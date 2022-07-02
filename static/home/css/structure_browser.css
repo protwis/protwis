@@ -32,7 +32,7 @@ table.dataTable.compact thead th.over_header {
   border-right: 1px solid;
   border-left: 0 solid;
   text-align: left;
-  padding: 4px 4px 4px 4px;
+  padding: 4px;
 }
 
 table.dataTable.compact thead tr.over_header th {
@@ -49,7 +49,7 @@ table.dataTable.compact thead th.rightborder {
 
 table.dataTable.compact thead th.checkbox_tr {
   text-align: left;
-  padding: 4px 4px 4px 4px;
+  padding: 4px;
 }
 
 .yadcf-filter-wrapper {
@@ -76,7 +76,7 @@ input.yadcf-filter {
 }
 
 .clicked_button {
-  background-color: rgb(215, 215, 215);
+  background-color: rgb(215 215 215);
 }
 
 .wrapper {
@@ -88,7 +88,7 @@ input.yadcf-filter {
   top: 0;
   position: absolute;
   background: #f8f8f8;
-  -webkit-box-shadow: 5px 0 2px -2px #888;
+  box-shadow: 5px 0 2px -2px #888;
   box-shadow: 5px 0 2px -2px #888;
 }
 
@@ -99,7 +99,7 @@ input.yadcf-filter {
 div.overhead_text {
   float: left;
   display: inline;
-  padding: 8px 0 0 0;
+  padding: 8px 0 0;
   width: 90%;
 }
 
@@ -111,16 +111,16 @@ div.overhead_close {
 
 .icon-button {
   appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
+  appearance: none;
+  appearance: none;
   outline: none;
   border: 0;
   background: transparent;
-  padding: 2px 0 2px 0;
+  padding: 2px 0;
 }
 
 .highlight {
-  background-color: rgb(204, 229, 255);
+  background-color: rgb(204 229 255);
 }
 
 .glyphicon.glyphicon-export {
@@ -145,7 +145,7 @@ div.overhead_close {
   position: absolute;
   background-color: #f1f1f1;
   width: 100%;
-  box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2);
+  box-shadow: 0 8px 16px 0 rgb(0 0 0 / 20%);
   z-index: 1;
 }
 

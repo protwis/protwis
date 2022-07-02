@@ -1,5 +1,5 @@
 .ali-td {
-  padding: 0 4px 0 4px;
+  padding: 0 4px;
   font-size: 10px;
   white-space: nowrap;
   height: 25px;
@@ -16,7 +16,7 @@
 }
 
 .ali-td-generic-num {
-  padding: 0 1px 0 1px;
+  padding: 0 1px;
   font-size: 8px;
   white-space: nowrap;
   height: 20px;
@@ -31,15 +31,15 @@
 .ali-td-generic-num-normal {
   font-size: 8px;
   line-height: 10px;
-  padding: 0 0 0 0;
-  margin: 0 0 0 0;
+  padding: 0;
+  margin: 0;
 }
 
 .ali-td-generic-num-tiny {
   font-size: 5px;
   line-height: 10px;
-  padding: 0 0 0 0;
-  margin: 0 0 0 0;
+  padding: 0;
+  margin: 0;
 }
 
 .ali-td-generic-num-grey {
@@ -55,7 +55,7 @@
 }
 
 .ali-td-stat-summary {
-  padding: 0 1px 0 1px;
+  padding: 0 1px;
   font-size: 7px;
   white-space: nowrap;
   height: 25px;
@@ -138,11 +138,11 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0);
+  background: rgb(255 255 255 / 0%);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(6, 128, 202, 1);
+  background: rgb(6 128 202 / 100%);
 }
 
 .res-color-A {

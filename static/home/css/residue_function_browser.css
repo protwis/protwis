@@ -82,12 +82,12 @@ table.dataTable.compact thead th.over_header {
   border-right: 1px solid;
   border-left: 0 solid;
   text-align: center;
-  padding: 4px 4px 4px 4px;
+  padding: 4px;
 }
 
 table.dataTable.compact thead tr.over_header th {
   border-bottom: 1px solid #ccc;
-  padding: 4px 4px 4px 4px;
+  padding: 4px;
 }
 
 table.dataTable.compact thead th.leftborder {
@@ -100,7 +100,7 @@ table.dataTable.compact thead th.rightborder {
 
 table.dataTable.compact thead th.checkbox_tr {
   text-align: left;
-  padding: 4px 4px 4px 4px;
+  padding: 4px;
 }
 
 .tooltip-inner {

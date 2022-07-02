@@ -1,5 +1,4 @@
-/*from https://github.com/tdamsma/datatables-yadcf-bootstrap-webpack*/
-
+/* from https://github.com/tdamsma/datatables-yadcf-bootstrap-webpack */
 
 .yadcf-number-slider-filter-wrapper-inner {
   display: inline-block;
@@ -25,7 +24,7 @@
 }
 
 .yadcf-filter-range-number-slider {
-    overflow: visible;
+  overflow: visible;
 }
 
 .yadcf-number-slider-filter-wrapper-inner .yadcf-filter-range-number-slider-min-tip {
@@ -38,17 +37,17 @@
 .yadcf-number-slider-filter-wrapper-inner .yadcf-filter-range-number-slider-max-tip {
   font-size: 13px;
   font-weight: normal;
-  position:absolute;
+  position: absolute;
   outline-style: none;
 }
 
 .yadcf-number-slider-filter-wrapper-inner .yadcf-filter-range-number-slider-min-tip-inner {
-  position:absolute;
+  position: absolute;
   top: 11px;
 }
 
 .yadcf-number-slider-filter-wrapper-inner .yadcf-filter-range-number-slider-max-tip-inner {
-  position:absolute;
+  position: absolute;
   top: 11px;
 }
 
@@ -88,18 +87,18 @@
   font-weight: normal;
   font-size: 14px;
   color: black;
-  background-color: #FFF;
-  border: 1px solid #CCC;
+  background-color: #fff;
+  border: 1px solid #ccc;
   border-radius: 4px;
   padding-left: 5px;
 }
 
-table.dataTable thead .sorting:hover:after,
-table.dataTable thead .sorting_asc:after,
-table.dataTable thead .sorting_desc:after,
-table.dataTable thead .sorting_asc_disabled:after,
-table.dataTable thead .sorting_desc_disabled:after {
-  opacity: 1
+table.dataTable thead .sorting:hover::after,
+table.dataTable thead .sorting_asc::after,
+table.dataTable thead .sorting_desc::after,
+table.dataTable thead .sorting_asc_disabled::after,
+table.dataTable thead .sorting_desc_disabled::after {
+  opacity: 1;
 }
 
 #yadcf-filter-wrapper-inner--example-4 .chosen-container.chosen-container-single .chosen-single,
@@ -113,7 +112,7 @@ table.dataTable thead .sorting_desc_disabled:after {
 
 .yadcf-filter-reset-button {
   text-decoration: none;
-  font-size: 0px;
+  font-size: 0;
   background: none;
   border: none;
   opacity: 0.3;
@@ -124,23 +123,23 @@ table.dataTable thead .sorting_desc_disabled:after {
   opacity: 1;
 }
 
-.yadcf-filter-reset-button:before {
-  font-family: 'Glyphicons Halflings';
+.yadcf-filter-reset-button::before {
+  font-family: "Glyphicons Halflings";
   content: "\E020";
   font-size: 14px;
 }
 
-.sorting:hover:after,
-.sorting_asc:hover:after,
-.sorting_desc:hover:after,
-.sorting_asc_disabled:hover:after,
-.sorting_desc_disabled:hover:after {
+.sorting:hover::after,
+.sorting_asc:hover::after,
+.sorting_desc:hover::after,
+.sorting_asc_disabled:hover::after,
+.sorting_desc_disabled:hover::after {
   color: #337ab7;
   opacity: 1;
 }
 
-.sorting_asc:after,
-.sorting_desc:after {
+.sorting_asc::after,
+.sorting_desc::after {
   color: #337ab7;
   opacity: 1;
 }

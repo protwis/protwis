@@ -19,5 +19,5 @@ table#uniprot_selection {
 }
 
 tr.selected td {
-  background-color: rgb(204, 229, 255);
+  background-color: rgb(204 229 255);
 }

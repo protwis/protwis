@@ -43,7 +43,7 @@ table.dataTable.compact thead th.rightborder {
 
 table.dataTable.compact thead th.checkbox_tr {
   text-align: left;
-  padding: 4px 4px 4px 4px;
+  padding: 4px;
 }
 
 table.dataTable.compact thead th {
@@ -82,7 +82,7 @@ input.yadcf-filter {
 }
 
 .clicked_button {
-  background-color: rgb(215, 215, 215);
+  background-color: rgb(215 215 215);
 }
 
 .wrapper {
@@ -94,7 +94,7 @@ div.table_overlay {
   top: 0;
   position: absolute;
   background: #f8f8f8;
-  -webkit-box-shadow: 5px 0 2px -2px #888;
+  box-shadow: 5px 0 2px -2px #888;
   box-shadow: 5px 0 2px -2px #888;
 }
 
@@ -103,7 +103,7 @@ div.table_overlay table tbody tr {
 }
 
 .highlight {
-  background-color: rgb(204, 229, 255);
+  background-color: rgb(204 229 255);
 }
 
 .glyphicon.glyphicon-export {
@@ -120,7 +120,7 @@ div.table_overlay table tbody tr {
   position: absolute;
   background-color: #f1f1f1;
   width: 100%;
-  box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2);
+  box-shadow: 0 8px 16px 0 rgb(0 0 0 / 20%);
   z-index: 1;
 }
 

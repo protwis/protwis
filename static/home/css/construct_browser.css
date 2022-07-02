@@ -70,27 +70,27 @@ input.date_range_filter {
   background-color: purple;
 
   /* color: white; */
-  background-color: rgb(142, 68, 173);
-  background-color: rgba(142, 68, 173, 0.6);
+  background-color: rgb(142 68 173);
+  background-color: rgb(142 68 173 / 60%);
 }
 
 .fusiontop {
-  background-color: rgb(142, 68, 173);
+  background-color: rgb(142 68 173);
 }
 
 .tag {
   background-color: gold;
-  background-color: rgb(244, 208, 63);
-  background-color: rgba(244, 208, 63, 0.6);
+  background-color: rgb(244 208 63);
+  background-color: rgb(244 208 63 / 60%);
 }
 
 .tagtop {
-  background-color: rgb(244, 208, 63);
+  background-color: rgb(244 208 63);
 }
 
 .signal {
   background-color: #2ecc40;
-  background-color: rgba(46, 204, 64, 0.6);
+  background-color: rgb(46 204 64 / 60%);
 }
 
 .signaltop {
@@ -99,23 +99,23 @@ input.date_range_filter {
 
 .prot_cleavage {
   background-color: #ffa233;
-  background-color: rgb(230, 126, 34);
-  background-color: rgba(230, 126, 34, 0.6);
+  background-color: rgb(230 126 34);
+  background-color: rgb(230 126 34 / 60%);
 }
 
 .prot_cleavagetop {
-  background-color: rgb(230, 126, 34);
+  background-color: rgb(230 126 34);
 }
 
 .linker {
   background-color: #58a2a1;
-  background-color: rgb(93, 173, 226);
-  background-color: rgba(93, 173, 226, 0.6);
+  background-color: rgb(93 173 226);
+  background-color: rgb(93 173 226 / 60%);
 }
 
 .linkertop {
   background-color: #58a2a1;
-  background-color: rgb(93, 173, 226);
+  background-color: rgb(93 173 226);
 }
 
 .insert_text {

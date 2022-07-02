@@ -1,28 +1,38 @@
-table input.form-control, table select.form-control {
-    width: 50px;
-    height: 20px;
-    font-size: 9px;
-    padding: 2px 2px;
+table input.form-control,
+table select.form-control {
+  width: 50px;
+  height: 20px;
+  font-size: 9px;
+  padding: 2px;
 }
-table input.number_range_filter, table input.date_range_filter {
-    width: 20px;
-    font-size: 8px;
+
+table input.number_range_filter,
+table input.date_range_filter {
+  width: 20px;
+  font-size: 8px;
 }
+
 table .general-th {
-    background-color: #98df8a;
+  background-color: #98df8a;
 }
+
 table .activity-th {
-    background-color: #aec7e8;
+  background-color: #aec7e8;
 }
+
 table .chemical-th {
-    background-color: #ff9896;
+  background-color: #ff9896;
 }
+
 div.container table {
-    min-width: 100%;
+  min-width: 100%;
 }
-div.container .display td,th {
-    text-align: center;
+
+div.container .display td,
+th {
+  text-align: center;
 }
+
 div.container .dt-left {
-    text-align: left;
+  text-align: left;
 }

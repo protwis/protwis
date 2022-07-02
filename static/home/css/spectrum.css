@@ -23,8 +23,8 @@ License: MIT
 /* Fix for * { box-sizing: border-box; } */
 .sp-container,
 .sp-container * {
-  -webkit-box-sizing: content-box;
-  -moz-box-sizing: content-box;
+  box-sizing: content-box;
+  box-sizing: content-box;
   box-sizing: content-box;
 }
 
@@ -85,13 +85,13 @@ License: MIT
 
 /* Gradients for hue, saturation and value instead of images.  Not pretty... but it works */
 .sp-sat {
-  background-image: linear-gradient(to right, #fff, rgba(204, 154, 129, 0));
-  filter: progid:dximagetransform.microsoft.gradient(GradientType=1, startColorstr='#FFFFFFFF', endColorstr='#00CC9A81');
+  background-image: linear-gradient(to right, #fff, rgb(204 154 129 / 0%));
+  filter: progid:dximagetransform.microsoft.gradient(GradientType=1, startColorstr="#FFFFFFFF", endColorstr="#00CC9A81");
 }
 
 .sp-val {
-  background-image: linear-gradient(to top, #000, rgba(204, 154, 129, 0));
-  filter: progid:dximagetransform.microsoft.gradient(startColorstr='#00CC9A81', endColorstr='#f0000');
+  background-image: linear-gradient(to top, #000, rgb(204 154 129 / 0%));
+  filter: progid:dximagetransform.microsoft.gradient(startColorstr="#00CC9A81", endColorstr="#f0000");
 }
 
 /* Don't allow text selection */
@@ -105,9 +105,9 @@ License: MIT
 .sp-alpha-handle,
 .sp-container.sp-dragging .sp-input,
 .sp-container button {
-  -webkit-user-select: none;
-  -moz-user-select: -moz-none;
-  -o-user-select: none;
+  user-select: none;
+  user-select: -moz-none;
+  user-select: none;
   user-select: none;
 }
 
@@ -145,32 +145,32 @@ License: MIT
  */
 .sp-1 {
   height: 17%;
-  filter: progid:dximagetransform.microsoft.gradient(startColorstr='#f00', endColorstr='#ff0');
+  filter: progid:dximagetransform.microsoft.gradient(startColorstr="#f00", endColorstr="#ff0");
 }
 
 .sp-2 {
   height: 16%;
-  filter: progid:dximagetransform.microsoft.gradient(startColorstr='#ff0', endColorstr='#0f0');
+  filter: progid:dximagetransform.microsoft.gradient(startColorstr="#ff0", endColorstr="#0f0");
 }
 
 .sp-3 {
   height: 17%;
-  filter: progid:dximagetransform.microsoft.gradient(startColorstr='#0f0', endColorstr='#0ff');
+  filter: progid:dximagetransform.microsoft.gradient(startColorstr="#0f0", endColorstr="#0ff");
 }
 
 .sp-4 {
   height: 17%;
-  filter: progid:dximagetransform.microsoft.gradient(startColorstr='#0ff', endColorstr='#00f');
+  filter: progid:dximagetransform.microsoft.gradient(startColorstr="#0ff", endColorstr="#00f");
 }
 
 .sp-5 {
   height: 16%;
-  filter: progid:dximagetransform.microsoft.gradient(startColorstr='#00f', endColorstr='#f0f');
+  filter: progid:dximagetransform.microsoft.gradient(startColorstr="#00f", endColorstr="#f0f");
 }
 
 .sp-6 {
   height: 17%;
-  filter: progid:dximagetransform.microsoft.gradient(startColorstr='#f0f', endColorstr='#f00');
+  filter: progid:dximagetransform.microsoft.gradient(startColorstr="#f0f", endColorstr="#f00");
 }
 
 .sp-hidden {
@@ -250,9 +250,9 @@ See http://bgrins.github.io/spectrum/themes/ for instructions.
 .sp-hue,
 .sp-clear {
   font: normal 12px "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", Geneva, Verdana, sans-serif;
-  -webkit-box-sizing: border-box;
-  -moz-box-sizing: border-box;
-  -ms-box-sizing: border-box;
+  box-sizing: border-box;
+  box-sizing: border-box;
+  box-sizing: border-box;
   box-sizing: border-box;
 }
 
@@ -429,10 +429,10 @@ See http://bgrins.github.io/spectrum/themes/ for instructions.
 /* Buttons: http://hellohappy.org/css3-buttons/ */
 .sp-container button {
   background-color: #eee;
-  background-image: -webkit-linear-gradient(top, #eee, #ccc);
-  background-image: -moz-linear-gradient(top, #eee, #ccc);
-  background-image: -ms-linear-gradient(top, #eee, #ccc);
-  background-image: -o-linear-gradient(top, #eee, #ccc);
+  background-image: linear-gradient(top, #eee, #ccc);
+  background-image: linear-gradient(top, #eee, #ccc);
+  background-image: linear-gradient(top, #eee, #ccc);
+  background-image: linear-gradient(top, #eee, #ccc);
   background-image: linear-gradient(to bottom, #eee, #ccc);
   border: 1px solid #ccc;
   border-bottom: 1px solid #bbb;
@@ -448,10 +448,10 @@ See http://bgrins.github.io/spectrum/themes/ for instructions.
 
 .sp-container button:hover {
   background-color: #ddd;
-  background-image: -webkit-linear-gradient(top, #ddd, #bbb);
-  background-image: -moz-linear-gradient(top, #ddd, #bbb);
-  background-image: -ms-linear-gradient(top, #ddd, #bbb);
-  background-image: -o-linear-gradient(top, #ddd, #bbb);
+  background-image: linear-gradient(top, #ddd, #bbb);
+  background-image: linear-gradient(top, #ddd, #bbb);
+  background-image: linear-gradient(top, #ddd, #bbb);
+  background-image: linear-gradient(top, #ddd, #bbb);
   background-image: linear-gradient(to bottom, #ddd, #bbb);
   border: 1px solid #bbb;
   border-bottom: 1px solid #999;
@@ -462,10 +462,10 @@ See http://bgrins.github.io/spectrum/themes/ for instructions.
 .sp-container button:active {
   border: 1px solid #aaa;
   border-bottom: 1px solid #888;
-  -webkit-box-shadow: inset 0 0 5px 2px #aaa, 0 1px 0 0 #eee;
-  -moz-box-shadow: inset 0 0 5px 2px #aaa, 0 1px 0 0 #eee;
-  -ms-box-shadow: inset 0 0 5px 2px #aaa, 0 1px 0 0 #eee;
-  -o-box-shadow: inset 0 0 5px 2px #aaa, 0 1px 0 0 #eee;
+  box-shadow: inset 0 0 5px 2px #aaa, 0 1px 0 0 #eee;
+  box-shadow: inset 0 0 5px 2px #aaa, 0 1px 0 0 #eee;
+  box-shadow: inset 0 0 5px 2px #aaa, 0 1px 0 0 #eee;
+  box-shadow: inset 0 0 5px 2px #aaa, 0 1px 0 0 #eee;
   box-shadow: inset 0 0 5px 2px #aaa, 0 1px 0 0 #eee;
 }
 
