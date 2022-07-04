@@ -1792,6 +1792,7 @@ class BiasPathways(TemplateView):
         context = dict()
         prepare_data = self.process_data(content)
         context.update({'data': prepare_data})
+        print(context)
 
         return context
 
@@ -1816,6 +1817,7 @@ class BiasPathways(TemplateView):
 
             if instance.receptor:
                 temp['receptor'] = instance.receptor
+                temp['class'] = instance.receptor.family.parent.parent.parent.name.split(' ')[1]
                 temp['uniprot'] = instance.receptor.entry_short
                 temp['IUPHAR'] = instance.receptor.name.split(' ', 1)[
                     0].strip()
