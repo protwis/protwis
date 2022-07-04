@@ -523,8 +523,8 @@ def getReferenceTable(pathway, subtype):
                     <th style=\"color:red\">Receptor<br>(GtP)</th> \
                     <th>Tested<br>(total)</th> \
                     <th>Balanced<br>references</th> \
-                    <th>Physiology<br>biased</th> \
                     <th>Pathway<br>biased</th> \
+                    <th>Physiology<br>biased</th> \
                   </tr> \
                 </thead>\
                 \n \
@@ -633,8 +633,8 @@ def getReferenceTable(pathway, subtype):
                     t['balanced_refs'],
                     t['biased_span'],
                     t['biased_count'],
-                    t['pathway_span'],
                     t['pathway_count'],
+                    t['pathway_span'],
                 )
 
         data_table += "</tbody></table>"

@@ -370,63 +370,76 @@ class BiasedSignallingSelection(AbsReferenceSelectionTable):
     subtype = False
     pathway = False
     pathfinder = {'EmaxRankOrder': {'Description': 'The next page shows plots for the ligand bias rank order ΔΔLog(Emax/EC50) by transducer or effector family across publications.' \
-                                                    + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>',
+                                                    + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.' \
+                                                    + '\nBiased ligands have a bias factor ≥ 1.',
                                     'Continue': "submitSelection('/biased_signalling/emax_rankorder');",
                                     'Pathway': "submitSelection('/biased_signalling/emax_rankorder_path_bias');",
                                     'Biased': "submitSelection('/biased_signalling/userselectionbiased_emax_rank_order');"},
                   'TauRankOrder': {'Description': 'The next page shows plots for the ligand bias rank order ΔΔLog(Tau/KA) by transducer or effector family across publications.' \
-                                                    + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>',
+                                                    + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.' \
+                                                    + '\nBiased ligands have a bias factor ≥ 1.',
                                    'Continue': "submitSelection('/biased_signalling/tau_rankorder');",
                                    'Pathway': "submitSelection('/biased_signalling/tau_rankorder_path_bias');",
                                    'Biased': "submitSelection('/biased_signalling/userselectionbiased_tau_rank_order');"},
                   'EmaxPathProfile': {'Description': 'The next page shows plots for the ligand pathway profiles ΔLog(Emax/EC50) by transducer or effector family across publications.' \
-                                                     + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>',
+                                                     + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.' \
+                                                     + '\nBiased ligands have a bias factor ≥ 1.',
                                       'Continue': "submitSelection('/biased_signalling/emax_path_profiles');",
                                       'Pathway': "submitSelection('/biased_signalling/emax_path_profiles_path_bias');",
                                       'Biased': "submitSelection('/biased_signalling/userselectionbiased_emax_path_profile');"},
                   'TauPathProfile': {'Description': 'The next page shows plots for the ligand pathway profiles ΔLog(Tau/KA) by transducer or effector family across publications.' \
-                                                     + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>',
+                                                     + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.' \
+                                                     + '\nBiased ligands have a bias factor ≥ 1.',
                                      'Continue': "submitSelection('/biased_signalling/tau_path_profiles');",
                                      'Pathway': "submitSelection('/biased_signalling/tau_path_profiles_path_bias');",
                                      'Biased': "submitSelection('/biased_signalling/userselectionbiased_tau_path_profile');"},
                   'EmaxRankOrderSubtype': {'Description': 'The next page shows plots for the ligand bias rank order ΔΔLog(Emax/EC50) by transducer or effector family across publications.' \
-                                                            + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>',
+                                                            + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.' \
+                                                            + '\nBiased ligands have a bias factor ≥ 1.',
                                            'Continue': "submitSelection('/biased_signalling/subtype_emax_rankorder');",
                                            'Pathway': "submitSelection('/biased_signalling/subtype_emax_rankorder_path_bias');",
                                            'Biased': "submitSelection('/biased_signalling/userselectionbiasedsubtype_emax_rank_order');"},
                   'TauRankOrderSubtype': {'Description': 'The next page shows plots for the ligand bias rank order ΔΔLog(Tau/KA) by transducer or effector family across publications.' \
-                                                         + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>',
+                                                         + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.' \
+                                                         + '\nBiased ligands have a bias factor ≥ 1.',
                                           'Continue': "submitSelection('/biased_signalling/subtype_tau_rankorder');",
                                           'Pathway': "submitSelection('/biased_signalling/subtype_tau_rankorder_path_bias');",
                                           'Biased': "submitSelection('/biased_signalling/userselectionbiasedsubtype_tau_rank_order');"},
                   'EmaxPathProfileSubtype': {'Description': 'The next page shows plots for the ligand pathway profiles ΔLog(Emax/EC50) by transducer or effector family across publications.' \
-                                                            + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>',
+                                                            + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.' \
+                                                            + '\nBiased ligands have a bias factor ≥ 1.',
                                              'Continue': "submitSelection('/biased_signalling/subtype_emax_path_profiles');",
                                              'Pathway': "submitSelection('/biased_signalling/subtype_emax_path_profiles_path_bias');",
                                              'Biased': "submitSelection('/biased_signalling/userselectionbiasedsubtype_emax_path_profile');"},
                   'TauPathProfileSubtype': {'Description': 'The next page shows plots for the ligand pathway profiles ΔLog(Tau/KA) by transducer or effector family across publications.' \
-                                                            + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>',
+                                                            + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.' \
+                                                            + '\nBiased ligands have a bias factor ≥ 1.',
                                             'Continue': "submitSelection('/biased_signalling/subtype_tau_path_profiles');",
                                             'Pathway': "submitSelection('/biased_signalling/subtype_tau_path_profiles_path_bias');",
                                             'Biased': "submitSelection('/biased_signalling/userselectionbiasedsubtype_tau_path_profile');"},
                   'Browser': {'Description': 'The next page shows ligands biased for a transducer or effector family (e.g. G protein, arrestin, GRK, ERK etc.).' \
-                                                    + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>',
+                                                    + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.' \
+                                                    + '\nBiased ligands have a bias factor ≥ 1.',
                               'Continue': "submitSelection('/biased_signalling/biased');",
                               'Pathway': "submitSelection('/biased_signalling/pathwaybiased');",
                               'Biased': "submitSelection('/biased_signalling/userselectionbiased');"},
                   'BrowserSubtype': {'Description': 'The next page shows ligands biased for a transducer or effector family (e.g. G protein, arrestin, GRK, ERK etc.).' \
-                                                    + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>',
+                                                    + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.' \
+                                                    + '\nBiased ligands have a bias factor ≥ 1.',
                                      'Continue': "submitSelection('/biased_signalling/biasedsubtypes');",
                                      'Pathway': "submitSelection('/biased_signalling/pathwaybiasedsubtypes');",
                                      'Biased': "submitSelection('/biased_signalling/userselectionbiasedsubtype');"},
                   'BrowserPathway': {'Description': 'The next page shows ligands biased for a transducer or effector family (e.g. G protein, arrestin, GRK, ERK etc.).' \
-                                                    + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>',
+                                                    + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.' \
+                                                    + '\nBiased ligands have a bias factor ≥ 1.',
                                      'Continue': "submitSelection('/biased_signalling/pathwaypreference');"},
                   'EmaxRankOrderPathway': {'Description': 'The next page shows plots for the ligand bias rank order ΔLog(Emax/EC50) by transducer or effector family across publications.' \
-                                                            + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>',
+                                                            + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.' \
+                                                            + '\nBiased ligands have a bias factor ≥ 1.',
                                            'Continue': "submitSelection('/biased_signalling/path_preference_emax_rankorder');"},
                   'EmaxPathProfilePathway': {'Description': 'The next page shows plots for the ligand pathway profiles Log(Emax/EC50) by transducer or effector family across publications.' \
-                                                            + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>',
+                                                            + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.' \
+                                                            + '\nBiased ligands have a bias factor ≥ 1.',
                                             'Continue': "submitSelection('/biased_signalling/path_preference_emax_path_profiles');"}
                 }
     way = 'EmaxRankOrder'
@@ -441,6 +454,12 @@ class BiasedSignallingSelection(AbsReferenceSelectionTable):
     ])
 
     buttons = {
+        "pathway": {
+            "label": "Pathway-biased ligands<br>(balanced reference ligand)",
+            'onclick': pathfinder[way]['Pathway'],
+            'color': 'success',
+            "sameSize": True,
+        },
         'continue': {
             'label': 'Physiology-biased ligands<br>(endogenous agonist reference)',
             'onclick': pathfinder[way]['Continue'],
@@ -448,14 +467,8 @@ class BiasedSignallingSelection(AbsReferenceSelectionTable):
             'invisible': 'No',
             "sameSize": True,
         },
-        "pathway": {
-            "label": "Pathway-biased ligands<br>(balanced reference ligand)",
-            'onclick': pathfinder[way]['Pathway'],
-            'color': 'success',
-            "sameSize": True,
-        },
         "biased": {
-            "label": "Benchmark-biased ligands<br>(other reference ligand)",
+            "label": "Biased ligands<br>(other reference ligand)",
             'onclick': pathfinder[way]['Biased'],
             "color": 'success',
             'invisible': 'No',
