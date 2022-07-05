@@ -248,6 +248,7 @@
 		<input id="switch_biased" type="checkbox" checked data-toggle="toggle" data-on="Pathway 1-2" data-off="All pathways" data-style="ios" data-width="130" data-height="35" data-offstyle="success">
 		{% endif %}
 	{% endif %}
+	 <div class="double_scroll">
 			<table class="display compact text-nowrap" id='structures_scrollable' style="width: 100%">
 				<thead id="headers">
 					<tr class="header-spans">
@@ -646,7 +647,7 @@
 					{% endif %}
 				</tbody>
 			</table>
-
+		</div>
 </div>
 
 <br>
@@ -782,8 +783,7 @@ function openPopup(url, title, win, w, h) {
 			vendors.setAttribute("type","hidden");
 			articles.setAttribute("type","hidden");
 			labs.setAttribute("type","hidden");
-			$('body').find('.dataTables_scrollBody').wrap('<div id="scroll_div"></div>');
-			$('#scroll_div').doubleScroll();
+			$('.double_scroll').doubleScroll();
 	});
 </script>
 {% else %}
@@ -907,8 +907,7 @@ function openPopup(url, title, win, w, h) {
 		vendors.setAttribute("type","hidden");
 		articles.setAttribute("type","hidden");
 		labs.setAttribute("type","hidden");
-		$('body').find('.dataTables_scrollBody').wrap('<div id="scroll_div"></div>');
-		$('#scroll_div').doubleScroll();
+		$('.double_scroll').doubleScroll();
 	});
 </script>
 {% endif %}
