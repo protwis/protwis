@@ -424,12 +424,12 @@ class BiasedSignallingSelection(AbsReferenceSelectionTable):
                               'Pathway': "submitSelection('/biased_signalling/pathwaybiased');",
                               'Biased': "submitSelection('/biased_signalling/userselectionbiased');"},
                   'BrowserSubtype': {'Description': 'The next page shows ligands biased for a transducer or effector family (e.g. G protein, arrestin, GRK, ERK etc.).' \
-                                                    + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.' \
+                                                    + '\nPathway-preference is not bias as no reference ligand is used. See the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.' \
                                                     + '\nBiased ligands have a bias factor ≥ 1.',
                                      'Continue': "submitSelection('/biased_signalling/biasedsubtypes');",
                                      'Pathway': "submitSelection('/biased_signalling/pathwaybiasedsubtypes');",
                                      'Biased': "submitSelection('/biased_signalling/userselectionbiasedsubtype');"},
-                  'BrowserPathway': {'Description': 'The next page shows ligands biased for a transducer or effector family (e.g. G protein, arrestin, GRK, ERK etc.).' \
+                  'BrowserPathway': {'Description': 'The next page shows ligands preferring a transducer or effector family (e.g. G protein, arrestin, GRK, ERK etc.).' \
                                                     + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.' \
                                                     + '\nBiased ligands have a bias factor ≥ 1.',
                                      'Continue': "submitSelection('/biased_signalling/pathwaypreference');"},
