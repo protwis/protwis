@@ -631,10 +631,10 @@ def getReferenceTable(pathway, subtype):
                     t['ligand_count'],
                     t['balanced_span'],
                     t['balanced_refs'],
+                    t['pathway_span'],
+                    t['pathway_count'],
                     t['biased_span'],
                     t['biased_count'],
-                    t['pathway_count'],
-                    t['pathway_span'],
                 )
 
         data_table += "</tbody></table>"
