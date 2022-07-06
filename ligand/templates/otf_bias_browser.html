@@ -239,6 +239,7 @@
 	<br />
 	<h5>Showing {{ Lig_Count }} biased ligands for {{ IUPHAR }} ({{ UniProt }})</h5>
 	<br />
+	<button id="reset_hidden" type="button" class="btn btn-primary" style="margin-top:10px;margin-top:3px"> Reset removed columns </button>
 	<button id="reset" type="button" class="btn btn-primary" style="margin-top:10px;margin-top:3px"> Reset filters </button>
 	<button onclick="tableToExcel('structures_scrollable', 'Families data', 'GPCRDB.xls')" type="button" class="btn btn-primary" style="margin-top:10px;margin-top:3px"> Export to Excel </button>
 	{% if not Balanced %}
@@ -255,54 +256,131 @@
 						<!-- <th id="receptor" style="text-align:left" colspan="5">Receptor</th> -->
 						{% if Pathway %}
 						<th style="text-align:left" colspan="4" style="">
-							Tested ligands</th>
+							Tested ligands
+							<button type="button" class="close hide_columns" columns="0,1,2,3"  aria-label="Close"><span aria-hidden="true">&times;</span></button>
+						</th>
 						<th id="pathways_effector" style="border-left: 1px solid black; text-align:left" colspan="5">
-							Pathway preference<br>(Log(&#964;/KA) or Log(Emax/EC50))</th>
+							Pathway preference<br>(Log(&#964;/KA) or Log(Emax/EC50))
+							<button type="button" class="close hide_columns" columns="4,5,6,7,8"  aria-label="Close"><span aria-hidden="true">&times;</span></button>
+						</th>
 						<th id="pathways_activity_tk" class="color-column" style="border-left: 1px solid black; text-align:left" colspan="4">
-							Relative pathway activity<br>(&#916;Log(&#964;/KA))</th>
+							Relative pathway activity<br>(&#916;Log(&#964;/KA))
+							<button type="button" class="close hide_columns" columns="10,11,12,13"  aria-label="Close"><span aria-hidden="true">&times;</span></button>
+						</th>
 						<th id="pathways_activity_ee" class="color-column" style="border-left: 1px solid black; text-align:left" colspan="4">
-							Relative pathway activity<br>(&#916;Log(Emax/EC50))</th>
+							Relative pathway activity<br>(&#916;Log(Emax/EC50))
+							<button type="button" class="close hide_columns" columns="14,15,16,17"  aria-label="Close"><span aria-hidden="true">&times;</span></button>
+						</th>
 						<th id="delta_emax_ec50_part" class="color-column" style="border-left: 1px solid black; text-align:left" colspan="5">
-							Pathway activity Log(&#964;/KA)</th>
+							Pathway activity Log(&#964;/KA)
+							<button type="button" class="close hide_columns" columns="18,19,20,21,22"  aria-label="Close"><span aria-hidden="true">&times;</span></button>
+						</th>
 						<th id="relative_transduction_coef" class="color-column" style="border-left: 1px solid black; text-align:left" colspan="5">
-							Pathway activity Log(Emax/EC50)</th>
-						{% else %}
-						<th style="text-align:left" colspan="5" style="">
-							Ligands</th>
-						<th id="pathways_effector" style="border-left: 1px solid black; text-align:left" colspan="5">
-							Pathway rank order<br>(&#916;Log(&#964;/KA) or &#916;Log(Emax/EC50))</th>
-						<th id="bias_factor" class="color-column" style="border-left: 1px solid black; text-align:left" colspan="4">
-							Bias factor<br>(antilog of &#916;&#916;Log(Emax/EC50))</th>
-						<th id="pathways_measure" style="border-left: 1px solid black; text-align:left" colspan="5">
-							Specific pathway:<br>Measured molecule</th>
-						<th id="delta_relative_transduction_coef" class="color-column" style="border-left: 1px solid black; text-align:left" colspan="4">
-							Operational<br>model <br>(&#916;&#916;Log(&#964;/Ka))</th>
-						<th id="lbf" class="color-column" style="border-left: 1px solid black; text-align:left" colspan="4">
-							Relative<br>activity<br>(&#916;&#916;Log(Emax/EC50))</th>
-						<th id="delta_emax_ec50_part" class="color-column" style="border-left: 1px solid black; text-align:left" colspan="5">
-							Ligand &#916;Log(&#964;/KA)</th>
-						<th id="relative_transduction_coef" class="color-column" style="border-left: 1px solid black; text-align:left" colspan="5">
-							Ligand &#916;Log(Emax/EC50)</th>
-						{% endif %}
+							Pathway activity Log(Emax/EC50)
+							<button type="button" class="close hide_columns" columns="23,24,25,26,27"  aria-label="Close"><span aria-hidden="true">&times;</span></button>
+						</th>
 						<th class="color-column" id="activity" style="border-left: 1px solid black; text-align:left" colspan="5">
 							Potency (pEC50)
+							<button type="button" class="close hide_columns" columns="28,29,30,31,32"  aria-label="Close"><span aria-hidden="true">&times;</span></button>
 						</th>
 						<th id="emax" class="color-column" style="border-left: 1px solid black; text-align:left" colspan="5">
-							Emax (% of ref ligand)</th>
+							Emax (% of ref ligand)
+							<button type="button" class="close hide_columns" columns="33,34,35,36,37"  aria-label="Close"><span aria-hidden="true">&times;</span></button>
+						</th>
 						<th id="mm1" style="border-left: 1px solid black; text-align:left" colspan="5">
-							Measured molecule 1</th>
+							Measured molecule 1
+							<button type="button" class="close hide_columns" columns="37,38,39,40,41"  aria-label="Close"><span aria-hidden="true">&times;</span></button>
+						</th>
 						<th id="mm2" style="border-left: 1px solid black; text-align:left" colspan="5">
-							Measured molecule 2</th>
+							Measured molecule 2
+							<button type="button" class="close hide_columns" columns="42,43,44,45,46"  aria-label="Close"><span aria-hidden="true">&times;</span></button>
+						</th>
 						<th id="bio" style="border-left: 1px solid black; text-align:left" colspan="5">
-							Biological process</th>
+							Biological process
+							<button type="button" class="close hide_columns" columns="47,48,49,50,51"  aria-label="Close"><span aria-hidden="true">&times;</span></button>
+						</th>
 						<th id="cell" style="border-left: 1px solid black; text-align:left" colspan="5">
-							Cell line</th>
+							Cell line
+							<button type="button" class="close hide_columns" columns="52,53,54,55,56"  aria-label="Close"><span aria-hidden="true">&times;</span></button>
+						</th>
 						<th id="time" style="border-left: 1px solid black; text-align:left" colspan="1">
-							Time resolved</th>
+							Time resolved
+							<button type="button" class="close hide_columns" columns="57"  aria-label="Close"><span aria-hidden="true">&times;</span></button>
+						</th>
 						<th style="border-left: 1px solid black; text-align:left; overflow: hidden;
-		                          white-space: nowrap;
-		                          text-overflow: ellipsis;
-		                  max-width: 250px;" colspan="2">Reference</th>
+															white-space: nowrap;
+															text-overflow: ellipsis;
+											max-width: 250px;" colspan="2">Reference
+											<button type="button" class="close hide_columns" columns="58,59"  aria-label="Close"><span aria-hidden="true">&times;</span></button>
+										</th>
+						{% else %}
+						<th style="text-align:left" colspan="5" style="">
+							Ligands
+							<button type="button" class="close hide_columns" columns="0,1,2,3,4"  aria-label="Close"><span aria-hidden="true">&times;</span></button>
+					  </th>
+						<th id="pathways_effector" style="border-left: 1px solid black; text-align:left" colspan="5">
+							Pathway rank order<br>(&#916;Log(&#964;/KA) or &#916;Log(Emax/EC50))
+							<button type="button" class="close hide_columns" columns="5,6,7,8,9"  aria-label="Close"><span aria-hidden="true">&times;</span></button>
+						</th>
+						<th id="bias_factor" class="color-column" style="border-left: 1px solid black; text-align:left" colspan="4">
+							Bias factor<br>(antilog of &#916;&#916;Log(Emax/EC50))
+							<button type="button" class="close hide_columns" columns="10,11,12,13"  aria-label="Close"><span aria-hidden="true">&times;</span></button>
+						</th>
+						<th id="pathways_measure" style="border-left: 1px solid black; text-align:left" colspan="5">
+							Specific pathway:<br>Measured molecule
+							<button type="button" class="close hide_columns" columns="14,15,16,17,18"  aria-label="Close"><span aria-hidden="true">&times;</span></button>
+						</th>
+						<th id="delta_relative_transduction_coef" class="color-column" style="border-left: 1px solid black; text-align:left" colspan="4">
+							Operational<br>model <br>(&#916;&#916;Log(&#964;/Ka))
+							<button type="button" class="close hide_columns" columns="19,20,21,22"  aria-label="Close"><span aria-hidden="true">&times;</span></button>
+						</th>
+						<th id="lbf" class="color-column" style="border-left: 1px solid black; text-align:left" colspan="4">
+							Relative<br>activity<br>(&#916;&#916;Log(Emax/EC50))
+							<button type="button" class="close hide_columns" columns="23,24,25,26"  aria-label="Close"><span aria-hidden="true">&times;</span></button>
+						</th>
+						<th id="delta_emax_ec50_part" class="color-column" style="border-left: 1px solid black; text-align:left" colspan="5">
+							Ligand &#916;Log(&#964;/KA)
+							<button type="button" class="close hide_columns" columns="27,28,29,30,31"  aria-label="Close"><span aria-hidden="true">&times;</span></button>
+						</th>
+						<th id="relative_transduction_coef" class="color-column" style="border-left: 1px solid black; text-align:left" colspan="5">
+							Ligand &#916;Log(Emax/EC50)
+							<button type="button" class="close hide_columns" columns="32,33,34,35,36"  aria-label="Close"><span aria-hidden="true">&times;</span></button>
+						</th>
+						<th class="color-column" id="activity" style="border-left: 1px solid black; text-align:left" colspan="5">
+							Potency (pEC50)
+							<button type="button" class="close hide_columns" columns="37,38,39,40,41"  aria-label="Close"><span aria-hidden="true">&times;</span></button>
+						</th>
+						<th id="emax" class="color-column" style="border-left: 1px solid black; text-align:left" colspan="5">
+							Emax (% of ref ligand)
+							<button type="button" class="close hide_columns" columns="42,43,44,45,46"  aria-label="Close"><span aria-hidden="true">&times;</span></button>
+						</th>
+						<th id="mm1" style="border-left: 1px solid black; text-align:left" colspan="5">
+							Measured molecule 1
+							<button type="button" class="close hide_columns" columns="47,48,49,50,51"  aria-label="Close"><span aria-hidden="true">&times;</span></button>
+						</th>
+						<th id="mm2" style="border-left: 1px solid black; text-align:left" colspan="5">
+							Measured molecule 2
+							<button type="button" class="close hide_columns" columns="52,53,54,55,56"  aria-label="Close"><span aria-hidden="true">&times;</span></button>
+						</th>
+						<th id="bio" style="border-left: 1px solid black; text-align:left" colspan="5">
+							Biological process
+							<button type="button" class="close hide_columns" columns="57,58,59,60,61"  aria-label="Close"><span aria-hidden="true">&times;</span></button>
+						</th>
+						<th id="cell" style="border-left: 1px solid black; text-align:left" colspan="5">
+							Cell line
+							<button type="button" class="close hide_columns" columns="62,63,64,65,66"  aria-label="Close"><span aria-hidden="true">&times;</span></button>
+						</th>
+						<th id="time" style="border-left: 1px solid black; text-align:left" colspan="1">
+							Time resolved
+							<button type="button" class="close hide_columns" columns="66"  aria-label="Close"><span aria-hidden="true">&times;</span></button>
+						</th>
+						<th style="border-left: 1px solid black; text-align:left; overflow: hidden;
+															white-space: nowrap;
+															text-overflow: ellipsis;
+											max-width: 250px;" colspan="2">Reference
+											<button type="button" class="close hide_columns" columns="67,68"  aria-label="Close"><span aria-hidden="true">&times;</span></button>
+										</th>
+						{% endif %}
 						<!-- <th style="border-left: 1px solid black; text-align:left" colspan="4">reference</th> -->
 					</tr>
 					<tr class="table-filter-dropdown">
@@ -665,6 +743,7 @@
 <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
 <script src="{% static 'home/js/jquery.doubleScroll.js' %}"> </script>
 <script src="{% static 'home/js/dataTables.buttons.min.js' %}"> </script>
+<script src="{% static 'home/js/dataTables.hideEmptyColumns.min.js' %}"> </script>
 <script src="{% static 'home/js/select2.js' %}"> </script>
 <script src="{% static 'home/js/grayscale.js' %}"></script>
 <script src="{% static 'home/js/gpcrdb.js' %}"></script>
@@ -711,6 +790,7 @@ function openPopup(url, title, win, w, h) {
 	    aaSorting: [],
 	    autoWidth: true,
 	    bInfo: true,
+			hideEmptyColumns: true,
 			columnDefs: [{
 				targets: [6,7,8,
 									10,11,12,
@@ -789,6 +869,37 @@ function openPopup(url, title, win, w, h) {
 			articles.setAttribute("type","hidden");
 			labs.setAttribute("type","hidden");
 			$('.double_scroll').doubleScroll();
+
+			$(".hide_columns").click(function(evt) {
+	    var columns = $(this).attr("columns").split(",");
+	    columns.forEach(function(column) {
+	        var column = oTable1.column( column );
+	        try {
+	            column.visible( false, false );
+	        }
+	        catch(err) {
+	            column.visible( false, false );
+	        }
+	        });
+	        oTable1.draw();
+	    } );
+
+			$("#reset_hidden").click(function(evt) {
+					resetHiddenColumns(oTable1);
+					gray_scale_table($("#structures_scrollable"));
+					hideColumns(oTable1, [6,7,8,
+																10,11,12,
+																14,15,16,
+																19,20,21,
+																24,25,26,
+																29,30,31,
+																34,35,36,
+																39,40,41,
+																44,45,46,
+																49,50,51,
+																54,55,56]);
+			} );
+
 	});
 </script>
 {% else %}
@@ -811,7 +922,6 @@ function openPopup(url, title, win, w, h) {
 		}
 		const csrftoken = getCookie('csrftoken');
 
-		console.time("structures_scrollable");
 	  $("#structures_scrollable").show();
 	  oTable1 = $("#structures_scrollable").DataTable({
 	    deferRender: true,
@@ -820,6 +930,7 @@ function openPopup(url, title, win, w, h) {
 	    scrollCollapse: true,
 	    scroller: true,
 	    paging: false,
+		  hideEmptyColumns: true,
 	    bSortCellsTop: false, //prevent sort arrows going on bottom row
 	    aaSorting: [],
 	    autoWidth: false,
@@ -883,6 +994,7 @@ function openPopup(url, title, win, w, h) {
 
 		gray_scale_table($("#structures_scrollable"));
 		oTable1.columns.adjust();
+
 	});
 </script>
 <script>
@@ -914,6 +1026,39 @@ function openPopup(url, title, win, w, h) {
 		articles.setAttribute("type","hidden");
 		labs.setAttribute("type","hidden");
 		$('.double_scroll').doubleScroll();
+
+		$(".hide_columns").click(function(evt) {
+    var columns = $(this).attr("columns").split(",");
+    columns.forEach(function(column) {
+        var column = oTable1.column( column );
+        try {
+            column.visible( false, false );
+        }
+        catch(err) {
+            column.visible( false, false );
+        }
+        });
+        oTable1.draw();
+    } );
+
+		$("#reset_hidden").click(function(evt) {
+				resetHiddenColumns(oTable1);
+				gray_scale_table($("#structures_scrollable"));
+				hideColumns(oTable1, [7,8,9,
+															11,12,13,
+															16,17,18,
+															20,21,22,
+															24,25,26,
+															29,30,31,
+															34,35,36,
+															39,40,41,
+															44,45,46,
+															49,50,51,
+															54,55,56,
+															59,60,61,
+															64,65,66]);
+		} );
+
 	});
 </script>
 {% endif %}
