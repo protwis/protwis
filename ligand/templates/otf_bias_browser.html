@@ -556,10 +556,14 @@
 							<td style="text-align:left" class="pathway">{{ value.14 }}</td>
 
 							<!-- Bias factor block -->
-							<td style="text-align:right" class="color-column" title="Bias Factor P2">{{ value.16 }}</td>
-							<td style="text-align:right" class="color-column" title="Bias Factor P3">{{ value.17|default_if_none:""|floatformat:1 }}</td>
-							<td style="text-align:right" class="color-column" title="Bias Factor P4">{{ value.18|default_if_none:""|floatformat:1 }}</td>
-							<td style="text-align:right" class="color-column" title="Bias Factor P5">{{ value.19|default_if_none:""|floatformat:1 }}</td>
+							{% if value.16 == 'Full Bias' %}
+							<td style="text-align:right" class="color-column" data-filter="1000" title="Bias Factor P2">{{ value.16 }}</td>
+							{% else %}
+							<td style="text-align:right" class="color-column" data-filter="{{ value.16 }}" title="Bias Factor P2">{{ value.16 }}</td>
+							{% endif %}
+							<td style="text-align:right" class="color-column" data-filter="{{ value.17|default_if_none:''|floatformat:1 }}" title="Bias Factor P3">{{ value.17|default_if_none:""|floatformat:1 }}</td>
+							<td style="text-align:right" class="color-column" data-filter="{{ value.18|default_if_none:''|floatformat:1 }}" title="Bias Factor P4">{{ value.18|default_if_none:""|floatformat:1 }}</td>
+							<td style="text-align:right" class="color-column" data-filter="{{ value.17|default_if_none:''|floatformat:1 }}" title="Bias Factor P5">{{ value.19|default_if_none:""|floatformat:1 }}</td>
 
 							<!-- Signaling protein block -->
 							<td style="text-align:left" title="Measured Molecule P1">{{ value.20 }}</td>
@@ -744,6 +748,7 @@ function openPopup(url, title, win, w, h) {
 		// DOI
 		column_filters = column_filters.concat(createYADCFfilters(59, 1, "multi_select", "select2", "DOI", false, null, "html", "80px"));
 
+
 		yadcf.init(oTable1.draw(), column_filters, {
 			cumulative_filtering: false
 		});
@@ -753,7 +758,7 @@ function openPopup(url, title, win, w, h) {
 		$("#reset").click(function() {
 			yadcf.exResetAllFilters(oTable1);
 		});
-
+		oTable1.columns.adjust();
 		// $(".").hide()
 	});
 </script>
@@ -856,7 +861,7 @@ function openPopup(url, title, win, w, h) {
 		// Pathway Rank Order block (5)
 		column_filters = column_filters.concat(createYADCFfilters(5, 5, "multi_select", "select2", "Select", false, null, null, "30px"));
 		// Bias Factor(5)
-		column_filters = column_filters.concat(createYADCFfilters(10, 4, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
+		column_filters = column_filters.concat(createYADCFfilters(10, 4, "range_number", null, ["Min", "Max"], false, null, null, "30px", "data-filter"));
 		// Signalling protein (5)
 		column_filters = column_filters.concat(createYADCFfilters(14, 5, "multi_select", "select2", "Select", false, null, null, "30px"));
 		// ΔΔLog(Tau/KA)(4)/ΔΔLog(Emax/EC50)(4)/ΔLog(Tau/KA)(5)/ΔLog(Emax/EC50)(5)/EC50(5)/Emax(5)
@@ -877,6 +882,7 @@ function openPopup(url, title, win, w, h) {
 		});
 
 		gray_scale_table($("#structures_scrollable"));
+		oTable1.columns.adjust();
 	});
 </script>
 <script>
