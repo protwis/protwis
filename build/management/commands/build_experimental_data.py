@@ -827,7 +827,7 @@ class Command(BaseBuild):
             query = 'gene_exact:{}'.format(protein.lower())
 
         if query not in Command.mapper_cache.keys():
-            url = 'https://www.uniprot.org/uniprot/'
+            url = 'https://legacy.uniprot.org/uniprot/'
             params = {
                 'query': query,
                 'format': 'tab',
