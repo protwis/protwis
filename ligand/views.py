@@ -1680,7 +1680,7 @@ class LigandInformationView(TemplateView):
 
     @staticmethod
     def process_ligand(ligand_data, endogenous_ligands):
-        img_setup_smiles = "<img style=\"max-height: 300px; max-width: 400px;\" src=\"https://cactus.nci.nih.gov/chemical/structure/{}/image\">"
+        img_setup_smiles = "<img style=\"height: 80%; width: 80%;;\" src=\"https://cactus.nci.nih.gov/chemical/structure/{}/image\">"
         ld = dict()
         ld['ligand_id'] = ligand_data.id
         ld['ligand_name'] = ligand_data.name
@@ -1759,16 +1759,24 @@ class LigandInformationView(TemplateView):
         peptide_label = '<img src="https://media.istockphoto.com/vectors/protein-structure-molecule-3d-icon-vector-id1301952426?k=20&m=1301952426&s=612x612&w=0&h=a3ik50-faiP2BqiB7wMP3s_rVZyzPl9yHNQy7Rg89aE=" title="Peptide" width="20" height="20"></img>'
         antibody_label = '<img src="https://icon-library.com/images/2018/2090572_antibody-antibody-hd-png-download.png" title="Antibody" width="20" height="20"></img>'
         label = ''
+        #creating a parallel dict to keep info for labelings
+        #but also addressing info in new table structure of ligand info page
+        label_dict = {}
         #Endogenous OR Surrogate
         if ligand_data.id in endogenous_ligands:
             label += endogenous_label
+            label_dict['endogenous'] = 'Yes'
         else:
             label += surrogate_label
+            label_dict['endogenous'] = 'No'
         #Drug or Trial
         sources = [i.web_resource.name for i in ligand_data.ids.all()]
         drug_banks = ['DrugBank', 'Drug Central']
         if any(value in sources for value in drug_banks):
             label += drug_label
+            label_dict['approved'] = 'Yes'
+        else:
+            label_dict['approved'] = 'No'
         #Small molecule, Peptide or Antibody
         if label_type == 'Small molecule':
             label += small_molecule_label
@@ -1776,8 +1784,8 @@ class LigandInformationView(TemplateView):
             label += peptide_label
         elif label_type == 'Antibody':
             label += antibody_label
-
-        return label
+        #returning the dict for sake of table structure
+        return label_dict
 
 class BiasPathways(TemplateView):
     template_name = 'bias_browser_pathways.html'
