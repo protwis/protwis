@@ -16,16 +16,16 @@
 (function($){
     $.widget("suwala.doubleScroll", {
 		options: {
-            contentElement: undefined, // Widest element, if not specified first child element will be used
-			topScrollBarMarkup: '<div class="suwala-doubleScroll-scroll-wrapper" style="height: 20px;"><div class="suwala-doubleScroll-scroll" style="height: 20px;"></div></div>',
-			topScrollBarInnerSelector: '.suwala-doubleScroll-scroll',
+      contentElement: undefined, // Widest element, if not specified first child element will be used
+			topScrollBarMarkup: "<div class='suwala-doubleScroll-scroll-wrapper' style='height: 20px;''><div class='suwala-doubleScroll-scroll' style='height: 20px;'></div></div>",
+			topScrollBarInnerSelector: ".suwala-doubleScroll-scroll",
 			scrollCss: {
-				'overflow-x': 'scroll',
-				'overflow-y':'hidden'
+				"overflow-x": "scroll",
+				"overflow-y": "hidden"
             },
 			contentCss: {
-				'overflow-x': 'scroll',
-				'overflow-y':'hidden'
+				"overflow-x": "scroll",
+				"overflow-y": "hidden"
 			}
         },
         _create : function() {
@@ -41,7 +41,7 @@
                 contentElement = self.element.find(self.options.contentElement);
             }
             else {
-                contentElement = self.element.find('>:first-child');
+                contentElement = self.element.find(">:first-child");
             }
 
             // bind upper scroll to bottom scroll
@@ -67,14 +67,14 @@
             // i.e. After AJAX data load
             var self = this;
 			var contentElement;
-            var topScrollBar = self.element.parent().find('.suwala-doubleScroll-scroll-wrapper');
+            var topScrollBar = self.element.parent().find(".suwala-doubleScroll-scroll-wrapper");
 
             // find the content element (should be the widest one)
             if (self.options.contentElement !== undefined && self.element.find(self.options.contentElement).length !== 0) {
                 contentElement = self.element.find(self.options.contentElement);
             }
             else {
-                contentElement = self.element.find('>:first-child');
+                contentElement = self.element.find(">:first-child");
             }
 
             // set the width of the wrappers
