@@ -14,6 +14,7 @@ import Bio.PDB as PDB
 from Bio import SeqIO
 from collections import OrderedDict
 import numpy as np
+from copy import deepcopy
 
 
 class Command(BaseCommand):
@@ -170,8 +171,30 @@ class Validation():
         print('TM_backbone_atom_num:',len(TM_target_backbone_atom_list))
 
         ### Running superposition and RMSD calculation
+        target_dict = self.atoms_to_dict(atom_lists[0])
         c = 2
         for m in atom_lists[1:]:
+            # Check for flipped residues
+            atom_dict = deepcopy(self.atoms_to_dict(m))
+            for i, j in zip(target_dict, atom_dict):
+                if target_dict[i][0].get_parent().get_resname() in ['TYR','PHE','ARG','ASP','GLU']:
+                    # print(i, target_dict[i][0].get_parent())
+                    to_sup = deepcopy(atom_dict[j])
+                    res_sup, atoms_used = self.superpose(target_dict[i], to_sup, [i])
+                    rmsd = self.calc_RMSD(sorted(target_dict[i]), sorted(res_sup))
+                    res_sup2 = self.run_residue_flip(res_sup)
+                    rmsd2 = self.calc_RMSD(sorted(target_dict[i]), sorted(res_sup2))
+                    if rmsd-rmsd2>=0.7:
+                        atom_dict[j] = self.run_residue_flip(atom_dict[j])
+
+            m = []
+            for i, j in atom_dict.items():
+                m+=j
+
+            # print(len(m),len(m2))
+            # for i,j in zip(m, m2):
+            #     if i.get_coord()[0]!=j.get_coord()[0]:
+            #         print(i.get_parent(), i,i.get_coord(),j.get_coord())
             print('########################################')
             print('Model {}'.format(c-1))
             if seq_nums:
@@ -190,6 +213,7 @@ class Validation():
             else:
                 superposed, atoms_used_sp = self.superpose(atom_lists[0], m)
                 target_atoms = atom_lists[0]
+            
             rmsd = self.calc_RMSD(sorted(target_atoms), sorted(superposed))
             print('Num atoms sent for superposition: ', len(atom_lists[0]), len(m))
             print('Num atoms used for superposition: ', atoms_used_sp)
@@ -215,6 +239,33 @@ class Validation():
             print('7TM backbone RMSD:', rmsd)
 
             c+=1
+
+    def run_residue_flip(self, atoms, atom_types=['CD','CE','CG','OE','OD','NH']):
+        for at in atom_types:
+            atoms = self.flip_residue(atoms, at)
+        return atoms
+
+    def flip_residue(self, atoms, atom_type):
+        for a in atoms:
+            if a.get_id()==atom_type+'1':
+                one_index = atoms.index(a)
+                one_coords = a.get_coord()
+            elif a.get_id()==atom_type+'2':
+                atoms[one_index].coord = a.get_coord()
+                a.coord = one_coords
+        return atoms
+
+
+    def atoms_to_dict(self, atom_list):
+        prev_res = 0
+        atom_resis = OrderedDict()
+        for a in atom_list:
+            if a.get_parent().get_id()[1]!=prev_res:
+                atom_resis[a.get_parent().get_id()[1]] = [a]
+            else:
+                atom_resis[a.get_parent().get_id()[1]].append(a)
+            prev_res = a.get_parent().get_id()[1]
+        return atom_resis
 
     def fetch_atoms_with_seqnum(self, atom_list, seq_nums, only_backbone=False):
         """Gets atoms from list2 based on list1 resnums. Get only N, CA, C atoms of backbone when setting only_backbone to True."""
