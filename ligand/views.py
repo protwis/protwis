@@ -496,6 +496,7 @@ class BiasedSignallingSelection(AbsReferenceSelectionTable):
             context['buttons']['biased']['invisible'] = "No"
         elif context['pathway']: #pathway define only continue button, delete others
             context['table_data'] = getReferenceTable("yes", "no")
+            context['buttons']['continue']['label'] = 'Pathway-preferring ligands<br>(no reference)'
             context['buttons']['pathway']['invisible'] = "Yes"
             context['buttons']['biased']['invisible'] = "Yes"
         else: #not subtype not pathway, define all three buttons
