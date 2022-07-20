@@ -274,13 +274,13 @@ function gray_scale_table(table, colorSetIds = []) {
     for (let [j, cell] of [...row.cells].entries()) {
       cols[parseInt(j,10)] = cols[j] || [];
       var colored = false;
-      if (cell.innerText !== "-" && cell.classList.contains("color-column")) {
+      if (cell.innerText !== "-" && cell.innerText !== "Full Bias" && cell.classList.contains("color-column")) {
         cols[j].push(cell.innerText);
         colored = true;
       } else {
         for (let k = 0; k < colorSetIds.length; k++) {
           if (cell.classList.contains(colorSetIds[k])) {
-            if (cell.innerText !== "-") {
+            if (cell.innerText !== "-" && cell.innerText !== "Full Bias") {
               sets[String(colorSetIds[k])].push(cell.innerText);
             }
             if (i === 0) {
@@ -291,7 +291,6 @@ function gray_scale_table(table, colorSetIds = []) {
           }
         }
       }
-
       // Check for gradients and prepare them
       if (colored) {
         for (let k = 0; k < cell.classList.length; k++) {

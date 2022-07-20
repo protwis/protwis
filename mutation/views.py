@@ -331,7 +331,6 @@ def render_mutations(request, protein = None, family = None, download = None, re
 
         if not mutation.refs_title:
             mutation.refs_title = ''
-
         row = '''
                 <tr>
                 <td><a href="/protein/%s">%s</a></td>
@@ -340,7 +339,7 @@ def render_mutations(request, protein = None, family = None, download = None, re
                 <td>%s</td>
                 <td>%s => %s</td>
 
-                <td><a class="foldchange" href="#" data-toogle="tooltip"  data-html="true" data-original-title="%s" data-placement="top"> %s</a></td>
+                <td data-filter="%s" data-sort="%s"><a href="#" data-html="true" data-original-title="%s" data-toggle="tooltip" data-placement="right">%s</a></td>
 
                 <td>%s</td>
                 <td>
@@ -351,7 +350,12 @@ def render_mutations(request, protein = None, family = None, download = None, re
                 <a class="citation-tooltip" target="_blank" href="%s" data-toggle="tooltip"  data-container="body" data-html="true" data-original-title="%s" data-placement="left" >%s</a></td>
                  </tr>
         ''' % (mutation.protein.entry_name,mutation.protein.entry_name,gn_display,mutation.residue.sequence_number,mutation.residue.protein_segment.slug,
-               mutation.residue.amino_acid, mutation.mutation.amino_acid,mutation.getCalculation(),mutation.getFoldorQual(),exp_type,smiles,lig_name,
+               mutation.residue.amino_acid, mutation.mutation.amino_acid,float(mutation.foldchange),
+               float(mutation.foldchange),
+               mutation.getCalculation(),
+               # mutation.foldchange,
+               mutation.getFoldorQual(),
+               exp_type,smiles,lig_name,
                lig_role_name,lig_name,mutation.refs_link,mutation.refs_title,mutation.refs_main,mutation.review_link,mutation.review_title,mutation.review_main)
         mutation_tables += row
     # mutation_tables = ''.join(mutation_tables)

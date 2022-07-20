@@ -5,82 +5,9 @@
 {% autoescape off %}
 
 <div class="container body-content">
-	<h2 class="sub-header">Ligand Data</h2>
 	<div class="row align-items-start justify-content-center">
 		<div class="col-md-4 ml-auto">
-			<h3>Ligand</h3>
-			<table class="table table-striped table-bordered" style="margin-right:10px">
-				<tr style=display:none>
-					<td>id </td>
-					<td id='ligand_id'>{{ligand.ligand_id}}</td>
-				</tr>
-				<tr>
-				<tr>
-					<td>Name </td>
-					<td>{{ligand.ligand_name}}</td>
-				</tr>
-				<tr>
-					<td>SMILES</td>
-					<td class="name" style="max-width: 350px">{{ligand.ligand_smiles}}</td>
-				</tr>
-				<tr>
-					<td>InChIKey</td>
-					<td>
-						{{ligand.ligand_inchikey}}</td>
-				</tr>
-				<tr>
-					<td>Type</td>
-					<td>
-						{{ligand.type}}</td>
-				</tr>
-				<tr>
-					<td>Labels</td>
-					<td>
-							{{ligand.labels}}
-					</td>
-				</tr>
-				{% if ligand.sequence%}
-				<tr>
-					<td>Sequence</td>
-					<td class="name">
-						{{ligand.sequence}}</td>
-				</tr>
-				{% endif %}
-				<tr>
-					<td>External Links</td>
-					<td>
-						<ul style="padding: 0; list-style-type:none">
-							{% for ex in ligand.wl %}
-							<li><a href="{{ex.link}}" target="_blank">{{ex.name}}</a></li>
-							{%endfor%}
-						</ul>
-					</td>
-				</tr>
-                {% if structure %}
-                <tr>
-                    <td>Structure pdb</td>
-                    <td>
-            		{% for data in structure %}
-    					<a href="https://gpcrdb.org/interaction/{{data.structure_pdb}}" target="_blank">{{data.structure_pdb}}</a>
-    				{%endfor%}
-                    </td>
-            	</tr>
-                {%endif%}
-                {% if mutations %}
-                <tr>
-                    <td>Ligand site mutations</td>
-                    <td>
-            		{% for data in mutations %}
-    					<a href="#" onclick="populate_selection('{{data.id}}')">{{data.name}}</a>
-    				{%endfor%}
-                    </td>
-            	</tr>
-                {%endif%}
-			</table>
-		</div>
-
-		<div class="col-md-4 ml-auto">
-			<h3>Structure</h3>
+			<h3>{{ligand.ligand_name|title}}</h3>
 			{% if ligand.picture is not None %}
 				{{ligand.picture}}
 			{%else%}
@@ -89,8 +16,12 @@
 		</div>
 
 		<div class="col-md-4 ml-auto">
-			<h3>Properties</h3>
-			<table class="table table-striped table-bordered">
+			<h3>Chemical Properties</h3>
+			<table class="table table-striped table-bordered" style="margin-right:10px">
+				<tr>
+					<td>SMILES</td>
+					<td class="name" style="max-width: 350px">{{ligand.ligand_smiles}}</td>
+				</tr>
 				<tr>
 					<td>Hydrogen bond acceptors</td>
 					<td>{{ligand.hacc}}</td>
@@ -107,6 +38,67 @@
 					<td>Molecular weight</td>
 					<td>{{ligand.mw|floatformat:1}}</td>
 				</tr>
+			</table>
+			<br \>
+			<h3>Drug Properties</h3>
+			<table class="table table-striped table-bordered" style="margin-right:10px">
+				<tr>
+					<td>Type</td>
+					<td>
+						{{ligand.type}}</td>
+				</tr>
+				<tr>
+					<td>Endogenous</td>
+					<td>
+							{{ligand.labels.endogenous}}
+					</td>
+				<tr>
+				<tr>
+					<td>Approved</td>
+					<td>
+							{{ligand.labels.approved}}
+					</td>
+				<tr>
+					<td>InChIKey</td>
+					<td>
+						{{ligand.ligand_inchikey}}</td>
+				</tr>
+			</table>
+		</div>
+
+		<div class="col-md-4 ml-auto">
+			<h3>Database Connections</h3>
+			<table class="table table-striped table-bordered">
+				<tr>
+					<td>External Links</td>
+					<td>
+						<ul style="padding: 0; list-style-type:none">
+							{% for ex in ligand.wl %}
+							<li><a href="{{ex.link}}" target="_blank">{{ex.name}}</a></li>
+							{%endfor%}
+						</ul>
+					</td>
+				</tr>
+								{% if structure %}
+								<tr>
+										<td>Structure pdb</td>
+										<td>
+								{% for data in structure %}
+							<a href="https://gpcrdb.org/interaction/{{data.structure_pdb}}" target="_blank">{{data.structure_pdb}}</a>
+						{%endfor%}
+										</td>
+							</tr>
+								{%endif%}
+								{% if mutations %}
+								<tr>
+										<td>Ligand site mutations</td>
+										<td>
+								{% for data in mutations %}
+							<a href="#" onclick="populate_selection('{{data.id}}')">{{data.name}}</a>
+						{%endfor%}
+										</td>
+							</tr>
+								{%endif%}
 			</table>
 			<hr>
 		</div>
