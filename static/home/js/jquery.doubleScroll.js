@@ -1,5 +1,3 @@
-
-
 /*
  * @name DoubleScroll
  * @desc displays scroll bar on top and on the bottom of the div
@@ -13,10 +11,11 @@
  * http://www.gnu.org/licenses/gpl.html
  */
 
+/*eslint wrap-iife: ["error", "inside"]*/
 (function($){
     $.widget("suwala.doubleScroll", {
 		options: {
-      contentElement: undefined, // Widest element, if not specified first child element will be used
+      contentElement: void 0, // Widest element, if not specified first child element will be used
 			topScrollBarMarkup: "<div class='suwala-doubleScroll-scroll-wrapper' style='height: 20px;''><div class='suwala-doubleScroll-scroll' style='height: 20px;'></div></div>",
 			topScrollBarInnerSelector: ".suwala-doubleScroll-scroll",
 			scrollCss: {
@@ -28,7 +27,7 @@
 				"overflow-y": "hidden"
 			}
         },
-        _create : function() {
+        _create() {
             var self = this;
 			var contentElement;
 
@@ -37,7 +36,7 @@
             self.element.before(topScrollBar);
 
             // find the content element (should be the widest one)
-            if (self.options.contentElement !== undefined && self.element.find(self.options.contentElement).length !== 0) {
+            if (typeof self.options.contentElement !== "undefined" && self.element.find(self.options.contentElement).length !== 0) {
                 contentElement = self.element.find(self.options.contentElement);
             }
             else {
@@ -62,7 +61,7 @@
             $(self.options.topScrollBarInnerSelector, topScrollBar).width(contentElement[0].scrollWidth);
             topScrollBar.width(self.element[0].clientWidth);
         },
-        refresh: function(){
+        refresh(){
             // this should be called if the content of the inner element changed.
             // i.e. After AJAX data load
             var self = this;
@@ -70,7 +69,7 @@
             var topScrollBar = self.element.parent().find(".suwala-doubleScroll-scroll-wrapper");
 
             // find the content element (should be the widest one)
-            if (self.options.contentElement !== undefined && self.element.find(self.options.contentElement).length !== 0) {
+            if (typeof self.options.contentElement !== "undefined" && self.element.find(self.options.contentElement).length !== 0) {
                 contentElement = self.element.find(self.options.contentElement);
             }
             else {

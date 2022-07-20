@@ -1,7 +1,6 @@
 from build.management.commands.base_build import Command as BaseBuild
-from build.management.commands.build_ligand_functions import *
+from build.management.commands.build_ligand_functions import get_ligand_by_id, match_id_via_unichem, get_or_create_ligand, is_float
 from django.conf import settings
-from django.db.models import Prefetch
 from django.utils.text import slugify
 from django.db import IntegrityError
 
@@ -17,8 +16,6 @@ import datamol as dm
 import datetime
 import pandas as pd
 import numpy as np
-import requests
-import xmltodict
 import urllib.parse
 import urllib.request
 
@@ -264,8 +261,8 @@ class Command(BaseBuild):
 
         #Adding Ranking to ligands in receptors without Principal status information
         #while tracking problematic values (missing info, symbols in data etc)
-        for id in not_commented:
-          data_slice = GtoP_endogenous.loc[GtoP_endogenous['Target_ID'] == id]
+        for target_id in not_commented:
+          data_slice = GtoP_endogenous.loc[GtoP_endogenous['Target_ID'] == target_id]
           if len(data_slice['Ligand_Name'].unique()) != 1:
               if data_slice['pEC50_avg'].isna().any() == False:
                   try:
@@ -274,12 +271,12 @@ class Command(BaseBuild):
                       counter = 1
                       for item in sorted_list:
                           if item in data_slice['pEC50_avg'].to_list():
-                              GtoP_endogenous.loc[(GtoP_endogenous['Target_ID'] == id) & (GtoP_endogenous['pEC50_avg'] == item), 'Ranking'] = counter
+                              GtoP_endogenous.loc[(GtoP_endogenous['Target_ID'] == target_id) & (GtoP_endogenous['pEC50_avg'] == item), 'Ranking'] = counter
                           else:
-                              GtoP_endogenous.loc[(GtoP_endogenous['Target_ID'] == id) & (GtoP_endogenous['pEC50_avg'] == str(item)), 'Ranking'] = counter
+                              GtoP_endogenous.loc[(GtoP_endogenous['Target_ID'] == target_id) & (GtoP_endogenous['pEC50_avg'] == str(item)), 'Ranking'] = counter
                           counter += 1
                   except ValueError:
-                      missing_info.append(id)
+                      missing_info.append(target_id)
               elif data_slice['pKi_avg'].isna().any() == False:
                   try:
                       #we have all pEC50 values
@@ -287,12 +284,12 @@ class Command(BaseBuild):
                       counter = 1
                       for item in sorted_list:
                           if item in data_slice['pKi_avg'].to_list():
-                              GtoP_endogenous.loc[(GtoP_endogenous['Target_ID'] == id) & (GtoP_endogenous['pKi_avg'] == item), 'Ranking'] = counter
+                              GtoP_endogenous.loc[(GtoP_endogenous['Target_ID'] == target_id) & (GtoP_endogenous['pKi_avg'] == item), 'Ranking'] = counter
                           else:
-                              GtoP_endogenous.loc[(GtoP_endogenous['Target_ID'] == id) & (GtoP_endogenous['pKi_avg'] == str(item)), 'Ranking'] = counter
+                              GtoP_endogenous.loc[(GtoP_endogenous['Target_ID'] == target_id) & (GtoP_endogenous['pKi_avg'] == str(item)), 'Ranking'] = counter
                           counter += 1
                   except ValueError:
-                      missing_info.append(id)
+                      missing_info.append(target_id)
               else:
                   #we don't have full values, grab higher pEC50 or higher pKi?
                   values_pEC50 = data_slice['pEC50_avg'].dropna().to_list()
@@ -304,13 +301,13 @@ class Command(BaseBuild):
                           counter = 1
                           for item in sorted_list:
                               if item in data_slice['pEC50_avg'].to_list():
-                                  GtoP_endogenous.loc[(GtoP_endogenous['Target_ID'] == id) & (GtoP_endogenous['pEC50_avg'] == item), 'Ranking'] = counter
+                                  GtoP_endogenous.loc[(GtoP_endogenous['Target_ID'] == target_id) & (GtoP_endogenous['pEC50_avg'] == item), 'Ranking'] = counter
                               else:
-                                  GtoP_endogenous.loc[(GtoP_endogenous['Target_ID'] == id) & (GtoP_endogenous['pEC50_avg'] == str(item)), 'Ranking'] = counter
+                                  GtoP_endogenous.loc[(GtoP_endogenous['Target_ID'] == target_id) & (GtoP_endogenous['pEC50_avg'] == str(item)), 'Ranking'] = counter
                               counter += 1
-                          GtoP_endogenous.loc[(GtoP_endogenous['Target_ID'] == id) & (GtoP_endogenous['pEC50_avg'].isna()), 'Ranking'] = counter
+                          GtoP_endogenous.loc[(GtoP_endogenous['Target_ID'] == target_id) & (GtoP_endogenous['pEC50_avg'].isna()), 'Ranking'] = counter
                       except ValueError:
-                          missing_info.append(id)
+                          missing_info.append(target_id)
                   elif len(values_pKi) > 0:
                       try:
                           #we have all pEC50 values
@@ -318,13 +315,13 @@ class Command(BaseBuild):
                           counter = 1
                           for item in sorted_list:
                               if item in data_slice['pKi_avg'].to_list():
-                                  GtoP_endogenous.loc[(GtoP_endogenous['Target_ID'] == id) & (GtoP_endogenous['pKi_avg'] == item), 'Ranking'] = counter
+                                  GtoP_endogenous.loc[(GtoP_endogenous['Target_ID'] == target_id) & (GtoP_endogenous['pKi_avg'] == item), 'Ranking'] = counter
                               else:
-                                  GtoP_endogenous.loc[(GtoP_endogenous['Target_ID'] == id) & (GtoP_endogenous['pKi_avg'] == str(item)), 'Ranking'] = counter
+                                  GtoP_endogenous.loc[(GtoP_endogenous['Target_ID'] == target_id) & (GtoP_endogenous['pKi_avg'] == str(item)), 'Ranking'] = counter
                               counter += 1
-                          GtoP_endogenous.loc[(GtoP_endogenous['Target_ID'] == id) & (GtoP_endogenous['pKi_avg'].isna()), 'Ranking'] = counter
+                          GtoP_endogenous.loc[(GtoP_endogenous['Target_ID'] == target_id) & (GtoP_endogenous['pKi_avg'].isna()), 'Ranking'] = counter
                       except ValueError:
-                          missing_info.append(id)
+                          missing_info.append(target_id)
                   else:
                       missing_info.append(id)
         return GtoP_endogenous
@@ -514,7 +511,7 @@ class Command(BaseBuild):
         wr_doi = WebResource.objects.get(slug="doi")
         existing_ids = list(WebLink.objects.filter(web_resource=wr_doi).values_list("index", flat=True).distinct())
 
-        for index, (pd_num, row) in enumerate(publication_data.iterrows()):
+        for _, row in publication_data.iterrows():
             if row['doi'] in existing_ids:
                 wl = WebLink.objects.get(index=row['doi'], web_resource=wr_doi)
             else:
@@ -540,7 +537,7 @@ class Command(BaseBuild):
                             journal_fullname = journal_fullname[:-1]
                     else:
                         journal_fullname =  row['journal']
-                    pub.journal, created = PublicationJournal.objects.get_or_create(defaults={"name": journal_fullname, 'slug': journal_slug}, name__iexact=journal_fullname)
+                    pub.journal, _ = PublicationJournal.objects.get_or_create(defaults={"name": journal_fullname, 'slug': journal_slug}, name__iexact=journal_fullname)
 
                 pub.title = row['title']
                 pub.authors = row['authors']
@@ -588,7 +585,7 @@ class Command(BaseBuild):
         smallmol = LigandType.objects.get(slug="small-molecule")
         ligands = []
         weblinks = []
-        for index, (pd_num, row) in enumerate(sm_data.iterrows()):
+        for index, (_, row) in enumerate(sm_data.iterrows()):
             insert = True
             ids = [row['molecule_chembl_id']]
 
@@ -681,7 +678,7 @@ class Command(BaseBuild):
         ligands = []
         ligand_types = {"Unknown": "na", "Protein": "protein"}
         weblinks = []
-        for index, (pd_num, row) in enumerate(nonsm_data.iterrows()):
+        for _, row in nonsm_data.iterrows():
             ids = {}
             ids["smiles"] = row['smiles']
             ids["sequence"] = row['sequence']
@@ -698,8 +695,8 @@ class Command(BaseBuild):
                 if len(existing) > 0:
                     continue # skip rest of creation
                 else:
-                    for id in extra_ids:
-                        weblinks.append(LigandID(ligand = ligand, index=id, web_resource=wr_chembl))
+                    for extra_id in extra_ids:
+                        weblinks.append(LigandID(ligand = ligand, index=extra_id, web_resource=wr_chembl))
         # Bulk insert all new ligandIDs
         LigandID.objects.bulk_create(weblinks)
 
@@ -736,7 +733,7 @@ class Command(BaseBuild):
         print("\n#4 Building ChEMBL bioactivity entries", datetime.datetime.now())
         bioacts = []
         pub_links = []
-        for index, (pd_num, row) in enumerate(bioactivity_data.iterrows()):
+        for index, (_, row) in enumerate(bioactivity_data.iterrows()):
             try:
                 if (row["parent_molecule_chembl_id"] in lig_dict.keys()) and (row["Entry name"] in prot_dict.keys()):
                     bioacts.append(AssayExperiment())
@@ -790,7 +787,7 @@ class Command(BaseBuild):
         vendor_url = os.sep.join([settings.DATA_DIR, "ligand_data", "assay_data", "pubchem_vendor_list.csv.gz"])
         vendor_data = pd.read_csv(vendor_url, dtype=str)
         vendors = []
-        for index, (pd_num, row) in enumerate(vendor_data.iterrows()):
+        for _, row in vendor_data.iterrows():
             vendors.append(LigandVendors(slug=slugify(row["SourceName"]), name = row["SourceName"], url = row["SourceURL"]))
         LigandVendors.objects.bulk_create(vendors)
         vendor_dict = {vendor.name : vendor.pk for vendor in vendors}
@@ -803,7 +800,7 @@ class Command(BaseBuild):
         vendor_links_url = os.sep.join([settings.DATA_DIR, "ligand_data", "assay_data", "pubchem_vendor_links.csv.gz"])
         vendor_links_data = pd.read_csv(vendor_links_url, dtype=str)
         links = []
-        for index, (pd_num, row) in enumerate(vendor_links_data.iterrows()):
+        for _, row in vendor_links_data.iterrows():
             if len(row["SourceRecordURL"]) < 300:
                 links.append(LigandVendorLink(vendor_id=vendor_dict[row["SourceName"]], ligand_id = lig_dict[row["chembl_id"]], url = row["SourceRecordURL"], external_id = row["RegistryID"]))
 
@@ -938,7 +935,7 @@ class Command(BaseBuild):
 
         #start parsing the GtP ligands
         issues = []
-        for index, (pd_num, row) in enumerate(lig_df.iterrows()):
+        for _, row in lig_df.iterrows():
             if row['Name']:
                 ids = {}
                 for key, value in weblink_keys.items():
@@ -980,7 +977,7 @@ class Command(BaseBuild):
     @staticmethod
     def build_gtp_bioactivities(gtp_biodata):
         print("# Start parsing the GTP Dataframe")
-        for index, (pd_num, row) in enumerate(gtp_biodata.iterrows()):
+        for _, row in gtp_biodata.iterrows():
             receptor = Command.fetch_protein(row['target_id'], 'GtoP', row['target_species'])
             # TODO Handle multiple matches (uniprot filter?)
             ligand = get_ligand_by_id("gtoplig", row['Ligand ID'])
@@ -1088,9 +1085,9 @@ class Command(BaseBuild):
                 try:
                     pub.save()
                 except:
-                    self.mylog.debug(
-                        "publication fetching error | module: fetch_publication. Row # is : " + str(publication_doi) + ' ' + pub_type)
                     # if something off with publication, skip.
+                    print("Publication fetching error | module: fetch_publication. Row # is : " + str(publication_doi) + ' ' + pub_type)
+
             Command.publication_cache[publication_doi] = pub
         else:
             pub = Command.publication_cache[publication_doi]
@@ -1181,7 +1178,7 @@ class Command(BaseBuild):
         bio_entries = len(bioactivity_data_filtered)
         print("\n===============\n#2 Start parsing PDSP data")
         bioacts = []
-        for index, (pd_num, row) in enumerate(bioactivity_data_filtered.iterrows()):
+        for index, (_, row) in enumerate(bioactivity_data_filtered.iterrows()):
             ids = {}
             receptor = None
             label = '_'.join([row['Unigene'], row['species']])
