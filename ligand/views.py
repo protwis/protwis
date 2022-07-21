@@ -2047,6 +2047,15 @@ class BiasGuidelines(TemplateView):
         context = super().get_context_data(**kwargs)
         return context
 
+class ReferenceSelection(TemplateView):
+
+    template_name = 'reference_ligand_selection.html'
+
+    def get_context_data(self, **kwargs):
+
+        context = super().get_context_data(**kwargs)
+        return context
+
 class EndogenousBrowser(TemplateView):
 
     template_name = 'endogenous_browser.html'
