@@ -830,7 +830,7 @@ function draw_heatmap(square_data, data, bible, options, location, element_id, l
   var svg_home = d3v4.select("#" + location)
               .append("svg")
               .attr("width", width + margin.left + margin.right)
-              .attr("height", height + margin.top + margin.bottom + margin.bottom)
+              .attr("height", height + (margin.top*5))
               .attr("transform", "translate(0,-" + margin.bottom + ")")
               .attr("id", element_id)
 
@@ -855,7 +855,7 @@ function draw_heatmap(square_data, data, bible, options, location, element_id, l
 
 
   var legend_svg = svg_home.append("g")
-                    .attr("transform", "translate(0,0)");
+                    .attr("transform", "translate(0," + (height+100)  + ")");
 
   var color_svg = svg_home.append("g")
                     .attr("transform", "translate(" + (margin.left*1.5) + ",0)");
@@ -871,16 +871,16 @@ function draw_heatmap(square_data, data, bible, options, location, element_id, l
             .text(legend_label);
 
   legend_svg.append("text")
-            .attr('x', 0)
+            .attr('x', 30)
             .attr('y', 30)
             .style("font", "14px sans-serif")
             .style("font-weight", "bold")
             .text('0');
 
   legend_svg.append('rect')
-            .attr('x', 20)
+            .attr('x', 40)
             .attr('y', 15)
-            .attr('width', width + margin.left + margin.right)
+            .attr('width', (width*0.9) + margin.left + margin.right)
             .attr('height', 20)
             .style('fill', 'url(#grad_' + element_id + ')');
 
