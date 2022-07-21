@@ -215,14 +215,6 @@
 		white-space: nowrap;
 		text-overflow: ellipsis;
 	}
-	.dataTables_scrollBody {
-	  overflow-y: visible !important;
-	  overflow-x: initial !important;
-	}
-	.dataTables_scrollHead {
-	  overflow: visible !important;
-	}
-
 </style>
 <style>
   .toggle.ios, .toggle-on.ios, .toggle-off.ios { border-radius: 20px; }
@@ -741,7 +733,6 @@
 <script src="{% static 'home/js/datatables.min.js' %}"> </script>
 <script src="{% static 'home/js/bootstrap2-toggle.min.js' %}"></script>
 <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
-<script src="{% static 'home/js/jquery.doubleScroll.js' %}"> </script>
 <script src="{% static 'home/js/dataTables.buttons.min.js' %}"> </script>
 <script src="{% static 'home/js/dataTables.hideEmptyColumns.min.js' %}"> </script>
 <script src="{% static 'home/js/select2.js' %}"> </script>
@@ -749,13 +740,13 @@
 <script src="{% static 'home/js/gpcrdb.js' %}"></script>
 <script src="{% static 'home/js/signprot-multitabtable.js' %}"></script>
 <script>
-function openPopup(url, title, win, w, h) {
+	function openPopup(url, title, win, w, h) {
 
-		const y = win.top.outerHeight / 2 + win.top.screenY - (h / 2);
-		const x = win.top.outerWidth / 2 + win.top.screenX - (w / 2);
-		return win.open(url, title, 'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=no, resizable=no, copyhistory=no, width=' + w + ', height=' + h + ', top=' + y + ', left=' + x);
+			const y = win.top.outerHeight / 2 + win.top.screenY - (h / 2);
+			const x = win.top.outerWidth / 2 + win.top.screenX - (w / 2);
+			return win.open(url, title, 'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=no, resizable=no, copyhistory=no, width=' + w + ', height=' + h + ', top=' + y + ', left=' + x);
 
-}
+	}
 </script>
 {% if Pathway %}
 <script>
@@ -862,13 +853,6 @@ function openPopup(url, title, win, w, h) {
 						gray_scale_table($("#structures_scrollable"));
 				}
 			});
-			var vendors = document.getElementById("yadcf-filter--structures_scrollable-to-2");
-			var articles = document.getElementById("yadcf-filter--structures_scrollable-to-3");
-			var labs = document.getElementById("yadcf-filter--structures_scrollable-to-4");
-			vendors.setAttribute("type","hidden");
-			articles.setAttribute("type","hidden");
-			labs.setAttribute("type","hidden");
-			$('.double_scroll').doubleScroll();
 
 			$(".hide_columns").click(function(evt) {
 	    var columns = $(this).attr("columns").split(",");
@@ -899,7 +883,6 @@ function openPopup(url, title, win, w, h) {
 																49,50,51,
 																54,55,56]);
 			} );
-
 	});
 </script>
 {% else %}
@@ -994,7 +977,6 @@ function openPopup(url, title, win, w, h) {
 
 		gray_scale_table($("#structures_scrollable"));
 		oTable1.columns.adjust();
-
 	});
 </script>
 <script>
@@ -1019,13 +1001,6 @@ function openPopup(url, title, win, w, h) {
 						gray_scale_table($("#structures_scrollable"));
 				}
 			});
-		var vendors = document.getElementById("yadcf-filter--structures_scrollable-to-2");
-		var articles = document.getElementById("yadcf-filter--structures_scrollable-to-3");
-		var labs = document.getElementById("yadcf-filter--structures_scrollable-to-4");
-		vendors.setAttribute("type","hidden");
-		articles.setAttribute("type","hidden");
-		labs.setAttribute("type","hidden");
-		$('.double_scroll').doubleScroll();
 
 		$(".hide_columns").click(function(evt) {
     var columns = $(this).attr("columns").split(",");
@@ -1058,8 +1033,30 @@ function openPopup(url, title, win, w, h) {
 															59,60,61,
 															64,65,66]);
 		} );
-
 	});
 </script>
 {% endif %}
+<script>
+	// General document ready functions
+	$(document).ready(function() {
+		// Hide max input for specific filters (vendors, articles, labs)
+		let hide_ids = ["yadcf-filter--structures_scrollable-to-2", "yadcf-filter--structures_scrollable-to-3", "yadcf-filter--structures_scrollable-to-4"];
+		for (let hide_id of hide_ids){
+			let hide_elem = document.getElementById(hide_id);
+			if (typeof hide_elem == "object" && hide_elem != null){
+				hide_elem.setAttribute("type","hidden");
+			}
+		}
+
+		// Add top scrollbar to
+		// https://stackoverflow.com/questions/35147038/how-to-place-the-datatables-horizontal-scrollbar-on-top-of-the-table
+		$(".dataTables_scrollHead").css({
+				"overflow-x": "scroll"
+		}).on("scroll", function(e){
+				var scrollBody = $(this).parent().find(".dataTables_scrollBody").get(0);
+				scrollBody.scrollLeft = this.scrollLeft;
+				$(scrollBody).trigger("scroll");
+		});
+	});
+</script>
 {% endblock %}
