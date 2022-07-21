@@ -358,7 +358,7 @@ function DrawCircles(location, data, starter, dict, fancy=false, clean=true){
                 .attr("rx", 4.25)
                 .attr("ry", 4.25)
                 .style("stroke", dict[unit])
-                .style("stroke-width", 1.7)
+                .style("stroke-width", 1.2)
                 .style("fill", color)
                 .attr("transform", "translate(" + (Math.ceil(starter) + multiply*spacer) + ",0)");
             }
