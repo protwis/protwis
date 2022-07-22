@@ -403,8 +403,8 @@ class BackboneSelector():
                         else:
                             if use_similar:
                                 for rule in self.similarity_rules:
-                                    if polypeptide.three_to_one(res.resname) in rule[self.similarity_dict["target_residue"]] and
-                                        fragment.rotamer.residue.amino_acid in rule[self.similarity_dict["target_residue"]] and
+                                    if polypeptide.three_to_one(res.resname) in rule[self.similarity_dict["target_residue"]] and \
+                                        fragment.rotamer.residue.amino_acid in rule[self.similarity_dict["target_residue"]] and \
                                         fragment.interaction_type.slug in rule[self.similarity_dict["interaction_type"]]:
                                         return [res['CA'], res['N'], res['O']]
                         # else:
