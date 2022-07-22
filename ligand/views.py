@@ -850,7 +850,7 @@ class BiasedSignallingOnTheFlyCalculation(TemplateView):
             journal_name = result['journal']
             if result['journal']:
                 if ' ' in result['journal']:
-                    journal_name  = re.sub(r'(\s\S*?)\s', r'\1 closeTS openTS ', result['journal'])
+                    journal_name  = re.sub(r'(\s\S*?)\s', r'\1 closeTSI openTSI ', result['journal'])
             else:
                 journal_name = "Not listed"
             if result['authors'] == None:
