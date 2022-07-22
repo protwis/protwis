@@ -844,6 +844,7 @@ class BiasedSignallingOnTheFlyCalculation(TemplateView):
             lig_name = result["ligand_name"]
             if result['ligand_name'][0].isdigit():
                 lig_name = "Ligand-"+result['ligand_name']
+            lig_name = lig_name.capitalize()
             hashed_lig_name = 'L' + hashlib.md5((str(result['ligand_id'])).encode('utf-8')).hexdigest()
             # replace second white space with closing and opening tspan for svg
 
