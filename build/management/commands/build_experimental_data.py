@@ -130,7 +130,7 @@ class Command(BaseBuild):
         endogenous_dicts = self.convert_dataframe(ranked_data)
         self.create_model(endogenous_dicts)
 
-        print("\n\Ended building endogenous data")
+        print("\n\nEnded building endogenous data")
 
         print("\n\nStarted building ChEBML ligands")
         self.build_chembl_ligands()
@@ -981,7 +981,7 @@ class Command(BaseBuild):
         return Command.mapper_cache[query]
 
     @staticmethod
-    def get_ligands_data(ligands, complete_ligands, ligand_mapping, ligand_interactions=pd.DataFrame(), target_ids=[]):
+    def get_ligands_data(ligands, complete_ligands, ligand_mapping, ligand_interactions=pd.DataFrame(), target_ids=False):
         full_info = ['ligand_id', 'name', 'species', 'type', 'approved', 'withdrawn', 'labelled', 'radioactive', 'pubchem_sid', 'pubchem_cid',
                      'uniprot_id', 'iupac_name', 'inn', 'synonyms', 'smiles', 'inchikey', 'inchi', 'gtoimmupdb', 'gtompdb']
         bioactivity_info = ['ligand_id', 'action', 'target', 'target_id', 'target_species',
@@ -1002,7 +1002,7 @@ class Command(BaseBuild):
         if not ligand_interactions.empty:
             bioactivity_data = ligand_interactions.loc[ligand_interactions['ligand_id'].isin(
                 ligands), bioactivity_info]
-            if len(target_ids) > 0:
+            if target_ids is not False and len(target_ids) > 0:
                 bioactivity_data = bioactivity_data.loc[bioactivity_data["target_id"].isin(
                     target_ids)]
             ligand_complete = ligand_complete.merge(
