@@ -72,7 +72,7 @@ class Command(BaseCommand):
             if rcsb_response.status_code == 200:
                 for header,sequence in grouped(rcsb_response.text.splitlines(), 2):
                     # Removal of RNA sequences and short sequences
-                    if not "U" in sequence and len(sequence) > 100:
+                    if "U" not in sequence and len(sequence) > 100:
                         fasta_results = fasta_results + header + "\n" + sequence + "\n"
             else:
                 print("Incorrect response from RCSB web services - exiting")
