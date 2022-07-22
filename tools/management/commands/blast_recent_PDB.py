@@ -16,7 +16,7 @@ class Command(BaseCommand):
     help = "Function to run against the local ."
 
     logger = logging.getLogger(__name__)
-    rcsb_search_url = "https://search.rcsb.org/rcsbsearch/v1/query"
+    rcsb_search_url = "https://search.rcsb.org/rcsbsearch/v2/query"
     rcsb_fasta_url = "https://www.rcsb.org/fasta"
     months = 2
 
@@ -37,7 +37,7 @@ class Command(BaseCommand):
                             }
                         },
                         "request_options":{
-                            "pager":{
+                            "paginate":{
                                 "start":0,
                                 "rows":99999
                             }

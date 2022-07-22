@@ -1341,15 +1341,15 @@ def right_rotamer_select(rotamer, chain=None):
 
 def get_pdb_ids(uniprot_id):
     pdb_list = []
-    data = { "query": { "type": "terminal", "service": "text", "parameters":{ "attribute":"rcsb_polymer_entity_container_identifiers.reference_sequence_identifiers.database_accession", "operator":"in", "value":[ uniprot_id ] } }, "request_options": { "pager": {"start": 0,"rows": 99999 }}, "return_type": "entry" }
-    url = 'https://search.rcsb.org/rcsbsearch/v1/query'
+    data = { "query": { "type": "terminal", "service": "text", "parameters":{ "attribute":"rcsb_polymer_entity_container_identifiers.reference_sequence_identifiers.database_accession", "operator":"in", "value":[ uniprot_id ] } }, "request_options": { "paginate": {"start": 0,"rows": 99999 }}, "return_type": "entry" }
+    url = 'https://search.rcsb.org/rcsbsearch/v2/query'
     req = Request(url)
     req.add_header('Content-Type', 'application/json; charset=utf-8')
     jsondata = json.dumps(data)
     jsondataasbytes = jsondata.encode('utf-8')
     req.add_header('Content-Length', len(jsondataasbytes))
     response = urlopen_with_retry(req, jsondataasbytes)
-    if response == False:
+    if response == False or response == None:
         logger.warning(f"ERROR: no valid response from RCSB for accession code {uniprot_id}")
         return []
 
