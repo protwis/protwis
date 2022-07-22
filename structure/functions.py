@@ -298,6 +298,7 @@ class CASelector(object):
                     if -8.1 < res['CA'].get_bfactor() < 8.1 and int(math.floor(abs(res['CA'].get_bfactor()))) in self.selection.helices:
                         atom_list.append(res['CA'])
                 except Exception:
+                    logger.warning("No CA for residues {!s} in {!s}".format(res.id, structure.id))
                     continue
 
         if atom_list == []:
