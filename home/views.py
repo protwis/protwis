@@ -2,13 +2,14 @@ from django.shortcuts import render
 from django.conf import settings
 from django.views.decorators.cache import cache_page
 from django.http import JsonResponse
-from django.db.models import F
+from django.db.models import F,Q
 
 from protwis.context_processors import site_title
 from news.models import News
 from common.models import ReleaseNotes, ReleaseStatistics, Citation
 from protein.models import Protein, ProteinCouplings
 from structure.models import StructureComplexModel
+from ligand.models import BiasedData, BiasedPathways, BiasedPathwaysAssay, Endogenous_GTP
 from contactnetwork.models import InteractingResiduePair
 from signprot.models import SignprotComplex, SignprotStructure
 from googleapiclient.discovery import build
@@ -103,8 +104,9 @@ def index(request):
             context['release_statistics'].append({"statistics_type": "<span class=\"stats_entry stats_title\"><i>Mutations</i></span>", "value" : "<span  class=\"stats_value\"></span>"})
             context['release_statistics'].append({"statistics_type": "<span class=\"stats_entry\">" + "Interface mutations" + "</span>", "value": "<span  class=\"stats_value\">" + "{:,}".format(409) + "</span>"})
 
-        else:
-            rename_dictionary = {"Exp. GPCR structures" : "GPCRs", "Exp. Gprotein structures" : "G proteins", "GPCR structure models": "GPCRs", "GPCR-G protein structure models": "GPCR-G protein complexes", "Refined GPCR structures": "Refined GPCR structures"}
+        elif context['site_title']=='GPCRdb':
+            rename_dictionary = {"Exp. GPCR structures" : "GPCRs structures", "GPCR structure models": "GPCRs structure models", "Refined GPCR structures": "Refined GPCR structures"}
+            skip_list = ["Exp. Gprotein structures", "GPCR-G protein structure models"]
             first_struct = -1
             first_model = -1
             count = 0
@@ -116,13 +118,31 @@ def index(request):
 
                 if entry[0] in rename_dictionary:
                     context['release_statistics'].append({"statistics_type": "<span class=\"stats_entry\">" + rename_dictionary[entry[0]] + "</span>", "value": "<span class=\"stats_value\">" + "{:,}".format(entry[1]) + "</span>"})
+                elif entry[0] in skip_list:
+                    continue
                 else:
                     context['release_statistics'].append({"statistics_type": "<span class=\"stats_entry\">" + entry[0] + "</span>", "value": "<span  class=\"stats_value\">" + "{:,}".format(entry[1]) + "</span>"})
                 count += 1
+        else: #Biased Signaling Atlas
+            context['release_statistics'].append({"statistics_type": "<span class=\"stats_entry stats_title\"><i>Biased ligands</i></span>", "value" : "<span  class=\"stats_value\"></span>"})
+            context['release_statistics'].append({"statistics_type": "<span class=\"stats_entry\">" + "physiology-biased ligands" + "</span>", "value": "<span  class=\"stats_value\">" + "{:,}".format(BiasedData.objects.filter(physiology_biased__isnull=False).values_list('ligand_id').distinct().count()) + "</span>"})
+            context['release_statistics'].append({"statistics_type": "<span class=\"stats_entry\">" + "pathway-biased ligands" + "</span>", "value": "<span  class=\"stats_value\">" + "{:,}".format(BiasedData.objects.filter(pathway_biased__isnull=False).values_list('ligand_id').distinct().count()) + "</span>"})
+            context['release_statistics'].append({"statistics_type": "<span class=\"stats_entry\">" + "ligand bias datapoints" + "</span>", "value": "<span  class=\"stats_value\">" + "{:,}".format(BiasedData.objects.all().count()) + "</span>"})
+
+            context['release_statistics'].append({"statistics_type": "<span class=\"stats_entry stats_title\"><i>Pathways</i></span>", "value" : "<span  class=\"stats_value\"></span>"})
+            context['release_statistics'].append({"statistics_type": "<span class=\"stats_entry\">" + "pathway effects" + "</span>", "value": "<span  class=\"stats_value\">" + "{:,}".format(BiasedPathwaysAssay.objects.all().count()) + "</span>"})
+
+            context['release_statistics'].append({"statistics_type": "<span class=\"stats_entry stats_title\"><i>Pathway-preferring ligands</i></span>", "value" : "<span  class=\"stats_value\"></span>"})
+            context['release_statistics'].append({"statistics_type": "<span class=\"stats_entry\">" + "pathway-preferring ligands" + "</span>", "value": "<span  class=\"stats_value\">" + "{:,}".format(BiasedData.objects.filter(pathway_preferred__isnull=False).values_list('ligand_id').distinct().count()) + "</span>"})
+            context['release_statistics'].append({"statistics_type": "<span class=\"stats_entry\">" + "ligand-receptor-pathway datapoints" + "</span>", "value": "<span  class=\"stats_value\">" + "{:,}".format(BiasedData.objects.filter(pathway_preferred__isnull=False).count()) + "</span>"})
+
+            context['release_statistics'].append({"statistics_type": "<span class=\"stats_entry stats_title\"><i>Reference ligands</i></span>", "value" : "<span  class=\"stats_value\"></span>"})
+            context['release_statistics'].append({"statistics_type": "<span class=\"stats_entry\">" + "reference ligands for physiology bias" + "</span>", "value": "<span  class=\"stats_value\">" + "{:,}".format(Endogenous_GTP.objects.filter(Q(endogenous_status='Principal') | Q(potency_ranking=1)).count()) + "</span>"})
+            context['release_statistics'].append({"statistics_type": "<span class=\"stats_entry\">" + "reference ligands for pathway bias" + "</span>", "value": "<span  class=\"stats_value\">" + "{:,}".format(BiasedData.objects.filter(pathway_biased__isnull=False).values_list('ligand_id').count()) + "</span>"})
 
             # Adjusted formatting for release notes
-            context['release_statistics'].insert(first_model, {"statistics_type": "<span class=\"stats_entry stats_title\"><i>Structure models</i></span>", "value" : "<span  class=\"stats_value\"></span>"})
-            context['release_statistics'].insert(first_struct, {"statistics_type": "<span class=\"stats_entry stats_title\"><i>Experimental structures</i></span>", "value" : "<span  class=\"stats_value\"></span>"})
+            # context['release_statistics'].insert(first_model, {"statistics_type": "<span class=\"stats_entry stats_title\"><i>Structure models</i></span>", "value" : "<span  class=\"stats_value\"></span>"})
+            # context['release_statistics'].insert(first_struct, {"statistics_type": "<span class=\"stats_entry stats_title\"><i>Experimental structures</i></span>", "value" : "<span  class=\"stats_value\"></span>"})
 
 
     except IndexError:
