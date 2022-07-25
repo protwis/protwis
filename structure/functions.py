@@ -10,12 +10,11 @@ except:
     from Bio.PDB import rotaxis
 
 from django.conf import settings
-from common.selection import SimpleSelection
 from common.alignment import Alignment
 from common.tools import urlopen_with_retry
 from common.models import WebResource, WebLink, Publication
 from protein.models import Protein, ProteinSegment, ProteinConformation, ProteinState
-from residue.functions import dgn, ggn
+from residue.functions import dgn
 from residue.models import Residue, ResidueGenericNumberEquivalent
 from structure.models import Structure, Rotamer, PdbData, StructureStabilizingAgent, StructureType
 from signprot.models import SignprotStructure
@@ -31,10 +30,7 @@ import urllib
 from collections import OrderedDict
 import Bio.PDB as PDB
 import csv
-# from openpyxl import Workbook
 import numpy
-import zipfile
-import pprint
 import json
 import yaml
 from urllib.request import urlopen, Request
@@ -74,7 +70,7 @@ class BlastSearch(object):
                 stdout=PIPE, stderr=PIPE)
             (blast_out, blast_err) = blast.communicate()
         else:
-        #Rest of the world:
+            #Rest of the world:
             blast = Popen('%s -db %s -outfmt 5' % (self.blast_path, self.blastdb), universal_newlines=True, shell=True,
                 stdin=PIPE, stdout=PIPE, stderr=PIPE)
             (blast_out, blast_err) = blast.communicate(input=str(input_seq))
@@ -301,7 +297,8 @@ class CASelector(object):
                 try:
                     if -8.1 < res['CA'].get_bfactor() < 8.1 and int(math.floor(abs(res['CA'].get_bfactor()))) in self.selection.helices:
                         atom_list.append(res['CA'])
-                except Exception as msg:
+                except Exception:
+                    logger.warning("No CA for residues {!s} in {!s}".format(res.id, structure.id))
                     continue
 
         if atom_list == []:
@@ -402,13 +399,14 @@ class BackboneSelector():
                 try:
                     gn = self.get_generic_number(res)
                     if gn == fragment.rotamer.residue.display_generic_number.label:
-                        # logger.info("Ref {}:{}\tFragment {}:{}".format(polypeptide.three_to_one(res.resname), self.get_generic_number(res), fragment.rotamer.residue.amino_acid, fragment.rotamer.residue.display_generic_number.label))
                         if polypeptide.three_to_one(res.resname) == fragment.rotamer.residue.amino_acid:
                             return [res['CA'], res['N'], res['O']]
                         else:
                             if use_similar:
                                 for rule in self.similarity_rules:
-                                    if polypeptide.three_to_one(res.resname) in rule[self.similarity_dict["target_residue"]] and fragment.rotamer.residue.amino_acid in rule[self.similarity_dict["target_residue"]] and fragment.interaction_type.slug in rule[self.similarity_dict["interaction_type"]]:
+                                    if polypeptide.three_to_one(res.resname) in rule[self.similarity_dict["target_residue"]] and \
+                                        fragment.rotamer.residue.amino_acid in rule[self.similarity_dict["target_residue"]] and \
+                                        fragment.interaction_type.slug in rule[self.similarity_dict["interaction_type"]]:
                                         return [res['CA'], res['N'], res['O']]
                         # else:
                         #     if fragment.interaction_type.slug not in ['acc', 'hyd']:
@@ -601,18 +599,11 @@ class HSExposureCB(AbstractPropertyMap):
         if model.get_id()!=0:
             model = model[0]
         residues_in_pdb,residues_with_proper_CA=[],[]
-        if check_chain_breaks==True:
-            # for m in model:
-                for chain in model:
-                    for res in chain:
-                        # try:
-                            if is_aa(res):
-                                residues_in_pdb.append(res.get_id()[1])
-                        # except:
-                        #     if is_aa(chain):
-                        #         residues_in_pdb.append(chain.get_id()[1])
-                        #         print('chain', chain, res)
-                        #         break
+        if check_chain_breaks is True:
+            for chain in model:
+                for res in chain:
+                    if is_aa(res):
+                        residues_in_pdb.append(res.get_id()[1])
         het_resis, het_resis_close, het_resis_clash = [], [], []
         for chain in model:
             for res in chain:
@@ -664,7 +655,7 @@ class HSExposureCB(AbstractPropertyMap):
                                 raise Exception
                         except:
                             if pp1 is pp2 and abs(i-j)<=offset:
-                            # neighboring residues in the chain are ignored
+                                # neighboring residues in the chain are ignored
                                 continue
                         ro=pp2[j]
                         if not is_aa(ro) or not ro.has_id('CA'):
@@ -729,9 +720,9 @@ class HSExposureCB(AbstractPropertyMap):
                     ref_vector = atom.get_vector()
                     for other_res in residue_up:
                         try:
-                            if other_res==pp1[i-1] and include_prev==False:
+                            if other_res==pp1[i-1] and include_prev is False:
                                 continue
-                            elif len(pp1)>=i+1 and other_res==pp1[i+1] and include_next==False:
+                            elif len(pp1)>=i+1 and other_res==pp1[i+1] and include_next is False:
                                 continue
                             else:
                                 raise Exception
@@ -831,7 +822,7 @@ class PossibleKnots():
                 if len(region1)==0:
                     region1 = list(Residue.objects.filter(protein_conformation__protein=self.signprot, protein_segment__slug=knot_label.split('-')[0]).values_list('sequence_number', flat=True))
                 if len(region1)==0:
-                    raise AssertionError('Protein segment slug error for loop knot: No residues found for {} in {}'.format(knot_label.split('-')[0], self.receptor, self.signprot))
+                    raise AssertionError('Protein segment slug error for loop knot: No residues found for {} in {} - {}'.format(knot_label.split('-')[0], self.receptor, self.signprot))
                 if knot_label=='h1ha-hehf':
                     for i in range(0,3):
                         region1.append(region1[-1]+1)
@@ -920,7 +911,7 @@ class PdbStateIdentifier():
         self.structure_type = None
 
         try:
-            if structure.protein_conformation.protein.parent==None:
+            if structure.protein_conformation.protein.parent is None:
                 raise Exception
             self.structure = structure
             self.structure_type = 'structure'
@@ -971,7 +962,7 @@ class PdbStateIdentifier():
             tm6 = self.get_residue_distance(self.tm2_gn, self.tm6_gn)
             tm7 = self.get_residue_distance(self.tm3_gn, self.tm7_gn)
             print(tm6, tm7, tm6-tm7)
-            if tm6!=False and tm7!=False:
+            if tm6 is not False and tm7 is not False:
                 self.activation_value = tm6-tm7
                 if self.activation_value<self.inactive_cutoff:
                     self.state = ProteinState.objects.get(slug='inactive')
@@ -988,7 +979,7 @@ class PdbStateIdentifier():
 
             tm6 = self.get_residue_distance(tm2_gn_b, tm6_gn_b)
             tm7 = self.get_residue_distance(tm3_gn_b, tm7_gn_b)
-            if tm6!=False and tm7!=False:
+            if tm6 is not False and tm7 is not False:
                 self.activation_value = tm6-tm7
                 if self.activation_value<self.inactive_cutoff:
                     self.state = ProteinState.objects.get(slug='inactive')
@@ -1005,7 +996,7 @@ class PdbStateIdentifier():
 
             tm6 = self.get_residue_distance(tm2_gn_c, tm6_gn_c)
             tm7 = self.get_residue_distance(tm3_gn_c, tm7_gn_c)
-            if tm6!=False and tm7!=False:
+            if tm6 is not False and tm7 is not False:
                 self.activation_value = tm6-tm7
                 if self.activation_value<self.inactive_cutoff:
                     self.state = ProteinState.objects.get(slug='inactive')
@@ -1024,7 +1015,7 @@ class PdbStateIdentifier():
 
             tm6 = self.get_residue_distance(tm2_gn_f, tm6_gn_f)
             tm7 = self.get_residue_distance(tm3_gn_f, tm7_gn_f)
-            if tm6!=False and tm7!=False:
+            if tm6 is not False and tm7 is not False:
                 self.activation_value = tm6-tm7
                 if self.activation_value<0:
                     self.state = ProteinState.objects.get(slug='inactive')
@@ -1144,10 +1135,10 @@ class ParseStructureCSV():
         with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'ligands.csv']), newline='') as csvfile:
             ligands = csv.reader(csvfile, delimiter='\t')
             next(ligands, None)
-            for l in ligands:
-                if 'ligand' not in self.structures[l[0]]:
-                    self.structures[l[0]]['ligand'] = []
-                self.structures[l[0]]['ligand'].append({'chain':l[1], 'name':l[2], 'pubchemId':l[3], 'role':l[4], 'title':l[5], 'type': l[6]})
+            for ligand in ligands:
+                if 'ligand' not in self.structures[ligand[0]]:
+                    self.structures[ligand[0]]['ligand'] = []
+                self.structures[ligand[0]]['ligand'].append({'chain':ligand[1], 'name':ligand[2], 'pubchemId':ligand[3], 'role':ligand[4], 'title':ligand[5], 'type': ligand[6]})
 
     def parse_nanobodies(self):
         self.parse_aux_file('nanobodies.csv')
@@ -1299,7 +1290,7 @@ def update_template_source(template_source, keys, struct, segment, just_rot=Fals
     ''' Update the template_source dictionary with structure info for backbone and rotamers.
     '''
     for k in keys:
-        if just_rot==True:
+        if just_rot is True:
             try:
                 template_source[segment][k][1] = struct
             except:
@@ -1330,7 +1321,7 @@ def right_rotamer_select(rotamer, chain=None):
     '''
     if len(rotamer)>1:
         for i in rotamer:
-            if i.pdbdata.pdb.startswith('COMPND')==False:
+            if i.pdbdata.pdb.startswith('COMPND') is False:
                 if chain!=None and chain==i.pdbdata.pdb[21]:
                     rotamer = i
                     break
@@ -1341,15 +1332,29 @@ def right_rotamer_select(rotamer, chain=None):
 
 def get_pdb_ids(uniprot_id):
     pdb_list = []
-    data = { "query": { "type": "terminal", "service": "text", "parameters":{ "attribute":"rcsb_polymer_entity_container_identifiers.reference_sequence_identifiers.database_accession", "operator":"in", "value":[ uniprot_id ] } }, "request_options": { "pager": {"start": 0,"rows": 99999 }}, "return_type": "entry" }
-    url = 'https://search.rcsb.org/rcsbsearch/v1/query'
+    data = { "query": {
+                "type": "terminal",
+                "service": "text",
+                "parameters": {
+                    "attribute" : "rcsb_polymer_entity_container_identifiers.reference_sequence_identifiers.database_accession",
+                    "operator":"in",
+                    "value":[ uniprot_id ]
+                }
+            },
+            "request_options": {
+                "paginate": {
+                    "start": 0,
+                    "rows": 99999
+            }},
+            "return_type": "entry" }
+    url = 'https://search.rcsb.org/rcsbsearch/v2/query'
     req = Request(url)
     req.add_header('Content-Type', 'application/json; charset=utf-8')
     jsondata = json.dumps(data)
     jsondataasbytes = jsondata.encode('utf-8')
     req.add_header('Content-Length', len(jsondataasbytes))
     response = urlopen_with_retry(req, jsondataasbytes)
-    if response == False:
+    if response is False or response is None:
         logger.warning(f"ERROR: no valid response from RCSB for accession code {uniprot_id}")
         return []
 

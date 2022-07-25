@@ -61,10 +61,10 @@ function copyListToClipboard(selected, delimiter = " ") {
 /**
  * This helper function can create a range of identical YADCF filters with a single call
  *
- * Arg list: createYADCFfilters(start_column, num_cols, filter_type, select_type*, filter_default_label*, filter_reset_button_text*, filter_match_mode*, column_data_type*, width*)
+ * Arg list: createYADCFfilters(start_column, num_cols, filter_type, select_type*, filter_default_label*, filter_reset_button_text*, filter_match_mode*, column_data_type*, width*, html5_data*)
  * The asterisk indicates an optional function argument
  */
-function createYADCFfilters(start_column, num_cols, filter_type, select_type = null, filter_default_label = "", filter_reset_button_text = false, filter_match_mode = null, column_data_type = null, width = null) {
+function createYADCFfilters(start_column, num_cols, filter_type, select_type = null, filter_default_label = "", filter_reset_button_text = false, filter_match_mode = null, column_data_type = null, width = null, html5_data=null) {
   let filters = [];
   for (let i = 0; i < num_cols; i++) {
     let filter = {
@@ -86,6 +86,9 @@ function createYADCFfilters(start_column, num_cols, filter_type, select_type = n
       filter["select_type_options"] = {
         width
       };
+    }
+    if (html5_data !== null) {
+      filter["html5_data"] = html5_data;
     }
 
     filters.push(filter);

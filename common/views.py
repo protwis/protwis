@@ -490,7 +490,7 @@ def getReferenceTable(pathway, subtype):
                   <tr> \
                     <th colspan=1>&nbsp;</th> \
                     <th colspan=6>Receptor classification</th> \
-                    <th colspan=1>Number of ligands</th> \
+                    <th colspan=1 style=\"border-left: 1px solid black; text-align:left\">Number of ligands</th> \
                   </tr> \
                   <tr> \
                     <th><br><br></th> \
@@ -511,7 +511,7 @@ def getReferenceTable(pathway, subtype):
                   <tr> \
                     <th colspan=1>&nbsp;</th> \
                     <th colspan=6>Receptor classification</th> \
-                    <th colspan=4>Number of ligands</th> \
+                    <th colspan=4 style=\"border-left: 1px solid black; text-align:left\">Number of ligands</th> \
                   </tr> \
                   <tr> \
                     <th><br><br></th> \
@@ -523,8 +523,8 @@ def getReferenceTable(pathway, subtype):
                     <th style=\"color:red\">Receptor<br>(GtP)</th> \
                     <th>Tested<br>(total)</th> \
                     <th>Balanced<br>references</th> \
-                    <th>Physiology<br>biased</th> \
                     <th>Pathway<br>biased</th> \
+                    <th>Physiology<br>biased</th> \
                   </tr> \
                 </thead>\
                 \n \
@@ -592,7 +592,7 @@ def getReferenceTable(pathway, subtype):
                 <td>{}</td> \
                 <td><span class=\"expand\">{}</span></td> \
                 <td><span class=\"expand\">{}</span></td> \
-                <td>{}</td> \
+                <td style=\"border-left: 1px solid black; text-align:left\">{}</td> \
                 </tr> \n".format(
                     t['slug'],
                     t['name'],
@@ -614,7 +614,7 @@ def getReferenceTable(pathway, subtype):
                 <td>{}</td> \
                 <td><span class=\"expand\">{}</span></td> \
                 <td><span class=\"expand\">{}</span></td> \
-                <td>{}</td> \
+                <td style=\"border-left: 1px solid black; text-align:left\">{}</td> \
                 <td data-search=\"{}\">{}</td> \
                 <td data-search=\"{}\">{}</td> \
                 <td data-search=\"{}\">{}</td> \
@@ -631,10 +631,10 @@ def getReferenceTable(pathway, subtype):
                     t['ligand_count'],
                     t['balanced_span'],
                     t['balanced_refs'],
-                    t['biased_span'],
-                    t['biased_count'],
                     t['pathway_span'],
                     t['pathway_count'],
+                    t['biased_span'],
+                    t['biased_count'],
                 )
 
         data_table += "</tbody></table>"

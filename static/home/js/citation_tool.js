@@ -103,11 +103,11 @@ function citation_tool(url, cite_id) {
 				continue;
 			}
 			else if (filter_for==="arrestindb" && data[i][11]==="ArrestinDb") {
-				data[i][5] = "Manuscript";
+				data[i][5] = "The arrestin database, ArrestinDb";
 				data[i][6] = "Jimmy Caroli, Gáspár Pándy-Szekeres, Alexander S. Hauser, György M. Keserű, Albert J. Kooistra and David E. Gloriam";
 				data[i][7] = 2022;
 				data[i][8] = "";
-				data[i][9] = "TBD";
+				data[i][9] = "Manuscript";
 				data[i][10] = "";
 			}
 			else if (filter_for==="ligandbiasdb" && data[i][11]==="LigandBiasDb") {

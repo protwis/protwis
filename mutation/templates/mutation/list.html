@@ -6,12 +6,15 @@
 <link rel="stylesheet" href="{% static 'home/css/structure_browser.css' %}" type="text/css" />
 <link href="{% static 'home/css/residue_table.css' %}" rel="stylesheet">
 <link href="{% static 'home/css/alignment.css' %}" rel="stylesheet">
+
+<link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
 <style>
 .smiles-tooltip + .tooltip > .tooltip-inner {
     max-width: 350px;
     /* If max-width does not work, try using width instead */
-    width: 350px; 
-    height: 350px; 
+    width: 350px;
+    height: 350px;
     background-color: #F5F5F5;
     color: #202020;
 }
@@ -32,58 +35,49 @@ input.form-control {
 {% endblock %}
 
 {% block addon_js %}
-    <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
-    <script src="{% static 'home/js/dataTables.tableTools.min.js' %}"> </script>
-    <script src="{% static 'home/js/jquery.dataTables.columnFilter.js' %}"> </script>
     <script src="{% static 'home/js/selection.js' %}"> </script>
     <script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
     <script src="{% static 'home/js/alignment.js' %}"></script>
 
+    <script src="{% static 'home/js/datatables.min.js' %}"> </script>
+    <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
+    <script src="{% static 'home/js/select2.js' %}"> </script>
+    <script src="{% static 'home/js/gpcrdb.js' %}"></script>
 
-    {% if HelixBox %} 
-    <script src="{% static 'home/js/diagrams.js' %}"></script> 
+    {% if HelixBox %}
+    <script src="{% static 'home/js/diagrams.js' %}"></script>
     <script src="{% static 'home/js/residuetable.js' %}"></script>
     {% endif %}
     <script type="text/javascript" charset="utf-8">
         $(document).ready(function() {
             var table = $('#mutations').DataTable({
-                "scrollX": true,
-                "scrollY": 600,
-                "bScrollCollapse": true,
-                'paging': false,
-                orderCellsTop: true,
-                "autoWidth": true,
-                dom: 'T<"clear">lfrtip',
-                "aoColumnDefs": [
-                    { "sType": "string", "aTargets": [0] },
-                ],
-                tableTools: {
-                    "sRowSelect": "multi",
-                    "aButtons": []
-                },
-                initComplete: function () {
-                    $('#mutations').dataTable().columnFilter({
-                        sPlaceHolder: "head:after",
-                        aoColumns: [
-                            { type: "text" }, //protein name
-                            { type: "select" }, //Alt Position
-                            { type: "select" }, //Position
-                            { type: "select" }, //Segment
-                            { type: "text" }, //Mutation
-                            { type: "text" }, //Foldchange
-                            { type: "select" }, //Exp type
-                            { type: "text" }, //ligand
-                            { type: "text" }, //reference
-                            { type: "text" }, //review
-                        ]
-                    });
-                }
+                deferRender: true,
+                scrollY: true,
+                scrollX: true,
+                scrollCollapse: true,
+                scroller: true,
+                paging: false,
+                hideEmptyColumns: true,
+                aaSorting: [],
+                autoWidth: false,
+                bInfo: true,
             });
 
-            $('[data-toggle="tooltip"]').tooltip(); 
+            let column_filters = [];
+            column_filters = column_filters.concat(createYADCFfilters(0, 1, "multi_select", "select2", "Select", false, null, "html", "80px"));
+            column_filters = column_filters.concat(createYADCFfilters(1, 5, "multi_select", "select2", "Select", false, null, null, "80px"));
+            column_filters = column_filters.concat(createYADCFfilters(5, 1, "range_number", null, ["Min", "Max"], false, null, null, "80px", "data-filter"));
+            column_filters = column_filters.concat(createYADCFfilters(6, 1, "multi_select", "select2", "Select", false, null, null, "80px"));
+            column_filters = column_filters.concat(createYADCFfilters(7, 3, "multi_select", "select2", "Select", false, null, "html", "80px"));
+
+            console.log(column_filters);
+            yadcf.init(table.draw(), column_filters, {
+            });
+
+            $('[data-toggle="tooltip"]').tooltip();
             //$('[data-toggle="tooltip"]').tooltip({html:true});
-            $('.foldchange').tooltip(); 
-            {% if HelixBox %} 
+            // $('.foldchange').tooltip();
+            {% if HelixBox %}
             mutant_json = '{{mutations_pos_list|safe}}';
 
             ajaxMutantsPos("snakeplot");
@@ -91,13 +85,13 @@ input.form-control {
             table_ajaxMutants();
             {% endif %}
             });
-        
-    </script> 
+
+    </script>
 {% endblock %}
 
 {% block content %}
 <h2>Mutant Browser</h2>
-{% if mutations %} 
+{% if mutations %}
     <!-- Download button -->
     <a class="btn btn-sm btn-primary" href="download" role="button">
     <span class="glyphicon glyphicon-download"></span> Download</a>
@@ -129,19 +123,10 @@ input.form-control {
                         <th></th>
                         <th></th>
                     </tr>
-                    <tr>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                    </tr>
                 </thead>
+                <tbody>
+                  {{mutation_tables|safe}}
+                </tbody>
                 <tfoot>
                     <tr>
                         <th>Protein name</th>
@@ -156,7 +141,6 @@ input.form-control {
                         <th>Review</th>
                     </tr>
                 </tfoot>
-                {{mutation_tables|safe}}
             </table>
         </div>
         <br><br>
@@ -168,18 +152,18 @@ input.form-control {
 </div>
     <div class="col-md-10">
        {{ SnakePlot }}
-    <br>    
-    Download: 
-        <a href="javascript:saveSvgAsPng(document.getElementById('snakeplot'), 'snake_mutants.png', {scale: 3});">PNG</a> | 
-        <a id=snake_svg_link href-lang="image/svg+xml" href="" download="snake_mutants">SVG</a>  
-   </a> 
+    <br>
+    Download:
+        <a href="javascript:saveSvgAsPng(document.getElementById('snakeplot'), 'snake_mutants.png', {scale: 3});">PNG</a> |
+        <a id=snake_svg_link href-lang="image/svg+xml" href="" download="snake_mutants">SVG</a>
+   </a>
 
      <small>Increased binding/potency: <font style="color: #000; background-color: #87E88F" color="#87E88F">>5-fold</font>, <font style="color: #000; background-color: #66B36C" color="#66B36C">>10-fold</font>; Reduced binding/potency: <font style="color: #FFF; background-color: #FF7373" color="#FF7373">>5-fold</font>, <font style="color: #FDFF7B; background-color: #FA1111" color="#FA1111">>10-fold</font>; <font style="color: #000; background-color: #F7DA00" color="#F7DA00">No/low effect (<5-fold)</font>; and <font style="color: #000; background-color: #D9D7CE" color="#D9D7CE">N/A</font> </small><br>
     {{ HelixBox }}
-    <br>    
-    Download: 
-        <a href="javascript:saveSvgAsPng(document.getElementById('helixbox'), 'helixbox_mutants.png', {scale: 3});">PNG</a> | 
-        <a id=helix_svg_link href-lang="image/svg+xml" href="" download="helixbox_mutants">SVG</a>  
+    <br>
+    Download:
+        <a href="javascript:saveSvgAsPng(document.getElementById('helixbox'), 'helixbox_mutants.png', {scale: 3});">PNG</a> |
+        <a id=helix_svg_link href-lang="image/svg+xml" href="" download="helixbox_mutants">SVG</a>
     </div>
 {% endif %}
 
@@ -187,7 +171,7 @@ input.form-control {
         <p> Ooops! There is no data to show here yet. </p>
     {% endif %}
 
- {% if data %}   
+ {% if data %}
 <br><br><br><br>
 <div class="col-md-2 text-right text-info">
     <h4>Residue Table</h4>
@@ -206,4 +190,3 @@ Too many proteins to produce meaningful residue table.
 {% endif %}
 <!-- sequence alignment ends -->
 {% endblock %}
-
