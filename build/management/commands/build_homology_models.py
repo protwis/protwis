@@ -356,24 +356,40 @@ class CallHomologyModeling():
                 Homology_model.main_template_preferred_chain = 'A'
                 Homology_model.main_structure = DummyStructure('A')
                 alignment = AlignedReferenceTemplate()
-                alignment.run_hommod_alignment(Homology_model.reference_protein, ['TM1','ICL1','TM2','ECL1','TM3','ICL2','TM4','TM5','TM6','TM7'], [Homology_model.state], 'similarity')
+                alignment.run_hommod_alignment(Homology_model.reference_protein, ['TM1','TM2','TM3','TM4','TM5','TM6','TM7'], [Homology_model.state], 'similarity')
                 delete_list = []
                 homologs = OrderedDict()
                 protconfs = {}
                 # Modality definition
-                modality = {'Active':['Agonist', 'Agonist (partial)', 'PAM', 'Ago-PAM', 'Full agonist', 'Positive allosteric modulator', 'Partial agonist', 'Agonist peptide', 'Allosteric agonist'],
-                            'Inactive':['Antagonist', 'Inverse agonist', 'NAM', 'Antagonist (neutral/silent)', 'Allosteric inverse agonist', 'Allosteric antagonist', 'Inverse agonist (partial)']}
+                modality = {'Active':['Agonist', 'Full agonist', 'Agonist peptide', 'Agonist (partial)', 'Partial agonist'],
+                            'Inactive':['Antagonist', 'Antagonist (neutral/silent)', 'Inverse agonist', 'Inverse agonist (partial)']}
                 # ID "wrong" modality templates
                 for i, j in alignment.similarity_table.items():
                     sli = StructureLigandInteraction.objects.filter(structure=i)
                     protconfs[i] = ProteinConformation.objects.get(protein=i.protein_conformation.protein.parent)
                     for s in sli:
-                        if s.ligand_role.name not in modality[Homology_model.state]:
-                            delete_list.append(i)
+                        if s.ligand_role.name not in modality[Homology_model.state]: 
+                            if len(sli)==1:
+                                delete_list.append(i)
+                            elif list(sli).index(s)==len(sli)-1 and i not in delete_list:
+                                delete_list.append(i)
+                        elif s.ligand_role.name in modality[Homology_model.state]:
+                            if type(alignment.similarity_table[i])!=type([]):
+                                alignment.similarity_table[i] = [alignment.similarity_table[i], modality[Homology_model.state].index(s.ligand_role.name)]
+                            elif modality[Homology_model.state].index(s.ligand_role.name)<alignment.similarity_table[i][1]:
+                                alignment.similarity_table[i][1] = modality[Homology_model.state].index(s.ligand_role.name)
+                    if len(sli)==0:
+                        delete_list.append(i)
                 # Remove "wrong" templates from template list
                 for i in delete_list:
                     del alignment.similarity_table[i]
-                Homology_model.similarity_table = alignment.similarity_table
+                # Reorder based on seqsim and resolution
+                pprint.pprint(alignment.similarity_table)
+                resorted_keys = sorted(alignment.similarity_table.items(), key=lambda x: (-x[1][0],x[1][1],x[0].resolution))
+                new_dict = OrderedDict()
+                for r in resorted_keys:
+                    new_dict[r[0]] = r[1][0]
+                Homology_model.similarity_table = new_dict
                 pprint.pprint(Homology_model.similarity_table)
                 # ID most homologuous receptors
                 for i, j in alignment.similarity_table.items():
@@ -408,12 +424,12 @@ class CallHomologyModeling():
                                             break
                                     if found_in_receptor:
                                         break
-                                if c==2:
+                                if c==3:
                                     interacting_residues[seg_lab].append(gn)
                                     res_seqnums.append(Residue.objects.get(display_generic_number__label=dgn(gn, Homology_model.prot_conf), protein_conformation=Homology_model.prot_conf).sequence_number)
                                     break
                                 receptor_count+=1
-                                if receptor_count==8:
+                                if receptor_count==5:
                                     break
                     print(datetime.now() - startTime)
                         
@@ -422,6 +438,32 @@ class CallHomologyModeling():
                 print(datetime.now() - startTime)
                 Homology_model.alignment.reference_dict = deepcopy(Homology_model.alignment.reference_dict)
                 Homology_model.alignment.template_dict = deepcopy(Homology_model.alignment.template_dict)
+
+                coverage = OrderedDict()
+                gn_per_struct = OrderedDict()
+                for seg,j in interacting_residues.items():
+                    for gn in j:
+                        for struct, sim in Homology_model.similarity_table.items():
+                            if struct not in coverage:
+                                coverage[struct] = [sim, 0]
+                                gn_per_struct[struct] = []
+                            try:
+                                res = Fragment.objects.filter(structure=struct, residue__display_generic_number__label=dgn(gn, struct.protein_conformation), residue__amino_acid=Homology_model.alignment.reference_dict[seg][gn])
+                                if len(res)>0:
+                                    coverage[struct][1]+=1
+                                    gn_per_struct[struct].append(gn)
+                            except Residue.DoesNotExist:
+                                continue
+                pprint.pprint(coverage)
+                pprint.pprint(gn_per_struct)
+                print(datetime.now() - startTime)
+                resorted_keys = sorted(coverage.items(), key=lambda x: (-x[1][1],-x[1][0],x[0].resolution))
+                new_dict = OrderedDict()
+                print(resorted_keys)
+                for r in resorted_keys:
+                    new_dict[r[0]] = r[1][0]
+                Homology_model.similarity_table = new_dict
+                # raise AssertionError
                 # Label positions to change
                 c = 0
                 for seg_lab, seg in interacting_residues.items():
@@ -2539,6 +2581,7 @@ class HomologyModeling(object):
                         main_pdb_array, template_dict, non_cons_res_templates, switched_count, no_match = self.find_and_switch_rotamer(self.similarity_table_other_states, gn, gn_,
                                 reference_dict, ref_seg, ref_res, main_pdb_array, atom_num_dict, template_dict, temp_seg, temp_res, non_cons_res_templates, switched_count, no_match, segment)
                         if no_match==True:
+                            print('No rotamer match: ', gn, reference_dict[ref_seg][gn])
                             try:
                                 if 'free' not in ref_seg:
                                     residue = main_pdb_array[ref_seg][str(ref_res).replace('x','.')]
