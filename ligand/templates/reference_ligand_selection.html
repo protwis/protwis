@@ -1,0 +1,61 @@
+{% extends "home/base.html" %}
+{% load static %}
+{% load humanize %}
+{% block addon_css %}
+<link rel="stylesheet" href="{% static 'home/css/nv.d3.min.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/nvd3-update.css' %}" type="text/css" />
+<link href="{% static 'home/css/bootstrap-responsive.css' %}" rel="stylesheet" media="screen">
+<style>
+  #main {
+      width: 110%;
+  }
+  .third {
+    width: 30%;
+    margin-left: 10px;
+    margin-right: 10px;
+    float: left;
+    text-align: justify;
+    text-justify: inter-word;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id='main'>
+  <div class='third'>
+    <h4>Reference ligand selection for pathway-bias</h4>
+
+    <p>Pathway-bias studies uses a reference ligand for bias which is has balanced signaling across the compared
+      pathways in the given biological and experimental system used <a href='https://doi.org/10.1111/bph.15811' target="_blank">(Ref)</a>.
+    These ligands can be found in the Biased Signaling Atlas’ browser for
+    <a href='http://biasedsignalingatlas.org/biased_signalling/pathwaypreferencebrowser' target='_blank'>Pathway-preferring ligands</a> by applying
+    a cut-off to the “Relative pathway activity (log(Emax/EC50))” which should be close to 0
+    (means pathway-balanced instead of pathway-preferring signaling).
+    To increase the chance that at least one of the viewed ligands are pathway-balanced also in your experiments,
+    it is suggested to pick and test several ligands and to prioritize ligands have been tested in similar biological and experimental systems.
+    </p>
+  </div>
+
+  <div class='third'>
+    <h4>Reference ligand selection for physiology-bias</h4>
+    <p>
+      Physiology-bias studies uses a reference ligand for bias which is an endogenous ligand.
+      These ligands can be found in GPCRdb’s browser for <a href='http://gpcrdb.org/ligand/endogenousbrowser/' target='_blank'>Endogenous ligands</a>.
+      If your receptor of interest has multiple endogenous ligands, <a href='https://doi.org/10.1111/bph.15811' target="_blank">community guidelines</a>
+      recommends using the “principal” endogenous ligand and not “secondary” endogenous ligands, which can be filtered out in this browser.
+      This is because secondary endogenous ligands can also be physiology-biased relative to the principal endogenous ligand.
+    </p>
+  </div>
+
+  <div class='third'>
+    <h4>Separate reference ligands for bias and Emax</h4>
+    <p>
+      If the reference ligand for bias is not a full agonist (does not reach the maximum efficacy of the assay),
+      a separate reference ligand should be used for efficacy measures. If needed, each pathway can use a distinct reference ligand
+      for efficacy as long as the efficacies of all ligands tested for bias, and the reference ligand for bias,
+      are measured relative the same reference ligand for efficacy.
+      For further information, see section “1. The choice of reference ligand …” in the <a href='https://doi.org/10.1111/bph.15811' target="_blank">community guidelines</a> .
+    </p>
+  </div>
+</div>
+{% endblock %}

@@ -844,13 +844,14 @@ class BiasedSignallingOnTheFlyCalculation(TemplateView):
             lig_name = result["ligand_name"]
             if result['ligand_name'][0].isdigit():
                 lig_name = "Ligand-"+result['ligand_name']
+            lig_name = lig_name.capitalize()
             hashed_lig_name = 'L' + hashlib.md5((str(result['ligand_id'])).encode('utf-8')).hexdigest()
             # replace second white space with closing and opening tspan for svg
 
             journal_name = result['journal']
             if result['journal']:
                 if ' ' in result['journal']:
-                    journal_name  = re.sub(r'(\s\S*?)\s', r'\1 closeTS openTS ', result['journal'])
+                    journal_name  = re.sub(r'(\s\S*?)\s', r'\1 closeTSI openTSI ', result['journal'])
             else:
                 journal_name = "Not listed"
             if result['authors'] == None:
@@ -1950,7 +1951,7 @@ class OTFBiasBrowser(TemplateView):
                            'P1 - Measured molecule 2', 'P2 - Measured molecule 2', 'P3 - Measured molecule 2', 'P4 - Measured molecule 2', 'P5 - Measured molecule 2',
                            'P1 - Biological process', 'P2 - Biological process', 'P3 - Biological process', 'P4 - Biological process', 'P5 - Biological process',
                            'P1 - Cell line', 'P2 - Cell lines', 'P3 - Cell line', 'P4 - Cell line', 'P5 - Cell line',
-                           'Time resolved', 'Authors', 'DOI/PMID', 'ID', 'pub_link']
+                           'Time resolved', 'Authors', 'DOI/PMID', 'ID', 'pub_link', 'Reference ligand ID']
         if self.pathway:
             browser_columns = ['Class', 'Receptor family', 'UniProt', 'IUPHAR', 'Species',
                                'Ligand', '#Vendors', '#Articles', '#Labs',
@@ -1989,6 +1990,11 @@ class OTFBiasBrowser(TemplateView):
                 labs_dict[authors[0]] = set()
             labs_dict[authors[0]].add(authors[1].split(',')[-1])
 
+        # Preprocess reference ligands
+        reference_names = set([data[pub][key]['Reference_ligand'] for pub in data for key in data[pub] if 'Reference_ligand' in data[pub][key].keys()])
+        lig_id_name_pair = list(Ligand.objects.filter(name__in=reference_names).values_list("name", "id"))
+        lig_id_name_dict = {entry[0]:entry[1] for entry in lig_id_name_pair}
+
         for pub in data:
             ligands = {}
             data_subset = pd.DataFrame()
@@ -2021,6 +2027,7 @@ class OTFBiasBrowser(TemplateView):
             data_subset['IUPHAR'] = receptor_info[0][3]
             if not self.pathway:
                 data_subset['Reference ligand'] = Reference_ligand
+                data_subset['Reference ligand ID'] = lig_id_name_dict[Reference_ligand]
 
             table = table.append(data_subset, ignore_index=True)
 
@@ -2041,6 +2048,15 @@ class OTFBiasBrowser(TemplateView):
 class BiasGuidelines(TemplateView):
 
     template_name = 'bias_guidelines.html'
+
+    def get_context_data(self, **kwargs):
+
+        context = super().get_context_data(**kwargs)
+        return context
+
+class ReferenceSelection(TemplateView):
+
+    template_name = 'reference_ligand_selection.html'
 
     def get_context_data(self, **kwargs):
 
