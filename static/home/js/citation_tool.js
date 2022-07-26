@@ -36,7 +36,7 @@ function citation_tool(url, cite_id) {
     var env = url.split('//')[1].split('/')[0];
     var main_ref_id = [];
     var cit_request = new XMLHttpRequest();
-    var domains = ["gpcrdb.org", "gproteindb.org", "arrestindb.org"];
+    var domains = ["gpcrdb.org", "gproteindb.org", "arrestindb.org", "biasedsignalingatlas.org"];
     var filter_for = false;
     if (env==="gpcrdb.org" || cite_id==="cite_gpcrdb") {
     	filter_for = "gpcrdb";
@@ -51,7 +51,6 @@ function citation_tool(url, cite_id) {
     	filter_for = "biasedsignalingatlas";
     }
     cit_request.open('GET', url.split('/')[0] + '/citations');
-    // env = "gpcrdb.org";
     cit_request.onload = function() {
 		var data = JSON.parse(cit_request.responseText)
 		for (let i = 0; i < data.length; i++) {
@@ -99,7 +98,7 @@ function citation_tool(url, cite_id) {
 			else if (filter_for==="arrestindb" && data[i][11]!=="ArrestinDb") {
 				continue;
 			}
-			else if (filter_for==="biasedsignalingatlas" && data[i][11]!=="BiasedSignalingAtlas") {
+			else if (filter_for==="biasedsignalingatlas" && data[i][11]!=="Biased Signaling Atlas") {
 				continue;
 			}
 			else if (filter_for==="arrestindb" && data[i][11]==="ArrestinDb") {
@@ -110,12 +109,12 @@ function citation_tool(url, cite_id) {
 				data[i][9] = "Manuscript";
 				data[i][10] = "";
 			}
-			else if (filter_for==="biasedsignalingatlas" && data[i][11]==="BiasedSignalingAtlas") {
-				data[i][5] = "Manuscript";
+			else if (filter_for==="biasedsignalingatlas" && data[i][11]==="Biased Signaling Atlas") {
+				data[i][5] = "An Online Biased Signaling Atlas";
 				data[i][6] = "Jimmy Caroli, Alibek Mamyrbekov, Kasper Harpsøe, Sahar Gardizi, Linda Dörries, Eshan Ghosh, Alexander S. Hauser, Albert J. Kooistra, and David E. Gloriam";
 				data[i][7] = 2022;
 				data[i][8] = "";
-				data[i][9] = "TBD";
+				data[i][9] = "Manuscript";
 				data[i][10] = "";
 			}
 			var site = parse_url_long(data[i][0]);
