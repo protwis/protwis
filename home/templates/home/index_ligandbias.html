@@ -99,12 +99,12 @@
                     </div> -->
                     <div class="col-md-4">
                         <p style='text-align:justify'>
-                            The Biased Signaling Atlas is a community hub offering:<br/>
+                            The Biased Signaling Atlas offers:<br/>
                             <ul>
                               <li>Reference data (see Data box)</li>
                               <li>Analysis tools (browse menu)</li>
                               <li>Visualization</li>
-                              <li>Experiment design (e.g., Reference ligand selection)</li>
+                              <li>Experiment design (e.g., <a href="{{ hosts.ligandbias }}/biased_signalling/reference_selection">Reference ligand selection</a>)</li>
                               <li>Data deposition (<a href='https://docs.gpcrdb.org/biasedsignaling.html#data-submission' target='_blank'>biased ligands</a>
                                 and <a href='https://docs.gpcrdb.org/biasedsignaling.html#data-submission' target='_blank'>pathway effects</a>)</li>
                         </p>
@@ -113,6 +113,7 @@
 
                     <div class="col-md-4">
                         <p style="text-align:justify;">
+                          <br />
                         Biased signaling entails hormones, probes, or drugs binding the same GPCR but engaging different intracellular
                         signaling pathways leading to distinct functional outcomes. This may let drugs favor therapeutic over adverse signal pathways.
                         </p>
@@ -149,27 +150,61 @@
                     </div>
                 </div>
 
-                <!-- Publications -->
-                <!-- <div class="col-md-4">
+                <!-- commented stuff for POST preprint -->
+            <!-- <div class="col-md-4">
                     <div class="panel panel-primary">
                         <div class="panel-body">
-                            <a href="https://www.youtube.com/watch?v=X8j_xpryZ4U&start=778&end=3732;" target="_blank"><img style="width: 100%;" src="{% static '/home/images/gprot_resource.png' %}". ></img></a>
+                            <h3><a href="/structure/statistics">Data</a></h3>
+                            <ul class="stats_list">
+                                {% for stat in release_statistics %}
+                                    <li>
+                                        {{ stat.value| safe }} {{ stat.statistics_type | safe }}
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                            {% if users %}
+                                {{ users|safe }}
+                            {% endif %}
                         </div>
                     </div>
+                </div> -->
+
+                <!-- Release Notes -->
+          <!-- <div class="col-md-4">
+                    <div class="panel panel-primary">
+                        <div class="panel-body">
+                            <h3>Latest <a href="/pages/releasenotes">release</a></h3>
+                            <strong>{{ release_notes.date }}</strong>
+                            {{ release_notes.html|safe }}
+                            <br />
+                            <strong><a href="/pages/releasenotes">All releases</a></strong>
+                        </div>
+                    </div>
+
+                    <div class="panel panel-primary">
+                        <div class="panel-body">
+                            <h3><a href="https://files.gpcrdb.org/video/GPCRdb-David_Gloriam.mp4">Videos</a></h3>
+                        </div>
+                    </div>
+
+                </div> -->
+
+                <!-- Publications -->
+          <!-- <div class="col-md-4">
                     <div class="panel panel-primary">
                         <div class="panel-body" style='max-height: 530px; overflow-y: scroll;'>
                             <h3>Publications</h3>
-                            The G protein database, GproteinDb.<br />
-                            Pandy-Szekeres G, Esguerra M, Hauser AS, Caroli J, Munk C, Pilger S, Keseru GM, Kooistra AJ, Gloriam DE<br />
-                            <a href='https://doi.org/10.1093/NAR/GKAB852' target='_blank'><i>Nucleic acids research</i>, 2022, 50:D518-D525</a><br />
-                            <br />
-                            Selectivity determinants of GPCR-G-protein binding.<br />
-                            Flock T, Hauser AS, Lund N, Gloriam DE, Balaji S, Babu MM<br />
-                            <a href='https://doi.org/10.1038/NATURE22070' target='_blank'><i>Nature</i>, 2017, 545:317-322</a><br />
+                            <p>
+                            The arrestin database, ArrestinDb<br />
+                            Jimmy Caroli, Gáspár Pándy-Szekeres, Alexander S. Hauser, György M. Keserű, Albert J. Kooistra and David E. Gloriam<br />
+                            <a href='#' target='_blank'><i>Manuscript</i>, 2022</a>
                             </p>
                         </div>
                     </div>
                 </div> -->
+
+
+
         </div>
 
         <div class="col-md-3">

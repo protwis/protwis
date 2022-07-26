@@ -158,7 +158,7 @@
 {% endif %}
 
 <div class="tab-content">
-  <div class="tab-pane container" id="physio">
+  <div class="tab-pane container active" id="physio">
     <br />
 
 {% if render == "not_bias" %}
@@ -256,6 +256,7 @@ Specific sets of ligands can be downloaded from the <a href="/ligand/biasedsubty
 <!-- Biased ligand statistics were last updated <strong>{{ release_notes.date|date:"Y-m-d" }}</strong>.<br /> -->
 <br />
 <br />
+
 {% if render == "not_bias" %}
 <h4>Ligand coverage of GPCR classes</h4><br />
 {% elif render == "pathway" %}
@@ -320,6 +321,7 @@ Circle colors indicate a number of ligands:
     orphan_options = {{ orphan_options | safe }};
     whole_dict = {{ whole_receptors|safe }};
 </script>
+
 {% if render == "not_bias" %}
 <script language='javascript'>
   $("#UniProtNames").click(function() {
@@ -346,13 +348,53 @@ Circle colors indicate a number of ligands:
       changeLeavesLabels("orphan","IUPHAR", whole_dict);
   });
 </script>
+{% elif render == "pathway" %}
+<script type="text/javascript" charset="utf-8">
+  circles = {{ circles_data | safe}}
+  heatmap_data = {{ HeatMapData | safe }};
+  master_dict = {{ MasterDict | safe}}
+</script>
+<script type="text/javascript" charset="utf-8">
+// $(window).on("load",function() {
+$(document).ready(function(){
+    let buttonObjects = [];
+    let checkboxes = $('#HeatmapHandler').find('label');
+    let selectedCheckboxes = checkboxes.filter('.active');
+    selectedCheckboxes
+      .each(function(index, element) {
+        if (!($(element).data('name') in buttonObjects)){
+          buttonObjects[$(element).data('name')] = [];
+        }
+        buttonObjects[$(element).data('name')].push($(element).data('value'));
+      });
+    draw_heatmap(circles, heatmap_data, master_dict, buttonObjects, 'HeatmapDivBal', 'Heatmap_BalancedRefenced', 'Primary transducer count');
+
+});
+</script>
+<script>
+  $(document).ready(function(){
+    $('#HeatmapHandler').on("change", function() {
+        let buttonObjects = [];
+        let checkboxes = $('#HeatmapHandler').find('label');
+        let selectedCheckboxes = checkboxes.filter('.active');
+        selectedCheckboxes
+          .each(function(index, element) {
+            if (!($(element).data('name') in buttonObjects)){
+              buttonObjects[$(element).data('name')] = [];
+            }
+            buttonObjects[$(element).data('name')].push($(element).data('value'));
+          });
+        d3.select("#HeatMap_div").select("svg").remove();
+        draw_heatmap(circles, heatmap_data, master_dict, buttonObjects, 'HeatmapDivBal', 'Heatmap_BalancedRefenced', 'Primary transducer count');
+      });
+  })
+</script>
 {% else %}
 <script type="text/javascript" charset="utf-8">
   circles = {{ circles_data | safe}}
   heatmap_data = {{ HeatMapData | safe }};
   master_dict = {{ MasterDict | safe}}
 </script>
-
 <script type="text/javascript" charset="utf-8">
 // $(window).on("load",function() {
 $(document).ready(function(){
@@ -370,7 +412,6 @@ $(document).ready(function(){
 
 });
 </script>
-
 <script>
   $(document).ready(function(){
     $('#HeatmapHandler').on("change", function() {
@@ -390,8 +431,9 @@ $(document).ready(function(){
   })
 </script>
 {% endif %}
-{% if render != "not_bias" %}
 
+
+{% if render != "not_bias" %}
   {% if render != "subtype" %}
     <ul class="nav nav-tabs">
       <li class="nav-item active">
@@ -430,7 +472,6 @@ $(document).ready(function(){
             </label>
           </div>
         </div>
-
         <div style="padding-top: 5px;">
         Sort by:&nbsp;&nbsp;
           <div class="btn-group" data-toggle="buttons" id="sorting_selection">
@@ -448,7 +489,6 @@ $(document).ready(function(){
             </label>
           </div>
         </div>
-
         <div style="padding-top: 5px;">
           Color by:
           <div class="btn-group btn-group-toggle" data-toggle="buttons">
@@ -463,8 +503,6 @@ $(document).ready(function(){
             </label>
           </div>
         </div>
-
-
         <div style="padding-top: 5px;">
           Receptor names:
           <div class="btn-group btn-group-toggle" data-toggle="buttons">
@@ -479,7 +517,6 @@ $(document).ready(function(){
             </label>
           </div>
         </div>
-
         <!-- <div>
           <div style="padding-top: 5px; width: 350px; margin:0px auto;" class="text-center">
             {% if render == "bias" %}
@@ -492,16 +529,11 @@ $(document).ready(function(){
           </div>
         </div> -->
       </div>
-
-
-
       <br />
       <br />
-
       <div id="HeatmapDivBal" class="text-center"></div>
       <!-- <div id="HeatMap_div" class="text-center"> -->
     <!-- </div> -->
-
     <div class="text-center">
       <div class="btn-group">
           <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
@@ -524,9 +556,9 @@ $(document).ready(function(){
           </ul>
       </div>
     </div>
-  {% if render != "subtype" %}
-      </div>
 
+  {% if render != "subtype" %}
+    </div>
       <div class="tab-pane container" id="trees">
 
         <div style="padding-top: 5px;">
@@ -569,7 +601,6 @@ $(document).ready(function(){
         <div id="class_a" class="text-center">
           <h4>Class A<br />(Rhodopsin)</h4>
         </div>
-
         <div class="text-center">
           <div class="btn-group">
               <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -591,41 +622,33 @@ $(document).ready(function(){
               </ul>
           </div>
         </div>
-
         <br />
         <br />
         <br />
-
         <div class="row-fluid">
           <div class="span12">
             <div class="row-fluid">
-
               <div class="span4">
                 <div id="orphan" class="text-center">
                   <h4>Class A <br /> Orphans</h4>
                 </div>
               </div>
-
               <div class="span4">
                 <div id="class_b1" class="text-center">
                   <h4>Class B1<br />(Secretin)</h4>
                 </div>
               </div>
-
               <div class="span4">
                 <div id="class_b2" class="text-center">
                   <h4>Class B2<br />(Adhesion)</h4>
                 </div>
               </div>
-
             </div>
           </div>
         </div>
-
         <div class="row-fluid">
           <div class="span12">
             <div class="row-fluid">
-
               <div class="span4">
                 <div class="text-center">
                   <div class="btn-group">
@@ -651,7 +674,6 @@ $(document).ready(function(){
                   </div>
                 </div>
               </div>
-
               <div class="span4">
                 <div class="text-center">
                   <div class="btn-group">
@@ -705,11 +727,9 @@ $(document).ready(function(){
             </div>
           </div>
         </div>
-
         <br />
         <br />
         <br />
-
         <div class="row-fluid">
           <div class="span12">
             <div class="row-fluid">
@@ -718,23 +738,19 @@ $(document).ready(function(){
                   <h4>Class C<br />(Glutamate)</h4>
                 </div>
               </div>
-
               <div class="span4">
                 <div id="class_f" class="text-center">
                   <h4>Class F<br />(Frizzled)</h4>
                 </div>
               </div>
-
               <div class="span4">
                 <div id="class_t2" class="text-center">
                   <h4>Class T <br /> (Taste 2)</h4>
                 </div>
               </div>
-
             </div>
           </div>
         </div>
-
         <div class="row-fluid">
           <div class="span12">
             <div class="row-fluid">
@@ -816,7 +832,6 @@ $(document).ready(function(){
             </div>
           </div>
         </div>
-
       </div>
     </div>
   {% endif %}
