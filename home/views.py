@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.conf import settings
 from django.views.decorators.cache import cache_page
 from django.http import JsonResponse
-from django.db.models import F,Q
+from django.db.models import F, Q
 
 from protwis.context_processors import site_title
 from news.models import News
@@ -22,42 +22,42 @@ def index(request):
     context = {}
 
     # title of the page
-    context['site_title'] = site_title(request)['site_title']#settings.SITE_TITLE
-    context['documentation_url'] = settings.DOCUMENTATION_URL
+    context["site_title"] = site_title(request)["site_title"]  # settings.SITE_TITLE
+    context["documentation_url"] = settings.DOCUMENTATION_URL
 
     # analytics
-    context['google_analytics_key'] = settings.GOOGLE_ANALYTICS_KEY
+    context["google_analytics_key"] = settings.GOOGLE_ANALYTICS_KEY
 
     if settings.GOOGLE_ANALYTICS_API:
         # Based on https://developers.google.com/analytics/devguides/reporting/core/v3/quickstart/service-py
         # from googleapiclient.discovery import build
         # from oauth2client.service_account import ServiceAccountCredentials
         # Define the auth scopes to request.
-        scope = 'https://www.googleapis.com/auth/analytics.readonly'
+        scope = "https://www.googleapis.com/auth/analytics.readonly"
         key_file_location = settings.GOOGLE_ANALYTICS_API
 
         # Fetched from API -- look at original code to re-fetch if changes.
-        profile_id = '77082434'
+        profile_id = "77082434"
 
         # Authenticate and construct service.
-        credentials = ServiceAccountCredentials.from_json_keyfile_name(
-                key_file_location, scopes=[scope])
+        credentials = ServiceAccountCredentials.from_json_keyfile_name(key_file_location, scopes=[scope])
         # Build the service object.
-        service = build('analytics', 'v3', credentials=credentials)
+        service = build("analytics", "v3", credentials=credentials)
 
-        users_year = service.data().ga().get(ids='ga:' + profile_id, start_date='365daysAgo', end_date='today', metrics='ga:users').execute().get('rows')[0][0]
-        users_month = service.data().ga().get(ids='ga:' + profile_id, start_date='30daysAgo', end_date='today', metrics='ga:users').execute().get('rows')[0][0]
+        users_year = service.data().ga().get(ids="ga:" + profile_id, start_date="365daysAgo", end_date="today", metrics="ga:users").execute().get("rows")[0][0]
+        users_month = service.data().ga().get(ids="ga:" + profile_id, start_date="30daysAgo", end_date="today", metrics="ga:users").execute().get("rows")[0][0]
 
-        context['users'] = "<a href='https://gpcrdb.org'>GPCRdb</a>, <a href='https://gproteindb.org'>GproteinDb</a>, and <a href='https://arrestindb.org'>ArrestinDb</a> had {:,} different users since this date last year and {:,} users in the last 30 days (<a href='https://analytics.google.com'>Google Analytics</a>).".format(int(users_year), int(users_month))
+        context["users"] = "<a href='https://gpcrdb.org'>GPCRdb</a>, <a href='https://gproteindb.org'>GproteinDb</a>, and " + \
+                        "<a href='https://arrestindb.org'>ArrestinDb</a> had {:,} different users since this date last year and ".format(int(users_year)) + \
+                        "{:,} users in the last 30 days (<a href='https://analytics.google.com'>Google Analytics</a>).".format(int(users_month))
 
     # get news
-    context['news'] = News.objects.order_by('-date').all()[:3]
+    context["news"] = News.objects.order_by("-date").all()[:3]
 
     # get release notes
     try:
-        context['release_notes'] = ReleaseNotes.objects.all()[0]
-        rel_stats = list(ReleaseStatistics.objects.filter(release=context['release_notes'])\
-                    .values_list("statistics_type__name", "value"))
+        context["release_notes"] = ReleaseNotes.objects.all()[0]
+        rel_stats = list(ReleaseStatistics.objects.filter(release=context["release_notes"]).values_list("statistics_type__name", "value"))
 
         # Create dictionary and process part of the results
         context['release_statistics'] = []
@@ -117,11 +117,21 @@ def index(request):
                     first_model = count
 
                 if entry[0] in rename_dictionary:
-                    context['release_statistics'].append({"statistics_type": "<span class=\"stats_entry\">" + rename_dictionary[entry[0]] + "</span>", "value": "<span class=\"stats_value\">" + "{:,}".format(entry[1]) + "</span>"})
+                    context["release_statistics"].append(
+                        {
+                            "statistics_type": '<span class="stats_entry">' + rename_dictionary[entry[0]] + "</span>",
+                            "value": '<span class="stats_value">' + "{:,}".format(entry[1]) + "</span>",
+                        }
+                    )
                 elif entry[0] in skip_list:
                     continue
                 else:
-                    context['release_statistics'].append({"statistics_type": "<span class=\"stats_entry\">" + entry[0] + "</span>", "value": "<span  class=\"stats_value\">" + "{:,}".format(entry[1]) + "</span>"})
+                    context["release_statistics"].append(
+                        {
+                            "statistics_type": '<span class="stats_entry">' + entry[0] + "</span>",
+                            "value": '<span  class="stats_value">' + "{:,}".format(entry[1]) + "</span>",
+                        }
+                    )
                 count += 1
         else: #Biased Signaling Atlas
             context['release_statistics'].append({"statistics_type": "<span class=\"stats_entry stats_title\"><b>Biased ligands</b></span>", "value" : "<span  class=\"stats_value\"></span>"})
@@ -141,20 +151,36 @@ def index(request):
             context['release_statistics'].append({"statistics_type": "<span class=\"stats_entry\">" + "Reference ligands for physiology-bias" + "</span>", "value": "<span  class=\"stats_value\">" + "{:,}".format(Endogenous_GTP.objects.filter(Q(endogenous_status='Principal') | Q(potency_ranking=1)).count()) + "</span>"})
 
             # Adjusted formatting for release notes
-            # context['release_statistics'].insert(first_model, {"statistics_type": "<span class=\"stats_entry stats_title\"><i>Structure models</i></span>", "value" : "<span  class=\"stats_value\"></span>"})
-            # context['release_statistics'].insert(first_struct, {"statistics_type": "<span class=\"stats_entry stats_title\"><i>Experimental structures</i></span>", "value" : "<span  class=\"stats_value\"></span>"})
-
+            # context['release_statistics'].insert(first_model, {"statistics_type": "<span class=\"stats_entry stats_title\"><i>Structure models</i></span>",
+            # "value" : "<span  class=\"stats_value\"></span>"})
+            # context['release_statistics'].insert(first_struct, {"statistics_type": "<span class=\"stats_entry stats_title\"><i>Experimental structures</i></span>",
+            # "value" : "<span  class=\"stats_value\"></span>"})
 
     except IndexError:
-        context['release_notes'] = ''
-        context['release_statistics'] = []
+        context["release_notes"] = ""
+        context["release_statistics"] = []
 
-    return render(request, 'home/index.html', context)
+    return render(request, "home/index.html", context)
+
 
 @cache_page(60 * 60 * 24 * 7)
 def citations_json(request):
-    context = {}
-    citations_q = Citation.objects.all().values_list("url", "video", "docs", "main", "page_name", "publication__title", "publication__authors", "publication__year", "publication__reference",
-                                                     "publication__journal__name", "publication__web_link__index").order_by("-publication__year", "page_name")
+    citations_q = (
+        Citation.objects.all()
+        .values_list(
+            "url",
+            "video",
+            "docs",
+            "main",
+            "page_name",
+            "publication__title",
+            "publication__authors",
+            "publication__year",
+            "publication__reference",
+            "publication__journal__name",
+            "publication__web_link__index",
+        )
+        .order_by("-publication__year", "page_name")
+    )
     response = JsonResponse(list(citations_q), safe=False)
     return response
