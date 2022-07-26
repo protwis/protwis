@@ -158,7 +158,7 @@
 {% endif %}
 
 <div class="tab-content">
-  <div class="tab-pane container active" id="physio">
+  <div class="tab-pane container" id="physio">
     <br />
 
 {% if render == "not_bias" %}
@@ -448,7 +448,7 @@ $(document).ready(function(){
       <div class="tab-pane container active" id="heatmap">
   {% endif %}
 
-      <div id="HeatmapHandler">
+      <div id="HeatmapHandlerBal">
         <div style="padding-top: 5px;">
         Classes:&ensp;
           <div class="btn-group" data-toggle="buttons" id="class_selection">
@@ -1246,7 +1246,7 @@ Specific sets of ligands can be downloaded from the <a href="/ligand/biasedsubty
 <h4>Biased ligand coverage by GPCR class</h4><br />
 {% endif %}
 
-<div id="HeatmapHandlerBal">
+<div id="HeatmapHandler">
   <div style="padding-top: 5px;">
   Classes:&ensp;
     <div class="btn-group" data-toggle="buttons" id="class_selection">
