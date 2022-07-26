@@ -47,13 +47,12 @@ def index(request):
         users_year = service.data().ga().get(ids="ga:" + profile_id, start_date="365daysAgo", end_date="today", metrics="ga:users").execute().get("rows")[0][0]
         users_month = service.data().ga().get(ids="ga:" + profile_id, start_date="30daysAgo", end_date="today", metrics="ga:users").execute().get("rows")[0][0]
 
-        context["users"] = "<a href='https://gpcrdb.org'>GPCRdb</a>, <a href='https://gproteindb.org'>GproteinDb</a>, and " + \
-                        "<a href='https://arrestindb.org'>ArrestinDb</a> had {:,} different users since this date last year and ".format(int(users_year)) + \
-                        "{:,} users in the last 30 days (<a href='https://analytics.google.com'>Google Analytics</a>).".format(int(users_month))
+        context["users"] = "Together, they have served {:,}/".format(int(users_month)) +\
+                           "{:,} users in the last month/year (<a href='https://analytics.google.com'>Google Analytics</a>)".format(int(users_year))
 
     # get news
+    print(context)
     context["news"] = News.objects.order_by("-date").all()[:3]
-
     # get release notes
     try:
         context["release_notes"] = ReleaseNotes.objects.all()[0]
