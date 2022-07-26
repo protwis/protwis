@@ -47,8 +47,8 @@ function citation_tool(url, cite_id) {
     else if (env==="arrestindb.org" || cite_id==="cite_arrestindb") {
     	filter_for = "arrestindb";
     }
-    else if (env==="ligandbiasdb.org" || cite_id==="cite_ligandbiasdb") {
-    	filter_for = "ligandbiasdb";
+    else if (env==="biasedsignalingatlas.org" || cite_id==="cite_biasedsignalingatlas") {
+    	filter_for = "biasedsignalingatlas";
     }
     cit_request.open('GET', url.split('/')[0] + '/citations');
     // env = "gpcrdb.org";
@@ -99,7 +99,7 @@ function citation_tool(url, cite_id) {
 			else if (filter_for==="arrestindb" && data[i][11]!=="ArrestinDb") {
 				continue;
 			}
-			else if (filter_for==="ligandbiasdb" && data[i][11]!=="LigandBiasDb") {
+			else if (filter_for==="biasedsignalingatlas" && data[i][11]!=="BiasedSignalingAtlas") {
 				continue;
 			}
 			else if (filter_for==="arrestindb" && data[i][11]==="ArrestinDb") {
@@ -110,7 +110,7 @@ function citation_tool(url, cite_id) {
 				data[i][9] = "Manuscript";
 				data[i][10] = "";
 			}
-			else if (filter_for==="ligandbiasdb" && data[i][11]==="LigandBiasDb") {
+			else if (filter_for==="biasedsignalingatlas" && data[i][11]==="BiasedSignalingAtlas") {
 				data[i][5] = "Manuscript";
 				data[i][6] = "Jimmy Caroli, Alibek Mamyrbekov, Kasper Harpsøe, Sahar Gardizi, Linda Dörries, Eshan Ghosh, Alexander S. Hauser, Albert J. Kooistra, and David E. Gloriam";
 				data[i][7] = 2022;

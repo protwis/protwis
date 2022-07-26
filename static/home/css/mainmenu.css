@@ -47,7 +47,7 @@
 }
 
 nav.navbar {
-  background-color: #5c5452;
+  background-color: #fff;
 }
 
 nav.navbar li.dropdown:not(.highlight_menu) {
@@ -64,7 +64,7 @@ nav.navbar li.dropdown.open {
 }
 
 nav.navbar li.dropdown a.dropdown-toggle:not(.select-link) {
-  color: #ccc;
+  color: #777;
 }
 
 nav.navbar li.dropdown.open a.dropdown-toggle,
@@ -74,14 +74,16 @@ nav.navbar li.dropdown.open a.dropdown-toggle:focus {
 }
 
 nav.navbar li.dropdown a.dropdown-toggle:hover:not(.select-link) {
-  color: #fff;
-
-  /* padding-top: 11px; */
+  color: #111;
 }
 
-/* nav.navbar li.dropdown:hover a.dropdown-toggle {
-  padding-top: 11px;
-} */
+nav.navbar li.dropdown.highlight_menu a.dropdown-toggle:not(.select-link) {
+  color: #ccc;
+}
+
+nav.navbar li.dropdown.highlight_menu a.dropdown-toggle:hover:not(.select-link) {
+  color: #fff;
+}
 
 nav.navbar .navbar-nav > .open > a,
 nav.navbar .navbar-inverse .navbar-nav > .open > a:focus,
@@ -89,46 +91,27 @@ nav.navbar .navbar-inverse .navbar-nav > .open > a:hover {
   background-color: transparent;
 }
 
+li#gpcrdb_menu {
+  border-left: 1px solid #101010;
+}
+
+li#gproteindb_menu {
+  border-left: 1px solid #101010;
+}
+
 li#gpcrdb_menu,
 li#gproteindb_menu,
-li#ligandbiasdb_menu,
+li#biasedsignalingatlas_menu,
 li#arrestindb_menu {
   background-repeat: no-repeat;
   background-size: 30px;
   padding-left: 30px;
-}
-
-/* li.highlight_menu a.dropdown-toggle,
-  li#cite_menu:hover a {
-  padding-top: 11px;
-  background-position: 10px 8px;
-} */
-
-li.highlight_menu.gpcr {
-  border-top: 4px solid #be00be;
-}
-
-li.highlight_menu.gprotein {
-  border-top: 4px solid #f46615;
-}
-
-li.highlight_menu.arrestin {
-  border-top: 4px solid #55ae35;
-}
-
-li.highlight_menu.ligandbias {
-  border-top: 4px solid #4169e1;
-}
-
-nav.navbar li.dropdown:not(.gpcr, .gprotein, .arrestin, .page-selection),
-nav.navbar li#cite_menu {
-  border-top: 4px solid #5c5452;
+  border-right: 1px solid #101010;
 }
 
 li#gpcrdb_menu,
 li#drugs_menu,
 li#constructs_menu {
-  border-top: 4px solid #be00be;
   background-position: 10px 8px;
 }
 
@@ -137,24 +120,21 @@ li#gpcrdb_menu {
 }
 
 li#gproteindb_menu {
-  border-top: 4px solid #f46615;
   background-position: 10px 8px;
   background-image: url("/static/home/logo/gprotein/main.png");
 }
 
 li#arrestindb_menu {
-  border-top: 4px solid #55ae35;
   background-position: 10px 8px;
   background-image: url("/static/home/logo/arrestin/main.png");
   background-size: 35px;
   padding-left: 35px;
 }
 
-li#ligandbiasdb_menu {
-  border-top: 4px solid #4169e1;
-  background-position: 10px 8px;
-  background-image: url("/static/home/logo/ligandbias/main.png");
-  background-size: 35px;
+li#biasedsignalingatlas_menu {
+  background-position: 10px 6px;
+  background-image: url("/static/home/logo/biasedsignalingatlas/main.png");
+  background-size: 27px;
   padding-left: 35px;
 }
 

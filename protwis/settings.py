@@ -80,8 +80,8 @@ USE_I18N = True
 USE_L10N = True
 USE_TZ = True
 
-# Default site configuration (gpcr - GPCRdb, gprotein - GproteinDb, arrestin - ArrestinDb)
-DEFAULT_SITE = "gpcr"
+# Default site configuration (gpcr - GPCRdb, gprotein - GproteinDb, arrestin - ArrestinDb, biasedsignallingatlas - Biased Signaling Atlas)
+DEFAULT_SITE = "gprotein"
 
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'

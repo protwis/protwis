@@ -1,0 +1,44 @@
+{% load static %}
+
+<!-- LIGANDBIAS -->
+<li class="dropdown biasedsignalingatlas {% if current_site == 'biasedsignalingatlas' %}highlight_menu {{current_site}}{% endif %}" id="biasedsignalingatlas_menu">
+    <a href="{{ hosts.biasedsignalingatlas }}/" class="dropdown-toggle" data-toggle="dropdown" role="button" data-submenu aria-expanded="false">
+        Biased Signaling Atlas<span class="caret"></span>
+    </a>
+    <ul class="dropdown-menu" role="menu">
+        <li><a role="button" id='cite_biasedsignalingatlas'>Citing Biased Signaling Atlas</a></li>
+        <li class="divider"></li>
+        <li class="nav-header disabled"><a>GUIDELINES</a></li>
+        <li><a href="{{ hosts.biasedsignalingatlas }}/biased_signalling/bias_guidelines">Community guidelines paper</a></li>
+        <li><a href="{{ hosts.biasedsignalingatlas }}/biased_signalling/reference_selection">Reference ligand selection</a></li>
+        <li><a href="https://files.gpcrdb.org/bias_guidelines/Template_to_calculate_ligand_bias_factors.xlsx">Template to calculate ligand bias factors</a></li>
+        <li class="divider"></li>
+        <li class="nav-header disabled"><a>BIASED LIGANDS (transducer family)</a></li>
+        <li><a href="{{ hosts.biasedsignalingatlas }}/biased_signalling/bias_coverage">Biased ligand coverage</a></li>
+        <li><a href="{{ hosts.biasedsignalingatlas }}/biased_signalling/biasedbrowser">Biased ligands (∆∆log(Emax/EC50) & ∆∆log(Tau/KA)</a></li>
+        <li><a href="{{ hosts.biasedsignalingatlas }}/biased_signalling/emax_rank_order_selection">Ligand bias rank orders (ΔΔlog(Emax/EC50))</a></li>
+        <li><a href="{{ hosts.biasedsignalingatlas }}/biased_signalling/tau_rank_order_selection">Ligand bias rank orders (ΔΔlog(Tau/KA))</a></li>
+        <li><a href="{{ hosts.biasedsignalingatlas }}/biased_signalling/emax_path_profiles_selection">Ligand pathway profiles (Δlog(Emax/EC50))</a></li>
+        <li><a href="{{ hosts.biasedsignalingatlas }}/biased_signalling/tau_path_profiles_selection">Ligand pathway profiles (Δlog(Tau/KA))</a></li>
+        <li class="divider"></li>
+        <li class="nav-header disabled"><a>BIASED LIGANDS (transducer subtype)</a></li>
+        <li><a href="{{ hosts.biasedsignalingatlas }}/biased_signalling/subtype_coverage">Biased ligand coverage</a></li>
+        <li><a href="{{ hosts.biasedsignalingatlas }}/biased_signalling/biasedsubtypesbrowser">Biased ligands (subtype ∆∆log(Emax/EC50) & ∆∆log(Tau/KA)</a></li>
+        <li><a href="{{ hosts.biasedsignalingatlas }}/biased_signalling/subtype_emax_rankorder_selection">Ligand bias rank orders (ΔΔlog(Emax/EC50))</a></li>
+        <li><a href="{{ hosts.biasedsignalingatlas }}/biased_signalling/subtype_tau_rank_order_selection">Ligand bias rank orders (ΔΔlog(Tau/KA))</a></li>
+        <li><a href="{{ hosts.biasedsignalingatlas }}/biased_signalling/subtype_emax_path_profiles_selection">Ligand pathway profiles (Δlog(Emax/EC50))</a></li>
+        <li><a href="{{ hosts.biasedsignalingatlas }}/biased_signalling/subtype_tau_path_profiles_selection">Ligand pathway profiles (Δlog(Tau/KA))</a></li>
+        <li class="divider"></li>
+        <li class="nav-header disabled"><a>PATHWAY-PREFERRING LIGANDS (transducer family)</a></li>
+        <li><a href="{{ hosts.biasedsignalingatlas }}/biased_signalling/path_preference_coverage">Pathway-preferring ligand coverage</a></li>
+        <li><a href="{{ hosts.biasedsignalingatlas }}/biased_signalling/pathwaypreferencebrowser">Pathway-preferring ligands (pathway ∆Log/(Emax/EC50)</a></li>
+        <li><a href="{{ hosts.biasedsignalingatlas }}/biased_signalling/path_preference_emax_rankorder_selection">Ligand pathway preference rank orders (Δlog(Emax/EC50))</a></li>
+        <li><a href="{{ hosts.biasedsignalingatlas }}/biased_signalling/path_preference_emax_path_profiles_selection">Ligand pathway profiles (Log(Emax/EC50))</a></li>
+        <li class="divider"></li>
+        <li class="nav-header disabled text-left"><a>Pathways</a></li>
+        <li><a href="{{ hosts.biasedsignalingatlas }}/biased_signalling/biasedpathways">Pathway effects</a></li>
+        <li class="divider"></li>
+        <li class="nav-header disabled"><a>DATA DEPOSITION</a></li>
+        <li><a href="{{ documentation_url }}biasedsignaling.html#data-submission">Data submission</a></li>
+    </ul>
+</li>
