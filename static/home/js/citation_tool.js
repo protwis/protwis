@@ -252,14 +252,14 @@ function citation_tool(url, cite_id) {
 		else {
 			main_ref_id = main_ref_id[1];
 		}
-		var color = "#BE00BE";
+		/*var color = "#BE00BE";
 		if (filter_for==="gproteindb") {
 			color = "#F46615";
 		}
 		else if (filter_for==="arrestindb") {
 			color = "#55AE35";
 		}
-		$(".article").first().css("border-top","4px solid "+color);
+		$(".article").first().css("border-top","4px solid "+color);*/
 		// $(".article").eq(1).css("border-top","4px solid #BE00BE");
 		if (highlight_main || $('.highlight_reference').length==0) {
 			highlight_article(main_ref_id);
