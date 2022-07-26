@@ -146,11 +146,11 @@ class Command(BaseBuild):
                 pub = self.fetch_publication(d['reference'])
 
                 # fetch main ligand
-                # TODO - replace this one
-                l = get_or_create_ligand(d['ligand_name'], {self.mol_types[d['ligand_type']]: d['ligand_id']})
-
-                #fetch ChEMBL
-                chembl = self.fetch_chembl(l)
+                l = None
+                chembl = None
+                if d['ligand_name'] is not None and d['ligand_name'] != "":
+                    l = get_or_create_ligand(d['ligand_name'], {self.mol_types[d['ligand_type']]: d['ligand_id']})
+                    chembl = self.fetch_chembl(l)
 
                 # fetch protein
                 protein = self.fetch_protein(d['receptor'], d['source_file'])

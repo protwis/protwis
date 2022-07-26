@@ -444,7 +444,7 @@ class BalancedLigands(models.Model):
 # Pathways part - start
 class BiasedPathways(models.Model):
     submission_author = models.CharField(max_length=50)
-    ligand = models.ForeignKey(Ligand, on_delete=models.CASCADE)
+    ligand = models.ForeignKey(Ligand, on_delete=models.CASCADE, null=True)
     publication = models.ForeignKey(Publication, on_delete=models.CASCADE)
     receptor = models.ForeignKey('protein.Protein', on_delete=models.CASCADE)
     chembl = models.CharField(max_length=40, null=True)
@@ -458,8 +458,8 @@ class BiasedPathwaysAssay(models.Model):
         on_delete=models.CASCADE, null=True
     )
     pathway_outcome_high = models.CharField(max_length=200)
-    pathway_outcome_summary = models.CharField(max_length=200, null=True)
-    pathway_outcome_detail = models.CharField(max_length=200, null=True)
+    pathway_outcome_summary = models.CharField(max_length=300, null=True)
+    pathway_outcome_detail = models.CharField(max_length=300, null=True)
     experiment_pathway_distinction = models.CharField(
         max_length=200, null=True)
     experiment_system = models.CharField(max_length=40, null=True)
