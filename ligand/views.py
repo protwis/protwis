@@ -1802,7 +1802,6 @@ class BiasPathways(TemplateView):
         context = dict()
         prepare_data = self.process_data(content)
         context.update({'data': prepare_data})
-        print(context)
 
         return context
 

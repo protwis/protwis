@@ -449,7 +449,7 @@ class BiasedPathways(models.Model):
     receptor = models.ForeignKey('protein.Protein', on_delete=models.CASCADE)
     chembl = models.CharField(max_length=40, null=True)
     relevance = models.CharField(max_length=50, null=True)
-    signalling_protein = models.CharField(max_length=20, null=True)
+    signalling_protein = models.CharField(max_length=50, null=True)
 
 
 class BiasedPathwaysAssay(models.Model):
