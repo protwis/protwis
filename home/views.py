@@ -52,7 +52,6 @@ def index(request):
                            "{:,} users in the last month/year (<a href='https://analytics.google.com'>Google Analytics</a>)".format(int(users_year))
 
     # get news
-    print(context)
     context["news"] = News.objects.order_by("-date").all()[:3]
     # get release notes
     try:
