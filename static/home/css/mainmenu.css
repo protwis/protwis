@@ -55,7 +55,7 @@ nav.navbar li.dropdown:not(.highlight_menu) {
 }
 
 nav.navbar li.dropdown.highlight_menu {
-  background-color: #222;
+  background-color: #000;
   background-position: 10px 8px;
 }
 
@@ -78,10 +78,6 @@ nav.navbar li.dropdown a.dropdown-toggle:hover:not(.select-link) {
 }
 
 nav.navbar li.dropdown.highlight_menu a.dropdown-toggle:not(.select-link) {
-  color: #ccc;
-}
-
-nav.navbar li.dropdown.highlight_menu a.dropdown-toggle:hover:not(.select-link) {
   color: #fff;
 }
 
@@ -91,14 +87,6 @@ nav.navbar .navbar-inverse .navbar-nav > .open > a:hover {
   background-color: transparent;
 }
 
-li#gpcrdb_menu {
-  border-left: 1px solid #101010;
-}
-
-li#gproteindb_menu {
-  border-left: 1px solid #101010;
-}
-
 li#gpcrdb_menu,
 li#gproteindb_menu,
 li#biasedsignalingatlas_menu,
@@ -106,7 +94,6 @@ li#arrestindb_menu {
   background-repeat: no-repeat;
   background-size: 30px;
   padding-left: 30px;
-  border-right: 1px solid #101010;
 }
 
 li#gpcrdb_menu,
