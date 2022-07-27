@@ -1380,7 +1380,7 @@ class Command(BaseBuild):
                 bioacts[-1].document_chembl_id = None
                 # BULK insert every X entries or last entry
             if (len(bioacts) == Command.bulk_size) or (index == bio_entries - 1):
-                # AssayExperiment.objects.bulk_create(bioacts)
+                AssayExperiment.objects.bulk_create(bioacts)
                 print("Inserted", index, "out of",
                       bio_entries, "bioactivities")
                 bioacts = []
