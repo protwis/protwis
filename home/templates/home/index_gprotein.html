@@ -3,7 +3,26 @@
 {% load humanize %}
 
 {% block content %}
+<style>
+  #center_menu ul {
+      padding: 0;
+      margin: 15px;
+  }
 
+  #center_menu li {
+     margin: 0;
+     padding: 0px;
+  }
+  #releases ul {
+      padding: 0;
+      margin: 15px;
+  }
+
+  #releases li {
+     margin: 0;
+     padding: 0px;
+  }
+</style>
     <!-- Carousel -->
     <div class="row">
 
@@ -86,7 +105,7 @@
 
         <div class="col-md-9">
             <div class="panel panel-primary">
-                <div class="panel-body">
+                <div class="panel-body" id="center_menu">
                     <div class="col-md-4">
                       <br />
                         <p style='text-align:center'>
@@ -133,7 +152,7 @@
                 <div class="col-md-4">
                     <div class="panel panel-primary">
                       <div class="panel-body">
-                          <h3><a href="/structure/statistics">Data</a></h3>
+                          <h3>Data</h3>
                           <ul class="stats_list">
                               {% for stat in release_statistics %}
                                   <li>
@@ -148,7 +167,7 @@
                 <!-- Release Notes -->
                 <div class="col-md-4">
                     <div class="panel panel-primary">
-                        <div class="panel-body">
+                        <div class="panel-body" id="releases">
                             <h3>Latest <a href="/pages/releasenotes">release</a></h3>
                             <strong>{{ release_notes.date }}</strong>
                             {{ release_notes.html|safe }}

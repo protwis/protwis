@@ -98,7 +98,7 @@
                     </div>
                     <!-- <div class="col-md-1">
                     </div> -->
-                    <div class="col-md-4">
+                    <div class="col-md-4" id='center_menu'>
                         <p style='text-align:justify'>
                             GPCRdb (G protein-coupled receptor database) is a community hub offering:<br/>
                             <ul>
@@ -134,7 +134,7 @@
                 <div class="col-md-4">
                     <div class="panel panel-primary">
                         <div class="panel-body">
-                            <h3><a href="/structure/statistics">Data</a></h3>
+                            <h3>Data</h3>
                             <ul class="stats_list">
                                 {% for stat in release_statistics %}
                                     <li>
@@ -147,7 +147,7 @@
                 </div>
 
                 <!-- Release Notes -->
-                <div class="col-md-4">
+                <div class="col-md-4" id='releases'>
                     <div class="panel panel-primary">
                         <div class="panel-body">
                             <h3>Latest <a href="/pages/releasenotes">release</a></h3>
@@ -160,7 +160,8 @@
 
                     <div class="panel panel-primary">
                         <div class="panel-body">
-                            <h3><a href="https://files.gpcrdb.org/video/GPCRdb-David_Gloriam.mp4">Videos</a></h3>
+                            <a href="https://youtu.be/EZAQYeR49zI" target="_blank"><img style="width: 100%;" src="{% static '/home/images/GPCRdb_youtube_introduction.png' %}". ></img></a>
+                            <!-- <h3><a href="https://files.gpcrdb.org/video/GPCRdb-David_Gloriam.mp4">Videos</a></h3> -->
                         </div>
                     </div>
 
@@ -192,25 +193,8 @@
                             Munk C, Mutt E, Isberg V, Nikolajsen LF, Bibbe JM, Flock T, Hanson MA, Stevens RC, Deupi X, Gloriam DE<br />
                             <a href ='https://doi.org/10.1038/S41592-018-0302-X' target='_blank'><i>Nature methods</i>, 2019, 16:151-162</a><br />
                             <br />
-                            Pharmacogenomics of GPCR Drug Targets.<br />
-                            Hauser AS, Chavali S, Masuho I, Jahn LJ, Martemyanov KA, Gloriam DE, Babu MM<br />
-                            <a href ='https://doi.org/10.1016/J.CELL.2017.11.033' target='_blank'><i>Cell</i>, 2018, 172:41-54.e19</a><br />
                             <br />
-                            GPCRdb in 2018: adding GPCR structure models and ligands.<br />
-                            Pandy-Szekeres G, Munk C, Tsonkov TM, Mordalski S, Harpsoe K, Hauser AS, Bojarski AJ, Gloriam DE<br />
-                            <a href ='https://doi.org/10.1093/NAR/GKX1109' target='_blank'><i>Nucleic acids research</i>, 2018, 46:D440-D446</a><br />
-                            <br />
-                            GPCRdb: an information system for G protein-coupled receptors.<br />
-                            Isberg V, Mordalski S, Munk C, Rataj K, Harpsoe K, Hauser AS, Vroling B, Bojarski AJ, Vriend G, Gloriam DE<br />
-                            <a href ='https://doi.org/10.1093/NAR/GKV1178' target='_blank'><i>Nucleic acids research</i>, 2016, 44:D356-64</a><br />
-                            <br />
-                            GPCRdb: the G protein-coupled receptor database - an introduction.<br />
-                            Munk C, Isberg V, Mordalski S, Harpsoe K, Rataj K, Hauser AS, Kolb P, Bojarski AJ, Vriend G, Gloriam DE<br />
-                            <a href ='https://doi.org/10.1111/BPH.13509' target='_blank'><i>British journal of pharmacology</i>, 2016, 173:2195-207</a><br />
-                            <br />
-                            Generic GPCR residue numbers - aligning topology maps while minding the gaps.<br />
-                            Isberg V, de Graaf C, Bortolato A, Cherezov V, Katritch V, Marshall FH, Mordalski S, Pin JP, Stevens RC, Vriend G, Gloriam DE<br />
-                            <a href ='https://doi.org/10.1016/J.TIPS.2014.11.001' target='_blank'><i>Trends in pharmacological sciences</i>, 2015, 36:22-31</a><br />
+                              <strong><a role="button" id='cite_gpcrdb_pubs'>Citing GPCRdb</a></strong>
                             </p>
                         </div>
                     </div>
@@ -228,11 +212,8 @@
                     {% if users %}
                         {{ users|safe }}
                     {% endif %}
-                </div>
-            </div>
-
-            <div class="panel panel-primary">
-                <div class="panel-body">
+                    <br />
+                    <br />
                     <h4>External GPCR <a href="{{ documentation_url }}external_sites.html">sites</a></h4>
                 </div>
             </div>
