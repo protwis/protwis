@@ -157,9 +157,15 @@
 </ul>
 {% endif %}
 
+{% if render == "pathway" %}
+<div class="tab-content">
+  <div class="tab-pane container active" id="physio">
+    <br />
+{% else %}
 <div class="tab-content">
   <div class="tab-pane container" id="physio">
     <br />
+{% endif %}
 
 {% if render == "not_bias" %}
 <h4>Number of unique ligands per receptor class</h4>
@@ -358,7 +364,7 @@ Circle colors indicate a number of ligands:
 // $(window).on("load",function() {
 $(document).ready(function(){
     let buttonObjects = [];
-    let checkboxes = $('#HeatmapHandler').find('label');
+    let checkboxes = $('#HeatmapHandlerBal').find('label');
     let selectedCheckboxes = checkboxes.filter('.active');
     selectedCheckboxes
       .each(function(index, element) {
@@ -375,7 +381,7 @@ $(document).ready(function(){
   $(document).ready(function(){
     $('#HeatmapHandler').on("change", function() {
         let buttonObjects = [];
-        let checkboxes = $('#HeatmapHandler').find('label');
+        let checkboxes = $('#HeatmapHandlerBal').find('label');
         let selectedCheckboxes = checkboxes.filter('.active');
         selectedCheckboxes
           .each(function(index, element) {
@@ -384,7 +390,7 @@ $(document).ready(function(){
             }
             buttonObjects[$(element).data('name')].push($(element).data('value'));
           });
-        d3.select("#HeatMap_div").select("svg").remove();
+        d3.select("#HeatmapDivBal").select("svg").remove();
         draw_heatmap(circles, heatmap_data, master_dict, buttonObjects, 'HeatmapDivBal', 'Heatmap_BalancedRefenced', 'Primary transducer count');
       });
   })
