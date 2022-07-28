@@ -1660,10 +1660,10 @@ class LigandInformationView(TemplateView):
 
         for item in return_dict.keys():
             for assay_type in return_dict[item]['data_type'].keys():
-                if return_dict[item]['source'] == 'ChEMBL':
-                    return_dict[item]['data_type'][assay_type] = LigandInformationView.get_min_max_values(return_dict[item]['data_type'][assay_type])
-                else:
+                if return_dict[item]['source'] == 'Guide to Pharmacology':
                     return_dict[item]['data_type'][assay_type] = LigandInformationView.return_splitted_ranges(return_dict[item]['data_type'][assay_type])
+                else:
+                    return_dict[item]['data_type'][assay_type] = LigandInformationView.get_min_max_values(return_dict[item]['data_type'][assay_type])
     	#Unpacking
         unpacked = dict()
         for key in return_dict.keys():
@@ -1691,6 +1691,7 @@ class LigandInformationView(TemplateView):
                 avg = (minimum + maximum)/2
             output = [round(minimum, 2), round(avg, 2), round(maximum, 2)]
         else:
+            print(value)
             minimum = []
             average = []
             maximum = []
