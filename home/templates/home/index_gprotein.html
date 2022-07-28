@@ -3,7 +3,26 @@
 {% load humanize %}
 
 {% block content %}
+<style>
+  #center_menu ul {
+      padding: 0;
+      margin: 15px;
+  }
 
+  #center_menu li {
+     margin: 0;
+     padding: 0px;
+  }
+  #releases ul {
+      padding: 0;
+      margin: 15px;
+  }
+
+  #releases li {
+     margin: 0;
+     padding: 0px;
+  }
+</style>
     <!-- Carousel -->
     <div class="row">
 
@@ -86,7 +105,7 @@
 
         <div class="col-md-9">
             <div class="panel panel-primary">
-                <div class="panel-body">
+                <div class="panel-body" id="center_menu">
                     <div class="col-md-4">
                       <br />
                         <p style='text-align:center'>
@@ -100,7 +119,7 @@
                     </div> -->
                     <div class="col-md-4">
                         <p style='text-align:justify'>
-                            GproteinDb (G protein database) is a community hub offering:<br/>
+                            GproteinDb (G protein database) offers:<br/>
                             <ul>
                               <li>Reference data (see Data box)</li>
                               <li>Analysis tools (browse menu)</li>
@@ -122,10 +141,9 @@
                     <div class="col-md-4">
                         <p style="text-align:justify;">
                         <br />
-                        <br />
-                        <br />
-                        G proteins are the main mediators of GPCR signaling, often induce arrestin recruitment.
-                        Their 16 subtypes from 4 families can be involved in biased signaling<sup><a href='https://en.wikipedia.org/wiki/Heterotrimeric_G_protein' target='_blank'>1</a></sup>.
+                        G proteins are the main mediators of GPCR signaling<sup><a href='https://en.wikipedia.org/wiki/Heterotrimeric_G_protein' target='_blank'>1</a></sup>.
+                        Their activation is followed by recruitment of arrestins that arrest (stop) signaling or scaffold additional signaling proteins.
+                        There are 16 human G protein subtypes from 4 families that can be involved in biased signaling.
                         </p>
                     </div>
                 </div>
@@ -134,7 +152,7 @@
                 <div class="col-md-4">
                     <div class="panel panel-primary">
                       <div class="panel-body">
-                          <h3><a href="/structure/statistics">Data</a></h3>
+                          <h3>Data</h3>
                           <ul class="stats_list">
                               {% for stat in release_statistics %}
                                   <li>
@@ -142,9 +160,6 @@
                                   </li>
                               {% endfor %}
                           </ul>
-                          {% if users %}
-                              {{ users|safe }}
-                          {% endif %}
                       </div>
                     </div>
                 </div>
@@ -152,7 +167,7 @@
                 <!-- Release Notes -->
                 <div class="col-md-4">
                     <div class="panel panel-primary">
-                        <div class="panel-body">
+                        <div class="panel-body" id="releases">
                             <h3>Latest <a href="/pages/releasenotes">release</a></h3>
                             <strong>{{ release_notes.date }}</strong>
                             {{ release_notes.html|safe }}
@@ -169,19 +184,6 @@
                             <a href="https://www.youtube.com/watch?v=X8j_xpryZ4U&start=778&end=3732;" target="_blank"><img style="width: 100%;" src="{% static '/home/images/gprot_resource.png' %}". ></img></a>
                         </div>
                     </div>
-                    <div class="panel panel-primary">
-                        <div class="panel-body" style='max-height: 530px; overflow-y: scroll;'>
-                            <h3>Publications</h3>
-                            The G protein database, GproteinDb.<br />
-                            Pandy-Szekeres G, Esguerra M, Hauser AS, Caroli J, Munk C, Pilger S, Keseru GM, Kooistra AJ, Gloriam DE<br />
-                            <a href='https://doi.org/10.1093/NAR/GKAB852' target='_blank'><i>Nucleic acids research</i>, 2022, 50:D518-D525</a><br />
-                            <br />
-                            Selectivity determinants of GPCR-G-protein binding.<br />
-                            Flock T, Hauser AS, Lund N, Gloriam DE, Balaji S, Babu MM<br />
-                            <a href='https://doi.org/10.1038/NATURE22070' target='_blank'><i>Nature</i>, 2017, 545:317-322</a><br />
-                            </p>
-                        </div>
-                    </div>
                 </div>
         </div>
 
@@ -191,9 +193,24 @@
                 <div class="panel-body">
                     <h3>Related resources</h3>
                     <a href='https://gpcrdb.org/' target='_blank'>GPCRdb</a>, <a href='https://gproteindb.org/' target='_blank'>GproteinDb</a>,
-                    <a href='https://arrestindb.org/' target='_blank'>ArrestinDb</a> and <a href='https://biasedsignallingatlas.org/' target='_blank'>Biased Signaling Atlas</a>
+                    <a href='https://arrestindb.org/' target='_blank'>ArrestinDb</a> and <a href='https://biasedsignalingatlas.org/' target='_blank'>Biased Signaling Atlas</a>
                     cover related aspects of signal transduction while serving dedicated research communities and use cases.
-                    Together, they have served 4,980/54,638 users in the last month/year (<a href='https://analytics.google.com/' target='_blank'>Google Analytics</a>).
+                    {% if users %}
+                        {{ users|safe }}
+                    {% endif %}
+                </div>
+            </div>
+            <div class="panel panel-primary">
+                <div class="panel-body" style='max-height: 530px; overflow-y: scroll;'>
+                    <h3>Publications</h3>
+                    The G protein database, GproteinDb.<br />
+                    Pandy-Szekeres G, Esguerra M, Hauser AS, Caroli J, Munk C, Pilger S, Keseru GM, Kooistra AJ, Gloriam DE<br />
+                    <a href='https://doi.org/10.1093/NAR/GKAB852' target='_blank'><i>Nucleic acids research</i>, 2022, 50:D518-D525</a><br />
+                    <br />
+                    Selectivity determinants of GPCR-G-protein binding.<br />
+                    Flock T, Hauser AS, Lund N, Gloriam DE, Balaji S, Babu MM<br />
+                    <a href='https://doi.org/10.1038/NATURE22070' target='_blank'><i>Nature</i>, 2017, 545:317-322</a><br />
+                    </p>
                 </div>
             </div>
 

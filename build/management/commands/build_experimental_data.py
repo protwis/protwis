@@ -168,7 +168,7 @@ class Command(BaseBuild):
         association = filtered_data[['ligand_id', 'target_id']].drop_duplicates(
         ).groupby('target_id')['ligand_id'].apply(list).to_dict()
 
-        info_we_want = ['pki', 'pic50', 'pkd', 'pec50']
+        info_we_want = ['pKi', 'pIC50', 'pKd', 'pEC50']
         new_columns = ['pki_min', 'pki_avg', 'pki_max',
                        'pkd_min', 'pkd_avg', 'pkd_max',
                        'pic50_min', 'pic50_avg', 'pic50_max',
@@ -221,6 +221,7 @@ class Command(BaseBuild):
                 for par in params:
                     # we want only pKi, pKd, pEC50 and pIC50, not nans or other weird stuff
                     if par in info_we_want:
+                        par_normalized = par.lower()
                         species = endogenous_data.loc[(endogenous_data['target_id'] == target) & (
                             endogenous_data['ligand_id'] == ligand) & (endogenous_data['parameter'] == par)]['interaction_species'].tolist()
                         for org in species:
@@ -229,18 +230,18 @@ class Command(BaseBuild):
                             if len(data) == 1:
                                 if '-' not in data[0]:
                                     uniq_rows.loc[(uniq_rows['target_id'] == target) & (
-                                        uniq_rows['ligand_id'] == ligand), par + '_avg'] = data[0]
+                                        uniq_rows['ligand_id'] == ligand), par_normalized + '_avg'] = data[0]
                                     uniq_rows.loc[(uniq_rows['target_id'] == target) & (
-                                        uniq_rows['ligand_id'] == ligand), par + '_max'] = data[0]
+                                        uniq_rows['ligand_id'] == ligand), par_normalized + '_max'] = data[0]
                                 elif data[0] == '-':
                                     continue
                                 else:
                                     uniq_rows.loc[(uniq_rows['target_id'] == target) & (
-                                        uniq_rows['ligand_id'] == ligand), par + '_min'] = data[0].split(' - ')[0]
-                                    uniq_rows.loc[(uniq_rows['target_id'] == target) & (uniq_rows['ligand_id'] == ligand), par +
+                                        uniq_rows['ligand_id'] == ligand), par_normalized + '_min'] = data[0].split(' - ')[0]
+                                    uniq_rows.loc[(uniq_rows['target_id'] == target) & (uniq_rows['ligand_id'] == ligand), par_normalized +
                                                   '_avg'] = statistics.mean([float(data[0].split(' - ')[0]), float(data[0].split(' - ')[1])])
                                     uniq_rows.loc[(uniq_rows['target_id'] == target) & (
-                                        uniq_rows['ligand_id'] == ligand), par + '_max'] = data[0].split(' - ')[1]
+                                        uniq_rows['ligand_id'] == ligand), par_normalized + '_max'] = data[0].split(' - ')[1]
                             else:
                                 try:
                                     vals = [float(x) for x in data]
@@ -248,11 +249,11 @@ class Command(BaseBuild):
                                     vals = [float(y)
                                             for x in data for y in x.split(' - ')]
                                 uniq_rows.loc[(uniq_rows['target_id'] == target) & (
-                                    uniq_rows['ligand_id'] == ligand), par + '_min'] = min(vals)
+                                    uniq_rows['ligand_id'] == ligand), par_normalized + '_min'] = min(vals)
                                 uniq_rows.loc[(uniq_rows['target_id'] == target) & (
-                                    uniq_rows['ligand_id'] == ligand), par + '_avg'] = statistics.mean(vals)
+                                    uniq_rows['ligand_id'] == ligand), par_normalized + '_avg'] = statistics.mean(vals)
                                 uniq_rows.loc[(uniq_rows['target_id'] == target) & (
-                                    uniq_rows['ligand_id'] == ligand), par + '_max'] = max(vals)
+                                    uniq_rows['ligand_id'] == ligand), par_normalized + '_max'] = max(vals)
         return uniq_rows
 
     @staticmethod
@@ -803,8 +804,7 @@ class Command(BaseBuild):
             ids["chembl_ligand"] = row['molecule_chembl_id']
 
             # Filter types
-            ligand = get_or_create_ligand(
-                row['pref_name'], ids, ligand_types[row['molecule_type']], False, True)
+            ligand = get_or_create_ligand(row['pref_name'], ids, ligand_types[row['molecule_type']], False, True)
 
             # Add LigandIDs
             if row['other_ids'] is not None:
@@ -825,15 +825,11 @@ class Command(BaseBuild):
         print("\n===============\n#1 Reading ChEMBL bioacitivity data")
 
         cache_dir = ['chembl', 'document_entry']
-        bioactivity_input_file = os.sep.join(
-            [settings.DATA_DIR, "ligand_data", "assay_data", "chembl_bioactivity_data.csv.gz"])
-        chembl_document_conversion_file = os.sep.join(
-            [settings.DATA_DIR, "ligand_data", "assay_data", "chembl_document_data.csv.gz"])
-        chembl_document_data = pd.read_csv(
-            chembl_document_conversion_file, dtype=str)
+        bioactivity_input_file = os.sep.join([settings.DATA_DIR, "ligand_data", "assay_data", "chembl_bioactivity_data.csv.gz"])
+        chembl_document_conversion_file = os.sep.join([settings.DATA_DIR, "ligand_data", "assay_data", "chembl_document_data.csv.gz"])
+        chembl_document_data = pd.read_csv(chembl_document_conversion_file, dtype=str)
 
-        publication_array = Command.build_chembl_publications(
-            chembl_document_data)
+        publication_array = Command.build_chembl_publications(chembl_document_data)
 
         bioactivity_data = pd.read_csv(bioactivity_input_file, dtype=str)
 
@@ -852,8 +848,7 @@ class Command(BaseBuild):
         # NOTE => might need to switch to Accession as the Entry name changes more frequently
         # If so, keep isoform notations in mind
         names = list(bioactivity_data["Entry name"].unique())
-        proteins = list(Protein.objects.filter(
-            entry_name__in=names).values_list("pk", "entry_name"))
+        proteins = list(Protein.objects.filter(entry_name__in=names).values_list("pk", "entry_name"))
         prot_dict = {prot_entry[1]: prot_entry[0] for prot_entry in proteins}
 
         print("\n#4 Building ChEMBL bioactivity entries", datetime.datetime.now())
@@ -876,8 +871,7 @@ class Command(BaseBuild):
                     bioacts[-1].source = 'ChEMBL'
 
                     try:
-                        doi = chembl_document_data.loc[chembl_document_data['document_chembl_id']
-                                                       == row["document_chembl_id"], 'doi'].iloc[0]
+                        doi = chembl_document_data.loc[chembl_document_data['document_chembl_id'] == row["document_chembl_id"], 'doi'].iloc[0]
                     except IndexError:
                         response = fetch_from_web_api(
                             url_doc_template, row["document_chembl_id"], cache_dir, xml=True)
@@ -1332,8 +1326,7 @@ class Command(BaseBuild):
         print("\n===============\n#1 Reading PDSP bioacitivity data")
         pdsp_link = get_or_create_url_cache(
             "https://pdsp.unc.edu/databases/kiDownload/download.php", 7 * 24 * 3600)
-        bioactivity_kidata = pd.read_csv(
-            pdsp_link, dtype=str, encoding='mac_roman')
+        bioactivity_kidata = pd.read_csv(pdsp_link, dtype=str, encoding='mac_roman')
         # Keeping data that has either SMILES info OR CAS info
         # CAS number can be translated into pubchem CID
         bioactivity_data_filtered = bioactivity_kidata.loc[(
@@ -1345,15 +1338,14 @@ class Command(BaseBuild):
         print("\n===============\n#2 Start parsing PDSP data")
         bioacts = []
         for index, (_, row) in enumerate(bioactivity_data_filtered.iterrows()):
-            ids = {}
             receptor = None
             label = '_'.join([row['Unigene'], row['species']])
             if label not in protein_names.keys():
-                protein = Command.uniprot_mapper(
-                    row['Unigene'], row['species'])
+                protein = Command.uniprot_mapper(row['Unigene'], row['species'])
                 if protein is not None:
-                    protein_names[label] = protein
+                    protein_names[label] = Command.fetch_protein(protein, 'PDSP')
 
+            ids = {}
             if row['SMILES'] != 'None':
                 ids['smiles'] = row['SMILES']
             if row['CAS'] != 'None':
@@ -1362,17 +1354,15 @@ class Command(BaseBuild):
                 ligand = get_or_create_ligand(row[' Ligand Name'], ids)
                 ligand_cache[row[' Ligand Name']] = ligand
             if label in protein_names.keys():
-                receptor = Command.fetch_protein(protein_names[label], 'PDSP')
+                receptor = protein_names[label]
             if (receptor is not None) and (ligand_cache[row[' Ligand Name']] is not None):
                 bioacts.append(AssayExperiment())
                 bioacts[-1].ligand_id = ligand_cache[row[' Ligand Name']].id
                 bioacts[-1].protein_id = receptor.id
                 bioacts[-1].assay_type = 'B'
                 bioacts[-1].assay_description = None
-                bioacts[-1].standard_activity_value = round(
-                    float(row['ki Val']), 2)
-                bioacts[-1].p_activity_value = round(-math.log10(
-                    float(row['ki Val']) * 10e-9), 2)
+                bioacts[-1].standard_activity_value = round(float(row['ki Val']), 2)
+                bioacts[-1].p_activity_value = round(-math.log10(float(row['ki Val']) * 10e-9), 2)
                 bioacts[-1].p_activity_ranges = None
                 bioacts[-1].standard_relation = '='
                 bioacts[-1].value_type = 'pKi'
@@ -1380,7 +1370,7 @@ class Command(BaseBuild):
                 bioacts[-1].document_chembl_id = None
                 # BULK insert every X entries or last entry
             if (len(bioacts) == Command.bulk_size) or (index == bio_entries - 1):
-                # AssayExperiment.objects.bulk_create(bioacts)
+                AssayExperiment.objects.bulk_create(bioacts)
                 print("Inserted", index, "out of",
                       bio_entries, "bioactivities")
                 bioacts = []

@@ -555,9 +555,13 @@
 
                         <!-- ligand -->
                         <td title='{{e.1.ligand}}'>
-                            <a href ='/ligand/{{e.1.ligand.id}}/info' target='_blank'>
-                              {{e.1.ligand}}
-                            </a>
+                            {% if e.1.ligand %}
+                              <a href ='/ligand/{{e.1.ligand.id}}/info' target='_blank'>
+                                {{e.1.ligand}}
+                              </a>
+                            {% else %}
+                              -
+                            {% endif %}
                         </td>
                         <!-- signalling_protein -->
                         <td style="border-left: 1px solid black;">{{e.1.signalling_protein}}</td>

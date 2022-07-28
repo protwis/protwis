@@ -90,9 +90,9 @@
                     </div>
                     <!-- <div class="col-md-1">
                     </div> -->
-                    <div class="col-md-4">
+                    <div class="col-md-4" id='center_menu'>
                         <p style='text-align:justify'>
-                            ArrestinDb (Arrestin database) is a community hub offering:<br/>
+                            ArrestinDb (Arrestin database) offers:<br/>
                             <ul>
                               <li>Reference data (see Data box)</li>
                               <li>Analysis tools (browse menu)</li>
@@ -104,6 +104,7 @@
 
                     <div class="col-md-4">
                         <p style="text-align:justify;">
+                          <br />
                           Arrestins can 'arrest' signaling by blocking GPCR-mediated G protein coupling and inducing receptor internalization.
                           They are also scaffold proteins rectruiting and assembling other signaling proteins and can be involved in biased
                           signaling<sup><a href='https://en.wikipedia.org/wiki/Arrestin' target='_blank'>1</a></sup>
@@ -114,8 +115,8 @@
                 <!-- Stats -->
                 <div class="col-md-4">
                     <div class="panel panel-primary">
-                      <div class="panel-body">
-                          <h3><a href="/structure/statistics">Data</a></h3>
+                      <div class="panel-body" id='releases'>
+                          <h3>Data</h3>
                           <ul class="stats_list">
                               {% for stat in release_statistics %}
                                   <li>
@@ -123,9 +124,6 @@
                                   </li>
                               {% endfor %}
                           </ul>
-                          {% if users %}
-                              {{ users|safe }}
-                          {% endif %}
                       </div>
                     </div>
                 </div>
@@ -143,38 +141,70 @@
                     </div>
                 </div>
 
-                <!-- Publications -->
-                <!-- <div class="col-md-4">
-                    <div class="panel panel-primary">
-                        <div class="panel-body">
-                            <a href="https://www.youtube.com/watch?v=X8j_xpryZ4U&start=778&end=3732;" target="_blank"><img style="width: 100%;" src="{% static '/home/images/gprot_resource.png' %}". ></img></a>
-                        </div>
-                    </div>
-                    <div class="panel panel-primary">
-                        <div class="panel-body" style='max-height: 530px; overflow-y: scroll;'>
-                            <h3>Publications</h3>
-                            The G protein database, GproteinDb.<br />
-                            Pandy-Szekeres G, Esguerra M, Hauser AS, Caroli J, Munk C, Pilger S, Keseru GM, Kooistra AJ, Gloriam DE<br />
-                            <a href='https://doi.org/10.1093/NAR/GKAB852' target='_blank'><i>Nucleic acids research</i>, 2022, 50:D518-D525</a><br />
-                            <br />
-                            Selectivity determinants of GPCR-G-protein binding.<br />
-                            Flock T, Hauser AS, Lund N, Gloriam DE, Balaji S, Babu MM<br />
-                            <a href='https://doi.org/10.1038/NATURE22070' target='_blank'><i>Nature</i>, 2017, 545:317-322</a><br />
-                            </p>
-                        </div>
-                    </div>
-                </div> -->
-        </div>
+              <!-- commented stuff for POST preprint -->
+          <!-- <div class="col-md-4">
+                  <div class="panel panel-primary">
+                      <div class="panel-body">
+                          <h3><a href="/structure/statistics">Data</a></h3>
+                          <ul class="stats_list">
+                              {% for stat in release_statistics %}
+                                  <li>
+                                      {{ stat.value| safe }} {{ stat.statistics_type | safe }}
+                                  </li>
+                              {% endfor %}
+                          </ul>
+                          {% if users %}
+                              {{ users|safe }}
+                          {% endif %}
+                      </div>
+                  </div>
+              </div> -->
 
+              <!-- Release Notes -->
+        <!-- <div class="col-md-4">
+                  <div class="panel panel-primary">
+                      <div class="panel-body">
+                          <h3>Latest <a href="/pages/releasenotes">release</a></h3>
+                          <strong>{{ release_notes.date }}</strong>
+                          {{ release_notes.html|safe }}
+                          <br />
+                          <strong><a href="/pages/releasenotes">All releases</a></strong>
+                      </div>
+                  </div>
+
+                  <div class="panel panel-primary">
+                      <div class="panel-body">
+                          <h3><a href="https://files.gpcrdb.org/video/GPCRdb-David_Gloriam.mp4">Videos</a></h3>
+                      </div>
+                  </div>
+
+              </div> -->
+
+              <!-- Publications -->
+        <!-- <div class="col-md-4">
+                  <div class="panel panel-primary">
+                      <div class="panel-body" style='max-height: 530px; overflow-y: scroll;'>
+                          <h3>Publications</h3>
+                          <p>
+                          The arrestin database, ArrestinDb<br />
+                          Jimmy Caroli, Gáspár Pándy-Szekeres, Alexander S. Hauser, György M. Keserű, Albert J. Kooistra and David E. Gloriam<br />
+                          <a href='#' target='_blank'><i>Manuscript</i>, 2022</a>
+                          </p>
+                      </div>
+                  </div>
+              </div> -->
+      </div>
         <div class="col-md-3">
 
             <div class="panel panel-primary">
                 <div class="panel-body">
                     <h3>Related resources</h3>
                     <a href='https://gpcrdb.org/' target='_blank'>GPCRdb</a>, <a href='https://gproteindb.org/' target='_blank'>GproteinDb</a>,
-                    <a href='https://arrestindb.org/' target='_blank'>ArrestinDb</a> and <a href='https://biasedsignallingatlas.org/' target='_blank'>Biased Signaling Atlas</a>
+                    <a href='https://arrestindb.org/' target='_blank'>ArrestinDb</a> and <a href='https://biasedsignalingatlas.org/' target='_blank'>Biased Signaling Atlas</a>
                     cover related aspects of signal transduction while serving dedicated research communities and use cases.
-                    Together, they have served 4,980/54,638 users in the last month/year (<a href='https://analytics.google.com/' target='_blank'>Google Analytics</a>).
+                    {% if users %}
+                        {{ users|safe }}
+                    {% endif %}
                 </div>
             </div>
 

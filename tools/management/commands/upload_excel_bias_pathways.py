@@ -146,11 +146,14 @@ class Command(BaseBuild):
                 pub = self.fetch_publication(d['reference'])
 
                 # fetch main ligand
-                # TODO - replace this one
-                l = get_or_create_ligand(d['ligand_name'], {self.mol_types[d['ligand_type']]: d['ligand_id']})
-
-                #fetch ChEMBL
-                chembl = self.fetch_chembl(l)
+                ligand = None
+                chembl = None
+                if d['ligand_name'] is not None and d['ligand_name'] != "":
+                    ids = {}
+                    if d['ligand_type'] in self.mol_types:
+                        ids = {self.mol_types[d['ligand_type']]: d['ligand_id']}
+                    ligand = get_or_create_ligand(d['ligand_name'], ids)
+                    chembl = self.fetch_chembl(ligand)
 
                 # fetch protein
                 protein = self.fetch_protein(d['receptor'], d['source_file'])
@@ -160,7 +163,7 @@ class Command(BaseBuild):
                 ## TODO:  check if it was already uploaded
                 experiment_entry = BiasedPathways(submission_author=d['submitting_group'],
                                                     publication=pub,
-                                                    ligand=l,
+                                                    ligand=ligand,
                                                     receptor=protein,
                                                     chembl = chembl,
                                                     relevance = d['relevance'],
