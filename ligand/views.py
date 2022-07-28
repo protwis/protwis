@@ -1696,6 +1696,9 @@ class LigandInformationView(TemplateView):
             if maximum == 0.00:
                 maximum = avg
 
+            if minimum == '-':
+                minimum = avg
+
             if avg == 0.00:
                 avg = (minimum + maximum)/2
 
@@ -1721,6 +1724,9 @@ class LigandInformationView(TemplateView):
                 maximum = max(maximum)
             except ValueError:
                 maximum = avg
+
+            if minimum == '-':
+                minimum = avg
 
             output = [minimum, round(avg, 2), round(maximum, 2)]
         return output
