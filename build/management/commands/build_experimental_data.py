@@ -168,7 +168,7 @@ class Command(BaseBuild):
         association = filtered_data[['ligand_id', 'target_id']].drop_duplicates(
         ).groupby('target_id')['ligand_id'].apply(list).to_dict()
 
-        info_we_want = ['pki', 'pic50', 'pkd', 'pec50']
+        info_we_want = ['pKi', 'pIC50', 'pKd', 'pEC50']
         new_columns = ['pki_min', 'pki_avg', 'pki_max',
                        'pkd_min', 'pkd_avg', 'pkd_max',
                        'pic50_min', 'pic50_avg', 'pic50_max',
@@ -221,6 +221,7 @@ class Command(BaseBuild):
                 for par in params:
                     # we want only pKi, pKd, pEC50 and pIC50, not nans or other weird stuff
                     if par in info_we_want:
+                        par_normalized = par.lower()
                         species = endogenous_data.loc[(endogenous_data['target_id'] == target) & (
                             endogenous_data['ligand_id'] == ligand) & (endogenous_data['parameter'] == par)]['interaction_species'].tolist()
                         for org in species:
@@ -229,18 +230,18 @@ class Command(BaseBuild):
                             if len(data) == 1:
                                 if '-' not in data[0]:
                                     uniq_rows.loc[(uniq_rows['target_id'] == target) & (
-                                        uniq_rows['ligand_id'] == ligand), par + '_avg'] = data[0]
+                                        uniq_rows['ligand_id'] == ligand), par_normalized + '_avg'] = data[0]
                                     uniq_rows.loc[(uniq_rows['target_id'] == target) & (
-                                        uniq_rows['ligand_id'] == ligand), par + '_max'] = data[0]
+                                        uniq_rows['ligand_id'] == ligand), par_normalized + '_max'] = data[0]
                                 elif data[0] == '-':
                                     continue
                                 else:
                                     uniq_rows.loc[(uniq_rows['target_id'] == target) & (
-                                        uniq_rows['ligand_id'] == ligand), par + '_min'] = data[0].split(' - ')[0]
-                                    uniq_rows.loc[(uniq_rows['target_id'] == target) & (uniq_rows['ligand_id'] == ligand), par +
+                                        uniq_rows['ligand_id'] == ligand), par_normalized + '_min'] = data[0].split(' - ')[0]
+                                    uniq_rows.loc[(uniq_rows['target_id'] == target) & (uniq_rows['ligand_id'] == ligand), par_normalized +
                                                   '_avg'] = statistics.mean([float(data[0].split(' - ')[0]), float(data[0].split(' - ')[1])])
                                     uniq_rows.loc[(uniq_rows['target_id'] == target) & (
-                                        uniq_rows['ligand_id'] == ligand), par + '_max'] = data[0].split(' - ')[1]
+                                        uniq_rows['ligand_id'] == ligand), par_normalized + '_max'] = data[0].split(' - ')[1]
                             else:
                                 try:
                                     vals = [float(x) for x in data]
@@ -248,11 +249,11 @@ class Command(BaseBuild):
                                     vals = [float(y)
                                             for x in data for y in x.split(' - ')]
                                 uniq_rows.loc[(uniq_rows['target_id'] == target) & (
-                                    uniq_rows['ligand_id'] == ligand), par + '_min'] = min(vals)
+                                    uniq_rows['ligand_id'] == ligand), par_normalized + '_min'] = min(vals)
                                 uniq_rows.loc[(uniq_rows['target_id'] == target) & (
-                                    uniq_rows['ligand_id'] == ligand), par + '_avg'] = statistics.mean(vals)
+                                    uniq_rows['ligand_id'] == ligand), par_normalized + '_avg'] = statistics.mean(vals)
                                 uniq_rows.loc[(uniq_rows['target_id'] == target) & (
-                                    uniq_rows['ligand_id'] == ligand), par + '_max'] = max(vals)
+                                    uniq_rows['ligand_id'] == ligand), par_normalized + '_max'] = max(vals)
         return uniq_rows
 
     @staticmethod
