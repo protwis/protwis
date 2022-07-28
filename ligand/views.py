@@ -1760,7 +1760,7 @@ class LigandInformationView(TemplateView):
         ld['labels'] = LigandInformationView.get_labels(ligand_data, endogenous_ligands, ld['type'])
         ld['wl'] = list()
 
-        if ligand_data.smiles != None and (ld['mw'] == None or ld['mw'] < 800):
+        if ligand_data.smiles is not None and (ld['mw'] is None or ld['mw'] < 800):
             ld['picture'] = img_setup_smiles.format(urllib.parse.quote(ligand_data.smiles))
         else:
             # "No image available" SVG (source: https://commons.wikimedia.org/wiki/File:No_image_available.svg)
@@ -1813,12 +1813,16 @@ class LigandInformationView(TemplateView):
     @staticmethod
     def get_labels(ligand_data, endogenous_ligands, label_type):
         endogenous_label = '<img src="https://icon-library.com/images/icon-e/icon-e-17.jpg" title="Endogenous ligand from GtoP" width="20" height="20"></img>'
-        surrogate_label = '<img src="https://icon-library.com/images/letter-s-icon/letter-s-icon-15.jpg" title="Surrogate ligand" width="20" height="20"></img>'
+        surrogate_label = '<img src="https://icon-library.com/images/letter-s-icon/letter-s-icon-15.jpg"' + \
+                          ' title="Surrogate ligand" width="20" height="20"></img>'
         drug_label = '<img src="https://icon-library.com/images/drugs-icon/drugs-icon-7.jpg" title="Approved drug" width="20" height="20"></img>'
         #trial_label = '<img src="https://icon-library.com/images/clinical-trial-icon-2793430_960_720_7492.png" title="Drug in clinical trial" width="20" height="20"></img>'
         small_molecule_label = '<img src="https://icon-library.com/images/282dfa029c.png" title="Small molecule" width="20" height="20"></img>'
-        peptide_label = '<img src="https://media.istockphoto.com/vectors/protein-structure-molecule-3d-icon-vector-id1301952426?k=20&m=1301952426&s=612x612&w=0&h=a3ik50-faiP2BqiB7wMP3s_rVZyzPl9yHNQy7Rg89aE=" title="Peptide" width="20" height="20"></img>'
-        antibody_label = '<img src="https://icon-library.com/images/2018/2090572_antibody-antibody-hd-png-download.png" title="Antibody" width="20" height="20"></img>'
+        peptide_label = '<img src="https://media.istockphoto.com/vectors/protein-structure-molecule-3d-icon-vector' + \
+                        '-id1301952426?k=20&m=1301952426&s=612x612&w=0&h=a3ik50-faiP2BqiB7wMP3s_rVZyzPl9yHNQy7Rg89aE=" ' + \
+                        'title="Peptide" width="20" height="20"></img>'
+        antibody_label = '<img src="https://icon-library.com/images/2018/2090572_antibody-antibody-hd-png-download.png" ' + \
+                         'title="Antibody" width="20" height="20"></img>'
         label = ''
         #creating a parallel dict to keep info for labelings
         #but also addressing info in new table structure of ligand info page
