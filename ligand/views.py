@@ -1592,13 +1592,13 @@ class LigandInformationView(TemplateView):
         ligand_data = LigandInformationView.process_ligand(ligand_data, endogenous_ligands)
         assay_data = LigandInformationView.process_assay(assay_data)
         mutations = LigandInformationView.get_mutations(ligand_data)
-        if int(ligand_id) in endogenous_ligands:
-            endo_data = list(Endogenous_GTP.objects.filter(ligand=ligand_id).prefetch_related(
-            'ligand', 'receptor', 'receptor__family',
-            'receptor__family__parent', 'receptor__family__parent__parent__parent',
-            'receptor__family__parent__parent', 'receptor__species'))
-            endo_values = LigandInformationView.process_endo(endo_data)
-            assay_data = assay_data + endo_values
+        # if int(ligand_id) in endogenous_ligands:
+        #     endo_data = list(Endogenous_GTP.objects.filter(ligand=ligand_id).prefetch_related(
+        #     'ligand', 'receptor', 'receptor__family',
+        #     'receptor__family__parent', 'receptor__family__parent__parent__parent',
+        #     'receptor__family__parent__parent', 'receptor__species'))
+        #     endo_values = LigandInformationView.process_endo(endo_data)
+        #     assay_data = assay_data + endo_values
         context.update({'structure': structures})
         context.update({'ligand': ligand_data})
         context.update({'assay': assay_data})
@@ -1635,28 +1635,35 @@ class LigandInformationView(TemplateView):
     def process_assay(assays):
         return_dict = dict()
         for i in assays:
-            name = str(i.protein)
+            name = str(i.protein) + '_' + str(i.source)
             assay_type = i.value_type
-            # if type[0] != 'P':
-            #    type = 'p'+type
+            if i.source == 'Guide to Pharmacology':
+                data_value = i.p_activity_ranges
+            else:
+                data_value = float(i.p_activity_value)
+
             if name in return_dict:
                 if assay_type in return_dict[name]['data_type'].keys():
-                    return_dict[name]['data_type'][assay_type].append(float(i.p_activity_value))
+                    return_dict[name]['data_type'][assay_type].append(data_value)
                 else:
-                    return_dict[name]['data_type'][assay_type] = [float(i.p_activity_value)]
+                    return_dict[name]['data_type'][assay_type] = [data_value]
             else:
                 return_dict[name] = dict()
                 return_dict[name]['data_type'] = dict()
-                return_dict[name]['data_type'][assay_type] = [float(i.p_activity_value)]
+                return_dict[name]['data_type'][assay_type] = [data_value]
                 return_dict[name]['receptor_gtp'] = i.protein.short()
                 return_dict[name]['receptor_uniprot'] = i.protein.entry_short()
                 return_dict[name]['receptor_species'] = i.protein.species.common_name
                 return_dict[name]['receptor_family'] = i.protein.family.parent.short()
                 return_dict[name]['receptor_class'] = i.protein.family.parent.parent.parent.short()
+                return_dict[name]['source'] = i.source
 
         for item in return_dict.keys():
             for assay_type in return_dict[item]['data_type'].keys():
-                return_dict[item]['data_type'][assay_type] = LigandInformationView.get_min_max_values(return_dict[item]['data_type'][assay_type])
+                if return_dict[item]['source'] == 'ChEMBL':
+                    return_dict[item]['data_type'][assay_type] = LigandInformationView.get_min_max_values(return_dict[item]['data_type'][assay_type])
+                else:
+                    return_dict[item]['data_type'][assay_type] = LigandInformationView.return_splitted_ranges(return_dict[item]['data_type'][assay_type])
     	#Unpacking
         unpacked = dict()
         for key in return_dict.keys():
@@ -1667,10 +1674,35 @@ class LigandInformationView(TemplateView):
                 unpacked[label]['min'] = return_dict[key]['data_type'][data_type][0]
                 unpacked[label]['avg'] = return_dict[key]['data_type'][data_type][1]
                 unpacked[label]['max'] = return_dict[key]['data_type'][data_type][2]
-                unpacked[label]['source'] = 'ChEMBL'
+                unpacked[label]['source'] = return_dict[key]['source']
                 unpacked[label].pop('data_type', None)
 
         return list(unpacked.values())
+
+    @staticmethod
+    def return_splitted_ranges(value):
+        if len(value) == 1:
+            minimum = float(value[0].split('|')[0])
+            avg = float(value[0].split('|')[1])
+            maximum = float(value[0].split('|')[2])
+            if maximum == 0.00:
+                maximum = avg
+            if avg == 0.00:
+                avg = (minimum + maximum)/2
+            output = [round(minimum, 2), round(avg, 2), round(maximum, 2)]
+        else:
+            minimum = []
+            average = []
+            maximum = []
+            for record in value:
+                minimum.append(float(record.split('|')[0]))
+                average.append(float(record.split('|')[1]))
+                maximum.append(float(record.split('|')[2]))
+            minimum = min(minimum)
+            maximum = max(maximum)
+            avg = sum(average) / len(average)
+            output = [round(minimum, 2), round(avg, 2), round(maximum, 2)]
+        return output
 
     @staticmethod
     def get_min_max_values(value):
@@ -1720,36 +1752,36 @@ class LigandInformationView(TemplateView):
                 ld['wl'].append({'name': i.web_resource.name, "link": str(i)})
         return ld
 
-    @staticmethod
-    def process_endo(endo_data):
-        return_dict = dict()
-        for i in endo_data:
-            name = str(i.receptor)
-            return_dict[name] = dict()
-            return_dict[name]['data_type'] = dict()
-            return_dict[name]['data_type']['pEC50'] = i.pec50.split(' | ')
-            return_dict[name]['data_type']['pIC50'] = i.pic50.split(' | ')
-            return_dict[name]['data_type']['pKi'] = i.pKi.split(' | ')
-            return_dict[name]['receptor_gtp'] = i.receptor.short()
-            return_dict[name]['receptor_uniprot'] = i.receptor.entry_short()
-            return_dict[name]['receptor_species'] = i.receptor.species.common_name
-            return_dict[name]['receptor_family'] = i.receptor.family.parent.short()
-            return_dict[name]['receptor_class'] = i.receptor.family.parent.parent.parent.short()
-
-    	#Unpacking
-        unpacked = dict()
-        for key in return_dict.keys():
-            for data_type in return_dict[key]['data_type'].keys():
-                label = '_'.join([key,data_type])
-                unpacked[label] = deepcopy(return_dict[key])
-                unpacked[label]['type'] = data_type
-                unpacked[label]['min'] = float(return_dict[key]['data_type'][data_type][0]) if return_dict[key]['data_type'][data_type][0] != 'None' else ''
-                unpacked[label]['avg'] = float(return_dict[key]['data_type'][data_type][1]) if return_dict[key]['data_type'][data_type][1] != 'None' else ''
-                unpacked[label]['max'] = float(return_dict[key]['data_type'][data_type][2]) if return_dict[key]['data_type'][data_type][2] != 'None' else ''
-                unpacked[label]['source'] = 'Guide to Pharmacology'
-                unpacked[label].pop('data_type', None)
-
-        return list(unpacked.values())
+    # @staticmethod
+    # def process_endo(endo_data):
+    #     return_dict = dict()
+    #     for i in endo_data:
+    #         name = str(i.receptor)
+    #         return_dict[name] = dict()
+    #         return_dict[name]['data_type'] = dict()
+    #         return_dict[name]['data_type']['pEC50'] = i.pec50.split(' | ')
+    #         return_dict[name]['data_type']['pIC50'] = i.pic50.split(' | ')
+    #         return_dict[name]['data_type']['pKi'] = i.pKi.split(' | ')
+    #         return_dict[name]['receptor_gtp'] = i.receptor.short()
+    #         return_dict[name]['receptor_uniprot'] = i.receptor.entry_short()
+    #         return_dict[name]['receptor_species'] = i.receptor.species.common_name
+    #         return_dict[name]['receptor_family'] = i.receptor.family.parent.short()
+    #         return_dict[name]['receptor_class'] = i.receptor.family.parent.parent.parent.short()
+    #
+    # 	#Unpacking
+    #     unpacked = dict()
+    #     for key in return_dict.keys():
+    #         for data_type in return_dict[key]['data_type'].keys():
+    #             label = '_'.join([key,data_type])
+    #             unpacked[label] = deepcopy(return_dict[key])
+    #             unpacked[label]['type'] = data_type
+    #             unpacked[label]['min'] = float(return_dict[key]['data_type'][data_type][0]) if return_dict[key]['data_type'][data_type][0] != 'None' else ''
+    #             unpacked[label]['avg'] = float(return_dict[key]['data_type'][data_type][1]) if return_dict[key]['data_type'][data_type][1] != 'None' else ''
+    #             unpacked[label]['max'] = float(return_dict[key]['data_type'][data_type][2]) if return_dict[key]['data_type'][data_type][2] != 'None' else ''
+    #             unpacked[label]['source'] = 'Guide to Pharmacology'
+    #             unpacked[label].pop('data_type', None)
+    #
+    #     return list(unpacked.values())
 
     @staticmethod
     def get_labels(ligand_data, endogenous_ligands, label_type):
