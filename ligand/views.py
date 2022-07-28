@@ -1682,27 +1682,47 @@ class LigandInformationView(TemplateView):
     @staticmethod
     def return_splitted_ranges(value):
         if len(value) == 1:
-            minimum = float(value[0].split('|')[0])
+            try: #check if it is not a None
+                minimum = round(float(value[0].split('|')[0]), 2)
+            except ValueError: #if it's None default to '-'
+                minimum = '-'
+            try: #check if it is not a None
+                maximum = float(value[0].split('|')[2])
+            except ValueError:#if it's None default to 0.00
+                maximum = 0.00
+
             avg = float(value[0].split('|')[1])
-            maximum = float(value[0].split('|')[2])
+
             if maximum == 0.00:
                 maximum = avg
+
             if avg == 0.00:
                 avg = (minimum + maximum)/2
-            output = [round(minimum, 2), round(avg, 2), round(maximum, 2)]
+
+            output = [minimum, round(avg, 2), round(maximum, 2)]
         else:
-            print(value)
             minimum = []
             average = []
             maximum = []
             for record in value:
-                minimum.append(float(record.split('|')[0]))
+                if record.split('|')[0] != 'None':
+                    minimum.append(float(record.split('|')[0]))
+                if record.split('|')[2] != 'None':
+                    maximum.append(float(record.split('|')[2]))
                 average.append(float(record.split('|')[1]))
-                maximum.append(float(record.split('|')[2]))
-            minimum = min(minimum)
-            maximum = max(maximum)
+            try:
+                minimum = round(min(minimum), 2)
+            except ValueError:
+                minimum = '-'
+
             avg = sum(average) / len(average)
-            output = [round(minimum, 2), round(avg, 2), round(maximum, 2)]
+
+            try:
+                maximum = max(maximum)
+            except ValueError:
+                maximum = avg
+
+            output = [minimum, round(avg, 2), round(maximum, 2)]
         return output
 
     @staticmethod
