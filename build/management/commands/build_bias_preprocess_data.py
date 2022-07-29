@@ -466,7 +466,7 @@ class Command(BaseBuild):
 
                     else:
                         try:
-                            if data[publication][row]['Bias factor'] >= 10:
+                            if data[publication][row]['Bias factor'] >= 5:
                                 BiasedData.objects.filter(ligand_id=data[publication][row]['ligand_id'],
                                                           publication_id=publication,
                                                           receptor_id=protein).update(**{key: data[publication][row]['P1']})
