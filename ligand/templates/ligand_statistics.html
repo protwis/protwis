@@ -157,7 +157,7 @@
 </ul>
 {% endif %}
 
-{% if render == "pathway" %}
+{% if render == "pathway" or render == "not_bias" %}
 <div class="tab-content">
   <div class="tab-pane container active" id="physio">
     <br />
@@ -203,7 +203,7 @@ This page shows the number of biased ligands with a bias factor &ge; 5 (subtype)
         </tr>
     </thead>
 
-    {% if render == "not_bias" %}
+    {% if render == "not_bias" or render == "pathway"%}
     <tbody>
         <tr>
             <td>No. ligands</td>
@@ -231,17 +231,17 @@ This page shows the number of biased ligands with a bias factor &ge; 5 (subtype)
     <tbody>
         <tr>
             <td>No. biased ligands</td>
-            {% for data in ligands_by_class %}
+            {% for data in bal_ligands_by_class %}
             <td align="center" style="vertical-align:middle !important">{{ data.num_ligands|floatformat:0|intcomma }}</td>
             {% endfor %}
-            <td align="center" style="vertical-align:middle !important">{{ ligands_total.num_ligands|floatformat:0|intcomma }}</td>
+            <td align="center" style="vertical-align:middle !important">{{ bal_ligands_total.num_ligands|floatformat:0|intcomma }}</td>
         </tr>
         <tr>
-            <td nowrap>No. GPCRs with biased ligand</td>
-            {% for data in ligands_by_class %}
+            <td nowrap>No. GPCRs with ligand</td>
+            {% for data in bal_ligands_by_class %}
             <td align="center" style="vertical-align:middle !important">{{ data.target_count|floatformat:0 }}</td>
             {% endfor %}
-            <td align="center" style="vertical-align:middle !important; white-space: nowrap; overflow: hidden;"> {{ ligands_total.target_count|floatformat:0 }}</td>
+            <td align="center" style="vertical-align:middle !important; white-space: nowrap; overflow: hidden;"> {{ bal_ligands_total.target_count|floatformat:0 }}</td>
         </tr>
     </tbody>
     {% endif %}
@@ -1195,7 +1195,7 @@ The number of ligands with a bias factor &ge; 5 (subtype).</p>
     <thead>
         <tr>
             <td align="right"><b>Class<br />(Family)</b></td>
-            {% for data in bal_ligands_by_class %}
+            {% for data in ligands_by_class %}
             <td align="center"><b>
               {% if data.name == " T (Taste 2)" %}T2 (Taste&nbsp;2)
               {% elif data.name == " D1 (Ste2-like fungal pheromone)" %}D1<br \>(Ste2-like fungal pheromone)
@@ -1209,14 +1209,14 @@ The number of ligands with a bias factor &ge; 5 (subtype).</p>
     <tbody>
         <tr>
             <td>No. biased ligands</td>
-            {% for data in bal_ligands_by_class %}
+            {% for data in ligands_by_class %}
             <td align="center" style="vertical-align:middle !important">{{ data.num_ligands|floatformat:0|intcomma }}</td>
             {% endfor %}
             <td align="center" style="vertical-align:middle !important">{{ bal_ligands_total.num_ligands|floatformat:0|intcomma }}</td>
         </tr>
         <tr>
             <td nowrap>No. GPCRs with ligand</td>
-            {% for data in bal_ligands_by_class %}
+            {% for data in ligands_by_class %}
             <td align="center" style="vertical-align:middle !important">{{ data.target_count|floatformat:0 }}</td>
             {% endfor %}
             <td align="center" style="vertical-align:middle !important; white-space: nowrap; overflow: hidden;"> {{ bal_ligands_total.target_count|floatformat:0 }}</td>
