@@ -40,6 +40,14 @@ from datetime import datetime, date
 import yaml
 import traceback
 import subprocess
+from sklearn.cluster import AffinityPropagation
+from sklearn import metrics
+from sklearn.datasets import make_blobs
+from sklearn.decomposition import PCA
+import numpy as np
+import matplotlib.pyplot as plt
+from itertools import cycle
+
 
 
 startTime = datetime.now()
@@ -439,10 +447,13 @@ class CallHomologyModeling():
                 Homology_model.alignment.reference_dict = deepcopy(Homology_model.alignment.reference_dict)
                 Homology_model.alignment.template_dict = deepcopy(Homology_model.alignment.template_dict)
 
+                # Check coverage per template
                 coverage = OrderedDict()
                 gn_per_struct = OrderedDict()
+                struct_per_gn = OrderedDict()
                 for seg,j in interacting_residues.items():
                     for gn in j:
+                        struct_per_gn[gn] = [] 
                         for struct, sim in Homology_model.similarity_table.items():
                             if struct not in coverage:
                                 coverage[struct] = [sim, 0]
@@ -452,18 +463,98 @@ class CallHomologyModeling():
                                 if len(res)>0:
                                     coverage[struct][1]+=1
                                     gn_per_struct[struct].append(gn)
+                                    struct_per_gn[gn].append(struct)
                             except Residue.DoesNotExist:
                                 continue
                 pprint.pprint(coverage)
                 pprint.pprint(gn_per_struct)
+                pprint.pprint(struct_per_gn)
                 print(datetime.now() - startTime)
                 resorted_keys = sorted(coverage.items(), key=lambda x: (-x[1][1],-x[1][0],x[0].resolution))
                 new_dict = OrderedDict()
+                new_dict[Structure.objects.get(pdb_code__index='7L1V')] = 100
                 print(resorted_keys)
                 for r in resorted_keys:
                     new_dict[r[0]] = r[1][0]
                 Homology_model.similarity_table = new_dict
-                # raise AssertionError
+
+                for gn, structs in struct_per_gn.items():
+                    if len(structs)==0:
+                        continue
+                    data = []
+                    print(gn, structs)
+                    first = True
+                    ref_atoms = []
+                    for s in structs:
+                        this_struct_data = np.array([0,0,0])
+                        rot_obj = Rotamer.objects.filter(structure=s, residue__display_generic_number__label=dgn(gn, s.protein_conformation))
+                        rot_obj = Homology_model.right_rotamer_select(rot_obj)
+                        rot = PDB.PDBParser().get_structure('rot', StringIO(rot_obj.pdbdata.pdb))[0]
+                        for c in rot:
+                            for res in c:
+                                if first:
+                                    ref_atoms = [a for a in res]
+                                    sorted_atoms = ref_atoms
+                                    first = False
+                                else:
+                                    sup = sp.RotamerSuperpose(sorted(ref_atoms), sorted([a for a in res]))
+                                    sorted_atoms = sup.run()
+                                for a in sorted_atoms:
+                                    if a.get_id() in ['N','CA','C','O']:
+                                        continue
+                                    this_struct_data = np.vstack((this_struct_data, list(a.get_coord())))
+                        pprint.pprint(this_struct_data[1:])
+                        pca = PCA(n_components=2)
+                        pca.fit(this_struct_data[1:])
+                        print(pca.explained_variance_ratio_)
+                        print(pca.singular_values_)
+                        data.append(pca.singular_values_)
+
+                    pprint.pprint(data)
+                    labels_true = structs
+                    af = AffinityPropagation(preference=-50, random_state=0).fit(data)
+                    cluster_centers_indices = af.cluster_centers_indices_
+                    labels = af.labels_
+
+                    n_clusters_ = len(cluster_centers_indices)
+                    print(cluster_centers_indices)
+                    print(labels)
+                    print(n_clusters_)
+                    # print("Estimated number of clusters: %d" % n_clusters_)
+                    # print("Homogeneity: %0.3f" % metrics.homogeneity_score(labels_true, labels))
+                    # print("Completeness: %0.3f" % metrics.completeness_score(labels_true, labels))
+                    # print("V-measure: %0.3f" % metrics.v_measure_score(labels_true, labels))
+                    # print("Adjusted Rand Index: %0.3f" % metrics.adjusted_rand_score(labels_true, labels))
+                    # print("Adjusted Mutual Information: %0.3f"% metrics.adjusted_mutual_info_score(labels_true, labels))
+                    # print("Silhouette Coefficient: %0.3f"% metrics.silhouette_score(X, labels, metric="sqeuclidean"))
+
+                    plt.close("all")
+                    plt.figure(1)
+                    plt.clf()
+
+                    colors = cycle("bgrcmykbgrcmykbgrcmykbgrcmyk")
+                    for k, col in zip(range(n_clusters_), colors):
+                        class_members = labels == k
+                        cluster_center = X[cluster_centers_indices[k]]
+                        plt.plot(X[class_members, 0], X[class_members, 1], col + ".")
+                        plt.plot(
+                            cluster_center[0],
+                            cluster_center[1],
+                            "o",
+                            markerfacecolor=col,
+                            markeredgecolor="k",
+                            markersize=14,
+                        )
+                        for x in X[class_members]:
+                            plt.plot([cluster_center[0], x[0]], [cluster_center[1], x[1]], col)
+
+                    plt.title("Estimated number of clusters: %d" % n_clusters_)
+                    plt.show()
+                    plt.savefig('plot.png')
+                    break
+                pprint.pprint(data)
+                raise AssertionError
+
                 # Label positions to change
                 c = 0
                 for seg_lab, seg in interacting_residues.items():
@@ -2639,7 +2730,7 @@ class HomologyModeling(object):
                     superpose = sp.RotamerSuperpose(orig_res, alt_res)
                     new_atoms = superpose.run()
                     if self.debug:
-                        print(struct, gn_, superpose.backbone_rmsd)
+                        print(struct, gn_, superpose.backbone_rmsd, superpose.rmsd)
                     if superpose.backbone_rmsd>0.45:
                         continue
                     main_pdb_array[ref_seg][str(ref_res).replace('x','.')] = new_atoms

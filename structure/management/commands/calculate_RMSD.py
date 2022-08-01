@@ -180,7 +180,7 @@ class Validation():
                 if target_dict[i][0].get_parent().get_resname() in ['TYR','PHE','ARG','ASP','GLU']:
                     # print(i, target_dict[i][0].get_parent())
                     to_sup = deepcopy(atom_dict[j])
-                    res_sup, atoms_used = self.superpose(target_dict[i], to_sup, [i])
+                    res_sup, atoms_used = self.superpose(sorted(target_dict[i]), sorted(to_sup), [i])
                     rmsd = self.calc_RMSD(sorted(target_dict[i]), sorted(res_sup))
                     res_sup2 = self.run_residue_flip(res_sup)
                     rmsd2 = self.calc_RMSD(sorted(target_dict[i]), sorted(res_sup2))
@@ -204,25 +204,27 @@ class Validation():
             ### Custom calculation
             if superpose_on:
                 if superpose_on=='7TM':
-                    custom_superposed, atoms_used_sp = self.superpose(atom_lists[0], m, list(TM_nums))
+                    custom_superposed, atoms_used_sp = self.superpose(sorted(atom_lists[0]), sorted(m), list(TM_nums))
                 elif superpose_on=='nflag':
-                    custom_superposed, atoms_used_sp = self.superpose(atom_lists[0], m, list(seq_nums))
+                    custom_superposed, atoms_used_sp = self.superpose(sorted(atom_lists[0]), sorted(m), list(seq_nums))
                 superposed = self.fetch_atoms_with_seqnum(custom_superposed, seq_nums, only_backbone)
                 target_atoms = self.fetch_atoms_with_seqnum(atom_lists[0], seq_nums, only_backbone)
                 rmsd = self.calc_RMSD(target_atoms, superposed)
             else:
-                superposed, atoms_used_sp = self.superpose(atom_lists[0], m)
+                superposed, atoms_used_sp = self.superpose(sorted(atom_lists[0]), sorted(m))
                 target_atoms = atom_lists[0]
             
+            # for t, s in zip(sorted(target_atoms), sorted(superposed)):
+            #     print(t, t.get_coord(), s, s.get_coord())
             rmsd = self.calc_RMSD(sorted(target_atoms), sorted(superposed))
             print('Num atoms sent for superposition: ', len(atom_lists[0]), len(m))
             print('Num atoms used for superposition: ', atoms_used_sp)
             print('Num atoms used for RMSD: ', len(target_atoms), len(superposed))
             print('Custom RMSD:', rmsd)
-
+            
             # ### 7TM all atoms calculation
             TM_model_atom_list = [i for i in m if i.get_parent().id[1] in TM_nums]
-            superposed2, atoms_used_sp = self.superpose(TM_target_atom_list, TM_model_atom_list, list(TM_nums))
+            superposed2, atoms_used_sp = self.superpose(sorted(TM_target_atom_list), sorted(TM_model_atom_list), list(TM_nums))
             rmsd = self.calc_RMSD(sorted(TM_target_atom_list), sorted(superposed2))
             print('Num atoms sent for superposition: ', len(TM_target_atom_list), len(TM_model_atom_list))
             print('Num atoms used for superposition: ', atoms_used_sp)
@@ -230,7 +232,7 @@ class Validation():
             print('7TM all RMSD:', rmsd)
 
             # ### 7TM only backbone (N, CA, C) calculation
-            superposed, atoms_used_sp = self.superpose(TM_target_atom_list, TM_model_atom_list, list(TM_nums))
+            superposed, atoms_used_sp = self.superpose(sorted(TM_target_atom_list), sorted(TM_model_atom_list), list(TM_nums))
             superposed3 = self.fetch_atoms_with_seqnum(superposed, list(TM_nums), True)
             rmsd = self.calc_RMSD(sorted(TM_target_backbone_atom_list), sorted(superposed3))
             print('Num atoms sent for superposition: ', len(TM_target_atom_list), len(TM_model_atom_list))
