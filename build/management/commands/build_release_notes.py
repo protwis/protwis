@@ -65,7 +65,7 @@ class Command(BaseCommand):
 
         stats = [
             #['Proteins', Protein.objects.filter(sequence_type__slug='wt').count()],
-            ['Human proteins', Protein.objects.filter(sequence_type__slug='wt', species__common_name="Human").count()],
+            ['Human proteins', Protein.objects.filter(sequence_type__slug='wt', family__slug__startswith='00', species__common_name="Human").count()],
             ['Species orthologs', Protein.objects.filter(sequence_type__slug='wt', family__slug__startswith='00').exclude(species__common_name="Human").count()],
             #['Species', Species.objects.all().count()],
             ['Genetic variants', NaturalMutations.objects.all().count()],

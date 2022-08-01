@@ -10,12 +10,12 @@ def get_hostnames():
             'gpcr': "",
             'gprotein': "",
             'arrestin': "",
-            'ligandbias': "",
+            'biasedsignalingatlas': "",
         }
     else:
         return {
             'gpcr': "https://gpcrdb.org",
             'gprotein': "https://gproteindb.org",
             'arrestin': "https://arrestindb.org",
-            'ligandbias': "https://ligandbiasdb.org",
+            'biasedsignalingatlas': "https://biasedsignalingatlas.org",
         }

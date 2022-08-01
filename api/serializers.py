@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from interaction.models import ResidueFragmentInteraction
+from ligand.models import Endogenous_GTP
 from mutation.models import MutationRaw
 from protein.models import Protein, ProteinConformation, ProteinFamily, Species, ProteinSource, ProteinSegment
 from residue.models import Residue, ResidueNumberingScheme, ResidueGenericNumber
@@ -38,18 +39,21 @@ class ProteinFamilySerializer(serializers.ModelSerializer):
         model = ProteinFamily
         fields = ('slug', 'name', 'parent')
 
+class EndogenousGTPSerializer(serializers.ModelSerializer):
+    name = serializers.ReadOnlyField(source='ligand.name')
+
+    class Meta:
+        model = Endogenous_GTP
+        fields = ('name', )
 
 class ReceptorListSerializer(serializers.ModelSerializer):
     subfamily = serializers.ReadOnlyField(source='family.name')
     ligand_type = serializers.ReadOnlyField(source='family.parent.name')
     receptor_family = serializers.ReadOnlyField(source='family.parent.parent.name')
     receptor_class = serializers.ReadOnlyField(source='family.parent.parent.parent.name')
-    endogenous_ligands = serializers.SlugRelatedField(
-        many=True,
-        read_only=True,
-        slug_field='name'
-    )
+    endogenous_ligands = EndogenousGTPSerializer(read_only=True, many=True)
     species = serializers.StringRelatedField(read_only=True)
+
     class Meta:
         model = Protein
         fields = ('entry_name', 'name', 'accession', 'receptor_class', 'receptor_family', 'ligand_type', 'subfamily', 'receptor_class', 'endogenous_ligands', 'species')

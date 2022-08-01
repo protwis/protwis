@@ -15,39 +15,48 @@
                     <li data-target="#carousel-example-generic" data-slide-to="1"></li>
                     <li data-target="#carousel-example-generic" data-slide-to="2"></li>
                     <li data-target="#carousel-example-generic" data-slide-to="3"></li>
+                    <li data-target="#carousel-example-generic" data-slide-to="4"></li>
                 </ol>
 
                 <!-- Wrapper for carousel slides -->
                 <div class="carousel-inner" role="listbox">
                     <div class="item active">
-                        <img src="{% static 'home/carousel/arrest_seqalign.png' %}">
+                        <img src="{% static 'home/carousel/bsa_biased_ligands.png' %}">
                         <div class="carousel-caption">
-                            <h3>Sequence alignments</h3>
-                            <p>Alignments with generic residue numbers and residue plots.</p>
+                            <h3>Biased ligands</h3>
+                            <p>Biased ligands, receptor pathways coverage & bias rank orders.</p>
                         </div>
                     </div>
 
                     <div class="item">
-                        <img src="{% static 'home/carousel/arrest_couplings.png' %}">
+                        <img src="{% static 'home/carousel/bsa_pathway_effects.png' %}">
                         <div class="carousel-caption">
-                            <h3>Arrestin couplings</h3>
-                            <p>Unified coupling atlas and Arrestin selectivity profiles.</p>
+                            <h3>Pathway effects</h3>
+                            <p>Pathway effects and therapeutic relevance.</p>
                         </div>
                     </div>
 
                     <div class="item">
-                        <img src="{% static 'home/carousel/arrest_structures.png' %}">
+                        <img src="{% static 'home/carousel/bsa_reference_ligands.png' %}">
                         <div class="carousel-caption">
-                            <h3>Structures</h3>
-                            <p>Arrestin structure statistics and browser with unique annotation.</p>
+                            <h3>Reference ligands</h3>
+                            <p>Reference ligands for pathway-/physiology-bias.</p>
                         </div>
                     </div>
 
                     <div class="item">
-                        <img src="{% static 'home/carousel/arrest_interface.png' %}">
+                        <img src="{% static 'home/carousel/bsa_bias_calculation_spreadsheet.png' %}">
                         <div class="carousel-caption">
-                            <h3>Arrestin structure interface</h3>
-                            <p>Structure based coupling interface interactions.</p>
+                            <h3>Bias calculation spreadsheet</a></h3>
+                            <p>Swifty calculate bias factors.</p>
+                        </div>
+                    </div>
+
+                    <div class="item">
+                        <img src="{% static 'home/carousel/bsa_data_deposition.png' %}">
+                        <div class="carousel-caption">
+                            <h3>Data deposition</h3>
+                            <p>Deposit biased ligands & pathway effects.</p>
                         </div>
                     </div>
 
@@ -72,8 +81,6 @@
         </div>
     </div>
 
-    <!-- NEW STUFF -->
-
     <div class="row">
 
         <div class="col-md-9">
@@ -82,22 +89,24 @@
                     <div class="col-md-4">
                       <br />
                         <p style='text-align:center'>
-                        <img style="height:90%; width:100px;" src="{% static 'home/logo/arrestin/main.png' %}">
+                        <img style="height:90%; width:100px;" src="{% static 'home/logo/biasedsignalingatlas/main.png' %}">
                         </p>
                         <p style='text-align:center; font-size: 20px; margin-top:0px;'>
-                        ArrestinDb
+                        Biased Signaling Atlas
                         </p>
                     </div>
                     <!-- <div class="col-md-1">
                     </div> -->
                     <div class="col-md-4" id='center_menu'>
                         <p style='text-align:justify'>
-                            ArrestinDb (Arrestin database) offers:<br/>
+                            The Biased Signaling Atlas offers:<br/>
                             <ul>
                               <li>Reference data (see Data box)</li>
                               <li>Analysis tools (browse menu)</li>
-                              <li>Visualization (e.g., <a href='https://gpcrdb.org/protein/' target='_blank'>snakeplots</a>)</li>
-                              <li>Data deposition (for arrestin couplings and interface mutations)</li>
+                              <li>Visualization</li>
+                              <li>Experiment design (e.g., <a href="{{ hosts.biasedsignalingatlas }}/biased_signalling/reference_selection">Reference ligand selection</a>)</li>
+                              <li>Data deposition (<a href='https://docs.gpcrdb.org/biasedsignaling.html#data-submission' target='_blank'>biased ligands</a>
+                                and <a href='https://docs.gpcrdb.org/biasedsignaling.html#data-submission' target='_blank'>pathway effects</a>)</li>
                         </p>
 
                     </div>
@@ -105,9 +114,8 @@
                     <div class="col-md-4">
                         <p style="text-align:justify;">
                           <br />
-                          Arrestins can 'arrest' signaling by blocking GPCR-mediated G protein coupling and inducing receptor internalization.
-                          They are also scaffold proteins rectruiting and assembling other signaling proteins and can be involved in biased
-                          signaling<sup><a href='https://en.wikipedia.org/wiki/Arrestin' target='_blank'>1</a></sup>
+                        Biased signaling entails hormones, probes, or drugs binding the same GPCR but engaging different intracellular
+                        signaling pathways leading to distinct functional outcomes. This may let drugs favor therapeutic over adverse signal pathways.
                         </p>
                     </div>
                 </div>
@@ -133,67 +141,69 @@
                     <div class="panel panel-primary">
                         <div class="panel-body">
                             <h3>Welcome</h3>
-                            A new database has been born. ArrestinDb is dedicated to arrestin proteins,
-                            which like G proteins, are major GPCR transducers but also have their own highly active research
-                            community. The publication is planned for end of 2022 or early 2023.
-                            Meanwhile, try it out and let us know what you think.
+                            The Biased Signaling Atlas is a new community platform.
+                            Publication is planned for end of 2022, meanwhile try it out and let us know what you think.
                         </div>
                     </div>
                 </div>
 
-              <!-- commented stuff for POST preprint -->
+                <!-- commented stuff for POST preprint -->
+            <!-- <div class="col-md-4">
+                    <div class="panel panel-primary">
+                        <div class="panel-body">
+                            <h3><a href="/structure/statistics">Data</a></h3>
+                            <ul class="stats_list">
+                                {% for stat in release_statistics %}
+                                    <li>
+                                        {{ stat.value| safe }} {{ stat.statistics_type | safe }}
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                            {% if users %}
+                                {{ users|safe }}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div> -->
+
+                <!-- Release Notes -->
           <!-- <div class="col-md-4">
-                  <div class="panel panel-primary">
-                      <div class="panel-body">
-                          <h3><a href="/structure/statistics">Data</a></h3>
-                          <ul class="stats_list">
-                              {% for stat in release_statistics %}
-                                  <li>
-                                      {{ stat.value| safe }} {{ stat.statistics_type | safe }}
-                                  </li>
-                              {% endfor %}
-                          </ul>
-                          {% if users %}
-                              {{ users|safe }}
-                          {% endif %}
-                      </div>
-                  </div>
-              </div> -->
+                    <div class="panel panel-primary">
+                        <div class="panel-body">
+                            <h3>Latest <a href="/pages/releasenotes">release</a></h3>
+                            <strong>{{ release_notes.date }}</strong>
+                            {{ release_notes.html|safe }}
+                            <br />
+                            <strong><a href="/pages/releasenotes">All releases</a></strong>
+                        </div>
+                    </div>
 
-              <!-- Release Notes -->
-        <!-- <div class="col-md-4">
-                  <div class="panel panel-primary">
-                      <div class="panel-body">
-                          <h3>Latest <a href="/pages/releasenotes">release</a></h3>
-                          <strong>{{ release_notes.date }}</strong>
-                          {{ release_notes.html|safe }}
-                          <br />
-                          <strong><a href="/pages/releasenotes">All releases</a></strong>
-                      </div>
-                  </div>
+                    <div class="panel panel-primary">
+                        <div class="panel-body">
+                            <h3><a href="https://files.gpcrdb.org/video/GPCRdb-David_Gloriam.mp4">Videos</a></h3>
+                        </div>
+                    </div>
 
-                  <div class="panel panel-primary">
-                      <div class="panel-body">
-                          <h3><a href="https://files.gpcrdb.org/video/GPCRdb-David_Gloriam.mp4">Videos</a></h3>
-                      </div>
-                  </div>
+                </div> -->
 
-              </div> -->
+                <!-- Publications -->
+          <!-- <div class="col-md-4">
+                    <div class="panel panel-primary">
+                        <div class="panel-body" style='max-height: 530px; overflow-y: scroll;'>
+                            <h3>Publications</h3>
+                            <p>
+                            The arrestin database, ArrestinDb<br />
+                            Jimmy Caroli, Gáspár Pándy-Szekeres, Alexander S. Hauser, György M. Keserű, Albert J. Kooistra and David E. Gloriam<br />
+                            <a href='#' target='_blank'><i>Manuscript</i>, 2022</a>
+                            </p>
+                        </div>
+                    </div>
+                </div> -->
 
-              <!-- Publications -->
-        <!-- <div class="col-md-4">
-                  <div class="panel panel-primary">
-                      <div class="panel-body" style='max-height: 530px; overflow-y: scroll;'>
-                          <h3>Publications</h3>
-                          <p>
-                          The arrestin database, ArrestinDb<br />
-                          Jimmy Caroli, Gáspár Pándy-Szekeres, Alexander S. Hauser, György M. Keserű, Albert J. Kooistra and David E. Gloriam<br />
-                          <a href='#' target='_blank'><i>Manuscript</i>, 2022</a>
-                          </p>
-                      </div>
-                  </div>
-              </div> -->
-      </div>
+
+
+        </div>
+
         <div class="col-md-3">
 
             <div class="panel panel-primary">
@@ -214,6 +224,7 @@
 
     </div>
 
+
     {#        <!-- Highlighted news -->#}
     {#        <div class="row">#}
     {#            <div class="col-md-12">#}
@@ -233,41 +244,6 @@
     {#                </div>#}
     {#            </div>#}
     {#        </div>#}
-
-
-        <!-- <div class="col-md-4">
-            <div class="panel panel-primary">
-                <div class="panel-body">
-                    <iframe width="100%" height="200" src="https://www.youtube.com/embed/X8j_xpryZ4U?start=778&end=3732;" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-                </div>
-            </div>
-        </div> -->
-
-        <!-- Twitter feed -->
-        <!-- <div class="col-md-4">
-            <div class="panel panel-primary">
-                <div class="panel-body">
-                    <h3>
-                        <a class="twitter-timeline" data-height="400" data-theme="light" href="https://twitter.com/gpcrdb"></a>
-                    </h3>
-                   <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
-                </div>
-            </div>
-        </div> -->
-
-        {#<!-- News -->#}
-        {#        <div class="col-md-3">#}
-        {#            <div class="panel panel-primary">#}
-        {#                <div class="panel-body">#}
-        {#                    <h3>Latest <a href="/news">news</a></h3>#}
-        {#                    <ul>#}
-        {#                        {% for item in news %}#}
-        {#                        <li><small>{{ item.html|safe }}</small></li>#}
-        {#                        {% endfor %}#}
-        {#                    </ul>#}
-        {#                </div>#}
-        {#            </div>#}
-        {#        </div> #}
 
     <!-- Gloriam Group and Collabs -->
     {#    <div class="row">#}

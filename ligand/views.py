@@ -371,75 +371,75 @@ class BiasedSignallingSelection(AbsReferenceSelectionTable):
     pathway = False
     pathfinder = {'EmaxRankOrder': {'Description': 'The next page shows plots for the ligand bias rank order ΔΔLog(Emax/EC50) by transducer or effector family across publications.' \
                                                     + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.' \
-                                                    + '\nBiased ligands have a bias factor ≥ 1.',
+                                                    + '\nBiased ligands have a bias factor ≥ 5.',
                                     'Continue': "submitSelection('/biased_signalling/emax_rankorder');",
                                     'Pathway': "submitSelection('/biased_signalling/emax_rankorder_path_bias');",
                                     'Biased': "submitSelection('/biased_signalling/userselectionbiased_emax_rank_order');"},
                   'TauRankOrder': {'Description': 'The next page shows plots for the ligand bias rank order ΔΔLog(Tau/KA) by transducer or effector family across publications.' \
                                                     + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.' \
-                                                    + '\nBiased ligands have a bias factor ≥ 1.',
+                                                    + '\nBiased ligands have a bias factor ≥ 5.',
                                    'Continue': "submitSelection('/biased_signalling/tau_rankorder');",
                                    'Pathway': "submitSelection('/biased_signalling/tau_rankorder_path_bias');",
                                    'Biased': "submitSelection('/biased_signalling/userselectionbiased_tau_rank_order');"},
                   'EmaxPathProfile': {'Description': 'The next page shows plots for the ligand pathway profiles ΔLog(Emax/EC50) by transducer or effector family across publications.' \
                                                      + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.' \
-                                                     + '\nBiased ligands have a bias factor ≥ 1.',
+                                                     + '\nBiased ligands have a bias factor ≥ 5.',
                                       'Continue': "submitSelection('/biased_signalling/emax_path_profiles');",
                                       'Pathway': "submitSelection('/biased_signalling/emax_path_profiles_path_bias');",
                                       'Biased': "submitSelection('/biased_signalling/userselectionbiased_emax_path_profile');"},
                   'TauPathProfile': {'Description': 'The next page shows plots for the ligand pathway profiles ΔLog(Tau/KA) by transducer or effector family across publications.' \
                                                      + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.' \
-                                                     + '\nBiased ligands have a bias factor ≥ 1.',
+                                                     + '\nBiased ligands have a bias factor ≥ 5.',
                                      'Continue': "submitSelection('/biased_signalling/tau_path_profiles');",
                                      'Pathway': "submitSelection('/biased_signalling/tau_path_profiles_path_bias');",
                                      'Biased': "submitSelection('/biased_signalling/userselectionbiased_tau_path_profile');"},
                   'EmaxRankOrderSubtype': {'Description': 'The next page shows plots for the ligand bias rank order ΔΔLog(Emax/EC50) by transducer or effector family across publications.' \
                                                             + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.' \
-                                                            + '\nBiased ligands have a bias factor ≥ 1.',
+                                                            + '\nBiased ligands have a bias factor ≥ 5.',
                                            'Continue': "submitSelection('/biased_signalling/subtype_emax_rankorder');",
                                            'Pathway': "submitSelection('/biased_signalling/subtype_emax_rankorder_path_bias');",
                                            'Biased': "submitSelection('/biased_signalling/userselectionbiasedsubtype_emax_rank_order');"},
                   'TauRankOrderSubtype': {'Description': 'The next page shows plots for the ligand bias rank order ΔΔLog(Tau/KA) by transducer or effector family across publications.' \
                                                          + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.' \
-                                                         + '\nBiased ligands have a bias factor ≥ 1.',
+                                                         + '\nBiased ligands have a bias factor ≥ 5.',
                                           'Continue': "submitSelection('/biased_signalling/subtype_tau_rankorder');",
                                           'Pathway': "submitSelection('/biased_signalling/subtype_tau_rankorder_path_bias');",
                                           'Biased': "submitSelection('/biased_signalling/userselectionbiasedsubtype_tau_rank_order');"},
                   'EmaxPathProfileSubtype': {'Description': 'The next page shows plots for the ligand pathway profiles ΔLog(Emax/EC50) by transducer or effector family across publications.' \
                                                             + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.' \
-                                                            + '\nBiased ligands have a bias factor ≥ 1.',
+                                                            + '\nBiased ligands have a bias factor ≥ 5.',
                                              'Continue': "submitSelection('/biased_signalling/subtype_emax_path_profiles');",
                                              'Pathway': "submitSelection('/biased_signalling/subtype_emax_path_profiles_path_bias');",
                                              'Biased': "submitSelection('/biased_signalling/userselectionbiasedsubtype_emax_path_profile');"},
                   'TauPathProfileSubtype': {'Description': 'The next page shows plots for the ligand pathway profiles ΔLog(Tau/KA) by transducer or effector family across publications.' \
                                                             + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.' \
-                                                            + '\nBiased ligands have a bias factor ≥ 1.',
+                                                            + '\nBiased ligands have a bias factor ≥ 5.',
                                             'Continue': "submitSelection('/biased_signalling/subtype_tau_path_profiles');",
                                             'Pathway': "submitSelection('/biased_signalling/subtype_tau_path_profiles_path_bias');",
                                             'Biased': "submitSelection('/biased_signalling/userselectionbiasedsubtype_tau_path_profile');"},
                   'Browser': {'Description': 'The next page shows ligands biased for a transducer or effector family (e.g. G protein, arrestin, GRK, ERK etc.).' \
                                                     + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.' \
-                                                    + '\nBiased ligands have a bias factor ≥ 1.',
+                                                    + '\nBiased ligands have a bias factor ≥ 5.',
                               'Continue': "submitSelection('/biased_signalling/biased');",
                               'Pathway': "submitSelection('/biased_signalling/pathwaybiased');",
                               'Biased': "submitSelection('/biased_signalling/userselectionbiased');"},
                   'BrowserSubtype': {'Description': 'The next page shows ligands biased for a transducer or effector family (e.g. G protein, arrestin, GRK, ERK etc.).' \
                                                     + '\nPathway-preference is not bias as no reference ligand is used. See the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.' \
-                                                    + '\nBiased ligands have a bias factor ≥ 1.',
+                                                    + '\nBiased ligands have a bias factor ≥ 5.',
                                      'Continue': "submitSelection('/biased_signalling/biasedsubtypes');",
                                      'Pathway': "submitSelection('/biased_signalling/pathwaybiasedsubtypes');",
                                      'Biased': "submitSelection('/biased_signalling/userselectionbiasedsubtype');"},
                   'BrowserPathway': {'Description': 'The next page shows ligands preferring a transducer or effector family (e.g. G protein, arrestin, GRK, ERK etc.).' \
                                                     + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.' \
-                                                    + '\nBiased ligands have a bias factor ≥ 1.',
+                                                    + '\nBiased ligands have a bias factor ≥ 5.',
                                      'Continue': "submitSelection('/biased_signalling/pathwaypreference');"},
                   'EmaxRankOrderPathway': {'Description': 'The next page shows plots for the ligand bias rank order ΔLog(Emax/EC50) by transducer or effector family across publications.' \
                                                             + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.' \
-                                                            + '\nBiased ligands have a bias factor ≥ 1.',
+                                                            + '\nBiased ligands have a bias factor ≥ 5.',
                                            'Continue': "submitSelection('/biased_signalling/path_preference_emax_rankorder');"},
                   'EmaxPathProfilePathway': {'Description': 'The next page shows plots for the ligand pathway profiles Log(Emax/EC50) by transducer or effector family across publications.' \
                                                             + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.' \
-                                                            + '\nBiased ligands have a bias factor ≥ 1.',
+                                                            + '\nBiased ligands have a bias factor ≥ 5.',
                                             'Continue': "submitSelection('/biased_signalling/path_preference_emax_path_profiles');"}
                 }
     way = 'EmaxRankOrder'
@@ -1592,13 +1592,13 @@ class LigandInformationView(TemplateView):
         ligand_data = LigandInformationView.process_ligand(ligand_data, endogenous_ligands)
         assay_data = LigandInformationView.process_assay(assay_data)
         mutations = LigandInformationView.get_mutations(ligand_data)
-        if int(ligand_id) in endogenous_ligands:
-            endo_data = list(Endogenous_GTP.objects.filter(ligand=ligand_id).prefetch_related(
-            'ligand', 'receptor', 'receptor__family',
-            'receptor__family__parent', 'receptor__family__parent__parent__parent',
-            'receptor__family__parent__parent', 'receptor__species'))
-            endo_values = LigandInformationView.process_endo(endo_data)
-            assay_data = assay_data + endo_values
+        # if int(ligand_id) in endogenous_ligands:
+        #     endo_data = list(Endogenous_GTP.objects.filter(ligand=ligand_id).prefetch_related(
+        #     'ligand', 'receptor', 'receptor__family',
+        #     'receptor__family__parent', 'receptor__family__parent__parent__parent',
+        #     'receptor__family__parent__parent', 'receptor__species'))
+        #     endo_values = LigandInformationView.process_endo(endo_data)
+        #     assay_data = assay_data + endo_values
         context.update({'structure': structures})
         context.update({'ligand': ligand_data})
         context.update({'assay': assay_data})
@@ -1635,42 +1635,101 @@ class LigandInformationView(TemplateView):
     def process_assay(assays):
         return_dict = dict()
         for i in assays:
-            name = str(i.protein)
+            name = str(i.protein) + '_' + str(i.source)
             assay_type = i.value_type
-            # if type[0] != 'P':
-            #    type = 'p'+type
+            if i.source == 'Guide to Pharmacology':
+                data_value = i.p_activity_ranges
+            else:
+                data_value = float(i.p_activity_value)
+
             if name in return_dict:
                 if assay_type in return_dict[name]['data_type'].keys():
-                    return_dict[name]['data_type'][assay_type].append(float(i.p_activity_value))
+                    return_dict[name]['data_type'][assay_type].append(data_value)
                 else:
-                    return_dict[name]['data_type'][assay_type] = [float(i.p_activity_value)]
+                    return_dict[name]['data_type'][assay_type] = [data_value]
             else:
                 return_dict[name] = dict()
                 return_dict[name]['data_type'] = dict()
-                return_dict[name]['data_type'][assay_type] = [float(i.p_activity_value)]
+                return_dict[name]['data_type'][assay_type] = [data_value]
                 return_dict[name]['receptor_gtp'] = i.protein.short()
                 return_dict[name]['receptor_uniprot'] = i.protein.entry_short()
                 return_dict[name]['receptor_species'] = i.protein.species.common_name
                 return_dict[name]['receptor_family'] = i.protein.family.parent.short()
                 return_dict[name]['receptor_class'] = i.protein.family.parent.parent.parent.short()
+                return_dict[name]['source'] = i.source
 
         for item in return_dict.keys():
             for assay_type in return_dict[item]['data_type'].keys():
-                return_dict[item]['data_type'][assay_type] = LigandInformationView.get_min_max_values(return_dict[item]['data_type'][assay_type])
+                if return_dict[item]['source'] == 'Guide to Pharmacology':
+                    return_dict[item]['data_type'][assay_type] = LigandInformationView.return_splitted_ranges(return_dict[item]['data_type'][assay_type])
+                else:
+                    return_dict[item]['data_type'][assay_type] = LigandInformationView.get_min_max_values(return_dict[item]['data_type'][assay_type])
     	#Unpacking
         unpacked = dict()
         for key in return_dict.keys():
             for data_type in return_dict[key]['data_type'].keys():
                 label = '_'.join([key,data_type])
                 unpacked[label] = deepcopy(return_dict[key])
-                unpacked[label]['type'] = data_type
+                unpacked[label]['type'] = data_type if data_type.startswith('p') or data_type.startswith('P') else 'p'+data_type
                 unpacked[label]['min'] = return_dict[key]['data_type'][data_type][0]
                 unpacked[label]['avg'] = return_dict[key]['data_type'][data_type][1]
                 unpacked[label]['max'] = return_dict[key]['data_type'][data_type][2]
-                unpacked[label]['source'] = 'ChEMBL'
+                unpacked[label]['source'] = return_dict[key]['source']
                 unpacked[label].pop('data_type', None)
 
         return list(unpacked.values())
+
+    @staticmethod
+    def return_splitted_ranges(value):
+        if len(value) == 1:
+            try: #check if it is not a None
+                minimum = round(float(value[0].split('|')[0]), 2)
+            except ValueError: #if it's None default to '-'
+                minimum = '-'
+            try: #check if it is not a None
+                maximum = float(value[0].split('|')[2])
+            except ValueError:#if it's None default to 0.00
+                maximum = 0.00
+
+            avg = float(value[0].split('|')[1])
+
+            if maximum == 0.00:
+                maximum = avg
+
+            if minimum == '-':
+                minimum = avg
+
+            if avg == 0.00:
+                avg = (minimum + maximum)/2
+
+            output = [minimum, round(avg, 2), round(maximum, 2)]
+        else:
+            minimum = []
+            average = []
+            maximum = []
+            for record in value:
+                if record.split('|')[0] != 'None':
+                    minimum.append(float(record.split('|')[0]))
+                if record.split('|')[2] != 'None':
+                    maximum.append(float(record.split('|')[2]))
+                average.append(float(record.split('|')[1]))
+            try:
+                minimum = round(min(minimum), 2)
+            except ValueError:
+                minimum = '-'
+
+            avg = sum(average) / len(average)
+
+            try:
+                maximum = max(maximum)
+            except ValueError:
+                maximum = avg
+
+            if minimum == '-':
+                minimum = avg
+
+            output = [minimum, round(avg, 2), round(maximum, 2)]
+        return output
 
     @staticmethod
     def get_min_max_values(value):
@@ -1701,7 +1760,7 @@ class LigandInformationView(TemplateView):
         ld['labels'] = LigandInformationView.get_labels(ligand_data, endogenous_ligands, ld['type'])
         ld['wl'] = list()
 
-        if ligand_data.smiles != None and (ld['mw'] == None or ld['mw'] < 800):
+        if ligand_data.smiles is not None and (ld['mw'] is None or ld['mw'] < 800):
             ld['picture'] = img_setup_smiles.format(urllib.parse.quote(ligand_data.smiles))
         else:
             # "No image available" SVG (source: https://commons.wikimedia.org/wiki/File:No_image_available.svg)
@@ -1720,46 +1779,50 @@ class LigandInformationView(TemplateView):
                 ld['wl'].append({'name': i.web_resource.name, "link": str(i)})
         return ld
 
-    @staticmethod
-    def process_endo(endo_data):
-        return_dict = dict()
-        for i in endo_data:
-            name = str(i.receptor)
-            return_dict[name] = dict()
-            return_dict[name]['data_type'] = dict()
-            return_dict[name]['data_type']['pEC50'] = i.pec50.split(' | ')
-            return_dict[name]['data_type']['pIC50'] = i.pic50.split(' | ')
-            return_dict[name]['data_type']['pKi'] = i.pKi.split(' | ')
-            return_dict[name]['receptor_gtp'] = i.receptor.short()
-            return_dict[name]['receptor_uniprot'] = i.receptor.entry_short()
-            return_dict[name]['receptor_species'] = i.receptor.species.common_name
-            return_dict[name]['receptor_family'] = i.receptor.family.parent.short()
-            return_dict[name]['receptor_class'] = i.receptor.family.parent.parent.parent.short()
-
-    	#Unpacking
-        unpacked = dict()
-        for key in return_dict.keys():
-            for data_type in return_dict[key]['data_type'].keys():
-                label = '_'.join([key,data_type])
-                unpacked[label] = deepcopy(return_dict[key])
-                unpacked[label]['type'] = data_type
-                unpacked[label]['min'] = float(return_dict[key]['data_type'][data_type][0]) if return_dict[key]['data_type'][data_type][0] != 'None' else ''
-                unpacked[label]['avg'] = float(return_dict[key]['data_type'][data_type][1]) if return_dict[key]['data_type'][data_type][1] != 'None' else ''
-                unpacked[label]['max'] = float(return_dict[key]['data_type'][data_type][2]) if return_dict[key]['data_type'][data_type][2] != 'None' else ''
-                unpacked[label]['source'] = 'Guide to Pharmacology'
-                unpacked[label].pop('data_type', None)
-
-        return list(unpacked.values())
+    # @staticmethod
+    # def process_endo(endo_data):
+    #     return_dict = dict()
+    #     for i in endo_data:
+    #         name = str(i.receptor)
+    #         return_dict[name] = dict()
+    #         return_dict[name]['data_type'] = dict()
+    #         return_dict[name]['data_type']['pEC50'] = i.pec50.split(' | ')
+    #         return_dict[name]['data_type']['pIC50'] = i.pic50.split(' | ')
+    #         return_dict[name]['data_type']['pKi'] = i.pKi.split(' | ')
+    #         return_dict[name]['receptor_gtp'] = i.receptor.short()
+    #         return_dict[name]['receptor_uniprot'] = i.receptor.entry_short()
+    #         return_dict[name]['receptor_species'] = i.receptor.species.common_name
+    #         return_dict[name]['receptor_family'] = i.receptor.family.parent.short()
+    #         return_dict[name]['receptor_class'] = i.receptor.family.parent.parent.parent.short()
+    #
+    # 	#Unpacking
+    #     unpacked = dict()
+    #     for key in return_dict.keys():
+    #         for data_type in return_dict[key]['data_type'].keys():
+    #             label = '_'.join([key,data_type])
+    #             unpacked[label] = deepcopy(return_dict[key])
+    #             unpacked[label]['type'] = data_type
+    #             unpacked[label]['min'] = float(return_dict[key]['data_type'][data_type][0]) if return_dict[key]['data_type'][data_type][0] != 'None' else ''
+    #             unpacked[label]['avg'] = float(return_dict[key]['data_type'][data_type][1]) if return_dict[key]['data_type'][data_type][1] != 'None' else ''
+    #             unpacked[label]['max'] = float(return_dict[key]['data_type'][data_type][2]) if return_dict[key]['data_type'][data_type][2] != 'None' else ''
+    #             unpacked[label]['source'] = 'Guide to Pharmacology'
+    #             unpacked[label].pop('data_type', None)
+    #
+    #     return list(unpacked.values())
 
     @staticmethod
     def get_labels(ligand_data, endogenous_ligands, label_type):
         endogenous_label = '<img src="https://icon-library.com/images/icon-e/icon-e-17.jpg" title="Endogenous ligand from GtoP" width="20" height="20"></img>'
-        surrogate_label = '<img src="https://icon-library.com/images/letter-s-icon/letter-s-icon-15.jpg" title="Surrogate ligand" width="20" height="20"></img>'
+        surrogate_label = '<img src="https://icon-library.com/images/letter-s-icon/letter-s-icon-15.jpg"' + \
+                          ' title="Surrogate ligand" width="20" height="20"></img>'
         drug_label = '<img src="https://icon-library.com/images/drugs-icon/drugs-icon-7.jpg" title="Approved drug" width="20" height="20"></img>'
         #trial_label = '<img src="https://icon-library.com/images/clinical-trial-icon-2793430_960_720_7492.png" title="Drug in clinical trial" width="20" height="20"></img>'
         small_molecule_label = '<img src="https://icon-library.com/images/282dfa029c.png" title="Small molecule" width="20" height="20"></img>'
-        peptide_label = '<img src="https://media.istockphoto.com/vectors/protein-structure-molecule-3d-icon-vector-id1301952426?k=20&m=1301952426&s=612x612&w=0&h=a3ik50-faiP2BqiB7wMP3s_rVZyzPl9yHNQy7Rg89aE=" title="Peptide" width="20" height="20"></img>'
-        antibody_label = '<img src="https://icon-library.com/images/2018/2090572_antibody-antibody-hd-png-download.png" title="Antibody" width="20" height="20"></img>'
+        peptide_label = '<img src="https://media.istockphoto.com/vectors/protein-structure-molecule-3d-icon-vector' + \
+                        '-id1301952426?k=20&m=1301952426&s=612x612&w=0&h=a3ik50-faiP2BqiB7wMP3s_rVZyzPl9yHNQy7Rg89aE=" ' + \
+                        'title="Peptide" width="20" height="20"></img>'
+        antibody_label = '<img src="https://icon-library.com/images/2018/2090572_antibody-antibody-hd-png-download.png" ' + \
+                         'title="Antibody" width="20" height="20"></img>'
         label = ''
         #creating a parallel dict to keep info for labelings
         #but also addressing info in new table structure of ligand info page
@@ -1802,7 +1865,6 @@ class BiasPathways(TemplateView):
         context = dict()
         prepare_data = self.process_data(content)
         context.update({'data': prepare_data})
-        print(context)
 
         return context
 
