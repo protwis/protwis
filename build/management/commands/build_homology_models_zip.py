@@ -1,8 +1,11 @@
 from build.management.commands.base_build import Command as BaseBuild
 from django.db import connection
+from django.conf import settings
+
 
 from protein.models import Protein, ProteinState
-from structure.models import Structure, StructureModel, StructureComplexModel, StatsText, PdbData
+from structure.models import Structure, StructureModel, StructureComplexModel, StatsText, PdbData, StructureModelpLDDT
+from residue.models import Residue
 from common.definitions import *
 
 import Bio.PDB as PDB
@@ -12,6 +15,7 @@ import zipfile
 import shutil
 from datetime import datetime, date
 import time
+from io import StringIO
 
 
 startTime = datetime.now()
@@ -42,9 +46,12 @@ class Command(BaseBuild):
         if pdbname in self.cached_structures:
             return self.cached_structures[pdbname]
         else:
-            s = Structure.objects.get(pdb_code__index=pdbname)
-            self.cached_structures[pdbname] = s
-            return s
+            if pdbname=='AF':
+                return None
+            else:
+                s = Structure.objects.get(pdb_code__index=pdbname)
+                self.cached_structures[pdbname] = s
+                return s
         
     def handle(self, *args, **options):
         self.cached_structures = {}
@@ -146,7 +153,10 @@ class Command(BaseBuild):
         # with open(os.sep.join([path, modelname, modelname+'.template_similarities.csv']), 'r') as sim_file:
         #     similarities = sim_file.readlines()
 
-        stats_text = StatsText.objects.get_or_create(stats_text=''.join(templates))[0]
+        if main_structure=='AF':
+            stats_text = None
+        else:
+            stats_text = StatsText.objects.get_or_create(stats_text=''.join(templates))[0]
         pdb = PdbData.objects.get_or_create(pdb=pdb_data)[0]
         
         if self.complex:
@@ -158,7 +168,19 @@ class Command(BaseBuild):
             s_state = ProteinState.objects.get(name=state)
             m_s = self.get_structures(main_structure)
             prot = Protein.objects.get(entry_name=gpcr_prot)
-            StructureModel.objects.get_or_create(protein=prot, state=s_state, main_template=m_s, pdb_data=pdb, version=build_date, stats_text=stats_text)
+            sm, created = StructureModel.objects.get_or_create(protein=prot, state=s_state, main_template=m_s, pdb_data=pdb, version=build_date, stats_text=stats_text)
+            if main_structure=='AF':
+                try:
+                    p = PDB.PDBParser().get_structure('model', os.sep.join([settings.DATA_DIR, 'structure_data', 'Alphafold', '{}_{}.pdb'.format(gpcr_prot, state.lower())]))[0]
+                except:
+                    print('ERROR: {}_{}.pdb is not in data folder'.format(gpcr_prot, state.lower()))
+                resis = []
+                for chain in p:
+                    for res in chain:
+                        plddt = res['CA'].get_bfactor()
+                        r = StructureModelpLDDT(structure_model=sm, residue=Residue.objects.get(protein_conformation__protein=prot, sequence_number=res.get_id()[1]), pLDDT=plddt)
+                        resis.append(r)
+                StructureModelpLDDT.objects.bulk_create(resis)
         if self.revise_xtal:
             m_s.refined = True
             m_s.save()

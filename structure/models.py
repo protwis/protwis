@@ -121,22 +121,34 @@ class StructureVectors(models.Model):
 class StructureModel(models.Model):
     protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE)
     state = models.ForeignKey('protein.ProteinState', on_delete=models.CASCADE)
-    main_template = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
+    main_template = models.ForeignKey('structure.Structure', null=True, on_delete=models.CASCADE)
     pdb_data = models.ForeignKey('PdbData', null=True, on_delete=models.CASCADE)
     version = models.DateField()
-    stats_text = models.ForeignKey('StatsText', on_delete=models.CASCADE)
+    stats_text = models.ForeignKey('StatsText', null=True, on_delete=models.CASCADE)
 
     def __repr__(self):
-        return '<HomologyModel: '+str(self.protein.entry_name)+' '+str(self.state)+'>'
+        return '<StructureModel: '+str(self.protein.entry_name)+' '+str(self.state)+'>'
 
     def __str__(self):
-        return '<HomologyModel: '+str(self.protein.entry_name)+' '+str(self.state)+'>'
+        return '<StructureModel: '+str(self.protein.entry_name)+' '+str(self.state)+'>'
 
     class Meta():
         db_table = 'structure_model'
 
     def get_cleaned_pdb(self):
         return self.pdb_data.pdb
+
+
+class StructureModelpLDDT(models.Model):
+    structure_model = models.ForeignKey('StructureModel', on_delete=models.CASCADE)
+    residue = models.ForeignKey('residue.Residue', on_delete=models.CASCADE)
+    pLDDT = models.DecimalField(max_digits=4, decimal_places=2)
+
+    def __str__(self):
+        return '<pLDDT: {} {} {}>'.format(self.pLDDT, self.residue.sequence_number, self.structure_model)
+
+    class Meta():
+        db_table = 'structure_model_plddt'
 
 
 class StructureComplexModel(models.Model):
