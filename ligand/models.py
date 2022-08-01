@@ -389,13 +389,12 @@ class Endogenous_GTP(models.Model):
     ligand_action = models.ForeignKey('ligand.LigandRole', on_delete=models.CASCADE, null=True)
     endogenous_status = models.CharField(max_length=200, null=True)
     potency_ranking = models.FloatField(max_length=60, null=True)
-    receptor = models.ForeignKey('protein.Protein', on_delete=models.CASCADE)
+    receptor = models.ForeignKey('protein.Protein', on_delete=models.CASCADE, related_name='endogenous_ligands')
     pec50 = models.CharField(max_length=200, null=True)
     pKi = models.CharField(max_length=200, null=True)
     pic50 = models.CharField(max_length=200, null=True)
     pKd = models.CharField(max_length=200, null=True)
     publication = models.ManyToManyField(Publication)
-
 
 # Biased Signalling Data
 class BiasedData(models.Model):
