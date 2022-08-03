@@ -1670,7 +1670,7 @@ class LigandInformationView(TemplateView):
             for data_type in return_dict[key]['data_type'].keys():
                 label = '_'.join([key,data_type])
                 unpacked[label] = deepcopy(return_dict[key])
-                unpacked[label]['type'] = data_type if data_type.startswith('p') or data_type.startswith('P') else 'p'+data_type
+                unpacked[label]['type'] = data_type if data_type.startswith('p') or data_type.startswith('P') or data_type == '-' else 'p'+data_type
                 unpacked[label]['min'] = return_dict[key]['data_type'][data_type][0]
                 unpacked[label]['avg'] = return_dict[key]['data_type'][data_type][1]
                 unpacked[label]['max'] = return_dict[key]['data_type'][data_type][2]
@@ -1694,7 +1694,7 @@ class LigandInformationView(TemplateView):
             try: #check if it is not a None
                 maximum = float(value[0].split('|')[2])
             except ValueError:#if it's None default to 0.00
-                minimum = avg
+                maximum = avg
 
             if avg == 0.00:
                 avg = (minimum + maximum)/2
