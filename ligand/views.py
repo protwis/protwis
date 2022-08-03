@@ -249,7 +249,7 @@ def TargetDetailsExtended(request, **kwargs):
                     protein__in=prot_id, ligand__ids__web_resource__slug='chembl_ligand')
 
     # if queryset is empty redirect to ligand browser
-    if not ps:
+    if not ps and 'slug' not in kwargs:
         return redirect("ligand_selection")
 
     if cache_key != False and cache.has_key(cache_key):
