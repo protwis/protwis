@@ -1682,17 +1682,18 @@ class LigandInformationView(TemplateView):
     @staticmethod
     def return_splitted_ranges(value):
         if len(value) == 1:
+            split_value = value[0].split('|')
             try: #check if it is not a None
-                avg = float(value[0].split('|')[1])
+                avg = float(split_value[1])
             except ValueError: #if it's None default to '-'
                 avg = '-'
             try: #check if it is not a None
-                minimum = round(float(value[0].split('|')[0]), 2)
+                minimum = round(float(split_value[0]), 2)
             except ValueError: #if it's None default to '-'
                 minimum = avg
 
             try: #check if it is not a None
-                maximum = float(value[0].split('|')[2])
+                maximum = float(split_value[2])
             except ValueError:#if it's None default to 0.00
                 maximum = avg
 
@@ -1708,17 +1709,22 @@ class LigandInformationView(TemplateView):
             average = []
             maximum = []
             for record in value:
-                if record.split('|')[0] != 'None':
+                split_record = record.split('|')
+                if split_record[0] != 'None':
                     minimum.append(float(record.split('|')[0]))
-                if record.split('|')[2] != 'None':
+                if split_record[1] != 'None':
+                    average.append(float(record.split('|')[1]))
+                if split_record[2] != 'None':
                     maximum.append(float(record.split('|')[2]))
-                average.append(float(record.split('|')[1]))
             try:
                 minimum = round(min(minimum), 2)
             except ValueError:
                 minimum = '-'
 
-            avg = sum(average) / len(average)
+            if len(average) > 0:
+                avg = sum(average) / len(average)
+            else:
+                avg = "-"
 
             try:
                 maximum = max(maximum)
@@ -1728,7 +1734,10 @@ class LigandInformationView(TemplateView):
             if minimum == '-':
                 minimum = avg
 
-            output = [minimum, round(avg, 2), round(maximum, 2)]
+            if avg != "-":
+                output = [minimum, round(avg, 2), round(maximum, 2)]
+            else:
+                output = ['-', '-', '-']
         return output
 
     @staticmethod
