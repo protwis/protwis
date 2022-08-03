@@ -1655,7 +1655,7 @@ class LigandInformationView(TemplateView):
                 return_dict[name]['receptor_uniprot'] = i.protein.entry_short()
                 return_dict[name]['receptor_species'] = i.protein.species.common_name
                 return_dict[name]['receptor_family'] = i.protein.family.parent.short()
-                return_dict[name]['receptor_class'] = i.protein.family.parent.parent.parent.short()
+                return_dict[name]['receptor_class'] = i.protein.family.parent.parent.parent.shorter()
                 return_dict[name]['source'] = i.source
 
         for item in return_dict.keys():
@@ -1683,26 +1683,26 @@ class LigandInformationView(TemplateView):
     def return_splitted_ranges(value):
         if len(value) == 1:
             try: #check if it is not a None
+                avg = float(value[0].split('|')[1])
+            except ValueError: #if it's None default to '-'
+                avg = '-'
+            try: #check if it is not a None
                 minimum = round(float(value[0].split('|')[0]), 2)
             except ValueError: #if it's None default to '-'
-                minimum = '-'
+                minimum = avg
+
             try: #check if it is not a None
                 maximum = float(value[0].split('|')[2])
             except ValueError:#if it's None default to 0.00
-                maximum = 0.00
-
-            avg = float(value[0].split('|')[1])
-
-            if maximum == 0.00:
-                maximum = avg
-
-            if minimum == '-':
                 minimum = avg
 
             if avg == 0.00:
                 avg = (minimum + maximum)/2
 
-            output = [minimum, round(avg, 2), round(maximum, 2)]
+            if avg != "-":
+                output = [minimum, round(avg, 2), round(maximum, 2)]
+            else:
+                output = ['-', '-', '-']
         else:
             minimum = []
             average = []
