@@ -2503,13 +2503,14 @@ def SingleModelDownload(request, modelname, fullness, state=None, csv=False):
 			helix_resis = Residue.objects.filter(protein_conformation__protein=hommod.protein, protein_segment__category='helix').values_list('sequence_number', flat=True)
 		p = PDBParser(get_header=True)
 		pdb = p.get_structure('pdb', StringIO(pdb_lines))[0]
-		to_remove = []
+
 		for chain in pdb:
+			to_remove = []
 			for res in chain:
 				if res.id[1] not in helix_resis and res.id[0]==' ':
 					to_remove.append(res.id)
-		for i in to_remove:
-			chain.detach_child(i)
+			for i in to_remove:
+				chain.detach_child(i)
 		io = StringIO()
 		pdbio = PDBIO()
 		pdbio.set_structure(pdb)
