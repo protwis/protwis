@@ -1,5 +1,6 @@
 from django.shortcuts import get_object_or_404, render
 from django.conf import settings
+from django.http import HttpResponse
 from django.views import generic
 from django.core.cache import cache
 from django.views.decorators.cache import cache_page
@@ -62,6 +63,10 @@ def linear_gradient(start_hex="#4682B4", finish_hex="#FFB347", n=10):
 
 @cache_page(60 * 60 * 24 * 7)
 def detail(request, slug):
+    # FULL class A is too big for consensus
+    if slug == "001":
+        return HttpResponse("Displaying a consensus of all class A receptors is currently not supported.")
+
     # get family
     pf = ProteinFamily.objects.get(slug=slug)
 
