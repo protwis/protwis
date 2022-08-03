@@ -142,7 +142,7 @@ def TargetDetailsCompact(request, **kwargs):
 
     # if queryset is empty redirect to ligand browser
     if not ps:
-        return redirect("ligand_browser")
+        return redirect("ligand_selection")
 
     if cache_key != False and cache.has_key(cache_key):
         ligand_data = cache.get(cache_key)
@@ -250,7 +250,7 @@ def TargetDetailsExtended(request, **kwargs):
 
     # if queryset is empty redirect to ligand browser
     if not ps:
-        return redirect("ligand_browser")
+        return redirect("ligand_selection")
 
     if cache_key != False and cache.has_key(cache_key):
         ps = cache.get(cache_key)
@@ -311,7 +311,7 @@ def TargetPurchasabilityDetails(request, **kwargs):
 
     # if queryset is empty redirect to ligand browser
     if not ps:
-        return redirect("ligand_browser")
+        return redirect("ligand_selection")
 
     if cache_key != False and cache.has_key(cache_key):
         purchasable = cache.get(cache_key)
