@@ -726,8 +726,11 @@ def familyDetail(request, slug):
             pc = ProteinConformation.objects.get(protein__family__slug=slug, protein__species_id=1,
                                                  protein__sequence_type__slug='wt')
         except:
-            pc = None
-            p = None
+            try:
+                pc = ProteinConformation.objects.filter(protein__family__slug=slug, protein__sequence_type__slug='wt').first()
+            except:
+                return HttpResponse("No consensus was generated for this protein family")
+    
     p = pc.protein
     residues = Residue.objects.filter(protein_conformation=pc).order_by('sequence_number').prefetch_related(
         'protein_segment', 'generic_number', 'display_generic_number')
