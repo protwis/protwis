@@ -80,14 +80,22 @@ canvas {
 
 <style>
 .inline {display:inline;}
-.graphcolor { display:inline-block; border-style:solid; border-width: 1px; padding: 1px 5px; text-align: center}
+.graphcolor {
+              display:inline-block;
+              padding: 1px 5px;
+              text-align: center;
+              margin-left: 20px;
+              vertical-align: middle;
+              width: 20px;
+              height: 20px;
+              margin-top: 5px;}
 </style>
 
 <div class="row">
     <div class="col-md-3 text-right text-info">
         <h4>MODEL</h4>
     </div>
-    <div class="col-md-9">
+    <div class="col-md-5">
         <div class="btn-group">
             <a href="/" class="dropdown-toggle btn btn-primary btn-mini" data-toggle="dropdown" role="button" aria-expanded="false">Download <span class='caret'></span></a>
             <ul class="dropdown-menu" role="menu" style="min-width:50%;">
@@ -110,9 +118,34 @@ canvas {
             </div>
         </div>
     </div>
+    <div class="col-md-4">
+      <br>
+      <br>
+      <br>
+      <br>
+      <div style='width: 70%; display:table; position:relative;'>
+          <div style='display: table-cell;'>
+              <div class="graphcolor" style="background-color: blue; "></div>
+              <span style="margin-left: 5px; vertical-align: middle; padding-top: 5px;">Very high (pLDDT > 90)</span>
+              <br>
+              <div class="graphcolor" style="background-color: lightblue; "></div>
+              <span style="margin-left: 5px; vertical-align: middle;">Confident (90 > pLDDT > 70)</span>
+              <br>
+              <div class="graphcolor" style="background-color: yellow; "></div>
+              <span style="margin-left: 5px; vertical-align: middle;">Low (70 > pLDDT > 50)</span>
+              <br>
+              <div class="graphcolor" style="background-color: orange;"></div>
+              <span style="margin-left: 5px; vertical-align: middle;">Very low (pLDDT < 50)</span>
+              <br>
+              <div class="graphcolor" style="background-color: red;"></div>
+              <span style="margin-left: 5px; vertical-align: middle;">Disordered</span>
+              <br>
+          </div>
+      </div>
+    </div>
 </div>
 
-<div class="row">
+<!-- <div class="row">
     <div class="col-md-3 text-right text-info">
         <h4>MAIN TEMPLATE</h4>
     </div>
@@ -127,9 +160,8 @@ canvas {
             </div>
         {% endif %}
     </div>
-</div>
-
-<div class="row">
+</div> -->
+<!-- <div class="row">
     <div class="col-md-3 text-right text-info">
         <h4>TEMPLATES</h4>
     </div>
@@ -186,7 +218,9 @@ canvas {
         </table>
         <br>
         Number of backbone templates: {{ backbone_templates_number }}<br>
-        Number of rotamer templates: {{ rotamer_templates_number }}<br><br>
+        Number of rotamer templates: {{ rotamer_templates_number }}<br><br> -->
+
+  <!-- ALREADY COMMENTED -->
   <!--   </div>
 </div>
 
@@ -219,15 +253,17 @@ canvas {
 
         </div>
     </div> -->
-
-        <div style="padding-top: 0px; float: left; font-size: 10px; white-space: nowrap; width: 100%;">
+  <!-- END ALREADY COMMENTED -->
+        <!-- <div style="padding-top: 0px; float: left; font-size: 10px; white-space: nowrap; width: 100%;"> -->
+          <!-- ALREADY COMMENTED -->
             <!-- <div class="btn-group">
                 <a id="download_csv_btn" class="btn btn-primary btn-mini " href="#" onClick="javascript:downloadCSV();">Download .csv</a>
             </div> -->
             <!-- <div class="btn-group">
                 <a id="superpose_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Superposition</a>
             </div> -->
-            <div style="padding-top: 0px; font-size: 10px; white-space: nowrap; width: 50%;">
+              <!-- END ALREADY COMMENTED -->
+            <!-- <div style="padding-top: 0px; font-size: 10px; white-space: nowrap; width: 50%;">
 
                 <style>
                     table.dataTable thead th {padding: 3px 1px 3px 3px;}
@@ -287,7 +323,7 @@ canvas {
             </div>
         </div>
     </div>
-</div>
+</div> -->
 
 {% endblock %}
 {% block addon_js %}
@@ -296,7 +332,7 @@ canvas {
         document.addEventListener( "DOMContentLoaded", function(){
             stage = new NGL.Stage( "viewport", { backgroundColor: "white" } );
             var color_residues = JSON.parse('{{color_residues|safe}}');
-            color_residues.push(["darkorchid","*"])
+            color_residues.push(["white","*"])
 
             var schemeId = NGL.ColorMakerRegistry.addSelectionScheme( color_residues );
 

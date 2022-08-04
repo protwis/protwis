@@ -10,7 +10,7 @@ from django.shortcuts import redirect
 
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from protein.models import ProteinSegment
-from structure.models import Structure, StructureModel, StructureComplexModel, StructureExtraProteins, StructureVectors, StructureModelRMSD
+from structure.models import Structure, StructureModel, StructureComplexModel, StructureExtraProteins, StructureVectors, StructureModelRMSD, StructureModelpLDDT
 from structure.functions import CASelector, SelectionParser, GenericNumbersSelector, SubstructureSelector, ModelRotamer
 from structure.assign_generic_numbers_gpcr import GenericNumbering, GenericNumberingFromDB
 from structure.structural_superposition import ProteinSuperpose,FragmentSuperpose
@@ -212,33 +212,160 @@ def HomologyModelDetails(request, modelname, state):
 	"""
 	modelname = modelname
 
-	color_palette = ["orange","cyan","yellow","lime","fuchsia","green","teal","olive","thistle","grey","chocolate","blue","red","pink","maroon"]
+	model_plddt = StructureModelpLDDT.objects.filter(structure_model__protein__entry_name=modelname, structure_model__state__slug=state)
+	residues_plddt = {}
+	for item in model_plddt:
+		residues_plddt[item.residue.id] = [item.residue, item.pLDDT]
 
 	model = StructureModel.objects.get(protein__entry_name=modelname, state__slug=state)
-	model_main_template = model.main_template
-	if model.protein.accession:
-		residues = Residue.objects.filter(protein_conformation__protein=model.protein)
-		a = Alignment()
-		a.load_reference_protein(model.protein)
-		a.load_proteins([model.main_template.protein_conformation.protein.parent])
-		segs = ProteinSegment.objects.filter(id__in=residues.order_by("protein_segment__slug").distinct("protein_segment__slug").values_list("protein_segment", flat=True))
-		a.load_segments(segs)
-		a.build_alignment()
-		a.calculate_similarity()
-		main_template_seqsim = a.proteins[1].similarity
-	else:
-		residues = Residue.objects.filter(protein_conformation__protein=model.protein.parent)
-		main_template_seqsim = 100
-	rotamers = parse_model_statsfile(model.stats_text.stats_text, residues)
-	version = model.version
+	# model_main_template = model.main_template
+	# if model.protein.accession:
+	# 	residues = Residue.objects.filter(protein_conformation__protein=model.protein)
+	# 	a = Alignment()
+	# 	a.load_reference_protein(model.protein)
+	# 	a.load_proteins([model.main_template.protein_conformation.protein.parent])
+	# 	segs = ProteinSegment.objects.filter(id__in=residues.order_by("protein_segment__slug").distinct("protein_segment__slug").values_list("protein_segment", flat=True))
+	# 	a.load_segments(segs)
+	# 	a.build_alignment()
+	# 	a.calculate_similarity()
+	# 	main_template_seqsim = a.proteins[1].similarity
+	# else:
+	# 	residues = Residue.objects.filter(protein_conformation__protein=model.protein.parent)
+	# 	main_template_seqsim = 100
+	# rotamers = parse_model_statsfile(model.stats_text.stats_text, residues)
+	# version = model.version
 
-	bb_temps, backbone_templates, r_temps, rotamer_templates, segments_out, bb_main, bb_alt, bb_none, sc_main, sc_alt, sc_none, template_list, colors = format_model_details(rotamers, model_main_template, color_palette)
+	# bb_temps, backbone_templates, r_temps, rotamer_templates, segments_out, bb_main, bb_alt, bb_none, sc_main, sc_alt, sc_none, template_list, colors = format_model_details(rotamers, model_main_template, color_palette)
 
-	return render(request,'homology_models_details.html',{'model': model, 'modelname': modelname, 'rotamers': rotamers, 'backbone_templates': bb_temps, 'backbone_templates_number': len(backbone_templates),
-														  'rotamer_templates': r_temps, 'rotamer_templates_number': len(rotamer_templates), 'color_residues': json.dumps(segments_out), 'bb_main': round(bb_main/len(rotamers)*100, 1),
-														  'bb_alt': round(bb_alt/len(rotamers)*100, 1), 'bb_none': round(bb_none/len(rotamers)*100, 1), 'sc_main': round(sc_main/len(rotamers)*100, 1), 'sc_alt': round(sc_alt/len(rotamers)*100, 1),
-														  'sc_none': round(sc_none/len(rotamers)*100, 1), 'main_template_seqsim': main_template_seqsim, 'template_list': template_list, 'model_main_template': model_main_template,
-														  'state': state, 'version': version})
+	segments_out = af_model_coloring(residues_plddt)
+
+	return render(request,'homology_models_details.html',{'model': model,
+														  'modelname': modelname,
+														  # 'rotamers': rotamers,
+														  # 'backbone_templates': bb_temps,
+														  # 'backbone_templates_number': len(backbone_templates),
+														  # 'rotamer_templates': r_temps,
+														  # 'rotamer_templates_number': len(rotamer_templates),
+														  'color_residues': json.dumps(segments_out),
+														  # 'bb_main': round(bb_main/len(rotamers)*100, 1),
+														  # 'bb_alt': round(bb_alt/len(rotamers)*100, 1),
+														  # 'bb_none': round(bb_none/len(rotamers)*100, 1),
+														  # 'sc_main': round(sc_main/len(rotamers)*100, 1),
+														  # 'sc_alt': round(sc_alt/len(rotamers)*100, 1),
+														  # 'sc_none': round(sc_none/len(rotamers)*100, 1),
+														  # 'main_template_seqsim': main_template_seqsim,
+														  # 'template_list': template_list,
+														  # 'model_main_template': model_main_template,
+														  # 'state': state,
+														  # 'version': version
+														  })
+
+def af_model_coloring(residues_plddt):
+	segments, segments_formatted, segment_colors = {},{},{}
+	hex_colors = colour_af_plddt()
+	for r in residues_plddt.keys():
+		color = from_score_to_color(residues_plddt[r][1], hex_colors)
+		if color in segment_colors.keys():
+			segment_colors[color].append(residues_plddt[r][0].sequence_number)
+		else:
+			segment_colors[color] = [residues_plddt[r][0].sequence_number]
+		if residues_plddt[r][0].protein_segment.slug not in segments:
+			segments[residues_plddt[r][0].protein_segment.slug] = [residues_plddt[r][0].sequence_number]
+		else:
+			segments[residues_plddt[r][0].protein_segment.slug].append(residues_plddt[r][0].sequence_number)
+
+	for s, nums in segment_colors.items():
+		for i, num in enumerate(nums):
+			if i==0:
+				segments_formatted[s] = [[num]]
+			elif nums[i-1]!=num-1:
+				if segments_formatted[s][-1][0]==nums[i-1]:
+					segments_formatted[s][-1] = '{}'.format(segments_formatted[s][-1][0])
+				else:
+					segments_formatted[s][-1] = '{}-{}'.format(segments_formatted[s][-1][0], nums[i-1])
+				segments_formatted[s].append([num])
+				if i+1==len(segment_colors[s]):
+					segments_formatted[s][-1] = '{}'.format(segments_formatted[s][-1][0])
+			elif i+1==len(segment_colors[s]):
+				segments_formatted[s][-1] = '{}-{}'.format(segments_formatted[s][-1][0], nums[i-1]+1)
+		if len(nums)==1:
+			segments_formatted[s] = ['{}'.format(segments_formatted[s][0][0])]
+
+	for s, nums in segments_formatted.items():
+		if len(nums)>1:
+			text = ''
+			for n in nums:
+				text+='{} or '.format(n)
+				segments_formatted[s] = text[:-4]
+		else:
+			segments_formatted[s] = segments_formatted[s][0]
+
+	segments_out = [[i,j] for i,j in segments_formatted.items()]
+
+	return segments_out
+
+def colour_af_plddt():
+    ''' Generates full gradient from 0 to 100 for plddt score '''
+    blue_hex = RGB_to_hex([0,76,202])
+    lightblue_hex = RGB_to_hex([73, 196, 238])
+    yellow_hex = RGB_to_hex([255, 213, 57])
+    orange_hex = RGB_to_hex([255, 113, 67])
+    red_hex = RGB_to_hex([255, 0, 0])
+
+    bad_confidence_gradient = linear_gradient(red_hex, orange_hex, 50)
+    low_confidence_gradient = linear_gradient(orange_hex, yellow_hex, 20)
+    expected_confidence_gradient= linear_gradient(yellow_hex, lightblue_hex, 20)
+    high_confidence_gradient= linear_gradient(lightblue_hex, blue_hex, 10)
+
+    full_gradient_hex = bad_confidence_gradient['hex'] + low_confidence_gradient['hex'] + expected_confidence_gradient['hex'] + high_confidence_gradient['hex']
+
+    return full_gradient_hex
+
+def hex_to_RGB(hex):
+  ''' "#FFFFFF" -> [255,255,255] '''
+  # Pass 16 to the integer function for change of base
+  return [int(hex[i:i+2], 16) for i in range(1,6,2)]
+
+def RGB_to_hex(RGB):
+  ''' [255,255,255] -> "#FFFFFF" '''
+  # Components need to be integers for hex to make sense
+  RGB = [int(x) for x in RGB]
+  return "#"+"".join(["0{0:x}".format(v) if v < 16 else
+            "{0:x}".format(v) for v in RGB])
+
+def color_dict(gradient):
+  ''' Takes in a list of RGB sub-lists and returns dictionary of
+    colors in RGB and hex form for use in a graphing function
+    defined later on '''
+  return {"hex":[RGB_to_hex(RGB) for RGB in gradient]}
+
+
+def linear_gradient(start_hex, finish_hex="#FFFFFF", n=10):
+  ''' returns a gradient list of (n) colors between
+    two hex colors. start_hex and finish_hex
+    should be the full six-digit color string,
+    inlcuding the number sign ("#FFFFFF") '''
+  # Starting and ending colors in RGB form
+  s = hex_to_RGB(start_hex)
+  f = hex_to_RGB(finish_hex)
+  # Initilize a list of the output colors with the starting color
+  RGB_list = [s]
+  # Calcuate a color at each evenly spaced value of t from 1 to n
+  for t in range(1, n):
+    # Interpolate RGB vector for color at the current value of t
+    curr_vector = [
+      int(s[j] + (float(t)/(n-1))*(f[j]-s[j]))
+      for j in range(3)
+    ]
+    # Add it to our list of output colors
+    RGB_list.append(curr_vector)
+
+  return color_dict(RGB_list)
+
+def from_score_to_color(residue, gradient):
+    residue = int(round(residue, 0))
+    color = gradient[residue]
+    return color
 
 def RefinedModelDetails(request, pdbname):
 	if len(pdbname) == 4:
