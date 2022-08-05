@@ -191,7 +191,7 @@ def TargetDetailsCompact(request, **kwargs):
 
                 # TEMPORARY workaround for handling string values
                 values = [float(item) for item in itertools.chain(
-                    *tmp.values()) if item != None and float(item)]
+                    *tmp.values()) if item != None and item != "None" and float(item)]
 
                 if len(values) > 0:
                     ligand_data.append({

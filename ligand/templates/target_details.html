@@ -303,11 +303,11 @@
                     <td>{{p.protein__entry_name}}</td>
                     <td>{{p.protein__species__common_name}}</td>
                     <td>{{p.purchasability}}</td>
-                    <td align="right">{{p.pchembl_value|floatformat:1}}</td>
-                    <td align="center">{{p.standard_type}}</td>
+                    <td align="right">{{p.p_activity_value|floatformat:1}}</td>
+                    <td align="center">{{p.value_type}}</td>
                     <td>{{p.standard_relation}}</td>
-                    <td>{{p.standard_value|floatformat}}</td>
-                    <td>{{p.standard_units}}</td>
+                    <td>{% if p.standard_activity_value != None %} {{p.standard_activity_value|floatformat}} {% endif %}</td>
+                    <td>{% if p.p_activity_value != p.standard_activity_value and p.standard_activity_value != None %} nM {% endif %}</td>
                     <td>{% if p.assay_type == 'B' %} Bind {% else %} Funct {% endif %}</td>
                     <td class="AssayCell"> <div style="overflow: hidden; text-overflow: ellipsis; word-wrap: break-word; max-width: 350px;white-space: nowrap;">{{p.assay_description}}<span class="AssayDetail">{{p.assay_description}}</span> </div></td>
                     <td>{{p.ligand__mw|floatformat:0}}</td>
