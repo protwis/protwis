@@ -523,8 +523,8 @@ def getReferenceTable(pathway, subtype):
                     <th style=\"color:red\">Receptor<br>(GtP)</th> \
                     <th>Tested<br>(total)</th> \
                     <th>Balanced<br>references</th> \
-                    <th>Pathway<br>biased</th> \
-                    <th>Physiology<br>biased</th> \
+                    <th>Pathway<br>biased *</th> \
+                    <th>Physiology<br>biased *</th> \
                   </tr> \
                 </thead>\
                 \n \
