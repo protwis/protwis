@@ -1637,6 +1637,8 @@ class LigandInformationView(TemplateView):
         for i in assays:
             name = str(i.protein) + '_' + str(i.source)
             assay_type = i.value_type
+            if i.source == 'PDSP KiDatabase':
+                i.source = 'PDSP Ki database'
             if i.source == 'Guide to Pharmacology':
                 data_value = i.p_activity_ranges
             else:
@@ -1839,10 +1841,10 @@ class LigandInformationView(TemplateView):
         #Endogenous OR Surrogate
         if ligand_data.id in endogenous_ligands:
             label += endogenous_label
-            label_dict['endogenous'] = 'Yes'
+            label_dict['endogenous'] = 'Endogenous'
         else:
             label += surrogate_label
-            label_dict['endogenous'] = 'No'
+            label_dict['endogenous'] = 'Surrogate'
         #Drug or Trial
         sources = [i.web_resource.name for i in ligand_data.ids.all()]
         drug_banks = ['DrugBank', 'Drug Central']
