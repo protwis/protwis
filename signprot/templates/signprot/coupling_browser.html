@@ -446,7 +446,9 @@
 {#                                <a href="/protein/{{ pvals.protein.entryname }}" target="_blank">{{ pvals.protein.iuphar|safe }}</a>#}
                             </td>
                             <td class="text-left">
+                              {% if cvals.ligand_name != "-" %}
                                 <a href="/ligand/{{ cvals.ligand_id }}/info" target="_blank">{{ cvals.ligand_name|safe }}</a>
+                              {% endif %}
                             </td>
                             <td>{{ cvals.ligand_physiological }}</td>
                             <td>{{ pvals.protein.gs }}</td>

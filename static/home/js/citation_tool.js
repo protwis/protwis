@@ -38,16 +38,17 @@ function citation_tool(url, cite_id) {
     var cit_request = new XMLHttpRequest();
     var domains = ["gpcrdb.org", "gproteindb.org", "arrestindb.org", "biasedsignalingatlas.org"];
     var filter_for = false;
-    if (env==="gpcrdb.org" || cite_id==="cite_gpcrdb") {
+		let cite_id_missing = typeof cite_id === "undefined";
+    if ((cite_id_missing && env==="gpcrdb.org") || cite_id==="cite_gpcrdb") {
     	filter_for = "gpcrdb";
     }
-    else if (env==="gproteindb.org" || cite_id==="cite_gproteindb") {
+    if ((cite_id_missing && env==="gproteindb.org") || cite_id==="cite_gproteindb") {
     	filter_for = "gproteindb";
     }
-    else if (env==="arrestindb.org" || cite_id==="cite_arrestindb") {
+    if ((cite_id_missing && env==="arrestindb.org") || cite_id==="cite_arrestindb") {
     	filter_for = "arrestindb";
     }
-    else if (env==="biasedsignalingatlas.org" || cite_id==="cite_biasedsignalingatlas") {
+    if ((cite_id_missing && env==="biasedsignalingatlas.org") || cite_id==="cite_biasedsignalingatlas") {
     	filter_for = "biasedsignalingatlas";
     }
     cit_request.open('GET', url.split('/')[0] + '/citations');
@@ -92,7 +93,7 @@ function citation_tool(url, cite_id) {
 			if (filter_for==="gpcrdb" && data[i][11]!=="GPCRdb") {
 				continue;
 			}
-			else if (filter_for==="gproteindb" && data[i][11]!=="GproteinDb") {
+			else if (filter_for==="gproteindb" && data[i][11]!=="GproteinDb" && data[i][7]=2022) {
 				continue;
 			}
 			else if (filter_for==="arrestindb" && data[i][11]!=="ArrestinDb") {

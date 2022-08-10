@@ -396,7 +396,6 @@ class Endogenous_GTP(models.Model):
     pKd = models.CharField(max_length=200, null=True)
     publication = models.ManyToManyField(Publication)
 
-
 # Biased Signalling Data
 class BiasedData(models.Model):
     ligand = models.ForeignKey(Ligand, on_delete=models.CASCADE) #LINK
