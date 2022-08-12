@@ -147,6 +147,18 @@
         Drugs <span>&#38;</span> ligands<span class="caret"></span>
     </a>
     <ul class="dropdown-menu" role="menu">
+        <li class="nav-header disabled"><a>LIGANDS & BIOACTIVITIES</a></li>
+        <li><a href="{{ hosts.gpcr }}/ligand/coverage">Ligand coverage</a></li>
+        <li><a href="{{ hosts.gpcr }}/ligand">Ligands (ChEMBL, GtP, Ki db)<a/></li>
+        <!-- <li class="dropdown-submenu">
+            <a tabindex="0" href="#">Ligands (ChEMBL, GtP, Ki db)</a>
+            <ul class="dropdown-menu">
+                <li><a href="{{ hosts.gpcr }}/ligand">By receptor<a/></li>
+                <li><a href="{{ hosts.gpcr }}/ligand_by_name">By name/id</a></li>
+                <li><a href="{{ hosts.gpcr }}/ligand_by_structure">By structure</a></li>
+            </ul>
+        </li> -->
+        <li class="divider"></li>
         <li class="nav-header disabled"><a>ENDOGENOUS LIGANDS</a></li>
         <li><a href="{{ hosts.gpcr }}/ligand/endogenousbrowser">Endogenous ligands (GtP)</a></li>
         <li class="divider"></li>
@@ -155,10 +167,6 @@
         <li><a href="{{ hosts.gpcr }}/drugs/drugmapping">Drug target tree</a></li>
         <li><a href="{{ hosts.gpcr }}/drugs/drugstatistics">Drug statistics</a></li>
         <li class="divider"></li>
-
-        <li class="nav-header disabled"><a>LIGANDS</a></li>
-        <li><a href="{{ hosts.gpcr }}/ligand/coverage">Ligand coverage</a></li>
-        <li><a href="{{ hosts.gpcr }}/ligand">Ligands (ChEMBL)</a></li>
 
         <!-- DEPRECATED FUNCTION
           <li class="nav-header disabled text-left"><a>Structures</a></li>
@@ -173,7 +181,6 @@
             </a></li>
           -->
 
-        <li class="divider"></li>
         <li class="nav-header disabled text-left"><a>LIGAND SITES</a></li>
 
         <li><a href="{{ hosts.gpcr }}/interaction">GPCR-ligand interactions
