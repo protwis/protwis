@@ -56,7 +56,32 @@
         border-width: 1px;
         padding: 3px;
     }
-
+    /*Structure preview in tooltip*/
+    pre {
+        display: block;
+        font: 100% "Courier New", Courier, monospace;
+        padding: 10px;
+        border: 1px solid #bae2f0;
+        background: #e3f4f9;
+        margin: .5em 0;
+        overflow: auto;
+        width: 800px;
+    }
+    #struct {
+        display: none;
+        position: absolute;
+        z-index: 100;
+        border: 1px;
+        background-color: white;
+        border-style: solid;
+        border-width: 1px;
+        padding: 3px;
+    }
+    .scroll-container {
+        /*max-width: 200px;*/
+        overflow-x: scroll;
+        overflow-y: auto;
+    }
 </style>
 <style type="text/css">
 	.dataTables_scrollHeadInner {
@@ -223,34 +248,8 @@
 <script src="{% static 'home/js/select2.js' %}"> </script>
 <script src="{% static 'home/js/gpcrdb.js' %}"></script>
 
+{% if mode == 'extended' %}
 <script type="text/javascript" charset="utf-8">
-    this.compoundPreview = function () {
-
-        //Define position of the tooltip in relation to the cursor
-        xOffset = 30;
-        yOffset = -10;
-
-        $("a.struct").hover(function (e) {
-            this.t = this.title;
-            this.title = "";
-            var c = (this.t != "") ? "<br/>" + this.t : "";
-            $("body").append("<p id='struct'><img style='max-width: 200px; height: auto' src='" + this.rel + "'/>" + c + "</p>");
-            $("#struct")
-                .css("top", (e.pageY - yOffset) + "px")
-                .css("left", (e.pageX + xOffset) + "px")
-                .fadeIn("fast");
-        },
-            function () {
-                this.title = this.t;
-                $("#struct").remove();
-            });
-        $("a.struct").mousemove(function (e) {
-            $("#struct")
-                .css("top", (e.pageY - yOffset) + "px")
-                .css("left", (e.pageX + xOffset) + "px");
-        });
-    };
-
     $(document).ready(function () {
         //ClearSelection('targets');
         var table = $('#proteins').DataTable({
@@ -278,8 +277,66 @@
         yadcf.init(table.draw(), column_filters, {
           cumulative_filtering: false
         });
+    })
+</script>
+{% else %}
+<script type="text/javascript" charset="utf-8">
+    $(document).ready(function () {
+        //ClearSelection('targets');
+        var table = $('#proteins').DataTable({
+            scrollX: true,
+            scrollY: $(window).height() - 100,
+            bScrollCollapse: true,
+            paging: true,
+            paging_type: 'full_numbers',
+            iDisplayLength: 50,
+            orderCellsTop: true,
+            autoWidth: true,
+            });
 
+        let column_filters = [];
+    		// createYADCFfilters(start_column, num_cols, filter_type, select_type = null, filter_default_label = "", filter_reset_button_text = false, filter_match_mode = null, column_data_type = null, width = null)
+        column_filters = column_filters.concat(createYADCFfilters(1, 2, "multi_select", "select2", "Select", false, null, "html", "80px"));
+    		column_filters = column_filters.concat(createYADCFfilters(3, 6, "multi_select", "select2", "Select", false, null, null, "50px"));
+    		column_filters = column_filters.concat(createYADCFfilters(9, 4, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
+        column_filters = column_filters.concat(createYADCFfilters(13, 2, "multi_select", "select2", "Select", false, null, null, "50px"));
+        column_filters = column_filters.concat(createYADCFfilters(15, 5, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
+        column_filters = column_filters.concat(createYADCFfilters(20, 1, "multi_select", "select2", "Select", false, null, null, "50px"));
 
+    		yadcf.init(table.draw(), column_filters, {
+    			cumulative_filtering: false
+    		});
+      })
+</script>
+{% endif %}
+<script type="text/javascript" charset="utf-8">
+    this.compoundPreview = function () {
+
+        //Define position of the tooltip in relation to the cursor
+        xOffset = 30;
+        yOffset = -10;
+
+        $("a.struct").hover(function (e) {
+            this.t = this.title;
+            this.title = "";
+            var c = (this.t != "") ? "<br/>" + this.t : "";
+            $("body").append("<p id='struct'><img style='max-width: 200px; height: auto' src='" + this.rel + "'/>" + c + "</p>");
+            $("#struct")
+                .css("top", (e.pageY - yOffset) + "px")
+                .css("left", (e.pageX + xOffset) + "px")
+                .fadeIn("fast");
+        },
+            function () {
+                this.title = this.t;
+                $("#struct").remove();
+            });
+        $("a.struct").mousemove(function (e) {
+            $("#struct")
+                .css("top", (e.pageY - yOffset) + "px")
+                .css("left", (e.pageX + xOffset) + "px");
+        });
+    };
+    $(document).ready(function () {
         $('.alt').change(function () {
             $(this).parent().parent().toggleClass('alt_selected');
         });
@@ -287,6 +344,7 @@
             $('.alt').prop('checked', $(this).prop("checked"));
             $('.alt').parent().parent().toggleClass('alt_selected');
         });
+
         $(".hide_columns").click(function(evt) {
           var columns = $(this).attr("columns").split(",");
           columns.forEach(function(column) {
@@ -307,10 +365,11 @@
           table.columns(columns).visible(true, false);
           table.draw();
         } );
+
         $('#csv_btn').click(function () {
             var checked_data = table.rows('.alt_selected').data();
             var csv_data = [];
-            csv_data.push('ChEMBL ID;Receptor;Species;Purchasable;p-value (-log);Activity Type;Activity Relation;Activity Value;Unit;Assay Type;Assay Description;Rot. Bonds;H don;H acc;LogP;Smiles')
+            csv_data.push('ChEMBL ID;Receptor;Species;Purchasable;No. records;Assay type;Min.;Average;Max.;Unit;Mol. weight;Rot. Bonds;H don;H acc;LogP;Smiles')
             for (i = 0; i < checked_data.length; i++) {
                 var csv_row = []
                 for (j = 1; j < checked_data[i].length; j++) {
@@ -346,7 +405,7 @@
                 div.innerHTML = checked_data[i][1];
                 name = div.textContent;
                 if (!processed.includes(name)){
-                  let smi_row = checked_data[i][17] + "\t" + name;
+                  let smi_row = checked_data[i][16] + "\t" + name;
                   smi_data.push(smi_row);
                   processed.push(name);
                 }
@@ -372,114 +431,197 @@
             table.columns.adjust().draw();
         }, 10);
     })
-
 </script>
 {% endblock %}
-
 {% block content %}
-<div class="btn-group">
-        <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
-                aria-haspopup="true" aria-expanded="false">
-            <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
-        </button>
-    <ul class="dropdown-menu">
-        <li>
-            <a id="csv_btn" href="javascript:void(0)">CSV</a>
-        </li>
-        <li>
-            <a id="smi_btn" href="javascript:void(0)">SMILES</a>
-        </li>
-        </ul>
-    </div>
-<div class="btn-group">
-    <a id="purchasability-btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Get vendors</a>
-</div>
-<div class="btn-group">
-  <button id="reset_hidden" type="button" class="btn btn-primary" style="margin-top:10px;margin-top:3px">Reset columns</button>
-</div>
-    <!--<div class="btn-group">-->
-    <!--    <a id="concise_funtional_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Show Concise Functional Assay Information</a>-->
-    <!--</div>-->
-    <!--<div class="btn-group">-->
-    <!--    <a id="superpose_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Superposition</a>-->
-    <!--</div>-->
-    <!--<div style="font-size: 10px;">For superimposition: Select (tick box) ligands, and Highlight the reference template</div>-->
-    <br />
-    <br />
-    <h3>Ligand source activities (1 row/activity)</h3>
+  {% if mode == 'extended' %}
+  <div class="btn-group">
+          <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                  aria-haspopup="true" aria-expanded="false">
+              <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+          </button>
+      <ul class="dropdown-menu">
+          <li>
+              <a id="csv_btn" href="javascript:void(0)">CSV</a>
+          </li>
+          <li>
+              <a id="smi_btn" href="javascript:void(0)">SMILES</a>
+          </li>
+          </ul>
+      </div>
+  <div class="btn-group">
+      <a id="purchasability-btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Get vendors</a>
+  </div>
+  <div class="btn-group">
+    <button id="reset_hidden" type="button" class="btn btn-primary" style="margin-top:10px;margin-top:3px">Reset columns</button>
+  </div>
+  <br />
+  <br />
+  <h3>Ligand source activities (1 row/activity)</h3>
 
-    <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;">
-        <table style="width:100%" class="display" id="proteins">
-            <thead>
-                <tr class="header-spans">
-                  <th style="text-align:left" colspan="4">Ligand
-                    <button type="button" class="close hide_columns" columns="1,2,3" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                  </th>
-                  <th style="border-left: 1px solid black; text-align:left" colspan="3" style="">Receptor
-                    <button type="button" class="close hide_columns" columns="4,5,6" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                  </th>
-                  <th style="border-left: 1px solid black; text-align:left" colspan="8">Assay information
-                    <button type="button" class="close hide_columns" columns="7,8,9,10,11,12,13,14" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                  </th>
-                  <th style="border-left: 1px solid black; text-align:left" colspan="6">Chemical information
-                    <button type="button" class="close hide_columns" columns="15,16,17,18,19,20"  aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                  </th>
-                </tr>
-                <tr>
-                    <th><input class="select-all" type="checkbox"> Select all</th>
-                    <th class="general-th">Common<br \>name</th>
-                    <th class="general-th">GPCRdb ID</th>
-                    <th class="general-th">#Vendors</th>
-                    <th class="general-th">UniProt</th>
-                    <th class="general-th">IUPHAR</th>
-                    <th class="general-th">Species</th>
-                    <th class="activity-th">p-value<br />(-log)</th>
-                    <th class="activity-th">Activity<br />Type</th>
-                    <th class="activity-th">Activity<br />Relation</th>
-                    <th class="activity-th">Activity<br />Value</th>
-                    <th class="activity-th">Assay Type</th>
-                    <th class="activity-th">Assay Description</th>
-                    <th class="activity-th">Source</th>
-                    <th class="chemical-th">Mol<br />weight</th>
-                    <th class="chemical-th">Rot<br />Bonds</th>
-                    <th class="chemical-th">H don</th>
-                    <th class="chemical-th">H acc</th>
-                    <th class="chemical-th">LogP</th>
-                    <th class="chemical-th dt-left">Smiles</th>
-                    <th class="chemical-th dt-left">DOI</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for p in proteins %}
-                <tr>
-                    <td><input class="alt" type="checkbox"></td>
-                    <td><a class="struct" rel="http://www.ebi.ac.uk/chembl/api/data/image/{{p.ligand__ids__index}}" href="/ligand/{{p.ligand__id}}/info" target="_blank">{{p.ligand__ids__index}}</a></td>
-                    <td><a href="/ligand/{{p.ligand__id}}/info" target="_blank">{{p.ligand__id}}</a></td>
-                    <td>{{p.purchasability}}</td>
-                    <td>{{p.protein__entry_name}}</td>
-                    <td>{{p.protein__name|safe}}</td>
-                    <td>{{p.protein__species__common_name}}</td>
-                    <td align="right">{{p.p_activity_value|floatformat:1}}</td>
-                    <td align="center">{% if p.source == 'ChEMBL' %} p{{p.value_type}} {% else %} {{p.value_type}} {% endif %}</td>
-                    <td>{{p.standard_relation}}</td>
-                    <td>{{p.p_activity_value|floatformat}}</td>
-                    <td>{% if p.assay_type == 'B' %} Binding {% elif p.assay_type == 'F' %} Functional {% elif p.assay_type == 'U' %} Unclassified {% elif p.assay_type == 'A' %} ADMET {% endif %}</td>
-                    <td class="AssayCell"> <div style="overflow: hidden; text-overflow: ellipsis; word-wrap: break-word; max-width: 350px;white-space: nowrap;">{{p.assay_description}}<span class="AssayDetail">{{p.assay_description}}</span> </div></td>
-                    <td>{{p.source}}</td>
-                    <td>{{p.ligand__mw|floatformat:0}}</td>
-                    <td>{{p.ligand__rotatable_bonds}}</td>
-                    <td>{{p.ligand__hdon}}</td>
-                    <td>{{p.ligand__hacc}}</td>
-                    <td>{{p.ligand__logp|floatformat:1}}</td>
-                    <td class="dt-left">{{p.ligand__smiles}}</td>
-                    <td><a href="{{p.link}}" target="_blank">{{p.publication__web_link__index}}</a></td>
-                </tr>
-                {% endfor %}
-            </tbody>
+  <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;">
+      <table style="width:100%" class="display" id="proteins">
+          <thead>
+              <tr class="header-spans">
+                <th style="text-align:left" colspan="4">Ligand
+                  <button type="button" class="close hide_columns" columns="1,2,3" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                </th>
+                <th style="border-left: 1px solid black; text-align:left" colspan="3" style="">Receptor
+                  <button type="button" class="close hide_columns" columns="4,5,6" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                </th>
+                <th style="border-left: 1px solid black; text-align:left" colspan="8">Assay information
+                  <button type="button" class="close hide_columns" columns="7,8,9,10,11,12,13,14" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                </th>
+                <th style="border-left: 1px solid black; text-align:left" colspan="6">Chemical information
+                  <button type="button" class="close hide_columns" columns="15,16,17,18,19,20"  aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                </th>
+              </tr>
+              <tr>
+                  <th><input class="select-all" type="checkbox"> Select all</th>
+                  <th class="general-th">Common<br \>name</th>
+                  <th class="general-th">GPCRdb ID</th>
+                  <th class="general-th">#Vendors</th>
+                  <th class="general-th">UniProt</th>
+                  <th class="general-th">IUPHAR</th>
+                  <th class="general-th">Species</th>
+                  <th class="activity-th">p-value<br />(-log)</th>
+                  <th class="activity-th">Activity<br />Type</th>
+                  <th class="activity-th">Activity<br />Relation</th>
+                  <th class="activity-th">Activity<br />Value</th>
+                  <th class="activity-th">Assay Type</th>
+                  <th class="activity-th">Assay Description</th>
+                  <th class="activity-th">Source</th>
+                  <th class="chemical-th">Mol<br />weight</th>
+                  <th class="chemical-th">Rot<br />Bonds</th>
+                  <th class="chemical-th">H don</th>
+                  <th class="chemical-th">H acc</th>
+                  <th class="chemical-th">LogP</th>
+                  <th class="chemical-th dt-left">Smiles</th>
+                  <th class="chemical-th dt-left">DOI</th>
+              </tr>
+          </thead>
+          <tbody>
+              {% for p in ligand_data %}
+              <tr>
+                  <td><input class="alt" type="checkbox"></td>
+                  <td><a class="struct" rel="http://www.ebi.ac.uk/chembl/api/data/image/{{p.ligand__ids__index}}" href="/ligand/{{p.ligand__id}}/info" target="_blank">{{p.ligand__ids__index}}</a></td>
+                  <td><a href="/ligand/{{p.ligand__id}}/info" target="_blank">{{p.ligand__id}}</a></td>
+                  <td>{{p.purchasability}}</td>
+                  <td>{{p.protein__entry_name}}</td>
+                  <td>{{p.protein__name|safe}}</td>
+                  <td>{{p.protein__species__common_name}}</td>
+                  <td align="right">{{p.p_activity_value|floatformat:1}}</td>
+                  <td align="center">{% if p.source == 'ChEMBL' %} p{{p.value_type}} {% else %} {{p.value_type}} {% endif %}</td>
+                  <td>{{p.standard_relation}}</td>
+                  <td>{{p.p_activity_value|floatformat}}</td>
+                  <td>{% if p.assay_type == 'B' %} Binding {% elif p.assay_type == 'F' %} Functional {% elif p.assay_type == 'U' %} Unclassified {% elif p.assay_type == 'A' %} ADMET {% endif %}</td>
+                  <td class="AssayCell"> <div style="overflow: hidden; text-overflow: ellipsis; word-wrap: break-word; max-width: 350px;white-space: nowrap;">{{p.assay_description}}<span class="AssayDetail">{{p.assay_description}}</span> </div></td>
+                  <td>{{p.source}}</td>
+                  <td>{{p.ligand__mw|floatformat:0}}</td>
+                  <td>{{p.ligand__rotatable_bonds}}</td>
+                  <td>{{p.ligand__hdon}}</td>
+                  <td>{{p.ligand__hacc}}</td>
+                  <td>{{p.ligand__logp|floatformat:1}}</td>
+                  <td class="dt-left">{{p.ligand__smiles}}</td>
+                  <td><a href="{{p.link}}" target="_blank">{{p.publication__web_link__index}}</a></td>
+              </tr>
+              {% endfor %}
+          </tbody>
+      </table>
+  </div>
+ {% else %}
+   <div class="btn-group">
+           <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                   aria-haspopup="true" aria-expanded="false">
+               <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+           </button>
+       <ul class="dropdown-menu">
+           <li>
+               <a id="csv_btn" href="javascript:void(0)">CSV</a>
+           </li>
+           <li>
+               <a id="smi_btn" href="javascript:void(0)">SMILES</a>
+           </li>
+           </ul>
+       </div>
+   <div class="btn-group">
+       <a id="purchasability-btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Get vendors</a>
+   </div>
+   <button id="reset_hidden" type="button" class="btn btn-primary" style="margin-top:10px;margin-top:3px">Reset columns</button>
+   <br />
+   <br />
+   <h3>Ligand min, max & mean activities (1 row/ligand)</h3>
+   <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;" class="scroll-container">
+       <table style="width:100%" class="display" id="proteins">
+           <thead id="headers">
+       			<tr class="header-spans">
+       				<th style="text-align:left" colspan="4">Ligand
+                 <button type="button" class="close hide_columns" columns="1,2,3"  aria-label="Close"><span aria-hidden="true">&times;</span></button>
+               </th>
+       				<th style="border-left: 1px solid black; text-align:left" colspan="3" style="">Receptor
+                 <button type="button" class="close hide_columns" columns="4,5,6"  aria-label="Close"><span aria-hidden="true">&times;</span></button>
+               </th>
+               <th style="border-left: 1px solid black; text-align:left" colspan="8">Assay information
+                 <button type="button" class="close hide_columns" columns="7,8,9,10,11,12,13,14"  aria-label="Close"><span aria-hidden="true">&times;</span></button>
+               </th>
+               <th style="border-left: 1px solid black; text-align:left" colspan="6">Chemical information
+                 <button type="button" class="close hide_columns" columns="15,16,17,18,19,20"  aria-label="Close"><span aria-hidden="true">&times;</span></button>
+               </th>
+       			</tr>
+       			<tr class="table-filter-dropdown">
+               <th><input class="select-all" type="checkbox"> Select all</th>
+               <th style="text-align:center">Common<br />name</th>
+               <th style="text-align:center">GPCRdb ID</th>
+               <th style="text-align:center">Type</th>
+               <th style="text-align:center">UniProt</th>
+               <th style="text-align:center">IUPHAR</th>
+               <th style="text-align:center">Species</th>
+               <th style="text-align:center">#Vendors</th>
+               <th style="text-align:center">Assay Type</th>
+               <th style="text-align:center">No. records</th>
+               <th style="text-align:center">Min.</th>
+               <th style="text-align:center">Average</th>
+               <th style="text-align:center">Max.</th>
+               <th style="text-align:center">Value</th>
+               <th style="text-align:center">Source</th>
+               <th style="text-align:center">Mol<br />weight</th>
+               <th style="text-align:center">Rot<br />Bonds</th>
+               <th style="text-align:center">H don</th>
+               <th style="text-align:center">H acc</th>
+               <th>LogP</th>
+               <th>Smiles</th>
+       			</tr>
+       		</thead>
+           <tbody>
+               {% for record in ligand_data %}
+               <tr>
+                   <td><input class="alt" type="checkbox"></td>
+                   <td><a class="struct" rel="{{record.picture}}" href="/ligand/{{record.lig_id}}/info" target="_blank">{{record.ligand_name|safe}}</a></td>
+                   <td><a href="/ligand/{{record.lig_id}}/info" target="_blank">{{record.lig_id}}</a></td>
+                   <td>{{record.ligand_type}}</td>
+                   <td>{{record.protein_name}}</td>
+                   <td>{{record.iuphar_name|safe}}</td>
+                   <td>{{record.species}}</td>
+                   <td>{{record.purchasability}}</td>
+                   <td>{{record.record_count}}</td>
+                   <td>{{record.assay_type}}</td>
+                   <td>{{record.low_value|floatformat:1}}</td>
+                   <td>{{record.average_value|floatformat:1}}</td>
+                   <td>{{record.high_value|floatformat:1}}</td>
+                   <td>{{record.value_type}}</td>
+                   <td>{{record.source}}</td>
+                   <td>{{record.mw|floatformat:0}}</td>
+                   <td>{{record.rotatable_bonds}}</td>
+                   <td>{{record.hdon}}</td>
+                   <td>{{record.hacc}}</td>
+                   <td>{{record.logp|floatformat:1}}</td>
+                   <td class="dt-left">{{record.smiles}}</td>
 
+               </tr>
 
-
-
-        </table>
-    </div>
-    {% endblock %}
+               {% endfor %}
+           </tbody>
+       </table>
+   </div>
+ {% endif %}
+{% endblock %}

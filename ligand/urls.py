@@ -7,9 +7,9 @@ urlpatterns = [
     #  url(r'^browser$', cache_page(3600*24*7)(views.LigandBrowser.as_view()), name='ligand_browser'),
     url(r'^$', views.LigandTargetSelection.as_view(), name='ligand_selection'),
 
-    url(r'^target/all/(?P<slug>[-\w]+)/$', views.TargetDetailsExtended, name='ligand_target_detail'),
-    path('target_detail', views.TargetDetailsExtended, name='ligand_target_detail'),
-    path('targets_compact', views.TargetDetailsCompact, name='ligand_target_detail_compact'),
+    url(r'^target/all/(?P<slug>[-\w]+)/$', views.CachedTargetDetailsExtended, name='ligand_target_detail'),
+    path('target_detail', views.CachedTargetDetailsExtended, name='ligand_target_detail'),
+    path('targets_compact', views.CachedTargetDetailsCompact, name='ligand_target_detail_compact'),
     url(r'^targets_purchasable', views.TargetPurchasabilityDetails, name='ligand_target_detail_purchasable'),
     url(r'^(?P<ligand_id>[-\w]+)/details$', views.LigandDetails, name='ligand_detail'),
     url(r'^coverage', cache_page(3600*24*7)(views.LigandStatistics.as_view()), name='ligand_statistics'),

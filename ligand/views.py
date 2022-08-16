@@ -129,179 +129,179 @@ def LigandDetails(request, ligand_id):
 
     return render(request, 'ligand_details.html', context)
 
-def TargetDetailsCompact(request, **kwargs):
+def CachedTargetDetailsCompact(request, **kwargs):
+    return TargetDetails("compact", request, **kwargs)
+
+def CachedTargetDetailsExtended(request, **kwargs):
+    return TargetDetails("extended", request, **kwargs)
+
+
+def TargetDetails(mode, request, **kwargs):
     cache_key = False
     simple_selection = request.session.get('selection', False)
     selection = Selection()
     if simple_selection:
         selection.importer(simple_selection)
-    if selection.reference != []:
-        prot_id = [x.item for x in selection.reference]
-        cache_key = "lig_compact_protid_" + ",".join(prot_id)
-        ps = AssayExperiment.objects.filter(protein__in=prot_id).prefetch_related('protein', 'ligand', 'ligand__ligand_type')
-                                                                                  # 'ligand__ids__web_resource',
-                                                                                  # 'ligand')
-    # if queryset is empty redirect to ligand browser
-    if not ps:
-        return redirect("ligand_selection")
+    if mode == 'extended':
+        if 'slug' in kwargs:
+            cache_key = "lig_ext_slug_" + kwargs['slug']
+            ps = AssayExperiment.objects.filter(protein__family__slug=kwargs['slug']).prefetch_related('protein','ligand', 'publication')
 
-    if cache_key != False and cache.has_key(cache_key):
-        ligand_data = cache.get(cache_key)
-    else:
-        img_setup_smiles = "https://cactus.nci.nih.gov/chemical/structure/{}/image"
-        d = {}
+            # Set selection for purchasability page
+            prot_ids = list(AssayExperiment.objects.filter(protein__family__slug=kwargs['slug']).values_list("protein_id", flat = True).distinct())
+            proteins = Protein.objects.filter(pk__in=prot_ids)
+            for prot in proteins:
+                selection.add('targets', 'protein', SelectionItem('protein', prot))
+            simple_selection = selection.exporter()
+            request.session['selection'] = simple_selection
+        else:
+            if selection.reference != []:
+                prot_id = [x.item for x in selection.reference]
+                if len(prot_id) > 0:
+                    cache_key = "lig_ext_protid_" + ",".join(prot_id)
+                    ps = AssayExperiment.objects.filter(protein__in=prot_id).prefetch_related('protein','ligand', 'publication')
 
-        for p in ps:
-            if p.ligand not in d:
-                d[p.ligand] = []
-            d[p.ligand].append(p)
+        # if queryset is empty redirect to ligand browser
+        if not ps and 'slug' not in kwargs:
+            return redirect("ligand_selection")
 
-        lig_ids = set([record.ligand_id for record in ps])
-        vendor_output = list(LigandVendorLink.objects.filter(ligand_id__in=lig_ids).values_list("ligand_id").annotate(Count('vendor_id', distinct=True)))
-        vendors_dict = {entry[0]:entry[1] for entry in vendor_output}
+        if cache_key != False and cache.has_key(cache_key):
+            ps = cache.get(cache_key)
+        else:
+            ps = ps.values('value_type',
+                           'standard_relation',
+                           'standard_activity_value',
+                           'assay_description',
+                           'assay_type',
+                           'p_activity_value',
+                           'p_activity_ranges',
+                           'source',
+                           'ligand__id',
+                           'ligand__ids__index',
+                           'protein__species__common_name',
+                           'protein__entry_name',
+                           'protein__name',
+                           'ligand__mw',
+                           'ligand__logp',
+                           'ligand__rotatable_bonds',
+                           'ligand__smiles',
+                           'ligand__hdon',
+                           'ligand__hacc',
+                           'protein',
+                           'publication__web_link__index',
+                           'publication__web_link__web_resource__url'
+                           ).annotate(num_targets=Count('protein__id', distinct=True))
 
-        ligand_data = []
-        assay_conversion = {'A': 'ADMET', 'B': 'Binding', 'F': 'Functional', 'U': 'Unclassified'}
-        for lig, records in d.items():
-            # links = lig.ids.all()
-            # chembl_id = [x for x in links if x.web_resource.slug == 'chembl_ligand'][0].index
-            if lig.smiles is not None and (lig.mw is None or lig.mw < 800):
-                picture = img_setup_smiles.format(urllib.parse.quote(lig.smiles))
-            else:
-                # "No image available" SVG (source: https://commons.wikimedia.org/wiki/File:No_image_available.svg)
-                picture = "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/No_image_available.svg/600px-No_image_available.svg.png?20190827162820"
+            lig_ids = set([record['ligand__id'] for record in ps])
+            vendor_output = list(LigandVendorLink.objects.filter(ligand_id__in=lig_ids).values_list("ligand_id").annotate(Count('vendor_id', distinct=True)))
+            vendors_dict = {entry[0]:entry[1] for entry in vendor_output}
 
-            purchasability = vendors_dict[lig.id] if lig.id in vendors_dict.keys() else 0
+            for record in ps:
+                record['purchasability'] = vendors_dict[record['ligand__id']] if record['ligand__id'] in vendors_dict.keys() else 0
+                record['protein__entry_name'] = record['protein__entry_name'].split('_')[0].upper()
+                record['link'] = record['publication__web_link__web_resource__url'].replace('$index',record['publication__web_link__index']) if record['publication__web_link__web_resource__url'] != None else '#'
 
-            for record in records:
-                data_parsed = {}
-                assay = assay_conversion[record.assay_type]
-                if record.source not in data_parsed.keys():
-                    data_parsed[record.source] = {}
-                if assay not in data_parsed[record.source].keys():
-                    data_parsed[record.source][assay] = {}
-                if record.value_type not in data_parsed[record.source][assay].keys():
-                    if record.source == 'Guide to Pharmacology':
-                        data_parsed[record.source][assay][record.value_type] = [x for x in record.p_activity_ranges.split('|')]
-                    else:
-                        data_parsed[record.source][assay][record.value_type] = [record.p_activity_value]
-                else:
-                    if record.source == 'Guide to Pharmacology':
-                        data = [x for x in record.p_activity_ranges.split('|')]
-                        data_parsed[data_line.source][assay][record.value_type] += data
-                    else:
-                        data_parsed[data_line.source][assay][record.value_type].append(record.p_activity_value)
+        context = {}
+        context['ligand_data'] = ps
+        cache.set(cache_key, ps, 60*60*24*7)
 
-            for source in data_parsed.keys():
-                for assay_type in data_parsed[source].keys():
-                    for value_type in data_parsed[source][assay_type].keys():
-                        values = [float(x) for x in data_parsed[source][assay_type][value_type] if x != 'None']
-                        low_value, average_value, high_value = '-','-','-'
-                        if len(values) > 0:
-                            low_value = min(values)
-                            average_value = round(sum(values) / len(values),1)
-                            high_value = max(values)
+    elif mode == 'compact':
 
-                        ligand_data.append({
-                            'lig_id': lig.id,
-                            'ligand_name': lig.name,
-                            'picture': picture,
-                            'protein_name': record.protein.entry_name.split('_')[0].upper(),
-                            'iuphar_name': record.protein.name,
-                            'species': record.protein.species.common_name,
-                            'record_count': len(records),
-                            'assay_type': assay_type,
-                            'purchasability': purchasability,
-                            'low_value': low_value,
-                            'average_value': average_value,
-                            'high_value': high_value,
-                            'value_type': value_type,
-                            'ligand_type': lig.ligand_type.name.replace('-',' ').capitalize(),
-                            'source': source,
-                            'smiles': lig.smiles,
-                            'mw': lig.mw,
-                            'rotatable_bonds': lig.rotatable_bonds,
-                            'hdon': lig.hdon,
-                            'hacc': lig.hacc,
-                            'logp': lig.logp,
-                        })
-    context = {}
-    context['ligand_data'] = ligand_data
-    cache.set(cache_key, ligand_data, 60*60*24*7)
-
-    return render(request, 'target_details_compact.html', context)
-
-def TargetDetailsExtended(request, **kwargs):
-    simple_selection = request.session.get('selection', False)
-    selection = Selection()
-    if simple_selection:
-        selection.importer(simple_selection)
-
-    cache_key = False
-    if 'slug' in kwargs:
-        cache_key = "lig_ext_slug_" + kwargs['slug']
-        ps = AssayExperiment.objects.filter(protein__family__slug=kwargs['slug']).prefetch_related('protein','ligand', 'publication')
-
-        # Set selection for purchasability page
-        prot_ids = list(AssayExperiment.objects.filter(protein__family__slug=kwargs['slug']).values_list("protein_id", flat = True).distinct())
-        proteins = Protein.objects.filter(pk__in=prot_ids)
-        for prot in proteins:
-            selection.add('targets', 'protein', SelectionItem('protein', prot))
-        simple_selection = selection.exporter()
-        request.session['selection'] = simple_selection
-    else:
         if selection.reference != []:
             prot_id = [x.item for x in selection.reference]
-            if len(prot_id) > 0:
-                cache_key = "lig_ext_protid_" + ",".join(prot_id)
-                ps = AssayExperiment.objects.filter(protein__in=prot_id).prefetch_related('protein','ligand', 'publication')
+            cache_key = "lig_compact_protid_" + ",".join(prot_id)
+            ps = AssayExperiment.objects.filter(protein__in=prot_id).prefetch_related('protein', 'ligand', 'ligand__ligand_type')
+                                                                                      # 'ligand__ids__web_resource',
+                                                                                      # 'ligand')
+        # if queryset is empty redirect to ligand browser
+        if not ps:
+            return redirect("ligand_selection")
 
-    # if queryset is empty redirect to ligand browser
-    if not ps and 'slug' not in kwargs:
-        return redirect("ligand_selection")
+        if cache_key != False and cache.has_key(cache_key):
+            ligand_data = cache.get(cache_key)
+        else:
+            img_setup_smiles = "https://cactus.nci.nih.gov/chemical/structure/{}/image"
+            d = {}
 
-    if cache_key != False and cache.has_key(cache_key):
-        ps = cache.get(cache_key)
-    else:
-        ps = ps.values('value_type',
-                       'standard_relation',
-                       'standard_activity_value',
-                       'assay_description',
-                       'assay_type',
-                       'p_activity_value',
-                       'p_activity_ranges',
-                       'source',
-                       'ligand__id',
-                       'ligand__ids__index',
-                       'protein__species__common_name',
-                       'protein__entry_name',
-                       'protein__name',
-                       'ligand__mw',
-                       'ligand__logp',
-                       'ligand__rotatable_bonds',
-                       'ligand__smiles',
-                       'ligand__hdon',
-                       'ligand__hacc',
-                       'protein',
-                       'publication__web_link__index',
-                       'publication__web_link__web_resource__url'
-                       ).annotate(num_targets=Count('protein__id', distinct=True))
+            for p in ps:
+                if p.ligand not in d:
+                    d[p.ligand] = []
+                d[p.ligand].append(p)
 
-        lig_ids = set([record['ligand__id'] for record in ps])
-        vendor_output = list(LigandVendorLink.objects.filter(ligand_id__in=lig_ids).values_list("ligand_id").annotate(Count('vendor_id', distinct=True)))
-        vendors_dict = {entry[0]:entry[1] for entry in vendor_output}
+            lig_ids = set([record.ligand_id for record in ps])
+            vendor_output = list(LigandVendorLink.objects.filter(ligand_id__in=lig_ids).values_list("ligand_id").annotate(Count('vendor_id', distinct=True)))
+            vendors_dict = {entry[0]:entry[1] for entry in vendor_output}
 
-        for record in ps:
-            record['purchasability'] = vendors_dict[record['ligand__id']] if record['ligand__id'] in vendors_dict.keys() else 0
-            record['protein__entry_name'] = record['protein__entry_name'].split('_')[0].upper()
-            record['link'] = record['publication__web_link__web_resource__url'].replace('$index',record['publication__web_link__index']) if record['publication__web_link__web_resource__url'] != None else '#'
+            ligand_data = []
+            assay_conversion = {'A': 'ADMET', 'B': 'Binding', 'F': 'Functional', 'U': 'Unclassified'}
+            for lig, records in d.items():
+                # links = lig.ids.all()
+                # chembl_id = [x for x in links if x.web_resource.slug == 'chembl_ligand'][0].index
+                if lig.smiles is not None and (lig.mw is None or lig.mw < 800):
+                    picture = img_setup_smiles.format(urllib.parse.quote(lig.smiles))
+                else:
+                    # "No image available" SVG (source: https://commons.wikimedia.org/wiki/File:No_image_available.svg)
+                    picture = "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/No_image_available.svg/600px-No_image_available.svg.png?20190827162820"
 
-    context = {}
-    context['proteins'] = ps
-    cache.set(cache_key, ps, 60*60*24*7)
+                purchasability = vendors_dict[lig.id] if lig.id in vendors_dict.keys() else 0
 
+                for record in records:
+                    data_parsed = {}
+                    assay = assay_conversion[record.assay_type]
+                    if record.source not in data_parsed.keys():
+                        data_parsed[record.source] = {}
+                    if assay not in data_parsed[record.source].keys():
+                        data_parsed[record.source][assay] = {}
+                    if record.value_type not in data_parsed[record.source][assay].keys():
+                        if record.source == 'Guide to Pharmacology':
+                            data_parsed[record.source][assay][record.value_type] = [x for x in record.p_activity_ranges.split('|')]
+                        else:
+                            data_parsed[record.source][assay][record.value_type] = [record.p_activity_value]
+                    else:
+                        if record.source == 'Guide to Pharmacology':
+                            data = [x for x in record.p_activity_ranges.split('|')]
+                            data_parsed[data_line.source][assay][record.value_type] += data
+                        else:
+                            data_parsed[data_line.source][assay][record.value_type].append(record.p_activity_value)
+
+                for source in data_parsed.keys():
+                    for assay_type in data_parsed[source].keys():
+                        for value_type in data_parsed[source][assay_type].keys():
+                            values = [float(x) for x in data_parsed[source][assay_type][value_type] if x != 'None']
+                            low_value, average_value, high_value = '-','-','-'
+                            if len(values) > 0:
+                                low_value = min(values)
+                                average_value = round(sum(values) / len(values),1)
+                                high_value = max(values)
+
+                            ligand_data.append({
+                                'lig_id': lig.id,
+                                'ligand_name': lig.name,
+                                'picture': picture,
+                                'protein_name': record.protein.entry_name.split('_')[0].upper(),
+                                'iuphar_name': record.protein.name,
+                                'species': record.protein.species.common_name,
+                                'record_count': len(records),
+                                'assay_type': assay_type,
+                                'purchasability': purchasability,
+                                'low_value': low_value,
+                                'average_value': average_value,
+                                'high_value': high_value,
+                                'value_type': value_type,
+                                'ligand_type': lig.ligand_type.name.replace('-',' ').capitalize(),
+                                'source': source,
+                                'smiles': lig.smiles,
+                                'mw': lig.mw,
+                                'rotatable_bonds': lig.rotatable_bonds,
+                                'hdon': lig.hdon,
+                                'hacc': lig.hacc,
+                                'logp': lig.logp,
+                            })
+        context = {}
+        context['ligand_data'] = ligand_data
+        cache.set(cache_key, ligand_data, 60*60*24*7)
+    context['mode'] = mode
     return render(request, 'target_details.html', context)
-
 
 def TargetPurchasabilityDetails(request, **kwargs):
     cache_key = False
