@@ -10,6 +10,12 @@
 <script src="{% static 'home/js/dataTables.buttons.min.js' %}"> </script>
 <script src="{% static 'home/js/select2.js' %}"> </script>
 <script src="https://cdn.datatables.net/buttons/1.0.3/js/buttons.colVis.js"></script>
+<script src="{% static 'home/js/dataTables.tableTools.min.js' %}"> </script>
+<script src="{% static 'home/js/jquery.dataTables.columnFilter.js' %}"> </script>
+<script src="{% static 'home/js/selection.js' %}"> </script>
+<script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
+<script src="{% static 'home/js/gpcrdb.js' %}"></script>
+
 
 <script type="text/javascript" charset="utf-8">
     function getCookie(c_name) {
@@ -31,8 +37,6 @@
         oTable = $('#structures_scrollable').DataTable({
             StateSave: true,
             dom: 'B<"toolbar">ftrip<>',
-
-
             buttons: [{
                     text: 'Excel',
                     className: 'btn btn-primary',
@@ -56,53 +60,18 @@
                         reset_filters()
                     },
                 },
-            // {
-            //     text: 'Get Vendors',
-            //     className: 'btn btn-primary',
-            //     titleAttr: 'Vendors info for top 20 ligands',
-            //     init: function(api, node, config) {
-            //         $(node).removeClass('dt-button buttons-excel buttons-html5');
-            //     },
-            //     action: function(e, dt, node, config) {
-            //         var id = read_ids()
-            //         var result
-            //         console.log('test' + id)
-            //         $.ajaxSetup({
-            //             headers: { "X-CSRFToken": getCookie("csrftoken") }
-            //         });
-            //         $.ajax({
-            //             type: 'POST',
-            //             url: '/ligand/vendors',
-            //             data: {
-            //                 ids: id,
-            //                 csrfmiddlewaretoken: '{{csrf_token }}',
-            //                 action: 'post',
-            //             },
-            //             success: function() {
-            //
-            //                 openPopup('/ligand/browservendors', 'Detail View', window, 850, 1000)
-            //             }
-            //         });
-            //     },
-            // },
             ],
             scrollX: '100%',
             scrollY: '70vh',
             scrollCollapse: true,
-            "order": [
-                [4, "desc"]
-            ],
-
+            order: [[4, "desc"]],
             AutoWidth: false,
             paging: true,
-            "lengthMenu": [
-                [100, -1],
-                [100, "All"]
-            ],
-            "columnDefs": [
+            lengthMenu: [[100, -1],[100, "All"]],
+            columnDefs: [
                 { className: "test_df", "targets": [10,11,12,14] }
               ],
-            "initComplete": function(settings, json) {
+            initComplete: function(settings, json) {
                     $('#loadingSpinner').show();
                     $('#structures_scrollable_body').hide();
                 setTimeout(function() {
@@ -129,7 +98,7 @@
                 }, 0);
             },
 
-            "fnDrawCallback": function() {
+            fnDrawCallback: function() {
             var ligand_counter = read_unique_ids();
             var receptor_counter = read_unique_ids_receptor()
             $('#loadingSpinner').show();
@@ -163,147 +132,16 @@
 
         });
 
+        let column_filters = [];
+        // createYADCFfilters(start_column, num_cols, filter_type, select_type = null, filter_default_label = "", filter_reset_button_text = false, filter_match_mode = null, column_data_type = null, width = null)
+        column_filters = column_filters.concat(createYADCFfilters(1, 5, "multi_select", "select2", "Select", false, null, null, "80px"));
+        column_filters = column_filters.concat(createYADCFfilters(6, 1, "multi_select", "select2", "Select", false, null, "html", "80px"));
+        column_filters = column_filters.concat(createYADCFfilters(7, 9, "multi_select", "select2", "Select", false, null, null, "80px"));
+        column_filters = column_filters.concat(createYADCFfilters(16, 1, "multi_select", "select2", "Select", false, null, "html", "80px"));
 
-        yadcf.init(oTable,
-            [{
-                    column_number: 1,
-                    filter_type: "multi_select",
-                    select_type: 'select2',
-                    filter_default_label: "Select",
-                    filter_reset_button_text: false,
-                },
-                {
-                    column_number: 2,
-                    filter_type: "multi_select",
-                    select_type: 'select2',
-                    filter_default_label: "Select",
-                    filter_reset_button_text: false,
-
-                },
-                {
-                    column_number: 3,
-                    filter_type: "multi_select",
-                    select_type: 'select2',
-                    //column_data_type: "html",
-                    filter_default_label: "Select",
-                    filter_reset_button_text: false,
-                },
-                {
-                    column_number: 4,
-                    filter_type: "multi_select",
-                    select_type: 'select2',
-                    filter_default_label: "Select",
-                    filter_reset_button_text: false,
-                },
-                {
-                    column_number: 5,
-                    filter_type: "multi_select",
-                    select_type: 'select2',
-                    filter_default_label: "Select",
-                    filter_reset_button_text: false,
-                },
-                {
-                    column_number: 6,
-                    filter_type: "multi_select",
-                    select_type: 'select2',
-                    column_data_type: "html",
-                    html_data_type: "text",
-                    filter_default_label: "Select",
-                    filter_reset_button_text: false,
-                },
-                // Ligand
-                {
-                    column_number: 7,
-                    filter_type: "multi_select",
-                    select_type: 'select2',
-                    column_data_type: "html",
-                    html_data_type: "text",
-                    filter_default_label: "Select",
-                    filter_reset_button_text: false,
-                },
-                {
-                    column_number: 8,
-                    filter_type: "multi_select",
-                    select_type: 'select2',
-                    column_data_type: "html",
-                    html_data_type: "text",
-                    filter_default_label: "Select",
-                    filter_reset_button_text: false,
-                },
-                {
-                    column_number: 9,
-                    filter_type: "multi_select",
-                    select_type: 'select2',
-                    column_data_type: "html",
-                    html_data_type: "text",
-                    filter_default_label: "Select",
-                    filter_reset_button_text: false,
-                },
-                {
-                    column_number: 10,
-                    filter_type: "multi_select",
-                    select_type: 'select2',
-                    filter_default_label: "Select",
-                    filter_reset_button_text: false,
-                    width: "50px",
-                },
-                {
-                    column_number: 11,
-                    filter_type: "multi_select",
-                    select_type: 'select2',
-                    filter_default_label: "Select",
-                    filter_reset_button_text: false,
-                    width: "50px",
-                },
-                //  Receotor Transduction
-                {
-                    column_number: 12,
-                    filter_type: "multi_select",
-                    select_type: 'select2',
-                    filter_default_label: "Select",
-                    filter_reset_button_text: false,
-                },
-                {
-                    column_number: 13,
-                    filter_type: "multi_select",
-                    select_type: 'select2',
-                    filter_default_label: "Select",
-                    filter_reset_button_text: false,
-                },
-                // pathway_bias
-                {
-                    column_number: 14,
-                    select_type: 'select2',
-                    filter_type: "multi_select",
-                    text_data_delimiter: " ",
-                    filter_default_label: "Select",
-                    filter_reset_button_text: false,
-                },
-                {
-                    column_number: 15,
-                    filter_type: "multi_select",
-                    select_type: 'select2',
-                    filter_default_label: "Article Authors",
-                    filter_reset_button_text: false,
-                },
-                {
-                    column_number: 16,
-                    filter_type: "multi_select",
-                    select_type: 'select2',
-                    column_data_type: "html",
-                    html_data_type: "text",
-                    filter_default_label: "Article DOI",
-                    filter_reset_button_text: false,
-                },
-
-
-
-            ], {
-                cumulative_filtering: true
-            }, {
-                externally_triggered: true
-            },
-        );
+        yadcf.init(oTable.draw(), column_filters, {
+          cumulative_filtering: false
+        });
 
         function reset_filters() {
             yadcf.exResetAllFilters(oTable);
@@ -328,7 +166,7 @@
 
         $('.dataTables_scrollBody #structures_scrollable').addClass("pull-left");
 
-        $('.dataTables_scrollBody').append('<div id=overlay><table id="overlay_table" class="row-border text-center compact dataTable no-footer text-nowrap"><tbody></tbody></table></div>');
+        // $('.dataTables_scrollBody').append('<div id=overlay><table id="overlay_table" class="row-border text-center compact dataTable no-footer text-nowrap"><tbody></tbody></table></div>');
 
         function create_overlay() {
             // This function fires upon filtering, to update what rows to show as an overlay
@@ -351,9 +189,9 @@
             $("#overlay_table .border-right").removeClass("border-right");
         }
         // Function that detects filtering events
-        $('#structures_scrollable').on('draw.dt', function(e, oSettings) {
-            create_overlay();
-        });
+        // $('#structures_scrollable').on('draw.dt', function(e, oSettings) {
+        //     create_overlay();
+        // });
         create_overlay();
         $("#overlay").hide();
         var left = 0;
@@ -486,14 +324,9 @@
 
 <div style='padding-top: 0px; font-size: 10px; white-space: nowrap; width:100%; overflow-y:hidden; display:inline-block; width:100%;'>
 
-    <div id='structures_scrollable_div'>
+            <table style="width:100%" class="display" id='structures_scrollable'>
 
-        <div id="testTable" style="padding-top: 10px; font-size: 11px; white-space: nowrap;">
-
-
-            <table class="display compact text-nowrap" style=" " id='structures_scrollable'>
-
-                <thead id="headers">
+                <thead>
                     <tr>
                         <th></th>
                         <th style="border-left: 1px solid black;" id="col_Receptor" colspan="5" style="text-align:left">Receptor</th>
@@ -588,9 +421,6 @@
                     {%endfor%}
                 </tbody>
             </table>
-        </div>
-    </div>
-    <!-- </div> -->
 </div>
 {% endautoescape %}
 {% else %}
@@ -615,7 +445,6 @@ document.getElementById("loadingSpinner").style.display = "none";
 <link href="{% static 'home/css/sequenceviewer.css' %}" rel="stylesheet">
 <link href="{% static 'home/css/modal.css' %}" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.datatables.net/buttons/1.4.0/css/buttons.dataTables.min.css" type="text/css" />
-
 <!-- configure radio buttons style -->
 <style>
     div#content ul li {
