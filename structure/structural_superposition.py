@@ -163,7 +163,7 @@ class RotamerSuperpose(object):
     def __init__(self, reference_atoms, template_atoms, TM_keys=None):
         self.reference_atoms = reference_atoms
         self.template_atoms = template_atoms
-        self.backbone_rmsd = None
+        self.backbone_rmsd, self.rmsd = None, None
         self.TM_keys = TM_keys
         self.num_atoms_used_for_superposition = 0
 
@@ -187,6 +187,11 @@ class RotamerSuperpose(object):
                 array2 = np.vstack((array2, list(atom2.get_coord())))
             diff = array1[1:]-array2[1:]
             self.backbone_rmsd = np.sqrt(sum(sum(diff**2))/array1[1:].shape[0])
+            for atom1, atom2 in zip(self.reference_atoms, self.template_atoms):
+                array1 = np.vstack((array1, list(atom1.get_coord())))
+                array2 = np.vstack((array2, list(atom2.get_coord())))
+            diff = array1[1:]-array2[1:]
+            self.rmsd = np.sqrt(sum(sum(diff**2))/array1[1:].shape[0])
             return self.template_atoms
         except Exception as msg:
             if self.reference_atoms!='x':

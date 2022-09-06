@@ -1,4 +1,4 @@
-﻿from Bio.Blast import NCBIXML, NCBIWWW
+from Bio.Blast import NCBIXML, NCBIWWW
 from Bio.PDB import PDBParser, PDBIO
 from Bio.PDB.PDBIO import Select
 import Bio.PDB.Polypeptide as polypeptide
@@ -730,7 +730,7 @@ class HSExposureCB(AbstractPropertyMap):
                             for other_atom in other_res:
                                 other_vector = other_atom.get_vector()
                                 d = other_vector-ref_vector
-                                if d.norm()<2:
+                                if d.norm()<1.5:
                                     if len(str(pp1[i]['CA'].get_bfactor()).split('.')[1])==1:
                                         clash_res1 = float(str(pp1[i]['CA'].get_bfactor())+'0')
                                     else:
@@ -752,7 +752,7 @@ class HSExposureCB(AbstractPropertyMap):
         ### GP checking HETRESIS to remove if not interacting with AAs
         self.hetresis_to_remove = []
         for i in het_resis:
-            if i not in het_resis and i not in het_resis_close or i in het_resis_clash:
+            if i not in self.hetresis_to_remove and i not in het_resis_close or i in het_resis_clash:
                 self.hetresis_to_remove.append(i)
         # self.hetresis_to_remove = [i for i in het_resis if i not in het_resis_close or i in het_resis_clash]
         if check_chain_breaks:

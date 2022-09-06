@@ -4,11 +4,11 @@ from django.db.models import Q
 from django.conf import settings
 
 from protein.models import Protein, ProteinConformation, ProteinAnomaly, ProteinState, ProteinSegment, ProteinFamily
-from residue.models import Residue
+from residue.models import Residue, ResidueGenericNumberEquivalent, ResidueGenericNumber
 from residue.functions import dgn, ggn
 from structure.models import *
 from structure.functions import HSExposureCB, PdbStateIdentifier, update_template_source, StructureSeqNumOverwrite
-from common.alignment import AlignedReferenceTemplate, GProteinAlignment
+from common.alignment import AlignedReferenceTemplate, GProteinAlignment, Alignment
 from common.definitions import *
 from common.models import WebLink
 from signprot.models import SignprotComplex
@@ -17,8 +17,9 @@ import structure.assign_generic_numbers_gpcr as as_gn
 import structure.homology_models_tests as tests
 from structure.signprot_modeling import SignprotModeling
 from structure.homology_modeling_functions import GPCRDBParsingPDB, ImportHomologyModel, Remodeling, DummyStructure
-from ligand.models import LigandPeptideStructure
+from ligand.models import LigandPeptideStructure, AssayExperiment
 from interaction.models import StructureLigandInteraction
+from tools.management.commands.bioactivity_receptors import Command as Bioactivity
 
 import Bio.PDB as PDB
 from modeller import *
@@ -40,10 +41,10 @@ from datetime import datetime, date
 import yaml
 import traceback
 import subprocess
-from sklearn.cluster import AffinityPropagation
+from sklearn.cluster import AffinityPropagation, MeanShift, KMeans
 from sklearn import metrics
 from sklearn.datasets import make_blobs
-from sklearn.decomposition import PCA
+from sklearn.decomposition import PCA, TruncatedSVD
 import numpy as np
 import matplotlib.pyplot as plt
 from itertools import cycle
@@ -101,6 +102,7 @@ class Command(BaseBuild):
         parser.add_argument('--keep_hetatoms', help='Keep hetero atoms from main template, this includes ligands', default=False, action='store_true')
         parser.add_argument('--rerun', help='Skip models with matching zip archives and only run the missing models.', default=False, action='store_true')
         parser.add_argument('--alphafold', help='Run the alphafold pipeline.', default=False, action='store_true')
+        parser.add_argument('--exclude_structures', help='Exclude structures as templates', default=False, type=str, nargs='+')
 
 
     def handle(self, *args, **options):
@@ -130,6 +132,7 @@ class Command(BaseBuild):
         self.rerun = options['rerun']
         self.added_mutations = options['mutations']
         self.alphafold = options['alphafold']
+        self.exclude_structures = options['exclude_structures']
 
         if options['mutations']:
             mutations = options['mutations']
@@ -209,6 +212,9 @@ class Command(BaseBuild):
             self.receptor_list = self.receptor_list[:5]
             self.receptor_list_entry_names = self.receptor_list_entry_names[:5]
 
+        if options['exclude_structures'] and options['r'] and options['state']:
+            self.receptor_list = [[Protein.objects.get(entry_name=options['r'][0]), options['state'][0]]]
+
         # Model building
         print("receptors to do",len(self.receptor_list))
         self.processors = options['proc']
@@ -257,7 +263,7 @@ class Command(BaseBuild):
             if self.rerun:
                 # Init temporary model object for checks regarding signaling protein complexes etc.
                 temp_model_check = HomologyModeling(receptor[0].entry_name, receptor[1], [receptor[1]], iterations=self.modeller_iterations, complex_model=self.complex, signprot=self.signprot, debug=self.debug,
-                                                  force_main_temp=self.force_main_temp, fast_refinement=self.fast_refinement, keep_hetatoms=self.keep_hetatoms, mutations=self.added_mutations)
+                                                  force_main_temp=self.force_main_temp, fast_refinement=self.fast_refinement, keep_hetatoms=self.keep_hetatoms, mutations=self.added_mutations, exclude_structures=self.exclude_structures)
 
                 path = './structure/complex_models_zip/' if temp_model_check.complex else './structure/homology_models_zip/'
                 # Differentiate between structure refinement and homology modeling
@@ -273,7 +279,7 @@ class Command(BaseBuild):
             mod_startTime = datetime.now()
             logger.info('Generating model for  \'{}\' ({})... ({} out of {}) (processor:{} count:{})'.format(receptor[0].entry_name, receptor[1],count.value, len(self.receptor_list),processor_id,i))
             chm = CallHomologyModeling(receptor[0].entry_name, receptor[1], iterations=self.modeller_iterations, debug=self.debug,
-                                       update=self.update, complex_model=self.complex, signprot=self.signprot, force_main_temp=self.force_main_temp, keep_hetatoms=self.keep_hetatoms, mutations=self.added_mutations, alphafold=self.alphafold)
+                                       update=self.update, complex_model=self.complex, signprot=self.signprot, force_main_temp=self.force_main_temp, keep_hetatoms=self.keep_hetatoms, mutations=self.added_mutations, alphafold=self.alphafold, exclude_structures=self.exclude_structures)
             chm.run(fast_refinement=self.fast_refinement)
             logger.info('Model finished for  \'{}\' ({})... (processor:{} count:{}) (Time: {})'.format(receptor[0].entry_name, receptor[1],processor_id,i,datetime.now() - mod_startTime))
 
@@ -304,7 +310,7 @@ class Command(BaseBuild):
 
 
 class CallHomologyModeling():
-    def __init__(self, receptor, state, iterations=1, debug=False, update=False, complex_model=False, signprot=False, force_main_temp=False, keep_hetatoms=False, no_remodeling=False, mutations=False, alphafold=False):
+    def __init__(self, receptor, state, iterations=1, debug=False, update=False, complex_model=False, signprot=False, force_main_temp=False, keep_hetatoms=False, no_remodeling=False, mutations=False, alphafold=False, exclude_structures=False):
         self.receptor = receptor
         self.state = state
         self.modeller_iterations = iterations
@@ -318,6 +324,7 @@ class CallHomologyModeling():
         self.mutations = mutations
         self.alphafold = alphafold
         self.alphafold_data_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'Alphafold'])
+        self.exclude_structures = exclude_structures
 
 
     def run(self, import_receptor=False, fast_refinement=False):
@@ -352,7 +359,7 @@ class CallHomologyModeling():
                 Homology_model.target_signprot = cm.target_signprot
                 Homology_model.signprot_protconf = cm.signprot_protconf
                 Homology_model.signprot_complex = cm.signprot_complex
-            elif self.alphafold:
+            elif self.alphafold and not Homology_model.revise_xtal:
                 af_path = os.sep.join([self.alphafold_data_dir, Homology_model.reference_protein.entry_name+'_'+Homology_model.state.lower()+'.pdb'])
                 ihm = ImportHomologyModel(self.receptor)
                 ihm.path_to_pdb = af_path
@@ -364,7 +371,16 @@ class CallHomologyModeling():
                 Homology_model.main_template_preferred_chain = 'A'
                 Homology_model.main_structure = DummyStructure('A')
                 alignment = AlignedReferenceTemplate()
-                alignment.run_hommod_alignment(Homology_model.reference_protein, ['TM1','TM2','TM3','TM4','TM5','TM6','TM7'], [Homology_model.state], 'similarity')
+                alignment.run_hommod_alignment(Homology_model.reference_protein, ['TM1','TM2','TM3','TM4','TM5','TM6','TM7'], ['Active','Inactive'], 'similarity')
+                Homology_model.similarity_table = alignment.similarity_table
+                target_residues = Residue.objects.filter(protein_conformation__protein=Homology_model.reference_protein)
+                rotamer_cluster_numbers = {}
+                with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'rotamer_cluster_numbers.txt']), 'r') as rf:
+                    lines = rf.readlines()
+                    for l in lines:
+                        s = l.split('\t')
+                        rotamer_cluster_numbers[s[0]] = int(s[1])
+                 
                 delete_list = []
                 homologs = OrderedDict()
                 protconfs = {}
@@ -372,7 +388,7 @@ class CallHomologyModeling():
                 modality = {'Active':['Agonist', 'Full agonist', 'Agonist peptide', 'Agonist (partial)', 'Partial agonist'],
                             'Inactive':['Antagonist', 'Antagonist (neutral/silent)', 'Inverse agonist', 'Inverse agonist (partial)']}
                 # ID "wrong" modality templates
-                for i, j in alignment.similarity_table.items():
+                for i, j in Homology_model.similarity_table.items():
                     sli = StructureLigandInteraction.objects.filter(structure=i)
                     protconfs[i] = ProteinConformation.objects.get(protein=i.protein_conformation.protein.parent)
                     for s in sli:
@@ -382,25 +398,26 @@ class CallHomologyModeling():
                             elif list(sli).index(s)==len(sli)-1 and i not in delete_list:
                                 delete_list.append(i)
                         elif s.ligand_role.name in modality[Homology_model.state]:
-                            if type(alignment.similarity_table[i])!=type([]):
-                                alignment.similarity_table[i] = [alignment.similarity_table[i], modality[Homology_model.state].index(s.ligand_role.name)]
-                            elif modality[Homology_model.state].index(s.ligand_role.name)<alignment.similarity_table[i][1]:
-                                alignment.similarity_table[i][1] = modality[Homology_model.state].index(s.ligand_role.name)
+                            if type(Homology_model.similarity_table[i])!=type([]):
+                                Homology_model.similarity_table[i] = [Homology_model.similarity_table[i], modality[Homology_model.state].index(s.ligand_role.name)]
+                            elif modality[Homology_model.state].index(s.ligand_role.name)<Homology_model.similarity_table[i][1]:
+                                Homology_model.similarity_table[i][1] = modality[Homology_model.state].index(s.ligand_role.name)
                     if len(sli)==0:
+                        delete_list.append(i)
+                    if self.exclude_structures and i.pdb_code.index in self.exclude_structures:
                         delete_list.append(i)
                 # Remove "wrong" templates from template list
                 for i in delete_list:
-                    del alignment.similarity_table[i]
-                # Reorder based on seqsim and resolution
-                pprint.pprint(alignment.similarity_table)
-                resorted_keys = sorted(alignment.similarity_table.items(), key=lambda x: (-x[1][0],x[1][1],x[0].resolution))
+                    del Homology_model.similarity_table[i]
+                # Reorder based on seqsim, resolution modality
+                resorted_keys = sorted(Homology_model.similarity_table.items(), key=lambda x: (-x[1][0],x[1][1],x[0].resolution))
                 new_dict = OrderedDict()
                 for r in resorted_keys:
                     new_dict[r[0]] = r[1][0]
                 Homology_model.similarity_table = new_dict
-                pprint.pprint(Homology_model.similarity_table)
+
                 # ID most homologuous receptors
-                for i, j in alignment.similarity_table.items():
+                for i, j in Homology_model.similarity_table.items():
                     if i.protein_conformation.protein.parent not in homologs:
                         homologs[i.protein_conformation.protein.parent] = [i]
                     elif i not in homologs[i.protein_conformation.protein.parent]:
@@ -410,11 +427,12 @@ class CallHomologyModeling():
                 res_seqnums = []
                 for seg_lab, seg in Homology_model.alignment.alignment_dict.items():
                     interacting_residues[seg_lab] = []
-                    print(seg_lab)
                     for gn, res in seg.items():
-                        if res=='G':
+                        if res in ['G','A']:#['F','Y','W','R','E','K','N','H','Q','D']:
                             continue
                         if 'x' in gn:
+                            if gn in ['45x50','3x25']:
+                                continue
                             c = 0
                             found_in_receptor = False
                             receptor_count = 0
@@ -439,11 +457,7 @@ class CallHomologyModeling():
                                 receptor_count+=1
                                 if receptor_count==5:
                                     break
-                    print(datetime.now() - startTime)
-                        
-                print(interacting_residues)
-                print(res_seqnums)
-                print(datetime.now() - startTime)
+
                 Homology_model.alignment.reference_dict = deepcopy(Homology_model.alignment.reference_dict)
                 Homology_model.alignment.template_dict = deepcopy(Homology_model.alignment.template_dict)
 
@@ -461,113 +475,348 @@ class CallHomologyModeling():
                             try:
                                 res = Fragment.objects.filter(structure=struct, residue__display_generic_number__label=dgn(gn, struct.protein_conformation), residue__amino_acid=Homology_model.alignment.reference_dict[seg][gn])
                                 if len(res)>0:
-                                    coverage[struct][1]+=1
-                                    gn_per_struct[struct].append(gn)
-                                    struct_per_gn[gn].append(struct)
+                                    rot = Homology_model.right_rotamer_select(Rotamer.objects.filter(residue=res[0].residue))
+                                    if not rot.missing_atoms:
+                                        coverage[struct][1]+=1
+                                        gn_per_struct[struct].append(gn)
+                                        struct_per_gn[gn].append(struct)
                             except Residue.DoesNotExist:
                                 continue
-                pprint.pprint(coverage)
-                pprint.pprint(gn_per_struct)
-                pprint.pprint(struct_per_gn)
+                
+                bd = Bioactivity()
+                bioactivity_data = bd.handle()
+                bioactivity_structures = []
+                if Homology_model.reference_protein.family.slug in bioactivity_data[Homology_model.state.lower()]:
+                    if self.debug:
+                        print(bioactivity_data[Homology_model.state.lower()][Homology_model.reference_protein.family.slug])
+                    for i,j in bioactivity_data[Homology_model.state.lower()][Homology_model.reference_protein.family.slug].items():
+                        bioactivity_structures+=[Structure.objects.get(pdb_code__index=j[0][0])]
+                else:
+                    is self.debug:
+                        print('No Bioactivity data available')
+
                 print(datetime.now() - startTime)
                 resorted_keys = sorted(coverage.items(), key=lambda x: (-x[1][1],-x[1][0],x[0].resolution))
                 new_dict = OrderedDict()
-                new_dict[Structure.objects.get(pdb_code__index='7L1V')] = 100
-                print(resorted_keys)
                 for r in resorted_keys:
                     new_dict[r[0]] = r[1][0]
                 Homology_model.similarity_table = new_dict
+                prot_conf = ProteinConformation.objects.get(protein=Homology_model.reference_protein)
 
+                ### Frequency benchmark TEMP MOD
+                bioactivity_structures = []
+
+                ### 7TM confidence score
+                confidence_7TM = []
+                for seg, res in Homology_model.main_pdb_array.items():
+                    if seg.startswith('TM'):
+                        for gn, atoms in res.items():
+                            confidence_7TM.append(atoms[0].get_bfactor())
+
+                alt_templates = OrderedDict()
+
+                ### Pocket alignment
+                pocket_alignment = Alignment()
+                pocket_alignment.load_reference_protein(Homology_model.reference_protein)
+                pocket_alignment.load_proteins([i.protein_conformation.protein for i in list(Homology_model.similarity_table.keys())])
+                pocket_segments = []
+                new_segment_dict = OrderedDict([('Custom', [])])
+                new_generic_numbers = OrderedDict([('Custom', OrderedDict())])
+                for gn in struct_per_gn:
+                    new_segment_dict['Custom'].append(gn)
+                    new_generic_numbers['Custom'][gn] = []
+                pocket_alignment.segments = new_segment_dict
+                pocket_alignment.generic_numbers['gpcrdba'] = new_generic_numbers
+                pocket_alignment.use_residue_groups = True
+                pocket_alignment.build_alignment()
+                pocket_alignment.calculate_similarity(normalized=True)
+                for p in pocket_alignment.proteins[1:]:
+                    s = Structure.objects.get(protein_conformation__protein=p.protein)
+                    Homology_model.similarity_table[s] = int(p.identity)
+                
+                resorted_keys = sorted(Homology_model.similarity_table.items(), key=lambda x: (-x[1],x[0].resolution))
+                new_dict = OrderedDict()
+                for r in resorted_keys:
+                    new_dict[r[0]] = r[1]
+                Homology_model.similarity_table = new_dict
                 for gn, structs in struct_per_gn.items():
-                    if len(structs)==0:
-                        continue
-                    data = []
-                    print(gn, structs)
-                    first = True
-                    ref_atoms = []
-                    for s in structs:
-                        this_struct_data = np.array([0,0,0])
-                        rot_obj = Rotamer.objects.filter(structure=s, residue__display_generic_number__label=dgn(gn, s.protein_conformation))
-                        rot_obj = Homology_model.right_rotamer_select(rot_obj)
-                        rot = PDB.PDBParser().get_structure('rot', StringIO(rot_obj.pdbdata.pdb))[0]
-                        for c in rot:
-                            for res in c:
-                                if first:
-                                    ref_atoms = [a for a in res]
-                                    sorted_atoms = ref_atoms
-                                    first = False
-                                else:
-                                    sup = sp.RotamerSuperpose(sorted(ref_atoms), sorted([a for a in res]))
-                                    sorted_atoms = sup.run()
-                                for a in sorted_atoms:
-                                    if a.get_id() in ['N','CA','C','O']:
-                                        continue
-                                    this_struct_data = np.vstack((this_struct_data, list(a.get_coord())))
-                        pprint.pprint(this_struct_data[1:])
-                        pca = PCA(n_components=2)
-                        pca.fit(this_struct_data[1:])
-                        print(pca.explained_variance_ratio_)
-                        print(pca.singular_values_)
-                        data.append(pca.singular_values_)
+                    res = target_residues.get(display_generic_number__label=dgn(gn, Homology_model.prot_conf))
+                    for s, i in Homology_model.similarity_table.items():
+                        if s in structs:
+                            alt_templates[gn] = [res.amino_acid, res.sequence_number, s]
+                            break
+                
+                ### Clustering
+                # for gn, structs in struct_per_gn.items():
+                #     fix_st = False
+                #     if len(bioactivity_structures)>0:
+                #         fix_st = bioactivity_structures[0]
+                #     # fix_st = Structure.objects.get(pdb_code__index='4IAR')
+                #     if fix_st in struct_per_gn[gn]:
+                #         structs = [fix_st, fix_st]
+                #         fix_st = True
+                #     ### Bioactivity benchmark TEMP MOD
+                #     # else:
+                #     #     continue
+                #     ###
+                #     if len(structs)==0:
+                #         continue
+                #     data = np.array([0,0])
+                #     target_residue = Residue.objects.get(protein_conformation=prot_conf, display_generic_number__label=dgn(gn, prot_conf))
+                #     print(gn, structs)
+                #     first = True
+                #     ref_atoms = []
+                #     if len(structs)>1:
+                #         for s in structs:
+                #             this_struct_data = np.array([0,0,0])
+                #             chi_angles = np.array([])
+                #             rot_obj = Rotamer.objects.filter(structure=s, residue__display_generic_number__label=dgn(gn, s.protein_conformation))
+                #             rot_obj = Homology_model.right_rotamer_select(rot_obj)
+                #             if rot_obj.missing_atoms:
+                #                 continue
+                #             rot = PDB.PDBParser().get_structure('rot', StringIO(rot_obj.pdbdata.pdb))
+                #             rot.atom_to_internal_coordinates()
+                            
+                #             for res in rot.get_residues():
+                #                 for i in range(1,6):
+                #                     chi = res.internal_coord.get_angle('chi{}'.format(i))
+                #                     # print(gn,s,res,chi,i)
+                #                     if chi:
+                #                         chi_angles = np.append(chi_angles, chi)
+                #                 if first and len(chi_angles)>0:
+                #                     ref_atoms = [a for a in res]
+                #                     sorted_atoms = ref_atoms
+                #                     first = False
+                #                     if len(chi_angles)==1:
+                #                         data = np.array([0]*2)
+                #                     else:
+                #                         data = np.array([0]*len(chi_angles))
+                #                     print(ref_atoms[0].get_parent())
+                #                     print(ref_atoms)
+                #                     print(chi_angles)
+                #                 else:
+                #                     sup = sp.RotamerSuperpose(sorted(ref_atoms), sorted([a for a in res]))
+                #                     sorted_atoms = sup.run()
+                #                 for a in sorted_atoms:
+                #                     if a.get_id() in ['N','CA','C','O']:
+                #                         continue
+                #                     this_struct_data = np.vstack((this_struct_data, list(a.get_coord())))
+                #             # pprint.pprint(this_struct_data[1:])
 
-                    pprint.pprint(data)
-                    labels_true = structs
-                    af = AffinityPropagation(preference=-50, random_state=0).fit(data)
-                    cluster_centers_indices = af.cluster_centers_indices_
-                    labels = af.labels_
+                #             if len(chi_angles)>2:
+                #                 if len(chi_angles)==5:
+                #                     array_ext = np.array([0,0,0,0,0])
+                #                 elif len(chi_angles)==4:
+                #                     array_ext = np.array([0,0,0,0])
+                #                 elif len(chi_angles)==3:
+                #                     array_ext = np.array([0,0,0])
+                #                 # tsvd = TruncatedSVD(n_components=2, random_state=1)
+                #                 # chi_angles = np.vstack((chi_angles, array_ext))
+                #                 # tsvd_out = tsvd.fit_transform(chi_angles)
+                #                 # chi_angles = tsvd_out[0]
+                #             elif len(chi_angles)==1:
+                #                 chi_angles = np.append(chi_angles, 0)
+                #             if len(chi_angles)>0:
+                #                 data = np.vstack((data, chi_angles))
 
-                    n_clusters_ = len(cluster_centers_indices)
-                    print(cluster_centers_indices)
-                    print(labels)
-                    print(n_clusters_)
-                    # print("Estimated number of clusters: %d" % n_clusters_)
-                    # print("Homogeneity: %0.3f" % metrics.homogeneity_score(labels_true, labels))
-                    # print("Completeness: %0.3f" % metrics.completeness_score(labels_true, labels))
-                    # print("V-measure: %0.3f" % metrics.v_measure_score(labels_true, labels))
-                    # print("Adjusted Rand Index: %0.3f" % metrics.adjusted_rand_score(labels_true, labels))
-                    # print("Adjusted Mutual Information: %0.3f"% metrics.adjusted_mutual_info_score(labels_true, labels))
-                    # print("Silhouette Coefficient: %0.3f"% metrics.silhouette_score(X, labels, metric="sqeuclidean"))
+                #         data = data[1:]
+                #         pprint.pprint(data)
 
-                    plt.close("all")
-                    plt.figure(1)
-                    plt.clf()
+                #         # Affinity Propagation
+                #         af = AffinityPropagation(preference=-50, random_state=0).fit(data)
+                #         cluster_centers_indices = af.cluster_centers_indices_
+                #         labels = af.labels_
 
-                    colors = cycle("bgrcmykbgrcmykbgrcmykbgrcmyk")
-                    for k, col in zip(range(n_clusters_), colors):
-                        class_members = labels == k
-                        cluster_center = X[cluster_centers_indices[k]]
-                        plt.plot(X[class_members, 0], X[class_members, 1], col + ".")
-                        plt.plot(
-                            cluster_center[0],
-                            cluster_center[1],
-                            "o",
-                            markerfacecolor=col,
-                            markeredgecolor="k",
-                            markersize=14,
-                        )
-                        for x in X[class_members]:
-                            plt.plot([cluster_center[0], x[0]], [cluster_center[1], x[1]], col)
+                #         if len(cluster_centers_indices)>rotamer_cluster_numbers[PDB.Polypeptide.three_to_one(ref_atoms[0].get_parent().get_resname())]:
+                #             # KMeans
+                #             kmeans = KMeans(n_clusters=rotamer_cluster_numbers[PDB.Polypeptide.three_to_one(ref_atoms[0].get_parent().get_resname())], random_state=0).fit(data)
+                #             labels = kmeans.labels_
+                #             cluster_centers = kmeans.cluster_centers_
+                #             cluster_centers_indices = []
+                #             print('KMeans')
+                #             print(cluster_centers)
+                #             cluster_centers_indices = []
+                #             for c in cluster_centers:
+                #                 closest = None
+                #                 closest_i = None
+                #                 min_val = 10000
+                #                 for i,j in enumerate(data):
+                #                     dist = np.linalg.norm(c-j)
+                #                     if dist<min_val:
+                #                         closest = j
+                #                         min_val = dist
+                #                         closest_i = i
+                #                 cluster_centers_indices.append(closest_i)
 
-                    plt.title("Estimated number of clusters: %d" % n_clusters_)
-                    plt.show()
-                    plt.savefig('plot.png')
-                    break
-                pprint.pprint(data)
-                raise AssertionError
+                #         n_clusters_ = len(cluster_centers_indices)
+                #         if n_clusters_==0:
+                #             ms = MeanShift(bin_seeding=True).fit(data)
+                #             labels = ms.labels_
+                #             cluster_centers = ms.cluster_centers_
+                #             print('MeanShift', cluster_centers)
+                #             cluster_centers_indices = []
+                #             for c in cluster_centers:
+                #                 closest = None
+                #                 closest_i = None
+                #                 min_val = 10000
+                #                 for i,j in enumerate(data):
+                #                     dist = np.linalg.norm(c-j)
+                #                     if dist<min_val:
+                #                         closest = j
+                #                         min_val = dist
+                #                         closest_i = i
+                #                 cluster_centers_indices.append(closest_i)
+
+                #         print(cluster_centers_indices)
+                #         print(labels)
+                #         print(n_clusters_)
+                #         cluster_repr_struct = structs[cluster_centers_indices[max(set(labels), key = list(labels).count)]]
+                #         clusters_by_receptor = OrderedDict()
+                #         for i, l in enumerate(labels):
+                #             if l not in clusters_by_receptor:
+                #                 clusters_by_receptor[l] = [structs[i].protein_conformation.protein.parent]
+                #             else:
+                #                 rec = structs[i].protein_conformation.protein.parent
+                #                 if rec not in clusters_by_receptor[l]:
+                #                     clusters_by_receptor[l].append(rec)
+                #         print(clusters_by_receptor)
+                        
+                #         ### If largest cluster only has 1 receptor, skip
+                #         largest_cluster_label = max(clusters_by_receptor, key=lambda k: len(clusters_by_receptor[k]))
+                #         if len(clusters_by_receptor[largest_cluster_label])==1:
+                #             if not fix_st:
+                #                 continue
+                        
+                #         largest_clusters = [largest_cluster_label]
+                #         for l, r in clusters_by_receptor.items():
+                #             if l!=largest_cluster_label and len(clusters_by_receptor[l])==len(clusters_by_receptor[largest_cluster_label]):
+                #                 largest_clusters.append(l)
+                #         print('LARGEST clusters', largest_clusters)
+                #         if len(largest_clusters)>1:
+                #             ## When receptor number is equal, select cluster with most structures
+                #             # struct_counts = OrderedDict()
+                #             # for l in largest_clusters:
+                #             #     struct_counts[l] = list(labels).count(l)
+                #             #     print(l, list(labels).count(l))
+                #             # counts = [l for l in struct_counts if struct_counts[l]==max(struct_counts.values())]
+                #             # print(counts, max(struct_counts.values()))
+                #             # if len(counts)==1:
+                #             #     largest_cluster_label = counts[0]
+                #             # else:
+                #             #     print('same number of receptors and structures in class!')
+                #             # cluster_repr_struct = structs[cluster_centers_indices[largest_cluster_label]]
+
+                #             ## When receptor number is equal, select cluster representative with higher similarity
+                #             sim_struct = {}
+                #             for l in largest_clusters:
+                #                 s = structs[cluster_centers_indices[l]]
+                #                 sim_struct[s] = Homology_model.similarity_table[s]
+                #             cluster_repr_struct = sorted(sim_struct.items(), key=lambda k: -k[1])[0][0]
+                #         else:
+                #             cluster_repr_struct = structs[cluster_centers_indices[largest_cluster_label]]
+
+                #         print('CLUSTER Repr:', cluster_repr_struct)
+                #         alt_templates[gn] = [target_residue.amino_acid, target_residue.sequence_number, cluster_repr_struct]
+                #         # plt.close("all")
+                #         # plt.figure(1)
+                #         # plt.clf()
+
+                #         # colors = cycle("bgrcmykbgrcmykbgrcmykbgrcmyk")
+                #         # for k, col in zip(range(n_clusters_), colors):
+                #         #     class_members = labels == k
+                #         #     cluster_center = data[cluster_centers_indices[k]]
+                #         #     plt.plot(data[class_members, 0], data[class_members, 1], col + ".")
+                #         #     plt.plot(
+                #         #         cluster_center[0],
+                #         #         cluster_center[1],
+                #         #         "o",
+                #         #         markerfacecolor=col,
+                #         #         markeredgecolor="k",
+                #         #         markersize=14,
+                #         #     )
+                #         #     for x in data[class_members]:
+                #         #         plt.plot([cluster_center[0], x[0]], [cluster_center[1], x[1]], col)
+
+                #         # plt.title("Estimated number of clusters: %d" % n_clusters_)
+                #         # plt.show()
+                #         # plt.savefig('plot.png')
+                if self.debug:
+                    print('ALT TEMPLATES')
+                    pprint.pprint(alt_templates)
+
+                used_rotamer_templates = OrderedDict()
+                confidence_scores = []
+                for gn, struct in alt_templates.items():
+                    struct = struct[2]
+                    rot_obj = Rotamer.objects.filter(structure=struct, residue__display_generic_number__label=dgn(gn, struct.protein_conformation))
+                    rot_obj = Homology_model.right_rotamer_select(rot_obj)
+                    rot = PDB.PDBParser().get_structure('rot', StringIO(rot_obj.pdbdata.pdb))
+                    seg = rot_obj.residue.protein_segment.slug
+                    struct_atoms = Homology_model.main_pdb_array[seg][gn.replace('x','.')]
+                    confidence_scores.append(struct_atoms[0].get_bfactor())
+                    alt_atoms = deepcopy([a for a in rot.get_atoms()])
+                    sup = sp.RotamerSuperpose(sorted(struct_atoms), sorted(alt_atoms))
+                    new_atoms = sup.run()
+
+                    alt_rmsd = deepcopy(sup.rmsd)
+                    if alt_atoms[0].get_parent().get_resname() in ['TYR','PHE','ARG','ASP','GLU']:
+                        new_alt_atoms = Homology_model.run_residue_flip(alt_atoms)
+                        superpose2 = sp.RotamerSuperpose(sorted(struct_atoms), sorted(new_alt_atoms))
+                        new_atoms2 = superpose2.run()
+                        if alt_rmsd>superpose2.rmsd:
+                            alt_rmsd = superpose2.rmsd
+                            new_atoms = new_atoms2
+                    # if alt_rmsd>0.2:
+                    Homology_model.main_pdb_array[seg][gn.replace('x','.')] = new_atoms
+                    Homology_model.template_source = update_template_source(Homology_model.template_source,[gn],struct,seg,just_rot=True)
+                    used_rotamer_templates[gn] = [struct, struct_atoms[0].get_bfactor(), Homology_model.similarity_table[struct]]
+
+                Homology_model.statistics.add_info('possible_rotamer_templates', alt_templates)
+                Homology_model.statistics.add_info('used_rotamer_templates', used_rotamer_templates)
 
                 # Label positions to change
-                c = 0
-                for seg_lab, seg in interacting_residues.items():
-                    for gn in seg:
-                        Homology_model.alignment.alignment_dict[seg_lab][gn] = '.'
-                        Homology_model.alignment.template_dict[seg_lab][gn] = 'G'
-                        c+=1
-                print('Number of positions to change: ',c)
-                Homology_model.statistics.info_dict['pdb_db_inconsistencies'] = []
+                # c = 0
+                # for seg_lab, seg in interacting_residues.items():
+                #     for gn in seg:
+                #         Homology_model.alignment.alignment_dict[seg_lab][gn] = '.'
+                #         Homology_model.alignment.template_dict[seg_lab][gn] = 'G'
+                #         c+=1
+                # print('Number of positions to change: ',c)
+                # Homology_model.statistics.info_dict['pdb_db_inconsistencies'] = []
                 
-                h = Homology_model.run_non_conserved_switcher(Homology_model.main_pdb_array, Homology_model.alignment.reference_dict, Homology_model.alignment.template_dict, Homology_model.alignment.alignment_dict)
-                pprint.pprint(Homology_model.statistics)
-                # raise AssertionError
+                # h = Homology_model.run_non_conserved_switcher(Homology_model.main_pdb_array, Homology_model.alignment.reference_dict, Homology_model.alignment.template_dict, Homology_model.alignment.alignment_dict)
+                if self.debug:
+                    pprint.pprint(Homology_model.statistics)
+            ### Refined alphafold structure model
+            # elif self.alphafold and Homology_model.revise_xtal:
+            #     alignment = Homology_model.run_alignment([self.state])
+            #     Homology_model.build_homology_model(alignment)
+            #     missing_sections = []
+            #     new_start, new_end = None, None
+            #     section = []
+
+            #     for seg, resis in Homology_model.template_source.items():
+            #         for gn, res in resis.items():
+            #             if res[0]!=Homology_model.main_structure:
+            #                 if not new_start:
+            #                     new_start = [seg, gn]
+            #                     new_end = [seg, gn]
+            #                     try:
+            #                         section = [[seg, gn, Residue.objects.get(protein_conformation=Homology_model.prot_conf, display_generic_number__label=dgn(gn, Homology_model.prot_conf)).sequence_number]]
+            #                     except ResidueGenericNumberEquivalent.DoesNotExist:
+            #                         section = [[seg, gn, int(gn)]]
+            #                 else:
+            #                     new_end = [seg, gn]
+            #                     try:
+            #                         section.append([seg, gn, Residue.objects.get(protein_conformation=Homology_model.prot_conf, display_generic_number__label=dgn(gn, Homology_model.prot_conf)).sequence_number])
+            #                     except ResidueGenericNumberEquivalent.DoesNotExist:
+            #                         section.append([seg, gn, int(gn)])
+            #             else:
+            #                 new_start = None
+            #                 if section not in missing_sections:
+            #                     missing_sections.append(section)
+            #     pprint.pprint(missing_sections)
+            #     raise AssertionError
             else:
                 alignment = Homology_model.run_alignment([self.state])
                 Homology_model.build_homology_model(alignment)
@@ -839,6 +1088,21 @@ class HomologyModeling(object):
         else:
             rotamer=rotamer[0]
         return rotamer
+
+    def run_residue_flip(self, atoms, atom_types=['CD','CE','CG','OE','OD','NH']):
+        for at in atom_types:
+            atoms = self.flip_residue(atoms, at)
+        return atoms
+
+    def flip_residue(self, atoms, atom_type):
+        for a in atoms:
+            if a.get_id()==atom_type+'1':
+                one_index = atoms.index(a)
+                one_coords = a.get_coord()
+            elif a.get_id()==atom_type+'2':
+                atoms[one_index].coord = a.get_coord()
+                a.coord = one_coords
+        return atoms
 
     def pdb_line_whitespace(self, pos_list, i, group3, whitespace):
         if len(str(pos_list[i]))-len(group3)==0:
