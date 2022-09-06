@@ -51,7 +51,7 @@ class ReceptorListSerializer(serializers.ModelSerializer):
     ligand_type = serializers.ReadOnlyField(source='family.parent.name')
     receptor_family = serializers.ReadOnlyField(source='family.parent.parent.name')
     receptor_class = serializers.ReadOnlyField(source='family.parent.parent.parent.name')
-    endogenous_ligands = EndogenousGTPSerializer(read_only=True, many=True)
+    endogenous_ligands = EndogenousGTPSerializer(source='endogenous_gtp_set', read_only=True, many=True)
     species = serializers.StringRelatedField(read_only=True)
 
     class Meta:

@@ -142,7 +142,7 @@ def TargetDetailsCompact(request, **kwargs):
 
     # if queryset is empty redirect to ligand browser
     if not ps:
-        return redirect("ligand_browser")
+        return redirect("ligand_selection")
 
     if cache_key != False and cache.has_key(cache_key):
         ligand_data = cache.get(cache_key)
@@ -191,7 +191,7 @@ def TargetDetailsCompact(request, **kwargs):
 
                 # TEMPORARY workaround for handling string values
                 values = [float(item) for item in itertools.chain(
-                    *tmp.values()) if item != None and float(item)]
+                    *tmp.values()) if item != None and item != "None" and float(item)]
 
                 if len(values) > 0:
                     ligand_data.append({
@@ -249,8 +249,8 @@ def TargetDetailsExtended(request, **kwargs):
                     protein__in=prot_id, ligand__ids__web_resource__slug='chembl_ligand')
 
     # if queryset is empty redirect to ligand browser
-    if not ps:
-        return redirect("ligand_browser")
+    if not ps and 'slug' not in kwargs:
+        return redirect("ligand_selection")
 
     if cache_key != False and cache.has_key(cache_key):
         ps = cache.get(cache_key)
@@ -311,7 +311,7 @@ def TargetPurchasabilityDetails(request, **kwargs):
 
     # if queryset is empty redirect to ligand browser
     if not ps:
-        return redirect("ligand_browser")
+        return redirect("ligand_selection")
 
     if cache_key != False and cache.has_key(cache_key):
         purchasable = cache.get(cache_key)
@@ -1655,7 +1655,7 @@ class LigandInformationView(TemplateView):
                 return_dict[name]['receptor_uniprot'] = i.protein.entry_short()
                 return_dict[name]['receptor_species'] = i.protein.species.common_name
                 return_dict[name]['receptor_family'] = i.protein.family.parent.short()
-                return_dict[name]['receptor_class'] = i.protein.family.parent.parent.parent.short()
+                return_dict[name]['receptor_class'] = i.protein.family.parent.parent.parent.shorter()
                 return_dict[name]['source'] = i.source
 
         for item in return_dict.keys():
@@ -1670,7 +1670,7 @@ class LigandInformationView(TemplateView):
             for data_type in return_dict[key]['data_type'].keys():
                 label = '_'.join([key,data_type])
                 unpacked[label] = deepcopy(return_dict[key])
-                unpacked[label]['type'] = data_type if data_type.startswith('p') or data_type.startswith('P') else 'p'+data_type
+                unpacked[label]['type'] = data_type if data_type.startswith('p') or data_type.startswith('P') or data_type == '-' else 'p'+data_type
                 unpacked[label]['min'] = return_dict[key]['data_type'][data_type][0]
                 unpacked[label]['avg'] = return_dict[key]['data_type'][data_type][1]
                 unpacked[label]['max'] = return_dict[key]['data_type'][data_type][2]
@@ -1682,43 +1682,49 @@ class LigandInformationView(TemplateView):
     @staticmethod
     def return_splitted_ranges(value):
         if len(value) == 1:
+            split_value = value[0].split('|')
             try: #check if it is not a None
-                minimum = round(float(value[0].split('|')[0]), 2)
+                avg = float(split_value[1])
             except ValueError: #if it's None default to '-'
-                minimum = '-'
+                avg = '-'
             try: #check if it is not a None
-                maximum = float(value[0].split('|')[2])
-            except ValueError:#if it's None default to 0.00
-                maximum = 0.00
-
-            avg = float(value[0].split('|')[1])
-
-            if maximum == 0.00:
-                maximum = avg
-
-            if minimum == '-':
+                minimum = round(float(split_value[0]), 2)
+            except ValueError: #if it's None default to '-'
                 minimum = avg
+
+            try: #check if it is not a None
+                maximum = float(split_value[2])
+            except ValueError:#if it's None default to 0.00
+                maximum = avg
 
             if avg == 0.00:
                 avg = (minimum + maximum)/2
 
-            output = [minimum, round(avg, 2), round(maximum, 2)]
+            if avg != "-":
+                output = [minimum, round(avg, 2), round(maximum, 2)]
+            else:
+                output = ['-', '-', '-']
         else:
             minimum = []
             average = []
             maximum = []
             for record in value:
-                if record.split('|')[0] != 'None':
+                split_record = record.split('|')
+                if split_record[0] != 'None':
                     minimum.append(float(record.split('|')[0]))
-                if record.split('|')[2] != 'None':
+                if split_record[1] != 'None':
+                    average.append(float(record.split('|')[1]))
+                if split_record[2] != 'None':
                     maximum.append(float(record.split('|')[2]))
-                average.append(float(record.split('|')[1]))
             try:
                 minimum = round(min(minimum), 2)
             except ValueError:
                 minimum = '-'
 
-            avg = sum(average) / len(average)
+            if len(average) > 0:
+                avg = sum(average) / len(average)
+            else:
+                avg = "-"
 
             try:
                 maximum = max(maximum)
@@ -1728,7 +1734,10 @@ class LigandInformationView(TemplateView):
             if minimum == '-':
                 minimum = avg
 
-            output = [minimum, round(avg, 2), round(maximum, 2)]
+            if avg != "-":
+                output = [minimum, round(avg, 2), round(maximum, 2)]
+            else:
+                output = ['-', '-', '-']
         return output
 
     @staticmethod
