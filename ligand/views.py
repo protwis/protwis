@@ -431,7 +431,7 @@ class BiasedSignallingSelection(AbsReferenceSelectionTable):
                                                     + '\nPathway-preference is not bias as no reference ligand is used. See the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.' \
                                                     + '\n<b>*</b>Biased ligands have a bias factor ≥ 5.',
                                      'Continue': "submitSelection('/biased_signalling/biasedsubtypes');",
-                                     'Pathway': "submitSelection('/biased_signalling/pathwaybiasedsubtypes');",
+                                     'Pathway': "submitSelection('/biased_signalling/pathwaybiasedsubtype');",
                                      'Biased': "submitSelection('/biased_signalling/userselectionbiasedsubtype');"},
                   'BrowserPathway': {'Description': 'The next page shows ligands preferring a transducer or effector family (e.g. G protein, arrestin, GRK, ERK etc.).' \
                                                     + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.' \
@@ -1970,7 +1970,7 @@ def CachedOTFBiasBrowsers(browser_type, user_ligand, balanced, request):
     keygen = protein_ids + user_ids
     cache_key = "OTFBROWSER_" + browser_type + "_" + hashlib.md5("_".join(keygen).encode('utf-8')).hexdigest()
     return_html = cache.get(cache_key)
-    return_html = None #testing
+    # return_html = None #testing
     if return_html == None:
         if user_ligand == False:
             if browser_type == "bias":
@@ -2012,6 +2012,7 @@ class OTFBiasBrowser(TemplateView):
     def get_context_data(self, **kwargs):
         if self.user:
             self.user = int(self.user)
+
         data = OnTheFly(int(self.protein_id), rank_method=self.rank_method, subtype=self.subtype, pathway=self.pathway, user=self.user, balanced=self.balanced)
         browser_columns = ['Class', 'Receptor family', 'UniProt', 'IUPHAR', 'Species',
                            'Reference ligand', 'Tested ligand', '#Vendors', '#Articles', '#Labs',

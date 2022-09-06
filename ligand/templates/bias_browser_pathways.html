@@ -56,35 +56,35 @@
                         reset_filters()
                     },
                 },
-            {
-                text: 'Get Vendors',
-                className: 'btn btn-primary',
-                titleAttr: 'Vendors info for top 20 ligands',
-                init: function(api, node, config) {
-                    $(node).removeClass('dt-button buttons-excel buttons-html5');
-                },
-                action: function(e, dt, node, config) {
-                    var id = read_ids()
-                    var result
-                    console.log('test' + id)
-                    $.ajaxSetup({
-                        headers: { "X-CSRFToken": getCookie("csrftoken") }
-                    });
-                    $.ajax({
-                        type: 'POST',
-                        url: '/ligand/vendors',
-                        data: {
-                            ids: id,
-                            csrfmiddlewaretoken: '{{csrf_token }}',
-                            action: 'post',
-                        },
-                        success: function() {
-
-                            openPopup('/ligand/browservendors', 'Detail View', window, 850, 1000)
-                        }
-                    });
-                },
-            },
+            // {
+            //     text: 'Get Vendors',
+            //     className: 'btn btn-primary',
+            //     titleAttr: 'Vendors info for top 20 ligands',
+            //     init: function(api, node, config) {
+            //         $(node).removeClass('dt-button buttons-excel buttons-html5');
+            //     },
+            //     action: function(e, dt, node, config) {
+            //         var id = read_ids()
+            //         var result
+            //         console.log('test' + id)
+            //         $.ajaxSetup({
+            //             headers: { "X-CSRFToken": getCookie("csrftoken") }
+            //         });
+            //         $.ajax({
+            //             type: 'POST',
+            //             url: '/ligand/vendors',
+            //             data: {
+            //                 ids: id,
+            //                 csrfmiddlewaretoken: '{{csrf_token }}',
+            //                 action: 'post',
+            //             },
+            //             success: function() {
+            //
+            //                 openPopup('/ligand/browservendors', 'Detail View', window, 850, 1000)
+            //             }
+            //         });
+            //     },
+            // },
             ],
             scrollX: '100%',
             scrollY: '70vh',
