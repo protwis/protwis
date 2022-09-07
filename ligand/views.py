@@ -1517,7 +1517,7 @@ class LigandStatistics(TemplateView):
                     rec_family_name = rec.family.parent.name
 
                 rec_uniprot = rec.entry_short()
-                rec_iuphar_long = "<tspan>" + rec.family.name.capitalize().replace("<sub>", '</tspan><tspan baseline-shift = "sub">').replace("</sub>", '</tspan><tspan>').replace("<i>", '</tspan><tspan font-style = "italic">').replace("</i>", '</tspan><tspan>').strip() + "</tspan>"
+                rec_iuphar_long = "<tspan>" + rec.family.name[0].upper() + rec.family.name[1:].replace("<sub>", '</tspan><tspan baseline-shift = "sub">').replace("</sub>", '</tspan><tspan>').replace("<i>", '</tspan><tspan font-style = "italic">').replace("</i>", '</tspan><tspan>').strip() + "</tspan>"
                 rec_iuphar_short = rec_iuphar_long.replace("-adrenoceptor", '').replace("receptor", '').replace("Long-wave-sensitive",'LWS').replace("Medium-wave-sensitive",'MWS').replace("Short-wave-sensitive",'SWS').replace("Olfactory", 'OLF').replace("Calcitonin -like", 'CLR').strip()
 
                 MasterDict[rec_uniprot] = {'UniProt': rec_uniprot,
