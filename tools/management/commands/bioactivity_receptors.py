@@ -1,11 +1,8 @@
-from django.core.management.base import BaseCommand, CommandError
-from django.db.models import Prefetch
+from django.core.management.base import BaseCommand
 from protein.models import Protein
 from ligand.models import AssayExperiment
 from structure.models import Structure
 from interaction.models import StructureLigandInteraction
-
-import json
 
 from rdkit import Chem, DataStructs, RDLogger
 from rdkit.Chem import AllChem
@@ -96,7 +93,7 @@ class Command(BaseCommand):
                             try:
                                 mol = Chem.MolFromSmiles(ligand)
                                 fingerprints.append([AllChem.GetMorganFingerprintAsBitVect(mol, 2, nBits=2048), ligand])
-                            except:
+                            except TypeError:
                                 continue
 
                         # Perform similarity search (NOTE - not optimized for batch processing)

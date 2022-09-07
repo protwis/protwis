@@ -1,20 +1,15 @@
-import os,sys,math,logging
 from io import StringIO
 from collections import OrderedDict
-import numpy as np
 from django.core.management.base import BaseCommand
 from copy import deepcopy
 import pprint
 
 import Bio.PDB.Polypeptide as polypeptide
-from Bio.PDB import *
-from Bio.Seq import Seq
-from structure.functions import *
-from structure.assign_generic_numbers_gpcr import GenericNumbering
+from Bio.PDB import PDBParser
 import structure.structural_superposition as sp
-from protein.models import Protein
 from structure.models import Structure, Rotamer
-from interaction.models import ResidueFragmentInteraction
+from residue.functions import dgn
+
 
 class Command(BaseCommand):
     def add_arguments(self, parser):
@@ -34,25 +29,26 @@ class Command(BaseCommand):
             struct_atoms = [a for a in s[r] if not a.get_id().startswith('H')]
             af_atoms = deepcopy([a for a in af[r] if not a.get_id().startswith('H')])
             superpose = sp.RotamerSuperpose(sorted(struct_atoms), sorted(af_atoms))
-            new_atoms = superpose.run()
+            superpose.run()
             rmsd = deepcopy(superpose.rmsd)
             if af_atoms[0].get_parent().get_resname() in ['TYR','PHE','ARG','ASP','GLU']:
                 new_af_atoms = self.run_residue_flip(af_atoms)
                 superpose2 = sp.RotamerSuperpose(sorted(struct_atoms), sorted(new_af_atoms))
-                new_atoms2 = superpose2.run()
+                superpose2.run()
                 if rmsd>superpose2.rmsd:
                     rmsd = round(superpose2.rmsd,3)
 
-            AA = Polypeptide.three_to_one(af_atoms[0].get_parent().get_resname())
+            AA = polypeptide.three_to_one(af_atoms[0].get_parent().get_resname())
             this_temp = ['AF', round(rmsd,3)]
             for pdb in Structure.objects.all():#gn_dict[g]:
                 struct = pdb#Structure.objects.get(pdb_code__index=pdb)
                 try:
-                  rot_obj = Rotamer.objects.filter(structure=struct, residue__amino_acid=AA, residue__display_generic_number__label=dgn(g, struct.protein_conformation))
-                except:
-                  continue
+                    dgn_lab = dgn(g, struct.protein_conformation)
+                    rot_obj = Rotamer.objects.filter(structure=struct, residue__amino_acid=AA, residue__display_generic_number__label=dgn_lab)
+                except ResidueGenericNumberEquivalent.DoesNotExist:
+                    continue
                 if len(rot_obj)==0:
-                  continue
+                    continue
                 rot_obj = self.right_rotamer_select(rot_obj)
                 rot = PDBParser().get_structure('rot', StringIO(rot_obj.pdbdata.pdb))[0]
                 for c in rot:
@@ -61,41 +57,43 @@ class Command(BaseCommand):
                 if len(af_atoms)!=len(alt_atoms):
                     continue
                 superpose = sp.RotamerSuperpose(sorted(struct_atoms), sorted(alt_atoms))
-                new_atoms = superpose.run()
+                superpose.run()
                 alt_rmsd = deepcopy(superpose.rmsd)
                 if alt_atoms[0].get_parent().get_resname() in ['TYR','PHE','ARG','ASP','GLU']:
                     new_alt_atoms = self.run_residue_flip(alt_atoms)
                     superpose2 = sp.RotamerSuperpose(sorted(struct_atoms), sorted(new_alt_atoms))
-                    new_atoms2 = superpose2.run()
+                    superpose2.run()
                     if alt_rmsd>superpose2.rmsd:
                         alt_rmsd = superpose2.rmsd
                 if alt_rmsd<rmsd:
                     print(r,g,struct, rmsd, alt_rmsd)
                     if struct not in coverage:
-                      coverage[struct] = 1
+                        coverage[struct] = 1
                     else:
-                      coverage[struct]+=1
+                        coverage[struct]+=1
                 if alt_rmsd<this_temp[1]:
                     this_temp = [struct, round(alt_rmsd,3)]
             templates[r] = [res.get_resname(), 'AF', round(rmsd,3), this_temp]
         pprint.pprint(templates)
         coverage = sorted(coverage.items(), key=lambda x: (-x[1]))
         pprint.pprint(coverage)
-            
-            
+
+
     def right_rotamer_select(self, rotamer):
         ''' Filter out compound rotamers.
         '''
         if len(rotamer)>1:
             for i in rotamer:
-                if i.pdbdata.pdb.startswith('COMPND')==False:
+                if not i.pdbdata.pdb.startswith('COMPND'):
                     rotamer = i
                     break
         else:
             rotamer=rotamer[0]
         return rotamer
 
-    def run_residue_flip(self, atoms, atom_types=['CD','CE','CG','OE','OD','NH']):
+    def run_residue_flip(self, atoms, atom_types=None):
+        if not atom_types:
+            ['CD','CE','CG','OE','OD','NH']
         for at in atom_types:
             atoms = self.flip_residue(atoms, at)
         return atoms

@@ -16,7 +16,6 @@ import zipfile
 import shutil
 from datetime import datetime, date
 import time
-from io import StringIO
 
 
 startTime = datetime.now()
@@ -67,8 +66,8 @@ class Command(BaseBuild):
             for f in data_files:
                 try:
                     uni, species, state = f.split('.')[0].split('_')
-                except:
-                    uni, species, part, state = f.split('.')[0].split('_')
+                except ValueError:
+                    uni, species, _, state = f.split('.')[0].split('_')
                 if state.startswith('isoform'):
                     continue
                 classname = Protein.objects.get(entry_name=uni+'_'+species).family.parent.parent.parent.name.split(' ')[1]
@@ -202,7 +201,7 @@ class Command(BaseBuild):
             s_state = ProteinState.objects.get(name=state)
             m_s = self.get_structures(main_structure)
             prot = Protein.objects.get(entry_name=gpcr_prot)
-            sm, created = StructureModel.objects.get_or_create(protein=prot, state=s_state, main_template=m_s, pdb_data=pdb, version=build_date, stats_text=stats_text)
+            sm = StructureModel.objects.get_or_create(protein=prot, state=s_state, main_template=m_s, pdb_data=pdb, version=build_date, stats_text=stats_text)[0]
             if main_structure=='AF':
                 try:
                     p = PDB.PDBParser().get_structure('model', os.sep.join([path, modelname, modelname+'.pdb']))[0]
@@ -212,7 +211,8 @@ class Command(BaseBuild):
                 for chain in p:
                     for res in chain:
                         plddt = res['C'].get_bfactor()
-                        r = StructureModelpLDDT(structure_model=sm, residue=Residue.objects.get(protein_conformation__protein=prot, sequence_number=res.get_id()[1]), pLDDT=plddt)
+                        res_obj = Residue.objects.get(protein_conformation__protein=prot, sequence_number=res.get_id()[1])
+                        r = StructureModelpLDDT(structure_model=sm, residue=res_obj, pLDDT=plddt)
                         resis.append(r)
                 StructureModelpLDDT.objects.bulk_create(resis)
         if self.revise_xtal:

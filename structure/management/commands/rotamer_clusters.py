@@ -1,24 +1,15 @@
-import os,sys,math,logging
 from io import StringIO
-from collections import OrderedDict
 import numpy as np
 from django.core.management.base import BaseCommand
-from copy import deepcopy
 import pprint
 
 import Bio.PDB.Polypeptide as polypeptide
-from Bio.PDB import *
-from Bio.Seq import Seq
-from structure.functions import *
-from structure.assign_generic_numbers_gpcr import GenericNumbering
+from Bio.PDB import PDBParser
 import structure.structural_superposition as sp
-from protein.models import Protein
-from structure.models import Structure, Rotamer
-from interaction.models import ResidueFragmentInteraction
+from structure.models import Rotamer
 
-from sklearn.decomposition import PCA, TruncatedSVD
-from sklearn.cluster import DBSCAN, AffinityPropagation, MeanShift
-import numpy as np
+from sklearn.decomposition import TruncatedSVD
+from sklearn.cluster import MeanShift
 
 AAs = {'E':9, 'S':6, 'Y':12, 'G':4, 'A':5, 'V':7, 'M':8, 'L':8, 'I':8, 'T':7, 'F':11, 'H':10, 'K':9,
                          'D':8, 'C':6, 'R':11, 'P':7, 'Q':9, 'N':8, 'W':14, '-':0}
@@ -32,7 +23,8 @@ class Command(BaseCommand):
         for aa in AAs:
             if aa in ['A','-','G']:
                 continue
-            rotamers = Rotamer.objects.filter(residue__amino_acid=aa, residue__display_generic_number__isnull=False, residue__protein_segment__slug__in=['TM1','TM2','TM3','TM4','TM5','TM6','TM7'])
+            tms = ['TM1','TM2','TM3','TM4','TM5','TM6','TM7']
+            rotamers = Rotamer.objects.filter(residue__amino_acid=aa, residue__display_generic_number__isnull=False, residue__protein_segment__slug__in=tms)
             data = np.array([0,0])
             
             first = True
@@ -43,12 +35,12 @@ class Command(BaseCommand):
                 if rot_obj.missing_atoms:
                     continue
                 chi_angles = np.array([])
-                rot = PDB.PDBParser(QUIET=True).get_structure('rot', StringIO(rot_obj.pdbdata.pdb))
+                rot = PDBParser(QUIET=True).get_structure('rot', StringIO(rot_obj.pdbdata.pdb))
                 rot.atom_to_internal_coordinates()
-                
+
                 for res in rot.get_residues():
                     try:
-                        if PDB.Polypeptide.three_to_one(res.get_resname())!=aa:
+                        if polypeptide.three_to_one(res.get_resname())!=aa:
                             continue
                     except KeyError:
                         continue
@@ -79,7 +71,7 @@ class Command(BaseCommand):
                     else:
                         alt_atoms = [a for a in res]
                         sup = sp.RotamerSuperpose(sorted(ref_atoms), sorted(alt_atoms))
-                        sorted_atoms = sup.run()
+                        sup.run()
                 if len(ref_atoms)!=len(alt_atoms):
                     continue
                 # print(rot_obj.residue, aa, len(ref_atoms), len(alt_atoms), chi_angles)
@@ -88,7 +80,7 @@ class Command(BaseCommand):
                     data = np.vstack((data, chi_angles))
             ms = MeanShift(bin_seeding=True).fit(data)
             labels = ms.labels_
-            cluster_centers = ms.cluster_centers_
+            _ = ms.cluster_centers_
             out[aa] = len(set(labels))
         pprint.pprint(out)
             

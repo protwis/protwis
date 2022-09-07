@@ -180,7 +180,7 @@ class Validation():
                 if target_dict[i][0].get_parent().get_resname() in ['TYR','PHE','ARG','ASP','GLU']:
                     # print(i, target_dict[i][0].get_parent())
                     to_sup = deepcopy(atom_dict[j])
-                    res_sup, atoms_used = self.superpose(sorted(target_dict[i]), sorted(to_sup), [i])
+                    res_sup, _ = self.superpose(sorted(target_dict[i]), sorted(to_sup), [i])
                     rmsd = self.calc_RMSD(sorted(target_dict[i]), sorted(res_sup))
                     res_sup2 = self.run_residue_flip(res_sup)
                     rmsd2 = self.calc_RMSD(sorted(target_dict[i]), sorted(res_sup2))
@@ -213,7 +213,7 @@ class Validation():
             else:
                 superposed, atoms_used_sp = self.superpose(sorted(atom_lists[0]), sorted(m))
                 target_atoms = atom_lists[0]
-            
+
             # for t, s in zip(sorted(target_atoms), sorted(superposed)):
             #     print(t, t.get_coord(), s, s.get_coord())
             rmsd = self.calc_RMSD(sorted(target_atoms), sorted(superposed))
@@ -242,7 +242,9 @@ class Validation():
 
             c+=1
 
-    def run_residue_flip(self, atoms, atom_types=['CD','CE','CG','OE','OD','NH']):
+    def run_residue_flip(self, atoms, atom_types=None):
+        if not atom_types:
+            atom_types = ['CD','CE','CG','OE','OD','NH']
         for at in atom_types:
             atoms = self.flip_residue(atoms, at)
         return atoms
