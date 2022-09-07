@@ -5,6 +5,7 @@ from django.conf import settings
 
 from protein.models import Protein, ProteinState
 from structure.models import Structure, StructureModel, StructureComplexModel, StatsText, PdbData, StructureModelpLDDT
+import structure.assign_generic_numbers_gpcr as as_gn
 from residue.models import Residue
 from common.definitions import *
 
@@ -34,13 +35,14 @@ import warnings
 warnings.filterwarnings("ignore")
 
 class Command(BaseBuild):
-    help = 'Build automated chimeric GPCR homology models'
+    help = 'Upload GPCRdb structure models from zips to db'
     
     def add_arguments(self, parser):
         super(Command, self).add_arguments(parser=parser)
         parser.add_argument('-f', help='Specify file name to be uploaded to GPCRdb', default=False, type=str, nargs='+')
         parser.add_argument('-c', help='Upload only complex models to GPCRdb', default=False, action='store_true')
         parser.add_argument('--purge', help='Purge existing entries in GPCRdb', default=False, action='store_true')
+        parser.add_argument('--copy_from_data', help='Copy and rename AF models from data to upload folder', default=False, action='store_true')
 
     def get_structures(self,pdbname):
         if pdbname in self.cached_structures:
@@ -58,6 +60,31 @@ class Command(BaseBuild):
 
         self.models_to_do = []
 
+        if options['copy_from_data']:
+            af_folder = os.sep.join([settings.DATA_DIR, 'structure_data', 'Alphafold'])
+            data_files = os.listdir(af_folder)
+
+            for f in data_files:
+                try:
+                    uni, species, state = f.split('.')[0].split('_')
+                except:
+                    uni, species, part, state = f.split('.')[0].split('_')
+                if state.startswith('isoform'):
+                    continue
+                classname = Protein.objects.get(entry_name=uni+'_'+species).family.parent.parent.parent.name.split(' ')[1]
+                new_name = 'Class{}_{}_{}_{}_AF_2022-08-16_GPCRdb'.format(classname, uni, species, state.capitalize())
+                shutil.copyfile(os.sep.join([af_folder, f]), os.sep.join(['./structure/homology_models_zip/', new_name+'.pdb']))
+                os.chdir('./structure/homology_models_zip/')
+                assign_gn = as_gn.GenericNumbering(pdb_file=new_name+'.pdb', sequence_parser=True)
+                pdb_struct = assign_gn.assign_generic_numbers_with_sequence_parser()
+                io = PDB.PDBIO()
+                io.set_structure(pdb_struct)
+                io.save(new_name+'.pdb')
+                with zipfile.ZipFile(new_name+'.zip', 'w') as zf:
+                    zf.write(new_name+'.pdb')
+                os.remove(new_name+'.pdb')
+                os.chdir('../../')
+
         if options['c'] and options['purge']:
             for s in StructureComplexModel.objects.all():
                 s.main_template.refined = False
@@ -65,8 +92,12 @@ class Command(BaseBuild):
             StructureComplexModel.objects.all().delete()
         elif options['purge']:
             for s in StructureModel.objects.all():
-                s.main_template.refined = False
-                s.main_template.save()
+                s.pdb_data.delete()
+                try:
+                    s.main_template.refined = False
+                    s.main_template.save()
+                except AttributeError:
+                    pass
             StructureModel.objects.all().delete()
         if options['c']:
             path = './structure/complex_models_zip/'
@@ -78,6 +109,7 @@ class Command(BaseBuild):
             files = options['f']
         else:
             files = os.listdir(path)
+
         for f in files:
             if f.endswith('.zip'):
                 modelname = f.split('.')[0]
@@ -148,10 +180,12 @@ class Command(BaseBuild):
 
         with open(os.sep.join([path, modelname, modelname+'.pdb']), 'r') as pdb_file:
             pdb_data = pdb_file.read()
-        with open(os.sep.join([path, modelname, modelname+'.templates.csv']), 'r') as templates_file:
-            templates = templates_file.readlines()
-        # with open(os.sep.join([path, modelname, modelname+'.template_similarities.csv']), 'r') as sim_file:
-        #     similarities = sim_file.readlines()
+        templates_file = os.sep.join([path, modelname, modelname+'.templates.csv'])
+        if os.path.exists(templates_file):
+            with open(templates_file, 'r') as templates_file:
+                templates = templates_file.readlines()
+        else:
+            templates = ''
 
         if main_structure=='AF':
             stats_text = None
@@ -171,13 +205,13 @@ class Command(BaseBuild):
             sm, created = StructureModel.objects.get_or_create(protein=prot, state=s_state, main_template=m_s, pdb_data=pdb, version=build_date, stats_text=stats_text)
             if main_structure=='AF':
                 try:
-                    p = PDB.PDBParser().get_structure('model', os.sep.join([settings.DATA_DIR, 'structure_data', 'Alphafold', '{}_{}.pdb'.format(gpcr_prot, state.lower())]))[0]
+                    p = PDB.PDBParser().get_structure('model', os.sep.join([path, modelname, modelname+'.pdb']))[0]
                 except:
-                    print('ERROR: {}_{}.pdb is not in data folder'.format(gpcr_prot, state.lower()))
+                    print('ERROR: {} is not in data folder'.format(os.sep.join([path, modelname, modelname+'.pdb'])))
                 resis = []
                 for chain in p:
                     for res in chain:
-                        plddt = res['CA'].get_bfactor()
+                        plddt = res['C'].get_bfactor()
                         r = StructureModelpLDDT(structure_model=sm, residue=Residue.objects.get(protein_conformation__protein=prot, sequence_number=res.get_id()[1]), pLDDT=plddt)
                         resis.append(r)
                 StructureModelpLDDT.objects.bulk_create(resis)

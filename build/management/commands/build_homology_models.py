@@ -492,7 +492,7 @@ class CallHomologyModeling():
                     for i,j in bioactivity_data[Homology_model.state.lower()][Homology_model.reference_protein.family.slug].items():
                         bioactivity_structures+=[Structure.objects.get(pdb_code__index=j[0][0])]
                 else:
-                    is self.debug:
+                    if self.debug:
                         print('No Bioactivity data available')
 
                 print(datetime.now() - startTime)

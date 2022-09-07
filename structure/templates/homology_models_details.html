@@ -95,7 +95,7 @@ canvas {
     <div class="col-md-3 text-right text-info">
         <h4>MODEL</h4>
     </div>
-    <div class="col-md-5">
+    <div class="col-md-4">
         <div class="btn-group">
             <a href="/" class="dropdown-toggle btn btn-primary btn-mini" data-toggle="dropdown" role="button" aria-expanded="false">Download <span class='caret'></span></a>
             <ul class="dropdown-menu" role="menu" style="min-width:50%;">
@@ -118,6 +118,7 @@ canvas {
             </div>
         </div>
     </div>
+{% if model.protein.accession %}
     <div class="col-md-4">
       <br>
       <br>
@@ -144,8 +145,10 @@ canvas {
       </div>
     </div>
 </div>
+{% else %}
+</div>
 
-<!-- <div class="row">
+<div class="row">
     <div class="col-md-3 text-right text-info">
         <h4>MAIN TEMPLATE</h4>
     </div>
@@ -160,8 +163,9 @@ canvas {
             </div>
         {% endif %}
     </div>
-</div> -->
-<!-- <div class="row">
+</div>
+
+<div class="row">
     <div class="col-md-3 text-right text-info">
         <h4>TEMPLATES</h4>
     </div>
@@ -218,18 +222,14 @@ canvas {
         </table>
         <br>
         Number of backbone templates: {{ backbone_templates_number }}<br>
-        Number of rotamer templates: {{ rotamer_templates_number }}<br><br> -->
-
-  <!-- ALREADY COMMENTED -->
+        Number of rotamer templates: {{ rotamer_templates_number }}<br><br>
   <!--   </div>
 </div>
-
 <br>
 <style>
 .inline {display:inline;}
 .graphcolor { display:inline-block; border-style:solid; border-width: 1px; padding: 1px 5px; text-align: center}
 </style>
-
 <div class="inline"> -->
     <!-- <div>
         <div style="float: left; width: 50%;">
@@ -250,20 +250,17 @@ canvas {
                             <div class="graphcolor" style="background-color:white; width: 12%;">None</div>
                 </div>
             </div>
-
         </div>
     </div> -->
-  <!-- END ALREADY COMMENTED -->
-        <!-- <div style="padding-top: 0px; float: left; font-size: 10px; white-space: nowrap; width: 100%;"> -->
-          <!-- ALREADY COMMENTED -->
+
+        <div style="padding-top: 0px; float: left; font-size: 10px; white-space: nowrap; width: 100%;">
             <!-- <div class="btn-group">
                 <a id="download_csv_btn" class="btn btn-primary btn-mini " href="#" onClick="javascript:downloadCSV();">Download .csv</a>
             </div> -->
             <!-- <div class="btn-group">
                 <a id="superpose_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Superposition</a>
             </div> -->
-              <!-- END ALREADY COMMENTED -->
-            <!-- <div style="padding-top: 0px; font-size: 10px; white-space: nowrap; width: 50%;">
+            <div style="padding-top: 0px; font-size: 10px; white-space: nowrap; width: 50%;">
 
                 <style>
                     table.dataTable thead th {padding: 3px 1px 3px 3px;}
@@ -323,8 +320,8 @@ canvas {
             </div>
         </div>
     </div>
-</div> -->
-
+</div>
+{% endif %}
 {% endblock %}
 {% block addon_js %}
     <script src="{% static 'home/js/ngl.js' %}"> </script>
@@ -332,7 +329,7 @@ canvas {
         document.addEventListener( "DOMContentLoaded", function(){
             stage = new NGL.Stage( "viewport", { backgroundColor: "white" } );
             var color_residues = JSON.parse('{{color_residues|safe}}');
-            color_residues.push(["white","*"])
+            color_residues.push(["darkorchid","*"])
 
             var schemeId = NGL.ColorMakerRegistry.addSelectionScheme( color_residues );
 
