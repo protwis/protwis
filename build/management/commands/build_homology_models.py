@@ -7,7 +7,7 @@ from protein.models import Protein, ProteinConformation, ProteinAnomaly, Protein
 from residue.models import Residue, ResidueGenericNumberEquivalent, ResidueGenericNumber
 from residue.functions import dgn, ggn
 from structure.models import *
-from structure.functions import HSExposureCB, PdbStateIdentifier, update_template_source, StructureSeqNumOverwrite
+from structure.functions import HSExposureCB, PdbStateIdentifier, update_template_source, StructureSeqNumOverwrite, run_residue_flip
 from common.alignment import AlignedReferenceTemplate, GProteinAlignment, Alignment
 from common.definitions import *
 from common.models import WebLink
@@ -760,7 +760,7 @@ class CallHomologyModeling():
 
                     alt_rmsd = deepcopy(sup.rmsd)
                     if alt_atoms[0].get_parent().get_resname() in ['TYR','PHE','ARG','ASP','GLU']:
-                        new_alt_atoms = Homology_model.run_residue_flip(alt_atoms)
+                        new_alt_atoms = run_residue_flip(alt_atoms)
                         superpose2 = sp.RotamerSuperpose(sorted(struct_atoms), sorted(new_alt_atoms))
                         new_atoms2 = superpose2.run()
                         if alt_rmsd>superpose2.rmsd:
@@ -1088,21 +1088,6 @@ class HomologyModeling(object):
         else:
             rotamer=rotamer[0]
         return rotamer
-
-    def run_residue_flip(self, atoms, atom_types=['CD','CE','CG','OE','OD','NH']):
-        for at in atom_types:
-            atoms = self.flip_residue(atoms, at)
-        return atoms
-
-    def flip_residue(self, atoms, atom_type):
-        for a in atoms:
-            if a.get_id()==atom_type+'1':
-                one_index = atoms.index(a)
-                one_coords = a.get_coord()
-            elif a.get_id()==atom_type+'2':
-                atoms[one_index].coord = a.get_coord()
-                a.coord = one_coords
-        return atoms
 
     def pdb_line_whitespace(self, pos_list, i, group3, whitespace):
         if len(str(pos_list[i]))-len(group3)==0:

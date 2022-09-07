@@ -1512,3 +1512,31 @@ def build_signprot_struct(protein, pdb, data):
         ss.stabilizing_agents.add(stabagent)
     ss.save()
     return ss
+
+def flip_residue(atoms, atom_type):
+    for a in atoms:
+        if a.get_id()==atom_type+'1':
+            one_index = atoms.index(a)
+            one_coords = a.get_coord()
+        elif a.get_id()==atom_type+'2':
+            atoms[one_index].coord = a.get_coord()
+            a.coord = one_coords
+    return atoms
+
+def run_residue_flip(self, atoms, atom_types=None):
+    if not atom_types:
+        ['CD','CE','CG','OE','OD','NH']
+    for at in atom_types:
+        atoms = flip_residue(atoms, at)
+    return atoms
+
+def atoms_to_dict(atom_list):
+    prev_res = 0
+    atom_resis = OrderedDict()
+    for a in atom_list:
+        if a.get_parent().get_id()[1]!=prev_res:
+            atom_resis[a.get_parent().get_id()[1]] = [a]
+        else:
+            atom_resis[a.get_parent().get_id()[1]].append(a)
+        prev_res = a.get_parent().get_id()[1]
+    return atom_resis

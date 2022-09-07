@@ -191,14 +191,14 @@ class StatsText(models.Model):
             line = self.stats_text.split('\n')[0]
         else:
             line = 'empty object'
-        return '<StatsText: >'.format(line)
+        return '<StatsText: {}>'.format(line)
 
     def __str__(self):
         if self.stats_text and len(self.stats_text)>0:
             line = self.stats_text.split('\n')[0]
         else:
             line = 'empty object'
-        return '<StatsText: >'.format(line)
+        return '<StatsText: {}>'.format(line)
 
     class Meta():
         db_table = 'stats_text'

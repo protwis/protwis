@@ -8,6 +8,7 @@ import Bio.PDB.Polypeptide as polypeptide
 from Bio.PDB import PDBParser
 import structure.structural_superposition as sp
 from structure.models import Structure, Rotamer
+from structure.functions import run_residue_flip
 from residue.functions import dgn
 
 
@@ -32,7 +33,7 @@ class Command(BaseCommand):
             superpose.run()
             rmsd = deepcopy(superpose.rmsd)
             if af_atoms[0].get_parent().get_resname() in ['TYR','PHE','ARG','ASP','GLU']:
-                new_af_atoms = self.run_residue_flip(af_atoms)
+                new_af_atoms = run_residue_flip(af_atoms)
                 superpose2 = sp.RotamerSuperpose(sorted(struct_atoms), sorted(new_af_atoms))
                 superpose2.run()
                 if rmsd>superpose2.rmsd:
@@ -60,7 +61,7 @@ class Command(BaseCommand):
                 superpose.run()
                 alt_rmsd = deepcopy(superpose.rmsd)
                 if alt_atoms[0].get_parent().get_resname() in ['TYR','PHE','ARG','ASP','GLU']:
-                    new_alt_atoms = self.run_residue_flip(alt_atoms)
+                    new_alt_atoms = run_residue_flip(alt_atoms)
                     superpose2 = sp.RotamerSuperpose(sorted(struct_atoms), sorted(new_alt_atoms))
                     superpose2.run()
                     if alt_rmsd>superpose2.rmsd:
@@ -91,19 +92,4 @@ class Command(BaseCommand):
             rotamer=rotamer[0]
         return rotamer
 
-    def run_residue_flip(self, atoms, atom_types=None):
-        if not atom_types:
-            ['CD','CE','CG','OE','OD','NH']
-        for at in atom_types:
-            atoms = self.flip_residue(atoms, at)
-        return atoms
-
-    def flip_residue(self, atoms, atom_type):
-        for a in atoms:
-            if a.get_id()==atom_type+'1':
-                one_index = atoms.index(a)
-                one_coords = a.get_coord()
-            elif a.get_id()==atom_type+'2':
-                atoms[one_index].coord = a.get_coord()
-                a.coord = one_coords
-        return atoms
+    

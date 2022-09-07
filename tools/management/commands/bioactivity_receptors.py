@@ -1,7 +1,6 @@
 from django.core.management.base import BaseCommand
 from protein.models import Protein
 from ligand.models import AssayExperiment
-from structure.models import Structure
 from interaction.models import StructureLigandInteraction
 
 from rdkit import Chem, DataStructs, RDLogger

@@ -7,8 +7,9 @@ import Bio.PDB.Polypeptide as polypeptide
 from Bio.PDB import PDBParser
 import structure.structural_superposition as sp
 from structure.models import Rotamer
+from residue.models import ResidueGenericNumberEquivalent
 
-from sklearn.decomposition import TruncatedSVD
+# from sklearn.decomposition import TruncatedSVD
 from sklearn.cluster import MeanShift
 
 AAs = {'E':9, 'S':6, 'Y':12, 'G':4, 'A':5, 'V':7, 'M':8, 'L':8, 'I':8, 'T':7, 'F':11, 'H':10, 'K':9,
@@ -26,7 +27,7 @@ class Command(BaseCommand):
             tms = ['TM1','TM2','TM3','TM4','TM5','TM6','TM7']
             rotamers = Rotamer.objects.filter(residue__amino_acid=aa, residue__display_generic_number__isnull=False, residue__protein_segment__slug__in=tms)
             data = np.array([0,0])
-            
+
             first = True
             ref_atoms = []
             alt_atoms = []
