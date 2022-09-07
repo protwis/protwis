@@ -113,7 +113,7 @@ def getLigandTable(receptor_id, browser_type):
             )
 
         data_table += "</tbody></table>"
-        # cache.set("target_table", data_table, 60*60*24*7)
+        cache.set("target_table", data_table, 60*60*24*7)
 
     return data_table
 
@@ -473,16 +473,16 @@ def getReferenceTable(pathway, subtype):
         ligand_tot = {}
         for entry in totals:
             if entry['receptor_id'] not in ligand_tot.keys():
-                ligand_tot[entry['receptor_id']] = [entry['total']]
+                ligand_tot[entry['receptor_id']] = [entry['total'], '-', '-', '-']
         for entry in physio_bias:
             if entry['receptor_id'] in ligand_tot.keys():
-                ligand_tot[entry['receptor_id']].append(entry['physio'])
+                ligand_tot[entry['receptor_id']][1] = entry['physio']
         for entry in balanced_refs:
             if entry['receptor_id'] in ligand_tot.keys():
-                ligand_tot[entry['receptor_id']].append(entry['balanced'])
+                ligand_tot[entry['receptor_id']][2] = entry['balanced']
         for entry in path_bias:
             if entry['receptor_id'] in ligand_tot.keys():
-                ligand_tot[entry['receptor_id']].append(entry['path'])
+                ligand_tot[entry['receptor_id']][3] = entry['path']
 
         if pathway == "yes":
             data_table = "<table id='uniprot_selection' class='uniprot_selection stripe compact'> \
@@ -523,8 +523,8 @@ def getReferenceTable(pathway, subtype):
                     <th style=\"color:red\">Receptor<br>(GtP)</th> \
                     <th>Tested<br>(total)</th> \
                     <th>Balanced<br>references</th> \
-                    <th>Pathway<br>biased</th> \
-                    <th>Physiology<br>biased</th> \
+                    <th>Pathway<br>biased *</th> \
+                    <th>Physiology<br>biased *</th> \
                   </tr> \
                 </thead>\
                 \n \
@@ -564,24 +564,24 @@ def getReferenceTable(pathway, subtype):
 
             if t['id'] in ligand_tot:
                 t['ligand_count'] = link_setup.format("/ligand/target/all/" + t['slug'], ligand_tot[t['id']][0])
-                try:
-                    t['biased_count'] = link_setup.format("/ligand/target/all/" + t['slug'], ligand_tot[t['id']][1])
-                    t['biased_span'] = ligand_tot[t['id']][1]
-                except IndexError:
+                if ligand_tot[t['id']][1] == '-':
                     t['biased_count'] = '-'
                     t['biased_span'] = ''
-                try:
-                    t['balanced_refs'] = link_setup.format("/ligand/target/all/" + t['slug'], ligand_tot[t['id']][2])
-                    t['balanced_span'] = ligand_tot[t['id']][2]
-                except IndexError:
+                else:
+                    t['biased_count'] = link_setup.format("/ligand/target/all/" + t['slug'], ligand_tot[t['id']][1])
+                    t['biased_span'] = ligand_tot[t['id']][1]
+                if ligand_tot[t['id']][2] == '-':
                     t['balanced_refs'] = '-'
                     t['balanced_span'] = ''
-                try:
-                    t['pathway_count'] = link_setup.format("/ligand/target/all/" + t['slug'], ligand_tot[t['id']][3])
-                    t['pathway_span'] = ligand_tot[t['id']][3]
-                except IndexError:
+                else:
+                    t['balanced_refs'] = link_setup.format("/ligand/target/all/" + t['slug'], ligand_tot[t['id']][2])
+                    t['balanced_span'] = ligand_tot[t['id']][2]
+                if ligand_tot[t['id']][3] == '-':
                     t['pathway_count'] = '-'
                     t['pathway_span'] = ''
+                else:
+                    t['pathway_count'] = link_setup.format("/ligand/target/all/" + t['slug'], ligand_tot[t['id']][3])
+                    t['pathway_span'] = ligand_tot[t['id']][3]
 
             if pathway == "yes":
                 data_table += "<tr> \
