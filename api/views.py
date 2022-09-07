@@ -64,7 +64,7 @@ class ReceptorList(generics.ListAPIView):
     \n/receptorlist/
     """
 
-    queryset = Protein.objects.filter(accession__isnull=False, parent__isnull=True, family__slug__startswith="00", source__name="SWISSPROT").prefetch_related('family','endogenous_ligands')
+    queryset = Protein.objects.filter(accession__isnull=False, parent__isnull=True, family__slug__startswith="00", source__name="SWISSPROT").prefetch_related('family','endogenous_gtp_set')
     serializer_class = ReceptorListSerializer
 
 class ProteinFamilyList(generics.ListAPIView):

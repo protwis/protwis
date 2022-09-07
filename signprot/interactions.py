@@ -182,22 +182,18 @@ def get_signature_consensus(signature_data, generic_numbers):
     return sigcons
 
 
-def prepare_signature_match(signature_match):
+def prepare_signature_match(signature_match, effector):
     repl_str = id_generator(6)
     sign_true_1 = '<div class="{}">'.format(repl_str)
     sign_true_2 = '{}</div>'
     sign_false = '<div></div>'
-    gprots = ['Gs','Gi/o','Gq/11','G12/13']
     class_coupling = 'coupling '
-
     coupling_data = prepare_coupling_data_container()
-    coupling_data = fill_coupling_data_container(coupling_data)
-    coupling_data = process_coupling_data(coupling_data)
+    coupling_data = process_coupling_data(coupling_data, effector)
 
     coupling_data_dict = {}
-    for e in coupling_data:
-        coupling_data_dict[e['rec_obj'].entry_name] = e
-
+    for entry in coupling_data:
+        coupling_data_dict[entry['rec_obj'].entry_name] = entry
     out = {}
     for elem in signature_match["scores"].items():
         entry = elem[0].protein.entry_name
@@ -210,231 +206,200 @@ def prepare_signature_match(signature_match):
             "family": elem[0].protein.get_protein_family(),
             "subfamily": elem[0].protein.get_protein_subfamily(),
         }
-
-    for elem in signature_match["scores"].items():
-        entry = elem[0].protein.entry_name
         coupling_entry = coupling_data_dict.get(entry)
-
-        sources = ["GuideToPharma", "Aska", "Merged"]
-
-        for source in sources:
-            out[entry][source] = {}
-            for gprot in gprots:
-                out[entry][source][gprot] = {}
-                if coupling_entry:
-                    ce = coupling_entry
-                    cl = ce['coupling'][source].get(gprot, '')
-                    if ce[source][gprot]:
-                        if cl[:4] == 'prim':
-                            html_val = sign_true_1.replace(repl_str, class_coupling+cl[:4]) + sign_true_2.format(cl)
-                            text_val = cl
-                        elif cl[:4] == 'seco':
-                            html_val = sign_true_1.replace(repl_str, class_coupling+cl[:4]) + sign_true_2.format(cl)
-                            text_val = cl
-                        elif cl[:2] == 'no':
-                            html_val = sign_true_1.replace(repl_str, class_coupling+cl[:2]) + sign_true_2.format(cl)
-                            text_val = cl
-                        else:
-                            html_val = sign_false
-                            text_val = ''
-                        out[entry][source][gprot]['html'] = html_val
-                        out[entry][source][gprot]['text'] = text_val
-                    else:
-                        out[entry][source][gprot]['html'] = sign_false
-                        out[entry][source][gprot]['text'] = ''
-                else:
-                    out[entry][source][gprot]['html'] = sign_false
-                    out[entry][source][gprot]['text'] = ''
-
+        for prot in coupling_entry['coupling'].keys():
+            out[entry][prot] = {}
+            if coupling_entry['coupling'][prot] == 'primary':
+                html_val = sign_true_1.replace(repl_str, class_coupling+'prim') + sign_true_2.format("1'")
+                text_val = "1'"
+            elif coupling_entry['coupling'][prot] == 'secondary':
+                html_val = sign_true_1.replace(repl_str, class_coupling+'seco') + sign_true_2.format("2'")
+                text_val = "2'"
+            elif coupling_entry['coupling'][prot] == 'No Data':
+                html_val = sign_true_1.replace(repl_str, class_coupling+'nodata') + sign_true_2.format('No Data')
+                text_val = 'No Data'
+            elif coupling_entry['coupling'][prot] == '':
+                html_val = sign_false
+                text_val = ''
+            else:
+                html_val = sign_true_1.replace(repl_str, class_coupling+'value') + sign_true_2.format(str(coupling_entry['coupling'][prot]))
+                text_val = str(coupling_entry['coupling'][prot])
+            out[entry][prot]['html'] = html_val
+            out[entry][prot]['text'] = text_val
     return out
 
 
 def prepare_coupling_data_container():
     class_names = {}
     data = {}
-
+    prot_names = []
+    # Calling the db for all the GPCR proteins
     proteins = (
         Protein.objects.filter(
             sequence_type__slug="wt",
             family__slug__startswith="00",
             species__common_name="Human")
-        .prefetch_related("family")
-    )
-
-    for p in proteins:
-        p_class = p.family.slug.split("_")[0]
-        if p_class not in class_names:
-            class_names[p_class] = re.sub(
-                r"\([^)]*\)", "", p.family.parent.parent.parent.name
-            )
-        p_class_name = class_names[p_class].strip()
-
-        data[p.entry_short()] = {
-            "class": p_class_name,
-            "pretty": p.short()[:15],
-            "GuideToPharma": {},
-            "Aska": {},
-            "rec_class": p.get_protein_class(),
-            "rec_obj": p,
-            "rec_pdb": p.entry_short(),
-        }
-
-    return data
-
-
-def fill_coupling_data_container(data):
-    distinct_sources = ["GuideToPharma", "Aska"]
-
-    couplings = ProteinCouplings.objects.filter(source__in=distinct_sources).prefetch_related(
+        .prefetch_related("family",
+                          "family__parent__parent",
+                          "family__parent__parent__parent")
+        )
+    # Calling the db for all the coupling data available
+    couplings = ProteinCouplings.objects.prefetch_related(
         "protein", "g_protein_subunit", "g_protein"
     )
+    # Setting up the data dictionary with the human GPCR proteins
+    for protein in proteins:
+        if protein.entry_short() not in prot_names:
+            prot_names.append(protein.entry_short())
+            protein_class = protein.family.slug.split("_")[0]
+            if protein_class not in class_names:
+                class_names[protein_class] = re.sub(
+                    r"\([^)]*\)", "", protein.family.parent.parent.parent.name
+                )
+            protein_class_name = class_names[protein_class].strip()
 
-    for c in couplings:
-        p = c.protein.entry_short()
+            data[protein.entry_short()] = {
+                "class": protein_class_name,
+                "pretty": protein.short()[:15],
+                "rec_class": protein.family.parent.parent.name,
+                "rec_obj": protein,
+                "rec_pdb": protein.entry_short(),
+                "sources": {},
+            }
+    # Parsing through the coupling data and filling up the data dictionary
+    for record in couplings:
+        protein_name = record.protein.entry_short()
         # Skip entries without any annotation
-        if p not in data:
+        if protein_name not in prot_names:
             continue
 
-        s = c.source
-        t = c.transduction
-        m = c.logmaxec50
-        gf = c.g_protein.name
-        gf = gf.replace(" family", "")
-
-        if c.g_protein_subunit:
-            g = c.g_protein_subunit.entry_name
-            g = g.replace("_human", "")
-
-        if s not in data[p]:
-            data[p][s] = {}
-
-        if gf not in data[p][s]:
-            data[p][s][gf] = {}
-
-        # If transduction in GuideToPharma data
-        if t:
-            data[p][s][gf] = t
+        source = record.source
+        transduction = record.transduction
+        emax_val = record.logmaxec50
+        g_protein_family = record.g_protein.name
+        g_protein_family = g_protein_family.replace(" family", "")
+        # Adding the information about subunit
+        if record.g_protein_subunit:
+            g_protein_subunit = record.g_protein_subunit.entry_name
+            g_protein_subunit = g_protein_subunit.replace("_human", "")
+        # Adding all the sources of coupling data
+        if source not in data[protein_name]["sources"]:
+            data[protein_name]["sources"][source] = {}
+        # Adding the information about g protein coupling family
+        if g_protein_family not in data[protein_name]["sources"][source]:
+            data[protein_name]["sources"][source][g_protein_family] = {}
+        # Adding transduction data (based on source information)
+        if transduction:
+            data[protein_name]["sources"][source][g_protein_family] = transduction
         else:
-            if "subunits" not in data[p][s][gf]:
-                data[p][s][gf] = {"subunits": {}, "best": -2.00}
-            data[p][s][gf]["subunits"][g] = round(Decimal(m), 2)
-            if round(Decimal(m), 2) == -0.00:
-                data[p][s][gf]["subunits"][g] = 0.00
-            # get the lowest number into 'best'
-            if m > data[p][s][gf]["best"]:
-                data[p][s][gf]["best"] = round(Decimal(m), 2)
-
-
+            if "subunits" not in data[protein_name]["sources"][source][g_protein_family]:
+                data[protein_name]["sources"][source][g_protein_family] = {"subunits": {}, "best": -2.00}
+            data[protein_name]["sources"][source][g_protein_family]["subunits"][g_protein_subunit] = round(Decimal(emax_val), 2)
+            if round(Decimal(emax_val), 2) == -0.00:
+                data[protein_name]["sources"][source][g_protein_family]["subunits"][g_protein_subunit] = 0.00
+            # get the higher number into 'best'
+            if emax_val > data[protein_name]["sources"][source][g_protein_family]["best"]:
+                data[protein_name]["sources"][source][g_protein_family]["best"] = round(Decimal(emax_val), 2)
+    # Purge the record without any coupling data
+    # purged_data = {key: value for key, value in data.items() if len(data[key]['sources'])>0 }
+    # Highlight data with no sources somehow (like add a No Data field further down)
+    # return purged_data #or data if we want to keep blank data
     return data
 
-
-def process_coupling_data(data):
-    res = []
-
+def process_coupling_data(data, effector):
+    results = []
+    # For the g proteins use the consensus options from the coupling browser
+    # (either GtP or at least two sources)
+    # For the arrestins use the Bouvier only data)
     for entry in data.keys():
-        i = data[entry]
+        record = data[entry]
+        temp_dict = {}
+        temp_dict["rec_class"] = record["rec_class"]
+        temp_dict["rec_obj"] = record["rec_obj"]
+        temp_dict["pretty"] = record["pretty"]
+        temp_dict["rec_pdb"] = record["rec_pdb"]
+        temp_dict['coupling'] = extract_coupling(record, effector)
+        results.append(temp_dict)
+    return results
 
-        e = {}
+def extract_coupling(entry, effector):
+# For the g proteins use the consensus options from the coupling browser
+# (either GtP or at least two sources)
+# For the arrestins use the Bouvier only data)
+    sources = list(entry['sources'].keys())
+    couplings = {}
+    # not needed and to be better worded
+    if effector == 'G alpha':
+        capital = 'G'
+        refined_coupling = {'Gs': "",
+                            'Gi/o': "",
+                            'Gq/11': "",
+                            'G12/13': "",
+                            'Gs_emax': "",
+                            'Gi/o_emax': "",
+                            'Gq/11_emax': "",
+                            'G12/13_emax': ""}
+        for source in sources:
+            # The actual primary and secondary, based on GtoP
+            if source == 'GuideToPharma':
+                for subunit in entry['sources'][source].keys():
+                    refined_coupling[subunit] = entry['sources'][source][subunit]
+            else:
+                # or if GtoP is not available, based on two sources
+                couplings[source] = {}
+                transducers = list(entry['sources'][source].keys())
+                # Keeping only G Protein values given the effector selection
+                transducers = [item for item in transducers if item.startswith(capital)]
+                for transducer in transducers:
+                    couplings[source][transducer] = float(entry['sources'][source][transducer]['best'])
 
-        c_gtop = extract_coupling_bool(i, "GuideToPharma")
-        p_gtop = extract_coupling_primary(i["GuideToPharma"])
+    elif effector == 'A':
+        capital = 'B'
+        refined_coupling = {'arrb1': "",
+                            'arrb2': "",
+                            'arrb1_emax': "",
+                            'arrb2_emax': ""}
+        for source in sources:
+            if source == 'Bouvier':
+                transducers = list(entry['sources'][source].keys())
+                # Keeping only Arrestin values given the effector selection
+                transducers = [item for item in transducers if item.startswith(capital)]
+                # Then parsing if we have at least one Arrestin (which should be labeled as 'Beta')
+                if len(transducers) == 1:
+                    couplings[source] = {}
+                    transducer = transducers[0]
+                    for subunit in entry['sources'][source][transducer]['subunits']:
+                        couplings[source][subunit] = float(entry['sources'][source][transducer]['subunits'][subunit])
+        # Here we need at least one source that provides info (Bouvier Data)
+        if len(couplings.keys()) == 1:
+            source = list(couplings.keys())[0]
+            filtered_dict = {arrestin:value for arrestin,value in couplings[source].items() if value != 0.0}
+            if len(filtered_dict) > 0:
+                sorted_list = list({arrestin: value for arrestin, value in sorted(filtered_dict.items(), key=lambda item: item[1], reverse=True)})
+                refined_coupling[sorted_list[0]] = filtered_dict[sorted_list[0]]
+                try:
+                    refined_coupling[sorted_list[1]] = filtered_dict[sorted_list[1]]
+                except IndexError:
+                    pass
+    # If more sources are provided, we define the mean values as in the browser
+    if len(couplings.keys()) > 1:
+        means = {}
+        for source in couplings.keys():
+            for transducer in couplings[source]:
+              if transducer not in means:
+                  means[transducer] = [couplings[source][transducer]]
+              else:
+                  means[transducer].append(couplings[source][transducer])
+                  # Filtering out the 0.0 values
+                  means[transducer] = list(filter((0.0).__ne__, means[transducer]))
+        for transducer in means.keys():
+            if len(means[transducer]) > 1:
+                refined_coupling[transducer+'_emax'] = round(sum(means[transducer])/len(means[transducer]),2)
+    # If all the data is empty because we do not have data
+    # Add the label "No Data" that it will be displayed in the table
+    refined_values = list(set(list(refined_coupling.values())))
+    if len(refined_values) == 1 and refined_values[0] == '':
+        for item in refined_coupling.keys():
+            refined_coupling[item] = "No Data"
 
-        c_aska = extract_coupling_bool(i, "Aska")
-        p_aska = extract_coupling_primary(c_aska[1])
-
-        c_merg = extract_coupling_bool(i, "Merged")
-        p_merg = extract_coupling_primary(c_merg[1])
-
-        e['coupling'] = {}
-        e["GuideToPharma"] = {}
-        e["Aska"] = {}
-        e["Merged"] = {}
-
-        e["rec_class"] = i["rec_class"]
-        e["rec_obj"] = i["rec_obj"]
-        e["key"] = entry
-
-        e["coupling"]["GuideToPharma"] = i["GuideToPharma"]
-        e["coupling"]["Aska"] = c_aska[1]
-        e["coupling"]["Merged"] = c_merg[1]
-
-        for x in ["Gs", "Gi/o", "Gq/11", "G12/13"]:
-            e["GuideToPharma"][x] = c_gtop[x]
-            e["Aska"][x] = c_aska[0][x]
-            e["Merged"][x] = c_merg[0][x]
-
-        e["GuideToPharma"]["gprot"] = p_gtop
-        e["Aska"]["gprot"] = p_aska
-        e["Merged"]["gprot"] = p_merg
-
-        res.append(e)
-
-    return res
-
-
-def extract_coupling_bool(gp, source):
-    distinct_g_families = ['Gs','Gi/o', 'Gq/11', 'G12/13', ]
-    threshold_primary = -0.1
-    threshold_secondary = -1
-
-    if source == 'GuideToPharma':
-        gp = gp[source]
-        c = {"Gi/o": False, "Gs": False, "Gq/11": False, "G12/13": False}
-        for key in c:
-            if key in gp:
-                c[key] = True
-        return c
-
-    elif source == 'Aska':
-        gp = gp[source]
-        c = {"Gi/o": False, "Gs": False, "Gq/11": False, "G12/13": False}
-        c_levels = {}
-
-        for gf in distinct_g_families:
-            if gf in gp:
-                if gp[gf]['best']>threshold_primary:
-                    c[gf] = True
-                    c_levels[gf] = "primary"
-                elif gp[gf]['best']>threshold_secondary:
-                    c[gf] = True
-                    c_levels[gf] = "secondary"
-                else:
-                    c[gf] = True
-                    c_levels[gf] = "no coupling"
-        return (c, c_levels)
-
-    elif source == 'Merged':
-        c = {"Gi/o": False, "Gs": False, "Gq/11": False, "G12/13": False}
-        c_levels = {}
-        v = gp
-
-        for gf in distinct_g_families:
-            values = []
-            if 'GuideToPharma' in v and gf in v['GuideToPharma']:
-                values.append(v['GuideToPharma'][gf])
-            if 'Aska' in v and gf in v['Aska']:
-                best = v['Aska'][gf]['best']
-                if best > threshold_primary:
-                    values.append('primary')
-                elif best > threshold_secondary:
-                    values.append('secondary')
-                else:
-                    values.append("no coupling")
-            if 'primary' in values:
-                c[gf] = True
-                c_levels[gf] = "primary"
-            elif 'secondary' in values:
-                c[gf] = True
-                c_levels[gf] = "secondary"
-            elif 'no coupling' in values:
-                c[gf] = True
-                c_levels[gf] = "no coupling"
-
-        return (c, c_levels)
-
-def extract_coupling_primary(gp):
-    p = []
-    for key in gp:
-        if gp[key] == "primary":
-            p.append(key)
-    return p
+    return refined_coupling

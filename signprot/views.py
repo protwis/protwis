@@ -44,7 +44,6 @@ class BrowseSelection(AbsTargetSelection):
 
     type_of_selection = 'browse_gprot'
 
-    description = 'Select a G protein or family by searching or browsing in the right column.'
     description = 'Select a G protein (family) by searching or browsing in the middle. The selection is viewed to' \
                   + ' the right.'
     docs = 'receptors.html'
@@ -727,8 +726,11 @@ def familyDetail(request, slug):
             pc = ProteinConformation.objects.get(protein__family__slug=slug, protein__species_id=1,
                                                  protein__sequence_type__slug='wt')
         except:
-            pc = None
-            p = None
+            try:
+                pc = ProteinConformation.objects.filter(protein__family__slug=slug, protein__sequence_type__slug='wt').first()
+            except:
+                return HttpResponse("No consensus was generated for this protein family")
+    
     p = pc.protein
     residues = Residue.objects.filter(protein_conformation=pc).order_by('sequence_number').prefetch_related(
         'protein_segment', 'generic_number', 'display_generic_number')
@@ -1157,7 +1159,6 @@ def interface_dataset():
             distinct=True,
             # ordering=interaction_sort_order
         ),
-
         pdb_id=F('referenced_structure__pdb_code__index'),
         conf_id=F('referenced_structure__protein_conformation_id'),
         gprot=F('referenced_structure__signprot_complex__protein__entry_name'),
@@ -1179,11 +1180,124 @@ def interface_dataset():
 
     return list(conf_ids), list(interactions)
 
-@cache_page(60 * 60 * 24 * 7)
-def InteractionMatrix(request):
-    prot_conf_ids, dataset = interface_dataset()
+@method_decorator(csrf_exempt)
+def AJAX_Interactions(request):
+    t1 = time.time()
+    selected_pdbs = request.POST.getlist("selected_pdbs[]")
+    effector = request.POST.get('effector')
+    # selected_pdbs = request.GET.get('selected_pdbs') if request.GET.get('selected_pdbs') != 'false' else False
+    # if selected_pdbs is false throw and error and get back
+    # correct receptor entry names - the ones with '_a' appended
+    if effector == 'G alpha':
+        complex_names = [pdb_name.lower() + '_a' for pdb_name in selected_pdbs]
+    elif effector == 'A':
+        complex_names = [pdb_name.lower() + '_arrestin' for pdb_name in selected_pdbs]
+    pdbs_names = [pdb.lower() for pdb in selected_pdbs]
+    complex_objs = SignprotComplex.objects.filter(structure__protein_conformation__protein__entry_name__in=pdbs_names).prefetch_related('structure__protein_conformation__protein')
+    # fetching the id of the selected structures
+    complex_struc_ids = [co.structure_id for co in complex_objs]
+    # protein conformations for those
+    prot_conf = ProteinConformation.objects.filter(protein__entry_name__in=complex_names).values_list('id', flat=True)
+    # correct receptor entry names - the ones with '_a' appended
 
-    gprotein_order = ProteinSegment.objects.filter(proteinfamily='Alpha').values('id', 'slug')
+    interaction_sort_order = [
+        "ionic",
+        "aromatic",
+        "polar",
+        "hydrophobic",
+        "van-der-waals",
+    ]
+
+    # getting all the signal protein residues for those protein conformations
+    prot_residues = Residue.objects.filter(
+        protein_conformation__in=prot_conf
+    ).values_list('id', flat=True)
+
+    interactions = InteractingResiduePair.objects.filter(
+        Q(res1__in=prot_residues) | Q(res2__in=prot_residues),
+        referenced_structure__in=complex_struc_ids
+    ).exclude(
+        Q(res1__in=prot_residues) & Q(res2__in=prot_residues)
+    ).prefetch_related(
+        'interaction__interaction_type',
+        'referenced_structure__pdb_code__index',
+        'referenced_structure__signprot_complex__protein__entry_name',
+        'referenced_structure__protein_conformation__protein__parent__entry_name',
+        'res1__amino_acid',
+        'res1__sequence_number',
+        'res1__generic_number__label',
+        'res2__amino_acid',
+        'res2__sequence_number',
+        'res2__generic_number__label',
+    ).order_by(
+        'res1__generic_number__label',
+        'res2__generic_number__label'
+    ).values(
+        int_id=F('id'),
+        int_ty=ArrayAgg(
+            'interaction__interaction_type',
+            distinct=True,
+            # ordering=interaction_sort_order
+        ),
+        pdb_id=F('referenced_structure__pdb_code__index'),
+        conf_id=F('referenced_structure__protein_conformation_id'),
+        gprot=F('referenced_structure__signprot_complex__protein__entry_name'),
+        entry_name=F('referenced_structure__protein_conformation__protein__parent__entry_name'),
+
+        rec_aa=F('res1__amino_acid'),
+        rec_pos=F('res1__sequence_number'),
+        rec_gn=F('res1__generic_number__label'),
+
+        sig_aa=F('res2__amino_acid'),
+        sig_pos=F('res2__sequence_number'),
+        sig_gn=F('res2__generic_number__label')
+    )
+
+    conf_ids = set()
+    for i in interactions:
+        i['int_ty'] = sort_a_by_b(i['int_ty'], interaction_sort_order)
+        conf_ids.update([i['conf_id']])
+
+    prot_conf_ids = list(conf_ids)
+    remaining_residues = Residue.objects.filter(
+        protein_conformation_id__in=prot_conf_ids,
+    ).prefetch_related(
+        "protein_conformation",
+        "protein_conformation__protein",
+        "protein_conformation__structure"
+    ).values(
+        rec_id=F('protein_conformation__protein__id'),
+        name=F('protein_conformation__protein__parent__name'),
+        entry_name=F('protein_conformation__protein__parent__entry_name'),
+        pdb_id=F('protein_conformation__structure__pdb_code__index'),
+        rec_aa=F('amino_acid'),
+        rec_gn=F('generic_number__label'),
+    ).exclude(
+        Q(rec_gn=None)
+    )
+
+    t2 = time.time()
+    print('AJAX Runtime: {}'.format((t2 - t1) * 1000.0))
+
+    return JsonResponse([list(remaining_residues), list(interactions)], safe=False)
+
+
+
+def ArrestinInteractionMatrix(request):
+    return InteractionMatrix(request, database="arrestin")
+
+def GProteinInteractionMatrix(request):
+    return InteractionMatrix(request, database="gprotein")
+
+# @cache_page(60 * 60 * 24 * 7)
+def InteractionMatrix(request, database='gprotein'):
+    # prot_conf_ids, dataset = interface_dataset()
+
+    if database == 'gprotein':
+        gprotein_order = ProteinSegment.objects.filter(proteinfamily='Alpha').values('id', 'slug')
+    elif database == 'arrestin':
+        arrestin_order = ProteinSegment.objects.filter(proteinfamily='Arrestin').values('id', 'slug')
+
     receptor_order = ['N', '1', '12', '2', '23', '3', '34', '4', '45', '5', '56', '6', '67', '7', '78', '8', 'C']
 
     struc = SignprotComplex.objects.prefetch_related(
@@ -1217,34 +1331,44 @@ def InteractionMatrix(request):
             r['gprot_class'] = ''
         complex_info.append(r)
 
-    remaining_residues = Residue.objects.filter(
-        protein_conformation_id__in=prot_conf_ids,
-    ).prefetch_related(
-        "protein_conformation",
-        "protein_conformation__protein",
-        "protein_conformation__structure"
-    ).values(
-        rec_id=F('protein_conformation__protein__id'),
-        name=F('protein_conformation__protein__parent__name'),
-        entry_name=F('protein_conformation__protein__parent__entry_name'),
-        pdb_id=F('protein_conformation__structure__pdb_code__index'),
-        rec_aa=F('amino_acid'),
-        rec_gn=F('generic_number__label'),
-    ).exclude(
-        Q(rec_gn=None)
-    )
+    # remaining_residues = Residue.objects.filter(
+    #     protein_conformation_id__in=prot_conf_ids,
+    # ).prefetch_related(
+    #     "protein_conformation",
+    #     "protein_conformation__protein",
+    #     "protein_conformation__structure"
+    # ).values(
+    #     rec_id=F('protein_conformation__protein__id'),
+    #     name=F('protein_conformation__protein__parent__name'),
+    #     entry_name=F('protein_conformation__protein__parent__entry_name'),
+    #     pdb_id=F('protein_conformation__structure__pdb_code__index'),
+    #     rec_aa=F('amino_acid'),
+    #     rec_gn=F('generic_number__label'),
+    # ).exclude(
+    #     Q(rec_gn=None)
+    # )
 
-    context = {
-        'interactions': json.dumps(dataset),
-        'interactions_metadata': json.dumps(complex_info),
-        'non_interactions': json.dumps(list(remaining_residues)),
-        'gprot': json.dumps(list(gprotein_order)),
-        'receptor': json.dumps(receptor_order),
-    }
+    if database == "gprotein":
+        context = {
+            'page': database,
+            # 'interactions': json.dumps(dataset),
+            'interactions_metadata': json.dumps(complex_info),
+            # 'non_interactions': json.dumps(list(remaining_residues)),
+            'gprot': json.dumps(list(gprotein_order)),
+            'receptor': json.dumps(receptor_order),
+        }
+    elif database == "arrestin":
+        context = {
+            'page': database,
+            # 'interactions': json.dumps(dataset),
+            'interactions_metadata': json.dumps(complex_info),
+            # 'non_interactions': json.dumps(list(remaining_residues)),
+            'gprot': json.dumps(list(arrestin_order)),
+            'receptor': json.dumps(receptor_order),
+        }
 
     request.session['signature'] = None
     request.session.modified = True
-
     return render(request,
                   'signprot/matrix.html',
                   context
@@ -1253,7 +1377,6 @@ def InteractionMatrix(request):
 @method_decorator(csrf_exempt)
 def IMSequenceSignature(request):
     """Accept set of proteins + generic numbers and calculate the signature for those"""
-    t1 = time.time()
 
     pos_set_in = get_entry_names(request)
     ignore_in_alignment = get_ignore_info(request)
@@ -1308,9 +1431,6 @@ def IMSequenceSignature(request):
     request.session['signature'] = signature.prepare_session_data()
     request.session.modified = True
 
-    t2 = time.time()
-    print('Runtime: {}'.format((t2 - t1) * 1000.0))
-
     return JsonResponse(res, safe=False)
 
 @method_decorator(csrf_exempt)
@@ -1319,11 +1439,13 @@ def IMSignatureMatch(request):
     signature_data = request.session.get('signature')
     ss_pos = get_entry_names(request)
     cutoff = request.POST.get('cutoff')
+    effector = request.POST.get('filtering_particle')
 
     request.session['ss_pos'] = ss_pos
     request.session['cutoff'] = cutoff
 
-    pos_set = Protein.objects.filter(entry_name__in=ss_pos).select_related('residue_numbering_scheme', 'species')
+    pos_set = Protein.objects.filter(entry_name__in=ss_pos).select_related('residue_numbering_scheme', 'species')\
+            .prefetch_related('family')
     pos_set = [protein for protein in pos_set]
     pfam = [protein.family.slug[:3] for protein in pos_set]
 
@@ -1341,7 +1463,6 @@ def IMSignatureMatch(request):
     maj_pfam = Counter(pfam).most_common()[0][0]
     signature_match.score_protein_class(maj_pfam, signprot=True)
     # request.session['signature_match'] = signature_match
-
     signature_match = {
         'scores': signature_match.protein_report,
         'scores_pos': signature_match.scores_pos,
@@ -1355,8 +1476,8 @@ def IMSignatureMatch(request):
         'numbering_schemes': signature_match.schemes,
     }
 
-    signature_match = prepare_signature_match(signature_match)
-    return JsonResponse(signature_match, safe=False)
+    signature_match_parsed = prepare_signature_match(signature_match, effector)
+    return JsonResponse(signature_match_parsed, safe=False)
 
 @method_decorator(csrf_exempt)
 def render_IMSigMat(request):

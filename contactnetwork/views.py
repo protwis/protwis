@@ -197,7 +197,8 @@ def PdbTreeData(request):
 @cache_page(60*60*24*7)
 def PdbTableData(request):
     exclude_non_interacting = True if request.GET.get('exclude_non_interacting') == 'true' else False
-
+    effector = request.GET.get('effector') if request.GET.get('effector') != 'false' else False
+    # interaction_protein_class = request.GET.get('interaction_protein_class')
     #constructs = Construct.objects.defer('schematics','snakecache').all().prefetch_related('crystallization__crystal_method')
     #methods = {}
     #for c in constructs:
@@ -207,7 +208,6 @@ def PdbTableData(request):
     #    else:
     #        method = "N/A"
     #    methods[c.name] = method
-
     data = Structure.objects.all().prefetch_related(
                 "pdb_code",
                 "state",
@@ -219,11 +219,24 @@ def PdbTableData(request):
                 "protein_conformation__protein__parent__family__parent",
                 "protein_conformation__protein__parent__family__parent__parent__parent",
                 "protein_conformation__protein__species",Prefetch("ligands", queryset=StructureLigandInteraction.objects.filter(
-                annotated=True).prefetch_related('ligand__ligand_type', 'ligand_role')),
-				Prefetch("extra_proteins", queryset=StructureExtraProteins.objects.all().prefetch_related(
-					'protein_conformation','wt_protein'))).order_by('protein_conformation__protein__parent','state').annotate(res_count = Sum(Case(When(protein_conformation__residue__generic_number=None, then=0), default=1, output_field=IntegerField())))
+                annotated=True).prefetch_related('ligand__ligand_type', 'ligand_role')))
+    # get best signalprotein/species/receptor
+    # if effector is defined (as one letter), filter by that
+    # 'G alpha' = G proteins (all G protein classes starts with G)
+    # 'A' = Arrestin
+    if effector:
+        data = data.filter(extra_proteins__category__startswith=effector).prefetch_related(
+        'extra_proteins__protein_conformation','extra_proteins__wt_protein').order_by(
+        'extra_proteins__protein_conformation__protein__parent','state').annotate(
+        res_count = Sum(Case(When(extra_proteins__structure__protein_conformation__residue__generic_number=None, then=0), default=1, output_field=IntegerField())))
+        signal_ps = StructureExtraProteins.objects.filter(category__startswith=effector).values('structure__protein_conformation__protein__parent','display_name').order_by().annotate(coverage = Max('wt_coverage'))
+    else:
+        data = data.prefetch_related('extra_proteins__protein_conformation','extra_proteins__wt_protein').order_by(
+        'extra_proteins__protein_conformation__protein__parent','state').annotate(
+        res_count = Sum(Case(When(extra_proteins__protein_conformation__residue__generic_number=None, then=0), default=1, output_field=IntegerField())))
+        signal_ps = StructureExtraProteins.objects.all().values('structure__protein_conformation__protein__parent','display_name').order_by().annotate(coverage = Max('wt_coverage'))
 
-    if exclude_non_interacting:
+    if exclude_non_interacting and effector == 'G alpha':
         complex_structure_ids = SignprotComplex.objects.values_list('structure', flat=True)
         data = data.filter(id__in=complex_structure_ids)
 
@@ -241,8 +254,6 @@ def PdbTableData(request):
         key = '{}_{}'.format(r['protein_conformation__protein__parent'], r['state__name'])
         best_resolutions[key] = r['res']
 
-    # get best signalprotein/species/receptor
-    signal_ps = StructureExtraProteins.objects.all().values('structure__protein_conformation__protein__parent','display_name').order_by().annotate(coverage = Max('wt_coverage'))
     best_signal_p = {}
     for ps in signal_ps:
         key = '{}_{}'.format(ps['structure__protein_conformation__protein__parent'], ps['display_name'])

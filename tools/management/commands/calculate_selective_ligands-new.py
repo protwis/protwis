@@ -109,11 +109,11 @@ class Command(BaseBuild):
             try:
                 content = AssayExperiment.objects.filter(ligand=assay.ligand
                                                          ).filter(Q(assay_type='F') | Q(assay_type='B')
-                                                                  ).filter(Q(standard_type='IC50') |
-                                                                           Q(standard_type='EC50') |
-                                                                           Q(standard_type='Potency')).prefetch_related(
+                                                                  ).filter(Q(value_type='IC50') |
+                                                                           Q(value_type='EC50') |
+                                                                           Q(value_type='Potency')).prefetch_related(
                     'ligand', 'protein'
-                ).only('protein', 'ligand', 'standard_type', 'standard_value', 'assay_type', 'pchembl_value'
+                ).only('protein', 'ligand', 'value_type', 'standard_activity_value', 'assay_type', 'p_activity_value'
                        ).order_by('ligand')
 
                 ligand_data['ligand'] = assay.ligand
@@ -138,7 +138,7 @@ class Command(BaseBuild):
             assay_b = assay['assay_b']
         if assay_b is not None:
             try:
-                if float(assay_b[0]['pchembl_value']) - 1 > float(assay_b[1]['pchembl_value']):
+                if float(assay_b[0]['p_activity_value']) - 1 > float(assay_b[1]['p_activity_value']):
                     if assay_b[0]['protein'] is not assay_b[1]['protein']:
                         if assay_b[0]['protein'] in self.b_receptor_count:
                             self.b_receptor_count[assay_b[0]['protein']
@@ -150,7 +150,7 @@ class Command(BaseBuild):
                 pass
         if assay_f is not None:
             try:
-                if float(assay_f[0]['pchembl_value']) - 1 > float(assay_f[1]['pchembl_value']):
+                if float(assay_f[0]['p_activity_value']) - 1 > float(assay_f[1]['p_activity_value']):
                     if assay_f[0]['protein'] is not assay_f[1]['protein']:
                         if assay_f[0]['protein'] in self.f_receptor_count:
                             self.f_receptor_count[assay_f[0]['protein']
@@ -186,10 +186,10 @@ class Command(BaseBuild):
                 assay_data = dict()
                 assay_data["protein"] = i.protein
                 assay_data["ligand"] = i.ligand
-                assay_data["pchembl_value"] = i.pchembl_value
+                assay_data["p_activity_value"] = i.p_activity_value
                 assay_data["assay_type"] = i.assay_type
-                assay_data["standard_type"] = i.standard_type
-                assay_data["standard_value"] = i.standard_value
+                assay_data["value_type"] = i.value_type
+                assay_data["standard_activity_value"] = i.standard_activity_value
                 assay_data['reference_protein'] = Protein()
                 processed_data.append(assay_data)
             except:

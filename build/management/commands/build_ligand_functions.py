@@ -5,11 +5,13 @@ from django.utils.text import slugify
 
 from ligand.models import Ligand, LigandID, LigandType, LigandRole
 from common.models import WebResource
-from common.tools import get_or_create_url_cache, fetch_from_web_api
+from common.tools import get_or_create_url_cache, fetch_from_web_api, save_to_cache
 
 import time
 import os
 import re
+import requests
+import xmltodict
 
 import datamol as dm
 from rdkit import RDLogger
@@ -56,10 +58,11 @@ def get_or_create_ligand(name, ids = {}, lig_type = "small-molecule", unichem = 
     """
 
     ligand = None
-
+    cas_to_cid_url =  "http://www.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pccompound&retmax=100&term=$index"
+    cas_cache_dir = ["CAS", 'cas_codes']
     # Check and filter IDs
     for type_id in list(ids.keys()):
-        if ids[type_id] == None or ids[type_id] == "None" or ids[type_id] == "":
+        if ids[type_id] is None or ids[type_id] == "None" or ids[type_id] == "":
             del ids[type_id]
         elif isinstance(ids[type_id], str) and ids[type_id].isnumeric():
             ids[type_id] = int(ids[type_id])
@@ -69,6 +72,14 @@ def get_or_create_ligand(name, ids = {}, lig_type = "small-molecule", unichem = 
             ids[type_id] = ids[type_id].strip()
             if type_id == "chembl_ligand":
                 ids[type_id] = ids[type_id].upper()
+            if type_id == "CAS":
+                data = fetch_from_web_api(cas_to_cid_url, ids[type_id], cas_cache_dir, xml=True)
+                if data:
+                    try:
+                        ids["pubchem"] = int(data[3][0].text)
+                    except:
+                        pass
+                del ids["CAS"]
         elif isinstance(ids[type_id], list) and len(ids[type_id]) == 1:
             ids[type_id] = ids[type_id][0]
 
@@ -96,7 +107,7 @@ def get_or_create_ligand(name, ids = {}, lig_type = "small-molecule", unichem = 
                 elif results.count() > 1:
                     print("Error for molecule with name (", name,") as it has ", results.count(), " corresponding entries")
 
-            if ligand == None:
+            if ligand is None:
                 print("No ligand found with name",name)
                 ligand = create_ligand_from_id(name, "", "", lig_type)
                 ligand.ambiguous_alias = True
@@ -105,13 +116,13 @@ def get_or_create_ligand(name, ids = {}, lig_type = "small-molecule", unichem = 
     else:
         # Try to find ligand via PubChem ID, Guide to Pharmacology ID, ChEMBL ID
         for type in external_sources:
-            if ligand == None and type in ids:
+            if ligand is None and type in ids:
                 ligand = get_ligand_by_id(type, ids[type])
 
         # How about the InChiKey?
-        if ligand == None and "inchikey" in ids:
+        if ligand is None and "inchikey" in ids:
             ligand = get_ligand_by_inchikey(ids["inchikey"])
-        elif "smiles" in ids:
+        elif ligand is None and "smiles" in ids:
             # result = Ligand.objects.filter(smiles = ids["smiles"])
             # if result.count() > 0:
             #     ligand = result.first()
@@ -123,21 +134,21 @@ def get_or_create_ligand(name, ids = {}, lig_type = "small-molecule", unichem = 
             input_mol = dm.to_mol(ids["smiles"], sanitize=False)
             ligand = get_ligand_by_inchikey(dm.to_inchikey(input_mol))
             # Try again using the InChiKey from the "cleaned" molecule
-            if ligand == None:
+            if ligand is None:
                 ligand = get_ligand_by_inchikey(get_cleaned_inchikey(ids["smiles"]))
 
         # Tried direct ID matching options => no ligand found => try UniChem IDs before creating new ligand
-        if extended_matching and ligand == None:
+        if extended_matching and ligand is None:
             external_ids = list(set.intersection(set(ids.keys()), set(external_sources)))
             current_ids = list(ids.values())
             for type in external_ids:
-                if ligand == None and type in ids:
+                if ligand is None and type in ids:
                     unichem_ids = match_id_via_unichem(type, ids[type])
                     for row in unichem_ids:
                         if row["id"] not in current_ids:
                             ligand = get_ligand_by_id(row["type"], row["id"])
                             current_ids.append(row["id"])
-                            if ligand != None:
+                            if ligand is not None:
                                 print("MATCHING", type, ids[type], "via UniChem")
                                 # print(ids)
                                 # print(row)
@@ -145,7 +156,7 @@ def get_or_create_ligand(name, ids = {}, lig_type = "small-molecule", unichem = 
                                 break
 
         # Peptide or protein entry Sequence - filter gtoplig as those entries are standalone and should not be merged
-        if ligand == None and "sequence" in ids and len(ids["sequence"]) > 3 and "gtoplig" not in ids:
+        if ligand is None and "sequence" in ids and len(ids["sequence"]) > 3 and "gtoplig" not in ids:
             result = Ligand.objects.filter(sequence = ids["sequence"])
             if result.count() > 0:
                 ligand = result.first()
@@ -155,7 +166,7 @@ def get_or_create_ligand(name, ids = {}, lig_type = "small-molecule", unichem = 
 
         # UniProt ID if there's no sequence or other IDs
         # TODO figure out best way of matching when sequence and UniProt ID are mixed as there can be multiple variants
-        elif ligand == None and "sequence" not in ids and "uniprot" in ids and len(set.intersection(set(ids.keys()), set(external_sources)))==0:
+        elif ligand is None and "sequence" not in ids and "uniprot" in ids and len(set.intersection(set(ids.keys()), set(external_sources)))==0:
             result = Ligand.objects.filter(uniprot__contains = ids["uniprot"].upper())
             if result.count() > 0:
                 ligand = result.first()
@@ -166,21 +177,21 @@ def get_or_create_ligand(name, ids = {}, lig_type = "small-molecule", unichem = 
 
         # If the ligand has not been found => create ligand using the provided IDs
         # TODO merge this into one function
-        if ligand == None:
+        if ligand is None:
             # Creation of peptides and proteins
             if lig_type != "small-molecule" and "sequence" in ids:
                 ligand = create_ligand_from_id(name, "sequence", ids["sequence"], lig_type)
 
             # Creation of small molecules and others without sequence/UniProt
-            if ligand == None:
+            if ligand is None:
                 for type in ["smiles", "pubchem", "gtoplig", "chembl_ligand"]:
                     if type in ids:
                         ligand = create_ligand_from_id(name, type, ids[type], lig_type)
-                        if ligand != None:
+                        if ligand is not None:
                             break
 
             # Create empty ligand
-            if ligand == None:
+            if ligand is None:
                 tmp_types = list(ids.keys())
                 if "uniprot" in tmp_types:
                     tmp_types.remove("uniprot")
@@ -198,27 +209,27 @@ def get_or_create_ligand(name, ids = {}, lig_type = "small-molecule", unichem = 
                         if results.count() == 1:
                             ligand = results.first()
 
-                if ligand == None:
+                if ligand is None:
                     print("Creating an empty ligand", name, ids)
                     ligand = create_ligand_from_id(name, "", "", lig_type)
                     ligand.ambiguous_alias = True
 
         # Add missing IDs via (web)links to the ligand object
-        if ligand != None:
+        if ligand is not None:
             # Validate if newly found inchikey really does not yet exist
-            if "inchikey" not in ids and ligand.inchikey != None:
+            if "inchikey" not in ids and ligand.inchikey is not None and ligand.pk is None:
                 test = get_ligand_by_inchikey(ligand.inchikey)
-                if test != None:
+                if test is not None:
                     ligand = test
 
             # Add provided entries to ligand when missing
-            if "pdb" in ids and ligand.pdbe == None:
+            if "pdb" in ids and ligand.pdbe is None:
                 ligand.pdbe = ids["pdb"]
-            if "uniprot" in ids and ligand.uniprot == None:
+            if "uniprot" in ids and ligand.uniprot is None:
                 ligand.uniprot = ids["uniprot"].upper()
-            if "sequence" in ids and ligand.sequence == None and len(ids["sequence"]) < 1000:
+            if "sequence" in ids and ligand.sequence is None and len(ids["sequence"]) < 1000:
                 ligand.sequence = ids["sequence"]
-            if "inchikey" in ids and ligand.inchikey == None:
+            if "inchikey" in ids and ligand.inchikey is None:
                 ligand.inchikey = ids["inchikey"]
             ligand.save()
 
@@ -241,7 +252,7 @@ def get_or_create_ligand(name, ids = {}, lig_type = "small-molecule", unichem = 
                 for row in unichem_ids:
                     if row["id"] not in current_ids:
                         if row["type"] == "pdb":
-                            if ligand.pdbe == None:
+                            if ligand.pdbe is None:
                                 ligand.pdbe = row["id"]
                                 ligand.save()
                         else:
@@ -262,7 +273,7 @@ def match_id_via_unichem(type, id):
         unichem_url = "https://www.ebi.ac.uk/unichem/rest/src_compound_id/$index/" + type_id
         cache_dir[1] = "id_match_" + type
         unichem = fetch_from_web_api(unichem_url, id, cache_dir)
-        if unichem:
+        if unichem and "error" not in unichem:
             for entry in unichem:
                 if entry["src_id"] in unichem_src_types.keys():
                     results.append({"type" : unichem_src_types[entry["src_id"]], "id": entry["src_compound_id"]})
@@ -270,7 +281,7 @@ def match_id_via_unichem(type, id):
         unichem_url = "https://www.ebi.ac.uk/unichem/rest/inchikey/$index"
         cache_dir[1] = "id_match_" + type
         unichem = fetch_from_web_api(unichem_url, id, cache_dir)
-        if unichem:
+        if unichem and "error" not in unichem:
             for entry in unichem:
                 if entry["src_id"] in unichem_src_types.keys():
                     results.append({"type" : unichem_src_types[entry["src_id"]], "id": entry["src_compound_id"]})
@@ -278,13 +289,14 @@ def match_id_via_unichem(type, id):
 
 
 def get_ligand_by_id(type, id, uniprot = None):
-    if uniprot == None:
-        result = Ligand.objects.filter(ids__index=id, ids__web_resource__slug=type)
+    if uniprot is None:
+        result = Ligand.objects.filter(ids__index=str(id), ids__web_resource__slug=type)
     else:
-        result = Ligand.objects.filter(ids__index=id, ids__web_resource__slug=type, uniprot__contains=uniprot.upper())
+        result = Ligand.objects.filter(ids__index=str(id), ids__web_resource__slug=type, uniprot__contains=uniprot.upper())
 
     if result.count() > 0:
-        if result.count() > 1:
+        # For drugs we allow multiple entries because of stereochemistry if drug is racemic
+        if result.count() > 1 and type not in ["drugbank", "drug_central"]:
             print("Multiple entries for the same ID - This should never happen - error", type, id)
         return result.first()
     else:
@@ -353,7 +365,7 @@ def create_ligand_from_id(name, type, id, lig_type):
                     ligand.smiles = chembl["molecule_structures"]["canonical_smiles"]
                 if len(chembl["molecule_structures"]["standard_inchi_key"]) > 0:
                     ligand.inchikey = chembl["molecule_structures"]["standard_inchi_key"]
-            if ligand.name == "" and chembl and "pref_name" in chembl and chembl["pref_name"] != None:
+            if ligand.name == "" and chembl and "pref_name" in chembl and chembl["pref_name"] is not None:
                 ligand.name = chembl["pref_name"]
             elif ligand.name == "":
                 ligand.name = id
@@ -361,15 +373,15 @@ def create_ligand_from_id(name, type, id, lig_type):
         skip=True
 
     # perform RDkit calculations
-    if lig_type == "small-molecule" and ligand.smiles != None and ligand.smiles != "":
+    if lig_type == "small-molecule" and ligand.smiles is not None and ligand.smiles != "":
         input_mol = dm.to_mol(ligand.smiles, sanitize=True)
         if input_mol:
             # Check if InChIKey has been set
-            if ligand.inchikey == None:
+            if ligand.inchikey is None:
                 ligand.inchikey = dm.to_inchikey(input_mol)
 
             # Check if cleaned InChIKey has been set
-            # if ligand.clean_inchikey == None:
+            # if ligand.clean_inchikey is None:
                 # ligand.clean_inchikey = get_cleaned_inchikey(ligand.smiles)
 
             # Calculate RDkit properties
@@ -383,25 +395,25 @@ def create_ligand_from_id(name, type, id, lig_type):
             # TODO - try again if we have other IDs
 
         # Before storing - check one more time if we already have this ligand
-        if ligand.inchikey != None:
+        if ligand.inchikey is not None:
             checkligand = get_ligand_by_inchikey(ligand.inchikey)
-            if checkligand != None:
+            if checkligand is not None:
                 return checkligand
 
-        # if ligand.clean_inchikey != None and ligand.clean_inchikey != ligand.inchikey:
+        # if ligand.clean_inchikey is not None and ligand.clean_inchikey != ligand.inchikey:
         #     checkligand = get_ligand_by_inchikey(ligand.clean_inchikey)
-        #     if checkligand != None:
+        #     if checkligand is not None:
         #         return checkligand
 
         return ligand
     elif lig_type != "small-molecule" or type == "":
-        if type == "smiles" and ligand.inchikey == None:
+        if type == "smiles" and ligand.inchikey is None:
             input_mol = dm.to_mol(ligand.smiles, sanitize=True)
             if input_mol:
                 ligand.inchikey = dm.to_inchikey(input_mol)
-                if ligand.inchikey != None:
+                if ligand.inchikey is not None:
                     checkligand = get_ligand_by_inchikey(ligand.inchikey)
-                    if checkligand != None:
+                    if checkligand is not None:
                         return checkligand
 
         # Before storing - check one more time if we already have this ligand based on sequence

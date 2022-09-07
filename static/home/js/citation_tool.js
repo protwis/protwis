@@ -1,4 +1,4 @@
-function citation_tool(url) {
+function citation_tool(url, cite_id) {
 	// Modal part
 	$('#citation_modal_table tbody').empty();
     var modal = document.getElementById('citation-tool');
@@ -12,12 +12,14 @@ function citation_tool(url) {
         modal.style.display = "none";
         $(".article_option").remove();
         $(".article").remove();
+        $(".cite-submenu").remove();
     }
     window.onclick = function(event) {
         if (event.target == modal) {
             modal.style.display = "none";
             $(".article_option").remove();
             $(".article").remove();
+            $(".cite-submenu").remove();
         }
     }
 
@@ -34,7 +36,21 @@ function citation_tool(url) {
     var env = url.split('//')[1].split('/')[0];
     var main_ref_id = [];
     var cit_request = new XMLHttpRequest();
-    var domains = ["gpcrdb.org", "gproteindb.org", "arrestindb.org"];
+    var domains = ["gpcrdb.org", "gproteindb.org", "arrestindb.org", "biasedsignalingatlas.org"];
+    var filter_for = false;
+		let cite_id_missing = typeof cite_id === "undefined";
+    if ((cite_id_missing && env==="gpcrdb.org") || cite_id==="cite_gpcrdb") {
+    	filter_for = "gpcrdb";
+    }
+    if ((cite_id_missing && env==="gproteindb.org") || cite_id==="cite_gproteindb") {
+    	filter_for = "gproteindb";
+    }
+    if ((cite_id_missing && env==="arrestindb.org") || cite_id==="cite_arrestindb") {
+    	filter_for = "arrestindb";
+    }
+    if ((cite_id_missing && env==="biasedsignalingatlas.org") || cite_id==="cite_biasedsignalingatlas") {
+    	filter_for = "biasedsignalingatlas";
+    }
     cit_request.open('GET', url.split('/')[0] + '/citations');
     cit_request.onload = function() {
 		var data = JSON.parse(cit_request.responseText)
@@ -67,13 +83,40 @@ function citation_tool(url) {
 				}
 			}
 		}
-
 		// Create HTML once per call
 		var articles = {};
 		var tags = [];
 		for (let i = 0; i < data.length; i++) {
 			if (data[i][11]==='') {
 				continue;
+			}
+			if (filter_for==="gpcrdb" && data[i][11]!=="GPCRdb") {
+				continue;
+			}
+			else if (filter_for==="gproteindb" && data[i][11]!=="GproteinDb" && data[i][7]=2022) {
+				continue;
+			}
+			else if (filter_for==="arrestindb" && data[i][11]!=="ArrestinDb") {
+				continue;
+			}
+			else if (filter_for==="biasedsignalingatlas" && data[i][11]!=="Biased Signaling Atlas") {
+				continue;
+			}
+			else if (filter_for==="arrestindb" && data[i][11]==="ArrestinDb") {
+				data[i][5] = "The arrestin database, ArrestinDb";
+				data[i][6] = "Jimmy Caroli, Gáspár Pándy-Szekeres, Alexander S. Hauser, György M. Keserű, Albert J. Kooistra and David E. Gloriam";
+				data[i][7] = 2022;
+				data[i][8] = "";
+				data[i][9] = "Manuscript";
+				data[i][10] = "";
+			}
+			else if (filter_for==="biasedsignalingatlas" && data[i][11]==="Biased Signaling Atlas") {
+				data[i][5] = "An Online Biased Signaling Atlas";
+				data[i][6] = "Jimmy Caroli, Alibek Mamyrbekov, Kasper Harpsøe, Sahar Gardizi, Linda Dörries, Eshan Ghosh, Alexander S. Hauser, Albert J. Kooistra, and David E. Gloriam";
+				data[i][7] = 2022;
+				data[i][8] = "";
+				data[i][9] = "Manuscript";
+				data[i][10] = "";
 			}
 			var site = parse_url_long(data[i][0]);
 			tags.push(site);
@@ -83,6 +126,7 @@ function citation_tool(url) {
 				submenu = document.createElement("li");
 				submenu.setAttribute("id", data[i][11]);
 				submenu.classList.add("dropdown-submenu");
+				submenu.classList.add("cite-submenu");
 				a_sub = document.createElement("a");
 				a_sub.innerHTML = data[i][11];
 				a_sub.setAttribute('tabindex', '0');
@@ -209,8 +253,15 @@ function citation_tool(url) {
 		else {
 			main_ref_id = main_ref_id[1];
 		}
-		$(".article").first().css("border-top","4px solid #F46615");
-		$(".article").eq(1).css("border-top","4px solid #BE00BE");
+		/*var color = "#BE00BE";
+		if (filter_for==="gproteindb") {
+			color = "#F46615";
+		}
+		else if (filter_for==="arrestindb") {
+			color = "#55AE35";
+		}
+		$(".article").first().css("border-top","4px solid "+color);*/
+		// $(".article").eq(1).css("border-top","4px solid #BE00BE");
 		if (highlight_main || $('.highlight_reference').length==0) {
 			highlight_article(main_ref_id);
 			$('#dropdown_articles option#'+main_ref_id).attr('selected', 'selected');

@@ -18,6 +18,21 @@
     $('#cite').click(function() {
       citation_tool(window.location.href);
     })
+    $('#cite_gpcrdb').click(function() {
+      citation_tool(window.location.href, "cite_gpcrdb");
+    })
+    $('#cite_gpcrdb_pubs').click(function() {
+      citation_tool(window.location.href, "cite_gpcrdb_pubs");
+    })
+    $('#cite_biasedsignalingatlas').click(function() {
+      citation_tool(window.location.href, "cite_biasedsignalingatlas");
+    })
+    $('#cite_gproteindb').click(function() {
+      citation_tool(window.location.href, "cite_gproteindb");
+    })
+    $('#cite_arrestindb').click(function() {
+      citation_tool(window.location.href, "cite_arrestindb");
+    })
     $('#icon_citation').click(function() {
       citation_tool(window.location.href);
     })
@@ -38,7 +53,26 @@
 
   });
 </script>
+<style>
+  #center_menu ul {
+      padding: 0;
+      margin: 15px;
+  }
 
+  #center_menu li {
+     margin: 0;
+     padding: 0px;
+  }
+  #releases ul {
+      padding: 0;
+      margin: 15px;
+  }
+
+  #releases li {
+     margin: 0;
+     padding: 0px;
+  }
+</style>
 <!-- Fixed navbar -->
 <nav class="navbar navbar-inverse navbar-static-top">
   <div class="container">
@@ -64,6 +98,9 @@
 
         <!-- ArrestinDB -->
         {% include "home/arrestindb.html" %}
+
+        <!-- BiasedSignalingAtlas -->
+        {% include "home/biasedsignalingatlas.html" %}
 
         <!-- Cite and join us -->
         {% include "home/cite_and_join_us.html" %}

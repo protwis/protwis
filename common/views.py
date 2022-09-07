@@ -117,6 +117,133 @@ def getLigandTable(receptor_id, browser_type):
 
     return data_table
 
+def getLigandCountTable():
+    data_table = cache.get("ligand_count_table")
+    # data_table = None
+    if data_table == None:
+        proteins = Protein.objects.filter(sequence_type__slug="wt",
+                                          family__slug__startswith="00").prefetch_related(
+                                          # species__common_name="Human").prefetch_related(
+            "family",
+            "family__parent__parent__parent",
+            "species"
+        )
+        # Acquired slugs
+        # entry_names = [ p.entry_name for p in proteins ]
+
+        drugtargets_approved = list(Protein.objects.filter(drugs__status="approved").values_list("entry_name", flat=True))
+        drugtargets_trials = list(Protein.objects.filter(drugs__status__in=["in trial"],
+                                                         drugs__clinicalstatus__in=["completed", "not open yet",
+                                                                                    "ongoing", "recruiting",
+                                                                                    "suspended"]).values_list(
+            "entry_name", flat=True))
+
+        # ligand_set = list(AssayExperiment.objects.values_list("protein__family__slug", "protein__species_id__latin_name")\
+        #     .annotate(num_ligands=Count("ligand", distinct=True)))
+
+        ligand_set = list(AssayExperiment.objects.values("protein__entry_name")\
+            .annotate(num_ligands=Count("ligand__pk", distinct=True)))
+
+        ligand_count = {}
+        for entry in ligand_set:
+            ligand_count[entry["protein__entry_name"]] = entry["num_ligands"]
+
+        data_table = "<table id='uniprot_selection' class='uniprot_selection stripe compact'> \
+            <thead>\
+              <tr> \
+                <th colspan=1>&nbsp;</th> \
+                <th colspan=6>Receptor classification</th> \
+                <th colspan=1>Ligands</th> \
+                <th colspan=2>Drugs</th> \
+              </tr> \
+              <tr> \
+                <th><br><br><input autocomplete='off' class='form-check-input' type='checkbox' onclick='return check_all_targets();'></th> \
+                <th>Class<br>&nbsp;</th> \
+                <th>Ligand type<br>&nbsp;</th> \
+                <th style=\"width; 100px;\">Family<br>&nbsp;</th> \
+                <th>Species<br>&nbsp;</th> \
+                <th style=\"color:red\">Receptor<br>(UniProt)</th> \
+                <th style=\"color:red\">Receptor<br>(GtP)</th> \
+                <th>Count</th> \
+                <th>Target of an approved drug</th> \
+                <th>Target in clinical trials</th> \
+              </tr> \
+            </thead>\
+            \n \
+            <tbody>\n"
+
+        slug_list = []
+        #link_setup = "<a target=\"_blank\" href=\"{}\"><span class=\"glyphicon glyphicon-new-window btn-xs\"></span></a>"
+        link_setup = "<a target=\"_blank\" href=\"{}\">{}</a>"
+        for p in proteins:
+            # Do not repeat slugs (only unhuman proteins)
+            # if p.family.slug in slug_list:
+            if p.entry_name in slug_list:
+                continue
+            slug_list.append(p.entry_name)
+            t = {}
+            t['slug'] = p.family.slug
+            t['entry_name'] = p.entry_name
+            # Ligand count
+            t['ligand_count'] = 0
+            if t['entry_name'] in ligand_count and ligand_count[t['entry_name']] > 0:
+                t['species'] = p.species
+                t['id'] = p.id
+                #t['ligand_count'] = link_setup.format("/ligand/target/all/" + t['slug'], ligand_count[t['entry_name']])
+                t['ligand_count'] = ligand_count[t['entry_name']]
+                t['accession'] = p.accession
+                t['class'] = p.family.parent.parent.parent.short().split(' ')[0]
+                t['ligandtype'] = p.family.parent.parent.short()
+                t['family'] = p.family.parent.short()
+                t['uniprot'] = p.entry_short()
+                t['iuphar'] = p.family.name.replace("receptor", '').strip()
+
+                # Web resource links
+                #t['uniprot_link'] = ""
+                #t['gtp_link'] = ""
+                uniprot_links = p.web_links.filter(web_resource__slug='uniprot')
+                if uniprot_links.count() > 0:
+                    #t['uniprot_link'] = link_setup.format(p.web_links.filter(web_resource__slug='uniprot')[0])
+                    t['uniprot'] = link_setup.format(uniprot_links[0], t['uniprot'])
+
+                gtop_links = p.web_links.filter(web_resource__slug='gtop')
+                if gtop_links.count() > 0:
+                    #t['gtp_link'] = link_setup.format(p.web_links.filter(web_resource__slug='gtop')[0])
+                    t['iuphar'] = link_setup.format(gtop_links[0], t['iuphar'])
+
+                t['approved_target'] = "Yes" if p.entry_name in drugtargets_approved else "No"
+                t['clinical_target'] = "Yes" if p.entry_name in drugtargets_trials else "No"
+
+                data_table += "<tr> \
+                <td data-sort=\"0\"><input autocomplete='off' class=\"form-check-input\" type=\"checkbox\" name=\"reference\" data-entry=\"{}\" entry-value=\"{}\"></td> \
+                <td>{}</td> \
+                <td>{}</td> \
+                <td>{}</td> \
+                <td>{}</td> \
+                <td><span class=\"expand\">{}</span></td> \
+                <td><span class=\"expand\">{}</span></td> \
+                <td>{}</td> \
+                <td>{}</td> \
+                <td>{}</td> \
+                </tr> \n".format(
+                    t['slug'],
+                    t['id'],
+                    t['class'],
+                    t['ligandtype'],
+                    t['family'],
+                    t['species'],
+                    t['uniprot'],
+                    t['iuphar'],
+                    t['ligand_count'],
+                    t['approved_target'],
+                    t['clinical_target'],
+                )
+
+        data_table += "</tbody></table>"
+        cache.set("ligand_count_table", data_table, 60*60*24*7)
+
+    return data_table
+
 def getTargetTable():
     data_table = cache.get("target_table")
     if data_table == None:
@@ -232,13 +359,11 @@ def getTargetTable():
             #t['gtp_link'] = ""
             uniprot_links = p.web_links.filter(web_resource__slug='uniprot')
             if uniprot_links.count() > 0:
-                #t['uniprot_link'] = link_setup.format(p.web_links.filter(web_resource__slug='uniprot')[0])
-                t['uniprot'] = link_setup.format(p.web_links.filter(web_resource__slug='uniprot')[0], t['uniprot'])
+                t['uniprot'] = link_setup.format(uniprot_links[0], t['uniprot'])
 
             gtop_links = p.web_links.filter(web_resource__slug='gtop')
             if gtop_links.count() > 0:
-                #t['gtp_link'] = link_setup.format(p.web_links.filter(web_resource__slug='gtop')[0])
-                t['iuphar'] = link_setup.format(p.web_links.filter(web_resource__slug='gtop')[0], t['iuphar'])
+                t['iuphar'] = link_setup.format(gtop_links[0], t['iuphar'])
 
             # Ligand count
             t['ligand_count'] = 0
@@ -329,7 +454,8 @@ def getReferenceTable(pathway, subtype):
                                           sequence_type__slug="wt",
                                           family__slug__startswith="00").prefetch_related(
             "family",
-            "family__parent__parent__parent"
+            "family__parent__parent__parent",
+            "species"
         )
 
         #Complete data
@@ -364,7 +490,7 @@ def getReferenceTable(pathway, subtype):
                   <tr> \
                     <th colspan=1>&nbsp;</th> \
                     <th colspan=6>Receptor classification</th> \
-                    <th colspan=1>Number of ligands</th> \
+                    <th colspan=1 style=\"border-left: 1px solid black; text-align:left\">Number of ligands</th> \
                   </tr> \
                   <tr> \
                     <th><br><br></th> \
@@ -385,7 +511,7 @@ def getReferenceTable(pathway, subtype):
                   <tr> \
                     <th colspan=1>&nbsp;</th> \
                     <th colspan=6>Receptor classification</th> \
-                    <th colspan=4>Number of ligands</th> \
+                    <th colspan=4 style=\"border-left: 1px solid black; text-align:left\">Number of ligands</th> \
                   </tr> \
                   <tr> \
                     <th><br><br></th> \
@@ -397,8 +523,8 @@ def getReferenceTable(pathway, subtype):
                     <th style=\"color:red\">Receptor<br>(GtP)</th> \
                     <th>Tested<br>(total)</th> \
                     <th>Balanced<br>references</th> \
-                    <th>Physiology<br>biased</th> \
                     <th>Pathway<br>biased</th> \
+                    <th>Physiology<br>biased</th> \
                   </tr> \
                 </thead>\
                 \n \
@@ -427,11 +553,11 @@ def getReferenceTable(pathway, subtype):
 
             uniprot_links = p.web_links.filter(web_resource__slug='uniprot')
             if uniprot_links.count() > 0:
-                t['uniprot'] = link_setup.format(p.web_links.filter(web_resource__slug='uniprot')[0], t['uniprot'])
+                t['uniprot'] = link_setup.format(uniprot_links[0], t['uniprot'])
 
             gtop_links = p.web_links.filter(web_resource__slug='gtop')
             if gtop_links.count() > 0:
-                t['iuphar'] = link_setup.format(p.web_links.filter(web_resource__slug='gtop')[0], t['iuphar'])
+                t['iuphar'] = link_setup.format(gtop_links[0], t['iuphar'])
 
             # Ligand count
             t['ligand_count'] = 0
@@ -466,7 +592,7 @@ def getReferenceTable(pathway, subtype):
                 <td>{}</td> \
                 <td><span class=\"expand\">{}</span></td> \
                 <td><span class=\"expand\">{}</span></td> \
-                <td>{}</td> \
+                <td style=\"border-left: 1px solid black; text-align:left\">{}</td> \
                 </tr> \n".format(
                     t['slug'],
                     t['name'],
@@ -488,7 +614,7 @@ def getReferenceTable(pathway, subtype):
                 <td>{}</td> \
                 <td><span class=\"expand\">{}</span></td> \
                 <td><span class=\"expand\">{}</span></td> \
-                <td>{}</td> \
+                <td style=\"border-left: 1px solid black; text-align:left\">{}</td> \
                 <td data-search=\"{}\">{}</td> \
                 <td data-search=\"{}\">{}</td> \
                 <td data-search=\"{}\">{}</td> \
@@ -505,10 +631,10 @@ def getReferenceTable(pathway, subtype):
                     t['ligand_count'],
                     t['balanced_span'],
                     t['balanced_refs'],
-                    t['biased_span'],
-                    t['biased_count'],
                     t['pathway_span'],
                     t['pathway_count'],
+                    t['biased_span'],
+                    t['biased_count'],
                 )
 
         data_table += "</tbody></table>"

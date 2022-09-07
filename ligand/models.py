@@ -340,20 +340,34 @@ class LigandRole(models.Model):
     class Meta():
         db_table = 'ligand_role'
 
+# class AssayExperiment(models.Model):
+#     ligand = models.ForeignKey('Ligand', on_delete=models.CASCADE)
+#     protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE)
+#     assay_type = models.CharField(max_length=10)
+#     assay_description = models.TextField(max_length=1000)
+#
+#     pchembl_value = models.CharField(max_length=10, null=True)
+#
+#     standard_value = models.CharField(max_length=15, null=True)
+#     standard_relation = models.CharField(max_length=10)
+#     standard_type = models.CharField(max_length=20)
+#     standard_units = models.CharField(max_length=20)
+#
+#     document_chembl_id = models.CharField(max_length=50, null=True)
+
 class AssayExperiment(models.Model):
     ligand = models.ForeignKey('Ligand', on_delete=models.CASCADE)
     protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE)
     assay_type = models.CharField(max_length=10)
-    assay_description = models.TextField(max_length=1000)
-
-    pchembl_value = models.CharField(max_length=10, null=True)
-
-    standard_value = models.CharField(max_length=15, null=True)
+    assay_description = models.TextField(max_length=1000, null=True)
+    standard_activity_value = models.CharField(max_length=20, null=True)
+    p_activity_value = models.CharField(max_length=100, null=True) #Only 1 value, median/max fot GTP (p activity)
+    p_activity_ranges = models.CharField(max_length=40, null=True) #If we have ranges (GtP)
     standard_relation = models.CharField(max_length=10)
-    standard_type = models.CharField(max_length=20)
-    standard_units = models.CharField(max_length=20)
-
-    document_chembl_id = models.CharField(max_length=50, null=True)
+    value_type = models.CharField(max_length=50, null=True)
+    source = models.CharField(max_length=50, null=True)
+    publication = models.ManyToManyField(Publication)
+    document_chembl_id = models.CharField(max_length=100, null=True)
 
 
 class LigandVendors(models.Model):
@@ -381,7 +395,6 @@ class Endogenous_GTP(models.Model):
     pic50 = models.CharField(max_length=200, null=True)
     pKd = models.CharField(max_length=200, null=True)
     publication = models.ManyToManyField(Publication)
-
 
 # Biased Signalling Data
 class BiasedData(models.Model):
@@ -430,12 +443,12 @@ class BalancedLigands(models.Model):
 # Pathways part - start
 class BiasedPathways(models.Model):
     submission_author = models.CharField(max_length=50)
-    ligand = models.ForeignKey(Ligand, on_delete=models.CASCADE)
+    ligand = models.ForeignKey(Ligand, on_delete=models.CASCADE, null=True)
     publication = models.ForeignKey(Publication, on_delete=models.CASCADE)
     receptor = models.ForeignKey('protein.Protein', on_delete=models.CASCADE)
     chembl = models.CharField(max_length=40, null=True)
     relevance = models.CharField(max_length=50, null=True)
-    signalling_protein = models.CharField(max_length=20, null=True)
+    signalling_protein = models.CharField(max_length=50, null=True)
 
 
 class BiasedPathwaysAssay(models.Model):
@@ -444,8 +457,8 @@ class BiasedPathwaysAssay(models.Model):
         on_delete=models.CASCADE, null=True
     )
     pathway_outcome_high = models.CharField(max_length=200)
-    pathway_outcome_summary = models.CharField(max_length=200, null=True)
-    pathway_outcome_detail = models.CharField(max_length=200, null=True)
+    pathway_outcome_summary = models.CharField(max_length=300, null=True)
+    pathway_outcome_detail = models.CharField(max_length=300, null=True)
     experiment_pathway_distinction = models.CharField(
         max_length=200, null=True)
     experiment_system = models.CharField(max_length=40, null=True)

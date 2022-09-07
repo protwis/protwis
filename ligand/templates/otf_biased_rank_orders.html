@@ -492,6 +492,8 @@
       old = d3.select(this)[0][0].innerHTML;
       old = old.replaceAll("openTS", '<tspan x="0" dy="1.2em">');
       old = old.replaceAll("closeTS", '</tspan>');
+      old = old.replaceAll("openTSI", '<tspan x="0" dy="1.2em" font-style="italic">');
+      old = old.replaceAll("closeTSI", '</tspan>');
       node = d3.select(this)[0][0];
       node.innerHTML = old;
     });
@@ -518,6 +520,8 @@
         change = getKeyByValue(labels, old);
         change = change.replaceAll("openTS", '<tspan x="0" dy="1.2em">');
         change = change.replaceAll("closeTS", '</tspan>');
+        change = change.replaceAll("openTSI", '<tspan x="0" dy="1.2em" font-style="italic">');
+        change = change.replaceAll("closeTSI", '</tspan>');
         old = old.replace(old, change);
         node = d3.select(this)[0][0];
         node.innerHTML = old;
@@ -537,6 +541,9 @@
         old = old.replaceAll('<tspan x="0" dy="1.2em">', "openTS");
         old = old.replaceAll('<tspan x="-25" dy="1.2em">', "openTS");
         old = old.replaceAll('</tspan>', "closeTS");
+        old = old.replaceAll('<tspan x="0" dy="1.2em" font-style="italic">', "openTSI");
+        old = old.replaceAll('<tspan x="-25" dy="1.2em" font-style="italic">', "openTSI");
+        old = old.replaceAll('</tspan>', "closeTSI");
         old = labels[old];
         node = d3.select(this)[0][0];
         node.innerHTML = old;

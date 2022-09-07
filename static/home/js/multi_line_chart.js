@@ -155,7 +155,7 @@ function DrawMultiLineChart(Data, BaseDiv, Keys, ID, linkTitle, reference, linkP
     //Drawing X Axis
     svg.append("g")
             .attr("class", "x axis")
-            .style("font", "10px sans-serif")
+            .style("font", "12px sans-serif")
             .attr("transform", "translate(0," + height + ")")
             .call(xAxis);
 
@@ -182,7 +182,7 @@ function DrawMultiLineChart(Data, BaseDiv, Keys, ID, linkTitle, reference, linkP
             .attr("y", -35)
             .attr("x", -50)
             .attr("dy", ".10em")
-            .style("font", "10px sans-serif")
+            .style("font", "12px sans-serif")
             .style("text-anchor", "end")
             .text(ylabel + " relative to " + reference);
 
@@ -307,7 +307,7 @@ function DrawMultiLineChart(Data, BaseDiv, Keys, ID, linkTitle, reference, linkP
             .text("Ligands tested for bias by")
             .attr("text-anchor", "left")
             .attr("font-weight", "bold")
-            .style("font", "10px sans-serif")
+            .style("font", "12px sans-serif")
             .style("alignment-baseline", "middle");
 
     svg.append("g")
@@ -319,7 +319,7 @@ function DrawMultiLineChart(Data, BaseDiv, Keys, ID, linkTitle, reference, linkP
             .text("decreasing " + ylabel)
             .attr("text-anchor", "left")
             .attr("font-weight", "bold")
-            .style("font", "10px sans-serif")
+            .style("font", "12px sans-serif")
             .style("alignment-baseline", "middle");
 
     svg.append("g")
@@ -331,7 +331,7 @@ function DrawMultiLineChart(Data, BaseDiv, Keys, ID, linkTitle, reference, linkP
             .text("Endogenous ligand: " + reference + " (0.0)")
             .attr("text-anchor", "left")
             .attr("font-weight", "bold")
-            .style("font", "10px sans-serif")
+            .style("font", "12px sans-serif")
             .style("alignment-baseline", "middle");
 
 
@@ -343,7 +343,7 @@ function DrawMultiLineChart(Data, BaseDiv, Keys, ID, linkTitle, reference, linkP
             .attr("y", 38)
             .text("Qualitative data point")
             .attr("text-anchor", "left")
-            .style("font", "10px sans-serif")
+            .style("font", "12px sans-serif")
             .style("alignment-baseline", "middle");
 
     svg.append("g")
@@ -375,7 +375,7 @@ var legend = svg.selectAll("mylabels")
                     }
             })
             .attr("id", function(d) { return d[0]})
-            .style("font", "10px sans-serif")
+            .style("font", "12px sans-serif")
             .attr("text-anchor", "left")
             .style("alignment-baseline", "middle")
             .on("click", function (d) {

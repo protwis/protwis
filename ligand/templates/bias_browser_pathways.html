@@ -245,6 +245,7 @@
                     select_type: 'select2',
                     filter_default_label: "Select",
                     filter_reset_button_text: false,
+                    width: "50px",
                 },
                 {
                     column_number: 11,
@@ -252,6 +253,7 @@
                     select_type: 'select2',
                     filter_default_label: "Select",
                     filter_reset_button_text: false,
+                    width: "50px",
                 },
                 //  Receotor Transduction
                 {
@@ -484,18 +486,6 @@
 
 <div style='padding-top: 0px; font-size: 10px; white-space: nowrap; width:100%; overflow-y:hidden; display:inline-block; width:100%;'>
 
-        <div class="toolbar_data_css" id="toolbar_data">
-<table class="display compact text-nowrap toolbar_data_css">
-            <thead>
-        <tr>
-           <h4>Showing unique:</h4>
-        </tr>
-            </thead>
-
-        <tr><td>Ligands</td><td id="ligand_counter"></td></tr>
-        <tr><td>Receptors</td><td id="receptor_counter"></td></tr>
-        </table>
-        </div>
     <div id='structures_scrollable_div'>
 
         <div id="testTable" style="padding-top: 10px; font-size: 11px; white-space: nowrap;">
@@ -505,11 +495,11 @@
 
                 <thead id="headers">
                     <tr>
-                        <th colspan="1">Details</th>
+                        <th></th>
                         <th style="border-left: 1px solid black;" id="col_Receptor" colspan="5" style="text-align:left">Receptor</th>
                         <th style="border-left: 1px solid black;" id="col_Ligand" colspan="1" style="text-align:left">Ligand</th>
                         <th style="border-left: 1px solid black;" id="col_Pathway" colspan="1">Pathway</th>
-                        <th style="border-left: 1px solid black;" colspan="1" style="text-align:left">Relevance</th>
+                        <th style="border-left: 1px solid black;" colspan="1" style="text-align:left">Therapeutic ares</th>
                         <th style="border-left: 1px solid black;" id="col_Pathway" colspan="3">Pathway effect outcomes</th>
                         <th style="border-left: 1px solid black;" id="col_Operational" colspan="3">Experiment</th>
                         <th style="border-left: 1px solid black;" id="authors" style="overflow: hidden;
@@ -519,7 +509,7 @@
                     </tr>
                     <tr>
                         <!-- Receptor -->
-                        <th>Details</th>
+                        <th></th>
                         <th>Class<br></th>
                         <th title="Receptor Family">Rec Fam</th>
                         <th>UniProt</th>
@@ -528,23 +518,22 @@
                         <!-- Ligand -->
                         <th class='pathways' style="border-left: 1px solid black;">Name</th>
                         <!-- Signalling protein -->
-                        <th class='pathways' style="border-left: 1px solid black;">Investigated signalling <br>protein</th>
+                        <th class='pathways' style="border-left: 1px solid black;">Effector</th>
                         <!-- Relevance-->
-                        <th style="border-left: 1px solid black;">Therapeutic area <br>
-                        (from Open Targets)</th>
+                        <th style="border-left: 1px solid black;">(Open Targets)</th>
                         <!-- Pathways -->
                         <th class='pathways' style="border-left: 1px solid black;">High level term</th>
                         <th class='pathways'>Summary</th>
-                        <th class='pathways'>Detailed description</th>
+                        <th class='pathways'>Details</th>
                         <!-- Experiment -->
                         <th class='opmodel' style="border-left: 1px solid black;">Pathway distinction</th>
                         <th class='opmodel'>System</th>
-                        <th class='opmodel'>Assesment method</th>
+                        <th class='opmodel'>Method</th>
                         <!-- Authors -->
                         <th style="overflow: hidden;
                           white-space: nowrap;
                           text-overflow: ellipsis;
-                          max-width: 250px; border-left: 1px solid black;">Authors</th>
+                          border-left: 1px solid black;">Authors</th>
                         <th style="border-right: 1px solid black;">DOI</th>
                     </tr>
                 </thead>
@@ -555,20 +544,24 @@
                         <td>
                             <span style='display: none'> {{e.1.ligand.id}}</span>
                             <a href="#">
-                                <span class="glyphicon glyphicon-info-sign" onclick="openPopup('pathwaydata/{{e.1.experiment_id}}/detail', 'Detail View', window, 1500, 1000)"></span> Details
+                                <span class="glyphicon glyphicon-info-sign" onclick="openPopup('pathwaydata/{{e.1.experiment_id}}/detail', 'Detail View', window, 1500, 1000)"></span>
                             </a>
                         </td>
-                        <td>{{e.1.receptor.family.parent.parent.parent.name}}</td>
+                        <td>{{e.1.class}}</td>
                         <td>{{e.1.receptor.family.parent}}</td>
-                        <td>{{e.1.receptor.accession}}</td>
                         <td>{{e.1.receptor.entry_short}}</td>
+                        <td>{{e.1.receptor.accession}}</td>
                         <td>{{e.1.receptor.species.common_name}}</td>
 
                         <!-- ligand -->
                         <td title='{{e.1.ligand}}'>
-                            <a href ='/ligand/{{e.1.ligand.id}}/info' target='_blank'>
-                              {{e.1.ligand}}
-                            </a>
+                            {% if e.1.ligand %}
+                              <a href ='/ligand/{{e.1.ligand.id}}/info' target='_blank'>
+                                {{e.1.ligand}}
+                              </a>
+                            {% else %}
+                              -
+                            {% endif %}
                         </td>
                         <!-- signalling_protein -->
                         <td style="border-left: 1px solid black;">{{e.1.signalling_protein}}</td>
@@ -651,7 +644,6 @@ document.getElementById("loadingSpinner").style.display = "none";
     table.dataTable thead th,
     table.dataTable tbody td {
         max-width: 110px;
-        min-width: 70px;
         border-bottom: 1px solid #111;
         /* padding-top: 4px;
       padding-bottom: 4px; */
@@ -674,11 +666,6 @@ document.getElementById("loadingSpinner").style.display = "none";
         /*border: 1px solid #333;*/
         -webkit-box-shadow: 5px 0 2px -2px #888;
         box-shadow: 5px 0 2px -2px #888;
-    }
-    .test_df{
-        width: fit-content;
-        max-width: 250px !important;
-        min-width: fit-content !important;
     }
     .container {
         width: 90%;

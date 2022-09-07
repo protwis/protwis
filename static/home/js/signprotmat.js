@@ -354,6 +354,19 @@ var signprotmat = {
     },
 
     sigScale(data, meta) {
+      // calculating the number of columns in the scale
+      var pdbs = [];
+      var range;
+      for (var i=0; i < data.length; i++){
+        if (!pdbs.includes(data[i]["pdb_id"])){
+          pdbs.push(data[i]["pdb_id"]);
+        }
+      }
+      if (pdbs.length <= 300){
+        range = 120;
+      } else {
+        range = 12*pdbs.length;
+      }
       var sigScale = d3
         .scaleBand()
         .domain(
@@ -372,7 +385,7 @@ var signprotmat = {
               return d3.descending(a_obj.gprot, b_obj.gprot);
             })
         )
-        .range([120, 0])
+        .range([range, 0])
         .padding(1);
       return sigScale;
     },

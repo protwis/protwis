@@ -26,10 +26,13 @@ urlpatterns = [
     path('ajax/interface/<slug>/', views.ajaxInterface, name='ajaxInterface'),
     path('structure/<pdbname>/', views.StructureInfo, name='StructureInfo'),
     path('family/<slug>/', views.familyDetail, name='familyDetail'),
-    path('matrix/', views.InteractionMatrix, name='InteractionMatrix'),
+    #Have two set of URLs with two prefixes: GP, Arr
+    path('matrix/', views.GProteinInteractionMatrix, name='InteractionMatrix'),
+    path('arr_matrix/', views.ArrestinInteractionMatrix, name='InteractionMatrix'),
     path('matrix/seqsig/', views.IMSequenceSignature, name='SequenceSignature'),
     path('matrix/sigmat/', views.IMSignatureMatch, name='SignatureMatch'),
     path('matrix/render_sigmat/', views.render_IMSigMat, name='renderSignatureMatch'),
     path('pdbtabledata', PdbTableData, name='pdbtreedata'),
+    path('matrix/AJAX_Interactions/', views.AJAX_Interactions, name='ajaxInteractions'),
     path('<slug>/', views.signprotdetail, name='signprotdetail'),
 ]

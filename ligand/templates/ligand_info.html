@@ -1,81 +1,13 @@
 {% extends "home/base.html" %}
 {% load static %}
 
-
 {% block content %}
 {% autoescape off %}
 
 <div class="container body-content">
-	<h2 class="sub-header">Ligand Data</h2>
 	<div class="row align-items-start justify-content-center">
 		<div class="col-md-4 ml-auto">
-			<h3>Ligand</h3>
-			<table class="table table-striped table-bordered" style="margin-right:10px">
-				<tr style=display:none>
-					<td>id </td>
-					<td id='ligand_id'>{{ligand.ligand_id}}</td>
-				</tr>
-				<tr>
-				<tr>
-					<td>Name </td>
-					<td>{{ligand.ligand_name}}</td>
-				</tr>
-				<tr>
-					<td>SMILES</td>
-					<td class="name" style="max-width: 350px">{{ligand.ligand_smiles}}</td>
-				</tr>
-				<tr>
-					<td>InChIKey</td>
-					<td>
-						{{ligand.ligand_inchikey}}</td>
-				</tr>
-				<tr>
-					<td>Type</td>
-					<td>
-						{{ligand.type}}</td>
-				</tr>
-				{% if ligand.sequence%}
-				<tr>
-					<td>Sequence</td>
-					<td class="name">
-						{{ligand.sequence}}</td>
-				</tr>
-				{% endif %}
-				<tr>
-					<td>External Links</td>
-					<td>
-						<ul style="padding: 0; list-style-type:none">
-							{% for ex in ligand.wl|dictsort:'name' %}
-							<li><a href="{{ex.link}}" target="_blank">{{ex.name}}</a></li>
-							{%endfor%}
-						</ul>
-					</td>
-				</tr>
-                {% if structure %}
-                <tr>
-                    <td>Structure pdb</td>
-                    <td>
-            		{% for data in structure %}
-    					<a href="https://gpcrdb.org/interaction/{{data.structure_pdb}}" target="_blank">{{data.structure_pdb}}</a>
-    				{%endfor%}
-                    </td>
-            	</tr>
-                {%endif%}
-                {% if mutations %}
-                <tr>
-                    <td>Ligand site mutations</td>
-                    <td>
-            		{% for data in mutations %}
-    					<a href="#" onclick="populate_selection('{{data.id}}')">{{data.name}}</a>
-    				{%endfor%}
-                    </td>
-            	</tr>
-                {%endif%}
-			</table>
-		</div>
-
-		<div class="col-md-4 ml-auto">
-			<h3>Structure</h3>
+			<h3>{{ligand.ligand_name|title}}</h3>
 			{% if ligand.picture is not None %}
 				{{ligand.picture}}
 			{%else%}
@@ -84,8 +16,12 @@
 		</div>
 
 		<div class="col-md-4 ml-auto">
-			<h3>Properties</h3>
-			<table class="table table-striped table-bordered">
+			<h3>Chemical Properties</h3>
+			<table class="table table-striped table-bordered" style="margin-right:10px">
+				<tr>
+					<td>SMILES</td>
+					<td class="name" style="max-width: 350px">{{ligand.ligand_smiles}}</td>
+				</tr>
 				<tr>
 					<td>Hydrogen bond acceptors</td>
 					<td>{{ligand.hacc}}</td>
@@ -103,6 +39,67 @@
 					<td>{{ligand.mw|floatformat:1}}</td>
 				</tr>
 			</table>
+			<br \>
+			<h3>Drug Properties</h3>
+			<table class="table table-striped table-bordered" style="margin-right:10px">
+				<tr>
+					<td>Type</td>
+					<td>
+						{{ligand.type}}</td>
+				</tr>
+				<tr>
+					<td>Endogenous</td>
+					<td>
+							{{ligand.labels.endogenous}}
+					</td>
+				<tr>
+				<tr>
+					<td>Approved</td>
+					<td>
+							{{ligand.labels.approved}}
+					</td>
+				<tr>
+					<td>InChIKey</td>
+					<td>
+						{{ligand.ligand_inchikey}}</td>
+				</tr>
+			</table>
+		</div>
+
+		<div class="col-md-4 ml-auto">
+			<h3>Database Connections</h3>
+			<table class="table table-striped table-bordered">
+				<tr>
+					<td>External Links</td>
+					<td>
+						<ul style="padding: 0; list-style-type:none">
+							{% for ex in ligand.wl %}
+							<li><a href="{{ex.link}}" target="_blank">{{ex.name}}</a></li>
+							{%endfor%}
+						</ul>
+					</td>
+				</tr>
+								{% if structure %}
+								<tr>
+										<td>Structure pdb</td>
+										<td>
+								{% for data in structure %}
+							<a href="https://gpcrdb.org/interaction/{{data.structure_pdb}}" target="_blank">{{data.structure_pdb}}</a>
+						{%endfor%}
+										</td>
+							</tr>
+								{%endif%}
+								{% if mutations %}
+								<tr>
+										<td>Ligand site mutations</td>
+										<td>
+								{% for data in mutations %}
+							<a href="#" onclick="populate_selection('{{data.id}}')">{{data.name}}</a>
+						{%endfor%}
+										</td>
+							</tr>
+								{%endif%}
+			</table>
 			<hr>
 		</div>
 	</div>
@@ -113,10 +110,10 @@
 			<tr rowspan="2">
 				<th style="text-align:center" colspan="5">
 					Receptor</th>
-				<th style=" text-align:center" colspan="3">
-					Affinity (nM)</th>
-				<th style=" text-align:center" colspan="3">
-					Potency (nM)</th>
+				<th style=" text-align:center" colspan="4">
+					Experimental Data</th>
+				<th style=" text-align:center" colspan="1">
+					Source</th>
 			</tr>
 			<tr>
 				<th style="text-align:left">GTP</th>
@@ -125,13 +122,12 @@
 				<th style="text-align:left">Family</th>
 				<th style="border-right: 1px solid black; text-align:left">Class</th>
 
+				<th>Type</th>
 				<th>Min</th>
 				<th>Avg</th>
 				<th style="border-right: 1px solid black;">Max</th>
 
-				<th>Min</th>
-				<th>Avg</th>
-				<th style="border-right: 1px solid black; ">Max</th>
+				<th style="border-right: 1px solid black; ">Database</th>
 			</tr>
 		</thead>
 		<tbody>
@@ -143,13 +139,13 @@
 				<td>{{data.receptor_family}}</td>
 				<td>{{data.receptor_class}}</td>
 
-				<td>{{data.affinity_min}}</td>
-				<td>{{data.affinity_avg}}</td>
-				<td>{{data.affinity_max}}</td>
+				<td>{{data.type}}</td>
 
-				<td>{{data.potency_min}}</td>
-				<td>{{data.potency_avg}}</td>
-				<td>{{data.potency_max}}</td>
+				<td>{{data.min}}</td>
+				<td>{{data.avg}}</td>
+				<td>{{data.max}}</td>
+
+				<td>{{data.source}}</td>
 			</tr>
 			{%endfor%}
 		</tbody>
@@ -286,7 +282,8 @@
 			[{
 					column_number: 0,
 					filter_type: "multi_select",
-					select_type: 'select2',
+					select_type: "select2",
+					// column_data_type: "html",
 					filter_default_label: "Select",
 					filter_reset_button_text: false,
 					select_type_options: {
@@ -334,9 +331,13 @@
 				},
 				{
 					column_number: 5,
-					filter_type: "range_number",
-					filter_default_label: ["Min", "Max"],
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Select",
 					filter_reset_button_text: false,
+					select_type_options: {
+						width: '75px',
+					}
 				},
 				{
 					column_number: 6,
@@ -358,23 +359,14 @@
 				},
 				{
 					column_number: 9,
-					filter_type: "range_number",
-					filter_default_label: ["Min", "Max"],
+					filter_type: "multi_select",
+					select_type: 'select2',
+					filter_default_label: "Select",
 					filter_reset_button_text: false,
-				},
-				{
-					column_number: 10,
-					filter_type: "range_number",
-					filter_default_label: ["Min", "Max"],
-					filter_reset_button_text: false,
-				},
-				{
-					column_number: 11,
-					filter_type: "range_number",
-					filter_default_label: ["Min", "Max"],
-					filter_reset_button_text: false,
+					select_type_options: {
+						width: '75px',
+					}
 				}
-
 			], {
 				cumulative_filtering: true
 			}
@@ -409,6 +401,7 @@
 <link href="{% static 'home/css/sequenceviewer.css' %}" rel="stylesheet">
 <link href="{% static 'home/css/modal.css' %}" rel="stylesheet">
 <link rel="stylesheet" type="text/css" href="{% static 'home/css/jquery.powertip.css' %}" />
+<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
 <style type="text/css">
 	.select2-result-label {
 		font-size: x-small;

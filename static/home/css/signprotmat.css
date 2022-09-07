@@ -226,6 +226,15 @@ text.expand {
   background-color: #bebebe;
 }
 
+.coupling.nodata {
+  background-color: white;
+  color: black;
+}
+
+.coupling.value {
+  color: black;
+}
+
 .coupling.no {
   color: black;
   background-color: #f9f9f9;

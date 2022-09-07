@@ -13,7 +13,7 @@ except:
 
 from alignment.functions import get_proteins_from_selection
 from common import definitions
-from common.selection import Selection
+from common.selection import Selection, SelectionItem
 from common.views import AbsTargetSelection, AbsTargetSelectionTable
 from common.views import AbsSegmentSelection
 from common.views import AbsMiscSelection
@@ -345,10 +345,17 @@ def render_family_alignment(request, slug):
         segments_ids.append(s.slug)
     segments_list = ','.join(str(x) for x in sorted(segments_ids))
 
+    # Store proteins and segments as selection to enable Fasta/Excel/CSV downloads
+    selection = Selection()
+    for prot in proteins:
+        selection.add('targets', 'protein', SelectionItem('protein', prot))
+    for segment in segments:
+        selection.add('segments', 'protein_segment', SelectionItem('protein_segment', segment))
+    request.session['selection'] = selection.exporter()
+
     s = str(protein_list+"_"+segments_list)
     key = "ALIGNMENT_"+hashlib.md5(s.encode('utf-8')).hexdigest()
     return_html = cache_alignment.get(key)
-
     if return_html==None:
         # load data into the alignment
         a.load_proteins(proteins)

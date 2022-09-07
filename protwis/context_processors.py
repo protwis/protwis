@@ -4,7 +4,7 @@ from django.core.cache import cache
 from common.models import Citation
 
 def current_site(request):
-    domain_switches = {"gpcrdb.org" : "gpcr", "gproteindb.org" : "gprotein", "arrestindb.org": "arrestin"}
+    domain_switches = {"gpcrdb.org" : "gpcr", "gproteindb.org" : "gprotein", "arrestindb.org": "arrestin", "biasedsignalingatlas.org": "biasedsignalingatlas"}
     domain = request.get_host().lower()
 
     if not domain in domain_switches:
@@ -18,7 +18,7 @@ def current_site(request):
 
 def site_title(request):
     domain = current_site(request)["current_site"]
-    domain_titles = {"gpcr": "GPCRdb", "gprotein": "GproteinDb", "arrestin": "ArrestinDb"}
+    domain_titles = {"gpcr": "GPCRdb", "gprotein": "GproteinDb", "arrestin": "ArrestinDb", "biasedsignalingatlas": "Biased Signaling Atlas"}
 
     if not domain in domain_titles:
         domain = settings.DEFAULT_SITE
