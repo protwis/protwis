@@ -869,7 +869,7 @@ class BiasedSignallingOnTheFlyCalculation(TemplateView):
                 jitterAuthors = 'openTS ' + shortAuthors + ' closeTS openTS ' + journal_name + ' closeTS openTS (' + str(result['pub_year']) + ') closeTS'
                 labels_dict[jitterAuthors] = shortAuthors
 
-            list_of_ligands.append(tuple((hashed_lig_name, lig_name)))
+            list_of_ligands.append(tuple((lig_name, hashed_lig_name)))
             list_of_publications.append(authors)
             #start parsing the data to create the big dictionary
             if single_delta == None:               #∆Emax / ∆Tau flex
@@ -1076,7 +1076,7 @@ class BiasedSignallingOnTheFlyCalculation(TemplateView):
         context['colors'] = json.dumps(Colors)
         context['scatter'] = json.dumps(jitterPlot)
         context['spider'] = json.dumps(SpiderOptions)
-        context['all_ligands'] = list(set(list_of_ligands))
+        context['all_ligands'] = sorted(list(set(list_of_ligands)))
         context['all_publications'] = list(set(list_of_publications))
         context['query'] = rec_name[0][0]
         context['IUPHAR'] = rec_name[0][1]
