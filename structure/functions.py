@@ -1,4 +1,4 @@
-﻿from Bio.Blast import NCBIXML, NCBIWWW
+from Bio.Blast import NCBIXML, NCBIWWW
 from Bio.PDB import PDBParser, PDBIO
 from Bio.PDB.PDBIO import Select
 import Bio.PDB.Polypeptide as polypeptide
@@ -730,7 +730,7 @@ class HSExposureCB(AbstractPropertyMap):
                             for other_atom in other_res:
                                 other_vector = other_atom.get_vector()
                                 d = other_vector-ref_vector
-                                if d.norm()<2:
+                                if d.norm()<1.5:
                                     if len(str(pp1[i]['CA'].get_bfactor()).split('.')[1])==1:
                                         clash_res1 = float(str(pp1[i]['CA'].get_bfactor())+'0')
                                     else:
@@ -752,7 +752,7 @@ class HSExposureCB(AbstractPropertyMap):
         ### GP checking HETRESIS to remove if not interacting with AAs
         self.hetresis_to_remove = []
         for i in het_resis:
-            if i not in het_resis and i not in het_resis_close or i in het_resis_clash:
+            if i not in self.hetresis_to_remove and i not in het_resis_close or i in het_resis_clash:
                 self.hetresis_to_remove.append(i)
         # self.hetresis_to_remove = [i for i in het_resis if i not in het_resis_close or i in het_resis_clash]
         if check_chain_breaks:
@@ -1512,3 +1512,31 @@ def build_signprot_struct(protein, pdb, data):
         ss.stabilizing_agents.add(stabagent)
     ss.save()
     return ss
+
+def flip_residue(atoms, atom_type):
+    for a in atoms:
+        if a.get_id()==atom_type+'1':
+            one_index = atoms.index(a)
+            one_coords = a.get_coord()
+        elif a.get_id()==atom_type+'2':
+            atoms[one_index].coord = a.get_coord()
+            a.coord = one_coords
+    return atoms
+
+def run_residue_flip(self, atoms, atom_types=None):
+    if not atom_types:
+        ['CD','CE','CG','OE','OD','NH']
+    for at in atom_types:
+        atoms = flip_residue(atoms, at)
+    return atoms
+
+def atoms_to_dict(atom_list):
+    prev_res = 0
+    atom_resis = OrderedDict()
+    for a in atom_list:
+        if a.get_parent().get_id()[1]!=prev_res:
+            atom_resis[a.get_parent().get_id()[1]] = [a]
+        else:
+            atom_resis[a.get_parent().get_id()[1]].append(a)
+        prev_res = a.get_parent().get_id()[1]
+    return atom_resis

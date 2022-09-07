@@ -261,7 +261,6 @@ class GPCRDBParsingPDB(object):
                                 atom.set_bfactor(gn)
                             atom_list.append(atom)
                         output[r.protein_segment.slug][ggn(r.display_generic_number.label).replace('x','.')] = atom_list
-            pprint.pprint(output)
             return output
         else:
             assign_gn = as_gn.GenericNumbering(pdb_file=io, pdb_code=structure.pdb_code.index, sequence_parser=True)
@@ -381,7 +380,7 @@ class ImportHomologyModel():
     ''' Imports receptor homology model for complex model building pipeline. The idea is to save time by not rerunning the receptor modeling
         when separate complex models are built with different subunits for the same receptor.
     '''
-    def __init__(self, receptor, sign_prot, zip_path='./structure/complex_models_zip/'):
+    def __init__(self, receptor, sign_prot=None, zip_path='./structure/complex_models_zip/'):
         self.receptor = receptor
         self.sign_prot = sign_prot
         self.zip_path = zip_path
@@ -454,7 +453,8 @@ class ImportHomologyModel():
                 reference_dict[this_res.protein_segment.slug][str(this_res.sequence_number)] = this_res.amino_acid
             atoms_list = []
             for atom in res:
-                atoms_list.append(atom)
+                if atom.element!='H':
+                    atoms_list.append(atom)
             try:
                 main_pdb_array[this_res.protein_segment.slug][this_res.generic_number.label.replace('x','.')] = atoms_list
             except:
@@ -534,6 +534,21 @@ class ImportHomologyModel():
                 c+=1
         print('FIND disulfides: {}'.format(disulfide_pairs))
         return disulfide_pairs
+
+
+class DummyStructure():
+    def __init__(self, preferred_chain):
+        self.preferred_chain = preferred_chain
+        self.pdb_code = DummyPDBCode()
+        self.protein_conformation = ProteinConformation(protein=Protein(entry_name='AF', parent=Protein(entry_name='AF')))
+
+    def __str__(self):
+        return self.pdb_code.index
+
+
+class DummyPDBCode():
+    def __init__(self):
+        self.index = "AF"
 
 
 class Remodeling():
