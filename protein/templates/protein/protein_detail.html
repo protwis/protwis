@@ -123,7 +123,7 @@
 
 <div class="row">
     <div class="col-md-2 text-right text-info">
-        <h4>HOMOLOGY MODELS</h4>
+        <h4>STRUCTURE MODELS</h4>
     </div>
 
     <div class="col-md-10">
@@ -131,9 +131,9 @@
             <p style="display: inline;"><a href="/structure/homology_models/{{ hommod.protein.entry_name }}_{{ hommod.state.slug }}">{{ hommod.protein.entry_name }} {{ hommod.state.slug }}</a>{% if forloop.last %} {% else %}, {% endif %}</p>
         {% empty %}
           {% if structures|length > 0 %}
-            No homology models have been generated as experimental structures are available (see below).
+            No structure models have been generated as experimental structures are available (see below).
           {% else %}
-            No homology models available. Check the Archive on <a href="/structure/homology_models">Structure models</a> for earlier releases.
+            No structure models available. Check the Archive on <a href="/structure/homology_models">Structure models</a> for earlier releases.
           {% endif %}
         {% endfor %}
     </div>
