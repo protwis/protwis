@@ -39,7 +39,8 @@ class LigandTargetSelection(AbsReferenceSelectionTable):
         ligand_js = True
 
         title = "SELECT A RECEPTOR with ligand assays"
-        description = 'Select a receptor in the table (below).' \
+        description = 'Ligands come from the <a href="https://www.ebi.ac.uk/chembl/" target="_blank">ChEMBL</a>, <a href="https://www.guidetopharmacology.org/" target="_blank">Guide to Pharmacology</a> and <a href="https://pdsp.unc.edu/databases/pdsp.php" target="_blank">PDSP Ki</a> databases.' \
+            + '\nSelect a receptor in the table (below).' \
             + '\n\nOnce you have selected your receptor, click a green button.'
 
         selection_boxes = OrderedDict([
@@ -128,164 +129,179 @@ def LigandDetails(request, ligand_id):
 
     return render(request, 'ligand_details.html', context)
 
-def TargetDetailsCompact(request, **kwargs):
+def CachedTargetDetailsCompact(request, **kwargs):
+    return TargetDetails("compact", request, **kwargs)
+
+def CachedTargetDetailsExtended(request, **kwargs):
+    return TargetDetails("extended", request, **kwargs)
+
+
+def TargetDetails(mode, request, **kwargs):
     cache_key = False
     simple_selection = request.session.get('selection', False)
     selection = Selection()
     if simple_selection:
         selection.importer(simple_selection)
-    if selection.reference != []:
-        prot_id = [x.item for x in selection.reference]
-        cache_key = "lig_compact_protid_" + ",".join(prot_id)
-        ps = AssayExperiment.objects.filter(
-            protein__in=prot_id, ligand__ids__web_resource__slug='chembl_ligand')
+    if mode == 'extended':
+        if 'slug' in kwargs:
+            cache_key = "lig_ext_slug_" + kwargs['slug']
+            ps = AssayExperiment.objects.filter(protein__family__slug=kwargs['slug']).prefetch_related('protein','ligand', 'publication')
 
-    # if queryset is empty redirect to ligand browser
-    if not ps:
-        return redirect("ligand_selection")
+            # Set selection for purchasability page
+            prot_ids = list(AssayExperiment.objects.filter(protein__family__slug=kwargs['slug']).values_list("protein_id", flat = True).distinct())
+            proteins = Protein.objects.filter(pk__in=prot_ids)
+            for prot in proteins:
+                selection.add('targets', 'protein', SelectionItem('protein', prot))
+            simple_selection = selection.exporter()
+            request.session['selection'] = simple_selection
+        else:
+            if selection.reference != []:
+                prot_id = [x.item for x in selection.reference]
+                if len(prot_id) > 0:
+                    cache_key = "lig_ext_protid_" + ",".join(prot_id)
+                    ps = AssayExperiment.objects.filter(protein__in=prot_id).prefetch_related('protein','ligand', 'publication')
 
-    if cache_key != False and cache.has_key(cache_key):
-        ligand_data = cache.get(cache_key)
-    else:
-        ps = ps.prefetch_related(
-            'protein', 'ligand__ids__web_resource')
-        d = {}
-        for p in ps:
-            if p.ligand not in d:
-                d[p.ligand] = {}
-            if p.protein not in d[p.ligand]:
-                d[p.ligand][p.protein] = []
-            d[p.ligand][p.protein].append(p)
+        # if queryset is empty redirect to ligand browser
+        if not ps and 'slug' not in kwargs:
+            return redirect("ligand_selection")
 
+        if cache_key != False and cache.has_key(cache_key):
+            ps = cache.get(cache_key)
+        else:
+            ps = ps.values('value_type',
+                           'standard_relation',
+                           'standard_activity_value',
+                           'assay_description',
+                           'assay_type',
+                           'p_activity_value',
+                           'p_activity_ranges',
+                           'source',
+                           'ligand__id',
+                           'ligand__ids__index',
+                           'protein__species__common_name',
+                           'protein__entry_name',
+                           'protein__name',
+                           'ligand__mw',
+                           'ligand__logp',
+                           'ligand__rotatable_bonds',
+                           'ligand__smiles',
+                           'ligand__hdon',
+                           'ligand__hacc',
+                           'protein',
+                           'publication__web_link__index',
+                           'publication__web_link__web_resource__url'
+                           ).annotate(num_targets=Count('protein__id', distinct=True))
 
-        lig_ids = set([record.ligand_id for record in ps])
-        purchasable = list(LigandVendorLink.objects.filter(ligand__pk__in=lig_ids).exclude(vendor__name__in=['ZINC', 'ChEMBL',
-            'BindingDB', 'SureChEMBL', 'eMolecules', 'MolPort', 'PubChem']).values_list('ligand__pk', flat = True).distinct())
+            lig_ids = set([record['ligand__id'] for record in ps])
+            vendor_output = list(LigandVendorLink.objects.filter(ligand_id__in=lig_ids).values_list("ligand_id").annotate(Count('vendor_id', distinct=True)))
+            vendors_dict = {entry[0]:entry[1] for entry in vendor_output}
 
-        ligand_data = []
-        for lig, records in d.items():
+            for record in ps:
+                record['purchasability'] = vendors_dict[record['ligand__id']] if record['ligand__id'] in vendors_dict.keys() else 0
+                record['protein__entry_name'] = record['protein__entry_name'].split('_')[0].upper()
+                record['link'] = record['publication__web_link__web_resource__url'].replace('$index',record['publication__web_link__index']) if record['publication__web_link__web_resource__url'] != None else '#'
 
-            links = lig.ids.all()
-            chembl_id = [x for x in links if x.web_resource.slug ==
-                         'chembl_ligand'][0].index
+        context = {}
+        context['ligand_data'] = ps
+        cache.set(cache_key, ps, 60*60*24*7)
 
-            purchasability = 'No'
-            if lig.id in purchasable:
-                    purchasability = 'Yes'
+    elif mode == 'compact':
 
-            for record, vals in records.items():
-                per_target_data = vals
-                protein_details = record
-                """
-                A dictionary of dictionaries with a list of values.
-                Assay_type
-                |
-                ->  Standard_type [list of values]
-                """
-                tmp = defaultdict(list)
-                tmp_count = 0
-                for data_line in per_target_data:
-                    tmp["Bind" if data_line.assay_type == 'B' else "Funct"].append(
-                        data_line.p_activity_value)
-                    tmp_count += 1
-
-                # TEMPORARY workaround for handling string values
-                values = [float(item) for item in itertools.chain(
-                    *tmp.values()) if item != None and item != "None" and float(item)]
-
-                if len(values) > 0:
-                    ligand_data.append({
-                        'lig_id': lig.id,
-                        'ligand_id': chembl_id,
-                        'protein_name': protein_details.entry_name,
-                        'species': protein_details.species.common_name,
-                        'record_count': tmp_count,
-                        'assay_type': ', '.join(tmp.keys()),
-                        'purchasability': purchasability,
-                        # Flattened list of lists of dict keys:
-                        'low_value': min(values),
-                        'average_value': sum(values) / len(values),
-                        'high_value': max(values),
-                        # 'standard_units': ', '.join(list(set([x.standard_units for x in per_target_data]))),
-                        'smiles': lig.smiles,
-                        'mw': lig.mw,
-                        'rotatable_bonds': lig.rotatable_bonds,
-                        'hdon': lig.hdon,
-                        'hacc': lig.hacc,
-                        'logp': lig.logp,
-                    })
-    context = {}
-    context['ligand_data'] = ligand_data
-    cache.set(cache_key, ligand_data, 60*60*24*7)
-
-    return render(request, 'target_details_compact.html', context)
-
-def TargetDetailsExtended(request, **kwargs):
-    simple_selection = request.session.get('selection', False)
-    selection = Selection()
-    if simple_selection:
-        selection.importer(simple_selection)
-
-    cache_key = False
-    if 'slug' in kwargs:
-        cache_key = "lig_ext_slug_" + kwargs['slug']
-        ps = AssayExperiment.objects.filter(
-             protein__family__slug=kwargs['slug'], ligand__ids__web_resource__slug='chembl_ligand')
-
-        # Set selection for purchasability page
-        prot_ids = list(AssayExperiment.objects.filter(
-             protein__family__slug=kwargs['slug'], ligand__ids__web_resource__slug='chembl_ligand').values_list("protein_id", flat = True).distinct())
-        proteins = Protein.objects.filter(pk__in=prot_ids)
-        for prot in proteins:
-            selection.add('targets', 'protein', SelectionItem('protein', prot))
-        simple_selection = selection.exporter()
-        request.session['selection'] = simple_selection
-    else:
         if selection.reference != []:
             prot_id = [x.item for x in selection.reference]
-            if len(prot_id) > 0:
-                cache_key = "lig_ext_protid_" + ",".join(prot_id)
-                ps = AssayExperiment.objects.filter(
-                    protein__in=prot_id, ligand__ids__web_resource__slug='chembl_ligand')
+            cache_key = "lig_compact_protid_" + ",".join(prot_id)
+            ps = AssayExperiment.objects.filter(protein__in=prot_id).prefetch_related('protein', 'ligand', 'ligand__ligand_type')
+                                                                                      # 'ligand__ids__web_resource',
+                                                                                      # 'ligand')
+        # if queryset is empty redirect to ligand browser
+        if not ps:
+            return redirect("ligand_selection")
 
-    # if queryset is empty redirect to ligand browser
-    if not ps and 'slug' not in kwargs:
-        return redirect("ligand_selection")
+        if cache_key != False and cache.has_key(cache_key):
+            ligand_data = cache.get(cache_key)
+        else:
+            img_setup_smiles = "https://cactus.nci.nih.gov/chemical/structure/{}/image"
+            d = {}
 
-    if cache_key != False and cache.has_key(cache_key):
-        ps = cache.get(cache_key)
-    else:
-        ps = ps.values('value_type',
-                       'standard_relation',
-                       'standard_activity_value',
-                       'assay_description',
-                       'assay_type',
-                       # 'standard_units',
-                       'p_activity_value',
-                       'ligand__id',
-                       'ligand__ids__index',
-                       'protein__species__common_name',
-                       'protein__entry_name',
-                       'ligand__mw',
-                       'ligand__logp',
-                       'ligand__rotatable_bonds',
-                       'ligand__smiles',
-                       'ligand__hdon',
-                       'ligand__hacc', 'protein'
-                       ).annotate(num_targets=Count('protein__id', distinct=True))
+            for p in ps:
+                if p.ligand not in d:
+                    d[p.ligand] = []
+                d[p.ligand].append(p)
 
-        lig_ids = set([record['ligand__id'] for record in ps])
-        purchasable = list(LigandVendorLink.objects.filter(ligand__pk__in=lig_ids).exclude(vendor__name__in=['ZINC', 'ChEMBL',
-            'BindingDB', 'SureChEMBL', 'eMolecules', 'MolPort', 'PubChem']).values_list('ligand__pk', flat = True).distinct())
-        for record in ps:
-            record['purchasability'] = 'Yes' if record['ligand__id'] in purchasable else 'No'
+            lig_ids = set([record.ligand_id for record in ps])
+            vendor_output = list(LigandVendorLink.objects.filter(ligand_id__in=lig_ids).values_list("ligand_id").annotate(Count('vendor_id', distinct=True)))
+            vendors_dict = {entry[0]:entry[1] for entry in vendor_output}
 
-    context = {}
-    context['proteins'] = ps
-    cache.set(cache_key, ps, 60*60*24*7)
+            ligand_data = []
+            assay_conversion = {'A': 'ADMET', 'B': 'Binding', 'F': 'Functional', 'U': 'Unclassified'}
+            for lig, records in d.items():
+                # links = lig.ids.all()
+                # chembl_id = [x for x in links if x.web_resource.slug == 'chembl_ligand'][0].index
+                if lig.smiles is not None and (lig.mw is None or lig.mw < 800):
+                    picture = img_setup_smiles.format(urllib.parse.quote(lig.smiles))
+                else:
+                    # "No image available" SVG (source: https://commons.wikimedia.org/wiki/File:No_image_available.svg)
+                    picture = "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/No_image_available.svg/600px-No_image_available.svg.png?20190827162820"
 
+                purchasability = vendors_dict[lig.id] if lig.id in vendors_dict.keys() else 0
+
+                for record in records:
+                    data_parsed = {}
+                    assay = assay_conversion[record.assay_type]
+                    if record.source not in data_parsed.keys():
+                        data_parsed[record.source] = {}
+                    if assay not in data_parsed[record.source].keys():
+                        data_parsed[record.source][assay] = {}
+                    if record.value_type not in data_parsed[record.source][assay].keys():
+                        if record.source == 'Guide to Pharmacology':
+                            data_parsed[record.source][assay][record.value_type] = [x for x in record.p_activity_ranges.split('|')]
+                        else:
+                            data_parsed[record.source][assay][record.value_type] = [record.p_activity_value]
+                    else:
+                        if record.source == 'Guide to Pharmacology':
+                            data = [x for x in record.p_activity_ranges.split('|')]
+                            data_parsed[data_line.source][assay][record.value_type] += data
+                        else:
+                            data_parsed[data_line.source][assay][record.value_type].append(record.p_activity_value)
+
+                for source in data_parsed.keys():
+                    for assay_type in data_parsed[source].keys():
+                        for value_type in data_parsed[source][assay_type].keys():
+                            values = [float(x) for x in data_parsed[source][assay_type][value_type] if x != 'None']
+                            low_value, average_value, high_value = '-','-','-'
+                            if len(values) > 0:
+                                low_value = min(values)
+                                average_value = round(sum(values) / len(values),1)
+                                high_value = max(values)
+
+                            ligand_data.append({
+                                'lig_id': lig.id,
+                                'ligand_name': lig.name,
+                                'picture': picture,
+                                'protein_name': record.protein.entry_name.split('_')[0].upper(),
+                                'iuphar_name': record.protein.name,
+                                'species': record.protein.species.common_name,
+                                'record_count': len(records),
+                                'assay_type': assay_type,
+                                'purchasability': purchasability,
+                                'low_value': low_value,
+                                'average_value': average_value,
+                                'high_value': high_value,
+                                'value_type': value_type,
+                                'ligand_type': lig.ligand_type.name.replace('-',' ').capitalize(),
+                                'source': source,
+                                'smiles': lig.smiles,
+                                'mw': lig.mw,
+                                'rotatable_bonds': lig.rotatable_bonds,
+                                'hdon': lig.hdon,
+                                'hacc': lig.hacc,
+                                'logp': lig.logp,
+                            })
+        context = {}
+        context['ligand_data'] = ligand_data
+        cache.set(cache_key, ligand_data, 60*60*24*7)
+    context['mode'] = mode
     return render(request, 'target_details.html', context)
-
 
 def TargetPurchasabilityDetails(request, **kwargs):
     cache_key = False
@@ -297,16 +313,14 @@ def TargetPurchasabilityDetails(request, **kwargs):
     if selection.targets != []:
         prot_ids = [str(x.item.id) for x in selection.targets]
         cache_key = "lig_purchasable_" + ",".join(prot_ids)
-        ps = AssayExperiment.objects.filter(
-            protein__in=prot_ids, ligand__ids__web_resource__slug='chembl_ligand')
+        ps = AssayExperiment.objects.filter(protein__in=prot_ids).prefetch_related('ligand','protein')
         context = {
             'target': ', '.join([x.item.entry_name for x in selection.targets])
         }
     elif selection.reference != []:
         prot_id = [x.item for x in selection.reference]
         cache_key = "lig_purchasable_" + ",".join(prot_id)
-        ps = AssayExperiment.objects.filter(
-            protein__in=prot_id, ligand__ids__web_resource__slug='chembl_ligand')
+        ps = AssayExperiment.objects.filter(protein__in=prot_id).prefetch_related('ligand','protein')
         context = {}
 
     # if queryset is empty redirect to ligand browser
@@ -316,25 +330,14 @@ def TargetPurchasabilityDetails(request, **kwargs):
     if cache_key != False and cache.has_key(cache_key):
         purchasable = cache.get(cache_key)
     else:
-        ps = ps.values('value_type',
-                       'standard_relation',
-                       'standard_activity_value',
-                       'assay_description',
-                       'assay_type',
-                       # 'standard_units',
-                       'p_activity_value',
+        ps = ps.values(
                        'ligand__id',
                        'ligand__ids__index',
                        'protein__species__common_name',
                        'protein__entry_name',
+                       'protein__name',
                        'ligand_id',
                        'ligand__name',
-                       'ligand__mw',
-                       'ligand__logp',
-                       'ligand__rotatable_bonds',
-                       'ligand__smiles',
-                       'ligand__hdon',
-                       'ligand__hacc',
                        )
 
         lig_ids = [entry["ligand_id"] for entry in ps]
@@ -350,6 +353,7 @@ def TargetPurchasabilityDetails(request, **kwargs):
 
         purchasable = []
         for record in ps:
+            record['protein__entry_name'] = record['protein__entry_name'].split('_')[0].upper()
             if record["ligand_id"] in vendor_dict:
                 for link in vendor_dict[record["ligand_id"]]:
                     entry = {**record, **link}
@@ -371,75 +375,75 @@ class BiasedSignallingSelection(AbsReferenceSelectionTable):
     pathway = False
     pathfinder = {'EmaxRankOrder': {'Description': 'The next page shows plots for the ligand bias rank order ΔΔLog(Emax/EC50) by transducer or effector family across publications.' \
                                                     + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.' \
-                                                    + '\nBiased ligands have a bias factor ≥ 5.',
+                                                    + '\n<b>*</b>Biased ligands have a bias factor ≥ 5.',
                                     'Continue': "submitSelection('/biased_signalling/emax_rankorder');",
                                     'Pathway': "submitSelection('/biased_signalling/emax_rankorder_path_bias');",
                                     'Biased': "submitSelection('/biased_signalling/userselectionbiased_emax_rank_order');"},
                   'TauRankOrder': {'Description': 'The next page shows plots for the ligand bias rank order ΔΔLog(Tau/KA) by transducer or effector family across publications.' \
                                                     + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.' \
-                                                    + '\nBiased ligands have a bias factor ≥ 5.',
+                                                    + '\n<b>*</b>Biased ligands have a bias factor ≥ 5.',
                                    'Continue': "submitSelection('/biased_signalling/tau_rankorder');",
                                    'Pathway': "submitSelection('/biased_signalling/tau_rankorder_path_bias');",
                                    'Biased': "submitSelection('/biased_signalling/userselectionbiased_tau_rank_order');"},
                   'EmaxPathProfile': {'Description': 'The next page shows plots for the ligand pathway profiles ΔLog(Emax/EC50) by transducer or effector family across publications.' \
                                                      + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.' \
-                                                     + '\nBiased ligands have a bias factor ≥ 5.',
+                                                     + '\n<b>*</b>Biased ligands have a bias factor ≥ 5.',
                                       'Continue': "submitSelection('/biased_signalling/emax_path_profiles');",
                                       'Pathway': "submitSelection('/biased_signalling/emax_path_profiles_path_bias');",
                                       'Biased': "submitSelection('/biased_signalling/userselectionbiased_emax_path_profile');"},
                   'TauPathProfile': {'Description': 'The next page shows plots for the ligand pathway profiles ΔLog(Tau/KA) by transducer or effector family across publications.' \
                                                      + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.' \
-                                                     + '\nBiased ligands have a bias factor ≥ 5.',
+                                                     + '\n<b>*</b>Biased ligands have a bias factor ≥ 5.',
                                      'Continue': "submitSelection('/biased_signalling/tau_path_profiles');",
                                      'Pathway': "submitSelection('/biased_signalling/tau_path_profiles_path_bias');",
                                      'Biased': "submitSelection('/biased_signalling/userselectionbiased_tau_path_profile');"},
                   'EmaxRankOrderSubtype': {'Description': 'The next page shows plots for the ligand bias rank order ΔΔLog(Emax/EC50) by transducer or effector family across publications.' \
                                                             + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.' \
-                                                            + '\nBiased ligands have a bias factor ≥ 5.',
+                                                            + '\n<b>*</b>Biased ligands have a bias factor ≥ 5.',
                                            'Continue': "submitSelection('/biased_signalling/subtype_emax_rankorder');",
                                            'Pathway': "submitSelection('/biased_signalling/subtype_emax_rankorder_path_bias');",
                                            'Biased': "submitSelection('/biased_signalling/userselectionbiasedsubtype_emax_rank_order');"},
                   'TauRankOrderSubtype': {'Description': 'The next page shows plots for the ligand bias rank order ΔΔLog(Tau/KA) by transducer or effector family across publications.' \
                                                          + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.' \
-                                                         + '\nBiased ligands have a bias factor ≥ 5.',
+                                                         + '\n<b>*</b>Biased ligands have a bias factor ≥ 5.',
                                           'Continue': "submitSelection('/biased_signalling/subtype_tau_rankorder');",
                                           'Pathway': "submitSelection('/biased_signalling/subtype_tau_rankorder_path_bias');",
                                           'Biased': "submitSelection('/biased_signalling/userselectionbiasedsubtype_tau_rank_order');"},
                   'EmaxPathProfileSubtype': {'Description': 'The next page shows plots for the ligand pathway profiles ΔLog(Emax/EC50) by transducer or effector family across publications.' \
                                                             + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.' \
-                                                            + '\nBiased ligands have a bias factor ≥ 5.',
+                                                            + '\n<b>*</b>Biased ligands have a bias factor ≥ 5.',
                                              'Continue': "submitSelection('/biased_signalling/subtype_emax_path_profiles');",
                                              'Pathway': "submitSelection('/biased_signalling/subtype_emax_path_profiles_path_bias');",
                                              'Biased': "submitSelection('/biased_signalling/userselectionbiasedsubtype_emax_path_profile');"},
                   'TauPathProfileSubtype': {'Description': 'The next page shows plots for the ligand pathway profiles ΔLog(Tau/KA) by transducer or effector family across publications.' \
                                                             + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.' \
-                                                            + '\nBiased ligands have a bias factor ≥ 5.',
+                                                            + '\n<b>*</b>Biased ligands have a bias factor ≥ 5.',
                                             'Continue': "submitSelection('/biased_signalling/subtype_tau_path_profiles');",
                                             'Pathway': "submitSelection('/biased_signalling/subtype_tau_path_profiles_path_bias');",
                                             'Biased': "submitSelection('/biased_signalling/userselectionbiasedsubtype_tau_path_profile');"},
                   'Browser': {'Description': 'The next page shows ligands biased for a transducer or effector family (e.g. G protein, arrestin, GRK, ERK etc.).' \
                                                     + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.' \
-                                                    + '\nBiased ligands have a bias factor ≥ 5.',
+                                                    + '\n<b>*</b>Biased ligands have a bias factor ≥ 5.',
                               'Continue': "submitSelection('/biased_signalling/biased');",
                               'Pathway': "submitSelection('/biased_signalling/pathwaybiased');",
                               'Biased': "submitSelection('/biased_signalling/userselectionbiased');"},
                   'BrowserSubtype': {'Description': 'The next page shows ligands biased for a transducer or effector family (e.g. G protein, arrestin, GRK, ERK etc.).' \
                                                     + '\nPathway-preference is not bias as no reference ligand is used. See the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.' \
-                                                    + '\nBiased ligands have a bias factor ≥ 5.',
+                                                    + '\n<b>*</b>Biased ligands have a bias factor ≥ 5.',
                                      'Continue': "submitSelection('/biased_signalling/biasedsubtypes');",
-                                     'Pathway': "submitSelection('/biased_signalling/pathwaybiasedsubtypes');",
+                                     'Pathway': "submitSelection('/biased_signalling/pathwaybiasedsubtype');",
                                      'Biased': "submitSelection('/biased_signalling/userselectionbiasedsubtype');"},
                   'BrowserPathway': {'Description': 'The next page shows ligands preferring a transducer or effector family (e.g. G protein, arrestin, GRK, ERK etc.).' \
                                                     + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.' \
-                                                    + '\nBiased ligands have a bias factor ≥ 5.',
+                                                    + '\n<b>*</b>Biased ligands have a bias factor ≥ 5.',
                                      'Continue': "submitSelection('/biased_signalling/pathwaypreference');"},
                   'EmaxRankOrderPathway': {'Description': 'The next page shows plots for the ligand bias rank order ΔLog(Emax/EC50) by transducer or effector family across publications.' \
                                                             + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.' \
-                                                            + '\nBiased ligands have a bias factor ≥ 5.',
+                                                            + '\n<b>*</b>Biased ligands have a bias factor ≥ 5.',
                                            'Continue': "submitSelection('/biased_signalling/path_preference_emax_rankorder');"},
                   'EmaxPathProfilePathway': {'Description': 'The next page shows plots for the ligand pathway profiles Log(Emax/EC50) by transducer or effector family across publications.' \
                                                             + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.' \
-                                                            + '\nBiased ligands have a bias factor ≥ 5.',
+                                                            + '\n<b>*</b>Biased ligands have a bias factor ≥ 5.',
                                             'Continue': "submitSelection('/biased_signalling/path_preference_emax_path_profiles');"}
                 }
     way = 'EmaxRankOrder'
@@ -865,7 +869,7 @@ class BiasedSignallingOnTheFlyCalculation(TemplateView):
                 jitterAuthors = 'openTS ' + shortAuthors + ' closeTS openTS ' + journal_name + ' closeTS openTS (' + str(result['pub_year']) + ') closeTS'
                 labels_dict[jitterAuthors] = shortAuthors
 
-            list_of_ligands.append(tuple((hashed_lig_name, lig_name)))
+            list_of_ligands.append(tuple((lig_name, hashed_lig_name)))
             list_of_publications.append(authors)
             #start parsing the data to create the big dictionary
             if single_delta == None:               #∆Emax / ∆Tau flex
@@ -1072,7 +1076,7 @@ class BiasedSignallingOnTheFlyCalculation(TemplateView):
         context['colors'] = json.dumps(Colors)
         context['scatter'] = json.dumps(jitterPlot)
         context['spider'] = json.dumps(SpiderOptions)
-        context['all_ligands'] = list(set(list_of_ligands))
+        context['all_ligands'] = sorted(list(set(list_of_ligands)))
         context['all_publications'] = list(set(list_of_publications))
         context['query'] = rec_name[0][0]
         context['IUPHAR'] = rec_name[0][1]
@@ -1513,7 +1517,7 @@ class LigandStatistics(TemplateView):
                     rec_family_name = rec.family.parent.name
 
                 rec_uniprot = rec.entry_short()
-                rec_iuphar_long = "<tspan>" + rec.family.name.capitalize().replace("<sub>", '</tspan><tspan baseline-shift = "sub">').replace("</sub>", '</tspan><tspan>').replace("<i>", '</tspan><tspan font-style = "italic">').replace("</i>", '</tspan><tspan>').strip() + "</tspan>"
+                rec_iuphar_long = "<tspan>" + rec.family.name[0].upper() + rec.family.name[1:].replace("<sub>", '</tspan><tspan baseline-shift = "sub">').replace("</sub>", '</tspan><tspan>').replace("<i>", '</tspan><tspan font-style = "italic">').replace("</i>", '</tspan><tspan>').strip() + "</tspan>"
                 rec_iuphar_short = rec_iuphar_long.replace("-adrenoceptor", '').replace("receptor", '').replace("Long-wave-sensitive",'LWS').replace("Medium-wave-sensitive",'MWS').replace("Short-wave-sensitive",'SWS').replace("Olfactory", 'OLF').replace("Calcitonin -like", 'CLR').strip()
 
                 MasterDict[rec_uniprot] = {'UniProt': rec_uniprot,
@@ -1637,6 +1641,8 @@ class LigandInformationView(TemplateView):
         for i in assays:
             name = str(i.protein) + '_' + str(i.source)
             assay_type = i.value_type
+            if i.source == 'PDSP KiDatabase':
+                i.source = 'PDSP Ki database'
             if i.source == 'Guide to Pharmacology':
                 data_value = i.p_activity_ranges
             else:
@@ -1839,10 +1845,10 @@ class LigandInformationView(TemplateView):
         #Endogenous OR Surrogate
         if ligand_data.id in endogenous_ligands:
             label += endogenous_label
-            label_dict['endogenous'] = 'Yes'
+            label_dict['endogenous'] = 'Endogenous'
         else:
             label += surrogate_label
-            label_dict['endogenous'] = 'No'
+            label_dict['endogenous'] = 'Surrogate'
         #Drug or Trial
         sources = [i.web_resource.name for i in ligand_data.ids.all()]
         drug_banks = ['DrugBank', 'Drug Central']
@@ -1964,7 +1970,7 @@ def CachedOTFBiasBrowsers(browser_type, user_ligand, balanced, request):
     keygen = protein_ids + user_ids
     cache_key = "OTFBROWSER_" + browser_type + "_" + hashlib.md5("_".join(keygen).encode('utf-8')).hexdigest()
     return_html = cache.get(cache_key)
-    return_html = None #testing
+    # return_html = None #testing
     if return_html == None:
         if user_ligand == False:
             if browser_type == "bias":
@@ -2006,6 +2012,7 @@ class OTFBiasBrowser(TemplateView):
     def get_context_data(self, **kwargs):
         if self.user:
             self.user = int(self.user)
+
         data = OnTheFly(int(self.protein_id), rank_method=self.rank_method, subtype=self.subtype, pathway=self.pathway, user=self.user, balanced=self.balanced)
         browser_columns = ['Class', 'Receptor family', 'UniProt', 'IUPHAR', 'Species',
                            'Reference ligand', 'Tested ligand', '#Vendors', '#Articles', '#Labs',

@@ -229,7 +229,7 @@
 	<a id="dlink" style="display:none;"></a>
 	<div id="excel_table" style2="display:none;"></div>
 	<br />
-	<h5>Showing {{ Lig_Count }} biased ligands for {{ IUPHAR }} ({{ UniProt }})</h5>
+	<h5>Showing {{ Lig_Count }} ligands tested for the bias at the {{ IUPHAR }} receptor ({{ UniProt }})</h5>
 	<br />
 	<button id="reset_hidden" type="button" class="btn btn-primary" style="margin-top:10px;margin-top:3px"> Reset removed columns </button>
 	<button id="reset" type="button" class="btn btn-primary" style="margin-top:10px;margin-top:3px"> Reset filters </button>
@@ -559,11 +559,11 @@
 							<td class="color-column" style="text-align:right">{{ value.36|default_if_none:""|floatformat:1 }}</td>
 
 							<!-- Emax block -->
-							<td style="text-align:right" class="color-column">{{ value.37|default_if_none:""|floatformat:1 }}</td>
-							<td style="text-align:right" class="color-column">{{ value.38|default_if_none:""|floatformat:1 }}</td>
-							<td style="text-align:right" class="color-column">{{ value.39|default_if_none:""|floatformat:1 }}</td>
-							<td style="text-align:right" class="color-column">{{ value.40|default_if_none:""|floatformat:1 }}</td>
-							<td style="text-align:right" class="color-column">{{ value.41|default_if_none:""|floatformat:1 }}</td>
+							<td style="text-align:right" class="color-column">{{ value.37|default_if_none:""|floatformat:-1 }}</td>
+							<td style="text-align:right" class="color-column">{{ value.38|default_if_none:""|floatformat:-1 }}</td>
+							<td style="text-align:right" class="color-column">{{ value.39|default_if_none:""|floatformat:-1 }}</td>
+							<td style="text-align:right" class="color-column">{{ value.40|default_if_none:""|floatformat:-1 }}</td>
+							<td style="text-align:right" class="color-column">{{ value.41|default_if_none:""|floatformat:-1 }}</td>
 
 							<!-- Molecule 1 block -->
 							<td>{{ value.42|default_if_none:"" }}</td>

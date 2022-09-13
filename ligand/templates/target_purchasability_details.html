@@ -5,7 +5,10 @@
 
 {% block addon_css %}
 <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
-<link rel="stylesheet" href="{% static 'home/css/ligand_browser.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/bootstrap2-toggle.min.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/modal.css' %}" type="text/css" />
 <style>
     /*Assay description tooltip*/
     .AssayCell {
@@ -55,6 +58,160 @@
     }
 
 </style>
+<style type="text/css">
+	.dataTables_scrollHeadInner {
+		margin-top: 20px;
+	}
+
+	table.dataTable thead th,
+	table.dataTable tbody td {
+		max-width: 65px;
+		word-break: break-all;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	table.dataTable thead .sorting {
+		background-position: right;
+	}
+
+	.select2-container select2-container-multi {
+		width: 75%;
+	}
+
+	.select2-container-multi .select2-choices .select2-search-field input {
+		max-width: 50px;
+	}
+
+	.yadcf-filter-wrapper {
+		position: center;
+		display: flex;
+		white-space: nowrap;
+		margin-top: 7px;
+		width: 50% !important;
+	}
+
+	.yadcf-filter-wrapper-inner {
+		white-space: normal;
+	}
+
+	.select2-results {
+		background-color: white;
+		border: gray;
+		width: 150px !important;
+	}
+
+	.yadcf-filter-range {
+		grid-auto-columns: auto;
+		max-width: 50px !important;
+		font-family: sans-serif;
+		font-size: 80%;
+		font-weight: bold;
+		margin: auto;
+		margin-top: 10%;
+		min-width: 40px;
+	}
+
+	table.dataTable.compact tbody th,
+	table.dataTable.compact tbody td {
+		padding: 5px 10px 5px 0px !important;
+		/* width: 0px; */
+	}
+
+	table.dataTable.compact thead th,
+	table.dataTable.compact thead td {
+		padding: 5px 10px 5px 0px;
+		/* width: 0px; */
+	}
+
+	table.dataTable.compact thead tr.over_header th {
+		border-bottom: 1px solid #ccc;
+	}
+
+	table.dataTable.compact thead th.leftborder {
+		border-left: 1px solid;
+	}
+
+	table.dataTable.compact thead th.rightborder {
+		border-right: 1px solid;
+	}
+
+	.yadcf-filter-range {
+		max-width: 40px !important;
+		font-family: sans-serif;
+		font-size: 80%;
+		font-weight: bold;
+		min-width: 40px;
+	}
+
+	#overlay {
+		top: 0px;
+		position: absolute;
+		background: #f8f8f8;
+		/*border: 1px solid #333;*/
+		-webkit-box-shadow: 5px 0 2px -2px #888;
+		box-shadow: 5px 0 2px -2px #888;
+	}
+
+	.container {
+		width: 90%;
+		/* display:flex;
+            flex-direction: column; */
+	}
+
+	.wrapper {
+		overflow-x: scroll;
+		overflow-y: hidden;
+	}
+
+	#overlay tbody tr {
+		background-color: #f8f8f8;
+	}
+
+	#count_row th {
+		font-size: 11px;
+		text-align: center;
+	}
+
+	.border-left {
+		padding-left: 3px;
+	}
+
+	.name {
+		width: 100px;
+		text-overflow: ellipsis;
+		cursor: pointer;
+		word-break: break-all;
+		overflow: hidden;
+		white-space: nowrap;
+	}
+
+	.name:hover {
+		overflow: visible;
+		white-space: normal;
+
+	}
+
+	.toolbar_data_css {
+		width: 250px;
+		margin-right: auto;
+		margin-left: 0px;
+		/* border: 1px solid; */
+		font-family: "Lucida Grande", Tahoma, Verdana, sans-serif;
+		font-weight: normal;
+		font-size: 120%;
+		line-height: 1.625;
+	}
+
+	.toolbar_data_css.td {
+		height: 15px;
+		max-width: 150px;
+		overflow: hidden;
+		white-space: nowrap;
+		text-overflow: ellipsis;
+	}
+</style>
 {% endblock %}
 
 {% block addon_js %}
@@ -62,6 +219,9 @@
 <script src="{% static 'home/js/dataTables.tableTools.min.js' %}"> </script>
 <script src="{% static 'home/js/jquery.dataTables.columnFilter.js' %}"> </script>
 <script src="{% static 'home/js/selection.js' %}"> </script>
+<script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
+<script src="{% static 'home/js/select2.js' %}"> </script>
+<script src="{% static 'home/js/gpcrdb.js' %}"></script>
 
 <script type="text/javascript" charset="utf-8">
     this.compoundPreview = function () {
@@ -101,58 +261,24 @@
 
         //ClearSelection('targets');
         var table = $('#proteins').DataTable({
-            'scrollX': true,
-            'scrollY': $(window).height() - 100,
-            'bScrollCollapse': true,
-            'paging': true,
-            'paging_type': 'full_numbers',
-            'iDisplayLength': 50,
-            'orderCellsTop': true,
-            'autoWidth': true,
-            'dom': 'iTlfrtp',
-            'aoColumnDefs': [
-                { 'bSortable': false, 'aTargets': [0] },
-                { 'sType': 'string', 'aTargets': [1] },
-            ],
-            'tableTools': {
-                "sRowSelect": "double",
-                "aButtons": []
-            },
-            "language": {
-                "lengthMenu": 'Display <select>' +
-                    '<option value="50">50</option>' +
-                    '<option value="100">100</option>' +
-                    '<option value="200">200</option>' +
-                    '<option value="-1">All</option>' +
-                    '</select> records'
-            },
-            initComplete: function () {
-                $('#proteins').dataTable().columnFilter({
-                    sPlaceHolder: "head:after",
-                    sRangeFormat: "{from}:{to}",
-                    aoColumns: [
-                        null,
-                        null, //Ligand Name
-                        null, //Protein Entry Name
-                        { type: "select" },//Species
-                        { type: "select" },// Vendor
-                        null,// Vendor ID
-                        { type: "number-range" },//PChEMBL Value
-                        { type: "select" },//Standard Type
-                        null,//Standard Relation
-                        { type: "number-range" },//Standard Value
-                        { type: "select" },//Standard Units
-                        { type: "select" },//Assay Type
-                        { type: "select" },//Assay Description
-                        { type: "number-range" },//Mol weight
-                        { type: "number-range" },//Rotatable Bonds
-                        { type: "number-range" },//Hydrogen Bond Donors
-                        { type: "number-range" },//Hydrogen Bond Acceptors
-                        { type: "number-range" },//LogP
-                        { type: "text" },//Smiles
-                    ]
-                });
-            }
+            scrollX: true,
+            scrollY: $(window).height() - 100,
+            bScrollCollapse: true,
+            paging: true,
+            paging_type: 'full_numbers',
+            iDisplayLength: 50,
+            orderCellsTop: true,
+            autoWidth: true,
+            });
+
+        let column_filters = [];
+        // createYADCFfilters(start_column, num_cols, filter_type, select_type = null, filter_default_label = "", filter_reset_button_text = false, filter_match_mode = null, column_data_type = null, width = null)
+        column_filters = column_filters.concat(createYADCFfilters(1, 2, "multi_select", "select2", "Select", false, null, "html", "80px"));
+        column_filters = column_filters.concat(createYADCFfilters(3, 3, "multi_select", "select2", "Select", false, null, null, "50px"));
+        column_filters = column_filters.concat(createYADCFfilters(6, 2, "multi_select", "select2", "Select", false, null, "html", "80px"));
+
+        yadcf.init(table.draw(), column_filters, {
+          cumulative_filtering: false
         });
         $('.alt').change(function () {
             $(this).parent().parent().toggleClass('alt_selected');
@@ -259,45 +385,13 @@
                 <thead>
                     <tr>
                         <th><input class="select-all" type="checkbox"> Select all</th>
-                        <th class="general-th">ChEMBL ID</th>
-                        <th class="general-th">Receptor</th>
+                        <th class="general-th">Common<br />name</th>
+                        <th class="general-th">GPCRdb ID</th>
+                        <th class="general-th">UniProt</th>
+                        <th class="general-th">IUPHAR</th>
                         <th class="general-th">Species</th>
                         <th class="general-th">Vendor</th>
                         <th class="general-th">Vendor ID</th>
-                        <th class="activity-th">p-value<br />(-log)</th>
-                        <th class="activity-th">Activity<br />Type</th>
-                        <th class="activity-th">Activity<br />Relation</th>
-                        <th class="activity-th">Activity<br />Value</th>
-                        <th class="activity-th">Unit</th>
-                        <th class="activity-th">Assay Type</th>
-                        <th class="activity-th">Assay Description</th>
-                        <th class="chemical-th">Mol.<br />weight</th>
-                        <th class="chemical-th">Rot<br />Bonds</th>
-                        <th class="chemical-th">H don</th>
-                        <th class="chemical-th">H acc</th>
-                        <th class="chemical-th">LogP</th>
-                        <th class="chemical-th dt-left">Smiles</th>
-                    </tr>
-                    <tr>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -305,23 +399,12 @@
                     <tr>
                         <td><input class="alt" type="checkbox"></td>
                         <td><a class="struct" rel="http://www.ebi.ac.uk/chembl/api/data/image/{{p.ligand__ids__index}}" href="/ligand/{{p.ligand_id}}/info">{{p.ligand__ids__index}}</a></td>
+                        <td><a href="/ligand/{{p.ligand_id}}/info">{{p.ligand_id}}</a></td>
                         <td>{{p.protein__entry_name}}</td>
+                        <td>{{p.protein__name|safe}}</td>
                         <td>{{p.protein__species__common_name}}</td>
                         <td><a href="http://{{p.vendor__url}}" target="_blank">{{p.vendor__name}}</a></td>
                         <td><a href="{{p.url}}" target="_blank">{% if p.external_id == '' %}product link{% else %}{{p.external_id}}{% endif %}</a></td>
-                        <td align="right">{{p.p_activity_value|floatformat:1}}</td>
-                        <td align="center">{{p.value_type}}</td>
-                        <td>{{p.standard_relation}}</td>
-                        <td>{% if p.standard_activity_value != None %} {{p.standard_activity_value|floatformat}} {% endif %}</td>
-                        <td>{% if p.p_activity_value != p.standard_activity_value and p.standard_activity_value != None %} nM {% endif %}</td>
-                        <td>{% if p.assay_type == 'B' %} Bind {% else %} Funct {% endif %}</td>
-                        <td class="AssayCell"> <div style="overflow: hidden; text-overflow: ellipsis; word-wrap: break-word; max-width: 350px;white-space: nowrap;">{{p.assay_description}}<span class="AssayDetail">{{p.assay_description}}</span> </div></td>
-                        <td>{{p.ligand__mw|floatformat:0}}</td>
-                        <td>{{p.ligand__rotatable_bonds}}</td>
-                        <td>{{p.ligand__hdon}}</td>
-                        <td>{{p.ligand__hacc}}</td>
-                        <td>{{p.ligand__logp|floatformat:1}}</td>
-                        <td class="dt-left">{{p.ligand__smiles}}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
