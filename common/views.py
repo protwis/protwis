@@ -113,7 +113,7 @@ def getLigandTable(receptor_id, browser_type):
             )
 
         data_table += "</tbody></table>"
-        # cache.set("target_table", data_table, 60*60*24*7)
+        cache.set(cache_key, data_table, 60*60*24*7)
 
     return data_table
 
