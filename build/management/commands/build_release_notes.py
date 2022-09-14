@@ -3,8 +3,9 @@ from django.conf import settings
 
 from common.models import ReleaseNotes, ReleaseStatistics, ReleaseStatisticsType
 from drugs.models import Drugs
+from residue.models import ResidueGenericNumberEquivalent
 from interaction.models import ResidueFragmentInteraction
-from ligand.models import Ligand, AssayExperiment
+from ligand.models import Ligand, AssayExperiment, Endogenous_GTP
 from mutation.models import MutationExperiment
 from mutational_landscape.models import NaturalMutations
 from protein.models import Protein, Species
@@ -69,20 +70,23 @@ class Command(BaseCommand):
             ['Species orthologs', Protein.objects.filter(sequence_type__slug='wt', family__slug__startswith='00').exclude(species__common_name="Human").count()],
             #['Species', Species.objects.all().count()],
             ['Genetic variants', NaturalMutations.objects.all().count()],
-            ['Drugs', Drugs.objects.all().count()],
+            ['Drugs', Drugs.objects.values('name').distinct().count()],
+            ['Drug targets', Drugs.objects.values('targets').distinct().count()],
+            ['Disease indications', Drugs.objects.values('indication').distinct().count()],
             ['Ligands', Ligand.objects.all().count()],
+            ['Endogenous ligands', Endogenous_GTP.objects.values('ligand_id').distinct().count()],
             ['Ligand bioactivities', AssayExperiment.objects.all().count()],
             ['Ligand site mutations', MutationExperiment.objects.all().count()],
             ['Ligand interactions', ResidueFragmentInteraction.objects.all().count()],
-            ['Exp. GPCR structures', Structure.objects.filter(protein_conformation__protein__family__slug__startswith="00").count()],
+            ['GPCRs structures', Structure.objects.filter(protein_conformation__protein__family__slug__startswith="00").count()],
             #['Exp. Gprotein structures', Structure.objects.filter(protein_conformation__protein__family__slug__startswith="100").count()],
             ['Exp. Gprotein structures', len(gprotein_structs)],
             #['Exp. Arrestin structures', Structure.objects.filter(protein_conformation__protein__family__slug__startswith="200").count()],
-            ['GPCR structure models', StructureModel.objects.filter(protein__accession__isnull=False).count()],
+            ['GPCRs structure models', StructureModel.objects.filter(protein__accession__isnull=False).count()],
+            ['Generic residues', ResidueGenericNumberEquivalent.objects.filter(scheme_id__in=[7,8,9,10,11]).values('label').distinct().count()],
             ['GPCR-G protein structure models', StructureComplexModel.objects.filter(receptor_protein__accession__isnull=False).count()],
-            ['Refined GPCR structures', StructureModel.objects.filter(protein__accession__isnull=True, protein__family__slug__startswith="00").count() + StructureComplexModel.objects.filter(receptor_protein__accession__isnull=True, receptor_protein__family__slug__startswith="00").count()],
+            ['Refined structures', StructureModel.objects.filter(protein__accession__isnull=True, protein__family__slug__startswith="00").count() + StructureComplexModel.objects.filter(receptor_protein__accession__isnull=True, receptor_protein__family__slug__startswith="00").count()],
         ]
-
         for stat in stats:
             stat_type, created = ReleaseStatisticsType.objects.get_or_create(name=stat[0])
             if created:
