@@ -60,6 +60,7 @@ def index(request):
         rel_stats = list(ReleaseStatistics.objects.filter(release=context["release_notes"]).values_list("statistics_type__name", "value"))
 
         # Create dictionary and process part of the results
+        context["release_statistics"] = []
         if context["site_title"] == "GproteinDb":
             context["release_statistics"].append(
                 {"statistics_type": '<span class="stats_title"><b>Sequences</b></span>', "value": ''}
