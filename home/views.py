@@ -12,6 +12,7 @@ from structure.models import StructureComplexModel
 from ligand.models import BiasedData, BiasedPathwaysAssay, Endogenous_GTP, BalancedLigands
 from contactnetwork.models import InteractingResiduePair
 from signprot.models import SignprotComplex, SignprotStructure
+from residue.models import ResidueGenericNumberEquivalent
 from googleapiclient.discovery import build
 from oauth2client.service_account import ServiceAccountCredentials
 
@@ -59,7 +60,6 @@ def index(request):
         rel_stats = list(ReleaseStatistics.objects.filter(release=context["release_notes"]).values_list("statistics_type__name", "value"))
 
         # Create dictionary and process part of the results
-        context["release_statistics"] = []
         if context["site_title"] == "GproteinDb":
             context["release_statistics"].append(
                 {"statistics_type": '<span class="stats_title"><b>Sequences</b></span>', "value": ''}
@@ -131,7 +131,16 @@ def index(request):
                     "value": '<span  class="stats_value">' + "{:,}".format(signcomp.filter(structure__refined=True).count()) + "</span>",
                 }
             )
-
+            context["release_statistics"].append(
+                {
+                    "statistics_type": '<span class="stats_entry">' + "Generic residues" + "</span>",
+                    "value": '<span  class="stats_value">'
+                    + "{:,}".format(
+                        ResidueGenericNumberEquivalent.objects.filter(scheme_id__in=[15]).values('label').distinct().count()
+                    )
+                    + "</span>",
+                }
+            )
             context["release_statistics"].append(
                 {
                     "statistics_type": '<span class="stats_title"><b>Structure interactions</b></span>',
@@ -206,6 +215,16 @@ def index(request):
             )
             context["release_statistics"].append(
                 {
+                    "statistics_type": '<span class="stats_entry">' + "Generic residues" + "</span>",
+                    "value": '<span  class="stats_value">'
+                    + "{:,}".format(
+                        ResidueGenericNumberEquivalent.objects.filter(scheme_id__in=[16]).values('label').distinct().count()
+                    )
+                    + "</span>",
+                }
+            )
+            context["release_statistics"].append(
+                {
                     "statistics_type": '<span class="stats_entry">' + "Arrestin complexes" + "</span>",
                     "value": '<span  class="stats_value">' + "{:,}".format(signcomp.count()) + "</span>",
                 }
@@ -240,29 +259,17 @@ def index(request):
             )
 
         elif context["site_title"] == "GPCRdb":
-            rename_dictionary = {
-                "Exp. GPCR structures": "GPCRs structures",
-                "GPCR structure models": "GPCRs structure models",
-                "Refined GPCR structures": "Refined structures",
-            }
             skip_list = ["Exp. Gprotein structures", "GPCR-G protein structure models"]
-            first_struct = -1
-            first_model = -1
+            # first_struct = -1
+            # first_model = -1
             count = 0
             for entry in rel_stats:
-                if first_struct < 0 and "Exp." in entry[0]:
-                    first_struct = count
-                elif first_model < 0 and "model" in entry[0]:
-                    first_model = count
+                # if first_struct < 0 and "Exp." in entry[0]:
+                #     first_struct = count
+                # elif first_model < 0 and "model" in entry[0]:
+                #     first_model = count
 
-                if entry[0] in rename_dictionary:
-                    context["release_statistics"].append(
-                        {
-                            "statistics_type": '<span class="stats_entry">' + rename_dictionary[entry[0]] + "</span>",
-                            "value": '<span class="stats_value">' + "{:,}".format(entry[1]) + "</span>",
-                        }
-                    )
-                elif entry[0] in skip_list:
+                if entry[0] in skip_list:
                     continue
                 else:
                     context["release_statistics"].append(
