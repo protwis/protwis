@@ -73,7 +73,6 @@ def index(request):
              'GPCRdb': {}}
     # get release notes
     try:
-        print(context["site_title"])
         context["release_notes"] = ReleaseNotes.objects.all()[0]
         rel_stats = list(ReleaseStatistics.objects.filter(release=context["release_notes"], database=context["site_title"]).values_list("statistics_type__name", "value"))
         # Create dictionary and process part of the results
