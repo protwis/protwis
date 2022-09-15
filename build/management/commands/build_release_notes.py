@@ -4,7 +4,7 @@ from django.db.models import F, Q
 
 from common.models import ReleaseNotes, ReleaseStatistics, ReleaseStatisticsType
 from drugs.models import Drugs
-from residue.models import ResidueGenericNumberEquivalent
+from residue.models import ResidueGenericNumber
 from interaction.models import ResidueFragmentInteraction
 from ligand.models import Ligand, AssayExperiment, BiasedData, BiasedPathwaysAssay, Endogenous_GTP, BalancedLigands
 from mutation.models import MutationExperiment
@@ -98,7 +98,7 @@ class Command(BaseCommand):
             ['Ligand interactions GPCRdb', ResidueFragmentInteraction.objects.all().count(), 'GPCRdb'],
             ['GPCRs structures GPCRdb', Structure.objects.filter(protein_conformation__protein__family__slug__startswith="00").count(), 'GPCRdb'],
             ['GPCRs structure models GPCRdb', StructureModel.objects.filter(protein__accession__isnull=False).count(), 'GPCRdb'],
-            ['Generic residues GPCRdb', ResidueGenericNumberEquivalent.objects.filter(scheme_id__in=[7,8,9,10,11]).values('label').distinct().count(), 'GPCRdb'],
+            ['Generic residues GPCRdb', ResidueGenericNumber.objects.filter(scheme_id__in=[7,8,9,10,11]).values('label').count(), 'GPCRdb'],
             ['Refined structures GPCRdb', StructureModel.objects.filter(protein__accession__isnull=True, protein__family__slug__startswith="00").count() + StructureComplexModel.objects.filter(receptor_protein__accession__isnull=True, receptor_protein__family__slug__startswith="00").count(), 'GPCRdb'],
             #GproteinDb block
             ['Human G proteins GproteinDb', Protein.objects.filter(family__parent__parent__name="Alpha", species__common_name="Human", accession__isnull=False).count(), 'GproteinDb'],
@@ -106,7 +106,7 @@ class Command(BaseCommand):
             ['G protein couplings GproteinDb', ProteinCouplings.objects.all().exclude(g_protein__slug__startswith="200").count(), 'GproteinDb'],
             ['G proteins GproteinDb', signcomp.count() + SignprotStructure.objects.all().exclude(protein__family__slug__startswith="200").count(), 'GproteinDb'],
             ['G protein complexes GproteinDb', SignprotComplex.objects.all().count(), 'GproteinDb'],
-            ['Generic residues GproteinDb', ResidueGenericNumberEquivalent.objects.filter(scheme_id__in=[15]).values('label').distinct().count(), 'GproteinDb'],
+            ['Generic residues GproteinDb', ResidueGenericNumber.objects.filter(scheme_id__in=[15]).values('label').count(), 'GproteinDb'],
             ['G protein complexes', StructureComplexModel.objects.all().count() - SignprotComplex.objects.filter(structure__refined=True).count(), 'GproteinDb'],
             ['Refined complexes GproteinDb', signcomp.filter(structure__refined=True).count(), 'GproteinDb'],
             ['G protein interface GproteinDb', interface_interactions_count, 'GproteinDb'],
@@ -116,7 +116,7 @@ class Command(BaseCommand):
             ['Species orthologs ArrestinDb', Protein.objects.filter(family__slug__startswith="200", accession__isnull=False).count(), 'ArrestinDb'],
             ['Arrestin couplings ArrestinDb', ProteinCouplings.objects.filter(g_protein__slug__startswith="200").count(), 'ArrestinDb'],
             ['Arrestins ArrestinDb', signcomp_arrestin.count() + SignprotStructure.objects.filter(protein__family__slug__startswith="200").count(), 'ArrestinDb'],
-            ['Generic residues ArrestinDb', ResidueGenericNumberEquivalent.objects.filter(scheme_id__in=[16]).values('label').distinct().count(), 'ArrestinDb'],
+            ['Generic residues ArrestinDb', ResidueGenericNumber.objects.filter(scheme_id__in=[16]).values('label').count(), 'ArrestinDb'],
             ['Arrestin complexes ArrestinDb', signcomp_arrestin.count(), 'ArrestinDb'],
             ['Interface interactions ArrestinDb', interface_interactions_arrestin_count, 'ArrestinDb'],
             ['Interface mutations ArrestinDb', 409, 'ArrestinDb'],
