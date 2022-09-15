@@ -1422,7 +1422,7 @@ class Command(BaseBuild):
         merged_data_filtered = merged_data_filtered.loc[(~merged_data_filtered['GENE'].isnull())]
         merged_data_filtered = merged_data_filtered.loc[(~merged_data_filtered['ACT_VALUE'].isnull())]
         merged_data_filtered.fillna('None', inplace=True)
-        merged_data_update = Command.classify_assay(merged_data_filtered, 'ACT_TYPE', 'ACT_COMMENT')
+        merged_data_filtered = Command.classify_assay(merged_data_filtered, 'ACT_TYPE', 'ACT_COMMENT')
         bio_entries = len(merged_data_filtered)
 
         print("# Parsing DrugCentral data")
