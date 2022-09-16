@@ -450,7 +450,7 @@
                     <td>{{ model.protein.family.parent.short|safe }}</td>
                     <td>{{ model.protein.family.parent.parent.parent.short }}</td>
                     <td>{{ model.protein.species.common_name }}</td>
-                    {% if model.main_template.protein_conformation %}
+                    {% if model.main_template %}
                         <td><a href="/protein/{{ model.main_template.protein_conformation.protein.parent.entry_name }}">{{ model.main_template.protein_conformation.protein.parent.family.name|safe }}</a></td>
                         <td><a href="{{ model.main_template.pdb_code.index }}">{{ model.main_template.pdb_code.index}}</a></td>
                     {% else %}
