@@ -1523,9 +1523,9 @@ def flip_residue(atoms, atom_type):
             a.coord = one_coords
     return atoms
 
-def run_residue_flip(self, atoms, atom_types=None):
+def run_residue_flip(atoms, atom_types=None):
     if not atom_types:
-        ['CD','CE','CG','OE','OD','NH']
+        atom_types = ['CD','CE','CG','OE','OD','NH']
     for at in atom_types:
         atoms = flip_residue(atoms, at)
     return atoms

@@ -648,6 +648,8 @@ class Command(BaseBuild):
             temp_seq = temp_seq[:306]+'R'+temp_seq[306:311]+temp_seq[312:]
         elif structure.pdb_code.index=='7WUJ':
             temp_seq = temp_seq[:158]+'T'+temp_seq[158:163]+temp_seq[164:]
+        elif structure.pdb_code.index=='5JQH':
+            temp_seq = temp_seq[:211]+'--D'+temp_seq[214:]
         
 
 

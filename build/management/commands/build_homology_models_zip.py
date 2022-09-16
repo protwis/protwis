@@ -59,7 +59,7 @@ class Command(BaseBuild):
         self.models_to_do = []
 
         if options['copy_from_data']:
-            af_folder = os.sep.join([settings.DATA_DIR, 'structure_data', 'Alphafold'])
+            af_folder = os.sep.join([settings.DATA_DIR, 'structure_data', 'AlphaFold'])
             data_files = os.listdir(af_folder)
 
             for f in data_files:
@@ -85,6 +85,7 @@ class Command(BaseBuild):
 
         if options['c'] and options['purge']:
             for s in StructureComplexModel.objects.all():
+                s.pdb_data.delete()
                 s.main_template.refined = False
                 s.main_template.save()
             StructureComplexModel.objects.all().delete()
