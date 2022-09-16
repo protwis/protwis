@@ -91,7 +91,7 @@ class Command(BaseBuild):
         bioactivity_data_gtp = self.get_ligands_data(
             bioactivity_ligands_ids, gtp_complete_ligands, gtp_ligand_mapping, ligand_interactions=gtp_interactions, target_ids=iuphar_ids)
         # Assess the assay type given info from affinity units and assay comments
-        bioactivity_data_gtp = self.classify_assay(bioactivity_data_gtp)
+        bioactivity_data_gtp = self.classify_assay(bioactivity_data_gtp, 'affinity_units', 'assay_description')
         bioactivity_data_gtp.fillna('None', inplace=True)
         print("Ended parsing Guide to Pharmacology bioactivities data")
 
@@ -148,6 +148,12 @@ class Command(BaseBuild):
         print("\n\nStarted building PDSP KiDatabase bioactivities")
         self.build_kidatabase_bioactivities()  # 14,562
         print("Ended building PDSP KiDatabase bioactivities")
+
+        # Building Drug Central bioactivity data
+        print("\n\nStarted building Drug Central bioactivities")
+        self.build_drugcentral_bioactivities()  # 5,844
+        print("Ended building Drug Central bioactivities")
+
 
     @staticmethod
     def purge_data():
@@ -1023,24 +1029,28 @@ class Command(BaseBuild):
         return list(entries['gtopdb_iuphar_id'].unique())
 
     @staticmethod
-    def classify_assay(biodata):
+    def classify_assay(biodata, type_column, description_column):
         # starting to assess assay type
         biodata['assay_type'] = 'U'
-        biodata['assay_description'].fillna('Unclassified', inplace=True)
+        biodata[description_column].fillna('Unclassified', inplace=True)
         # find Binding assays (displacement, affinity, ) KI and KD are always binding
-        biodata.loc[biodata['affinity_units'].isin(
-            ['pKi', 'pKd']), 'assay_type'] = 'B'
+        biodata.loc[biodata[type_column].isin(
+            ['pKi', 'pKd', 'Ki', 'Kd']), 'assay_type'] = 'B'
         # EC50, pKB and pA2 are always Functional
-        biodata.loc[biodata['affinity_units'].isin(
-            ['pKB', 'pEC50', 'pA2']), 'assay_type'] = 'F'
+        biodata.loc[biodata[type_column].isin(
+            ['pKB', 'pEC50', 'pA2', 'A2', 'Kb', 'KB', 'EC50']), 'assay_type'] = 'F'
         # IC50 can be both B: displacement, affinity, binding, radioligand else is F
         binding_words = ['isplacement', 'ffinity', 'inding', 'adioligand']
-        biodata.loc[(biodata['affinity_units'] == 'pIC50') & (
-            biodata['assay_description'].str.contains('|'.join(binding_words))), 'assay_type'] = 'B'
-        biodata.loc[(biodata['affinity_units'] == 'pIC50') & ~(
-            biodata['assay_description'].str.contains('|'.join(binding_words))), 'assay_type'] = 'F'
+        biodata.loc[(biodata[type_column] == 'pIC50') & (
+            biodata[description_column].str.contains('|'.join(binding_words))), 'assay_type'] = 'B'
+        biodata.loc[(biodata[type_column] == 'IC50') & (
+            biodata[description_column].str.contains('|'.join(binding_words))), 'assay_type'] = 'B'
+        biodata.loc[(biodata[type_column] == 'pIC50') & ~(
+            biodata[description_column].str.contains('|'.join(binding_words))), 'assay_type'] = 'F'
+        biodata.loc[(biodata[type_column] == 'IC50') & ~(
+            biodata[description_column].str.contains('|'.join(binding_words))), 'assay_type'] = 'F'
         # find Unclassified assayas
-        biodata.loc[biodata['assay_description'].str.contains(
+        biodata.loc[biodata[description_column].str.contains(
             'Unclassified'), 'assay_type'] = 'U'
 
         return biodata
@@ -1281,6 +1291,13 @@ class Command(BaseBuild):
                 return test
             except:
                 return None
+        elif database == 'DrugCentral':
+            try:
+                protein = Protein.objects.filter(accession=target)
+                test = protein.get()
+                return test
+            except:
+                return None
 
     @staticmethod
     def fetch_role(drug_type, drug_action):
@@ -1318,6 +1335,15 @@ class Command(BaseBuild):
             return species
         except:
             return None
+
+    @staticmethod
+    def fetch_from_accession(code):
+        try:
+            protein = Protein.objects.filter(accession=code)
+            test = protein.get()
+        except:
+            test = None
+        return test
 
     @staticmethod
     def build_kidatabase_bioactivities():
@@ -1367,6 +1393,72 @@ class Command(BaseBuild):
                 bioacts[-1].standard_relation = '='
                 bioacts[-1].value_type = 'pKi'
                 bioacts[-1].source = 'PDSP KiDatabase'
+                bioacts[-1].document_chembl_id = None
+                # BULK insert every X entries or last entry
+            if (len(bioacts) == Command.bulk_size) or (index == bio_entries - 1):
+                AssayExperiment.objects.bulk_create(bioacts)
+                print("Inserted", index, "out of",
+                      bio_entries, "bioactivities")
+                bioacts = []
+    @staticmethod
+    def build_drugcentral_bioactivities():
+        print("# Collecting DrugCentral data")
+        accession_numbers = {}
+        ligand_cache = {}
+        drugcentral_ligands_link = get_or_create_url_cache("https://unmtid-shinyapps.net/download/DrugCentral/2021_09_01/drug.target.interaction.tsv.gz", 7 * 24 * 3600)
+        # drugcentral_ligands_link = "https://unmtid-shinyapps.net/download/DrugCentral/2021_09_01/drug.target.interaction.tsv.gz"
+        drugcentral_smiles_link = get_or_create_url_cache("https://unmtid-shinyapps.net/download/DrugCentral/2021_09_01/structures.smiles.tsv", 7 * 24 * 3600)
+        # drugcentral_smiles_link = "https://unmtid-shinyapps.net/download/DrugCentral/2021_09_01/structures.smiles.tsv"
+        drugcentral_ligands = pd.read_csv(drugcentral_ligands_link, sep='\t', header=0)
+        drugcentral_smiles = pd.read_csv(drugcentral_smiles_link, sep='\t', header=0)
+        #Adjusting the data and filter
+        drugcentral_ligands['ID'] =  drugcentral_ligands['STRUCT_ID']
+        drugcentral_ligands.drop('STRUCT_ID', axis=1, inplace=True)
+        drugcentral_ligands = drugcentral_ligands.loc[drugcentral_ligands['TARGET_CLASS'] == 'GPCR']
+        merged_data = pd.merge(drugcentral_ligands, drugcentral_smiles, on='ID', how='left')
+        # Keeping data that has either SMILES info OR CAS info
+        # CAS number can be translated into pubchem CID
+        merged_data_filtered = merged_data.loc[(~merged_data['SMILES'].isnull()) | (~merged_data['CAS_RN'].isnull())]
+        merged_data_filtered = merged_data_filtered.loc[(~merged_data_filtered['GENE'].isnull())]
+        merged_data_filtered = merged_data_filtered.loc[(~merged_data_filtered['ACT_VALUE'].isnull())]
+        merged_data_filtered.fillna('None', inplace=True)
+        merged_data_filtered = Command.classify_assay(merged_data_filtered, 'ACT_TYPE', 'ACT_COMMENT')
+        bio_entries = len(merged_data_filtered)
+
+        print("# Parsing DrugCentral data")
+        bioacts = []
+        for index, (_, row) in enumerate(merged_data_filtered.iterrows()):
+            receptor = None
+            code = row['ACCESSION']
+            if code not in accession_numbers.keys():
+                protein = Command.fetch_protein(code, 'DrugCentral')
+                if protein is not None:
+                    accession_numbers[code] = protein
+
+            ids = {}
+            if row['SMILES'] != 'None':
+                ids['smiles'] = row['SMILES']
+            if row['CAS_RN'] != 'None':
+                ids['CAS'] = row['CAS_RN']
+            if row['InChIKey'] != 'None':
+                ids['inchikey'] = row['InChIKey']
+            if row['DRUG_NAME'] not in ligand_cache.keys():
+                ligand = get_or_create_ligand(row['DRUG_NAME'], ids)
+                ligand_cache[row['DRUG_NAME']] = ligand
+            if code in accession_numbers.keys():
+                receptor = accession_numbers[code]
+            if (receptor is not None) and (ligand_cache[row['DRUG_NAME']] is not None):
+                bioacts.append(AssayExperiment())
+                bioacts[-1].ligand_id = ligand_cache[row['DRUG_NAME']].id
+                bioacts[-1].protein_id = receptor.id
+                bioacts[-1].assay_type = row['assay_type']
+                bioacts[-1].assay_description = row['ACT_COMMENT']
+                bioacts[-1].standard_activity_value = round(float(row['ACT_VALUE']), 2) if row['ACT_TYPE'] != 'pA2' else None
+                bioacts[-1].p_activity_value = round(-math.log10(float(row['ACT_VALUE']) * 10e-9), 2) if row['ACT_TYPE'] != 'pA2' else round(float(row['ACT_VALUE']), 2)
+                bioacts[-1].p_activity_ranges = None
+                bioacts[-1].standard_relation = row['RELATION']
+                bioacts[-1].value_type = 'p'+row['ACT_TYPE'] if row['ACT_TYPE'] != 'pA2' else row['ACT_TYPE']
+                bioacts[-1].source = 'Drug Central'
                 bioacts[-1].document_chembl_id = None
                 # BULK insert every X entries or last entry
             if (len(bioacts) == Command.bulk_size) or (index == bio_entries - 1):

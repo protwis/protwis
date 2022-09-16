@@ -53,309 +53,40 @@ def index(request):
 
     # get news
     context["news"] = News.objects.order_by("-date").all()[:3]
+    # Setting the headers for data boxes
+    headers={'GproteinDb' : {0: {"statistics_type": '<span class="stats_title"><b>Sequences</b></span>', "value": ''},
+                             2: {"statistics_type": '<span class="stats_title"><b>Couplings</b></span>', "value": ''},
+                             3: {"statistics_type": '<span class="stats_title"><b>Structures</b></span>', "value": ''},
+                             6: {"statistics_type": '<span class="stats_title"><b>Structure models</b></span>', "value": ''},
+                             8: {"statistics_type": '<span class="stats_title"><b>Structure interactions</b></span>', "value": '',},
+                             9: {"statistics_type": '<span class="stats_title"><b>Mutations</b></span>', "value": ''}},
+             'ArrestinDb': {0: {"statistics_type": '<span class="stats_title"><b>Sequences</b></span>', "value": ''},
+                            2: {"statistics_type": '<span class="stats_title"><b>Couplings</b></span>', "value": ''},
+                            3: {"statistics_type": '<span class="stats_title"><b>Structures</b></span>', "value": ''},
+                            6: {"statistics_type": '<span class="stats_title"><b>Structure interactions</b></span>', "value": '',},
+                            7: {"statistics_type": '<span class="stats_title"><b>Mutations</b></span>', "value": ''}},
+             'Biased Signaling Atlas': {0: {"statistics_type": '<span class="stats_title"><b>Biased ligands</b></span>', "value": ''},
+                                      3: {"statistics_type": '<span class="stats_title"><b>Pathways</b></span>', "value": ''},
+                                      4: {"statistics_type": '<span class="stats_title"><b>Pathway-preferring ligands</b></span>', "value": '',},
+                                      6: {"statistics_type": '<span class="stats_title"><b>Reference ligands</b></span>', "value": ''}},
+             'GPCRdb': {}}
     # get release notes
     try:
         context["release_notes"] = ReleaseNotes.objects.all()[0]
-        rel_stats = list(ReleaseStatistics.objects.filter(release=context["release_notes"]).values_list("statistics_type__name", "value"))
-
+        rel_stats = list(ReleaseStatistics.objects.filter(release=context["release_notes"], database=context["site_title"]).values_list("statistics_type__name", "value"))
         # Create dictionary and process part of the results
         context["release_statistics"] = []
-        if context["site_title"] == "GproteinDb":
-            context["release_statistics"].append(
-                {"statistics_type": '<span class="stats_title"><b>Sequences</b></span>', "value": ''}
-            )
-            context["release_statistics"].append(
-                {
-                    "statistics_type": '<span class="stats_entry">' + "Human G proteins" + "</span>",
-                    "value": '<span  class="stats_value">'
-                    + "{:,}".format(
-                        Protein.objects.filter(family__parent__parent__name="Alpha", species__common_name="Human", accession__isnull=False).count()
-                    )
-                    + "</span>",
-                }
-            )
+        count = 0
+        for entry in rel_stats:
+            if count in headers[context["site_title"]].keys():
+                context["release_statistics"].append(headers[context["site_title"]][count])
             context["release_statistics"].append(
                 {
-                    "statistics_type": '<span class="stats_entry">' + "Species orthologs" + "</span>",
-                    "value": '<span  class="stats_value">'
-                    + "{:,}".format(Protein.objects.filter(family__parent__parent__name="Alpha", accession__isnull=False).count())
-                    + "</span>",
+                    "statistics_type": '<span class="stats_entry">' + entry[0].split(' '+context["site_title"])[0] + "</span>",
+                    "value": '<span  class="stats_value">' + "{:,}".format(entry[1]) + "</span>",
                 }
             )
-
-            context["release_statistics"].append(
-                {"statistics_type": '<span class="stats_title"><b>Couplings</b></span>', "value": ''}
-            )
-            context["release_statistics"].append(
-                {
-                    "statistics_type": '<span class="stats_entry">' + "G protein couplings" + "</span>",
-                    "value": '<span  class="stats_value">'
-                    + "{:,}".format(ProteinCouplings.objects.all().exclude(g_protein__slug__startswith="200").count())
-                    + "</span>",
-                }
-            )
-
-            context["release_statistics"].append(
-                {"statistics_type": '<span class="stats_title"><b>Structures</b></span>', "value": ''}
-            )
-            signcomp = SignprotComplex.objects.all().exclude(protein__family__slug__startswith="200")
-            context["release_statistics"].append(
-                {
-                    "statistics_type": '<span class="stats_entry">' + "G proteins" + "</span>",
-                    "value": '<span  class="stats_value">'
-                    + "{:,}".format(signcomp.count() + SignprotStructure.objects.all().exclude(protein__family__slug__startswith="200").count())
-                    + "</span>",
-                }
-            )
-            context["release_statistics"].append(
-                {
-                    "statistics_type": '<span class="stats_entry">' + "G protein complexes" + "</span>",
-                    "value": '<span  class="stats_value">' + "{:,}".format(SignprotComplex.objects.all().count()) + "</span>",
-                }
-            )
-
-            context["release_statistics"].append(
-                {"statistics_type": '<span class="stats_title"><b>Structure models</b></span>', "value": ''}
-            )
-            context["release_statistics"].append(
-                {
-                    "statistics_type": '<span class="stats_entry">' + "G protein complexes" + "</span>",
-                    "value": '<span  class="stats_value">'
-                    + "{:,}".format(StructureComplexModel.objects.all().count() - SignprotComplex.objects.filter(structure__refined=True).count())
-                    + "</span>",
-                }
-            )
-            context["release_statistics"].append(
-                {
-                    "statistics_type": '<span class="stats_entry">' + "Refined complexes" + "</span>",
-                    "value": '<span  class="stats_value">' + "{:,}".format(signcomp.filter(structure__refined=True).count()) + "</span>",
-                }
-            )
-
-            context["release_statistics"].append(
-                {
-                    "statistics_type": '<span class="stats_title"><b>Structure interactions</b></span>',
-                    "value": '',
-                }
-            )
-            interface_interactions_count = (
-                InteractingResiduePair.objects.filter(referenced_structure__in=signcomp.values_list("structure", flat=True))
-                .exclude(res1__protein_conformation_id=F("res2__protein_conformation_id"))
-                .count()
-            )
-            context["release_statistics"].append(
-                {
-                    "statistics_type": '<span class="stats_entry">' + "G protein interface" + "</span>",
-                    "value": '<span  class="stats_value">' + "{:,}".format(interface_interactions_count) + "</span>",
-                }
-            )
-
-            context["release_statistics"].append(
-                {"statistics_type": '<span class="stats_title"><b>Mutations</b></span>', "value": ''}
-            )
-            context["release_statistics"].append(
-                {
-                    "statistics_type": '<span class="stats_entry">' + "Interface mutations" + "</span>",
-                    "value": '<span  class="stats_value">' + "{:,}".format(54) + "</span>",
-                }
-            )
-        elif context["site_title"] == "ArrestinDb":
-            context["release_statistics"].append(
-                {"statistics_type": '<span class="stats_title"><b>Sequences</b></span>', "value": ''}
-            )
-            context["release_statistics"].append(
-                {
-                    "statistics_type": '<span class="stats_entry">' + "Human arrestins" + "</span>",
-                    "value": '<span  class="stats_value">'
-                    + "{:,}".format(Protein.objects.filter(family__slug__startswith="200", species__common_name="Human", accession__isnull=False).count())
-                    + "</span>",
-                }
-            )
-            context["release_statistics"].append(
-                {
-                    "statistics_type": '<span class="stats_entry">' + "Species orthologs" + "</span>",
-                    "value": '<span  class="stats_value">'
-                    + "{:,}".format(Protein.objects.filter(family__slug__startswith="200", accession__isnull=False).count())
-                    + "</span>",
-                }
-            )
-
-            context["release_statistics"].append(
-                {"statistics_type": '<span class="stats_title"><b>Couplings</b></span>', "value": ''}
-            )
-            context["release_statistics"].append(
-                {
-                    "statistics_type": '<span class="stats_entry">' + "Arrestin couplings" + "</span>",
-                    "value": '<span  class="stats_value">'
-                    + "{:,}".format(ProteinCouplings.objects.filter(g_protein__slug__startswith="200").count())
-                    + "</span>",
-                }
-            )
-
-            context["release_statistics"].append(
-                {"statistics_type": '<span class="stats_title"><b>Structures</b></span>', "value": ''}
-            )
-            signcomp = SignprotComplex.objects.filter(protein__family__slug__startswith="200")
-            context["release_statistics"].append(
-                {
-                    "statistics_type": '<span class="stats_entry">' + "Arrestins" + "</span>",
-                    "value": '<span  class="stats_value">'
-                    + "{:,}".format(signcomp.count() + SignprotStructure.objects.filter(protein__family__slug__startswith="200").count())
-                    + "</span>",
-                }
-            )
-            context["release_statistics"].append(
-                {
-                    "statistics_type": '<span class="stats_entry">' + "Arrestin complexes" + "</span>",
-                    "value": '<span  class="stats_value">' + "{:,}".format(signcomp.count()) + "</span>",
-                }
-            )
-
-            context["release_statistics"].append(
-                {
-                    "statistics_type": '<span class="stats_title"><b>Structure interactions</b></span>',
-                    "value": '',
-                }
-            )
-            interface_interactions_count = (
-                InteractingResiduePair.objects.filter(referenced_structure__in=signcomp.values_list("structure", flat=True))
-                .exclude(res1__protein_conformation_id=F("res2__protein_conformation_id"))
-                .count()
-            )
-            context["release_statistics"].append(
-                {
-                    "statistics_type": '<span class="stats_entry">' + "Interface interactions" + "</span>",
-                    "value": '<span  class="stats_value">' + "{:,}".format(interface_interactions_count) + "</span>",
-                }
-            )
-
-            context["release_statistics"].append(
-                {"statistics_type": '<span class="stats_title"><b>Mutations</b></span>', "value": ''}
-            )
-            context["release_statistics"].append(
-                {
-                    "statistics_type": '<span class="stats_entry">' + "Interface mutations" + "</span>",
-                    "value": '<span  class="stats_value">' + "{:,}".format(409) + "</span>",
-                }
-            )
-
-        elif context["site_title"] == "GPCRdb":
-            rename_dictionary = {
-                "Exp. GPCR structures": "GPCRs structures",
-                "GPCR structure models": "GPCRs structure models",
-                "Refined GPCR structures": "Refined structures",
-            }
-            skip_list = ["Exp. Gprotein structures", "GPCR-G protein structure models"]
-            first_struct = -1
-            first_model = -1
-            count = 0
-            for entry in rel_stats:
-                if first_struct < 0 and "Exp." in entry[0]:
-                    first_struct = count
-                elif first_model < 0 and "model" in entry[0]:
-                    first_model = count
-
-                if entry[0] in rename_dictionary:
-                    context["release_statistics"].append(
-                        {
-                            "statistics_type": '<span class="stats_entry">' + rename_dictionary[entry[0]] + "</span>",
-                            "value": '<span class="stats_value">' + "{:,}".format(entry[1]) + "</span>",
-                        }
-                    )
-                elif entry[0] in skip_list:
-                    continue
-                else:
-                    context["release_statistics"].append(
-                        {
-                            "statistics_type": '<span class="stats_entry">' + entry[0] + "</span>",
-                            "value": '<span  class="stats_value">' + "{:,}".format(entry[1]) + "</span>",
-                        }
-                    )
-                count += 1
-        else:  # Biased Signaling Atlas
-            context["release_statistics"].append(
-                {"statistics_type": '<span class="stats_title"><b>Biased ligands</b></span>', "value": ''}
-            )
-            context["release_statistics"].append(
-                {
-                    "statistics_type": '<span class="stats_entry">' + "Physiology-biased" + "</span>",
-                    "value": '<span  class="stats_value">'
-                    + "{:,}".format(BiasedData.objects.filter(physiology_biased__isnull=False).values_list("ligand_id").distinct().count())
-                    + "</span>",
-                }
-            )
-            context["release_statistics"].append(
-                {
-                    "statistics_type": '<span class="stats_entry">' + "Pathway-biased" + "</span>",
-                    "value": '<span  class="stats_value">'
-                    + "{:,}".format(BiasedData.objects.filter(pathway_biased__isnull=False).values_list("ligand_id").distinct().count())
-                    + "</span>",
-                }
-            )
-            context["release_statistics"].append(
-                {
-                    "statistics_type": '<span class="stats_entry">' + "Total datapoints" + "</span>",
-                    "value": '<span  class="stats_value">' + "{:,}".format(BiasedData.objects.all().count()) + "</span>",
-                }
-            )
-
-            context["release_statistics"].append(
-                {"statistics_type": '<span class="stats_title"><b>Pathways</b></span>', "value": ''}
-            )
-            context["release_statistics"].append(
-                {
-                    "statistics_type": '<span class="stats_entry">' + "Pathway effects" + "</span>",
-                    "value": '<span  class="stats_value">' + "{:,}".format(BiasedPathwaysAssay.objects.all().count()) + "</span>",
-                }
-            )
-
-            context["release_statistics"].append(
-                {
-                    "statistics_type": '<span class="stats_title"><b>Pathway-preferring ligands</b></span>',
-                    "value": '',
-                }
-            )
-            context["release_statistics"].append(
-                {
-                    "statistics_type": '<span class="stats_entry">' + "Ligands" + "</span>",
-                    "value": '<span  class="stats_value">'
-                    + "{:,}".format(BiasedData.objects.filter(pathway_preferred__isnull=False).values_list("ligand_id").distinct().count())
-                    + "</span>",
-                }
-            )
-            context["release_statistics"].append(
-                {
-                    "statistics_type": '<span class="stats_entry">' + "Total datapoints" + "</span>",
-                    "value": '<span  class="stats_value">' + "{:,}".format(BiasedData.objects.filter(pathway_preferred__isnull=False).count()) + "</span>",
-                }
-            )
-
-            context["release_statistics"].append(
-                {"statistics_type": '<span class="stats_title"><b>Reference ligands</b></span>', "value": ''}
-            )
-            context["release_statistics"].append(
-                {
-                    "statistics_type": '<span class="stats_entry">' + "For pathway-bias" + "</span>",
-                    "value": '<span  class="stats_value">' + "{:,}".format(BalancedLigands.objects.all().values_list("ligand_id").count()) + "</span>",
-                }
-            )
-            context["release_statistics"].append(
-                {
-                    "statistics_type": '<span class="stats_entry">' + "For physiology-bias" + "</span>",
-                    "value": '<span  class="stats_value">'
-                    + "{:,}".format(Endogenous_GTP.objects.filter(Q(endogenous_status="Principal") | Q(potency_ranking=1)).count())
-                    + "</span>",
-                }
-            )
-
-            # Adjusted formatting for release notes
-            # context['release_statistics'].insert(first_model,
-            # {"statistics_type": "<span class=\"stats_entry stats_title\"><i>Structure models</i></span>",
-            # "value" : "<span  class=\"stats_value\"></span>"})
-            # context['release_statistics'].insert(first_struct,
-            # {"statistics_type": "<span class=\"stats_entry stats_title\"><i>Experimental structures</i></span>",
-            # "value" : "<span  class=\"stats_value\"></span>"})
-
+            count+=1
     except IndexError:
         context["release_notes"] = ""
         context["release_statistics"] = []
