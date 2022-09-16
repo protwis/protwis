@@ -250,66 +250,6 @@
 
 {% if mode == 'extended' %}
 <script type="text/javascript" charset="utf-8">
-    $(document).ready(function () {
-        //ClearSelection('targets');
-        var table = $('#proteins').DataTable({
-            scrollX: true,
-            scrollY: $(window).height() - 150,
-            bScrollCollapse: true,
-            paging: true,
-            paging_type: 'full_numbers',
-            iDisplayLength: 50,
-            orderCellsTop: true,
-            autoWidth: true,
-            });
-
-        let column_filters = [];
-        // createYADCFfilters(start_column, num_cols, filter_type, select_type = null, filter_default_label = "", filter_reset_button_text = false, filter_match_mode = null, column_data_type = null, width = null)
-        column_filters = column_filters.concat(createYADCFfilters(1, 2, "multi_select", "select2", "Select", false, null, "html", "80px"));
-        column_filters = column_filters.concat(createYADCFfilters(3, 4, "multi_select", "select2", "Select", false, null, null, "50px"));
-        column_filters = column_filters.concat(createYADCFfilters(7, 1, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
-        column_filters = column_filters.concat(createYADCFfilters(8, 2, "multi_select", "select2", "Select", false, null, null, "50px"));
-        column_filters = column_filters.concat(createYADCFfilters(10, 1, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
-        column_filters = column_filters.concat(createYADCFfilters(11, 3, "multi_select", "select2", "Select", false, null, null, "50px"));
-        column_filters = column_filters.concat(createYADCFfilters(14, 5, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
-        column_filters = column_filters.concat(createYADCFfilters(19, 2, "multi_select", "select2", "Select", false, null, null, "50px"));
-
-        yadcf.init(table.draw(), column_filters, {
-          cumulative_filtering: false
-        });
-    })
-</script>
-{% else %}
-<script type="text/javascript" charset="utf-8">
-    $(document).ready(function () {
-        //ClearSelection('targets');
-        var table = $('#proteins').DataTable({
-            scrollX: true,
-            scrollY: $(window).height() - 100,
-            bScrollCollapse: true,
-            paging: true,
-            paging_type: 'full_numbers',
-            iDisplayLength: 50,
-            orderCellsTop: true,
-            autoWidth: true,
-            });
-
-        let column_filters = [];
-    		// createYADCFfilters(start_column, num_cols, filter_type, select_type = null, filter_default_label = "", filter_reset_button_text = false, filter_match_mode = null, column_data_type = null, width = null)
-        column_filters = column_filters.concat(createYADCFfilters(1, 2, "multi_select", "select2", "Select", false, null, "html", "80px"));
-    		column_filters = column_filters.concat(createYADCFfilters(3, 6, "multi_select", "select2", "Select", false, null, null, "50px"));
-    		column_filters = column_filters.concat(createYADCFfilters(9, 4, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
-        column_filters = column_filters.concat(createYADCFfilters(13, 2, "multi_select", "select2", "Select", false, null, null, "50px"));
-        column_filters = column_filters.concat(createYADCFfilters(15, 5, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
-        column_filters = column_filters.concat(createYADCFfilters(20, 1, "multi_select", "select2", "Select", false, null, null, "50px"));
-
-    		yadcf.init(table.draw(), column_filters, {
-    			cumulative_filtering: false
-    		});
-      })
-</script>
-{% endif %}
-<script type="text/javascript" charset="utf-8">
     this.compoundPreview = function () {
 
         //Define position of the tooltip in relation to the cursor
@@ -337,6 +277,35 @@
         });
     };
     $(document).ready(function () {
+
+
+        var table = $('#proteins').DataTable({
+            scrollX: true,
+            scrollY: $(window).height() - 150,
+            bScrollCollapse: true,
+            paging: true,
+            paging_type: 'full_numbers',
+            iDisplayLength: 50,
+            orderCellsTop: true,
+            autoWidth: true,
+            });
+
+        let column_filters = [];
+        // createYADCFfilters(start_column, num_cols, filter_type, select_type = null, filter_default_label = "", filter_reset_button_text = false, filter_match_mode = null, column_data_type = null, width = null)
+        column_filters = column_filters.concat(createYADCFfilters(1, 2, "multi_select", "select2", "Select", false, null, "html", "80px"));
+        column_filters = column_filters.concat(createYADCFfilters(3, 4, "multi_select", "select2", "Select", false, null, null, "50px"));
+        column_filters = column_filters.concat(createYADCFfilters(7, 1, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
+        column_filters = column_filters.concat(createYADCFfilters(8, 2, "multi_select", "select2", "Select", false, null, null, "50px"));
+        column_filters = column_filters.concat(createYADCFfilters(10, 1, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
+        column_filters = column_filters.concat(createYADCFfilters(11, 3, "multi_select", "select2", "Select", false, null, null, "50px"));
+        column_filters = column_filters.concat(createYADCFfilters(14, 5, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
+        column_filters = column_filters.concat(createYADCFfilters(19, 2, "multi_select", "select2", "Select", false, null, null, "50px"));
+
+        yadcf.init(table.draw(), column_filters, {
+          cumulative_filtering: false
+        });
+
+
         $('.alt').change(function () {
             $(this).parent().parent().toggleClass('alt_selected');
         });
@@ -432,6 +401,158 @@
         }, 10);
     })
 </script>
+{% else %}
+<script type="text/javascript" charset="utf-8">
+    this.compoundPreview = function () {
+
+        //Define position of the tooltip in relation to the cursor
+        xOffset = 30;
+        yOffset = -10;
+
+        $("a.struct").hover(function (e) {
+            this.t = this.title;
+            this.title = "";
+            var c = (this.t != "") ? "<br/>" + this.t : "";
+            $("body").append("<p id='struct'><img style='max-width: 200px; height: auto' src='" + this.rel + "'/>" + c + "</p>");
+            $("#struct")
+                .css("top", (e.pageY - yOffset) + "px")
+                .css("left", (e.pageX + xOffset) + "px")
+                .fadeIn("fast");
+        },
+            function () {
+                this.title = this.t;
+                $("#struct").remove();
+            });
+        $("a.struct").mousemove(function (e) {
+            $("#struct")
+                .css("top", (e.pageY - yOffset) + "px")
+                .css("left", (e.pageX + xOffset) + "px");
+        });
+    };
+    $(document).ready(function () {
+
+
+        var table = $('#proteins').DataTable({
+            scrollX: true,
+            scrollY: $(window).height() - 100,
+            bScrollCollapse: true,
+            paging: true,
+            paging_type: 'full_numbers',
+            iDisplayLength: 50,
+            orderCellsTop: true,
+            autoWidth: true,
+            });
+
+        let column_filters = [];
+        // createYADCFfilters(start_column, num_cols, filter_type, select_type = null, filter_default_label = "", filter_reset_button_text = false, filter_match_mode = null, column_data_type = null, width = null)
+        column_filters = column_filters.concat(createYADCFfilters(1, 2, "multi_select", "select2", "Select", false, null, "html", "80px"));
+        column_filters = column_filters.concat(createYADCFfilters(3, 6, "multi_select", "select2", "Select", false, null, null, "50px"));
+        column_filters = column_filters.concat(createYADCFfilters(9, 4, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
+        column_filters = column_filters.concat(createYADCFfilters(13, 2, "multi_select", "select2", "Select", false, null, null, "50px"));
+        column_filters = column_filters.concat(createYADCFfilters(15, 5, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
+        column_filters = column_filters.concat(createYADCFfilters(20, 1, "multi_select", "select2", "Select", false, null, null, "50px"));
+
+        yadcf.init(table.draw(), column_filters, {
+          cumulative_filtering: false
+        });
+
+        $('.alt').change(function () {
+            $(this).parent().parent().toggleClass('alt_selected');
+        });
+        $('.select-all').change(function () {
+            $('.alt').prop('checked', $(this).prop("checked"));
+            $('.alt').parent().parent().toggleClass('alt_selected');
+        });
+
+        $(".hide_columns").click(function(evt) {
+          var columns = $(this).attr("columns").split(",");
+          columns.forEach(function(column) {
+              var column = table.column( column );
+              try {
+                  column.visible( false, false );
+              }
+              catch(err) {
+                  column.visible( false, false );
+              }
+              });
+              table.draw();
+        } );
+
+        $("#reset_hidden").click(function(evt) {
+          let col_length = table.columns()[0].length;
+          let columns = Array.from(new Array(col_length - 1), (x, i) => i);
+          table.columns(columns).visible(true, false);
+          table.draw();
+        } );
+
+        $('#csv_btn').click(function () {
+            var checked_data = table.rows('.alt_selected').data();
+            var csv_data = [];
+            csv_data.push('ChEMBL ID;Receptor;Species;Purchasable;No. records;Assay type;Min.;Average;Max.;Unit;Mol. weight;Rot. Bonds;H don;H acc;LogP;Smiles')
+            for (i = 0; i < checked_data.length; i++) {
+                var csv_row = []
+                for (j = 1; j < checked_data[i].length; j++) {
+                    var div = document.createElement("div");
+                    div.innerHTML = checked_data[i][j];
+                    if (typeof div.innerText !== "undefined") {
+                        csv_row.push(div.innerText.replace(/\s+/g, ''));
+                    } else {
+                        csv_row.push(div.textContent.replace(/\s+/g, ''));
+                    }
+                }
+                csv_data.push(csv_row.join(';'));
+            }
+            var csv_string = csv_data.join("\n");
+            if (window.navigator.msSaveOrOpenBlob) {
+                var blob = new Blob([csv_string]);
+                window.navigator.msSaveOrOpenBlob(blob, 'target_ligand_data.csv');
+            } else {
+                var a = document.createElement('a');
+                a.href = 'data:attachment/csv,' + encodeURIComponent(csv_string);
+                a.target = '_blank';
+                a.download = 'target_ligand_data.csv';
+                document.body.appendChild(a);
+                a.click();
+            }
+        });
+        $('#smi_btn').click(function () {
+            var checked_data = table.rows('.alt_selected').data();
+            let smi_data = [];
+            let processed = [];
+            for (i = 0; i < checked_data.length; i++) {
+                var div = document.createElement("div");
+                div.innerHTML = checked_data[i][1];
+                name = div.textContent;
+                if (!processed.includes(name)){
+                  let smi_row = checked_data[i][16] + "\t" + name;
+                  smi_data.push(smi_row);
+                  processed.push(name);
+                }
+            }
+            let smi_string = smi_data.join("\n");
+            if (window.navigator.msSaveOrOpenBlob) {
+                var blob = new Blob([smi_string]);
+                window.navigator.msSaveOrOpenBlob(blob, 'target_ligands.smi');
+            } else {
+                var a = document.createElement('a');
+                a.href = 'data:attachment/smi,' + encodeURIComponent(smi_string);
+                a.target = '_blank';
+                a.download = 'target_ligands.smi';
+                document.body.appendChild(a);
+                a.click();
+            }
+        });
+        $('#purchasability-btn').click(function () {
+            window.location.href = '/ligand/targets_purchasable';
+        });
+        compoundPreview();
+        setTimeout(function () {
+            table.columns.adjust().draw();
+        }, 10);
+    })
+</script>
+{% endif %}
+
 {% endblock %}
 {% block content %}
   {% if mode == 'extended' %}

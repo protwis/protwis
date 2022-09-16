@@ -9,10 +9,9 @@ from interaction.models import ResidueFragmentInteraction
 from ligand.models import Ligand, AssayExperiment, BiasedData, BiasedPathwaysAssay, Endogenous_GTP, BalancedLigands
 from mutation.models import MutationExperiment
 from mutational_landscape.models import NaturalMutations
-from protein.models import Protein, Species, ProteinCouplings
+from protein.models import Protein, ProteinCouplings
 from structure.models import Structure, StructureModel, StructureComplexModel
 from signprot.models import SignprotComplex, SignprotStructure
-from structure.models import StructureComplexModel
 from contactnetwork.models import InteractingResiduePair
 
 import logging

@@ -12,7 +12,6 @@ from structure.models import StructureComplexModel
 from ligand.models import BiasedData, BiasedPathwaysAssay, Endogenous_GTP, BalancedLigands
 from contactnetwork.models import InteractingResiduePair
 from signprot.models import SignprotComplex, SignprotStructure
-from residue.models import ResidueGenericNumberEquivalent
 from googleapiclient.discovery import build
 from oauth2client.service_account import ServiceAccountCredentials
 
