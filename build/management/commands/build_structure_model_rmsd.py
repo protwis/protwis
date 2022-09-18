@@ -7,9 +7,9 @@ Created on 2020-11-13 10:16:25.482439
 from build.management.commands.base_build import Command as BaseBuild
 from django.conf import settings
 
-from common.alignment import Alignment
+# from common.alignment import Alignment
 from protein.models import Protein, ProteinSegment
-from residue.models import Residue
+# from residue.models import Residue
 from structure.models import Structure, StructureModelRMSD
 from structure.sequence_parser import SequenceParser
 
@@ -17,7 +17,7 @@ from datetime import datetime
 import csv, os, pprint
 
 
-startTime = datetime.now()
+starttime = datetime.now()
 
 class Command(BaseBuild):
 
@@ -57,13 +57,14 @@ class BuildStructureModelRMSD():
     def run_build(self):
         for i in self.data[1:]:
             i = [None if j=='-' else float(j) if '.' in j and len(j)==3 else j for j in i]
-            pdb, main_temp, version, overall_all, overall_backbone, TM_all, TM_backbone, H8, ICL1, ECL1, ICL2, ECL2, ECL3, notes = i
+            pdb, _, version, overall_all, overall_backbone, TM_all, TM_backbone, H8, ICL1, ECL1, ICL2, ECL2, ECL3, notes = i
             target_structure = Structure.objects.get(pdb_code__index=pdb.upper())
             # main_template = Structure.objects.get(pdb_code__index=main_temp.upper())
             # a = Alignment()
             # a.load_reference_protein(target_structure.protein_conformation.protein.parent)
             # a.load_proteins([main_template.protein_conformation.protein.parent])
-            # segments = Residue.objects.filter(protein_conformation__protein=target_structure.protein_conformation.protein.parent).order_by('protein_segment__id').distinct('protein_segment__id').values_list('protein_segment',flat=True)
+            # resis = Residue.objects.filter(protein_conformation__protein=target_structure.protein_conformation.protein.parent)
+            # segments = resis.order_by('protein_segment__id').distinct('protein_segment__id').values_list('protein_segment',flat=True)
             # a.load_segments(ProteinSegment.objects.filter(id__in=segments))
             # a.build_alignment()
             # a.remove_non_generic_numbers_from_alignment()
@@ -76,7 +77,8 @@ class BuildStructureModelRMSD():
                                                                     main_template=main_template,
                                                                     version='{}-{}-{}'.format(version[-4:], version[3:5], version[:2]),
                                                                     seq_id=seq_id, seq_sim=seq_sim,
-                                                                    overall_all=overall_all, overall_backbone=overall_backbone, TM_all=TM_all, TM_backbone=TM_backbone, H8=H8, 
+                                                                    overall_all=overall_all, overall_backbone=overall_backbone, TM_all=TM_all, 
+                                                                    TM_backbone=TM_backbone, H8=H8, 
                                                                     ICL1=ICL1, ECL1=ECL1, ICL2=ICL2, ECL2=ECL2, ECL3=ECL3,
                                                                     notes=notes)
 
