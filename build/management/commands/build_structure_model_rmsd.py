@@ -77,8 +77,8 @@ class BuildStructureModelRMSD():
                                                                     main_template=main_template,
                                                                     version='{}-{}-{}'.format(version[-4:], version[3:5], version[:2]),
                                                                     seq_id=seq_id, seq_sim=seq_sim,
-                                                                    overall_all=overall_all, overall_backbone=overall_backbone, TM_all=TM_all, 
-                                                                    TM_backbone=TM_backbone, H8=H8, 
+                                                                    overall_all=overall_all, overall_backbone=overall_backbone, TM_all=TM_all,
+                                                                    TM_backbone=TM_backbone, H8=H8,
                                                                     ICL1=ICL1, ECL1=ECL1, ICL2=ICL2, ECL2=ECL2, ECL3=ECL3,
                                                                     notes=notes)
 
