@@ -35,16 +35,16 @@ function model_statistics() {
             null,
             null,
             null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
+            // null,
+            // null,
+            // null,
+            // null,
+            // null,
+            // null,
+            // null,
+            // null,
+            // null,
+            // null,
         ],
         "bInfo" : true,
     });
@@ -220,101 +220,101 @@ function model_statistics() {
                     width: "70px",
                 }
             },
-            {
-                column_number : 20,
-                filter_type: "range_number",
-                filter_reset_button_text: false,
-                filter_default_label: ["Min", "Max"],
-            },
-            {
-                column_number : 21,
-                filter_type: "range_number",
-                filter_reset_button_text: false,
-                filter_default_label: ["Min", "Max"],
-            },
+            // {
+            //     column_number : 20,
+            //     filter_type: "range_number",
+            //     filter_reset_button_text: false,
+            //     filter_default_label: ["Min", "Max"],
+            // },
+            // {
+            //     column_number : 21,
+            //     filter_type: "range_number",
+            //     filter_reset_button_text: false,
+            //     filter_default_label: ["Min", "Max"],
+            // },
             
-            {
-                column_number : 22,
-                filter_type: "multi_select",
-                select_type: "select2",
-                column_data_type: "html",
-                html_data_type: "text",
-                filter_default_label: "UniProt",
-                filter_match_mode : "exact",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: "60px",
-                }
-            },
-            {
-                column_number : 23,
-                filter_type: "multi_select",
-                select_type: "select2",
-                column_data_type: "html",
-                html_data_type: "text",
-                filter_default_label: "IUPHAR",
-                filter_match_mode : "exact",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: "60px",
-                }
-            },
-            {
-                column_number : 24,
-                filter_type: "multi_select",
-                select_type: "select2",
-                column_data_type: "html",
-                html_data_type: "text",
-                filter_default_label: "Select",
-                filter_match_mode : "exact",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: "80px",
-                }
-            },
-            {
-                column_number: 25,
-                filter_type: "multi_select",
-                select_type: "select2",
-                filter_default_label: "Species",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: "60px",
-                }
-            },
-            {
-                column_number : 26,
-                filter_type: "multi_select",
-                select_type: "select2",
-                column_data_type: "html",
-                filter_default_label: "",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: "50px",
-                }
-            },
-            {
-                column_number : 27,
-                filter_type: "multi_select",
-                select_type: "select2",
-                filter_default_label: "Select",
-                filter_reset_button_text: false,
-                select_type_options: {
-                    width: "50px",
-                }
-            },
-            {
-                column_number : 28,
-                filter_type: "range_number",
-                filter_reset_button_text: false,
-                filter_default_label: ["Min", "Max"],
-            },
-            {
-                column_number : 29,
-                filter_type: "range_number",
-                filter_reset_button_text: false,
-                filter_default_label: ["Min", "Max"],
-            },
+            // {
+            //     column_number : 22,
+            //     filter_type: "multi_select",
+            //     select_type: "select2",
+            //     column_data_type: "html",
+            //     html_data_type: "text",
+            //     filter_default_label: "UniProt",
+            //     filter_match_mode : "exact",
+            //     filter_reset_button_text: false,
+            //     select_type_options: {
+            //         width: "60px",
+            //     }
+            // },
+            // {
+            //     column_number : 23,
+            //     filter_type: "multi_select",
+            //     select_type: "select2",
+            //     column_data_type: "html",
+            //     html_data_type: "text",
+            //     filter_default_label: "IUPHAR",
+            //     filter_match_mode : "exact",
+            //     filter_reset_button_text: false,
+            //     select_type_options: {
+            //         width: "60px",
+            //     }
+            // },
+            // {
+            //     column_number : 24,
+            //     filter_type: "multi_select",
+            //     select_type: "select2",
+            //     column_data_type: "html",
+            //     html_data_type: "text",
+            //     filter_default_label: "Select",
+            //     filter_match_mode : "exact",
+            //     filter_reset_button_text: false,
+            //     select_type_options: {
+            //         width: "80px",
+            //     }
+            // },
+            // {
+            //     column_number: 25,
+            //     filter_type: "multi_select",
+            //     select_type: "select2",
+            //     filter_default_label: "Species",
+            //     filter_reset_button_text: false,
+            //     select_type_options: {
+            //         width: "60px",
+            //     }
+            // },
+            // {
+            //     column_number : 26,
+            //     filter_type: "multi_select",
+            //     select_type: "select2",
+            //     column_data_type: "html",
+            //     filter_default_label: "",
+            //     filter_reset_button_text: false,
+            //     select_type_options: {
+            //         width: "50px",
+            //     }
+            // },
+            // {
+            //     column_number : 27,
+            //     filter_type: "multi_select",
+            //     select_type: "select2",
+            //     filter_default_label: "Select",
+            //     filter_reset_button_text: false,
+            //     select_type_options: {
+            //         width: "50px",
+            //     }
+            // },
+            // {
+            //     column_number : 28,
+            //     filter_type: "range_number",
+            //     filter_reset_button_text: false,
+            //     filter_default_label: ["Min", "Max"],
+            // },
+            // {
+            //     column_number : 29,
+            //     filter_type: "range_number",
+            //     filter_reset_button_text: false,
+            //     filter_default_label: ["Min", "Max"],
+            // },
         ],
         {
             cumulative_filtering: false

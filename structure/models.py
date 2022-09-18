@@ -206,8 +206,8 @@ class StatsText(models.Model):
 
 class StructureModelRMSD(models.Model):
     homology_model = models.ForeignKey('structure.StructureModel', on_delete=models.CASCADE, null=True)
-    target_structure = models.ForeignKey('structure.Structure', related_name='target_structure', on_delete=models.CASCADE)
-    main_template = models.ForeignKey('structure.Structure', related_name='main_template', on_delete=models.CASCADE)
+    target_structure = models.ForeignKey('structure.Structure', related_name='target_structure', null=True, on_delete=models.CASCADE)
+    main_template = models.ForeignKey('structure.Structure', related_name='main_template', null=True, on_delete=models.CASCADE)
     version = models.DateField(null=True)
     seq_id = models.IntegerField(null=True)
     seq_sim = models.IntegerField(null=True)

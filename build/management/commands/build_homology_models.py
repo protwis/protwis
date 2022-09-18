@@ -48,6 +48,7 @@ from sklearn.decomposition import PCA, TruncatedSVD
 import numpy as np
 import matplotlib.pyplot as plt
 from itertools import cycle
+import json
 
 
 
@@ -323,7 +324,8 @@ class CallHomologyModeling():
         self.no_remodeling = no_remodeling
         self.mutations = mutations
         self.alphafold = alphafold
-        self.alphafold_data_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'Alphafold'])
+        self.alphafold_data_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'AlphaFold'])
+        self.alphafold_refined_data_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'AlphaFold_refined'])
         self.exclude_structures = exclude_structures
 
 
@@ -788,35 +790,78 @@ class CallHomologyModeling():
                 if self.debug:
                     pprint.pprint(Homology_model.statistics)
             ### Refined alphafold structure model
-            # elif self.alphafold and Homology_model.revise_xtal:
-            #     alignment = Homology_model.run_alignment([self.state])
-            #     Homology_model.build_homology_model(alignment)
-            #     missing_sections = []
-            #     new_start, new_end = None, None
-            #     section = []
+            elif self.alphafold and Homology_model.revise_xtal:
 
-            #     for seg, resis in Homology_model.template_source.items():
-            #         for gn, res in resis.items():
-            #             if res[0]!=Homology_model.main_structure:
-            #                 if not new_start:
-            #                     new_start = [seg, gn]
-            #                     new_end = [seg, gn]
-            #                     try:
-            #                         section = [[seg, gn, Residue.objects.get(protein_conformation=Homology_model.prot_conf, display_generic_number__label=dgn(gn, Homology_model.prot_conf)).sequence_number]]
-            #                     except ResidueGenericNumberEquivalent.DoesNotExist:
-            #                         section = [[seg, gn, int(gn)]]
-            #                 else:
-            #                     new_end = [seg, gn]
-            #                     try:
-            #                         section.append([seg, gn, Residue.objects.get(protein_conformation=Homology_model.prot_conf, display_generic_number__label=dgn(gn, Homology_model.prot_conf)).sequence_number])
-            #                     except ResidueGenericNumberEquivalent.DoesNotExist:
-            #                         section.append([seg, gn, int(gn)])
-            #             else:
-            #                 new_start = None
-            #                 if section not in missing_sections:
-            #                     missing_sections.append(section)
-            #     pprint.pprint(missing_sections)
-            #     raise AssertionError
+                print(ResidueGenericNumberEquivalent.objects.filter(scheme_id__in=[7,8,9,10,11]).values('label').distinct().count())
+
+                raise AssertionError
+                target_residues = Residue.objects.filter(protein_conformation__protein=Homology_model.reference_protein.parent)
+                template_residues = Residue.objects.filter(protein_conformation__protein=Homology_model.reference_protein)
+                wt_lookup_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'wt_pdb_lookup', Homology_model.reference_entry_name+'.json'])
+                wt_lookup_needed = False
+                Homology_model.main_structure = Structure.objects.get(pdb_code__index=Homology_model.reference_entry_name.upper())
+                alignment = AlignedReferenceTemplate()
+
+                ### get wt_pdb_lookup data when there are incorrect sequence numbers in structure
+                if os.path.exists(wt_lookup_file):
+                    ssno = StructureSeqNumOverwrite(Homology_model.main_structure)
+                    wt_lookup_needed = True
+
+                reference_dict = OrderedDict()
+                for r in target_residues:
+                    if r.protein_segment.slug not in reference_dict:
+                        reference_dict[r.protein_segment.slug] = OrderedDict()
+                    if r.display_generic_number:
+                        reference_dict[r.protein_segment.slug][ggn(r.display_generic_number.label)] = r
+                    else:
+                        reference_dict[r.protein_segment.slug][r.sequence_number] = r
+                
+                template_dict = OrderedDict()
+                for seglab, seg in reference_dict.items():
+                    if seglab not in template_dict:
+                        template_dict[seglab] = OrderedDict()
+                    for gn, res in seg.items():
+                        if wt_lookup_needed and res.sequence_number in ssno.wt_pdb_table:
+                            seqnum = ssno.wt_pdb_table[res.sequence_number]
+                        else:
+                            seqnum = res.sequence_number
+                        try:
+                            temp_res = template_residues.get(sequence_number=seqnum)
+                        except Residue.DoesNotExist:
+                            temp_res = '-'
+                        template_dict[seglab][gn] = temp_res
+                
+                alignment_dict = OrderedDict()
+                for seglab, seg in template_dict.items():
+                    for gn, res in seg.items():
+                        pass
+
+                
+                # missing_sections = []
+                # new_start, new_end = None, None
+                # section = []
+                # for seg, resis in Homology_model.template_source.items():
+                #     for gn, res in resis.items():
+                #         if res[0]!=Homology_model.main_structure:
+                #             if not new_start:
+                #                 new_start = [seg, gn]
+                #                 new_end = [seg, gn]
+                #                 try:
+                #                     section = [[seg, gn, Residue.objects.get(protein_conformation=Homology_model.prot_conf, display_generic_number__label=dgn(gn, Homology_model.prot_conf)).sequence_number]]
+                #                 except ResidueGenericNumberEquivalent.DoesNotExist:
+                #                     section = [[seg, gn, int(gn)]]
+                #             else:
+                #                 new_end = [seg, gn]
+                #                 try:
+                #                     section.append([seg, gn, Residue.objects.get(protein_conformation=Homology_model.prot_conf, display_generic_number__label=dgn(gn, Homology_model.prot_conf)).sequence_number])
+                #                 except ResidueGenericNumberEquivalent.DoesNotExist:
+                #                     section.append([seg, gn, int(gn)])
+                #         else:
+                #             new_start = None
+                #             if section not in missing_sections:
+                #                 missing_sections.append(section)
+                # pprint.pprint(missing_sections)
+                raise AssertionError
             else:
                 alignment = Homology_model.run_alignment([self.state])
                 Homology_model.build_homology_model(alignment)
