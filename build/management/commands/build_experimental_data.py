@@ -1410,7 +1410,7 @@ class Command(BaseBuild):
         drugcentral_smiles_link = get_or_create_url_cache("https://unmtid-shinyapps.net/download/DrugCentral/2021_09_01/structures.smiles.tsv", 7 * 24 * 3600)
         # drugcentral_smiles_link = "https://unmtid-shinyapps.net/download/DrugCentral/2021_09_01/structures.smiles.tsv"
         drugcentral_ligands = pd.read_csv(drugcentral_ligands_link, sep='\t', header=0, compression='gzip')
-        drugcentral_smiles = pd.read_csv(drugcentral_smiles_link, sep='\t', header=0, compression='gzip')
+        drugcentral_smiles = pd.read_csv(drugcentral_smiles_link, sep='\t', header=0)
         #Adjusting the data and filter
         drugcentral_ligands['ID'] =  drugcentral_ligands['STRUCT_ID']
         drugcentral_ligands.drop('STRUCT_ID', axis=1, inplace=True)
