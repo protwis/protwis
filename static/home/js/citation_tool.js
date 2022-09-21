@@ -93,7 +93,7 @@ function citation_tool(url, cite_id) {
 			if (filter_for==="gpcrdb" && data[i][11]!=="GPCRdb") {
 				continue;
 			}
-			else if (filter_for==="gproteindb" && data[i][11]!=="GproteinDb" && data[i][7]=2022) {
+			else if (filter_for==="gproteindb" && data[i][11]!=="GproteinDb" && data[i][7]===2022) {
 				continue;
 			}
 			else if (filter_for==="arrestindb" && data[i][11]!=="ArrestinDb") {

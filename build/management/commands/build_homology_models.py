@@ -791,16 +791,23 @@ class CallHomologyModeling():
                     pprint.pprint(Homology_model.statistics)
             ### Refined alphafold structure model
             elif self.alphafold and Homology_model.revise_xtal:
-
-                print(ResidueGenericNumberEquivalent.objects.filter(scheme_id__in=[7,8,9,10,11]).values('label').distinct().count())
-
-                raise AssertionError
+                ### structure
                 target_residues = Residue.objects.filter(protein_conformation__protein=Homology_model.reference_protein.parent)
-                template_residues = Residue.objects.filter(protein_conformation__protein=Homology_model.reference_protein)
+                template_residues = Residue.objects.filter(protein_conformation__protein=Homology_model.reference_protein, protein_segment__isnull=False)
                 wt_lookup_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'wt_pdb_lookup', Homology_model.reference_entry_name+'.json'])
                 wt_lookup_needed = False
                 Homology_model.main_structure = Structure.objects.get(pdb_code__index=Homology_model.reference_entry_name.upper())
                 alignment = AlignedReferenceTemplate()
+                ### AF
+                af_path = os.sep.join([self.alphafold_refined_data_dir, Homology_model.main_structure.pdb_code.index+'_refined.pdb'])
+                ihm = ImportHomologyModel(Homology_model.reference_protein.parent)
+                ihm.path_to_pdb = af_path
+                p = PDB.PDBParser()
+                model = p.get_structure('receptor', af_path)[0]['A']
+                af_reference_dict, af_template_dict, af_alignment_dict, af_main_pdb_array = deepcopy(ihm.parse_model(model))
+                # Homology_model.disulfide_pairs = ihm.find_disulfides()
+                Homology_model.trimmed_residues = []
+
 
                 ### get wt_pdb_lookup data when there are incorrect sequence numbers in structure
                 if os.path.exists(wt_lookup_file):
@@ -814,29 +821,69 @@ class CallHomologyModeling():
                     if r.display_generic_number:
                         reference_dict[r.protein_segment.slug][ggn(r.display_generic_number.label)] = r
                     else:
-                        reference_dict[r.protein_segment.slug][r.sequence_number] = r
-                
+                        reference_dict[r.protein_segment.slug][str(r.sequence_number)] = r
+
+                ### Need to FIX this section for wt_lookup_needed structures
                 template_dict = OrderedDict()
                 for seglab, seg in reference_dict.items():
-                    if seglab not in template_dict:
-                        template_dict[seglab] = OrderedDict()
+                    template_dict[seglab] = OrderedDict()
                     for gn, res in seg.items():
+                        gn = str(gn)
+                        # print(gn, res)
                         if wt_lookup_needed and res.sequence_number in ssno.wt_pdb_table:
                             seqnum = ssno.wt_pdb_table[res.sequence_number]
+                            seglab = template_residues.get(sequence_number=seqnum).protein_segment.slug
+                            # print(res.sequence_number, seqnum, seglab)
                         else:
                             seqnum = res.sequence_number
                         try:
                             temp_res = template_residues.get(sequence_number=seqnum)
                         except Residue.DoesNotExist:
                             temp_res = '-'
-                        template_dict[seglab][gn] = temp_res
-                
+                        if temp_res!='-':
+                            template_dict[seglab][gn] = temp_res
+                        else:
+                            template_dict[seglab][gn] = '-'
+
                 alignment_dict = OrderedDict()
                 for seglab, seg in template_dict.items():
+                    alignment_dict[seglab] = OrderedDict()
                     for gn, res in seg.items():
-                        pass
+                        gn = str(gn)
+                        if template_dict[seglab][gn]=='-':
+                            alignment_dict[seglab][gn] = '-'
+                        elif reference_dict[seglab][gn].amino_acid!=template_dict[seglab][gn].amino_acid:
+                            alignment_dict[seglab][gn] = '.'
+                        else:
+                            alignment_dict[seglab][gn] = res
 
-                
+                main_pdb_array = OrderedDict()
+                for seglab, seg in template_dict.items():
+                    main_pdb_array[seglab] = OrderedDict()
+                    for gn, res in seg.items():
+                        gn = str(gn).replace('x','.')
+                        if res=='-':
+                            main_pdb_array[seglab][gn] = '-'
+                        else:
+                            rot_obj = Homology_model.right_rotamer_select(Rotamer.objects.filter(residue=res))
+                            rot = PDB.PDBParser().get_structure('rot', StringIO(rot_obj.pdbdata.pdb))[0]
+                            if rot_obj.missing_atoms:
+                                alignment_dict[seglab][gn] = '.'
+                            for chain in rot:
+                                for res in chain:
+                                    atoms = [a for a in res if a.get_name()[0]!='H']
+                            main_pdb_array[seglab][gn] = atoms
+
+                pprint.pprint(alignment_dict)
+                pprint.pprint(af_main_pdb_array)
+
+                ### Rotamer swap
+                for seglab, seg in alignment_dict.items():
+                    for gn, res in seg.items():
+                        if res=='.' and gn in af_template_dict[seglab]:
+                            print(gn, af_main_pdb_array[seglab][gn.replace('x','.')], main_pdb_array[seglab][gn.replace('x','.')], af_main_pdb_array[seglab][gn.replace('x','.')][0].get_parent(), af_template_dict[seglab][gn], template_dict[seglab][gn])
+
+
                 # missing_sections = []
                 # new_start, new_end = None, None
                 # section = []
