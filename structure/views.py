@@ -2559,7 +2559,7 @@ def HommodDownload(request):
     with zipfile.ZipFile(zip_io, mode='w', compression=zipfile.ZIP_DEFLATED) as backup_zip:
         for hommod in hommodels:
             io = StringIO(hommod.pdb_data.pdb)
-            stats_text = StringIO(hommod.stats_text.stats_text)
+            
             if not hommod.protein.accession:
                 mod_name = 'Class{}_{}_{}_refined_{}_{}_GPCRDB.pdb'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.parent.entry_name,
                                                                    hommod.main_template.pdb_code.index, hommod.state.name, hommod.version)
@@ -2567,11 +2567,13 @@ def HommodDownload(request):
                                                                    hommod.main_template.pdb_code.index, hommod.state.name, hommod.version)
             else:
                 mod_name = 'Class{}_{}_{}_{}_{}_GPCRDB.pdb'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.entry_name,
-                                                                          hommod.state.name, hommod.main_template.pdb_code.index, hommod.version)
+                                                                          hommod.state.name, 'AF', hommod.version)
                 stat_name = 'Class{}_{}_{}_{}_{}_GPCRDB.templates.csv'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.entry_name,
-                                                                          hommod.state.name, hommod.main_template.pdb_code.index, hommod.version)
+                                                                          hommod.state.name, 'AF', hommod.version)
             backup_zip.writestr(mod_name, io.getvalue())
-            backup_zip.writestr(stat_name, stats_text.getvalue())
+            if hommod.stats_text:
+                stats_text = StringIO(hommod.stats_text.stats_text)
+                backup_zip.writestr(stat_name, stats_text.getvalue())
 
     response = HttpResponse(zip_io.getvalue(), content_type='application/x-zip-compressed')
     response['Content-Disposition'] = 'attachment; filename=%s' % 'GPCRDB_homology_models' + ".zip"
