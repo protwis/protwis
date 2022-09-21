@@ -29,7 +29,7 @@ canvas {
 
 <div class="row">
     <div class="col-md-3 text-right text-info">
-        <h4>PROTEIN CLASS</h4>
+        <h4>GPCR CLASS</h4>
     </div>
     <div class="col-md-9">
         {{ model.protein.get_protein_class }}
@@ -77,6 +77,19 @@ canvas {
     </div>
 </div>
 
+<div class="row">
+    <div class="col-md-3 text-right text-info">
+        <h4>METHOD</h4>
+    </div>
+    <div class="col-md-9">
+        {% if model.protein.accession %}
+        <a href="https://doi.org/10.1002/prot.26382" target="_blank">AlphaFold-Multistate</a>
+        {% else %}
+        <a href="https://docs.gpcrdb.org/structures.html#refined-structures" target="_blank">GPCRdb refined structure homology modeling pipeline</a>
+        {% endif %}
+    </div>
+</div>
+
 
 <style>
 .inline {display:inline;}
@@ -109,7 +122,8 @@ canvas {
             </ul>
         </div>
         <div>
-            <p>PDB file contains GPCRdb generic numbers in the B-factor field of CA atoms</p>
+            <p>PDB file contains GPCRdb generic numbers in the B-factor field of C&alpha; atoms {% if model.protein.accession %} and AlphFold pLDDT scores in the B-factor field of C atoms{% endif %}</p>
+            
         </div>
         <div style="float: left; width: 60%;">
             <div id="viewport" style="width:500px; height:400px;background-color: white;"></div>
@@ -120,12 +134,13 @@ canvas {
     </div>
 {% if model.protein.accession %}
     <div class="col-md-4">
-      <br>
-      <br>
-      <br>
-      <br>
-      <div style='width: 70%; display:table; position:relative;'>
-          <div style='display: table-cell;'>
+        <br>
+        <br>
+        <br>
+        <br>
+        <div><h4>Model confidence</h4></div>
+        <div style='width: 70%; display:table; position:relative;'>
+            <div style='display: table-cell;'>
               <div class="graphcolor" style="background-color: blue; "></div>
               <span style="margin-left: 5px; vertical-align: middle; padding-top: 5px;">Very high (pLDDT > 90)</span>
               <br>
@@ -141,8 +156,8 @@ canvas {
               <div class="graphcolor" style="background-color: red;"></div>
               <span style="margin-left: 5px; vertical-align: middle;">Disordered</span>
               <br>
-          </div>
-      </div>
+            </div>
+        </div>
     </div>
 </div>
 {% else %}
