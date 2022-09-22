@@ -309,9 +309,29 @@
         $('.alt').change(function () {
             $(this).parent().parent().toggleClass('alt_selected');
         });
-        $('.select-all').change(function () {
+        $('.select-page').change(function () {
             $('.alt').prop('checked', $(this).prop("checked"));
             $('.alt').parent().parent().toggleClass('alt_selected');
+        });
+
+        const btn = document.getElementById("selectall");
+
+        btn.addEventListener("click", ()=>{
+            if(btn.innerText === "Select table"){
+                btn.innerText = "Deselect table";
+            }else{
+                btn.innerText= "Select table";
+            }
+        })
+
+        $("#selectall").click(function() {
+            var rows = table.rows().nodes();
+            if($('input:checked', rows).length == rows.length){
+               $('input[type="checkbox"]', rows).prop('checked', false);
+            }
+            else{
+               $('input[type="checkbox"]', rows).prop('checked', true);
+            }
         });
 
         $(".hide_columns").click(function(evt) {
@@ -459,9 +479,29 @@
         $('.alt').change(function () {
             $(this).parent().parent().toggleClass('alt_selected');
         });
-        $('.select-all').change(function () {
+        $('.select-page').change(function () {
             $('.alt').prop('checked', $(this).prop("checked"));
             $('.alt').parent().parent().toggleClass('alt_selected');
+        });
+
+        const btn = document.getElementById("selectall");
+
+        btn.addEventListener("click", ()=>{
+            if(btn.innerText === "Select table"){
+                btn.innerText = "Deselect table";
+            }else{
+                btn.innerText= "Select table";
+            }
+        })
+
+        $("#selectall").click(function() {
+            var rows = table.rows().nodes();
+            if($('input:checked', rows).length == rows.length){
+               $('input[type="checkbox"]', rows).prop('checked', false);
+            }
+            else{
+               $('input[type="checkbox"]', rows).prop('checked', true);
+            }
         });
 
         $(".hide_columns").click(function(evt) {
@@ -575,6 +615,7 @@
   </div>
   <div class="btn-group">
     <button id="reset_hidden" type="button" class="btn btn-primary" style="margin-top:10px;margin-top:3px">Reset columns</button>
+    <button id="selectall" type="button" class="btn btn-primary" style="margin-top:10px;margin-top:3px">Select table</button>
   </div>
   <br />
   <br />
@@ -598,7 +639,7 @@
                 </th>
               </tr>
               <tr>
-                  <th><input class="select-all" type="checkbox"> Select all</th>
+                  <th><input class="select-all" type="checkbox">Sel. page</th>
                   <th class="general-th">Common<br \>name</th>
                   <th class="general-th">GPCRdb ID</th>
                   <th class="general-th">#Vendors</th>
@@ -669,6 +710,7 @@
        <a id="purchasability-btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Get vendors</a>
    </div>
    <button id="reset_hidden" type="button" class="btn btn-primary" style="margin-top:10px;margin-top:3px">Reset columns</button>
+   <button id="selectall" type="button" class="btn btn-primary" style="margin-top:10px;margin-top:3px">Select table</button>
    <br />
    <br />
    <h3>Ligand min, max & mean activities (1 row/ligand)</h3>
@@ -690,7 +732,7 @@
                </th>
        			</tr>
        			<tr class="table-filter-dropdown">
-               <th><input class="select-all" type="checkbox"> Select all</th>
+               <th><input class="select-page" type="checkbox">Sel. page</th>
                <th style="text-align:center">Common<br />name</th>
                <th style="text-align:center">GPCRdb ID</th>
                <th style="text-align:center">Type</th>
