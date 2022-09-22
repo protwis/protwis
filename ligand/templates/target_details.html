@@ -309,9 +309,35 @@
         $('.alt').change(function () {
             $(this).parent().parent().toggleClass('alt_selected');
         });
-        $('.select-all').change(function () {
+        $('.select-page').change(function () {
             $('.alt').prop('checked', $(this).prop("checked"));
             $('.alt').parent().parent().toggleClass('alt_selected');
+        });
+
+        const btn = document.getElementById("selectall");
+
+        btn.addEventListener("click", ()=>{
+            if(btn.innerText === "Select full table"){
+                btn.innerText = "Deselect full table";
+            }else{
+                btn.innerText= "Select full table";
+            }
+        })
+
+        $("#selectall").click(function() {
+            var rows = table.rows().nodes();
+            if($('input:checked', rows).length == rows.length){
+               $('input[type="checkbox"]', rows).prop('checked', false);
+               table.rows().every(function() {
+                 this.nodes().to$().removeClass('alt_selected')
+               })
+            }
+            else{
+               $('input[type="checkbox"]', rows).prop('checked', true);
+               table.rows().every(function() {
+                 this.nodes().to$().addClass('alt_selected')
+               })
+            }
         });
 
         $(".hide_columns").click(function(evt) {
@@ -336,6 +362,7 @@
         } );
 
         $('#csv_btn').click(function () {
+            var checked_data = table.rows('.alt_selected').data();
             var checked_data = table.rows('.alt_selected').data();
             var csv_data = [];
             csv_data.push('ChEMBL ID;Receptor;Species;Purchasable;No. records;Assay type;Min.;Average;Max.;Unit;Mol. weight;Rot. Bonds;H don;H acc;LogP;Smiles')
@@ -374,7 +401,7 @@
                 div.innerHTML = checked_data[i][1];
                 name = div.textContent;
                 if (!processed.includes(name)){
-                  let smi_row = checked_data[i][16] + "\t" + name;
+                  let smi_row = checked_data[i][19] + "\t" + name;
                   smi_data.push(smi_row);
                   processed.push(name);
                 }
@@ -459,9 +486,35 @@
         $('.alt').change(function () {
             $(this).parent().parent().toggleClass('alt_selected');
         });
-        $('.select-all').change(function () {
+        $('.select-page').change(function () {
             $('.alt').prop('checked', $(this).prop("checked"));
             $('.alt').parent().parent().toggleClass('alt_selected');
+        });
+
+        const btn = document.getElementById("selectall");
+
+        btn.addEventListener("click", ()=>{
+            if(btn.innerText === "Select full table"){
+                btn.innerText = "Deselect full table";
+            }else{
+                btn.innerText= "Select full table";
+            }
+        })
+
+        $("#selectall").click(function() {
+            var rows = table.rows().nodes();
+            if($('input:checked', rows).length == rows.length){
+               $('input[type="checkbox"]', rows).prop('checked', false);
+               table.rows().every(function() {
+                 this.nodes().to$().removeClass('alt_selected')
+               })
+            }
+            else{
+               $('input[type="checkbox"]', rows).prop('checked', true);
+               table.rows().every(function() {
+                 this.nodes().to$().addClass('alt_selected')
+               })
+            }
         });
 
         $(".hide_columns").click(function(evt) {
@@ -524,7 +577,7 @@
                 div.innerHTML = checked_data[i][1];
                 name = div.textContent;
                 if (!processed.includes(name)){
-                  let smi_row = checked_data[i][16] + "\t" + name;
+                  let smi_row = checked_data[i][20] + "\t" + name;
                   smi_data.push(smi_row);
                   processed.push(name);
                 }
@@ -557,8 +610,8 @@
 {% block content %}
   {% if mode == 'extended' %}
   <div class="btn-group">
-          <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
-                  aria-haspopup="true" aria-expanded="false">
+          <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown"
+                  aria-haspopup="true" aria-expanded="false" style="margin-top:10px;margin-top:3px">
               <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
           </button>
       <ul class="dropdown-menu">
@@ -571,10 +624,13 @@
           </ul>
       </div>
   <div class="btn-group">
-      <a id="purchasability-btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Get vendors</a>
+      <a id="purchasability-btn" class="btn btn-primary" href="javascript:void(0)" style="margin-top:10px;margin-top:3px">Get vendors</a>
   </div>
   <div class="btn-group">
     <button id="reset_hidden" type="button" class="btn btn-primary" style="margin-top:10px;margin-top:3px">Reset columns</button>
+  </div>
+  <div class="btn-group">
+    <button id="selectall" type="button" class="btn btn-primary" style="margin-top:10px;margin-top:3px">Select full table</button>
   </div>
   <br />
   <br />
@@ -598,7 +654,7 @@
                 </th>
               </tr>
               <tr>
-                  <th><input class="select-all" type="checkbox"> Select all</th>
+                  <th><input class="select-all" type="checkbox">Sel. page</th>
                   <th class="general-th">Common<br \>name</th>
                   <th class="general-th">GPCRdb ID</th>
                   <th class="general-th">#Vendors</th>
@@ -652,8 +708,8 @@
   </div>
  {% else %}
    <div class="btn-group">
-           <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
-                   aria-haspopup="true" aria-expanded="false">
+           <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown"
+                   aria-haspopup="true" aria-expanded="false" style="margin-top:10px;margin-top:3px">
                <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
            </button>
        <ul class="dropdown-menu">
@@ -666,9 +722,14 @@
            </ul>
        </div>
    <div class="btn-group">
-       <a id="purchasability-btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Get vendors</a>
+       <a id="purchasability-btn" class="btn btn-primary" href="javascript:void(0)" style="margin-top:10px;margin-top:3px">Get vendors</a>
    </div>
-   <button id="reset_hidden" type="button" class="btn btn-primary" style="margin-top:10px;margin-top:3px">Reset columns</button>
+   <div class="btn-group">
+     <button id="reset_hidden" type="button" class="btn btn-primary" style="margin-top:10px;margin-top:3px">Reset columns</button>
+   </div>
+   <div class="btn-group">
+     <button id="selectall" type="button" class="btn btn-primary" style="margin-top:10px;margin-top:3px">Select full table</button>
+   </div>
    <br />
    <br />
    <h3>Ligand min, max & mean activities (1 row/ligand)</h3>
@@ -690,7 +751,7 @@
                </th>
        			</tr>
        			<tr class="table-filter-dropdown">
-               <th><input class="select-all" type="checkbox"> Select all</th>
+               <th><input class="select-page" type="checkbox">Sel. page</th>
                <th style="text-align:center">Common<br />name</th>
                <th style="text-align:center">GPCRdb ID</th>
                <th style="text-align:center">Type</th>

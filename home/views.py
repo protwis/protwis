@@ -68,7 +68,7 @@ def index(request):
              'Biased Signaling Atlas': {0: {"statistics_type": '<span class="stats_title"><b>Biased ligands</b></span>', "value": ''},
                                       3: {"statistics_type": '<span class="stats_title"><b>Pathways</b></span>', "value": ''},
                                       4: {"statistics_type": '<span class="stats_title"><b>Pathway-preferring ligands</b></span>', "value": '',},
-                                      6: {"statistics_type": '<span class="stats_title"><b>Reference ligands</b></span>', "value": ''}},
+                                      5: {"statistics_type": '<span class="stats_title"><b>Reference ligands</b></span>', "value": ''}},
              'GPCRdb': {}}
     # get release notes
     try:
