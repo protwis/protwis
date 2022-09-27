@@ -404,7 +404,7 @@ function ShowRadarPlot(type) {
     var mergedWidth = 900;
   } else {
     var mergedWidth = 300 * (ids.length - 1);
-  };
+  }
 
   // createElementNS for svg
   var mergedSvg = document.createElementNS(svgNS, 'svg');
@@ -422,7 +422,7 @@ function ShowRadarPlot(type) {
     } else {
       xMultiply = 0;
       yMultiply = yMultiply + 1;
-    };
+    }
     var plot = document.getElementById(ids[i]);
     var plotSvg = plot.getElementsByTagName('svg')[0];
     var plotContent = Array.from(plotSvg.childNodes)[0];

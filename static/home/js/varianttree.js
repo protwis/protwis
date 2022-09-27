@@ -37,7 +37,7 @@ var link = svg_g.selectAll(".link")
     if (d.source.depth === 0) {return "fill: none; opacity: 0.8; stroke-width: " + 10 + "; stroke: #C0C0C0"}
     else if (d.source.depth === 1) {return "fill: none; opacity: 0.8; stroke-width: " + 4 + "; stroke: #C0C0C0"}
     else if (d.source.depth === 2) {return "fill: none; opacity: 0.8; stroke-width: " + 2 + "; stroke: #C0C0C0"}
-    else if (d.source.depth === 3) {return "fill: none; opacity: 0.8; stroke-width: " + 1 + "; stroke: #C0C0C0"};})
+    else if (d.source.depth === 3) {return "fill: none; opacity: 0.8; stroke-width: " + 1 + "; stroke: #C0C0C0"}})
 
   .attr("d", diagonal);
 
@@ -75,7 +75,7 @@ var node = svg_g.selectAll(".node")
 node.append("circle")
   .attr("r", function(d) {
     if (d.number_of_variants >= 1) {return 6.0}
-    else {return 0.0} ;})
+    else {return 0.0} })
   .style("fill", function(d) {return "#43A047"})
   .style("fill-opacity", function(d) {return d.density_of_variants * 2});
 

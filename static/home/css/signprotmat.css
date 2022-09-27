@@ -30,18 +30,16 @@
   /* left: 0; */
 }
 
-
 /* styling for hover tooltip */
 .d3-tip {
   line-height: 1;
   padding: 12px;
-  background: rgba(0, 0, 0, 0.8);
+  background: rgb(0 0 0 / 80%);
   color: #fff;
   border-radius: 2px;
   pointer-events: none;
   text-align: left;
 }
-
 
 /* Creates a small triangle extender for the tooltip */
 .d3-tip::after {
@@ -50,19 +48,18 @@
   font-size: 10px;
   width: 100%;
   line-height: 1;
-  color: rgba(0, 0, 0, 0.8);
+  color: rgb(0 0 0 / 80%);
   position: absolute;
   pointer-events: none;
 }
 
 .d3-tip.n::after {
   content: "\25BC";
-  margin: -2px 0 0 0;
+  margin: -2px 0 0;
   top: 100%;
   left: 0;
   text-align: center;
 }
-
 
 /* styling for the major ticks of the grid */
 .x.grid line {
@@ -79,7 +76,6 @@
   stroke-width: 0.5;
 }
 
-
 /* hover effect for rects */
 
 /* rect {
@@ -91,7 +87,6 @@ rect:hover {
     opacity: 0.6;
     transition: opacity 200ms;
 } */
-
 
 /* legend label style */
 text.legend {
@@ -184,9 +179,6 @@ text.expand {
   pointer-events: none;
 }
 
-
-
-
 /* removing unnecessary paths via assigning no stroke */
 .x.grid path {
   stroke: none;
@@ -197,7 +189,7 @@ text.expand {
 }
 
 .activeRes {
-  -webkit-animation: pulse 1s linear infinite;
+  animation: pulse 1s linear infinite;
   animation: pulse 1s linear infinite;
 }
 

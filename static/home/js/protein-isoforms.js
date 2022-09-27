@@ -153,7 +153,7 @@ function make_coverage_tree() {
 
         .style("opacity", function(d) {
             if (d.depth === 4) { return d.density_of_variants } // || 1==1
-            else { return (d.density_of_variants) };
+            else { return (d.density_of_variants) }
         })
         // .style("fill-rule", "evenodd")
         .on('mouseover', function(d) {
@@ -165,7 +165,7 @@ function make_coverage_tree() {
             d3.select(this).style("cursor", "cursor")
         })
         .on("click", function(d) {
-            if (d.depth === 4) { filter_this_receptor(d.name); };
+            if (d.depth === 4) { filter_this_receptor(d.name); }
         })
         .each(stash);
 
@@ -269,7 +269,7 @@ function make_coverage_tree() {
             })
 
             .on("click", function() {
-                if (d.depth === 4) { filter_this_receptor(d.name); };
+                if (d.depth === 4) { filter_this_receptor(d.name); }
             })
 
             .style("fill", function() { return "#000" })

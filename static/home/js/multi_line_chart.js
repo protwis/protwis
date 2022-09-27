@@ -77,7 +77,7 @@ function DrawMultiLineChart(Data, BaseDiv, Keys, ID, linkTitle, reference, linkP
          .style("opacity", 1);
        d3.selectAll("g.segment path")
          .style("opacity", 1);
-     };
+     }
 
     document.getElementById(ID).onclick = ResetOpacity;
 
@@ -103,10 +103,10 @@ function DrawMultiLineChart(Data, BaseDiv, Keys, ID, linkTitle, reference, linkP
     var xData = Data[0].PathwaysData.map(function (d) { return d.Pathway; });
 
     var real_points = Data[0].PathwaysData.filter(function(d) {
-      return d.value[1] == "REAL"; });
+      return d.value[1] === "REAL"; });
 
     var artificial_points = Data[0].PathwaysData.filter(function(d) {
-      return d.value[1] == "ARTIFICIAL"; });
+      return d.value[1] === "ARTIFICIAL"; });
 
     var line = d3.svg.line()
         //.interpolate("basis")
@@ -204,7 +204,7 @@ function DrawMultiLineChart(Data, BaseDiv, Keys, ID, linkTitle, reference, linkP
             .data(function (d) { return d.PathwaysData; } )
             .enter()
             .append("circle")
-            .filter(function(d) { return d.value[1] == "REAL"})
+            .filter(function(d) { return d.value[1] === "REAL"})
             .attr("class",function(d) { return d.value[1] })
             .attr("r", 5)
             .attr("cx", function (d) { return (x(d.Pathway) + x.rangeBand() / 2)-100; })
@@ -226,7 +226,7 @@ function DrawMultiLineChart(Data, BaseDiv, Keys, ID, linkTitle, reference, linkP
             .data(function (d) { return d.PathwaysData; } )
             .enter()
             .append("rect")
-            .filter(function(d) { return d.value[1] == "ARTIFICIAL"})
+            .filter(function(d) { return d.value[1] === "ARTIFICIAL"})
             .attr("class",function(d) { return d.value[1] })
             .attr("x", function (d) { return (x(d.Pathway) + x.rangeBand()/2)-105; })
             .attr("y", function (d) { return y(d.value[0]) -5; })

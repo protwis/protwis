@@ -309,9 +309,9 @@ function createScatterplot(data,containerSelector) {
                 .attr("opacity",0.7)
                 .attr("r", function (d) { return sp_size!='none' && d.name in colors[sp_size] ? 2+colors[sp_size][d.name][1] * 8 : 5;})
                 .style("fill", function (d) {
-                    if (sp_color == "segment") {
+                    if (sp_color === "segment") {
                         return colors[sp_color][d.name];
-                    } else if (sp_color == "network") {
+                    } else if (sp_color === "network") {
                         network_group = filtered_cluster_groups.filter(l => l.includes(d.name));
                         network_group_id = filtered_cluster_groups.indexOf(network_group[0]);
                         if (filtered_cluster_groups.length > 10 || 1==1) {
@@ -352,9 +352,9 @@ function createScatterplot(data,containerSelector) {
             .attr("font-weight", font_weight)
             .attr("text-anchor",text_anchor)
             .style("fill", function (d) {
-                if (sp_color == "segment") {
+                if (sp_color === "segment") {
                     return colors[sp_color][d.name];
-                } else if (sp_color == "network") {
+                } else if (sp_color === "network") {
                     network_group = filtered_cluster_groups.filter(l => l.includes(d.name));
                     network_group_id = filtered_cluster_groups.indexOf(network_group[0]);
                     if (filtered_cluster_groups.length >  10 || 1==1) {
@@ -513,7 +513,7 @@ function createScatterplot(data,containerSelector) {
         // $(containerSelector_hash).find(".scatter_options").css("grid-template-rows", "auto");
         $(containerSelector_hash).find(".scatter_options").css("grid-template-areas", "'. .'");
 
-        ;
+        
 
     }
 

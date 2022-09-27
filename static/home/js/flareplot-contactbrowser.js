@@ -20,7 +20,7 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
     var rotate = 0;
     var discRad = 50;
 
-    if( typeof inputGraph == "string" ){
+    if( typeof inputGraph === "string" ){
         inputGraph = JSON.parse(inputGraph);
     }
 
@@ -303,7 +303,7 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                           toggleSegment(d.segment);
                       });
                   }
-              };
+              }
               /*svg.selectAll("g.segmentElement")
                   .data(graph.segments)
                   .enter().append("svg:g")
@@ -1199,7 +1199,7 @@ function createFlareplot(width, inputGraph, containerSelector, contiguousOutward
                 .style("visibility", "hidden");
 
             // update coloring (if based on interactions)
-            if (edgeColoring == "interactions")
+            if (edgeColoring === "interactions")
               updateColors(edgeColoring, interactions);
 
 

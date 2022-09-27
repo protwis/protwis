@@ -87,14 +87,14 @@ function renderTree(data) {
     var reg = new RegExp('^[0-9]+[\.]?[0-9]*$');
     nodes.forEach(function(n) {
         // HACK: the internal nodes names are now cluster scoring values
-        if (n.name != "" && reg.test(n.name)) {
+        if (n.name !== "" && reg.test(n.name)) {
             n.score = n.name
             n.name = names.toString();
             names++;
         }
 
         // ORIGINAL
-        /*if (n.name == "") {
+        /*if (n.name === "") {
             n.name = names.toString();
             names++;
         }*/

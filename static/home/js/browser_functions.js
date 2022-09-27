@@ -108,7 +108,7 @@ function superposition(oTable, columns, site, hide_first_column) {
         $(this).children(':first').prop("checked",true);
         window.location.href = '/structure/superposition_workflow_index';
     })
-};
+}
 
 function Sort(clicked_th, table1, table2) {
     if (clicked_th.parent().parent().parent().attr('class').includes('scrollable')) {
@@ -150,7 +150,7 @@ function AddToSelection(selection_type, selection_subtype, selection_id) {
         },
         'type': 'GET',
         'async': false,
-        'success': function(data) {
+        'success'(data) {
             $("#selection-" + selection_type).html(data);
         },
     });
@@ -171,7 +171,7 @@ function select_all(e, table1_id, table2_id) {
         }
     });
     $('#loading_div').hide();
-};
+}
 
 function assign_to_row1(table1_id, table2_id){
   $('#'+table1_id+' > tbody > tr').click(function(event) {

@@ -1325,7 +1325,7 @@ function createSnakeplot(data, containerSelector) {
             
             console.log('change backbone color to!', fill_color);
             var path_max = 0;
-            if (fill_color != "none"){
+            if (fill_color !== "none"){
               $(containerSelector).find('.helix_path').each(function () {
                   path_id = $(this).attr('id');
                   fill_scale = path_groups[path_id][fill_color];
@@ -1445,11 +1445,11 @@ function createSnakeplot(data, containerSelector) {
         legends = [];
         // Deduce which legends to make
         fill_color = $(containerSelector + " #snakeplot_color").val();
-        if (fill_color != "none" && fill_color) {
+        if (fill_color !== "none" && fill_color) {
 
             var color1  = $(containerSelector+" #fill_color1").spectrum("get").toHexString();
             var color2  = $(containerSelector+" #fill_color2").spectrum("get").toHexString();
-            var color3  = $(containerSelector+" #fill_color3").val() == "" ? 'none' : $(containerSelector+" #fill_color3").spectrum("get").toHexString();
+            var color3  = $(containerSelector+" #fill_color3").val() === "" ? 'none' : $(containerSelector+" #fill_color3").spectrum("get").toHexString();
             var colors = [color1,color2,color3].filter(item => !(item == 'none'));
             legends.push({ icon: 'fill', value: nice_index_names[fill_color],colors:colors })
         }
@@ -1474,7 +1474,7 @@ function createSnakeplot(data, containerSelector) {
         fill_color = $(containerSelector + " #snakeplot_color_rotation").val();
         if (fill_color!="none" && fill_color) legends.push({ icon: 'rotation', value: nice_index_names[fill_color]})
         fill_color = $(containerSelector + " #snakeplot_color_backbone").val();
-            if (fill_color != "none" && fill_color) {
+            if (fill_color !== "none" && fill_color) {
 
                 var color1 = $(containerSelector + " #backbone_color1").val();
                 var color2 = $(containerSelector + " #backbone_color2").val();

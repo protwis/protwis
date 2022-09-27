@@ -33,7 +33,7 @@ function createFlareplotSlider (flareplot, containerSelector) {
  * @param rangeMin Minimum value of the range
  * @param rangeMax Maximum value of the range
  * @param containerSelector A CSS selection indicating exactly one element in the document
- * @returns {{range: function(number, number), onChange: function(function)}}
+ * @returns {{range(number, number), onChange(function)}}
  */
 function createD3RangeSlider (rangeMin, rangeMax, containerSelector, playButton) {
     "use strict";

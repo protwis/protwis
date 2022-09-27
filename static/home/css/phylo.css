@@ -1,5 +1,5 @@
 #my_svg {
-  margin: 10px 10px 10px 10px;
+  margin: 10px;
 }
 
 .divider {
@@ -39,9 +39,9 @@ text:hover {
 }
 
 .tree-selection-brush .extent {
-  fill-opacity: .05;
+  fill-opacity: 0.05;
   stroke: #fff;
-  shape-rendering: crispEdges;
+  shape-rendering: crispedges;
 }
 
 .tree-scale-bar text {
@@ -52,7 +52,7 @@ text:hover {
 .tree-scale-bar path {
   fill: none;
   stroke: #000;
-  shape-rendering: crispEdges;
+  shape-rendering: crispedges;
 }
 
 .internal-node circle,
@@ -221,27 +221,27 @@ div.selectivity_tooltip {
 #class_legend_box {
   width: auto;
   height: auto;
-  margin: 10px 10px 10px 10px;
+  margin: 10px;
   top: 10%;
-  padding: 7px 10px 10px 10px;
+  padding: 7px 10px 10px;
   float: left;
   fill: black;
   border: 2px solid dimgrey;
 }
 
 #quantity_legend_box {
-  margin: 10px 10px 10px 10px;
+  margin: 10px;
   top: 10%;
-  padding: 7px 10px 10px 10px;
+  padding: 7px 10px 10px;
   float: left;
   fill: black;
   border: 2px solid dimgrey;
 }
 
 #categorical_legend_box {
-  margin: 10px 10px 10px 10px;
+  margin: 10px;
   top: 10%;
-  padding: 7px 10px 10px 10px;
+  padding: 7px 10px 10px;
   float: left;
   fill: black;
   border: 2px solid dimgrey;

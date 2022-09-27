@@ -29,14 +29,14 @@
   }
 
   Item.prototype = {
-    init: function() {
+    init() {
       this.$element.on('keydown', $.proxy(this, 'keydown'));
     },
-    close: function() {
+    close() {
       this.$main.removeClass('open');
       this.$items.trigger('hide.bs.submenu');
     },
-    keydown: function(event) {
+    keydown(event) {
       // 27: Esc
 
       if (event.keyCode == 27) {
@@ -59,7 +59,7 @@
   }
 
   $.extend(SubmenuItem.prototype, Item.prototype, {
-    init: function() {
+    init() {
       this.$element.on({
         click: $.proxy(this, 'click'),
         keydown: $.proxy(this, 'keydown')
@@ -67,7 +67,7 @@
 
       this.$main.on('hide.bs.submenu', $.proxy(this, 'hide'));
     },
-    click: function(event) {
+    click(event) {
       // Fix a[href="#"]. For community
       event.preventDefault();
 
@@ -75,17 +75,17 @@
 
       this.toggle();
     },
-    hide: function(event) {
+    hide(event) {
       // Stop event bubbling
       event.stopPropagation();
 
       this.close();
     },
-    open: function() {
+    open() {
       this.$main.addClass('open');
       this.$subs.trigger('hide.bs.submenu');
     },
-    toggle: function() {
+    toggle() {
       if (this.$main.hasClass('open')) {
         this.close();
       }
@@ -93,7 +93,7 @@
         this.open();
       }
     },
-    keydown: function(event) {
+    keydown(event) {
       // 13: Return, 32: Spacebar
 
       if (event.keyCode == 32) {
@@ -117,7 +117,7 @@
   }
 
   Submenupicker.prototype = {
-    init: function() {
+    init() {
       this.$menu.off('keydown.bs.dropdown.data-api');
       this.$menu.on('keydown', $.proxy(this, 'itemKeydown'));
 
@@ -131,10 +131,10 @@
 
       this.$main.on('hidden.bs.dropdown', $.proxy(this, 'hidden'));
     },
-    hidden: function() {
+    hidden() {
       this.$items.trigger('hide.bs.submenu');
     },
-    itemKeydown: function(event) {
+    itemKeydown(event) {
       // 38: Arrow up, 40: Arrow down
 
       if ($.inArray(event.keyCode, [38, 40]) != -1) {

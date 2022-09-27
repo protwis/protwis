@@ -107,7 +107,7 @@ function createHiveplot(data, container) {
         .attr("class", "hive-axis")
         .attr("transform", function(d) { return "rotate(" + degreesHP(angle(d)) + ")" })
         .attr("x1", function(d) { if (resCount[d] == 0){ return 0; } else if (d == 7) { return (resCount[0] * 1.2) * (outerRadius-innerRadius)/20+innerRadius; } else { return innerRadius; }})
-        .attr("x2", function(d) { var extra = 0; if (resCount[d] == 0){ return 0; } else if (d == 7  && resCount[d]>0){ extra = resCount[0] * 1.2}; return (outerRadius-innerRadius)/20*(extra+resCount[d]+1)+innerRadius; });
+        .attr("x2", function(d) { var extra = 0; if (resCount[d] == 0){ return 0; } else if (d == 7  && resCount[d]>0){ extra = resCount[0] * 1.2} return (outerRadius-innerRadius)/20*(extra+resCount[d]+1)+innerRadius; });
         //.attr("x2", function(d) { var extra = 0; if (d.x == 7){ extra = resCount[0] * 1.2}; return (outerRadius-innerRadius)/20*(resCount[d]+extra+1)+innerRadius; });
 
     // draw links between nodes
@@ -126,7 +126,7 @@ function createHiveplot(data, container) {
         .interpolate( "bundle" )
         .tension( 0.85 )
 //        .radius(function(d) { return d.y*(outerRadius-innerRadius)/20+innerRadius; })
-        .radius(function(d) { var extra = 0; if (d.x >= 6.5){ extra = resCount[0] * 1.2}; return (d.y+extra)*(outerRadius-innerRadius)/20+innerRadius; })
+        .radius(function(d) { var extra = 0; if (d.x >= 6.5){ extra = resCount[0] * 1.2} return (d.y+extra)*(outerRadius-innerRadius)/20+innerRadius; })
         .angle(function(d) { /*if (d.x < 0) d.x = 7 + d.x;*/ return angle(d.x); });
 
     hivesvg.selectAll(".hive-link")
@@ -193,7 +193,7 @@ function createHiveplot(data, container) {
       .enter().append("circle")
         .attr("class", "hive-node")
         .attr("transform", function(d) { return "rotate(" + degreesHP(angle(d.x)) + ")"; })
-        .attr("cx", function(d) { var extra = 0; if (d.x == 7){ extra = resCount[0] * 1.2}; return (d.y+extra)*(outerRadius-innerRadius)/20+innerRadius; })
+        .attr("cx", function(d) { var extra = 0; if (d.x == 7){ extra = resCount[0] * 1.2} return (d.y+extra)*(outerRadius-innerRadius)/20+innerRadius; })
         .attr("r", 5)
         .style("fill", function(d) { return color(d.x); })
         .on("mouseover", nodeMouseoverHP)

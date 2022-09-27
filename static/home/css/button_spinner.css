@@ -1,16 +1,12 @@
-﻿.spinner {
+.spinner {
   display: inline-block;
   opacity: 0;
   width: 0;
-
-  -webkit-transition: opacity 0.25s, width 0.25s;
-  -moz-transition: opacity 0.25s, width 0.25s;
-  -o-transition: opacity 0.25s, width 0.25s;
   transition: opacity 0.25s, width 0.25s;
 }
 
 .has-spinner.active {
-  cursor:progress;
+  cursor: progress;
 }
 
 .has-spinner.active .spinner {
@@ -19,17 +15,17 @@
 }
 
 .has-spinner.btn-mini.active .spinner {
-    width: 10px;
+  width: 10px;
 }
 
 .has-spinner.btn-small.active .spinner {
-    width: 13px;
+  width: 13px;
 }
 
 .has-spinner.btn.active .spinner {
-    width: 16px;
+  width: 16px;
 }
 
 .has-spinner.btn-large.active .spinner {
-    width: 19px;
+  width: 19px;
 }

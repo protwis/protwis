@@ -1032,11 +1032,11 @@ function branchStyler(element, node){
       element.style("stroke", "#888");
       if (doBranchColoring && displayDataInner >= 0 && 'colorClasses' in node.target){
         // color according to shared feature
-        if (node.target['colorClasses'][displayDataInner] != "-" && node.target['colorClasses'][displayDataInner].length > 0 ) {
+        if (node.target['colorClasses'][displayDataInner] !== "-" && node.target['colorClasses'][displayDataInner].length > 0 ) {
             if (Array.isArray(node.target['colorClasses'][displayDataInner])) {
               // if array with multiple options - first based on previous connection
               if (node.target['colorClasses'][displayDataInner].length > 1){
-                  if (node.source['colorClasses'][displayDataInner] != "-" && node.source['colorClasses'][displayDataInner].length > 0){
+                  if (node.source['colorClasses'][displayDataInner] !== "-" && node.source['colorClasses'][displayDataInner].length > 0){
                     node.target['colorClasses'][displayDataInner] = node.target['colorClasses'][displayDataInner].filter(x => node.source['colorClasses'][displayDataInner].includes(x))
                   }
               }
@@ -1215,11 +1215,11 @@ function initializeButtons(selector, treeFunction) {
             // empty the SVG field and reload
             $(selector + ' .tree-container').html('<svg id="clustering-tree"></svg><span id="svgloading">Loading...</span>');
             clusterMethod = 0
-            if (this.innerHTML == "Go")
+            if (this.innerHTML === "Go")
               clusterMethod = 0
-            else if (this.innerHTML == "Go (distance pairs - normalized)")
+            else if (this.innerHTML === "Go (distance pairs - normalized)")
                 clusterMethod = 0
-            else if (this.innerHTML == "Go (distance to 7TM axis)")
+            else if (this.innerHTML === "Go (distance to 7TM axis)")
               clusterMethod = 1
             else if (this.innerHTML.startsWith("Go (distance to most stable residue)"))
               clusterMethod = 2

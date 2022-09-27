@@ -580,7 +580,7 @@ function ValidateForm(){
         console.log("nothing in "+blank_id);
         var outer_class=$(this).attr("class").split(' ').pop();
         $(this).after("<label name=error-"+blank_name+" id=error-"+blank_id+" class='error "+outer_class+"'>*</label>");
-      } else if ($(this).val() != "" && $("#error-"+blank_id).length) {
+      } else if ($(this).val() !== "" && $("#error-"+blank_id).length) {
         $("#error-"+blank_id).remove();
       }
   });

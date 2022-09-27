@@ -171,7 +171,7 @@ const initialize_consensus = function(cons_data) {
 
   for (let key of Object.keys(cons_data)) {
     con_seq[key] = [cons_data[key][0]];
-  };
+  }
 
   non_interactions.push(...data.receptor);
   var gn;
@@ -225,12 +225,12 @@ const run_seq_sig = function(interface_data) {
   if (pos_set.length < 1) {
     showAlert("No valid set selected.", "warning");
     return;
-  };
+  }
 
   if (_.isEqual(old_sets.sort(), pos_set.sort())) {
     showAlert("The selected set is identical to the previously selected one.", "warning");
     return;
-  };
+  }
 
   // api request
   let req = $.ajax({
@@ -270,7 +270,7 @@ const run_seq_sig = function(interface_data) {
       for (const interaction of interface_data["transformed"]) {
         let struct = interaction.pdb_id;
         let gn = interaction.rec_gn;
-        if (typeof(int_cons_list[gn]) == "undefined") {
+        if (typeof(int_cons_list[gn]) === "undefined") {
           int_cons_list[gn] = [struct];
         } else {
           if (int_cons_list[gn].indexOf(struct) === -1) {
@@ -284,7 +284,7 @@ const run_seq_sig = function(interface_data) {
       for (let i in data.feat){
         if (Object.prototype.hasOwnProperty.call(data.feat, i)) {
           for (const obj of data.feat[i]){
-            if (typeof(int_cons_list[obj.gn]) == "undefined") {
+            if (typeof(int_cons_list[obj.gn]) === "undefined") {
               obj.int_freq = 0;
             } else {
               obj.int_freq = Math.round(int_cons_list[obj.gn].length/struct_count*100,0);
@@ -838,6 +838,6 @@ $(document).ready(function() {
       var endTime = performance.now();
       var elapsed = endTime - startTime;
       console.log("run_seq_sig execution Time: " + elapsed);
-    };
+    }
   });
 });

@@ -26,7 +26,7 @@ function filter_browser() {
 
 
 
-            if (analys_mode == "#two-crystal-groups") {
+            if (analys_mode === "#two-crystal-groups") {
                 if (!(gns[0] in filtered_gns_abs_diff_values)) filtered_gns_abs_diff_values[gns[0]] = [];
                 if (!(gns[1] in filtered_gns_abs_diff_values)) filtered_gns_abs_diff_values[gns[1]] = [];
                 // BEWARE this 4th index can change if the column changes.. only on relevant in 2 group
@@ -67,7 +67,7 @@ function filter_browser() {
         })
         filtered_gns_presence = {};
         filtered_cluster_groups_set = {};
-        if (analys_mode == "#two-crystal-groups") {
+        if (analys_mode === "#two-crystal-groups") {
             $.each(filtered_gns_abs_diff_values, function (i, v) {
                 // Go through all the diff values. If both negative and positive diff numbers exist
                 // then label position as "both". Otherwise the correct set. This gives information whether
@@ -119,9 +119,9 @@ function filter_browser() {
                 network_group = filtered_cluster_groups.filter(l => l.includes(gns[0]));
                 network_group_id = filtered_cluster_groups.indexOf(network_group[0])
 
-                if (analys_mode == "#two-crystal-groups") {
+                if (analys_mode === "#two-crystal-groups") {
                     column_ids = [5, 6, 7];
-                } else if (analys_mode == "#single-crystal-group") {
+                } else if (analys_mode === "#single-crystal-group") {
                     column_ids = [3, 4, 5];
 
                 } else {
@@ -173,9 +173,9 @@ function make_range_number_cols(start_column, repeat_number) {
 
 jQuery.extend( jQuery.fn.dataTableExt.oSort, {
     "non-empty-string-asc": function (str1, str2) {
-        if(str1 == "")
+        if(str1 === "")
             return 1;
-        if(str2 == "")
+        if(str2 === "")
             return -1;
         if ($.isNumeric(str1))
             str1 = parseFloat(str1);
@@ -185,9 +185,9 @@ jQuery.extend( jQuery.fn.dataTableExt.oSort, {
     },
 
     "non-empty-string-desc": function (str1, str2) {
-        if(str1 == "")
+        if(str1 === "")
             return 1;
-        if(str2 == "")
+        if(str2 === "")
             return -1;
         if ($.isNumeric(str1))
             str1 = parseFloat(str1);
@@ -206,7 +206,7 @@ function renderDataTablesYadcf(element) {
     const analys_mode = selector.replace('-tab', '');
     var table = $(selector + " .browser-table-" + tab_number);
     var heading = $(selector + " .tab-content .panel-title:visible");
-    if (analys_mode == "#two-crystal-groups") {
+    if (analys_mode === "#two-crystal-groups") {
         heading.find(".abs_button").remove();
         heading.append(' <button type="button"  onclick="make_abs_values(this,\''+selector + " .browser-table-" + tab_number+'\');" class="btn btn-primary btn-xs abs_button" changed=0>Change negative to absolute values</button>');
         //heading.addClass("button_added");
@@ -233,7 +233,7 @@ function renderDataTablesYadcf(element) {
             // statements_1
             // Specify which columns are to be fixed to 40px
             list_narrow_cols = [];
-            if (analys_mode == "#two-crystal-groups") {
+            if (analys_mode === "#two-crystal-groups") {
                 list_narrow_cols = make_list_narrow_cols([2, 3, 4], 6, 6 + 19);
             }
 
@@ -284,7 +284,7 @@ function renderDataTablesYadcf(element) {
 
             console.timeEnd("Render DataTable " + tab_number);
 
-            if (analys_mode == "#two-crystal-groups") {
+            if (analys_mode === "#two-crystal-groups") {
 
                 repeated_from_to_1 = make_range_number_cols(8, 18);
                 repeated_from_to_2 = make_range_number_cols(28, 10);
@@ -351,7 +351,7 @@ function renderDataTablesYadcf(element) {
                     }
 
                 );
-            } else if (analys_mode == "#single-crystal-group") {
+            } else if (analys_mode === "#single-crystal-group") {
                 repeated_from_to_1 = make_range_number_cols(6, 18);
                 repeated_from_to_2 = make_range_number_cols(26, 7);
                 yadcf.init(btable,
@@ -407,7 +407,7 @@ function renderDataTablesYadcf(element) {
                     }
 
                 );
-            } else if (analys_mode == "#single-crystal") {
+            } else if (analys_mode === "#single-crystal") {
                 repeated_from_to_1 = make_range_number_cols(7, 11);
                 repeated_from_to_2 = make_range_number_cols(20, 1);
 
@@ -489,7 +489,7 @@ function renderDataTablesYadcf(element) {
             console.log("do tab", tab_number)
             // Specify which columns are to be fixed to 40px
             list_narrow_cols = [];
-            if (analys_mode == "#two-crystal-groups") {
+            if (analys_mode === "#two-crystal-groups") {
                 list_narrow_cols = make_list_narrow_cols([3, 4], 6, 6 + 17);
             }
 
@@ -540,7 +540,7 @@ function renderDataTablesYadcf(element) {
             });
 
 
-            if (analys_mode == "#two-crystal-groups") {
+            if (analys_mode === "#two-crystal-groups") {
 
 
                 repeated_from_to_1 = make_range_number_cols(2, 6);
@@ -608,7 +608,7 @@ function renderDataTablesYadcf(element) {
                     }
 
                 );
-            } else if (analys_mode == "#single-crystal-group") {
+            } else if (analys_mode === "#single-crystal-group") {
 
                 repeated_from_to_1 = make_range_number_cols(2, 2);
                 repeated_from_to_2 = make_range_number_cols(6, 6);
@@ -687,7 +687,7 @@ function renderDataTablesYadcf(element) {
                      }
 
                 );
-            } else if (analys_mode == "#single-crystal") {
+            } else if (analys_mode === "#single-crystal") {
 
                 repeated_from_to_1 = make_range_number_cols(4, 3);
                 repeated_from_to_2 = make_range_number_cols(8, 11);
@@ -777,7 +777,7 @@ function renderDataTablesYadcf(element) {
             console.log("do tab", tab_number)
             // Specify which columns are to be fixed to 40px
             list_narrow_cols = [];
-            if (analys_mode == "#two-crystal-groups") {
+            if (analys_mode === "#two-crystal-groups") {
                 list_narrow_cols = make_list_narrow_cols([2], 5, 7);
             }
 
@@ -828,7 +828,7 @@ function renderDataTablesYadcf(element) {
             });
 
 
-            if (analys_mode == "#two-crystal-groups") {
+            if (analys_mode === "#two-crystal-groups") {
 
 
                 repeated_from_to_1 = make_range_number_cols(2, 7);
@@ -889,9 +889,9 @@ function renderDataTablesYadcf(element) {
                     }
 
                 );
-            } else if (analys_mode == "#single-crystal-group") {
+            } else if (analys_mode === "#single-crystal-group") {
 
-            } else if (analys_mode == "#single-crystal") {
+            } else if (analys_mode === "#single-crystal") {
 
             }
             // btable.on('draw.dt', function(e, oSettings) {
@@ -904,7 +904,7 @@ function renderDataTablesYadcf(element) {
             console.log("do tab", tab_number)
             // Specify which columns are to be fixed to 40px
             list_narrow_cols = [];
-            // if (analys_mode == "#two-crystal-groups") {
+            // if (analys_mode === "#two-crystal-groups") {
             //     list_narrow_cols = make_list_narrow_cols([2], 5, 7);
             // }
 
@@ -954,7 +954,7 @@ function renderDataTablesYadcf(element) {
                 ]
             });
 
-            if (analys_mode == "#two-crystal-groups") {
+            if (analys_mode === "#two-crystal-groups") {
                 repeated_from_to_1 = make_range_number_cols(4, 24);
                 repeated_from_to_2 = make_range_number_cols(28, 3);
                 repeated_from_to_3 = make_range_number_cols(31, 2);
@@ -1032,7 +1032,7 @@ function renderDataTablesYadcf(element) {
                     }
 
                 );
-            } else if (analys_mode == "#single-crystal-group") {
+            } else if (analys_mode === "#single-crystal-group") {
                 repeated_from_to_1 = make_range_number_cols(3, 7);
                 repeated_from_to_2 = make_range_number_cols(11, 1);
                 repeated_from_to_3 = make_range_number_cols(13, 1);
@@ -1091,7 +1091,7 @@ function renderDataTablesYadcf(element) {
                     }
 
                 );
-            } else if (analys_mode == "#single-crystal") {
+            } else if (analys_mode === "#single-crystal") {
                 repeated_from_to_1 = make_range_number_cols(3, 6);
                 repeated_from_to_2 = make_range_number_cols(11, 1);
 
@@ -1160,7 +1160,7 @@ function renderDataTablesYadcf(element) {
             console.log("do tab", tab_number)
             // Specify which columns are to be fixed to 40px
             list_narrow_cols = [];
-            // if (analys_mode == "#two-crystal-groups") {
+            // if (analys_mode === "#two-crystal-groups") {
             //     list_narrow_cols = make_list_narrow_cols([2], 5, 7);
             // }
 
@@ -1237,11 +1237,11 @@ function renderDataTablesYadcf(element) {
                 }
 
             );
-            if (analys_mode == "#two-crystal-groups") {
+            if (analys_mode === "#two-crystal-groups") {
 
-            } else if (analys_mode == "#single-crystal-group") {
+            } else if (analys_mode === "#single-crystal-group") {
 
-            } else if (analys_mode == "#single-crystal") {
+            } else if (analys_mode === "#single-crystal") {
 
             }
             // btable.on('draw.dt', function(e, oSettings) {
@@ -3819,7 +3819,7 @@ function colorByData(mode, tableNumber, columnNumber, type) {
     var rows = []
     const selector = "#" + $('.main_option:visible').attr('id');
     const analys_mode = selector.replace('-tab', '');
-    if (analys_mode == "#single-crystal" && tableNumber==1) {
+    if (analys_mode === "#single-crystal" && tableNumber==1) {
       rows = getDateFromTable(tableNumber, [2, columnNumber].flat());
     } else {
       rows = getDateFromTable(tableNumber, [1, columnNumber].flat());

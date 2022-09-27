@@ -37,7 +37,7 @@ h4 {
 }
 
 .carousel-caption {
-  background: rgba(0, 0, 0, 0.8);
+  background: rgb(0 0 0 / 80%);
 }
 
 .carousel-inner > .item > img,
@@ -110,7 +110,7 @@ span.text-red-highlight {
 }
 
 span.text-forest-highlight {
-  color: #4E9258 !important;
+  color: #4e9258 !important;
 }
 
 #target-table-container .text-highlight input.select2-default {
@@ -135,7 +135,7 @@ span.text-forest-highlight {
 }
 
 .target-selection {
-  padding: 0 0 0 0;
+  padding: 0;
   font-size: 11px;
   white-space: nowrap;
 }
@@ -143,7 +143,7 @@ span.text-forest-highlight {
 .ui-autocomplete-category {
   font-weight: bold;
   padding: 0.2em 0.4em;
-  margin: 0.2em 0 0.2em;
+  margin: 0.2em 0;
   line-height: 1.5;
 }
 
@@ -153,18 +153,16 @@ span.text-forest-highlight {
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0);
+  background: rgb(255 255 255 / 0%);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(6, 128, 202, 1);
+  background: rgb(6 128 202 / 100%);
 }
 
 .btn-small {
   padding: 2px 10px;
   font-size: 11.9px;
-  -webkit-border-radius: 3px;
-  -moz-border-radius: 3px;
   border-radius: 3px;
 }
 
@@ -200,9 +198,7 @@ input.form-control {
   left: 100%;
   margin-top: -6px;
   margin-left: -1px;
-  -webkit-border-radius: 0 6px 6px 6px;
-  -moz-border-radius: 0 6px 6px;
-  border-radius: 0 6px 6px 6px;
+  border-radius: 0 6px 6px;
 }
 
 .dropdown-submenu:hover > .dropdown-menu {
@@ -234,13 +230,11 @@ input.form-control {
 .dropdown-submenu.pull-left > .dropdown-menu {
   left: -100%;
   margin-left: 10px;
-  -webkit-border-radius: 6px 0 6px 6px;
-  -moz-border-radius: 6px 0 6px 6px;
   border-radius: 6px 0 6px 6px;
 }
 
 .dropdown-submenu.guidelines > a::after {
-  padding-left:300px;
+  padding-left: 300px;
 }
 
 h3.dropleft .dropleft > .dropdown-menu {
@@ -261,8 +255,8 @@ text.segment {
 }
 
 .structure_overlay {
-  -webkit-transform: translateZ(0);
-  -webkit-backface-visibility: hidden;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 .structure_overlay::-webkit-scrollbar {
@@ -271,7 +265,7 @@ text.segment {
 }
 
 .panel-primary {
-  border-color: rgba(0, 0, 0, 0.2);
+  border-color: rgb(0 0 0 / 20%);
 }
 
 ul.stats_list {
@@ -307,6 +301,9 @@ ul.nav-tabs li a {
   white-space: nowrap;
 }
 
-a.external_link:link, a.external_link:visited, a.external_link:hover, a.external_link:active {
+a.external_link:link,
+a.external_link:visited,
+a.external_link:hover,
+a.external_link:active {
   color: #036;
 }

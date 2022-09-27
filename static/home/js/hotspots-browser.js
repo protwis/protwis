@@ -527,7 +527,7 @@ function getBackendData() {
         dataType: 'json',
         data: {},
         async: true,
-        success: function(data) {
+        success(data) {
             // Re-render heatmap
             hotspotsdata = data;
             console.table(data['residue_matrix']);
@@ -538,7 +538,7 @@ function getBackendData() {
 
             // DEMO - Get n number of positions
             n = 40
-            var gns = hotspotsdata['sorted_gns'].slice(0);;
+            var gns = hotspotsdata['sorted_gns'].slice(0);
             const shuffled = gns.sort(() => 0.5 - Math.random());
             // Get sub-array of first n elements after shuffled
             let selected = shuffled.slice(0, n);

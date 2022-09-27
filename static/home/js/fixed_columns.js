@@ -890,7 +890,7 @@ function showPDBtable(element) {
         });
         console.log("done click event");
 
-    };
+    }
     $(element + " .loading_overlay").hide();
     prepopulatePDBs();
 }

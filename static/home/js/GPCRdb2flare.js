@@ -1,5 +1,5 @@
 function parseGPCRdb2flare(data, subset=false) {
-  if (typeof data == "string") {
+  if (typeof data === "string") {
     data = JSON.parse(data);
   }
 

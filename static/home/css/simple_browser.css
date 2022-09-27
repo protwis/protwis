@@ -3,7 +3,7 @@ select.form-control {
   width: 40px;
   height: 20px;
   font-size: 9px;
-  padding: 2px 2px;
+  padding: 2px;
 }
 
 #content input.number_range_filter,
