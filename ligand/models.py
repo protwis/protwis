@@ -368,6 +368,10 @@ class AssayExperiment(models.Model):
     source = models.CharField(max_length=50, null=True)
     publication = models.ManyToManyField(Publication)
     document_chembl_id = models.CharField(max_length=100, null=True)
+    affinity = models.CharField(max_length=100, null=True)
+    potency = models.CharField(max_length=100, null=True)
+    count_affinity_test = models.CharField(max_length=10, null=True)
+    count_potency_test = models.CharField(max_length=10, null=True)
 
 
 class LigandVendors(models.Model):

@@ -189,7 +189,11 @@ def TargetDetails(mode, request, **kwargs):
                            'ligand__hacc',
                            'protein',
                            'publication__web_link__index',
-                           'publication__web_link__web_resource__url'
+                           'publication__web_link__web_resource__url',
+                           'affinity',
+                           'potency',
+                           'count_affinity_test',
+                           'count_potency_test'
                            ).annotate(num_targets=Count('protein__id', distinct=True))
 
             lig_ids = set([record['ligand__id'] for record in ps])
@@ -245,8 +249,8 @@ def TargetDetails(mode, request, **kwargs):
 
                 purchasability = vendors_dict[lig.id] if lig.id in vendors_dict.keys() else 0
 
+                data_parsed = {}
                 for record in records:
-                    data_parsed = {}
                     assay = assay_conversion[record.assay_type]
                     if record.source not in data_parsed.keys():
                         data_parsed[record.source] = {}
@@ -260,9 +264,9 @@ def TargetDetails(mode, request, **kwargs):
                     else:
                         if record.source == 'Guide to Pharmacology':
                             data = [x for x in record.p_activity_ranges.split('|')]
-                            data_parsed[data_line.source][assay][record.value_type] += data
+                            data_parsed[record.source][assay][record.value_type] += data
                         else:
-                            data_parsed[data_line.source][assay][record.value_type].append(record.p_activity_value)
+                            data_parsed[record.source][assay][record.value_type].append(record.p_activity_value)
 
                 for source in data_parsed.keys():
                     for assay_type in data_parsed[source].keys():
@@ -278,8 +282,10 @@ def TargetDetails(mode, request, **kwargs):
                                 'lig_id': lig.id,
                                 'ligand_name': lig.name,
                                 'picture': picture,
-                                'protein_name': record.protein.entry_name.split('_')[0].upper(),
-                                'iuphar_name': record.protein.name,
+                                'affinity': record.affinity,
+                                'affinity_tested': record.count_affinity_test,
+                                'potency': record.potency,
+                                'potency_tested': record.count_potency_test,
                                 'species': record.protein.species.common_name,
                                 'record_count': len(records),
                                 'assay_type': assay_type,

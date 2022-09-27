@@ -110,6 +110,9 @@ class Command(BaseBuild):
 
         print('\n\nSaving the ligands in the models')
         self.save_the_ligands_save_the_world(ligand_data, gtp_peptides)
+
+        print('\n\nFetching Drug Bank ligands and saving to model')
+        self.build_drugbank_ligands()
         # Building GtP bioactivity data
         print("\n\nStarted building Guide to Pharmacology bioactivities")
         self.build_gtp_bioactivities(bioactivity_data_gtp)
@@ -153,6 +156,11 @@ class Command(BaseBuild):
         print("\n\nStarted building Drug Central bioactivities")
         self.build_drugcentral_bioactivities()  # 5,844
         print("Ended building Drug Central bioactivities")
+
+        # Building Drug Central bioactivity data
+        print("\n\nStarted calculating potency and affinity indexes")
+        self.calculate_potency_and_affinity()
+        print("Potency and affinity indexes have been added to the model")
 
 
     @staticmethod
@@ -1400,6 +1408,7 @@ class Command(BaseBuild):
                 print("Inserted", index, "out of",
                       bio_entries, "bioactivities")
                 bioacts = []
+
     @staticmethod
     def build_drugcentral_bioactivities():
         print("# Collecting DrugCentral data")
@@ -1409,7 +1418,7 @@ class Command(BaseBuild):
         # drugcentral_ligands_link = "https://unmtid-shinyapps.net/download/DrugCentral/2021_09_01/drug.target.interaction.tsv.gz"
         drugcentral_smiles_link = get_or_create_url_cache("https://unmtid-shinyapps.net/download/DrugCentral/2021_09_01/structures.smiles.tsv", 7 * 24 * 3600)
         # drugcentral_smiles_link = "https://unmtid-shinyapps.net/download/DrugCentral/2021_09_01/structures.smiles.tsv"
-        drugcentral_ligands = pd.read_csv(drugcentral_ligands_link, sep='\t', header=0)
+        drugcentral_ligands = pd.read_csv(drugcentral_ligands_link, sep='\t', header=0, compression='gzip')
         drugcentral_smiles = pd.read_csv(drugcentral_smiles_link, sep='\t', header=0)
         #Adjusting the data and filter
         drugcentral_ligands['ID'] =  drugcentral_ligands['STRUCT_ID']
@@ -1466,3 +1475,113 @@ class Command(BaseBuild):
                 print("Inserted", index, "out of",
                       bio_entries, "bioactivities")
                 bioacts = []
+
+    @staticmethod
+    def build_drugbank_ligands():
+        print("# Collecting Drug Bank data")
+        data_link = os.sep.join([settings.DATA_DIR, 'ligand_data', 'assay_data', 'structure_links.csv'])
+
+        data = pd.read_csv(data_link)
+        ligand_cache = {}
+
+        data.fillna('None', inplace=True)
+        #Keep only rows with at least info in one of the relevant columns
+        filtered = data.loc[(data['SMILES'] != 'None') | (data['CAS Number'] != 'None') | (data['InChIKey'] != 'None') | (data['PubChem Compound ID'] != 'None')]
+
+        print("# Parsing Drug Bank data")
+        for index, (_, row) in enumerate(data.iterrows()):
+            ids = {}
+            if row['SMILES'] != 'None':
+                ids['smiles'] = row['SMILES']
+            if row['CAS Number'] != 'None':
+                ids['CAS'] = row['CAS Number']
+            if row['InChIKey'] != 'None':
+                ids['inchikey'] = row['InChIKey']
+            if row['PubChem Compound ID'] != 'None':
+                ids['pubchem'] = int(row['PubChem Compound ID'])
+            if row['Name'] not in ligand_cache.keys():
+                ligand = get_or_create_ligand(row['Name'], ids)
+                ligand_cache[row['Name']] = ligand
+
+    @staticmethod
+    def calculate_potency_and_affinity():
+        ligand_target_couples = AssayExperiment.objects.exclude(p_activity_value='None').values_list('ligand_id', 'protein_id', 'value_type', 'p_activity_value').distinct()
+        connections = {}
+        SI_dict = {}
+        B_values = ['pKi', 'pKd']
+        F_values = ['pEC50', 'pIC50', 'pA2', 'pKB', 'pKb', 'Potency', 'pAC50']
+        for pair in ligand_target_couples:
+            value_type = pair[2]
+            if not pair[2].startswith(('p','P')):
+                value_type = 'p'+pair[2]
+            if value_type in B_values:
+                sample = 'Affinity'
+            if value_type in F_values:
+                sample = 'Potency'
+            if pair[0] not in connections.keys():
+                connections[pair[0]] = {}
+            if pair[1] not in connections[pair[0]].keys():
+                connections[pair[0]][pair[1]] = {}
+            if sample not in connections[pair[0]][pair[1]].keys():
+                connections[pair[0]][pair[1]][sample] = []
+            connections[pair[0]][pair[1]][sample].append(float(pair[3]))
+
+        for ligand in connections:
+            for target in connections[ligand]:
+                for value in connections[ligand][target]:
+                    connections[ligand][target][value] = round(statistics.mean(connections[ligand][target][value]),2)
+
+        #Expected: ligand[target] = SI
+        #ligand = 212224
+        for ligand in connections:
+            SI_dict[ligand] = {}
+            Max_Affinity = []
+            Max_Potency = []
+            target_count = len(connections[ligand].keys())
+            #we have a list of targets for the ligand now
+            #need to assess target with highest B and highest F
+            for target in connections[ligand].keys():
+                for measurement in connections[ligand][target].keys():
+                    if measurement == 'Affinity':
+                        Max_Affinity.append((target, connections[ligand][target][measurement]))
+                    elif measurement == 'Potency':
+                        Max_Potency.append((target, connections[ligand][target][measurement]))
+            #Generate sorted lists
+            affinity_sort = sorted(Max_Affinity, key=lambda x: x[1], reverse=True)
+            potency_sort = sorted(Max_Potency, key=lambda x: x[1], reverse=True)
+            SI_dict[ligand] = {"Affinity Count": len(affinity_sort),
+                               "Potency Count": len(potency_sort)}
+            #Max_B and Max_F sets the reference GPCR and
+            #need to assess target with highest B and highest F
+            for target in connections[ligand].keys():
+                SI_dict[ligand][target] = {}
+                if (len(affinity_sort) > 1) and ('Affinity' in connections[ligand][target].keys()):
+                    if target == affinity_sort[0][0]:
+                        va = connections[ligand][target]['Affinity'] - affinity_sort[1][1]
+                        BAssay = int(10**(abs(va)))
+                        SI_dict[ligand][target]['Affinity'] = str(BAssay)+'-fold'
+                    else:
+                        va = connections[ligand][target]['Affinity'] - affinity_sort[0][1]
+                        BAssay = int(10**(abs(va)))
+                        SI_dict[ligand][target]['Affinity'] = "-" + str(BAssay) + '-fold'
+                if (len(potency_sort) > 1) and ('Potency' in connections[ligand][target].keys()):
+                    if target == potency_sort[0][0]:
+                        va = connections[ligand][target]['Potency'] - potency_sort[1][1]
+                        FAssay = int(10**(abs(va)))
+                        SI_dict[ligand][target]['Potency'] = str(FAssay)+'-fold'
+                    else:
+                        va = connections[ligand][target]['Potency'] - potency_sort[0][1]
+                        FAssay = int(10**(abs(va)))
+                        SI_dict[ligand][target]['Potency'] = "-" + str(FAssay) + "-fold"
+        #This step is kinda slow and may be sped up using bulk_update
+        #but I don't know if you can apply bulk_update with filters
+        for lig in SI_dict:
+            for tg in list(SI_dict[lig].keys())[2:]:
+                affinity = SI_dict[lig][tg]['Affinity'] if 'Affinity' in SI_dict[lig][tg].keys() else None
+                potency = SI_dict[lig][tg]['Potency'] if 'Potency' in SI_dict[lig][tg].keys() else None
+                AssayExperiment.objects.filter(ligand_id=lig, protein_id=tg).update(
+                    affinity=affinity,
+                    potency=potency,
+                    count_potency_test=SI_dict[lig]['Potency Count'],
+                    count_affinity_test=SI_dict[lig]['Affinity Count']
+                )

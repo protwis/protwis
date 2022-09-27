@@ -293,13 +293,15 @@
         let column_filters = [];
         // createYADCFfilters(start_column, num_cols, filter_type, select_type = null, filter_default_label = "", filter_reset_button_text = false, filter_match_mode = null, column_data_type = null, width = null)
         column_filters = column_filters.concat(createYADCFfilters(1, 2, "multi_select", "select2", "Select", false, null, "html", "80px"));
-        column_filters = column_filters.concat(createYADCFfilters(3, 4, "multi_select", "select2", "Select", false, null, null, "50px"));
+        column_filters = column_filters.concat(createYADCFfilters(3, 2, "multi_select", "select2", "Select", false, null, null, "50px"));
+        column_filters = column_filters.concat(createYADCFfilters(5, 1, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
+        column_filters = column_filters.concat(createYADCFfilters(6, 1, "multi_select", "select2", "Select", false, null, null, "50px"));
         column_filters = column_filters.concat(createYADCFfilters(7, 1, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
-        column_filters = column_filters.concat(createYADCFfilters(8, 2, "multi_select", "select2", "Select", false, null, null, "50px"));
-        column_filters = column_filters.concat(createYADCFfilters(10, 1, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
-        column_filters = column_filters.concat(createYADCFfilters(11, 3, "multi_select", "select2", "Select", false, null, null, "50px"));
-        column_filters = column_filters.concat(createYADCFfilters(14, 5, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
-        column_filters = column_filters.concat(createYADCFfilters(19, 2, "multi_select", "select2", "Select", false, null, null, "50px"));
+        column_filters = column_filters.concat(createYADCFfilters(8, 4, "multi_select", "select2", "Select", false, null, null, "50px"));
+        column_filters = column_filters.concat(createYADCFfilters(12, 1, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
+        column_filters = column_filters.concat(createYADCFfilters(13, 3, "multi_select", "select2", "Select", false, null, null, "50px"));
+        column_filters = column_filters.concat(createYADCFfilters(16, 5, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
+        column_filters = column_filters.concat(createYADCFfilters(21, 2, "multi_select", "select2", "Select", false, null, null, "50px"));
 
         yadcf.init(table.draw(), column_filters, {
           cumulative_filtering: false
@@ -401,7 +403,7 @@
                 div.innerHTML = checked_data[i][1];
                 name = div.textContent;
                 if (!processed.includes(name)){
-                  let smi_row = checked_data[i][19] + "\t" + name;
+                  let smi_row = checked_data[i][21] + "\t" + name;
                   smi_data.push(smi_row);
                   processed.push(name);
                 }
@@ -473,11 +475,15 @@
         let column_filters = [];
         // createYADCFfilters(start_column, num_cols, filter_type, select_type = null, filter_default_label = "", filter_reset_button_text = false, filter_match_mode = null, column_data_type = null, width = null)
         column_filters = column_filters.concat(createYADCFfilters(1, 2, "multi_select", "select2", "Select", false, null, "html", "80px"));
-        column_filters = column_filters.concat(createYADCFfilters(3, 6, "multi_select", "select2", "Select", false, null, null, "50px"));
-        column_filters = column_filters.concat(createYADCFfilters(9, 4, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
-        column_filters = column_filters.concat(createYADCFfilters(13, 2, "multi_select", "select2", "Select", false, null, null, "50px"));
-        column_filters = column_filters.concat(createYADCFfilters(15, 5, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
-        column_filters = column_filters.concat(createYADCFfilters(20, 1, "multi_select", "select2", "Select", false, null, null, "50px"));
+        column_filters = column_filters.concat(createYADCFfilters(3, 2, "multi_select", "select2", "Select", false, null, null, "50px"));
+        column_filters = column_filters.concat(createYADCFfilters(5, 1, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
+        column_filters = column_filters.concat(createYADCFfilters(6, 1, "multi_select", "select2", "Select", false, null, null, "50px"));
+        column_filters = column_filters.concat(createYADCFfilters(7, 1, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
+        column_filters = column_filters.concat(createYADCFfilters(8, 4, "multi_select", "select2", "Select", false, null, null, "50px"));
+        column_filters = column_filters.concat(createYADCFfilters(12, 4, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
+        column_filters = column_filters.concat(createYADCFfilters(16, 1, "multi_select", "select2", "Select", false, null, null, "50px"));
+        column_filters = column_filters.concat(createYADCFfilters(17, 5, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
+        column_filters = column_filters.concat(createYADCFfilters(22, 1, "multi_select", "select2", "Select", false, null, null, "50px"));
 
         yadcf.init(table.draw(), column_filters, {
           cumulative_filtering: false
@@ -577,7 +583,7 @@
                 div.innerHTML = checked_data[i][1];
                 name = div.textContent;
                 if (!processed.includes(name)){
-                  let smi_row = checked_data[i][20] + "\t" + name;
+                  let smi_row = checked_data[i][22] + "\t" + name;
                   smi_data.push(smi_row);
                   processed.push(name);
                 }
@@ -643,14 +649,14 @@
                 <th style="text-align:left" colspan="4">Ligand
                   <button type="button" class="close hide_columns" columns="1,2,3" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                 </th>
-                <th style="border-left: 1px solid black; text-align:left" colspan="3" style="">Receptor
-                  <button type="button" class="close hide_columns" columns="4,5,6" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <th style="border-left: 1px solid black; text-align:left" colspan="5" style="">Receptor
+                  <button type="button" class="close hide_columns" columns="4,5,6,7,8" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                 </th>
-                <th style="border-left: 1px solid black; text-align:left" colspan="8">Assay information
-                  <button type="button" class="close hide_columns" columns="7,8,9,10,11,12,13,14" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <th style="border-left: 1px solid black; text-align:left" colspan="7">Assay information
+                  <button type="button" class="close hide_columns" columns="9,10,11,12,13,14,15" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                 </th>
-                <th style="border-left: 1px solid black; text-align:left" colspan="6">Chemical information
-                  <button type="button" class="close hide_columns" columns="15,16,17,18,19,20"  aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <th style="border-left: 1px solid black; text-align:left" colspan="7">Chemical information
+                  <button type="button" class="close hide_columns" columns="16,17,18,19,20,21,22"  aria-label="Close"><span aria-hidden="true">&times;</span></button>
                 </th>
               </tr>
               <tr>
@@ -658,17 +664,21 @@
                   <th class="general-th">Common<br \>name</th>
                   <th class="general-th">GPCRdb ID</th>
                   <th class="general-th">#Vendors</th>
-                  <th class="general-th">UniProt</th>
-                  <th class="general-th">IUPHAR</th>
+
+                  <th style="border-left: 1px solid black;" class="general-th">Affinity</th>
+                  <th class="general-th">Affinity<br \>assay count</th>
+                  <th class="general-th">Potency</th>
+                  <th class="general-th">Potency<br \>assay count</th>
+
                   <th class="general-th">Species</th>
-                  <th class="activity-th">p-value<br />(-log)</th>
+                  <th style="border-left: 1px solid black;" class="activity-th">p-value<br />(-log)</th>
                   <th class="activity-th">Activity<br />Type</th>
                   <th class="activity-th">Activity<br />Relation</th>
                   <th class="activity-th">Activity<br />Value</th>
                   <th class="activity-th">Assay Type</th>
                   <th class="activity-th">Assay Description</th>
                   <th class="activity-th">Source</th>
-                  <th class="chemical-th">Mol<br />weight</th>
+                  <th style="border-left: 1px solid black;" class="chemical-th">Mol<br />weight</th>
                   <th class="chemical-th">Rot<br />Bonds</th>
                   <th class="chemical-th">H don</th>
                   <th class="chemical-th">H acc</th>
@@ -684,8 +694,12 @@
                   <td><a class="struct" rel="http://www.ebi.ac.uk/chembl/api/data/image/{{p.ligand__ids__index}}" href="/ligand/{{p.ligand__id}}/info" target="_blank">{{p.ligand__ids__index}}</a></td>
                   <td><a href="/ligand/{{p.ligand__id}}/info" target="_blank">{{p.ligand__id}}</a></td>
                   <td>{{p.purchasability}}</td>
-                  <td>{{p.protein__entry_name}}</td>
-                  <td>{{p.protein__name|safe}}</td>
+
+                  <td>{{p.affinity}}</td>
+                  <td>{{p.count_affinity_test}}</td>
+                  <td>{{p.potency}}</td>
+                  <td>{{p.count_potency_test}}</td>
+
                   <td>{{p.protein__species__common_name}}</td>
                   <td align="right">{{p.p_activity_value|floatformat:1}}</td>
                   <td align="center">{% if p.source == 'ChEMBL' %} p{{p.value_type}} {% else %} {{p.value_type}} {% endif %}</td>
@@ -740,14 +754,14 @@
        				<th style="text-align:left" colspan="4">Ligand
                  <button type="button" class="close hide_columns" columns="1,2,3"  aria-label="Close"><span aria-hidden="true">&times;</span></button>
                </th>
-       				<th style="border-left: 1px solid black; text-align:left" colspan="3" style="">Receptor
-                 <button type="button" class="close hide_columns" columns="4,5,6"  aria-label="Close"><span aria-hidden="true">&times;</span></button>
+       				<th style="border-left: 1px solid black; text-align:left" colspan="5" style="">Receptor
+                 <button type="button" class="close hide_columns" columns="4,5,6,7,8"  aria-label="Close"><span aria-hidden="true">&times;</span></button>
                </th>
                <th style="border-left: 1px solid black; text-align:left" colspan="8">Assay information
-                 <button type="button" class="close hide_columns" columns="7,8,9,10,11,12,13,14"  aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                 <button type="button" class="close hide_columns" columns="9,10,11,12,13,14,15,16"  aria-label="Close"><span aria-hidden="true">&times;</span></button>
                </th>
                <th style="border-left: 1px solid black; text-align:left" colspan="6">Chemical information
-                 <button type="button" class="close hide_columns" columns="15,16,17,18,19,20"  aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                 <button type="button" class="close hide_columns" columns="17,18,19,20,21,22"  aria-label="Close"><span aria-hidden="true">&times;</span></button>
                </th>
        			</tr>
        			<tr class="table-filter-dropdown">
@@ -755,10 +769,14 @@
                <th style="text-align:center">Common<br />name</th>
                <th style="text-align:center">GPCRdb ID</th>
                <th style="text-align:center">Type</th>
-               <th style="text-align:center">UniProt</th>
-               <th style="text-align:center">IUPHAR</th>
+
+               <th style="border-left: 1px solid black; text-align:center">Affinity</th>
+               <th style="text-align:center">Affinity<br \>assay count</th>
+               <th style="text-align:center">Potency</th>
+               <th style="text-align:center">Potency<br \>assay count</th>
+
                <th style="text-align:center">Species</th>
-               <th style="text-align:center">#Vendors</th>
+               <th style="border-left: 1px solid black; text-align:center">#Vendors</th>
                <th style="text-align:center">Assay Type</th>
                <th style="text-align:center">No. records</th>
                <th style="text-align:center">Min.</th>
@@ -766,7 +784,7 @@
                <th style="text-align:center">Max.</th>
                <th style="text-align:center">Value</th>
                <th style="text-align:center">Source</th>
-               <th style="text-align:center">Mol<br />weight</th>
+               <th style="border-left: 1px solid black; text-align:center">Mol<br />weight</th>
                <th style="text-align:center">Rot<br />Bonds</th>
                <th style="text-align:center">H don</th>
                <th style="text-align:center">H acc</th>
@@ -781,12 +799,16 @@
                    <td><a class="struct" rel="{{record.picture}}" href="/ligand/{{record.lig_id}}/info" target="_blank">{{record.ligand_name|safe}}</a></td>
                    <td><a href="/ligand/{{record.lig_id}}/info" target="_blank">{{record.lig_id}}</a></td>
                    <td>{{record.ligand_type}}</td>
-                   <td>{{record.protein_name}}</td>
-                   <td>{{record.iuphar_name|safe}}</td>
+
+                   <td>{{record.affinity}}</td>
+                   <td>{{record.affinity_tested}}</td>
+                   <td>{{record.potency}}</td>
+                   <td>{{record.potency_tested}}</td>
+
                    <td>{{record.species}}</td>
                    <td>{{record.purchasability}}</td>
-                   <td>{{record.record_count}}</td>
                    <td>{{record.assay_type}}</td>
+                   <td>{{record.record_count}}</td>
                    <td>{{record.low_value|floatformat:1}}</td>
                    <td>{{record.average_value|floatformat:1}}</td>
                    <td>{{record.high_value|floatformat:1}}</td>
