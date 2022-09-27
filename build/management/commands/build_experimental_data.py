@@ -1489,7 +1489,7 @@ class Command(BaseBuild):
         filtered = data.loc[(data['SMILES'] != 'None') | (data['CAS Number'] != 'None') | (data['InChIKey'] != 'None') | (data['PubChem Compound ID'] != 'None')]
 
         print("# Parsing Drug Bank data")
-        for index, (_, row) in enumerate(data.iterrows()):
+        for index, (_, row) in enumerate(filtered.iterrows()):
             ids = {}
             if row['SMILES'] != 'None':
                 ids['smiles'] = row['SMILES']
@@ -1505,7 +1505,10 @@ class Command(BaseBuild):
 
     @staticmethod
     def calculate_potency_and_affinity():
-        ligand_target_couples = AssayExperiment.objects.exclude(p_activity_value='None').values_list('ligand_id', 'protein_id', 'value_type', 'p_activity_value').distinct()
+        ligand_target_couples = AssayExperiment.objects.exclude(p_activity_value='None').values_list('ligand_id',
+                                                                                                     'protein_id',
+                                                                                                     'value_type',
+                                                                                                     'p_activity_value').distinct()
         connections = {}
         SI_dict = {}
         B_values = ['pKi', 'pKd']
@@ -1537,7 +1540,7 @@ class Command(BaseBuild):
             SI_dict[ligand] = {}
             Max_Affinity = []
             Max_Potency = []
-            target_count = len(connections[ligand].keys())
+            # target_count = len(connections[ligand].keys())
             #we have a list of targets for the ligand now
             #need to assess target with highest B and highest F
             for target in connections[ligand].keys():
