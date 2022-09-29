@@ -379,7 +379,15 @@ class BiasedSignallingSelection(AbsReferenceSelectionTable):
     import_export_box = False
     subtype = False
     pathway = False
-    pathfinder = {'EmaxRankOrder': {'Description': 'The next page shows plots for the ligand bias rank order ΔΔLog(Emax/EC50) by transducer or effector family across publications.' \
+                  ####NEW
+    pathfinder = {'BiasRankOrder': {'Description': 'The next page shows plots for the ligand bias rank order by transducer or effector family across publications.' \
+                                                    + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.' \
+                                                    + '\n<b>*</b>Biased ligands have a bias factor ≥ 5.',
+                                    'Continue': "submitSelection('/biased_signalling/bias_rankorder');",
+                                    'Pathway': "submitSelection('/biased_signalling/bias_rankorder_path_bias');",
+                                    'Biased': "submitSelection('/biased_signalling/userselectionbiased_bias_rank_order');"},
+                  ####END NEW
+                  'EmaxRankOrder': {'Description': 'The next page shows plots for the ligand bias rank order ΔΔLog(Emax/EC50) by transducer or effector family across publications.' \
                                                     + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.' \
                                                     + '\n<b>*</b>Biased ligands have a bias factor ≥ 5.',
                                     'Continue': "submitSelection('/biased_signalling/emax_rankorder');",
@@ -403,6 +411,14 @@ class BiasedSignallingSelection(AbsReferenceSelectionTable):
                                      'Continue': "submitSelection('/biased_signalling/tau_path_profiles');",
                                      'Pathway': "submitSelection('/biased_signalling/tau_path_profiles_path_bias');",
                                      'Biased': "submitSelection('/biased_signalling/userselectionbiased_tau_path_profile');"},
+                  ####NEW
+                  'BiasRankOrderSubtype': {'Description': 'The next page shows plots for the ligand bias rank order by transducer or effector family across publications.' \
+                                                            + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.' \
+                                                            + '\n<b>*</b>Biased ligands have a bias factor ≥ 5.',
+                                           'Continue': "submitSelection('/biased_signalling/subtype_bias_rankorder');",
+                                           'Pathway': "submitSelection('/biased_signalling/subtype_bias_rankorder_path_bias');",
+                                           'Biased': "submitSelection('/biased_signalling/userselectionbiasedsubtype_bias_rank_order');"},
+                  ####END NEW
                   'EmaxRankOrderSubtype': {'Description': 'The next page shows plots for the ligand bias rank order ΔΔLog(Emax/EC50) by transducer or effector family across publications.' \
                                                             + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.' \
                                                             + '\n<b>*</b>Biased ligands have a bias factor ≥ 5.',
@@ -538,6 +554,8 @@ class UserBiased(AbsReferenceSelectionTable):
     #Biased Effector Family Browser (Ligand Selection)
     'Browser': "submitSelection('/biased_signalling/userbiased');",
     #Biased Effector Family Emax/EC50 Rank Order (Ligand Selection)
+    'BiasRankOrder': "submitSelection('/biased_signalling/userbiased_bias_rank_order');",
+    #Biased Effector Family Emax/EC50 Rank Order (Ligand Selection)
     'EmaxRankOrder': "submitSelection('/biased_signalling/userbiased_emax_rank_order');",
     #Biased Effector Family Tau/KA Rank Order (Ligand Selection)
     'TauRankOrder': "submitSelection('/biased_signalling/userbiased_tau_rank_order');",
@@ -547,6 +565,8 @@ class UserBiased(AbsReferenceSelectionTable):
     'TauPathProfile': "submitSelection('/biased_signalling/userbiased_tau_path_profile');",
     #Biased Effector Subtype Browser (Ligand Selection)
     'BrowserSubtype': "submitSelection('/biased_signalling/userbiasedsubtypes');",
+    #Biased Effector Subtype Emax/EC50 Rank Order (Ligand Selection)
+    'BiasRankOrderSubtype': "submitSelection('/biased_signalling/userbiasedsubtypes_bias_rank_order');",
     #Biased Effector Subtype Emax/EC50 Rank Order (Ligand Selection)
     'EmaxRankOrderSubtype': "submitSelection('/biased_signalling/userbiasedsubtypes_emax_rank_order');",
     #Biased Effector Subtype Tau/KA Rank Order (Ligand Selection)
@@ -833,7 +853,7 @@ class BiasedSignallingOnTheFlyCalculation(TemplateView):
                 else:
                     reference_emax_tau = 'NA'
                     reference_EC50_ka = 'NA'
-            else:
+            elif self.label == 'tau':
                 try:
                     single_delta = result[delta_tk_key]
                 except KeyError:
@@ -849,6 +869,32 @@ class BiasedSignallingOnTheFlyCalculation(TemplateView):
                 components = ['Tau', 'KA']
                 reference_emax_tau = "NA" #need to be updated IF datacolumn for TAU will be added
                 reference_EC50_ka = "NA"  #need to be updated IF datacolumn for KA will be added
+            else:   #### label = bias
+                try:
+                    single_delta = result[delta_ee_key]
+                except KeyError:
+                    single_delta = None
+                try:
+                    double_delta = result['Bias factor'] if result['Bias factor'] is not None else 'Full Bias'
+                except KeyError:
+                    double_delta = None
+                emax_tau = result["Emax"]
+                try:
+                    EC50_ka = '{:0.2e}'.format(result["EC50"])
+                except TypeError:
+                    EC50_ka = result["EC50"]
+                EC50_sign = result['EC50_sign'] #Remember these parameters for additional info
+                Emax_sign = result['Emax_sign'] #Remember these parameters for additional info
+                components = ['Emax', 'EC50']
+                if set(['Reference_Emax', 'Reference_EC50']).issubset(set(result.keys())):
+                    reference_emax_tau = result['Reference_Emax']
+                    try:
+                        reference_EC50_ka = '{:0.2e}'.format(result['Reference_EC50'])
+                    except TypeError:
+                        reference_EC50_ka = result['Reference_EC50']
+                else:
+                    reference_emax_tau = 'NA'
+                    reference_EC50_ka = 'NA'
 
             #fixing ligand name (hash hash baby)
             lig_name = result["ligand_name"]
@@ -974,7 +1020,6 @@ class BiasedSignallingOnTheFlyCalculation(TemplateView):
                                              "tooltip": tooltip_info})
                     SpiderOptions[authors][hashed_lig_name]["Data"][0].append({'axis':result['primary_effector_family'],
                                                                                'value':value})
-
         for item in full_data.keys():
             vals = []
             for name in full_data[item]["Data"]:
@@ -1976,7 +2021,7 @@ def CachedOTFBiasBrowsers(browser_type, user_ligand, balanced, request):
     keygen = protein_ids + user_ids
     cache_key = "OTFBROWSER_" + browser_type + "_" + hashlib.md5("_".join(keygen).encode('utf-8')).hexdigest()
     return_html = cache.get(cache_key)
-    # return_html = None #testing
+    return_html = None #testing
     if return_html == None:
         if user_ligand == False:
             if browser_type == "bias":

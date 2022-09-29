@@ -472,10 +472,12 @@
     }else{
       ylabel = "ΔLog(Emax/EC50)";
     }
-
-  } else {
+  } else if(label == 'tau'){
     ylabel = "ΔΔLog(Tau/KA)"
     qualitative = false
+  } else {
+    qualitative = true
+    ylabel = "Bias factor";
   };
   var count = 1;
   for(var path in realData){
