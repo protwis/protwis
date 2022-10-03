@@ -278,7 +278,7 @@ class CASelector(object):
                         atom_list.append(res['CA'])
                     if -8.1 < res['CA'].get_bfactor() < 0 and "{:.3f}".format(-res['CA'].get_bfactor() + 0.001) in self.selection.generic_numbers:
                         atom_list.append(res['CA'])
-                except Exception as msg:
+                except:
                     continue
 
         if atom_list == []:
