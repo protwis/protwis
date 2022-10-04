@@ -1538,6 +1538,8 @@ def SelectAlignableResidues(request):
                 r_prot = proteins[0]
             elif simple_selection.reference[0].type == 'protein':
                 r_prot = simple_selection.reference[0].item
+            elif simple_selection.reference[0].type == 'structure':
+                r_prot = simple_selection.reference[0].item.protein_conformation.protein
 
             seg_ids_all = get_protein_segment_ids(r_prot, seg_ids_all)
             if r_prot.residue_numbering_scheme not in numbering_schemes:
@@ -1927,6 +1929,8 @@ def ExpandSegment(request):
             numbering_scheme = proteins[0].residue_numbering_scheme
         elif first_item.type == 'protein':
             numbering_scheme = first_item.item.residue_numbering_scheme
+        elif first_item.type == 'structure':
+            numbering_scheme = first_item.item.protein_conformation.protein.residue_numbering_scheme
     else:
         numbering_scheme = ResidueNumberingScheme.objects.get(slug=numbering_scheme_slug)
 
