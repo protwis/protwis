@@ -201,6 +201,7 @@ def TargetDetails(mode, request, **kwargs):
             vendors_dict = {entry[0]:entry[1] for entry in vendor_output}
 
             for record in ps:
+                record['assay_type'] = record['assay_type'] if record['assay_type'] != 'U' else 'N/A'
                 record['purchasability'] = vendors_dict[record['ligand__id']] if record['ligand__id'] in vendors_dict.keys() else 0
                 record['protein__entry_name'] = record['protein__entry_name'].split('_')[0].upper()
                 record['link'] = record['publication__web_link__web_resource__url'].replace('$index',record['publication__web_link__index']) if record['publication__web_link__web_resource__url'] != None else '#'
@@ -237,7 +238,7 @@ def TargetDetails(mode, request, **kwargs):
             vendors_dict = {entry[0]:entry[1] for entry in vendor_output}
 
             ligand_data = []
-            assay_conversion = {'A': 'ADMET', 'B': 'Binding', 'F': 'Functional', 'U': 'Unclassified'}
+            assay_conversion = {'A': 'ADMET', 'B': 'Binding', 'F': 'Functional', 'U': 'N/A'}
             for lig, records in d.items():
                 # links = lig.ids.all()
                 # chembl_id = [x for x in links if x.web_resource.slug == 'chembl_ligand'][0].index
@@ -630,7 +631,7 @@ class BiasedSignallingOnTheFlyCalculation(TemplateView):
         ref_small = ''
         small = ''
         large = ''
-        head = "<b>Compound Name:</b> " + str(ligand) + \
+        head = "<b>Ligand tested for bias:</b> " + str(ligand) + \
                "<br><b>Plotted Value:</b> " + str(value) + \
                "<hr class='solid'>"
         if small_data:
@@ -1950,6 +1951,7 @@ class BiasPathways(TemplateView):
             temp['ligand'] = instance.ligand
             temp['rece'] = instance.chembl
             temp['chembl'] = instance.chembl
+            temp['effect_type'] = instance.effect_type
             temp['relevance'] = instance.relevance
             temp['signalling_protein'] = instance.signalling_protein
 
@@ -1957,8 +1959,8 @@ class BiasPathways(TemplateView):
                 temp['receptor'] = instance.receptor
                 temp['class'] = instance.receptor.family.parent.parent.parent.name.split(' ')[1]
                 temp['uniprot'] = instance.receptor.entry_short
-                temp['IUPHAR'] = instance.receptor.name.split(' ', 1)[
-                    0].strip()
+                temp['link'] = 'https://gpcrdb/protein/' + str(instance.receptor.entry_name)
+                temp['IUPHAR'] = instance.receptor.name.split(' ', 1)[0].strip()
             else:
                 temp['receptor'] = 'Error appeared'
             # at the moment, there is only 1 pathways for every biased_pathway

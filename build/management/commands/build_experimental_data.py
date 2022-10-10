@@ -288,9 +288,8 @@ class Command(BaseBuild):
                 label = 'Principal'
                 if 'Proposed' in comment:
                     label = 'Proposed'
-                dataframe.loc[dataframe['target_id'] ==
-                              id, 'principal/secondary'] = label
-            if 'principal' in comment:
+                dataframe.loc[dataframe['target_id'] == val_id, 'principal/secondary'] = label
+            elif 'principal' in comment:
                 if 'agonists' in comment:
                     drugs = comment.replace(' and ', ', ').split(' are')[
                         0].split(', ')
@@ -315,21 +314,21 @@ class Command(BaseBuild):
         return dataframe, not_commented
 
     @staticmethod
-    def adding_potency_rankings(gtop_endogenous, not_commented):
+    def adding_potency_rankings(endogenous_data, to_be_ranked):
         # fix things, drop unused values
-        gtop_endogenous['ranking'] = np.nan
+        endogenous_data['ranking'] = np.nan
         missing_info = []
-        gtop_endogenous.pki_avg.fillna(gtop_endogenous.pki_max, inplace=True)
-        gtop_endogenous.pec50_avg.fillna(
-            gtop_endogenous.pec50_max, inplace=True)
-        gtop_endogenous.pkd_avg.fillna(gtop_endogenous.pkd_max, inplace=True)
-        gtop_endogenous.pic50_avg.fillna(
-            gtop_endogenous.pic50_max, inplace=True)
-
+        endogenous_data.pki_avg.fillna(endogenous_data.pki_max, inplace=True)
+        endogenous_data.pec50_avg.fillna(endogenous_data.pec50_max, inplace=True)
+        endogenous_data.pkd_avg.fillna(endogenous_data.pkd_max, inplace=True)
+        endogenous_data.pic50_avg.fillna(endogenous_data.pic50_max, inplace=True)
+        endogenous_data.loc[endogenous_data['principal/secondary'] == 'Principal', 'ranking'] = 1
+        endogenous_data.loc[endogenous_data['principal/secondary'] == 'Proposed', 'ranking'] = 1
+        endogenous_data.loc[endogenous_data['principal/secondary'] == 'Secondary', 'ranking'] = 2
         # adding ranking to ligands in receptors without principal status information
         # while tracking problematic values (missing info, symbols in data etc)
-        for target_id in not_commented:
-            data_slice = gtop_endogenous.loc[gtop_endogenous['target_id'] == target_id]
+        for target_id in to_be_ranked:
+            data_slice = endogenous_data.loc[endogenous_data['target_id'] == target_id]
             if len(data_slice['ligand_name'].unique()) != 1:
                 if data_slice['pec50_avg'].isna().any() is False:
                     try:
@@ -338,12 +337,10 @@ class Command(BaseBuild):
                             list(set([float(x) for x in data_slice['pec50_avg'].to_list()])), reverse=True)
                         counter = 1
                         for item in sorted_list:
-                            if item in data_slice['pec50_avg'].to_list():
-                                gtop_endogenous.loc[(gtop_endogenous['target_id'] == target_id) & (
-                                    gtop_endogenous['pec50_avg'] == item), 'ranking'] = counter
-                            else:
-                                gtop_endogenous.loc[(gtop_endogenous['target_id'] == target_id) & (
-                                    gtop_endogenous['pec50_avg'] == str(item)), 'ranking'] = counter
+                            endogenous_data.loc[(endogenous_data['target_id'] == target_id) & (
+                                endogenous_data['pec50_avg'] == item), 'ranking'] = counter
+                            endogenous_data.loc[(endogenous_data['target_id'] == target_id) & (
+                                endogenous_data['pec50_avg'] == str(item)), 'ranking'] = counter
                             counter += 1
                     except ValueError:
                         missing_info.append(target_id)
@@ -354,12 +351,38 @@ class Command(BaseBuild):
                             list(set([float(x) for x in data_slice['pki_avg'].to_list()])), reverse=True)
                         counter = 1
                         for item in sorted_list:
-                            if item in data_slice['pki_avg'].to_list():
-                                gtop_endogenous.loc[(gtop_endogenous['target_id'] == target_id) & (
-                                    gtop_endogenous['pki_avg'] == item), 'ranking'] = counter
-                            else:
-                                gtop_endogenous.loc[(gtop_endogenous['target_id'] == target_id) & (
-                                    gtop_endogenous['pki_avg'] == str(item)), 'ranking'] = counter
+                            endogenous_data.loc[(endogenous_data['target_id'] == target_id) & (
+                                endogenous_data['pki_avg'] == item), 'ranking'] = counter
+                            endogenous_data.loc[(endogenous_data['target_id'] == target_id) & (
+                                endogenous_data['pki_avg'] == str(item)), 'ranking'] = counter
+                            counter += 1
+                    except ValueError:
+                        missing_info.append(target_id)
+                elif data_slice['pkd_avg'].isna().any() is False:
+                    try:
+                        # we have all pec50 values
+                        sorted_list = sorted(
+                            list(set([float(x) for x in data_slice['pkd_avg'].to_list()])), reverse=True)
+                        counter = 1
+                        for item in sorted_list:
+                            endogenous_data.loc[(endogenous_data['target_id'] == target_id) & (
+                                endogenous_data['pkd_avg'] == item), 'ranking'] = counter
+                            endogenous_data.loc[(endogenous_data['target_id'] == target_id) & (
+                                endogenous_data['pkd_avg'] == str(item)), 'ranking'] = counter
+                            counter += 1
+                    except ValueError:
+                        missing_info.append(target_id)
+                if data_slice['pic50_avg'].isna().any() is False:
+                    try:
+                        # we have all pec50 values
+                        sorted_list = sorted(
+                            list(set([float(x) for x in data_slice['pic50_avg'].to_list()])), reverse=True)
+                        counter = 1
+                        for item in sorted_list:
+                            endogenous_data.loc[(endogenous_data['target_id'] == target_id) & (
+                                endogenous_data['pic50_avg'] == item), 'ranking'] = counter
+                            endogenous_data.loc[(endogenous_data['target_id'] == target_id) & (
+                                endogenous_data['pic50_avg'] == str(item)), 'ranking'] = counter
                             counter += 1
                     except ValueError:
                         missing_info.append(target_id)
@@ -367,6 +390,8 @@ class Command(BaseBuild):
                     # we don't have full values, grab higher pec50 or higher pki?
                     values_pec50 = data_slice['pec50_avg'].dropna().to_list()
                     values_pki = data_slice['pki_avg'].dropna().to_list()
+                    values_pic50 = data_slice['pic50_avg'].dropna().to_list()
+                    values_pkd = data_slice['pkd_avg'].dropna().to_list()
                     if len(values_pec50) > 0:
                         try:
                             # we have all pec50 values
@@ -374,15 +399,13 @@ class Command(BaseBuild):
                                 [float(x) for x in data_slice['pec50_avg'].dropna().to_list()])), reverse=True)
                             counter = 1
                             for item in sorted_list:
-                                if item in data_slice['pec50_avg'].to_list():
-                                    gtop_endogenous.loc[(gtop_endogenous['target_id'] == target_id) & (
-                                        gtop_endogenous['pec50_avg'] == item), 'ranking'] = counter
-                                else:
-                                    gtop_endogenous.loc[(gtop_endogenous['target_id'] == target_id) & (
-                                        gtop_endogenous['pec50_avg'] == str(item)), 'ranking'] = counter
+                                endogenous_data.loc[(endogenous_data['target_id'] == target_id) & (
+                                    endogenous_data['pec50_avg'] == item), 'ranking'] = counter
+                                endogenous_data.loc[(endogenous_data['target_id'] == target_id) & (
+                                    endogenous_data['pec50_avg'] == str(item)), 'ranking'] = counter
                                 counter += 1
-                            gtop_endogenous.loc[(gtop_endogenous['target_id'] == target_id) & (
-                                gtop_endogenous['pec50_avg'].isna()), 'ranking'] = counter
+                            endogenous_data.loc[(endogenous_data['target_id'] == target_id) & (
+                                endogenous_data['pec50_avg'].isna()), 'ranking'] = counter
                         except ValueError:
                             missing_info.append(target_id)
                     elif len(values_pki) > 0:
@@ -392,20 +415,50 @@ class Command(BaseBuild):
                                 set([float(x) for x in data_slice['pki_avg'].dropna().to_list()])), reverse=True)
                             counter = 1
                             for item in sorted_list:
-                                if item in data_slice['pki_avg'].to_list():
-                                    gtop_endogenous.loc[(gtop_endogenous['target_id'] == target_id) & (
-                                        gtop_endogenous['pki_avg'] == item), 'ranking'] = counter
-                                else:
-                                    gtop_endogenous.loc[(gtop_endogenous['target_id'] == target_id) & (
-                                        gtop_endogenous['pki_avg'] == str(item)), 'ranking'] = counter
+                                endogenous_data.loc[(endogenous_data['target_id'] == target_id) & (
+                                    endogenous_data['pki_avg'] == item), 'ranking'] = counter
+                                endogenous_data.loc[(endogenous_data['target_id'] == target_id) & (
+                                    endogenous_data['pki_avg'] == str(item)), 'ranking'] = counter
                                 counter += 1
-                            gtop_endogenous.loc[(gtop_endogenous['target_id'] == target_id) & (
-                                gtop_endogenous['pki_avg'].isna()), 'ranking'] = counter
+                            endogenous_data.loc[(endogenous_data['target_id'] == target_id) & (
+                                endogenous_data['pki_avg'].isna()), 'ranking'] = counter
+                        except ValueError:
+                            missing_info.append(target_id)
+                    elif len(values_pkd) > 0:
+                        try:
+                            # we have all pec50 values
+                            sorted_list = sorted(list(
+                                set([float(x) for x in data_slice['pkd_avg'].dropna().to_list()])), reverse=True)
+                            counter = 1
+                            for item in sorted_list:
+                                endogenous_data.loc[(endogenous_data['target_id'] == target_id) & (
+                                    endogenous_data['pkd_avg'] == item), 'ranking'] = counter
+                                endogenous_data.loc[(endogenous_data['target_id'] == target_id) & (
+                                    endogenous_data['pkd_avg'] == str(item)), 'ranking'] = counter
+                                counter += 1
+                            endogenous_data.loc[(endogenous_data['target_id'] == target_id) & (
+                                endogenous_data['pkd_avg'].isna()), 'ranking'] = counter
+                        except ValueError:
+                            missing_info.append(target_id)
+                    elif len(values_pic50) > 0:
+                        try:
+                            # we have all pec50 values
+                            sorted_list = sorted(list(
+                                set([float(x) for x in data_slice['pic50_avg'].dropna().to_list()])), reverse=True)
+                            counter = 1
+                            for item in sorted_list:
+                                endogenous_data.loc[(endogenous_data['target_id'] == target_id) & (
+                                    endogenous_data['pic50_avg'] == item), 'ranking'] = counter
+                                endogenous_data.loc[(endogenous_data['target_id'] == target_id) & (
+                                    endogenous_data['pic50_avg'] == str(item)), 'ranking'] = counter
+                                counter += 1
+                            endogenous_data.loc[(endogenous_data['target_id'] == target_id) & (
+                                endogenous_data['pic50_avg'].isna()), 'ranking'] = counter
                         except ValueError:
                             missing_info.append(target_id)
                     else:
-                        missing_info.append(id)
-        return gtop_endogenous
+                        missing_info.append(target_id)
+        return endogenous_data
 
     @staticmethod
     def convert_dataframe(df):
@@ -1058,8 +1111,8 @@ class Command(BaseBuild):
         biodata.loc[(biodata[type_column] == 'IC50') & ~(
             biodata[description_column].str.contains('|'.join(binding_words))), 'assay_type'] = 'F'
         # find Unclassified assayas
-        biodata.loc[biodata[description_column].str.contains(
-            'Unclassified'), 'assay_type'] = 'U'
+        # biodata.loc[biodata[description_column].str.contains(
+        #     'Unclassified'), 'assay_type'] = 'U'
 
         return biodata
 
@@ -1396,7 +1449,7 @@ class Command(BaseBuild):
                 bioacts[-1].assay_type = 'B'
                 bioacts[-1].assay_description = None
                 bioacts[-1].standard_activity_value = round(float(row['ki Val']), 2)
-                bioacts[-1].p_activity_value = round(-math.log10(float(row['ki Val']) * 10e-9), 2)
+                bioacts[-1].p_activity_value = round(-math.log10(float(row['ki Val']) * 1e-9), 2)
                 bioacts[-1].p_activity_ranges = None
                 bioacts[-1].standard_relation = '='
                 bioacts[-1].value_type = 'pKi'
@@ -1463,7 +1516,7 @@ class Command(BaseBuild):
                 bioacts[-1].assay_type = row['assay_type']
                 bioacts[-1].assay_description = row['ACT_COMMENT']
                 bioacts[-1].standard_activity_value = round(float(row['ACT_VALUE']), 2) if row['ACT_TYPE'] != 'pA2' else None
-                bioacts[-1].p_activity_value = round(-math.log10(float(row['ACT_VALUE']) * 10e-9), 2) if row['ACT_TYPE'] != 'pA2' else round(float(row['ACT_VALUE']), 2)
+                bioacts[-1].p_activity_value = round(-math.log10(float(row['ACT_VALUE']) * 1e-9), 2) if row['ACT_TYPE'] != 'pA2' else round(float(row['ACT_VALUE']), 2)
                 bioacts[-1].p_activity_ranges = None
                 bioacts[-1].standard_relation = row['RELATION']
                 bioacts[-1].value_type = 'p'+row['ACT_TYPE'] if row['ACT_TYPE'] != 'pA2' else row['ACT_TYPE']
@@ -1476,32 +1529,32 @@ class Command(BaseBuild):
                       bio_entries, "bioactivities")
                 bioacts = []
 
-    @staticmethod
-    def build_drugbank_ligands():
-        print("# Collecting Drug Bank data")
-        data_link = os.sep.join([settings.DATA_DIR, 'ligand_data', 'assay_data', 'structure_links.csv'])
-
-        data = pd.read_csv(data_link)
-        ligand_cache = {}
-
-        data.fillna('None', inplace=True)
-        #Keep only rows with at least info in one of the relevant columns
-        filtered = data.loc[(data['SMILES'] != 'None') | (data['CAS Number'] != 'None') | (data['InChIKey'] != 'None') | (data['PubChem Compound ID'] != 'None')]
-
-        print("# Parsing Drug Bank data")
-        for index, (_, row) in enumerate(filtered.iterrows()):
-            ids = {}
-            if row['SMILES'] != 'None':
-                ids['smiles'] = row['SMILES']
-            if row['CAS Number'] != 'None':
-                ids['CAS'] = row['CAS Number']
-            if row['InChIKey'] != 'None':
-                ids['inchikey'] = row['InChIKey']
-            if row['PubChem Compound ID'] != 'None':
-                ids['pubchem'] = int(row['PubChem Compound ID'])
-            if row['Name'] not in ligand_cache.keys():
-                ligand = get_or_create_ligand(row['Name'], ids)
-                ligand_cache[row['Name']] = ligand
+    # @staticmethod
+    # def build_drugbank_ligands():
+    #     print("# Collecting Drug Bank data")
+    #     data_link = os.sep.join([settings.DATA_DIR, 'ligand_data', 'assay_data', 'structure_links.csv'])
+    #
+    #     data = pd.read_csv(data_link)
+    #     ligand_cache = {}
+    #
+    #     data.fillna('None', inplace=True)
+    #     #Keep only rows with at least info in one of the relevant columns
+    #     filtered = data.loc[(data['SMILES'] != 'None') | (data['CAS Number'] != 'None') | (data['InChIKey'] != 'None') | (data['PubChem Compound ID'] != 'None')]
+    #
+    #     print("# Parsing Drug Bank data")
+    #     for index, (_, row) in enumerate(filtered.iterrows()):
+    #         ids = {}
+    #         if row['SMILES'] != 'None':
+    #             ids['smiles'] = row['SMILES']
+    #         if row['CAS Number'] != 'None':
+    #             ids['CAS'] = row['CAS Number']
+    #         if row['InChIKey'] != 'None':
+    #             ids['inchikey'] = row['InChIKey']
+    #         if row['PubChem Compound ID'] != 'None':
+    #             ids['pubchem'] = int(row['PubChem Compound ID'])
+    #         if row['Name'] not in ligand_cache.keys():
+    #             ligand = get_or_create_ligand(row['Name'], ids)
+    #             ligand_cache[row['Name']] = ligand
 
     @staticmethod
     def calculate_potency_and_affinity():
@@ -1562,26 +1615,26 @@ class Command(BaseBuild):
                     if target == affinity_sort[0][0]:
                         va = connections[ligand][target]['Affinity'] - affinity_sort[1][1]
                         BAssay = int(10**(abs(va)))
-                        SI_dict[ligand][target]['Affinity'] = str(BAssay)+'-fold'
+                        SI_dict[ligand][target]['Affinity'] = BAssay
                     else:
                         va = connections[ligand][target]['Affinity'] - affinity_sort[0][1]
                         BAssay = int(10**(abs(va)))
-                        SI_dict[ligand][target]['Affinity'] = "-" + str(BAssay) + '-fold'
+                        SI_dict[ligand][target]['Affinity'] = -BAssay
                 if (len(potency_sort) > 1) and ('Potency' in connections[ligand][target].keys()):
                     if target == potency_sort[0][0]:
                         va = connections[ligand][target]['Potency'] - potency_sort[1][1]
                         FAssay = int(10**(abs(va)))
-                        SI_dict[ligand][target]['Potency'] = str(FAssay)+'-fold'
+                        SI_dict[ligand][target]['Potency'] = FAssay
                     else:
                         va = connections[ligand][target]['Potency'] - potency_sort[0][1]
                         FAssay = int(10**(abs(va)))
-                        SI_dict[ligand][target]['Potency'] = "-" + str(FAssay) + "-fold"
+                        SI_dict[ligand][target]['Potency'] = -FAssay
         #This step is kinda slow and may be sped up using bulk_update
         #but I don't know if you can apply bulk_update with filters
         for lig in SI_dict:
             for tg in list(SI_dict[lig].keys())[2:]:
-                affinity = SI_dict[lig][tg]['Affinity'] if 'Affinity' in SI_dict[lig][tg].keys() else None
-                potency = SI_dict[lig][tg]['Potency'] if 'Potency' in SI_dict[lig][tg].keys() else None
+                affinity = SI_dict[lig][tg]['Affinity'] if 'Affinity' in SI_dict[lig][tg].keys() else '-'
+                potency = SI_dict[lig][tg]['Potency'] if 'Potency' in SI_dict[lig][tg].keys() else '-'
                 AssayExperiment.objects.filter(ligand_id=lig, protein_id=tg).update(
                     affinity=affinity,
                     potency=potency,

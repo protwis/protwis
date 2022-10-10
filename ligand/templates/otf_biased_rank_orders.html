@@ -471,6 +471,7 @@
       ylabel = "ΔΔLog(Emax/EC50)";
     }else{
       ylabel = "ΔLog(Emax/EC50)";
+      bias = false
     }
   } else if(label == 'tau'){
     ylabel = "ΔΔLog(Tau/KA)"
@@ -478,11 +479,12 @@
   } else {
     qualitative = true
     ylabel = "Bias factor";
+    bias = true;
   };
   var count = 1;
   for(var path in realData){
     var name = 'Pathway' + parseInt(count);
-    DotScatter(realData[path], 'boxplotChart', name, colors, legend[path], conversion[path], ylabel, qualitative);
+    DotScatter(realData[path], 'boxplotChart', name, colors, legend[path], conversion[path], ylabel, qualitative, bias);
     count = count + 1;
     gNodes = d3.select('#'+name).selectAll('.main.axis.date').selectAll('.tick');
     headerNode = d3.select('#'+name).selectAll('.header').selectAll('text')[0][0];

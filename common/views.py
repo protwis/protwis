@@ -119,7 +119,7 @@ def getLigandTable(receptor_id, browser_type):
 
 def getLigandCountTable():
     data_table = cache.get("ligand_count_table")
-    data_table = None
+    # data_table = None
     if data_table == None:
         proteins = Protein.objects.filter(sequence_type__slug="wt",
                                           family__slug__startswith="00").prefetch_related(
