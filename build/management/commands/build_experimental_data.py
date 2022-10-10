@@ -1510,13 +1510,14 @@ class Command(BaseBuild):
             if code in accession_numbers.keys():
                 receptor = accession_numbers[code]
             if (receptor is not None) and (ligand_cache[row['DRUG_NAME']] is not None):
+                calc_val = round(-math.log10(float(row['ACT_VALUE']) * 1e-9), 2) if row['ACT_TYPE'] != 'pA2' else round(float(row['ACT_VALUE']), 2)
                 bioacts.append(AssayExperiment())
                 bioacts[-1].ligand_id = ligand_cache[row['DRUG_NAME']].id
                 bioacts[-1].protein_id = receptor.id
                 bioacts[-1].assay_type = row['assay_type']
                 bioacts[-1].assay_description = row['ACT_COMMENT']
                 bioacts[-1].standard_activity_value = round(float(row['ACT_VALUE']), 2) if row['ACT_TYPE'] != 'pA2' else None
-                bioacts[-1].p_activity_value = round(-math.log10(float(row['ACT_VALUE']) * 1e-9), 2) if row['ACT_TYPE'] != 'pA2' else round(float(row['ACT_VALUE']), 2)
+                bioacts[-1].p_activity_value = calc_val
                 bioacts[-1].p_activity_ranges = None
                 bioacts[-1].standard_relation = row['RELATION']
                 bioacts[-1].value_type = 'p'+row['ACT_TYPE'] if row['ACT_TYPE'] != 'pA2' else row['ACT_TYPE']

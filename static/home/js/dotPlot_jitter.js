@@ -150,7 +150,7 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
   }
 
   if(qualitative === true){
-    if(bias == false){
+    if(bias === false){
       y = d3.scale.linear()
         .domain([0,
           d3.max(data, function(d) {
