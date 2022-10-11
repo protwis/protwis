@@ -1532,7 +1532,7 @@ def SelectAlignableResidues(request):
     if numbering_scheme_slug == 'cgn':
         cgn = True
     elif numbering_scheme_slug == 'false':
-        if simple_selection.reference:
+        if simple_selection and simple_selection.reference:
             if simple_selection.reference[0].type == 'family':
                 proteins = Protein.objects.filter(family__slug__startswith=simple_selection.reference[0].item.slug)
                 r_prot = proteins[0]
@@ -1545,7 +1545,7 @@ def SelectAlignableResidues(request):
             if r_prot.residue_numbering_scheme not in numbering_schemes:
                 numbering_schemes.append(r_prot.residue_numbering_scheme)
 
-        if simple_selection.targets:
+        if simple_selection and simple_selection.targets:
             for t in simple_selection.targets:
                 if t.type == 'family':
                     proteins = Protein.objects.filter(family__slug__startswith=t.item.slug)
@@ -1557,11 +1557,17 @@ def SelectAlignableResidues(request):
                 seg_ids_all = get_protein_segment_ids(t_prot, seg_ids_all)
                 if t_prot.residue_numbering_scheme not in numbering_schemes:
                     numbering_schemes.append(t_prot.residue_numbering_scheme)
+
         # Filter based on reference and target proteins
         filtered_segments = []
         for segment in segments:
             if segment.id in seg_ids_all:
                 filtered_segments.append(segment)
+
+        if len(numbering_schemes) == 0 and len(filtered_segments) == 0:
+            numbering_schemes.append(ResidueNumberingScheme.objects.get(slug="gpcrdba"))
+            filtered_segments = segments
+
         segments = filtered_segments
     else:
         numbering_schemes = [ResidueNumberingScheme.objects.get(slug=numbering_scheme_slug)]
@@ -1919,20 +1925,27 @@ def ExpandSegment(request):
     cgn = False
     if numbering_scheme_slug == 'cgn':
         cgn = True
-    elif numbering_scheme_slug == 'false':
+    elif numbering_scheme_slug == 'false' and simple_selection:
+        first_item = False
         if simple_selection.reference:
             first_item = simple_selection.reference[0]
-        else:
+        elif simple_selection.targets:
             first_item = simple_selection.targets[0]
-        if first_item.type == 'family':
-            proteins = Protein.objects.filter(family__slug__startswith=first_item.item.slug)
-            numbering_scheme = proteins[0].residue_numbering_scheme
-        elif first_item.type == 'protein':
-            numbering_scheme = first_item.item.residue_numbering_scheme
-        elif first_item.type == 'structure':
-            numbering_scheme = first_item.item.protein_conformation.protein.residue_numbering_scheme
+
+        if first_item:
+            if first_item.type == 'family':
+                proteins = Protein.objects.filter(family__slug__startswith=first_item.item.slug)
+                numbering_scheme = proteins[0].residue_numbering_scheme
+            elif first_item.type == 'protein':
+                numbering_scheme = first_item.item.residue_numbering_scheme
+            elif first_item.type == 'structure':
+                numbering_scheme = first_item.item.protein_conformation.protein.residue_numbering_scheme
+        else:
+            numbering_scheme = ResidueNumberingScheme.objects.get(slug="gpcrdba")
+    elif numbering_scheme_slug:
+            numbering_scheme = ResidueNumberingScheme.objects.get(slug=numbering_scheme_slug)
     else:
-        numbering_scheme = ResidueNumberingScheme.objects.get(slug=numbering_scheme_slug)
+        numbering_scheme = ResidueNumberingScheme.objects.get(slug="gpcrdba")
 
     if cgn ==True:
         # fetch the generic numbers for CGN differently

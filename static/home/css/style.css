@@ -173,7 +173,7 @@ span.text-forest-highlight {
   margin-top: 0;
 }
 
-select.form-control {
+select.form-control :not(#numberingschemeselect) {
   width: auto;
   height: 22px;
   font-size: 11px;
