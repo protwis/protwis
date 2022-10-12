@@ -111,9 +111,8 @@ class Command(BaseBuild):
         print('\n\nSaving the ligands in the models')
         self.save_the_ligands_save_the_world(ligand_data, gtp_peptides)
 
-        print('\n\nFetching Drug Bank ligands and saving to model')
-        self.build_drugbank_ligands()
-        # Building GtP bioactivity data
+        # print('\n\nFetching Drug Bank ligands and saving to model')
+        # self.build_drugbank_ligands()
         print("\n\nStarted building Guide to Pharmacology bioactivities")
         self.build_gtp_bioactivities(bioactivity_data_gtp)
         print("Ended building Guide to Pharmacology bioactivities")
@@ -1455,6 +1454,7 @@ class Command(BaseBuild):
                 bioacts[-1].value_type = 'pKi'
                 bioacts[-1].source = 'PDSP KiDatabase'
                 bioacts[-1].document_chembl_id = None
+                bioacts[-1].reference_ligand = row['Hotligand']
                 # BULK insert every X entries or last entry
             if (len(bioacts) == Command.bulk_size) or (index == bio_entries - 1):
                 AssayExperiment.objects.bulk_create(bioacts)
