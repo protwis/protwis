@@ -130,14 +130,20 @@ def getLigandCountTable():
         )
         # Acquired slugs
         # entry_names = [ p.entry_name for p in proteins ]
-
-        drugtargets_approved = list(Protein.objects.filter(drugs__status="approved").values_list("entry_name", flat=True))
+        drugtargets_approved = list(Protein.objects.filter(drugs__status="approved").values("entry_name").annotate(num_ligands=Count("drugs__name", distinct=True)))
+        # drugtargets_approved = list(Protein.objects.filter(drugs__status="approved").values_list("entry_name", flat=True))
+        approved = {}
+        for entry in drugtargets_approved:
+            approved[entry['entry_name']] = entry['num_ligands']
         drugtargets_trials = list(Protein.objects.filter(drugs__status__in=["in trial"],
                                                          drugs__clinicalstatus__in=["completed", "not open yet",
                                                                                     "ongoing", "recruiting",
-                                                                                    "suspended"]).values_list(
-            "entry_name", flat=True))
+                                                                                    "suspended"]).values(
+            "entry_name").annotate(num_ligands=Count("drugs__name", distinct=True)))
 
+        trials = {}
+        for entry in drugtargets_trials:
+            trials[entry['entry_name']] = entry['num_ligands']
         # ligand_set = list(AssayExperiment.objects.values_list("protein__family__slug", "protein__species_id__latin_name")\
         #     .annotate(num_ligands=Count("ligand", distinct=True)))
 
@@ -165,8 +171,8 @@ def getLigandCountTable():
                 <th style=\"color:red\">Receptor<br>(UniProt)</th> \
                 <th style=\"color:red\">Receptor<br>(GtP)</th> \
                 <th>Count</th> \
-                <th>Target of an approved drug</th> \
-                <th>Target in clinical trials</th> \
+                <th>Approved</th> \
+                <th>In clinical<br>trials</th> \
               </tr> \
             </thead>\
             \n \
@@ -211,8 +217,8 @@ def getLigandCountTable():
                     #t['gtp_link'] = link_setup.format(p.web_links.filter(web_resource__slug='gtop')[0])
                     t['iuphar'] = link_setup.format(gtop_links[0], t['iuphar'])
 
-                t['approved_target'] = "Yes" if p.entry_name in drugtargets_approved else "No"
-                t['clinical_target'] = "Yes" if p.entry_name in drugtargets_trials else "No"
+                t['approved_target'] = approved[t['entry_name']] if t['entry_name'] in approved.keys() else 0
+                t['clinical_target'] = trials[t['entry_name']] if t['entry_name'] in trials.keys() else 0
 
                 data_table += "<tr> \
                 <td data-sort=\"0\"><input autocomplete='off' class=\"form-check-input\" type=\"checkbox\" name=\"reference\" data-entry=\"{}\" entry-value=\"{}\"></td> \

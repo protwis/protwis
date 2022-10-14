@@ -1,7 +1,7 @@
 /*global d3*/
 /*eslint complexity: ["error", 20]*/
 
-function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, qualitative){
+function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, qualitative, bias){
 
   // check if there are qualitative values in the dataset
   // for specify the y labels later
@@ -13,6 +13,8 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
   var idRemove;
   var nodes;
   var tmp;
+  var full_bias = false;
+  var over_50 = false;
   var pubs = new Array();
   var first = ylabel.replace(/\Δ|\(|\)|[Log]/g,"").split("/")[0];
   var second = ylabel.replace(/\Δ|\(|\)|[Log]/g,"").split("/")[1];
@@ -130,14 +132,41 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
     }))
     .rangePoints([0, width], 0.5);
 
-  if(qualitative === true){
-    y = d3.scale.linear()
-      .domain([0,
-        d3.max(data, function(d) {
-        return d[1];
-      })])
-      .range([height, 0]);
+  var max = d3.max(data, function(d) {return d[1];});
+  for(let i = 0; i < data.length; i++) {
+    if(data[i][1] > 50 && data[i][4] != "Full Bias"){
+      over_50 = true;
+      data[i][1] = 55;
+      data[i][4] = 'High Bias';
+    }
+    if(data[i][4] === "Full Bias"){
+      full_bias = true;
+    }
+  }
+  for(let i = 0; i < data.length; i++) {
+    if(data[i][4] === "Full Bias" && over_50 === true){
+      data[i][1] = 60;
+    }
+  }
 
+  if(qualitative === true){
+    if(bias === false){
+      y = d3.scale.linear()
+        .domain([0,
+          d3.max(data, function(d) {
+          return d[1];
+        })])
+        .range([height, 0]);
+    }else{
+      if(over_50 === true && full_bias === true){
+        max = 60;
+      }else if(over_50 === true && full_bias === false){
+        max = 55;
+      }
+      y = d3.scale.linear()
+        .domain([0,max])
+        .range([height, 0]);
+    }
   }else{
     y = d3.scale.linear()
       .domain([
@@ -150,6 +179,7 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
       .range([height, 0]);
 
   }
+
   var chart = d3.select("#" + ID)
     .append("svg:svg")
     .attr("width", width + margin.right + margin.left)
@@ -187,15 +217,21 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
 
   var tickArray = yAxis.scale().ticks();
   // console.log(tickArray);
-  // console.log(tickArray.slice(-1)[0]);
   var step = yAxis.scale().ticks()[1];
   var count_ticks = yAxis.scale().ticks().length;
 
+  if(bias === true){
+    for(let i = 0; i < data.length; i++) {
+      if(data[i][1] > 50 && data[i][4] != "Full Bias"){
+        data[i][4] = "High Bias";
+      }
+    }
+  }
+
   for(let i = 0; i < data.length; i++) {
     if(data[i][4] === "High Bias"){
-      tmp = data[i][1];
-      if(tickArray.includes(tmp)){
-        hb = step_rounder(tmp, step);
+      if(full_bias === true){
+        hb = tickArray.slice(-2)[0];
       }else{
         hb = tickArray.slice(-1)[0];
       }
@@ -206,7 +242,6 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
       }else{
         fb = tickArray.slice(-1)[0];
       }
-      // hb = step_rounder((tmp - step), step);
     }
   }
 
@@ -214,7 +249,7 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
           if(d === fb){
             return "Full Bias";
           } else if(d === hb){
-            return "High Bias";
+            return "Over 50";
           } else {
             return d;
           }
@@ -355,18 +390,16 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
                 highlight(tempId);
             });
 
-    // Creating Full Bias Squares
+    // Creating High Bias Circles
     g.selectAll("scatter-dots")
             .data(data)
-            .enter()
-            .append("rect")
+            .enter().append("svg:circle")
             .filter(function(d) { return d[4] === "High Bias";})
             .attr("class", "HighBias")
             .attr("id", function(d) {return "LC" + d[3].replace(/\[|\]|\(|\)|\s|\,/g,"");})
-            .attr("x", function(d) {return x(d[0]) - jitterWidth/2 + Math.random()*jitterWidth ;})
-            .attr("y", function(d) {return y(d[1]);})
-            .attr("width", 7)
-            .attr("height", 7)
+            .attr("cx", function(d) {return x(d[0]) - jitterWidth/2 + Math.random()*jitterWidth ;})
+            .attr("cy", function(d) {return y(d[1]);})
+            .attr("r", 4)
             .style("fill", function(d) {return d[2];})
             .style("opacity", 1.0)
             .on("mouseover", mouseover)

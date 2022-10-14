@@ -683,15 +683,21 @@ function initLigandCountTable(elementID) {
                 },
                 {
                     column_number: 8,
-                    select_type: "select2",
+                    filter_type: "range_number",
+                    filter_default_label: ["From", "To"],
                     filter_reset_button_text: false,
-                    filter_match_mode : "exact",
+                    //style_class: "center"
+                    //html5_data: "data-search",
+                    column_data_type: "html",
                 },
                 {
                     column_number: 9,
-                    select_type: "select2",
+                    filter_type: "range_number",
+                    filter_default_label: ["From", "To"],
                     filter_reset_button_text: false,
-                    filter_match_mode : "exact",
+                    //style_class: "center"
+                    //html5_data: "data-search",
+                    column_data_type: "html",
                 },
             ], {
                 // cumulative_filtering: true,
