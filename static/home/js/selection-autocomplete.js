@@ -41,7 +41,7 @@ $(function() {
                 //custom for ginterface
                 AddToSelection("targets", ui.item["type"], ui.item["id"]);
                 toggleButtonClass("selection-button"); // loading effect on button
-                setTimeout(function(){window.location = "/signprot/ginterface/"" + ui.item["slug"];}, 200);
+                setTimeout(function(){window.location = "/signprot/ginterface/" + ui.item["slug"];}, 200);
             } else if (type_of_selection === "browse_gprot") {
                 //custom for ginterface
                 AddToSelection("targets", ui.item["type"], ui.item["id"]);
