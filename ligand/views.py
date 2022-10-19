@@ -19,7 +19,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 from django.core.cache import cache
 
-from common.views import AbsReferenceSelectionTable, getReferenceTable, getLigandTable, getLigandCountTable
+from common.views import AbsReferenceSelectionTable, getReferenceTable, getLigandTable, getLigandCountTable, AbsTargetSelection
 from common.models import ReleaseNotes, WebResource, Publication
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from common.selection import Selection, SelectionItem
@@ -28,6 +28,30 @@ from ligand.functions import OnTheFly, AddPathwayData
 from protein.models import Protein, ProteinFamily
 from interaction.models import StructureLigandInteraction
 from mutation.models import MutationExperiment
+
+
+class LigandNameSelection(AbsTargetSelection):
+    # Left panel
+    step = 1
+    number_of_steps = 1
+    template_name = 'common/selection_ligand_name.html'
+    filters = False
+    import_export_box = False
+    target_input = False
+    psets = False
+    family_tree = False
+    type_of_selection = 'ligands'
+    selection_only_receptors = False
+    title = "Ligand selection via name/ID"
+    description = 'Select a ligand by either its name or GPCRdb ID using the query searchbar.'
+
+    buttons = {
+        'continue' : {
+            'label' : 'Show ligand information',
+            'url' : '',
+            'color' : 'success',
+            }
+        }
 
 class LigandTargetSelection(AbsReferenceSelectionTable):
         step = 1
@@ -1685,7 +1709,7 @@ class LigandInformationView(TemplateView):
         context = dict()
         structures = LigandInformationView.get_structure(ligand_data)
         ligand_data = LigandInformationView.process_ligand(ligand_data, endogenous_ligands)
-        assay_data = LigandInformationView.process_assay(assay_data)
+        assay_data_affinity, assay_data_potency = LigandInformationView.process_assay(assay_data)
         mutations = LigandInformationView.get_mutations(ligand_data)
         # if int(ligand_id) in endogenous_ligands:
         #     endo_data = list(Endogenous_GTP.objects.filter(ligand=ligand_id).prefetch_related(
@@ -1696,7 +1720,8 @@ class LigandInformationView(TemplateView):
         #     assay_data = assay_data + endo_values
         context.update({'structure': structures})
         context.update({'ligand': ligand_data})
-        context.update({'assay': assay_data})
+        context.update({'assay_affinity': assay_data_affinity})
+        context.update({'assay_potency': assay_data_potency})
         context.update({'mutations': mutations})
         return context
 
@@ -1762,19 +1787,31 @@ class LigandInformationView(TemplateView):
                 else:
                     return_dict[item]['data_type'][assay_type] = LigandInformationView.get_min_max_values(return_dict[item]['data_type'][assay_type])
     	#Unpacking
-        unpacked = dict()
+        unpacked_affinity = dict()
+        unpacked_potency = dict()
+        potency_values = ['pKB', 'pKb', 'pEC50', 'pA2', 'A2', 'Kb', 'KB', 'EC50', 'Potency', 'IC50', 'pIC50']
+        affinity_values = ['pKi', 'pKd', 'Ki', 'Kd']
         for key in return_dict.keys():
             for data_type in return_dict[key]['data_type'].keys():
                 label = '_'.join([key,data_type])
-                unpacked[label] = deepcopy(return_dict[key])
-                unpacked[label]['type'] = data_type if data_type.startswith('p') or data_type.startswith('P') or data_type == '-' else 'p'+data_type
-                unpacked[label]['min'] = return_dict[key]['data_type'][data_type][0]
-                unpacked[label]['avg'] = return_dict[key]['data_type'][data_type][1]
-                unpacked[label]['max'] = return_dict[key]['data_type'][data_type][2]
-                unpacked[label]['source'] = return_dict[key]['source']
-                unpacked[label].pop('data_type', None)
+                if data_type in potency_values:
+                    unpacked_potency[label] = deepcopy(return_dict[key])
+                    unpacked_potency[label]['type'] = data_type if data_type.startswith('p') or data_type.startswith('P') or data_type == '-' else 'p'+data_type
+                    unpacked_potency[label]['min'] = return_dict[key]['data_type'][data_type][0]
+                    unpacked_potency[label]['avg'] = return_dict[key]['data_type'][data_type][1]
+                    unpacked_potency[label]['max'] = return_dict[key]['data_type'][data_type][2]
+                    unpacked_potency[label]['source'] = return_dict[key]['source']
+                    unpacked_potency[label].pop('data_type', None)
+                elif data_type in affinity_values:
+                    unpacked_affinity[label] = deepcopy(return_dict[key])
+                    unpacked_affinity[label]['type'] = data_type if data_type.startswith('p') or data_type.startswith('P') or data_type == '-' else 'p'+data_type
+                    unpacked_affinity[label]['min'] = return_dict[key]['data_type'][data_type][0]
+                    unpacked_affinity[label]['avg'] = return_dict[key]['data_type'][data_type][1]
+                    unpacked_affinity[label]['max'] = return_dict[key]['data_type'][data_type][2]
+                    unpacked_affinity[label]['source'] = return_dict[key]['source']
+                    unpacked_affinity[label].pop('data_type', None)
 
-        return list(unpacked.values())
+        return list(unpacked_affinity.values()), list(unpacked_potency.values())
 
     @staticmethod
     def return_splitted_ranges(value):

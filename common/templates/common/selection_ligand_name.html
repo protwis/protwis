@@ -1,0 +1,87 @@
+{% extends "home/base.html" %}
+{% load static %}
+
+{% block addon_css %}
+<link rel="stylesheet" href="{% static 'home/css/button_spinner.css' %}" type="text/css" />
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
+{% endblock %}
+
+{% block content %}
+
+  <div class="row">
+    <!-- description column -->
+    <div class="col-md-8">
+        <!-- main description -->
+        <div class="col-md-12 panel panel-primary">
+            <div class="panel-body">
+                <h4>{{ title }}</h4>
+                {{ description|linebreaks }}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <!-- button(s) -->
+        {% if buttons.continue.label %}
+        <div id="selection-buttons">
+            {% include 'common/selection_buttons.html' %}
+        </div>
+        {% endif %}
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-8">
+      <!-- target search -->
+      {% if search %}
+          <div class="col-md-12 panel panel-primary">
+              <div class="panel-body">
+                  <h4>Search</h4>
+                  <div>
+                      <input id="selection-autocomplete" class="form-control" size="25">
+                  </div>
+              </div>
+          </div>
+      {% endif %}
+    </div>
+  </div>
+
+{% endblock %}
+
+{% block addon_js %}
+    <script type="text/javascript">
+        var type_of_selection = '{{ type_of_selection }}';
+        var selection_only_receptors = '{{ selection_only_receptors }}';
+        var redirect_url = '{{ buttons.continue.url }}'
+        var redirect_on_select = '{{ redirect_on_select }}'
+    </script>
+    <script src="{% static 'home/js/selection-autocomplete.js' %}"></script>
+    <script src="{% static 'home/js/selection-filters.js' %}"></script>
+    <script src="{% static 'home/js/selection.js' %}"></script>
+
+    <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
+    <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
+    <script src="{% static 'home/js/select2.js' %}"> </script>
+
+    <!-- Target select modal table -->
+    <script type="text/javascript" src="{% static 'home/js/targetselect_functions.js' %}"> </script>
+
+    <script>
+        const csrf_token = "{{ csrf_token }}";
+
+        {% if filter_tableselect %}
+        $(document).ready(function() {
+            // Get Receptor Targets for table build
+            initializeTargetChooserTables();
+
+            $('#targetselect-modal-table').on('shown.bs.modal', function (e) {
+                showTARGETtable('#targetselect-modal-table');
+            })
+
+
+            $('#targetselect-modal-table').on('hidden.bs.modal', AddMultipleTargets);
+
+        });
+        {% endif %}
+
+
+    </script>
+{% endblock %}
