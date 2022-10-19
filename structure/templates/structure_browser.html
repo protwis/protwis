@@ -12,6 +12,30 @@
     <link href="{% static 'home/css/sequenceviewer.css' %}" rel="stylesheet">
     <link href="{% static 'home/css/modal.css' %}" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="{% static 'home/css/jquery.powertip.css' %}" />
+    <style>
+      /*Structure preview in tooltip*/
+      pre {
+          display: block;
+          font: 100% "Courier New", Courier, monospace;
+          padding: 10px;
+          border: 1px solid #bae2f0;
+          background: #e3f4f9;
+          margin: .5em 0;
+          overflow: auto;
+          width: 800px;
+      }
+
+      #struct {
+          display: none;
+          position: absolute;
+          z-index: 100;
+          border: 1px;
+          background-color: white;
+          border-style: solid;
+          border-width: 1px;
+          padding: 3px;
+      }
+    </style>
 {% endblock %}
 
 {% block addon_js %}
@@ -24,6 +48,32 @@
     <script src="{% static 'home/js/jquery.powertip.js' %}"></script>
 
 <script type="text/javascript" charset="utf-8">
+  this.compoundPreview = function () {
+
+      //Define position of the tooltip in relation to the cursor
+      xOffset = 30;
+      yOffset = -10;
+
+      $("a.struct").hover(function (e) {
+          this.t = this.title;
+          this.title = "";
+          var c = (this.t != "") ? "<br/>" + this.t : "";
+          $("body").append("<p id='struct'><img style='max-width: 200px; height: auto' src='" + this.rel + "'/>" + c + "</p>");
+          $("#struct")
+              .css("top", (e.pageY - yOffset) + "px")
+              .css("left", (e.pageX + xOffset) + "px")
+              .fadeIn("fast");
+      },
+          function () {
+              this.title = this.t;
+              $("#struct").remove();
+          });
+      $("a.struct").mousemove(function (e) {
+          $("#struct")
+              .css("top", (e.pageY - yOffset) + "px")
+              .css("left", (e.pageX + xOffset) + "px");
+      });
+  };
     $(document).ready(function() {
         structurebrowser();
     });
@@ -268,10 +318,10 @@
                                   {% if ligand.ligand.ambiguous_alias %}
                                     {{ ligand.ligand.name|safe }}
                                   {% else %}
-                                    <a href="/ligand/{{ ligand.ligand.id }}/info" target="_blank">{{ ligand.ligand.name|safe }}</a>
-                                    {% for link in ligand.ligand.ids.all %}
+                                    <a class="struct" rel="http://www.ebi.ac.uk/chembl/api/data/image/{{ligand.ligand.id}}" href="/ligand/{{ligand.ligand.id}}/info" target="_blank">{{ ligand.ligand.name|safe }}</a>
+                                    <!-- {% for link in ligand.ligand.ids.all %}
                                         <a class="external_link" href="{{ link}}" target="_blank">{{link.web_resource.name}}</a>
-                                    {% endfor %}
+                                    {% endfor %} -->
                                   {% endif %}
                                   <br>
                             {% empty %}
