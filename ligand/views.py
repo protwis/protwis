@@ -63,7 +63,9 @@ class LigandTargetSelection(AbsReferenceSelectionTable):
         ligand_js = True
 
         title = "SELECT A RECEPTOR with ligand assays"
-        description = 'Ligands come from the <a href="https://www.ebi.ac.uk/chembl/" target="_blank">ChEMBL</a>, <a href="https://www.guidetopharmacology.org/" target="_blank">Guide to Pharmacology</a> and <a href="https://pdsp.unc.edu/databases/pdsp.php" target="_blank">PDSP Ki</a> databases.' \
+        description = 'Ligands come from the <a href="https://www.ebi.ac.uk/chembl/" target="_blank">ChEMBL</a>,' \
+            + '<a href="https://www.guidetopharmacology.org/" target="_blank">Guide to Pharmacology</a>' \
+            + 'and <a href="https://pdsp.unc.edu/databases/pdsp.php" target="_blank">PDSP Ki</a> databases.' \
             + '\nSelect a receptor in the table (below).' \
             + '\n\nOnce you have selected your receptor, click a green button.'
 
