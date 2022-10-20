@@ -31,9 +31,13 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
   function highlight(object) {
     d3.selectAll("circle")
        .style("opacity", 0.2);
+    d3.selectAll("path")
+      .style("opacity", 0.2);
     d3.selectAll("rect")
        .style("opacity", 0.2);
     d3.selectAll("circle#" + object)
+      .style("opacity", 1);
+    d3.selectAll("path#" + object)
       .style("opacity", 1);
     d3.selectAll("rect#" + object)
       .style("opacity", 1);
@@ -445,7 +449,6 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
     .enter().append("path")
     .filter(function(d) { return (d[4] !== "Full Bias" && d[4] !== "High Bias");})
     .filter(function(d) { return (d[6] === "<" || d[7] === "<");})
-    .attr("class", "dot")
     .attr("transform", function(d) { return "translate(" + (x(d[0]) - jitterWidth/2 + Math.random()*jitterWidth) + "," +  y(d[1]) + ")"; })
     .attr("d", symbolTypes.triangleDown())
     .attr("id", function(d) {return "LC" + d[3].replace(/\[|\]|\(|\)|\s|\,/g,"");})
@@ -470,7 +473,6 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
     .enter().append("path")
     .filter(function(d) { return (d[4] !== "Full Bias" && d[4] !== "High Bias");})
     .filter(function(d) { return (d[6] === ">" || d[7] === ">");})
-    .attr("class", "dot")
     .attr("transform", function(d) { return "translate(" + (x(d[0]) - jitterWidth/2 + Math.random()*jitterWidth) + "," +  y(d[1]) + ")"; })
     .attr("d", symbolTypes.triangleUp())
     .attr("id", function(d) {return "LC" + d[3].replace(/\[|\]|\(|\)|\s|\,/g,"");})
@@ -589,12 +591,15 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
     chart.append("g")
       .attr("transform", position)
         .append("path")
-        .attr("class", "dot")
         .attr("transform", function(d) { return "translate(" + (xSeed + 4) + "," +  (margin.top + 57) + ")"; }) //+10 / 80
         .attr("d", symbolTypes.triangleUp())
         .style("stroke", "black")
         .attr("class", "Legend")
-        .attr("fill", "#FAFAFA"); //'url(#gradient)'
+        .attr("fill", "#FAFAFA")
+        .on("click", function (d) {
+            var tempId = d3.select(this).attr("id");
+            highlight(tempId);
+        });
 
     chart.append("g")
        .attr("class", "ytitle")
@@ -612,12 +617,15 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
     chart.append("g")
       .attr("transform", position)
         .append("path")
-        .attr("class", "dot")
         .attr("transform", function(d) { return "translate(" + (xSeed  + 4) + "," +  (margin.top + 71) + ")"; }) //+10 / 94
         .attr("d", symbolTypes.triangleDown())
         .style("stroke", "black")
         .attr("class", "Legend")
-        .attr("fill", "#FAFAFA"); //'url(#gradient)'
+        .attr("fill", "#FAFAFA")
+        .on("click", function (d) {
+            var tempId = d3.select(this).attr("id");
+            highlight(tempId);
+        });
 
     chart.append("g")
        .attr("class", "ytitle")
