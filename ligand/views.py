@@ -3,6 +3,7 @@ import itertools
 import json
 import re
 import time
+import math
 import pandas as pd
 import urllib
 
@@ -689,13 +690,14 @@ class BiasedSignallingOnTheFlyCalculation(TemplateView):
     user = False
 
     @staticmethod
-    def jitter_tooltip(page, pathway, ligand, value, headers, prefix='', small_data=None, large_data=None, small_ref=None):
+    def jitter_tooltip(page, pathway, ligand, value, headers, prefix='', small_data=None, large_data=None, small_ref=None, double_path=None):
         #small and large data has to structured
         #small --> pathway/value/value
         #large --> pathway1/delta/value/value pathway2/delta/value/value
         ref_small = ''
         small = ''
         large = ''
+        double_data = ''
         head = "<b>Ligand tested for bias:</b> " + str(ligand) + \
                "<br><b>Plotted Value:</b> " + str(value) + \
                "<hr class='solid'>"
@@ -729,28 +731,80 @@ class BiasedSignallingOnTheFlyCalculation(TemplateView):
                          "      </tr>" + \
                          "</table>"
         if large_data:
-            #large table showing also Δ data
-            large =  "<table>" + \
-                     "      <tr>" + \
-                     "        <th>" + str(ligand) + "</th>" + \
-                     "        <th>" + prefix + "Log(" + headers[0] + "/" + headers[1] + ") </th>" + \
-                     "        <th>" + headers[0] + "</th>" + \
-                     "        <th>" + headers[1] + "</th>" + \
-                     "      </tr>" + \
-                     "      <tr>" + \
-                     "        <td>" + str(large_data[0]) + "</td>" + \
-                     "        <td>" + str(large_data[1]) + "</td>" + \
-                     "        <td>" + str(large_data[2]) + "</td>" + \
-                     "        <td>" + str(large_data[3]) + "</td>" + \
-                     "      </tr>" + \
-                     "      <tr>" + \
-                     "        <td>" + str(large_data[4]) + "</td>" + \
-                     "        <td>" + str(large_data[5]) + "</td>" + \
-                     "        <td>" + str(large_data[6]) + "</td>" + \
-                     "        <td>" + str(large_data[7]) + "</td>" + \
-                     "      </tr>" + \
-                     "</table>" + \
+            if pathway:
+                #large table showing also Δ data
+                large =  "<table>" + \
+                         "      <tr>" + \
+                         "        <th>" + str(ligand) + "</th>" + \
+                         "        <th>" + prefix + "Log(" + headers[0] + "/" + headers[1] + ") </th>" + \
+                         "        <th>" + headers[0] + "</th>" + \
+                         "        <th>" + headers[1] + "</th>" + \
+                         "      </tr>" + \
+                         "      <tr>" + \
+                         "        <td>" + str(large_data[0]) + "</td>" + \
+                         "        <td>" + str(large_data[1]) + "</td>" + \
+                         "        <td>" + str(large_data[2]) + "</td>" + \
+                         "        <td>" + str(large_data[3]) + "</td>" + \
+                         "      </tr>" + \
+                         "      <tr>" + \
+                         "        <td>" + str(large_data[4]) + "</td>" + \
+                         "        <td>" + str(large_data[5]) + "</td>" + \
+                         "        <td>" + str(large_data[6]) + "</td>" + \
+                         "        <td>" + str(large_data[7]) + "</td>" + \
+                         "      </tr>" + \
+                         "</table>" + \
+                         "<hr class='solid'>"
+            else:
+                large =  "<table>" + \
+                         "      <tr>" + \
+                         "        <th>" + str(ligand) + "</th>" + \
+                         "        <th>" + prefix + "Log(" + headers[0] + "/" + headers[1] + ") </th>" + \
+                         "        <th>" + "Log(" + headers[0] + "/" + headers[1] + ") </th>" + \
+                         "        <th width='15%'>" + headers[0] + "</th>" + \
+                         "        <th width='15%'>" + headers[1] + "</th>" + \
+                         "      </tr>" + \
+                         "      <tr>" + \
+                         "        <td>" + str(large_data[0]) + "</td>" + \
+                         "        <td>" + str(large_data[1]) + "</td>" + \
+                         "        <td>" + str(large_data[8]) + "</td>" + \
+                         "        <td>" + str(large_data[2]) + "</td>" + \
+                         "        <td>" + str(large_data[3]) + "</td>" + \
+                         "      </tr>" + \
+                         "      <tr>" + \
+                         "        <td>" + str(large_data[4]) + "</td>" + \
+                         "        <td>" + str(large_data[5]) + "</td>" + \
+                         "        <td>" + str(large_data[9]) + "</td>" + \
+                         "        <td>" + str(large_data[6]) + "</td>" + \
+                         "        <td>" + str(large_data[7]) + "</td>" + \
+                         "      </tr>" + \
+                         "</table>" + \
+                         "<hr class='solid'>"
+        if double_path:
+            ref_lig = list(double_path)[0]
+            paths = [p for p in double_path[ref_lig]]
+            if len(str(double_path[ref_lig][paths[1]][0])) > 6:
+                double_path[ref_lig][paths[1]][0] = str(double_path[ref_lig][paths[1]][0])[:3] + str(double_path[ref_lig][paths[1]][0])[-4:]
+            if len(str(double_path[ref_lig][paths[0]][0])) > 6:
+                double_path[ref_lig][paths[0]][0] = str(double_path[ref_lig][paths[0]][0])[:3] + str(double_path[ref_lig][paths[0]][0])[-4:]
+            double_data =    "<table>" + \
+                             "      <tr>" + \
+                             "        <th>" + str(ref_lig) + "</th>" + \
+                             "        <th width='15%'>Emax</th>" + \
+                             "        <th width='15%'>EC50</th>" + \
+                             "      </tr>" + \
+                             "      <tr>" + \
+                             "        <td>" + str(paths[0]) + "</td>" + \
+                             "        <td>" + str(double_path[ref_lig][paths[0]][1]) + "</td>" + \
+                             "        <td>" + str(double_path[ref_lig][paths[0]][0]) + "</td>" + \
+                             "      </tr>" + \
+                             "      <tr>" + \
+                             "        <td>" + str(paths[1]) + "</td>" + \
+                             "        <td>" + str(double_path[ref_lig][paths[1]][1]) + "</td>" + \
+                             "        <td>" + str(double_path[ref_lig][paths[1]][0]) + "</td>" + \
+                             "      </tr>" + \
+                             "</table>" + \
                      "<hr class='solid'>"
+
 
         if pathway:
             #no reference values
@@ -763,7 +817,7 @@ class BiasedSignallingOnTheFlyCalculation(TemplateView):
         else:
             #reference values required
             if page == "rankorder":
-                tip = head + large + small
+                tip = head + large + double_data
                 #dot plots with reference values
             else:
                 tip = head + small + ref_small
@@ -836,11 +890,19 @@ class BiasedSignallingOnTheFlyCalculation(TemplateView):
         data = OnTheFly(int(receptor), self.label, subtype=self.subtype, pathway=self.pathway, user=self.user, balanced=self.balanced)
         #### added code
         flat_data = {}
+        reference_data = {}
         for key, value in data.items():
             for row_key, data_dict in value.items():
                 #filtering out non compared
                 if (len(data_dict) > 33) and ('Pathway Rank' in data_dict.keys()):
                     flat_data[row_key] = data_dict
+                else:
+                    if 'Reference_ligand' not in data_dict.keys():
+                        if data_dict['doi'] not in reference_data.keys():
+                            reference_data[data_dict['doi']] = {}
+                        if data_dict['ligand_name'] not in reference_data[data_dict['doi']].keys():
+                            reference_data[data_dict['doi']][data_dict['ligand_name']] = {}
+                        reference_data[data_dict['doi']][data_dict['ligand_name']][data_dict['primary_effector_family']] = [data_dict['EC50'], data_dict['Emax']]
         ####
         upgrade_value = ["High activity", "High activity (Potency and Emax)", "Full agonism"]
         downgrade_value = ["Low activity", "No activity", "Inverse agonism/antagonism"]
@@ -871,6 +933,11 @@ class BiasedSignallingOnTheFlyCalculation(TemplateView):
 
         for row in flat_data:
             result = flat_data[row]
+            if not self.pathway:
+                double_path = reference_data[result['doi']]
+            else:
+                double_path = None
+
             try:
                 reference_ligand = result['Reference_ligand']
             except KeyError:
@@ -987,6 +1054,10 @@ class BiasedSignallingOnTheFlyCalculation(TemplateView):
                 jitterAuthors = 'openTS ' + shortAuthors + ' closeTS openTS ' + journal_name + ' closeTS openTS (' + str(result['pub_year']) + ') closeTS'
                 labels_dict[jitterAuthors] = shortAuthors
 
+            if not self.pathway:
+                if jitterAuthors not in reference_data.keys():
+                    reference_data[jitterAuthors] = reference_data[result['doi']]
+
             list_of_ligands.append(tuple((lig_name, hashed_lig_name)))
             list_of_publications.append(authors)
             #start parsing the data to create the big dictionary
@@ -1034,9 +1105,11 @@ class BiasedSignallingOnTheFlyCalculation(TemplateView):
                 jitterDict[jitterAuthors][lig_name]["Emax_Tau"] = emax_tau
                 jitterDict[jitterAuthors][lig_name]["EC50_KA"] = EC50_ka
 
+
             tooltip_info = BiasedSignallingOnTheFlyCalculation.jitter_tooltip(self.page, self.pathway, lig_name, value, components,
                                                           small_data=[result['primary_effector_family'], emax_tau, EC50_ka, lig_name],
-                                                          small_ref=[reference_path, reference_emax_tau, reference_EC50_ka, reference_ligand])
+                                                          small_ref=[reference_path, reference_emax_tau, reference_EC50_ka, reference_ligand],
+                                                          double_path=double_path)
 
             # initialization of the dictionary for new publication
             if result['doi'] not in full_data.keys():
@@ -1088,6 +1161,8 @@ class BiasedSignallingOnTheFlyCalculation(TemplateView):
                                                                                'value':value})
         for item in full_data.keys():
             vals = []
+            if not self.pathway:
+                double_path = reference_data[item]
             for name in full_data[item]["Data"]:
                 to_fix = [subdict['value'][0] for subdict in name['PathwaysData']]
                 vals = vals + to_fix
@@ -1103,7 +1178,8 @@ class BiasedSignallingOnTheFlyCalculation(TemplateView):
                             name["PathwaysData"][i]["value"] = [MAX,"ARTIFICIAL"]
                             name["PathwaysData"][i]["tooltip"] = BiasedSignallingOnTheFlyCalculation.jitter_tooltip(self.page, self.pathway, lig_name, value, components,
                                                                                                 small_data=[result['primary_effector_family'], emax_tau, 'High', lig_name],
-                                                                                                small_ref=[reference_path, reference_emax_tau, reference_EC50_ka, reference_ligand])
+                                                                                                small_ref=[reference_path, reference_emax_tau, reference_EC50_ka, reference_ligand],
+                                                                                                double_path=double_path)
                     except ValueError:
                         continue
                 if quality in downgrade_value:
@@ -1112,7 +1188,8 @@ class BiasedSignallingOnTheFlyCalculation(TemplateView):
                             name["PathwaysData"][i]["value"] = [MIN,"ARTIFICIAL"]
                             name["PathwaysData"][i]["tooltip"] = BiasedSignallingOnTheFlyCalculation.jitter_tooltip(self.page, self.pathway, lig_name, value, components,
                                                                                                 small_data=[result['primary_effector_family'], emax_tau, 'Low', lig_name],
-                                                                                                small_ref=[reference_path, reference_emax_tau, reference_EC50_ka, reference_ligand])
+                                                                                                small_ref=[reference_path, reference_emax_tau, reference_EC50_ka, reference_ligand],
+                                                                                                double_path=double_path)
                     except ValueError:
                         continue
 
@@ -1149,20 +1226,34 @@ class BiasedSignallingOnTheFlyCalculation(TemplateView):
         for pub in jitterDict.keys():
             for ligand in jitterDict[pub]:
                 try:
+                    log_first = None
+                    log_second = None
                     if ligand not in Colors.keys():
                         color = '#%02x%02x%02x' % (BiasedSignallingOnTheFlyCalculation.create_rgb_color(), BiasedSignallingOnTheFlyCalculation.create_rgb_color(), BiasedSignallingOnTheFlyCalculation.create_rgb_color())
                         Colors[ligand] = color
                     little = [reference_path, reference_emax_tau, reference_EC50_ka, reference_ligand]
+                    if not self.pathway:
+                        double_path = reference_data[pub]
+                        try:
+                            log_first = round(math.log((jitterDict[pub][ligand]['Emax_Tau']/float(jitterDict[pub][ligand]['EC50_KA'])),10),2)
+                        except TypeError:
+                            log_first = '-'
+                        try:
+                            log_second = round(math.log((jitterDict[pub][ligand]['2nd_Pathway_emax_tau']/float(jitterDict[pub][ligand]['2nd_Pathway_EC50_KA'])),10),2)
+                        except TypeError:
+                            log_second = '-'
                     if self.subtype:
                         big = [sign_prot_conversion[jitterDict[pub][ligand]["signalling_prot"]], jitterDict[pub][ligand]['delta'], jitterDict[pub][ligand]['Emax_Tau'], jitterDict[pub][ligand]['EC50_KA'],
-                               sign_prot_conversion[jitterDict[pub][ligand]["signalling_prot"]], jitterDict[pub][ligand]['2nd_Pathway_delta'], jitterDict[pub][ligand]['2nd_Pathway_emax_tau'], jitterDict[pub][ligand]['2nd_Pathway_EC50_KA']]
+                               sign_prot_conversion[jitterDict[pub][ligand]["signalling_prot"]], jitterDict[pub][ligand]['2nd_Pathway_delta'], jitterDict[pub][ligand]['2nd_Pathway_emax_tau'], jitterDict[pub][ligand]['2nd_Pathway_EC50_KA'],
+                               log_first,log_second]
                     else:
                         big = [jitterDict[pub][ligand]["Pathway"], jitterDict[pub][ligand]['delta'], jitterDict[pub][ligand]['Emax_Tau'], jitterDict[pub][ligand]['EC50_KA'],
-                               jitterDict[pub][ligand]['2nd_Pathway'], jitterDict[pub][ligand]['2nd_Pathway_delta'], jitterDict[pub][ligand]['2nd_Pathway_emax_tau'], jitterDict[pub][ligand]['2nd_Pathway_EC50_KA']]
+                               jitterDict[pub][ligand]['2nd_Pathway'], jitterDict[pub][ligand]['2nd_Pathway_delta'], jitterDict[pub][ligand]['2nd_Pathway_emax_tau'], jitterDict[pub][ligand]['2nd_Pathway_EC50_KA'],
+                               log_first,log_second]
                     if (jitterDict[pub][ligand]['deltadelta'][1] == 'High Bias') or (jitterDict[pub][ligand]['deltadelta'][1] == 'Full Bias'):
-                        tooltip = BiasedSignallingOnTheFlyCalculation.jitter_tooltip(self.page, self.pathway, ligand, jitterDict[pub][ligand]['deltadelta'][1], components, prefix, small_data=little, large_data=big)
+                        tooltip = BiasedSignallingOnTheFlyCalculation.jitter_tooltip(self.page, self.pathway, ligand, jitterDict[pub][ligand]['deltadelta'][1], components, prefix, small_data=little, large_data=big, double_path=double_path)
                     else:
-                        tooltip = BiasedSignallingOnTheFlyCalculation.jitter_tooltip(self.page, self.pathway, ligand, jitterDict[pub][ligand]['deltadelta'][0], components, prefix, small_data=little, large_data=big)
+                        tooltip = BiasedSignallingOnTheFlyCalculation.jitter_tooltip(self.page, self.pathway, ligand, jitterDict[pub][ligand]['deltadelta'][0], components, prefix, small_data=little, large_data=big, double_path=double_path)
                     jitterPlot[jitterDict[pub][ligand]["Pathway"]].append([pub, jitterDict[pub][ligand]['deltadelta'][0], Colors[ligand], ligand, jitterDict[pub][ligand]['deltadelta'][1], tooltip, jitterDict[pub][ligand]['EC50_sign'], jitterDict[pub][ligand]['Emax_sign']])
                     jitterLegend[jitterDict[pub][ligand]["Pathway"]].append(tuple((ligand, jitterDict[pub][ligand]['deltadelta'][0])))
                 except KeyError:
