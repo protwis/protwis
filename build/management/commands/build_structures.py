@@ -393,6 +393,11 @@ class Command(BaseBuild):
                 deletions.remove(i)
         elif structure.pdb_code.index in ['7SF7','7SF8']:
             deletions, removed = [], []
+        elif structure.pdb_code.index=='2YCW':
+            deletions = []
+        elif structure.pdb_code.index in ['4LDE','4LDL','4LDO']:
+            deletions.remove(263)
+
 
         if self.debug:
             print('Deletions: ', deletions)
@@ -650,6 +655,8 @@ class Command(BaseBuild):
             temp_seq = temp_seq[:158]+'T'+temp_seq[158:163]+temp_seq[164:]
         elif structure.pdb_code.index=='5JQH':
             temp_seq = temp_seq[:211]+'--D'+temp_seq[214:]
+        elif structure.pdb_code.index=='2YCW':
+            temp_seq = temp_seq[:242]+'R'+temp_seq[242:270]+temp_seq[271:]
         
 
 

@@ -62,6 +62,7 @@ logger.setLevel(logging.INFO)
 structure_path = './structure/'
 pir_path = os.sep.join([structure_path, 'PIR'])
 path = "./structure/homology_models/"
+zip_path = "./structure/homology_models_zip/"
 
 build_date = date.today()
 atom_num_dict = {'E':9, 'S':6, 'Y':12, 'G':4, 'A':5, 'V':7, 'M':8, 'L':8, 'I':8, 'T':7, 'F':11, 'H':10, 'K':9,
@@ -104,6 +105,7 @@ class Command(BaseBuild):
         parser.add_argument('--rerun', help='Skip models with matching zip archives and only run the missing models.', default=False, action='store_true')
         parser.add_argument('--alphafold', help='Run the alphafold pipeline.', default=False, action='store_true')
         parser.add_argument('--exclude_structures', help='Exclude structures as templates', default=False, type=str, nargs='+')
+        parser.add_argument('--skip_existing', help='Skip model builds present in the homology_models_zip folder', default=False, action='store_true')
 
 
     def handle(self, *args, **options):
@@ -201,6 +203,23 @@ class Command(BaseBuild):
                 continue
             for st in self.get_states_to_model(r):
                 self.receptor_list.append([r, st])
+
+        if options['skip_existing']:
+            existing_models = os.listdir(zip_path)
+            models_to_skip = []
+            for prot, state in self.receptor_list:
+                if prot.parent:
+                    for f in existing_models:
+                        if prot.entry_name.upper() in f and 'refined' in f:
+                            models_to_skip.append([prot,state])
+                            break
+                else:
+                    for f in existing_models:
+                        if prot.entry_name in f and state in f:
+                            models_to_skip.append([prot,state])
+                            break
+            for i in models_to_skip:
+                self.receptor_list.remove(i)
 
         # Only specified states
         if options['state']:
@@ -330,7 +349,7 @@ class CallHomologyModeling():
 
 
     def run(self, import_receptor=False, fast_refinement=False):
-        # try:
+        try:
             # seq_nums_overwrite_cutoff_dict = {'4PHU':2000, '4LDL':1000, '4LDO':1000, '4QKX':1000, '5JQH':1000, '5TZY':2000, '6D26':2000, '6D27':2000, '6CSY':1000}
 
             ##### Ignore output from that can come from BioPDB! #####
@@ -340,6 +359,11 @@ class CallHomologyModeling():
 
             Homology_model = HomologyModeling(self.receptor, self.state, [self.state], iterations=self.modeller_iterations, complex_model=self.complex, signprot=self.signprot, debug=self.debug,
                                               force_main_temp=self.force_main_temp, fast_refinement=fast_refinement, keep_hetatoms=self.keep_hetatoms, mutations=self.mutations, alphafold=self.alphafold)
+
+            ### TEMP FIX for complex models not to run on AlphaFold
+            if Homology_model.complex and self.alphafold:
+                return 0 
+            ###
 
             if import_receptor:
                 ihm = ImportHomologyModel(self.receptor, self.signprot)
@@ -797,6 +821,7 @@ class CallHomologyModeling():
                 wt_lookup_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'wt_pdb_lookup', Homology_model.reference_entry_name+'.json'])
                 wt_lookup_needed = False
                 Homology_model.main_structure = Structure.objects.get(pdb_code__index=Homology_model.reference_entry_name.upper())
+                Homology_model.main_template_preferred_chain = Homology_model.main_structure.preferred_chain
                 alignment = AlignedReferenceTemplate()
                 ### AF
                 af_path = os.sep.join([self.alphafold_refined_data_dir, Homology_model.main_structure.pdb_code.index+'_refined.pdb'])
@@ -805,15 +830,20 @@ class CallHomologyModeling():
                 p = PDB.PDBParser()
                 model = p.get_structure('receptor', af_path)[0]['A']
                 af_reference_dict, af_template_dict, af_alignment_dict, af_main_pdb_array = deepcopy(ihm.parse_model(model))
+                print('pLDDT')
+                for seg, resis in af_main_pdb_array.items():
+                    for gn, atoms in resis.items():
+                        print(gn, atoms[0].get_parent(), atoms[0].get_bfactor())
                 # Homology_model.disulfide_pairs = ihm.find_disulfides()
                 Homology_model.trimmed_residues = []
-
+                parse = GPCRDBParsingPDB()
 
                 ### get wt_pdb_lookup data when there are incorrect sequence numbers in structure
                 if os.path.exists(wt_lookup_file):
                     ssno = StructureSeqNumOverwrite(Homology_model.main_structure)
                     wt_lookup_needed = True
 
+                ### build reference_dict
                 reference_dict = OrderedDict()
                 for r in target_residues:
                     if r.protein_segment.slug not in reference_dict:
@@ -823,21 +853,30 @@ class CallHomologyModeling():
                     else:
                         reference_dict[r.protein_segment.slug][str(r.sequence_number)] = r
 
-                ### Need to FIX this section for wt_lookup_needed structures
+                segment_labels = [i for i in list(reference_dict.keys()) if len(reference_dict[i])>0]
+
+                ### build template_dict
                 template_dict = OrderedDict()
+                distorted_residues = OrderedDict()
                 for seglab, seg in reference_dict.items():
                     template_dict[seglab] = OrderedDict()
+                    distorted_residues[seglab] = []
                     for gn, res in seg.items():
                         gn = str(gn)
-                        # print(gn, res)
-                        if wt_lookup_needed and res.sequence_number in ssno.wt_pdb_table:
-                            seqnum = ssno.wt_pdb_table[res.sequence_number]
-                            seglab = template_residues.get(sequence_number=seqnum).protein_segment.slug
-                            # print(res.sequence_number, seqnum, seglab)
+                        if wt_lookup_needed:
+                            if res.sequence_number in ssno.wt_pdb_table:
+                                seqnum = ssno.wt_pdb_table[res.sequence_number]
+                            elif res.sequence_number in ssno.pdb_wt_table:
+                                seqnum = 0
+                            else:
+                                seqnum = res.sequence_number
                         else:
                             seqnum = res.sequence_number
                         try:
                             temp_res = template_residues.get(sequence_number=seqnum)
+                            ### Checking annotation
+                            if res.display_generic_number and not temp_res.display_generic_number:
+                                distorted_residues[res.protein_segment.slug].append(ggn(res.display_generic_number.label))
                         except Residue.DoesNotExist:
                             temp_res = '-'
                         if temp_res!='-':
@@ -845,6 +884,11 @@ class CallHomologyModeling():
                         else:
                             template_dict[seglab][gn] = '-'
 
+                ### Custom fixes
+                if Homology_model.main_structure.pdb_code.index in ['2YCW','2YCZ']:
+                    distorted_residues['TM6']+=['6x22','6x23']
+
+                ### build alignment_dict
                 alignment_dict = OrderedDict()
                 for seglab, seg in template_dict.items():
                     alignment_dict[seglab] = OrderedDict()
@@ -857,13 +901,14 @@ class CallHomologyModeling():
                         else:
                             alignment_dict[seglab][gn] = res
 
+                ### build main_pdb_array
                 main_pdb_array = OrderedDict()
                 for seglab, seg in template_dict.items():
                     main_pdb_array[seglab] = OrderedDict()
                     for gn, res in seg.items():
-                        gn = str(gn).replace('x','.')
+                        mpa_gn = str(gn).replace('x','.')
                         if res=='-':
-                            main_pdb_array[seglab][gn] = '-'
+                            main_pdb_array[seglab][mpa_gn] = 'x'
                         else:
                             rot_obj = Homology_model.right_rotamer_select(Rotamer.objects.filter(residue=res))
                             rot = PDB.PDBParser().get_structure('rot', StringIO(rot_obj.pdbdata.pdb))[0]
@@ -872,43 +917,166 @@ class CallHomologyModeling():
                             for chain in rot:
                                 for res in chain:
                                     atoms = [a for a in res if a.get_name()[0]!='H']
-                            main_pdb_array[seglab][gn] = atoms
+                            main_pdb_array[seglab][mpa_gn] = atoms
 
-                pprint.pprint(alignment_dict)
-                pprint.pprint(af_main_pdb_array)
+                ### reformat dictionaries
+                for ref_seg, temp_seg, ali_seg in zip(reference_dict, template_dict, alignment_dict):
+                    for ref_res, temp_res, ali_res in zip(reference_dict[ref_seg], template_dict[temp_seg], alignment_dict[ali_seg]):
+                        if type(reference_dict[ref_seg][ref_res])!=type(''):
+                            reference_dict[ref_seg][ref_res] = reference_dict[ref_seg][ref_res].amino_acid
+                        if type(template_dict[temp_seg][temp_res])!=type(''):
+                            template_dict[temp_seg][temp_res] = template_dict[temp_seg][temp_res].amino_acid
+                        if type(alignment_dict[ali_seg][ali_res])!=type(''):
+                            alignment_dict[ali_seg][ali_res] = alignment_dict[ali_seg][ali_res].amino_acid
 
-                ### Rotamer swap
+                ### build template source
+                template_source = OrderedDict()
+                for seglab, seg in alignment_dict.items():
+                    template_source[seglab] = OrderedDict()
+                    for gn, res in seg.items():
+                        if res!='-':
+                            template_source[seglab][gn] = [Homology_model.main_structure, Homology_model.main_structure]
+                        else:
+                            template_source[seglab][gn] = [None, None]
+
+                ### Identify missing sections
+                missing_sections = []
+                new_start, new_end = None, None
+                section = []
+                for seg, resis in template_source.items():
+                    for gn, res in resis.items():
+                        if res[0]!=Homology_model.main_structure:
+                            if not new_start:
+                                new_start = [seg, gn]
+                                new_end = [seg, gn]
+                                section = [[seg, gn]]
+                            else:
+                                new_end = [seg, gn]
+                                section.append([seg, gn])
+                        else:
+                            new_start = None
+                            if section not in missing_sections:
+                                missing_sections.append(section)
+                if section not in missing_sections:
+                    missing_sections.append(section)
+
+                ### Swap sections
+                seg_dict = {}
+                for i in missing_sections:
+                    if len(i)==0:
+                        continue
+                    if (i[0][0]=='N-term' and i[0][1]=='1') or ('N-term' not in reference_dict and i[0][0]=='TM1' and int(i[0][1].split('x')[1])<45):
+                        i, plus_gns, last_seg = parse.find_after_4_gns(i, reference_dict, distorted_residues, segment_labels)
+                        orig_residues = parse.fetch_residues_from_array(main_pdb_array[last_seg], plus_gns)
+                        alt_residues_end = parse.fetch_residues_from_array(af_main_pdb_array[last_seg], plus_gns)
+
+                        swapped_dict = OrderedDict()
+                        for seg, pos in i:
+                            if seg not in swapped_dict:
+                                swapped_dict[seg] = [pos]
+                            else:
+                                swapped_dict[seg].append(pos)
+                            template_source[seg][pos] = [None, None]
+                            seg_dict[pos] = seg
+                        
+                        alt_residues = OrderedDict()
+                        for seg, posis in swapped_dict.items():
+                            alt_mid = parse.fetch_residues_from_array(af_main_pdb_array[seg], posis)
+                            alt_residues = parse.add_two_ordereddict(alt_residues, alt_mid)
+                        alt_residues = parse.add_two_ordereddict(alt_residues, alt_residues_end)
+
+                        superpose = sp.OneSidedSuperpose(orig_residues,alt_residues,4,0)
+                        new_residues = superpose.run()
+
+                        key_list = list(new_residues.keys())[:-4]
+                        Homology_model.trimmed_residues.append(key_list[-1])
+                        Homology_model.trimmed_residues.append(list(new_residues.keys())[-4])
+
+                    elif i[-1][0]=='C-term' and i[-1][1]==list(template_source[list(template_source.keys())[-1]].keys())[-1]:
+                        i, minus_gns, first_seg = parse.find_before_4_gns(i, reference_dict, distorted_residues, segment_labels)
+                        orig_residues = parse.fetch_residues_from_array(main_pdb_array[first_seg], minus_gns)
+                        alt_residues_start = parse.fetch_residues_from_array(af_main_pdb_array[first_seg], minus_gns)
+
+                        swapped_dict = OrderedDict()
+                        for seg, pos in i:
+                            if seg not in swapped_dict:
+                                swapped_dict[seg] = [pos]
+                            else:
+                                swapped_dict[seg].append(pos)
+                            seg_dict[pos] = seg
+                        
+                        alt_residues = OrderedDict()
+                        for seg, posis in swapped_dict.items():
+                            alt_mid = parse.fetch_residues_from_array(af_main_pdb_array[seg], posis)
+                            alt_residues = parse.add_two_ordereddict(alt_residues, alt_mid)
+                        alt_residues = parse.add_two_ordereddict(alt_residues_start, alt_residues)
+
+                        superpose = sp.OneSidedSuperpose(orig_residues,alt_residues,4,1)
+                        new_residues = superpose.run()
+
+                        key_list = list(new_residues.keys())[4:]
+                        Homology_model.trimmed_residues.append(key_list[0])
+                        Homology_model.trimmed_residues.append(list(new_residues.keys())[3])
+
+                    else:
+                        ### find right before and after 4 gns
+                        i, minus_gns, first_seg = parse.find_before_4_gns(i, reference_dict, distorted_residues, segment_labels)
+                        i, plus_gns, last_seg = parse.find_after_4_gns(i, reference_dict, distorted_residues, segment_labels)
+                        
+                        orig_residues1 = parse.fetch_residues_from_array(main_pdb_array[first_seg], minus_gns)
+                        orig_residues2 = parse.fetch_residues_from_array(main_pdb_array[last_seg], plus_gns)
+                        orig_residues = parse.add_two_ordereddict(orig_residues1, orig_residues2)
+
+                        alt_residues1 = parse.fetch_residues_from_array(af_main_pdb_array[first_seg], minus_gns)
+                        alt_residues2 = parse.fetch_residues_from_array(af_main_pdb_array[last_seg], plus_gns)
+
+                        swapped_dict = OrderedDict()
+                        for seg, pos in i:
+                            if seg not in swapped_dict:
+                                swapped_dict[seg] = [pos]
+                            else:
+                                swapped_dict[seg].append(pos)
+                            seg_dict[pos] = seg
+
+                        for seg, posis in swapped_dict.items():
+                            alt_mid = parse.fetch_residues_from_array(af_main_pdb_array[seg], posis)
+                            alt_residues1 = parse.add_two_ordereddict(alt_residues1, alt_mid)
+                        alt_residues = parse.add_two_ordereddict(alt_residues1, alt_residues2)
+
+                        superpose = sp.LoopSuperpose(orig_residues, alt_residues)
+                        new_residues = superpose.run()
+
+                        key_list = list(new_residues.keys())[4:-4]
+                        Homology_model.trimmed_residues.append(key_list[0])
+                        Homology_model.trimmed_residues.append(key_list[-1])
+                        Homology_model.trimmed_residues.append(list(new_residues.keys())[3])
+                        Homology_model.trimmed_residues.append(list(new_residues.keys())[-4])
+
+                    for key in key_list:
+                        main_pdb_array[seg_dict[key.replace('.','x')]][key] = new_residues[key]
+                        template_dict[seg_dict[key.replace('.','x')]][key.replace('.','x')] = PDB.Polypeptide.three_to_one(new_residues[key][0].get_parent().get_resname())
+                        alignment_dict[seg_dict[key.replace('.','x')]][key.replace('.','x')] = PDB.Polypeptide.three_to_one(new_residues[key][0].get_parent().get_resname())
+
+                ### Rotamer swap (missing atoms and non-wt)
                 for seglab, seg in alignment_dict.items():
                     for gn, res in seg.items():
                         if res=='.' and gn in af_template_dict[seglab]:
-                            print(gn, af_main_pdb_array[seglab][gn.replace('x','.')], main_pdb_array[seglab][gn.replace('x','.')], af_main_pdb_array[seglab][gn.replace('x','.')][0].get_parent(), af_template_dict[seglab][gn], template_dict[seglab][gn])
+                            mpa_gn = gn.replace('x','.')
+                            orig_res = main_pdb_array[seglab][mpa_gn]
+                            alt_res = af_main_pdb_array[seglab][mpa_gn]
+                            superpose = sp.RotamerSuperpose(orig_res, alt_res)
+                            new_atoms = superpose.run()
+                            main_pdb_array[seglab][mpa_gn] = new_atoms
+                            new_aa = PDB.Polypeptide.three_to_one(new_atoms[0].get_parent().get_resname())
+                            template_dict[seglab][gn] = new_aa
+                            alignment_dict[seglab][gn] = new_aa
+                            template_source[seglab][gn][1] = None
 
-
-                # missing_sections = []
-                # new_start, new_end = None, None
-                # section = []
-                # for seg, resis in Homology_model.template_source.items():
-                #     for gn, res in resis.items():
-                #         if res[0]!=Homology_model.main_structure:
-                #             if not new_start:
-                #                 new_start = [seg, gn]
-                #                 new_end = [seg, gn]
-                #                 try:
-                #                     section = [[seg, gn, Residue.objects.get(protein_conformation=Homology_model.prot_conf, display_generic_number__label=dgn(gn, Homology_model.prot_conf)).sequence_number]]
-                #                 except ResidueGenericNumberEquivalent.DoesNotExist:
-                #                     section = [[seg, gn, int(gn)]]
-                #             else:
-                #                 new_end = [seg, gn]
-                #                 try:
-                #                     section.append([seg, gn, Residue.objects.get(protein_conformation=Homology_model.prot_conf, display_generic_number__label=dgn(gn, Homology_model.prot_conf)).sequence_number])
-                #                 except ResidueGenericNumberEquivalent.DoesNotExist:
-                #                     section.append([seg, gn, int(gn)])
-                #         else:
-                #             new_start = None
-                #             if section not in missing_sections:
-                #                 missing_sections.append(section)
-                # pprint.pprint(missing_sections)
-                raise AssertionError
+                Homology_model.alignment.reference_dict = reference_dict
+                Homology_model.alignment.template_dict = template_dict
+                Homology_model.alignment.alignment_dict = alignment_dict
+                Homology_model.main_pdb_array = main_pdb_array
+                Homology_model.template_source = template_source
             else:
                 alignment = Homology_model.run_alignment([self.state])
                 Homology_model.build_homology_model(alignment)
@@ -921,7 +1089,7 @@ class CallHomologyModeling():
 
             # # if Homology_model.changes_on_db:
             ssno = StructureSeqNumOverwrite(Homology_model.main_structure)
-            if len(ssno.pdb_wt_table)>0:
+            if len(ssno.pdb_wt_table)>0 and not self.alphafold:
                 ssno.seq_num_overwrite('wt')
 
             # Run clash and break test
@@ -949,8 +1117,12 @@ class CallHomologyModeling():
                 post_model2 = p.get_structure('model','./structure/homology_models/{}.pdb'.format(Homology_model.modelname))
                 for chain in post_model2[0]:
                     for hetres in hse.hetresis_to_remove:
-                        chain.detach_child(hetres.id)
-                        logger.info('{} detached from model due to no interaction'.format(hetres))
+                        try:
+                            chain.detach_child(hetres.id)
+                            logger.info('{} detached from model due to no interaction'.format(hetres))
+                        except KeyError:
+                            print('Cannot detach {} from model'.format(hetres))
+                            logger.info('Cannot detach {} from model'.format(hetres))
                 io = PDB.PDBIO()
                 io.set_structure(post_model2)
                 io.save('./structure/homology_models/{}.pdb'.format(Homology_model.modelname))
@@ -1049,42 +1221,42 @@ class CallHomologyModeling():
             with open('./structure/homology_models/done_models.txt','a') as f:
                 f.write(self.receptor+'\n')
 
-        # except Exception as msg:
-        #     try:
-        #         exc_type, exc_obj, exc_tb = sys.exc_info()
-        #         if self.debug:
-        #             print('Error on line {}: Failed to build model {} (main structure: {})\n{}'.format(exc_tb.tb_lineno, self.receptor,
-        #                                                                                     Homology_model.main_structure,msg))
-        #             print(''.join(traceback.format_tb(exc_tb)))
-        #         logger.error('Failed to build model {} {}\n    {}'.format(self.receptor, self.state, msg))
-        #         # Return main template structure residue table sequence numbering to original
-        #         ssno = StructureSeqNumOverwrite(Homology_model.main_structure)
-        #         if len(ssno.pdb_wt_table)>0:
-        #         # # if Homology_model.changes_on_db:
-        #             ssno = StructureSeqNumOverwrite(Homology_model.main_structure)
-        #             ssno.seq_num_overwrite('wt')
-        #             self.logger.info('Structure {} residue table sequence number overwrite wt to pdb'.format(structure))
-        #         t = tests.HomologyModelsTests()
-        #         if 'Number of residues in the alignment and  pdb files are different' in str(msg):
-        #             t.pdb_alignment_mismatch(Homology_model.alignment, Homology_model.main_pdb_array,
-        #                                      Homology_model.main_structure)
-        #             if Homology_model.complex:
-        #                 t.pdb_pir_mismatch(os.sep.join([structure_path, 'homology_models', '{}_{}_post.pdb'.format(Homology_model.reference_entry_name, Homology_model.target_signprot.entry_name)]),
-        #                                    os.sep.join([pir_path, '{}_{}.pir'.format(Homology_model.reference_protein.accession, Homology_model.target_signprot.entry_name)]))
-        #             else:
-        #                 t.pdb_pir_mismatch(os.sep.join([structure_path, 'homology_models', '{}_{}_post.pdb'.format(Homology_model.reference_entry_name, Homology_model.state)]),
-        #                                    os.sep.join([pir_path, '{}_{}.pir'.format(Homology_model.reference_protein.accession, Homology_model.state)]))
-        #         elif 'No such residue:' in str(msg):
-        #             if self.debug:
-        #                 t.pdb_pir_mismatch(Homology_model.main_pdb_array, Homology_model.model_sequence)
-        #         with open('./structure/homology_models/done_models.txt','a') as f:
-        #             f.write(self.receptor+'\n')
-        #     except:
-        #         try:
-        #             Protein.objects.get(entry_name=self.receptor)
-        #         except:
-        #             logger.error('Invalid receptor name: {}'.format(self.receptor))
-        #             print('Invalid receptor name: {}'.format(self.receptor))
+        except Exception as msg:
+            try:
+                exc_type, exc_obj, exc_tb = sys.exc_info()
+                if self.debug:
+                    print('Error on line {}: Failed to build model {} (main structure: {})\n{}'.format(exc_tb.tb_lineno, self.receptor,
+                                                                                            Homology_model.main_structure,msg))
+                    print(''.join(traceback.format_tb(exc_tb)))
+                logger.error('Failed to build model {} {}\n    {}'.format(self.receptor, self.state, msg))
+                # Return main template structure residue table sequence numbering to original
+                ssno = StructureSeqNumOverwrite(Homology_model.main_structure)
+                if len(ssno.pdb_wt_table)>0 and not self.alphafold:
+                # # if Homology_model.changes_on_db:
+                    ssno = StructureSeqNumOverwrite(Homology_model.main_structure)
+                    ssno.seq_num_overwrite('wt')
+                    self.logger.info('Structure {} residue table sequence number overwrite wt to pdb'.format(structure))
+                t = tests.HomologyModelsTests()
+                if 'Number of residues in the alignment and  pdb files are different' in str(msg):
+                    t.pdb_alignment_mismatch(Homology_model.alignment, Homology_model.main_pdb_array,
+                                             Homology_model.main_structure)
+                    if Homology_model.complex:
+                        t.pdb_pir_mismatch(os.sep.join([structure_path, 'homology_models', '{}_{}_post.pdb'.format(Homology_model.reference_entry_name, Homology_model.target_signprot.entry_name)]),
+                                           os.sep.join([pir_path, '{}_{}.pir'.format(Homology_model.reference_protein.accession, Homology_model.target_signprot.entry_name)]))
+                    else:
+                        t.pdb_pir_mismatch(os.sep.join([structure_path, 'homology_models', '{}_{}_post.pdb'.format(Homology_model.reference_entry_name, Homology_model.state)]),
+                                           os.sep.join([pir_path, '{}_{}.pir'.format(Homology_model.reference_protein.accession, Homology_model.state)]))
+                elif 'No such residue:' in str(msg):
+                    if self.debug:
+                        t.pdb_pir_mismatch(Homology_model.main_pdb_array, Homology_model.model_sequence)
+                with open('./structure/homology_models/done_models.txt','a') as f:
+                    f.write(self.receptor+'\n')
+            except:
+                try:
+                    Protein.objects.get(entry_name=self.receptor)
+                except:
+                    logger.error('Invalid receptor name: {}'.format(self.receptor))
+                    print('Invalid receptor name: {}'.format(self.receptor))
 
 
 class HomologyModeling(object):
@@ -2638,6 +2810,7 @@ class HomologyModeling(object):
             pdb = PDB.PDBList()
             pdb.retrieve_pdb_file(str(self.main_structure), pdir='./', file_format='pdb')
             self.alternate_water_positions = OrderedDict()
+            last_seqnum = list(Residue.objects.filter(protein_conformation__protein=self.reference_protein.parent))[-1].sequence_number
             with open('./pdb{}.ent'.format(str(self.main_structure).lower()),'r') as f:
                 lines = f.readlines()
             with open(post_file, 'a') as model:
@@ -2651,21 +2824,30 @@ class HomologyModeling(object):
                         pref_chain = str(self.main_structure.preferred_chain)
                         if len(pref_chain)>1:
                             pref_chain = pref_chain[0]
-                        try:
-                            pdb_re = re.search('(HETATM[0-9\sA-Z{apo}]{{11}})([A-Z0-9\s]{{3}})\s({pref})([0-9\s]{{4}})'.format(apo="'",pref=pref_chain), line)
-                            if pdb_re.group(2)!='HOH':
-                                if hetatm!=pdb_re.group(4):
-                                    hetatm_count+=1
-                                    hetatm = pdb_re.group(4)
-                            else:
-                                if pdb_re.group(1)[-1]==' ' or pdb_re.group(1)[-1]==pref_chain:
-                                    water_count+=1
-                                elif pdb_re.group(1)[-1] in ['B','C','D']:
-                                    self.alternate_water_positions[water_count] = line
-                            if pdb_re!=None:
-                                model.write(line)
-                        except:
+                        pdb_re = re.search('(HETATM[0-9\sA-Z{apo}]{{11}})([A-Z0-9\s]{{3}})\s({pref})([0-9\s]{{4}})'.format(apo="'",pref=pref_chain), line)
+                        if not pdb_re:
                             continue
+                        if pdb_re.group(2)!='HOH':
+                            if hetatm!=pdb_re.group(4):
+                                hetatm_count+=1
+                                hetatm = pdb_re.group(4)
+                                ### Hetatm seqnums are too low, same as normal residues - FIXME
+                                # print("HETATM STUFF")
+                                # print(int(hetatm), last_seqnum)
+                                # if int(hetatm)<=last_seqnum:
+                                #     num_hetatm = last_seqnum+hetatm_count
+                                #     if len(hetatm)>len(str(num_hetatm)):
+                                #         num_hetatm = ' '*(len(hetatm)-len(str(num_hetatm)))+str(num_hetatm)
+                                #     line.replace(hetatm, num_hetatm)
+                                #     print(num_hetatm)
+                                #     print(line)
+                        else:
+                            if pdb_re.group(1)[-1]==' ' or pdb_re.group(1)[-1]==pref_chain:
+                                water_count+=1
+                            elif pdb_re.group(1)[-1] in ['B','C','D']:
+                                self.alternate_water_positions[water_count] = line
+                        if pdb_re!=None:
+                            model.write(line)
                 try:
                     ligand_pep_structs = LigandPeptideStructure.objects.filter(structure=self.main_structure)
                     for l in ligand_pep_structs:
@@ -2731,7 +2913,7 @@ class HomologyModeling(object):
         #         pprint.pprint(self.alignment.template_dict[j])
         #         pprint.pprint(self.alignment.alignment_dict[i])
         #         pprint.pprint(self.main_pdb_array[k])
-        trimmed_res_nums['N-term']['1'] = 1
+
         # Model with MODELLER
         self.create_PIR_file(self.alignment.reference_dict, self.alignment.template_dict, post_file, hetatm_count, water_count)
 
@@ -2759,9 +2941,14 @@ class HomologyModeling(object):
             pir_file = "./structure/PIR/{}_{}.pir".format(self.uniprot_id, self.target_signprot.entry_name)
         else:
             pir_file = "./structure/PIR/"+self.uniprot_id+"_"+self.state+".pir"
+
+        if self.alphafold and len([trimmed_res_nums[i] for i in trimmed_res_nums if len(trimmed_res_nums[i])>0])==0:
+            trimmed_res_nums['N-term']['1'] = 1
+
         if self.debug:
             print('Atom selection for MODELLER:')
             print(trimmed_res_nums)
+
         self.run_MODELLER(pir_file, post_file,
                           self.uniprot_id, self.modeller_iterations, path+self.modelname+'.pdb',
                           atom_dict=trimmed_res_nums, helix_restraints=helix_restraints, icl3_mid=icl3_mid, disulfide_nums=disulfide_nums, complex_start=complex_start, beta_start=beta_start,

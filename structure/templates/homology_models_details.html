@@ -82,11 +82,7 @@ canvas {
         <h4>METHOD</h4>
     </div>
     <div class="col-md-9">
-        {% if model.protein.accession %}
         <a href="https://doi.org/10.1002/prot.26382" target="_blank">AlphaFold-Multistate</a>
-        {% else %}
-        <a href="https://docs.gpcrdb.org/structures.html#refined-structures" target="_blank">GPCRdb refined structure homology modeling pipeline</a>
-        {% endif %}
     </div>
 </div>
 
@@ -204,12 +200,12 @@ canvas {
             <div style='display: table-cell;'>
                 {% for prot, bts in backbone_templates.items %}
                     {% for bt in bts %}
-                        <div class="graphcolor" style="background-color:{{ bt.color }}; width: 20px; height: 10px; margin-top: 5px;"></div>
+                        <div class="graphcolor" style="background-color:{{ bt.color }}; width: 20px; height: 10px; margin-bottom: 5px; border:solid black;"></div>
                         {{ bt.pdb_code.index }} ({{ bt.protein_conformation.protein.parent.name|safe}}) <br>
                     {% endfor %}
                 {% endfor %}
-                        <div class="graphcolor" style="background-color:white; width: 20px; height: 10px;"></div>
-                        None
+                        <div class="graphcolor" style="background-color:white; width: 20px; height: 10px; margin-bottom: 5px; border: solid black;"></div>
+                        AlphaFold
             </div>
         </div>
         <table>
@@ -217,27 +213,27 @@ canvas {
                 <tr>
                     <th class='table-th'></th>
                     <th class='table-th'>Main template (%)</th>
-                    <th class='table-th'>Additional templates (%)</th>
-                    <th class='table-th' style="border-right: 0px;">No template - freely modelled (%)</th>
+                    <!-- <th class='table-th'>Additional templates (%)</th> -->
+                    <th class='table-th' style="border-right: 0px;">AlphaFold (%)</th>
             </thead>
             <tbody>
                 <tr>
                     <td style="border-right: 1px solid #9ea7af; text-align:right; padding: 3px; font-size: 12px;">Backbone</td>
                     <td class="table-td">{{bb_main}}</td>
-                    <td class="table-td">{{bb_alt}}</td>
+                    <!-- <td class="table-td">{{bb_alt}}</td> -->
                     <td class="table-td" style="border-right: 0px;">{{bb_none}}</td>
                 </tr>
                 <tr>
                     <td style="border-right: 1px solid #9ea7af; text-align:right; padding: 3px; font-size: 12px;">Side-chains</td>
                     <td class="table-td">{{sc_main}}</td>
-                    <td class="table-td">{{sc_alt}}</td>
+                    <!-- <td class="table-td">{{sc_alt}}</td> -->
                     <td class="table-td" style="border-right: 0px;">{{sc_none}}</td>
                 </tr>
             </tbody>
         </table>
         <br>
-        Number of backbone templates: {{ backbone_templates_number }}<br>
-        Number of rotamer templates: {{ rotamer_templates_number }}<br><br>
+        <!-- Number of backbone templates: {{ backbone_templates_number }}<br>
+        Number of rotamer templates: {{ rotamer_templates_number }}<br><br> -->
   <!--   </div>
 </div>
 <br>
@@ -318,15 +314,15 @@ canvas {
                                 <td><a href="/protein/{{ rota.backbone_template.protein_conformation.protein.parent.entry_name }}">{{ rota.backbone_template.protein_conformation.protein.parent.name|safe }}</a></td>
                                 <td><a href="../{{ rota.backbone_template.pdb_code.index }}">{{ rota.backbone_template.pdb_code.index|safe }}</a></td>
                             {% else %}
-                                <td>-</td>
-                                <td>-</td>
+                                <td>AlphaFold</td>
+                                <td>AlphaFold</td>
                             {% endif %}
                             {% if rota.rotamer_template %}
                                 <td><a href="/protein/{{ rota.rotamer_template.protein_conformation.protein.parent.entry_name }}">{{ rota.rotamer_template.protein_conformation.protein.parent.name|safe }}</a></td>
                                 <td><a href="../{{ rota.rotamer_template.pdb_code.index }}">{{ rota.rotamer_template.pdb_code.index|safe }}</a></td>
                             {% else %}
-                                <td>-</td>
-                                <td>-</td>
+                                <td>AlphaFold</td>
+                                <td>AlphaFold</td>
                             {% endif %}
                         </tr>
                         {% endfor %}
