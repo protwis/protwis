@@ -125,7 +125,8 @@ class GPCRDBParsingPDB(object):
                 direction += 1
             return str(split[0])+delimiter+str(int(str(split[1])[:2])+direction)
 
-    def find_before_4_gns(self, section, reference_dict, distorted_residues, segment_labels):
+    @staticmethod
+    def find_before_4_gns(section, reference_dict, distorted_residues, segment_labels):
         minus_offset, minus_gns = [], []
         first_index = list(reference_dict[section[0][0]]).index(section[0][1])
         first_seg = section[0][0]
@@ -156,7 +157,8 @@ class GPCRDBParsingPDB(object):
 
         return section, minus_gns, first_seg
 
-    def find_after_4_gns(self, section, reference_dict, distorted_residues, segment_labels):
+    @staticmethod
+    def find_after_4_gns(section, reference_dict, distorted_residues, segment_labels):
         ''' Find after 4 residues for superpositioning'''
         plus_offset, plus_gns = [], []
         last_index = list(reference_dict[section[-1][0]]).index(section[-1][1])

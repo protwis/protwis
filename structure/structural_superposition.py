@@ -292,8 +292,8 @@ class LoopSuperpose(BulgeConstrictionSuperpose):
                 all_template_atoms.append(atom)
 
         super_imposer.set_atoms(sorted(ref_backbone_atoms), sorted(temp_backbone_atoms))
-        super_imposer.apply(all_template_atoms)       
-        self.backbone_rmsd = self.calc_backbone_RMSD(sorted(ref_backbone_atoms), sorted(temp_backbone_atoms)) 
+        super_imposer.apply(all_template_atoms)
+        self.backbone_rmsd = self.calc_backbone_RMSD(sorted(ref_backbone_atoms), sorted(temp_backbone_atoms))
         return self.rebuild_dictionary(all_template_atoms)
         
 #============================================================================== 
