@@ -290,9 +290,10 @@ class LoopSuperpose(BulgeConstrictionSuperpose):
                 if (res_count<=edge1 or array_length-edge2<res_count) and atom.get_name() in ['N','CA','C']:
                     temp_backbone_atoms.append(atom)
                 all_template_atoms.append(atom)
-        self.backbone_rmsd = self.calc_backbone_RMSD(ref_backbone_atoms, temp_backbone_atoms)
-        super_imposer.set_atoms(ref_backbone_atoms, temp_backbone_atoms)
-        super_imposer.apply(all_template_atoms)        
+
+        super_imposer.set_atoms(sorted(ref_backbone_atoms), sorted(temp_backbone_atoms))
+        super_imposer.apply(all_template_atoms)       
+        self.backbone_rmsd = self.calc_backbone_RMSD(sorted(ref_backbone_atoms), sorted(temp_backbone_atoms)) 
         return self.rebuild_dictionary(all_template_atoms)
         
 #============================================================================== 
