@@ -24,6 +24,13 @@
 					<td>
 						{{ligand.ligand_inchikey}}</td>
 				</tr>
+				{% if ligand.type == 'Peptide' %}
+				<tr>
+					<td>Sequence</td>
+					<td>
+						{{ligand.sequence}}</td>
+				</tr>
+				{% endif %}
 			</table>
 		</div>
 
