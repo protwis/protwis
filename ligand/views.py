@@ -166,8 +166,12 @@ def TargetDetails(mode, request, **kwargs):
             return redirect("ligand_selection")
 
         if cache_key != False and cache.has_key(cache_key):
-            ps = cache.get(cache_key)
+            result = cache.get(cache_key)
+            ligand_data_affinity = result['affinity_data']
+            ligand_data_potency = result['potency_data']
         else:
+            ligand_data_affinity = []
+            ligand_data_potency = []
             ps = ps.values('value_type',
                            'standard_relation',
                            'standard_activity_value',
@@ -189,7 +193,12 @@ def TargetDetails(mode, request, **kwargs):
                            'ligand__hacc',
                            'protein',
                            'publication__web_link__index',
-                           'publication__web_link__web_resource__url'
+                           'publication__web_link__web_resource__url',
+                           'affinity',
+                           'potency',
+                           'count_affinity_test',
+                           'count_potency_test',
+                           'reference_ligand'
                            ).annotate(num_targets=Count('protein__id', distinct=True))
 
             lig_ids = set([record['ligand__id'] for record in ps])
@@ -197,13 +206,18 @@ def TargetDetails(mode, request, **kwargs):
             vendors_dict = {entry[0]:entry[1] for entry in vendor_output}
 
             for record in ps:
+                record['assay_type'] = record['assay_type'] if record['assay_type'] != 'U' else 'N/A'
                 record['purchasability'] = vendors_dict[record['ligand__id']] if record['ligand__id'] in vendors_dict.keys() else 0
                 record['protein__entry_name'] = record['protein__entry_name'].split('_')[0].upper()
                 record['link'] = record['publication__web_link__web_resource__url'].replace('$index',record['publication__web_link__index']) if record['publication__web_link__web_resource__url'] != None else '#'
-
+                if record['assay_type'] == 'B':
+                    ligand_data_affinity.append(record)
+                elif record['assay_type'] == 'F':
+                    ligand_data_potency.append(record)
         context = {}
-        context['ligand_data'] = ps
-        cache.set(cache_key, ps, 60*60*24*7)
+        context['affinity_data'] = ligand_data_affinity
+        context['potency_data'] = ligand_data_potency
+        cache.set(cache_key, context, 60*60*24*7)
 
     elif mode == 'compact':
 
@@ -211,15 +225,17 @@ def TargetDetails(mode, request, **kwargs):
             prot_id = [x.item for x in selection.reference]
             cache_key = "lig_compact_protid_" + ",".join(prot_id)
             ps = AssayExperiment.objects.filter(protein__in=prot_id).prefetch_related('protein', 'ligand', 'ligand__ligand_type')
-                                                                                      # 'ligand__ids__web_resource',
-                                                                                      # 'ligand')
+                                                                                      # 'ligand__ids__web_resource',                                                                      # 'ligand')
         # if queryset is empty redirect to ligand browser
         if not ps:
             return redirect("ligand_selection")
 
         if cache_key != False and cache.has_key(cache_key):
-            ligand_data = cache.get(cache_key)
+            result = cache.get(cache_key)
+            ligand_data_affinity = result['affinity_data']
+            ligand_data_potency = result['potency_data']
         else:
+            result = {}
             img_setup_smiles = "https://cactus.nci.nih.gov/chemical/structure/{}/image"
             d = {}
 
@@ -232,8 +248,9 @@ def TargetDetails(mode, request, **kwargs):
             vendor_output = list(LigandVendorLink.objects.filter(ligand_id__in=lig_ids).values_list("ligand_id").annotate(Count('vendor_id', distinct=True)))
             vendors_dict = {entry[0]:entry[1] for entry in vendor_output}
 
-            ligand_data = []
-            assay_conversion = {'A': 'ADMET', 'B': 'Binding', 'F': 'Functional', 'U': 'Unclassified'}
+            ligand_data_affinity = []
+            ligand_data_potency = []
+            assay_conversion = {'A': 'ADMET', 'B': 'Binding', 'F': 'Functional', 'U': 'N/A'}
             for lig, records in d.items():
                 # links = lig.ids.all()
                 # chembl_id = [x for x in links if x.web_resource.slug == 'chembl_ligand'][0].index
@@ -245,8 +262,8 @@ def TargetDetails(mode, request, **kwargs):
 
                 purchasability = vendors_dict[lig.id] if lig.id in vendors_dict.keys() else 0
 
+                data_parsed = {}
                 for record in records:
-                    data_parsed = {}
                     assay = assay_conversion[record.assay_type]
                     if record.source not in data_parsed.keys():
                         data_parsed[record.source] = {}
@@ -260,9 +277,9 @@ def TargetDetails(mode, request, **kwargs):
                     else:
                         if record.source == 'Guide to Pharmacology':
                             data = [x for x in record.p_activity_ranges.split('|')]
-                            data_parsed[data_line.source][assay][record.value_type] += data
+                            data_parsed[record.source][assay][record.value_type] += data
                         else:
-                            data_parsed[data_line.source][assay][record.value_type].append(record.p_activity_value)
+                            data_parsed[record.source][assay][record.value_type].append(record.p_activity_value)
 
                 for source in data_parsed.keys():
                     for assay_type in data_parsed[source].keys():
@@ -273,33 +290,62 @@ def TargetDetails(mode, request, **kwargs):
                                 low_value = min(values)
                                 average_value = round(sum(values) / len(values),1)
                                 high_value = max(values)
-
-                            ligand_data.append({
-                                'lig_id': lig.id,
-                                'ligand_name': lig.name,
-                                'picture': picture,
-                                'protein_name': record.protein.entry_name.split('_')[0].upper(),
-                                'iuphar_name': record.protein.name,
-                                'species': record.protein.species.common_name,
-                                'record_count': len(records),
-                                'assay_type': assay_type,
-                                'purchasability': purchasability,
-                                'low_value': low_value,
-                                'average_value': average_value,
-                                'high_value': high_value,
-                                'value_type': value_type,
-                                'ligand_type': lig.ligand_type.name.replace('-',' ').capitalize(),
-                                'source': source,
-                                'smiles': lig.smiles,
-                                'mw': lig.mw,
-                                'rotatable_bonds': lig.rotatable_bonds,
-                                'hdon': lig.hdon,
-                                'hacc': lig.hacc,
-                                'logp': lig.logp,
-                            })
+                            print(assay_type)
+                            if assay_type == 'Binding': #Affinity
+                                ligand_data_affinity.append({
+                                    'lig_id': lig.id,
+                                    'ligand_name': lig.name,
+                                    'picture': picture,
+                                    'affinity': record.affinity,
+                                    'affinity_tested': record.count_affinity_test,
+                                    'species': record.protein.species.common_name,
+                                    'record_count': len(records),
+                                    'assay_type': assay_type,
+                                    'purchasability': purchasability,
+                                    'low_value': low_value,
+                                    'average_value': average_value,
+                                    'high_value': high_value,
+                                    'value_type': value_type,
+                                    'ligand_type': lig.ligand_type.name.replace('-',' ').capitalize(),
+                                    'source': source,
+                                    'smiles': lig.smiles,
+                                    'mw': lig.mw,
+                                    'rotatable_bonds': lig.rotatable_bonds,
+                                    'hdon': lig.hdon,
+                                    'hacc': lig.hacc,
+                                    'logp': lig.logp,
+                                    'reference': record.reference_ligand,
+                                })
+                            elif assay_type == 'Functional': #Potency
+                                ligand_data_potency.append({
+                                    'lig_id': lig.id,
+                                    'ligand_name': lig.name,
+                                    'picture': picture,
+                                    'potency': record.potency,
+                                    'potency_tested': record.count_potency_test,
+                                    'species': record.protein.species.common_name,
+                                    'record_count': len(records),
+                                    'assay_type': assay_type,
+                                    'purchasability': purchasability,
+                                    'low_value': low_value,
+                                    'average_value': average_value,
+                                    'high_value': high_value,
+                                    'value_type': value_type,
+                                    'ligand_type': lig.ligand_type.name.replace('-',' ').capitalize(),
+                                    'source': source,
+                                    'smiles': lig.smiles,
+                                    'mw': lig.mw,
+                                    'rotatable_bonds': lig.rotatable_bonds,
+                                    'hdon': lig.hdon,
+                                    'hacc': lig.hacc,
+                                    'logp': lig.logp,
+                                    'reference': record.reference_ligand,
+                                })
         context = {}
-        context['ligand_data'] = ligand_data
-        cache.set(cache_key, ligand_data, 60*60*24*7)
+        context['potency_data'] = ligand_data_potency
+        context['affinity_data'] = ligand_data_affinity
+        cache.set(cache_key, context, 60*60*24*7)
+        print(cache)
     context['mode'] = mode
     return render(request, 'target_details.html', context)
 
@@ -373,7 +419,15 @@ class BiasedSignallingSelection(AbsReferenceSelectionTable):
     import_export_box = False
     subtype = False
     pathway = False
-    pathfinder = {'EmaxRankOrder': {'Description': 'The next page shows plots for the ligand bias rank order ΔΔLog(Emax/EC50) by transducer or effector family across publications.' \
+                  ####NEW
+    pathfinder = {'BiasRankOrder': {'Description': 'The next page shows plots for the ligand bias rank order by transducer or effector family across publications.' \
+                                                    + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.' \
+                                                    + '\n<b>*</b>Biased ligands have a bias factor ≥ 5.',
+                                    'Continue': "submitSelection('/biased_signalling/bias_rankorder');",
+                                    'Pathway': "submitSelection('/biased_signalling/bias_rankorder_path_bias');",
+                                    'Biased': "submitSelection('/biased_signalling/userselectionbiased_bias_rank_order');"},
+                  ####END NEW
+                  'EmaxRankOrder': {'Description': 'The next page shows plots for the ligand bias rank order ΔΔLog(Emax/EC50) by transducer or effector family across publications.' \
                                                     + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.' \
                                                     + '\n<b>*</b>Biased ligands have a bias factor ≥ 5.',
                                     'Continue': "submitSelection('/biased_signalling/emax_rankorder');",
@@ -397,6 +451,14 @@ class BiasedSignallingSelection(AbsReferenceSelectionTable):
                                      'Continue': "submitSelection('/biased_signalling/tau_path_profiles');",
                                      'Pathway': "submitSelection('/biased_signalling/tau_path_profiles_path_bias');",
                                      'Biased': "submitSelection('/biased_signalling/userselectionbiased_tau_path_profile');"},
+                  ####NEW
+                  'BiasRankOrderSubtype': {'Description': 'The next page shows plots for the ligand bias rank order by transducer or effector family across publications.' \
+                                                            + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.' \
+                                                            + '\n<b>*</b>Biased ligands have a bias factor ≥ 5.',
+                                           'Continue': "submitSelection('/biased_signalling/subtype_bias_rankorder');",
+                                           'Pathway': "submitSelection('/biased_signalling/subtype_bias_rankorder_path_bias');",
+                                           'Biased': "submitSelection('/biased_signalling/userselectionbiasedsubtype_bias_rank_order');"},
+                  ####END NEW
                   'EmaxRankOrderSubtype': {'Description': 'The next page shows plots for the ligand bias rank order ΔΔLog(Emax/EC50) by transducer or effector family across publications.' \
                                                             + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.' \
                                                             + '\n<b>*</b>Biased ligands have a bias factor ≥ 5.',
@@ -532,6 +594,8 @@ class UserBiased(AbsReferenceSelectionTable):
     #Biased Effector Family Browser (Ligand Selection)
     'Browser': "submitSelection('/biased_signalling/userbiased');",
     #Biased Effector Family Emax/EC50 Rank Order (Ligand Selection)
+    'BiasRankOrder': "submitSelection('/biased_signalling/userbiased_bias_rank_order');",
+    #Biased Effector Family Emax/EC50 Rank Order (Ligand Selection)
     'EmaxRankOrder': "submitSelection('/biased_signalling/userbiased_emax_rank_order');",
     #Biased Effector Family Tau/KA Rank Order (Ligand Selection)
     'TauRankOrder': "submitSelection('/biased_signalling/userbiased_tau_rank_order');",
@@ -541,6 +605,8 @@ class UserBiased(AbsReferenceSelectionTable):
     'TauPathProfile': "submitSelection('/biased_signalling/userbiased_tau_path_profile');",
     #Biased Effector Subtype Browser (Ligand Selection)
     'BrowserSubtype': "submitSelection('/biased_signalling/userbiasedsubtypes');",
+    #Biased Effector Subtype Emax/EC50 Rank Order (Ligand Selection)
+    'BiasRankOrderSubtype': "submitSelection('/biased_signalling/userbiasedsubtypes_bias_rank_order');",
     #Biased Effector Subtype Emax/EC50 Rank Order (Ligand Selection)
     'EmaxRankOrderSubtype': "submitSelection('/biased_signalling/userbiasedsubtypes_emax_rank_order');",
     #Biased Effector Subtype Tau/KA Rank Order (Ligand Selection)
@@ -604,7 +670,7 @@ class BiasedSignallingOnTheFlyCalculation(TemplateView):
         ref_small = ''
         small = ''
         large = ''
-        head = "<b>Compound Name:</b> " + str(ligand) + \
+        head = "<b>Ligand tested for bias:</b> " + str(ligand) + \
                "<br><b>Plotted Value:</b> " + str(value) + \
                "<hr class='solid'>"
         if small_data:
@@ -827,7 +893,7 @@ class BiasedSignallingOnTheFlyCalculation(TemplateView):
                 else:
                     reference_emax_tau = 'NA'
                     reference_EC50_ka = 'NA'
-            else:
+            elif self.label == 'tau':
                 try:
                     single_delta = result[delta_tk_key]
                 except KeyError:
@@ -843,6 +909,32 @@ class BiasedSignallingOnTheFlyCalculation(TemplateView):
                 components = ['Tau', 'KA']
                 reference_emax_tau = "NA" #need to be updated IF datacolumn for TAU will be added
                 reference_EC50_ka = "NA"  #need to be updated IF datacolumn for KA will be added
+            else:   #### label = bias
+                try:
+                    single_delta = result[delta_ee_key]
+                except KeyError:
+                    single_delta = None
+                try:
+                    double_delta = result['Bias factor'] if result['Bias factor'] is not None else 'Full Bias'
+                except KeyError:
+                    double_delta = None
+                emax_tau = result["Emax"]
+                try:
+                    EC50_ka = '{:0.2e}'.format(result["EC50"])
+                except TypeError:
+                    EC50_ka = result["EC50"]
+                EC50_sign = result['EC50_sign'] #Remember these parameters for additional info
+                Emax_sign = result['Emax_sign'] #Remember these parameters for additional info
+                components = ['Emax', 'EC50']
+                if set(['Reference_Emax', 'Reference_EC50']).issubset(set(result.keys())):
+                    reference_emax_tau = result['Reference_Emax']
+                    try:
+                        reference_EC50_ka = '{:0.2e}'.format(result['Reference_EC50'])
+                    except TypeError:
+                        reference_EC50_ka = result['Reference_EC50']
+                else:
+                    reference_emax_tau = 'NA'
+                    reference_EC50_ka = 'NA'
 
             #fixing ligand name (hash hash baby)
             lig_name = result["ligand_name"]
@@ -968,7 +1060,6 @@ class BiasedSignallingOnTheFlyCalculation(TemplateView):
                                              "tooltip": tooltip_info})
                     SpiderOptions[authors][hashed_lig_name]["Data"][0].append({'axis':result['primary_effector_family'],
                                                                                'value':value})
-
         for item in full_data.keys():
             vals = []
             for name in full_data[item]["Data"]:
@@ -1899,6 +1990,7 @@ class BiasPathways(TemplateView):
             temp['ligand'] = instance.ligand
             temp['rece'] = instance.chembl
             temp['chembl'] = instance.chembl
+            temp['effect_type'] = instance.effect_type
             temp['relevance'] = instance.relevance
             temp['signalling_protein'] = instance.signalling_protein
 
@@ -1906,8 +1998,8 @@ class BiasPathways(TemplateView):
                 temp['receptor'] = instance.receptor
                 temp['class'] = instance.receptor.family.parent.parent.parent.name.split(' ')[1]
                 temp['uniprot'] = instance.receptor.entry_short
-                temp['IUPHAR'] = instance.receptor.name.split(' ', 1)[
-                    0].strip()
+                temp['link'] = 'https://gpcrdb/protein/' + str(instance.receptor.entry_name)
+                temp['IUPHAR'] = instance.receptor.name.split(' ', 1)[0].strip()
             else:
                 temp['receptor'] = 'Error appeared'
             # at the moment, there is only 1 pathways for every biased_pathway
@@ -1970,7 +2062,7 @@ def CachedOTFBiasBrowsers(browser_type, user_ligand, balanced, request):
     keygen = protein_ids + user_ids
     cache_key = "OTFBROWSER_" + browser_type + "_" + hashlib.md5("_".join(keygen).encode('utf-8')).hexdigest()
     return_html = cache.get(cache_key)
-    # return_html = None #testing
+    return_html = None #testing
     if return_html == None:
         if user_ligand == False:
             if browser_type == "bias":

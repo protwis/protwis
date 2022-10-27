@@ -309,6 +309,9 @@ def PdbTableData(request):
     identity_lookup = {}
     for s in data:
         pdb_id = s.pdb_code.index
+        if pdb_id in data_dict:
+            continue
+
         r = {}
         r['protein'] = s.protein_conformation.protein.parent.entry_short()
         r['protein_long'] = s.protein_conformation.protein.parent.short()

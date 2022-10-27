@@ -70,9 +70,7 @@ input.form-control {
             column_filters = column_filters.concat(createYADCFfilters(6, 1, "multi_select", "select2", "Select", false, null, null, "80px"));
             column_filters = column_filters.concat(createYADCFfilters(7, 3, "multi_select", "select2", "Select", false, null, "html", "80px"));
 
-            console.log(column_filters);
-            yadcf.init(table.draw(), column_filters, {
-            });
+            yadcf.init(table.draw(), column_filters, {});
 
             $('[data-toggle="tooltip"]').tooltip();
             //$('[data-toggle="tooltip"]').tooltip({html:true});
@@ -84,7 +82,9 @@ input.form-control {
             ajaxMutantsPos("helixbox");
             table_ajaxMutants();
             {% endif %}
-            });
+
+            table.columns.adjust().draw();
+          });
 
     </script>
 {% endblock %}

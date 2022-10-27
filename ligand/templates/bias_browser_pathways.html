@@ -45,7 +45,7 @@
                         $(node).removeClass('dt-button buttons-excel buttons-html5');
                     },
                     action: function(e, dt, node, config) {
-                        tableToExcel('structures_scrollable', 'Biased Pathways Data', 'GPCRdb_biased_Pathways.xls')
+                        tableToExcel('structures_scrollable', 'Biased Pathways Data', 'Pathway_effects.xlsx')
                     },
                 },
                 {
@@ -134,10 +134,12 @@
 
         let column_filters = [];
         // createYADCFfilters(start_column, num_cols, filter_type, select_type = null, filter_default_label = "", filter_reset_button_text = false, filter_match_mode = null, column_data_type = null, width = null)
-        column_filters = column_filters.concat(createYADCFfilters(1, 5, "multi_select", "select2", "Select", false, null, null, "80px"));
+        column_filters = column_filters.concat(createYADCFfilters(1, 2, "multi_select", "select2", "Select", false, null, null, "80px"));
+        column_filters = column_filters.concat(createYADCFfilters(3, 2, "multi_select", "select2", "Select", false, null, "html", "80px"));
+        column_filters = column_filters.concat(createYADCFfilters(5, 1, "multi_select", "select2", "Select", false, null, null, "80px"));
         column_filters = column_filters.concat(createYADCFfilters(6, 1, "multi_select", "select2", "Select", false, null, "html", "80px"));
-        column_filters = column_filters.concat(createYADCFfilters(7, 9, "multi_select", "select2", "Select", false, null, null, "80px"));
-        column_filters = column_filters.concat(createYADCFfilters(16, 1, "multi_select", "select2", "Select", false, null, "html", "80px"));
+        column_filters = column_filters.concat(createYADCFfilters(7, 10, "multi_select", "select2", "Select", false, null, null, "80px"));
+        column_filters = column_filters.concat(createYADCFfilters(17, 1, "multi_select", "select2", "Select", false, null, "html", "80px"));
 
         yadcf.init(oTable.draw(), column_filters, {
           cumulative_filtering: false
@@ -275,7 +277,6 @@
         var l = 0;
         for (var i = 2; i < temp_lenght; i++) {
             var x = table.rows[i].cells[2];
-            console.log(x);
             ids.push($(x)[0].innerText)
         }
         l = countUnique(ids);
@@ -332,8 +333,8 @@
                         <th style="border-left: 1px solid black;" id="col_Receptor" colspan="5" style="text-align:left">Receptor</th>
                         <th style="border-left: 1px solid black;" id="col_Ligand" colspan="1" style="text-align:left">Ligand</th>
                         <th style="border-left: 1px solid black;" id="col_Pathway" colspan="1">Pathway</th>
-                        <th style="border-left: 1px solid black;" colspan="1" style="text-align:left">Therapeutic ares</th>
-                        <th style="border-left: 1px solid black;" id="col_Pathway" colspan="3">Pathway effect outcomes</th>
+                        <th style="border-left: 1px solid black;" colspan="1" style="text-align:left">Therapeutic area</th>
+                        <th style="border-left: 1px solid black;" id="col_Pathway" colspan="4">Pathway effect outcome</th>
                         <th style="border-left: 1px solid black;" id="col_Operational" colspan="3">Experiment</th>
                         <th style="border-left: 1px solid black;" id="authors" style="overflow: hidden;
                   white-space: nowrap;
@@ -346,16 +347,17 @@
                         <th>Class<br></th>
                         <th title="Receptor Family">Rec Fam</th>
                         <th>UniProt</th>
-                        <th>IUPHAR</th>
+                        <th>GtP</th>
                         <th>Species</th>
                         <!-- Ligand -->
                         <th class='pathways' style="border-left: 1px solid black;">Name</th>
                         <!-- Signalling protein -->
                         <th class='pathways' style="border-left: 1px solid black;">Effector</th>
                         <!-- Relevance-->
-                        <th style="border-left: 1px solid black;">(Open Targets)</th>
+                        <th style="border-left: 1px solid black;"></th>
                         <!-- Pathways -->
-                        <th class='pathways' style="border-left: 1px solid black;">High level term</th>
+                        <th class='pathways' style="border-left: 1px solid black;">Effect type</th>
+                        <th class='pathways'>High level term</th>
                         <th class='pathways'>Summary</th>
                         <th class='pathways'>Details</th>
                         <!-- Experiment -->
@@ -382,8 +384,8 @@
                         </td>
                         <td>{{e.1.class}}</td>
                         <td>{{e.1.receptor.family.parent}}</td>
-                        <td>{{e.1.receptor.accession}}</td>
-                        <td>{{e.1.receptor.entry_short}}</td>
+                        <td><a href='{{e.1.link}}' target='blank'>{{e.1.uniprot}}</a></td>
+                        <td><a href='{{e.1.link}}' target='blank'>{{e.1.IUPHAR}}</a></td>
                         <td>{{e.1.receptor.species.common_name}}</td>
 
                         <!-- ligand -->
@@ -402,7 +404,8 @@
                         <td style="border-left: 1px solid black;">{{e.1.relevance}}</td>
 
                         <!-- pathways -->
-                        <td title='{{e.1.pathway_outcome_high}}' style="border-left: 1px solid black;">{{e.1.pathway_outcome_high}}</td>
+                        <td title='' style="border-left: 1px solid black;">{{e.1.effect_type}}</td>
+                        <td title='{{e.1.pathway_outcome_high}}' >{{e.1.pathway_outcome_high}}</td>
                         <td title='{{e.1.pathway_outcome_summary}}'>{{e.1.pathway_outcome_summary}}</td>
                         <td title='{{e.1.pathway_outcome_detail}}'>{{e.1.pathway_outcome_detail}}</td>
 
@@ -415,7 +418,7 @@
                             {{e.1.publication.authors}}</td>
                         <td class="name">
                             <a href='{{e.1.publication.web_link}}' target='blank'>
-                                {{e.1.publication.reference}}</td>
+                                {{e.1.publication.reference}}</a></td>
 
                     </tr>
                     {%endfor%}

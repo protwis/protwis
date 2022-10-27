@@ -130,14 +130,20 @@ def getLigandCountTable():
         )
         # Acquired slugs
         # entry_names = [ p.entry_name for p in proteins ]
-
-        drugtargets_approved = list(Protein.objects.filter(drugs__status="approved").values_list("entry_name", flat=True))
+        drugtargets_approved = list(Protein.objects.filter(drugs__status="approved").values("entry_name").annotate(num_ligands=Count("drugs__name", distinct=True)))
+        # drugtargets_approved = list(Protein.objects.filter(drugs__status="approved").values_list("entry_name", flat=True))
+        approved = {}
+        for entry in drugtargets_approved:
+            approved[entry['entry_name']] = entry['num_ligands']
         drugtargets_trials = list(Protein.objects.filter(drugs__status__in=["in trial"],
                                                          drugs__clinicalstatus__in=["completed", "not open yet",
                                                                                     "ongoing", "recruiting",
-                                                                                    "suspended"]).values_list(
-            "entry_name", flat=True))
+                                                                                    "suspended"]).values(
+            "entry_name").annotate(num_ligands=Count("drugs__name", distinct=True)))
 
+        trials = {}
+        for entry in drugtargets_trials:
+            trials[entry['entry_name']] = entry['num_ligands']
         # ligand_set = list(AssayExperiment.objects.values_list("protein__family__slug", "protein__species_id__latin_name")\
         #     .annotate(num_ligands=Count("ligand", distinct=True)))
 
@@ -165,8 +171,8 @@ def getLigandCountTable():
                 <th style=\"color:red\">Receptor<br>(UniProt)</th> \
                 <th style=\"color:red\">Receptor<br>(GtP)</th> \
                 <th>Count</th> \
-                <th>Target of an approved drug</th> \
-                <th>Target in clinical trials</th> \
+                <th>Approved</th> \
+                <th>In clinical<br>trials</th> \
               </tr> \
             </thead>\
             \n \
@@ -211,8 +217,8 @@ def getLigandCountTable():
                     #t['gtp_link'] = link_setup.format(p.web_links.filter(web_resource__slug='gtop')[0])
                     t['iuphar'] = link_setup.format(gtop_links[0], t['iuphar'])
 
-                t['approved_target'] = "Yes" if p.entry_name in drugtargets_approved else "No"
-                t['clinical_target'] = "Yes" if p.entry_name in drugtargets_trials else "No"
+                t['approved_target'] = approved[t['entry_name']] if t['entry_name'] in approved.keys() else 0
+                t['clinical_target'] = trials[t['entry_name']] if t['entry_name'] in trials.keys() else 0
 
                 data_table += "<tr> \
                 <td data-sort=\"0\"><input autocomplete='off' class=\"form-check-input\" type=\"checkbox\" name=\"reference\" data-entry=\"{}\" entry-value=\"{}\"></td> \
@@ -1532,7 +1538,7 @@ def SelectAlignableResidues(request):
     if numbering_scheme_slug == 'cgn':
         cgn = True
     elif numbering_scheme_slug == 'false':
-        if simple_selection.reference:
+        if simple_selection and simple_selection.reference:
             if simple_selection.reference[0].type == 'family':
                 proteins = Protein.objects.filter(family__slug__startswith=simple_selection.reference[0].item.slug)
                 r_prot = proteins[0]
@@ -1545,7 +1551,7 @@ def SelectAlignableResidues(request):
             if r_prot.residue_numbering_scheme not in numbering_schemes:
                 numbering_schemes.append(r_prot.residue_numbering_scheme)
 
-        if simple_selection.targets:
+        if simple_selection and simple_selection.targets:
             for t in simple_selection.targets:
                 if t.type == 'family':
                     proteins = Protein.objects.filter(family__slug__startswith=t.item.slug)
@@ -1557,11 +1563,17 @@ def SelectAlignableResidues(request):
                 seg_ids_all = get_protein_segment_ids(t_prot, seg_ids_all)
                 if t_prot.residue_numbering_scheme not in numbering_schemes:
                     numbering_schemes.append(t_prot.residue_numbering_scheme)
+
         # Filter based on reference and target proteins
         filtered_segments = []
         for segment in segments:
             if segment.id in seg_ids_all:
                 filtered_segments.append(segment)
+
+        if len(numbering_schemes) == 0 and len(filtered_segments) == 0:
+            numbering_schemes.append(ResidueNumberingScheme.objects.get(slug="gpcrdba"))
+            filtered_segments = segments
+
         segments = filtered_segments
     else:
         numbering_schemes = [ResidueNumberingScheme.objects.get(slug=numbering_scheme_slug)]
@@ -1919,20 +1931,27 @@ def ExpandSegment(request):
     cgn = False
     if numbering_scheme_slug == 'cgn':
         cgn = True
-    elif numbering_scheme_slug == 'false':
+    elif numbering_scheme_slug == 'false' and simple_selection:
+        first_item = False
         if simple_selection.reference:
             first_item = simple_selection.reference[0]
-        else:
+        elif simple_selection.targets:
             first_item = simple_selection.targets[0]
-        if first_item.type == 'family':
-            proteins = Protein.objects.filter(family__slug__startswith=first_item.item.slug)
-            numbering_scheme = proteins[0].residue_numbering_scheme
-        elif first_item.type == 'protein':
-            numbering_scheme = first_item.item.residue_numbering_scheme
-        elif first_item.type == 'structure':
-            numbering_scheme = first_item.item.protein_conformation.protein.residue_numbering_scheme
+
+        if first_item:
+            if first_item.type == 'family':
+                proteins = Protein.objects.filter(family__slug__startswith=first_item.item.slug)
+                numbering_scheme = proteins[0].residue_numbering_scheme
+            elif first_item.type == 'protein':
+                numbering_scheme = first_item.item.residue_numbering_scheme
+            elif first_item.type == 'structure':
+                numbering_scheme = first_item.item.protein_conformation.protein.residue_numbering_scheme
+        else:
+            numbering_scheme = ResidueNumberingScheme.objects.get(slug="gpcrdba")
+    elif numbering_scheme_slug:
+            numbering_scheme = ResidueNumberingScheme.objects.get(slug=numbering_scheme_slug)
     else:
-        numbering_scheme = ResidueNumberingScheme.objects.get(slug=numbering_scheme_slug)
+        numbering_scheme = ResidueNumberingScheme.objects.get(slug="gpcrdba")
 
     if cgn ==True:
         # fetch the generic numbers for CGN differently
