@@ -6,6 +6,7 @@ from ligand import views
 urlpatterns = [
     #  url(r'^browser$', cache_page(3600*24*7)(views.LigandBrowser.as_view()), name='ligand_browser'),
     url(r'^$', views.LigandTargetSelection.as_view(), name='ligand_selection'),
+    path('ligand_by_name', views.LigandNameSelection.as_view(), name='ligand_selection'),
 
     url(r'^target/all/(?P<slug>[-\w]+)/$', views.CachedTargetDetailsExtended, name='ligand_target_detail'),
     path('target_detail', views.CachedTargetDetailsExtended, name='ligand_target_detail'),
@@ -116,6 +117,7 @@ urlpatterns = [
     url(r'^vendors$', views.test_link, name='test'),
     url(r'^browservendors$', views.BiasVendorBrowser.as_view(), name='browservendor'),
     path('biasedpathways', cache_page(3600*24*7)(views.BiasPathways.as_view()), name='pathways'),
+    # path('biasedpathways', views.BiasPathways.as_view(), name='pathways'),
     url(r'^pathwaydata/(?P<pk>[-\w]+)/detail$', views.PathwayExperimentEntryView.as_view()),
     #GUIDELINES SECTION cache_page(3600*24*7)(views.LigandStatistics.as_view()), name='ligand_statistics'),
     path('bias_guidelines', views.BiasGuidelines.as_view(), name='bias_guidelines'),

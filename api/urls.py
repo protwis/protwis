@@ -3,9 +3,13 @@ from django.views.decorators.cache import cache_page
 from api import views
 
 
-urlpatterns = [
+excluded_apis = [
     url(r'^$', views.schema_view),
-    url(r'^reference/', views.schema_view),
+    url(r'^reference/', views.schema_view)]
+
+urlpatterns = excluded_apis + [
+    # url(r'^$', views.schema_view),
+    # url(r'^reference/', views.schema_view),
     url(r'^protein/accession/(?P<accession>[^/].+)/$', views.ProteinByAccessionDetail.as_view(),
         name='proteinbyaccession'),
     url(r'^protein/(?P<entry_name>[^/].+)/$', views.ProteinDetail.as_view(), name='protein-detail'),

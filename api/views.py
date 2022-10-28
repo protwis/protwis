@@ -157,7 +157,7 @@ class ProteinsInFamilySpeciesList(generics.ListAPIView):
         family = self.kwargs.get('slug')
         species = self.kwargs.get('latin_name')
         return queryset.filter(sequence_type__slug='wt', family__slug__startswith=family,
-                               species__latin_name=species).prefetch_related('family',
+                               species__latin_name__iexact=species).prefetch_related('family',
                                'species', 'source', 'residue_numbering_scheme', 'genes')
 
 
@@ -373,7 +373,7 @@ class FamilyAlignment(views.APIView):
             # Check for specific species
             if latin_name is not None:
                 ps = Protein.objects.filter(sequence_type__slug='wt', family__slug__startswith=slug,
-                    species__latin_name=latin_name)
+                    species__latin_name__iexact=latin_name)
             else:
                 if not include_trembl:
                     ps = Protein.objects.filter(sequence_type__slug='wt', family__slug__startswith=slug, source__id=1)

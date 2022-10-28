@@ -1,0 +1,16 @@
+{% extends "home/base.html" %}
+{% load static %}
+{% load humanize %}
+{% block addon_css %}
+<link rel="stylesheet" href="{% static 'home/css/nv.d3.min.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/nvd3-update.css' %}" type="text/css" />
+<link href="{% static 'home/css/bootstrap-responsive.css' %}" rel="stylesheet" media="screen">
+{% endblock %}
+
+{% block content %}
+
+<h4>Insert ligand name or ligand id</h4>
+
+<p> This is a placeholder text for future improvement.</p>
+
+{% endblock %}

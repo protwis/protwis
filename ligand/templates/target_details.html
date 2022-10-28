@@ -56,27 +56,6 @@
         border-width: 1px;
         padding: 3px;
     }
-    /*Structure preview in tooltip*/
-    pre {
-        display: block;
-        font: 100% "Courier New", Courier, monospace;
-        padding: 10px;
-        border: 1px solid #bae2f0;
-        background: #e3f4f9;
-        margin: .5em 0;
-        overflow: auto;
-        width: 800px;
-    }
-    #struct {
-        display: none;
-        position: absolute;
-        z-index: 100;
-        border: 1px;
-        background-color: white;
-        border-style: solid;
-        border-width: 1px;
-        padding: 3px;
-    }
     .scroll-container {
         /*max-width: 200px;*/
         overflow-x: scroll;
@@ -591,8 +570,8 @@
   <h3>Ligand source activities (1 row/activity)</h3>
 
   <ul class="nav nav-tabs">
-    <li class="nav-item">
-      <a class="nav-link active" data-toggle="tab" href="#potency">Potency</a>
+    <li class="nav-item active">
+      <a class="nav-link" data-toggle="tab" href="#potency">Potency</a>
     </li>
     <li class="nav-item">
       <a class="nav-link" data-toggle="tab" href="#affinity">Affinity</a>
@@ -652,7 +631,7 @@
                       <th style="text-align:left">Reference<br \>ligand</th>
 
                       <th style="border-left: 1px solid black;text-align:left" class="general-th">Fold selectivity<br \>(Potency)</th>
-                      <th style="text-align:left">Assay count<br \>(Potency)</th>
+                      <th style="text-align:left"># tested GPCRs<br \>(Potency)</th>
 
                       <th style="text-align:left">Species</th>
                       <th style="border-left: 1px solid black;text-align:left" class="activity-th">p-value<br />(-log)</th>
@@ -757,7 +736,7 @@
                     <th style="text-align:left">Reference<br \>ligand</th>
 
                     <th style="border-left: 1px solid black;text-align:left" class="general-th">Fold selectivity<br \>(Affinity)</th>
-                    <th style="text-align:left">Assay count<br \>(Affinity)</th>
+                    <th style="text-align:left"># tested GPCRs<br \>(Affinity)</th>
 
                     <th style="text-align:left">Species</th>
                     <th style="border-left: 1px solid black;text-align:left" class="activity-th">p-value<br />(-log)</th>
@@ -876,7 +855,7 @@
                    <th style="text-align:left">Reference<br \>ligand</th>
 
                    <th style="border-left: 1px solid black; text-align:left">Fold selectivity<br \>(Potency)</th>
-                   <th style="text-align:left">Assay count<br \>(Potency)</th>
+                   <th style="text-align:left"># tested GPCRs<br \>(Potency)</th>
 
                    <th style="text-align:left">Species</th>
                    <th style="border-left: 1px solid black; text-align:left">#Vendors</th>
@@ -983,7 +962,7 @@
                 <th style="text-align:left">Reference<br \>ligand</th>
 
                 <th style="border-left: 1px solid black; text-align:left">Fold selectivity<br \>(Affinity)</th>
-                <th style="text-align:left">Assay count<br \>(Affinity)</th>
+                <th style="text-align:left"># tested GPCRs<br \>(Affinity)</th>
 
                 <th style="text-align:left">Species</th>
                 <th style="border-left: 1px solid black; text-align:left">#Vendors</th>

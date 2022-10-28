@@ -149,15 +149,15 @@
     <ul class="dropdown-menu" role="menu">
         <li class="nav-header disabled"><a>LIGANDS & BIOACTIVITIES</a></li>
         <li><a href="{{ hosts.gpcr }}/ligand/coverage">Ligand coverage</a></li>
-        <li><a href="{{ hosts.gpcr }}/ligand">Ligands (ChEMBL, GtP, Ki db)<a/></li>
-        <!-- <li class="dropdown-submenu">
+        <!-- <li><a href="{{ hosts.gpcr }}/ligand">Ligands (ChEMBL, GtP, Ki db)<a/></li> -->
+        <li class="dropdown-submenu">
             <a tabindex="0" href="#">Ligands (ChEMBL, GtP, Ki db)</a>
             <ul class="dropdown-menu">
-                <li><a href="{{ hosts.gpcr }}/ligand">Ligand (by receptor)<a/></li>
-                <li><a href="{{ hosts.gpcr }}/ligand_by_name">Ligand (by name/ID)</a></li>
-                <li><a href="{{ hosts.gpcr }}/ligand_by_structure">Ligands (by structure)</a></li>
+                <li><a href="{{ hosts.gpcr }}/ligand">Ligands (by receptor query)<a/></li>
+                <li><a href="{{ hosts.gpcr }}/ligand/ligand_by_name">Ligands (by ligand query)</a></li>
+                <!-- <li><a href="{{ hosts.gpcr }}/ligand/ligand_by_structure">Ligands (by structure)</a></li> -->
             </ul>
-        </li> -->
+        </li>
         <li class="divider"></li>
         <li class="nav-header disabled"><a>ENDOGENOUS LIGANDS</a></li>
         <li><a href="{{ hosts.gpcr }}/ligand/endogenousbrowser">Endogenous ligands (GtP)</a></li>
