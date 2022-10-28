@@ -103,8 +103,11 @@ class Command(BuildHumanProteins):
             # for i,source_file in enumerate(filenames):
             while count.value<len(filenames):
                 with lock:
-                    source_file = filenames[count.value]
-                    count.value +=1
+                    if count.value < len(filenames):
+                        source_file = filenames[count.value]
+                        count.value +=1
+                    else:
+                        continue
                 # if i<positions[0]: #continue if less than start
                 #     continue
                 # if positions[1]: #if end is non-false
