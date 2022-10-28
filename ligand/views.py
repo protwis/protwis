@@ -3,6 +3,7 @@ import itertools
 import json
 import re
 import time
+import math
 import pandas as pd
 import urllib
 
@@ -19,7 +20,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 from django.core.cache import cache
 
-from common.views import AbsReferenceSelectionTable, getReferenceTable, getLigandTable, getLigandCountTable
+from common.views import AbsReferenceSelectionTable, getReferenceTable, getLigandTable, getLigandCountTable, AbsTargetSelection
 from common.models import ReleaseNotes, WebResource, Publication
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from common.selection import Selection, SelectionItem
@@ -28,6 +29,39 @@ from ligand.functions import OnTheFly, AddPathwayData
 from protein.models import Protein, ProteinFamily
 from interaction.models import StructureLigandInteraction
 from mutation.models import MutationExperiment
+
+
+class LigandNameSelection(AbsTargetSelection):
+    # Left panel
+    step = 1
+    number_of_steps = 1
+    template_name = 'common/selection_ligand_name.html'
+    filters = False
+    import_export_box = False
+    target_input = False
+    psets = False
+    family_tree = False
+    type_of_selection = 'ligands'
+    selection_only_receptors = False
+    title = "Ligand search"
+    description = 'Search by ligand name, database ID (GPCRdb, GtP, ChEMBL) or structure (inchiKey, smiles).'
+
+    buttons = {
+        'continue' : {
+            'label' : 'Show ligand information',
+            'url' : '',
+            'color' : 'success',
+            }
+        }
+
+class LigandStructureSelection(TemplateView):
+
+    template_name = 'ligand_structure_selection.html'
+
+    def get_context_data(self, **kwargs):
+
+        context = super().get_context_data(**kwargs)
+        return context
 
 class LigandTargetSelection(AbsReferenceSelectionTable):
         step = 1
@@ -39,7 +73,9 @@ class LigandTargetSelection(AbsReferenceSelectionTable):
         ligand_js = True
 
         title = "SELECT A RECEPTOR with ligand assays"
-        description = 'Ligands come from the <a href="https://www.ebi.ac.uk/chembl/" target="_blank">ChEMBL</a>, <a href="https://www.guidetopharmacology.org/" target="_blank">Guide to Pharmacology</a> and <a href="https://pdsp.unc.edu/databases/pdsp.php" target="_blank">PDSP Ki</a> databases.' \
+        description = 'Ligands come from the <a href="https://www.ebi.ac.uk/chembl/" target="_blank">ChEMBL</a>,' \
+            + '<a href="https://www.guidetopharmacology.org/" target="_blank">Guide to Pharmacology</a>' \
+            + 'and <a href="https://pdsp.unc.edu/databases/pdsp.php" target="_blank">PDSP Ki</a> databases.' \
             + '\nSelect a receptor in the table (below).' \
             + '\n\nOnce you have selected your receptor, click a green button.'
 
@@ -166,8 +202,12 @@ def TargetDetails(mode, request, **kwargs):
             return redirect("ligand_selection")
 
         if cache_key != False and cache.has_key(cache_key):
-            ps = cache.get(cache_key)
+            result = cache.get(cache_key)
+            ligand_data_affinity = result['affinity_data']
+            ligand_data_potency = result['potency_data']
         else:
+            ligand_data_affinity = []
+            ligand_data_potency = []
             ps = ps.values('value_type',
                            'standard_relation',
                            'standard_activity_value',
@@ -189,7 +229,12 @@ def TargetDetails(mode, request, **kwargs):
                            'ligand__hacc',
                            'protein',
                            'publication__web_link__index',
-                           'publication__web_link__web_resource__url'
+                           'publication__web_link__web_resource__url',
+                           'affinity',
+                           'potency',
+                           'count_affinity_test',
+                           'count_potency_test',
+                           'reference_ligand'
                            ).annotate(num_targets=Count('protein__id', distinct=True))
 
             lig_ids = set([record['ligand__id'] for record in ps])
@@ -197,13 +242,18 @@ def TargetDetails(mode, request, **kwargs):
             vendors_dict = {entry[0]:entry[1] for entry in vendor_output}
 
             for record in ps:
+                record['assay_type'] = record['assay_type'] if record['assay_type'] != 'U' else 'N/A'
                 record['purchasability'] = vendors_dict[record['ligand__id']] if record['ligand__id'] in vendors_dict.keys() else 0
                 record['protein__entry_name'] = record['protein__entry_name'].split('_')[0].upper()
                 record['link'] = record['publication__web_link__web_resource__url'].replace('$index',record['publication__web_link__index']) if record['publication__web_link__web_resource__url'] != None else '#'
-
+                if record['assay_type'] == 'B':
+                    ligand_data_affinity.append(record)
+                elif record['assay_type'] == 'F':
+                    ligand_data_potency.append(record)
         context = {}
-        context['ligand_data'] = ps
-        cache.set(cache_key, ps, 60*60*24*7)
+        context['affinity_data'] = ligand_data_affinity
+        context['potency_data'] = ligand_data_potency
+        cache.set(cache_key, context, 60*60*24*7)
 
     elif mode == 'compact':
 
@@ -211,15 +261,17 @@ def TargetDetails(mode, request, **kwargs):
             prot_id = [x.item for x in selection.reference]
             cache_key = "lig_compact_protid_" + ",".join(prot_id)
             ps = AssayExperiment.objects.filter(protein__in=prot_id).prefetch_related('protein', 'ligand', 'ligand__ligand_type')
-                                                                                      # 'ligand__ids__web_resource',
-                                                                                      # 'ligand')
+                                                                                      # 'ligand__ids__web_resource',                                                                      # 'ligand')
         # if queryset is empty redirect to ligand browser
         if not ps:
             return redirect("ligand_selection")
 
         if cache_key != False and cache.has_key(cache_key):
-            ligand_data = cache.get(cache_key)
+            result = cache.get(cache_key)
+            ligand_data_affinity = result['affinity_data']
+            ligand_data_potency = result['potency_data']
         else:
+            result = {}
             img_setup_smiles = "https://cactus.nci.nih.gov/chemical/structure/{}/image"
             d = {}
 
@@ -232,8 +284,9 @@ def TargetDetails(mode, request, **kwargs):
             vendor_output = list(LigandVendorLink.objects.filter(ligand_id__in=lig_ids).values_list("ligand_id").annotate(Count('vendor_id', distinct=True)))
             vendors_dict = {entry[0]:entry[1] for entry in vendor_output}
 
-            ligand_data = []
-            assay_conversion = {'A': 'ADMET', 'B': 'Binding', 'F': 'Functional', 'U': 'Unclassified'}
+            ligand_data_affinity = []
+            ligand_data_potency = []
+            assay_conversion = {'A': 'ADMET', 'B': 'Binding', 'F': 'Functional', 'U': 'N/A'}
             for lig, records in d.items():
                 # links = lig.ids.all()
                 # chembl_id = [x for x in links if x.web_resource.slug == 'chembl_ligand'][0].index
@@ -245,8 +298,8 @@ def TargetDetails(mode, request, **kwargs):
 
                 purchasability = vendors_dict[lig.id] if lig.id in vendors_dict.keys() else 0
 
+                data_parsed = {}
                 for record in records:
-                    data_parsed = {}
                     assay = assay_conversion[record.assay_type]
                     if record.source not in data_parsed.keys():
                         data_parsed[record.source] = {}
@@ -260,9 +313,9 @@ def TargetDetails(mode, request, **kwargs):
                     else:
                         if record.source == 'Guide to Pharmacology':
                             data = [x for x in record.p_activity_ranges.split('|')]
-                            data_parsed[data_line.source][assay][record.value_type] += data
+                            data_parsed[record.source][assay][record.value_type] += data
                         else:
-                            data_parsed[data_line.source][assay][record.value_type].append(record.p_activity_value)
+                            data_parsed[record.source][assay][record.value_type].append(record.p_activity_value)
 
                 for source in data_parsed.keys():
                     for assay_type in data_parsed[source].keys():
@@ -273,33 +326,62 @@ def TargetDetails(mode, request, **kwargs):
                                 low_value = min(values)
                                 average_value = round(sum(values) / len(values),1)
                                 high_value = max(values)
-
-                            ligand_data.append({
-                                'lig_id': lig.id,
-                                'ligand_name': lig.name,
-                                'picture': picture,
-                                'protein_name': record.protein.entry_name.split('_')[0].upper(),
-                                'iuphar_name': record.protein.name,
-                                'species': record.protein.species.common_name,
-                                'record_count': len(records),
-                                'assay_type': assay_type,
-                                'purchasability': purchasability,
-                                'low_value': low_value,
-                                'average_value': average_value,
-                                'high_value': high_value,
-                                'value_type': value_type,
-                                'ligand_type': lig.ligand_type.name.replace('-',' ').capitalize(),
-                                'source': source,
-                                'smiles': lig.smiles,
-                                'mw': lig.mw,
-                                'rotatable_bonds': lig.rotatable_bonds,
-                                'hdon': lig.hdon,
-                                'hacc': lig.hacc,
-                                'logp': lig.logp,
-                            })
+                            print(assay_type)
+                            if assay_type == 'Binding': #Affinity
+                                ligand_data_affinity.append({
+                                    'lig_id': lig.id,
+                                    'ligand_name': lig.name,
+                                    'picture': picture,
+                                    'affinity': record.affinity,
+                                    'affinity_tested': record.count_affinity_test,
+                                    'species': record.protein.species.common_name,
+                                    'record_count': len(records),
+                                    'assay_type': assay_type,
+                                    'purchasability': purchasability,
+                                    'low_value': low_value,
+                                    'average_value': average_value,
+                                    'high_value': high_value,
+                                    'value_type': value_type,
+                                    'ligand_type': lig.ligand_type.name.replace('-',' ').capitalize(),
+                                    'source': source,
+                                    'smiles': lig.smiles,
+                                    'mw': lig.mw,
+                                    'rotatable_bonds': lig.rotatable_bonds,
+                                    'hdon': lig.hdon,
+                                    'hacc': lig.hacc,
+                                    'logp': lig.logp,
+                                    'reference': record.reference_ligand,
+                                })
+                            elif assay_type == 'Functional': #Potency
+                                ligand_data_potency.append({
+                                    'lig_id': lig.id,
+                                    'ligand_name': lig.name,
+                                    'picture': picture,
+                                    'potency': record.potency,
+                                    'potency_tested': record.count_potency_test,
+                                    'species': record.protein.species.common_name,
+                                    'record_count': len(records),
+                                    'assay_type': assay_type,
+                                    'purchasability': purchasability,
+                                    'low_value': low_value,
+                                    'average_value': average_value,
+                                    'high_value': high_value,
+                                    'value_type': value_type,
+                                    'ligand_type': lig.ligand_type.name.replace('-',' ').capitalize(),
+                                    'source': source,
+                                    'smiles': lig.smiles,
+                                    'mw': lig.mw,
+                                    'rotatable_bonds': lig.rotatable_bonds,
+                                    'hdon': lig.hdon,
+                                    'hacc': lig.hacc,
+                                    'logp': lig.logp,
+                                    'reference': record.reference_ligand,
+                                })
         context = {}
-        context['ligand_data'] = ligand_data
-        cache.set(cache_key, ligand_data, 60*60*24*7)
+        context['potency_data'] = ligand_data_potency
+        context['affinity_data'] = ligand_data_affinity
+        cache.set(cache_key, context, 60*60*24*7)
+        print(cache)
     context['mode'] = mode
     return render(request, 'target_details.html', context)
 
@@ -373,7 +455,15 @@ class BiasedSignallingSelection(AbsReferenceSelectionTable):
     import_export_box = False
     subtype = False
     pathway = False
-    pathfinder = {'EmaxRankOrder': {'Description': 'The next page shows plots for the ligand bias rank order ΔΔLog(Emax/EC50) by transducer or effector family across publications.' \
+                  ####NEW
+    pathfinder = {'BiasRankOrder': {'Description': 'The next page shows plots for the ligand bias rank order by transducer or effector family across publications.' \
+                                                    + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.' \
+                                                    + '\n<b>*</b>Biased ligands have a bias factor ≥ 5.',
+                                    'Continue': "submitSelection('/biased_signalling/bias_rankorder');",
+                                    'Pathway': "submitSelection('/biased_signalling/bias_rankorder_path_bias');",
+                                    'Biased': "submitSelection('/biased_signalling/userselectionbiased_bias_rank_order');"},
+                  ####END NEW
+                  'EmaxRankOrder': {'Description': 'The next page shows plots for the ligand bias rank order ΔΔLog(Emax/EC50) by transducer or effector family across publications.' \
                                                     + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.' \
                                                     + '\n<b>*</b>Biased ligands have a bias factor ≥ 5.',
                                     'Continue': "submitSelection('/biased_signalling/emax_rankorder');",
@@ -397,6 +487,14 @@ class BiasedSignallingSelection(AbsReferenceSelectionTable):
                                      'Continue': "submitSelection('/biased_signalling/tau_path_profiles');",
                                      'Pathway': "submitSelection('/biased_signalling/tau_path_profiles_path_bias');",
                                      'Biased': "submitSelection('/biased_signalling/userselectionbiased_tau_path_profile');"},
+                  ####NEW
+                  'BiasRankOrderSubtype': {'Description': 'The next page shows plots for the ligand bias rank order by transducer or effector family across publications.' \
+                                                            + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.' \
+                                                            + '\n<b>*</b>Biased ligands have a bias factor ≥ 5.',
+                                           'Continue': "submitSelection('/biased_signalling/subtype_bias_rankorder');",
+                                           'Pathway': "submitSelection('/biased_signalling/subtype_bias_rankorder_path_bias');",
+                                           'Biased': "submitSelection('/biased_signalling/userselectionbiasedsubtype_bias_rank_order');"},
+                  ####END NEW
                   'EmaxRankOrderSubtype': {'Description': 'The next page shows plots for the ligand bias rank order ΔΔLog(Emax/EC50) by transducer or effector family across publications.' \
                                                             + '\nPhysiology-bias, pathway-bias and benchmark-bias is explained in the article <a href="https://bpspubs.onlinelibrary.wiley.com/doi/abs/10.1111/bph.15811" target="_blank">Community Guidelines for GPCR Ligand Bias</a>.' \
                                                             + '\n<b>*</b>Biased ligands have a bias factor ≥ 5.',
@@ -532,6 +630,8 @@ class UserBiased(AbsReferenceSelectionTable):
     #Biased Effector Family Browser (Ligand Selection)
     'Browser': "submitSelection('/biased_signalling/userbiased');",
     #Biased Effector Family Emax/EC50 Rank Order (Ligand Selection)
+    'BiasRankOrder': "submitSelection('/biased_signalling/userbiased_bias_rank_order');",
+    #Biased Effector Family Emax/EC50 Rank Order (Ligand Selection)
     'EmaxRankOrder': "submitSelection('/biased_signalling/userbiased_emax_rank_order');",
     #Biased Effector Family Tau/KA Rank Order (Ligand Selection)
     'TauRankOrder': "submitSelection('/biased_signalling/userbiased_tau_rank_order');",
@@ -541,6 +641,8 @@ class UserBiased(AbsReferenceSelectionTable):
     'TauPathProfile': "submitSelection('/biased_signalling/userbiased_tau_path_profile');",
     #Biased Effector Subtype Browser (Ligand Selection)
     'BrowserSubtype': "submitSelection('/biased_signalling/userbiasedsubtypes');",
+    #Biased Effector Subtype Emax/EC50 Rank Order (Ligand Selection)
+    'BiasRankOrderSubtype': "submitSelection('/biased_signalling/userbiasedsubtypes_bias_rank_order');",
     #Biased Effector Subtype Emax/EC50 Rank Order (Ligand Selection)
     'EmaxRankOrderSubtype': "submitSelection('/biased_signalling/userbiasedsubtypes_emax_rank_order');",
     #Biased Effector Subtype Tau/KA Rank Order (Ligand Selection)
@@ -597,14 +699,15 @@ class BiasedSignallingOnTheFlyCalculation(TemplateView):
     user = False
 
     @staticmethod
-    def jitter_tooltip(page, pathway, ligand, value, headers, prefix='', small_data=None, large_data=None, small_ref=None):
+    def jitter_tooltip(page, pathway, ligand, value, headers, prefix='', small_data=None, large_data=None, small_ref=None, double_path=None):
         #small and large data has to structured
         #small --> pathway/value/value
         #large --> pathway1/delta/value/value pathway2/delta/value/value
         ref_small = ''
         small = ''
         large = ''
-        head = "<b>Compound Name:</b> " + str(ligand) + \
+        double_data = ''
+        head = "<b>Ligand tested for bias:</b> " + str(ligand) + \
                "<br><b>Plotted Value:</b> " + str(value) + \
                "<hr class='solid'>"
         if small_data:
@@ -637,28 +740,80 @@ class BiasedSignallingOnTheFlyCalculation(TemplateView):
                          "      </tr>" + \
                          "</table>"
         if large_data:
-            #large table showing also Δ data
-            large =  "<table>" + \
-                     "      <tr>" + \
-                     "        <th>" + str(ligand) + "</th>" + \
-                     "        <th>" + prefix + "Log(" + headers[0] + "/" + headers[1] + ") </th>" + \
-                     "        <th>" + headers[0] + "</th>" + \
-                     "        <th>" + headers[1] + "</th>" + \
-                     "      </tr>" + \
-                     "      <tr>" + \
-                     "        <td>" + str(large_data[0]) + "</td>" + \
-                     "        <td>" + str(large_data[1]) + "</td>" + \
-                     "        <td>" + str(large_data[2]) + "</td>" + \
-                     "        <td>" + str(large_data[3]) + "</td>" + \
-                     "      </tr>" + \
-                     "      <tr>" + \
-                     "        <td>" + str(large_data[4]) + "</td>" + \
-                     "        <td>" + str(large_data[5]) + "</td>" + \
-                     "        <td>" + str(large_data[6]) + "</td>" + \
-                     "        <td>" + str(large_data[7]) + "</td>" + \
-                     "      </tr>" + \
-                     "</table>" + \
+            if pathway:
+                #large table showing also Δ data
+                large =  "<table>" + \
+                         "      <tr>" + \
+                         "        <th>" + str(ligand) + "</th>" + \
+                         "        <th>" + prefix + "Log(" + headers[0] + "/" + headers[1] + ") </th>" + \
+                         "        <th>" + headers[0] + "</th>" + \
+                         "        <th>" + headers[1] + "</th>" + \
+                         "      </tr>" + \
+                         "      <tr>" + \
+                         "        <td>" + str(large_data[0]) + "</td>" + \
+                         "        <td>" + str(large_data[1]) + "</td>" + \
+                         "        <td>" + str(large_data[2]) + "</td>" + \
+                         "        <td>" + str(large_data[3]) + "</td>" + \
+                         "      </tr>" + \
+                         "      <tr>" + \
+                         "        <td>" + str(large_data[4]) + "</td>" + \
+                         "        <td>" + str(large_data[5]) + "</td>" + \
+                         "        <td>" + str(large_data[6]) + "</td>" + \
+                         "        <td>" + str(large_data[7]) + "</td>" + \
+                         "      </tr>" + \
+                         "</table>" + \
+                         "<hr class='solid'>"
+            else:
+                large =  "<table>" + \
+                         "      <tr>" + \
+                         "        <th>" + str(ligand) + "</th>" + \
+                         "        <th>" + prefix + "Log(" + headers[0] + "/" + headers[1] + ") </th>" + \
+                         "        <th>" + "Log(" + headers[0] + "/" + headers[1] + ") </th>" + \
+                         "        <th width='15%'>" + headers[0] + "</th>" + \
+                         "        <th width='15%'>" + headers[1] + "</th>" + \
+                         "      </tr>" + \
+                         "      <tr>" + \
+                         "        <td>" + str(large_data[0]) + "</td>" + \
+                         "        <td>" + str(large_data[1]) + "</td>" + \
+                         "        <td>" + str(large_data[8]) + "</td>" + \
+                         "        <td>" + str(large_data[2]) + "</td>" + \
+                         "        <td>" + str(large_data[3]) + "</td>" + \
+                         "      </tr>" + \
+                         "      <tr>" + \
+                         "        <td>" + str(large_data[4]) + "</td>" + \
+                         "        <td>" + str(large_data[5]) + "</td>" + \
+                         "        <td>" + str(large_data[9]) + "</td>" + \
+                         "        <td>" + str(large_data[6]) + "</td>" + \
+                         "        <td>" + str(large_data[7]) + "</td>" + \
+                         "      </tr>" + \
+                         "</table>" + \
+                         "<hr class='solid'>"
+        if double_path:
+            ref_lig = list(double_path)[0]
+            paths = [p for p in double_path[ref_lig]]
+            if len(str(double_path[ref_lig][paths[1]][0])) > 6:
+                double_path[ref_lig][paths[1]][0] = str(double_path[ref_lig][paths[1]][0])[:3] + str(double_path[ref_lig][paths[1]][0])[-4:]
+            if len(str(double_path[ref_lig][paths[0]][0])) > 6:
+                double_path[ref_lig][paths[0]][0] = str(double_path[ref_lig][paths[0]][0])[:3] + str(double_path[ref_lig][paths[0]][0])[-4:]
+            double_data =    "<table>" + \
+                             "      <tr>" + \
+                             "        <th>" + str(ref_lig) + "</th>" + \
+                             "        <th width='15%'>Emax</th>" + \
+                             "        <th width='15%'>EC50</th>" + \
+                             "      </tr>" + \
+                             "      <tr>" + \
+                             "        <td>" + str(paths[0]) + "</td>" + \
+                             "        <td>" + str(double_path[ref_lig][paths[0]][1]) + "</td>" + \
+                             "        <td>" + str(double_path[ref_lig][paths[0]][0]) + "</td>" + \
+                             "      </tr>" + \
+                             "      <tr>" + \
+                             "        <td>" + str(paths[1]) + "</td>" + \
+                             "        <td>" + str(double_path[ref_lig][paths[1]][1]) + "</td>" + \
+                             "        <td>" + str(double_path[ref_lig][paths[1]][0]) + "</td>" + \
+                             "      </tr>" + \
+                             "</table>" + \
                      "<hr class='solid'>"
+
 
         if pathway:
             #no reference values
@@ -671,7 +826,7 @@ class BiasedSignallingOnTheFlyCalculation(TemplateView):
         else:
             #reference values required
             if page == "rankorder":
-                tip = head + large + small
+                tip = head + large + double_data
                 #dot plots with reference values
             else:
                 tip = head + small + ref_small
@@ -744,11 +899,19 @@ class BiasedSignallingOnTheFlyCalculation(TemplateView):
         data = OnTheFly(int(receptor), self.label, subtype=self.subtype, pathway=self.pathway, user=self.user, balanced=self.balanced)
         #### added code
         flat_data = {}
+        reference_data = {}
         for key, value in data.items():
             for row_key, data_dict in value.items():
                 #filtering out non compared
                 if (len(data_dict) > 33) and ('Pathway Rank' in data_dict.keys()):
                     flat_data[row_key] = data_dict
+                else:
+                    if 'Reference_ligand' not in data_dict.keys():
+                        if data_dict['doi'] not in reference_data.keys():
+                            reference_data[data_dict['doi']] = {}
+                        if data_dict['ligand_name'] not in reference_data[data_dict['doi']].keys():
+                            reference_data[data_dict['doi']][data_dict['ligand_name']] = {}
+                        reference_data[data_dict['doi']][data_dict['ligand_name']][data_dict['primary_effector_family']] = [data_dict['EC50'], data_dict['Emax']]
         ####
         upgrade_value = ["High activity", "High activity (Potency and Emax)", "Full agonism"]
         downgrade_value = ["Low activity", "No activity", "Inverse agonism/antagonism"]
@@ -779,6 +942,11 @@ class BiasedSignallingOnTheFlyCalculation(TemplateView):
 
         for row in flat_data:
             result = flat_data[row]
+            if not self.pathway:
+                double_path = reference_data[result['doi']]
+            else:
+                double_path = None
+
             try:
                 reference_ligand = result['Reference_ligand']
             except KeyError:
@@ -827,7 +995,7 @@ class BiasedSignallingOnTheFlyCalculation(TemplateView):
                 else:
                     reference_emax_tau = 'NA'
                     reference_EC50_ka = 'NA'
-            else:
+            elif self.label == 'tau':
                 try:
                     single_delta = result[delta_tk_key]
                 except KeyError:
@@ -843,6 +1011,32 @@ class BiasedSignallingOnTheFlyCalculation(TemplateView):
                 components = ['Tau', 'KA']
                 reference_emax_tau = "NA" #need to be updated IF datacolumn for TAU will be added
                 reference_EC50_ka = "NA"  #need to be updated IF datacolumn for KA will be added
+            else:   #### label = bias
+                try:
+                    single_delta = result[delta_ee_key]
+                except KeyError:
+                    single_delta = None
+                try:
+                    double_delta = result['Bias factor'] if result['Bias factor'] is not None else 'Full Bias'
+                except KeyError:
+                    double_delta = None
+                emax_tau = result["Emax"]
+                try:
+                    EC50_ka = '{:0.2e}'.format(result["EC50"])
+                except TypeError:
+                    EC50_ka = result["EC50"]
+                EC50_sign = result['EC50_sign'] #Remember these parameters for additional info
+                Emax_sign = result['Emax_sign'] #Remember these parameters for additional info
+                components = ['Emax', 'EC50']
+                if set(['Reference_Emax', 'Reference_EC50']).issubset(set(result.keys())):
+                    reference_emax_tau = result['Reference_Emax']
+                    try:
+                        reference_EC50_ka = '{:0.2e}'.format(result['Reference_EC50'])
+                    except TypeError:
+                        reference_EC50_ka = result['Reference_EC50']
+                else:
+                    reference_emax_tau = 'NA'
+                    reference_EC50_ka = 'NA'
 
             #fixing ligand name (hash hash baby)
             lig_name = result["ligand_name"]
@@ -868,6 +1062,10 @@ class BiasedSignallingOnTheFlyCalculation(TemplateView):
                 shortAuthors = result['authors'].split(',')[0] + ', et al.'
                 jitterAuthors = 'openTS ' + shortAuthors + ' closeTS openTS ' + journal_name + ' closeTS openTS (' + str(result['pub_year']) + ') closeTS'
                 labels_dict[jitterAuthors] = shortAuthors
+
+            if not self.pathway:
+                if jitterAuthors not in reference_data.keys():
+                    reference_data[jitterAuthors] = reference_data[result['doi']]
 
             list_of_ligands.append(tuple((lig_name, hashed_lig_name)))
             list_of_publications.append(authors)
@@ -916,9 +1114,11 @@ class BiasedSignallingOnTheFlyCalculation(TemplateView):
                 jitterDict[jitterAuthors][lig_name]["Emax_Tau"] = emax_tau
                 jitterDict[jitterAuthors][lig_name]["EC50_KA"] = EC50_ka
 
+
             tooltip_info = BiasedSignallingOnTheFlyCalculation.jitter_tooltip(self.page, self.pathway, lig_name, value, components,
                                                           small_data=[result['primary_effector_family'], emax_tau, EC50_ka, lig_name],
-                                                          small_ref=[reference_path, reference_emax_tau, reference_EC50_ka, reference_ligand])
+                                                          small_ref=[reference_path, reference_emax_tau, reference_EC50_ka, reference_ligand],
+                                                          double_path=double_path)
 
             # initialization of the dictionary for new publication
             if result['doi'] not in full_data.keys():
@@ -968,9 +1168,10 @@ class BiasedSignallingOnTheFlyCalculation(TemplateView):
                                              "tooltip": tooltip_info})
                     SpiderOptions[authors][hashed_lig_name]["Data"][0].append({'axis':result['primary_effector_family'],
                                                                                'value':value})
-
         for item in full_data.keys():
             vals = []
+            if not self.pathway:
+                double_path = reference_data[item]
             for name in full_data[item]["Data"]:
                 to_fix = [subdict['value'][0] for subdict in name['PathwaysData']]
                 vals = vals + to_fix
@@ -986,7 +1187,8 @@ class BiasedSignallingOnTheFlyCalculation(TemplateView):
                             name["PathwaysData"][i]["value"] = [MAX,"ARTIFICIAL"]
                             name["PathwaysData"][i]["tooltip"] = BiasedSignallingOnTheFlyCalculation.jitter_tooltip(self.page, self.pathway, lig_name, value, components,
                                                                                                 small_data=[result['primary_effector_family'], emax_tau, 'High', lig_name],
-                                                                                                small_ref=[reference_path, reference_emax_tau, reference_EC50_ka, reference_ligand])
+                                                                                                small_ref=[reference_path, reference_emax_tau, reference_EC50_ka, reference_ligand],
+                                                                                                double_path=double_path)
                     except ValueError:
                         continue
                 if quality in downgrade_value:
@@ -995,7 +1197,8 @@ class BiasedSignallingOnTheFlyCalculation(TemplateView):
                             name["PathwaysData"][i]["value"] = [MIN,"ARTIFICIAL"]
                             name["PathwaysData"][i]["tooltip"] = BiasedSignallingOnTheFlyCalculation.jitter_tooltip(self.page, self.pathway, lig_name, value, components,
                                                                                                 small_data=[result['primary_effector_family'], emax_tau, 'Low', lig_name],
-                                                                                                small_ref=[reference_path, reference_emax_tau, reference_EC50_ka, reference_ligand])
+                                                                                                small_ref=[reference_path, reference_emax_tau, reference_EC50_ka, reference_ligand],
+                                                                                                double_path=double_path)
                     except ValueError:
                         continue
 
@@ -1032,20 +1235,34 @@ class BiasedSignallingOnTheFlyCalculation(TemplateView):
         for pub in jitterDict.keys():
             for ligand in jitterDict[pub]:
                 try:
+                    log_first = None
+                    log_second = None
                     if ligand not in Colors.keys():
                         color = '#%02x%02x%02x' % (BiasedSignallingOnTheFlyCalculation.create_rgb_color(), BiasedSignallingOnTheFlyCalculation.create_rgb_color(), BiasedSignallingOnTheFlyCalculation.create_rgb_color())
                         Colors[ligand] = color
                     little = [reference_path, reference_emax_tau, reference_EC50_ka, reference_ligand]
+                    if not self.pathway:
+                        double_path = reference_data[pub]
+                        try:
+                            log_first = round(math.log((jitterDict[pub][ligand]['Emax_Tau']/float(jitterDict[pub][ligand]['EC50_KA'])),10),2)
+                        except TypeError:
+                            log_first = '-'
+                        try:
+                            log_second = round(math.log((jitterDict[pub][ligand]['2nd_Pathway_emax_tau']/float(jitterDict[pub][ligand]['2nd_Pathway_EC50_KA'])),10),2)
+                        except TypeError:
+                            log_second = '-'
                     if self.subtype:
                         big = [sign_prot_conversion[jitterDict[pub][ligand]["signalling_prot"]], jitterDict[pub][ligand]['delta'], jitterDict[pub][ligand]['Emax_Tau'], jitterDict[pub][ligand]['EC50_KA'],
-                               sign_prot_conversion[jitterDict[pub][ligand]["signalling_prot"]], jitterDict[pub][ligand]['2nd_Pathway_delta'], jitterDict[pub][ligand]['2nd_Pathway_emax_tau'], jitterDict[pub][ligand]['2nd_Pathway_EC50_KA']]
+                               sign_prot_conversion[jitterDict[pub][ligand]["signalling_prot"]], jitterDict[pub][ligand]['2nd_Pathway_delta'], jitterDict[pub][ligand]['2nd_Pathway_emax_tau'], jitterDict[pub][ligand]['2nd_Pathway_EC50_KA'],
+                               log_first,log_second]
                     else:
                         big = [jitterDict[pub][ligand]["Pathway"], jitterDict[pub][ligand]['delta'], jitterDict[pub][ligand]['Emax_Tau'], jitterDict[pub][ligand]['EC50_KA'],
-                               jitterDict[pub][ligand]['2nd_Pathway'], jitterDict[pub][ligand]['2nd_Pathway_delta'], jitterDict[pub][ligand]['2nd_Pathway_emax_tau'], jitterDict[pub][ligand]['2nd_Pathway_EC50_KA']]
+                               jitterDict[pub][ligand]['2nd_Pathway'], jitterDict[pub][ligand]['2nd_Pathway_delta'], jitterDict[pub][ligand]['2nd_Pathway_emax_tau'], jitterDict[pub][ligand]['2nd_Pathway_EC50_KA'],
+                               log_first,log_second]
                     if (jitterDict[pub][ligand]['deltadelta'][1] == 'High Bias') or (jitterDict[pub][ligand]['deltadelta'][1] == 'Full Bias'):
-                        tooltip = BiasedSignallingOnTheFlyCalculation.jitter_tooltip(self.page, self.pathway, ligand, jitterDict[pub][ligand]['deltadelta'][1], components, prefix, small_data=little, large_data=big)
+                        tooltip = BiasedSignallingOnTheFlyCalculation.jitter_tooltip(self.page, self.pathway, ligand, jitterDict[pub][ligand]['deltadelta'][1], components, prefix, small_data=little, large_data=big, double_path=double_path)
                     else:
-                        tooltip = BiasedSignallingOnTheFlyCalculation.jitter_tooltip(self.page, self.pathway, ligand, jitterDict[pub][ligand]['deltadelta'][0], components, prefix, small_data=little, large_data=big)
+                        tooltip = BiasedSignallingOnTheFlyCalculation.jitter_tooltip(self.page, self.pathway, ligand, jitterDict[pub][ligand]['deltadelta'][0], components, prefix, small_data=little, large_data=big, double_path=double_path)
                     jitterPlot[jitterDict[pub][ligand]["Pathway"]].append([pub, jitterDict[pub][ligand]['deltadelta'][0], Colors[ligand], ligand, jitterDict[pub][ligand]['deltadelta'][1], tooltip, jitterDict[pub][ligand]['EC50_sign'], jitterDict[pub][ligand]['Emax_sign']])
                     jitterLegend[jitterDict[pub][ligand]["Pathway"]].append(tuple((ligand, jitterDict[pub][ligand]['deltadelta'][0])))
                 except KeyError:
@@ -1594,7 +1811,7 @@ class LigandInformationView(TemplateView):
         context = dict()
         structures = LigandInformationView.get_structure(ligand_data)
         ligand_data = LigandInformationView.process_ligand(ligand_data, endogenous_ligands)
-        assay_data = LigandInformationView.process_assay(assay_data)
+        assay_data_affinity, assay_data_potency = LigandInformationView.process_assay(assay_data)
         mutations = LigandInformationView.get_mutations(ligand_data)
         # if int(ligand_id) in endogenous_ligands:
         #     endo_data = list(Endogenous_GTP.objects.filter(ligand=ligand_id).prefetch_related(
@@ -1605,7 +1822,8 @@ class LigandInformationView(TemplateView):
         #     assay_data = assay_data + endo_values
         context.update({'structure': structures})
         context.update({'ligand': ligand_data})
-        context.update({'assay': assay_data})
+        context.update({'assay_affinity': assay_data_affinity})
+        context.update({'assay_potency': assay_data_potency})
         context.update({'mutations': mutations})
         return context
 
@@ -1671,19 +1889,31 @@ class LigandInformationView(TemplateView):
                 else:
                     return_dict[item]['data_type'][assay_type] = LigandInformationView.get_min_max_values(return_dict[item]['data_type'][assay_type])
     	#Unpacking
-        unpacked = dict()
+        unpacked_affinity = dict()
+        unpacked_potency = dict()
+        potency_values = ['pKB', 'pKb', 'pEC50', 'pA2', 'A2', 'Kb', 'KB', 'EC50', 'Potency', 'IC50', 'pIC50']
+        affinity_values = ['pKi', 'pKd', 'Ki', 'Kd']
         for key in return_dict.keys():
             for data_type in return_dict[key]['data_type'].keys():
                 label = '_'.join([key,data_type])
-                unpacked[label] = deepcopy(return_dict[key])
-                unpacked[label]['type'] = data_type if data_type.startswith('p') or data_type.startswith('P') or data_type == '-' else 'p'+data_type
-                unpacked[label]['min'] = return_dict[key]['data_type'][data_type][0]
-                unpacked[label]['avg'] = return_dict[key]['data_type'][data_type][1]
-                unpacked[label]['max'] = return_dict[key]['data_type'][data_type][2]
-                unpacked[label]['source'] = return_dict[key]['source']
-                unpacked[label].pop('data_type', None)
+                if data_type in potency_values:
+                    unpacked_potency[label] = deepcopy(return_dict[key])
+                    unpacked_potency[label]['type'] = data_type if data_type.startswith('p') or data_type.startswith('P') or data_type == '-' else 'p'+data_type
+                    unpacked_potency[label]['min'] = return_dict[key]['data_type'][data_type][0]
+                    unpacked_potency[label]['avg'] = return_dict[key]['data_type'][data_type][1]
+                    unpacked_potency[label]['max'] = return_dict[key]['data_type'][data_type][2]
+                    unpacked_potency[label]['source'] = return_dict[key]['source']
+                    unpacked_potency[label].pop('data_type', None)
+                elif data_type in affinity_values:
+                    unpacked_affinity[label] = deepcopy(return_dict[key])
+                    unpacked_affinity[label]['type'] = data_type if data_type.startswith('p') or data_type.startswith('P') or data_type == '-' else 'p'+data_type
+                    unpacked_affinity[label]['min'] = return_dict[key]['data_type'][data_type][0]
+                    unpacked_affinity[label]['avg'] = return_dict[key]['data_type'][data_type][1]
+                    unpacked_affinity[label]['max'] = return_dict[key]['data_type'][data_type][2]
+                    unpacked_affinity[label]['source'] = return_dict[key]['source']
+                    unpacked_affinity[label].pop('data_type', None)
 
-        return list(unpacked.values())
+        return list(unpacked_affinity.values()), list(unpacked_potency.values())
 
     @staticmethod
     def return_splitted_ranges(value):
@@ -1899,6 +2129,7 @@ class BiasPathways(TemplateView):
             temp['ligand'] = instance.ligand
             temp['rece'] = instance.chembl
             temp['chembl'] = instance.chembl
+            temp['effect_type'] = instance.effect_type
             temp['relevance'] = instance.relevance
             temp['signalling_protein'] = instance.signalling_protein
 
@@ -1906,8 +2137,8 @@ class BiasPathways(TemplateView):
                 temp['receptor'] = instance.receptor
                 temp['class'] = instance.receptor.family.parent.parent.parent.name.split(' ')[1]
                 temp['uniprot'] = instance.receptor.entry_short
-                temp['IUPHAR'] = instance.receptor.name.split(' ', 1)[
-                    0].strip()
+                temp['link'] = 'https://gpcrdb/protein/' + str(instance.receptor.entry_name)
+                temp['IUPHAR'] = instance.receptor.name.split(' ', 1)[0].strip()
             else:
                 temp['receptor'] = 'Error appeared'
             # at the moment, there is only 1 pathways for every biased_pathway
@@ -1970,7 +2201,7 @@ def CachedOTFBiasBrowsers(browser_type, user_ligand, balanced, request):
     keygen = protein_ids + user_ids
     cache_key = "OTFBROWSER_" + browser_type + "_" + hashlib.md5("_".join(keygen).encode('utf-8')).hexdigest()
     return_html = cache.get(cache_key)
-    # return_html = None #testing
+    return_html = None #testing
     if return_html == None:
         if user_ligand == False:
             if browser_type == "bias":
