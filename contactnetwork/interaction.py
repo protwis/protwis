@@ -110,9 +110,18 @@ class InteractingPair:
         # Add the interactions to the pair'
         bulk = []
         for i in self.get_interactions():
-            ni = Interaction(interaction_type=i.get_type(),specific_type=i.get_details(), interacting_pair=pair, atomname_residue1=i.atomname_residue1, atomname_residue2=i.atomname_residue2, interaction_level = i.get_level())
+            ni = Interaction(interaction_type=i.get_type(),specific_type=i.get_details(), interacting_pair=pair, atomname_residue1=i.atomname_residue1, atomname_residue2=i.atomname_residue2, interaction_level=i.get_level())
             bulk.append(ni)
         Interaction.objects.bulk_create(bulk)
+
+    def save_peptide_interactions(self, peptide):
+        pair, created = InteractingPeptideResiduePair.objects.get_or_create(peptide_amino_acid_three_letter=self.dbres2.three_letter, peptide_amino_acid=self.dbres2.amino_acid, peptide_sequence_number=self.dbres2.sequence_number,
+                                                                            peptide=peptide, receptor_residue=self.dbres1)
+        bulk = []
+        for i in self.get_interactions():
+            ip = InteractionPeptide(interacting_peptide_pair=pair, peptide_atom=i.atomname_residue2, receptor_atom=i.atomname_residue1, interaction_type=i.get_type(), specific_type=i.get_details(), interaction_level=i.get_level())
+            bulk.append(ip)
+        InteractionPeptide.objects.bulk_create(bulk)
 
     def ionic_interactions(self):
         # Only oppositely charged residues
