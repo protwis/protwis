@@ -180,7 +180,7 @@ def SelectionAutocomplete(request):
                                         species__in=(species_list),
                                         source__in=(protein_source_list)).exclude(family__slug__startswith=exclusion_slug).exclude(sequence_type__slug='consensus')[:10]
         elif type_of_selection == 'ligands':
-            ps = Ligand.objects.filter(Q(name__icontains=q) | Q(id__icontains=q) | Q(smiles__icontains=q))[:10]
+            ps = Ligand.objects.filter(Q(name__icontains=q) | Q(id__icontains=q) | Q(inchikey__contains=q) | Q(smiles__icontains=q))[:10]
             indexes = LigandID.objects.filter(index=q).values_list('ligand_id','ligand_id__name','web_resource_id__name')
         else:
             ps = Protein.objects.filter(Q(name__icontains=q) | Q(entry_name__icontains=q) | Q(family__name__icontains=q) | Q(accession=q),

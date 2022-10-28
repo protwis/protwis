@@ -43,8 +43,8 @@ class LigandNameSelection(AbsTargetSelection):
     family_tree = False
     type_of_selection = 'ligands'
     selection_only_receptors = False
-    title = "Ligand selection via name/ID"
-    description = 'Select a ligand by either its name or GPCRdb ID using the query searchbar.'
+    title = "Ligand search"
+    description = 'Search by ligand name, database ID (GPCRdb, GtP, ChEMBL) or structure (inchiKey, smiles).'
 
     buttons = {
         'continue' : {
@@ -53,6 +53,15 @@ class LigandNameSelection(AbsTargetSelection):
             'color' : 'success',
             }
         }
+
+class LigandStructureSelection(TemplateView):
+
+    template_name = 'ligand_structure_selection.html'
+
+    def get_context_data(self, **kwargs):
+
+        context = super().get_context_data(**kwargs)
+        return context
 
 class LigandTargetSelection(AbsReferenceSelectionTable):
         step = 1
