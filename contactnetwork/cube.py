@@ -34,7 +34,7 @@ def compute_interactions(pdb_name,save_to_db = False):
     classified = []
     classified_complex = []
     with open(os.sep.join([settings.DATA_DIR, 'residue_data', 'unnatural_amino_acids.yaml']), 'r') as f_yaml:
-        unnatural_amino_acids = yaml.safe_load(f_yaml, Loader=yaml.FullLoader)
+        unnatural_amino_acids = yaml.safe_load(f_yaml)
 
     # Ensure that the PDB name is lowercase
     pdb_name = pdb_name.lower()
