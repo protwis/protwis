@@ -1,10 +1,14 @@
-from Bio.PDB import Selection, PDBParser
+from django.conf import settings
+
+from Bio.PDB import Selection, PDBParser, Polypeptide
 from Bio.PDB.NeighborSearch import NeighborSearch
 
 from contactnetwork.interaction import *
 from contactnetwork.pdb import *
 from contactnetwork.models import *
 from contactnetwork.residue import is_aa
+from ligand.models import LigandPeptideStructure
+from residue.functions import DummyResidue
 from io import StringIO
 
 from protein.models import ProteinConformation
@@ -14,6 +18,8 @@ from structure.models import Structure, StructureExtraProteins
 from signprot.models import SignprotComplex
 
 import copy
+import yaml
+import os
 
 # Distance between residues in peptide
 NUM_SKIP_RESIDUES = 0
@@ -23,9 +29,12 @@ def compute_interactions(pdb_name,save_to_db = False):
     do_distances = False ## Distance calculation moved to build_structure_angles
     do_interactions = True
     do_complexes = True
+    do_peptide_ligand = True
     distances = []
     classified = []
     classified_complex = []
+    with open(os.sep.join([settings.DATA_DIR, 'residue_data', 'unnatural_amino_acids.yaml']), 'r') as f_yaml:
+        unnatural_amino_acids = yaml.safe_load(f_yaml)
 
     # Ensure that the PDB name is lowercase
     pdb_name = pdb_name.lower()
@@ -187,6 +196,47 @@ def compute_interactions(pdb_name,save_to_db = False):
             print("No protein conformation definition found for signaling protein of ", pdb_name)
 #            log = "No protein conformation definition found for signaling protein of " + pdb_name
 
+    if do_peptide_ligand:
+        ligands = LigandPeptideStructure.objects.filter(structure=struc)
+        if len(ligands)>0:
+            # Get all GPCR residue atoms based on preferred chain
+            gpcr_atom_list = [ atom for residue in Selection.unfold_entities(s[preferred_chain], 'R') if is_aa(residue) and residue.get_id()[1] in dbres \
+                            for atom in residue.get_atoms()]
+            ns_gpcr = NeighborSearch(gpcr_atom_list)
+
+            classified_ligand_complex = {}
+            for ligand in ligands:
+                pep_chain = ligand.chain
+
+                dbres_pep = {}
+                for res in s[pep_chain]:
+                    try:
+                        one_letter = Polypeptide.three_to_one(res.get_resname())
+                    except KeyError:
+                        if res.get_resname() in unnatural_amino_acids:
+                            one_letter = unnatural_amino_acids[res.get_resname()]
+                        else:
+                            print('WARNING: {} residue in structure {} is missing from unnatural amino acid definitions (data/protwis/gpcr/residue_data/unnatural_amino_acids.yaml)'.format(res, struc))
+                            continue
+
+                    res_obj = DummyResidue(res.get_id()[1], one_letter, res.get_resname())
+                    dbres_pep[res.get_id()[1]] = res_obj
+
+                pep_atom_list = [ atom for residue in Selection.unfold_entities(s[pep_chain], 'R') if residue.get_id()[1] in dbres_pep \
+                                    for atom in residue.get_atoms()]
+
+                ns_pep = NeighborSearch(pep_atom_list)
+
+                # For each GPCR atom perform the neighbor search on the signaling protein
+                all_neighbors = {(gpcr_atom.parent, match_res) for gpcr_atom in gpcr_atom_list
+                                for match_res in ns_pep.search(gpcr_atom.coord, 4.5, "R")}
+
+                # Find interactions
+                interactions = [InteractingPair(res_pair[0], res_pair[1], dbres[res_pair[0].id[1]], dbres_pep[res_pair[1].id[1]], struc) for res_pair in all_neighbors if res_pair[0].id[1] in dbres and res_pair[1].id[1] in dbres_pep ]
+
+                # Filter unclassified interactions
+                classified_ligand_complex[ligand] = [interaction for interaction in interactions if len(interaction.get_interactions()) > 0]
+
     if save_to_db:
 
         if do_interactions:
@@ -244,6 +294,11 @@ def compute_interactions(pdb_name,save_to_db = False):
         if do_complexes:
             for pair in classified_complex:
                 pair.save_into_database()
+
+        if do_peptide_ligand and len(ligands)>0:
+            for ligand in ligands:
+                for pair in classified_ligand_complex[ligand]:
+                    pair.save_peptide_interactions(ligand)
 
         # if do_distances:
         #     # Distance.objects.filter(structure=struc).all().delete()
