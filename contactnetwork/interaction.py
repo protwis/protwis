@@ -115,7 +115,7 @@ class InteractingPair:
         Interaction.objects.bulk_create(bulk)
 
     def save_peptide_interactions(self, peptide):
-        pair, created = InteractingPeptideResiduePair.objects.get_or_create(peptide_amino_acid_three_letter=self.dbres2.three_letter, peptide_amino_acid=self.dbres2.amino_acid, peptide_sequence_number=self.dbres2.sequence_number,
+        pair, _ = InteractingPeptideResiduePair.objects.get_or_create(peptide_amino_acid_three_letter=self.dbres2.three_letter, peptide_amino_acid=self.dbres2.amino_acid, peptide_sequence_number=self.dbres2.sequence_number,
                                                                             peptide=peptide, receptor_residue=self.dbres1)
         bulk = []
         for i in self.get_interactions():

@@ -1,5 +1,4 @@
 from structure.models import Structure
-from ligand.models import LigandPeptideStructure
 
 from django.db import models
 import numpy as np
