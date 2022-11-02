@@ -316,6 +316,8 @@ class Command(BaseBuild):
                         human_ortholog = Protein.objects.filter(entry_name='5ht5a_human')
                     elif entry_name.startswith('taar4_'):
                         human_ortholog = Protein.objects.filter(entry_name='taar2_human')
+                    elif entry_name in ['q764p5_letca','a0a1e1g6x5_takru','a0a1e1g6y2_danre','h2u5s9_takru','w5n9z3_lepoc','a0a1e1g6y8_oncmy','a0a0n9n9h8_danre','r9r6d2_oryla','f1nu85_chick','r9r6c6_oryla','w5j8f8_anoda','q8ji05_takru','q868g4_brabe','q95p33_cioin','q5sbp8_pladu','q1l4c8_utast','e7fee5_danre','a0a0k0ybe3_pladu']:
+                        human_ortholog = Protein.objects.filter(entry_name='opn5_human')
                     ###
                     if human_ortholog.exists():
                         human_ortholog = human_ortholog.get()
