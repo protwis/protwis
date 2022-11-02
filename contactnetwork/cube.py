@@ -151,18 +151,18 @@ def compute_interactions(pdb_name,save_to_db = False):
                 key =  res_1.get_parent().get_id()+str(res_1.get_id()[1]) + "_" + res_2.get_parent().get_id()+str(res_2.get_id()[1])
                 interaction_pairs[key] = pair
 
-            # Obtain list of all water molecules in the structure
-            water_list = { water for chain in s for residue in chain
-                            if residue.get_resname() == "HOH" for water in residue.get_atoms() }
-
-            # If waters are present calculate water-mediated interactions
-            if len(water_list) > 0:
-                ## Iterate water molecules over coupled and gpcr atom list
-                water_neighbors_gpcr = {(water, match_res) for water in water_list
-                                for match_res in ns_gpcr.search(water.coord, 3.5, "R")}
-
-                water_neighbors_sign = {(water, match_res) for water in water_list
-                                for match_res in ns_sign.search(water.coord, 3.5, "R")}
+            # # Obtain list of all water molecules in the structure
+            # water_list = { water for chain in s for residue in chain
+            #                 if residue.get_resname() == "HOH" for water in residue.get_atoms() }
+            #
+            # # If waters are present calculate water-mediated interactions
+            # if len(water_list) > 0:
+            #     ## Iterate water molecules over coupled and gpcr atom list
+            #     water_neighbors_gpcr = {(water, match_res) for water in water_list
+            #                     for match_res in ns_gpcr.search(water.coord, 3.5, "R")}
+            #
+            #     water_neighbors_sign = {(water, match_res) for water in water_list
+            #                     for match_res in ns_sign.search(water.coord, 3.5, "R")}
 
 
                 # TODO: DEBUG AND VERIFY this code as water-mediated interactions were present at this time
@@ -207,6 +207,11 @@ def compute_interactions(pdb_name,save_to_db = False):
             classified_ligand_complex = {}
             for ligand in ligands:
                 pep_chain = ligand.chain
+
+                # Peptide chain not resolved/modelled
+                if peptide == "":
+                    classified_ligand_complex[ligand] = []
+                    continue
 
                 dbres_pep = {}
                 for res in s[pep_chain]:
