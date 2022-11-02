@@ -209,7 +209,7 @@ def compute_interactions(pdb_name,save_to_db = False):
                 pep_chain = ligand.chain
 
                 # Peptide chain not resolved/modelled
-                if peptide == "":
+                if peptide.strip() == "":
                     classified_ligand_complex[ligand] = []
                     continue
 
