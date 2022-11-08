@@ -14,12 +14,13 @@ from structure.models import Structure, StructureExtraProteins
 from structure.assign_generic_numbers_gpcr import GenericNumbering
 from structure.sequence_parser import SequenceParser
 from api.serializers import (ProteinSerializer, ProteinFamilySerializer, SpeciesSerializer, ResidueSerializer,
-                             ResidueExtendedSerializer, StructureLigandInteractionSerializer,
+                             ResidueExtendedSerializer, StructureLigandInteractionSerializer, StructurePeptideLigandInteractionSerializer,
                              MutationSerializer, ReceptorListSerializer)
 from api.renderers import PDBRenderer
 from common.alignment import Alignment
 from common.definitions import AMINO_ACIDS, AMINO_ACID_GROUPS
 from drugs.models import Drugs
+from contactnetwork.models import InteractionPeptide
 
 from io import StringIO
 from Bio.PDB import PDBIO, parse_pdb_header
@@ -244,6 +245,7 @@ class StructureList(views.APIView):
 
         structures = structures.prefetch_related('protein_conformation__protein__parent__species', 'pdb_code',
             'protein_conformation__protein__parent__family', 'protein_conformation__protein__parent__species',
+            'protien_conformation__protein__parent__family__parent__parent__parent',
             'publication__web_link', 'publication__web_link__web_resource', 'structure_type',
             'structureligandinteraction_set__ligand',
             'structureligandinteraction_set__ligand__ligand_type',
@@ -263,6 +265,7 @@ class StructureList(views.APIView):
             structure_data = {
                 'pdb_code': structure.pdb_code.index,
                 'protein': structure.protein_conformation.protein.parent.entry_name,
+                'class': structure.protein_conformation.protein.parent.family.parent.parent.parent.name,
                 'family': structure.protein_conformation.protein.parent.family.slug,
                 'species': structure.protein_conformation.protein.parent.species.latin_name,
                 'preferred_chain': structure.preferred_chain,
@@ -525,7 +528,8 @@ class ProteinSimilaritySearchAlignment(views.APIView):
     Get a segment sequence alignment of two or more proteins ranked by similarity
     \n/alignment/similarity/{proteins}/{segments}/
     \n{proteins} is a comma separated list of protein identifiers, e.g. adrb2_human,5ht2a_human,cxcr4_human,
-    where the first protein is the query protein and the following the proteins to compare it to
+    where the first protein is the query protein and the following are compared to it. Now PDB IDs can also be 
+    used to align structure sequences with wild type sequences, e.g. adrb2_human,3SN6
     \n{segments} is a comma separated list of protein segment identifiers and/ or
     generic GPCRdb numbers, e.g. TM2,TM3,ECL2,4x50
     """
@@ -534,11 +538,14 @@ class ProteinSimilaritySearchAlignment(views.APIView):
         if proteins is not None:
             protein_list = proteins.split(",")
             # first in API should be reference
-            ps = Protein.objects.filter(sequence_type__slug='wt', entry_name__in=protein_list[1:])
-            reference = Protein.objects.filter(sequence_type__slug='wt', entry_name__in=[protein_list[0]])
+            reference = Protein.objects.filter(entry_name__iexact=protein_list[0])
+            q_list = Q()
+            for q in [Q(entry_name__iexact=p) for p in protein_list[1:]]:
+                q_list |= q
+            ps = Protein.objects.filter(q_list)
 
             # take the numbering scheme from the first protein
-            s_slug = Protein.objects.get(entry_name=protein_list[0]).residue_numbering_scheme_id
+            s_slug = reference[0].residue_numbering_scheme_id
 
             protein_family = ps[0].family.slug[:3]
 
@@ -620,13 +627,17 @@ class ProteinAlignment(views.APIView):
     """
     Get a full sequence alignment of two or more proteins
     \n/alignment/protein/{proteins}/
-    \n{proteins} is a comma separated list of protein identifiers, e.g. adrb2_human,5ht2a_human
+    \n{proteins} is a comma separated list of protein identifiers, e.g. adrb2_human,5ht2a_human. PDB IDs can also be 
+    used to align structure sequences with wild type sequences, e.g. adrb2_human,3SN6
     """
 
     def get(self, request, proteins=None, segments=None, statistics=False):
         if proteins is not None:
             protein_list = proteins.split(",")
-            ps = Protein.objects.filter(sequence_type__slug='wt', entry_name__in=protein_list)
+            q_list = Q()
+            for q in [Q(entry_name__iexact=p) for p in protein_list]:
+                q_list |= q
+            ps = Protein.objects.filter(q_list)
 
             # take the numbering scheme from the first protein
             #s_slug = Protein.objects.get(entry_name=protein_list[0]).residue_numbering_scheme_id
@@ -866,8 +877,30 @@ class StructureLigandInteractions(generics.ListAPIView):
         #queryset = queryset.exclude(interaction_type__type='hidden').order_by('fragment__residue__sequence_number')
         queryset = queryset.order_by('fragment__residue__sequence_number')
         slug = self.kwargs.get('pdb_code')
-        return queryset.filter(structure_ligand_pair__structure__pdb_code__index=slug,
+        return queryset.filter(structure_ligand_pair__structure__pdb_code__index__iexact=slug,
                                structure_ligand_pair__annotated=True)
+
+
+class StructurePeptideLigandInteractions(generics.ListAPIView):
+
+    """
+    Get a list of interactions between structure and peptide ligand
+    \n/structure/{pdb_code}/peptideinteraction/
+    \n{pdb_code} is a structure identifier from the Protein Data Bank, e.g. 5VBL
+    """
+    serializer_class = StructurePeptideLigandInteractionSerializer
+
+    def get_queryset(self):
+        queryset = InteractionPeptide.objects.all()
+        queryset = queryset.prefetch_related('interacting_peptide_pair__peptide__structure__pdb_code',
+                                             'interacting_peptide_pair__peptide',
+                                             'interacting_peptide_pair',
+                                             'interacting_peptide_pair__receptor_residue',
+                                             'interacting_peptide_pair__receptor_residue__display_generic_number',
+                                             )
+        queryset = queryset.distinct('interacting_peptide_pair__receptor_residue','interacting_peptide_pair__peptide_sequence_number','interaction_type').order_by('interacting_peptide_pair__peptide_sequence_number')
+        slug = self.kwargs.get('pdb_code')
+        return queryset.filter(interacting_peptide_pair__peptide__structure__pdb_code__index__iexact=slug)
 
 
 class MutantList(generics.ListAPIView):

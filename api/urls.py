@@ -8,8 +8,6 @@ excluded_apis = [
     url(r'^reference/', views.schema_view)]
 
 urlpatterns = excluded_apis + [
-    # url(r'^$', views.schema_view),
-    # url(r'^reference/', views.schema_view),
     url(r'^protein/accession/(?P<accession>[^/].+)/$', views.ProteinByAccessionDetail.as_view(),
         name='proteinbyaccession'),
     url(r'^protein/(?P<entry_name>[^/].+)/$', views.ProteinDetail.as_view(), name='protein-detail'),
@@ -67,6 +65,7 @@ urlpatterns = excluded_apis + [
         name='representative-structure-list-protein'),
     url(r'^structure/(?P<pdb_code>[^/]+)/$', views.StructureDetail.as_view(), name='structure-detail'),
     url(r'^structure/(?P<pdb_code>[^/]+)/interaction/$', views.StructureLigandInteractions.as_view(), name='interaction'),
+    url(r'^structure/(?P<pdb_code>[^/]+)/peptideinteraction/$', views.StructurePeptideLigandInteractions.as_view(), name='peptide-interaction'),
     url(r'^structure/template/(?P<entry_name>[^/]+)/$', views.StructureTemplate.as_view(),
         name='structuretemplate'),
     url(r'^structure/template/(?P<entry_name>[^/]+)/(?P<segments>[^/]+)/$', views.StructureTemplatePartial.as_view(),
