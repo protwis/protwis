@@ -335,7 +335,6 @@ class StructureList(views.APIView):
     def get_structures(self, pdb_code=None, representative=None):
         return Structure.objects.all()
 
-
 class RepresentativeStructureList(StructureList):
 
     """
@@ -370,6 +369,20 @@ class StructureDetail(StructureList):
     def get_structures(self, pdb_code=None, representative=None):
         return Structure.objects.filter(pdb_code__index=pdb_code)
 
+class StructureAccessionHuman(views.APIView):
+
+    """
+    Get a list of all (human) UniProt accession codes for which receptor types an experimental structure is available
+    \n/structure/accession_codes_human/
+    """
+
+    def get(self, request):
+        unique_slugs = list(Structure.objects.filter(protein_conformation__protein__family__slug__startswith="00")\
+            .order_by('protein_conformation__protein__family__slug').values_list('protein_conformation__protein__family__slug', flat=True).distinct())
+        accession_codes = list(Protein.objects.filter(family__slug__in=unique_slugs, sequence_type__slug='wt', species__latin_name='Homo sapiens')\
+                            .values_list('entry_name', flat=True))
+        accessions = [x.split("_")[0].upper() for x in accession_codes]
+        return Response(accessions)
 
 class FamilyAlignment(views.APIView):
 
