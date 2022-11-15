@@ -197,6 +197,9 @@ def compute_interactions(pdb_name,save_to_db = False):
             print("No protein conformation definition found for signaling protein of ", pdb_name)
 #            log = "No protein conformation definition found for signaling protein of " + pdb_name
 
+    # TODO for peptides:
+    # - support deviating atom names in unnatural AAs for detecting HB-donors and acceptors
+    # - support for terminal carboxyl (OXT) + amidation etc for ionic+hbond interactions
     if do_peptide_ligand:
         ligands = LigandPeptideStructure.objects.filter(structure=struc)
         if len(ligands)>0:
