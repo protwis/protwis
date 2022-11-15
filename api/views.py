@@ -4,7 +4,7 @@ from rest_framework.parsers import FileUploadParser
 from rest_framework.renderers import JSONRenderer
 from django.template.loader import render_to_string
 
-from django.db.models import Prefetch, Q
+from django.db.models import Prefetch, Q, Min, Count
 
 from interaction.models import ResidueFragmentInteraction
 from mutation.models import MutationRaw
@@ -528,7 +528,7 @@ class ProteinSimilaritySearchAlignment(views.APIView):
     Get a segment sequence alignment of two or more proteins ranked by similarity
     \n/alignment/similarity/{proteins}/{segments}/
     \n{proteins} is a comma separated list of protein identifiers, e.g. adrb2_human,5ht2a_human,cxcr4_human,
-    where the first protein is the query protein and the following are compared to it. Now PDB IDs can also be 
+    where the first protein is the query protein and the following are compared to it. Now PDB IDs can also be
     used to align structure sequences with wild type sequences, e.g. adrb2_human,3SN6
     \n{segments} is a comma separated list of protein segment identifiers and/ or
     generic GPCRdb numbers, e.g. TM2,TM3,ECL2,4x50
@@ -627,7 +627,7 @@ class ProteinAlignment(views.APIView):
     """
     Get a full sequence alignment of two or more proteins
     \n/alignment/protein/{proteins}/
-    \n{proteins} is a comma separated list of protein identifiers, e.g. adrb2_human,5ht2a_human. PDB IDs can also be 
+    \n{proteins} is a comma separated list of protein identifiers, e.g. adrb2_human,5ht2a_human. PDB IDs can also be
     used to align structure sequences with wild type sequences, e.g. adrb2_human,3SN6
     """
 
@@ -891,17 +891,24 @@ class StructurePeptideLigandInteractions(generics.ListAPIView):
     serializer_class = StructurePeptideLigandInteractionSerializer
 
     def get_queryset(self):
-        queryset = InteractionPeptide.objects.all()
-        queryset = queryset.prefetch_related('interacting_peptide_pair__peptide__structure__pdb_code',
-                                             'interacting_peptide_pair__peptide',
-                                             'interacting_peptide_pair',
-                                             'interacting_peptide_pair__receptor_residue',
-                                             'interacting_peptide_pair__receptor_residue__display_generic_number',
-                                             )
-        queryset = queryset.distinct('interacting_peptide_pair__receptor_residue','interacting_peptide_pair__peptide_sequence_number','interaction_type').order_by('interacting_peptide_pair__peptide_sequence_number')
-        slug = self.kwargs.get('pdb_code')
-        return queryset.filter(interacting_peptide_pair__peptide__structure__pdb_code__index__iexact=slug)
+        pdb_code = self.kwargs.get('pdb_code')
 
+        queryset = InteractionPeptide.objects.filter(interacting_peptide_pair__peptide__structure__pdb_code__index__iexact=pdb_code)
+        queryset = queryset.values('interacting_peptide_pair__peptide__structure__pdb_code__index',
+                            'interacting_peptide_pair__peptide__ligand__name',
+                            'interacting_peptide_pair__peptide__chain',
+                            'interacting_peptide_pair__peptide_amino_acid',
+                            'interacting_peptide_pair__peptide_amino_acid_three_letter',
+                            'interacting_peptide_pair__peptide_sequence_number',
+                            'interacting_peptide_pair__receptor_residue__amino_acid',
+                            'interacting_peptide_pair__receptor_residue__sequence_number',
+                            'interacting_peptide_pair__receptor_residue__display_generic_number__label',
+                            'interaction_type', 'interaction_level').distinct(
+                            ).annotate(
+                                interaction_count=Count('interaction_type')
+                            )
+
+        return queryset
 
 class MutantList(generics.ListAPIView):
 

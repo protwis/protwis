@@ -119,24 +119,18 @@ class StructureLigandInteractionSerializer(serializers.ModelSerializer):
 
 
 class StructurePeptideLigandInteractionSerializer(serializers.ModelSerializer):
-    pdb_code = serializers.ReadOnlyField(source='interacting_peptide_pair.peptide.structure.pdb_code.index')
-    ligand_name = serializers.ReadOnlyField(source='interacting_peptide_pair.peptide.ligand.name')
-    ligand_chain = serializers.ReadOnlyField(source='interacting_peptide_pair.peptide.chain')
-    peptide_amino_acid = serializers.ReadOnlyField(source='interacting_peptide_pair.peptide_amino_acid')
-    peptide_amino_acid_three_letter = serializers.ReadOnlyField(source='interacting_peptide_pair.peptide_amino_acid_three_letter')
-    peptide_residue_number = serializers.ReadOnlyField(source='interacting_peptide_pair.peptide_sequence_number')
-    receptor_amino_acid = serializers.ReadOnlyField(source='interacting_peptide_pair.receptor_residue.amino_acid')
-    receptor_residue_number = serializers.ReadOnlyField(source='interacting_peptide_pair.receptor_residue.sequence_number')
-    display_generic_number = serializers.ReadOnlyField(source='interacting_peptide_pair.receptor_residue.display_generic_number.label')
+    pdb_code = serializers.ReadOnlyField(source='interacting_peptide_pair__peptide__structure__pdb_code__index')
+    ligand_name = serializers.ReadOnlyField(source='interacting_peptide_pair__peptide__ligand__name')
+    ligand_chain = serializers.ReadOnlyField(source='interacting_peptide_pair__peptide__chain')
+    peptide_amino_acid = serializers.ReadOnlyField(source='interacting_peptide_pair__peptide_amino_acid')
+    peptide_amino_acid_three_letter = serializers.ReadOnlyField(source='interacting_peptide_pair__peptide_amino_acid_three_letter')
+    peptide_residue_number = serializers.ReadOnlyField(source='interacting_peptide_pair__peptide_sequence_number')
+    receptor_amino_acid = serializers.ReadOnlyField(source='interacting_peptide_pair__receptor_residue__amino_acid')
+    receptor_residue_number = serializers.ReadOnlyField(source='interacting_peptide_pair__receptor_residue__sequence_number')
+    display_generic_number = serializers.ReadOnlyField(source='interacting_peptide_pair__receptor_residue__display_generic_number.label')
     interaction_type = serializers.ReadOnlyField()
     interaction_level = serializers.ReadOnlyField()
-    interaction_count = serializers.SerializerMethodField()
-
-    def get_interaction_count(self, obj):
-        return InteractionPeptide.objects.filter(interacting_peptide_pair__peptide__structure__pdb_code__index=obj.interacting_peptide_pair.peptide.structure.pdb_code.index, 
-                                                 interacting_peptide_pair__peptide_sequence_number=obj.interacting_peptide_pair.peptide_sequence_number,
-                                                 interacting_peptide_pair__receptor_residue__sequence_number=obj.interacting_peptide_pair.receptor_residue.sequence_number,
-                                                 interaction_type=obj.interaction_type).count()
+    interaction_count = serializers.ReadOnlyField()
 
     class Meta:
         model = InteractionPeptide
