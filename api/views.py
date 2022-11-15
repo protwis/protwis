@@ -868,17 +868,15 @@ class StructureLigandInteractions(generics.ListAPIView):
     serializer_class = StructureLigandInteractionSerializer
 
     def get_queryset(self):
-        queryset = ResidueFragmentInteraction.objects.all()
-        queryset = queryset.prefetch_related('structure_ligand_pair__structure__pdb_code',
-                                             'interaction_type',
-                                             'fragment__residue__generic_number',
-                                             'fragment__residue__display_generic_number',
-                                             )
-        #queryset = queryset.exclude(interaction_type__type='hidden').order_by('fragment__residue__sequence_number')
-        queryset = queryset.order_by('fragment__residue__sequence_number')
-        slug = self.kwargs.get('pdb_code')
-        return queryset.filter(structure_ligand_pair__structure__pdb_code__index__iexact=slug,
-                               structure_ligand_pair__annotated=True)
+        pdb_code = self.kwargs.get('pdb_code')
+
+        queryset = ResidueFragmentInteraction.objects.filter(structure_ligand_pair__structure__pdb_code__index__iexact=pdb_code,
+                                                             structure_ligand_pair__annotated=True).prefetch_related('structure_ligand_pair__structure__pdb_code',
+                                                             'interaction_type',
+                                                             'fragment__residue__generic_number',
+                                                             'fragment__residue__display_generic_number',
+                                                             ).order_by('fragment__residue__sequence_number')
+        return queryset
 
 
 class StructurePeptideLigandInteractions(generics.ListAPIView):
@@ -906,7 +904,7 @@ class StructurePeptideLigandInteractions(generics.ListAPIView):
                             'interaction_type', 'interaction_level').distinct(
                             ).annotate(
                                 interaction_count=Count('interaction_type')
-                            )
+                            ).order_by('interacting_peptide_pair__peptide_sequence_number','interacting_peptide_pair__receptor_residue__sequence_number')
 
         return queryset
 
