@@ -4,10 +4,13 @@ from django.conf import settings
 from django.contrib.staticfiles.storage import staticfiles_storage
 from django.views.generic.base import RedirectView
 
+from django.urls import path
+from django.views.decorators.cache import cache_page
+
 from home import views
 
 urlpatterns = [
-    url(r'^$', views.index, name='index'), 
+    url(r'^$', views.index, name='index'),
     url(
         r'^favicon.ico$',
         RedirectView.as_view(
@@ -15,5 +18,6 @@ urlpatterns = [
             permanent=False),
         name="favicon"
     ),
-    url(r'^citations', views.citations_json, name='citation')
+    url(r'^citations', views.citations_json, name='citation'),
+    url(r'^cite_gpcrdb', views.citeGPCRdb.as_view(), name='citation')
 ]
