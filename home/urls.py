@@ -3,10 +3,6 @@ from django.views.generic import TemplateView
 from django.conf import settings
 from django.contrib.staticfiles.storage import staticfiles_storage
 from django.views.generic.base import RedirectView
-
-from django.urls import path
-from django.views.decorators.cache import cache_page
-
 from home import views
 
 urlpatterns = [
