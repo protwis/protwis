@@ -35,6 +35,7 @@ def compute_interactions(pdb_name,save_to_db = False):
     classified_complex = []
     with open(os.sep.join([settings.DATA_DIR, 'residue_data', 'unnatural_amino_acids.yaml']), 'r') as f_yaml:
         unnatural_amino_acids = yaml.safe_load(f_yaml)
+        unnatural_amino_acids = {str(x):unnatural_amino_acids[x] for x in unnatural_amino_acids}
 
     # Ensure that the PDB name is lowercase
     pdb_name = pdb_name.lower()
@@ -196,6 +197,9 @@ def compute_interactions(pdb_name,save_to_db = False):
             print("No protein conformation definition found for signaling protein of ", pdb_name)
 #            log = "No protein conformation definition found for signaling protein of " + pdb_name
 
+    # TODO for peptides:
+    # - support deviating atom names in unnatural AAs for detecting HB-donors and acceptors
+    # - support for terminal carboxyl (OXT) + amidation etc for ionic+hbond interactions
     if do_peptide_ligand:
         ligands = LigandPeptideStructure.objects.filter(structure=struc)
         if len(ligands)>0:
