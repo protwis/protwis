@@ -9,6 +9,7 @@ from django.db.models import Prefetch, Q
 from interaction.models import ResidueFragmentInteraction
 from mutation.models import MutationRaw
 from protein.models import Protein, ProteinFamily, Species, ProteinSegment
+from ligand.models import LigandID
 from residue.models import Residue, ResidueGenericNumberEquivalent
 from structure.models import Structure, StructureExtraProteins
 from structure.assign_generic_numbers_gpcr import GenericNumbering
