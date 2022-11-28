@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from interaction.models import ResidueFragmentInteraction
-from ligand.models import Endogenous_GTP
+from ligand.models import Endogenous_GTP, LigandID
 from mutation.models import MutationRaw
 from protein.models import Protein, ProteinConformation, ProteinFamily, Species, ProteinSource, ProteinSegment
 from residue.models import Residue, ResidueNumberingScheme, ResidueGenericNumber
@@ -64,6 +64,11 @@ class SpeciesSerializer(serializers.ModelSerializer):
         model = Species
         fields = ('latin_name', 'common_name')
 
+class GuidetoPharmacologySerializer(serializers.ModelSerializer):
+    ligand_name = serializers.ReadOnlyField(source='ligand.name')
+    class Meta:
+        model = LigandID
+        fields = ('index', 'ligand_name')
 
 class ResidueNumberingSchemeSerializer(serializers.ModelSerializer):
     class Meta:

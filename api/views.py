@@ -15,7 +15,7 @@ from structure.assign_generic_numbers_gpcr import GenericNumbering
 from structure.sequence_parser import SequenceParser
 from api.serializers import (ProteinSerializer, ProteinFamilySerializer, SpeciesSerializer, ResidueSerializer,
                              ResidueExtendedSerializer, StructureLigandInteractionSerializer,
-                             MutationSerializer, ReceptorListSerializer)
+                             MutationSerializer, ReceptorListSerializer, GuidetoPharmacologySerializer)
 from api.renderers import PDBRenderer
 from common.alignment import Alignment
 from common.definitions import AMINO_ACIDS, AMINO_ACID_GROUPS
@@ -199,6 +199,15 @@ class SpeciesList(generics.ListAPIView):
     queryset = Species.objects.all()
     serializer_class = SpeciesSerializer
 
+class GtoPIDList(generics.ListAPIView):
+
+    """
+    Get a list of Guide to Pharmacology ligand IDs
+    \n/species/
+    """
+
+    queryset = LigandID.objects.filter(web_resource_id=6).prefetch_related('ligand')
+    serializer_class = GuidetoPharmacologySerializer
 
 class SpeciesDetail(generics.RetrieveAPIView):
 
