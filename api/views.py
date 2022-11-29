@@ -200,14 +200,14 @@ class SpeciesList(generics.ListAPIView):
     queryset = Species.objects.all()
     serializer_class = SpeciesSerializer
 
-class GtoPIDList(generics.ListAPIView):
+class GtPIDList(generics.ListAPIView):
 
     """
     Get a list of Guide to Pharmacology ligand IDs
-    \n/species/
+    \n/ligands/gtop_ids/
     """
 
-    queryset = LigandID.objects.filter(web_resource_id__slug="gtoplig").prefetch_related('ligand')
+    queryset = LigandID.objects.filter(web_resource_id__slug="gtoplig").values('index', 'ligand__name')
     serializer_class = GuidetoPharmacologySerializer
 
 class SpeciesDetail(generics.RetrieveAPIView):

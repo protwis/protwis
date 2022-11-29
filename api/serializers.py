@@ -65,10 +65,11 @@ class SpeciesSerializer(serializers.ModelSerializer):
         fields = ('latin_name', 'common_name')
 
 class GuidetoPharmacologySerializer(serializers.ModelSerializer):
-    ligand_name = serializers.ReadOnlyField(source='ligand.name')
+    gtp_ligand_id = serializers.ReadOnlyField(source='index')
+    ligand_name = serializers.ReadOnlyField(source='ligand__name')
     class Meta:
         model = LigandID
-        fields = ('index', 'ligand_name')
+        fields = ('gtp_ligand_id', 'ligand_name')
 
 class ResidueNumberingSchemeSerializer(serializers.ModelSerializer):
     class Meta:
