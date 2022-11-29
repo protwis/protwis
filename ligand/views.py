@@ -1805,7 +1805,7 @@ class LigandGtoPInfoView(TemplateView):
     def get_context_data(self, *args, **kwargs):
         context = super(LigandGtoPInfoView, self).get_context_data(**kwargs)
         ligand_id = self.kwargs['pk']
-        ligand_conversion = LigandID.objects.filter(index=ligand_id, web_resource_id=6).values_list('ligand_id')[0][0]
+        ligand_conversion = LigandID.objects.filter(index=ligand_id, web_resource_id__slug="gtoplig").values_list('ligand_id')[0][0]
         ligand_data = Ligand.objects.get(id=ligand_conversion)
         endogenous_ligands =  Endogenous_GTP.objects.all().values_list("ligand_id", flat=True)
         assay_data = list(AssayExperiment.objects.filter(ligand=ligand_id).prefetch_related(
