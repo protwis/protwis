@@ -505,18 +505,13 @@ class Command(BaseBuild):
                 elif r['protein'] not in missing_proteins:
 
                     try:
-                        print('trying')
-                        print(r['protein'])
                         r['protein'] = wrong_uniport_ids[r['protein']]
-                        print(r['protein'])
                         # real_uniprot = wrong_uniport_ids[r['protein']]
                         # protein=Protein.objects.get(entry_name=r['protein'])
                         protein=Protein.objects.get(entry_name=r['protein'])
                         # print('fetched with lookup table',r['protein'])
                     except:
                         # look for it as uniprot
-                        print('except')
-                        print(r['protein'])
                         protein=Protein.objects.filter(web_links__web_resource__slug='uniprot', web_links__index=r['protein'].upper())
                         if protein.exists():
                             protein=protein.get()

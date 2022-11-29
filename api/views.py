@@ -207,7 +207,7 @@ class GtoPIDList(generics.ListAPIView):
     \n/species/
     """
 
-    queryset = LigandID.objects.filter(web_resource_id=6).prefetch_related('ligand')
+    queryset = LigandID.objects.filter(web_resource_id__slug="gtoplig").prefetch_related('ligand')
     serializer_class = GuidetoPharmacologySerializer
 
 class SpeciesDetail(generics.RetrieveAPIView):
