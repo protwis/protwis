@@ -129,6 +129,15 @@ div.overhead_close {
 
 .glyphicon.glyphicon-info-sign {
   font-size: 15px;
+  color: #337ab7;
+}
+
+.glyphicon.glyphicon-book {
+  font-size: 15px;
+}
+
+.popover{
+    max-width: 50%;
 }
 
 .glyphicon.glyphicon-question-sign {

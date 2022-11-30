@@ -1,10 +1,14 @@
-from rest_framework import views, generics
+from rest_framework import views, generics, schemas
+from rest_framework.decorators import api_view, renderer_classes
 from rest_framework.response import Response
 from rest_framework.parsers import FileUploadParser
 from rest_framework.renderers import JSONRenderer
-from django.template.loader import render_to_string
 
-from django.db.models import Prefetch, Q
+from rest_framework_swagger.views import get_swagger_view
+from rest_framework_swagger.renderers import OpenAPIRenderer, SwaggerUIRenderer
+
+from django.template.loader import render_to_string
+from django.db.models import Prefetch, Q, Min, Count
 
 from interaction.models import ResidueFragmentInteraction
 from mutation.models import MutationRaw
@@ -15,12 +19,13 @@ from structure.models import Structure, StructureExtraProteins
 from structure.assign_generic_numbers_gpcr import GenericNumbering
 from structure.sequence_parser import SequenceParser
 from api.serializers import (ProteinSerializer, ProteinFamilySerializer, SpeciesSerializer, ResidueSerializer,
-                             ResidueExtendedSerializer, StructureLigandInteractionSerializer,
+                             ResidueExtendedSerializer, StructureLigandInteractionSerializer, StructurePeptideLigandInteractionSerializer,
                              MutationSerializer, ReceptorListSerializer, GuidetoPharmacologySerializer)
 from api.renderers import PDBRenderer
 from common.alignment import Alignment
 from common.definitions import AMINO_ACIDS, AMINO_ACID_GROUPS
 from drugs.models import Drugs
+from contactnetwork.models import InteractionPeptide
 
 from io import StringIO
 from Bio.PDB import PDBIO, parse_pdb_header
@@ -29,10 +34,15 @@ from collections import OrderedDict
 # FIXME add
 # getMutations
 # numberPDBfile
-from rest_framework.decorators import renderer_classes
-from rest_framework_swagger.views import get_swagger_view
 
-schema_view = get_swagger_view(title='GPCRdb API')
+class JSONOpenAPIRenderer(OpenAPIRenderer):
+    media_type = 'application/json'
+
+@api_view()
+@renderer_classes([SwaggerUIRenderer, OpenAPIRenderer, JSONOpenAPIRenderer])
+def schema_view(request):
+    generator = schemas.SchemaGenerator(title='GPCRdb API')
+    return Response(generator.get_schema(request=request))
 
 class ProteinDetail(generics.RetrieveAPIView):
 
@@ -254,6 +264,7 @@ class StructureList(views.APIView):
 
         structures = structures.prefetch_related('protein_conformation__protein__parent__species', 'pdb_code',
             'protein_conformation__protein__parent__family', 'protein_conformation__protein__parent__species',
+            'protein_conformation__protein__parent__family__parent__parent__parent',
             'publication__web_link', 'publication__web_link__web_resource', 'structure_type',
             'structureligandinteraction_set__ligand',
             'structureligandinteraction_set__ligand__ligand_type',
@@ -273,6 +284,7 @@ class StructureList(views.APIView):
             structure_data = {
                 'pdb_code': structure.pdb_code.index,
                 'protein': structure.protein_conformation.protein.parent.entry_name,
+                'class': structure.protein_conformation.protein.parent.family.parent.parent.parent.name,
                 'family': structure.protein_conformation.protein.parent.family.slug,
                 'species': structure.protein_conformation.protein.parent.species.latin_name,
                 'preferred_chain': structure.preferred_chain,
@@ -333,7 +345,6 @@ class StructureList(views.APIView):
     def get_structures(self, pdb_code=None, representative=None):
         return Structure.objects.all()
 
-
 class RepresentativeStructureList(StructureList):
 
     """
@@ -368,6 +379,20 @@ class StructureDetail(StructureList):
     def get_structures(self, pdb_code=None, representative=None):
         return Structure.objects.filter(pdb_code__index=pdb_code)
 
+class StructureAccessionHuman(views.APIView):
+
+    """
+    Get a list of all (human) UniProt accession codes for which receptor types an experimental structure is available
+    \n/structure/accession_codes_human/
+    """
+
+    def get(self, request):
+        unique_slugs = list(Structure.objects.filter(protein_conformation__protein__family__slug__startswith="00")\
+            .order_by('protein_conformation__protein__family__slug').values_list('protein_conformation__protein__family__slug', flat=True).distinct())
+        accession_codes = list(Protein.objects.filter(family__slug__in=unique_slugs, sequence_type__slug='wt', species__latin_name='Homo sapiens')\
+                            .values_list('entry_name', flat=True))
+        accessions = [x.split("_")[0].upper() for x in accession_codes]
+        return Response(accessions)
 
 class FamilyAlignment(views.APIView):
 
@@ -535,7 +560,8 @@ class ProteinSimilaritySearchAlignment(views.APIView):
     Get a segment sequence alignment of two or more proteins ranked by similarity
     \n/alignment/similarity/{proteins}/{segments}/
     \n{proteins} is a comma separated list of protein identifiers, e.g. adrb2_human,5ht2a_human,cxcr4_human,
-    where the first protein is the query protein and the following the proteins to compare it to
+    where the first protein is the query protein and the following are compared to it. Now PDB IDs can also be
+    used to align structure sequences with wild type sequences, e.g. adrb2_human,3SN6
     \n{segments} is a comma separated list of protein segment identifiers and/ or
     generic GPCRdb numbers, e.g. TM2,TM3,ECL2,4x50
     """
@@ -544,11 +570,14 @@ class ProteinSimilaritySearchAlignment(views.APIView):
         if proteins is not None:
             protein_list = proteins.split(",")
             # first in API should be reference
-            ps = Protein.objects.filter(sequence_type__slug='wt', entry_name__in=protein_list[1:])
-            reference = Protein.objects.filter(sequence_type__slug='wt', entry_name__in=[protein_list[0]])
+            reference = Protein.objects.filter(entry_name__iexact=protein_list[0])
+            q_list = Q()
+            for q in [Q(entry_name__iexact=p) for p in protein_list[1:]]:
+                q_list |= q
+            ps = Protein.objects.filter(q_list)
 
             # take the numbering scheme from the first protein
-            s_slug = Protein.objects.get(entry_name=protein_list[0]).residue_numbering_scheme_id
+            s_slug = reference[0].residue_numbering_scheme_id
 
             protein_family = ps[0].family.slug[:3]
 
@@ -630,13 +659,17 @@ class ProteinAlignment(views.APIView):
     """
     Get a full sequence alignment of two or more proteins
     \n/alignment/protein/{proteins}/
-    \n{proteins} is a comma separated list of protein identifiers, e.g. adrb2_human,5ht2a_human
+    \n{proteins} is a comma separated list of protein identifiers, e.g. adrb2_human,5ht2a_human. PDB IDs can also be
+    used to align structure sequences with wild type sequences, e.g. adrb2_human,3SN6
     """
 
     def get(self, request, proteins=None, segments=None, statistics=False):
         if proteins is not None:
             protein_list = proteins.split(",")
-            ps = Protein.objects.filter(sequence_type__slug='wt', entry_name__in=protein_list)
+            q_list = Q()
+            for q in [Q(entry_name__iexact=p) for p in protein_list]:
+                q_list |= q
+            ps = Protein.objects.filter(q_list)
 
             # take the numbering scheme from the first protein
             #s_slug = Protein.objects.get(entry_name=protein_list[0]).residue_numbering_scheme_id
@@ -867,18 +900,45 @@ class StructureLigandInteractions(generics.ListAPIView):
     serializer_class = StructureLigandInteractionSerializer
 
     def get_queryset(self):
-        queryset = ResidueFragmentInteraction.objects.all()
-        queryset = queryset.prefetch_related('structure_ligand_pair__structure__pdb_code',
-                                             'interaction_type',
-                                             'fragment__residue__generic_number',
-                                             'fragment__residue__display_generic_number',
-                                             )
-        #queryset = queryset.exclude(interaction_type__type='hidden').order_by('fragment__residue__sequence_number')
-        queryset = queryset.order_by('fragment__residue__sequence_number')
-        slug = self.kwargs.get('pdb_code')
-        return queryset.filter(structure_ligand_pair__structure__pdb_code__index=slug,
-                               structure_ligand_pair__annotated=True)
+        pdb_code = self.kwargs.get('pdb_code')
 
+        queryset = ResidueFragmentInteraction.objects.filter(structure_ligand_pair__structure__pdb_code__index__iexact=pdb_code,
+                                                             structure_ligand_pair__annotated=True).prefetch_related('structure_ligand_pair__structure__pdb_code',
+                                                             'interaction_type',
+                                                             'fragment__residue__generic_number',
+                                                             'fragment__residue__display_generic_number',
+                                                             ).order_by('fragment__residue__sequence_number')
+        return queryset
+
+
+class StructurePeptideLigandInteractions(generics.ListAPIView):
+
+    """
+    Get a list of interactions between structure and peptide ligand
+    \n/structure/{pdb_code}/peptideinteraction/
+    \n{pdb_code} is a structure identifier from the Protein Data Bank, e.g. 5VBL
+    """
+    serializer_class = StructurePeptideLigandInteractionSerializer
+
+    def get_queryset(self):
+        pdb_code = self.kwargs.get('pdb_code')
+
+        queryset = InteractionPeptide.objects.filter(interacting_peptide_pair__peptide__structure__pdb_code__index__iexact=pdb_code)
+        queryset = queryset.values('interacting_peptide_pair__peptide__structure__pdb_code__index',
+                            'interacting_peptide_pair__peptide__ligand__name',
+                            'interacting_peptide_pair__peptide__chain',
+                            'interacting_peptide_pair__peptide_amino_acid',
+                            'interacting_peptide_pair__peptide_amino_acid_three_letter',
+                            'interacting_peptide_pair__peptide_sequence_number',
+                            'interacting_peptide_pair__receptor_residue__amino_acid',
+                            'interacting_peptide_pair__receptor_residue__sequence_number',
+                            'interacting_peptide_pair__receptor_residue__display_generic_number__label',
+                            'interaction_type', 'interaction_level').order_by("interacting_peptide_pair__peptide_sequence_number").distinct(
+                            ).annotate(
+                                interaction_count=Count('interaction_type')
+                            ).order_by('interacting_peptide_pair__peptide_sequence_number','interacting_peptide_pair__receptor_residue__sequence_number')
+
+        return queryset
 
 class MutantList(generics.ListAPIView):
 

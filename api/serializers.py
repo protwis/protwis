@@ -6,6 +6,7 @@ from mutation.models import MutationRaw
 from protein.models import Protein, ProteinConformation, ProteinFamily, Species, ProteinSource, ProteinSegment
 from residue.models import Residue, ResidueNumberingScheme, ResidueGenericNumber
 from structure.models import Structure
+from contactnetwork.models import InteractionPeptide
 
 
 class ProteinSerializer(serializers.ModelSerializer):
@@ -48,8 +49,8 @@ class EndogenousGTPSerializer(serializers.ModelSerializer):
 
 class ReceptorListSerializer(serializers.ModelSerializer):
     subfamily = serializers.ReadOnlyField(source='family.name')
-    ligand_type = serializers.ReadOnlyField(source='family.parent.name')
-    receptor_family = serializers.ReadOnlyField(source='family.parent.parent.name')
+    ligand_type = serializers.ReadOnlyField(source='family.parent.parent.name')
+    receptor_family = serializers.ReadOnlyField(source='family.parent.name')
     receptor_class = serializers.ReadOnlyField(source='family.parent.parent.parent.name')
     endogenous_ligands = EndogenousGTPSerializer(source='endogenous_gtp_set', read_only=True, many=True)
     species = serializers.StringRelatedField(read_only=True)
@@ -121,6 +122,26 @@ class StructureLigandInteractionSerializer(serializers.ModelSerializer):
         model = ResidueFragmentInteraction
         fields = ('pdb_code', 'ligand_name', 'amino_acid', 'sequence_number',
                   'display_generic_number', 'interaction_type')
+
+
+class StructurePeptideLigandInteractionSerializer(serializers.ModelSerializer):
+    pdb_code = serializers.ReadOnlyField(source='interacting_peptide_pair__peptide__structure__pdb_code__index')
+    ligand_name = serializers.ReadOnlyField(source='interacting_peptide_pair__peptide__ligand__name')
+    ligand_chain = serializers.ReadOnlyField(source='interacting_peptide_pair__peptide__chain')
+    peptide_amino_acid = serializers.ReadOnlyField(source='interacting_peptide_pair__peptide_amino_acid')
+    peptide_amino_acid_three_letter = serializers.ReadOnlyField(source='interacting_peptide_pair__peptide_amino_acid_three_letter')
+    peptide_residue_number = serializers.ReadOnlyField(source='interacting_peptide_pair__peptide_sequence_number')
+    receptor_amino_acid = serializers.ReadOnlyField(source='interacting_peptide_pair__receptor_residue__amino_acid')
+    receptor_residue_number = serializers.ReadOnlyField(source='interacting_peptide_pair__receptor_residue__sequence_number')
+    receptor_residue_generic_number = serializers.ReadOnlyField(source='interacting_peptide_pair__receptor_residue__display_generic_number__label')
+    interaction_type = serializers.ReadOnlyField()
+    interaction_level = serializers.ReadOnlyField()
+    interaction_count = serializers.ReadOnlyField()
+
+    class Meta:
+        model = InteractionPeptide
+        fields = ('pdb_code', 'ligand_name', 'ligand_chain', 'peptide_amino_acid', 'peptide_amino_acid_three_letter', 'peptide_residue_number',
+                  'receptor_amino_acid', 'receptor_residue_number', 'receptor_residue_generic_number', 'interaction_type', 'interaction_level', 'interaction_count')
 
 
 class MutationSerializer(serializers.ModelSerializer):
