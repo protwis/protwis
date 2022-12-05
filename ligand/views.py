@@ -1796,6 +1796,36 @@ class BiasVendorBrowser(TemplateView):
 
         return context
 
+class LigandGtoPInfoView(TemplateView):
+    # Tunnel view from Guide to Pharmacology, gets their GtoP ID and
+    # return the associated GPCRdb ligand info page
+    # calls function from LigandInformationView because this is simply a head copy
+    template_name = 'ligand_info.html'
+
+    def get_context_data(self, *args, **kwargs):
+        context = super(LigandGtoPInfoView, self).get_context_data(**kwargs)
+        ligand_id = self.kwargs['pk']
+        ligand_conversion = LigandID.objects.filter(index=ligand_id, web_resource_id__slug="gtoplig").values_list('ligand_id')[0][0]
+        ligand_data = Ligand.objects.get(id=ligand_conversion)
+        endogenous_ligands =  Endogenous_GTP.objects.all().values_list("ligand_id", flat=True)
+        assay_data = list(AssayExperiment.objects.filter(ligand=ligand_id).prefetch_related(
+            'ligand', 'protein', 'protein__family',
+            'protein__family__parent', 'protein__family__parent__parent__parent',
+            'protein__family__parent__parent', 'protein__family', 'protein__species'))
+        context = dict()
+        structures = LigandInformationView.get_structure(ligand_data)
+        ligand_data = LigandInformationView.process_ligand(ligand_data, endogenous_ligands)
+        assay_data_affinity, assay_data_potency = LigandInformationView.process_assay(assay_data)
+        mutations = LigandInformationView.get_mutations(ligand_data)
+
+        context.update({'structure': structures})
+        context.update({'ligand': ligand_data})
+        context.update({'assay_affinity': assay_data_affinity})
+        context.update({'assay_potency': assay_data_potency})
+        context.update({'mutations': mutations})
+        return context
+
+
 class LigandInformationView(TemplateView):
     template_name = 'ligand_info.html'
 

@@ -75,6 +75,7 @@ urlpatterns = excluded_apis + [
         name='assign_generic_numbers'),
     url(r'structure/parse_pdb$', views.StructureSequenceParser.as_view(), name='sequence_parser'),
     url(r'^species/$', cache_page(3600*24*7)(views.SpeciesList.as_view()), name='species-list'),
+    url(r'^ligands/gtp_ids/$', views.GtPIDList.as_view(), name='gtp-ids'),
     url(r'^species/(?P<latin_name>[^/]+)/$', views.SpeciesDetail.as_view(), name='species-detail'),
     url(r'^mutants/(?P<entry_name>[^/].+)/$', views.MutantList.as_view(), name='mutants'),
     url(r'^drugs/(?P<entry_name>[^/].+)/$', views.DrugList.as_view(), name='drugs'),

@@ -13,13 +13,14 @@ from django.db.models import Prefetch, Q, Min, Count
 from interaction.models import ResidueFragmentInteraction
 from mutation.models import MutationRaw
 from protein.models import Protein, ProteinFamily, Species, ProteinSegment
+from ligand.models import LigandID
 from residue.models import Residue, ResidueGenericNumberEquivalent
 from structure.models import Structure, StructureExtraProteins
 from structure.assign_generic_numbers_gpcr import GenericNumbering
 from structure.sequence_parser import SequenceParser
 from api.serializers import (ProteinSerializer, ProteinFamilySerializer, SpeciesSerializer, ResidueSerializer,
                              ResidueExtendedSerializer, StructureLigandInteractionSerializer, StructurePeptideLigandInteractionSerializer,
-                             MutationSerializer, ReceptorListSerializer)
+                             MutationSerializer, ReceptorListSerializer, GuidetoPharmacologySerializer)
 from api.renderers import PDBRenderer
 from common.alignment import Alignment
 from common.definitions import AMINO_ACIDS, AMINO_ACID_GROUPS
@@ -209,6 +210,15 @@ class SpeciesList(generics.ListAPIView):
     queryset = Species.objects.all()
     serializer_class = SpeciesSerializer
 
+class GtPIDList(generics.ListAPIView):
+
+    """
+    Get a list of Guide to Pharmacology ligand IDs
+    \n/ligands/gtop_ids/
+    """
+
+    queryset = LigandID.objects.filter(web_resource_id__slug="gtoplig").values('index', 'ligand__name')
+    serializer_class = GuidetoPharmacologySerializer
 
 class SpeciesDetail(generics.RetrieveAPIView):
 
