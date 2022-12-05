@@ -199,9 +199,13 @@ function importTargets(){
 
   // Keep track of matches and misses
   var not_found = [];
+  var not_found_full = [];
+  var full_names = [];
   var parsed = 0;
+  var selected_items = [];
   for (var i = 0; i < split_entries.length; i++) {
     split_entries[parseInt(i, 10)] = split_entries[parseInt(i, 10)].trim().toLowerCase();
+    full_names.push(split_entries[parseInt(i, 10)]);
     split_entries[parseInt(i, 10)] = split_entries[parseInt(i, 10)].split("_")[0];
 
     // Check minimum protein name length
@@ -211,17 +215,36 @@ function importTargets(){
       if (items.length > 0){
         parsed++;
         addTarget(items[0]);
+        selected_items.push(items[0]);
       } else {
         not_found.push(split_entries[parseInt(i, 10)]);
+        not_found_full.push(full_names[parseInt(i, 10)])
       }
     }
   }
+  var slugs = fetch_protein_slug(not_found_full.join(','))
+  var remove_indeces = [];
+  for (i=0;i<slugs.length;i++) {
+    var this_item = $('#'+slugs[i])[0];
+    if (!selected_items.includes(this_item)) {
+      addTarget(this_item);
+    }
+    parsed++;
+    remove_indeces.push(i);
+  }
+  var new_not_found = [];
+  for (i=0;i<not_found.length;i++) {
+    if (!remove_indeces.includes(i)) {
+      new_not_found.push(not_found[i])
+    }
+  }
+  not_found = new_not_found;
 
   // Add summary on message
   var message = "";
   var msg_type = "info";
   if (parsed > 0){
-    message = "<b>Successfully</b> imported "+parsed+" targets.<br>";
+    message = "<b>Successfully</b> imported "+parsed+" entries.<br>";
     if (not_found.length > 0){
       message += "<br>The following name(s) could <i>not</i> be matched:<br>&#8226;&nbsp;&nbsp;" + not_found.join("<br>&#8226;&nbsp;&nbsp;");
     }
@@ -231,6 +254,25 @@ function importTargets(){
   }
   showAlert(message, msg_type);
   updateTargetCount();
+}
+
+function fetch_protein_slug(entry_names, response){
+  $.ajax({
+      'url': '/common/fetchproteinslug',
+      'data': {
+          entry_names: entry_names
+      },
+      'dataType': 'JSON',
+      'type': 'GET',
+      'async': false,
+      'success': function(slugs) {
+        response = JSON.parse(slugs);
+      },
+      'error': function(data) {
+        console.log('error')
+      }
+  });
+  return response;
 }
 
 /**

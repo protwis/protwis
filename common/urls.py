@@ -7,6 +7,7 @@ urlpatterns = [
     url(r'^addtoselection', views.AddToSelection, name='addtoselection'),
     url(r'^removefromselection', views.RemoveFromSelection, name='removefromselection'),
     url(r'^clearselection', views.ClearSelection, name='clearselection'),
+    url(r'^fetchproteinslug', views.FetchProteinSlug, name='fetchproteinslug'),
     url(r'^selectrange', views.SelectRange, name='selectrange'),
     url(r'^togglefamilytreenode', views.ToggleFamilyTreeNode, name='togglefamilytreenode'),
     url(r'^selectionannotation', views.SelectionAnnotation, name='selectionannotation'),

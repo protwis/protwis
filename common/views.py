@@ -1,4 +1,4 @@
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.views.generic import TemplateView
 from django.views.decorators.cache import cache_page
@@ -1388,6 +1388,12 @@ def SelectRange(request):
         for resn in residue_nums:
             if range_start < float(resn.label.replace('x','.')) < range_end:
                 o.append(resn)
+
+def FetchProteinSlug(request):
+    """Fetches protein family slug"""
+    entry_names = request.GET['entry_names']
+    slugs = list(Protein.objects.filter(entry_name__in=entry_names.split(',')).values_list('family__slug', flat=True))
+    return JsonResponse(json.dumps(slugs), safe=False)
 
 def SelectFullSequence(request):
     """Adds all segments to the selection"""
