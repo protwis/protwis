@@ -1,6 +1,6 @@
             <p>Please choose one or more species, and click 'Save & close'.</p>
             {% for sp in sps %}
-                <a href="javascript:void(0)" onclick="SelectionSpeciesToggle('{{ sp.id }}')"
+                <a href="javascript:void(0)" species-id="{{ sp.id }}" onclick="SelectionSpeciesToggle('{{ sp.id }}')"
                     class="btn btn-primary{% for sel_sp in selection.species %}{% if sp == sel_sp.item %} active{% endif %}{% endfor %}">
                     {{ sp.common_name }}
                 </a>

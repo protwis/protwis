@@ -1392,8 +1392,11 @@ def SelectRange(request):
 def FetchProteinSlug(request):
     """Fetches protein family slug"""
     entry_names = request.GET['entry_names']
-    slugs = list(Protein.objects.filter(entry_name__in=entry_names.split(',')).values_list('family__slug', flat=True))
-    return JsonResponse(json.dumps(slugs), safe=False)
+    proteins = Protein.objects.filter(entry_name__in=entry_names.split(','))
+    species = list(proteins.values_list('species__id', flat=True).distinct())
+    slugs = list(proteins.values_list('family__slug', flat=True))
+    out = {'slugs':slugs, 'species':species}
+    return JsonResponse(json.dumps(out), safe=False)
 
 def SelectFullSequence(request):
     """Adds all segments to the selection"""

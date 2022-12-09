@@ -95,7 +95,7 @@ def render_alignment(request):
 
     # load data from selection into the alignment
     a.load_reference_protein_from_selection(simple_selection)
-    a.load_proteins_from_selection(simple_selection)
+    a.load_proteins_from_selection(simple_selection, only_wildtype=True)
     a.load_segments_from_selection(simple_selection)
 
     # build the alignment data matrix

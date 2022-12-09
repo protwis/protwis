@@ -222,15 +222,33 @@ function importTargets(){
       }
     }
   }
-  var slugs = fetch_protein_slug(not_found_full.join(','))
+  var out = fetch_protein_slug(not_found_full.join(','))
+  var slugs = out['slugs'];
+  var species = out['species'];
+  // If import function should be species filter independant
+  // if (species.length>1 || (species.length!==0 && !species.includes(1))) {
+  //   $("#filters-species .active").removeClass('active');
+  //   console.log($("#filters-species .btn-group"))
+  //   $("a[data-target='#SpeciesSelector']").addClass('active');
+  //   for (var i=0; i<species.length; i++) {
+  //     console.log(species[i])
+  //     console.log($("a[species-id="+species[i]+"]"))
+  //     $("a[species-id="+species[i]+"]").addClass('active');
+  //     SelectionSpeciesToggle(species[i]);
+  //   }
+  // }
   var remove_indeces = [];
+  var species_filter = $("div#filters-species a.btn.active")[0].innerText.trim();
   for (i=0;i<slugs.length;i++) {
     var this_item = $('#'+slugs[i])[0];
-    if (!selected_items.includes(this_item)) {
-      addTarget(this_item);
+    if (species_filter === "Human" && $(this_item).attr("data-human")==="No"){}
+    else {
+      if (!selected_items.includes(this_item)) {
+        addTarget(this_item);
+      }
+      parsed++;
+      remove_indeces.push(i);
     }
-    parsed++;
-    remove_indeces.push(i);
   }
   var new_not_found = [];
   for (i=0;i<not_found.length;i++) {
@@ -265,8 +283,8 @@ function fetch_protein_slug(entry_names, response){
       'dataType': 'JSON',
       'type': 'GET',
       'async': false,
-      'success': function(slugs) {
-        response = JSON.parse(slugs);
+      'success': function(out) {
+        response = JSON.parse(out);
       },
       'error': function(data) {
         console.log('error')
