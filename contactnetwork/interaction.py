@@ -217,7 +217,7 @@ class InteractingPair:
                         # 1. grab previous connected residue (if numbering switches, this might give an error)
                         # 2. grab coordinate atom previous residue
                         hbd_chain = hbd_residue.get_parent()
-                        if hbd_residue.has_id(hbd_residue.id[1]-1):
+                        if hbd_chain.has_id(hbd_residue.id[1]-1):
                             p3 = hbd_chain[hbd_residue.id[1]-1].child_dict[donor_set[3]].coord
                         else:
                             continue

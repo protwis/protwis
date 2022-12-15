@@ -4,6 +4,7 @@
 
 var targetTable;
 var selected_targets = new Set();
+var imported_targets = new Set();
 
 /**
  * This function mains the shown and hidden selected targets
@@ -14,7 +15,8 @@ function updateTargetCount(){
   // Counting the selected targets matching the current filters
   var numTargets = $("table#uniprot_selection tbody input:checked").length;
 
-  var message = selected_targets.size.toString();
+  var message = (selected_targets.size + imported_targets.size).toString();
+
   if (numTargets === 1){
     message += " target selected";
   } else {
@@ -39,18 +41,24 @@ function updateTargetCount(){
  * This function adds the target of the checkbox to the selected targets
  * @param {object} checkbox Checkbox element of the target to select
  */
-function addTarget(checkbox){
+function addTarget(checkbox, add_to_targets=true){
   var species = $("div#filters-species a.btn.active")[0].innerText.trim();
 
-  if (species === "Human" && $(checkbox).attr("data-human")==="No"){
-    showAlert("Note that <b>"+$(checkbox).attr("data-entry")+"</b> does not have a human ortholog.<br>Adjust the species selection to include it.", "warning");
+  if (add_to_targets) {
+    if (species === "Human" && $(checkbox).attr("data-human")==="No"){
+      showAlert("Note that <b>"+$(checkbox).attr("data-entry")+"</b> does not have a human ortholog.<br>Adjust the species selection to include it.", "warning");
+    } else {
+      var slug = $(checkbox).attr("id");
+      $(checkbox).prop("checked", true);
+      $(checkbox).closest("tr").addClass("selected");
+      selected_targets.add(slug);
+    }
   } else {
     var slug = $(checkbox).attr("id");
     $(checkbox).prop("checked", true);
     $(checkbox).closest("tr").addClass("selected");
-
-    selected_targets.add(slug);
   }
+
 }
 
 /**
@@ -93,6 +101,7 @@ function clearTargetSelection(){
 
   // Clean all (handling automated population by browser when using back button)
   selected_targets = new Set();
+  imported_targets = new Set();
 
   // update information message
   updateTargetCount();
@@ -199,9 +208,12 @@ function importTargets(){
 
   // Keep track of matches and misses
   var not_found = [];
+  var full_names = [];
   var parsed = 0;
+  var selected_items = [];
   for (var i = 0; i < split_entries.length; i++) {
     split_entries[parseInt(i, 10)] = split_entries[parseInt(i, 10)].trim().toLowerCase();
+    full_names.push(split_entries[parseInt(i, 10)]);
     split_entries[parseInt(i, 10)] = split_entries[parseInt(i, 10)].split("_")[0];
 
     // Check minimum protein name length
@@ -209,19 +221,65 @@ function importTargets(){
       // Find checkbox with correct entry
       var items = $("table#uniprot_selection").find(`input[data-entry='${split_entries[parseInt(i, 10)]}']`);
       if (items.length > 0){
-        parsed++;
-        addTarget(items[0]);
+        addTarget(items[0], false);
+        selected_items.push(items[0]);
       } else {
         not_found.push(split_entries[parseInt(i, 10)]);
       }
     }
   }
+  // AJAX to add imported to selection
+  var out = importTargetSelection(full_names.join(','))
+  var slugs = out['slugs'];
+  var species = out['species'];
+  var entries = out['found_entries'];
+  parsed = out['found_entries'].length;
+  for (var i=0; i<entries.length;i++) {
+    if (!imported_targets.has(entries[i])) {
+      imported_targets.add(entries[i]);
+    }
+  }
+  // Toggle species filter
+  if (species.length>1 || species[0]!==1) {
+    $("#filters-species .active").removeClass('active');
+    $("a[data-target='#SpeciesSelector']").addClass('active');
+    for (var i=0; i<species.length; i++) {
+      $("a[species-id="+species[i]+"]").addClass('active');
+    }
+  }
+  // Toggle annotation filter
+  if (out['source']!=="Swissprot") {
+    $("#AnnotationSP").removeClass('active');
+    $("#AnnotationAll").addClass('active');
+  }
+  
+  // Update not_found list
+  var remove_indeces = [];
+  for (i=0;i<slugs.length;i++) {
+    var this_item = $('#'+slugs[i])[0];
+      if (!selected_items.includes(this_item)) {
+        addTarget(this_item, false);
+      }
+      remove_indeces.push(i);
+  }
+  var new_not_found = [];
+  for (i=0;i<not_found.length;i++) {
+    if (!remove_indeces.includes(i)) {
+      new_not_found.push(not_found[i])
+    }
+  }
+  for (i=0;i<full_names.length;i++) {
+    if (!entries.includes(full_names[i])) {
+      new_not_found.push(full_names[i]);
+    }
+  }
+  not_found = new_not_found;
 
   // Add summary on message
   var message = "";
   var msg_type = "info";
   if (parsed > 0){
-    message = "<b>Successfully</b> imported "+parsed+" targets.<br>";
+    message = "<b>Successfully</b> imported "+parsed+" entries.<br>";
     if (not_found.length > 0){
       message += "<br>The following name(s) could <i>not</i> be matched:<br>&#8226;&nbsp;&nbsp;" + not_found.join("<br>&#8226;&nbsp;&nbsp;");
     }
@@ -233,8 +291,27 @@ function importTargets(){
   updateTargetCount();
 }
 
+function importTargetSelection(entry_names, response){
+  $.ajax({
+      'url': '/common/importtargetselection',
+      'data': {
+          entry_names: entry_names
+      },
+      'dataType': 'JSON',
+      'type': 'GET',
+      'async': false,
+      'success': function(out) {
+        response = JSON.parse(out);
+      },
+      'error': function(data) {
+        console.log('error')
+      }
+  });
+  return response;
+}
+
 /**
- * This function exports the current taret selection to a textbox and copies the
+ * This function exports the current target selection to a textbox and copies the
  * selection to clipboard.
  */
 function exportTargets(){
@@ -270,8 +347,7 @@ function submitSelection(url, minimum = 1, maximum = 0) {
   if (species !== "Human"){
     species_exemption = true;
   }
-
-  if (species_exemption || (selected_targets.size >= minimum && (maximum === 0 || selected_targets.size <= maximum))) {
+  if (species_exemption || (selected_targets.size >= minimum && (maximum === 0 || selected_targets.size <= maximum)) || imported_targets > 0) {
     // set CSRF csrf_token
     $.ajaxSetup({
         headers:

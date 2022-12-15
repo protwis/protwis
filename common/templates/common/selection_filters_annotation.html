@@ -1,11 +1,11 @@
 <b>Source</b>
 <div class="btn-group btn-group-sm" role="group">
-    <a href="javascript:void(0)" onclick="SelectionAnnotation('SWISSPROT')" class="btn btn-primary
+    <a href="javascript:void(0)" id="AnnotationSP" onclick="SelectionAnnotation('SWISSPROT')" class="btn btn-primary
         {% if selection.annotation|length == 1 and selection.annotation.0.item.name == 'SWISSPROT' %} active{% endif %}
         ">
         Swiss-Prot
     </a>
-    <a href="javascript:void(0)" onclick="SelectionAnnotation('All')"
+    <a href="javascript:void(0)" id="AnnotationAll" onclick="SelectionAnnotation('All')"
         class="btn btn-primary{% if selection.annotation|length > 1 %} active{% endif %}">
         All
     </a>
