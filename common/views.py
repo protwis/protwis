@@ -1389,13 +1389,47 @@ def SelectRange(request):
             if range_start < float(resn.label.replace('x','.')) < range_end:
                 o.append(resn)
 
-def FetchProteinSlug(request):
-    """Fetches protein family slug"""
+def ImportTargetSelection(request):
+    """Adds source and proteins into session, returns info to update filters"""
     entry_names = request.GET['entry_names']
-    proteins = Protein.objects.filter(entry_name__in=entry_names.split(','))
-    species = list(proteins.values_list('species__id', flat=True).distinct())
+    proteins = Protein.objects.filter(entry_name__in=entry_names.split(',')).select_related('species', 'source')
+    sources = set([p.source for p in proteins])
+    species = set([p.species for p in proteins])
+    found_entries = [p.entry_name for p in proteins]
+
+    if len(sources)>1 or list(sources)[0].name!='SWISSPROT':
+        source = 'All'
+    else:
+        source = 'Swissprot'
+    species_ids = list(proteins.values_list('species__id', flat=True).distinct())
     slugs = list(proteins.values_list('family__slug', flat=True))
-    out = {'slugs':slugs, 'species':species}
+    out = {'slugs':slugs, 'species':species_ids, 'source':source, 'found_entries':found_entries}
+
+    simple_selection = request.session.get('selection', False)
+
+    # create full selection and import simple selection (if it exists)
+    selection = Selection()
+    if simple_selection:
+        selection.importer(simple_selection)
+
+    for prot in proteins:
+        selection_object = SelectionItem('protein', prot)
+        selection.add('targets', 'protein', selection_object)
+
+    for sp in species:
+        selection_object = SelectionItem('species', sp)
+        selection.add('species', 'species', selection_object)
+
+    for ps in sources:
+        selection_object = SelectionItem('annotation', ps)
+        selection.add('annotation', 'annotation', selection_object)
+
+    # export simple selection that can be serialized
+    simple_selection = selection.exporter()
+
+    # add simple selection to session
+    request.session['selection'] = simple_selection
+
     return JsonResponse(json.dumps(out), safe=False)
 
 def SelectFullSequence(request):
@@ -1721,9 +1755,10 @@ def SelectionAnnotation(request):
 
     # export simple selection that can be serialized
     simple_selection = selection.exporter()
-
+    print('annotation',simple_selection)
     # add simple selection to session
     request.session['selection'] = simple_selection
+
     return render(request, 'common/selection_filters_annotation.html', selection.dict('annotation'))
 
 def SelectionSpeciesPredefined(request):
@@ -1737,14 +1772,14 @@ def SelectionSpeciesPredefined(request):
     selection = Selection()
     if simple_selection:
         selection.importer(simple_selection)
-
+    print(simple_selection)
     all_sps = Species.objects.all()
     sps = False
     if species == 'All':
         sps = []
     if species != 'All' and species:
         sps = Species.objects.filter(common_name=species)
-
+    print('sps', sps)
     if sps != False:
         # reset the species selection
         selection.clear('species')
@@ -1772,10 +1807,10 @@ def SelectionSpeciesToggle(request):
 
     all_sps = Species.objects.all()
     sps = Species.objects.filter(pk=species_id)
-
+    print(sps)
     # get simple selection from session
     simple_selection = request.session.get('selection', False)
-
+    print('species get simple selection', simple_selection)
     # create full selection and import simple selection (if it exists)
     selection = Selection()
     if simple_selection:
@@ -1797,6 +1832,7 @@ def SelectionSpeciesToggle(request):
     # add all species objects to context (for comparison to selected species)
     context = selection.dict('species')
     context['sps'] = Species.objects.all()
+    print('species toggle',simple_selection)
 
     return render(request, 'common/selection_filters_species_selector.html', context)
 
@@ -2425,10 +2461,12 @@ def ReadTargetInput(request):
 
     if request.POST == {}:
         return render(request, 'common/selection_lists.html', '')
+    print(selection_type, selection_subtype)
 
     # Process input names
     up_names = request.POST['input-targets'].split('\r')
     for up_name in up_names:
+        print(up_name)
         up_name = up_name.strip()
         obj = None
         if "_" in up_name: # Maybe entry name
@@ -2463,7 +2501,7 @@ def ReadTargetInput(request):
         if obj != None:
             selection_object = SelectionItem(selection_subtype, obj)
             selection.add(selection_type, selection_subtype, selection_object)
-
+    print(obj)
     # export simple selection that can be serialized
     simple_selection = selection.exporter()
     # add simple selection to session

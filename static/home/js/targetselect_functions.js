@@ -4,6 +4,7 @@
 
 var targetTable;
 var selected_targets = new Set();
+var imported_targets = new Set();
 
 /**
  * This function mains the shown and hidden selected targets
@@ -14,7 +15,8 @@ function updateTargetCount(){
   // Counting the selected targets matching the current filters
   var numTargets = $("table#uniprot_selection tbody input:checked").length;
 
-  var message = selected_targets.size.toString();
+  var message = (selected_targets.size + imported_targets.size).toString();
+
   if (numTargets === 1){
     message += " target selected";
   } else {
@@ -39,18 +41,24 @@ function updateTargetCount(){
  * This function adds the target of the checkbox to the selected targets
  * @param {object} checkbox Checkbox element of the target to select
  */
-function addTarget(checkbox){
+function addTarget(checkbox, add_to_targets=true){
   var species = $("div#filters-species a.btn.active")[0].innerText.trim();
 
-  if (species === "Human" && $(checkbox).attr("data-human")==="No"){
-    showAlert("Note that <b>"+$(checkbox).attr("data-entry")+"</b> does not have a human ortholog.<br>Adjust the species selection to include it.", "warning");
+  if (add_to_targets) {
+    if (species === "Human" && $(checkbox).attr("data-human")==="No"){
+      showAlert("Note that <b>"+$(checkbox).attr("data-entry")+"</b> does not have a human ortholog.<br>Adjust the species selection to include it.", "warning");
+    } else {
+      var slug = $(checkbox).attr("id");
+      $(checkbox).prop("checked", true);
+      $(checkbox).closest("tr").addClass("selected");
+      selected_targets.add(slug);
+    }
   } else {
     var slug = $(checkbox).attr("id");
     $(checkbox).prop("checked", true);
     $(checkbox).closest("tr").addClass("selected");
-
-    selected_targets.add(slug);
   }
+
 }
 
 /**
@@ -93,6 +101,7 @@ function clearTargetSelection(){
 
   // Clean all (handling automated population by browser when using back button)
   selected_targets = new Set();
+  imported_targets = new Set();
 
   // update information message
   updateTargetCount();
@@ -199,7 +208,6 @@ function importTargets(){
 
   // Keep track of matches and misses
   var not_found = [];
-  var not_found_full = [];
   var full_names = [];
   var parsed = 0;
   var selected_items = [];
@@ -213,47 +221,56 @@ function importTargets(){
       // Find checkbox with correct entry
       var items = $("table#uniprot_selection").find(`input[data-entry='${split_entries[parseInt(i, 10)]}']`);
       if (items.length > 0){
-        parsed++;
-        addTarget(items[0]);
+        addTarget(items[0], false);
         selected_items.push(items[0]);
       } else {
         not_found.push(split_entries[parseInt(i, 10)]);
-        not_found_full.push(full_names[parseInt(i, 10)])
       }
     }
   }
-  var out = fetch_protein_slug(not_found_full.join(','))
+  // AJAX to add imported to selection
+  var out = importTargetSelection(full_names.join(','))
   var slugs = out['slugs'];
   var species = out['species'];
-  // If import function should be species filter independant
-  // if (species.length>1 || (species.length!==0 && !species.includes(1))) {
-  //   $("#filters-species .active").removeClass('active');
-  //   console.log($("#filters-species .btn-group"))
-  //   $("a[data-target='#SpeciesSelector']").addClass('active');
-  //   for (var i=0; i<species.length; i++) {
-  //     console.log(species[i])
-  //     console.log($("a[species-id="+species[i]+"]"))
-  //     $("a[species-id="+species[i]+"]").addClass('active');
-  //     SelectionSpeciesToggle(species[i]);
-  //   }
-  // }
+  var entries = out['found_entries'];
+  parsed = out['found_entries'].length;
+  for (var i=0; i<entries.length;i++) {
+    if (!imported_targets.has(entries[i])) {
+      imported_targets.add(entries[i]);
+    }
+  }
+  // Toggle species filter
+  if (species.length>1 || species[0]!==1) {
+    $("#filters-species .active").removeClass('active');
+    $("a[data-target='#SpeciesSelector']").addClass('active');
+    for (var i=0; i<species.length; i++) {
+      $("a[species-id="+species[i]+"]").addClass('active');
+    }
+  }
+  // Toggle annotation filter
+  if (out['source']!=="Swissprot") {
+    $("#AnnotationSP").removeClass('active');
+    $("#AnnotationAll").addClass('active');
+  }
+  
+  // Update not_found list
   var remove_indeces = [];
-  var species_filter = $("div#filters-species a.btn.active")[0].innerText.trim();
   for (i=0;i<slugs.length;i++) {
     var this_item = $('#'+slugs[i])[0];
-    if (species_filter === "Human" && $(this_item).attr("data-human")==="No"){}
-    else {
       if (!selected_items.includes(this_item)) {
-        addTarget(this_item);
+        addTarget(this_item, false);
       }
-      parsed++;
       remove_indeces.push(i);
-    }
   }
   var new_not_found = [];
   for (i=0;i<not_found.length;i++) {
     if (!remove_indeces.includes(i)) {
       new_not_found.push(not_found[i])
+    }
+  }
+  for (i=0;i<full_names.length;i++) {
+    if (!entries.includes(full_names[i])) {
+      new_not_found.push(full_names[i]);
     }
   }
   not_found = new_not_found;
@@ -274,9 +291,9 @@ function importTargets(){
   updateTargetCount();
 }
 
-function fetch_protein_slug(entry_names, response){
+function importTargetSelection(entry_names, response){
   $.ajax({
-      'url': '/common/fetchproteinslug',
+      'url': '/common/importtargetselection',
       'data': {
           entry_names: entry_names
       },
@@ -294,7 +311,7 @@ function fetch_protein_slug(entry_names, response){
 }
 
 /**
- * This function exports the current taret selection to a textbox and copies the
+ * This function exports the current target selection to a textbox and copies the
  * selection to clipboard.
  */
 function exportTargets(){
@@ -330,8 +347,7 @@ function submitSelection(url, minimum = 1, maximum = 0) {
   if (species !== "Human"){
     species_exemption = true;
   }
-
-  if (species_exemption || (selected_targets.size >= minimum && (maximum === 0 || selected_targets.size <= maximum))) {
+  if (species_exemption || (selected_targets.size >= minimum && (maximum === 0 || selected_targets.size <= maximum)) || imported_targets > 0) {
     // set CSRF csrf_token
     $.ajaxSetup({
         headers:

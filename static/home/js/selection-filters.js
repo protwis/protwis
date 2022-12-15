@@ -1,4 +1,4 @@
-$(document).on( "hidden.bs.modal", "#SpeciesSelector", function(e) {
+$(document).on( "hidden.bs.modal", "#SpeciesSelector", function (e) {
     SelectionSpeciesPredefined("")
 });
 $(document).on("hidden.bs.modal", "#PrefGProteinsSelector", function (e) {
