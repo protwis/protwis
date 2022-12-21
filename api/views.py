@@ -13,7 +13,7 @@ from django.db.models import Prefetch, Q, Min, Count
 from interaction.models import ResidueFragmentInteraction
 from mutation.models import MutationRaw
 from protein.models import Protein, ProteinFamily, Species, ProteinSegment
-from ligand.models import LigandID, AssayExperiment, Endogenous_GTP
+from ligand.models import LigandID, AssayExperiment
 from residue.models import Residue, ResidueGenericNumberEquivalent
 from structure.models import Structure, StructureExtraProteins
 from structure.assign_generic_numbers_gpcr import GenericNumbering
