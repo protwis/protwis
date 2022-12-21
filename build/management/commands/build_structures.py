@@ -39,6 +39,8 @@ from urllib.request import urlopen
 from Bio.PDB import parse_pdb_header
 from Bio.PDB.Selection import *
 
+# import traceback
+
 
 ## FOR VIGNIR ORDERED DICT YAML IMPORT/DUMP
 _mapping_tag = yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG
@@ -1728,11 +1730,10 @@ class Command(BaseBuild):
             if self.run_contactnetwork:
                 try:
                     current = time.time()
-                    self.build_contact_network(s,sd['pdb'])
+                    self.build_contact_network(s, sd['pdb'])
                     end = time.time()
                     diff = round(end - current,1)
-                    self.logger.info('Create contactnetwork done for {}. {} seconds.'.format(
-                                s.protein_conformation.protein.entry_name, diff))
+                    self.logger.info('Create contactnetwork done for {}. {} seconds.'.format(s.protein_conformation.protein.entry_name, diff))
                 except Exception as msg:
                     print(msg)
                     print('ERROR WITH CONTACTNETWORK {}'.format(sd['pdb']))
@@ -1753,6 +1754,7 @@ class Command(BaseBuild):
                                 s.protein_conformation.protein.entry_name, diff))
                 except Exception as msg:
                     print(msg)
+                    # print(traceback.format_exc())
                     print('ERROR WITH INTERACTIONS {}'.format(sd['pdb']))
                     self.logger.error('Error parsing interactions output for {}'.format(sd['pdb']))
 

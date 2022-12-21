@@ -37,6 +37,7 @@ import xlsxwriter
 import shutil
 import requests
 import numpy as np
+from math import degrees
 from rdkit import Chem
 from rdkit import RDConfig
 from rdkit.Chem import AllChem
@@ -97,25 +98,19 @@ def calculate_interactions(pdb, session=None, peptide=None):
     tempdir = projectdir + 'temp/'
     if not os.path.exists(tempdir):
         os.makedirs(tempdir)
-        os.chmod(tempdir, 0o777)
+        # os.chmod(tempdir, 0o777)
     if not session:
         check_pdb(projectdir, pdb)
         checkdirs(projectdir, pdb)
         pdb_location = projectdir + 'pdbs/' + pdb + '.pdb'
         hetlist_display = find_interacting_ligand(pdb_location, pdb)
-        print(hetlist_display)
         # Defining a shared parser
         parser = PDBParser(QUIET=True)
         scroller = parser.get_structure(pdb, pdb_location)
-        print('ligands')
         create_ligands_and_poseview(hetlist_display, scroller, projectdir, pdb, peptide) #ignore_het (should be global), inchikeys, smiles (should not be used)
-        print('build')
         hetlist, ligand_charged, ligand_donors, ligand_atoms, ligand_acceptors, ligandcenter, ligand_rings = build_ligand_info(scroller, hetlist_display, projectdir, pdb, peptide, hetlist, ligand_atoms, ligand_charged, ligand_donors, ligand_acceptors, ligandcenter, ligand_rings)
-        print('interactions')
         summary_results, new_results, results = find_interactions(scroller, projectdir, pdb, peptide, hetlist, ligandcenter, radius, summary_results, new_results, results, hydrophob_radius, ligand_rings, ligand_charged)
-        print('analysis')
         summary_results, new_results, sortedresults = analyze_interactions(projectdir, pdb, results, ligand_donors, ligand_acceptors, ligand_charged, new_results, summary_results, hetlist_display, sortedresults)
-        print('pretty')
         pretty_results(projectdir, pdb, summary_results)
     else:
         projectdir = projectdir + session + "/"
@@ -156,19 +151,19 @@ def checkdirs(projectdir, pdb): # DO WE NEED TO HAVE THIS DATA STORE IN TMP FILE
     directory = projectdir + 'results/' + pdb + '/interaction'
     if not os.path.exists(directory):
         os.makedirs(directory)
-        os.chmod(directory, 0o777)
+        # os.chmod(directory, 0o777)
     directory = projectdir + 'results/' + pdb + '/ligand' #not really necessary
     if not os.path.exists(directory):
         os.makedirs(directory)
-        os.chmod(directory, 0o777)
+        # os.chmod(directory, 0o777)
     directory = projectdir + 'results/' + pdb + '/output'
     if not os.path.exists(directory):
         os.makedirs(directory)
-        os.chmod(directory, 0o777)
+        # os.chmod(directory, 0o777)
     directory = projectdir + 'results/' + pdb + '/fragments' #not really necessary
     if not os.path.exists(directory):
         os.makedirs(directory)
-        os.chmod(directory, 0o777)
+        # os.chmod(directory, 0o777)
 
 def find_interacting_ligand(pdb_location, pdb):
     #Compare these names to the ones in the database
@@ -950,12 +945,12 @@ def analyze_interactions(projectdir, pdb, results, ligand_donors, ligand_accepto
 
             score = round(score, 2)
             if interaction_type == 'waals' and score > 1:  # mainly no hbond detected
-                summary_results[ligand]['waals'].append([residue, score, sum])
+                summary_results[ligand]['waals'].append([residue, score, sum_data])
                 new_results[ligand]['interactions'].append([residue, fragment_file, 'Van der Waals', 'Van der Waals', 'waals', '', entry[0], entry[1], entry[2]])
             elif interaction_type == 'hbond':
-                summary_results[ligand]['hbond'].append([residue, score, sum, hbond])
+                summary_results[ligand]['hbond'].append([residue, score, sum_data, hbond])
             elif interaction_type == 'hbondplus':
-                summary_results[ligand]['hbondplus'].append([residue, score, sum, hbondplus])
+                summary_results[ligand]['hbondplus'].append([residue, score, sum_data, hbondplus])
             # elif interaction_type == 'hbond_confirmed':
             #     summary_results[ligand]['hbond_confirmed'].append([residue,score,sum,hbondconfirmed])
             ligscore += score
@@ -1531,7 +1526,7 @@ def calculate(request, redirect=None):
             # create dirs and set permissions (needed on some systems)
             for mdir in module_dirs:
                 os.makedirs(mdir, exist_ok=True)
-                os.chmod(mdir, 0o777)
+                # os.chmod(mdir, 0o777)
 
             if 'file' in request.FILES:
                 pdbdata = request.FILES['file']
