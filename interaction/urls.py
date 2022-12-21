@@ -6,7 +6,7 @@ from interaction import views
 urlpatterns = [
     url(r'^$', views.InteractionSelection.as_view(), name='selection'),
     url(r'^list', views.list_structures, name='list'),
-    url(r'^calculate', views.showcalculation, name='showcalculation'),
+    # url(r'^calculate', views.showcalculation, name='showcalculation'),
     url(r'^sitesearch_calculate', views.calculate, {'redirect': '/sitesearch/segmentselectionpdb'},
         name='sitesearch_calculate'),
     url(r'^download', views.download, name='download'),
