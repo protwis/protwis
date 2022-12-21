@@ -1225,7 +1225,7 @@ class Command(BaseBuild):
                 try:
                     struct_lig_interactions = StructureLigandInteraction.objects.filter(pdb_reference=lig_key, structure=structure).get()
                     struct_lig_interactions.pdb_file = pdbdata
-                except Exception as msg:: #already there
+                except: #already there
                     struct_lig_interactions = StructureLigandInteraction.objects.filter(pdb_reference=lig_key, structure=structure, pdb_file=pdbdata).get()
                 ligand = struct_lig_interactions.ligand
             else:  # create ligand and pair
