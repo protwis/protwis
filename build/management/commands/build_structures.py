@@ -1182,8 +1182,6 @@ class Command(BaseBuild):
             return
 
     def parsecalculation(self, pdb_id, data, debug=True, ignore_ligand_preset=False):
-        logger = logging.getLogger('build')
-        mypath = '/tmp/interactions/results/' + pdb_id + '/output'
         module_dir = '/tmp/interactions'
         web_resource = web_resource = WebResource.objects.get(slug='pdb')
         web_link, created = WebLink.objects.get_or_create(web_resource=web_resource, index=pdb_id)

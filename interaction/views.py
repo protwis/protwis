@@ -34,23 +34,14 @@ from Bio.PDB import PDBIO, PDBParser, Select, Vector
 import xlsxwriter
 
 #NEW IMPORTS
-import time
-import sys
-import getopt
-import subprocess
 import shutil
 import requests
-from collections import Counter
 import numpy as np
-from math import pi, degrees
-from operator import attrgetter, methodcaller
 from rdkit import Chem
 from rdkit import RDConfig
 from rdkit.Chem import AllChem
-from rdkit.Chem import Draw
 from rdkit.Chem import MolFromPDBFile
 from rdkit.Chem import ChemicalFeatures
-from rdkit.Chem import PeriodicTable
 #END NEW IMPORTS
 
 
@@ -223,11 +214,9 @@ def create_ligands_and_poseview(ligand_het, scroller, projectdir, pdb, peptide=N
             else:
                 return 0
 
-    hetflag_done = {}
     for model in scroller:
         for chain in model:
             for residue in chain:
-                hetresname = residue.get_resname()
                 # catch residues with hetflag
                 hetflag = residue.get_full_id()[3][0].strip()
                 hetflag = hetflag.replace("H_", "").strip()
@@ -255,7 +244,6 @@ def check_unique_ligand_mol(filename): # IS THIS NEEDED?
     # check that only HETATM are exported to file
     f_in = open(filename, 'r')
     tempstr = ''
-    check = []
     ligandid = 0
     chainid = 0
     for line in f_in:
@@ -287,8 +275,8 @@ def get_sdf_ligand_from_cache(comp_id):
     return mol
 
 def isRingAromatic(mol, bondRing):
-    for id in bondRing:
-        if not mol.GetBondWithIdx(id).GetIsAromatic():
+    for ring_id in bondRing:
+        if not mol.GetBondWithIdx(ring_id).GetIsAromatic():
             return False
     return True
 
@@ -401,7 +389,7 @@ def build_ligand_info(scroller, lig_het, projectdir, pdb, peptide, hetlist, liga
                                 atom_vector = atom.get_vector()
                                 center += atom_vector
                                 hetlist[hetflag].append([hetresname, het_atom, atom_vector])
-                                if not hetflag in ligand_atoms:
+                                if hetflag not in ligand_atoms:
                                     # make the ligand_atoms ready
                                     ligand_atoms[hetflag] = []
                                 ligand_atoms[hetflag].append([count_atom_ligand[hetflag], atom_vector, het_atom])
@@ -455,11 +443,10 @@ def find_interactions(scroller, projectdir, pdb, peptide, hetlist, ligandcenter,
                         continue
 
                     for hetflag, atomlist in hetlist.items():
-                        sum = 0
+                        sum_data = 0
                         hydrophobic_count = 0
                         accesible = False
                         for atom_het in atomlist:
-                            hetresname = atom_het[0]
                             het_atom = atom_het[1]
                             het_vector = atom_het[2]
                             aaatomlist = []
@@ -486,7 +473,7 @@ def find_interactions(scroller, projectdir, pdb, peptide, hetlist, ligandcenter,
                                     if (het_atom[0] != 'H') or (aa_atom[0] != 'H') or (aa_atom_type != 'H'):
                                         tempdistance = round(distance.norm(), 2)
                                         results[hetflag][aaname].append([het_atom, aa_atom, tempdistance, het_vector, aa_vector, aa_seqid, chainid])
-                                        sum += 1
+                                        sum_data += 1
                                 # if both are carbon then we are making a hydrophic interaction
                                 if (het_atom[0] == 'C') and (aa_atom[0] == 'C') and (distance.norm() < hydrophob_radius):
                                     hydrophobic_count += 1
@@ -508,7 +495,7 @@ def find_interactions(scroller, projectdir, pdb, peptide, hetlist, ligandcenter,
                             fragment_file = fragment_library(projectdir, pdb, hetflag, None, '', aa_seqid, chainid, 'hydrop')
                             new_results[hetflag]['interactions'].append([aaname,fragment_file,'hyd','hydrophobic','hydrophobic',''])
 
-                        if sum > 1 and aa_resname in AROMATIC:
+                        if sum_data > 1 and aa_resname in AROMATIC:
                             aarings = get_ring_from_aa(scroller, projectdir, aa_seqid, residue)
                             #aarings.append([atomlist, center, normal, vectorlist])
                             if not aarings:
@@ -666,7 +653,6 @@ def get_hydrogen_from_aa(projectdir, pdb, residueid):
                 return 0
     ptemp = PDBParser(QUIET=True)
     stemp = ptemp.get_structure(pdb, projectdir + 'pdbs/' + pdb + '.pdb')
-    temp_aa_id = residueid
 
     io = PDBIO()
     io.set_structure(stemp)
@@ -804,11 +790,11 @@ def analyze_interactions(projectdir, pdb, results, ligand_donors, ligand_accepto
         ligscore = 0
         fragment_file = ''
         for residue, interaction in result.items():
-            sum = 0
+            sum_data = 0
             score = 0
             hbond = []
             hbondplus = []
-            type = 'waals'
+            interaction_type = 'waals'
             for entry in interaction:
                 hbondconfirmed = []
                 if (entry[2] <= 3.5):
@@ -926,10 +912,10 @@ def analyze_interactions(projectdir, pdb, results, ligand_donors, ligand_accepto
                         if not found:
                             summary_results[ligand]['hbond_confirmed'].append([residue, hbondconfirmed])
                         if chargedcheck:
-                            type = 'hbondplus'
+                            interaction_type = 'hbondplus'
                             hbondplus.append(entry)
                     elif chargedcheck:
-                        type = 'hbondplus'
+                        interaction_type = 'hbondplus'
                         hbondplus.append(entry)
                         fragment_file = fragment_library(projectdir, pdb, ligand, entry[3], entry[0], entry[5], entry[6], 'HBC')
                         remove_hyd(residue, ligand, new_results)
@@ -950,7 +936,7 @@ def analyze_interactions(projectdir, pdb, results, ligand_donors, ligand_accepto
                             else:
                                 new_results[ligand]['interactions'].append([residue, fragment_file,'polar_unknown_protein','polar (charge-assisted hydrogen bond)','polar','protein',entry[0],entry[1],entry[2]])
                     else:
-                        type = 'hbond'
+                        interaction_type = 'hbond'
                         hbond.append(entry)
                         fragment_file = fragment_library(projectdir, pdb, ligand, entry[3], entry[0], entry[5], entry[6], 'HB')
                         new_results[ligand]['interactions'].append([residue, fragment_file,'polar_unspecified','polar (hydrogen bond)','polar','',entry[0],entry[1],entry[2]])
@@ -959,18 +945,18 @@ def analyze_interactions(projectdir, pdb, results, ligand_donors, ligand_accepto
                     entry[3] = ''
 
                 if (entry[2] < 4.5):
-                    sum += 1
+                    sum_data += 1
                     score += 4.5 - entry[2]
 
             score = round(score, 2)
-            if type == 'waals' and score > 2:  # mainly no hbond detected
+            if interaction_type == 'waals' and score > 1:  # mainly no hbond detected
                 summary_results[ligand]['waals'].append([residue, score, sum])
                 new_results[ligand]['interactions'].append([residue, fragment_file, 'Van der Waals', 'Van der Waals', 'waals', '', entry[0], entry[1], entry[2]])
-            elif type == 'hbond':
+            elif interaction_type == 'hbond':
                 summary_results[ligand]['hbond'].append([residue, score, sum, hbond])
-            elif type == 'hbondplus':
+            elif interaction_type == 'hbondplus':
                 summary_results[ligand]['hbondplus'].append([residue, score, sum, hbondplus])
-            # elif type == 'hbond_confirmed':
+            # elif interaction_type == 'hbond_confirmed':
             #     summary_results[ligand]['hbond_confirmed'].append([residue,score,sum,hbondconfirmed])
             ligscore += score
             # print "Total <4 (score is combined diff from 4)",sum,"score",score
@@ -993,8 +979,6 @@ def addresiduestoligand(projectdir, ligand, pdb, residuelist):
     f_in = open(temp_path, 'r')
     inserstr = ''
     check = []
-    ligandid = 0
-    chainid = 0
     for line in f_in:
         if line.startswith('ATOM'):
             temp = line.split()
@@ -1029,10 +1013,8 @@ def addresiduestoligand(projectdir, ligand, pdb, residuelist):
 
 def pretty_results(projectdir, pdb, summary_results):
     for ligand, result in summary_results.items():
-        output = ''
         bindingresidues = []
         for interaction_type, typelist in result.items():
-            # output += interaction_type + "\n"
             if interaction_type == 'waals':
                 typelist = sorted(typelist, key=itemgetter(2), reverse=True)
             if interaction_type == 'hydrophobic':
@@ -1040,7 +1022,6 @@ def pretty_results(projectdir, pdb, summary_results):
             for entry in typelist:
                 if interaction_type not in ['score', 'prettyname']:
                     bindingresidues.append(entry[0])
-        temp_path = projectdir + 'results/' + pdb + '/output/' + pdb + '_' + ligand + '.yaml'
         bindingresidues = list(set(bindingresidues))
         addresiduestoligand(projectdir, ligand, pdb, bindingresidues)
 
