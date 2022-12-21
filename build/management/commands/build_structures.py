@@ -1212,29 +1212,29 @@ class Command(BaseBuild):
                 print('quitting due to no pdb for fragment in filesystem', f)
                 quit()
 
-            structureligandinteraction = StructureLigandInteraction.objects.filter(pdb_reference=lig_key, structure=structure, annotated=True) #, pdb_file=None
-            if structureligandinteraction.exists():  # if the annotated exists
+            struct_lig_interactions = StructureLigandInteraction.objects.filter(pdb_reference=lig_key, structure=structure, annotated=True) #, pdb_file=None
+            if struct_lig_interactions.exists():  # if the annotated exists
                 try:
-                    structureligandinteraction = structureligandinteraction.get()
-                    structureligandinteraction.pdb_file = pdbdata
-                    ligand = structureligandinteraction.ligand
+                    struct_lig_interactions = struct_lig_interactions.get()
+                    struct_lig_interactions.pdb_file = pdbdata
+                    ligand = struct_lig_interactions.ligand
                 except Exception as msg:
                     print('error with duplication structureligand',lig_key,msg)
                     quit() #not sure about this quit
             elif StructureLigandInteraction.objects.filter(pdb_reference=lig_key, structure=structure).exists():
                 try:
-                    structureligandinteraction = StructureLigandInteraction.objects.filter(pdb_reference=lig_key, structure=structure).get()
-                    structureligandinteraction.pdb_file = pdbdata
-                except: #already there
-                    structureligandinteraction = StructureLigandInteraction.objects.filter(pdb_reference=lig_key, structure=structure, pdb_file=pdbdata).get()
-                ligand = structureligandinteraction.ligand
+                    struct_lig_interactions = StructureLigandInteraction.objects.filter(pdb_reference=lig_key, structure=structure).get()
+                    struct_lig_interactions.pdb_file = pdbdata
+                except Exception as msg:: #already there
+                    struct_lig_interactions = StructureLigandInteraction.objects.filter(pdb_reference=lig_key, structure=structure, pdb_file=pdbdata).get()
+                ligand = struct_lig_interactions.ligand
             else:  # create ligand and pair
-                print(pdb_id, "Skipping interactions with ", output['prettyname'])
+                print(pdb_id, "Skipping interactions with ", pdb_id)
                 pass
 
-            structureligandinteraction.save()
+            struct_lig_interactions.save()
 
-            ResidueFragmentInteraction.objects.filter(structure_ligand_pair=structureligandinteraction).delete()
+            ResidueFragmentInteraction.objects.filter(structure_ligand_pair=struct_lig_interactions).delete()
 
             for interaction in data[lig_key]['interactions']:
                 aa = interaction[0]
@@ -1242,9 +1242,15 @@ class Command(BaseBuild):
                 residue = check_residue(protein, pos, aa)
                 f = interaction[1]
                 fragment, rotamer = extract_fragment_rotamer(f, residue, structure, ligand)
-                if fragment!=None:
-                    interaction_type, created = ResidueFragmentInteractionType.objects.get_or_create(slug=interaction[2], name=interaction[3], type=interaction[4], direction=interaction[5])
-                    fragment_interaction, created = ResidueFragmentInteraction.objects.get_or_create(structure_ligand_pair=structureligandinteraction, interaction_type=interaction_type, fragment=fragment, rotamer=rotamer)
+                if fragment is not None:
+                    interaction_type, created = ResidueFragmentInteractionType.objects.get_or_create(
+                                                slug=interaction[2],
+                                                name=interaction[3],
+                                                type=interaction[4], direction=interaction[5])
+                    fragment_interaction, created = ResidueFragmentInteraction.objects.get_or_create(
+                                                    structure_ligand_pair=struct_lig_interactions,
+                                                    interaction_type=interaction_type,
+                                                    fragment=fragment, rotamer=rotamer)
         else:
             pass
 
