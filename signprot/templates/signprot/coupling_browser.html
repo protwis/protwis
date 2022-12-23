@@ -65,7 +65,7 @@
 
                 <div class="btn-group" style="padding-left:10px;">
                     <input class="btn btn-primary btn-sm" type="button"
-                           onclick="tableToExcel('familiestabletab', 'Families data', 'families_coupling.xls')"
+                           onclick="GlobalTableToExcel('familiestabletab', 'Families data', 'families_coupling.xls')"
                            value="Excel">
                     <input class="btn btn-primary btn-sm" type="button" onclick="reset_tab(oTable1);" value="Reset All">
                 </div>
@@ -287,7 +287,7 @@
 
                 <div class="btn-group" style="padding-left:10px;">
                     <input class="btn btn-primary btn-sm" type="button"
-                           onclick="tableToExcel('subtypestabletab', 'Subtypes data', 'subtypes_coupling.xls')"
+                           onclick="GlobalTableToExcel('subtypestabletab', 'Subtypes data', 'subtypes_coupling.xls')"
                            value="Excel">
                     <input class="btn btn-primary btn-sm" type="button" onclick="reset_tab(oTable2);" value="Reset All">
                 </div>
@@ -526,7 +526,7 @@
 
           <div class="btn-group" style="padding-left:10px;">
               <input class="btn btn-primary btn-sm" type="button"
-                     onclick="tableToExcel('arrestintable', 'Arrestin coupling data', 'arrestin_coupling.xls')"
+                     onclick="GlobalTableToExcel('arrestintable', 'Arrestin coupling data', 'arrestin_coupling.xls')"
                      value="Export Excel">
               <input class="btn btn-primary btn-sm" type="button" onclick="reset_tab(oTable1);" value="Reset All">
           </div>
@@ -695,6 +695,7 @@
     <script src="{% static 'home/js/jquery.dataTables.min.js' %}"></script>
     <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"></script>
     <script src="{% static 'home/js/select2.js' %}"></script>
+    <script src="{% static 'home/js/gpcrdb.js' %}"></script>
     <script src="{% static 'home/js/signprot-multitabtable.js' %}"></script>
     {% if page == 'gprot' %}
       <script src="{% static 'home/js/gprotein_coupling.js' %}"></script>
