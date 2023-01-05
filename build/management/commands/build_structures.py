@@ -1176,7 +1176,8 @@ class Command(BaseBuild):
 
     def build_contact_network(self,s,pdb_code):
         try:
-            interacting_pairs, distances  = compute_interactions(pdb_code, save_to_db=True)
+            # interacting_pairs, distances  = compute_interactions(pdb_code, save_to_db=True)
+            interacting_pairs  = compute_interactions(pdb_code, do_interactions=True, do_peptide_ligand=True, save_to_db=True)
         except:
             self.logger.error('Error with computing interactions (%s)' % (pdb_code))
             return

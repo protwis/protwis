@@ -25,7 +25,7 @@ class Command(BaseBuild):
             default=1,
             help='Number of processes to run')
 
-    def handle(self, *args, **options):        
+    def handle(self, *args, **options):
         try:
             self.logger.info('CREATING COMPLEX INTERACTIONS')
             self.prepare_input(options['proc'], self.pdbs)
@@ -39,8 +39,8 @@ class Command(BaseBuild):
         while count.value<len(pdbs):
             with lock:
                 pdb = pdbs[count.value]
-                count.value +=1 
+                count.value +=1
             try:
-                compute_interactions(pdb, True)
+                compute_interactions(pdb, do_complexes=True, save_to_db=True)
             except:
                 print('Issue making interactions for',pdb)
