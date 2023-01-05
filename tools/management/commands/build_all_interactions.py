@@ -41,6 +41,7 @@ class Command(BaseBuild):
                 pdb = pdbs[count.value]
                 count.value +=1
             try:
-                compute_interactions(pdb, True)
+                # compute_interactions(pdb, True)
+                compute_interactions(pdb, do_interactions=True, do_peptide_ligand=True, save_to_db=True)
             except:
                 print('Issue making interactions for',pdb)
