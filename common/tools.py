@@ -3,6 +3,7 @@ from django.utils.text import slugify
 from django.core.cache import cache
 
 import os
+import sys
 import yaml
 import time
 import logging
@@ -18,6 +19,45 @@ from string import Template
 from Bio import Entrez, Medline
 import xml.etree.ElementTree as etree
 from http.client import HTTPException
+
+
+def test_model_updates(model, master_data, initialize=False, check=False):
+    #check if the input is a single model or a list of models
+    #and initialize the dictionary with the model name and length (set to 0)
+    if initialize:
+        print('Initializing master database of built models')
+        if len(model) == 1:
+            if model[0] not in master_data.keys():
+                master_data[model[0]] = len(model[0].objects.all())
+        else:
+            for table in model:
+                if table not in master_data.keys():
+                    master_data[table] = len(table.objects.all())
+    if check:
+        CHECK = False
+        if len(model) == 1:
+            OG = master_data[model[0]]
+            NEW = len(model[0].objects.all())
+            if NEW != OG:
+                master_data[model[0]] = NEW
+                print('Changes have been applied to the model: ' + str(model[0]))
+                CHECK = True
+            else:
+                print('No changes have been applied to the model: ' + str(model[0]))
+        else:
+            for table in model:
+                OG = master_data[table]
+                NEW = len(table.objects.all())
+                if NEW != OG:
+                    master_data[table] = NEW
+                    print('Changes have been applied to the model: ' + str(table))
+                    CHECK = True
+                else:
+                    print('No changes have been applied to the model: ' + str(table))
+
+        if CHECK == False:
+            print('No module of the tested ones have been updated. Probably some error?')
+            sys.exit()
 
 
 def save_to_cache(path, file_id, data):
