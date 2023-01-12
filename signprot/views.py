@@ -730,8 +730,13 @@ def familyDetail(request, slug):
                 pc = ProteinConformation.objects.filter(protein__family__slug=slug, protein__sequence_type__slug='wt').first()
             except:
                 return HttpResponse("No consensus was generated for this protein family")
-    
-    p = pc.protein
+
+    # GPa1 family return correct pc query but empty one, so we need to fix this behaviour
+    try:
+        p = pc.protein
+    except:
+        return HttpResponse("No consensus was generated for this protein family")
+
     residues = Residue.objects.filter(protein_conformation=pc).order_by('sequence_number').prefetch_related(
         'protein_segment', 'generic_number', 'display_generic_number')
 
