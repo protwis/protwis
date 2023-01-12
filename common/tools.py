@@ -21,43 +21,69 @@ import xml.etree.ElementTree as etree
 from http.client import HTTPException
 
 
-def test_model_updates(model, master_data, initialize=False, check=False):
+def test_model_updates(model, master_data, initialize=False, check=False, rerun=False):
     #check if the input is a single model or a list of models
     #and initialize the dictionary with the model name and length (set to 0)
     if initialize:
         print('Initializing master database of built models')
         if len(model) == 1:
             if model[0] not in master_data.keys():
-                master_data[model[0]] = len(model[0].objects.all())
+                master_data[model[0]] = model[0].objects.all().count()
         else:
             for table in model:
                 if table not in master_data.keys():
-                    master_data[table] = len(table.objects.all())
+                    master_data[table] = table.objects.all().count()
     if check:
         CHECK = False
         if len(model) == 1:
             OG = master_data[model[0]]
-            NEW = len(model[0].objects.all())
+            NEW = model[0].objects.all().count()
             if NEW != OG:
                 master_data[model[0]] = NEW
                 print('Changes have been applied to the model: ' + str(model[0]))
                 CHECK = True
-            else:
-                print('No changes have been applied to the model: ' + str(model[0]))
+                if NEW > OG:
+                    diff = NEW - OG
+                    print(str(diff) + ' records have been added')
+                else:
+                    diff = OG - NEW
+                    print(str(diff) + ' records have been removed')
         else:
             for table in model:
                 OG = master_data[table]
-                NEW = len(table.objects.all())
+                NEW = table.objects.all().count()
                 if NEW != OG:
                     master_data[table] = NEW
                     print('Changes have been applied to the model: ' + str(table))
                     CHECK = True
-                else:
-                    print('No changes have been applied to the model: ' + str(table))
+                    if NEW > OG:
+                        diff = NEW - OG
+                        print(str(diff) + ' records have been added')
+                    else:
+                        diff = OG - NEW
+                        print(str(diff) + ' records have been removed')
 
-        if CHECK == False:
-            print('No module of the tested ones have been updated. Probably some error?')
+        if not CHECK:
+            print('EXITING: No module have been updated. Probably some error?')
             sys.exit()
+
+    if rerun:
+        print('Checking if changes have happened during a build rerun')
+        if len(model) == 1:
+            OG = master_data[model[0]]
+            NEW = model[0].objects.all().count()
+            if NEW != OG:
+                print('Something had changed in the record of the model ' + str(model[0]))
+                print('Previous number of records: ' +str(OG))
+                print('New number of records: ' +str(NEW))
+        else:
+            for table in model:
+                OG = master_data[table]
+                NEW = table.objects.all().count()
+                if NEW != OG:
+                    print('Something had changed in the record of the model ' + str(table))
+                    print('Previous number of records: ' +str(OG))
+                    print('New number of records: ' +str(NEW))
 
 
 def save_to_cache(path, file_id, data):

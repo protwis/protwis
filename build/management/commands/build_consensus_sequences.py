@@ -7,11 +7,13 @@ from build.management.commands.build_human_proteins import Command as BuildHuman
 from residue.functions import *
 from protein.models import Protein, ProteinConformation, ProteinFamily, ProteinSegment, ProteinSequenceType
 from common.alignment import Alignment
+from common.tools import test_model_updates
 from alignment.models import AlignmentConsensus
 
 import os
 import yaml
 import pickle
+import django.apps
 from collections import OrderedDict
 
 class Command(BuildHumanProteins):
@@ -30,6 +32,11 @@ class Command(BuildHumanProteins):
     # fetch families
     families = ProteinFamily.objects.filter(slug__startswith='00').all()
 
+    #Setting the variables for the test tracking of the model upadates
+    tracker = {}
+    all_models = django.apps.apps.get_models()[6:]
+    test_model_updates(all_models, tracker, initialize=True)
+
     def add_arguments(self, parser):
         parser.add_argument('-p', '--proc', type=int, action='store', dest='proc', default=1, help='Number of processes to run')
         parser.add_argument('--signprot', type=str, action='store', dest='signprot', default=False, help='Only run for either G proteins or arrestins')
@@ -42,8 +49,11 @@ class Command(BuildHumanProteins):
             self.input_slug = options['input-slug']
             if options['purge']:
                 self.purge_consensus_sequences()
+                self.tracker = {}
+                test_model_updates(self.all_models, self.tracker, initialize=True)
             self.logger.info('CREATING CONSENSUS SEQUENCES')
             self.prepare_input(options['proc'], self.families)
+            test_model_updates(self.all_models, self.tracker, check=True)
             self.logger.info('COMPLETED CREATING CONSENSUS SEQUENCES')
         except Exception as msg:
             print(msg)

@@ -12,15 +12,20 @@ from protein.models import Protein, ProteinSegment
 # from residue.models import Residue
 from structure.models import Structure, StructureModelRMSD
 from structure.sequence_parser import SequenceParser
-
+from common.tools import test_model_updates
 from datetime import datetime
 import csv, os, pprint
+import django.apps
 
 
 starttime = datetime.now()
 
 class Command(BaseBuild):
 
+    #Setting the variables for the test tracking of the model upadates
+    tracker = {}
+    all_models = django.apps.apps.get_models()[6:]
+    test_model_updates(all_models, tracker, initialize=True)
     def add_arguments(self, parser):
         super(Command, self).add_arguments(parser=parser)
         parser.add_argument('--verbose',
@@ -37,8 +42,11 @@ class Command(BaseBuild):
         bsmr = BuildStructureModelRMSD()
         if options['purge']:
             bsmr.purge()
+            self.tracker = {}
+            test_model_updates(self.all_models, self.tracker, initialize=True)
         bsmr.parse_data_file()
         bsmr.run_build()
+        test_model_updates(self.all_models, self.tracker, check=True)
 
 
 class BuildStructureModelRMSD():
@@ -81,5 +89,3 @@ class BuildStructureModelRMSD():
                                                                     TM_backbone=TM_backbone, H8=H8,
                                                                     ICL1=ICL1, ECL1=ECL1, ICL2=ICL2, ECL2=ECL2, ECL3=ECL3,
                                                                     notes=notes)
-
-

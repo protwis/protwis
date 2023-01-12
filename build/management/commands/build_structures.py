@@ -10,6 +10,7 @@ from protein.models import (Protein, ProteinConformation, ProteinState, ProteinA
     ProteinSegment)
 from residue.models import ResidueGenericNumber, ResidueNumberingScheme, Residue, ResidueGenericNumberEquivalent
 from common.models import WebLink, WebResource, Publication
+from common.tools import test_model_updates
 from structure.models import Structure, StructureType, StructureStabilizingAgent,PdbData, Rotamer, Fragment
 from construct.functions import *
 
@@ -27,6 +28,7 @@ from interaction.models import *
 from interaction.views import runcalculation_2022, regexaa, check_residue, extract_fragment_rotamer
 from residue.functions import dgn
 
+import django.apps
 import logging
 import os
 import re
@@ -95,6 +97,10 @@ class Command(BaseBuild):
             default=False,
             help='Print info for debugging')
 
+    tracker = {}
+    all_models = django.apps.apps.get_models()[6:]
+    test_model_updates(all_models, tracker, initialize=True)
+
     # source file directory
     pdb_data_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'pdbs'])
 
@@ -122,6 +128,8 @@ class Command(BaseBuild):
         if options['purge']:
             try:
                 self.purge_structures()
+                self.tracker = {}
+                test_model_updates(self.all_models, self.tracker, initialize=True)
             except Exception as msg:
                 print(msg)
                 self.logger.error(msg)
@@ -154,7 +162,7 @@ class Command(BaseBuild):
             iterations = 1
             for i in range(1,iterations+1):
                 self.prepare_input(options['proc'], self.parsed_structures.pdb_ids, i)
-
+            test_model_updates(self.all_models, self.tracker, check=True)
             self.logger.info('COMPLETED CREATING STRUCTURES')
         except Exception as msg:
             print(msg)
