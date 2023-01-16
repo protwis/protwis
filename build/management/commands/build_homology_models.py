@@ -1654,6 +1654,20 @@ class HomologyModeling(object):
                 pdb_struct.detach_child(l[0].chain)
                 pdb_struct.add(l[2][l[0].chain])
 
+        ### FIXME later - fetch UNK unnatural residues from original file and keep the modeled natural ones
+        # if len(self.peptide_ligands)>0:
+        #     for l in self.peptide_ligands:
+        #         model_peptide_resis = [i for i in pdb_struct[l[0].chain]]
+        #         print(model_peptide_resis)
+        #         orig_peptide_resis = [i for i in l[2][l[0].chain]]
+        #         print(orig_peptide_resis)
+        #         for i, res in enumerate(pdb_struct[l[0].chain]):
+        #             if res.get_resname()=='UNK':
+        #                 print(res, model_peptide_resis[i].get_id()[1], pdb_struct[l[0].chain][model_peptide_resis[i].get_id()[1]])
+        #                 pdb_struct[l[0].chain].detach_child(model_peptide_resis[i].get_id())
+        #                 pdb_struct[l[0].chain].add(l[2][l[0].chain][orig_peptide_resis[i].get_id()])
+        # pprint.pprint(self.peptide_ligands)
+
         io = PDB.PDBIO()
         io.set_structure(pdb_struct)
         io.save(path+self.modelname+'.pdb')
@@ -2811,8 +2825,12 @@ class HomologyModeling(object):
             pdb.retrieve_pdb_file(str(self.main_structure), pdir='./', file_format='pdb')
             self.alternate_water_positions = OrderedDict()
             last_seqnum = list(Residue.objects.filter(protein_conformation__protein=self.reference_protein.parent))[-1].sequence_number
-            with open('./pdb{}.ent'.format(str(self.main_structure).lower()),'r') as f:
-                lines = f.readlines()
+            try:
+                with open('./pdb{}.ent'.format(str(self.main_structure).lower()),'r') as f:
+                    lines = f.readlines()
+            except:
+                with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'pdbs', str(self.main_structure)+'.pdb']), 'r') as f:
+                    lines = f.readlines()
             with open(post_file, 'a') as model:
                 hetatm = 1
                 for line in lines:
