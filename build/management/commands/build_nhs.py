@@ -5,7 +5,8 @@ from django.db import IntegrityError
 
 from drugs.models import Drugs
 from mutational_landscape.models import NHSPrescribings
-
+from common.tools import test_model_updates
+import django.apps
 import pandas as pd
 import numpy as np
 import math, os
@@ -22,6 +23,10 @@ class Command(BaseCommand):
 
     logger = logging.getLogger(__name__)
 
+    tracker = {}
+    all_models = django.apps.apps.get_models()[6:]
+    test_model_updates(all_models, tracker, initialize=True)
+
     def add_arguments(self, parser):
         parser.add_argument('--filename', action='append', dest='filename',
             help='Filename to import. Can be used multiple times')
@@ -35,6 +40,7 @@ class Command(BaseCommand):
         try:
             self.purge_data()
             self.create_NHS()
+            test_model_updates(self.all_models, self.tracker, check=True)
         except Exception as msg:
             print(msg)
             self.logger.error(msg)
