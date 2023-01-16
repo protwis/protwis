@@ -63,6 +63,7 @@ class StructureBrowser(TemplateView):
         try:
             structures = Structure.objects.all().select_related(
                 "state",
+                "structure_type",
                 "pdb_code__web_resource",
                 "protein_conformation__protein__species",
                 "protein_conformation__protein__source",
@@ -70,7 +71,7 @@ class StructureBrowser(TemplateView):
                 "publication__web_link__web_resource").prefetch_related(
                 "stabilizing_agents", "construct__crystallization__crystal_method",
                 "protein_conformation__protein__parent__endogenous_gtp_set__ligand__ligand_type",
-                "protein_conformation__site_protein_conformation__site",
+                "protein_conformation__site_protein_conformation__site","structure_type",
                 Prefetch("ligands", queryset=StructureLigandInteraction.objects.filter(
                 annotated=True).prefetch_related('ligand__ligand_type', 'ligand_role','ligand__ids__web_resource')),
                 Prefetch("extra_proteins", queryset=StructureExtraProteins.objects.all().prefetch_related(
@@ -79,10 +80,18 @@ class StructureBrowser(TemplateView):
         except Structure.DoesNotExist as e:
             pass
 
+        residue_counts = Residue.objects.values("protein_conformation").filter(protein_segment__isnull=False).order_by("protein_conformation").annotate(Count=Count("protein_conformation"))
+        structure_residues = {}
+        for pair in residue_counts:
+            if pair['protein_conformation'] not in structure_residues.keys():
+                structure_residues[pair['protein_conformation']] =  pair['Count']
+
         structs_and_coverage = []
         for s in structures:
-            structure_residues = Residue.objects.filter(protein_conformation=s.protein_conformation, protein_segment__isnull=False)
-            coverage = round((len(structure_residues) / len(s.protein_conformation.protein.parent.sequence))*100)
+            # structure_residues = Residue.objects.filter(protein_conformation=s.protein_conformation, protein_segment__isnull=False)
+            residue_num = structure_residues[s.protein_conformation.id]
+            # coverage = round((len(structure_residues) / len(s.protein_conformation.protein.parent.sequence))*100)
+            coverage = round((residue_num / len(s.protein_conformation.protein.parent.sequence))*100)
             structs_and_coverage.append([s, coverage])
         context['structures'] = structs_and_coverage
 
@@ -2559,7 +2568,7 @@ def HommodDownload(request):
     with zipfile.ZipFile(zip_io, mode='w', compression=zipfile.ZIP_DEFLATED) as backup_zip:
         for hommod in hommodels:
             io = StringIO(hommod.pdb_data.pdb)
-            
+
             if not hommod.protein.accession:
                 mod_name = 'Class{}_{}_{}_refined_{}_{}_GPCRDB.pdb'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.parent.entry_name,
                                                                    hommod.main_template.pdb_code.index, hommod.state.name, hommod.version)
