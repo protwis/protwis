@@ -15,8 +15,6 @@ from interaction.models import ResidueFragmentInteraction
 logger = logging.getLogger("protwis")
 #==============================================================================  
 class ProteinSuperpose(object):
-  
-    
 
     def __init__ (self, ref_file, alt_files, simple_selection):
     
@@ -27,7 +25,7 @@ class ProteinSuperpose(object):
             if not check_gn(self.ref_struct):
                 gn_assigner = GenericNumbering(structure=self.ref_struct)
                 self.ref_struct = gn_assigner.assign_generic_numbers()
-      
+
         self.alt_structs = []
         for alt_id, alt_file in enumerate(alt_files):
             try:
@@ -44,11 +42,11 @@ class ProteinSuperpose(object):
         self.selector = CASelector(self.selection, self.ref_struct, self.alt_structs)
 
     def run (self):
-    
+
         if self.alt_structs == []:
             logger.error("No structures to align!")
             return []
-    
+
         super_imposer = Superimposer()
         for alt_struct in self.alt_structs:
             try:
@@ -292,9 +290,10 @@ class LoopSuperpose(BulgeConstrictionSuperpose):
                 if (res_count<=edge1 or array_length-edge2<res_count) and atom.get_name() in ['N','CA','C']:
                     temp_backbone_atoms.append(atom)
                 all_template_atoms.append(atom)
-        self.backbone_rmsd = self.calc_backbone_RMSD(ref_backbone_atoms, temp_backbone_atoms)
-        super_imposer.set_atoms(ref_backbone_atoms, temp_backbone_atoms)
-        super_imposer.apply(all_template_atoms)        
+
+        super_imposer.set_atoms(sorted(ref_backbone_atoms), sorted(temp_backbone_atoms))
+        super_imposer.apply(all_template_atoms)
+        self.backbone_rmsd = self.calc_backbone_RMSD(sorted(ref_backbone_atoms), sorted(temp_backbone_atoms))
         return self.rebuild_dictionary(all_template_atoms)
         
 #============================================================================== 

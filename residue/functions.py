@@ -620,3 +620,15 @@ def dgn(gn, protein_conformation):
     convert_gn = ResidueGenericNumberEquivalent.objects.get(label=gn, scheme=scheme).default_generic_number.label
     return Residue.objects.get(protein_conformation=protein_conformation, generic_number__label=convert_gn).display_generic_number.label
     
+class DummyResidue():
+    def __init__(self, sequence_number, amino_acid, three_letter, display_generic_number=None, generic_number=None, protein_conformation=None, protein_segment=None):
+        self.sequence_number = sequence_number
+        self.amino_acid = amino_acid
+        self.three_letter = three_letter
+        self.display_generic_number = display_generic_number
+        self.generic_number = generic_number
+        self.protein_conformation = protein_conformation
+        self.protein_segment = protein_segment
+
+    def __repr__(self):
+        return self.amino_acid+str(self.sequence_number)

@@ -125,6 +125,68 @@ class GPCRDBParsingPDB(object):
                 direction += 1
             return str(split[0])+delimiter+str(int(str(split[1])[:2])+direction)
 
+    @staticmethod
+    def find_before_4_gns(section, reference_dict, distorted_residues, segment_labels):
+        minus_offset, minus_gns = [], []
+        first_index = list(reference_dict[section[0][0]]).index(section[0][1])
+        first_seg = section[0][0]
+        ### If not 4 residues in this segment, start from prev segment
+        if first_index<4:
+            first_seg = segment_labels[segment_labels.index(section[0][0])-1]
+            for fi in range(first_index-1, -1, -1):
+                minus_offset.append([section[0][0], list(reference_dict[section[0][0]])[fi]])
+            first_index = len(reference_dict[first_seg])
+        first_index_orig = first_index
+        minus_gns = []
+
+        ### Find before 4
+        for j in range(1, 5):
+            while list(reference_dict[first_seg])[first_index-j] in distorted_residues[first_seg]:
+                minus_offset.append([first_seg,list(reference_dict[first_seg])[first_index-j]])
+                first_index-=1
+                if first_index_orig>0 and first_index-j<0:
+                    first_seg = segment_labels[segment_labels.index(first_seg)-1]
+                    first_index = len(reference_dict[first_seg])
+                    j = 1
+            minus_gns.append(list(reference_dict[first_seg])[first_index-j])
+
+        minus_gns.reverse()
+        if len(minus_offset)>0:
+            for m_s, m_gn in minus_offset:
+                section = [[m_s, m_gn]]+section
+
+        return section, minus_gns, first_seg
+
+    @staticmethod
+    def find_after_4_gns(section, reference_dict, distorted_residues, segment_labels):
+        ''' Find after 4 residues for superpositioning'''
+        plus_offset, plus_gns = [], []
+        last_index = list(reference_dict[section[-1][0]]).index(section[-1][1])
+        last_seg = section[-1][0]
+        last_seg_orig = last_seg
+
+        ### If not 4 residues in this segment, end in next segment
+        if len(reference_dict[section[-1][0]])-last_index<5:
+            last_seg = segment_labels[segment_labels.index(section[-1][0])+1]
+            for li in range(last_index+1, len(reference_dict[section[-1][0]])):
+                plus_offset.append([section[-1][0], list(reference_dict[section[-1][0]])[li]])
+            last_index = 0
+        if last_seg!=last_seg_orig:
+            r = range(0,4)
+        else:
+            r = range(1,5)
+        for k in r:
+            while list(reference_dict[last_seg])[last_index+k] in distorted_residues[last_seg]:
+                plus_offset.append([last_seg,list(reference_dict[last_seg])[last_index+k]])
+                last_index+=1
+            plus_gns.append(list(reference_dict[last_seg])[last_index+k])
+        
+        if len(plus_offset)>0:
+            for p_s, p_gn in plus_offset:
+                section.append([p_s, p_gn])
+
+        return section, plus_gns, last_seg
+
     def fetch_residues_from_pdb(self, structure, generic_numbers, modify_bulges=False, just_nums=False):
         ''' Fetches specific lines from pdb file by generic number (if generic number is
             not available then by residue number). Returns nested OrderedDict()
@@ -448,7 +510,7 @@ class ImportHomologyModel():
             seqnum = res.get_id()[1]
             this_res = resis.get(sequence_number=seqnum)
             try:
-                reference_dict[this_res.protein_segment.slug][this_res.generic_number.label] = this_res.amino_acid
+                reference_dict[this_res.protein_segment.slug][ggn(this_res.display_generic_number.label)] = this_res.amino_acid
             except:
                 reference_dict[this_res.protein_segment.slug][str(this_res.sequence_number)] = this_res.amino_acid
             atoms_list = []
@@ -456,7 +518,7 @@ class ImportHomologyModel():
                 if atom.element!='H':
                     atoms_list.append(atom)
             try:
-                main_pdb_array[this_res.protein_segment.slug][this_res.generic_number.label.replace('x','.')] = atoms_list
+                main_pdb_array[this_res.protein_segment.slug][ggn(this_res.display_generic_number.label).replace('x','.')] = atoms_list
             except:
                 main_pdb_array[this_res.protein_segment.slug][str(this_res.sequence_number)] = atoms_list
 

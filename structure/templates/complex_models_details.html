@@ -155,13 +155,13 @@ canvas {
             <div style='display: table-cell;'>
                 {% for prot, bts in backbone_templates.items %}
                     {% for bt in bts %}
-                        <div class="graphcolor" style="background-color:{{ bt.color }}; width: 20px; height: 10px; margin-top: 5px;"></div>
+                        <div class="graphcolor" style="background-color:{{ bt.color }}; width: 20px; height: 10px; margin-bottom: 5px; border:solid black;"></div>
                         {{ bt.pdb_code.index }} ({{ bt.protein_conformation.protein.parent.name|safe}}) <br>
 
 
                     {% endfor %}
                 {% endfor %}
-                        <div class="graphcolor" style="background-color:white; width: 20px; height: 10px;"></div>
+                        <div class="graphcolor" style="background-color:white; width: 20px; height: 10px; margin-bottom: 5px; border:solid black;"></div>
                         None
             </div>
         </div>

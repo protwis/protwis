@@ -1,7 +1,7 @@
 /*global d3*/
 /*eslint complexity: ["error", 20]*/
 
-function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, qualitative, bias){
+function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, qualitative, bias, pathway){
 
   // check if there are qualitative values in the dataset
   // for specify the y labels later
@@ -248,10 +248,14 @@ function DotScatter(data, BaseDiv, ID, colors, legendData, header, ylabel, quali
       }
     }
   }
-
+  console.log(pathway);
   yAxis.tickFormat(function(d) {
           if(d === fb){
-            return "Full Bias";
+            if (pathway === 'True'){
+              return "Full Preference";
+            } else {
+              return "Full Bias";
+            }
           } else if(d === hb){
             return "Over 50";
           } else {

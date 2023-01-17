@@ -420,9 +420,9 @@
                 <tr model_id='{{model.pk}}'>
                     <td class="text-center"><input class="alt" type="checkbox" id="{{ model.pk }}"></td>
                     {% if model.protein.accession %}
-                        <td><a href="homology_models/{{ model.protein.entry_name }}_{{ model.state.slug }}">{{ model.protein.family.name|safe }}</a></td>
+                        <td><a href="homology_models/{{ model.protein.entry_name }}_{{ model.state.slug }}" target="_blank">{{ model.protein.family.name|safe }}</a></td>
                     {% else %}
-                        <td><a href="refined/{{ model.protein.entry_name|upper }}">{{ model.protein.family.name|safe }}</a></td>
+                        <td><a href="refined/{{ model.protein.entry_name|upper }}" target="_blank">{{ model.protein.family.name|safe }}</a></td>
                     {% endif %}
                     <td>{{ model.version|date:"Y-m-d" }}</td>
                     <td>{{ model.state.name }}</td>

@@ -274,11 +274,11 @@ class CASelector(object):
         for chain in structure:
             for res in chain:
                 try:
-                    if 0 < res['CA'].get_bfactor() < 8.1 and "{:.2f}".format(res['CA'].get_bfactor()) in self.selection.generic_numbers:
+                    if "{:.2f}".format(res['CA'].get_bfactor()) in self.selection.generic_numbers:
                         atom_list.append(res['CA'])
                     if -8.1 < res['CA'].get_bfactor() < 0 and "{:.3f}".format(-res['CA'].get_bfactor() + 0.001) in self.selection.generic_numbers:
                         atom_list.append(res['CA'])
-                except :
+                except:
                     continue
 
         if atom_list == []:
@@ -1121,12 +1121,14 @@ class ParseStructureCSV():
     def __init__(self):
         self.pdb_ids = []
         self.structures = {}
+        self.parent_segends = {}
         with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'structures.csv']), newline='') as csvfile:
             structures = csv.reader(csvfile, delimiter='\t')
             next(structures, None)
             for s in structures:
                 self.pdb_ids.append(s[0])
                 self.structures[s[0]]= {'protein':s[1], 'name':s[0].lower(), 'state':s[4], 'preferred_chain':s[5], 'resolution':s[3]}
+        self.fusion_proteins = []
 
     def __str__(self):
         return '<ParsedStructures: {} entries>'.format(len(self.pdb_ids))
@@ -1174,6 +1176,17 @@ class ParseStructureCSV():
                 if 'auxiliary_protein' not in self.structures[a[0]]:
                     self.structures[a[0]]['auxiliary_protein'] = []
                 self.structures[a[0]]['auxiliary_protein'].append(a[1])
+                if aux_csv=='fusion_proteins.csv':
+                    if a[1] not in self.fusion_proteins:
+                        self.fusion_proteins.append(a[1])
+
+    def parse_yaml_file(self, yaml_file):
+        with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', yaml_file]), 'r') as yfile:
+            y = yaml.safe_load(yfile)
+        return y
+
+    def parse_parent_segends(self):
+        self.parent_segends = self.parse_yaml_file('non_xtal_segends.yaml')
 
 
 class StructureBuildCheck():

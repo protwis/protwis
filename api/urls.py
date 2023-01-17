@@ -8,8 +8,6 @@ excluded_apis = [
     url(r'^reference/', views.schema_view)]
 
 urlpatterns = excluded_apis + [
-    # url(r'^$', views.schema_view),
-    # url(r'^reference/', views.schema_view),
     url(r'^protein/accession/(?P<accession>[^/].+)/$', views.ProteinByAccessionDetail.as_view(),
         name='proteinbyaccession'),
     url(r'^protein/(?P<entry_name>[^/].+)/$', views.ProteinDetail.as_view(), name='protein-detail'),
@@ -58,6 +56,7 @@ urlpatterns = excluded_apis + [
         name='proteinsimilarityalignment'),
 
     url(r'^structure/$', cache_page(3600*24*7)(views.StructureList.as_view()), name='structure-list'),
+    url(r'^structure/accession_codes_human/$', cache_page(3600*24*7)(views.StructureAccessionHuman.as_view()), name='structure-accession-list'),
     url(r'^structure/representative/$', cache_page(3600*24*7)(views.RepresentativeStructureList.as_view()), {'representative': True},
         name='structure-representative-list'),
     url(r'^structure/protein/(?P<entry_name>[^/]+)/$', views.StructureListProtein.as_view(),
@@ -67,6 +66,7 @@ urlpatterns = excluded_apis + [
         name='representative-structure-list-protein'),
     url(r'^structure/(?P<pdb_code>[^/]+)/$', views.StructureDetail.as_view(), name='structure-detail'),
     url(r'^structure/(?P<pdb_code>[^/]+)/interaction/$', views.StructureLigandInteractions.as_view(), name='interaction'),
+    url(r'^structure/(?P<pdb_code>[^/]+)/peptideinteraction/$', views.StructurePeptideLigandInteractions.as_view(), name='peptide-interaction'),
     url(r'^structure/template/(?P<entry_name>[^/]+)/$', views.StructureTemplate.as_view(),
         name='structuretemplate'),
     url(r'^structure/template/(?P<entry_name>[^/]+)/(?P<segments>[^/]+)/$', views.StructureTemplatePartial.as_view(),
@@ -75,6 +75,7 @@ urlpatterns = excluded_apis + [
         name='assign_generic_numbers'),
     url(r'structure/parse_pdb$', views.StructureSequenceParser.as_view(), name='sequence_parser'),
     url(r'^species/$', cache_page(3600*24*7)(views.SpeciesList.as_view()), name='species-list'),
+    url(r'^ligands/gtp_ids/$', views.GtPIDList.as_view(), name='gtp-ids'),
     url(r'^species/(?P<latin_name>[^/]+)/$', views.SpeciesDetail.as_view(), name='species-detail'),
     url(r'^mutants/(?P<entry_name>[^/].+)/$', views.MutantList.as_view(), name='mutants'),
     url(r'^drugs/(?P<entry_name>[^/].+)/$', views.DrugList.as_view(), name='drugs'),

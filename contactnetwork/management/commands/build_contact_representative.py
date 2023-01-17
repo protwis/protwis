@@ -106,7 +106,9 @@ class Command(BaseCommand):
                 pdb_common_contacts = common_contacts.intersection(contacts_in_pdb[pdb])
                 pdb_uncommon_contacts = uncommon_contacts.intersection(contacts_in_pdb[pdb])
                 score = len(pdb_common_contacts) + len(uncommon_contacts) - len(pdb_uncommon_contacts)
-                score /= (len(common_contacts)+len(uncommon_contacts))
+                if len(common_contacts)+len(uncommon_contacts) > 0:
+                    score /= (len(common_contacts)+len(uncommon_contacts))
+                score = 0
                 print(pdb,score,resolution_lookup[pdb],len(pdb_common_contacts),len(pdb_uncommon_contacts),len(contacts_in_pdb[pdb]))
                 pdbs_scored.append([pdb,score,resolution_lookup[pdb],len(pdb_common_contacts),len(pdb_uncommon_contacts),len(contacts_in_pdb[pdb])])
                 s = Structure.objects.get(pdb_code__index=pdb)

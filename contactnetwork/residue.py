@@ -93,7 +93,7 @@ ACCEPTING_REFERENCES = {'ASN':
                         {'O': 'C' }}
 
 # Van-der-Waals radii of the elements.
-VDW_RADII = {'H': 1.2, 'C': 1.7, 'N': 1.55, 'O': 1.52, 'P': 1.80, 'S': 1.80}
+VDW_RADII = {'H': 1.2, 'C': 1.7, 'N': 1.55, 'O': 1.52, 'P': 1.80, 'S': 1.80, 'F': 1.47, 'CL': 1.75}
 
 # Factor multiplied with VDW radii when determining distance between elements.
 VDW_TRESHOLD_FACTOR = 1.1

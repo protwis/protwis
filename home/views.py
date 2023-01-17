@@ -3,6 +3,7 @@ from django.conf import settings
 from django.views.decorators.cache import cache_page
 from django.http import JsonResponse
 from django.db.models import F, Q
+from django.views.generic import TemplateView
 
 from protwis.context_processors import site_title
 from news.models import News
@@ -115,3 +116,12 @@ def citations_json(request):
     )
     response = JsonResponse(list(citations_q), safe=False)
     return response
+
+
+class citeGPCRdb(TemplateView):
+    template_name = 'home/cite_gpcrdb.html'
+
+    def get_context_data(self, **kwargs):
+
+        context = super().get_context_data(**kwargs)
+        return context

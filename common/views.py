@@ -1,4 +1,4 @@
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.views.generic import TemplateView
 from django.views.decorators.cache import cache_page
@@ -1389,6 +1389,49 @@ def SelectRange(request):
             if range_start < float(resn.label.replace('x','.')) < range_end:
                 o.append(resn)
 
+def ImportTargetSelection(request):
+    """Adds source and proteins into session, returns info to update filters"""
+    entry_names = request.GET['entry_names']
+    proteins = Protein.objects.filter(entry_name__in=entry_names.split(',')).select_related('species', 'source')
+    sources = set([p.source for p in proteins])
+    species = set([p.species for p in proteins])
+    found_entries = [p.entry_name for p in proteins]
+
+    if len(sources)>1 or list(sources)[0].name!='SWISSPROT':
+        source = 'All'
+    else:
+        source = 'Swissprot'
+    species_ids = list(proteins.values_list('species__id', flat=True).distinct())
+    slugs = list(proteins.values_list('family__slug', flat=True))
+    out = {'slugs':slugs, 'species':species_ids, 'source':source, 'found_entries':found_entries}
+
+    simple_selection = request.session.get('selection', False)
+
+    # create full selection and import simple selection (if it exists)
+    selection = Selection()
+    if simple_selection:
+        selection.importer(simple_selection)
+
+    for prot in proteins:
+        selection_object = SelectionItem('protein', prot)
+        selection.add('targets', 'protein', selection_object)
+
+    for sp in species:
+        selection_object = SelectionItem('species', sp)
+        selection.add('species', 'species', selection_object)
+
+    for ps in sources:
+        selection_object = SelectionItem('annotation', ps)
+        selection.add('annotation', 'annotation', selection_object)
+
+    # export simple selection that can be serialized
+    simple_selection = selection.exporter()
+
+    # add simple selection to session
+    request.session['selection'] = simple_selection
+
+    return JsonResponse(json.dumps(out), safe=False)
+
 def SelectFullSequence(request):
     """Adds all segments to the selection"""
     selection_type = request.GET['selection_type']
@@ -1538,18 +1581,20 @@ def SelectAlignableResidues(request):
     if numbering_scheme_slug == 'cgn':
         cgn = True
     elif numbering_scheme_slug == 'false':
-        if simple_selection.reference:
+        if simple_selection and simple_selection.reference:
             if simple_selection.reference[0].type == 'family':
                 proteins = Protein.objects.filter(family__slug__startswith=simple_selection.reference[0].item.slug)
                 r_prot = proteins[0]
             elif simple_selection.reference[0].type == 'protein':
                 r_prot = simple_selection.reference[0].item
+            elif simple_selection.reference[0].type == 'structure':
+                r_prot = simple_selection.reference[0].item.protein_conformation.protein
 
             seg_ids_all = get_protein_segment_ids(r_prot, seg_ids_all)
             if r_prot.residue_numbering_scheme not in numbering_schemes:
                 numbering_schemes.append(r_prot.residue_numbering_scheme)
 
-        if simple_selection.targets:
+        if simple_selection and simple_selection.targets:
             for t in simple_selection.targets:
                 if t.type == 'family':
                     proteins = Protein.objects.filter(family__slug__startswith=t.item.slug)
@@ -1561,11 +1606,17 @@ def SelectAlignableResidues(request):
                 seg_ids_all = get_protein_segment_ids(t_prot, seg_ids_all)
                 if t_prot.residue_numbering_scheme not in numbering_schemes:
                     numbering_schemes.append(t_prot.residue_numbering_scheme)
+
         # Filter based on reference and target proteins
         filtered_segments = []
         for segment in segments:
             if segment.id in seg_ids_all:
                 filtered_segments.append(segment)
+
+        if len(numbering_schemes) == 0 and len(filtered_segments) == 0:
+            numbering_schemes.append(ResidueNumberingScheme.objects.get(slug="gpcrdba"))
+            filtered_segments = segments
+
         segments = filtered_segments
     else:
         numbering_schemes = [ResidueNumberingScheme.objects.get(slug=numbering_scheme_slug)]
@@ -1704,9 +1755,10 @@ def SelectionAnnotation(request):
 
     # export simple selection that can be serialized
     simple_selection = selection.exporter()
-
+    print('annotation',simple_selection)
     # add simple selection to session
     request.session['selection'] = simple_selection
+
     return render(request, 'common/selection_filters_annotation.html', selection.dict('annotation'))
 
 def SelectionSpeciesPredefined(request):
@@ -1720,14 +1772,14 @@ def SelectionSpeciesPredefined(request):
     selection = Selection()
     if simple_selection:
         selection.importer(simple_selection)
-
+    print(simple_selection)
     all_sps = Species.objects.all()
     sps = False
     if species == 'All':
         sps = []
     if species != 'All' and species:
         sps = Species.objects.filter(common_name=species)
-
+    print('sps', sps)
     if sps != False:
         # reset the species selection
         selection.clear('species')
@@ -1755,10 +1807,10 @@ def SelectionSpeciesToggle(request):
 
     all_sps = Species.objects.all()
     sps = Species.objects.filter(pk=species_id)
-
+    print(sps)
     # get simple selection from session
     simple_selection = request.session.get('selection', False)
-
+    print('species get simple selection', simple_selection)
     # create full selection and import simple selection (if it exists)
     selection = Selection()
     if simple_selection:
@@ -1780,6 +1832,7 @@ def SelectionSpeciesToggle(request):
     # add all species objects to context (for comparison to selected species)
     context = selection.dict('species')
     context['sps'] = Species.objects.all()
+    print('species toggle',simple_selection)
 
     return render(request, 'common/selection_filters_species_selector.html', context)
 
@@ -1923,18 +1976,27 @@ def ExpandSegment(request):
     cgn = False
     if numbering_scheme_slug == 'cgn':
         cgn = True
-    elif numbering_scheme_slug == 'false':
+    elif numbering_scheme_slug == 'false' and simple_selection:
+        first_item = False
         if simple_selection.reference:
             first_item = simple_selection.reference[0]
-        else:
+        elif simple_selection.targets:
             first_item = simple_selection.targets[0]
-        if first_item.type == 'family':
-            proteins = Protein.objects.filter(family__slug__startswith=first_item.item.slug)
-            numbering_scheme = proteins[0].residue_numbering_scheme
-        elif first_item.type == 'protein':
-            numbering_scheme = first_item.item.residue_numbering_scheme
+
+        if first_item:
+            if first_item.type == 'family':
+                proteins = Protein.objects.filter(family__slug__startswith=first_item.item.slug)
+                numbering_scheme = proteins[0].residue_numbering_scheme
+            elif first_item.type == 'protein':
+                numbering_scheme = first_item.item.residue_numbering_scheme
+            elif first_item.type == 'structure':
+                numbering_scheme = first_item.item.protein_conformation.protein.residue_numbering_scheme
+        else:
+            numbering_scheme = ResidueNumberingScheme.objects.get(slug="gpcrdba")
+    elif numbering_scheme_slug:
+            numbering_scheme = ResidueNumberingScheme.objects.get(slug=numbering_scheme_slug)
     else:
-        numbering_scheme = ResidueNumberingScheme.objects.get(slug=numbering_scheme_slug)
+        numbering_scheme = ResidueNumberingScheme.objects.get(slug="gpcrdba")
 
     if cgn ==True:
         # fetch the generic numbers for CGN differently
@@ -2399,10 +2461,12 @@ def ReadTargetInput(request):
 
     if request.POST == {}:
         return render(request, 'common/selection_lists.html', '')
+    print(selection_type, selection_subtype)
 
     # Process input names
     up_names = request.POST['input-targets'].split('\r')
     for up_name in up_names:
+        print(up_name)
         up_name = up_name.strip()
         obj = None
         if "_" in up_name: # Maybe entry name
@@ -2437,7 +2501,7 @@ def ReadTargetInput(request):
         if obj != None:
             selection_object = SelectionItem(selection_subtype, obj)
             selection.add(selection_type, selection_subtype, selection_object)
-
+    print(obj)
     # export simple selection that can be serialized
     simple_selection = selection.exporter()
     # add simple selection to session

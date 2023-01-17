@@ -79,6 +79,7 @@ urlpatterns = [
     path('path_preference_emax_path_profiles', views.BiasedSignallingOnTheFlyCalculation.as_view(page='pathwayprofiles', pathway=True), name='biased_rank_order'),
 
     url(r'^(?P<pk>[-\w]+)/info$', views.LigandInformationView.as_view()),
+    url(r'^(?P<pk>[-\w]+)/gtp_info$', views.LigandGtoPInfoView.as_view()),
     #Browsers Cached
     path('userbiased/', views.CachedOTFBiasBrowserUser, name='bias_browser-list'),
     path('userbiasedsubtypes/',views.CachedOTFBiasSubtypeBrowserUser, name='bias_browser-list'),

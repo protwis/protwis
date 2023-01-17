@@ -76,6 +76,11 @@
   };
     $(document).ready(function() {
         structurebrowser();
+
+        // Activate popovers from Bootstrap
+        $("[data-toggle='popover']").popover({
+          container: 'body'
+        });
     });
 </script>
 
@@ -206,11 +211,11 @@
                                 <div><button class='icon-button' type='button'><i id='pdb_copy' class="glyphicon glyphicon-export pdb-export"></i></button></div>
                             </div>
                         </th>
-                        <th>Refined<br>structure<br><a href="https://docs.gpcrdb.org/structures.html#refined-structures" target="_blank"><span class="glyphicon glyphicon-info-sign"></span></a></th>
+                        <th>Refined<br>structure<br><a href="https://docs.gpcrdb.org/structures.html#refined-structures" target="_blank"><span class="glyphicon glyphicon-book icon-button"></span></a></th>
                         <th>Resolution</th>
                         <th>Preferred<br>chain</th>
-                        <th>State<br><a href="https://docs.gpcrdb.org/structures.html#structure-descriptors" target="_blank"><span class="glyphicon glyphicon-info-sign"></span></a></th>
-                        <th>Degree<br>active (%)<br><a href="https://docs.gpcrdb.org/structures.html#structure-descriptors" target="_blank"><span class="glyphicon glyphicon-info-sign"></span></a></th>
+                        <th>State<br><span class="glyphicon glyphicon-info-sign" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="bottom" data-content="<b>GPCR structure state classification</b><br>GPCRdb calculates a ‘degree active’ percent value for each structure. Fully inactive state structures (0% active) are defined based on a maximum Cα atom distance between class-specific residue pairs A: 11.9Å between 2x46 and 6x37, B1: 13.0Å between 2x53 and 6x42, C: 14.5Å between 2x43 and 6x39, and F: 13.0Å between 2x43 and 6x30. These distance cut-offs were defined based on the best correlation with structures reported as inactive in their publications. Fully active state structures (100% active) are defined as G protein or arrestin bound. These fully inactive and active state reference structures are used to measure the conformational similarity of and to classify all other structures into the same categories or to an intermediate state category for classes A and B1 (classes C and F have no intermediate state structures). The conformational similarity measure is based on all-to-all Cα atom distances between class-specific generic residue pairs. A few outlier structures that have a very low similarity to both inactive and active state reference structures are classified as 'Other' e.g., the structure of the platelet-activating receptor binding the antagonist foropafant."></span><a href="https://docs.gpcrdb.org/structures.html#structure-descriptors" target="_blank"><span class="glyphicon glyphicon-book icon-button"></span></a></th>
+                        <th>Degree<br>active (%)<br><a href="https://docs.gpcrdb.org/structures.html#structure-descriptors" target="_blank"><span class="glyphicon glyphicon-book icon-button"></span></a></th>
                         <th class="rightborder">% of Seq</th>
                         <th>Family</th>
                         <th>Subtype</th>
