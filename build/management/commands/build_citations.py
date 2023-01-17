@@ -3,10 +3,11 @@ from django.core.management import call_command
 from django.conf import settings
 from django.db import connection
 from django.utils.text import slugify
-
+from common.tools import test_model_updates
 from build.management.commands.parse_excel_annotations import Command as ParseExcel
 from common.models import Publication, PublicationJournal, WebLink, WebResource, Citation
 
+import django.apps
 import datetime
 import logging
 import os
@@ -27,10 +28,16 @@ class Command(ParseExcel):
 
 	source_file = os.sep.join([settings.DATA_DIR, 'common_data', 'Site_References.xlsx'])
 	references_yaml = os.sep.join([settings.DATA_DIR, 'common_data', 'references.yaml'])
+    #Setting the variables for the test tracking of the model upadates
+	tracker = {}
+	all_models = django.apps.apps.get_models()[6:]
+    test_model_updates(all_models, tracker, initialize=True)
 
 	def handle(self, *args, **options):
 		if options['purge']:
 			self.purge_citations()
+            self.tracker = {}
+            test_model_updates(self.all_models, self.tracker, initialize=True)
 		self.logger.info('CREATING CITATIONS')
 		self.logger.info('Parsing file ' + self.source_file)
 		data = self.parse_excel(self.source_file)
@@ -38,6 +45,7 @@ class Command(ParseExcel):
 		self.write_yaml_refs(data)
 		self.logger.info('Parsing {} and creating citation entries'.format(self.references_yaml))
 		self.create_citations()
+		test_model_updates(self.all_models, self.tracker, check=True)
 
 	def create_citations(self):
 		'''Create citation objects'''

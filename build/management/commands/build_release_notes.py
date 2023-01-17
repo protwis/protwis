@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 from django.db.models import F, Q
-
+from common.tools import test_model_updates
 from common.models import ReleaseNotes, ReleaseStatistics, ReleaseStatisticsType
 from drugs.models import Drugs
 from residue.models import ResidueGenericNumber
@@ -18,11 +18,15 @@ import logging
 import shlex
 import os
 import yaml
+import django.apps
 
 class Command(BaseCommand):
     help = 'Builds release notes and stats'
 
     logger = logging.getLogger(__name__)
+    tracker = {}
+    all_models = django.apps.apps.get_models()[6:]
+    test_model_updates(all_models, tracker, initialize=True)
 
     release_notes_data_dir = os.sep.join([settings.DATA_DIR, 'release_notes'])
 
@@ -32,6 +36,7 @@ class Command(BaseCommand):
         except Exception as msg:
             print(msg)
             self.logger.error(msg)
+        test_model_updates(self.all_models, self.tracker, check=True)
 
     def create_release_notes(self):
         self.logger.info('CREATING RELEASE NOTES')

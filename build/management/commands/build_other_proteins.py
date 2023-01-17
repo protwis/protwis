@@ -7,7 +7,9 @@ from build.management.commands.build_human_proteins import Command as BuildHuman
 from residue.functions import *
 from structure.functions import BlastSearch, ParseStructureCSV
 from protein.models import Protein, ProteinFamily, Gene
+from common.tools import test_model_updates
 
+import django.apps
 import logging
 import os
 import yaml
@@ -26,6 +28,11 @@ def PrintException():
     print('EXCEPTION IN ({}, LINE {} "{}"): {}'.format(filename, lineno, line.strip(), exc_obj))
 
 mapping_dict = {'b1b1u5_9arac':['opsd',''], 'b3xzf5_chick':['opn5',''], 'a0a8j0qrx8_xentr':['opn5','']}
+
+#Setting the variables for the test tracking of the model upadates
+tracker = {}
+all_models = django.apps.apps.get_models()[6:]
+test_model_updates(all_models, tracker, initialize=True)
 
 parapinopsin = {'fam_name':'Parapinopsin','parent_fam':'Opsins'}
 non_human_dict = {'q764p5_letca':parapinopsin, 'a0a1e1g6x5_takru':parapinopsin, 'a0a1e1g6y2_danre':parapinopsin, 'h2u5s9_takru':parapinopsin, 'w5n9z3_lepoc':parapinopsin,
@@ -57,6 +64,8 @@ class Command(BuildHumanProteins):
         if options['purge']:
             try:
                 self.purge_orthologs()
+                self.tracker = {}
+                test_model_updates(self.all_models, self.tracker, initialize=True)
             except:
                 self.logger.error('Could not purge orthologs')
 
@@ -303,6 +312,7 @@ class Command(BuildHumanProteins):
                         self.logger.info('Created protein family {}'.format(pf))
 
                     self.create_protein(up['genes'][0], pf, p.sequence_type, p.residue_numbering_scheme, accession, up)
+            test_model_updates(self.all_models, self.tracker, check=True)
             self.logger.info('COMPLETED CREATING OTHER PROTEINS')
         except Exception as msg:
             print(msg)

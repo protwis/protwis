@@ -4,7 +4,7 @@ from build.management.commands.base_build import Command as BaseBuild
 from django.utils.text import slugify
 
 from django.conf import settings
-
+from common.tools import test_model_updates
 from residue.models import Residue, ResidueDataType, ResidueDataPoint
 from protein.models import Protein, ProteinSet
 
@@ -13,12 +13,15 @@ from urllib import request, parse
 import json
 import time
 import os
-
+import django.apps
 
 class Command(BaseBuild):
     help = "Add dynamine annotations."
 
     logger = logging.getLogger(__name__)
+    tracker = {}
+    all_models = django.apps.apps.get_models()[6:]
+    test_model_updates(all_models, tracker, initialize=True)
 
     def add_arguments(self, parser):
         parser.add_argument("-p", "--proc",
@@ -42,6 +45,7 @@ class Command(BaseBuild):
         #self.proteins = list( set(list(ProteinSet.objects.get(name="All").proteins.all())))
         self.prepare_input(options["proc"], self.proteins)
         # self.logger.info('Finishing adding dynamine annotations')
+        test_model_updates(self.all_models, self.tracker, check=True)
 
     def get_dynamine_prediction(self, protein):
         # DEPRECATED First: try the local Django cache and return if exists

@@ -4,10 +4,11 @@ from django.core.management import call_command
 from django.conf import settings
 from django.db import connection
 from signprot.models import SignprotComplex
-
+from common.tools import test_model_updates
 from contactnetwork.cube import *
 
-import logging, json, os
+import logging, json, os, sys
+import django.apps
 
 class Command(BaseBuild):
 
@@ -15,7 +16,10 @@ class Command(BaseBuild):
 
     logger = logging.getLogger(__name__)
     pdbs = SignprotComplex.objects.values_list('structure__pdb_code__index', flat=True)
-
+    #Setting the variables for the test tracking of the model upadates
+    tracker = {}
+    all_models = django.apps.apps.get_models()[6:]
+    test_model_updates(all_models, tracker, initialize=True)
 
     def add_arguments(self, parser):
         parser.add_argument('-p', '--proc',
@@ -44,3 +48,4 @@ class Command(BaseBuild):
                 compute_interactions(pdb, do_complexes=True, save_to_db=True)
             except:
                 print('Issue making interactions for',pdb)
+        test_model_updates(self.all_models, self.tracker, check=True)

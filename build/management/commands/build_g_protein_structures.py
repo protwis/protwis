@@ -11,6 +11,7 @@ from signprot.models import SignprotComplex, SignprotStructure, SignprotStructur
 from common.models import WebResource, WebLink, Publication
 from structure.models import StructureType, StructureStabilizingAgent, PdbData, Rotamer
 from structure.functions import get_pdb_ids, create_structure_rotamer, fetch_signprot_data, build_signprot_struct
+from common.tools import test_model_updates
 
 import re
 from Bio import pairwise2
@@ -24,7 +25,7 @@ import pprint
 import json
 import yaml
 import urllib
-
+import django.apps
 import traceback
 import sys, os
 import datetime
@@ -40,6 +41,10 @@ AA = {"ALA":"A", "ARG":"R", "ASN":"N", "ASP":"D",
 
 class Command(BaseBuild):
 
+    #Setting the variables for the test tracking of the model upadates
+    tracker = {}
+    all_models = django.apps.apps.get_models()[6:]
+    test_model_updates(all_models, tracker, initialize=True)
     local_uniprot_dir = os.sep.join([settings.DATA_DIR, "g_protein_data", "uniprot"])
     local_uniprot_beta_dir = os.sep.join([settings.DATA_DIR, "g_protein_data", "uniprot_beta"])
     local_uniprot_gamma_dir = os.sep.join([settings.DATA_DIR, "g_protein_data", "uniprot_gamma"])
@@ -61,9 +66,13 @@ class Command(BaseBuild):
             Residue.objects.filter(protein_conformation__protein__entry_name__endswith="_a", protein_conformation__protein__family__parent__parent__name="Alpha").delete()
             ProteinConformation.objects.filter(protein__entry_name__endswith="_a", protein__family__parent__parent__name="Alpha").delete()
             Protein.objects.filter(entry_name__endswith="_a", family__parent__parent__name="Alpha").delete()
+            self.tracker = {}
+            test_model_updates(self.all_models, self.tracker, initialize=True)
         if self.options["purge_non_complex"]:
             SignprotStructureExtraProteins.objects.all().delete()
             SignprotStructure.objects.all().delete()
+            self.tracker = {}
+            test_model_updates(self.all_models, self.tracker, initialize=True)
 
         if not self.options["only_signprot_structures"]:
             if self.options["s"]:
@@ -71,7 +80,7 @@ class Command(BaseBuild):
             else:
                 self.scs = SignprotComplex.objects.filter(protein__family__slug__startswith='100_001')
             self.prepare_input(self.options['proc'], self.scs, 1)
-
+            test_model_updates(self.all_models, self.tracker, check=True)
         if not self.options["s"]:
             ### Build SignprotStructure objects from non-complex signprots
             g_prot_alphas = Protein.objects.filter(family__slug__startswith="100_001", accession__isnull=False)#.filter(entry_name="gnai1_human")
@@ -83,10 +92,11 @@ class Command(BaseBuild):
                         try:
                             data = fetch_signprot_data(pdb, a, os.listdir(self.local_uniprot_beta_dir), os.listdir(self.local_uniprot_gamma_dir))
                             if data:
-                                ss = build_signprot_struct(a, pdb, data) 
+                                ss = build_signprot_struct(a, pdb, data)
                                 self.build_g_prot_extra_proteins(a, pdb, ss, data)
                         except Exception as msg:
                             self.logger.error("SignprotStructure of {} {} failed\n{}: {}".format(a.entry_name, pdb, type(msg), msg))
+            test_model_updates(self.all_models, self.tracker, check=True)
         if self.options["debug"]:
             print(datetime.datetime.now() - startTime)
 
@@ -103,7 +113,7 @@ class Command(BaseBuild):
         #         count.value +=1
         for sc in scs:
             # Building protein and protconf objects for g protein structure in complex
-            
+
             # for sc in scs:
             self.logger.info("Protein, ProteinConformation and Residue build for alpha subunit of {} is building".format(sc))
             try:
@@ -334,7 +344,7 @@ class Command(BaseBuild):
                         ref_seq =  'MGCLGNSKTEDQRNEEKAQREANKKIEKQLQKDKQVYRATHRLLLLGAGESGKSTIVKQMRILHVNGFNGEGGEEDPQAARSNSDGEKATKVQDIKNNLKEAIETIVAAMSNLVPPVELANPENQFRVDYILSVMNVPDFDFPPEFYEHAKALWEDEGVRACYERSNEYQLIDCAQYFLDKIDVIKQADYVPSDQDLLRCRVLTSGIFETKFQVDKVNFHMFDVGGQRDERRKWIQCFNDVTAIIFVVASSSYNMVIREDNQTNRLQEALNLFKSIWNNRWLRTISVILFLNKQDLLAEKVLAGKSKIEDYFPEFARYTTPEDATPEPGEDPRVTRAKYFIRDEFLRISTASGDGRHYCYPHFTCAVDTENIRRVFNDCRDIIQRMHLRQYELL'
                         temp_seq = '-----------LSAEDKAAVERSKMIEKQLQKDKQVYRATHRLLLLGADNSGKSTIVKQMRI------------------------------------------------------------------------------------------------------------------------------------------YHVTSGIFETKFQVDKVNFHMFDVGAQRDERRKWIQCFNDVTAIIFVVDSSDYN----------RLQEALNDFKSIWNNRWLRTISVILFLNKQDLLAEKVLAGKSKIEDYFPEFARYTTPEDATPEPGEDPRVTRAKYFIRDEFLRISTASGDGRHYCYPHFTCSVDTENARRIFNDCRDIIQRMHLRQYELL'
 
-                    
+
                     wt_pdb_dict = OrderedDict()
                     pdb_wt_dict = OrderedDict()
                     j, k = 0, 0
@@ -394,9 +404,9 @@ class Command(BaseBuild):
                     if sc.structure.pdb_code.index=='6WHA':
                         ref_seq  = "MTLESIMACCLSEEAKEARRINDEIERQLRRDKRDARRELKLLLLGTGESGKSTFIKQMRIIHGSGYSDEDKRGFTKLVYQNIFTAMQAMIRAMDTLKIPYKYEHNKAHAQLVREVDVEKVSAFENPYVDAIKSLWNDPGIQECYDRRREYQLSDSTKYYLNDLDRVADPAYLPTQQDVLRVRVPTTGIIEYPFDLQSVIFRMVDVGGQRSERRKWIHCFENVTSIMFLVALSEYDQVLVESDNENRMEESKALFRTIITYPWFQNSSVILFLNKKDLLEEKIM--YSHLVDYFPEYDGP----QRDAQAAREFILKMFVDL---NPDSDKIIYSHFTCATDTENIRFVFAAVKDTILQLNLKEYNLV"
                         temp_seq = "----------VSAEDKAAAERSKMIDKNLREDGEKARRTLRLLLLGADNSGKSTIVK----------------------------------------------------------------------------------------------------------------------------------GIFETKFQVDKVNFHMFDVG-----RRKWIQCFNDVTAIIFVVDSSDYNR----------LQEALNDFKSIWNNRWLRTISVILFLNKQDLLAEKVLAGKSKIEDYFPEFARYTTPDPRVTRAKY-FIRKEFVDISTASGDGRHICYPHFTC-VDTENARRIFNDCKDIILQMNLREYNLV"
-                    
-                    
-                    
+
+
+
                     pdb_num_dict = OrderedDict()
                     temp_resis = [res for res in chain]
                     temp_i = 0

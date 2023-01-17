@@ -10,9 +10,11 @@ from residue.models import Residue
 from residue.functions import *
 from protein.models import Protein, ProteinConformation, ProteinSegment, ProteinFamily
 
+from common.tools import test_model_updates
 from Bio import pairwise2
 from Bio.Align import substitution_matrices
 
+import django.apps
 import logging
 import os
 import sys
@@ -43,6 +45,11 @@ class Command(BaseBuild):
             help='Number of processes to run')
 
     logger = logging.getLogger(__name__)
+
+    #Setting the variables for the test tracking of the model upadates
+    tracker = {}
+    all_models = django.apps.apps.get_models()[6:]
+    test_model_updates(all_models, tracker, initialize=True)
 
     # source file directory
     annotation_source_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'Structural_Annotation.xlsx'])
@@ -88,7 +95,7 @@ class Command(BaseBuild):
 
             # self.main_func([0, False],0)
             # self.analyse_rf_annotations()
-
+            test_model_updates(self.all_models, self.tracker, check=True)
             self.logger.info('COMPLETED CREATING RESIDUES')
         except Exception as msg:
             print(msg)
