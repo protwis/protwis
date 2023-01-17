@@ -117,28 +117,33 @@ class EffectorStructureBrowser(TemplateView):
         try:
             context['structures'] = Structure.objects.filter(id__in=complexstructs.values_list('structure', flat=True)).select_related(
                 "state",
+                "structure_type",
                 "pdb_code__web_resource",
                 "protein_conformation__protein__species",
                 "protein_conformation__protein__source",
                 "protein_conformation__protein__family__parent__parent__parent",
                 "publication__web_link__web_resource").prefetch_related(
-                "stabilizing_agents", "construct__crystallization__crystal_method",
+                "stabilizing_agents", "construct__crystallization__crystal_method", "structure_type",
                 "protein_conformation__protein__parent__endogenous_gtp_set__ligand__ligand_type",
                 "protein_conformation__site_protein_conformation__site",
                 Prefetch("ligands", queryset=StructureLigandInteraction.objects.filter(
                 annotated=True).prefetch_related('ligand__ligand_type', 'ligand_role','ligand__ids__web_resource')),
                 Prefetch("extra_proteins", queryset=StructureExtraProteins.objects.all().prefetch_related(
-                    'protein_conformation','wt_protein')),
-                Prefetch("signprot_complex", queryset=SignprotComplex.objects.all().prefetch_related('protein')))
+                    'protein_conformation','wt_protein', 'wt_protein__species', 'wt_protein__family', 'wt_protein__family__parent')),
+                Prefetch("signprot_complex", queryset=SignprotComplex.objects.all().prefetch_related(
+                'protein', 'protein__family', 'protein__family__parent', 'protein__species')))
         except Structure.DoesNotExist as e:
             pass
         # Fetch non-complex g prot structures and filter for overlaps preferring SignprotComplex
         ncstructs = SignprotStructure.objects.filter(protein__family__slug__startswith=slug_start).select_related(
                 "protein__family",
+                "protein__species",
+                "structure_type",
                 "pdb_code__web_resource",
                 "publication__web_link__web_resource").prefetch_related(
-                "stabilizing_agents",
-                Prefetch("extra_proteins", queryset=SignprotStructureExtraProteins.objects.all().prefetch_related('wt_protein')))
+                "protein", "stabilizing_agents", "structure_type", "protein__species", "protein__family", "protein__family__parent",
+                Prefetch("extra_proteins", queryset=SignprotStructureExtraProteins.objects.all().prefetch_related(
+                'protein_conformation','wt_protein', 'wt_protein__species', 'wt_protein__family', 'wt_protein__family__parent')))
         pdbs = []
         filtered_ncstructs = []
         for i in context['structures']:
