@@ -774,12 +774,12 @@ class StructureStatistics(TemplateView):
         all_complexes = all_structs.exclude(ligands=None)
         unique_structs = Structure.objects.order_by('protein_conformation__protein__family__name', 'state',
             'publication_date', 'resolution').distinct('protein_conformation__protein__family__name').prefetch_related('protein_conformation__protein__family')
-        unique_complexes = StructureLigandInteraction.objects.filter(annotated=True).distinct('ligand', 'structure__protein_conformation__protein__family')
+        unique_complexes = StructureLigandInteraction.objects.filter(annotated=True).distinct('ligand', 'structure__protein_conformation__protein__family').prefetch_related('structure', 'structure__protein_conformation', 'structure__protein_conformation__protein', 'structure__protein_conformation__protein__family')
         all_active = all_structs.filter(protein_conformation__state__slug = 'active')
         years = self.get_years_range(list(set([x.publication_date.year for x in all_structs])))
         unique_active = unique_structs.filter(protein_conformation__state__slug = 'active')
         #Stats
-        struct_count = Structure.objects.all().annotate(Count('id'))
+        # struct_count = Structure.objects.all().annotate(Count('id'))
         struct_lig_count = Structure.objects.exclude(ligands=None)
         context['all_structures'] = len(all_structs)
         context['all_structures_by_class'] = self.count_by_class(all_structs, lookup)
@@ -804,7 +804,7 @@ class StructureStatistics(TemplateView):
         context['chartdata_class_all'] = self.get_per_class_cumulative_data_series(years, all_structs, lookup)
 
         # GPROT Complex information
-        all_gprots = StructureExtraProteins.objects.filter(category='G alpha')
+        all_gprots = StructureExtraProteins.objects.filter(category='G alpha').prefetch_related("wt_protein","wt_protein__family", "wt_protein__family__parent", "structure__protein_conformation__protein__family")
         # all_gprots = all_structs.filter(id__in=SignprotComplex.objects.filter(protein__family__slug__startswith='100').values_list("structure__id", flat=True))
 
         ###### these are query sets for G-Prot Structure Statistics
@@ -818,7 +818,7 @@ class StructureStatistics(TemplateView):
             all_g_T2_complexes = all_gprots.filter(structure__protein_conformation__protein__family__slug__startswith='007')
             # unique_gprots = unique_structs.filter(id__in=SignprotComplex.objects.filter(protein__family__slug__startswith='100').values_list("structure__id", flat=True))
             # unique_gprots = unique_structs.filter(id__in=StructureExtraProteins.objects.filter(category='G alpha').values_list("structure__id", flat=True))
-            unique_gprots = StructureExtraProteins.objects.filter(category='G alpha').distinct('structure__protein_conformation__protein__family__name')
+            unique_gprots = StructureExtraProteins.objects.filter(category='G alpha').prefetch_related("wt_protein", "wt_protein__family", "wt_protein__family__parent", "structure__protein_conformation__protein__family").distinct('structure__protein_conformation__protein__family__name')
             unique_g_A_complexes = all_g_A_complexes.annotate(distinct_name=Concat('wt_protein__family__name', 'structure__protein_conformation__protein__family__name', output_field=TextField())).order_by('distinct_name').distinct('distinct_name')
             unique_g_B1_complexes = all_g_B1_complexes.annotate(distinct_name=Concat('wt_protein__family__name', 'structure__protein_conformation__protein__family__name', output_field=TextField())).order_by('distinct_name').distinct('distinct_name')
             unique_g_B2_complexes = all_g_B2_complexes.annotate(distinct_name=Concat('wt_protein__family__name', 'structure__protein_conformation__protein__family__name', output_field=TextField())).order_by('distinct_name').distinct('distinct_name')
@@ -856,7 +856,7 @@ class StructureStatistics(TemplateView):
 
             #GPROT
             if self.origin == 'gprot':
-                noncomplex_gprots = SignprotStructure.objects.filter(protein__family__slug__startswith='100')
+                noncomplex_gprots = SignprotStructure.objects.filter(protein__family__slug__startswith='100').prefetch_related("protein")
                 context['noncomplex_gprots_by_gclass'] = self.count_by_effector_class(noncomplex_gprots, lookup, nc=True)
                 context['noncomplex_gprots'] = len(noncomplex_gprots)
                 circle_data = all_gprots.values_list(
@@ -875,8 +875,8 @@ class StructureStatistics(TemplateView):
 
         #ARRESTIN
         else:
-            all_arrestins = StructureExtraProteins.objects.filter(category='Arrestin')
-            noncomplex_arrestins = SignprotStructure.objects.filter(protein__family__slug__startswith='200')
+            all_arrestins = StructureExtraProteins.objects.filter(category='Arrestin').prefetch_related("wt_protein","wt_protein__family", "wt_protein__family__parent", "structure__protein_conformation__protein__family")
+            noncomplex_arrestins = SignprotStructure.objects.filter(protein__family__slug__startswith='200').prefetch_related("protein")
             ###### these are query sets for Arrestin Structure Statistics
             all_arr_A_complexes = all_arrestins.filter(structure__protein_conformation__protein__family__slug__startswith='001')
             all_arr_B1_complexes = all_arrestins.filter(structure__protein_conformation__protein__family__slug__startswith='002')
@@ -886,7 +886,7 @@ class StructureStatistics(TemplateView):
             all_arr_F_complexes = all_arrestins.filter(structure__protein_conformation__protein__family__slug__startswith='006')
             all_arr_T2_complexes = all_arrestins.filter(structure__protein_conformation__protein__family__slug__startswith='007')
             # unique_arrestins = unique_structs.filter(id__in=StructureExtraProteins.objects.filter(category='Arrestin').values_list("structure__id", flat=True))
-            unique_arrestins = StructureExtraProteins.objects.filter(category='Arrestin').distinct('structure__protein_conformation__protein__family__name')
+            unique_arrestins = StructureExtraProteins.objects.filter(category='Arrestin').prefetch_related("wt_protein", "structure__protein_conformation__protein__family").distinct('structure__protein_conformation__protein__family__name')
             unique_arr_A_complexes = all_arr_A_complexes.annotate(distinct_name=Concat('wt_protein__family__name', 'structure__protein_conformation__protein__family__name', output_field=TextField())).order_by('distinct_name').distinct('distinct_name')
             unique_arr_B1_complexes = all_arr_B1_complexes.annotate(distinct_name=Concat('wt_protein__family__name', 'structure__protein_conformation__protein__family__name', output_field=TextField())).order_by('distinct_name').distinct('distinct_name')
             unique_arr_B2_complexes = all_arr_B2_complexes.annotate(distinct_name=Concat('wt_protein__family__name', 'structure__protein_conformation__protein__family__name', output_field=TextField())).order_by('distinct_name').distinct('distinct_name')
@@ -1002,9 +1002,9 @@ class StructureStatistics(TemplateView):
         context["whole_receptors"] = json.dumps(whole_rec_dict)
         context["page"] = self.origin
 
+        save_mapping = {}
         circles = {}
 
-        save_mapping = {}
         for data in circle_data:
             # Ugly workaround for mapping non-human receptors to human
             if data[1].split('_')[1] != 'human':
