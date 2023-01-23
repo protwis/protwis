@@ -1754,7 +1754,7 @@ class Command(BaseBuild):
                     print('ERROR WITH CONTACTNETWORK {}'.format(sd['pdb']))
                     self.logger.error('Error with contactnetwork for {}'.format(sd['pdb']))
 
-            if ligand['type'] in ['small molecule', 'pep', 'protein']:
+            if ligand['type'] in ['small molecule', 'pep', 'protein', 'peptide']:
                 try:
                     current = time.time()
                     # mypath = '/tmp/interactions/results/' + sd['pdb'] + '/output'
