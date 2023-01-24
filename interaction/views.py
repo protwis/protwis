@@ -196,17 +196,22 @@ def find_interacting_ligand(pdb_location, pdb):
     f_in = open(pdb_location, 'r')
     d = {}
     for lig in db_ligs:
+        d[lig] = ''
         if lig == 'pep':
-            d[lig] = ''
+            continue
         else:
             for line in f_in:
                 if lig in line:
                     if line.startswith('HETSYN'):
-                        m = re.match("HETSYN[\s]+([\w]{3})[\s]+(.+)", line)
-                        d[m.group(1)] = m.group(2).strip()
-                    else:
-                        d[lig] = ''
-                # if m.group(1) in db_ligs:
+                        try:
+                            m = re.match("HETSYN[\s]+([\w]{3})[\s]+(.+)", line)
+                            d[m.group(1)] = m.group(2).strip()
+                        except AttributeError:
+                            m = re.match("HETSYN[\s]+([\w]{1})[\s]+(.+)", line)
+                            lig_code = m.group(2).split('  ')[0]
+                            lig_name = m.group(2).split('  ')[1]
+                            d[lig_code] = d[lig_code] + lig_name
+            # if m.group(1) in db_ligs:
                 #     d[m.group(1)] = m.group(2).strip()
     return d
 
@@ -1160,14 +1165,11 @@ def StructureDetails(request, pdbname):
     resn_list = ''
 
 
-    main_ligand = "none"
+    main_ligand = []
     for structure in structures:
         if structure['structure_ligand_pair__annotated']:
-            resn_list += ",\"" + \
-                structure['structure_ligand_pair__pdb_reference'] + "\""
-            main_ligand = structure['structure_ligand_pair__pdb_reference']
-
-
+            resn_list += ",\"" + structure['structure_ligand_pair__pdb_reference'] + "\""
+            main_ligand.append(structure['structure_ligand_pair__pdb_reference'])
 
     crystal = Structure.objects.get(pdb_code__index=pdbname)
     p = Protein.objects.get(protein=crystal.protein_conformation.protein)
@@ -1186,7 +1188,7 @@ def StructureDetails(request, pdbname):
     residues_browser = []
     ligands = []
     display_res = []
-    main_ligand_full = "None"
+    main_ligand_full = []
     residue_table_list = []
     for residue in residues:
         key = residue.interaction_type.name
@@ -1218,7 +1220,8 @@ def StructureDetails(request, pdbname):
 
         if ligand not in ligands:
             ligands.append(ligand)
-            main_ligand_full = ligand
+            main_ligand_full.append(ligand)
+    print(main_ligand_full)
     display_res = ' or '.join(display_res)
     # RESIDUE TABLE
     segments = ProteinSegment.objects.all().filter().prefetch_related()
@@ -1301,12 +1304,22 @@ def StructureDetails(request, pdbname):
                 residuelist, p.get_protein_class(), str(p), nobuttons=1)
     SnakePlot = DrawSnakePlot(
                 residuelist, p.get_protein_class(), str(p), nobuttons=1)
-
+    #adjusting main_ligand and main_ligand_full
+    if len(main_ligand) == 0:
+        multiple_ligands = False
+        main_ligand = "None"
+        main_ligand_full = "None"
+    elif len(main_ligand) == 1:
+        multiple_ligands = False
+        main_ligand = main_ligand[0]
+        main_ligand_full = main_ligand_full[0]
+    else:
+        multiple_ligands = True
     return render(request, 'interaction/structure.html', {'pdbname': pdbname, 'structures': structures,
                                                           'crystal': crystal, 'protein': p, 'helixbox' : HelixBox, 'snakeplot': SnakePlot, 'residues': residues_browser, 'residues_lookup': residues_lookup, 'display_res': display_res, 'annotated_resn':
                                                           resn_list, 'ligands': ligands,'main_ligand' : main_ligand,'main_ligand_full' : main_ligand_full, 'data': context['data'],
                                                           'header': context['header'], 'segments': context['segments'],
-                                                          'number_of_schemes': len(numbering_schemes)})
+                                                          'number_of_schemes': len(numbering_schemes), "multiple_ligands": multiple_ligands})
 
 
 def list_structures(request):

@@ -1509,7 +1509,7 @@ class Command(BaseBuild):
                 for ligand in ligands:
                     l = False
                     peptide_chain = ""
-                    if 'chain'!='':
+                    if ligand['chain']!='':
                         peptide_chain = ligand['chain']
                         # ligand['name'] = 'pep'
                     if ligand['name'] and ligand['name'] != 'None': # some inserted as none.
@@ -1754,23 +1754,27 @@ class Command(BaseBuild):
                     print('ERROR WITH CONTACTNETWORK {}'.format(sd['pdb']))
                     self.logger.error('Error with contactnetwork for {}'.format(sd['pdb']))
 
-            if ligand['type'] in ['small molecule', 'pep', 'protein', 'peptide']:
-                try:
-                    current = time.time()
-                    # mypath = '/tmp/interactions/results/' + sd['pdb'] + '/output'
-                    # if not os.path.isdir(mypath):
-                    #     #Only run calcs, if not already in temp
-                    # runcalculation(sd['pdb'],peptide_chain)
-                    data_results = runcalculation_2022(sd['pdb'], peptide_chain)
-                    self.parsecalculation(sd['pdb'], data_results, False)
-                    end = time.time()
-                    diff = round(end - current,1)
-                    self.logger.info('Interaction calculations done for {}. {} seconds.'.format(
-                                s.protein_conformation.protein.entry_name, diff))
-                except Exception as msg:
-                    print(msg)
-                    # print(traceback.format_exc())
-                    print('ERROR WITH INTERACTIONS {}'.format(sd['pdb']))
-                    self.logger.error('Error parsing interactions output for {}'.format(sd['pdb']))
+            for ligand in ligands:
+                if ligand['type'] in ['small molecule', 'pep', 'protein', 'peptide']:
+                    try:
+                        current = time.time()
+                        peptide_chain = ""
+                        if ligand['chain']!='':
+                            peptide_chain = ligand['chain']
+                        # mypath = '/tmp/interactions/results/' + sd['pdb'] + '/output'
+                        # if not os.path.isdir(mypath):
+                        #     #Only run calcs, if not already in temp
+                        # runcalculation(sd['pdb'],peptide_chain)
+                        data_results = runcalculation_2022(sd['pdb'], peptide_chain)
+                        self.parsecalculation(sd['pdb'], data_results, False)
+                        end = time.time()
+                        diff = round(end - current,1)
+                        self.logger.info('Interaction calculations done for {}. {} seconds.'.format(
+                                    s.protein_conformation.protein.entry_name, diff))
+                    except Exception as msg:
+                        print(msg)
+                        # print(traceback.format_exc())
+                        print('ERROR WITH INTERACTIONS {}'.format(sd['pdb']))
+                        self.logger.error('Error parsing interactions output for {}'.format(sd['pdb']))
 
-                    # print('{} done'.format(sd['pdb']))
+                        # print('{} done'.format(sd['pdb']))
