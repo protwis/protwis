@@ -207,11 +207,13 @@ def find_interacting_ligand(pdb_location, pdb):
                             m = re.match("HETSYN[\s]+([\w]{3})[\s]+(.+)", line)
                             d[m.group(1)] = m.group(2).strip()
                         except AttributeError:
+                            #apply exception to ligand with multiline names1
                             m = re.match("HETSYN[\s]+([\w]{1})[\s]+(.+)", line)
-                            lig_code = m.group(2).split('  ')[0]
-                            lig_name = m.group(2).split('  ')[1]
-                            d[lig_code] = d[lig_code] + lig_name
-            # if m.group(1) in db_ligs:
+                            code = m.group(2).split(' ')[0]
+                            d[code] += m.group(2).split(' ')[1].strip()
+                    else:
+                        d[lig] = ''
+                # if m.group(1) in db_ligs:
                 #     d[m.group(1)] = m.group(2).strip()
     return d
 
@@ -908,7 +910,7 @@ def analyze_interactions(projectdir, pdb, results, ligand_donors, ligand_accepto
                         if d < 0.5:
                             chargedcheck = True
                             hydrogenmatch = False  # Replace previous match!
-                            charge_value = charged[2]
+                            charge_value = charged[1]
                     if residue[0:3] in CHARGEDAA:
                         if chargedcheck:
                             doublechargecheck = True

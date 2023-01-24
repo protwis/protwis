@@ -86,7 +86,7 @@ class Command(BaseBuild):
                 print(msg)
                 self.logger.error(msg)
         # import the structure data
-        Command.prepare_all_data()
+        self.prepare_all_data()
 
     @staticmethod
     def purge_bias_data():
@@ -95,8 +95,7 @@ class Command(BaseBuild):
         delete_bias_excel.delete()
         delete_balanced_ligands.delete()
 
-    @staticmethod
-    def prepare_all_data():
+    def prepare_all_data(self):
         start = timeit.default_timer()
         print('**** Stage #1: reading Excel  ****')
         bias_data = Command.read_excel_pandas(Command.structure_data_dir, 'Biased_ligand_single_pathway_data.xlsx')

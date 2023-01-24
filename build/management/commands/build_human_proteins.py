@@ -196,7 +196,7 @@ class Command(BaseBuild):
 
         # get/create species
         try:
-            species, created = v.objects.get_or_create(latin_name=uniprot['species_latin_name'],
+            species, created = Species.objects.get_or_create(latin_name=uniprot['species_latin_name'],
                 defaults={
                 'common_name': uniprot['species_common_name'],
                 })
