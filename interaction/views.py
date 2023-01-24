@@ -185,6 +185,10 @@ def checkdirs(projectdir, pdb): # DO WE NEED TO HAVE THIS DATA STORE IN TMP FILE
     if not os.path.exists(directory):
         os.makedirs(directory)
         # os.chmod(directory, 0o777)
+    directory = projectdir + 'temp/'
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+        # os.chmod(directory, 0o777)
 
 def find_interacting_ligand(pdb_location, pdb):
     #Compare these names to the ones in the database
@@ -766,8 +770,12 @@ def fragment_library(projectdir, pdb, ligand, atomvector, atomname, residuenr, c
     f = open(filename, 'w')
     f.write(tempstr)
     f.close()
-    mol2 = MolFromPDBFile(filename)
-    Chem.MolToPDBFile(mol2, filename)
+    try:
+        mol2 = MolFromPDBFile(filename)
+        Chem.MolToPDBFile(mol2, filename)
+    except:
+        mol2 = MolFromPDBFile(filename, sanitize=False)
+        Chem.MolToPDBFile(mol2, filename)
 
     return filename
 
