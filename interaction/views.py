@@ -228,14 +228,16 @@ def accept_residue(residue, hetflag, peptide=None):
 def create_ligands_and_poseview(ligand_het, scroller, projectdir, pdb, peptide=None):
 
     class HetSelect(Select):
-        def accept_residue(self, residue):
+        @staticmethod
+        def accept_residue(residue):
             if residue.get_resname().strip() == hetflag:
                 return 1
             else:
                 return 0
 
     class ClassSelect(Select):
-        def accept_residue(self, residue):
+        @staticmethod
+        def accept_residue(residue):
             if residue.get_parent().id == peptide:
                 return 1
             else:

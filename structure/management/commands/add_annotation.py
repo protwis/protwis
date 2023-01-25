@@ -4,11 +4,8 @@ from django.conf import settings
 from protein.models import Protein
 from residue.models import Residue
 from structure.models import Structure
-from structure.functions import StructureBuildCheck, ParseStructureCSV
-from structure.structural_superposition import ProteinSuperpose
+from structure.functions import ParseStructureCSV
 from tools.management.commands.build_structure_angles import NonHetSelect
-from common.alignment import ClosestReceptorHomolog
-from common.selection import Selection
 from contactnetwork.interaction import InteractingPair
 from construct.functions import fetch_pdb_info, construct_structure_annotation_override
 
@@ -16,8 +13,6 @@ import logging
 import os
 import yaml
 import Bio
-from io import StringIO
-import heapq
 from collections import OrderedDict
 import pprint
 from datetime import datetime
@@ -57,16 +52,14 @@ class Command(BaseCommand):
             self.xtal_seg_ends = yaml.safe_load(f)
 
         segends = OrderedDict()
-        counter = 0
-        mismatches = {}
+        # mismatches = {}
         new_unique_receptor_structures = {}
         for s, data in self.parsed_structures.structures.items():
             ### New structures
             if s not in self.xtal_seg_ends:
                 print(s)
                 print(data)
-                # if s!='7VVN':
-                #     continue
+
                 segends[s] = {'1b':'-','1e':'-','i1b':'-','i1e':'-','2b':'-','2e':'-','e1b':'-','e1e':'-',
                               '3b':'-','3e':'-','i2b':'-','i2e':'-','4b':'-','4e':'-','e2b':'-','e2e':'-',
                               '5b':'-','5e':'-','6b':'-','6e':'-','7b':'-','7e':'-','8b':'-','8e':'-'}
@@ -101,9 +94,6 @@ class Command(BaseCommand):
                                     # print(seg[1][0], entry_name)
                                     if seg[1][0]!=data['protein'] and seg[-1]!=True and seg[1][0]!='Uncharacterized protein' and 'receptor' not in seg[1][0]:
                                         if seg[0].split("_")[1]==data['preferred_chain']:
-                                            #print(seg[2],seg[3]+1)
-                                            #for i in range(seg[2],seg[3]+1):
-                                            # print(seg)
                                             for i in seg[6]:
                                                 removed.append(i)
 
@@ -119,7 +109,7 @@ class Command(BaseCommand):
                     ### Skip residues with missing backbone atoms
                     if not res.has_id('N') or not res.has_id('CA') or not res.has_id('C') or not res.has_id('O'):
                         continue
-                    try:      
+                    try:
                         seq+=Bio.PDB.Polypeptide.three_to_one(res.get_resname())
                         res_list.append(res)
                     except KeyError:
@@ -171,8 +161,6 @@ class Command(BaseCommand):
                     if r!='-':
                         ref_i+=1
 
-                # pprint.pprint(res_dict)
-                # pprint.pprint(wt_pdb_lookup)
                 try:
                     parent_segends = self.parsed_structures.parent_segends[parent_protein.entry_name]
                 except KeyError:
@@ -198,7 +186,6 @@ class Command(BaseCommand):
                         parent_segends[prefix+'x'] = x50
                         parent_segends[prefix+'e'] = e
 
-                hdist = []
                 ### Helices
                 for i in range(1,9):
                     parent_x50 = int(parent_segends[str(i)+'x'])
@@ -209,7 +196,6 @@ class Command(BaseCommand):
                     start_range = range(parent_x50, parent_start-1, -1)
                     non_helical, remove_list = self.get_non_helicals(start_range, res_dict)
                     if len(non_helical)==0:
-                        # print('Zero non-helical')
                         while parent_start in res_dict and res_dict[parent_start][1][2]=='H':
                             parent_start-=1
                         start_range = range(parent_x50, parent_start-1, -1)
@@ -250,8 +236,7 @@ class Command(BaseCommand):
                     except ValueError:
                         start = '-'
                         end = '-'
-                    # print(i, parent_x50, parent_start, parent_end)
-                    # print(start, end)
+
                     if i<8 and (start=='-' or end=='-'):
                         print('WARNING: helix {} for {} {} has missing annotation'.format(i, s, parent_protein))
                     if i==8 and end==segends[s]['7e']:
@@ -284,7 +269,6 @@ class Command(BaseCommand):
 
                     ### ECL1
                     if i==2 and parent_segends['e1b']!='-':
-                        has_e1 = False
                         e1_range = range(int(parent_segends['e1b']), int(parent_segends['e1e'])+1)
                         struct_e1 = [e for e in e1_range if e in res_dict]
                         if len(struct_e1)==len(e1_range):
@@ -299,7 +283,6 @@ class Command(BaseCommand):
                     if i==3 and parent_segends['i2b']!='-':
                         i2_range = range(int(parent_segends['i2b']), int(parent_segends['i2e'])+1)
                         non_helical, remove_list = self.get_non_helicals(i2_range, res_dict)
-                        print(non_helical, remove_list, i2_range)
                         if len(non_helical)<4 and len([i for i in i2_range if i in res_dict])==len(i2_range):
                             segends[s]['i2b'] = wt_pdb_lookup[int(parent_segends['i2b'])]
                             segends[s]['i2e'] = wt_pdb_lookup[int(parent_segends['i2e'])]
@@ -310,7 +293,7 @@ class Command(BaseCommand):
 
                     ### ECL2
                     if i==4 and parent_segends['e2b']!='-':
-                        e2_range = range(int(parent_segends['e2b']), int(parent_segends['e2e'])+1)
+                        # e2_range = range(int(parent_segends['e2b']), int(parent_segends['e2e'])+1)
                         tm3_cys = parent_residues.get(generic_number__label='3x25').sequence_number
                         if parent_segends['e2b'] in res_dict and res_dict[parent_segends['e2b']][1][1]=='C' and tm3_cys in res_dict and res_dict[tm3_cys][1][1]=='C':
                             segends[s]['e2b'] = wt_pdb_lookup[int(parent_segends['e2b'])]
@@ -327,9 +310,7 @@ class Command(BaseCommand):
                         new_unique_receptor_structures[parent_protein] = [s]
                     else:
                         new_unique_receptor_structures[parent_protein].append(s)
-                # import statistics
-                # print(sum(hdist)/len(hdist), max(hdist), statistics.median(hdist))
-                # break
+
                 ### Check with done structures
                 # for seg, val in segends[s].items():
                 #     if val!=int(parent_segends[seg]) and s not in mismatches:
@@ -338,10 +319,6 @@ class Command(BaseCommand):
                 #         mismatches[s].append([seg, int(parent_segends[seg]), val])
                 for s, data in segends.items():
                     self.xtal_seg_ends[s] = data
-                # if counter==5:
-                #     pprint.pprint(mismatches)
-                #     return 0
-                # counter+=1
             
         pprint.pprint(segends)
         print('New unique receptor structures')
@@ -359,7 +336,7 @@ class Command(BaseCommand):
                 remove_list.append(j)
                 continue
             # print(j, residues[j])
-            if residues[j][1][2]!='H':  
+            if residues[j][1][2]!='H':
                 non_helical.append(j)
         return non_helical, remove_list
 

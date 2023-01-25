@@ -1035,15 +1035,16 @@ class Command(BaseBuild):
     def build_contact_network(self,s,pdb_code):
         try:
             # interacting_pairs, distances  = compute_interactions(pdb_code, save_to_db=True)
-            interacting_pairs  = compute_interactions(pdb_code, do_interactions=True, do_peptide_ligand=True, save_to_db=True)
+            compute_interactions(pdb_code, do_interactions=True, do_peptide_ligand=True, save_to_db=True)
         except:
             self.logger.error('Error with computing interactions (%s)' % (pdb_code))
             return
 
-    def parsecalculation(self, pdb_id, data, debug=True, ignore_ligand_preset=False):
+    @staticmethod
+    def parsecalculation(pdb_id, data, debug=True, ignore_ligand_preset=False):
         module_dir = '/tmp/interactions'
-        web_resource = web_resource = WebResource.objects.get(slug='pdb')
-        web_link, created = WebLink.objects.get_or_create(web_resource=web_resource, index=pdb_id)
+        web_resource = WebResource.objects.get(slug='pdb')
+        web_link, _ = WebLink.objects.get_or_create(web_resource=web_resource, index=pdb_id)
         structure = Structure.objects.filter(pdb_code=web_link)
         if structure.exists():
             structure = Structure.objects.get(pdb_code=web_link)
@@ -1082,7 +1083,7 @@ class Command(BaseBuild):
                 try:
                     struct_lig_interactions = StructureLigandInteraction.objects.filter(pdb_reference=lig_key, structure=structure).get()
                     struct_lig_interactions.pdb_file = pdbdata
-                except: #already there
+                except StructureLigandInteraction.DoesNotExist: #already there
                     struct_lig_interactions = StructureLigandInteraction.objects.filter(pdb_reference=lig_key, structure=structure, pdb_file=pdbdata).get()
                 ligand = struct_lig_interactions.ligand
             else:  # create ligand and pair
@@ -1095,7 +1096,7 @@ class Command(BaseBuild):
 
             for interaction in data[lig_key]['interactions']:
                 aa = interaction[0]
-                aa, pos, chain = regexaa(aa)
+                aa, pos, _ = regexaa(aa)
                 residue = check_residue(protein, pos, aa)
                 f = interaction[1]
                 fragment, rotamer = extract_fragment_rotamer(f, residue, structure, ligand)
