@@ -6,7 +6,7 @@ from structure.models import Structure, StructureVectors
 from residue.models import Residue
 from angles.models import ResidueAngle as Angle
 from contactnetwork.models import Distance, distance_scaling_factor
-
+from common.tools import test_model_updates
 import Bio.PDB
 import copy
 import freesasa
@@ -17,6 +17,8 @@ import subprocess
 import os
 import re
 import traceback
+import django.apps
+
 
 import numpy as np
 import scipy.stats as stats
@@ -219,7 +221,9 @@ class NonHetSelect(Bio.PDB.Select):
 class Command(BaseCommand):
 
     help = "Command to calculate all angles for residues in each TM helix."
-
+    tracker = {}
+    all_models = django.apps.apps.get_models()[6:]
+    test_model_updates(all_models, tracker, initialize=True)
     np.set_printoptions(suppress=True)
     logger = logging.getLogger(__name__)
 
@@ -298,6 +302,7 @@ class Command(BaseCommand):
         print(len(self.references),'structures')
         self.references = list(self.references)
         self.prepare_input(self.processes, self.references)
+        test_model_updates(self.all_models, self.tracker, check=True)
 
     def main_func(self, positions, iteration,count,lock):
         def recurse(entity,slist):

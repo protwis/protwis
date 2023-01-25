@@ -7,7 +7,7 @@ from build.management.commands.base_build import Command as BaseBuild
 from build.management.commands.build_ligand_functions import *
 
 from mutation.models import *
-from common.tools import fetch_from_web_api
+from common.tools import fetch_from_web_api, test_model_updates
 from residue.models import Residue
 from protein.models import Protein
 from ligand.models import Ligand, LigandRole, LigandType
@@ -25,6 +25,7 @@ import xlrd
 import operator
 import traceback
 import time
+import django.apps
 
 class Command(BaseBuild):
     help = 'Reads source data and creates pdb structure records'
@@ -51,6 +52,10 @@ class Command(BaseBuild):
 
     # source file directory
     structure_data_dir = os.sep.join([settings.DATA_DIR, 'mutant_data'])
+    #Setting the variables for the test tracking of the model upadates
+    tracker = {}
+    all_models = django.apps.apps.get_models()[6:]
+    test_model_updates(all_models, tracker, initialize=True)
 
     publication_cache = {}
     ligand_cache = {}
@@ -72,6 +77,8 @@ class Command(BaseBuild):
         if options['purge']:
             try:
                 self.purge_mutants()
+                self.tracker = {}
+                test_model_updates(self.all_models, self.tracker, initialize=True)
             except Exception as msg:
                 print(msg)
                 self.logger.error(msg)
@@ -79,9 +86,13 @@ class Command(BaseBuild):
         # import the mutant data
         try:
             self.logger.info('CREATING MUTANT DATA')
+            print('Preparing data')
             self.prepare_all_data(options['filename'])
             # random.shuffle(self.data_all)
+            print('Preparing input')
             self.prepare_input(options['proc'], self.data_all)
+            print('Performing check')
+            test_model_updates(self.all_models, self.tracker, check=True)
             self.logger.info('COMPLETED CREATING MUTANTS')
 
         except Exception as msg:

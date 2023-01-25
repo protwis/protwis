@@ -3,11 +3,12 @@ from build.management.commands.build_ligand_functions import get_or_create_ligan
 from protein.models import Protein
 from ligand.models import BiasedPathwaysAssay, BiasedPathways
 from common.models import Publication
-
+from common.tools import test_model_updates
 from django.conf import settings
 import logging
 import os
 import xlrd
+import django.apps
 
 class Command(BaseBuild):
     mylog = logging.getLogger(__name__)
@@ -17,7 +18,9 @@ class Command(BaseBuild):
     file_handler.setLevel(logging.ERROR)
     file_handler.setFormatter(formatter)
     mylog.addHandler(file_handler)
-
+    tracker = {}
+    all_models = django.apps.apps.get_models()[6:]
+    test_model_updates(all_models, tracker, initialize=True)
     help = 'Reads bias data and imports it'
     # source file directory
     structure_data_dir = os.sep.join([settings.DATA_DIR, 'ligand_data', 'bias_data', 'pathways'])
@@ -58,12 +61,15 @@ class Command(BaseBuild):
         if options['purge']:
             try:
                 self.purge_bias_data()
+                self.tracker = {}
+                test_model_updates(self.all_models, self.tracker, initialize=True)
             except Exception as msg:
                 print(msg)
                 self.logger.error(msg)
 
         print('CREATING BIAS PATHWAYS DATA')
         self.prepare_all_data(options['filename'])
+        test_model_updates(self.all_models, self.tracker, check=True)
         self.logger.info('COMPLETED CREATING BIAS')
 
     def purge_bias_data(self):

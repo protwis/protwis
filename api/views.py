@@ -13,7 +13,7 @@ from django.db.models import Prefetch, Q, Min, Count
 from interaction.models import ResidueFragmentInteraction
 from mutation.models import MutationRaw
 from protein.models import Protein, ProteinFamily, Species, ProteinSegment
-from ligand.models import LigandID
+from ligand.models import LigandID, AssayExperiment
 from residue.models import Residue, ResidueGenericNumberEquivalent
 from structure.models import Structure, StructureExtraProteins
 from structure.assign_generic_numbers_gpcr import GenericNumbering
@@ -982,6 +982,29 @@ class DrugList(views.APIView):
 
         return Response(druglist)
 
+class LigandList(views.APIView):
+
+    """
+    Get a list of ligands for a single protein instance by entry name
+    \n/ligands/{prot_name}/
+    \n{prot_name} is a protein identifier from Uniprot, e.g. adrb2_human
+    """
+    def get(self, request, prot_name=None):
+
+        ligands = AssayExperiment.objects.filter(protein__entry_name=prot_name).values('protein__name',
+                                                                                       'ligand_id__name',
+                                                                                       'ligand_id__ligand_type__name').order_by('ligand_id__name')
+        ligandlist = []
+        for compound in ligands:
+            protein = compound['protein__name']
+            lig_name = compound['ligand_id__name']
+            lig_type = compound['ligand_id__ligand_type__name'].replace('-',' ')
+
+            ligandlist.append({'Protein name':protein,
+                               'Ligand name': lig_name,
+                               'Ligand type': lig_type})
+
+        return Response(ligandlist)
 
 class HelixBoxView(views.APIView):
 

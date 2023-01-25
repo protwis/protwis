@@ -4,7 +4,7 @@ from django.conf import settings
 from django.utils.text import slugify
 from django.db import IntegrityError
 
-from common.tools import get_or_create_url_cache, fetch_from_web_api
+from common.tools import get_or_create_url_cache, fetch_from_web_api, test_model_updates
 from common.models import WebLink, WebResource, Publication, PublicationJournal
 from ligand.models import Ligand, LigandID, LigandType, LigandVendors, LigandVendorLink, AssayExperiment, Endogenous_GTP, LigandRole
 from protein.models import Protein, Species
@@ -18,6 +18,7 @@ import pandas as pd
 import numpy as np
 import urllib.parse
 import urllib.request
+import django.apps
 
 from rdkit import Chem
 from rdkit.Chem.EnumerateStereoisomers import EnumerateStereoisomers, StereoEnumerationOptions
@@ -28,6 +29,10 @@ class Command(BaseBuild):
     bulk_size = 50000
     mapper_cache = {}
     publication_cache = {}
+    #Setting the variables for the test tracking of the model upadates
+    tracker = {}
+    all_models = django.apps.apps.get_models()[6:]
+    test_model_updates(all_models, tracker, initialize=True)
 
     def add_arguments(self, parser):
         parser.add_argument("--test_run",
@@ -50,6 +55,8 @@ class Command(BaseBuild):
             # For deleting the ligands - purse all ligand data using the GtP ligand build
             print("Started purging bioactivity and ligand data")
             self.purge_data()
+            self.tracker = {}
+            test_model_updates(self.all_models, self.tracker, initialize=True)
             print("Ended purging data")
 
         # Fetching all the Guide to Pharmacology data
@@ -74,7 +81,7 @@ class Command(BaseBuild):
             gtp_interactions_link, dtype=str, header=1)
         self.normalize_gtp_headers(gtp_interactions)
         gtp_detailed_endogenous_link = get_or_create_url_cache(
-            "https://www.guidetopharmacology.org/DATA/detailed_endogenous_ligands.csv", 7 * 24 * 3600)
+            "https://www.guidetopharmacology.org/DATA/endogenous_ligand_detailed.csv", 7 * 24 * 3600)
         gtp_detailed_endogenous = pd.read_csv(
             gtp_detailed_endogenous_link, dtype=str, header=1)
         self.normalize_gtp_headers(gtp_detailed_endogenous)
@@ -111,14 +118,18 @@ class Command(BaseBuild):
         print('\n\nSaving the ligands in the models')
         self.save_the_ligands_save_the_world(ligand_data, gtp_peptides)
 
+        print('Performing checks')
+        test_model_updates(self.all_models, self.tracker, check=True)
         # print('\n\nFetching Drug Bank ligands and saving to model')
         # self.build_drugbank_ligands()
         print("\n\nStarted building Guide to Pharmacology bioactivities")
         self.build_gtp_bioactivities(bioactivity_data_gtp)
         print("Ended building Guide to Pharmacology bioactivities")
 
-        print("\n\nStarted building the Endogenous data from Guide to Pharmacology")
+        print('Performing checks')
+        test_model_updates(self.all_models, self.tracker, check=True)
 
+        print("\n\nStarted building the Endogenous data from Guide to Pharmacology")
         print('\n#1 Preprocessing the data')
         processed_data = self.data_preparation(
             gtp_detailed_endogenous, gtp_interactions, iuphar_ids)
@@ -131,36 +142,49 @@ class Command(BaseBuild):
         print('\n#4 Creating and filling the Endogenous_GTP model')
         endogenous_dicts = self.convert_dataframe(ranked_data)
         self.create_model(endogenous_dicts)
-
         print("\n\nEnded building endogenous data")
+
+        print('Performing checks')
+        test_model_updates(self.all_models, self.tracker, check=True)
 
         print("\n\nStarted building ChEBML ligands")
         self.build_chembl_ligands()
         print("\n\nEnded building ChEMBL ligands")
+        print('Performing checks')
+        test_model_updates(self.all_models, self.tracker, check=True)
+
         # Parse ChEMBL bioactivity data
         print("\n\nStarted building ChEMBL bioactivities")
         self.build_chembl_bioactivities()
         print("Ended building ChEMBL bioactivities")
+        print('Performing checks')
+        test_model_updates(self.all_models, self.tracker, check=True)
+
         # Parse ChEMBL/PubChem vendor data
         print("\n\nStarted building PubChem vendor data")
         self.build_pubchem_vendor_links()
         print("Ended building PubChem vendor data")
+        print('Performing checks')
+        test_model_updates(self.all_models, self.tracker, check=True)
 
         # Building PDSP KiDatabase bioactivity data
         print("\n\nStarted building PDSP KiDatabase bioactivities")
         self.build_kidatabase_bioactivities()  # 14,562
         print("Ended building PDSP KiDatabase bioactivities")
+        print('Performing checks')
+        test_model_updates(self.all_models, self.tracker, check=True)
 
         # Building Drug Central bioactivity data
         print("\n\nStarted building Drug Central bioactivities")
         self.build_drugcentral_bioactivities()  # 5,844
         print("Ended building Drug Central bioactivities")
+        print('Performing checks')
+        test_model_updates(self.all_models, self.tracker, check=True)
 
         # Building Drug Central bioactivity data
         print("\n\nStarted calculating potency and affinity indexes")
         self.calculate_potency_and_affinity()
         print("Potency and affinity indexes have been added to the model")
-
 
     @staticmethod
     def purge_data():
@@ -175,8 +199,7 @@ class Command(BaseBuild):
         # Remove parameter, value and PMID is columns to have the complete dataset
         filtered_data = endogenous_data.loc[endogenous_data['target_id'].isin(
             iuphar_ids)]
-        uniq_rows = filtered_data.drop(
-            columns=['parameter', 'value', 'pubmed_ids']).drop_duplicates()
+        uniq_rows = filtered_data.drop(columns=['interaction_parameter','interation_units','interaction_pubmed_ids']).drop_duplicates()
         uniq_rows = uniq_rows.dropna(subset=['ligand_name'])
         association = filtered_data[['ligand_id', 'target_id']].drop_duplicates(
         ).groupby('target_id')['ligand_id'].apply(list).to_dict()
@@ -186,7 +209,7 @@ class Command(BaseBuild):
                        'pkd_min', 'pkd_avg', 'pkd_max',
                        'pic50_min', 'pic50_avg', 'pic50_max',
                        'pec50_min', 'pec50_avg', 'pec50_max',
-                       'ligand_species', 'ligand_action', 'ligand_role', 'pubmed_ids']
+                       'ligand_species', 'ligand_action', 'ligand_role', 'interaction_pubmed_ids']
 
         columns = ['ligand_id', 'ligand_name', 'ligand_type', 'ligand_uniprot_ids',
                    'ligand_ensembl_gene_id', 'ligand_subunit_id', 'ligand_subunit_name',
@@ -225,21 +248,21 @@ class Command(BaseBuild):
                     uniq_rows['ligand_id'] == ligand), 'ligand_species'] = species
                 # fetching the parameters of interaction between receptor and ligand
                 params = endogenous_data.loc[(endogenous_data['target_id'] == target) & (
-                    endogenous_data['ligand_id'] == ligand), 'parameter'].to_list()
+                    endogenous_data['ligand_id'] == ligand), 'interaction_parameter'].to_list()
                 pmids = '|'.join(endogenous_data.loc[(endogenous_data['target_id'] == target) & (
-                    endogenous_data['ligand_id'] == ligand), 'pubmed_ids'].dropna().to_list())
+                    endogenous_data['ligand_id'] == ligand), 'interaction_pubmed_ids'].dropna().to_list())
                 uniq_rows.loc[(uniq_rows['target_id'] == target) & (
-                    uniq_rows['ligand_id'] == ligand), 'pubmed_ids'] = pmids
+                    uniq_rows['ligand_id'] == ligand), 'interaction_pubmed_ids'] = pmids
                 # now parsing the data based on parameter
                 for par in params:
                     # we want only pKi, pKd, pEC50 and pIC50, not nans or other weird stuff
                     if par in info_we_want:
                         par_normalized = par.lower()
                         species = endogenous_data.loc[(endogenous_data['target_id'] == target) & (
-                            endogenous_data['ligand_id'] == ligand) & (endogenous_data['parameter'] == par)]['interaction_species'].tolist()
+                            endogenous_data['ligand_id'] == ligand) & (endogenous_data['interaction_parameter'] == par)]['interaction_species'].tolist()
                         for org in species:
                             data = endogenous_data.loc[(endogenous_data['target_id'] == target) & (endogenous_data['ligand_id'] == ligand) & (
-                                endogenous_data['parameter'] == par) & (endogenous_data['interaction_species'] == org)]['value'].tolist()
+                                endogenous_data['interaction_parameter'] == par) & (endogenous_data['interaction_species'] == org)]['interation_units'].tolist()
                             if len(data) == 1:
                                 if '-' not in data[0]:
                                     uniq_rows.loc[(uniq_rows['target_id'] == target) & (
@@ -542,7 +565,7 @@ class Command(BaseBuild):
 
             # Adding publications from the PMIDs section
             try:
-                pmids = row['pubmed_ids'].split('|')
+                pmids = row['interaction_pubmed_ids'].split('|')
             except AttributeError:
                 pmids = None
 

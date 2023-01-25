@@ -3,13 +3,17 @@ from django.conf import settings
 
 from residue.models import ResiduePositionSet, ResidueGenericNumberEquivalent
 from interaction.models import ResidueFragmentInteraction
-
+from common.tools import test_model_updates
 import logging
+import django.apps
 
 class Command(BaseCommand):
     help = 'Reads source data and creates common database tables'
 
     logger = logging.getLogger(__name__)
+    tracker = {}
+    all_models = django.apps.apps.get_models()[6:]
+    test_model_updates(all_models, tracker, initialize=True)
 
     def purge_residue_sets_(self):
         try:
@@ -25,7 +29,7 @@ class Command(BaseCommand):
 
         try:
             self.purge_residue_sets_()
-
+            test_model_updates(self.all_models, self.tracker, initialize=True)
         except Exception as msg:
             print(msg)
             self.logger.error(msg)
@@ -37,7 +41,7 @@ class Command(BaseCommand):
             except Exception as msg:
                 print(msg)
                 self.logger.error(msg)
-
+            test_model_updates(self.all_models, self.tracker, check=True)
 
     def create_residue_sets(self):
         self.logger.info('CREATING RESIDUE SETS')

@@ -12,7 +12,7 @@
     <link href="{% static 'home/css/sequenceviewer.css' %}" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="{% static 'home/css/jquery.powertip.css' %}" />
 {% endblock %}
-    
+
 {% block addon_js %}
     <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
     <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
@@ -21,6 +21,7 @@
     <script src="{% static 'home/js/browser_functions.js' %}"> </script>
     <script src="{% static 'home/js/model_statistics.js' %}"> </script>
     <script src="{% static 'home/js/grayscale.js' %}"> </script>
+    <script src="{% static 'home/js/gpcrdb.js' %}"></script>
     <script src="{% static 'home/js/jquery.powertip.js' %}"></script>
 
 <script type="text/javascript" charset="utf-8">
@@ -35,12 +36,12 @@
 {% block content %}
 
 <div id="browser">
-    
+
     <div style="width:100%; display:inline;">
         <div class="btn-group" style="padding-left:10px; width: 100%;">
             <a id="dlink"  style="display:none;"></a>
             <div id="excel_table"  style="display:none;"></div>
-            <input class="btn btn-default btn-s btn-success" type="button" onclick="tableToExcel('structures_scrollable', 'Structure model statistics', 'GPCRdb_structure_model_statistics.xls')" value="Export Excel"></input>
+            <input class="btn btn-default btn-s btn-success" type="button" onclick="GlobalTableToExcel('structures_scrollable', 'Structure model statistics', 'GPCRdb_structure_model_statistics.xls')" value="Export Excel"></input>
             <div style="padding: 0px 0px 0px 10px; display: inline;">The RMSD values compare the latest model before a structure of the same receptor in the same state was published. <a href="https://docs.gpcrdb.org/structures.html#structure-model-statistics" target="_blank">Documentation</a></div>
         </div>
     </div>
@@ -230,20 +231,20 @@
                                 -
                             {% endif %}
                         </td>
-                        
+
                         <!-- Receptor -->
                         <td><span><a target="_blank" href="https://www.uniprot.org/uniprot/{{ smr.target_structure.protein_conformation.protein.parent.accession }}">{{ smr.target_structure.protein_conformation.protein.parent.entry_short|safe }}</a></span></td>
                         <td class="uniprot"><a target="_blank" href="/protein/{{ smr.target_structure.protein_conformation.protein.parent.entry_name }}">{{ smr.target_structure.protein_conformation.protein.parent.short|safe }}</a></td>
                         <td class="expand" style="max-width: 80px;"><span>{{ smr.target_structure.protein_conformation.protein.family.parent.short|safe }}</span></td>
                         <td class="expand" style="max-width: 30px;"><span>{{ smr.target_structure.protein_conformation.protein.family.parent.parent.parent.short|safe }}</span></td>
-                        
+
                         <!-- Experimental structure -->
                         <td class="pdb text-left">
                             <a target="_blank" href="{{ smr.target_structure.pdb_code.index}}">{{ smr.target_structure.pdb_code.index}}</a>
                         </td>
                         <td>{{ smr.target_structure.state.name }}</td>
                         <td class="text-center">{{ smr.target_structure.gprot_bound_likeness|floatformat|dashwhenempty }}</td>
-                        
+
                         <!-- Model -->
                         <td>{{ smr.version|date:"Y-m-d" }}</td>
                         <td class="expand">

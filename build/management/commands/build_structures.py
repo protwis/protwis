@@ -10,6 +10,7 @@ from protein.models import (Protein, ProteinConformation, ProteinState, ProteinA
     ProteinSegment)
 from residue.models import ResidueGenericNumber, ResidueNumberingScheme, Residue, ResidueGenericNumberEquivalent
 from common.models import WebLink, WebResource, Publication
+from common.tools import test_model_updates
 from structure.models import Structure, StructureType, StructureStabilizingAgent,PdbData, Rotamer, Fragment
 from construct.functions import *
 
@@ -24,9 +25,10 @@ from structure.assign_generic_numbers_gpcr import GenericNumbering
 from structure.functions import StructureBuildCheck, ParseStructureCSV
 from ligand.models import Ligand, LigandType, LigandRole, LigandPeptideStructure
 from interaction.models import *
-from interaction.views import runcalculation,parsecalculation
+from interaction.views import runcalculation_2022, regexaa, check_residue, extract_fragment_rotamer
 from residue.functions import dgn
 
+import django.apps
 import logging
 import os
 import re
@@ -38,6 +40,8 @@ import json
 from urllib.request import urlopen
 from Bio.PDB import parse_pdb_header
 from Bio.PDB.Selection import *
+
+# import traceback
 
 
 ## FOR VIGNIR ORDERED DICT YAML IMPORT/DUMP
@@ -93,6 +97,10 @@ class Command(BaseBuild):
             default=False,
             help='Print info for debugging')
 
+    tracker = {}
+    all_models = django.apps.apps.get_models()[6:]
+    test_model_updates(all_models, tracker, initialize=True)
+
     # source file directory
     pdb_data_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'pdbs'])
 
@@ -120,6 +128,8 @@ class Command(BaseBuild):
         if options['purge']:
             try:
                 self.purge_structures()
+                self.tracker = {}
+                test_model_updates(self.all_models, self.tracker, initialize=True)
             except Exception as msg:
                 print(msg)
                 self.logger.error(msg)
@@ -152,7 +162,7 @@ class Command(BaseBuild):
             iterations = 1
             for i in range(1,iterations+1):
                 self.prepare_input(options['proc'], self.parsed_structures.pdb_ids, i)
-
+            test_model_updates(self.all_models, self.tracker, check=True)
             self.logger.info('COMPLETED CREATING STRUCTURES')
         except Exception as msg:
             print(msg)
@@ -245,159 +255,7 @@ class Command(BaseBuild):
                                 removed.append(i)
         # Reset removed, since it causes more problems than not
 
-        # Overwrite reset to fix annotation
-        if structure.pdb_code.index in ['6H7N','6H7J','6H7L','6H7M','6H7O']:
-            removed = list(range(3,40))
-            deletions = deletions+list(range(244,272))
-        elif structure.pdb_code.index=='6MEO':
-            removed = []
-        elif structure.pdb_code.index=='5N2R':
-            deletions = [1]+list(range(209,219))+list(range(306,413))
-        elif structure.pdb_code.index in ['5WIU','5WIV']:
-            removed = removed+[1001]
-        elif structure.pdb_code.index=='6QZH':
-            removed = list(range(1001,1473))+list(range(255,260))
-        elif structure.pdb_code.index in ['6KUX', '6KUY']:
-            deletions = list(range(1,20))
-        elif structure.pdb_code.index=='7BZ2':
-            deletions = list(range(240,265))
-        elif structure.pdb_code.index=='7C6A':
-            removed = list(range(1,35))
-        elif structure.pdb_code.index=='6S0L':
-            removed = [-1,0] + list(range(1001,1107))
-        elif structure.pdb_code.index=='7D7M':
-            deletions = list(range(1,4)) + list(range(367,489))
-        elif structure.pdb_code.index in ['7D77', '7D76', '4GRV']:
-            deletions = []
-        elif structure.pdb_code.index=='6A94':
-            removed.remove(69)
-            deletions.remove(69)
-        elif structure.pdb_code.index in ['6LI1']:
-            for i in range(261,265):
-                removed.remove(i)
-                deletions.remove(i)
-        elif structure.pdb_code.index=='6LI2':
-            for i in range(263,265):
-                removed.remove(i)
-                deletions.remove(i)
-        elif structure.pdb_code.index=='5JQH':
-            for i in range(1023,1030):
-                removed.remove(i)
-            for i in range(23,30):
-                deletions.remove(i)
-        elif structure.pdb_code.index=='5T1A':
-            for i in range(226,241):
-                deletions.remove(i)
-            removed.append(1002)
-            removed.remove(234)
-            removed.remove(319)
-            removed.remove(320)
-        elif structure.pdb_code.index=='5UEN':
-            for i in range(220,228):
-                removed.remove(i)
-                deletions.remove(i)
-        elif structure.pdb_code.index=='3SN6':
-            removed = list(range(1002,1161))
-        elif structure.pdb_code.index in ['6ZDV','6ZDR','6MH8','6PS7','6S0Q','6WQA','6AQF','6GT3','6JZH','6LPJ','6LPL','6LPK',
-                                          '5JTB','5OLH','5NM2','5OLG','5OM1','5OLO','5OLZ','5OLV','5OM4','5UVI','5VRA']:
-            removed.remove(1)
-            deletions.remove(1)
-        elif structure.pdb_code.index in ['5NLX','5NM4']:
-            removed.remove(10)
-            deletions.remove(1)
-            for i in range(209,214):
-                deletions.remove(i)
-            for i in range(218,223):
-                removed.remove(i)
-        elif structure.pdb_code.index=='6N48':
-            for i in range(1023,1029):
-                removed.remove(i)
-            for i in range(23,29):
-                deletions.remove(i)
-        elif structure.pdb_code.index=='5ZK3':
-            deletions.remove(382)
-        elif structure.pdb_code.index=='6A93':
-            removed.remove(69)
-            deletions.remove(69)
-        elif structure.pdb_code.index=='6IBL':
-            removed = list(range(1003,1110))
-            for i in range(41,44):
-                deletions.remove(i)
-            deletions.remove(243)
-            deletions.append(271)
-        elif structure.pdb_code.index=='6LUQ':
-            removed.remove(387)
-            deletions.remove(366)
-        elif structure.pdb_code.index=='6W2Y':
-            for i in range(845,862):
-                deletions.remove(i)
-        elif structure.pdb_code.index in ['4Z34','4Z35','4Z36']:
-            removed.remove(327)
-            deletions.remove(327)
-        elif structure.pdb_code.index=='6TKO':
-            removed.remove(358)
-            deletions.remove(358)
-        elif structure.pdb_code.index=='6DO1':
-            removed = []
-        elif structure.pdb_code.index=='5D6L':
-            for i in range(224,231):
-                removed.remove(i)
-                deletions.remove(i)
-        elif structure.pdb_code.index=='7DFL':
-            deletions = list(range(222,405))
-        elif structure.pdb_code.index=='2I35':
-            removed = [330,331,332]
-        elif structure.pdb_code.index in ['7ARO', '7RM5']:
-            removed.remove(1)
-            deletions.remove(1)
-        elif structure.pdb_code.index in ['7BTS','7BU6','7BU7','7BVQ']:
-            removed, deletions = list(range(884,1054)), list(range(884,1054))
-        elif structure.pdb_code.index=='7D68':
-            for i in range(395,456):
-                deletions.remove(i)
-        elif structure.pdb_code.index=='7EB2':
-            deletions, removed = [], []
-        elif structure.pdb_code.index=='7F1R':
-            deletions = list(range(314,400))
-            removed = list(range(1,128))+list(range(188,192))
-        elif structure.pdb_code.index=='7F1Q':
-            removed = list(range(1,113))
-        elif structure.pdb_code.index in ['7EPE','7EPF']:
-            removed, deletions = list(range(1000,1148)), list(range(1000,1148))
-        elif structure.pdb_code.index in ['7EZM','7EZK','7EZH']:
-            for i in range(38,64):
-                removed.remove(i)
-        elif structure.pdb_code.index in ['6ZFZ', '6ZG4', '6ZG9']:
-            for i in range(21,27):
-                removed.remove(i)
-                deletions.remove(i)
-        elif structure.pdb_code.index=='7EWR':
-            removed, deletions = [], []
-        elif structure.pdb_code.index in ['7T10', '7T11']:
-            deletions = []
-        elif structure.pdb_code.index in ['7PX4','7PYR']:
-            deletions.remove(1)
-            removed.remove(1)
-        elif structure.pdb_code.index=='7B6W':
-            deletions = list(range(352,525))
-        elif structure.pdb_code.index=='7V9M':
-            deletions = []
-        elif structure.pdb_code.index=='7F4F':
-            deletions = []
-        elif structure.pdb_code.index in ['7EVY','7EVZ','7EW0']:
-            removed = list(range(1,47))
-        elif structure.pdb_code.index=='7VAB':
-            removed = list(range(1,127))
-        elif structure.pdb_code.index=='7SBF':
-            for i in range(65,73):
-                deletions.remove(i)
-        elif structure.pdb_code.index in ['7SF7','7SF8']:
-            deletions, removed = [], []
-        elif structure.pdb_code.index=='2YCW':
-            deletions = []
-        elif structure.pdb_code.index in ['4LDE','4LDL','4LDO']:
-            deletions.remove(263)
-
+        removed, deletions = construct_structure_annotation_override(structure.pdb_code.index, removed, deletions)
 
         if self.debug:
             print('Deletions: ', deletions)
@@ -657,7 +515,7 @@ class Command(BaseBuild):
             temp_seq = temp_seq[:211]+'--D'+temp_seq[214:]
         elif structure.pdb_code.index=='2YCW':
             temp_seq = temp_seq[:242]+'R'+temp_seq[242:270]+temp_seq[271:]
-        
+
 
 
         for i, r in enumerate(ref_seq, 1): #loop over alignment to create lookups (track pos)
@@ -1176,13 +1034,89 @@ class Command(BaseBuild):
 
     def build_contact_network(self,s,pdb_code):
         try:
-            interacting_pairs, distances  = compute_interactions(pdb_code, save_to_db=True)
+            # interacting_pairs, distances  = compute_interactions(pdb_code, save_to_db=True)
+            compute_interactions(pdb_code, do_interactions=True, do_peptide_ligand=True, save_to_db=True)
         except:
             self.logger.error('Error with computing interactions (%s)' % (pdb_code))
             return
 
+    @staticmethod
+    def parsecalculation(pdb_id, data, debug=True, ignore_ligand_preset=False):
+        module_dir = '/tmp/interactions'
+        web_resource = WebResource.objects.get(slug='pdb')
+        web_link, _ = WebLink.objects.get_or_create(web_resource=web_resource, index=pdb_id)
+        structure = Structure.objects.filter(pdb_code=web_link)
+        if structure.exists():
+            structure = Structure.objects.get(pdb_code=web_link)
 
-    def main_func(self, positions, iteration,count,lock):
+            if structure.pdb_data is None:
+                f = module_dir + "/pdbs/" + pdb_id + ".pdb"
+                if os.path.isfile(f):
+                    pdbdata, created = PdbData.objects.get_or_create(pdb=open(f, 'r').read())  # does this close the file?
+                else:
+                    print('quitting due to no pdb in filesystem')
+                    quit()
+                structure.pdb_data = pdbdata
+                structure.save()
+
+            protein = structure.protein_conformation
+            lig_key = list(data.keys())[0]
+
+            f = module_dir + "/results/" + pdb_id + "/interaction" + "/" + pdb_id + "_" + lig_key + ".pdb"
+            if os.path.isfile(f):
+                pdbdata, created = PdbData.objects.get_or_create(pdb=open(f, 'r').read())  # does this close the file?
+                print("Found file" + f)
+            else:
+                print('quitting due to no pdb for fragment in filesystem', f)
+                quit()
+
+            struct_lig_interactions = StructureLigandInteraction.objects.filter(pdb_reference=lig_key, structure=structure, annotated=True) #, pdb_file=None
+            if struct_lig_interactions.exists():  # if the annotated exists
+                try:
+                    struct_lig_interactions = struct_lig_interactions.get()
+                    struct_lig_interactions.pdb_file = pdbdata
+                    ligand = struct_lig_interactions.ligand
+                except Exception as msg:
+                    print('error with duplication structureligand',lig_key,msg)
+                    quit() #not sure about this quit
+            elif StructureLigandInteraction.objects.filter(pdb_reference=lig_key, structure=structure).exists():
+                try:
+                    struct_lig_interactions = StructureLigandInteraction.objects.filter(pdb_reference=lig_key, structure=structure).get()
+                    struct_lig_interactions.pdb_file = pdbdata
+                except StructureLigandInteraction.DoesNotExist: #already there
+                    struct_lig_interactions = StructureLigandInteraction.objects.filter(pdb_reference=lig_key, structure=structure, pdb_file=pdbdata).get()
+                ligand = struct_lig_interactions.ligand
+            else:  # create ligand and pair
+                print(pdb_id, "Skipping interactions with ", pdb_id)
+                pass
+
+            struct_lig_interactions.save()
+
+            ResidueFragmentInteraction.objects.filter(structure_ligand_pair=struct_lig_interactions).delete()
+
+            for interaction in data[lig_key]['interactions']:
+                aa = interaction[0]
+                aa, pos, _ = regexaa(aa)
+                residue = check_residue(protein, pos, aa)
+                f = interaction[1]
+                fragment, rotamer = extract_fragment_rotamer(f, residue, structure, ligand)
+                if fragment is not None:
+                    interaction_type, created = ResidueFragmentInteractionType.objects.get_or_create(
+                                                slug=interaction[2],
+                                                name=interaction[3],
+                                                type=interaction[4], direction=interaction[5])
+                    fragment_interaction, created = ResidueFragmentInteraction.objects.get_or_create(
+                                                    structure_ligand_pair=struct_lig_interactions,
+                                                    interaction_type=interaction_type,
+                                                    fragment=fragment, rotamer=rotamer)
+        else:
+            pass
+
+        # results = sorted(results, key=itemgetter(3), reverse=True)
+
+        return data
+
+    def main_func(self, positions, iteration, count, lock):
         # setting up processes
         # if not positions[1]:
         #     pdbs = self.parsed_structures[positions[0]:]
@@ -1424,7 +1358,7 @@ class Command(BaseBuild):
                 for ligand in ligands:
                     l = False
                     peptide_chain = ""
-                    if 'chain'!='':
+                    if ligand['chain']!='':
                         peptide_chain = ligand['chain']
                         # ligand['name'] = 'pep'
                     if ligand['name'] and ligand['name'] != 'None': # some inserted as none.
@@ -1660,48 +1594,36 @@ class Command(BaseBuild):
             if self.run_contactnetwork:
                 try:
                     current = time.time()
-                    self.build_contact_network(s,sd['pdb'])
+                    self.build_contact_network(s, sd['pdb'])
                     end = time.time()
                     diff = round(end - current,1)
-                    self.logger.info('Create contactnetwork done for {}. {} seconds.'.format(
-                                s.protein_conformation.protein.entry_name, diff))
+                    self.logger.info('Create contactnetwork done for {}. {} seconds.'.format(s.protein_conformation.protein.entry_name, diff))
                 except Exception as msg:
                     print(msg)
                     print('ERROR WITH CONTACTNETWORK {}'.format(sd['pdb']))
                     self.logger.error('Error with contactnetwork for {}'.format(sd['pdb']))
 
-                try:
-                    current = time.time()
-                    mypath = '/tmp/interactions/results/' + sd['pdb'] + '/output'
-                    # if not os.path.isdir(mypath):
-                    #     #Only run calcs, if not already in temp
-                    runcalculation(sd['pdb'],peptide_chain)
-
-                    parsecalculation(sd['pdb'],False)
-                    end = time.time()
-                    diff = round(end - current,1)
-                    self.logger.info('Interaction calculations done for {}. {} seconds.'.format(
-                                s.protein_conformation.protein.entry_name, diff))
-                except Exception as msg:
+            for ligand in ligands:
+                if ligand['type'] in ['small molecule', 'pep', 'protein', 'peptide']:
                     try:
                         current = time.time()
-                        mypath = '/tmp/interactions/results/' + sd['pdb'] + '/output'
+                        peptide_chain = ""
+                        if ligand['chain']!='':
+                            peptide_chain = ligand['chain']
+                        # mypath = '/tmp/interactions/results/' + sd['pdb'] + '/output'
                         # if not os.path.isdir(mypath):
                         #     #Only run calcs, if not already in temp
-                        runcalculation(sd['pdb'], peptide_chain)
-
-                        parsecalculation(sd['pdb'],False)
+                        # runcalculation(sd['pdb'],peptide_chain)
+                        data_results = runcalculation_2022(sd['pdb'], peptide_chain)
+                        self.parsecalculation(sd['pdb'], data_results, False)
                         end = time.time()
                         diff = round(end - current,1)
-                        self.logger.info('Interaction calculations done (again) for {}. {} seconds.'.format(
+                        self.logger.info('Interaction calculations done for {}. {} seconds.'.format(
                                     s.protein_conformation.protein.entry_name, diff))
                     except Exception as msg:
-
                         print(msg)
+                        # print(traceback.format_exc())
                         print('ERROR WITH INTERACTIONS {}'.format(sd['pdb']))
                         self.logger.error('Error parsing interactions output for {}'.format(sd['pdb']))
 
-
-
-
-                    # print('{} done'.format(sd['pdb']))
+                        # print('{} done'.format(sd['pdb']))
