@@ -338,6 +338,8 @@ def build_ligand_info(scroller, lig_het, projectdir, pdb, peptide, hetlist, liga
                             ligand_acceptors[hetflag] = []
                             count_atom_ligand[hetflag] = 0
                             mol2 = MolFromPDBFile(projectdir + 'results/' + pdb + '/ligand/' + hetflag + '_' + pdb + ".pdb")
+                            if not mol2:
+                                mol2 = MolFromPDBFile(projectdir + 'results/' + pdb + '/ligand/' + hetflag + '_' + pdb + ".pdb", sanitize=False)
                             hetflag_sdf = get_sdf_ligand_from_cache(hetflag)
                             try:
                                 mol2 = AllChem.AssignBondOrdersFromTemplate(refmol=hetflag_sdf, mol=mol2)

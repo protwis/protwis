@@ -1544,7 +1544,6 @@ class Command(BaseBuild):
 
             # save structure
             s.save()
-
             #Delete previous interaction data to prevent errors.
             ResidueFragmentInteraction.objects.filter(structure_ligand_pair__structure=s).delete()
             #Remove previous Rotamers/Residues to prepare repopulate
@@ -1603,7 +1602,7 @@ class Command(BaseBuild):
                     self.logger.error('Error with contactnetwork for {}'.format(sd['pdb']))
 
             for ligand in ligands:
-                if ligand['type'] in ['small molecule', 'pep', 'protein', 'peptide']:
+                if ligand['type'].strip() in ['small molecule', 'pep', 'protein', 'peptide']:
                     try:
                         current = time.time()
                         peptide_chain = ""
