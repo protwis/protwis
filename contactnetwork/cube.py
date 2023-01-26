@@ -31,6 +31,7 @@ def compute_interactions(pdb_name, do_interactions=False, do_complexes=False, do
     with open(os.sep.join([settings.DATA_DIR, 'residue_data', 'unnatural_amino_acids.yaml']), 'r') as f_yaml:
         unnatural_amino_acids = yaml.safe_load(f_yaml)
         unnatural_amino_acids = {str(x):unnatural_amino_acids[x] for x in unnatural_amino_acids}
+    struc = Structure.objects.get(protein_conformation__protein__entry_name=pdb_name)
     if file_input:
         #read pdb file
         pdb_io = StringIO(pdb_name)
@@ -46,7 +47,6 @@ def compute_interactions(pdb_name, do_interactions=False, do_complexes=False, do
     # Ensure that the PDB name is lowercase
         pdb_name = pdb_name.lower()
         # Get the pdb structure
-        struc = Structure.objects.get(protein_conformation__protein__entry_name=pdb_name)
         pdb_io = StringIO(struc.pdb_data.pdb)
         # Get the preferred chain
         preferred_chain = struc.preferred_chain.split(',')[0]
