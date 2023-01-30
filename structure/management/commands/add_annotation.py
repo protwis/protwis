@@ -57,9 +57,6 @@ class Command(BaseCommand):
         for s, data in self.parsed_structures.structures.items():
             ### New structures
             if s not in self.xtal_seg_ends:
-                print(s)
-                print(data)
-
                 segends[s] = {'1b':'-','1e':'-','i1b':'-','i1e':'-','2b':'-','2e':'-','e1b':'-','e1e':'-',
                               '3b':'-','3e':'-','i2b':'-','i2e':'-','4b':'-','4e':'-','e2b':'-','e2e':'-',
                               '5b':'-','5e':'-','6b':'-','6e':'-','7b':'-','7e':'-','8b':'-','8e':'-'}
@@ -236,7 +233,6 @@ class Command(BaseCommand):
                     except ValueError:
                         start = '-'
                         end = '-'
-
                     if i<8 and (start=='-' or end=='-'):
                         print('WARNING: helix {} for {} {} has missing annotation'.format(i, s, parent_protein))
                     if i==8 and end==segends[s]['7e']:
