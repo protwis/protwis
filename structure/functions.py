@@ -1198,7 +1198,7 @@ class StructureBuildCheck():
     local_wt_pdb_lookup_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'wt_pdb_lookup'])
 
     def __init__(self):
-        with open(self.local_annotation_dir+'/xtal_segends.yaml', 'r') as f:
+        with open(self.local_annotation_dir+'/mod_xtal_segends.yaml', 'r') as f:
             self.segends_dict = yaml.safe_load(f)
         self.pdbs = ParseStructureCSV().pdb_ids
         self.wt_pdb_lookup_files = [i.split('.')[0] for i in os.listdir(self.local_wt_pdb_lookup_dir)]
