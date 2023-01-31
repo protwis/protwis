@@ -1140,7 +1140,10 @@ class ParseStructureCSV():
             for ligand in ligands:
                 if 'ligand' not in self.structures[ligand[0]]:
                     self.structures[ligand[0]]['ligand'] = []
-                self.structures[ligand[0]]['ligand'].append({'chain':ligand[1], 'name':ligand[2], 'pubchemId':ligand[3], 'role':ligand[4], 'title':ligand[5], 'type': ligand[6]})
+                in_structure = True
+                if ligand[8]!='':
+                    in_structure = False
+                self.structures[ligand[0]]['ligand'].append({'chain':ligand[1], 'name':ligand[2], 'pubchemId':ligand[3], 'role':ligand[4], 'title':ligand[5], 'type': ligand[6], 'in_structure': in_structure})
 
     def parse_nanobodies(self):
         self.parse_aux_file('nanobodies.csv')
@@ -1195,7 +1198,7 @@ class StructureBuildCheck():
     local_wt_pdb_lookup_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'wt_pdb_lookup'])
 
     def __init__(self):
-        with open(self.local_annotation_dir+'/xtal_segends.yaml', 'r') as f:
+        with open(self.local_annotation_dir+'/mod_xtal_segends.yaml', 'r') as f:
             self.segends_dict = yaml.safe_load(f)
         self.pdbs = ParseStructureCSV().pdb_ids
         self.wt_pdb_lookup_files = [i.split('.')[0] for i in os.listdir(self.local_wt_pdb_lookup_dir)]

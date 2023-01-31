@@ -81,7 +81,7 @@ class Command(BaseCommand):
         self.ECD_data = self.parse_excel(self.ECD_annotation_source_file)
         self.dump_ECD_files()
         self.ClassD_data = self.parse_excel(self.ClassD_annotation_source_file)
-        self.dump_ClassD_data()
+        # self.dump_ClassD_data()
         self.GPCRdb_structure_data = self.parse_excel(self.GPCRdb_structure_info)
         self.dump_GPCRdb_structure_data()
         # self.analyse_annotation_consistency()

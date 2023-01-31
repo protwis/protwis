@@ -58,8 +58,6 @@ class Command(BaseCommand):
             ### New structures
             if s not in self.xtal_seg_ends:
                 print(s)
-                print(data)
-
                 segends[s] = {'1b':'-','1e':'-','i1b':'-','i1e':'-','2b':'-','2e':'-','e1b':'-','e1e':'-',
                               '3b':'-','3e':'-','i2b':'-','i2e':'-','4b':'-','4e':'-','e2b':'-','e2e':'-',
                               '5b':'-','5e':'-','6b':'-','6e':'-','7b':'-','7e':'-','8b':'-','8e':'-'}
@@ -135,7 +133,7 @@ class Command(BaseCommand):
 
                 dssp = self.dssp(s, structure[0][data['preferred_chain']], structure)
                 
-                if fusion_present or s in ['7V68','7V69','7V6A']:
+                if fusion_present or s in ['7V68','7V69','7V6A','7W6P','7W7E','8E9W','8E9X','8E9Y','8E9Z','8EA0']:
                     pw2 = Bio.pairwise2.align.localms(parent_seq, seq, 3, -3, -3.5, -1)
                 else:
                     pw2 = Bio.pairwise2.align.localms(parent_seq, seq, 3, -4, -5, -2)
@@ -186,8 +184,15 @@ class Command(BaseCommand):
                         parent_segends[prefix+'x'] = x50
                         parent_segends[prefix+'e'] = e
 
+                if self.debug:
+                    print(res_dict)
+                    print(parent_segends)
+
                 ### Helices
                 for i in range(1,9):
+                    if i==8 and parent_segends[str(i)+'x']=='-':
+                        print('WARNING: no H8 annotated for wt {}'.format(parent_protein))
+                        continue
                     parent_x50 = int(parent_segends[str(i)+'x'])
                     parent_start = int(parent_segends[str(i)+'b'])
                     parent_end = int(parent_segends[str(i)+'e'])
@@ -236,7 +241,6 @@ class Command(BaseCommand):
                     except ValueError:
                         start = '-'
                         end = '-'
-
                     if i<8 and (start=='-' or end=='-'):
                         print('WARNING: helix {} for {} {} has missing annotation'.format(i, s, parent_protein))
                     if i==8 and end==segends[s]['7e']:
@@ -310,6 +314,7 @@ class Command(BaseCommand):
                         new_unique_receptor_structures[parent_protein] = [s]
                     else:
                         new_unique_receptor_structures[parent_protein].append(s)
+                print(new_unique_receptor_structures)
 
                 ### Check with done structures
                 # for seg, val in segends[s].items():
@@ -319,14 +324,16 @@ class Command(BaseCommand):
                 #         mismatches[s].append([seg, int(parent_segends[seg]), val])
                 for s, data in segends.items():
                     self.xtal_seg_ends[s] = data
-            
-        pprint.pprint(segends)
-        print('New unique receptor structures')
-        pprint.pprint(new_unique_receptor_structures)
 
-        ### Save to file
-        with open(self.xtal_seg_end_file, 'w') as f1:
-            yaml.dump(self.xtal_seg_ends, f1, default_flow_style=False)
+                ### Save to file
+                with open(self.xtal_seg_end_file, 'w') as f1:
+                    yaml.dump(self.xtal_seg_ends, f1, default_flow_style=False)
+            
+        # pprint.pprint(segends)
+        # print('New unique receptor structures')
+        # pprint.pprint(new_unique_receptor_structures)
+
+        
 
     @staticmethod
     def get_non_helicals(res_range, residues):
