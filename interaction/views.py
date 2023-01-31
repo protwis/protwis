@@ -160,7 +160,7 @@ def check_pdb(projectdir, pdb):  #CAN WE HAVE THE PDB AS A VAR AND NOT A FILE?
         url = 'https://www.rcsb.org/pdb/files/%s.pdb' % pdb
         # pdbfile = urllib.request.urlopen(url).read()
         pdbfile = requests.get(url)
-        if "404 Not Found" in pdbfile.text and pdb+'.pdb' in os.listdir(pdb_dir):
+        if ("404 Not Found" in pdbfile.text or pdb in ['7F1T', '7XBX']) and pdb+'.pdb' in os.listdir(pdb_dir):
             with open(os.sep.join([pdb_dir, pdb+'.pdb']), 'r') as f:
                 pdbfile = f.read()
         else:
@@ -173,7 +173,7 @@ def check_pdb(projectdir, pdb):  #CAN WE HAVE THE PDB AS A VAR AND NOT A FILE?
     else:
         with open(projectdir + 'pdbs/' + pdb + '.pdb', 'r') as f:
             pdbfile = f.read()
-        if "404 Not Found" in pdbfile and pdb+'.pdb' in os.listdir(pdb_dir):
+        if ("404 Not Found" in pdbfile or pdb in ['7F1T', '7XBX']) and pdb+'.pdb' in os.listdir(pdb_dir):
             with open(os.sep.join([pdb_dir, pdb+'.pdb']), 'r') as f:
                 pdbfile = f.read()
             temp_path = projectdir + 'pdbs/' + pdb + '.pdb'

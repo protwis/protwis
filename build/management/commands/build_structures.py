@@ -386,7 +386,7 @@ class Command(BaseBuild):
             seq = seq[:265]
         elif structure.pdb_code.index in ['1GZM', '3C9L']:
             seq = seq[:-3]
-        if structure.pdb_code.index in ['6NBI','6NBF','6NBH','6U1N','6M1H','6PWC','7JVR','7SHF','7EJ0','7EJ8','7EJA','7EJK']:
+        if structure.pdb_code.index in ['6NBI','6NBF','6NBH','6U1N','6M1H','6PWC','7JVR','7SHF','7EJ0','7EJ8','7EJA','7EJK','7VVJ']:
             pw2 = pairwise2.align.localms(parent_seq, seq, 3, -4, -3, -1)
         elif structure.pdb_code.index in ['6KUX', '6KUY', '6KUW']:
             pw2 = pairwise2.align.localms(parent_seq, seq, 3, -4, -4, -1.5)
@@ -515,6 +515,12 @@ class Command(BaseBuild):
             temp_seq = temp_seq[:211]+'--D'+temp_seq[214:]
         elif structure.pdb_code.index=='2YCW':
             temp_seq = temp_seq[:242]+'R'+temp_seq[242:270]+temp_seq[271:]
+        elif structure.pdb_code.index=='7EPT':
+            temp_seq = temp_seq[:197]+'SA'+temp_seq[197:208]+temp_seq[210:]
+        elif structure.pdb_code.index=='7SK5':
+            temp_seq = temp_seq[:186]+'S--'+temp_seq[189:]
+        elif structure.pdb_code.index=='7WU9':
+            temp_seq = temp_seq[:261]+'Q'+temp_seq[261:275]+temp_seq[276:]
 
 
 
