@@ -1519,19 +1519,9 @@ class Command(BaseBuild):
                     print('ERROR WITH CONTACTNETWORK {}'.format(sd['pdb']))
                     self.logger.error('Error with contactnetwork for {}'.format(sd['pdb']))
 
-                try:
-                    current = time.time()
-                    mypath = '/tmp/interactions/results/' + sd['pdb'] + '/output'
-                    # if not os.path.isdir(mypath):
-                    #     #Only run calcs, if not already in temp
-                    runcalculation(sd['pdb'],peptide_chain)
 
-                    parsecalculation(sd['pdb'],False)
-                    end = time.time()
-                    diff = round(end - current,1)
-                    self.logger.info('Interaction calculations done for {}. {} seconds.'.format(
-                                s.protein_conformation.protein.entry_name, diff))
-                except Exception as msg:
+            for ligand in ligands:
+                if ligand['type'] in ['small molecule', 'pep', 'protein', 'peptide'] and ligand['in_structure']:
                     try:
                         current = time.time()
                         mypath = '/tmp/interactions/results/' + sd['pdb'] + '/output'
@@ -1545,7 +1535,6 @@ class Command(BaseBuild):
                         self.logger.info('Interaction calculations done (again) for {}. {} seconds.'.format(
                                     s.protein_conformation.protein.entry_name, diff))
                     except Exception as msg:
-
                         print(msg)
                         print('ERROR WITH INTERACTIONS {}'.format(sd['pdb']))
                         self.logger.error('Error parsing interactions output for {}'.format(sd['pdb']))

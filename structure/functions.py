@@ -1140,7 +1140,10 @@ class ParseStructureCSV():
             for ligand in ligands:
                 if 'ligand' not in self.structures[ligand[0]]:
                     self.structures[ligand[0]]['ligand'] = []
-                self.structures[ligand[0]]['ligand'].append({'chain':ligand[1], 'name':ligand[2], 'pubchemId':ligand[3], 'role':ligand[4], 'title':ligand[5], 'type': ligand[6]})
+                in_structure = True
+                if ligand[8]!='':
+                    in_structure = False
+                self.structures[ligand[0]]['ligand'].append({'chain':ligand[1], 'name':ligand[2], 'pubchemId':ligand[3], 'role':ligand[4], 'title':ligand[5], 'type': ligand[6], 'in_structure': in_structure})
 
     def parse_nanobodies(self):
         self.parse_aux_file('nanobodies.csv')

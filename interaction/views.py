@@ -3,6 +3,7 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.conf import settings
 from django.db.models import Count, Sum, Avg, Q
 from django.utils.text import slugify
+from django.conf import settings
 
 from interaction.models import ResidueFragmentInteraction, StructureLigandInteraction, ResidueFragmentInteractionType
 from interaction.forms import PDBform
@@ -41,6 +42,1058 @@ AA = {'ALA': 'A', 'ARG': 'R', 'ASN': 'N', 'ASP': 'D',
       'MET': 'M', 'PHE': 'F', 'PRO': 'P', 'SER': 'S',
       'THR': 'T', 'TRP': 'W', 'TYR': 'Y', 'VAL': 'V'}
 
+#IMPLEMENTING THE LEGACY FUNCTIONS HERE!
+
+# Van Der Waals interactions: to define if two atoms are interacting via Van Der Waals
+# you can calculate the distance between these two atoms , which should be
+# around 3 to 6 Angstrom, then check if their Van Der Waals radius (PeriodicTable)
+# is overlapping, is enough to match the distance
+
+HBD = {'H', 'K', 'N', 'Q', 'R', 'S', 'T', 'W', 'Y'}
+HBA = {'D', 'E', 'H', 'N', 'Q', 'S', 'T', 'Y'}
+NEGATIVE = {'D', 'E'}
+POSITIVE = {'H', 'K', 'R'}
+cation_atoms =  ['NZ', 'CZ', 'NE', 'NH1', 'NH2']
+AROMATIC = {'TYR', 'TRP', 'PHE', 'HIS'}
+CHARGEDAA = {'ARG', 'LYS', 'ASP', 'GLU'}
+HYDROPHOBIC_AA = {'A', 'C', 'F', 'I', 'L', 'M', 'P', 'V', 'W', 'Y'}
+ignore_het = ['NA', 'W']  # ignore sodium and water
+radius = 5
+hydrophob_radius = 4.5
+pdb_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'pdbs'])
+
+#RETURN THE DICTIONARY RESULTS
+def runcalculation_2022(pdbname, peptide=""):
+    output = calculate_interactions(pdbname, None, peptide)
+    return output
+
+#RETURN THE DICTIONARY RESULTS
+def runusercalculation_2022(filename, session):
+    output = calculate_interactions(filename, session, None)
+    return output
+
+def calculate_interactions(pdb, session=None, peptide=None):
+    # REMEMBER TO GET THE RETURNS FROM ALL THE BELOW FUNCTIONS
+    hetlist = {}
+    ligand_atoms = {}
+    ligand_charged = {}
+    ligandcenter = {}
+    ligand_rings = {}
+    ligand_donors = {}
+    ligand_acceptors = {}
+    results = {}
+    sortedresults = []
+    summary_results = {}
+    new_results = {}
+    projectdir = '/tmp/interactions/'
+    tempdir = projectdir + 'temp/'
+    if not os.path.exists(tempdir):
+        os.makedirs(tempdir)
+        # os.chmod(tempdir, 0o777)
+    if not session:
+        check_pdb(projectdir, pdb)
+        checkdirs(projectdir, pdb)
+        pdb_location = projectdir + 'pdbs/' + pdb + '.pdb'
+        hetlist_display = find_interacting_ligand(pdb_location, pdb)
+        # Defining a shared parser
+        parser = PDBParser(QUIET=True)
+        scroller = parser.get_structure(pdb, pdb_location)
+        create_ligands_and_poseview(hetlist_display, scroller, projectdir, pdb, peptide) #ignore_het (should be global), inchikeys, smiles (should not be used)
+        hetlist, ligand_charged, ligand_donors, ligand_atoms, ligand_acceptors, ligandcenter, ligand_rings = build_ligand_info(
+                                                                                                                scroller, hetlist_display,
+                                                                                                                projectdir, pdb, peptide, hetlist,
+                                                                                                                ligand_atoms, ligand_charged, ligand_donors,
+                                                                                                                ligand_acceptors, ligandcenter, ligand_rings)
+        summary_results, new_results, results = find_interactions(
+                                                    scroller, projectdir, pdb, peptide,
+                                                    hetlist, ligandcenter, radius, summary_results,
+                                                    new_results, results, hydrophob_radius, ligand_rings, ligand_charged)
+        summary_results, new_results, sortedresults = analyze_interactions(
+                                                        projectdir, pdb, results, ligand_donors,
+                                                        ligand_acceptors, ligand_charged, new_results,
+                                                        summary_results, hetlist_display, sortedresults)
+        pretty_results(projectdir, pdb, summary_results)
+    else:
+        projectdir = projectdir + session + "/"
+        checkdirs(projectdir, pdb)
+        pdb_location = projectdir + 'pdbs/' + pdb + '.pdb'
+        hetlist_display = find_interacting_ligand(pdb_location, pdb)
+        # Defining a shared parser
+        parser = PDBParser(QUIET=True)
+        scroller = parser.get_structure(pdb, pdb_location)
+        create_ligands_and_poseview(hetlist_display, scroller, projectdir, pdb, peptide) #ignore_het (should be global), inchikeys, smiles (should not be used)
+        hetlist, ligand_charged, ligand_donors, ligand_atoms, ligand_acceptors, ligandcenter, ligand_rings = build_ligand_info(
+                                                                                                                scroller, hetlist_display,
+                                                                                                                projectdir, pdb, peptide, hetlist,
+                                                                                                                ligand_atoms, ligand_charged, ligand_donors,
+                                                                                                                ligand_acceptors, ligandcenter, ligand_rings)
+        summary_results, new_results, results = find_interactions(
+                                                    scroller, projectdir, pdb,
+                                                    peptide, hetlist, ligandcenter,
+                                                    radius, summary_results, new_results,
+                                                    results, hydrophob_radius, ligand_rings, ligand_charged)
+        summary_results, new_results, sortedresults = analyze_interactions(
+                                                        projectdir, pdb, results, ligand_donors,
+                                                        ligand_acceptors, ligand_charged, new_results,
+                                                        summary_results, hetlist_display, sortedresults)
+        pretty_results(projectdir, pdb, summary_results)
+    return new_results
+
+
+def check_pdb(projectdir, pdb):  #CAN WE HAVE THE PDB AS A VAR AND NOT A FILE?
+    # check if PDB is there, otherwise fetch
+    if not os.path.exists(projectdir + 'pdbs/'):
+        os.makedirs(projectdir + 'pdbs/')
+
+    if not os.path.isfile(projectdir + 'pdbs/' + pdb + '.pdb'):
+        url = 'https://www.rcsb.org/pdb/files/%s.pdb' % pdb
+        # pdbfile = urllib.request.urlopen(url).read()
+        pdbfile = requests.get(url)
+        if "404 Not Found" in pdbfile.text and pdb+'.pdb' in os.listdir(pdb_dir):
+            with open(os.sep.join([pdb_dir, pdb+'.pdb']), 'r') as f:
+                pdbfile = f.read()
+        else:
+            pdbfile = pdbfile.text
+            
+        # output_pdb = pdbfile.decode('utf-8').split('\n')
+        temp_path = projectdir + 'pdbs/' + pdb + '.pdb'
+        with open(temp_path, "w") as f:
+            f.write(pdbfile)
+    else:
+        with open(projectdir + 'pdbs/' + pdb + '.pdb', 'r') as f:
+            pdbfile = f.read()
+        if "404 Not Found" in pdbfile and pdb+'.pdb' in os.listdir(pdb_dir):
+            with open(os.sep.join([pdb_dir, pdb+'.pdb']), 'r') as f:
+                pdbfile = f.read()
+            temp_path = projectdir + 'pdbs/' + pdb + '.pdb'
+            with open(temp_path, "w") as f:
+                f.write(pdbfile)
+    # return output_pdb
+
+def checkdirs(projectdir, pdb): # DO WE NEED TO HAVE THIS DATA STORE IN TMP FILES?
+    # check that dirs are there and have right permissions
+    directory = projectdir + 'results/' + pdb
+    if os.path.exists(directory):
+        shutil.rmtree(directory)
+    directory = projectdir + 'results/' + pdb + '/interaction'
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+        # os.chmod(directory, 0o777)
+    directory = projectdir + 'results/' + pdb + '/ligand' #not really necessary
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+        # os.chmod(directory, 0o777)
+    directory = projectdir + 'results/' + pdb + '/output'
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+        # os.chmod(directory, 0o777)
+    directory = projectdir + 'results/' + pdb + '/fragments' #not really necessary
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+        # os.chmod(directory, 0o777)
+    directory = projectdir + 'temp/'
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+        # os.chmod(directory, 0o777)
+
+def find_interacting_ligand(pdb_location, pdb):
+    #Compare these names to the ones in the database
+    db_ligs = list(StructureLigandInteraction.objects.filter(structure_id__pdb_code_id__index=pdb.upper()).values_list('pdb_reference', flat=True))
+    f_in = open(pdb_location, 'r')
+    d = {}
+    for lig in db_ligs:
+        d[lig] = ''
+        if lig == 'pep':
+            continue
+        else:
+            for line in f_in:
+                if lig in line:
+                    if line.startswith('HETSYN'):
+                        try:
+                            m = re.match("HETSYN[\s]+([\w]{3})[\s]+(.+)", line)
+                            d[m.group(1)] = m.group(2).strip()
+                        except AttributeError:
+                            #apply exception to ligand with multiline names1
+                            m = re.match("HETSYN[\s]+([\w]{1})[\s]+(.+)", line)
+                            code = m.group(2).split(' ')[0]
+                            d[code] += m.group(2).split(' ')[1].strip()
+                    else:
+                        d[lig] = ''
+                # if m.group(1) in db_ligs:
+                #     d[m.group(1)] = m.group(2).strip()
+    return d
+
+def accept_residue(residue, hetflag, peptide=None):
+    if residue.get_parent().id == peptide:
+        return 1
+    elif residue.get_resname().strip() == hetflag:
+        return 1
+    else:
+        return 0
+
+def create_ligands_and_poseview(ligand_het, scroller, projectdir, pdb, peptide=None):
+
+    class HetSelect(Select):
+        @staticmethod
+        def accept_residue(residue):
+            if residue.get_resname().strip() == hetflag:
+                return 1
+            else:
+                return 0
+
+    class ClassSelect(Select):
+        @staticmethod
+        def accept_residue(residue):
+            if residue.get_parent().id == peptide:
+                return 1
+            else:
+                return 0
+
+    for model in scroller:
+        for chain in model:
+            for residue in chain:
+                # catch residues with hetflag
+                hetflag = residue.get_full_id()[3][0].strip()
+                hetflag = hetflag.replace("H_", "").strip()
+                if peptide and chain.id==peptide:
+                    hetflag= 'pep'
+
+                if hetflag in ligand_het.keys():
+                    ligand_pdb = projectdir + 'results/' + pdb + '/ligand/' + hetflag + '_' + pdb + '.pdb'
+
+                    # if sdf not made, make it #Always make them for now
+                    if not os.path.isfile(ligand_pdb):
+                        io = PDBIO()
+                        io.set_structure(scroller)
+                        if peptide and chain.id==peptide:
+                            io.save(ligand_pdb, ClassSelect())
+                        else:
+                            io.save(ligand_pdb, HetSelect())
+                        # check_unique_ligand_mol(ligand_pdb)
+                        if MolFromPDBFile(ligand_pdb) == 0:
+                            continue
+                    else:
+                        continue
+
+def check_unique_ligand_mol(filename): # IS THIS NEEDED?
+    # check that only HETATM are exported to file
+    f_in = open(filename, 'r')
+    tempstr = ''
+    ligandid = 0
+    chainid = 0
+    for line in f_in:
+        if line.startswith('HETATM'):
+            residue_number = line[22:26]
+            chain = line[21]
+
+            if (residue_number != ligandid and ligandid != 0) or (chain != chainid and chainid != 0):
+                continue
+
+            ligandid = residue_number
+            chainid = chain
+
+        tempstr += line
+
+    f_in.close()
+    f = open(filename, 'w')
+    f.write(tempstr)
+    f.close()
+
+def get_sdf_ligand_from_cache(comp_id):
+    #CHECK IF THE SDF IS CACHED
+    url = 'https://files.rcsb.org/ligands/download/$index'
+    cache_dir = ["pdbe", 'sdf_models']
+    comp_id += '_model.sdf'
+    data = fetch_from_web_api(url, comp_id, cache_dir, raw=True)
+    mol = AllChem.MolFromMolBlock(data)
+    # AllChem.AssignStereochemistryFrom3D(mol) #FOR PYTHON 3
+    return mol
+
+def isRingAromatic(mol, bondRing):
+    for ring_id in bondRing:
+        if not mol.GetBondWithIdx(ring_id).GetIsAromatic():
+            return False
+    return True
+
+def build_ligand_info(scroller, lig_het, projectdir, pdb, peptide, hetlist, ligand_atoms, ligand_charged, ligand_donors, ligand_acceptors, ligandcenter, ligand_rings):
+    count_atom_ligand = {}
+
+    for model in scroller:
+        for chain in model:
+            for residue in chain:
+                hetresname = residue.get_resname()
+                # catch residues with hetflag
+                hetflag = residue.get_full_id()[3][0].strip()
+                hetflag = hetflag.replace("H_", "").strip()
+
+                if peptide and chain.id==peptide:
+                    hetflag= 'pep'
+                if peptide and chain.id!=peptide:
+                    continue
+
+                # REMEMBER TO PARSE ONLY THE ACTUAL LIGAND
+                if hetflag in lig_het.keys():
+                    if (hetflag not in hetlist) or (chain.id==peptide):
+                        if MolFromPDBFile(projectdir + 'results/' + pdb + '/ligand/' + hetflag + '_' + pdb + '.pdb') == 0:
+                            # This ligand has no molecules
+                            # print('no info for',hetflag)
+                            continue
+
+                        if hetflag not in hetlist: #do not recreate for peptides
+                            hetlist[hetflag] = []
+                            ligand_charged[hetflag] = []
+                            ligand_donors[hetflag] = []
+                            ligand_acceptors[hetflag] = []
+                            count_atom_ligand[hetflag] = 0
+                            mol2 = MolFromPDBFile(projectdir + 'results/' + pdb + '/ligand/' + hetflag + '_' + pdb + ".pdb")
+                            hetflag_sdf = get_sdf_ligand_from_cache(hetflag)
+                            try:
+                                mol2 = AllChem.AssignBondOrdersFromTemplate(refmol=hetflag_sdf, mol=mol2)
+                            except ValueError:
+                                try:
+                                    smiles = list(Ligand.objects.filter(pdbe=hetflag).values_list('smiles', flat=True))[0]
+                                    refmol = AllChem.MolFromSmiles(smiles)
+                                    mol2 = AllChem.AssignBondOrdersFromTemplate(refmol=refmol, mol=mol2)
+                                except:
+                                    pass
+                            mol2 = Chem.AddHs(mol2)
+                            rings = Chem.rdmolops.GetSSSR(mol2)
+                            ringlist = []
+                            if rings > 0:
+                                counter = -1
+                                ri = mol2.GetRingInfo()
+                                for ring in ri.BondRings():
+                                    counter +=1
+                                    center = Vector(0.0, 0.0, 0.0)
+                                    members = len(ring)
+                                    if isRingAromatic(mol2, ring):
+                                        atomlist = []
+                                        vectorlist = []
+                                        for i, atom in enumerate(mol2.GetAtoms()):
+                                            if atom.GetIdx() in ri.AtomRings()[counter]:
+                                                positions = mol2.GetConformer().GetAtomPosition(i)
+                                                a_vector = Vector(positions)
+                                                center += a_vector
+                                                atomlist.append(atom.GetIdx())
+                                                vectorlist.append(a_vector)
+                                        center = center / members
+                                        normal1 = center - vectorlist[0]
+                                        normal2 = center - vectorlist[2]
+                                        # normal = Vector(np.cross(normal1,normal2
+                                        normal = Vector(np.cross([normal1[0],normal1[1],normal1[2]],[normal2[0],normal2[1],normal2[2]]))
+                                        ringlist.append([atomlist, center, normal, vectorlist])
+
+                            ligand_rings[hetflag] = ringlist
+
+                            fdefName = os.path.join(RDConfig.RDDataDir,'BaseFeatures.fdef')
+                            factory = ChemicalFeatures.BuildFeatureFactory(fdefName)
+                            feats = factory.GetFeaturesForMol(mol2)
+
+                            for i, atom in enumerate(mol2.GetAtoms()):
+                                if atom.GetFormalCharge() != 0:
+                                    positions = mol2.GetConformer().GetAtomPosition(i)
+                                    chargevector = Vector(positions)
+                                    ligand_charged[hetflag].append([chargevector, atom.GetFormalCharge()])
+
+                            for feat in feats:
+                                if feat.GetFamily() == 'Acceptor':
+                                    positions = feat.GetPos()
+                                    chargevector = Vector(positions)
+                                    ligand_acceptors[hetflag].append(chargevector)
+                                if feat.GetFamily() == 'Donor':
+                                    positions = feat.GetPos()
+                                    chargevector = Vector(positions)
+                                    temphatoms = []
+                                    atom_id = feat.GetAtomIds()[0]
+                                    atom = mol2.GetAtomWithIdx(atom_id)
+                                    for j, neighbour_atom in enumerate(atom.GetNeighbors()):
+                                        if neighbour_atom.GetSymbol() == 'H':
+                                            positions_hs = mol2.GetConformer().GetAtomPosition(j)
+                                            temphatoms.append(Vector(positions_hs))
+                                    ligand_donors[hetflag].append([chargevector, temphatoms])
+
+                        # Function to get ligand centers to maybe skip some residues
+                        check = 0
+                        center = Vector(0.0, 0.0, 0.0)
+                        if peptide and chain.id==peptide:
+                            if hetflag in ligandcenter:
+                                center = ligandcenter[hetflag][2]
+                            for atom in residue:
+                                het_atom = atom.name
+                                atom_vector = atom.get_vector()
+                                center += atom_vector
+                                hetlist[hetflag].append([hetresname, het_atom, atom_vector])
+                                if hetflag not in ligand_atoms:
+                                    # make the ligand_atoms ready
+                                    ligand_atoms[hetflag] = []
+                                ligand_atoms[hetflag].append([count_atom_ligand[hetflag], atom_vector, het_atom])
+                                count_atom_ligand[hetflag] += 1
+                                ligandcenter[hetflag] = [center, count_atom_ligand[hetflag]]
+                        else:
+                            for atom in residue:
+                                if check == 0 and hetflag in ligand_atoms:
+                                    continue  # skip when there are many of same ligand
+                                het_atom = atom.name
+                                check = 1
+                                atom_vector = atom.get_vector()
+                                center += atom_vector
+                                hetlist[hetflag].append([hetresname, het_atom, atom_vector])
+                                if hetflag not in ligand_atoms:
+                                    # make the ligand_atoms ready
+                                    ligand_atoms[hetflag] = []
+                                ligand_atoms[hetflag].append([count_atom_ligand[hetflag], atom_vector, het_atom])
+                                count_atom_ligand[hetflag] += 1
+                        center2 = center / count_atom_ligand[hetflag]
+                        ligandcenter[hetflag] = [center2, count_atom_ligand[hetflag],center]
+
+    return hetlist, ligand_charged, ligand_donors, ligand_atoms, ligand_acceptors, ligandcenter, ligand_rings
+
+# LOOP OVER RECEPTOR AND FIND INTERACTIONS
+def find_interactions(scroller, projectdir, pdb, peptide, hetlist, ligandcenter, radius, summary_results, new_results, results, hydrophob_radius, ligand_rings, ligand_charged):
+    count_atom = 0
+    count_skips = 0
+    count_calcs = 0
+    # waals = []
+    for heteroatom in ligandcenter.keys():
+        for model in scroller:
+            for chain in model:
+                chainid = chain.get_id()
+                if peptide and chainid==peptide:
+                    continue
+                for residue in chain:
+                    aa_resname = residue.get_resname()
+                    aa_seqid = str(residue.get_full_id()[3][1])
+                    aaname = aa_resname + aa_seqid + chainid
+                    hetflagtest = str(residue.get_full_id()[3][0]).strip()
+
+                    if hetflagtest or 'CA' not in residue:
+                        continue  # residue is a hetnam
+
+                    # could probably make a check here to see if this residue was
+                    # anywhere near the ligand, otherwise skip the check per atom
+                    ca = residue['CA'].get_vector()
+                    if (ca - ligandcenter[heteroatom][0]).norm() > ligandcenter[heteroatom][1]:
+                        count_skips += 1
+                        continue
+
+                    for hetflag, atomlist in hetlist.items():
+                        sum_data = 0
+                        hydrophobic_count = 0
+                        accesible = False
+                        for atom_het in atomlist:
+                            het_atom = atom_het[1]
+                            het_vector = atom_het[2]
+                            aaatomlist = []
+                            for atom in residue:
+                                count_atom += 1
+                                aa_vector = atom.get_vector()
+                                aa_atom = atom.name
+                                aa_atom_type = atom.element
+                                aaatomlist.append([count_atom, aa_vector, aa_atom])
+                                distance = (het_vector - aa_vector)
+                                count_calcs += 1
+                                # if distance.norm() < 6:
+                                #     waals.append([aaname])
+                                if distance.norm() < radius:
+                                    if hetflag not in results:
+                                        results[hetflag] = {}
+                                        summary_results[hetflag] = {'score': [], 'hbond': [], 'hbondplus': [], 'pistack': [],
+                                                                    'hbond_confirmed': [], 'aromatic': [],'aromaticff': [],
+                                                                    'ionaromatic': [], 'aromaticion': [], 'aromaticef': [],
+                                                                    'aromaticfe': [], 'hydrophobic': [], 'waals': [], 'accessible':[]}
+                                        new_results[hetflag] = {'interactions':[]}
+                                    if aaname not in results[hetflag]:
+                                        results[hetflag][aaname] = []
+                                    if (het_atom[0] != 'H') or (aa_atom[0] != 'H') or (aa_atom_type != 'H'):
+                                        tempdistance = round(distance.norm(), 2)
+                                        results[hetflag][aaname].append([het_atom, aa_atom, tempdistance, het_vector, aa_vector, aa_seqid, chainid])
+                                        sum_data += 1
+                                # if both are carbon then we are making a hydrophic interaction
+                                if (het_atom[0] == 'C') and (aa_atom[0] == 'C') and (distance.norm() < hydrophob_radius):
+                                    hydrophobic_count += 1
+
+                                # If within 5 angstrom and not a backbone atom (name C, O, N), then indicate as a residue in vicinity of the ligand
+                                if (distance.norm() < radius) and (aa_atom not in ['C', 'O', 'N']):
+                                    accesible = True
+                        fragment_file = ''
+                        # if hetflag in summary_results.keys():
+                        #     summary_results[hetflag]['waals'] = waals
+                        #     for amino_acid in waals:
+                        #         new_results[hetflag]['interactions'].append([amino_acid[0],fragment_file,'waals','accessible','waals',''])
+                        if accesible: #if accessible!)
+                            summary_results[hetflag]['accessible'].append([aaname])
+                            fragment_file = fragment_library(projectdir, pdb, hetflag, None, '', aa_seqid, chainid, 'access')
+                            new_results[hetflag]['interactions'].append([aaname,fragment_file,'acc','accessible','hidden',''])
+                        if hydrophobic_count > 2 and AA[aaname[0:3]] in HYDROPHOBIC_AA:  # min 3 c-c interactions
+                            summary_results[hetflag]['hydrophobic'].append([aaname, hydrophobic_count])
+                            fragment_file = fragment_library(projectdir, pdb, hetflag, None, '', aa_seqid, chainid, 'hydrop')
+                            new_results[hetflag]['interactions'].append([aaname,fragment_file,'hyd','hydrophobic','hydrophobic',''])
+
+                        if sum_data > 1 and aa_resname in AROMATIC:
+                            aarings = get_ring_from_aa(scroller, projectdir, aa_seqid, residue)
+                            #aarings.append([atomlist, center, normal, vectorlist])
+                            if not aarings:
+                                continue
+                            for aaring in aarings:
+                                center = aaring[1]
+                                count = 0
+                                for ring in ligand_rings[hetflag]:
+                                    shortest_center_het_ring_to_res_atom = 10
+                                    shortest_center_aa_ring_to_het_atom = 10
+                                    for a in aaring[3]:
+                                        if (ring[1] - a).norm() < shortest_center_het_ring_to_res_atom:
+                                            shortest_center_het_ring_to_res_atom = (ring[1] - a).norm()
+                                    for a in ring[3]:
+                                        if (center - a).norm() < shortest_center_aa_ring_to_het_atom:
+                                            shortest_center_aa_ring_to_het_atom = (center - a).norm()
+                                    count += 1
+                                    # take vector from two centers, and compare against
+                                    # vector from center to outer point -- this will
+                                    # give the perpendicular angle.
+                                    angle = Vector.angle(center - ring[1], ring[2]) #aacenter to ring center vs ring normal
+                                    # take vector from two centers, and compare against
+                                    # vector from center to outer point -- this will
+                                    # give the perpendicular angle.
+                                    angle2 = Vector.angle(center - ring[1], aaring[2]) #aacenter to ring center vs AA normal
+                                    angle3 = Vector.angle(ring[2], aaring[2]) #two normal vectors against eachother
+                                    angle_degrees = [round(degrees(angle), 1), round(degrees(angle2), 1), round(degrees(angle3), 1)]
+                                    distance = (center - ring[1]).norm()
+                                    if distance < 5 and (angle_degrees[2]<20 or abs(angle_degrees[2]-180)<20):  # poseview uses <5
+                                        summary_results[hetflag]['aromatic'].append([aaname, count, round(distance, 2), angle_degrees])
+                                        fragment_file = fragment_library_aromatic(projectdir, pdb, hetflag, ring[3], aa_seqid, chainid, count)
+                                        if check_other_aromatic(aaname, hetflag, {'Distance':round(distance, 2),'Angles':angle_degrees}, new_results):
+                                            new_results[hetflag]['interactions'].append([aaname,fragment_file,
+                                                                                         'aro_ff','aromatic (face-to-face)','aromatic','none',
+                                                                                         {'Distance':round(distance, 2),'ResAtom to center':round(shortest_center_het_ring_to_res_atom,2),
+                                                                                         'LigAtom to center': round(shortest_center_aa_ring_to_het_atom,2),'Angles':angle_degrees}])
+                                            remove_hyd(aaname, hetflag, new_results)
+                                    # need to be careful for edge-edge
+                                    elif (shortest_center_aa_ring_to_het_atom < 4.5) and abs(angle_degrees[0]-90)<30 and abs(angle_degrees[2]-90)<30:
+                                        summary_results[hetflag]['aromaticfe'].append([aaname, count, round(distance, 2), angle_degrees])
+                                        fragment_file = fragment_library_aromatic(projectdir, pdb, hetflag, ring[3], aa_seqid, chainid, count)
+                                        if check_other_aromatic(aaname, hetflag, {'Distance':round(distance, 2),'Angles':angle_degrees}, new_results):
+                                            new_results[hetflag]['interactions'].append([aaname,fragment_file,
+                                                                                         'aro_fe_protein','aromatic (face-to-edge)','aromatic','protein',
+                                                                                         {'Distance':round(distance, 2),'ResAtom to center':round(shortest_center_het_ring_to_res_atom,2),
+                                                                                         'LigAtom to center': round(shortest_center_aa_ring_to_het_atom,2),'Angles':angle_degrees}])
+                                            remove_hyd(aaname, hetflag, new_results)
+                                    # need to be careful for edge-edge
+                                    elif (shortest_center_het_ring_to_res_atom < 4.5) and abs(angle_degrees[1]-90)<30 and abs(angle_degrees[2]-90)<30:
+                                        summary_results[hetflag]['aromaticef'].append([aaname, count, round(distance, 2), angle_degrees])
+                                        fragment_file = fragment_library_aromatic(projectdir, pdb, hetflag, ring[3], aa_seqid, chainid, count)
+                                        if check_other_aromatic(aaname, hetflag, {'Distance':round(distance, 2),'Angles':angle_degrees}, new_results):
+                                            new_results[hetflag]['interactions'].append([aaname,fragment_file,
+                                                                                         'aro_ef_protein','aromatic (edge-to-face)','aromatic','protein',
+                                                                                         {'Distance':round(distance, 2),'ResAtom to center':round(shortest_center_het_ring_to_res_atom,2),
+                                                                                         'LigAtom to center': round(shortest_center_aa_ring_to_het_atom,2),'Angles':angle_degrees}])
+                                            remove_hyd(aaname, hetflag, new_results)
+                                for charged in ligand_charged[hetflag]:
+                                    distance = (center - charged[1]).norm()
+                                    # needs max 4.2 distance to make aromatic+
+                                    if distance < 4.2 and charged[2] > 0:
+                                        summary_results[hetflag]['aromaticion'].append([aaname, count, round(distance, 2), charged])
+                                        #FIXME fragment file
+                                        new_results[hetflag]['interactions'].append([aaname,'','aro_ion_protein','aromatic (pi-cation)','aromatic','protein',{'Distance':round(distance, 2)}])
+                                        remove_hyd(aaname, hetflag, new_results)
+                        #Calculate PiStack interactions
+                        if (aa_resname in ['ARG', 'LYS']) and ligand_rings[hetflag]:
+                            for atom in residue:
+                                aa_vector = atom.get_vector()
+                                aa_atom = atom.name
+                                #First: find the receptor atom that checks
+                                if aa_atom in cation_atoms:
+                                    #Second: calculate the center of the aromatic ring (ligand)
+                                    for ring in ligand_rings[hetflag]:
+                                        ring_center = ring[1]
+                                        #Third: calculate the distance of the residue atom to the center of the ring
+                                        distance = (ring_center - aa_vector).norm()
+                                        #and check distance is less than 6.6
+                                        if distance < 6.6:
+                                            #Fourth: calculate the angle between the atom and the perpendicular center
+                                            perp_vector = ring[2]
+                                            angle = degrees(Vector.angle(perp_vector, aa_vector))
+                                            if angle <= 30:
+                                                summary_results[hetflag]['pistack'].append([aaname])
+                                                new_results[hetflag]['interactions'].append([aaname,'','aro_ion_protein','aromatic (pi-cation)','aromatic','protein',{'Distance':round(distance, 2)}])
+    return summary_results, new_results, results
+
+def get_ring_from_aa(scroller, projectdir, residueid, residue):
+
+    class AAselect(Select):
+        def accept_residue(self, residue):
+            if str(residue.get_full_id()[3][1]) == residueid:
+                return 1
+            else:
+                return 0
+
+    io = PDBIO()
+    io.set_structure(scroller)
+    io.save(projectdir + 'temp/' + residueid + '.pdb', AAselect())
+    mol = MolFromPDBFile(projectdir + 'temp/' + residueid + '.pdb')
+    mol = Chem.AddHs(mol)
+    # ANALYZING AROMATIC RINGS
+    rings = Chem.rdmolops.GetSSSR(mol)
+    ringlist = []
+    if rings > 0:
+        counter = -1
+        ri = mol.GetRingInfo()
+        for ring in ri.BondRings():
+            counter +=1
+            center = Vector(0.0, 0.0, 0.0)
+            members = len(ring)
+            if isRingAromatic(mol, ring):
+                atomlist = []
+                vectorlist = []
+                for i, atom in enumerate(mol.GetAtoms()):
+                    if atom.GetIdx() in ri.AtomRings()[counter]:
+                        positions = mol.GetConformer().GetAtomPosition(i)
+                        a_vector = Vector(positions)
+                        center += a_vector
+                        atomlist.append(atom.GetIdx())
+                        vectorlist.append(a_vector)
+                center = center / members
+                normal1 = center - vectorlist[0]
+                normal2 = center - vectorlist[2]
+                normal = Vector(np.cross([normal1[0],normal1[1],normal1[2]],[normal2[0],normal2[1],normal2[2]]))
+                ringlist.append([atomlist, center, normal, vectorlist])
+    return ringlist
+
+def remove_hyd(aa, ligand, new_results):
+    templist = []
+    for res in new_results[ligand]['interactions']:
+        if (res[0]==aa) and (res[2] in ['HYD','hyd']):
+            continue
+        else:
+            templist.append(res)
+    new_results[ligand]['interactions'] = templist
+
+def check_other_aromatic(aa, ligand, info, new_results):
+    templist = []
+    check = True
+    for res in new_results[ligand]['interactions']:
+        if (res[0]==aa) and (res[4]=='aromatic'):
+            #if the new aromatic interaction has a center-center distance greater than the old one, keep old.
+            if info['Distance'] > res[6]['Distance']:
+                templist.append(res)
+                check = False #Do not add the new one.
+            else: #if not, delete the old one, as the new is better.
+                check = True #add the new one
+                continue
+        else:
+            templist.append(res)
+    new_results[ligand]['interactions'] = templist
+    return check
+
+def get_hydrogen_from_aa(projectdir, pdb, residueid):
+
+    class AAselect(Select):
+
+        def accept_residue(self, residue):
+            # print residue.get_full_id()[3][1],residueid
+            if str(residue.get_full_id()[3][1]) == residueid:
+                return 1
+            else:
+                return 0
+    ptemp = PDBParser(QUIET=True)
+    stemp = ptemp.get_structure(pdb, projectdir + 'pdbs/' + pdb + '.pdb')
+
+    io = PDBIO()
+    io.set_structure(stemp)
+    io.save(projectdir + 'temp/' + residueid + '.pdb', AAselect())
+
+    mol = MolFromPDBFile(projectdir + 'temp/' +residueid + '.pdb')
+    mol = Chem.AddHs(mol)
+
+    fdefName = os.path.join(RDConfig.RDDataDir,'BaseFeatures.fdef')
+    factory = ChemicalFeatures.BuildFeatureFactory(fdefName)
+    feats = factory.GetFeaturesForMol(mol)
+    donors = []
+    for feat in feats:
+        acceptor = False
+        #FINDING H BOND ACCEPTORS
+        if feat.GetFamily() == 'Acceptor':
+            positions = feat.GetPos()
+            chargevector = Vector(positions)
+            acceptor = True
+            temphatoms = []
+            atom_id = feat.GetAtomIds()[0]
+            atom = mol.GetAtomWithIdx(atom_id)
+            for j, neighbour_atom in enumerate(atom.GetNeighbors()):
+                if neighbour_atom.GetSymbol() == 'H':
+                    positions_hs = mol.GetConformer().GetAtomPosition(j)
+                    temphatoms.append(Vector(positions_hs))
+        if feat.GetFamily() == 'Donor':
+            positions = feat.GetPos()
+            chargevector = Vector(positions)
+            temphatoms = []
+            atom_id = feat.GetAtomIds()[0]
+            atom = mol.GetAtomWithIdx(atom_id)
+            for j, neighbour_atom in enumerate(atom.GetNeighbors()):
+                if neighbour_atom.GetSymbol() == 'H':
+                    positions_hs = mol.GetConformer().GetAtomPosition(j)
+                    temphatoms.append(Vector(positions_hs))
+        donors.append([chargevector, temphatoms, acceptor])
+    return donors
+
+def fragment_library(projectdir, pdb, ligand, atomvector, atomname, residuenr, chain, typeinteraction):
+    #if debug:
+        #print "Make fragment pdb file for ligand:", ligand, "atom vector", atomvector, "atomname", atomname, "residuenr from protein", residuenr, typeinteraction, 'chain', chain
+    residuename = 'unknown'
+    ligand_pdb = projectdir + 'results/' + pdb + '/ligand/' + ligand + '_' + pdb + '.pdb'
+    mol2 = MolFromPDBFile(ligand_pdb, removeHs=True)
+    listofvectors = []
+    chain = chain.strip()
+    pdbfile = projectdir + 'pdbs/' + pdb + '.pdb'
+    f_in = open(pdbfile, 'r')
+    tempstr = ''
+    for line in f_in:
+        if line.startswith('HETATM'):
+            atomvector = Vector(line[30:38], line[38:46], line[46:54])
+            residue_number = line[22:26]
+            tempchain = line[21]
+            skip = 1
+            for targetvector in listofvectors:
+                distance = (targetvector - atomvector).norm()
+                if distance < 0.1:
+                    skip = 0
+            if skip == 1:
+                continue
+        elif line.startswith('ATOM'):
+            residue_number = line[22:26].strip()
+            tempchain = line[21].strip()
+            if residue_number != residuenr:
+                continue
+            if tempchain != chain:
+                continue
+            residuenr = residue_number
+            chain = tempchain
+            residuename = line[17:20].strip()
+        else:
+            continue  # ignore all other lines
+
+        tempstr += line
+
+    filename = projectdir + 'results/' + pdb + '/fragments/' + pdb + "_" + ligand + \
+        "_" + residuename + residuenr + chain + "_" + atomname + "_" + typeinteraction + ".pdb"
+    f_in.close()
+    f = open(filename, 'w')
+    f.write(tempstr)
+    f.close()
+    try:
+        mol2 = MolFromPDBFile(filename)
+        Chem.MolToPDBFile(mol2, filename)
+    except:
+        mol2 = MolFromPDBFile(filename, sanitize=False)
+        Chem.MolToPDBFile(mol2, filename)
+
+    return filename
+
+def fragment_library_aromatic(projectdir, pdb, ligand, atomvectors, residuenr, chain, ringnr):
+    chain = chain.strip()
+    pdbfile = projectdir + 'pdbs/' + pdb + '.pdb'
+    residuename = ''
+
+    f_in = open(pdbfile, 'r')
+    tempstr = ''
+    for line in f_in:
+        if line.startswith('HETATM'):
+            atomvector = Vector(line[30:38], line[38:46], line[46:54])
+            skip = 1
+            for targetvector in atomvectors:
+                distance = (targetvector - atomvector).norm()
+                if distance < 0.1:
+                    # print "FOUND!"
+                    skip = 0
+            if skip == 1:
+                continue
+        elif line.startswith('ATOM'):
+            residue_number = line[22:26].strip()
+            tempchain = line[21].strip()
+
+            if residue_number != residuenr:
+                continue
+            if tempchain != chain:
+                continue
+            residuename = line[17:20].strip()
+            chain = tempchain
+        else:
+            continue  # ignore all other lines
+
+        tempstr += line
+    filename = projectdir + 'results/' + pdb + '/fragments/' + pdb + "_" + ligand + \
+        "_" + residuename + str(residuenr) + chain + "_aromatic_" + str(ringnr) + ".pdb"
+    f_in.close()
+    f = open(filename, 'w')
+    f.write(tempstr)
+    f.close()
+    return filename
+
+def analyze_interactions(projectdir, pdb, results, ligand_donors, ligand_acceptors, ligand_charged, new_results, summary_results, hetlist_display, sortedresults):
+    for ligand, result in results.items():
+        ligscore = 0
+        fragment_file = ''
+        for residue, interaction in result.items():
+            sum_data = 0
+            score = 0
+            hbond = []
+            hbondplus = []
+            interaction_type = 'waals'
+            for entry in interaction:
+                hbondconfirmed = []
+                if (entry[2] <= 3.5):
+                    if entry[0][0] == 'C' or entry[1][0] == 'C':
+                        continue  # If either atom is C then no hydrogen bonding
+                    aa_donors = get_hydrogen_from_aa(projectdir, pdb, entry[5])
+                    hydrogenmatch = False
+                    res_is_acceptor = False
+                    res_is_donor = False
+                    found_donor = False
+                    found_acceptor = False
+                    chargedcheck = False
+                    charge_value = 0
+                    res_charge_value = False
+                    doublechargecheck = False
+                    for donor in aa_donors:
+                        d = (donor[0] - entry[4]).norm()
+                        if d < 0.5:
+                            hydrogens = donor[1]
+                            res_is_acceptor = donor[2]
+                            res_is_donor = True
+                            for hydrogen in hydrogens:
+                                hydrogenvector = hydrogen - donor[0]
+                                bindingvector = entry[3] - hydrogen
+                                angle = round(degrees(Vector.angle(hydrogenvector, bindingvector)), 2)
+                                distance = round(bindingvector.norm(), 2)
+                                if distance > 2.5:
+                                    # "Too far away"
+                                    continue
+                                if angle > 60:
+                                    # "Bad angle"
+                                    continue
+                                hydrogenmatch = True
+                                hbondconfirmed.append(["D", entry[0], entry[1], angle, distance])
+                    #Checking donor status
+                    for donor in ligand_donors[ligand]:
+                        d = (donor[0] - entry[3]).norm()
+                        if d < 0.5:
+                            found_donor = True
+                            hydrogens = donor[1]
+                            for hydrogen in hydrogens:
+                                hydrogenvector = hydrogen - donor[0]
+                                bindingvector = entry[4] - hydrogen
+                                angle = round(degrees(Vector.angle(hydrogenvector, bindingvector)), 2)
+                                distance = round(bindingvector.norm(), 2)
+                                if distance > 2.5:
+                                    # "Too far away"
+                                    continue
+                                if angle > 60:
+                                    # "Bad angle"
+                                    continue
+                                hydrogenmatch = True
+                                hbondconfirmed.append(["A", entry[0], entry[1], angle, distance])
+                    #Checking acceptor status
+                    for acceptor in ligand_acceptors[ligand]:
+                        d = (acceptor - entry[3]).norm()
+                        if d < 0.5:
+                            found_acceptor = 1
+                            if not found_donor and res_is_donor:
+                                hydrogenmatch = True
+                                hbondconfirmed.append(['D']) #set residue as donor
+
+                    if not found_acceptor and found_donor and res_is_acceptor:
+                        hydrogenmatch = True
+                        hbondconfirmed.append(['A']) #set residue as acceptor
+                    if found_acceptor and found_donor:
+                        if res_is_donor and not res_is_acceptor:
+                            hydrogenmatch = True
+                            hbondconfirmed.append(['D'])
+                        elif not res_is_donor and res_is_acceptor:
+                            hydrogenmatch = True
+                            hbondconfirmed.append(['A'])
+                        else:
+                            pass
+                    #Checking charged statuses
+                    for charged in ligand_charged[ligand]:
+                        d = (charged[0] - entry[3]).norm()
+                        if d < 0.5:
+                            chargedcheck = True
+                            hydrogenmatch = False  # Replace previous match!
+                            charge_value = charged[1]
+                    if residue[0:3] in CHARGEDAA:
+                        if chargedcheck:
+                            doublechargecheck = True
+                        chargedcheck = True
+                        hydrogenmatch = False  # Replace previous match!
+
+                        if AA[residue[0:3]] in POSITIVE:
+                            res_charge_value = 1
+                        elif AA[residue[0:3]] in NEGATIVE:
+                            res_charge_value = -1
+                    if entry[1] == 'N': #backbone connection!
+                        fragment_file = fragment_library(projectdir, pdb, ligand, entry[3], entry[0], entry[5], entry[6], 'HB_backbone')
+                        new_results[ligand]['interactions'].append([residue,fragment_file,
+                                                                    'polar_backbone','polar (hydrogen bond with backbone)',
+                                                                    'polar','protein',entry[0],entry[1],entry[2]])
+                        remove_hyd(residue, ligand, new_results)
+                    elif entry[1] == 'O': #backbone connection!
+                        fragment_file = fragment_library(projectdir, pdb, ligand, entry[3], entry[0], entry[5], entry[6], 'HB_backbone')
+                        new_results[ligand]['interactions'].append([residue,fragment_file,
+                                                                    'polar_backbone','polar (hydrogen bond with backbone)',
+                                                                    'polar','protein',entry[0],entry[1],entry[2]])
+                        remove_hyd(residue, ligand, new_results)
+                    elif hydrogenmatch:
+                        found = False
+                        fragment_file = fragment_library(projectdir, pdb, ligand, entry[3], entry[0], entry[5], entry[6], 'HB')
+                        for x in summary_results[ligand]['hbond_confirmed']:
+                            if residue == x[0]:
+                                # print "Already key there",residue
+                                key = summary_results[ligand]['hbond_confirmed'].index(x)
+                                summary_results[ligand]['hbond_confirmed'][key][1].extend(hbondconfirmed)
+                                found = True
+                        if hbondconfirmed[0][0]=="D":
+                            new_results[ligand]['interactions'].append([residue,fragment_file,
+                                                                        'polar_donor_protein','polar (hydrogen bond)',
+                                                                        'polar','protein',entry[0],entry[1],entry[2]])
+                            remove_hyd(residue, ligand, new_results)
+                        if hbondconfirmed[0][0]=="A":
+                            new_results[ligand]['interactions'].append([residue,fragment_file,
+                                                                        'polar_acceptor_protein','polar (hydrogen bond)',
+                                                                        'polar','protein',entry[0],entry[1],entry[2]])
+                            remove_hyd(residue, ligand, new_results)
+                        if not found:
+                            summary_results[ligand]['hbond_confirmed'].append([residue, hbondconfirmed])
+                        if chargedcheck:
+                            interaction_type = 'hbondplus'
+                            hbondplus.append(entry)
+                    elif chargedcheck:
+                        interaction_type = 'hbondplus'
+                        hbondplus.append(entry)
+                        fragment_file = fragment_library(projectdir, pdb, ligand, entry[3], entry[0], entry[5], entry[6], 'HBC')
+                        remove_hyd(residue, ligand, new_results)
+                        if doublechargecheck:
+                            if (res_charge_value>0):
+                                new_results[ligand]['interactions'].append([residue, fragment_file,
+                                                                            'polar_double_pos_protein','polar (charge-charge)',
+                                                                            'polar','',entry[0],entry[1],entry[2]])
+                            elif (res_charge_value<0):
+                                new_results[ligand]['interactions'].append([residue, fragment_file,
+                                                                            'polar_double_neg_protein','polar (charge-charge)',
+                                                                            'polar','',entry[0],entry[1],entry[2]])
+                        elif (charge_value>0):
+                            new_results[ligand]['interactions'].append([residue, fragment_file,
+                                                                        'polar_pos_ligand','polar (charge-assisted hydrogen bond)',
+                                                                        'polar','ligand',entry[0],entry[1],entry[2]])
+                        elif (charge_value<0):
+                            new_results[ligand]['interactions'].append([residue, fragment_file,
+                                                                        'polar_neg_ligand','polar (charge-assisted hydrogen bond)',
+                                                                        'polar','ligand',entry[0],entry[1],entry[2]])
+                        else:
+                            if (res_charge_value>0):
+                                new_results[ligand]['interactions'].append([residue, fragment_file,
+                                                                            'polar_pos_protein','polar (charge-assisted hydrogen bond)',
+                                                                            'polar','protein',entry[0],entry[1],entry[2]])
+                            elif (res_charge_value<0):
+                                new_results[ligand]['interactions'].append([residue, fragment_file,
+                                                                            'polar_neg_protein','polar (charge-assisted hydrogen bond)',
+                                                                            'polar','protein',entry[0],entry[1],entry[2]])
+                            else:
+                                new_results[ligand]['interactions'].append([residue, fragment_file,
+                                                                            'polar_unknown_protein','polar (charge-assisted hydrogen bond)',
+                                                                            'polar','protein',entry[0],entry[1],entry[2]])
+                    else:
+                        interaction_type = 'hbond'
+                        hbond.append(entry)
+                        fragment_file = fragment_library(projectdir, pdb, ligand, entry[3], entry[0], entry[5], entry[6], 'HB')
+                        new_results[ligand]['interactions'].append([residue, fragment_file,
+                                                                    'polar_unspecified','polar (hydrogen bond)',
+                                                                    'polar','',entry[0],entry[1],entry[2]])
+                        remove_hyd(residue, ligand, new_results)
+                    #print type,hbondconfirmed
+                    entry[3] = ''
+
+                if (entry[2] < 4.5):
+                    sum_data += 1
+                    score += 4.5 - entry[2]
+
+            score = round(score, 2)
+            if interaction_type == 'waals' and score > 1:  # mainly no hbond detected
+                summary_results[ligand]['waals'].append([residue, score, sum_data])
+                new_results[ligand]['interactions'].append([residue, fragment_file,
+                                                            'Van der Waals', 'Van der Waals', 'waals',
+                                                            '', entry[0], entry[1], entry[2]])
+            elif interaction_type == 'hbond':
+                summary_results[ligand]['hbond'].append([residue, score, sum_data, hbond])
+            elif interaction_type == 'hbondplus':
+                summary_results[ligand]['hbondplus'].append([residue, score, sum_data, hbondplus])
+            # elif interaction_type == 'hbond_confirmed':
+            #     summary_results[ligand]['hbond_confirmed'].append([residue,score,sum,hbondconfirmed])
+            ligscore += score
+            # print "Total <4 (score is combined diff from 4)",sum,"score",score
+            sortedresults.append([residue, score, sum, hbond, type])
+
+        summary_results[ligand]['score'].append([ligscore])
+        new_results[ligand]['score'] = ligscore
+        if ligand in hetlist_display:
+            summary_results[ligand]['prettyname'] = hetlist_display[ligand]
+            new_results[ligand]['prettyname'] = hetlist_display[ligand]
+
+        # print ligand,"Ligand score:"+str(ligscore)
+
+        sortedresults = sorted(sortedresults, key=itemgetter(1), reverse=True)
+
+    return summary_results, new_results, sortedresults
+
+def addresiduestoligand(projectdir, ligand, pdb, residuelist):
+    temp_path = projectdir + 'pdbs/' + pdb + '.pdb'
+    f_in = open(temp_path, 'r')
+    inserstr = ''
+    for line in f_in:
+        if line.startswith('ATOM'):
+            temp = line.split()
+            m = re.match("(\w)(\d+)", temp[4])
+            if (m):
+                temp[4] = m.group(1)
+                temp[5] = m.group(2)
+            aaname = temp[3] + temp[5] + temp[4]
+            if aaname in residuelist:
+                inserstr += line
+    f_in.close()
+
+    temp_path = projectdir + 'results/' + pdb + '/ligand/' + ligand + '_' + pdb + '.pdb'
+    f_in = open(temp_path, 'r')
+    tempstr = ''
+    inserted = 0
+    for line in f_in:
+        if line.startswith('ATOM'):
+            temp = line.split()
+            if temp[2] == 'H':
+                continue
+
+        if (line.startswith('CONECT') or line.startswith('MASTER') or line.startswith('END')) and inserted == 0:
+            tempstr += inserstr
+            inserted = 1
+        tempstr += line
+    f_in.close()
+
+    f = open(projectdir + 'results/' + pdb + '/interaction/' + pdb + '_' + ligand + '.pdb', 'w')
+    f.write(tempstr)
+    f.close()
+
+def pretty_results(projectdir, pdb, summary_results):
+    for ligand, result in summary_results.items():
+        bindingresidues = []
+        for interaction_type, typelist in result.items():
+            if interaction_type == 'waals':
+                typelist = sorted(typelist, key=itemgetter(2), reverse=True)
+            if interaction_type == 'hydrophobic':
+                typelist = sorted(typelist, key=itemgetter(1), reverse=True)
+            for entry in typelist:
+                if interaction_type not in ['score', 'prettyname']:
+                    bindingresidues.append(entry[0])
+        bindingresidues = list(set(bindingresidues))
+        addresiduestoligand(projectdir, ligand, pdb, bindingresidues)
+
+####### END IMPLEMENTATION OF LEGACY FUNCTIONS ####
 
 def regexaa(aa):
     aaPattern = re.compile(r'^(\w{3})(\d+)([\w\s]+)$')
