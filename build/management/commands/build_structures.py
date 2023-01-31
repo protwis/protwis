@@ -18,7 +18,7 @@ from contactnetwork.models import *
 import contactnetwork.interaction as ci
 from contactnetwork.cube import compute_interactions
 
-from Bio.PDB import PDBParser,PPBuilder
+from Bio.PDB import PDBParser, PPBuilder, Polypeptide
 from Bio import pairwise2
 
 from structure.assign_generic_numbers_gpcr import GenericNumbering
@@ -122,6 +122,16 @@ class Command(BaseBuild):
     for segment in s:
         segments[segment.slug] = segment
 
+    parsed_pdb = None
+
+    construct_errors, rotamer_errors, contactnetwork_errors, interaction_errors = [],[],[],[]
+
+    with open(os.sep.join([settings.DATA_DIR, 'residue_data', 'unnatural_amino_acids.yaml']), 'r') as f_yaml:
+        raw_uaa = yaml.safe_load(f_yaml)
+        unnatural_amino_acids = {}
+        for i, j in raw_uaa.items():
+            unnatural_amino_acids[i] = j
+
 
     def handle(self, *args, **options):
         # delete any existing structure data
@@ -167,6 +177,15 @@ class Command(BaseBuild):
         except Exception as msg:
             print(msg)
             self.logger.error(msg)
+
+        print('Construct errors:')
+        print(self.construct_errors)
+        print('Rotamer erros:')
+        print(self.rotamer_errors)
+        print('Contact network errors')
+        print(self.contactnetwork_errors)
+        print('Interaction errors')
+        print(self.interaction_errors)
 
     @staticmethod
     def queryset_iterator(qs, batchsize = 5000, gc_collect = True):
@@ -265,7 +284,7 @@ class Command(BaseBuild):
             removed = []
             deletions = []
 
-        s = PDBParser(PERMISSIVE=True, QUIET=True).get_structure('ref', pdb_path)[0]
+        s = self.parsed_pdb
         chain = s[preferred_chain] #select only one chain (avoid n-mer receptors)
 
         ppb=PPBuilder()
@@ -1233,6 +1252,8 @@ class Command(BaseBuild):
             pdbdata, created = PdbData.objects.get_or_create(pdb=pdbdata_raw)
             s.pdb_data = pdbdata
 
+            self.parsed_pdb = PDBParser(PERMISSIVE=True, QUIET=True).get_structure('ref', pdb_path)[0]
+
             # UPDATE HETSYN with its PDB reference instead + GRAB PUB DATE, PMID, DOI AND RESOLUTION
             hetsyn = {}
             hetsyn_reverse = {}
@@ -1419,6 +1440,20 @@ class Command(BaseBuild):
                             for entry in uc_entries:
                                 if entry["type"] not in ids:
                                     ids[entry["type"]] = entry["id"]
+                        # sequence
+                        if peptide_chain in self.parsed_pdb:
+                            seq = ''
+                            for res in self.parsed_pdb[peptide_chain]:
+                                try:
+                                    one_letter = Polypeptide.three_to_one(res.get_resname())
+                                except KeyError:
+                                    if res.get_resname() in self.unnatural_amino_acids:
+                                        one_letter = self.unnatural_amino_acids[res.get_resname()]
+                                    else:
+                                        print('WARNING: {} residue in structure {} is missing from unnatural amino acid definitions (data/protwis/gpcr/residue_data/unnatural_amino_acids.yaml)'.format(res, struc))
+                                        continue
+                                seq+=one_letter
+                            ids['sequence'] = seq
 
                         with lock:
                             l = get_or_create_ligand(ligand_title, ids, ligand['type'])
@@ -1578,6 +1613,8 @@ class Command(BaseBuild):
                 print('ERROR WITH CONSTRUCT FETCH {}'.format(sd['pdb']))
                 self.logger.error('ERROR WITH CONSTRUCT FETCH for {}'.format(sd['pdb']))
 
+                self.construct_errors.append(s)
+
             try:
                 current = time.time()
                 self.create_rotamers(s,pdb_path,d)
@@ -1592,6 +1629,8 @@ class Command(BaseBuild):
                 print(msg)
                 print('ERROR WITH ROTAMERS {}'.format(sd['pdb']))
                 self.logger.error('Error with rotamers for {}'.format(sd['pdb']))
+
+                self.rotamer_errors.append(s)
 
             try:
                 s.protein_conformation.generate_sites()
@@ -1609,6 +1648,8 @@ class Command(BaseBuild):
                     print(msg)
                     print('ERROR WITH CONTACTNETWORK {}'.format(sd['pdb']))
                     self.logger.error('Error with contactnetwork for {}'.format(sd['pdb']))
+
+                    self.contactnetwork_errors.append(s)
 
             for ligand in ligands:
                 if ligand['type'].strip() in ['small molecule', 'protein', 'peptide'] and ligand['in_structure']:
@@ -1632,5 +1673,7 @@ class Command(BaseBuild):
                         # print(traceback.format_exc())
                         print('ERROR WITH INTERACTIONS {}'.format(sd['pdb']))
                         self.logger.error('Error parsing interactions output for {}'.format(sd['pdb']))
+
+                        self.interaction_errors.append(s)
 
                         # print('{} done'.format(sd['pdb']))
