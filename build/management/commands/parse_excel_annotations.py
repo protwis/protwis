@@ -77,7 +77,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         self.data = self.parse_excel(self.annotation_source_file)
-        self.dump_files()
+        # self.dump_files()
         self.ECD_data = self.parse_excel(self.ECD_annotation_source_file)
         self.dump_ECD_files()
         self.ClassD_data = self.parse_excel(self.ClassD_annotation_source_file)

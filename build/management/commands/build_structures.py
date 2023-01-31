@@ -10,6 +10,7 @@ from protein.models import (Protein, ProteinConformation, ProteinState, ProteinA
     ProteinSegment)
 from residue.models import ResidueGenericNumber, ResidueNumberingScheme, Residue, ResidueGenericNumberEquivalent
 from common.models import WebLink, WebResource, Publication
+from common.tools import test_model_updates
 from structure.models import Structure, StructureType, StructureStabilizingAgent,PdbData, Rotamer, Fragment
 from construct.functions import *
 
@@ -24,9 +25,10 @@ from structure.assign_generic_numbers_gpcr import GenericNumbering
 from structure.functions import StructureBuildCheck, ParseStructureCSV
 from ligand.models import Ligand, LigandType, LigandRole, LigandPeptideStructure
 from interaction.models import *
-from interaction.views import runcalculation,parsecalculation
+from interaction.views import runcalculation_2022, regexaa, check_residue, extract_fragment_rotamer
 from residue.functions import dgn
 
+import django.apps
 import logging
 import os
 import re
@@ -38,6 +40,8 @@ import json
 from urllib.request import urlopen
 from Bio.PDB import parse_pdb_header
 from Bio.PDB.Selection import *
+
+# import traceback
 
 
 ## FOR VIGNIR ORDERED DICT YAML IMPORT/DUMP
@@ -93,6 +97,10 @@ class Command(BaseBuild):
             default=False,
             help='Print info for debugging')
 
+    tracker = {}
+    all_models = django.apps.apps.get_models()[6:]
+    test_model_updates(all_models, tracker, initialize=True)
+
     # source file directory
     pdb_data_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'pdbs'])
 
@@ -120,6 +128,8 @@ class Command(BaseBuild):
         if options['purge']:
             try:
                 self.purge_structures()
+                self.tracker = {}
+                test_model_updates(self.all_models, self.tracker, initialize=True)
             except Exception as msg:
                 print(msg)
                 self.logger.error(msg)
@@ -152,7 +162,7 @@ class Command(BaseBuild):
             iterations = 1
             for i in range(1,iterations+1):
                 self.prepare_input(options['proc'], self.parsed_structures.pdb_ids, i)
-
+            test_model_updates(self.all_models, self.tracker, check=True)
             self.logger.info('COMPLETED CREATING STRUCTURES')
         except Exception as msg:
             print(msg)
@@ -505,7 +515,7 @@ class Command(BaseBuild):
             temp_seq = temp_seq[:211]+'--D'+temp_seq[214:]
         elif structure.pdb_code.index=='2YCW':
             temp_seq = temp_seq[:242]+'R'+temp_seq[242:270]+temp_seq[271:]
-        
+
 
 
         for i, r in enumerate(ref_seq, 1): #loop over alignment to create lookups (track pos)
@@ -1025,13 +1035,88 @@ class Command(BaseBuild):
     def build_contact_network(self,s,pdb_code):
         try:
             # interacting_pairs, distances  = compute_interactions(pdb_code, save_to_db=True)
-            interacting_pairs  = compute_interactions(pdb_code, do_interactions=True, do_peptide_ligand=True, save_to_db=True)
+            compute_interactions(pdb_code, do_interactions=True, do_peptide_ligand=True, save_to_db=True)
         except:
             self.logger.error('Error with computing interactions (%s)' % (pdb_code))
             return
 
+    @staticmethod
+    def parsecalculation(pdb_id, data, debug=True, ignore_ligand_preset=False):
+        module_dir = '/tmp/interactions'
+        web_resource = WebResource.objects.get(slug='pdb')
+        web_link, _ = WebLink.objects.get_or_create(web_resource=web_resource, index=pdb_id)
+        structure = Structure.objects.filter(pdb_code=web_link)
+        if structure.exists():
+            structure = Structure.objects.get(pdb_code=web_link)
 
-    def main_func(self, positions, iteration,count,lock):
+            if structure.pdb_data is None:
+                f = module_dir + "/pdbs/" + pdb_id + ".pdb"
+                if os.path.isfile(f):
+                    pdbdata, created = PdbData.objects.get_or_create(pdb=open(f, 'r').read())  # does this close the file?
+                else:
+                    print('quitting due to no pdb in filesystem')
+                    quit()
+                structure.pdb_data = pdbdata
+                structure.save()
+
+            protein = structure.protein_conformation
+            lig_key = list(data.keys())[0]
+
+            f = module_dir + "/results/" + pdb_id + "/interaction" + "/" + pdb_id + "_" + lig_key + ".pdb"
+            if os.path.isfile(f):
+                pdbdata, created = PdbData.objects.get_or_create(pdb=open(f, 'r').read())  # does this close the file?
+                print("Found file" + f)
+            else:
+                print('quitting due to no pdb for fragment in filesystem', f)
+                quit()
+
+            struct_lig_interactions = StructureLigandInteraction.objects.filter(pdb_reference=lig_key, structure=structure, annotated=True) #, pdb_file=None
+            if struct_lig_interactions.exists():  # if the annotated exists
+                try:
+                    struct_lig_interactions = struct_lig_interactions.get()
+                    struct_lig_interactions.pdb_file = pdbdata
+                    ligand = struct_lig_interactions.ligand
+                except Exception as msg:
+                    print('error with duplication structureligand',lig_key,msg)
+                    quit() #not sure about this quit
+            elif StructureLigandInteraction.objects.filter(pdb_reference=lig_key, structure=structure).exists():
+                try:
+                    struct_lig_interactions = StructureLigandInteraction.objects.filter(pdb_reference=lig_key, structure=structure).get()
+                    struct_lig_interactions.pdb_file = pdbdata
+                except StructureLigandInteraction.DoesNotExist: #already there
+                    struct_lig_interactions = StructureLigandInteraction.objects.filter(pdb_reference=lig_key, structure=structure, pdb_file=pdbdata).get()
+                ligand = struct_lig_interactions.ligand
+            else:  # create ligand and pair
+                print(pdb_id, "Skipping interactions with ", pdb_id)
+                pass
+
+            struct_lig_interactions.save()
+
+            ResidueFragmentInteraction.objects.filter(structure_ligand_pair=struct_lig_interactions).delete()
+
+            for interaction in data[lig_key]['interactions']:
+                aa = interaction[0]
+                aa, pos, _ = regexaa(aa)
+                residue = check_residue(protein, pos, aa)
+                f = interaction[1]
+                fragment, rotamer = extract_fragment_rotamer(f, residue, structure, ligand)
+                if fragment is not None:
+                    interaction_type, created = ResidueFragmentInteractionType.objects.get_or_create(
+                                                slug=interaction[2],
+                                                name=interaction[3],
+                                                type=interaction[4], direction=interaction[5])
+                    fragment_interaction, created = ResidueFragmentInteraction.objects.get_or_create(
+                                                    structure_ligand_pair=struct_lig_interactions,
+                                                    interaction_type=interaction_type,
+                                                    fragment=fragment, rotamer=rotamer)
+        else:
+            pass
+
+        # results = sorted(results, key=itemgetter(3), reverse=True)
+
+        return data
+
+    def main_func(self, positions, iteration, count, lock):
         # setting up processes
         # if not positions[1]:
         #     pdbs = self.parsed_structures[positions[0]:]
@@ -1273,7 +1358,7 @@ class Command(BaseBuild):
                 for ligand in ligands:
                     l = False
                     peptide_chain = ""
-                    if 'chain'!='':
+                    if ligand['chain']!='':
                         peptide_chain = ligand['chain']
                         # ligand['name'] = 'pep'
                     if ligand['name'] and ligand['name'] != 'None': # some inserted as none.
@@ -1509,37 +1594,36 @@ class Command(BaseBuild):
             if self.run_contactnetwork:
                 try:
                     current = time.time()
-                    self.build_contact_network(s,sd['pdb'])
+                    self.build_contact_network(s, sd['pdb'])
                     end = time.time()
                     diff = round(end - current,1)
-                    self.logger.info('Create contactnetwork done for {}. {} seconds.'.format(
-                                s.protein_conformation.protein.entry_name, diff))
+                    self.logger.info('Create contactnetwork done for {}. {} seconds.'.format(s.protein_conformation.protein.entry_name, diff))
                 except Exception as msg:
                     print(msg)
                     print('ERROR WITH CONTACTNETWORK {}'.format(sd['pdb']))
                     self.logger.error('Error with contactnetwork for {}'.format(sd['pdb']))
 
-
             for ligand in ligands:
                 if ligand['type'] in ['small molecule', 'pep', 'protein', 'peptide'] and ligand['in_structure']:
                     try:
                         current = time.time()
-                        mypath = '/tmp/interactions/results/' + sd['pdb'] + '/output'
+                        peptide_chain = ""
+                        if ligand['chain']!='':
+                            peptide_chain = ligand['chain']
+                        # mypath = '/tmp/interactions/results/' + sd['pdb'] + '/output'
                         # if not os.path.isdir(mypath):
                         #     #Only run calcs, if not already in temp
-                        runcalculation(sd['pdb'], peptide_chain)
-
-                        parsecalculation(sd['pdb'],False)
+                        # runcalculation(sd['pdb'],peptide_chain)
+                        data_results = runcalculation_2022(sd['pdb'], peptide_chain)
+                        self.parsecalculation(sd['pdb'], data_results, False)
                         end = time.time()
                         diff = round(end - current,1)
-                        self.logger.info('Interaction calculations done (again) for {}. {} seconds.'.format(
+                        self.logger.info('Interaction calculations done for {}. {} seconds.'.format(
                                     s.protein_conformation.protein.entry_name, diff))
                     except Exception as msg:
                         print(msg)
+                        # print(traceback.format_exc())
                         print('ERROR WITH INTERACTIONS {}'.format(sd['pdb']))
                         self.logger.error('Error parsing interactions output for {}'.format(sd['pdb']))
 
-
-
-
-                    # print('{} done'.format(sd['pdb']))
+                        # print('{} done'.format(sd['pdb']))

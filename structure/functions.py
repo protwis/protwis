@@ -1183,7 +1183,8 @@ class ParseStructureCSV():
                     if a[1] not in self.fusion_proteins:
                         self.fusion_proteins.append(a[1])
 
-    def parse_yaml_file(self, yaml_file):
+    @staticmethod
+    def parse_yaml_file(yaml_file):
         with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', yaml_file]), 'r') as yfile:
             y = yaml.safe_load(yfile)
         return y

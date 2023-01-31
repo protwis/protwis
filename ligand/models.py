@@ -320,7 +320,7 @@ class LigandType(models.Model):
 
 class LigandPeptideStructure(models.Model):
     structure = models.ForeignKey(
-        'structure.Structure', on_delete=models.CASCADE)
+        'structure.Structure', on_delete=models.CASCADE, null=True)
     ligand = models.ForeignKey('ligand.Ligand', on_delete=models.CASCADE)
     chain = models.CharField(max_length=20)
 

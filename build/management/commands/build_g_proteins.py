@@ -18,7 +18,7 @@ import requests
 import xlrd
 import xmltodict, json
 import yaml
-
+import django.apps
 import Bio.PDB as PDB
 from Bio import SeqIO, pairwise2
 from Bio.pairwise2 import format_alignment
@@ -36,6 +36,7 @@ from residue.models import (Residue, ResidueGenericNumber,
                             ResidueNumberingScheme)
 from signprot.models import SignprotBarcode, SignprotComplex, SignprotStructure, SignprotStructureExtraProteins
 from structure.models import Structure, StructureStabilizingAgent, StructureType, StructureExtraProteins
+from common.tools import test_model_updates
 
 
 class Command(BaseCommand):
@@ -57,7 +58,10 @@ class Command(BaseCommand):
     local_uniprot_beta_dir = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'uniprot_beta'])
     local_uniprot_gamma_dir = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'uniprot_gamma'])
     remote_uniprot_dir = 'https://www.uniprot.org/uniprot/'
-
+    #Setting the variables for the test tracking of the model upadates
+    tracker = {}
+    all_models = django.apps.apps.get_models()[6:]
+    test_model_updates(all_models, tracker, initialize=True)
 
     logger = logging.getLogger(__name__)
 
@@ -87,8 +91,10 @@ class Command(BaseCommand):
             filenames = False
         if self.options['wt']:
             self.add_entry()
+            test_model_updates(self.all_models, self.tracker, check=True)
         elif self.options['build_datafile']:
             self.build_table_from_fasta()
+            test_model_updates(self.all_models, self.tracker, check=True)
         else:
             # Add G-proteins from CGN-db Common G-alpha Numbering <https://www.mrc-lmb.cam.ac.uk/CGN/>
             try:
@@ -128,7 +134,7 @@ class Command(BaseCommand):
                 self.logger.info('PASS: create_barcode')
                 self.add_other_subunits()
                 self.logger.info('PASS: add_other_subunits')
-
+                test_model_updates(self.all_models, self.tracker, check=True)
             except Exception as msg:
                 exc_type, exc_obj, exc_tb = sys.exc_info()
                 fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]

@@ -3,7 +3,7 @@ from django.conf import settings
 from django.utils.text import slugify
 from django.utils.html import strip_tags
 from django.db import IntegrityError
-
+from common.tools import test_model_updates
 from build.management.commands.base_build import Command as BaseBuild
 from protein.models import (Protein, ProteinConformation, ProteinState, ProteinSequenceType, ProteinSegment, ProteinSource)
 from residue.models import Residue
@@ -12,11 +12,15 @@ from structure.functions import ParseStructureCSV
 import os
 import logging
 import yaml
+import django.apps
 
 
 class Command(BaseBuild):
     help = 'Reads source data and creates protein records for constructs'
-
+    #Setting the variables for the test tracking of the model upadates
+    tracker = {}
+    all_models = django.apps.apps.get_models()[6:]
+    test_model_updates(all_models, tracker, initialize=True)
     def add_arguments(self, parser):
         parser.add_argument('-p', '--proc',
             type=int,
@@ -40,6 +44,8 @@ class Command(BaseBuild):
         if options['purge']:
             try:
                 self.purge_constructs()
+                self.tracker = {}
+                test_model_updates(self.all_models, self.tracker, initialize=True)
             except Exception as msg:
                 print(msg)
                 self.logger.error(msg)
@@ -51,6 +57,7 @@ class Command(BaseBuild):
         try:
             self.logger.info('CREATING CONSTRUCTS')
             self.prepare_input(options['proc'], self.parsed_structures.pdb_ids)
+            test_model_updates(self.all_models, self.tracker, check=True)
             self.logger.info('COMPLETED CREATING CONSTRUCTS')
         except Exception as msg:
             print(msg)

@@ -4,14 +4,14 @@ import os
 import sys
 from itertools import islice
 from collections import defaultdict
-
+import django.apps
 import xlrd
 
 from build.management.commands.build_ligand_functions import get_or_create_ligand
 from common.models import Publication, WebLink, WebResource
 from django.conf import settings
 from django.core.management.base import BaseCommand
-
+from common.tools import test_model_updates
 from protein.models import Protein, ProteinFamily, ProteinCouplings
 from ligand.models import Ligand
 
@@ -22,15 +22,20 @@ class Command(BaseCommand):
     # source files
     iupharcoupling_file = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'iuphar_coupling_data.csv'])
     master_file = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'GPCR-G_protein_couplings.xlsx'])
-
+    #Setting the variables for the test tracking of the model upadates
+    tracker = {}
+    all_models = django.apps.apps.get_models()[6:]
+    test_model_updates(all_models, tracker, initialize=True)
     logger = logging.getLogger(__name__)
 
     def handle(self, *args, **options):
         self.purge_coupling_data()
         self.logger.info('PASS: purge_coupling_data')
         self.create_iuphar_couplings()
+        test_model_updates(self.all_models, self.tracker, check=True)
         self.logger.info('PASS: create_iuphar_couplings')
         self.create_data_couplings()
+        test_model_updates(self.all_models, self.tracker, check=True)
         self.logger.info('PASS: create_data_couplings')
 
     def purge_coupling_data(self):
