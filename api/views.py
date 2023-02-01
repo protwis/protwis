@@ -233,7 +233,7 @@ class PeptideList(views.APIView):
                                                                                            'structure__protein_conformation', 'structure__protein_conformation__protein',
                                                                                            'structure__protein_conformation__protein__family').values_list(
                                                                                            'ligand_id__name', 'ligand_id__sequence', 'structure_id__pdb_code_id__index',
-                                                                                           'structure_id__protein_conformation_id__protein_id__family__name',
+                                                                                           'structure_id__protein_conformation_id__protein_id__parent_id__entry_name',
                                                                                            'structure_id__protein_conformation_id__protein_id__family__parent__name',
                                                                                            'structure_id__protein_conformation_id__protein_id__family__parent__parent__parent__name'
                                                                                            )
@@ -242,7 +242,7 @@ class PeptideList(views.APIView):
             peptide_info = {
                 'Peptide name': peptide[0],
                 'Sequence': peptide[1],
-                'Sequence length': len(peptide[1]) if peptide[1] != None else None,
+                'Sequence length': len(peptide[1]) if peptide[1] is not None else None,
                 'PDB': peptide[2],
                 'Receptor': peptide[3],
                 'Family': peptide[4],
