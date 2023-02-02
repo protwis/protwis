@@ -1579,91 +1579,127 @@ def construct_structure_annotation_override(pdb_code, removed, deletions):
     elif pdb_code in ['7D77', '7D76', '4GRV']:
         deletions = []
     elif pdb_code=='6A94':
-        removed.remove(69)
-        deletions.remove(69)
+        if 69 in removed:
+            removed.remove(69)
+        if 69 in deletions:
+            deletions.remove(69)
     elif pdb_code in ['6LI1']:
         for i in range(261,265):
-            removed.remove(i)
-            deletions.remove(i)
+            if i in removed:
+                removed.remove(i)
+            if i in deletions:
+                deletions.remove(i)
     elif pdb_code=='6LI2':
         for i in range(263,265):
-            removed.remove(i)
-            deletions.remove(i)
+            if i in removed:
+                removed.remove(i)
+            if i in deletions:
+                deletions.remove(i)
     elif pdb_code=='5JQH':
         for i in range(1023,1030):
-            removed.remove(i)
+            if i in removed:
+                removed.remove(i)
         for i in range(23,30):
-            deletions.remove(i)
+            if i in deletions:
+                deletions.remove(i)
     elif pdb_code=='5T1A':
         for i in range(226,241):
-            deletions.remove(i)
+            if i in deletions:
+                deletions.remove(i)
         removed.append(1002)
-        removed.remove(234)
-        removed.remove(319)
-        removed.remove(320)
+        for i in [234, 319, 320]:
+            if i in removed:
+                removed.remove(i)
     elif pdb_code=='5UEN':
         for i in range(220,228):
-            removed.remove(i)
-            deletions.remove(i)
+            if i in removed:
+                removed.remove(i)
+            if i in deletions:
+                deletions.remove(i)
     elif pdb_code=='3SN6':
         removed = list(range(1002,1161))
     elif pdb_code in ['6ZDV','6ZDR','6MH8','6PS7','6S0Q','6WQA','6AQF','6GT3','6JZH','6LPJ','6LPL','6LPK',
                                       '5JTB','5OLH','5NM2','5OLG','5OM1','5OLO','5OLZ','5OLV','5OM4','5UVI','5VRA']:
-        removed.remove(1)
-        deletions.remove(1)
+        if 1 in removed:
+            removed.remove(1)
+        if 1 in deletions:
+            deletions.remove(1)
     elif pdb_code in ['5NLX','5NM4']:
-        removed.remove(10)
-        deletions.remove(1)
+        if 10 in removed:
+            removed.remove(10)
+        if 1 in deletions:
+            deletions.remove(1)
         for i in range(209,214):
-            deletions.remove(i)
+            if i in deletions:
+                deletions.remove(i)
         for i in range(218,223):
-            removed.remove(i)
+            if i in removed:
+                removed.remove(i)
     elif pdb_code=='6N48':
         for i in range(1023,1029):
-            removed.remove(i)
+            if i in removed:
+                removed.remove(i)
         for i in range(23,29):
-            deletions.remove(i)
+            if i in deletions:
+                deletions.remove(i)
     elif pdb_code=='5ZK3':
-        deletions.remove(382)
+        if 382 in deletions:
+            deletions.remove(382)
     elif pdb_code=='6A93':
-        removed.remove(69)
-        deletions.remove(69)
+        if 69 in removed:
+            removed.remove(69)
+        if 69 in deletions:
+            deletions.remove(69)
     elif pdb_code=='6IBL':
         removed = list(range(1003,1110))
         for i in range(41,44):
-            deletions.remove(i)
-        deletions.remove(243)
+            if i in deletions:
+                deletions.remove(i)
+        if 243 in deletions:
+            deletions.remove(243)
         deletions.append(271)
     elif pdb_code=='6LUQ':
-        removed.remove(387)
-        deletions.remove(366)
+        if 387 in removed:
+            removed.remove(387)
+        if 387 in deletions:
+            deletions.remove(366)
     elif pdb_code=='6W2Y':
         for i in range(845,862):
-            deletions.remove(i)
+            if i in deletions:
+                deletions.remove(i)
     elif pdb_code in ['4Z34','4Z35','4Z36']:
-        removed.remove(327)
-        deletions.remove(327)
+        if 327 in removed:
+            removed.remove(327)
+        if 327 in deletions:
+            deletions.remove(327)
     elif pdb_code=='6TKO':
-        removed.remove(358)
-        deletions.remove(358)
+        if 358 in removed:
+            removed.remove(358)
+        if 358 in deletions:
+            deletions.remove(358)
     elif pdb_code=='6DO1':
         removed = []
     elif pdb_code=='5D6L':
         for i in range(224,231):
-            removed.remove(i)
-            deletions.remove(i)
+            if i in removed:
+                removed.remove(i)
+            if i in deletions:
+                deletions.remove(i)
     elif pdb_code=='7DFL':
         deletions = list(range(222,405))
     elif pdb_code=='2I35':
         removed = [330,331,332]
     elif pdb_code in ['7ARO', '7RM5']:
-        removed.remove(1)
-        deletions.remove(1)
+        if i in removed:
+            removed.remove(1)
+        if i in deletions:
+            deletions.remove(1)
     elif pdb_code in ['7BTS','7BU6','7BU7','7BVQ']:
         removed, deletions = list(range(884,1054)), list(range(884,1054))
     elif pdb_code=='7D68':
         for i in range(395,456):
-            deletions.remove(i)
+            if i in deletions:
+                deletions.remove(i)
     elif pdb_code=='7EB2':
         deletions, removed = [], []
     elif pdb_code=='7F1R':
@@ -1675,18 +1711,23 @@ def construct_structure_annotation_override(pdb_code, removed, deletions):
         removed, deletions = list(range(1000,1148)), list(range(1000,1148))
     elif pdb_code in ['7EZM','7EZK','7EZH']:
         for i in range(38,64):
-            removed.remove(i)
+            if i in removed:
+                removed.remove(i)
     elif pdb_code in ['6ZFZ', '6ZG4', '6ZG9']:
         for i in range(21,27):
-            removed.remove(i)
-            deletions.remove(i)
+            if i in removed:
+                removed.remove(i)
+            if i in deletions:
+                deletions.remove(i)
     elif pdb_code=='7EWR':
         removed, deletions = [], []
     elif pdb_code in ['7T10', '7T11']:
         deletions = []
     elif pdb_code in ['7PX4','7PYR']:
-        deletions.remove(1)
-        removed.remove(1)
+        if 1 in deletions:
+            deletions.remove(1)
+        if 1 in removed:
+            removed.remove(1)
     elif pdb_code=='7B6W':
         deletions = list(range(352,525))
     elif pdb_code=='7V9M':
@@ -1699,24 +1740,30 @@ def construct_structure_annotation_override(pdb_code, removed, deletions):
         removed = list(range(1,127))
     elif pdb_code=='7SBF':
         for i in range(65,73):
-            deletions.remove(i)
+            if i in deletions:
+                deletions.remove(i)
     elif pdb_code in ['7SF7','7SF8']:
         deletions, removed = [], []
     elif pdb_code=='2YCW':
         deletions = []
     elif pdb_code in ['4LDE','4LDL','4LDO']:
-        deletions.remove(263)
+        if 263 in deletions:
+            deletions.remove(263)
     elif pdb_code=='7ZI0':
         for i in range(556,658):
-            deletions.remove(i)
+            if i in deletions:
+                deletions.remove(i)
     elif pdb_code in ['8DCR','8DCS']:
         for i in range(139,243):
-            deletions.remove(i)
+            if i in deletions:
+                deletions.remove(i)
         for i in range(247,358):
-            deletions.remove(i)
+            if i in deletions:
+                deletions.remove(i)
     elif pdb_code=='7T32':
         for i in range(315,399):
-            deletions.remove(i)
+            if i in deletions:
+                deletions.remove(i)
     elif pdb_code in ['7UTZ', '7T9I', '7T9N', '7T9M']:
         deletions = []
     elif pdb_code=='7F1T':

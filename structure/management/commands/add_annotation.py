@@ -54,8 +54,11 @@ class Command(BaseCommand):
         segends = OrderedDict()
         # mismatches = {}
         new_unique_receptor_structures = {}
+
         for s, data in self.parsed_structures.structures.items():
             ### New structures
+            if 'ligand' not in self.parsed_structures.structures[s]:
+                print('WARNING: {} missing ligand annotation'.format(s))
             if s not in self.xtal_seg_ends:
                 print(s)
                 segends[s] = {'1b':'-','1e':'-','i1b':'-','i1e':'-','2b':'-','2e':'-','e1b':'-','e1e':'-',
