@@ -1690,9 +1690,9 @@ def construct_structure_annotation_override(pdb_code, removed, deletions):
     elif pdb_code=='2I35':
         removed = [330,331,332]
     elif pdb_code in ['7ARO', '7RM5']:
-        if i in removed:
+        if 1 in removed:
             removed.remove(1)
-        if i in deletions:
+        if 1 in deletions:
             deletions.remove(1)
     elif pdb_code in ['7BTS','7BU6','7BU7','7BVQ']:
         removed, deletions = list(range(884,1054)), list(range(884,1054))
