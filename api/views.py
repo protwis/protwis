@@ -13,14 +13,14 @@ from django.db.models import Prefetch, Q, Min, Count
 from interaction.models import ResidueFragmentInteraction
 from mutation.models import MutationRaw
 from protein.models import Protein, ProteinFamily, Species, ProteinSegment
-from ligand.models import LigandID, AssayExperiment, Ligand, LigandPeptideStructure
+from ligand.models import LigandID, AssayExperiment, Ligand, LigandPeptideStructure, Endogenous_GTP
 from residue.models import Residue, ResidueGenericNumberEquivalent
 from structure.models import Structure, StructureExtraProteins
 from structure.assign_generic_numbers_gpcr import GenericNumbering
 from structure.sequence_parser import SequenceParser
 from api.serializers import (ProteinSerializer, ProteinFamilySerializer, SpeciesSerializer, ResidueSerializer,
                              ResidueExtendedSerializer, StructureLigandInteractionSerializer, StructurePeptideLigandInteractionSerializer,
-                             MutationSerializer, ReceptorListSerializer, GuidetoPharmacologySerializer)
+                             MutationSerializer, ReceptorListSerializer, GuidetoPharmacologySerializer, EndogenousLigandSerializer)
 from api.renderers import PDBRenderer
 from common.alignment import Alignment
 from common.definitions import AMINO_ACIDS, AMINO_ACID_GROUPS
@@ -219,6 +219,20 @@ class GtPIDList(generics.ListAPIView):
 
     queryset = LigandID.objects.filter(web_resource_id__slug="gtoplig").values('index', 'ligand__name')
     serializer_class = GuidetoPharmacologySerializer
+
+class EndogenousLigands(generics.ListAPIView):
+
+    """
+    Get a list of endogenous ligands - receptor pairs
+    \n/ligands/endogenousligands/
+    """
+
+    queryset = Endogenous_GTP.objects.all().prefetch_related('ligand_id', 'ligand_id_ligand_type_id',
+                                                             'receptor_id','receptor_id__family_id').values('endogenous_status', 'potency_ranking',
+                                                                                                            'ligand_id__name', 'ligand_id__sequence',
+                                                                                                            'ligand_id__ligand_type_id__slug', 'receptor_id__entry_name')
+    serializer_class = EndogenousLigandSerializer
+
 
 class PeptideList(views.APIView):
 

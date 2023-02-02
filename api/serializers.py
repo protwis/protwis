@@ -72,6 +72,17 @@ class GuidetoPharmacologySerializer(serializers.ModelSerializer):
         model = LigandID
         fields = ('gtp_ligand_id', 'ligand_name')
 
+class EndogenousLigandSerializer(serializers.ModelSerializer):
+    endogenous_status = serializers.ReadOnlyField()
+    potency_ranking = serializers.ReadOnlyField()
+    ligand_name = serializers.ReadOnlyField(source='ligand_id__name')
+    sequence = serializers.ReadOnlyField(source='ligand_id__sequence')
+    ligand_type = serializers.ReadOnlyField(source='ligand_id__ligand_type_id__slug')
+    receptor = serializers.ReadOnlyField(source='receptor_id__entry_name')
+    class Meta:
+        model = Endogenous_GTP
+        fields = ('receptor', 'ligand_name', 'sequence', 'sequence', 'ligand_type', 'endogenous_status', 'potency_ranking')
+
 class ResidueNumberingSchemeSerializer(serializers.ModelSerializer):
     class Meta:
         model = ResidueNumberingScheme
