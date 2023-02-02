@@ -1228,7 +1228,7 @@ class StructureBuildCheck():
                             self.duplicate_residue_error[s] = [r]
 
     def check_segment_ends(self, structure):
-        key = structure.protein_conformation.protein.parent.entry_name + '_' + structure.pdb_code.index
+        key = structure.pdb_code.index
         if key in self.segends_dict:
             parent_residues = Residue.objects.filter(protein_conformation__protein=structure.protein_conformation.protein.parent)
             structure_residues = Residue.objects.filter(protein_conformation=structure.protein_conformation)
