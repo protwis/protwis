@@ -13,14 +13,14 @@ from django.db.models import Prefetch, Q, Min, Count
 from interaction.models import ResidueFragmentInteraction
 from mutation.models import MutationRaw
 from protein.models import Protein, ProteinFamily, Species, ProteinSegment
-from ligand.models import LigandID, AssayExperiment
+from ligand.models import LigandID, AssayExperiment, Ligand, LigandPeptideStructure, Endogenous_GTP
 from residue.models import Residue, ResidueGenericNumberEquivalent
 from structure.models import Structure, StructureExtraProteins
 from structure.assign_generic_numbers_gpcr import GenericNumbering
 from structure.sequence_parser import SequenceParser
 from api.serializers import (ProteinSerializer, ProteinFamilySerializer, SpeciesSerializer, ResidueSerializer,
                              ResidueExtendedSerializer, StructureLigandInteractionSerializer, StructurePeptideLigandInteractionSerializer,
-                             MutationSerializer, ReceptorListSerializer, GuidetoPharmacologySerializer)
+                             MutationSerializer, ReceptorListSerializer, GuidetoPharmacologySerializer, EndogenousLigandSerializer)
 from api.renderers import PDBRenderer
 from common.alignment import Alignment
 from common.definitions import AMINO_ACIDS, AMINO_ACID_GROUPS
@@ -219,6 +219,64 @@ class GtPIDList(generics.ListAPIView):
 
     queryset = LigandID.objects.filter(web_resource_id__slug="gtoplig").values('index', 'ligand__name')
     serializer_class = GuidetoPharmacologySerializer
+
+class EndogenousLigands(generics.ListAPIView):
+
+    """
+    Get a list of endogenous ligands - receptor pairs
+    \n/ligands/endogenousligands/
+    """
+
+    queryset = Endogenous_GTP.objects.all().prefetch_related('ligand_id', 'ligand_id_ligand_type_id',
+                                                             'receptor_id','receptor_id__family_id').values('endogenous_status', 'potency_ranking',
+                                                                                                            'ligand_id__name', 'ligand_id__sequence',
+                                                                                                            'ligand_id__ligand_type_id__slug', 'receptor_id__entry_name')
+    serializer_class = EndogenousLigandSerializer
+
+
+class PeptideList(views.APIView):
+
+    """
+    Get a list of peptide ligands with detailed info
+    \n/ligands/peptides/
+    """
+    def get(self, request):
+        peptides_ids = Ligand.objects.filter(ligand_type_id=2).values_list('id', flat=True)
+        peptides_data = Ligand.objects.filter(ligand_type_id=2).values_list('id', flat=True).values_list('name', 'sequence')
+        peptides_with_structures = LigandPeptideStructure.objects.filter(ligand_id__in=peptides_ids).prefetch_related('structure', 'structure_id__web_link',
+                                                                                           'structure__protein_conformation', 'structure__protein_conformation__protein',
+                                                                                           'structure__protein_conformation__protein__family').values_list(
+                                                                                           'ligand_id__name', 'ligand_id__sequence', 'structure_id__pdb_code_id__index',
+                                                                                           'structure_id__protein_conformation_id__protein_id__parent_id__entry_name',
+                                                                                           'structure_id__protein_conformation_id__protein_id__family__parent__name',
+                                                                                           'structure_id__protein_conformation_id__protein_id__family__parent__parent__parent__name'
+                                                                                           )
+        s = []
+        for peptide in peptides_with_structures:
+            peptide_info = {
+                'Peptide name': peptide[0],
+                'Sequence': peptide[1],
+                'Sequence length': len(peptide[1]) if peptide[1] is not None else None,
+                'PDB': peptide[2],
+                'Receptor': peptide[3],
+                'Family': peptide[4],
+                'GPCR Class': peptide[5],
+            }
+            s.append(peptide_info)
+        for peptide in peptides_data:
+            peptide_info = {
+                'Peptide name': peptide[0],
+                'Sequence': peptide[1],
+                'Sequence length': len(peptide[1]) if peptide[1] != None else None,
+                'PDB': '-',
+                'Receptor': '-',
+                'Family': '-',
+                'GPCR Class': '-'
+            }
+            s.append(peptide_info)
+
+
+        return Response(s)
 
 class SpeciesDetail(generics.RetrieveAPIView):
 
