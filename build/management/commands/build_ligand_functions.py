@@ -24,7 +24,7 @@ def get_or_create_ligand(name, ids = {}, lig_type = "small-molecule", unichem = 
     """ This function tries to obtain a small molecule Ligand object.
 
         If the ligand already exists it will return the corresponding object. If
-        not, it will processes the provided data and create the ligand object.
+        not, it will process the provided data and create the ligand object.
         When a ligand does not exist, or cannot be created, with the given input
         it will return None
 
@@ -36,7 +36,7 @@ def get_or_create_ligand(name, ids = {}, lig_type = "small-molecule", unichem = 
             Dictionary where the key is the id_type and the value is the id
             <id_type> is e.g. pubchem, gtp, chembl, etc. (slug of the web_resource)
             <id> is the Identifier itself
-        ids : str, optional
+        lig_type : str, optional
             String indicating the ligand type (according to the LigandType slugs)
             By default this is set to "small-molecule".
         unichem : bool, optional

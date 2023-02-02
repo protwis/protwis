@@ -1450,7 +1450,7 @@ class Command(BaseBuild):
                                     if res.get_resname() in self.unnatural_amino_acids:
                                         one_letter = self.unnatural_amino_acids[res.get_resname()]
                                     else:
-                                        print('WARNING: {} residue in structure {} is missing from unnatural amino acid definitions (data/protwis/gpcr/residue_data/unnatural_amino_acids.yaml)'.format(res, struc))
+                                        print('WARNING: {} residue in structure {} is missing from unnatural amino acid definitions (data/protwis/gpcr/residue_data/unnatural_amino_acids.yaml)'.format(res, s))
                                         continue
                                 seq+=one_letter
                             ids['sequence'] = seq
