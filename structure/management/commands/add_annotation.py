@@ -36,6 +36,15 @@ class Command(BaseCommand):
             dest='debug',
             default=False,
             help='Print info for debugging')
+        parser.add_argument('--no_save',
+            action='store_false',
+            dest='no_save',
+            default=True,
+            help='Does not save annotation')
+        parser.add_argument('-s', '--structure',
+            dest='structure',
+            help='Structure to annotate',
+            nargs='+')
 
     def handle(self, *args, **options):
         self.debug = options['debug']
@@ -48,6 +57,12 @@ class Command(BaseCommand):
         self.parsed_structures.parse_grk()
         self.parsed_structures.parse_parent_segends()
 
+        self.save_annotation = options['no_save']
+        if options['structure']:
+            self.structures_to_annotate = options['structure']
+        else:
+            self.structures_to_annotate = None
+
         with open(self.xtal_seg_end_file, 'r') as f:
             self.xtal_seg_ends = yaml.safe_load(f)
 
@@ -59,7 +74,7 @@ class Command(BaseCommand):
             ### New structures
             if 'ligand' not in self.parsed_structures.structures[s]:
                 print('WARNING: {} missing ligand annotation'.format(s))
-            if s not in self.xtal_seg_ends:
+            if s not in self.xtal_seg_ends or (self.structures_to_annotate and s in self.structures_to_annotate):
                 print(s)
                 segends[s] = {'1b':'-','1e':'-','i1b':'-','i1e':'-','2b':'-','2e':'-','e1b':'-','e1e':'-',
                               '3b':'-','3e':'-','i2b':'-','i2e':'-','4b':'-','4e':'-','e2b':'-','e2e':'-',
@@ -162,6 +177,12 @@ class Command(BaseCommand):
                     if r!='-':
                         ref_i+=1
 
+                needs_lookup = False
+                if len(wt_pdb_lookup)>0:
+                    needs_lookup = True
+
+                if self.debug:
+                    pprint.pprint(wt_pdb_lookup)
                 try:
                     parent_segends = self.parsed_structures.parent_segends[parent_protein.entry_name]
                 except KeyError:
@@ -188,7 +209,8 @@ class Command(BaseCommand):
                         parent_segends[prefix+'e'] = e
 
                 if self.debug:
-                    print(res_dict)
+                    for i,j in res_dict.items():
+                        print(i,j)
                     print(parent_segends)
 
                 ### Helices
@@ -248,6 +270,12 @@ class Command(BaseCommand):
                         print('WARNING: helix {} for {} {} has missing annotation'.format(i, s, parent_protein))
                     if i==8 and end==segends[s]['7e']:
                         segends[s]['7e']-=1
+                    if needs_lookup:
+                        if start in wt_pdb_lookup:
+                            start = wt_pdb_lookup[start]
+                        if end in wt_pdb_lookup:
+                            end = wt_pdb_lookup[end]
+
                     segends[s][str(i)+'b'] = start
                     segends[s][str(i)+'e'] = end
 
@@ -311,6 +339,9 @@ class Command(BaseCommand):
                                 e2e_counter+=1
                             segends[s]['e2e'] = wt_pdb_lookup[e2e]
 
+                if self.debug:
+                    pprint.pprint(segends[s])
+
                 proteins_in_db = Structure.objects.filter(protein_conformation__protein__parent=parent_protein)
                 if len(proteins_in_db)==0:
                     if parent_protein not in new_unique_receptor_structures:
@@ -329,8 +360,9 @@ class Command(BaseCommand):
                     self.xtal_seg_ends[s] = data
 
                 ### Save to file
-                with open(self.xtal_seg_end_file, 'w') as f1:
-                    yaml.dump(self.xtal_seg_ends, f1, default_flow_style=False)
+                if self.save_annotation:
+                    with open(self.xtal_seg_end_file, 'w') as f1:
+                        yaml.dump(self.xtal_seg_ends, f1, default_flow_style=False)
             
         # pprint.pprint(segends)
         # print('New unique receptor structures')

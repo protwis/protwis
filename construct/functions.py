@@ -1658,11 +1658,6 @@ def construct_structure_annotation_override(pdb_code, removed, deletions):
         if 243 in deletions:
             deletions.remove(243)
         deletions.append(271)
-    elif pdb_code=='6LUQ':
-        if 387 in removed:
-            removed.remove(387)
-        if 387 in deletions:
-            deletions.remove(366)
     elif pdb_code=='6W2Y':
         for i in range(845,862):
             if i in deletions:
@@ -1700,8 +1695,6 @@ def construct_structure_annotation_override(pdb_code, removed, deletions):
         for i in range(395,456):
             if i in deletions:
                 deletions.remove(i)
-    elif pdb_code=='7EB2':
-        deletions, removed = [], []
     elif pdb_code=='7F1R':
         deletions = list(range(314,400))
         removed = list(range(1,128))+list(range(188,192))
@@ -1742,17 +1735,11 @@ def construct_structure_annotation_override(pdb_code, removed, deletions):
         for i in range(65,73):
             if i in deletions:
                 deletions.remove(i)
-    elif pdb_code in ['7SF7','7SF8']:
-        deletions, removed = [], []
     elif pdb_code=='2YCW':
         deletions = []
     elif pdb_code in ['4LDE','4LDL','4LDO']:
         if 263 in deletions:
             deletions.remove(263)
-    elif pdb_code=='7ZI0':
-        for i in range(556,658):
-            if i in deletions:
-                deletions.remove(i)
     elif pdb_code in ['8DCR','8DCS']:
         for i in range(139,243):
             if i in deletions:
@@ -1771,5 +1758,21 @@ def construct_structure_annotation_override(pdb_code, removed, deletions):
         deletions = []
     elif pdb_code=='7PP1':
         deletions = []
+    elif pdb_code=='6LUQ':
+        if 387 in removed:
+            removed.remove(387)
+        if 366 in deletions:
+            deletions.remove(366)
+    elif pdb_code=='7Y27':
+        for i in range(40, 63):
+            if i in removed:
+                removed.remove(i)
+    elif pdb_code in ['7W56','7W53']:
+        for i in range(362,368):
+            if i in deletions:
+                deletions.remove(i)
+    ### make deletions and removed empty
+    elif pdb_code in ['7SF7','7SF8','7EB2','7X1T','7X1U','7SRS','7UL2','7UL3','7UL5','7XBX']:
+        deletions, removed = [], []
 
     return removed, deletions
