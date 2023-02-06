@@ -405,9 +405,9 @@ class Command(BaseBuild):
             seq = seq[:265]
         elif structure.pdb_code.index in ['1GZM', '3C9L']:
             seq = seq[:-3]
-        if structure.pdb_code.index in ['6NBI','6NBF','6NBH','6U1N','6M1H','6PWC','7JVR','7SHF','7EJ0','7EJ8','7EJA','7EJK','7VVJ']:
+        if structure.pdb_code.index in ['6NBI','6NBF','6NBH','6U1N','6M1H','6PWC','7JVR','7SHF','7EJ0','7EJ8','7EJA','7EJK','7VVJ','7TS0','7W6P','7W7E']:
             pw2 = pairwise2.align.localms(parent_seq, seq, 3, -4, -3, -1)
-        elif structure.pdb_code.index in ['6KUX', '6KUY', '6KUW']:
+        elif structure.pdb_code.index in ['6KUX', '6KUY', '6KUW','7SRS']:
             pw2 = pairwise2.align.localms(parent_seq, seq, 3, -4, -4, -1.5)
         else:
             pw2 = pairwise2.align.localms(parent_seq, seq, 3, -4, -5, -2)
@@ -540,6 +540,55 @@ class Command(BaseBuild):
             temp_seq = temp_seq[:186]+'S--'+temp_seq[189:]
         elif structure.pdb_code.index=='7WU9':
             temp_seq = temp_seq[:261]+'Q'+temp_seq[261:275]+temp_seq[276:]
+        elif structure.pdb_code.index=='7SRS':
+            temp_seq = temp_seq[:246]+'VRLLS'+61*'-'+'R'+temp_seq[313:]
+        elif structure.pdb_code.index=='7UL2':
+            ref_seq = ref_seq[:257]+ref_seq[259:305]+ref_seq[306:]
+            temp_seq = temp_seq[:264]+'SVRL'+19*'-'+'LSGS'+temp_seq[291:296]+temp_seq[298:308]+temp_seq[309:]
+        elif structure.pdb_code.index=='7UL3':
+            ref_seq = ref_seq[:202]+ref_seq[206:211]+ref_seq[212:236]+ref_seq[242:244]+ref_seq[246:255]+ref_seq[256:]
+            temp_seq = temp_seq[:208]+'LKSVRLLS'+5*'-'+'SRE'+temp_seq[235:247]+'L'+temp_seq[251:]
+        elif structure.pdb_code.index=='7UL5':
+            ref_seq = ref_seq[:244]+ref_seq[245:253]+ref_seq[258:]
+            temp_seq = temp_seq[:237]+temp_seq[239:242]+'LSGSR'+temp_seq[251:]
+        elif structure.pdb_code.index=='7PP1':
+            temp_seq = temp_seq[:128]+'P'+temp_seq[128:134]+temp_seq[135:161]+'L'+temp_seq[161:177]+temp_seq[178:]
+        elif structure.pdb_code.index=='7RAN':
+            temp_seq = temp_seq[:283]+'C'+temp_seq[283:287]+temp_seq[288:]
+        elif structure.pdb_code.index=='7S0F':
+            temp_seq = temp_seq[:247]+temp_seq[248:283]+'F'+temp_seq[283:]
+        elif structure.pdb_code.index=='7VIH':
+            temp_seq = temp_seq[:33]+'KL'+temp_seq[33:45]+temp_seq[47:]
+        elif structure.pdb_code.index=='7VQX':
+            temp_seq = temp_seq[:288]+'S'+temp_seq[288:297]+temp_seq[298:]
+        elif structure.pdb_code.index in ['7VVK']:
+            temp_seq = temp_seq[:4]+temp_seq[65:84]+temp_seq[4:65]+temp_seq[84:]
+        elif structure.pdb_code.index in ['7VVL']:
+            temp_seq = temp_seq[:4]+temp_seq[62:81]+temp_seq[4:62]+temp_seq[81:]
+        elif structure.pdb_code.index in ['7VVM']:
+            temp_seq = temp_seq[:4]+temp_seq[61:80]+temp_seq[4:61]+temp_seq[80:]
+        elif structure.pdb_code.index=='7VVN':
+            temp_seq = temp_seq[:6]+temp_seq[78:95]+temp_seq[6:67]+temp_seq[95:102]+11*'-'+temp_seq[102:365]+'T'+temp_seq[365:372]+temp_seq[373:403]+'T'+temp_seq[403:408]+temp_seq[409:]
+        elif structure.pdb_code.index=='7VVO':
+            temp_seq = temp_seq[:6]+temp_seq[79:99]+temp_seq[6:79]+temp_seq[99:]
+        elif structure.pdb_code.index=='7W57':
+            temp_seq = temp_seq[:192]+'P'+temp_seq[192:198]+temp_seq[199:]
+        elif structure.pdb_code.index in ['7W6P']:
+            temp_seq = temp_seq[:182]+'P'+temp_seq[182:200]+temp_seq[201:]
+        elif structure.pdb_code.index=='7W7E':
+            temp_seq = temp_seq[:182]+'P'+temp_seq[182:200]+temp_seq[201:242]+'R'+temp_seq[242:377]+temp_seq[378:]
+        elif structure.pdb_code.index=='7WBJ':
+            temp_seq = temp_seq[:288]+'S'+temp_seq[288:297]+temp_seq[298:]
+        elif structure.pdb_code.index in ['7X8R']:
+            temp_seq = temp_seq[:7]+temp_seq[89:113]+temp_seq[7:89]+temp_seq[113:]
+        elif structure.pdb_code.index in ['7X8S']:
+            temp_seq = temp_seq[:7]+temp_seq[90:114]+temp_seq[7:90]+temp_seq[114:]
+        elif structure.pdb_code.index=='8HA0':
+            temp_seq = temp_seq[:4]+temp_seq[58:78]+temp_seq[4:58]+temp_seq[78:]
+        elif structure.pdb_code.index=='8HAF':
+            temp_seq = temp_seq[:4]+temp_seq[53:78]+temp_seq[4:53]+temp_seq[78:]
+        elif structure.pdb_code.index=='8HAO':
+            temp_seq = temp_seq[:4]+temp_seq[57:78]+temp_seq[4:57]+temp_seq[78:]
 
 
 
@@ -669,7 +718,7 @@ class Command(BaseBuild):
                                     elif residue.sequence_number!=wt_r.sequence_number:
                                         # print('WT pos not same pos, mismatch',residue.sequence_number,residue.amino_acid,wt_r.sequence_number,wt_r.amino_acid)
                                         wt_pdb_lookup.append(OrderedDict([('WT_POS',wt_r.sequence_number), ('PDB_POS',residue.sequence_number), ('AA',wt_r.amino_acid)]))
-                                        if structure.pdb_code.index not in ['4GBR','6C1R','6C1Q']:
+                                        if structure.pdb_code.index not in ['4GBR','6C1R','6C1Q','7XBX']:
                                             if residue.sequence_number in unmapped_ref:
                                                 #print('residue.sequence_number',residue.sequence_number,'not mapped though')
                                                 if residue.amino_acid == wt_lookup[residue.sequence_number].amino_acid:
@@ -680,7 +729,6 @@ class Command(BaseBuild):
                                         ### REPLACE seq number with WT to fix odd PDB annotation. FIXME kinda dangerous, but best way to ensure consistent GN numbering
                                         ### 2019.01.18 DISABLED underneat, to be sure that sequence number can be found in DB correctly.
                                         # residue.sequence_number = wt_r.sequence_number
-
                                     if residue.amino_acid!=wt_r.amino_acid:
                                         if debug: print('aa mismatch',residue.sequence_number,residue.amino_acid,wt_r.sequence_number,wt_r.amino_acid)
                                         aa_mismatch += 1

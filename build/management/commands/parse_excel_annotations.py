@@ -434,7 +434,7 @@ class Command(BaseCommand):
 
         pdb_info = OrderedDict(sorted(pdb_info.items()))
         with open(self.mod_xtal_seg_end_file, 'w') as outfile:
-            yaml.dump(pdb_info, outfile, indent=4)
+            yaml.dump(pdb_info, outfile, default_flow_style=False)
 
         pdb_info_all = OrderedDict(sorted(pdb_info_all.items()))
         with open(self.xtal_seg_end_file, 'w') as outfile:
