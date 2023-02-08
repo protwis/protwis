@@ -332,7 +332,7 @@ class Alignment:
 
 
         self.number_of_residues_total = len(rs)
-        if self.number_of_residues_total>120000: #300 receptors, 400 residues limit
+        if self.number_of_residues_total>125000: #300 receptors, 400 residues limit
             return "Too large"
 
         # AJK: performance boost -> Internal caching (not for very small alignments)

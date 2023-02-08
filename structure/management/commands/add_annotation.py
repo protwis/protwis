@@ -276,6 +276,11 @@ class Command(BaseCommand):
                         if end in wt_pdb_lookup:
                             end = wt_pdb_lookup[end]
 
+                    ### Custom segends
+                    if s=='7VVJ' and i==6:
+                        start = 402
+                        end = 425
+
                     segends[s][str(i)+'b'] = start
                     segends[s][str(i)+'e'] = end
 
