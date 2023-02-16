@@ -1195,7 +1195,7 @@ def add_construct(d):
                                                        pi_email = d['contact_info']['pi_email'],
                                                        pi_name = d['contact_info']['pi_name'],
                                                        urls = d['contact_info']['url'],
-                                                       date = datetime.datetime.strptime(d['contact_info']['date'], '%m/%d/%Y').strftime('%Y-%m-%d'),
+                                                       date = datetime.strptime(d['contact_info']['date'], '%m/%d/%Y').strftime('%Y-%m-%d'),
                                                        address = d['contact_info']['address'])
 
     construct.save()

@@ -31,7 +31,7 @@ class Command(BaseCommand):
             except Exception as msg:
                 print(msg)
                 self.logger.error(msg)
-            test_model_updates(self.all_models, self.tracker, check=True)
+        test_model_updates(self.all_models, self.tracker, check=True)
 
     def create_news(self):
         self.logger.info('CREATING NEWS')

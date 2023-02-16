@@ -36,6 +36,7 @@ class Command(BaseBuild):
         except Exception as msg:
             print(msg)
             self.logger.error(msg)
+        test_model_updates(self.all_models, self.tracker, check=True)
         self.logger.info('COMPLETED COMPLEX INTERACTIONS')
 
     def main_func(self, positions, iteration,count,lock):
@@ -48,4 +49,3 @@ class Command(BaseBuild):
                 compute_interactions(pdb, do_complexes=True, save_to_db=True)
             except:
                 print('Issue making interactions for',pdb)
-        test_model_updates(self.all_models, self.tracker, check=True)
