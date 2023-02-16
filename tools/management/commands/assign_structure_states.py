@@ -67,6 +67,7 @@ class Command(BaseCommand):
                 class_pair_inactives['004'] = ["2x47_6x37", 14.5] #C
                 class_pair_inactives['005'] = ["2x47_6x37", 1000] #D PLACEHOLDER
                 class_pair_inactives['006'] = ["2x44_6x31", 13] #F
+                class_pair_inactives['007'] = ["2x46_6x37", 1000] #T PLACEHOLDER
 
                 inactive_ids = list(Distance.objects.filter(distance__lt=class_pair_inactives[slug[0]][1]*distance_scaling_factor) \
                                     .filter(gns_pair=class_pair_inactives[slug[0]][0]) \

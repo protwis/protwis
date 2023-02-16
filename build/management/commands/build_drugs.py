@@ -34,9 +34,8 @@ class Command(BaseCommand):
 
         try:
             self.purge_drugs()
-            self.create_drug_data(filenames)
-            #the purge is not an argument, so we initialize the test after the purge
             test_model_updates(self.all_models, self.tracker, initialize=True)
+            self.create_drug_data(filenames)
             test_model_updates(self.all_models, self.tracker, check=True)
         except Exception as msg:
             print(msg)

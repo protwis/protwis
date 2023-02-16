@@ -168,8 +168,12 @@ class Command(BaseCommand):
                     if r=='-':
                         temp_i+=1
                     elif temp_seq[i-1]!='-':
-                        if fusion_present and (res_list[temp_i].get_id()[1] in deletions or res_list[temp_i].get_id()[1] in removed):
-                            fusion_res = True
+                        if s=='7ZI0':
+                            if fusion_present and res_list[temp_i].get_id()[1] in removed:
+                                fusion_res = True
+                        else:
+                            if fusion_present and (res_list[temp_i].get_id()[1] in deletions or res_list[temp_i].get_id()[1] in removed):
+                                fusion_res = True
                         if not fusion_res:
                             res_dict[parent_residues[ref_i].sequence_number] = [res_list[temp_i], dssp[temp_i]]
                             wt_pdb_lookup[parent_residues[ref_i].sequence_number] = res_list[temp_i].get_id()[1]

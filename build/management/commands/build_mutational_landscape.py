@@ -43,10 +43,10 @@ class Command(BaseCommand):
 
         try:
             self.purge_data()
+            test_model_updates(self.all_models, self.tracker, initialize=True)
             self.create_PTMs()
             self.create_natural_mutations()
             #here purge is not an argument, so we initialize the test after the purge
-            test_model_updates(self.all_models, self.tracker, initialize=True)
             test_model_updates(self.all_models, self.tracker, check=True)
         except Exception as msg:
             print(msg)
