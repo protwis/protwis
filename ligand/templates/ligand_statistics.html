@@ -202,49 +202,22 @@ This page shows the number of biased ligands with a bias factor &ge; 5 (subtype)
             <td align="center"><b><br />Total</b></td>
         </tr>
     </thead>
-
-    {% if render == "not_bias" or render == "pathway"%}
-    <tbody>
-        <tr>
-            <td>No. ligands</td>
-            {% for data in ligands_by_class %}
-            <td align="center" style="vertical-align:middle !important">{{ data.num_ligands|floatformat:0|intcomma }}</td>
-            {% endfor %}
-            <td align="center" style="vertical-align:middle !important">{{ ligands_total.num_ligands|floatformat:0|intcomma }}</td>
-        </tr>
-        <tr>
-            <td nowrap>Average no. ligands/GPCR</td>
-            {% for data in ligands_by_class %}
-            <td align="center" style="vertical-align:middle !important">{{ data.avg_num_ligands|floatformat:0|intcomma }}</td>
-            {% endfor %}
-            <td align="center" style="vertical-align:middle !important">{{ ligands_total.avg_num_ligands|floatformat:0|intcomma }}</td>
-        </tr>
-        <tr>
-            <td nowrap>No. GPCRs with ligand (%)</td>
-            {% for data in ligands_by_class %}
-            <td align="center" style="vertical-align:middle !important">{{ data.target_count|floatformat:0 }} ({{ data.target_percentage|floatformat:0 }})</td>
-            {% endfor %}
-            <td align="center" style="vertical-align:middle !important; white-space: nowrap; overflow: hidden;"> {{ ligands_total.target_count|floatformat:0 }} ({{ ligands_total.target_percentage|floatformat:0 }})</td>
-        </tr>
-    </tbody>
-    {% else %}
     <tbody>
         <tr>
             <td>No. biased ligands</td>
-            {% for data in bal_ligands_by_class %}
+            {% for data in ligands_by_class %}
             <td align="center" style="vertical-align:middle !important">{{ data.num_ligands|floatformat:0|intcomma }}</td>
             {% endfor %}
             <td align="center" style="vertical-align:middle !important">{{ bal_ligands_total.num_ligands|floatformat:0|intcomma }}</td>
         </tr>
         <tr>
             <td nowrap>No. GPCRs with ligand</td>
-            {% for data in bal_ligands_by_class %}
+            {% for data in ligands_by_class %}
             <td align="center" style="vertical-align:middle !important">{{ data.target_count|floatformat:0 }}</td>
             {% endfor %}
             <td align="center" style="vertical-align:middle !important; white-space: nowrap; overflow: hidden;"> {{ bal_ligands_total.target_count|floatformat:0 }}</td>
         </tr>
     </tbody>
-    {% endif %}
 
     <tr> </tr>
 </table>
@@ -361,40 +334,40 @@ Circle colors indicate a number of ligands:
   master_dict = {{ MasterDict | safe}}
 </script>
 <script type="text/javascript" charset="utf-8">
-// $(window).on("load",function() {
-$(document).ready(function(){
-    let buttonObjects = [];
-    let checkboxes = $('#HeatmapHandlerBal').find('label');
-    let selectedCheckboxes = checkboxes.filter('.active');
-    selectedCheckboxes
-      .each(function(index, element) {
-        if (!($(element).data('name') in buttonObjects)){
-          buttonObjects[$(element).data('name')] = [];
-        }
-        buttonObjects[$(element).data('name')].push($(element).data('value'));
-      });
-    draw_heatmap(circles, heatmap_data, master_dict, buttonObjects, 'HeatmapDivBal', 'Heatmap_BalancedRefenced', 'Primary transducer count');
-
-});
-</script>
-<script>
   $(document).ready(function(){
-    $('#HeatmapHandlerBal').on("change", function() {
-        let buttonObjects = [];
-        let checkboxes = $('#HeatmapHandlerBal').find('label');
-        let selectedCheckboxes = checkboxes.filter('.active');
-        selectedCheckboxes
-          .each(function(index, element) {
-            if (!($(element).data('name') in buttonObjects)){
-              buttonObjects[$(element).data('name')] = [];
-            }
-            buttonObjects[$(element).data('name')].push($(element).data('value'));
-          });
-        d3.select("#HeatmapDivBal").select("svg").remove();
-        draw_heatmap(circles, heatmap_data, master_dict, buttonObjects, 'HeatmapDivBal', 'Heatmap_BalancedRefenced', 'Primary transducer count');
-      });
-  })
-</script>
+      let buttonObjects = [];
+      let checkboxes = $('#HeatmapHandler').find('label');
+      let selectedCheckboxes = checkboxes.filter('.active');
+      selectedCheckboxes
+        .each(function(index, element) {
+          if (!($(element).data('name') in buttonObjects)){
+            buttonObjects[$(element).data('name')] = [];
+          }
+          buttonObjects[$(element).data('name')].push($(element).data('value'));
+        });
+      draw_heatmap(circles, heatmap_data, master_dict, buttonObjects, 'HeatMap_div', 'HeatMap_BiasedLigands', 'Primary transducer count');
+
+  });
+  </script>
+  <script>
+    $(document).ready(function(){
+      $('#HeatmapHandler').on("change", function() {
+          let buttonObjects = [];
+          let checkboxes = $('#HeatmapHandler').find('label');
+          let selectedCheckboxes = checkboxes.filter('.active');
+          selectedCheckboxes
+            .each(function(index, element) {
+              if (!($(element).data('name') in buttonObjects)){
+                buttonObjects[$(element).data('name')] = [];
+              }
+              buttonObjects[$(element).data('name')].push($(element).data('value'));
+            });
+          d3.select("#HeatMap_div").select("svg").remove();
+          draw_heatmap(circles, heatmap_data, master_dict, buttonObjects, 'HeatMap_div', 'HeatMap_BiasedLigands', 'Primary transducer count');
+        });
+    })
+  </script>
+
 {% else %}
 <script type="text/javascript" charset="utf-8">
   circles = {{ circles_data | safe}}
@@ -402,40 +375,39 @@ $(document).ready(function(){
   master_dict = {{ MasterDict | safe}}
 </script>
 <script type="text/javascript" charset="utf-8">
-// $(window).on("load",function() {
-$(document).ready(function(){
-    let buttonObjects = [];
-    let checkboxes = $('#HeatmapHandler').find('label');
-    let selectedCheckboxes = checkboxes.filter('.active');
-    selectedCheckboxes
-      .each(function(index, element) {
-        if (!($(element).data('name') in buttonObjects)){
-          buttonObjects[$(element).data('name')] = [];
-        }
-        buttonObjects[$(element).data('name')].push($(element).data('value'));
-      });
-    draw_heatmap(circles, heatmap_data, master_dict, buttonObjects, 'HeatMap_div', 'HeatMap_BiasedLigands', 'Primary transducer count');
-
-});
-</script>
-<script>
+  // $(window).on("load",function() {
   $(document).ready(function(){
-    $('#HeatmapHandler').on("change", function() {
-        let buttonObjects = [];
-        let checkboxes = $('#HeatmapHandler').find('label');
-        let selectedCheckboxes = checkboxes.filter('.active');
-        selectedCheckboxes
-          .each(function(index, element) {
-            if (!($(element).data('name') in buttonObjects)){
-              buttonObjects[$(element).data('name')] = [];
-            }
-            buttonObjects[$(element).data('name')].push($(element).data('value'));
-          });
-        d3.select("#HeatMap_div").select("svg").remove();
-        draw_heatmap(circles, heatmap_data, master_dict, buttonObjects, 'HeatMap_div', 'HeatMap_BiasedLigands', 'Primary transducer count');
-      });
-  })
-</script>
+      let buttonObjects = [];
+      let checkboxes = $('#HeatmapHandlerBal').find('label');
+      let selectedCheckboxes = checkboxes.filter('.active');
+      selectedCheckboxes
+        .each(function(index, element) {
+          if (!($(element).data('name') in buttonObjects)){
+            buttonObjects[$(element).data('name')] = [];
+          }
+          buttonObjects[$(element).data('name')].push($(element).data('value'));
+        });
+      draw_heatmap(circles, heatmap_data, master_dict, buttonObjects, 'HeatmapDivBal', 'Heatmap_BalancedRefenced', 'Primary transducer count');
+  });
+  </script>
+  <script>
+    $(document).ready(function(){
+      $('#HeatmapHandlerBal').on("change", function() {
+          let buttonObjects = [];
+          let checkboxes = $('#HeatmapHandlerBal').find('label');
+          let selectedCheckboxes = checkboxes.filter('.active');
+          selectedCheckboxes
+            .each(function(index, element) {
+              if (!($(element).data('name') in buttonObjects)){
+                buttonObjects[$(element).data('name')] = [];
+              }
+              buttonObjects[$(element).data('name')].push($(element).data('value'));
+            });
+          d3.select("#HeatmapDivBal").select("svg").remove();
+          draw_heatmap(circles, heatmap_data, master_dict, buttonObjects, 'HeatmapDivBal', 'Heatmap_BalancedRefenced', 'Primary transducer count');
+        });
+    })
+  </script>
 {% endif %}
 
 
@@ -454,7 +426,8 @@ $(document).ready(function(){
       <div class="tab-pane container active" id="heatmap">
   {% endif %}
 
-      <div id="HeatmapHandlerBal">
+      <div id="HeatmapHandler">
+      <!-- <div id="HeatmapHandlerBal"> -->
         <div style="padding-top: 5px;">
         Classes:&ensp;
           <div class="btn-group" data-toggle="buttons" id="class_selection">
@@ -537,8 +510,8 @@ $(document).ready(function(){
       </div>
       <br />
       <br />
-      <div id="HeatmapDivBal" class="text-center"></div>
-      <!-- <div id="HeatMap_div" class="text-center"> -->
+      <!-- <div id="HeatmapDivBal" class="text-center"></div> -->
+      <div id="HeatMap_div" class="text-center"></div>
     <!-- </div> -->
     <div class="text-center">
       <div class="btn-group">
@@ -548,20 +521,21 @@ $(document).ready(function(){
           </button>
           <ul class="dropdown-menu">
               <li>
-                  <a href="javascript:saveSvgAsPng(document.getElementById('Heatmap_BalancedRefenced'), 'HeatMap_pathway_biased.png');">PNG</a>
+                  <a href="javascript:saveSvgAsPng(document.getElementById('HeatMap_BiasedLigands'), 'HeatMap_biased_ligands.png');">PNG</a>
               </li>
               <li>
-                  <a href="javascript:saveSvgAsJpg(document.getElementById('Heatmap_BalancedRefenced'), 'HeatMap_pathway_biased.jpg');">JPG</a>
+                  <a href="javascript:saveSvgAsJpg(document.getElementById('HeatMap_BiasedLigands'), 'HeatMap_biased_ligands.jpg');">JPG</a>
               </li>
               <li>
-                  <a href="javascript:saveSvgAsTiff(document.getElementById('Heatmap_BalancedRefenced'), 'HeatMap_pathway_biased.tiff');">TIFF</a>
+                  <a href="javascript:saveSvgAsTiff(document.getElementById('HeatMap_BiasedLigands'), 'HeatMap_biased_ligands.tiff');">TIFF</a>
               </li>
               <li>
-                  <a href="javascript:saveSvg(document.getElementById('Heatmap_BalancedRefenced'), 'HeatMap_pathway_biased.svg');">SVG</a>
+                  <a href="javascript:saveSvg(document.getElementById('HeatMap_BiasedLigands'), 'HeatMap_biased_ligands.svg');">SVG</a>
               </li>
           </ul>
       </div>
     </div>
+
 
   {% if render != "subtype" %}
     </div>
@@ -1192,6 +1166,7 @@ Physiology-bias and pathway-bias is explained in the article <a href="https://bp
 The number of ligands with a bias factor &ge; 5 (subtype).</p>
 <table style="width:60% !important" class="table table-stripped">
 {% endif %}
+
     <thead>
         <tr>
             <td align="right"><b>Class<br />(Family)</b></td>
@@ -1206,22 +1181,49 @@ The number of ligands with a bias factor &ge; 5 (subtype).</p>
             <td align="center"><b><br />Total</b></td>
         </tr>
     </thead>
+    {% if render == "not_bias" or render == "pathway"%}
+    <tbody>
+        <tr>
+            <td>No. ligands</td>
+            {% for data in ligands_by_class %}
+            <td align="center" style="vertical-align:middle !important">{{ data.num_ligands|floatformat:0|intcomma }}</td>
+            {% endfor %}
+            <td align="center" style="vertical-align:middle !important">{{ ligands_total.num_ligands|floatformat:0|intcomma }}</td>
+        </tr>
+        <tr>
+            <td nowrap>Average no. ligands/GPCR</td>
+            {% for data in ligands_by_class %}
+            <td align="center" style="vertical-align:middle !important">{{ data.avg_num_ligands|floatformat:0|intcomma }}</td>
+            {% endfor %}
+            <td align="center" style="vertical-align:middle !important">{{ ligands_total.avg_num_ligands|floatformat:0|intcomma }}</td>
+        </tr>
+        <tr>
+            <td nowrap>No. GPCRs with ligand (%)</td>
+            {% for data in ligands_by_class %}
+            <td align="center" style="vertical-align:middle !important">{{ data.target_count|floatformat:0 }} ({{ data.target_percentage|floatformat:0 }})</td>
+            {% endfor %}
+            <td align="center" style="vertical-align:middle !important; white-space: nowrap; overflow: hidden;"> {{ ligands_total.target_count|floatformat:0 }} ({{ ligands_total.target_percentage|floatformat:0 }})</td>
+        </tr>
+    </tbody>
+    {% else %}
     <tbody>
         <tr>
             <td>No. biased ligands</td>
-            {% for data in ligands_by_class %}
+            {% for data in bal_ligands_by_class %} <!-- HERE -->
             <td align="center" style="vertical-align:middle !important">{{ data.num_ligands|floatformat:0|intcomma }}</td>
             {% endfor %}
             <td align="center" style="vertical-align:middle !important">{{ bal_ligands_total.num_ligands|floatformat:0|intcomma }}</td>
         </tr>
         <tr>
             <td nowrap>No. GPCRs with ligand</td>
-            {% for data in ligands_by_class %}
+            {% for data in bal_ligands_by_class %} <!-- HERE -->
             <td align="center" style="vertical-align:middle !important">{{ data.target_count|floatformat:0 }}</td>
             {% endfor %}
             <td align="center" style="vertical-align:middle !important; white-space: nowrap; overflow: hidden;"> {{ bal_ligands_total.target_count|floatformat:0 }}</td>
         </tr>
     </tbody>
+    {% endif %}
+
     <tr> </tr>
 
 </table>
@@ -1252,7 +1254,8 @@ Specific sets of ligands can be downloaded from the <a href="/ligand/biasedsubty
 <h4>Biased ligand coverage by GPCR class</h4><br />
 {% endif %}
 
-<div id="HeatmapHandler">
+<div id="HeatmapHandlerBal">
+<!-- <div id="HeatmapHandler"> -->
   <div style="padding-top: 5px;">
   Classes:&ensp;
     <div class="btn-group" data-toggle="buttons" id="class_selection">
@@ -1354,9 +1357,9 @@ Specific sets of ligands can be downloaded from the <a href="/ligand/biasedsubty
   $('#second_tab').on('click', function () {
     setTimeout(
     function() {
-      d3.select("#HeatmapDivBal").select("svg").remove();
+      d3.select("#HeatMap_div").select("svg").remove(); //changed from HeatmapDivBal to HeatMap_div
       let buttonObjects = [];
-      let checkboxes = $('#HeatmapHandlerBal').find('label');
+      let checkboxes = $('#HeatmapHandler').find('label');
       let selectedCheckboxes = checkboxes.filter('.active');
       selectedCheckboxes
         .each(function(index, element) {
@@ -1365,7 +1368,8 @@ Specific sets of ligands can be downloaded from the <a href="/ligand/biasedsubty
           }
           buttonObjects[$(element).data('name')].push($(element).data('value'));
         });
-      draw_heatmap(circles_bal, heatmap_data_bal, master_dict, buttonObjects, 'HeatmapDivBal', 'Heatmap_BalancedRefenced', 'Primary transducer count');
+      //changed from HeatmapDivBal to HeatMap_div
+      draw_heatmap(circles_bal, heatmap_data_bal, master_dict, buttonObjects, 'HeatMap_div', 'HeatMap_BiasedLigands', 'Primary transducer count');
     },
     1);
 });
@@ -1390,8 +1394,8 @@ Specific sets of ligands can be downloaded from the <a href="/ligand/biasedsubty
   })
 </script>
 
-<!-- <div id="HeatmapDivBal" class="text-center"></div> -->
-<div id="HeatMap_div" class="text-center"></div>
+<div id="HeatmapDivBal" class="text-center"></div>
+<!-- <div id="HeatMap_div" class="text-center"></div> -->
 
 <p>
   <div class="text-center">
@@ -1402,16 +1406,16 @@ Specific sets of ligands can be downloaded from the <a href="/ligand/biasedsubty
         </button>
         <ul class="dropdown-menu">
             <li>
-                <a href="javascript:saveSvgAsPng(document.getElementById('HeatMap_BiasedLigands'), 'HeatMap_biased_ligands.png');">PNG</a>
+                <a href="javascript:saveSvgAsPng(document.getElementById('Heatmap_BalancedRefenced'), 'HeatMap_pathway_biased.png');">PNG</a>
             </li>
             <li>
-                <a href="javascript:saveSvgAsJpg(document.getElementById('HeatMap_BiasedLigands'), 'HeatMap_biased_ligands.jpg');">JPG</a>
+                <a href="javascript:saveSvgAsJpg(document.getElementById('Heatmap_BalancedRefenced'), 'HeatMap_pathway_biased.jpg');">JPG</a>
             </li>
             <li>
-                <a href="javascript:saveSvgAsTiff(document.getElementById('HeatMap_BiasedLigands'), 'HeatMap_biased_ligands.tiff');">TIFF</a>
+                <a href="javascript:saveSvgAsTiff(document.getElementById('Heatmap_BalancedRefenced'), 'HeatMap_pathway_biased.tiff');">TIFF</a>
             </li>
             <li>
-                <a href="javascript:saveSvg(document.getElementById('HeatMap_BiasedLigands'), 'HeatMap_biased_ligands.svg');">SVG</a>
+                <a href="javascript:saveSvg(document.getElementById('Heatmap_BalancedRefenced'), 'HeatMap_pathway_biased.svg');">SVG</a>
             </li>
         </ul>
     </div>
