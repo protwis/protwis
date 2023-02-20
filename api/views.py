@@ -915,15 +915,25 @@ class StructurePeptideLigandInteractions(generics.ListAPIView):
 
     """
     Get a list of interactions between structure and peptide ligand
-    \n/structure/{pdb_code}/peptideinteraction/
-    \n{pdb_code} is a structure identifier from the Protein Data Bank, e.g. 5VBL
+    \n/structure/{value}/peptideinteraction/
+    \n{value} can be a structure identifier from the Protein Data Bank, e.g. 5VBL
+    \n{value} can also be a protein identifier from Uniprot, e.g. adrb2_human
+    \n{value} can also be a protein identifier from Uniprot, e.g. P07550
+    \nThe inserted value will be queried in the following order: PDB code --> UniProt entry name --> UniProt accession
+    \nBy default, UniProt values (entry name and accession) will be queried to AlphaFold Models interaction data
     """
     serializer_class = StructurePeptideLigandInteractionSerializer
 
     def get_queryset(self):
-        pdb_code = self.kwargs.get('pdb_code')
+        value = self.kwargs.get('value')
+        #trying different inputs: pdb_code, entry_name, accession_number
+        queryset = InteractionPeptide.objects.filter(interacting_peptide_pair__peptide__structure__pdb_code__index__iexact=value)
+        if len(queryset) == 0:
+            queryset = InteractionPeptide.objects.filter(interacting_peptide_pair__peptide__model__protein__entry_name__iexact=value)
+        if len(queryset) == 0:
+            queryset = InteractionPeptide.objects.filter(interacting_peptide_pair__peptide__model__protein__accession__iexact=value)
 
-        queryset = InteractionPeptide.objects.filter(interacting_peptide_pair__peptide__structure__pdb_code__index__iexact=pdb_code)
+
         queryset = queryset.values('interacting_peptide_pair__peptide__structure__pdb_code__index',
                             'interacting_peptide_pair__peptide__ligand__name',
                             'interacting_peptide_pair__peptide__chain',
