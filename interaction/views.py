@@ -1456,9 +1456,12 @@ def extract_fragment_rotamer(f, residue, structure, ligand):
         f_in.close()
 
         rotamer_data, created = PdbData.objects.get_or_create(pdb=rotamer_pdb)
-        rotamer, created = Rotamer.objects.get_or_create(residue=residue, structure=structure, pdbdata=rotamer_data)
+        try:
+            rotamer = Rotamer.objects.get(residue=residue, structure=structure)
+        except Rotamer.DoesNotExist:
+            rotamer, _ = Rotamer.objects.get_or_create(residue=residue, structure=structure, pdbdata=rotamer_data)            
 
-        fragment_data, created = PdbData.objects.get_or_create(pdb=fragment_pdb)
+        fragment_data, _ = PdbData.objects.get_or_create(pdb=fragment_pdb)
         fragment, created = Fragment.objects.get_or_create(ligand=ligand, structure=structure, pdbdata=fragment_data, residue=residue)
     else:
         #quit("Could not find " + residue)
