@@ -221,8 +221,8 @@
 					<!-- Receptor block -->
 					<td style="text-align:right">{{value.0}}</td>
 					<td style="text-align:right">{{value.1}}</td>
-					<td style="text-align:right">{{value.2}}</td>
-          <td style="text-align:right">{{value.3}}</td>
+					<td style="text-align:right"><a target='_blank' href="http://www.uniprot.org/uniprot/{{value.18}}">{{value.2}}</a></td> <!-- UniProt -->
+          <td style="text-align:right"><a target='_blank' href="/protein/{{value.19}}">{{value.3}}</a></td> <!-- IUPHAR -->
           <td style="text-align:right">{{value.4}}</td>
 
 					<!-- ligand block -->
@@ -303,7 +303,8 @@ $('#references').on('show.bs.modal', function(e) {
 	    scrollX: true,
 	    scrollCollapse: true,
 	    scroller: true,
-	    paging: false,
+	    paging: true,
+			lengthMenu: [ 50, 75, 100 ],
 	    bSortCellsTop: false, //prevent sort arrows going on bottom row
 	    aaSorting: [],
 	    autoWidth: true,
