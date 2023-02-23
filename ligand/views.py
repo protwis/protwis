@@ -2436,7 +2436,9 @@ class EndogenousBrowser(TemplateView):
                             "publication__journal__name",                     #15 Pub Journal
                             "publication__reference",                         #16 Pub Reference
                             "publication__web_link__index",                   #17 DOI/PMID
-                            "receptor").distinct()                            #18 Receptor ID
+                            "receptor",                                       #18 Receptor ID
+                            "receptor__accession").distinct()                 #19 Accession (UniProt link)
+
 
         gtpidlinks = dict(list(LigandID.objects.filter(web_resource__slug='gtoplig').values_list(
                             "ligand",
@@ -2499,7 +2501,8 @@ class EndogenousBrowser(TemplateView):
                 else:
                     data_subset['Reference'] = 'empty'
                 data_subset['ID'] = data[6]                                                 #17
-
+                data_subset['Entry Name'] = data[2]                                         #18
+                data_subset['Accession'] = data[19]                                         #19
                 table = table.append(data_subset, ignore_index=True)
 
         table.fillna('', inplace=True)

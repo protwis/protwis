@@ -1397,6 +1397,12 @@ class Command(BaseBuild):
                 sd['publication_date'] = '2021-02-10'
             elif sd['pdb']=='7B6W':
                 sd['publication_date'] = '2022-01-12'
+            elif sd['pdb']=='7XBX':
+                sd['publication_date'] = '2022-07-13'
+            elif sd['pdb']=='7F1T':
+                sd['publication_date'] = '2021-07-14'
+            elif sd['pdb']=='7PP1':
+                sd['publication_date'] = '2022-11-02'
             if 'publication_date' in sd:
                 s.publication_date = sd['publication_date']
             else:
@@ -1411,10 +1417,10 @@ class Command(BaseBuild):
             except:
                 self.logger.error('Error saving publication'.format(sd['pdb']))
 
-            if sd['pdb'] in self.xtal_seg_ends and not self.incremental_mode:
-                s.annotated = True
-            else:
-                s.annotated = False
+            # if sd['pdb'] in self.xtal_seg_ends and not self.incremental_mode:
+            s.annotated = True
+            # else:
+            #     s.annotated = False
 
             s.refined = False
             s.stats_text = None
