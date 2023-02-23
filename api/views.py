@@ -993,16 +993,37 @@ class LigandList(views.APIView):
 
         ligands = AssayExperiment.objects.filter(protein__entry_name=prot_name).values('protein__name',
                                                                                        'ligand_id__name',
-                                                                                       'ligand_id__ligand_type__name').order_by('ligand_id__name')
+                                                                                       'ligand_id__ligand_type__name',
+                                                                                       'ligand_id__smiles',
+                                                                                       'p_activity_ranges',
+                                                                                       'p_activity_value',
+                                                                                       'value_type',
+                                                                                       'assay_type',
+                                                                                       'assay_description',
+                                                                                       'source').prefetch_related('ligand','protein').order_by('ligand_id__name')
         ligandlist = []
         for compound in ligands:
             protein = compound['protein__name']
             lig_name = compound['ligand_id__name']
             lig_type = compound['ligand_id__ligand_type__name'].replace('-',' ')
+            smiles = compound['ligand_id__smiles']
+            p_activity_ranges = compound['p_activity_ranges']
+            p_activity_value = compound['p_activity_value']
+            value_type = compound['value_type']
+            assay_type = compound['assay_type']
+            assay_description = compound['assay_description']
+            source = compound['source']
 
             ligandlist.append({'Protein name':protein,
                                'Ligand name': lig_name,
-                               'Ligand type': lig_type})
+                               'Ligand type': lig_type,
+                               'Smiles': smiles,
+                               'Activity ranges (P)': p_activity_ranges,
+                               'Activity value (P)': p_activity_value,
+                               'Value type': value_type,
+                               'Assay type': assay_type,
+                               'Assay description': assay_description,
+                               'Source': source})
 
         return Response(ligandlist)
 
