@@ -10,161 +10,164 @@
 <link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css" />
 <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
 <link rel="stylesheet" href="{% static 'home/css/modal.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/structure_browser.css' %}" type="text/css" />
+
 <!-- <link rel="stylesheet" href="{% static 'home/css/signprot-multitabtable.css' %}" type="text/css" /> -->
 
 <style type="text/css">
-	.dataTables_scrollHeadInner {
-		margin-top: 20px;
-	}
+    .dataTables_scrollHeadInner {
+        margin-top: 20px;
+    }
 
-	table.dataTable thead th,
-	table.dataTable tbody td {
-		max-width: 65px;
-		word-break: break-all;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
+    table.dataTable thead th,
+    table.dataTable tbody td {
+        max-width: 65px;
+        word-break: break-all;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
 
-	table.dataTable thead .sorting {
-		background-position: right;
-	}
+    table.dataTable thead .sorting {
+        background-position: right;
+    }
 
-	.select2-container select2-container-multi {
-		width: 75%;
-	}
+    .select2-container select2-container-multi {
+        width: 75%;
+    }
 
-	.select2-container-multi .select2-choices .select2-search-field input {
-		max-width: 50px;
-	}
+    .select2-container-multi .select2-choices .select2-search-field input {
+        max-width: 50px;
+    }
 
-	.yadcf-filter-wrapper {
-		position: center;
-		display: flex;
-		white-space: nowrap;
-		margin-top: 7px;
-		width: 50% !important;
-	}
+    .yadcf-filter-wrapper {
+        position: center;
+        display: flex;
+        white-space: nowrap;
+        margin-top: 7px;
+        width: 50% !important;
+    }
 
-	.yadcf-filter-wrapper-inner {
-		white-space: normal;
-	}
+    .yadcf-filter-wrapper-inner {
+        white-space: normal;
+    }
 
-	.select2-results {
-		background-color: white;
-		border: gray;
-		width: 150px !important;
-	}
+    .select2-results {
+        background-color: white;
+        border: gray;
+        width: 150px !important;
+    }
 
-	.yadcf-filter-range {
-		grid-auto-columns: auto;
-		max-width: 50px !important;
-		font-family: sans-serif;
-		font-size: 80%;
-		font-weight: bold;
-		margin: auto;
-		margin-top: 10%;
-		min-width: 40px;
-	}
+    .yadcf-filter-range {
+        grid-auto-columns: auto;
+        max-width: 50px !important;
+        font-family: sans-serif;
+        font-size: 80%;
+        font-weight: bold;
+        margin: auto;
+        margin-top: 10%;
+        min-width: 40px;
+    }
 
-	table.dataTable.compact tbody th,
-	table.dataTable.compact tbody td {
-		padding: 5px 10px 5px 0px !important;
-		/* width: 0px; */
-	}
+    table.dataTable.compact tbody th,
+    table.dataTable.compact tbody td {
+        padding: 5px 10px 5px 0px !important;
+        /* width: 0px; */
+    }
 
-	table.dataTable.compact thead th,
-	table.dataTable.compact thead td {
-		padding: 5px 10px 5px 0px;
-		/* width: 0px; */
-	}
+    table.dataTable.compact thead th,
+    table.dataTable.compact thead td {
+        padding: 5px 10px 5px 0px;
+        /* width: 0px; */
+    }
 
-	table.dataTable.compact thead tr.over_header th {
-		border-bottom: 1px solid #ccc;
-	}
+    table.dataTable.compact thead tr.over_header th {
+        border-bottom: 1px solid #ccc;
+    }
 
-	table.dataTable.compact thead th.leftborder {
-		border-left: 1px solid;
-	}
+    table.dataTable.compact thead th.leftborder {
+        border-left: 1px solid;
+    }
 
-	table.dataTable.compact thead th.rightborder {
-		border-right: 1px solid;
-	}
+    table.dataTable.compact thead th.rightborder {
+        border-right: 1px solid;
+    }
 
-	.yadcf-filter-range {
-		max-width: 40px !important;
-		font-family: sans-serif;
-		font-size: 80%;
-		font-weight: bold;
-		min-width: 40px;
-	}
+    .yadcf-filter-range {
+        max-width: 40px !important;
+        font-family: sans-serif;
+        font-size: 80%;
+        font-weight: bold;
+        min-width: 40px;
+    }
 
-	#overlay {
-		top: 0px;
-		position: absolute;
-		background: #f8f8f8;
-		/*border: 1px solid #333;*/
-		-webkit-box-shadow: 5px 0 2px -2px #888;
-		box-shadow: 5px 0 2px -2px #888;
-	}
+    #overlay {
+        top: 0px;
+        position: absolute;
+        background: #f8f8f8;
+        /*border: 1px solid #333;*/
+        -webkit-box-shadow: 5px 0 2px -2px #888;
+        box-shadow: 5px 0 2px -2px #888;
+    }
 
-	.container {
-		width: 90%;
-		/* display:flex;
-            flex-direction: column; */
-	}
 
-	.wrapper {
-		overflow-x: scroll;
-		overflow-y: hidden;
-	}
 
-	#overlay tbody tr {
-		background-color: #f8f8f8;
-	}
+    .wrapper {
+        overflow-x: scroll;
+        overflow-y: hidden;
+    }
 
-	#count_row th {
-		font-size: 11px;
-		text-align: center;
-	}
+    #overlay tbody tr {
+        background-color: #f8f8f8;
+    }
 
-	.border-left {
-		padding-left: 3px;
-	}
+    #count_row th {
+        font-size: 11px;
+        text-align: center;
+    }
 
-	.name {
-		width: 100px;
-		text-overflow: ellipsis;
-		cursor: pointer;
-		word-break: break-all;
-		overflow: hidden;
-		white-space: nowrap;
-	}
+    .border-left {
+        padding-left: 3px;
+    }
 
-	.name:hover {
-		overflow: visible;
-		white-space: normal;
+    .name {
+        width: 100px;
+        text-overflow: ellipsis;
+        cursor: pointer;
+        word-break: break-all;
+        overflow: hidden;
+        white-space: nowrap;
+    }
 
-	}
+    .name:hover {
+        overflow: visible;
+        white-space: normal;
 
-	.toolbar_data_css {
-		width: 250px;
-		margin-right: auto;
-		margin-left: 0px;
-		/* border: 1px solid; */
-		font-family: "Lucida Grande", Tahoma, Verdana, sans-serif;
-		font-weight: normal;
-		font-size: 120%;
-		line-height: 1.625;
-	}
+    }
 
-	.toolbar_data_css.td {
-		height: 15px;
-		max-width: 150px;
-		overflow: hidden;
-		white-space: nowrap;
-		text-overflow: ellipsis;
-	}
+    .toolbar_data_css {
+        width: 250px;
+        margin-right: auto;
+        margin-left: 0px;
+        /* border: 1px solid; */
+        font-family: "Lucida Grande", Tahoma, Verdana, sans-serif;
+        font-weight: normal;
+        font-size: 120%;
+        line-height: 1.625;
+    }
+
+    .toolbar_data_css.td {
+        height: 15px;
+        max-width: 150px;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+    #content {
+        height: 100%;
+        overflow-y:hidden;
+    }
 </style>
 
 {% endblock %}
@@ -172,86 +175,88 @@
 {% block content %}
 {% autoescape off %}
 
-<div style='padding-top: 0px; font-size: 10px; white-space: nowrap; overflow-y:hidden;  width:100%;'>
-  <br />
+<div style='overflow-y:hidden;'>
   <div style='font-size: 12px;'>
   <p> Data showed in this table is continously collected from the <a href='https://www.guidetopharmacology.org/' target='_blank'>Guide to Pharmacology</a> database. <a href='https://pubmed.ncbi.nlm.nih.gov/34718737/' target='_blank'>Ref</a></p>
   </div>
-	<a id="dlink" style="display:none;"></a>
-	<div id="excel_table" style2="display:none;"></div>
-	<button onclick="GlobalTableToExcel('structures_scrollable', 'Families data', 'EndogenousData.xls')" type="button" class="btn btn-primary" style="margin-top:10px;margin-top:3px"> Export to Excel </button>
-	<button id="reset" type="button" class="btn btn-primary" style="margin-top:10px;margin-top:3px"> Reset filters </button>
+    <div>
+        <a id="dlink" style="display:none;"></a>
+        <div id="excel_table" style2="display:none;"></div>
+        <button onclick="GlobalTableToExcel('endo_scrollable', 'Families data', 'EndogenousData.xls')" type="button" class="btn btn-primary" style="margin-top:10px;margin-top:3px"> Export to Excel </button>
+        <button id="reset" type="button" class="btn btn-primary" style="margin-top:10px;margin-top:3px"> Reset filters </button>
+    </div>
+    <div>
+        <table class="display compact text-nowrap" id='endo_scrollable' style='width:100%; font-size:10px;'>
+            <thead id="headers">
+                <tr class="header-spans">
+                    <th style="text-align:left" colspan="5">RECEPTOR</th>
+                    <th style="border-left: 1px solid black; text-align:left; padding-left:5px;" colspan="4" style="">ENDOGENOUS LIGANDS</th>
+                    <th style="border-left: 1px solid black; text-align:left; padding-left:5px;" colspan="3">pEC50</th>
+                    <th style="border-left: 1px solid black; text-align:left; padding-left:5px;" colspan="3">pKi</th>
+                    <th style="border-left: 1px solid black; text-align:left; padding-left:5px;" colspan="1">REFERENCES</th>
+                </tr>
+                <tr class="table-filter-dropdown">
+            <!-- Receptor block -->
+                    <th>Class</th>
+                    <th>Receptor family</th>
+                    <th>UniProt</th>
+                    <th>IUPHAR</th>
+                    <th>Species</th>
+            <!-- ligand block -->
+                    <th class="pathways">Ligand</th>
+                    <th class="pathways">GtP<br />Classification</th>
+                    <th class="pathways">Potency<br />Ranking</th>
+                    <th class="pathways">Type</th>
+                    <!-- pEC50 block  -->
+                    <th class="color-column">Min</th>
+                    <th class="color-column">Mid</th>
+                    <th class="color-column">Max</th>
+            <!-- pKi block -->
+                    <th class="color-column">Min</th>
+                    <th class="color-column">Mid</th>
+                    <th class="color-column">Max</th>
+            <!-- Reference block  -->
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id='endo_scrollable_body'>
+                    {% for value in Array %}
+                    <tr>
+                        <!-- Receptor block -->
+                        <td style="text-align:right">{{value.0}}</td>
+                        <td style="text-align:right">{{value.1}}</td>
+                        <td style="text-align:right"><a target='_blank' href="http://www.uniprot.org/uniprot/{{value.18}}">{{value.2}}</a></td> <!-- UniProt -->
+                        <td style="text-align:right"><a target='_blank' href="/protein/{{value.19}}">{{value.3}}</a></td> <!-- IUPHAR -->
+                        <td style="text-align:right">{{value.4}}</td>
 
-	<table class="display compact text-nowrap" id='structures_scrollable' style="width: 100%">
-		<thead id="headers">
-			<tr class="header-spans">
-				<th style="text-align:left" colspan="5">Receptor</th>
-				<th style="border-left: 1px solid black; text-align:left" colspan="4" style="">Endogenous ligands</th>
-				<th style="border-left: 1px solid black; text-align:left" colspan="3">pEC50</th>
-        <th style="border-left: 1px solid black; text-align:left" colspan="3">pKi</th>
-        <th style="border-left: 1px solid black; text-align:left" colspan="1">References</th>
-			</tr>
-			<tr class="table-filter-dropdown">
-        <!-- Receptor block -->
-				<th>Class</th>
-				<th>Receptor family</th>
-				<th>UniProt</th>
-				<th>IUPHAR</th>
-        <th>Species</th>
-        <!-- ligand block -->
-				<th class="pathways">Ligand</th>
-				<th class="pathways">GtP<br />Classification</th>
-				<th class="pathways">Potency<br />Ranking</th>
-				<th class="pathways">Type</th>
-				<!-- pEC50 block  -->
-				<th class="color-column">Min</th>
-				<th class="color-column">Mid</th>
-				<th class="color-column">Max</th>
-        <!-- pKi block -->
-        <th class="color-column">Min</th>
-        <th class="color-column">Mid</th>
-        <th class="color-column">Max</th>
-        <!-- Reference block  -->
-				<th></th>
-			</tr>
-		</thead>
-		<tbody id='structures_scrollable_body'>
-				{% for value in Array %}
-				<tr>
-					<!-- Receptor block -->
-					<td style="text-align:right">{{value.0}}</td>
-					<td style="text-align:right">{{value.1}}</td>
-					<td style="text-align:right"><a target='_blank' href="http://www.uniprot.org/uniprot/{{value.18}}">{{value.2}}</a></td> <!-- UniProt -->
-          <td style="text-align:right"><a target='_blank' href="/protein/{{value.19}}">{{value.3}}</a></td> <!-- IUPHAR -->
-          <td style="text-align:right">{{value.4}}</td>
+                        <!-- ligand block -->
+                        <td style="text-align:left"><a href='/ligand/{{value.17}}/info' target='_blank'>{{value.5|title}}</a></td>
+                        <td style="text-align:left">{{value.7|title}}</td>
+                        <td style="text-align:left" class="pathway">{{value.8|floatformat:0}}</td>
+                        <td style="text-align:left" class="pathway ">{{value.9}}</td>
 
-					<!-- ligand block -->
-          <td style="text-align:left"><a href='/ligand/{{value.17}}/info' target='_blank'>{{value.5|title}}</a></td>
-					<td style="text-align:left">{{value.7|title}}</td>
-					<td style="text-align:left" class="pathway">{{value.8|floatformat:0}}</td>
-					<td style="text-align:left" class="pathway ">{{value.9}}</td>
+                        <!-- pEC50 block  -->
+                        <td style="text-align:right" class="color-column" id="lbf_p2_p1">{{value.10|floatformat:1}}</td>
+                        <td style="text-align:right" class="color-column" id="lbf_p3_p1">{{value.11|floatformat:1}}</td>
+                        <td style="text-align:right" class="color-column" id="lbf_p4_p1">{{value.12|floatformat:1}}</td>
 
-					<!-- pEC50 block  -->
-					<td style="text-align:right" class="color-column" id="lbf_p2_p1">{{value.10|floatformat:1}}</td>
-					<td style="text-align:right" class="color-column" id="lbf_p3_p1">{{value.11|floatformat:1}}</td>
-					<td style="text-align:right" class="color-column" id="lbf_p4_p1">{{value.12|floatformat:1}}</td>
+                        <!-- pKi block -->
+                        <td style="text-align:right" class="color-column" id="dee_p2_p1">{{value.13|floatformat:1}}</td>
+                        <td style="text-align:right" class="color-column" id="dee_p3_p1">{{value.14|floatformat:1}}</td>
+                        <td style="text-align:right" class="color-column" id="dee_p4_p1">{{value.15|floatformat:1}}</td>
 
-					<!-- pKi block -->
-					<td style="text-align:right" class="color-column" id="dee_p2_p1">{{value.13|floatformat:1}}</td>
-					<td style="text-align:right" class="color-column" id="dee_p3_p1">{{value.14|floatformat:1}}</td>
-					<td style="text-align:right" class="color-column" id="dee_p4_p1">{{value.15|floatformat:1}}</td>
-
-					<!-- Reference -->
-					<!-- <td class="name"><a href='#' onClick="javascript:reference_list('{{value.16|safe}}');">References</a></td> -->
-					{% if value.16|safe != 'empty' %}
-	          <td class="name" style="text-align:center"><a href="#references" data-toggle="modal" data-book-id="{{value.16|safe}}"> Refs</a></td>
-					{% else %}
-						<td class="name" style="text-align:center"></td>
-					{% endif %}
-				</tr>
-				{% endfor %}
-		</tbody>
-	</table>
+                        <!-- Reference -->
+                        <!-- <td class="name"><a href='#' onClick="javascript:reference_list('{{value.16|safe}}');">References</a></td> -->
+                        {% if value.16|safe != 'empty' %}
+                            <td class="name" style="text-align:center"><a href="#references" data-toggle="modal" data-book-id="{{value.16|safe}}"> Refs</a></td>
+                        {% else %}
+                            <td class="name" style="text-align:center"></td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 
 <div class="modal" id="references">
@@ -294,54 +299,53 @@ $('#references').on('show.bs.modal', function(e) {
 });
 </script>
 <script>
-	$(document).ready(function() {
+    $(document).ready(function() {
 
-	  $("#structures_scrollable").show();
-	  oTable1 = $("#structures_scrollable").DataTable({
-	    deferRender: true,
-	    scrollY: true,
-	    scrollX: true,
-	    scrollCollapse: true,
-	    scroller: true,
-	    paging: true,
-			lengthMenu: [ 50, 75, 100 ],
-	    bSortCellsTop: false, //prevent sort arrows going on bottom row
-	    aaSorting: [],
-	    autoWidth: true,
-	    bInfo: true,
+      $("#endo_scrollable").show();
+      oTable1 = $("#endo_scrollable").DataTable({
+        deferRender: true,
+        scrollY: '65vh',
+        scrollX: true,
+        scrollCollapse: true,
+        scroller: true,
+        paging: false,
+        bSortCellsTop: false, //prevent sort arrows going on bottom row
+        aaSorting: [],
+        autoWidth: false,
+        bInfo: true,
       order: [[2, "asc"]],
-	  });
-		// columns to hide: 3,14,15,18,19,22,23,26,27,28,31,32,33,36,37,38,41,42,43,46,47,48,51,52,53,56,57,58
-		let column_filters = [];
-		// createYADCFfilters(start_column, num_cols, filter_type, select_type = null, filter_default_label = "", filter_reset_button_text = false, filter_match_mode = null, column_data_type = null, width = null)
-		// Class
-		column_filters = column_filters.concat(createYADCFfilters(0, 1, "multi_select", "select2", "Class", false, null, null, "80px"));
-		// Receptor section (4)
-		column_filters = column_filters.concat(createYADCFfilters(1, 4, "multi_select", "select2", "Select", false, null, null, "80px"));
-		// Ligand column
-		column_filters = column_filters.concat(createYADCFfilters(5, 1, "multi_select", "select2", "Select", false, null, "html", "80px"));
+      });
+        // columns to hide: 3,14,15,18,19,22,23,26,27,28,31,32,33,36,37,38,41,42,43,46,47,48,51,52,53,56,57,58
+        let column_filters = [];
+        // createYADCFfilters(start_column, num_cols, filter_type, select_type = null, filter_default_label = "", filter_reset_button_text = false, filter_match_mode = null, column_data_type = null, width = null)
+        // Class
+        column_filters = column_filters.concat(createYADCFfilters(0, 1, "multi_select", "select2", "Class", false, null, null, "80px"));
+        // Receptor section (4)
+        column_filters = column_filters.concat(createYADCFfilters(1, 4, "multi_select", "select2", "Select", false, null, null, "80px"));
+        // Ligand column
+        column_filters = column_filters.concat(createYADCFfilters(5, 1, "multi_select", "select2", "Select", false, null, "html", "80px"));
     column_filters = column_filters.concat(createYADCFfilters(6, 1, "multi_select", "select2", "Select", false, null, null, "80px"));
-		// Vendors/Articles/Labs (3)
-		column_filters = column_filters.concat(createYADCFfilters(7, 2, "multi_select", "select2", "Select", false, null, null, "80px"));
-		// Pathway Preference block (5)
+        // Vendors/Articles/Labs (3)
+        column_filters = column_filters.concat(createYADCFfilters(7, 2, "multi_select", "select2", "Select", false, null, null, "80px"));
+        // Pathway Preference block (5)
     column_filters = column_filters.concat(createYADCFfilters(9, 6, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
     // Authors
-		// column_filters = column_filters.concat(createYADCFfilters(15, 1, "multi_select", "select2", "Authors", false, null, null, "80px"));
-		// DOI
-		// column_filters = column_filters.concat(createYADCFfilters(16, 1, "multi_select", "select2", "DOI", false, null, "html", "80px"));
+        // column_filters = column_filters.concat(createYADCFfilters(15, 1, "multi_select", "select2", "Authors", false, null, null, "80px"));
+        // DOI
+        // column_filters = column_filters.concat(createYADCFfilters(16, 1, "multi_select", "select2", "DOI", false, null, "html", "80px"));
 
-		yadcf.init(oTable1.draw(), column_filters, {
-			cumulative_filtering: false
-		});
+        yadcf.init(oTable1.draw(), column_filters, {
+            cumulative_filtering: false
+        });
     yadcf.exFilterColumn(oTable1, [[4, ["Human"]]], true);
 
-		gray_scale_table($("#structures_scrollable"));
+        gray_scale_table($("#endo_scrollable"));
 
-		$("#reset").click(function() {
-			yadcf.exResetAllFilters(oTable1);
-		});
+        $("#reset").click(function() {
+            yadcf.exResetAllFilters(oTable1);
+        });
 
-		// $(".").hide()
-	});
+        // $(".").hide()
+    });
 </script>
 {% endblock %}
