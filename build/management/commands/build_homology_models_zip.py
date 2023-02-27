@@ -75,6 +75,12 @@ class Command(BaseBuild):
                 os.chdir('./structure/homology_models_zip/')
                 assign_gn = as_gn.GenericNumbering(pdb_file=new_name+'.pdb', sequence_parser=True)
                 pdb_struct = assign_gn.assign_generic_numbers_with_sequence_parser()
+                ### Removing H-atoms from models
+                for chain in pdb_struct:
+                    for residue in chain:
+                        for atom in residue.get_unpacked_list():
+                            if atom.element=='H':
+                                residue.detach_child(atom.get_id())
                 io = PDB.PDBIO()
                 io.set_structure(pdb_struct)
                 io.save(new_name+'.pdb')
