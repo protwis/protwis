@@ -10,7 +10,7 @@ class Structure(models.Model):
     # linked onto the Xtal ProteinConformation, which is linked to the Xtal protein
     protein_conformation = models.ForeignKey('protein.ProteinConformation', on_delete=models.CASCADE)
     structure_type = models.ForeignKey('StructureType', on_delete=models.CASCADE)
-    pdb_code = models.ForeignKey('common.WebLink', on_delete=models.CASCADE)
+    pdb_code = models.ForeignKey('common.WebLink', on_delete=models.CASCADE, null=True)
     state = models.ForeignKey('protein.ProteinState', on_delete=models.CASCADE)
     author_state = models.ForeignKey('protein.ProteinState', null=True, on_delete=models.CASCADE, related_name='author_state')
     publication = models.ForeignKey('common.Publication', null=True, on_delete=models.CASCADE)
@@ -18,7 +18,7 @@ class Structure(models.Model):
     protein_anomalies = models.ManyToManyField('protein.ProteinAnomaly')
     stabilizing_agents = models.ManyToManyField('StructureStabilizingAgent')
     preferred_chain = models.CharField(max_length=20)
-    resolution = models.DecimalField(max_digits=5, decimal_places=3)
+    resolution = models.DecimalField(max_digits=5, decimal_places=3, null=True) #allow null for now, for AF models
     publication_date = models.DateField()
     pdb_data = models.ForeignKey('PdbData', null=True, on_delete=models.CASCADE) #allow null for now, since dump file does not contain.
     representative = models.BooleanField(default=False)
@@ -125,6 +125,8 @@ class StructureModel(models.Model):
     pdb_data = models.ForeignKey('PdbData', null=True, on_delete=models.CASCADE)
     version = models.DateField()
     stats_text = models.ForeignKey('StatsText', null=True, on_delete=models.CASCADE)
+    ligand = models.ForeignKey('ligand.Ligand', null=True, on_delete=models.CASCADE)
+    type = models.ForeignKey('StructureType', null=True, on_delete=models.CASCADE)
 
     def __repr__(self):
         return '<StructureModel: '+str(self.protein.entry_name)+' '+str(self.state)+'>'

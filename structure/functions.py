@@ -18,9 +18,11 @@ from residue.functions import dgn
 from residue.models import Residue, ResidueGenericNumberEquivalent
 from structure.models import Structure, Rotamer, PdbData, StructureStabilizingAgent, StructureType
 from signprot.models import SignprotStructure
+from ligand.models import Endogenous_GTP
 
 from subprocess import Popen, PIPE
 from io import StringIO
+import pandas as pd
 import os
 import sys
 import tempfile
@@ -1116,6 +1118,40 @@ class StructureSeqNumOverwrite():
                 r.sequence_number = int(target_dict[r.sequence_number])
                 r.save()
 
+class ParseAFModelsCSV():
+    def __init__(self):
+        self.complexes = []
+        self.structures = {}
+        with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'AF_Arman_Models.csv']), newline='') as csvfile:
+            structures = csv.reader(csvfile, delimiter=',')
+            next(structures, None)
+            for s in structures:
+                protein = s[0].split('_')[0]
+                ligand = s[4]
+                complex = protein+'_'+ligand
+                self.complexes.append(complex)
+                self.structures[complex]= {'protein':s[0], 'name':protein.lower(), 'state':s[2], 'peptide_id': s[4], 'preferred_chain':s[3], 'model':s[1], 'location':s[5]}
+
+    def parse_ligands(self):
+        endogenous_peptides = pd.read_csv(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'Peptides_GPRCdb_dump.csv']))
+        for complex in self.structures.keys():
+            receptor, pep_id = complex.split('_')[0], complex.split('_')[1]
+            self.structures[complex]['ligand'] = []
+            try:
+                role = endogenous_peptides.loc[(endogenous_peptides['Receptor'].str.match(receptor)) & (endogenous_peptides['GtP ID'] == int(pep_id)), 'Role'].values[0]
+                name = endogenous_peptides.loc[(endogenous_peptides['Receptor'].str.match(receptor)) & (endogenous_peptides['GtP ID'] == int(pep_id)), 'Ligand Name'].values[0]
+                type = endogenous_peptides.loc[(endogenous_peptides['Receptor'].str.match(receptor)) & (endogenous_peptides['GtP ID'] == int(pep_id)), 'Type'].values[0]
+                gpcrdb_id = endogenous_peptides.loc[(endogenous_peptides['Receptor'].str.match(receptor)) & (endogenous_peptides['GtP ID'] == int(pep_id)), 'GPCRdb ID'].values[0]
+                self.structures[complex]['ligand'].append(
+                                {'chain':'B',
+                                 'name':pep_id,
+                                 'role':role,
+                                 'title':name,
+                                 'type':type,
+                                 'gpcrdb id': gpcrdb_id,
+                                 'in_structure': True})
+            except IndexError:
+                print('Cannot find information for complex {}'.format(complex))
 
 class ParseStructureCSV():
     def __init__(self):
