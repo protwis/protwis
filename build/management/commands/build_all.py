@@ -41,7 +41,7 @@ class Command(BaseCommand):
             safe_proc_num = options['proc']
 
         phase1 = [
-            ['clear_cache'],
+#            ['clear_cache'],
             ['build_common'],
             ['build_citations'],
             ['build_human_proteins'],
