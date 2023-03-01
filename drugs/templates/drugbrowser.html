@@ -2,9 +2,29 @@
 {% load static %}
 {% block addon_css %}
 <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
-<style media="screen">
+<link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.yadcf.css' %}" type="text/css">
+<link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css">
+
+<style type="text/css">
+  input.yadcf-filter  {
+    height: 30px;
+    border-radius: 3px;
+    border: 1px solid #ccc;
+    padding: 2px;
+    font-family: sans-serif;
+    font-size: 100%;
+    font-weight: bold;
+  }
+  tr.no-border-bottom th {
+    text-align: center;
+    border-left: 1px solid black;
+    border-bottom: none !important;
+  }
+
 </style>
+
 {% endblock %}
+
 {% block content %}
 <h2>Drug Browser</h2>
 <button onclick="tableToExcel()" type="button" class="btn btn-primary" style="margin-top:10px;margin-top:3px"> Export to Excel </button>
@@ -12,62 +32,55 @@
     <div class="col-md-12 text-center">
         {% if drugdata %}
         <div style="padding-top: 10px; font-size: 11px; white-space: nowrap;">
-            <table width="100%" class="display table" id="drugdata">
-
+            <table width="100%" class="display compact" id="drugdata">
                 <thead>
-                    <tr>
-                        <th style="background-color:#98df8a;text-align:center">Drug Name</th>
-                        <th style="background-color:#98df8a;text-align:center">Indication</th>
-                        <th style="background-color:#aec7e8;text-align:center">Target</th>
-                        <th style="background-color:#aec7e8;text-align:center">Target Level</th>
-                        <th style="background-color:#aec7e8;text-align:center">Class</th>
-                        <th style="background-color:#aec7e8;text-align:center">Family</th>
-                        <th style="background-color:#ffbb78;text-align:center">Status</th>
-                        <th style="background-color:#ffbb78;text-align:center">Phase</th>
-                        <th style="background-color:#ffbb78;text-align:center">Clinical Status</th>
-                        <th style="background-color:#ffbb78;text-align:center">Year of Approval</th>
-                        <th style="background-color:#ffbb78;text-align:center">Drug Type</th>
-                        <th style="background-color:#ffbb78;text-align:center">Mechanism of Action</th>
-                        <th style="background-color:#ffbb78;text-align:;word-wrap: break-word">References</th>
-                        <th style="background-color:#ffbb78;text-align:center">NHS</th>
-                    </tr>
-                    <tr>
-                        <th style="text-align:center"> </th>
-                        <th style="text-align:center"> </th>
-                        <th style="text-align:center"> </th>
-                        <th style="text-align:center"> </th>
-                        <th style="text-align:center"> </th>
-                        <th style="text-align:center"> </th>
-                        <th style="text-align:center"> </th>
-                        <th style="text-align:center"> </th>
-                        <th style="text-align:center"> </th>
-                        <th style="text-align:center"> </th>
-                        <th style="text-align:center"> </th>
-                        <th style="text-align:center"> </th>
-                        <th style="text-align:center"> </th>
-                        <th style="text-align:center"> </th>
-                    </tr>
+                  <tr class="no-border-bottom">
+                    <th colspan="2" style="border-left: none;">DRUGS</th>
+                    <th colspan="5">RECEPTOR</th>
+                    <th colspan="7">CLINICAL INFORMATION</th>  
+                  </tr>
+
+                  <!-- yadcf filter rows -->
+                  <tr>
+                    <!-- Drug section -->
+                    <th style="text-align:left; border-left: none;"> </th>
+                    <th style="text-align:left; border-left: none;">  </th>
+                    <!-- Receptor section -->
+                    <th style="text-align:left; border-left: 1px solid black;">  </th>
+                    <th style="text-align:left; border-left: none">  </th>
+                    <th style="text-align:left; border-left: none">  </th>
+                    <th style="text-align:left; border-left: none">  </th>
+                    <th style="text-align:left; border-left: none">  </th>
+                    <!-- Clinical information section -->
+                    <th style="text-align:left; border-left: 1px solid black;">  </th>
+                    <th style="text-align:left; border-left: none">  </th>
+                    <th style="text-align:left; border-left: none">  </th>
+                    <th style="text-align:left; border-left: none">  </th>
+                    <th style="text-align:left; border-left: none">  </th>
+                    <th style="text-align:left; border-left: none">  </th>
+                    <th style="text-align:left; border-left: none">  </th>
+                  </tr>
                 </thead>
                 <tbody>
                 {% for row in drugdata %}
                 <tr>
                 {% if row.NHS == 'yes' %}
-                  <td style="text-align:center"><a href='/drugs/nhs/{{row.name|safe}} ' target="_blank"> {{row.name|safe}}</a></td>
+                  <td style="text-align:left"><a href='/drugs/nhs/{{row.name|safe}} ' target="_blank"> {{row.name|safe}}</a></td>
                 {% else %}
-                  <td style="text-align:center">{{row.name|safe}}</a></td>
+                  <td style="text-align:left">{{row.name|safe}}</a></td>
                 {% endif %}
-                <td style="text-align:center">{{row.indication|safe}}</td>
-                <td style="text-align:center"> <a href='/protein/{{row.target|safe}} '> {{row.target|safe}} </a></td>
-                <td style="text-align:center">{{row.targetlevel|safe}}</td>
-                <td style="text-align:center">{{row.class|safe}}</td>
-                <td style="text-align:center">{{row.family|safe}}</td>
-                <td style="text-align:center">{{row.status|safe}}</td>
-                <td style="text-align:center">{{row.phase|safe}}</td>
-                <td style="text-align:center">{{row.clinicalstatus|safe}}</td>
-                <td style="text-align:center">{{row.approval|safe}}</td>
-                <td style="text-align:center">{{row.drugtype|safe}}</td>
-                <td style="text-align:center">{{row.moa|safe}}</td>
-                <td style="text-align:center">
+                <td style="text-align:left">{{row.indication|safe}}</td>
+                <td style="text-align:left"> <a href='/protein/{{row.target|safe}} '> {{row.target|safe}} </a></td>
+                <td style="text-align:left">{{row.targetlevel|safe}}</td>
+                <td style="text-align:left">{{row.class|safe}}</td>
+                <td style="text-align:left">{{row.family|safe}}</td>
+                <td style="text-align:left">{{row.status|safe}}</td>
+                <td style="text-align:left">{{row.phase|safe}}</td>
+                <td style="text-align:left">{{row.clinicalstatus|safe}}</td>
+                <td style="text-align:left">{{row.approval|safe}}</td>
+                <td style="text-align:left">{{row.drugtype|safe}}</td>
+                <td style="text-align:left">{{row.moa|safe}}</td>
+                <td style="text-align:left">
                   {% for pmid in row.references %}
                     {% if pmid != "nan" %}
                       <a href='https://www.ncbi.nlm.nih.gov/pubmed/{{pmid}}' target="_blank">{{pmid}}</a>
@@ -78,9 +91,9 @@
                   {% endfor %}
                 </td>
                   {% if row.NHS == 'yes' %}
-                    <td style="text-align:center"><a href='/drugs/nhs/{{row.name|safe}} '> {{row.NHS|safe}}</a></td>
+                    <td style="text-align:left"><a href='/drugs/nhs/{{row.name|safe}} '> {{row.NHS|safe}}</a></td>
                   {% else %}
-                    <td style="text-align:center">{{row.NHS|safe}}</a></td>
+                    <td style="text-align:left">{{row.NHS|safe}}</a></td>
                   {% endif %}
                 {% endfor %}
                 </tbody>
@@ -96,67 +109,46 @@
 {% endblock %}
 {% block addon_js %}
 <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
-<script src="{% static 'home/js/dataTables.tableTools.min.js' %}"> </script>
-<script src="{% static 'home/js/jquery.dataTables.columnFilter.js' %}"> </script>
+<script src="{% static 'home/js/gpcrdb.js' %}"></script>
+<script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"></script>
+<script src="{% static 'home/js/select2.js' %}"></script>
 
 <script type="text/javascript" charset="utf-8">
-        $(document).ready(function() {
-            var table = $('#drugdata').DataTable({
-                "scrollX": true,
-                // 'scrollY': $(window).height()-300,
-                'bScrollCollapse': true,
-                'paging': true,
-                "lengthMenu": [[25, 50, 100, -1], [25, 50, 100, "All"]],
-                'orderCellsTop': true,
-                'autoWidth': true,
-                'buttons' : ['excel'],
-                'dom': 'T<"clear">lfrtip',
-                'order': [[6, "desc"]], // order by date
-                "aoColumns": [
-                        {"sClass": "center"},
-                        {"sClass": "center"},
-                        {"sClass": "center"},
-                        {"sClass": "center"},
-                        {"sClass": "center"},
-                        {"sClass": "center"},
-                        {"sClass": "center"},
-                        {"sClass": "center"},
-                        {"sClass": "center"},
-                        {"sClass": "center"},
-                        {"sClass": "center"},
-                        {"sClass": "center"},
-                        {"sClass": "center"},
-                        {"sClass": "center"}],
-                'tableTools': {
-                    "sRowSelect": "multi",
-                    "aButtons": []
-                },
-                initComplete: function () {
-                    $('#drugdata').dataTable().columnFilter({
-                        'sPlaceHolder': "head:after",
-                        'aoColumns': [
-                            { type: "text" },
-                            { type: "text" },
-                            { type: "text" },
-                            { type: "select" },
-                            { type: "select" }, // Family
-                            { type: "select" },
-                            { type: "select" },
-                            { type: "select" },
-                            { type: "select" },
-                            { type: "select" },
-                            { type: "select" },
-                            { type: "select" },
-                            { type: "select" },
-                            { type: "text" },
-                            { type: "text" },
-                        ]
-                    });
-                }
-
-            });
-        });
-    </script>
+  $(document).ready(
+    function() {
+      var table = $('#drugdata').DataTable(
+        {
+          autoWidth: true,
+          'order': [[0, "asc"]],
+          scrollY: "65vh",
+          scrollX: true,
+          scrollCollapse: true,
+          scroller: true,
+          paging: false,
+          bSortCellsTop: false,
+        }
+      );
+      yadcf.init(
+        table, [
+          {column_number: 0 , filter_default_label: "Name" ,filter_type: 'text',   filter_reset_button_text: false},
+          {column_number: 1 , filter_default_label: "Indication" ,filter_type: 'text',   filter_reset_button_text: false},
+          {column_number: 2 , filter_default_label: "Target" ,filter_type: 'text',   filter_reset_button_text: false},
+          {column_number: 3 , filter_default_label: "Target level" ,filter_type: 'multi_select', select_type: 'select2', filter_reset_button_text: false},
+          {column_number: 4 , filter_default_label: "Class" ,filter_type: 'multi_select', select_type: 'select2', filter_reset_button_text: false},
+          {column_number: 5 , filter_default_label: "Family" ,filter_type: 'multi_select', select_type: 'select2', filter_reset_button_text: false},
+          {column_number: 6 , filter_default_label: "Status" ,filter_type: 'multi_select', select_type: 'select2', filter_reset_button_text: false},
+          {column_number: 7 , filter_default_label: "Phase" ,filter_type: 'multi_select', select_type: 'select2', filter_reset_button_text: false},
+          {column_number: 8 , filter_default_label: "Clinical Status" ,filter_type: 'multi_select', select_type: 'select2', filter_reset_button_text: false},
+          {column_number: 9 , filter_default_label: "Year of Approval" ,filter_type: 'multi_select', select_type: 'select2', filter_reset_button_text: false},
+          {column_number: 10, filter_default_label: "Drug Type" ,filter_type: 'multi_select', select_type: 'select2', filter_reset_button_text: false},
+          {column_number: 11, filter_default_label: "Mechanism of Action" ,filter_type: 'multi_select', select_type: 'select2', filter_reset_button_text: false},
+          {column_number: 12, filter_default_label: "References" ,filter_type: 'multi_select', select_type: 'select2', filter_reset_button_text: false},
+          {column_number: 13, filter_default_label: "NHS" ,filter_type: 'text',   filter_reset_button_text: false},
+        ]
+      );
+    }
+  );
+</script>
     <script>
       var tableToExcel = (function () {
         var encabezado = '<html><head><meta http-equiv="content-type" content="text/plain; charset=UTF-8"/><style> table, td {border:thin solid black} table {border-collapse:collapse}</style></head><body><table>';
