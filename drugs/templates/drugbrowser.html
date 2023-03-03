@@ -9,11 +9,13 @@
   input.yadcf-filter  {
     height: 30px;
     border-radius: 3px;
-    border: 1px solid #ccc;
+    border: 1px solid #c4c4c4;
     padding: 2px;
     font-family: sans-serif;
-    font-size: 100%;
+    font-size: 20;
     font-weight: bold;
+    width: 80px;
+
   }
   tr.no-border-bottom th {
     text-align: center;
@@ -21,10 +23,17 @@
     border-bottom: none !important;
   }
 
+	table.dataTable thead th,
+	table.dataTable tbody td {
+    max-width: 20px;
+		word-break: break-all;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
 </style>
 
 {% endblock %}
-
 {% block content %}
 <h2>Drug Browser</h2>
 <button onclick="tableToExcel()" type="button" class="btn btn-primary" style="margin-top:10px;margin-top:3px"> Export to Excel </button>
@@ -43,29 +52,29 @@
                   <!-- yadcf filter rows -->
                   <tr>
                     <!-- Drug section -->
-                    <th style="text-align:left; border-left: none;"> </th>
-                    <th style="text-align:left; border-left: none;">  </th>
+                    <th style="text-align:center; border-left: none;"></th>
+                    <th style="text-align:center; border-left: none;"></th>
                     <!-- Receptor section -->
-                    <th style="text-align:left; border-left: 1px solid black;">  </th>
-                    <th style="text-align:left; border-left: none"> </th>
-                    <th style="text-align:left; border-left: none"> </th>
-                    <th style="text-align:left; border-left: none"> </th>
-                    <th style="text-align:left; border-left: none"> </th>
+                    <th style="text-align:left; border-left: 1px solid black;"></th>
+                    <th style="text-align:left; border-left: none"></th>
+                    <th style="text-align:left; border-left: none"></th>
+                    <th style="text-align:left; border-left: none"></th>
+                    <th style="text-align:left; border-left: none"></th>
                     <!-- Clinical information section -->
                     <th style="text-align:left; border-left: 1px solid black;">  </th>
-                    <th style="text-align:left; border-left: none"> </th>
-                    <th style="text-align:left; border-left: none"> </th>
-                    <th style="text-align:left; border-left: none"> </th>
-                    <th style="text-align:left; border-left: none"> </th>
-                    <th style="text-align:left; border-left: none"> </th>
-                    <th style="text-align:left; border-left: none"> </th>
+                    <th style="text-align:left; border-left: none"></th>
+                    <th style="text-align:left; border-left: none"></th>
+                    <th style="text-align:left; border-left: none"></th>
+                    <th style="text-align:left; border-left: none"></th>
+                    <th style="text-align:left; border-left: none"></th>
+                    <th style="text-align:left; border-left: none"></th>
                   </tr>
                 </thead>
                 <tbody>
                 {% for row in drugdata %}
                 <tr>
                 {% if row.NHS == 'yes' %}
-                  <td style="text-align:left"><a href='/drugs/nhs/{{row.name|safe}} ' target="_blank"> {{row.name|safe}}</a></td>
+                  <td style="text-align:left;"><a href='/drugs/nhs/{{row.name|safe}} ' target="_blank"> {{row.name|safe}}</a></td>
                 {% else %}
                   <td style="text-align:left">{{row.name|safe}}</a></td>
                 {% endif %}
@@ -112,6 +121,8 @@
 <script src="{% static 'home/js/gpcrdb.js' %}"></script>
 <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"></script>
 <script src="{% static 'home/js/select2.js' %}"></script>
+<script src="{% static 'home/js/datatables.min.js' %}"> </script>
+<script src="{% static 'home/js/bootstrap2-toggle.min.js' %}"></script>
 
 <script type="text/javascript" charset="utf-8">
   $(document).ready(
@@ -131,20 +142,92 @@
       // YADCF filter 
       yadcf.init(
         table, [
-          {column_number: 0 , filter_default_label: "Name" ,filter_type: 'text',   filter_reset_button_text: false},
-          {column_number: 1 , filter_default_label: "Indication" ,filter_type: 'text',   filter_reset_button_text: false},
-          {column_number: 2 , filter_default_label: "Target" ,filter_type: 'text',   filter_reset_button_text: false},
-          {column_number: 3 , filter_default_label: "Target level" ,filter_type: 'multi_select', select_type: 'select2', filter_reset_button_text: false},
-          {column_number: 4 , filter_default_label: "Class" ,filter_type: 'multi_select', select_type: 'select2', filter_reset_button_text: false},
-          {column_number: 5 , filter_default_label: "Family" ,filter_type: 'multi_select', select_type: 'select2', filter_reset_button_text: false},
-          {column_number: 6 , filter_default_label: "Status" ,filter_type: 'multi_select', select_type: 'select2', filter_reset_button_text: false},
-          {column_number: 7 , filter_default_label: "Phase" ,filter_type: 'multi_select', select_type: 'select2', filter_reset_button_text: false},
-          {column_number: 8 , filter_default_label: "Clinical Status" ,filter_type: 'multi_select', select_type: 'select2', filter_reset_button_text: false},
-          {column_number: 9 , filter_default_label: "Year of Approval" ,filter_type: 'multi_select', select_type: 'select2', filter_reset_button_text: false},
-          {column_number: 10, filter_default_label: "Drug Type" ,filter_type: 'multi_select', select_type: 'select2', filter_reset_button_text: false},
-          {column_number: 11, filter_default_label: "Mechanism of Action" ,filter_type: 'multi_select', select_type: 'select2', filter_reset_button_text: false},
-          {column_number: 12, filter_default_label: "References" ,filter_type: 'multi_select', select_type: 'select2', filter_reset_button_text: false},
-          {column_number: 13, filter_default_label: "NHS" ,filter_type: 'text',   filter_reset_button_text: false},
+          {
+            column_number: 0,
+            filter_default_label: "Name", 
+            filter_type: 'text',   
+            filter_reset_button_text: false
+          },
+          {
+            column_number: 1, 
+            filter_default_label: "Indication",
+            filter_type: 'text',   
+            filter_reset_button_text: false
+          },
+          {
+            column_number: 2, 
+            filter_default_label: "Target",
+            filter_type: 'text',   
+            filter_reset_button_text: false
+          },
+          {
+            column_number: 3, 
+            filter_default_label: "Target level",
+            filter_type: 'multi_select', 
+            select_type: 'select2', 
+            filter_reset_button_text: false
+          },
+          {
+            column_number: 4 , 
+            filter_default_label: "Class" ,
+            filter_type: 'multi_select', 
+            select_type: 'select2', 
+            filter_reset_button_text: false},
+          {
+            column_number: 5 , 
+            filter_default_label: "Family" ,
+            filter_type: 'multi_select', 
+            select_type: 'select2', 
+            filter_reset_button_text: false},
+          {
+            column_number: 6 , 
+            filter_default_label: "Status",
+            filter_type: 'multi_select', 
+            select_type: 'select2', 
+            filter_reset_button_text: false},
+          {
+            column_number: 7 , 
+            filter_default_label: "Phase",
+            filter_type: 'multi_select', 
+            select_type: 'select2', 
+            filter_reset_button_text: false},
+          {
+            column_number: 8 , 
+            filter_default_label: "Clinical Status",
+            filter_type: 'multi_select', 
+            select_type: 'select2', 
+            filter_reset_button_text: false},
+          {
+            column_number: 9 , 
+            filter_default_label: "Year of Approval" ,
+            filter_type: 'multi_select', 
+            select_type: 'select2', 
+            filter_reset_button_text: false},
+          {
+            column_number: 10, 
+            filter_default_label: "Drug Type" ,
+            filter_type: 'multi_select', 
+            select_type: 'select2', 
+            filter_reset_button_text: false},
+          {
+            column_number: 11, 
+            filter_default_label: "Mechanism of Action" ,
+            filter_type: 'multi_select', 
+            select_type: 'select2', 
+            filter_reset_button_text: false},
+          {
+            column_number: 12, 
+            filter_default_label: "References" ,
+            filter_type: 'multi_select', 
+            select_type: 'select2', 
+            filter_reset_button_text: false},
+          {
+            column_number: 13, 
+            filter_default_label: "NHS",
+            filter_type: 'multi_select', 
+            select_type: 'select2', 
+            filter_reset_button_text: false, 
+            data: ['no', 'yes']},
         ]
       );
     }
