@@ -122,6 +122,7 @@
 <script src="{% static 'home/js/select2.js' %}"></script>
 <script src="{% static 'home/js/datatables.min.js' %}"> </script>
 <script src="{% static 'home/js/bootstrap2-toggle.min.js' %}"></script>
+<script src="{% static 'home/js/gpcrdb.js' %}"></script>
 
 <script type="text/javascript" charset="utf-8">
   $(document).ready(
@@ -138,96 +139,14 @@
           bSortCellsTop: false,
         }
       ); 
+      let filter_names = 'Name, Indication, Target, Target level, Class, Family, Status, Phase, Clinical Status, Year of Approval, Drug Type, Mechanism of Action, References, NHS'.split(', ');
+      let column_filters = [];
+      column_filters = column_filters.concat(createYADCFfiltersNameArray(0, 3, "text", select_type="select2", filter_default_label_=filter_names));
+      column_filters = column_filters.concat(createYADCFfiltersNameArray(3, 11,"multi_select", select_type="select2", filter_default_label_=filter_names));
       // YADCF filter 
       yadcf.init(
-        table, [
-          {
-            column_number: 0,
-            filter_default_label: "Name", 
-            filter_type: 'text',   
-            filter_reset_button_text: false
-          },
-          {
-            column_number: 1, 
-            filter_default_label: "Indication",
-            filter_type: 'text',   
-            filter_reset_button_text: false
-          },
-          {
-            column_number: 2, 
-            filter_default_label: "Target",
-            filter_type: 'text',   
-            filter_reset_button_text: false
-          },
-          {
-            column_number: 3, 
-            filter_default_label: "Target level",
-            filter_type: 'multi_select', 
-            select_type: 'select2', 
-            filter_reset_button_text: false
-          },
-          {
-            column_number: 4 , 
-            filter_default_label: "Class" ,
-            filter_type: 'multi_select', 
-            select_type: 'select2', 
-            filter_reset_button_text: false},
-          {
-            column_number: 5 , 
-            filter_default_label: "Family" ,
-            filter_type: 'multi_select', 
-            select_type: 'select2', 
-            filter_reset_button_text: false},
-          {
-            column_number: 6 , 
-            filter_default_label: "Status",
-            filter_type: 'multi_select', 
-            select_type: 'select2', 
-            filter_reset_button_text: false},
-          {
-            column_number: 7 , 
-            filter_default_label: "Phase",
-            filter_type: 'multi_select', 
-            select_type: 'select2', 
-            filter_reset_button_text: false},
-          {
-            column_number: 8 , 
-            filter_default_label: "Clinical Status",
-            filter_type: 'multi_select', 
-            select_type: 'select2', 
-            filter_reset_button_text: false},
-          {
-            column_number: 9 , 
-            filter_default_label: "Year of Approval" ,
-            filter_type: 'multi_select', 
-            select_type: 'select2', 
-            filter_reset_button_text: false},
-          {
-            column_number: 10, 
-            filter_default_label: "Drug Type" ,
-            filter_type: 'multi_select', 
-            select_type: 'select2', 
-            filter_reset_button_text: false},
-          {
-            column_number: 11, 
-            filter_default_label: "Mechanism of Action" ,
-            filter_type: 'multi_select', 
-            select_type: 'select2', 
-            filter_reset_button_text: false},
-          {
-            column_number: 12, 
-            filter_default_label: "References" ,
-            filter_type: 'multi_select', 
-            select_type: 'select2', 
-            filter_reset_button_text: false},
-          {
-            column_number: 13, 
-            filter_default_label: "NHS",
-            filter_type: 'multi_select', 
-            select_type: 'select2', 
-            filter_reset_button_text: false, 
-            data: ['no', 'yes']},
-        ]
+        table, column_filters
+  
       );
     }
   );
