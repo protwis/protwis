@@ -113,7 +113,7 @@ function createYADCFfilters(start_column, num_cols, filter_type, select_type = n
  * @returns {array} An array of YADCF filters.
  */
 function createYADCFfiltersNameArray(start_column, num_cols, filter_type, select_type, filter_default_label, filter_reset_button_text, filter_match_mode, column_data_type, width, html5_da) {
-  let filters = createYADCFfilters(start_column, num_cols, filter_type, select_type, filter_default_label, filter_reset_button_text, filter_match_mode, column_data_type, width, html5_da); // Call the "OneFunc" function with "this" set to the "SecondFunc" function
+  let filters = createYADCFfilters(start_column, num_cols, filter_type, select_type, filter_default_label, filter_reset_button_text, filter_match_mode, column_data_type, width, html5_da); // Call the "createYADCFfilters" function to the ""createYADCFfiltersNAmeArray" function
       labels = filter_default_label
       for (let i = 0; i < num_cols; i++){
           filters[i].filter_default_label = labels[start_column + i]
