@@ -14,8 +14,8 @@
     font-family: sans-serif;
     font-weight: bold;
     width: 100%;
-
   }
+
   tr.no-border-bottom th {
     text-align: center;
     border-left: 1px solid black;
@@ -58,15 +58,15 @@
                     <th style="text-align:left; border-left: none"></th>
                     <th style="text-align:left; border-left: none"></th>
                     <th style="text-align:left; border-left: none"></th>
-                    <th style="text-align:left; border-left: none"></th>
+                    <th style="text-align:left; border-left: none;"></th>
                     <!-- Clinical information section -->
-                    <th style="text-align:left; border-left: 1px solid black;">  </th>
+                    <th style="text-align:left; border-left: 1px solid black; width: 55px;"></th>
+                    <th style="text-align:left; border-left: none; width:92px">          </th>
+                    <th style="text-align:left; border-left: none; width: 105px;"></th>
                     <th style="text-align:left; border-left: none"></th>
+                    <th style="text-align:left; border-left: none; width: 128px;"></th>
                     <th style="text-align:left; border-left: none"></th>
-                    <th style="text-align:left; border-left: none"></th>
-                    <th style="text-align:left; border-left: none"></th>
-                    <th style="text-align:left; border-left: none"></th>
-                    <th style="text-align:left; border-left: none"></th>
+                    <th style="text-align:left; border-left: none; width: 40px;"></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -143,6 +143,7 @@
       let column_filters = [];
       column_filters = column_filters.concat(createYADCFfiltersNameArray(0, 3, "text", select_type="select2", filter_default_label_=filter_names));
       column_filters = column_filters.concat(createYADCFfiltersNameArray(3, 11,"multi_select", select_type="select2", filter_default_label_=filter_names));
+      column_filters[13]["data"] = ["yes", "no"]
       // YADCF filter 
       yadcf.init(
         table, column_filters
