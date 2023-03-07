@@ -28,10 +28,16 @@ class Command(BaseBuild):
             dest='proc',
             default=1,
             help='Number of processes to run')
+        parser.add_argument('-s', '--structure',
+            dest='structure',
+            help='Structure to build complex interactions for (PDB ID)',
+            nargs='+')
 
     def handle(self, *args, **options):
         try:
             self.logger.info('CREATING COMPLEX INTERACTIONS')
+            if options['structure']:
+                self.pdbs = [i.upper() for i in options['structure']]
             self.prepare_input(options['proc'], self.pdbs)
         except Exception as msg:
             print(msg)
