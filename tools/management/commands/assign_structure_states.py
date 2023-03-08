@@ -42,6 +42,10 @@ class Command(BaseCommand):
 
             structure_ids = [x[0] for x in structure_ids]
 
+            ### Skipping class C as author based state annotation is used here instead
+            if slug[0].startswith('004'):
+                continue
+
             if len(structure_ids) > 0:
 
                 # Get all PDB-codes for G-protein coupled structures in this class
@@ -85,6 +89,10 @@ class Command(BaseCommand):
 
                 if "6FJ3" in inactive_ids:
                     inactive_ids.remove("6FJ3")
+                if "7XBX" in active_ids:
+                    active_ids.remove("7XBX")
+                if "7XBW" in active_ids:
+                    active_ids.remove("7XBW")
 
                 #print(slug[0], len(inactive_ids),len(active_ids))
                 if len(active_ids) > 0 and len(inactive_ids) > 0:
@@ -143,7 +151,13 @@ class Command(BaseCommand):
                         "4IAQ" : "inactive", #
                         "5V54" : "inactive", #
                         "6IQL" : "inactive", #
-                        "7C61" : "inactive"
+                        "7C61" : "inactive", #
+                        "7XBX" : "active", # CX3R1 binds to G protein differently with no outwards movement of TM6
+                        "7XBW" : "active", # CX3R1 binds to G protein differently with no outwards movement of TM6
+                        "6Z66" : "intermediate",
+                        "6Z4V" : "intermediate",
+                        "6Z8N" : "intermediate",
+                        "6ZA8" : "intermediate"
                     }
 
                     # Percentage score for TM2-TM6 opening
@@ -176,7 +190,7 @@ class Command(BaseCommand):
                         # Classification
                         score = scoring_results[pdb]
                         structure_state = "inactive"
-                        if score < 75 and slug[0] == "001": # above this score always inactive structure
+                        if score < 55 and slug[0] == "001": # above this score always inactive structure
                             structure_state = "active"
                             if slug[0] == "001" and score > -15:
                                 structure_state = "intermediate"
