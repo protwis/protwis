@@ -1,4 +1,5 @@
 from django.db import models
+from common.models import Publication
 
 class Drugs(models.Model):
     target = models.ManyToManyField('protein.Protein')
@@ -16,9 +17,13 @@ class Drugs(models.Model):
     externallink = models.CharField(max_length=150, null=True) # Link Framework
     novelty = models.CharField(max_length=15) #Boolean
     references = models.CharField(max_length=180) #Boolean
+    publication = models.ManyToManyField(Publication)
+
 
     def __str__(self):
         return self.name
 
     class Meta():
         db_table = 'drugs'
+
+

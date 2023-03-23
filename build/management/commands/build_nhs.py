@@ -18,7 +18,7 @@ class Command(BaseCommand):
     help = 'Build NHS data'
 
     # source file directory
-    drug_data_path = os.sep.join([settings.DATA_DIR, 'drug_data'])
+    drug_data_path =  os.sep.join([settings.DATA_DIR, 'drug_data'])
 
     logger = logging.getLogger(__name__)
 
@@ -47,9 +47,10 @@ class Command(BaseCommand):
             self.logger.warning('Existing data cannot be deleted')
 
     def create_NHS(self, filenames=False):
+        print('Creating NHS')
         self.logger.info('CREATING NHS PRESCRIBINGS')
 
-        # read source files
+        #read source files
         if not filenames:
             filenames = [fn for fn in os.listdir(self.drug_data_path) if fn.endswith('nhs.csv')]
 
@@ -57,18 +58,18 @@ class Command(BaseCommand):
             filepath = os.sep.join([self.drug_data_path, filename])
             nhs_data = pd.read_csv(filepath, low_memory=False)
 
-            for index, entry in enumerate(nhs_data.iterrows()):
+            for _, entry in nhs_data.iterrows():
 
-                date = nhs_data[index:index+1]['date'].values[0]
-                quantity = nhs_data[index:index+1]['quantity'].values[0]
-                items = nhs_data[index:index+1]['items'].values[0]
-                actual_cost = nhs_data[index:index+1]['actual_cost'].values[0]
-                drugCode = nhs_data[index:index+1]['drugCode'].values[0]
-                op_name = nhs_data[index:index+1]['drugName'].values[0]
-                bnf_section_raw = nhs_data[index:index+1]['section'].values[0]
+                date = entry['date']
+                quantity = entry['quantity']
+                items = entry['items']
+                actual_cost = entry['actual_cost']
+                drugCode = entry['drugCode']
+                op_name = entry['drugName']
+                bnf_section_raw = entry['section']
                 bnf_section_name = bnf_section_raw.split(': ')[1]
                 bnf_section_id = bnf_section_raw.split(': ')[0]
-                drugNameQuery = nhs_data[index:index+1]['drugNameQuery'].values[0]
+                drugNameQuery = entry['drugNameQuery']
 
                 try:
                     drugname = Drugs.objects.filter(name=drugNameQuery)[0]
