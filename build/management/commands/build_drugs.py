@@ -1,5 +1,6 @@
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
+from django.db import IntegrityError, DatabaseError
 
 from common.models import WebResource, WebLink, Publication
 from protein.models import Protein
@@ -96,7 +97,7 @@ class Command(BaseCommand):
                     pub.update_from_pubmed_data(index=publication_doi)
                 try:
                     pub.save()
-                except:
+                except DatabaseError:
                     # if something off with publication, skip.
                     print("Publication fetching error | module: fetch_publication. Row # is : " +
                           str(publication_doi) + ' ' + pub_type)
@@ -107,7 +108,6 @@ class Command(BaseCommand):
 
         return pub
     
-
     def create_drug_data(self, filenames=False):
         print('CREATING DRUGDATA')
 
@@ -146,17 +146,17 @@ class Command(BaseCommand):
 
                 # fetch protein
 
-                drug, created = Drugs.objects.get_or_create(name=drugname, 
-                                                                synonym=drugalias, 
-                                                                drugtype=drugtype, 
-                                                                indication=indication, 
-                                                                novelty=novelty, 
-                                                                approval=approval, 
-                                                                phase=phase, 
-                                                                phasedate=PhaseDate, 
-                                                                clinicalstatus=ClinicalStatus, 
-                                                                moa=moa, 
-                                                                status=status, 
+                drug, _ = Drugs.objects.get_or_create(name=drugname,
+                                                                synonym=drugalias,
+                                                                drugtype=drugtype,
+                                                                indication=indication,
+                                                                novelty=novelty,
+                                                                approval=approval,
+                                                                phase=phase,
+                                                                phasedate=PhaseDate,
+                                                                clinicalstatus=ClinicalStatus,
+                                                                moa=moa,
+                                                                status=status,
                                                                 targetlevel=targetlevel,
                                                             )
                 try:
