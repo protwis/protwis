@@ -654,7 +654,10 @@ def StructureDetails(request, pdbname):
 
     crystal = Structure.objects.get(pdb_code__index=pdbname)
     ligands = StructureLigandInteraction.objects.filter(structure=crystal, annotated=True)
-    p = Protein.objects.get(protein=crystal.protein_conformation.protein)
+    if pdbname.startswith('AFM'):
+        p = Protein.objects.get(id=crystal.protein_conformation.protein.id)
+    else:
+        p = Protein.objects.get(protein=crystal.protein_conformation.protein)
     residues = ResidueFragmentInteraction.objects.filter(structure_ligand_pair__structure__pdb_code__index=pdbname, structure_ligand_pair__annotated=True).order_by('rotamer__residue__sequence_number')
 
     # positioning data

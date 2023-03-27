@@ -34,7 +34,7 @@ starttime = datetime.now()
 # def look_for_value(d,k):
 #     ### look for a value in dict if found, give back, otherwise None
 
-def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=False, model=False):
+def fetch_pdb_info(pdbname, protein ,new_xtal=False, ignore_gasper_annotation=False, model=False):
     print(model)
     # ignore_gaspar_annotation skips PDB_RANGE edits that mark missing residues as deleted, which messes up constructs.
     if not protein:
@@ -68,8 +68,15 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
     #d = {}
     d = OrderedDict()
     d['construct_crystal'] = {}
-    d['construct_crystal']['pdb'] = pdbname
-    d['construct_crystal']['pdb_name'] = 'auto_'+pdbname
+    if model:
+        d['construct_crystal']['pdb'] = pdbname.split('/')[-1]
+        d['construct_crystal']['pdb_name'] = 'auto_'+pdbname.split('/')[-1]
+        d['pdb'] = pdbname.split('/')[-1]
+    else:
+        d['construct_crystal']['pdb'] = pdbname
+        d['construct_crystal']['pdb_name'] = 'auto_'+pdbname
+        d['pdb'] = pdbname
+
     try:
         d['construct_crystal']['uniprot'] = protein.parent.entry_name
         d['protein'] = protein.parent.name
@@ -89,7 +96,6 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
     d['contact_info']['date'] = time.strftime('%m/%d/%Y')
     d['contact_info']['address'] = ''
 
-    d['pdb'] = pdbname
     d['links'] = []
     d['xml_not_observed'] = []
     d['xml_segments'] = []

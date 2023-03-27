@@ -24,26 +24,39 @@ import os
 # Distance between residues in peptide
 NUM_SKIP_RESIDUES = 0
 
-def compute_interactions(pdb_name, do_interactions=False, do_complexes=False, do_peptide_ligand=False, save_to_db = False, file_input = False):
+def compute_interactions(pdb_name, protein=None, lig=None, do_interactions=False, do_complexes=False, do_peptide_ligand=False, save_to_db=False, file_input=False):
 
     classified = []
     classified_complex = []
     with open(os.sep.join([settings.DATA_DIR, 'residue_data', 'unnatural_amino_acids.yaml']), 'r') as f_yaml:
         unnatural_amino_acids = yaml.safe_load(f_yaml)
         unnatural_amino_acids = {str(x):unnatural_amino_acids[x] for x in unnatural_amino_acids}
-    struc = Structure.objects.get(protein_conformation__protein__entry_name=pdb_name)
+
     if file_input:
-        #read pdb file
-        pdb_io = StringIO(pdb_name)
         # Get the preferred chain
         preferred_chain = 'A' #I guess?
         # Get the Biopython structure for the PDB
-        s = PDBParser(PERMISSIVE=True, QUIET=True).get_structure('ref', pdb_io)[0]
+        parser = PDBParser()
+        s = parser.get_structure("ComplexModel", pdb_name)[0]
         #s = pdb_get_structure(pdb_name)[0]
         chain = s[preferred_chain]
-        # remove residues without GN and only those matching receptor.
-        residues = struc.protein_conformation.residue_set.exclude(generic_number=None).all().prefetch_related('generic_number')
+        # fetching residues for wild type structure of protein
+        residues = protein.protein_conformation.residue_set.exclude(generic_number=None).all().prefetch_related('generic_number')
+        # residues = ProteinConformation.objects.get(protein__entry_name=protein.protein.entry_name).residue_set.exclude(generic_number=None).all().prefetch_related('generic_number')
+        # CREATING THE DUMMY RESIDUES FOR ALL THE RESIDUES OF CHAIN A (aka protein)
+        # for res in chain:
+        #     try:
+        #         one_letter = Polypeptide.three_to_one(res.get_resname())
+        #     except KeyError:
+        #         if res.get_resname() in unnatural_amino_acids:
+        #             one_letter = unnatural_amino_acids[res.get_resname()]
+        #         else:
+        #             print('WARNING: {} residue in structure {} is missing from unnatural amino acid definitions (data/protwis/gpcr/residue_data/unnatural_amino_acids.yaml)'.format(res, struc))
+        #             continue
+        #     res_obj = DummyResidue(res.get_id()[1], one_letter, res.get_resname())
+        #     dbres[res_obj.sequence_number] = res_obj
     else:
+        struc = Structure.objects.get(protein_conformation__protein__entry_name=pdb_name)
     # Ensure that the PDB name is lowercase
         pdb_name = pdb_name.lower()
         # Get the pdb structure
@@ -56,6 +69,7 @@ def compute_interactions(pdb_name, do_interactions=False, do_complexes=False, do
         chain = s[preferred_chain]
         # remove residues without GN and only those matching receptor.
         residues = struc.protein_conformation.residue_set.exclude(generic_number=None).all().prefetch_related('generic_number')
+
     dbres = {}
     dblabel = {}
     for r in residues:
@@ -67,10 +81,8 @@ def compute_interactions(pdb_name, do_interactions=False, do_complexes=False, do
             ids_to_remove.append(res.id)
     for i in ids_to_remove:
         chain.detach_child(i)
-
     if do_interactions:
         atom_list = Selection.unfold_entities(s[preferred_chain], 'A')
-
         # Search for all neighbouring residues
         ns = NeighborSearch(atom_list)
         all_neighbors = ns.search_all(6.6, "R")
@@ -174,10 +186,14 @@ def compute_interactions(pdb_name, do_interactions=False, do_complexes=False, do
     # - support deviating atom names in unnatural AAs for detecting HB-donors and acceptors
     # - support for terminal carboxyl (OXT) + amidation etc for ionic+hbond interactions
     if do_peptide_ligand:
-        ligands = LigandPeptideStructure.objects.filter(structure=struc)
+        if file_input:
+            #Fetching from the correct model
+            ligands = LigandPeptideStructure.objects.filter(structure=protein, ligand=lig)
+        else:
+            ligands = LigandPeptideStructure.objects.filter(structure=struc)
         if len(ligands)>0:
             # Get all GPCR residue atoms based on preferred chain
-            gpcr_atom_list = [ atom for residue in Selection.unfold_entities(s[preferred_chain], 'R') if is_aa(residue) and residue.get_id()[1] in dbres \
+            gpcr_atom_list = [atom for residue in Selection.unfold_entities(s[preferred_chain], 'R') if is_aa(residue) and residue.get_id()[1] in dbres \
                             for atom in residue.get_atoms()]
             ns_gpcr = NeighborSearch(gpcr_atom_list)
 
@@ -214,11 +230,9 @@ def compute_interactions(pdb_name, do_interactions=False, do_complexes=False, do
                                 for match_res in ns_pep.search(gpcr_atom.coord, 4.5, "R")}
 
                 # Find interactions
-                interactions = [InteractingPair(res_pair[0], res_pair[1], dbres[res_pair[0].id[1]], dbres_pep[res_pair[1].id[1]], struc) for res_pair in all_neighbors if res_pair[0].id[1] in dbres and res_pair[1].id[1] in dbres_pep ]
-
+                interactions = [InteractingPair(res_pair[0], res_pair[1], dbres[res_pair[0].id[1]], dbres_pep[res_pair[1].id[1]], protein) for res_pair in all_neighbors if res_pair[0].id[1] in dbres and res_pair[1].id[1] in dbres_pep ]
                 # Filter unclassified interactions
                 classified_ligand_complex[ligand] = [interaction for interaction in interactions if len(interaction.get_interactions()) > 0]
-
     if save_to_db:
 
         if do_interactions:
@@ -275,8 +289,8 @@ def compute_interactions(pdb_name, do_interactions=False, do_complexes=False, do
         if do_peptide_ligand and len(ligands)>0:
             for ligand in ligands:
                 for pair in classified_ligand_complex[ligand]:
+                    # SAME HERE, SOME CHANGES WERE NEEDED
                     pair.save_peptide_interactions(ligand)
-
     return classified
 
 # def compute_interactions(pdb_name,save_to_db = False):

@@ -74,8 +74,8 @@ hydrophob_radius = 4.5
 pdb_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'pdbs'])
 
 #RETURN THE DICTIONARY RESULTS
-def runcalculation_2022(pdbname, peptide=""):
-    output = calculate_interactions(pdbname, None, peptide)
+def runcalculation_2022(pdbname, peptide="", file_input=False):
+    output = calculate_interactions(pdbname, None, peptide, file_input)
     return output
 
 #RETURN THE DICTIONARY RESULTS
@@ -83,7 +83,7 @@ def runusercalculation_2022(filename, session):
     output = calculate_interactions(filename, session, None)
     return output
 
-def calculate_interactions(pdb, session=None, peptide=None):
+def calculate_interactions(pdb, session=None, peptide=None, file_input=False):
     # REMEMBER TO GET THE RETURNS FROM ALL THE BELOW FUNCTIONS
     hetlist = {}
     ligand_atoms = {}
@@ -101,13 +101,20 @@ def calculate_interactions(pdb, session=None, peptide=None):
     if not os.path.exists(tempdir):
         os.makedirs(tempdir)
         # os.chmod(tempdir, 0o777)
-    if not session:
-        check_pdb(projectdir, pdb)
-        checkdirs(projectdir, pdb)
+    if not file_input:
         pdb_location = projectdir + 'pdbs/' + pdb + '.pdb'
-        hetlist_display = find_interacting_ligand(pdb_location, pdb)
+    else:
+        complex_name = pdb.split('/')[-2]
+        model_name = pdb.split('/')[-1]
+        pdb_location = projectdir + 'pdbs/' + complex_name + '/' + model_name + '.pdb'
+    if not session:
+        check_pdb(projectdir, pdb, file_input)
+        checkdirs(projectdir, pdb, file_input)
+        hetlist_display = find_interacting_ligand(pdb_location, pdb, file_input)
         # Defining a shared parser
         parser = PDBParser(QUIET=True)
+        if file_input:
+            pdb = model_name
         scroller = parser.get_structure(pdb, pdb_location)
         create_ligands_and_poseview(hetlist_display, scroller, projectdir, pdb, peptide) #ignore_het (should be global), inchikeys, smiles (should not be used)
         hetlist, ligand_charged, ligand_donors, ligand_atoms, ligand_acceptors, ligandcenter, ligand_rings = build_ligand_info(
@@ -115,20 +122,21 @@ def calculate_interactions(pdb, session=None, peptide=None):
                                                                                                                 projectdir, pdb, peptide, hetlist,
                                                                                                                 ligand_atoms, ligand_charged, ligand_donors,
                                                                                                                 ligand_acceptors, ligandcenter, ligand_rings)
+
         summary_results, new_results, results = find_interactions(
                                                     scroller, projectdir, pdb, peptide,
                                                     hetlist, ligandcenter, radius, summary_results,
-                                                    new_results, results, hydrophob_radius, ligand_rings, ligand_charged)
+                                                    new_results, results, hydrophob_radius, ligand_rings, ligand_charged, pdb_location)
         summary_results, new_results, sortedresults = analyze_interactions(
                                                         projectdir, pdb, results, ligand_donors,
                                                         ligand_acceptors, ligand_charged, new_results,
-                                                        summary_results, hetlist_display, sortedresults)
-        pretty_results(projectdir, pdb, summary_results)
+                                                        summary_results, hetlist_display, sortedresults, pdb_location)
+        pretty_results(projectdir, pdb, summary_results, pdb_location)
+
     else:
         projectdir = projectdir + session + "/"
-        checkdirs(projectdir, pdb)
-        pdb_location = projectdir + 'pdbs/' + pdb + '.pdb'
-        hetlist_display = find_interacting_ligand(pdb_location, pdb)
+        checkdirs(projectdir, pdb, file_input)
+        hetlist_display = find_interacting_ligand(pdb_location, pdb, file_input)
         # Defining a shared parser
         parser = PDBParser(QUIET=True)
         scroller = parser.get_structure(pdb, pdb_location)
@@ -142,74 +150,109 @@ def calculate_interactions(pdb, session=None, peptide=None):
                                                     scroller, projectdir, pdb,
                                                     peptide, hetlist, ligandcenter,
                                                     radius, summary_results, new_results,
-                                                    results, hydrophob_radius, ligand_rings, ligand_charged)
+                                                    results, hydrophob_radius, ligand_rings, ligand_charged, pdb_location)
         summary_results, new_results, sortedresults = analyze_interactions(
                                                         projectdir, pdb, results, ligand_donors,
                                                         ligand_acceptors, ligand_charged, new_results,
-                                                        summary_results, hetlist_display, sortedresults)
-        pretty_results(projectdir, pdb, summary_results)
+                                                        summary_results, hetlist_display, sortedresults, pdb_location)
+        pretty_results(projectdir, pdb, summary_results, pdb_location)
     return new_results
 
 
-def check_pdb(projectdir, pdb):  #CAN WE HAVE THE PDB AS A VAR AND NOT A FILE?
+def check_pdb(projectdir, pdb, file_input):  #CAN WE HAVE THE PDB AS A VAR AND NOT A FILE?
     # check if PDB is there, otherwise fetch
+
     if not os.path.exists(projectdir + 'pdbs/'):
         os.makedirs(projectdir + 'pdbs/')
+    if not file_input:
+        if not os.path.isfile(projectdir + 'pdbs/' + pdb + '.pdb'):
+            url = 'https://www.rcsb.org/pdb/files/%s.pdb' % pdb
+            # pdbfile = urllib.request.urlopen(url).read()
+            pdbfile = requests.get(url)
+            if ("404 Not Found" in pdbfile.text or pdb in ['7F1T', '7XBX']) and pdb+'.pdb' in os.listdir(pdb_dir):
+                with open(os.sep.join([pdb_dir, pdb+'.pdb']), 'r') as f:
+                    pdbfile = f.read()
+            else:
+                pdbfile = pdbfile.text
 
-    if not os.path.isfile(projectdir + 'pdbs/' + pdb + '.pdb'):
-        url = 'https://www.rcsb.org/pdb/files/%s.pdb' % pdb
-        # pdbfile = urllib.request.urlopen(url).read()
-        pdbfile = requests.get(url)
-        if ("404 Not Found" in pdbfile.text or pdb in ['7F1T', '7XBX']) and pdb+'.pdb' in os.listdir(pdb_dir):
-            with open(os.sep.join([pdb_dir, pdb+'.pdb']), 'r') as f:
-                pdbfile = f.read()
-        else:
-            pdbfile = pdbfile.text
-            
-        # output_pdb = pdbfile.decode('utf-8').split('\n')
-        temp_path = projectdir + 'pdbs/' + pdb + '.pdb'
-        with open(temp_path, "w") as f:
-            f.write(pdbfile)
-    else:
-        with open(projectdir + 'pdbs/' + pdb + '.pdb', 'r') as f:
-            pdbfile = f.read()
-        if ("404 Not Found" in pdbfile or pdb in ['7F1T', '7XBX']) and pdb+'.pdb' in os.listdir(pdb_dir):
-            with open(os.sep.join([pdb_dir, pdb+'.pdb']), 'r') as f:
-                pdbfile = f.read()
+            # output_pdb = pdbfile.decode('utf-8').split('\n')
             temp_path = projectdir + 'pdbs/' + pdb + '.pdb'
             with open(temp_path, "w") as f:
                 f.write(pdbfile)
+        else:
+            with open(projectdir + 'pdbs/' + pdb + '.pdb', 'r') as f:
+                pdbfile = f.read()
+            if ("404 Not Found" in pdbfile or pdb in ['7F1T', '7XBX']) and pdb+'.pdb' in os.listdir(pdb_dir):
+                with open(os.sep.join([pdb_dir, pdb+'.pdb']), 'r') as f:
+                    pdbfile = f.read()
+                temp_path = projectdir + 'pdbs/' + pdb + '.pdb'
+                with open(temp_path, "w") as f:
+                    f.write(pdbfile)
+    else:
+        complex_name = pdb.split('/')[-2]
+        model_name = pdb.split('/')[-1]
+        with open(pdb +'.pdb', 'r') as f:
+            pdbfile = f.read()
+        # output_pdb = pdbfile.decode('utf-8').split('\n')
+        temp_path = projectdir + 'pdbs/' + complex_name + '/' + model_name + '.pdb'
+        if not os.path.exists(projectdir + 'pdbs/' + complex_name +'/'):
+            os.makedirs(projectdir + 'pdbs/' + complex_name + '/')
+        with open(temp_path, "w") as f:
+            f.write(pdbfile)
     # return output_pdb
 
-def checkdirs(projectdir, pdb): # DO WE NEED TO HAVE THIS DATA STORE IN TMP FILES?
+def checkdirs(projectdir, pdb, file_input): # DO WE NEED TO HAVE THIS DATA STORE IN TMP FILES?
     # check that dirs are there and have right permissions
-    directory = projectdir + 'results/' + pdb
-    if os.path.exists(directory):
-        shutil.rmtree(directory)
-    directory = projectdir + 'results/' + pdb + '/interaction'
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-        # os.chmod(directory, 0o777)
-    directory = projectdir + 'results/' + pdb + '/ligand' #not really necessary
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-        # os.chmod(directory, 0o777)
-    directory = projectdir + 'results/' + pdb + '/output'
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-        # os.chmod(directory, 0o777)
-    directory = projectdir + 'results/' + pdb + '/fragments' #not really necessary
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-        # os.chmod(directory, 0o777)
-    directory = projectdir + 'temp/'
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-        # os.chmod(directory, 0o777)
+    if not file_input:
+        directory = projectdir + 'results/' + pdb
+        if os.path.exists(directory):
+            shutil.rmtree(directory)
+        directory = projectdir + 'results/' + pdb + '/interaction'
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        directory = projectdir + 'results/' + pdb + '/ligand' #not really necessary
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        directory = projectdir + 'results/' + pdb + '/output'
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        directory = projectdir + 'results/' + pdb + '/fragments' #not really necessary
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        directory = projectdir + 'temp/'
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+    else:
+        model_name = pdb.split('/')[-1].split('.pdb')[0]
+        directory = projectdir + 'results/' + model_name
+        if os.path.exists(directory):
+            shutil.rmtree(directory)
+        directory = projectdir + 'results/' + model_name + '/interaction'
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        directory = projectdir + 'results/' + model_name + '/ligand' #not really necessary
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        directory = projectdir + 'results/' + model_name + '/output'
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        directory = projectdir + 'results/' + model_name + '/fragments' #not really necessary
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        directory = projectdir + 'temp/'
+        if not os.path.exists(directory):
+            os.makedirs(directory)
 
-def find_interacting_ligand(pdb_location, pdb):
+
+def find_interacting_ligand(pdb_location, pdb, file_input):
     #Compare these names to the ones in the database
-    db_ligs = list(StructureLigandInteraction.objects.filter(structure_id__pdb_code_id__index=pdb.upper()).values_list('pdb_reference', flat=True))
+    if not file_input:
+        db_ligs = list(StructureLigandInteraction.objects.filter(structure_id__pdb_code_id__index=pdb.upper()).values_list('pdb_reference', flat=True))
+    else:
+        receptor = pdb.split('/')[6].split('_')[0]
+        lig_id = pdb.split('/')[7]
+        code = '_'.join(['AFM', receptor, lig_id]).upper()
+        db_ligs = list(StructureLigandInteraction.objects.filter(structure_id__pdb_code_id__index=code).values_list('pdb_reference', flat=True))
     f_in = open(pdb_location, 'r')
     d = {}
     for lig in db_ligs:
@@ -462,7 +505,7 @@ def build_ligand_info(scroller, lig_het, projectdir, pdb, peptide, hetlist, liga
     return hetlist, ligand_charged, ligand_donors, ligand_atoms, ligand_acceptors, ligandcenter, ligand_rings
 
 # LOOP OVER RECEPTOR AND FIND INTERACTIONS
-def find_interactions(scroller, projectdir, pdb, peptide, hetlist, ligandcenter, radius, summary_results, new_results, results, hydrophob_radius, ligand_rings, ligand_charged):
+def find_interactions(scroller, projectdir, pdb, peptide, hetlist, ligandcenter, radius, summary_results, new_results, results, hydrophob_radius, ligand_rings, ligand_charged, pdb_location):
     count_atom = 0
     count_skips = 0
     count_calcs = 0
@@ -488,7 +531,6 @@ def find_interactions(scroller, projectdir, pdb, peptide, hetlist, ligandcenter,
                     if (ca - ligandcenter[heteroatom][0]).norm() > ligandcenter[heteroatom][1]:
                         count_skips += 1
                         continue
-
                     for hetflag, atomlist in hetlist.items():
                         sum_data = 0
                         hydrophobic_count = 0
@@ -535,13 +577,12 @@ def find_interactions(scroller, projectdir, pdb, peptide, hetlist, ligandcenter,
                         #         new_results[hetflag]['interactions'].append([amino_acid[0],fragment_file,'waals','accessible','waals',''])
                         if accesible: #if accessible!)
                             summary_results[hetflag]['accessible'].append([aaname])
-                            fragment_file = fragment_library(projectdir, pdb, hetflag, None, '', aa_seqid, chainid, 'access')
+                            fragment_file = fragment_library(projectdir, pdb, hetflag, None, '', aa_seqid, chainid, 'access', pdb_location)
                             new_results[hetflag]['interactions'].append([aaname,fragment_file,'acc','accessible','hidden',''])
                         if hydrophobic_count > 2 and AA[aaname[0:3]] in HYDROPHOBIC_AA:  # min 3 c-c interactions
                             summary_results[hetflag]['hydrophobic'].append([aaname, hydrophobic_count])
-                            fragment_file = fragment_library(projectdir, pdb, hetflag, None, '', aa_seqid, chainid, 'hydrop')
+                            fragment_file = fragment_library(projectdir, pdb, hetflag, None, '', aa_seqid, chainid, 'hydrop', pdb_location)
                             new_results[hetflag]['interactions'].append([aaname,fragment_file,'hyd','hydrophobic','hydrophobic',''])
-
                         if sum_data > 1 and aa_resname in AROMATIC:
                             aarings = get_ring_from_aa(scroller, projectdir, aa_seqid, residue)
                             #aarings.append([atomlist, center, normal, vectorlist])
@@ -573,7 +614,7 @@ def find_interactions(scroller, projectdir, pdb, peptide, hetlist, ligandcenter,
                                     distance = (center - ring[1]).norm()
                                     if distance < 5 and (angle_degrees[2]<20 or abs(angle_degrees[2]-180)<20):  # poseview uses <5
                                         summary_results[hetflag]['aromatic'].append([aaname, count, round(distance, 2), angle_degrees])
-                                        fragment_file = fragment_library_aromatic(projectdir, pdb, hetflag, ring[3], aa_seqid, chainid, count)
+                                        fragment_file = fragment_library_aromatic(projectdir, pdb, hetflag, ring[3], aa_seqid, chainid, count, pdb_location)
                                         if check_other_aromatic(aaname, hetflag, {'Distance':round(distance, 2),'Angles':angle_degrees}, new_results):
                                             new_results[hetflag]['interactions'].append([aaname,fragment_file,
                                                                                          'aro_ff','aromatic (face-to-face)','aromatic','none',
@@ -583,7 +624,7 @@ def find_interactions(scroller, projectdir, pdb, peptide, hetlist, ligandcenter,
                                     # need to be careful for edge-edge
                                     elif (shortest_center_aa_ring_to_het_atom < 4.5) and abs(angle_degrees[0]-90)<30 and abs(angle_degrees[2]-90)<30:
                                         summary_results[hetflag]['aromaticfe'].append([aaname, count, round(distance, 2), angle_degrees])
-                                        fragment_file = fragment_library_aromatic(projectdir, pdb, hetflag, ring[3], aa_seqid, chainid, count)
+                                        fragment_file = fragment_library_aromatic(projectdir, pdb, hetflag, ring[3], aa_seqid, chainid, count, pdb_location)
                                         if check_other_aromatic(aaname, hetflag, {'Distance':round(distance, 2),'Angles':angle_degrees}, new_results):
                                             new_results[hetflag]['interactions'].append([aaname,fragment_file,
                                                                                          'aro_fe_protein','aromatic (face-to-edge)','aromatic','protein',
@@ -593,7 +634,7 @@ def find_interactions(scroller, projectdir, pdb, peptide, hetlist, ligandcenter,
                                     # need to be careful for edge-edge
                                     elif (shortest_center_het_ring_to_res_atom < 4.5) and abs(angle_degrees[1]-90)<30 and abs(angle_degrees[2]-90)<30:
                                         summary_results[hetflag]['aromaticef'].append([aaname, count, round(distance, 2), angle_degrees])
-                                        fragment_file = fragment_library_aromatic(projectdir, pdb, hetflag, ring[3], aa_seqid, chainid, count)
+                                        fragment_file = fragment_library_aromatic(projectdir, pdb, hetflag, ring[3], aa_seqid, chainid, count, pdb_location)
                                         if check_other_aromatic(aaname, hetflag, {'Distance':round(distance, 2),'Angles':angle_degrees}, new_results):
                                             new_results[hetflag]['interactions'].append([aaname,fragment_file,
                                                                                          'aro_ef_protein','aromatic (edge-to-face)','aromatic','protein',
@@ -601,9 +642,9 @@ def find_interactions(scroller, projectdir, pdb, peptide, hetlist, ligandcenter,
                                                                                          'LigAtom to center': round(shortest_center_aa_ring_to_het_atom,2),'Angles':angle_degrees}])
                                             remove_hyd(aaname, hetflag, new_results)
                                 for charged in ligand_charged[hetflag]:
-                                    distance = (center - charged[1]).norm()
+                                    distance = (center - charged[0]).norm()
                                     # needs max 4.2 distance to make aromatic+
-                                    if distance < 4.2 and charged[2] > 0:
+                                    if distance < 4.2 and charged[1] > 0:
                                         summary_results[hetflag]['aromaticion'].append([aaname, count, round(distance, 2), charged])
                                         #FIXME fragment file
                                         new_results[hetflag]['interactions'].append([aaname,'','aro_ion_protein','aromatic (pi-cation)','aromatic','protein',{'Distance':round(distance, 2)}])
@@ -697,7 +738,7 @@ def check_other_aromatic(aa, ligand, info, new_results):
     new_results[ligand]['interactions'] = templist
     return check
 
-def get_hydrogen_from_aa(projectdir, pdb, residueid):
+def get_hydrogen_from_aa(projectdir, pdb, residueid, pdb_location):
 
     class AAselect(Select):
 
@@ -708,7 +749,7 @@ def get_hydrogen_from_aa(projectdir, pdb, residueid):
             else:
                 return 0
     ptemp = PDBParser(QUIET=True)
-    stemp = ptemp.get_structure(pdb, projectdir + 'pdbs/' + pdb + '.pdb')
+    stemp = ptemp.get_structure(pdb, pdb_location)
 
     io = PDBIO()
     io.set_structure(stemp)
@@ -748,7 +789,7 @@ def get_hydrogen_from_aa(projectdir, pdb, residueid):
         donors.append([chargevector, temphatoms, acceptor])
     return donors
 
-def fragment_library(projectdir, pdb, ligand, atomvector, atomname, residuenr, chain, typeinteraction):
+def fragment_library(projectdir, pdb, ligand, atomvector, atomname, residuenr, chain, typeinteraction, pdbfile):
     #if debug:
         #print "Make fragment pdb file for ligand:", ligand, "atom vector", atomvector, "atomname", atomname, "residuenr from protein", residuenr, typeinteraction, 'chain', chain
     residuename = 'unknown'
@@ -756,7 +797,6 @@ def fragment_library(projectdir, pdb, ligand, atomvector, atomname, residuenr, c
     mol2 = MolFromPDBFile(ligand_pdb, removeHs=True)
     listofvectors = []
     chain = chain.strip()
-    pdbfile = projectdir + 'pdbs/' + pdb + '.pdb'
     f_in = open(pdbfile, 'r')
     tempstr = ''
     for line in f_in:
@@ -801,11 +841,10 @@ def fragment_library(projectdir, pdb, ligand, atomvector, atomname, residuenr, c
 
     return filename
 
-def fragment_library_aromatic(projectdir, pdb, ligand, atomvectors, residuenr, chain, ringnr):
+def fragment_library_aromatic(projectdir, pdb, ligand, atomvectors, residuenr, chain, ringnr, pdbfile):
     chain = chain.strip()
-    pdbfile = projectdir + 'pdbs/' + pdb + '.pdb'
+    # pdbfile = projectdir + 'pdbs/' + pdb + '.pdb'
     residuename = ''
-
     f_in = open(pdbfile, 'r')
     tempstr = ''
     for line in f_in:
@@ -841,7 +880,7 @@ def fragment_library_aromatic(projectdir, pdb, ligand, atomvectors, residuenr, c
     f.close()
     return filename
 
-def analyze_interactions(projectdir, pdb, results, ligand_donors, ligand_acceptors, ligand_charged, new_results, summary_results, hetlist_display, sortedresults):
+def analyze_interactions(projectdir, pdb, results, ligand_donors, ligand_acceptors, ligand_charged, new_results, summary_results, hetlist_display, sortedresults, pdb_location):
     for ligand, result in results.items():
         ligscore = 0
         fragment_file = ''
@@ -856,7 +895,7 @@ def analyze_interactions(projectdir, pdb, results, ligand_donors, ligand_accepto
                 if (entry[2] <= 3.5):
                     if entry[0][0] == 'C' or entry[1][0] == 'C':
                         continue  # If either atom is C then no hydrogen bonding
-                    aa_donors = get_hydrogen_from_aa(projectdir, pdb, entry[5])
+                    aa_donors = get_hydrogen_from_aa(projectdir, pdb, entry[5], pdb_location)
                     hydrogenmatch = False
                     res_is_acceptor = False
                     res_is_donor = False
@@ -943,20 +982,20 @@ def analyze_interactions(projectdir, pdb, results, ligand_donors, ligand_accepto
                         elif AA[residue[0:3]] in NEGATIVE:
                             res_charge_value = -1
                     if entry[1] == 'N': #backbone connection!
-                        fragment_file = fragment_library(projectdir, pdb, ligand, entry[3], entry[0], entry[5], entry[6], 'HB_backbone')
+                        fragment_file = fragment_library(projectdir, pdb, ligand, entry[3], entry[0], entry[5], entry[6], 'HB_backbone', pdb_location)
                         new_results[ligand]['interactions'].append([residue,fragment_file,
                                                                     'polar_backbone','polar (hydrogen bond with backbone)',
                                                                     'polar','protein',entry[0],entry[1],entry[2]])
                         remove_hyd(residue, ligand, new_results)
                     elif entry[1] == 'O': #backbone connection!
-                        fragment_file = fragment_library(projectdir, pdb, ligand, entry[3], entry[0], entry[5], entry[6], 'HB_backbone')
+                        fragment_file = fragment_library(projectdir, pdb, ligand, entry[3], entry[0], entry[5], entry[6], 'HB_backbone', pdb_location)
                         new_results[ligand]['interactions'].append([residue,fragment_file,
                                                                     'polar_backbone','polar (hydrogen bond with backbone)',
                                                                     'polar','protein',entry[0],entry[1],entry[2]])
                         remove_hyd(residue, ligand, new_results)
                     elif hydrogenmatch:
                         found = False
-                        fragment_file = fragment_library(projectdir, pdb, ligand, entry[3], entry[0], entry[5], entry[6], 'HB')
+                        fragment_file = fragment_library(projectdir, pdb, ligand, entry[3], entry[0], entry[5], entry[6], 'HB', pdb_location)
                         for x in summary_results[ligand]['hbond_confirmed']:
                             if residue == x[0]:
                                 # print "Already key there",residue
@@ -981,7 +1020,7 @@ def analyze_interactions(projectdir, pdb, results, ligand_donors, ligand_accepto
                     elif chargedcheck:
                         interaction_type = 'hbondplus'
                         hbondplus.append(entry)
-                        fragment_file = fragment_library(projectdir, pdb, ligand, entry[3], entry[0], entry[5], entry[6], 'HBC')
+                        fragment_file = fragment_library(projectdir, pdb, ligand, entry[3], entry[0], entry[5], entry[6], 'HBC', pdb_location)
                         remove_hyd(residue, ligand, new_results)
                         if doublechargecheck:
                             if (res_charge_value>0):
@@ -1016,7 +1055,7 @@ def analyze_interactions(projectdir, pdb, results, ligand_donors, ligand_accepto
                     else:
                         interaction_type = 'hbond'
                         hbond.append(entry)
-                        fragment_file = fragment_library(projectdir, pdb, ligand, entry[3], entry[0], entry[5], entry[6], 'HB')
+                        fragment_file = fragment_library(projectdir, pdb, ligand, entry[3], entry[0], entry[5], entry[6], 'HB', pdb_location)
                         new_results[ligand]['interactions'].append([residue, fragment_file,
                                                                     'polar_unspecified','polar (hydrogen bond)',
                                                                     'polar','',entry[0],entry[1],entry[2]])
@@ -1056,9 +1095,9 @@ def analyze_interactions(projectdir, pdb, results, ligand_donors, ligand_accepto
 
     return summary_results, new_results, sortedresults
 
-def addresiduestoligand(projectdir, ligand, pdb, residuelist):
-    temp_path = projectdir + 'pdbs/' + pdb + '.pdb'
-    f_in = open(temp_path, 'r')
+def addresiduestoligand(projectdir, ligand, pdb, residuelist, pdbfile):
+    # temp_path = projectdir + 'pdbs/' + pdb + '.pdb'
+    f_in = open(pdbfile, 'r')
     inserstr = ''
     for line in f_in:
         if line.startswith('ATOM'):
@@ -1092,7 +1131,7 @@ def addresiduestoligand(projectdir, ligand, pdb, residuelist):
     f.write(tempstr)
     f.close()
 
-def pretty_results(projectdir, pdb, summary_results):
+def pretty_results(projectdir, pdb, summary_results, pdbfile):
     for ligand, result in summary_results.items():
         bindingresidues = []
         for interaction_type, typelist in result.items():
@@ -1104,7 +1143,7 @@ def pretty_results(projectdir, pdb, summary_results):
                 if interaction_type not in ['score', 'prettyname']:
                     bindingresidues.append(entry[0])
         bindingresidues = list(set(bindingresidues))
-        addresiduestoligand(projectdir, ligand, pdb, bindingresidues)
+        addresiduestoligand(projectdir, ligand, pdb, bindingresidues, pdbfile)
 
 ####### END IMPLEMENTATION OF LEGACY FUNCTIONS ####
 
@@ -1195,7 +1234,10 @@ def StructureDetails(request, pdbname):
             main_ligand.append(structure['structure_ligand_pair__pdb_reference'])
 
     crystal = Structure.objects.get(pdb_code__index=pdbname)
-    p = Protein.objects.get(protein=crystal.protein_conformation.protein)
+    if pdbname.startswith('AFM'):
+        p = Protein.objects.get(id=crystal.protein_conformation.protein.id)
+    else:
+        p = Protein.objects.get(protein=crystal.protein_conformation.protein)
 
     residuelist = Residue.objects.filter(protein_conformation__protein=p).prefetch_related('protein_segment','display_generic_number','generic_number')
     lookup = {}
@@ -1427,8 +1469,11 @@ def check_residue(protein, pos, aa):
     residue = Residue.objects.filter(
         protein_conformation=protein, sequence_number=pos)
     if residue.exists():
-        residue = Residue.objects.get(
-            protein_conformation=protein, sequence_number=pos)
+        if len(residue) > 1:
+            residue = residue[0]
+        else:
+            residue = Residue.objects.get(
+                protein_conformation=protein, sequence_number=pos)
         if residue.amino_acid != aa:
             residue.amino_acid = aa
             residue.save()
