@@ -20,7 +20,7 @@ canvas {
 }
 
 
-#viewport_full, #viewport {
+#viewport_full, #viewport, #viewport_1, #viewport_2, #viewport_3  {
     /*border: 1px solid #888888;*/
     position: relative;
     margin: 0 auto;
@@ -193,11 +193,19 @@ canvas {
 <!--                  <div style="height: 380px; width: 400px; position: relative;" class='viewer_3Dmoljs'  data-backgroundcolor='0xffffff' data-href='download?ligand={{ ligand }}&pdb={{ pdbname }}' data-type='pdb' data-backgroundcolor='0xffffff' data-labelres1='fontSize:10;opacity:1;color:white;backgroundOpacity:0.8' data-select1='{"hetflag":false}' data-style1='stick' data-select2='{"hetflag":true}' data-style2='{"stick":{"colorscheme":"greenCarbon"}}'></div>
  -->
                  <a href="download?ligand={{ ligand }}&pdb={{ pdbname }}">Download PDB file</a>
+                 {% if multiple_ligands %}
+                 <div id="viewport_{{ forloop.counter }}" style="width:100%; height:300px;"></div>
+                 <div style="width:100%; background-color:#eaeaea; border-radius: 0px 0px 5px 5px; text-align: left;">
+                    <p style="padding: 2px 0px 2px 5px; font-size: 10px;"><a href="https://github.com/arose/ngl">NGL</a><font color='black'> is a WebGL based 3D viewer powered by </font><a href="https://mmtf.rcsb.org">MMTF</a>.</p>
+                 </div>
+                 <div> <button id="fullscreen_{{ forloop.counter }}"">Full Screen</button></div>
+                 {% else %}
                  <div id="viewport" style="width:100%; height:300px;"></div>
                  <div style="width:100%; background-color:#eaeaea; border-radius: 0px 0px 5px 5px; text-align: left;">
                     <p style="padding: 2px 0px 2px 5px; font-size: 10px;"><a href="https://github.com/arose/ngl">NGL</a><font color='black'> is a WebGL based 3D viewer powered by </font><a href="https://mmtf.rcsb.org">MMTF</a>.</p>
                  </div>
-                 <div> <button id=fullscreen>Full Screen</button></div>
+                 <div> <button id="fullscreen">Full Screen</button></div>
+                 {% endif %}
             </div>
 {% comment %}
               {# PoseView has been pending for years #}
@@ -387,7 +395,6 @@ canvas {
         }
 
         document.addEventListener( "DOMContentLoaded", function(){
-
             stage_full = new NGL.Stage( "viewport_full", { backgroundColor: "white" } );
             stage_full.loadFile( "pdb?pdb={{ pdbname }}", { ext: "pdb" }  ).then( function( o ){
 
@@ -397,19 +404,35 @@ canvas {
                 o.addRepresentation( "rope", {
                     color: "residueindex", visible: false
                 } );
-
-                {% if main_ligand != 'none' %}
-                  o.addRepresentation("ball+stick", { sele: "[{{ main_ligand}}]", scale: 1, aspectRatio: 1 } );
-                  o.addRepresentation("surface", { sele: "[{{ main_ligand}}]", opacity: 0.4, useWorker: false } );
-                  o.addRepresentation( "licorice", { sele: "({{display_res}}) and sidechainAttached" , scale: 2, aspectRatio: 1});
-                  o.addRepresentation( "label", {
-                      sele: "({{display_res}}) and .CB",
-                      color: "#113", scale: 2.0
-                  } );
-                  o.addRepresentation( "label", {
-                      sele: "[{{ main_ligand}}] and .C1",
-                      color: "#888", scale: 3.0, labelType: "resname"
-                  } );
+                {% if multiple_ligands %}
+                  var pdb_ligs = {{main_ligand|safe}};
+                  for (i=0; i<pdb_ligs.length; i++){
+                    o.addRepresentation("ball+stick", { sele: pdb_ligs[i], scale: 1, aspectRatio: 1 } );
+                    o.addRepresentation("surface", { sele: pdb_ligs[i], opacity: 0.4, useWorker: false } );
+                    o.addRepresentation( "licorice", { sele: "({{display_res}}) and sidechainAttached" , scale: 2, aspectRatio: 1});
+                    o.addRepresentation( "label", {
+                        sele: "({{display_res}}) and .CB",
+                        color: "#113", scale: 2.0
+                    } );
+                    o.addRepresentation( "label", {
+                        sele: "[pdb_ligs[i]] and .C1",
+                        color: "#888", scale: 3.0, labelType: "resname"
+                    } );
+                  }
+                {% else %}
+                  {% if main_ligand != 'none' %}
+                    o.addRepresentation("ball+stick", { sele: "[{{ main_ligand}}]", scale: 1, aspectRatio: 1 } );
+                    o.addRepresentation("surface", { sele: "[{{ main_ligand}}]", opacity: 0.4, useWorker: false } );
+                    o.addRepresentation( "licorice", { sele: "({{display_res}}) and sidechainAttached" , scale: 2, aspectRatio: 1});
+                    o.addRepresentation( "label", {
+                        sele: "({{display_res}}) and .CB",
+                        color: "#113", scale: 2.0
+                    } );
+                    o.addRepresentation( "label", {
+                        sele: "[{{ main_ligand}}] and .C1",
+                        color: "#888", scale: 3.0, labelType: "resname"
+                    } );
+                  {% endif %}
                 {% endif %}
 
                 o.centerView();
@@ -428,44 +451,82 @@ canvas {
                 stage_full.toggleFullscreen();
             } );
             // stage_full.setSpin( [ 0, 1, 0 ], 0.005 );
-            {% if main_ligand != 'none' %}
-            stage = new NGL.Stage( "viewport", { backgroundColor: "white" } );
-            stage.loadFile( "download?ligand={{ main_ligand_full }}&pdb={{ pdbname }}", { ext: "pdb" }  ).then( function( o ){
+            // HERE WE NEED TO DIVERISFY
+            {% if multiple_ligands %}
+              var pdb_ligs = {{main_ligand|safe}};
+              var pdb_ligs_full = {{main_ligand_full|safe}};
+              for (i=0; i<pdb_ligs.length; i++){
+                  var k = i + 1;
+                  stage = new NGL.Stage( "viewport_"+k, { backgroundColor: "white" } );
+                  stage.loadFile( "download?ligand="+pdb_ligs_full[i]+"&pdb={{ pdbname }}", { ext: "pdb" }  ).then( function( o ){
+
+                      o.addRepresentation( "ball+stick", { sele: pdb_ligs[i], scale: 1, aspectRatio: 1 } );
+                      // o.addRepresentation( "surface", { sele: pdb_ligs[i], opacity: 0.4, useWorker: false } );
+                      o.addRepresentation( "licorice", { sele: "sidechainAttached and not "+pdb_ligs[i] , scale: 2, aspectRatio: 1});
+                      o.addRepresentation( "label", { sele: ".CB", color: "#113", scale: 2.0} );
+                      // o.addRepresentation( "label", {
+                      //    sele: pdb_ligs[i]+" and .C1",
+                      //    color: "#888", scale: 3.0, labelType: "resname"
+                      // } );
+
+                      o.centerView();
+                  } );
+
+                  // stage.setSpin( [ 0, 1, 0 ], 0.005 );
+
+                  $( "#fullscreen_"+k ).click(function() {
+                      stage.toggleFullscreen();
+                  });
+
+                  stage.signals.clicked.add( function( d ){
+                      $('#clicked_two').html(getPickingMessage( d, "Clicked" ));
+                  } );
+                  stage.signals.hovered.add( function( d ){
+                      $('#hovered_two').html(getPickingMessage( d, "Hovered" ));
+                  } );
+
+                  $('#viewport'+k).find("canvas").after("<div class='overlay'><span id='clicked_two'>&nbsp;</span> | <span id='hovered_two'>&nbsp;</span></div>");
+
+              }
+            {% else %}
+              {% if main_ligand != 'none' %}
+              stage = new NGL.Stage( "viewport", { backgroundColor: "white" } );
+              stage.loadFile( "download?ligand={{ main_ligand_full }}&pdb={{ pdbname }}", { ext: "pdb" }  ).then( function( o ){
 
 
-                o.addRepresentation("ball+stick", { sele: "{{ main_ligand}}", scale: 1, aspectRatio: 1 } );
-                o.addRepresentation("surface", { sele: "{{ main_ligand}}", opacity: 0.4,
-                                                useWorker: false } );
-                o.addRepresentation( "licorice", { sele: "sidechainAttached and not {{ main_ligand}}" , scale: 2, aspectRatio: 1});
-                o.addRepresentation( "label", {
-                    sele: ".CB",
-                    color: "#113", scale: 2.0
-                } );
-                o.addRepresentation( "label", {
-                    sele: "{{ main_ligand}} and .C1",
-                    color: "#888", scale: 3.0, labelType: "resname"
-                } );
+                  o.addRepresentation("ball+stick", { sele: "{{ main_ligand}}", scale: 1, aspectRatio: 1 } );
+                  o.addRepresentation("surface", { sele: "{{ main_ligand}}", opacity: 0.4,
+                                                  useWorker: false } );
+                  o.addRepresentation( "licorice", { sele: "sidechainAttached and not {{ main_ligand}}" , scale: 2, aspectRatio: 1});
+                  o.addRepresentation( "label", {
+                      sele: ".CB",
+                      color: "#113", scale: 2.0
+                  } );
+                  o.addRepresentation( "label", {
+                      sele: "{{ main_ligand}} and .C1",
+                      color: "#888", scale: 3.0, labelType: "resname"
+                  } );
 
-                o.centerView();
-            } );
+                  o.centerView();
+              } );
 
-            // stage.setSpin( [ 0, 1, 0 ], 0.005 );
+              // stage.setSpin( [ 0, 1, 0 ], 0.005 );
 
-            $( "#fullscreen" ).click(function() {
-                stage.toggleFullscreen();
-            });
+              $( "#fullscreen" ).click(function() {
+                  stage.toggleFullscreen();
+              });
 
-            stage.signals.clicked.add( function( d ){
-                $('#clicked_two').html(getPickingMessage( d, "Clicked" ));
-            } );
-            stage.signals.hovered.add( function( d ){
-                $('#hovered_two').html(getPickingMessage( d, "Hovered" ));
-            } );
+              stage.signals.clicked.add( function( d ){
+                  $('#clicked_two').html(getPickingMessage( d, "Clicked" ));
+              } );
+              stage.signals.hovered.add( function( d ){
+                  $('#hovered_two').html(getPickingMessage( d, "Hovered" ));
+              } );
 
-            $('#viewport').find("canvas").after("<div class='overlay'><span id='clicked_two'>&nbsp;</span> | <span id='hovered_two'>&nbsp;</span></div>");
+              $('#viewport').find("canvas").after("<div class='overlay'><span id='clicked_two'>&nbsp;</span> | <span id='hovered_two'>&nbsp;</span></div>");
 
-        {% endif %}
-
+              {% endif %}
+            {% endif %}
         });
     </script>
 {% endblock %}

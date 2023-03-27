@@ -7,7 +7,7 @@ from build.management.commands.base_build import Command as BaseBuild
 from build.management.commands.build_ligand_functions import *
 
 from mutation.models import *
-from common.tools import fetch_from_web_api
+from common.tools import fetch_from_web_api, test_model_updates
 from residue.models import Residue
 from protein.models import Protein
 from ligand.models import Ligand, LigandRole, LigandType
@@ -25,6 +25,7 @@ import xlrd
 import operator
 import traceback
 import time
+import django.apps
 
 class Command(BaseBuild):
     help = 'Reads source data and creates pdb structure records'
@@ -51,6 +52,10 @@ class Command(BaseBuild):
 
     # source file directory
     structure_data_dir = os.sep.join([settings.DATA_DIR, 'mutant_data'])
+    #Setting the variables for the test tracking of the model upadates
+    tracker = {}
+    all_models = django.apps.apps.get_models()[6:]
+    test_model_updates(all_models, tracker, initialize=True)
 
     publication_cache = {}
     ligand_cache = {}
@@ -72,6 +77,8 @@ class Command(BaseBuild):
         if options['purge']:
             try:
                 self.purge_mutants()
+                self.tracker = {}
+                test_model_updates(self.all_models, self.tracker, initialize=True)
             except Exception as msg:
                 print(msg)
                 self.logger.error(msg)
@@ -79,9 +86,13 @@ class Command(BaseBuild):
         # import the mutant data
         try:
             self.logger.info('CREATING MUTANT DATA')
+            print('Preparing data')
             self.prepare_all_data(options['filename'])
-            random.shuffle(self.data_all)
+            # random.shuffle(self.data_all)
+            print('Preparing input')
             self.prepare_input(options['proc'], self.data_all)
+            print('Performing check')
+            test_model_updates(self.all_models, self.tracker, check=True)
             self.logger.info('COMPLETED CREATING MUTANTS')
 
         except Exception as msg:
@@ -506,7 +517,8 @@ class Command(BaseBuild):
 
                     try:
                         r['protein'] = wrong_uniport_ids[r['protein']]
-                        real_uniprot = wrong_uniport_ids[r['protein']]
+                        # real_uniprot = wrong_uniport_ids[r['protein']]
+                        # protein=Protein.objects.get(entry_name=r['protein'])
                         protein=Protein.objects.get(entry_name=r['protein'])
                         # print('fetched with lookup table',r['protein'])
                     except:
@@ -605,24 +617,39 @@ class Command(BaseBuild):
                     mutation, created =  Mutation.objects.get_or_create(amino_acid=r['mutation_to'],protein=protein, residue=res)
                 except IntegrityError:
                     mutation = Mutation.objects.get(amino_acid=r['mutation_to'],protein=protein, residue=res)
-                logtypes = ['pEC50','pIC50','pK']
+                # logtypes = ['pEC50','pIC50','pK']
+
+# I swapped a few things around, since lower values are better when not talking about log values or percentages.
+# If it's a log value (pKi, pEC50, pIC50, pKx), FC = 10^-wt/10^-mut or FC=10^(mut-wt)
+# if it's a percentage, FC = mut/wt (higher percentage is usually better)
+# else, FC = wt/mut
 
                 foldchange = 0
                 typefold = ''
                 if r['exp_wt_value']!=0 and r['exp_mu_value_raw']!=0: #fix for new format
-                    if re.match("(" + ")|(".join(logtypes) + ")", r['exp_type']):  #-log values!
+                    if r['exp_type'].startswith(("Log", "log", "p")):
+                    # if re.match("(" + ")|(".join(logtypes) + ")", r['exp_type']):  #-log values!
                         try:
-                            foldchange = round(math.pow(10,-r['exp_mu_value_raw'])/pow(10,-r['exp_wt_value']),3);
+                            # Previous calculation
+                            # foldchange = round(math.pow(10,-r['exp_mu_value_raw'])/pow(10,-r['exp_wt_value']),3);
+                            # If it's a log value (pKi, pEC50, pIC50, pKx), FC = 10^-wt/10^-mut or FC=10^(mut-wt)
+                            tmp = r['exp_mu_value_raw'] - r['exp_wt_value']
+                            foldchange = round(math.pow(10, tmp),3)
                         except:
                             print(r)
                         typefold = r['exp_type']+"_log"
-                    elif "%"==r['exp_wt_unit']:
+                    elif r['exp_wt_unit'] == '%':
                         # if % then it's a difference case, then lower value is bad. Otherwise it's conc and lower is better
-                        foldchange = round(r['exp_wt_value']/r['exp_mu_value_raw'],3);
-                    else:
+                        # foldchange = round(r['exp_wt_value']/r['exp_mu_value_raw'],3);
+                        # if it's a percentage, FC = mut/wt (higher percentage is usually better)
                         foldchange = round(r['exp_mu_value_raw']/r['exp_wt_value'],3);
+                    else:
+                        # Previous calculation
+                        # foldchange = round(r['exp_mu_value_raw']/r['exp_wt_value'],3);
+                        # else, FC = wt/mut
+                        foldchange = round(r['exp_wt_value']/r['exp_mu_value_raw'],3);
                         typefold = r['exp_type']+"_not_log"
-                    if foldchange>0 and foldchange<1 and foldchange!=0:
+                    if foldchange < 1 and foldchange != 0:
                         foldchange = -round((1/foldchange),3)
                 elif r['fold_effect']!=0:
                         try:

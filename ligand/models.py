@@ -320,7 +320,7 @@ class LigandType(models.Model):
 
 class LigandPeptideStructure(models.Model):
     structure = models.ForeignKey(
-        'structure.Structure', on_delete=models.CASCADE)
+        'structure.Structure', on_delete=models.CASCADE, null=True)
     ligand = models.ForeignKey('ligand.Ligand', on_delete=models.CASCADE)
     chain = models.CharField(max_length=20)
 
@@ -340,21 +340,6 @@ class LigandRole(models.Model):
     class Meta():
         db_table = 'ligand_role'
 
-# class AssayExperiment(models.Model):
-#     ligand = models.ForeignKey('Ligand', on_delete=models.CASCADE)
-#     protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE)
-#     assay_type = models.CharField(max_length=10)
-#     assay_description = models.TextField(max_length=1000)
-#
-#     pchembl_value = models.CharField(max_length=10, null=True)
-#
-#     standard_value = models.CharField(max_length=15, null=True)
-#     standard_relation = models.CharField(max_length=10)
-#     standard_type = models.CharField(max_length=20)
-#     standard_units = models.CharField(max_length=20)
-#
-#     document_chembl_id = models.CharField(max_length=50, null=True)
-
 class AssayExperiment(models.Model):
     ligand = models.ForeignKey('Ligand', on_delete=models.CASCADE)
     protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE)
@@ -368,6 +353,11 @@ class AssayExperiment(models.Model):
     source = models.CharField(max_length=50, null=True)
     publication = models.ManyToManyField(Publication)
     document_chembl_id = models.CharField(max_length=100, null=True)
+    affinity = models.CharField(max_length=100, null=True)
+    potency = models.CharField(max_length=100, null=True)
+    count_affinity_test = models.CharField(max_length=10, null=True)
+    count_potency_test = models.CharField(max_length=10, null=True)
+    reference_ligand = models.CharField(max_length=300, null=True)
 
 
 class LigandVendors(models.Model):
@@ -447,7 +437,8 @@ class BiasedPathways(models.Model):
     publication = models.ForeignKey(Publication, on_delete=models.CASCADE)
     receptor = models.ForeignKey('protein.Protein', on_delete=models.CASCADE)
     chembl = models.CharField(max_length=40, null=True)
-    relevance = models.CharField(max_length=50, null=True)
+    effect_type = models.CharField(max_length=200, null=True)
+    relevance = models.CharField(max_length=200, null=True)
     signalling_protein = models.CharField(max_length=50, null=True)
 
 

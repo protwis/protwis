@@ -93,7 +93,7 @@ function citation_tool(url, cite_id) {
 			if (filter_for==="gpcrdb" && data[i][11]!=="GPCRdb") {
 				continue;
 			}
-			else if (filter_for==="gproteindb" && data[i][11]!=="GproteinDb" && data[i][7]=2022) {
+			else if (filter_for==="gproteindb" && data[i][11]!=="GproteinDb" && data[i][7]===2022) {
 				continue;
 			}
 			else if (filter_for==="arrestindb" && data[i][11]!=="ArrestinDb") {
@@ -115,8 +115,8 @@ function citation_tool(url, cite_id) {
 				data[i][6] = "Jimmy Caroli, Alibek Mamyrbekov, Kasper Harpsøe, Sahar Gardizi, Linda Dörries, Eshan Ghosh, Alexander S. Hauser, Albert J. Kooistra, and David E. Gloriam";
 				data[i][7] = 2022;
 				data[i][8] = "";
-				data[i][9] = "Manuscript";
-				data[i][10] = "";
+				data[i][9] = "Preprint";
+				data[i][10] = "https://doi.org/10.21203/rs.3.rs-2155951/v1";
 			}
 			var site = parse_url_long(data[i][0]);
 			tags.push(site);

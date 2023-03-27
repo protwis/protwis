@@ -7,21 +7,36 @@
 <div class="container body-content">
 	<div class="row align-items-start justify-content-center">
 		<div class="col-md-4 ml-auto">
-			<h3>{{ligand.ligand_name|title}}</h3>
+			<h3>{{ligand.ligand_name}}</h3>
 			{% if ligand.picture is not None %}
 				{{ligand.picture}}
 			{%else%}
 			<h3>Image not available</h3>
 			{%endif%}
-		</div>
-
-		<div class="col-md-4 ml-auto">
-			<h3>Chemical Properties</h3>
+			<br \>
 			<table class="table table-striped table-bordered" style="margin-right:10px">
 				<tr>
 					<td>SMILES</td>
 					<td class="name" style="max-width: 350px">{{ligand.ligand_smiles}}</td>
 				</tr>
+				<tr>
+					<td>InChIKey</td>
+					<td>
+						{{ligand.ligand_inchikey}}</td>
+				</tr>
+				{% if ligand.type == 'Peptide' %}
+				<tr>
+					<td>Sequence</td>
+					<td class="name" style="max-width: 350px">
+						{{ligand.sequence}}</td>
+				</tr>
+				{% endif %}
+			</table>
+		</div>
+
+		<div class="col-md-4 ml-auto">
+			<h3>Chemical properties</h3>
+			<table class="table table-striped table-bordered" style="margin-right:10px">
 				<tr>
 					<td>Hydrogen bond acceptors</td>
 					<td>{{ligand.hacc}}</td>
@@ -35,47 +50,42 @@
 					<td>{{ligand.rotatable}}</td>
 				</tr>
 				<tr>
-					<td>Molecular weight</td>
+					<td>Molecular weight (Da)</td>
 					<td>{{ligand.mw|floatformat:1}}</td>
 				</tr>
 			</table>
 			<br \>
-			<h3>Drug Properties</h3>
+			<h3>Drug properties</h3>
 			<table class="table table-striped table-bordered" style="margin-right:10px">
 				<tr>
-					<td>Type</td>
+					<td>Molecular type</td>
 					<td>
 						{{ligand.type}}</td>
 				</tr>
 				<tr>
-					<td>Endogenous</td>
+					<td>Endogenous/Surrogate</td>
 					<td>
 							{{ligand.labels.endogenous}}
 					</td>
 				<tr>
 				<tr>
-					<td>Approved</td>
+					<td>Approved drug</td>
 					<td>
 							{{ligand.labels.approved}}
 					</td>
-				<tr>
-					<td>InChIKey</td>
-					<td>
-						{{ligand.ligand_inchikey}}</td>
-				</tr>
 			</table>
 		</div>
 
 		<div class="col-md-4 ml-auto">
-			<h3>Database Connections</h3>
+			<h3>Database connections</h3>
 			<table class="table table-striped table-bordered">
 				<tr>
-					<td>External Links</td>
 					<td>
 						<ul style="padding: 0; list-style-type:none">
 							{% for ex in ligand.wl %}
 							<li><a href="{{ex.link}}" target="_blank">{{ex.name}}</a></li>
 							{%endfor%}
+							<li><a href="https://gpcrdb.org/ligand/{{ligand.ligand_id}}/info" target="_blank">GPCRdb</a></li>
 						</ul>
 					</td>
 				</tr>
@@ -100,58 +110,116 @@
 							</tr>
 								{%endif%}
 			</table>
-			<hr>
 		</div>
 	</div>
 	<hr>
-	<h3>Bioactivity</h3>
-	<table class="display" id='structures_scrollable_ligand' style="width: 100%">
-		<thead>
-			<tr rowspan="2">
-				<th style="text-align:center" colspan="5">
-					Receptor</th>
-				<th style=" text-align:center" colspan="4">
-					Experimental Data</th>
-				<th style=" text-align:center" colspan="1">
-					Source</th>
-			</tr>
-			<tr>
-				<th style="text-align:left">GTP</th>
-				<th style="text-align:left">Uniprot</th>
-				<th style="text-align:left">Species</th>
-				<th style="text-align:left">Family</th>
-				<th style="border-right: 1px solid black; text-align:left">Class</th>
+	<h3>Bioactivities</h3>
+	<ul class="nav nav-tabs">
+		<li class="nav-item active">
+			<a class="nav-link" data-toggle="tab" href="#affinity">Affinity</a>
+		</li>
+		<li class="nav-item">
+			<a class="nav-link" data-toggle="tab" href="#potency">Potency</a>
+		</li>
+	</ul>
+	<div class="tab-content">
+		<div class="tab-pane container active" id="affinity">
+			<table class="display" id='affinity_table' style="width: 100%">
+				<thead>
+					<tr rowspan="2">
+						<th style="text-align:center" colspan="5">
+							Receptor</th>
+						<th style=" text-align:center" colspan="4">
+							Activity</th>
+						<th style=" text-align:center" colspan="1">
+							Source</th>
+					</tr>
+					<tr>
+						<th style="text-align:left">GTP</th>
+						<th style="text-align:left">Uniprot</th>
+						<th style="text-align:left">Species</th>
+						<th style="text-align:left">Family</th>
+						<th style="border-right: 1px solid black; text-align:left">Class</th>
 
-				<th>Type</th>
-				<th>Min</th>
-				<th>Avg</th>
-				<th style="border-right: 1px solid black;">Max</th>
+						<th>Type</th>
+						<th>Min</th>
+						<th>Avg</th>
+						<th style="border-right: 1px solid black;">Max</th>
 
-				<th style="border-right: 1px solid black; ">Database</th>
-			</tr>
-		</thead>
-		<tbody>
-			{%for data in assay%}
-			<tr>
-				<td>{{data.receptor_gtp}}</td>
-				<td>{{data.receptor_uniprot}}</td>
-				<td>{{data.receptor_species}}</td>
-				<td>{{data.receptor_family}}</td>
-				<td>{{data.receptor_class}}</td>
+						<th style="border-right: 1px solid black;">Database</th>
+					</tr>
+				</thead>
+				<tbody>
+					{%for data in assay_affinity%}
+					<tr>
+						<td>{{data.receptor_gtp}}</td>
+						<td>{{data.receptor_uniprot}}</td>
+						<td>{{data.receptor_species}}</td>
+						<td>{{data.receptor_family}}</td>
+						<td>{{data.receptor_class}}</td>
 
-				<td>{{data.type}}</td>
+						<td>{{data.type}}</td>
 
-				<td>{{data.min}}</td>
-				<td>{{data.avg}}</td>
-				<td>{{data.max}}</td>
+						<td>{{data.min}}</td>
+						<td>{{data.avg}}</td>
+						<td>{{data.max}}</td>
 
-				<td>{{data.source}}</td>
-			</tr>
-			{%endfor%}
-		</tbody>
-	</table>
-    <hr>
-    <br>
+						<td>{{data.source}}</td>
+					</tr>
+					{%endfor%}
+				</tbody>
+			</table>
+		</div>
+		<div class="tab-pane container" id="potency">
+			<table class="display" id='potency_table' style="width: 100%">
+				<thead>
+					<tr rowspan="2">
+						<th style="text-align:center" colspan="5">
+							Receptor</th>
+						<th style=" text-align:center" colspan="4">
+							Activity</th>
+						<th style=" text-align:center" colspan="1">
+							Source</th>
+					</tr>
+					<tr>
+						<th style="text-align:left">GTP</th>
+						<th style="text-align:left">Uniprot</th>
+						<th style="text-align:left">Species</th>
+						<th style="text-align:left">Family</th>
+						<th style="border-right: 1px solid black; text-align:left">Class</th>
+
+						<th>Type</th>
+						<th>Min</th>
+						<th>Avg</th>
+						<th style="border-right: 1px solid black;">Max</th>
+
+						<th style="border-right: 1px solid black;">Database</th>
+					</tr>
+				</thead>
+				<tbody>
+					{%for data in assay_potency%}
+					<tr>
+						<td>{{data.receptor_gtp}}</td>
+						<td>{{data.receptor_uniprot}}</td>
+						<td>{{data.receptor_species}}</td>
+						<td>{{data.receptor_family}}</td>
+						<td>{{data.receptor_class}}</td>
+
+						<td>{{data.type}}</td>
+
+						<td>{{data.min}}</td>
+						<td>{{data.avg}}</td>
+						<td>{{data.max}}</td>
+
+						<td>{{data.source}}</td>
+					</tr>
+					{%endfor%}
+				</tbody>
+			</table>
+		</div>
+	</div>
+  <hr>
+  <br>
 	{% endautoescape %}
 </div>
 <br>
@@ -163,6 +231,7 @@
 <script src="{% static 'home/js/dataTables.buttons.min.js' %}"></script>
 <script src="{% static 'home/js/select2.js' %}"> </script>
 <script src="{% static 'home/js/selection.js' %}"> </script>
+<script src="{% static 'home/js/gpcrdb.js' %}"></script>
 
 
 <script type="text/javascript">
@@ -213,12 +282,13 @@
 		}
 		const csrftoken = getCookie('csrftoken');
 
-		var table = $('#structures_scrollable_ligand').DataTable({
+		var table_potency = $('#potency_table').DataTable({
 			dom: 'B<>ftrip',
 			paging: true,
 			scrollCollapse: true,
+			paging: false,
 			AutoWidth: true,
-			pageLength: 15,
+			// pageLength: 15,
 			buttons: [
                 {
                     extend: 'csv',
@@ -278,107 +348,91 @@
 				},
 			],
 		});
-		yadcf.init(table,
-			[{
-					column_number: 0,
-					filter_type: "multi_select",
-					select_type: "select2",
-					// column_data_type: "html",
-					filter_default_label: "Select",
-					filter_reset_button_text: false,
-					select_type_options: {
-						width: '100px',
-					}
-				}, {
-					column_number: 1,
-					filter_type: "multi_select",
-					select_type: 'select2',
-					filter_default_label: "Select",
-					filter_reset_button_text: false,
-					select_type_options: {
-						width: '75px',
-					}
-				},
+		var table_affinity = $('#affinity_table').DataTable({
+			dom: 'B<>ftrip',
+			paging: true,
+			scrollCollapse: true,
+			paging: false,
+			AutoWidth: true,
+			// pageLength: 15,
+			buttons: [
+								{
+										extend: 'csv',
+										text: 'Export to CSV',
+										className: 'btn btn-primary',
+										init: function(api, node, config) {
+												$(node).removeClass('dt-button buttons-excel buttons-html5');
+										},
+										exportOptions: {
+												modifier: {
+														order: 'current',
+														page: 'all',
+														search: 'none'
+												}
+										}
+								},
 				{
-					column_number: 2,
-					filter_type: "multi_select",
-					select_type: 'select2',
-					filter_default_label: "Select",
-					filter_reset_button_text: false,
-					select_type_options: {
-						width: '75px',
-					}
+					text: 'Reset All Filters',
+					className: 'btn btn-primary',
+					titleAttr: 'Reset All Filters',
+					init: function(api, node, config) {
+						$(node).removeClass('dt-button buttons-excel buttons-html5');
+					},
+					action: function(e, dt, node, config) {
+						reset_filters()
+					},
 				},
-				{
-					column_number: 3,
-					filter_type: "multi_select",
-					select_type: 'select2',
-					filter_default_label: "Select",
-					filter_reset_button_text: false,
-					select_type_options: {
-						width: '125px',
-					}
-				},
-				{
-					column_number: 4,
-					filter_type: "multi_select",
-					select_type: 'select2',
-					filter_default_label: "Select",
-					filter_reset_button_text: false,
-					select_type_options: {
-						width: '125px',
-					}
-				},
-				{
-					column_number: 5,
-					filter_type: "multi_select",
-					select_type: 'select2',
-					filter_default_label: "Select",
-					filter_reset_button_text: false,
-					select_type_options: {
-						width: '75px',
-					}
-				},
-				{
-					column_number: 6,
-					filter_type: "range_number",
-					filter_default_label: ["Min", "Max"],
-					filter_reset_button_text: false,
-				},
-				{
-					column_number: 7,
-					filter_type: "range_number",
-					filter_default_label: ["Min", "Max"],
-					filter_reset_button_text: false,
-				},
-				{
-					column_number: 8,
-					filter_type: "range_number",
-					filter_default_label: ["Min", "Max"],
-					filter_reset_button_text: false,
-				},
-				{
-					column_number: 9,
-					filter_type: "multi_select",
-					select_type: 'select2',
-					filter_default_label: "Select",
-					filter_reset_button_text: false,
-					select_type_options: {
-						width: '75px',
-					}
-				}
-			], {
-				cumulative_filtering: true
-			}
-		);
+								{
+					text: 'Get Vendors',
+					className: 'btn btn-primary',
+					titleAttr: 'Vendors info for top 20 ligands',
+					init: function(api, node, config) {
+						$(node).removeClass('dt-button buttons-excel buttons-html5');
+					},
+					action: function(e, dt, node, config) {
+						var id = {{ligand.ligand_id}}
+						var result
+						$.ajaxSetup({
+							headers: {
+								"X-CSRFToken": csrftoken
+							}
+						});
+						$.ajax({
+							type: 'POST',
+							url: '/ligand/vendors',
+							data: {
+								ids: id,
+								csrfmiddlewaretoken: '{{csrf_token }}',
+								action: 'post',
+							},
+							success: function() {
 
+								openPopup('/ligand/browservendors', 'Detail View', window, 850, 1000)
+							}
+						});
+					},
+				},
+			],
+		});
 
+		let column_filters = [];
+		column_filters = column_filters.concat(createYADCFfilters(0, 6, "multi_select", "select2", "Select", false, null, null, "80px"));
+		column_filters = column_filters.concat(createYADCFfilters(6, 3, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
+		column_filters = column_filters.concat(createYADCFfilters(9, 1, "multi_select", "select2", "Select", false, null, null, "50px"));
+
+		yadcf.init(table_potency.draw(), column_filters, {
+			cumulative_filtering: false
+		});
+
+		yadcf.init(table_affinity.draw(), column_filters, {
+			cumulative_filtering: false
+		});
 
 		function reset_filters() {
 			location.reload()
 		}
-		table.columns.adjust();
-
+		table_potency.columns.adjust();
+		table_affinity.columns.adjust();
 
 	});
 </script>
@@ -401,7 +455,8 @@
 <link href="{% static 'home/css/sequenceviewer.css' %}" rel="stylesheet">
 <link href="{% static 'home/css/modal.css' %}" rel="stylesheet">
 <link rel="stylesheet" type="text/css" href="{% static 'home/css/jquery.powertip.css' %}" />
-<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'home/css/bootstrap2-toggle.min.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/modal.css' %}" type="text/css" />
 <style type="text/css">
 	.select2-result-label {
 		font-size: x-small;

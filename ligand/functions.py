@@ -190,7 +190,7 @@ def assess_reference(data_dict, user=False):
     tested = {}
     skip = False
     reference_ligand = None
-    checks = ['Principal', 'Secondary', None]
+    checks = ['Principal', 'Secondary', 'None', None]
     #if reference ligand is not provided by user
     if user == False:
         receptor_id = data_dict[list(data_dict.keys())[0]]['receptor_id']
@@ -202,7 +202,7 @@ def assess_reference(data_dict, user=False):
                                                            endogenous_status=status).values_list("ligand", flat=True).distinct())
 
             if len(endo_objs) > 0:
-                if status != None:
+                if status not in ['None', None]:
                     #if either principal or secondary check numerosity
                     data = list(Endogenous_GTP.objects.filter(Q(ligand_species_id__common_name="Human") | Q(ligand_species_id__isnull=True),
                                                          receptor=receptor_id,

@@ -175,9 +175,19 @@ class CouplingBrowser(TemplateView):
                                           family__slug__startswith='00').prefetch_related(
                                           'family', 'family__parent__parent__parent', 'web_links')
 
+        proteins_links = Protein.objects.filter(entry_name__in=coupling_receptors, sequence_type__slug='wt',
+                                          family__slug__startswith='00', web_links__web_resource__slug='gtop').prefetch_related(
+                                          'family', 'family__parent__parent__parent', 'web_links').values_list(
+                                          'id', 'web_links__web_resource__url').distinct()
+
         couplings = ProteinCouplings.objects.filter(source="GuideToPharma").values_list('protein__entry_name',
                                                                                            'g_protein__name',
                                                                                            'transduction')
+
+        links = {}
+        for item in proteins_links:
+            if item[0] not in links.keys():
+                links[item[0]] = item[1].replace('$index', str(item[0]))
 
         signaling_data = {}
         for pairing in couplings:
@@ -195,10 +205,9 @@ class CouplingBrowser(TemplateView):
             protein_data[prot.id]['accession'] = prot.accession
             protein_data[prot.id]['entryname'] = prot.entry_name
 
-            # Add link to GtP
-            gtop_links = prot.web_links.filter(web_resource__slug='gtop')
-            if len(gtop_links) > 0:
-                protein_data[prot.id]['gtp_link'] = gtop_links[0]
+            # Add link to GtP:
+            if prot.id in links.keys():
+                protein_data[prot.id]['gtp_link'] = links[prot.id]
 
             #VARIABLE (arrestins/gprots)
             # gprotein_families = ["Gs", "Gi/o", "Gq/11", "G12/13"]
@@ -218,7 +227,7 @@ class CouplingBrowser(TemplateView):
         couplings2 = ProteinCouplings.objects.exclude(source="GuideToPharma") \
             .filter(g_protein_subunit__family__slug__startswith=subunit_filter) \
             .order_by("g_protein_subunit__family__slug", "source", "-variant") \
-            .prefetch_related('g_protein_subunit__family', 'g_protein')
+            .prefetch_related('g_protein_subunit__family', 'g_protein', 'ligand')
 
         #VARIABLE
         coupling_headers = ProteinCouplings.objects.exclude(source="GuideToPharma") \
@@ -730,8 +739,13 @@ def familyDetail(request, slug):
                 pc = ProteinConformation.objects.filter(protein__family__slug=slug, protein__sequence_type__slug='wt').first()
             except:
                 return HttpResponse("No consensus was generated for this protein family")
-    
-    p = pc.protein
+
+    # GPa1 family return correct pc query but empty one, so we need to fix this behaviour
+    try:
+        p = pc.protein
+    except:
+        return HttpResponse("No consensus was generated for this protein family")
+
     residues = Residue.objects.filter(protein_conformation=pc).order_by('sequence_number').prefetch_related(
         'protein_segment', 'generic_number', 'display_generic_number')
 

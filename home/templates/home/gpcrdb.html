@@ -6,7 +6,8 @@
             GPCRdb<span class="caret"></span>
         </a>
         <ul class="dropdown-menu" role="menu">
-            <li><a role="button" id='cite_gpcrdb'>Citing GPCRdb</a></li>
+            <!-- <li><a role="button" id='cite_gpcrdb'>Citing GPCRdb</a></li> -->
+            <li><a href="{{ hosts.gpcr }}/cite_gpcrdb">Citing GPCRdb</a></li>
             <li class="divider"></li>
             <li><a href="{{ hosts.gpcr }}/protein">Receptor page
                 <button mp4="https://files.gpcrdb.org/video/receptors1.mp4"
@@ -39,7 +40,7 @@
 
             <!-- SEQUENCE COMPARISON -->
             <li class="divider"></li>
-            <li class="nav-header disabled text-left"><a>SEQUENCE COMPARISON</a></li>
+            <li class="nav-header disabled text-left"><a>SEQUENCE ANALYSIS</a></li>
             <li class="dropdown-submenu">
                 <a tabindex="0" href="#">Receptor similarity</a>
                 <ul class="dropdown-menu">
@@ -68,13 +69,13 @@
             </a></li>
             <li><a href="{{ hosts.gpcr }}/structure">Structures</a></li>
             <li><a href="{{ hosts.gpcr }}/structure/homology_models">Structure models</a></li>
-            <li><a href="{{ hosts.gpcr }}/structure/model_statistics">Structure model coverage</a></li>
+            <li><a href="{{ hosts.gpcr }}/structure/model_statistics">Structure model validation</a></li>
             {#  DEPRECATED FOR NOW #}
             {#  <li><a href="{{ hosts.gpcr }}/structure/template_selection">Template selection</a></li> #}
 
             <!-- STRUCTURE COMPARISON -->
             <li class="divider"></li>
-            <li class="nav-header disabled text-left"><a>STRUCTURE COMPARISON</a></li>
+            <li class="nav-header disabled text-left"><a>STRUCTURE ANALYSIS</a></li>
             <li><a href="{{ hosts.gpcr }}/structure_comparison/comparative_analysis">Structure comparison tool</a></li>
             <li><a href="{{ hosts.gpcr }}/structure_comparison/structure_clustering">Structure similarity trees</a></li>
             <li><a href="{{ hosts.gpcr }}/structure/superposition_workflow_index/true">Structure superposition</a></li>
@@ -118,7 +119,7 @@
             <li class="divider"></li>
             <li class="nav-header disabled text-left"><a>DETERMINANTS & MUTATIONS</a></li>
             <li><a href="{{ hosts.gpcr }}/seqsign">Sequence signature tool</a></li>
-            <li><a href="{{ hosts.gpcr }}/mutations/state_stabilizing">State-affecting mutation design</a></li>
+            <li><a href="{{ hosts.gpcr }}/mutations/state_stabilizing">State stabilizing mutation design</a></li>
         </ul>
 </li>
 
@@ -147,6 +148,18 @@
         Drugs <span>&#38;</span> ligands<span class="caret"></span>
     </a>
     <ul class="dropdown-menu" role="menu">
+        <li class="nav-header disabled"><a>LIGANDS & BIOACTIVITIES</a></li>
+        <li><a href="{{ hosts.gpcr }}/ligand/coverage">Ligand coverage</a></li>
+        <!-- <li><a href="{{ hosts.gpcr }}/ligand">Ligands (ChEMBL, GtP, Ki db)<a/></li> -->
+        <li class="dropdown-submenu">
+            <a tabindex="0" href="#">Ligands (ChEMBL, GtP, Ki db)</a>
+            <ul class="dropdown-menu">
+                <li><a href="{{ hosts.gpcr }}/ligand">Ligands (by receptor query)<a/></li>
+                <li><a href="{{ hosts.gpcr }}/ligand/ligand_by_name">Ligands (by ligand query)</a></li>
+                <!-- <li><a href="{{ hosts.gpcr }}/ligand/ligand_by_structure">Ligands (by structure)</a></li> -->
+            </ul>
+        </li>
+        <li class="divider"></li>
         <li class="nav-header disabled"><a>ENDOGENOUS LIGANDS</a></li>
         <li><a href="{{ hosts.gpcr }}/ligand/endogenousbrowser">Endogenous ligands (GtP)</a></li>
         <li class="divider"></li>
@@ -155,10 +168,6 @@
         <li><a href="{{ hosts.gpcr }}/drugs/drugmapping">Drug target tree</a></li>
         <li><a href="{{ hosts.gpcr }}/drugs/drugstatistics">Drug statistics</a></li>
         <li class="divider"></li>
-
-        <li class="nav-header disabled"><a>LIGANDS</a></li>
-        <li><a href="{{ hosts.gpcr }}/ligand/coverage">Ligand coverage</a></li>
-        <li><a href="{{ hosts.gpcr }}/ligand">Ligands (ChEMBL)</a></li>
 
         <!-- DEPRECATED FUNCTION
           <li class="nav-header disabled text-left"><a>Structures</a></li>
@@ -173,7 +182,6 @@
             </a></li>
           -->
 
-        <li class="divider"></li>
         <li class="nav-header disabled text-left"><a>LIGAND SITES</a></li>
 
         <li><a href="{{ hosts.gpcr }}/interaction">GPCR-ligand interactions
@@ -182,13 +190,19 @@
                 <span class="glyphicon glyphicon-film"></span>
             </button>
         </a></li>
-        <li><a href="{{ hosts.gpcr }}/sitesearch/targetselection">Site search (by seq. motif)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</a></li>
-        <li><a href="{{ hosts.gpcr }}/sitesearch/targetselectionpdb">Site search (by ligand complex)
-            <button mp4="https://files.gpcrdb.org/video/interactions2.mp4" type="button"
-                    class="videoLink pull-right btn btn-xs btn-default">
-                <span class="glyphicon glyphicon-film"></span>
-            </button>
-        </a></li>
+
+        <li class="dropdown-submenu">
+            <a tabindex="0" href="#">Site search</a>
+            <ul class="dropdown-menu">
+              <li><a href="{{ hosts.gpcr }}/sitesearch/targetselection">Site search (by seq. motif)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</a></li>
+              <li><a href="{{ hosts.gpcr }}/sitesearch/targetselectionpdb">Site search (by ligand complex)
+                  <button mp4="https://files.gpcrdb.org/video/interactions2.mp4" type="button"
+                          class="videoLink pull-right btn btn-xs btn-default">
+                      <span class="glyphicon glyphicon-film"></span>
+                  </button>
+              </a></li>
+            </ul>
+        </li>
 
         <!-- MUTATIONS -->
         <li class="divider"></li>

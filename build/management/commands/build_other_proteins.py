@@ -7,7 +7,9 @@ from build.management.commands.build_human_proteins import Command as BuildHuman
 from residue.functions import *
 from structure.functions import BlastSearch, ParseStructureCSV
 from protein.models import Protein, ProteinFamily, Gene
+from common.tools import test_model_updates
 
+import django.apps
 import logging
 import os
 import yaml
@@ -25,7 +27,16 @@ def PrintException():
     line = linecache.getline(filename, lineno, f.f_globals)
     print('EXCEPTION IN ({}, LINE {} "{}"): {}'.format(filename, lineno, line.strip(), exc_obj))
 
+mapping_dict = {'b1b1u5_9arac':['opsd',''], 'b3xzf5_chick':['opn5',''], 'a0a8j0qrx8_xentr':['opn5','']}
 
+#Setting the variables for the test tracking of the model upadates
+tracker = {}
+all_models = django.apps.apps.get_models()[6:]
+test_model_updates(all_models, tracker, initialize=True)
+
+parapinopsin = {'fam_name':'Parapinopsin','parent_fam':'Opsins'}
+non_human_dict = {'q764p5_letca':parapinopsin, 'a0a1e1g6x5_takru':parapinopsin, 'a0a1e1g6y2_danre':parapinopsin, 'h2u5s9_takru':parapinopsin, 'w5n9z3_lepoc':parapinopsin,
+                  'a0a1e1g6y8_oncmy':parapinopsin, 'a0a0n9n9h8_danre':parapinopsin, 'r9r6d2_oryla':{'fam_name':'TMT','gene':'TMT','parent_fam':'Opsins'}, 'f1nu85_chick':{'fam_name':'OPN5-like'}}
 
 class Command(BuildHumanProteins):
     help = 'Reads uniprot text files and creates protein entries for non-human proteins'
@@ -53,6 +64,8 @@ class Command(BuildHumanProteins):
         if options['purge']:
             try:
                 self.purge_orthologs()
+                self.tracker = {}
+                test_model_updates(self.all_models, self.tracker, initialize=True)
             except:
                 self.logger.error('Could not purge orthologs')
 
@@ -89,9 +102,9 @@ class Command(BuildHumanProteins):
             ###GP - class D addition - just temporary - FIXME
             construct_entry_names = construct_entry_names+['a0a0w0dd93_cangb', 'q8wzm9_sorma', 'b1gvb8_pench', 'mam2_schpo', 'q4wyu8_aspfu', 'q8nir1_neucs', 'ste2_lackl', 'q6fly8_canga', 'g2ye05_botf4', 's6exb4_zygb2', 'c5dx97_zygrc']
             # added seq with no human ortholog
-            construct_entry_names = construct_entry_names+['5ht5b_mouse', '5ht5b_rat', 'taar4_mouse', 'taar4_rat']
+            construct_entry_names = construct_entry_names+['5ht5b_mouse', '5ht5b_rat', 'taar4_mouse', 'taar4_rat']+['f1nu85_chick','b3xzf5_chick','a0a8j0qrx8_xentr','h2u5s9_takru', 'e7fee5_danre', 'a0a0n9n9h8_danre','q5sbp8_pladu','q868g4_brabe','q764p5_letca','r9r6d2_oryla','a0a1e1g6x5_takru','a0a1e1g6y2_danre','q8ji05_takru','q1l4c8_utast','q95p33_cioin','a0a0k0ybe3_pladu','r9r6c6_oryla','w5n9z3_lepoc','a0a1e1g6y8_oncmy','w5j8f8_anoda']
             # custom family mapping for these entries
-            non_human_family_entries = ['5ht5b_mouse', '5ht5b_rat', 'taar4_mouse', 'taar4_rat']
+            non_human_family_entries = ['5ht5b_mouse', '5ht5b_rat', 'taar4_mouse', 'taar4_rat']+['h2u5s9_takru', 'e7fee5_danre', 'a0a0n9n9h8_danre','q5sbp8_pladu','q868g4_brabe','q764p5_letca','r9r6d2_oryla','a0a1e1g6x5_takru','a0a1e1g6y2_danre','q8ji05_takru','q1l4c8_utast','q95p33_cioin','a0a0k0ybe3_pladu','r9r6c6_oryla','w5n9z3_lepoc','a0a1e1g6y8_oncmy','w5j8f8_anoda','f1nu85_chick']
 
             # Keep track of first or second iteration
             reviewed = ['SWISSPROT','TREMBL'][iteration-1]
@@ -99,8 +112,11 @@ class Command(BuildHumanProteins):
             # for i,source_file in enumerate(filenames):
             while count.value<len(filenames):
                 with lock:
-                    source_file = filenames[count.value]
-                    count.value +=1
+                    if count.value < len(filenames):
+                        source_file = filenames[count.value]
+                        count.value +=1
+                    else:
+                        continue
                 # if i<positions[0]: #continue if less than start
                 #     continue
                 # if positions[1]: #if end is non-false
@@ -164,8 +180,8 @@ class Command(BuildHumanProteins):
                         # UGLY: hardcoded corrections
                         # NOTE: when extending this - make a dictionary
                         # NOTE: consider utilizing e.g. OrthoDB
-                        if up['entry_name'] == "b1b1u5_9arac":
-                            split_entry_name = ["opsd", ""]
+                        if up['entry_name'] in mapping_dict:
+                            split_entry_name = mapping_dict[up['entry_name']]
 
                         # add _ to the split entry name to avoid e.g. gp1 matching gp139
                         entry_name_query = split_entry_name[0] + '_'
@@ -247,9 +263,24 @@ class Command(BuildHumanProteins):
                         fam_name =  '<i>TAAR4P</i>'
                         gene = 'TAAR4'
                         parent_fam = ProteinFamily.objects.get(name='Class A orphans')
+                    elif up['entry_name'] in non_human_dict:
+                        fam_name = non_human_dict[up['entry_name']]['fam_name']
+                        if 'gene' in non_human_dict[up['entry_name']]:
+                            gene = non_human_dict[up['entry_name']]['gene']
+                        else:
+                            if len(up['genes'])>0:
+                                gene = up['genes'][0]
+                            else:
+                                gene = fam_name
+                        if 'parent_fam' in non_human_dict[up['entry_name']]:
+                            parent_fam = ProteinFamily.objects.get(name=non_human_dict[up['entry_name']]['parent_fam'])
                     else:
-                        fam_name = up['genes'][0].upper()
-                        gene = up['genes'][0]
+                        if len(up['genes'])>0:
+                            fam_name = up['genes'][0].upper()
+                            gene = up['genes'][0]
+                        else:
+                            fam_name = 'Other'
+                            gene = up['entry_name'].split('_')[0].upper()
 
                     num_families = ProteinFamily.objects.filter(parent=parent_fam).count()
                     family_slug = parent_fam.slug + "_" + str(num_families + 1).zfill(3)
@@ -281,6 +312,7 @@ class Command(BuildHumanProteins):
                         self.logger.info('Created protein family {}'.format(pf))
 
                     self.create_protein(up['genes'][0], pf, p.sequence_type, p.residue_numbering_scheme, accession, up)
+            test_model_updates(self.all_models, self.tracker, check=True)
             self.logger.info('COMPLETED CREATING OTHER PROTEINS')
         except Exception as msg:
             print(msg)

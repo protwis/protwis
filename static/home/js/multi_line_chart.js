@@ -110,7 +110,7 @@ function DrawMultiLineChart(Data, BaseDiv, Keys, ID, linkTitle, reference, linkP
 
     var line = d3.svg.line()
         //.interpolate("basis")
-        .x(function (d) { return x(d.Pathway) + x.rangeBand() / 2; })
+        .x(function (d) { return (x(d.Pathway) + x.rangeBand() / 2)-100; })
         .y(function (d) { return y(d.value[0]); });
 
     // document.BaseDiv.appendChild(div);
@@ -156,7 +156,7 @@ function DrawMultiLineChart(Data, BaseDiv, Keys, ID, linkTitle, reference, linkP
     svg.append("g")
             .attr("class", "x axis")
             .style("font", "12px sans-serif")
-            .attr("transform", "translate(0," + height + ")")
+            .attr("transform", "translate(-100," + height + ")")
             .call(xAxis);
 
     // Drawing Horizontal grid lines.
@@ -207,7 +207,7 @@ function DrawMultiLineChart(Data, BaseDiv, Keys, ID, linkTitle, reference, linkP
             .filter(function(d) { return d.value[1] == "REAL"})
             .attr("class",function(d) { return d.value[1] })
             .attr("r", 5)
-            .attr("cx", function (d) { return x(d.Pathway) + x.rangeBand() / 2; })
+            .attr("cx", function (d) { return (x(d.Pathway) + x.rangeBand() / 2)-100; })
             .attr("cy", function (d) { return y(d.value[0]); })
             .style("stroke", "black")
             .style("fill", function (d) { return color(this.parentNode.__data__.name); })
@@ -228,7 +228,7 @@ function DrawMultiLineChart(Data, BaseDiv, Keys, ID, linkTitle, reference, linkP
             .append("rect")
             .filter(function(d) { return d.value[1] == "ARTIFICIAL"})
             .attr("class",function(d) { return d.value[1] })
-            .attr("x", function (d) { return x(d.Pathway) + x.rangeBand()/2 -5; })
+            .attr("x", function (d) { return (x(d.Pathway) + x.rangeBand()/2)-105; })
             .attr("y", function (d) { return y(d.value[0]) -5; })
             .attr("width", 10)
             .attr("height", 10)

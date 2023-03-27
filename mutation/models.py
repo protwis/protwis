@@ -84,16 +84,15 @@ class MutationExperiment(models.Model):
     def getCalculation(self):
 
         if self.foldchange and self.exp_type and self.wt_value:
-            if self.wt_unit=='%':
-                # Check calc is done right, since current error
-                temp = round(self.mu_value/self.wt_value,3);
-                if temp<1 and temp!=0:
-                    temp = -1/temp
-                temp = -round(temp,3)
-                if temp != self.foldchange:
-                    self.foldchange = temp
-                    self.save()
-
+            # if self.wt_unit=='%':
+            #     # Check calc is done right, since current error
+            #     temp = round(self.mu_value/self.wt_value,3);
+            #     if temp<1 and temp!=0:
+            #         temp = -1/temp
+            #     temp = -round(temp,3)
+            #     if temp != self.foldchange:
+            #         self.foldchange = temp
+            #         self.save()
             temp = (" Measure: "+self.exp_type.type+" <br> Unit: " + str(self.wt_unit) +  " <br> WT: " + str(self.wt_value) + " <br> Mu: "+ str(self.mu_value) +" <br> Foldchange: "+str(self.foldchange))
         else:
             temp = "No information"
@@ -111,20 +110,20 @@ class MutationExperiment(models.Model):
                 sign = self.mu_sign
 
             # CHECK FOR % CALC
-            if self.wt_unit=='%' and self.wt_value:
-                # Check calc is done right, since current error
-                temp = round(self.mu_value/self.wt_value,3);
-                if temp<1:
-                    temp = -1/temp
-                temp = -round(temp,3)
-                if temp != self.foldchange:
-                    self.foldchange = temp
-                    self.save()
+            # if self.wt_unit=='%' and self.wt_value:
+            #     # Check calc is done right, since current error
+            #     temp = round(self.mu_value/self.wt_value,3);
+            #     if temp<1:
+            #         temp = -1/temp
+            #     temp = -round(temp,3)
+            #     if temp != self.foldchange:
+            #         self.foldchange = temp
+            #         self.save()
 
             if temp>1:
-                temp =  "<font color='red'>"+sign + str(temp) + "↓</font>"
+                temp =  "<font color='green'>"+sign + str(temp) + "↑</font>"
             elif temp<1:
-                temp =  "<font color='green'>"+sign + str(-temp) + "↑</font>"
+                temp =  "<font color='red'>"+sign + str(-temp) + "↓</font>"
             if self.exp_qual:
                 temp = self.exp_qual.qual +  " " +  self.exp_qual.prop
 

@@ -121,22 +121,34 @@ class StructureVectors(models.Model):
 class StructureModel(models.Model):
     protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE)
     state = models.ForeignKey('protein.ProteinState', on_delete=models.CASCADE)
-    main_template = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
+    main_template = models.ForeignKey('structure.Structure', null=True, on_delete=models.CASCADE)
     pdb_data = models.ForeignKey('PdbData', null=True, on_delete=models.CASCADE)
     version = models.DateField()
-    stats_text = models.ForeignKey('StatsText', on_delete=models.CASCADE)
+    stats_text = models.ForeignKey('StatsText', null=True, on_delete=models.CASCADE)
 
     def __repr__(self):
-        return '<HomologyModel: '+str(self.protein.entry_name)+' '+str(self.state)+'>'
+        return '<StructureModel: '+str(self.protein.entry_name)+' '+str(self.state)+'>'
 
     def __str__(self):
-        return '<HomologyModel: '+str(self.protein.entry_name)+' '+str(self.state)+'>'
+        return '<StructureModel: '+str(self.protein.entry_name)+' '+str(self.state)+'>'
 
     class Meta():
         db_table = 'structure_model'
 
     def get_cleaned_pdb(self):
         return self.pdb_data.pdb
+
+
+class StructureModelpLDDT(models.Model):
+    structure_model = models.ForeignKey('StructureModel', on_delete=models.CASCADE)
+    residue = models.ForeignKey('residue.Residue', on_delete=models.CASCADE)
+    pLDDT = models.DecimalField(max_digits=4, decimal_places=2)
+
+    def __str__(self):
+        return '<pLDDT: {} {} {}>'.format(self.pLDDT, self.residue.sequence_number, self.structure_model)
+
+    class Meta():
+        db_table = 'structure_model_plddt'
 
 
 class StructureComplexModel(models.Model):
@@ -179,14 +191,14 @@ class StatsText(models.Model):
             line = self.stats_text.split('\n')[0]
         else:
             line = 'empty object'
-        return '<StatsText: >'.format(line)
+        return '<StatsText: {}>'.format(line)
 
     def __str__(self):
         if self.stats_text and len(self.stats_text)>0:
             line = self.stats_text.split('\n')[0]
         else:
             line = 'empty object'
-        return '<StatsText: >'.format(line)
+        return '<StatsText: {}>'.format(line)
 
     class Meta():
         db_table = 'stats_text'
@@ -194,8 +206,8 @@ class StatsText(models.Model):
 
 class StructureModelRMSD(models.Model):
     homology_model = models.ForeignKey('structure.StructureModel', on_delete=models.CASCADE, null=True)
-    target_structure = models.ForeignKey('structure.Structure', related_name='target_structure', on_delete=models.CASCADE)
-    main_template = models.ForeignKey('structure.Structure', related_name='main_template', on_delete=models.CASCADE)
+    target_structure = models.ForeignKey('structure.Structure', related_name='target_structure', null=True, on_delete=models.CASCADE)
+    main_template = models.ForeignKey('structure.Structure', related_name='main_template', null=True, on_delete=models.CASCADE)
     version = models.DateField(null=True)
     seq_id = models.IntegerField(null=True)
     seq_sim = models.IntegerField(null=True)

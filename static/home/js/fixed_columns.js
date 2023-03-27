@@ -27,6 +27,7 @@ function update_text_in_modal() {
         }
     });
 
+    mode = $("ul#mode_nav").find("li.active").find("a").text().trim();
     if (mode === "Single set of structures" || $("#single-group-tree-tab").length) {
         total_selected = pdbs.length;
         selected_visible = $(".dataTables_scrollBody:visible .pdb_selected:checked").length;

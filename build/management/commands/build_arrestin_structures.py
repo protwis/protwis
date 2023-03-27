@@ -5,7 +5,7 @@ from residue.models import Residue, ResidueNumberingScheme
 from signprot.models import SignprotComplex
 from structure.functions import create_structure_rotamer, get_pdb_ids, fetch_signprot_data, build_signprot_struct
 from structure.models import Rotamer
-
+from common.tools import test_model_updates
 from Bio.PDB import PDBParser, PPBuilder, PDBIO, Polypeptide
 from io import StringIO
 from Bio import pairwise2
@@ -13,9 +13,16 @@ import logging
 import urllib
 import json
 import datetime
+import django.apps
 
 
 class Command(BaseBuild):
+
+    #Setting the variables for the test tracking of the model upadates
+    tracker = {}
+    all_models = django.apps.apps.get_models()[6:]
+    test_model_updates(all_models, tracker, initialize=True)
+
     def add_arguments(self, parser):
         parser.add_argument('-p', '--proc', type=int, action='store', dest='proc', default=1, help='Number of processes to run')
         parser.add_argument("-s", default=False, type=str, action="store", nargs="+", help="PDB codes to build")
@@ -27,6 +34,8 @@ class Command(BaseBuild):
         startTime = datetime.datetime.now()
         if options['purge']:
             self.purge()
+            self.tracker = {}
+            test_model_updates(self.all_models, self.tracker, initialize=True)
 
         # Complex structures
         self.scs = SignprotComplex.objects.filter(protein__family__slug__startswith="200")
@@ -54,11 +63,11 @@ class Command(BaseBuild):
                 print(sc)
                 print('Structure seq:')
                 print(structure_seq)
-            
-            protein, created = Protein.objects.get_or_create(entry_name=sc.structure.pdb_code.index.lower()+'_arrestin', accession=None, 
-                                                             name=sc.structure.pdb_code.index.lower()+'_arrestin', 
-                                                             sequence=structure_seq, family=sc.protein.family, parent=sc.protein, 
-                                                             residue_numbering_scheme=ResidueNumberingScheme.objects.get(slug='can'), 
+
+            protein, created = Protein.objects.get_or_create(entry_name=sc.structure.pdb_code.index.lower()+'_arrestin', accession=None,
+                                                             name=sc.structure.pdb_code.index.lower()+'_arrestin',
+                                                             sequence=structure_seq, family=sc.protein.family, parent=sc.protein,
+                                                             residue_numbering_scheme=ResidueNumberingScheme.objects.get(slug='can'),
                                                              sequence_type=ProteinSequenceType.objects.get(slug="mod"), source=ProteinSource.objects.get(name="OTHER"),
                                                              species=sc.protein.species)
             protconf, created = ProteinConformation.objects.get_or_create(protein=protein, state=ProteinState.objects.get(slug='active'))
@@ -67,7 +76,7 @@ class Command(BaseBuild):
             ref_seq, temp_seq = str(pw2[0][0]), str(pw2[0][1])
 
             parent_residues = Residue.objects.filter(protein_conformation__protein=protein.parent)
-            
+
             bulked_rotamers = []
             r_c, s_c = 0, 0
             for r, t in zip(ref_seq, temp_seq):
@@ -103,6 +112,8 @@ class Command(BaseBuild):
                         self.logger.error("SignprotStructure of {} {} failed\n{}: {}".format(a.entry_name, pdb, type(msg), msg))
         if options["debug"]:
             print(datetime.datetime.now() - startTime)
+
+        test_model_updates(self.all_models, self.tracker, check=True)
 
 
     def purge(self):

@@ -5,13 +5,14 @@ from django.db import IntegrityError, DatabaseError
 from common.models import WebResource, WebLink, Publication
 from protein.models import Protein
 from drugs.models import Drugs
-
+from common.tools import test_model_updates
 
 from optparse import make_option
 import logging
 import csv
 import os
 import pandas as pd
+import django.apps
 
 class Command(BaseCommand):
     help = 'Build Drug Data'
@@ -24,7 +25,10 @@ class Command(BaseCommand):
     logger = logging.getLogger(__name__)
 
         # source file directory
+
     drugdata_data_dir = os.sep.join([settings.DATA_DIR, 'drug_data']) #settings.DATA_DIR
+    tracker = {}
+    all_models = django.apps.apps.get_models()[6:]
 
     def handle(self, *args, **options):
         if options['filename']:
@@ -34,7 +38,9 @@ class Command(BaseCommand):
 
         try:
             self.purge_drugs()
-            self.create_drug_data()
+            test_model_updates(self.all_models, self.tracker, initialize=True)
+            self.create_drug_data(filenames)
+            test_model_updates(self.all_models, self.tracker, check=True)
         except Exception as msg:
             print(msg)
             self.logger.error(msg)

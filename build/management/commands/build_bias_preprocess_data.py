@@ -8,7 +8,7 @@ from decimal import Decimal
 from build.management.commands.base_build import Command as BaseBuild
 from build.management.commands.build_ligand_functions import *
 
-from common.tools import fetch_from_cache, save_to_cache, fetch_from_web_api
+from common.tools import fetch_from_cache, save_to_cache, fetch_from_web_api, test_model_updates
 from common.models import WebLink, WebResource, Publication
 from protein.models import Protein, ProteinCouplings
 from ligand.models import  Ligand, LigandType, Endogenous_GTP, BiasedData, BalancedLigands
@@ -23,6 +23,8 @@ import traceback
 import time
 import requests
 import timeit
+import django.apps
+
 
 # The pEC50 is defined as the negative logarithm of the EC50
 
@@ -44,6 +46,10 @@ class Command(BaseBuild):
     cell_cache = {}
     ligand_cache = {}
     data_all = []
+    #Setting the variables for the test tracking of the model upadates
+    tracker = {}
+    all_models = django.apps.apps.get_models()[6:]
+    test_model_updates(all_models, tracker, initialize=True)
 
     def add_arguments(self, parser):
         parser.add_argument('-p', '--proc',
@@ -73,12 +79,14 @@ class Command(BaseBuild):
             try:
                 print('Started purging bias and balanced data')
                 Command.purge_bias_data()
+                self.tracker = {}
+                test_model_updates(self.all_models, self.tracker, initialize=True)
                 print('Ended purging bias and balanced data')
             except Exception as msg:
                 print(msg)
                 self.logger.error(msg)
         # import the structure data
-        Command.prepare_all_data()
+        self.prepare_all_data()
 
     @staticmethod
     def purge_bias_data():
@@ -87,8 +95,7 @@ class Command(BaseBuild):
         delete_bias_excel.delete()
         delete_balanced_ligands.delete()
 
-    @staticmethod
-    def prepare_all_data():
+    def prepare_all_data(self):
         start = timeit.default_timer()
         print('**** Stage #1: reading Excel  ****')
         bias_data = Command.read_excel_pandas(Command.structure_data_dir, 'Biased_ligand_single_pathway_data.xlsx')
@@ -97,6 +104,8 @@ class Command(BaseBuild):
         df_from_excel = Command.convert_df_to_dict(bias_data)
         print('**** Stage #3: processing & uploading data  ****')
         Command.main_process(df_from_excel, cell_data)
+        print('**** Checkin models update ****')
+        test_model_updates(self.all_models, self.tracker, check=True)
         print('**** Stage #4: updating physiology biased ligands')
         Command.update_biased_columns()
         print('**** Stage #5: updating physiology biased (subtypes) ligands')
@@ -105,6 +114,8 @@ class Command(BaseBuild):
         Command.update_biased_columns(pathway=True)
         print('**** Stage #7: creating Balanced Ligand database')
         Command.model_assemble()
+        print('**** Checkin models update ****')
+        test_model_updates(self.all_models, self.tracker, check=True)
         print('**** Stage #8: updating biased ligands using balanced reference')
         Command.update_biased_columns(balanced=True)
         print('**** Stage #9: updating biased ligands using balanced reference (subtype)')
@@ -466,7 +477,7 @@ class Command(BaseBuild):
 
                     else:
                         try:
-                            if data[publication][row]['Bias factor'] >= 5:
+                            if (data[publication][row]['Bias factor'] is None) or (data[publication][row]['Bias factor'] >= 5):
                                 BiasedData.objects.filter(ligand_id=data[publication][row]['ligand_id'],
                                                           publication_id=publication,
                                                           receptor_id=protein).update(**{key: data[publication][row]['P1']})

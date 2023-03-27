@@ -229,11 +229,11 @@
 	<a id="dlink" style="display:none;"></a>
 	<div id="excel_table" style2="display:none;"></div>
 	<br />
-	<h5>Showing {{ Lig_Count }} biased ligands for {{ IUPHAR }} ({{ UniProt }})</h5>
+	<h5>Showing {{ Lig_Count }} ligands tested for the bias at the {{ IUPHAR }} receptor ({{ UniProt }})</h5>
 	<br />
 	<button id="reset_hidden" type="button" class="btn btn-primary" style="margin-top:10px;margin-top:3px"> Reset removed columns </button>
 	<button id="reset" type="button" class="btn btn-primary" style="margin-top:10px;margin-top:3px"> Reset filters </button>
-	<button onclick="tableToExcel('structures_scrollable', 'Families data', 'GPCRDB.xls')" type="button" class="btn btn-primary" style="margin-top:10px;margin-top:3px"> Export to Excel </button>
+	<button onclick="GlobalTableToExcel('structures_scrollable', 'Families data', 'GPCRDB.xls')" type="button" class="btn btn-primary" style="margin-top:10px;margin-top:3px"> Export to Excel </button>
 	{% if not Balanced %}
 		{% if Pathway %}
 		<input id="switch_pathway" type="checkbox" checked data-toggle="toggle" data-on="Pathway 1-2" data-off="All pathways" data-style="ios" data-width="130" data-height="35" data-offstyle="success">
@@ -559,11 +559,11 @@
 							<td class="color-column" style="text-align:right">{{ value.36|default_if_none:""|floatformat:1 }}</td>
 
 							<!-- Emax block -->
-							<td style="text-align:right" class="color-column">{{ value.37|default_if_none:""|floatformat:1 }}</td>
-							<td style="text-align:right" class="color-column">{{ value.38|default_if_none:""|floatformat:1 }}</td>
-							<td style="text-align:right" class="color-column">{{ value.39|default_if_none:""|floatformat:1 }}</td>
-							<td style="text-align:right" class="color-column">{{ value.40|default_if_none:""|floatformat:1 }}</td>
-							<td style="text-align:right" class="color-column">{{ value.41|default_if_none:""|floatformat:1 }}</td>
+							<td style="text-align:right" class="color-column">{{ value.37|default_if_none:""|floatformat:-1 }}</td>
+							<td style="text-align:right" class="color-column">{{ value.38|default_if_none:""|floatformat:-1 }}</td>
+							<td style="text-align:right" class="color-column">{{ value.39|default_if_none:""|floatformat:-1 }}</td>
+							<td style="text-align:right" class="color-column">{{ value.40|default_if_none:""|floatformat:-1 }}</td>
+							<td style="text-align:right" class="color-column">{{ value.41|default_if_none:""|floatformat:-1 }}</td>
 
 							<!-- Molecule 1 block -->
 							<td>{{ value.42|default_if_none:"" }}</td>
@@ -627,13 +627,13 @@
 
 							<!-- Bias factor block -->
 							{% if value.16 == 'Full Bias' %}
-							<td style="text-align:right" class="color-column" data-filter="1000" title="Bias Factor P2">{{ value.16 }}</td>
+							<td style="text-align:right" class="color-column" data-order="100000.0" title="Bias Factor P2">{{ value.16 }}</td>
 							{% else %}
-							<td style="text-align:right" class="color-column" data-filter="{{ value.16 }}" title="Bias Factor P2">{{ value.16 }}</td>
+							<td style="text-align:right" class="color-column" data-order='{{ value.16|floatformat:1 }}' title="Bias Factor P2">{{ value.16|default_if_none:""|floatformat:2 }}</td>
 							{% endif %}
-							<td style="text-align:right" class="color-column" data-filter="{{ value.17|default_if_none:''|floatformat:1 }}" title="Bias Factor P3">{{ value.17|default_if_none:""|floatformat:1 }}</td>
-							<td style="text-align:right" class="color-column" data-filter="{{ value.18|default_if_none:''|floatformat:1 }}" title="Bias Factor P4">{{ value.18|default_if_none:""|floatformat:1 }}</td>
-							<td style="text-align:right" class="color-column" data-filter="{{ value.17|default_if_none:''|floatformat:1 }}" title="Bias Factor P5">{{ value.19|default_if_none:""|floatformat:1 }}</td>
+							<td style="text-align:right" class="color-column" data-order="{{ value.17|default_if_none:''|floatformat:1 }}" title="Bias Factor P3">{{ value.17|default_if_none:""|floatformat:1 }}</td>
+							<td style="text-align:right" class="color-column" data-order="{{ value.18|default_if_none:''|floatformat:1 }}" title="Bias Factor P4">{{ value.18|default_if_none:""|floatformat:1 }}</td>
+							<td style="text-align:right" class="color-column" data-order="{{ value.17|default_if_none:''|floatformat:1 }}" title="Bias Factor P5">{{ value.19|default_if_none:""|floatformat:1 }}</td>
 
 							<!-- Signaling protein block -->
 							<td style="text-align:left" title="Measured Molecule P1">{{ value.20 }}</td>
@@ -955,7 +955,7 @@
 		// Pathway Rank Order block (5)
 		column_filters = column_filters.concat(createYADCFfilters(5, 5, "multi_select", "select2", "Select", false, null, null, "30px"));
 		// Bias Factor(5)
-		column_filters = column_filters.concat(createYADCFfilters(10, 4, "range_number", null, ["Min", "Max"], false, null, null, "30px", "data-filter"));
+		column_filters = column_filters.concat(createYADCFfilters(10, 4, "range_number", null, ["Min", "Max"], false, null, null, "30px", "data-order"));
 		// Signalling protein (5)
 		column_filters = column_filters.concat(createYADCFfilters(14, 5, "multi_select", "select2", "Select", false, null, null, "30px"));
 		// ΔΔLog(Tau/KA)(4)/ΔΔLog(Emax/EC50)(4)/ΔLog(Tau/KA)(5)/ΔLog(Emax/EC50)(5)/EC50(5)/Emax(5)
@@ -966,7 +966,7 @@
 		column_filters = column_filters.concat(createYADCFfilters(68, 1, "multi_select", "select2", "Authors", false, null, null, "30px"));
 		// DOI
 		column_filters = column_filters.concat(createYADCFfilters(69, 1, "multi_select", "select2", "DOI", false, null, null, "80px"));
-
+		console.log(column_filters);
 		yadcf.init(oTable1.draw(), column_filters, {
 			cumulative_filtering: false
 		});

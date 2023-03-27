@@ -1,4 +1,4 @@
-﻿from Bio.Blast import NCBIXML, NCBIWWW
+from Bio.Blast import NCBIXML, NCBIWWW
 from Bio.PDB import PDBParser, PDBIO
 from Bio.PDB.PDBIO import Select
 import Bio.PDB.Polypeptide as polypeptide
@@ -274,11 +274,11 @@ class CASelector(object):
         for chain in structure:
             for res in chain:
                 try:
-                    if 0 < res['CA'].get_bfactor() < 8.1 and "{:.2f}".format(res['CA'].get_bfactor()) in self.selection.generic_numbers:
+                    if "{:.2f}".format(res['CA'].get_bfactor()) in self.selection.generic_numbers:
                         atom_list.append(res['CA'])
                     if -8.1 < res['CA'].get_bfactor() < 0 and "{:.3f}".format(-res['CA'].get_bfactor() + 0.001) in self.selection.generic_numbers:
                         atom_list.append(res['CA'])
-                except :
+                except:
                     continue
 
         if atom_list == []:
@@ -730,7 +730,7 @@ class HSExposureCB(AbstractPropertyMap):
                             for other_atom in other_res:
                                 other_vector = other_atom.get_vector()
                                 d = other_vector-ref_vector
-                                if d.norm()<2:
+                                if d.norm()<1.5:
                                     if len(str(pp1[i]['CA'].get_bfactor()).split('.')[1])==1:
                                         clash_res1 = float(str(pp1[i]['CA'].get_bfactor())+'0')
                                     else:
@@ -752,7 +752,7 @@ class HSExposureCB(AbstractPropertyMap):
         ### GP checking HETRESIS to remove if not interacting with AAs
         self.hetresis_to_remove = []
         for i in het_resis:
-            if i not in het_resis and i not in het_resis_close or i in het_resis_clash:
+            if i not in self.hetresis_to_remove and i not in het_resis_close or i in het_resis_clash:
                 self.hetresis_to_remove.append(i)
         # self.hetresis_to_remove = [i for i in het_resis if i not in het_resis_close or i in het_resis_clash]
         if check_chain_breaks:
@@ -1121,12 +1121,14 @@ class ParseStructureCSV():
     def __init__(self):
         self.pdb_ids = []
         self.structures = {}
+        self.parent_segends = {}
         with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'structures.csv']), newline='') as csvfile:
             structures = csv.reader(csvfile, delimiter='\t')
             next(structures, None)
             for s in structures:
                 self.pdb_ids.append(s[0])
                 self.structures[s[0]]= {'protein':s[1], 'name':s[0].lower(), 'state':s[4], 'preferred_chain':s[5], 'resolution':s[3]}
+        self.fusion_proteins = []
 
     def __str__(self):
         return '<ParsedStructures: {} entries>'.format(len(self.pdb_ids))
@@ -1138,7 +1140,10 @@ class ParseStructureCSV():
             for ligand in ligands:
                 if 'ligand' not in self.structures[ligand[0]]:
                     self.structures[ligand[0]]['ligand'] = []
-                self.structures[ligand[0]]['ligand'].append({'chain':ligand[1], 'name':ligand[2], 'pubchemId':ligand[3], 'role':ligand[4], 'title':ligand[5], 'type': ligand[6]})
+                in_structure = True
+                if ligand[8]!='':
+                    in_structure = False
+                self.structures[ligand[0]]['ligand'].append({'chain':ligand[1], 'name':ligand[2], 'pubchemId':ligand[3], 'role':ligand[4], 'title':ligand[5], 'type': ligand[6], 'in_structure': in_structure})
 
     def parse_nanobodies(self):
         self.parse_aux_file('nanobodies.csv')
@@ -1174,6 +1179,18 @@ class ParseStructureCSV():
                 if 'auxiliary_protein' not in self.structures[a[0]]:
                     self.structures[a[0]]['auxiliary_protein'] = []
                 self.structures[a[0]]['auxiliary_protein'].append(a[1])
+                if aux_csv=='fusion_proteins.csv':
+                    if a[1] not in self.fusion_proteins:
+                        self.fusion_proteins.append(a[1])
+
+    @staticmethod
+    def parse_yaml_file(yaml_file):
+        with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', yaml_file]), 'r') as yfile:
+            y = yaml.safe_load(yfile)
+        return y
+
+    def parse_parent_segends(self):
+        self.parent_segends = self.parse_yaml_file('non_xtal_segends.yaml')
 
 
 class StructureBuildCheck():
@@ -1181,7 +1198,7 @@ class StructureBuildCheck():
     local_wt_pdb_lookup_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'wt_pdb_lookup'])
 
     def __init__(self):
-        with open(self.local_annotation_dir+'/xtal_segends.yaml', 'r') as f:
+        with open(self.local_annotation_dir+'/mod_xtal_segends.yaml', 'r') as f:
             self.segends_dict = yaml.safe_load(f)
         self.pdbs = ParseStructureCSV().pdb_ids
         self.wt_pdb_lookup_files = [i.split('.')[0] for i in os.listdir(self.local_wt_pdb_lookup_dir)]
@@ -1211,7 +1228,7 @@ class StructureBuildCheck():
                             self.duplicate_residue_error[s] = [r]
 
     def check_segment_ends(self, structure):
-        key = structure.protein_conformation.protein.parent.entry_name + '_' + structure.pdb_code.index
+        key = structure.pdb_code.index
         if key in self.segends_dict:
             parent_residues = Residue.objects.filter(protein_conformation__protein=structure.protein_conformation.protein.parent)
             structure_residues = Residue.objects.filter(protein_conformation=structure.protein_conformation)
@@ -1512,3 +1529,31 @@ def build_signprot_struct(protein, pdb, data):
         ss.stabilizing_agents.add(stabagent)
     ss.save()
     return ss
+
+def flip_residue(atoms, atom_type):
+    for a in atoms:
+        if a.get_id()==atom_type+'1':
+            one_index = atoms.index(a)
+            one_coords = a.get_coord()
+        elif a.get_id()==atom_type+'2':
+            atoms[one_index].coord = a.get_coord()
+            a.coord = one_coords
+    return atoms
+
+def run_residue_flip(atoms, atom_types=None):
+    if not atom_types:
+        atom_types = ['CD','CE','CG','OE','OD','NH']
+    for at in atom_types:
+        atoms = flip_residue(atoms, at)
+    return atoms
+
+def atoms_to_dict(atom_list):
+    prev_res = 0
+    atom_resis = OrderedDict()
+    for a in atom_list:
+        if a.get_parent().get_id()[1]!=prev_res:
+            atom_resis[a.get_parent().get_id()[1]] = [a]
+        else:
+            atom_resis[a.get_parent().get_id()[1]].append(a)
+        prev_res = a.get_parent().get_id()[1]
+    return atom_resis
