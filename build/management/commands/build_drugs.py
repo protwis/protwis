@@ -5,46 +5,49 @@ from django.db import IntegrityError, DatabaseError
 from common.models import WebResource, WebLink, Publication
 from protein.models import Protein
 from drugs.models import Drugs
+from mutational_landscape.models import NHSPrescribings
 from common.tools import test_model_updates
 
-from optparse import make_option
-import logging
-import csv
-import os
 import pandas as pd
+import os
 import django.apps
+import logging
 
 class Command(BaseCommand):
-    help = 'Build Drug Data'
+    help = 'Build Drug and NHS Data'
+
     publication_cache = {}
 
     def add_arguments(self, parser):
         parser.add_argument('--filename', action='store', dest='filename',
-            help='Filename to import. Can be used multiple times')
+                            help='Filename to import. Can be used multiple times')
 
     logger = logging.getLogger(__name__)
 
-        # source file directory
-
-    drugdata_data_dir = os.sep.join([settings.DATA_DIR, 'drug_data']) #settings.DATA_DIR
+    # source file directory
+    data_dir = '/Users/vtk842/UCPH/protwis/data/protwis/gpcr/drug_data/'
+    #os.sep.join([settings.DATA_DIR, 'drug_data'])
     tracker = {}
     all_models = django.apps.apps.get_models()[6:]
 
     def handle(self, *args, **options):
-
         try:
-            self.purge_drugs()
+            self.purge_data()
             test_model_updates(self.all_models, self.tracker, initialize=True)
             self.create_drug_data()
+            self.create_NHS()
             test_model_updates(self.all_models, self.tracker, check=True)
         except Exception as msg:
             print(msg)
             self.logger.error(msg)
 
-    def purge_drugs(self):
+    def purge_data(self):
         try:
             Drugs.objects.all().delete()
-        except Drugs.DoesNotExist:
+            NHSPrescribings.objects.all().delete()
+        except Exception as msg:
+            print(msg)
+            self.logger.warning('Existing data cannot be deleted')
             self.logger.warning('Drugs mod not found: nothing to delete.')
 
     @staticmethod
@@ -109,22 +112,23 @@ class Command(BaseCommand):
 
         return pub
     
+    def read_csv_data(self, filename, file_suffix):
+
+        if not filename:
+            filename = next((fn for fn in os.listdir(self.data_dir) if fn.endswith(file_suffix)), None)
+
+        filepath = os.sep.join([self.data_dir, filename])
+        data = pd.read_csv(filepath, low_memory=False, encoding="ISO-8859-1")
+        return data
+    
     def create_drug_data(self, filename=False):
         print('CREATING DRUGDATA')
 
-        # read source files
-        if not filename:
-            filename = next((fn for fn in os.listdir(self.drugdata_data_dir) if fn.endswith('drug_data.csv')), None)
-
-        # if filename:
-        filepath = os.sep.join([self.drugdata_data_dir, filename])
-
-        data = pd.read_csv(filepath, low_memory=False, encoding = "ISO-8859-1", dtype={'PMID': str})
-        data['PMID'] = data['PMID'].fillna('')
+        data = self.read_csv_data(filename, 'drug_data.csv')
+        data['PMID'] = data['PMID'].fillna('').astype(str)
 
         for _, row in data.iterrows():
             drugname = row['Drug Name'].split(",")[0]
-            trialname = row['Trial name']
             drugalias_raw = row['DrugAliases']
             drugalias = ['' if str(drugalias_raw) == 'nan' else str(drugalias_raw)][0]
 
@@ -147,18 +151,17 @@ class Command(BaseCommand):
             # fetch protein
 
             drug, _ = Drugs.objects.get_or_create(name=drugname,
-                                                            synonym=drugalias,
-                                                            drugtype=drugtype,
-                                                            indication=indication,
-                                                            novelty=novelty,
-                                                            approval=approval,
-                                                            phase=phase,
-                                                            phasedate=PhaseDate,
-                                                            clinicalstatus=ClinicalStatus,
-                                                            moa=moa,
-                                                            status=status,
-                                                            targetlevel=targetlevel,
-                                                        )
+                                                    synonym=drugalias,
+                                                    drugtype=drugtype,
+                                                    indication=indication,
+                                                    novelty=novelty,
+                                                    approval=approval,
+                                                    phase=phase,
+                                                    phasedate=PhaseDate,
+                                                    clinicalstatus=ClinicalStatus,
+                                                    moa=moa,
+                                                    status=status,
+                                                    targetlevel=targetlevel)
             try:
                 p = Protein.objects.get(entry_name=entry_name)
                 drug.target.add(p)
@@ -175,9 +178,43 @@ class Command(BaseCommand):
             except:
                 publication = None
 
-
             drug.save()
 
             # target_list = drug.target.all()
 
         self.logger.info('COMPLETED CREATING DRUGDATA')
+    
+    def create_NHS(self, filename=False):
+        print('Creating NHS')
+
+        nhs_data = self.read_csv_data(filename, 'nhs.csv')
+
+        for _, entry in nhs_data.iterrows():
+
+            date = entry['date']
+            quantity = entry['quantity']
+            items = entry['items']
+            actual_cost = entry['actual_cost']
+            drugCode = entry['drugCode']
+            op_name = entry['drugName']
+            bnf_section_raw = entry['section']
+            bnf_section_name = bnf_section_raw.split(': ')[1]
+            drugNameQuery = entry['drugNameQuery']
+
+            try:
+                drugname = Drugs.objects.filter(name=drugNameQuery)[0]
+
+            except:
+                self.logger.warning('Drug not found for chemical {}'.format(drugNameQuery))
+                continue
+
+            NHSPrescribings.objects.get_or_create(date=date,
+                                                    quantity=quantity,
+                                                    items=items,
+                                                    actual_cost=actual_cost,
+                                                    drugCode=drugCode,
+                                                    op_name=op_name,
+                                                    bnf_section=bnf_section_name,
+                                                    drugname=drugname)
+
+        self.logger.info('COMPLETED CREATING NHS PRESCRIBINGS')
