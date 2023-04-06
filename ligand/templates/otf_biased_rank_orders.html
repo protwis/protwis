@@ -194,7 +194,7 @@
 
           <datalist id="select-ligand">
             {% for ligand in all_ligands %}
-              <option data-value="{{ligand.0}}" value="{{ligand.1}}"></li>
+              <option data-value="{{ligand.1}}" value="{{ligand.0}}"></li>
             {% endfor %}
           </datalist>
 
@@ -227,20 +227,35 @@
         </div>
     </div>
   {% else %}
-
-  <style>
-    div.tooltip {
-        position: absolute;
-        text-align: left;
-        width: 280px; /*120*/
-        height: 200px; /*15*/
-        font: 10px sans-serif;
-        background: white;
-        border: solid 1px #aaa;
-        border-radius: 8px;
-        pointer-events: none;
-    }
-  </style>
+    {% if pathway == 'True' %}
+    <style>
+      div.tooltip {
+          position: absolute;
+          text-align: left;
+          width: 350px; /*120*/
+          height: 130px; /*15*/
+          font: 10px sans-serif;
+          background: white;
+          border: solid 1px #aaa;
+          border-radius: 8px;
+          pointer-events: none;
+      }
+    </style>
+    {% else %}
+    <style>
+      div.tooltip {
+          position: absolute;
+          text-align: left;
+          width: 420px; /*120*/
+          height: 250px; /*15*/
+          font: 10px sans-serif;
+          background: white;
+          border: solid 1px #aaa;
+          border-radius: 8px;
+          pointer-events: none;
+      }
+    </style>
+    {% endif %}
 
   <!-- Tab panes -->
   <div class="tab-content">
@@ -329,7 +344,7 @@
 
     <datalist id="select-ligand">
       {% for ligand in all_ligands %}
-        <option data-value="{{ligand.0}}" value="{{ligand.1}}"></li>
+        <option data-value="{{ligand.1}}" value="{{ligand.0}}"></li>
       {% endfor %}
     </datalist>
 
@@ -458,6 +473,7 @@
   var colors = {{ colors | safe }};
   var legend = {{ scatter_legend | safe }};
   var pathway = "{{ pathway }}";
+  console.log(pathway);
   var conversion = {'G12/13': 'G<sub>12/13</sub>',
                     'Gi/o': 'G<sub>i/o</sub>',
                     'Gq/11': 'G<sub>q/11</sub>',
@@ -471,16 +487,20 @@
       ylabel = "ΔΔLog(Emax/EC50)";
     }else{
       ylabel = "ΔLog(Emax/EC50)";
+      bias = false
     }
-
-  } else {
+  } else if(label == 'tau'){
     ylabel = "ΔΔLog(Tau/KA)"
     qualitative = false
+  } else {
+    qualitative = true
+    ylabel = "Bias factor";
+    bias = true;
   };
   var count = 1;
   for(var path in realData){
     var name = 'Pathway' + parseInt(count);
-    DotScatter(realData[path], 'boxplotChart', name, colors, legend[path], conversion[path], ylabel, qualitative);
+    DotScatter(realData[path], 'boxplotChart', name, colors, legend[path], conversion[path], ylabel, qualitative, bias, pathway);
     count = count + 1;
     gNodes = d3.select('#'+name).selectAll('.main.axis.date').selectAll('.tick');
     headerNode = d3.select('#'+name).selectAll('.header').selectAll('text')[0][0];

@@ -309,6 +309,9 @@ def PdbTableData(request):
     identity_lookup = {}
     for s in data:
         pdb_id = s.pdb_code.index
+        if pdb_id in data_dict:
+            continue
+
         r = {}
         r['protein'] = s.protein_conformation.protein.parent.entry_short()
         r['protein_long'] = s.protein_conformation.protein.parent.short()
@@ -725,7 +728,7 @@ def InteractionBrowserData(request):
                                               protein_conformation__protein__sequence_type__slug='wt',
                                               protein_conformation__protein__species__common_name='Human',
 
-                        ).exclude(generic_number=None).values('pk','sequence_number','generic_number__label','amino_acid','protein_conformation__protein__entry_name','display_generic_number__label').all()
+                        ).exclude(display_generic_number=None).values('pk','sequence_number','generic_number__label','amino_acid','protein_conformation__protein__entry_name','display_generic_number__label').all()
             r_pair_lookup = defaultdict(lambda: defaultdict(lambda: set()))
             for r in residues:
                 # use the class specific generic number

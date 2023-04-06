@@ -50,11 +50,12 @@ class Command(BaseBuild):
             with lock:
                 s = self.structures[count.value]
                 pdb_code = s.protein_conformation.protein.entry_name
-                count.value +=1 
+                count.value +=1
                 self.logger.info('Generating crystal interactions data for PDB \'{}\'... ({} out of {})'.format(pdb_code, count.value, len(self.structures)))
 
             try:
-                interacting_pairs = compute_interactions(pdb_code)
+                # interacting_pairs = compute_interactions(pdb_code)
+                interacting_pairs = compute_interactions(pdb_code, do_interactions=True)
             except:
                 self.logger.error('Error with computing interactions (%s)' % (pdb_code))
                 continue

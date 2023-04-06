@@ -77,11 +77,11 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         self.data = self.parse_excel(self.annotation_source_file)
-        self.dump_files()
+        # self.dump_files()
         self.ECD_data = self.parse_excel(self.ECD_annotation_source_file)
         self.dump_ECD_files()
         self.ClassD_data = self.parse_excel(self.ClassD_annotation_source_file)
-        self.dump_ClassD_data()
+        # self.dump_ClassD_data()
         self.GPCRdb_structure_data = self.parse_excel(self.GPCRdb_structure_info)
         self.dump_GPCRdb_structure_data()
         # self.analyse_annotation_consistency()
@@ -434,7 +434,7 @@ class Command(BaseCommand):
 
         pdb_info = OrderedDict(sorted(pdb_info.items()))
         with open(self.mod_xtal_seg_end_file, 'w') as outfile:
-            yaml.dump(pdb_info, outfile, indent=4)
+            yaml.dump(pdb_info, outfile, default_flow_style=False)
 
         pdb_info_all = OrderedDict(sorted(pdb_info_all.items()))
         with open(self.xtal_seg_end_file, 'w') as outfile:

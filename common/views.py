@@ -1,4 +1,4 @@
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.views.generic import TemplateView
 from django.views.decorators.cache import cache_page
@@ -113,7 +113,7 @@ def getLigandTable(receptor_id, browser_type):
             )
 
         data_table += "</tbody></table>"
-        # cache.set("target_table", data_table, 60*60*24*7)
+        cache.set(cache_key, data_table, 60*60*24*7)
 
     return data_table
 
@@ -130,14 +130,20 @@ def getLigandCountTable():
         )
         # Acquired slugs
         # entry_names = [ p.entry_name for p in proteins ]
-
-        drugtargets_approved = list(Protein.objects.filter(drugs__status="approved").values_list("entry_name", flat=True))
+        drugtargets_approved = list(Protein.objects.filter(drugs__status="approved").values("entry_name").annotate(num_ligands=Count("drugs__name", distinct=True)))
+        # drugtargets_approved = list(Protein.objects.filter(drugs__status="approved").values_list("entry_name", flat=True))
+        approved = {}
+        for entry in drugtargets_approved:
+            approved[entry['entry_name']] = entry['num_ligands']
         drugtargets_trials = list(Protein.objects.filter(drugs__status__in=["in trial"],
                                                          drugs__clinicalstatus__in=["completed", "not open yet",
                                                                                     "ongoing", "recruiting",
-                                                                                    "suspended"]).values_list(
-            "entry_name", flat=True))
+                                                                                    "suspended"]).values(
+            "entry_name").annotate(num_ligands=Count("drugs__name", distinct=True)))
 
+        trials = {}
+        for entry in drugtargets_trials:
+            trials[entry['entry_name']] = entry['num_ligands']
         # ligand_set = list(AssayExperiment.objects.values_list("protein__family__slug", "protein__species_id__latin_name")\
         #     .annotate(num_ligands=Count("ligand", distinct=True)))
 
@@ -165,8 +171,8 @@ def getLigandCountTable():
                 <th style=\"color:red\">Receptor<br>(UniProt)</th> \
                 <th style=\"color:red\">Receptor<br>(GtP)</th> \
                 <th>Count</th> \
-                <th>Target of an approved drug</th> \
-                <th>Target in clinical trials</th> \
+                <th>Approved</th> \
+                <th>In clinical<br>trials</th> \
               </tr> \
             </thead>\
             \n \
@@ -211,8 +217,8 @@ def getLigandCountTable():
                     #t['gtp_link'] = link_setup.format(p.web_links.filter(web_resource__slug='gtop')[0])
                     t['iuphar'] = link_setup.format(gtop_links[0], t['iuphar'])
 
-                t['approved_target'] = "Yes" if p.entry_name in drugtargets_approved else "No"
-                t['clinical_target'] = "Yes" if p.entry_name in drugtargets_trials else "No"
+                t['approved_target'] = approved[t['entry_name']] if t['entry_name'] in approved.keys() else 0
+                t['clinical_target'] = trials[t['entry_name']] if t['entry_name'] in trials.keys() else 0
 
                 data_table += "<tr> \
                 <td data-sort=\"0\"><input autocomplete='off' class=\"form-check-input\" type=\"checkbox\" name=\"reference\" data-entry=\"{}\" entry-value=\"{}\"></td> \
@@ -473,16 +479,16 @@ def getReferenceTable(pathway, subtype):
         ligand_tot = {}
         for entry in totals:
             if entry['receptor_id'] not in ligand_tot.keys():
-                ligand_tot[entry['receptor_id']] = [entry['total']]
+                ligand_tot[entry['receptor_id']] = [entry['total'], '-', '-', '-']
         for entry in physio_bias:
             if entry['receptor_id'] in ligand_tot.keys():
-                ligand_tot[entry['receptor_id']].append(entry['physio'])
+                ligand_tot[entry['receptor_id']][1] = entry['physio']
         for entry in balanced_refs:
             if entry['receptor_id'] in ligand_tot.keys():
-                ligand_tot[entry['receptor_id']].append(entry['balanced'])
+                ligand_tot[entry['receptor_id']][2] = entry['balanced']
         for entry in path_bias:
             if entry['receptor_id'] in ligand_tot.keys():
-                ligand_tot[entry['receptor_id']].append(entry['path'])
+                ligand_tot[entry['receptor_id']][3] = entry['path']
 
         if pathway == "yes":
             data_table = "<table id='uniprot_selection' class='uniprot_selection stripe compact'> \
@@ -523,8 +529,8 @@ def getReferenceTable(pathway, subtype):
                     <th style=\"color:red\">Receptor<br>(GtP)</th> \
                     <th>Tested<br>(total)</th> \
                     <th>Balanced<br>references</th> \
-                    <th>Pathway<br>biased</th> \
-                    <th>Physiology<br>biased</th> \
+                    <th>Pathway<br>biased *</th> \
+                    <th>Physiology<br>biased *</th> \
                   </tr> \
                 </thead>\
                 \n \
@@ -564,24 +570,24 @@ def getReferenceTable(pathway, subtype):
 
             if t['id'] in ligand_tot:
                 t['ligand_count'] = link_setup.format("/ligand/target/all/" + t['slug'], ligand_tot[t['id']][0])
-                try:
-                    t['biased_count'] = link_setup.format("/ligand/target/all/" + t['slug'], ligand_tot[t['id']][1])
-                    t['biased_span'] = ligand_tot[t['id']][1]
-                except IndexError:
+                if ligand_tot[t['id']][1] == '-':
                     t['biased_count'] = '-'
                     t['biased_span'] = ''
-                try:
-                    t['balanced_refs'] = link_setup.format("/ligand/target/all/" + t['slug'], ligand_tot[t['id']][2])
-                    t['balanced_span'] = ligand_tot[t['id']][2]
-                except IndexError:
+                else:
+                    t['biased_count'] = link_setup.format("/ligand/target/all/" + t['slug'], ligand_tot[t['id']][1])
+                    t['biased_span'] = ligand_tot[t['id']][1]
+                if ligand_tot[t['id']][2] == '-':
                     t['balanced_refs'] = '-'
                     t['balanced_span'] = ''
-                try:
-                    t['pathway_count'] = link_setup.format("/ligand/target/all/" + t['slug'], ligand_tot[t['id']][3])
-                    t['pathway_span'] = ligand_tot[t['id']][3]
-                except IndexError:
+                else:
+                    t['balanced_refs'] = link_setup.format("/ligand/target/all/" + t['slug'], ligand_tot[t['id']][2])
+                    t['balanced_span'] = ligand_tot[t['id']][2]
+                if ligand_tot[t['id']][3] == '-':
                     t['pathway_count'] = '-'
                     t['pathway_span'] = ''
+                else:
+                    t['pathway_count'] = link_setup.format("/ligand/target/all/" + t['slug'], ligand_tot[t['id']][3])
+                    t['pathway_span'] = ligand_tot[t['id']][3]
 
             if pathway == "yes":
                 data_table += "<tr> \
@@ -1383,6 +1389,49 @@ def SelectRange(request):
             if range_start < float(resn.label.replace('x','.')) < range_end:
                 o.append(resn)
 
+def ImportTargetSelection(request):
+    """Adds source and proteins into session, returns info to update filters"""
+    entry_names = request.GET['entry_names']
+    proteins = Protein.objects.filter(entry_name__in=entry_names.split(',')).select_related('species', 'source')
+    sources = set([p.source for p in proteins])
+    species = set([p.species for p in proteins])
+    found_entries = [p.entry_name for p in proteins]
+
+    if len(sources)>1 or list(sources)[0].name!='SWISSPROT':
+        source = 'All'
+    else:
+        source = 'Swissprot'
+    species_ids = list(proteins.values_list('species__id', flat=True).distinct())
+    slugs = list(proteins.values_list('family__slug', flat=True))
+    out = {'slugs':slugs, 'species':species_ids, 'source':source, 'found_entries':found_entries}
+
+    simple_selection = request.session.get('selection', False)
+
+    # create full selection and import simple selection (if it exists)
+    selection = Selection()
+    if simple_selection:
+        selection.importer(simple_selection)
+
+    for prot in proteins:
+        selection_object = SelectionItem('protein', prot)
+        selection.add('targets', 'protein', selection_object)
+
+    for sp in species:
+        selection_object = SelectionItem('species', sp)
+        selection.add('species', 'species', selection_object)
+
+    for ps in sources:
+        selection_object = SelectionItem('annotation', ps)
+        selection.add('annotation', 'annotation', selection_object)
+
+    # export simple selection that can be serialized
+    simple_selection = selection.exporter()
+
+    # add simple selection to session
+    request.session['selection'] = simple_selection
+
+    return JsonResponse(json.dumps(out), safe=False)
+
 def SelectFullSequence(request):
     """Adds all segments to the selection"""
     selection_type = request.GET['selection_type']
@@ -1532,18 +1581,20 @@ def SelectAlignableResidues(request):
     if numbering_scheme_slug == 'cgn':
         cgn = True
     elif numbering_scheme_slug == 'false':
-        if simple_selection.reference:
+        if simple_selection and simple_selection.reference:
             if simple_selection.reference[0].type == 'family':
                 proteins = Protein.objects.filter(family__slug__startswith=simple_selection.reference[0].item.slug)
                 r_prot = proteins[0]
             elif simple_selection.reference[0].type == 'protein':
                 r_prot = simple_selection.reference[0].item
+            elif simple_selection.reference[0].type == 'structure':
+                r_prot = simple_selection.reference[0].item.protein_conformation.protein
 
             seg_ids_all = get_protein_segment_ids(r_prot, seg_ids_all)
             if r_prot.residue_numbering_scheme not in numbering_schemes:
                 numbering_schemes.append(r_prot.residue_numbering_scheme)
 
-        if simple_selection.targets:
+        if simple_selection and simple_selection.targets:
             for t in simple_selection.targets:
                 if t.type == 'family':
                     proteins = Protein.objects.filter(family__slug__startswith=t.item.slug)
@@ -1555,11 +1606,17 @@ def SelectAlignableResidues(request):
                 seg_ids_all = get_protein_segment_ids(t_prot, seg_ids_all)
                 if t_prot.residue_numbering_scheme not in numbering_schemes:
                     numbering_schemes.append(t_prot.residue_numbering_scheme)
+
         # Filter based on reference and target proteins
         filtered_segments = []
         for segment in segments:
             if segment.id in seg_ids_all:
                 filtered_segments.append(segment)
+
+        if len(numbering_schemes) == 0 and len(filtered_segments) == 0:
+            numbering_schemes.append(ResidueNumberingScheme.objects.get(slug="gpcrdba"))
+            filtered_segments = segments
+
         segments = filtered_segments
     else:
         numbering_schemes = [ResidueNumberingScheme.objects.get(slug=numbering_scheme_slug)]
@@ -1698,9 +1755,10 @@ def SelectionAnnotation(request):
 
     # export simple selection that can be serialized
     simple_selection = selection.exporter()
-
+    print('annotation',simple_selection)
     # add simple selection to session
     request.session['selection'] = simple_selection
+
     return render(request, 'common/selection_filters_annotation.html', selection.dict('annotation'))
 
 def SelectionSpeciesPredefined(request):
@@ -1714,14 +1772,14 @@ def SelectionSpeciesPredefined(request):
     selection = Selection()
     if simple_selection:
         selection.importer(simple_selection)
-
+    print(simple_selection)
     all_sps = Species.objects.all()
     sps = False
     if species == 'All':
         sps = []
     if species != 'All' and species:
         sps = Species.objects.filter(common_name=species)
-
+    print('sps', sps)
     if sps != False:
         # reset the species selection
         selection.clear('species')
@@ -1749,10 +1807,10 @@ def SelectionSpeciesToggle(request):
 
     all_sps = Species.objects.all()
     sps = Species.objects.filter(pk=species_id)
-
+    print(sps)
     # get simple selection from session
     simple_selection = request.session.get('selection', False)
-
+    print('species get simple selection', simple_selection)
     # create full selection and import simple selection (if it exists)
     selection = Selection()
     if simple_selection:
@@ -1774,6 +1832,7 @@ def SelectionSpeciesToggle(request):
     # add all species objects to context (for comparison to selected species)
     context = selection.dict('species')
     context['sps'] = Species.objects.all()
+    print('species toggle',simple_selection)
 
     return render(request, 'common/selection_filters_species_selector.html', context)
 
@@ -1856,7 +1915,7 @@ def SelectionGproteinToggle(request):
     g_prots_slugs = ['100_001_002', '100_001_003', '100_001_001', '100_001_004', '100_001_005']
     all_gprots = ProteinFamily.objects.filter(slug__in=g_prots_slugs)
     # all_gprots = ProteinGProtein.objects.all()
-    gprots = ProteinFamily.object.filter(pk=conversion[g_protein_id])
+    gprots = ProteinFamily.objects.filter(pk=conversion[g_protein_id])
     # gprots = ProteinGProtein.objects.filter(pk=g_protein_id)
     # print("'{}'".format(ProteinGProtein.objects.get(pk=g_protein_id).name))
 
@@ -1917,18 +1976,27 @@ def ExpandSegment(request):
     cgn = False
     if numbering_scheme_slug == 'cgn':
         cgn = True
-    elif numbering_scheme_slug == 'false':
+    elif numbering_scheme_slug == 'false' and simple_selection:
+        first_item = False
         if simple_selection.reference:
             first_item = simple_selection.reference[0]
-        else:
+        elif simple_selection.targets:
             first_item = simple_selection.targets[0]
-        if first_item.type == 'family':
-            proteins = Protein.objects.filter(family__slug__startswith=first_item.item.slug)
-            numbering_scheme = proteins[0].residue_numbering_scheme
-        elif first_item.type == 'protein':
-            numbering_scheme = first_item.item.residue_numbering_scheme
+
+        if first_item:
+            if first_item.type == 'family':
+                proteins = Protein.objects.filter(family__slug__startswith=first_item.item.slug)
+                numbering_scheme = proteins[0].residue_numbering_scheme
+            elif first_item.type == 'protein':
+                numbering_scheme = first_item.item.residue_numbering_scheme
+            elif first_item.type == 'structure':
+                numbering_scheme = first_item.item.protein_conformation.protein.residue_numbering_scheme
+        else:
+            numbering_scheme = ResidueNumberingScheme.objects.get(slug="gpcrdba")
+    elif numbering_scheme_slug:
+            numbering_scheme = ResidueNumberingScheme.objects.get(slug=numbering_scheme_slug)
     else:
-        numbering_scheme = ResidueNumberingScheme.objects.get(slug=numbering_scheme_slug)
+        numbering_scheme = ResidueNumberingScheme.objects.get(slug="gpcrdba")
 
     if cgn ==True:
         # fetch the generic numbers for CGN differently
@@ -2393,10 +2461,12 @@ def ReadTargetInput(request):
 
     if request.POST == {}:
         return render(request, 'common/selection_lists.html', '')
+    print(selection_type, selection_subtype)
 
     # Process input names
     up_names = request.POST['input-targets'].split('\r')
     for up_name in up_names:
+        print(up_name)
         up_name = up_name.strip()
         obj = None
         if "_" in up_name: # Maybe entry name
@@ -2431,7 +2501,7 @@ def ReadTargetInput(request):
         if obj != None:
             selection_object = SelectionItem(selection_subtype, obj)
             selection.add(selection_type, selection_subtype, selection_object)
-
+    print(obj)
     # export simple selection that can be serialized
     simple_selection = selection.exporter()
     # add simple selection to session

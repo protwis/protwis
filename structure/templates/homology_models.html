@@ -420,9 +420,9 @@
                 <tr model_id='{{model.pk}}'>
                     <td class="text-center"><input class="alt" type="checkbox" id="{{ model.pk }}"></td>
                     {% if model.protein.accession %}
-                        <td><a href="homology_models/{{ model.protein.entry_name }}_{{ model.state.slug }}">{{ model.protein.family.name|safe }}</a></td>
+                        <td><a href="homology_models/{{ model.protein.entry_name }}_{{ model.state.slug }}" target="_blank">{{ model.protein.family.name|safe }}</a></td>
                     {% else %}
-                        <td><a href="refined/{{ model.protein.entry_name|upper }}">{{ model.protein.family.name|safe }}</a></td>
+                        <td><a href="refined/{{ model.protein.entry_name|upper }}" target="_blank">{{ model.protein.family.name|safe }}</a></td>
                     {% endif %}
                     <td>{{ model.version|date:"Y-m-d" }}</td>
                     <td>{{ model.state.name }}</td>
@@ -450,8 +450,13 @@
                     <td>{{ model.protein.family.parent.short|safe }}</td>
                     <td>{{ model.protein.family.parent.parent.parent.short }}</td>
                     <td>{{ model.protein.species.common_name }}</td>
-                    <td><a href="/protein/{{ model.main_template.protein_conformation.protein.parent.entry_name }}">{{ model.main_template.protein_conformation.protein.parent.family.name|safe }}</a></td>
-                    <td><a href="{{ model.main_template.pdb_code.index }}">{{ model.main_template.pdb_code.index}}</a></td>
+                    {% if model.main_template %}
+                        <td><a href="/protein/{{ model.main_template.protein_conformation.protein.parent.entry_name }}">{{ model.main_template.protein_conformation.protein.parent.family.name|safe }}</a></td>
+                        <td><a href="{{ model.main_template.pdb_code.index }}">{{ model.main_template.pdb_code.index}}</a></td>
+                    {% else %}
+                        <td>-</td>
+                        <td>-</td>
+                    {% endif %}
                     <td style="display:none;">{{ model.protein.entry_name }}</td>
                 </tr>
             {% endfor %}

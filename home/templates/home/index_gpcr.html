@@ -21,42 +21,49 @@
                 <!-- Wrapper for carousel slides -->
                 <div class="carousel-inner" role="listbox">
                     <div class="item active">
-                        <img src="{% static 'home/carousel/seqali_phyltree.png' %}">
+                      <a href="https://docs.gpcrdb.org/structures.html#structure-models" target="_blank">
+                        <img src="{% static 'home/carousel/alphafold_models.png' %}">
+                      </a>
                         <div class="carousel-caption">
-                            <h3><a href="/alignment/targetselection" target="_blank">Alignments</a> and <a href="/phylogenetic_trees/targetselection" target="_blank">Trees</a></h3>
-                            <p>Segment and residue customized sequence alignments and phylogenetic trees.</p>
+                            <h3>New state-specific <a href="structure/homology_models" target="_blank">structure models</a></h3>
+                            <p>Models and refined structures using AlphaFold2.</p>
+                        </div>
+                    </div>
+                    <div class="item">
+                      <a href="https://docs.gpcrdb.org/index.html" target="_blank">
+                        <img src="{% static 'home/carousel/ligand_resources.png' %}">
+                      </a>
+                        <div class="carousel-caption">
+                            <h3>New <a href="ligand/endogenousbrowser/" target="_blank">ligand</a> resources</h3>
+                            <p>Endogenous ligands and tool compounds.</p>
+                        </div>
+                    </div>
+                    <div class="item">
+                      <a href="https://docs.gpcrdb.org/structure_comparison.html#structure-comparison-tool" target="_blank">
+                        <img src="{% static 'home/carousel/struct_comparison_tool.png' %}">
+                      </a>
+                        <div class="carousel-caption">
+                            <h3>New <a href="/structure_comparison/comparative_analysis" target="_blank">structure analysis</a> resource</h3>
+                            <p>Structure comparison tool and similarity trees.</p>
                         </div>
                     </div>
 
                     <div class="item">
-                        <img src="{% static 'home/carousel/constructs.png' %}">
-                        <div class="carousel-caption">
-                            <h3>Structure <a href="/construct/design" target="_blank">Determination</a> Resource</h3>
-                            <p>Construct design tool and suggested thermostabilizing mutations.</p>
-                        </div>
-                    </div>
-
-                    <div class="item">
-                        <img src="{% static 'home/carousel/strbrowser.png' %}">
-                        <div class="carousel-caption">
-                            <h3>Structure <a href="structure" target="_blank">Browser</a> and <a href="structure/statistics" target="_blank">Stats</a></h3>
-                            <p>Detailed browser for currently available GPCR structures and refinements.</p>
-                        </div>
-                    </div>
-
-                    <div class="item">
-                        <img src="{% static 'home/carousel/homomodels.png' %}">
-                        <div class="carousel-caption">
-                            <h3>Homology <a href="structure/homology_models" target="_blank">Models</a></h3>
-                            <p>Multiple template homology models for the whole GPCRome.</p>
-                        </div>
-                    </div>
-
-                    <div class="item">
+                      <a href="https://docs.gpcrdb.org/sites.html#sites" target="_blank">
                         <img src="{% static 'home/carousel/residplots.png' %}">
+                      <a>
                         <div class="carousel-caption">
                             <h3>Residue Plots</h3>
-                            <p>Customizable helix and snake plots.</p>
+                            <p>Custom helix and snake plots .</p>
+                        </div>
+                    </div>
+                    <div class="item">
+                      <a href="https://docs.gpcrdb.org/sequences.html#structure-based-alignments" target="_blank">
+                        <img src="{% static 'home/carousel/seqali_phyltree.png' %}">
+                      </a>
+                        <div class="carousel-caption">
+                            <h3><a href="/alignment/targetselection" target="_blank">Alignments</a> and <a href="/phylogenetic_trees/targetselection" target="_blank">Trees</a></h3>
+                            <p>Customized sequence alignments and phylogenetic trees .</p>
                         </div>
                     </div>
 
@@ -100,13 +107,14 @@
                     </div> -->
                     <div class="col-md-4" id='center_menu'>
                         <p style='text-align:justify'>
-                            GPCRdb (G protein-coupled receptor database) is a community hub offering:<br/>
+                            GPCRdb offers:<br/>
                             <ul>
-                              <li>Reference data (see Data box)</li>
-                              <li>Analysis tools (browse menu)</li>
-                              <li>Visualization (e.g., <a href='https://gpcrdb.org/protein/' target='_blank'>snakeplots</a>)</li>
-                              <li>Experiment design (overview)</li> <!-- need to add popup image onclick -->
-                              <li>Data deposition (e.g., <a href='https://docs.gpcrdb.org/mutations.html#mutation-data-submission' target='_blank'>ligand site mutations</a>)</li>
+                              <li>Reference data</li>
+                              <li>Analysis tools</li>
+                              <li>Visualization</li>
+                              <li>Experiment design</li> <!-- need to add popup image onclick -->
+                              <li>Data deposition</li>
+                              <li><a href='https://gpcrdb.org/cite_gpcrdb' target='_blank'>Overview figure and references</a></li>
                             <!-- GPCRdb contains reference data, interactive
                             visualisation and experiment design tools for G protein-coupled receptors (GPCRs). GPCRdb
                             curates sequence alignments, structures and receptor mutations from literature. Interactive
@@ -122,7 +130,7 @@
                     <div class="col-md-4">
                         <p style="text-align:justify">
                           <br />
-                           GPCRs are cell-surface receptors mediating the responses of 2/3<sup>rds</sup> of human hormones<sup><a href='https://doi.org/10.1016/j.cell.2019.10.010' target='_blank'>1</a></sup> and 1/3<sup>rd</sup> of
+                           G protein-coupled receptors (GPCRs) are cell-surface receptors mediating the responses of 2/3<sup>rds</sup> of human hormones<sup><a href='https://doi.org/10.1016/j.cell.2019.10.010' target='_blank'>1</a></sup> and 1/3<sup>rd</sup> of
                            drugs<sup><a href='https://doi.org/10.1038/nrd.2017.178' target='_blank'>2</a></sup>.
                            Each GPCR can bind several transducers, G proteins, GPCR kinases (GRKs) and arrestins
                            leading to distinct intracellular signaling networks and functional outcomes.
@@ -174,6 +182,10 @@
                             <h3>Publications</h3>
                             <div style='max-height: 470px; overflow-y: scroll;'>
                               <p>
+                              GPCRdb in 2023: State-specific structure models using AlphaFold2 and expansion of ligand resources.<br />
+                              Pándy-Szekeres, G., Caroli, J., Mamyrbekov, A., Kermani, A.A., Keserű, G.M., Kooistra, A.J. and Gloriam, D.E.<br />
+                              <a href ='https://doi.org/10.1093/nar/gkac1013' target='_blank'><i>Nucleic Acids Research</i>, 2023</a><br />
+                              <br />
                               GPCRdb in 2021: integrating GPCR sequence, structure and function.<br />
                               Kooistra AJ, Mordalski S, Pandy-Szekeres G, Esguerra M, Mamyrbekov A, Munk C, Keseru GM, Gloriam DE<br />
                               <a href ='https://doi.org/10.1093/NAR/GKAA1080' target='_blank'><i>Nucleic acids research</i>, 2021, 49:D335-D343</a><br />
@@ -197,7 +209,7 @@
                               </p>
                             </div>
                             <div style='height: 30px; margin-top: 10px; position: relative;'>
-                              <span style="position: absolute; bottom 0;"><strong><a role="button" id='cite_gpcrdb_pubs'>Citing GPCRdb</a></strong></span>
+                              <span style="position: absolute; bottom 0;"><strong><a href='https://gpcrdb.org/cite_gpcrdb' target='_blank'>Citing GPCRdb</a></strong></span>
                             </div>
                         </div>
                     </div>

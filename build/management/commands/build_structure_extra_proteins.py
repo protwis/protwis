@@ -6,7 +6,7 @@ from structure.models import StructureExtraProteins, Structure
 from structure.functions import ParseStructureCSV
 from protein.models import Protein, ProteinConformation
 from residue.models import Residue
-
+from common.tools import test_model_updates
 from interaction.models import StructureLigandInteraction
 
 from Bio.PDB import PDBParser
@@ -14,12 +14,13 @@ from io import StringIO
 import os
 import math
 import yaml
+import django.apps
 
 class Command(BaseBuild):
     help = "Build StructureExtraProteins data"
 
     g_prot_dict = {# Alpha
-                   'GNAS2':'Gs', 'GNAL':'Golf', 
+                   'GNAS2':'Gs', 'GNAL':'Golf',
                    'GNAI1':'Gi1', 'GNAI2':'Gi2', 'GNAI3':'Gi3', 'GNAT1':'Gt1', 'GNAT2':'Gt2', 'GNAT3':'Gt3', 'GNAZ':'Gz', 'GNAO':'Go',
                    'GNAQ':'Gq', 'GNA11':'G11', 'GNA14':'G14', 'GNA15':'G15',
                    'GNA12':'G12', 'GNA13':'G13',
@@ -32,7 +33,10 @@ class Command(BaseBuild):
                    'subunit gamma':'G&gamma;'}
 
     arrestin_dict = {'arrs_mouse':'S-arrestin', 'arrs_bovin':'S-arrestin', 'arrb1_human':'Beta-arrestin-1', 'arrb1_rat':'Beta-arrestin-1'}
-
+    #Setting the variables for the test tracking of the model upadates
+    tracker = {}
+    all_models = django.apps.apps.get_models()[6:]
+    test_model_updates(all_models, tracker, initialize=True)
 
     def add_arguments(self, parser):
         super(Command, self).add_arguments(parser=parser)
@@ -41,13 +45,17 @@ class Command(BaseBuild):
     def handle(self, *args, **options):
         if options['purge']:
             StructureExtraProteins.objects.all().delete()
+            self.tracker = {}
+            test_model_updates(self.all_models, self.tracker, initialize=True)
 
         self.psc = ParseStructureCSV()
         self.psc.parse_g_proteins()
         self.psc.parse_arrestins()
 
         self.build_g_protein_heterotrimer()
-        self.build_arrestin_extra_protein()     
+        test_model_updates(self.all_models, self.tracker, check=True)
+        self.build_arrestin_extra_protein()
+        test_model_updates(self.all_models, self.tracker, check=True)
 
     def build_g_protein_heterotrimer(self):
         sc = SignprotComplex.objects.filter(protein__family__slug__startswith='100')
@@ -152,4 +160,3 @@ class Command(BaseBuild):
                         sep.wt_coverage = None
 
                 sep.save()
-            

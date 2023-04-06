@@ -12,7 +12,7 @@
     <link href="{% static 'home/css/sequenceviewer.css' %}" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="{% static 'home/css/jquery.powertip.css' %}" />
 {% endblock %}
-    
+
 {% block addon_js %}
     <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
     <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
@@ -21,6 +21,7 @@
     <script src="{% static 'home/js/browser_functions.js' %}"> </script>
     <script src="{% static 'home/js/model_statistics.js' %}"> </script>
     <script src="{% static 'home/js/grayscale.js' %}"> </script>
+    <script src="{% static 'home/js/gpcrdb.js' %}"></script>
     <script src="{% static 'home/js/jquery.powertip.js' %}"></script>
 
 <script type="text/javascript" charset="utf-8">
@@ -35,12 +36,12 @@
 {% block content %}
 
 <div id="browser">
-    
+
     <div style="width:100%; display:inline;">
         <div class="btn-group" style="padding-left:10px; width: 100%;">
             <a id="dlink"  style="display:none;"></a>
             <div id="excel_table"  style="display:none;"></div>
-            <input class="btn btn-default btn-s btn-success" type="button" onclick="tableToExcel('structures_scrollable', 'Structure model statistics', 'GPCRdb_structure_model_statistics.xls')" value="Export Excel"></input>
+            <input class="btn btn-default btn-s btn-success" type="button" onclick="GlobalTableToExcel('structures_scrollable', 'Structure model statistics', 'GPCRdb_structure_model_statistics.xls')" value="Export Excel"></input>
             <div style="padding: 0px 0px 0px 10px; display: inline;">The RMSD values compare the latest model before a structure of the same receptor in the same state was published. <a href="https://docs.gpcrdb.org/structures.html#structure-model-statistics" target="_blank">Documentation</a></div>
         </div>
     </div>
@@ -85,14 +86,14 @@
                                 </div>
                             </div>
                         </th>
-                        <th colspan=10 class="over_header flexible_over_header" id="structure_over_header" >
+                        <!-- <th colspan=10 class="over_header flexible_over_header" id="structure_over_header" >
                             <div>
                                 <div class="overhead_text">MAIN TEMPLATE</div>
                                 <div class="overhead_close">
                                     <button type="button" class="close hide_columns" columns="20,21,22,23,24,25,26,27,28,29"  aria-label="Close"><span aria-hidden="true">&times;</span></button>
                                 </div>
                             </div>
-                        </th>
+                        </th> -->
                     </tr>
                     <tr class="over_header centered-header">
                         <th></th>
@@ -125,7 +126,7 @@
                         <th class="rightborder">Degree<br>active (%)</th>
                         <th>Version</th>
                         <th class="rightborder">Note</th>
-                        <th>GN seq.<br>id. (%)<br><i class="glyphicon glyphicon-question-sign gn-seqid"></i></th>
+                        <!-- <th>GN seq.<br>id. (%)<br><i class="glyphicon glyphicon-question-sign gn-seqid"></i></th>
                         <th>GN seq.<br>sim. (%)<br><i class="glyphicon glyphicon-question-sign gn-seqsim"></i></th>
                         <th>
                             <div>
@@ -144,7 +145,7 @@
                         </th>
                         <th>State</th>
                         <th>Degree<br>active (%)</th>
-                        <th class="rightborder">Resolution</th>
+                        <th class="rightborder">Resolution</th> -->
                     </tr>
                     <tr>
                         <th class="no-sort checkbox_tr"><input class="select-all" type="checkbox" onclick="select_all(this)"></th>
@@ -167,6 +168,7 @@
                         <th class="rightborder"></th>
                         <th></th>
                         <th class="rightborder"></th>
+                        <!-- <th></th>
                         <th></th>
                         <th></th>
                         <th></th>
@@ -175,8 +177,7 @@
                         <th></th>
                         <th></th>
                         <th></th>
-                        <th></th>
-                        <th class="rightborder"></th>
+                        <th class="rightborder"></th> -->
                     </tr>
                 </thead>
                 <tbody>
@@ -230,18 +231,20 @@
                                 -
                             {% endif %}
                         </td>
-                        
+
                         <!-- Receptor -->
                         <td><span><a target="_blank" href="https://www.uniprot.org/uniprot/{{ smr.target_structure.protein_conformation.protein.parent.accession }}">{{ smr.target_structure.protein_conformation.protein.parent.entry_short|safe }}</a></span></td>
                         <td class="uniprot"><a target="_blank" href="/protein/{{ smr.target_structure.protein_conformation.protein.parent.entry_name }}">{{ smr.target_structure.protein_conformation.protein.parent.short|safe }}</a></td>
                         <td class="expand" style="max-width: 80px;"><span>{{ smr.target_structure.protein_conformation.protein.family.parent.short|safe }}</span></td>
                         <td class="expand" style="max-width: 30px;"><span>{{ smr.target_structure.protein_conformation.protein.family.parent.parent.parent.short|safe }}</span></td>
+
                         <!-- Experimental structure -->
                         <td class="pdb text-left">
                             <a target="_blank" href="{{ smr.target_structure.pdb_code.index}}">{{ smr.target_structure.pdb_code.index}}</a>
                         </td>
                         <td>{{ smr.target_structure.state.name }}</td>
                         <td class="text-center">{{ smr.target_structure.gprot_bound_likeness|floatformat|dashwhenempty }}</td>
+
                         <!-- Model -->
                         <td>{{ smr.version|date:"Y-m-d" }}</td>
                         <td class="expand">
@@ -252,7 +255,7 @@
                             {% endif %}
                         </td>
                         <!-- Main template -->
-                        <td class="text-center color-column">{{ smr.seq_id }}</td>
+                        <!-- <td class="text-center color-column">{{ smr.seq_id }}</td>
                         <td class="text-center color-column">{{ smr.seq_sim }}</td>
                         <td><span><a target="_blank" href="https://www.uniprot.org/uniprot/{{ smr.main_template.protein_conformation.protein.parent.accession }}">{{ smr.main_template.protein_conformation.protein.parent.entry_short|safe }}</a></span></td>
                         <td class="uniprot"><a target="_blank" href="/protein/{{ smr.main_template.protein_conformation.protein.parent.entry_name }}">{{ smr.main_template.protein_conformation.protein.parent.short|safe }}</a></td>
@@ -263,7 +266,7 @@
                         </td>
                         <td>{{ smr.main_template.state.name }}</td>
                         <td class="text-center">{{ smr.main_template.gprot_bound_likeness|floatformat|dashwhenempty }}</td>
-                        <td class="text-center color-column">{{ smr.main_template.resolution|floatformat:"1" }}</td>
+                        <td class="text-center color-column">{{ smr.main_template.resolution|floatformat:"1" }}</td> -->
                     </tr>
                 {% endfor %}
                 </tbody>

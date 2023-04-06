@@ -173,7 +173,7 @@ span.text-forest-highlight {
   margin-top: 0;
 }
 
-select.form-control {
+select.form-control :not(#numberingschemeselect) {
   width: auto;
   height: 22px;
   font-size: 11px;
@@ -296,7 +296,7 @@ span.stats_title {
 span.stats_value {
   width: 3.5em;
   display: inline-block;
-  text-align: left;
+  text-align: right;
 }
 
 span.stats_indent {

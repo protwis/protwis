@@ -277,7 +277,11 @@ def render_alignment(request):
     a = Alignment()
 
     # load data from selection into the alignment
-    a.load_proteins_from_selection(simple_selection)
+    # only show wildtype protein entries if selection type is family
+    if len([t for t in simple_selection.targets if t.type=='family'])>0:
+        a.load_proteins_from_selection(simple_selection, only_wildtype=True)
+    else:
+        a.load_proteins_from_selection(simple_selection)
     a.load_segments_from_selection(simple_selection)
 
     key = "ALIGNMENT_" + a.get_hash()

@@ -54,6 +54,10 @@ class Alignment(GenericAlignment):
 
         if len(generic_number.split('.'))>2:
             formatted_gn = generic_number
+        # elif len(generic_number.split('.'))==2:
+        #     formatted_gn = '<br />'
+        #     seq_class = 'ali-td-generic-num-normal'
+        #     formatted_gn += '<span class="{:s}">{:s}<br /></span>'.format(seq_class, generic_number)
         # ECD format
         elif generic_number.split('x')[0] in self.ECD_segments:
             formatted_gn = '<br />'
