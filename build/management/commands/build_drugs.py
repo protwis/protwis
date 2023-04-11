@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
-from django.db import IntegrityError, DatabaseError
+from django.db import IntegrityError
 
 from common.models import WebResource, WebLink, Publication
 from protein.models import Protein
@@ -66,7 +66,7 @@ class Command(BaseCommand):
             publication_doi = str(int(publication_doi))
         except ValueError:
             pass
-        
+
         if publication_doi.isdigit():  # assume pubmed
             pub_type = 'pubmed'
         else:  # assume doi
