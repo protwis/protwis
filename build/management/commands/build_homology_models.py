@@ -174,7 +174,7 @@ class Command(BaseBuild):
             self.custom_selection = True
         # Only refined structures
         elif options['x']:
-            structs = Structure.objects.filter(annotated=True).order_by('pdb_code__index')
+            structs = Structure.objects.filter(annotated=True).exclude(structure_type__slug__startswith='af-').order_by('pdb_code__index')
             all_receptors = [i.protein_conformation.protein for i in structs]
         # Build all
         elif options['c']==False:
@@ -186,7 +186,7 @@ class Command(BaseBuild):
                                                                                                                                       Q(family__slug__istartswith='005') |
                                                                                                                                       Q(family__slug__istartswith='006') |
                                                                                                                                       Q(family__slug__istartswith='007')).order_by('entry_name')
-            structs = Structure.objects.filter(annotated=True).order_by('pdb_code__index')
+            structs = Structure.objects.filter(annotated=True).exclude(structure_type__slug__startswith='af-').order_by('pdb_code__index')
             all_receptors = list(all_receptors)+[i.protein_conformation.protein for i in structs]
         elif options['c'].upper() not in GPCR_class_codes:
             raise AssertionError('Error: Incorrect class name given. Use argument -c with class name A, B1, B2, D1, C, F or T')
@@ -309,15 +309,15 @@ class Command(BaseBuild):
         rec_class = ProteinFamily.objects.get(name=receptor.get_protein_class())
         if rec_class.name=='Class B2 (Adhesion)':
             rec_class = ProteinFamily.objects.filter(name__in=['Class B1 (Secretin)', 'Class B2 (Adhesion)'])
-            structs_in_class = Structure.objects.filter(annotated=True).filter(Q(protein_conformation__protein__parent__family__slug__startswith=rec_class[0].slug) |
+            structs_in_class = Structure.objects.filter(annotated=True).exclude(structure_type__slug__startswith='af-').filter(Q(protein_conformation__protein__parent__family__slug__startswith=rec_class[0].slug) |
                                                                                Q(protein_conformation__protein__parent__family__slug__startswith=rec_class[1].slug))
         else:
-            structs_in_class = Structure.objects.filter(protein_conformation__protein__parent__family__slug__startswith=rec_class.slug, annotated=True)
+            structs_in_class = Structure.objects.filter(protein_conformation__protein__parent__family__slug__startswith=rec_class.slug, annotated=True).exclude(structure_type__slug__startswith='af-')
         possible_states = structs_in_class.exclude(protein_conformation__protein__parent=receptor).exclude(state__name='Other').values_list('state__name', flat=True).distinct()
         if len(possible_states)==0:
             if rec_class.name=='Class T (Taste 2)':
                 rec_class = ProteinFamily.objects.get(name='Class A (Rhodopsin)')
-                structs_in_class = Structure.objects.filter(protein_conformation__protein__parent__family__slug__startswith=rec_class.slug, annotated=True)
+                structs_in_class = Structure.objects.filter(protein_conformation__protein__parent__family__slug__startswith=rec_class.slug, annotated=True).exclude(structure_type__slug__startswith='af-')
             possible_states = structs_in_class.exclude(protein_conformation__protein__parent=receptor).exclude(state__name='Other').values_list('state__name', flat=True).distinct()
         structs = structs_in_class.filter(protein_conformation__protein__parent=receptor)
         li1 = list(possible_states)
@@ -362,7 +362,7 @@ class CallHomologyModeling():
 
             ### TEMP FIX for complex models not to run on AlphaFold
             if Homology_model.complex and self.alphafold:
-                return 0 
+                return 0
             ###
 
             if import_receptor:
@@ -406,7 +406,7 @@ class CallHomologyModeling():
                     for l in lines:
                         s = l.split('\t')
                         rotamer_cluster_numbers[s[0]] = int(s[1])
-                 
+
                 delete_list = []
                 homologs = OrderedDict()
                 protconfs = {}
@@ -418,7 +418,7 @@ class CallHomologyModeling():
                     sli = StructureLigandInteraction.objects.filter(structure=i)
                     protconfs[i] = ProteinConformation.objects.get(protein=i.protein_conformation.protein.parent)
                     for s in sli:
-                        if s.ligand_role.name not in modality[Homology_model.state]: 
+                        if s.ligand_role.name not in modality[Homology_model.state]:
                             if len(sli)==1:
                                 delete_list.append(i)
                             elif list(sli).index(s)==len(sli)-1 and i not in delete_list:
@@ -493,7 +493,7 @@ class CallHomologyModeling():
                 struct_per_gn = OrderedDict()
                 for seg,j in interacting_residues.items():
                     for gn in j:
-                        struct_per_gn[gn] = [] 
+                        struct_per_gn[gn] = []
                         for struct, sim in Homology_model.similarity_table.items():
                             if struct not in coverage:
                                 coverage[struct] = [sim, 0]
@@ -508,7 +508,7 @@ class CallHomologyModeling():
                                         struct_per_gn[gn].append(struct)
                             except Residue.DoesNotExist:
                                 continue
-                
+
                 bd = Bioactivity()
                 bioactivity_data = bd.handle()
                 bioactivity_structures = []
@@ -559,7 +559,7 @@ class CallHomologyModeling():
                 for p in pocket_alignment.proteins[1:]:
                     s = Structure.objects.get(protein_conformation__protein=p.protein)
                     Homology_model.similarity_table[s] = int(p.identity)
-                
+
                 resorted_keys = sorted(Homology_model.similarity_table.items(), key=lambda x: (-x[1],x[0].resolution))
                 new_dict = OrderedDict()
                 for r in resorted_keys:
@@ -571,7 +571,7 @@ class CallHomologyModeling():
                         if s in structs:
                             alt_templates[gn] = [res.amino_acid, res.sequence_number, s]
                             break
-                
+
                 ### Clustering
                 # for gn, structs in struct_per_gn.items():
                 #     fix_st = False
@@ -602,7 +602,7 @@ class CallHomologyModeling():
                 #                 continue
                 #             rot = PDB.PDBParser().get_structure('rot', StringIO(rot_obj.pdbdata.pdb))
                 #             rot.atom_to_internal_coordinates()
-                            
+
                 #             for res in rot.get_residues():
                 #                 for i in range(1,6):
                 #                     chi = res.internal_coord.get_angle('chi{}'.format(i))
@@ -706,13 +706,13 @@ class CallHomologyModeling():
                 #                 if rec not in clusters_by_receptor[l]:
                 #                     clusters_by_receptor[l].append(rec)
                 #         print(clusters_by_receptor)
-                        
+
                 #         ### If largest cluster only has 1 receptor, skip
                 #         largest_cluster_label = max(clusters_by_receptor, key=lambda k: len(clusters_by_receptor[k]))
                 #         if len(clusters_by_receptor[largest_cluster_label])==1:
                 #             if not fix_st:
                 #                 continue
-                        
+
                 #         largest_clusters = [largest_cluster_label]
                 #         for l, r in clusters_by_receptor.items():
                 #             if l!=largest_cluster_label and len(clusters_by_receptor[l])==len(clusters_by_receptor[largest_cluster_label]):
@@ -809,7 +809,7 @@ class CallHomologyModeling():
                 #         c+=1
                 # print('Number of positions to change: ',c)
                 # Homology_model.statistics.info_dict['pdb_db_inconsistencies'] = []
-                
+
                 # h = Homology_model.run_non_conserved_switcher(Homology_model.main_pdb_array, Homology_model.alignment.reference_dict, Homology_model.alignment.template_dict, Homology_model.alignment.alignment_dict)
                 if self.debug:
                     pprint.pprint(Homology_model.statistics)
@@ -978,7 +978,7 @@ class CallHomologyModeling():
                                 swapped_dict[seg].append(pos)
                             template_source[seg][pos] = [None, None]
                             seg_dict[pos] = seg
-                        
+
                         alt_residues = OrderedDict()
                         for seg, posis in swapped_dict.items():
                             alt_mid = parse.fetch_residues_from_array(af_main_pdb_array[seg], posis)
@@ -1004,7 +1004,7 @@ class CallHomologyModeling():
                             else:
                                 swapped_dict[seg].append(pos)
                             seg_dict[pos] = seg
-                        
+
                         alt_residues = OrderedDict()
                         for seg, posis in swapped_dict.items():
                             alt_mid = parse.fetch_residues_from_array(af_main_pdb_array[seg], posis)
@@ -1022,7 +1022,7 @@ class CallHomologyModeling():
                         ### find right before and after 4 gns
                         i, minus_gns, first_seg = parse.find_before_4_gns(i, reference_dict, distorted_residues, segment_labels)
                         i, plus_gns, last_seg = parse.find_after_4_gns(i, reference_dict, distorted_residues, segment_labels)
-                        
+
                         orig_residues1 = parse.fetch_residues_from_array(main_pdb_array[first_seg], minus_gns)
                         orig_residues2 = parse.fetch_residues_from_array(main_pdb_array[last_seg], plus_gns)
                         orig_residues = parse.add_two_ordereddict(orig_residues1, orig_residues2)
@@ -1717,7 +1717,7 @@ class HomologyModeling(object):
             self.statistics.add_info("main_template", self.main_structure)
             self.statistics.add_info("preferred_chain", self.main_template_preferred_chain)
 
-            
+
             main_pdb_array = parse.pdb_array_creator(structure=self.main_structure)
 
             ### main_pdb_array sanity check
@@ -2799,7 +2799,7 @@ class HomologyModeling(object):
             post_file = '{}{}_{}_post.pdb'.format(path, self.reference_entry_name, self.target_signprot)
         else:
             post_file = path+self.reference_entry_name+'_'+self.state+"_post.pdb"
-        
+
         ## NMUR2
         # for i in ['ECL2|2','ECL2|3','ECL2|4','ECL2|5','ECL2|6','ECL2|7','ECL2|8','ECL2|9','ECL2|10','ECL2|11','ECL2|12','ECL2|13','ECL2|14','ECL2|15','ECL2|16','ECL2|17','ECL2|23','ECL2|24','ECL2|25']:
         #     self.trimmed_residues.remove(i)
@@ -2891,7 +2891,7 @@ class HomologyModeling(object):
                         if len(pep_seq)!=len(pep_resnums):
                             pep_seq = ''
                             for r in pep[l.chain]:
-                                try:  
+                                try:
                                     pep_seq+=PDB.Polypeptide.three_to_one(r.get_resname())
                                 except KeyError:
                                     pep_seq+='X'

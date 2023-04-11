@@ -41,9 +41,9 @@ import numpy as np
 startTime = datetime.now()
 
 
-class Command(BaseBuild):  
+class Command(BaseBuild):
 	help = 'Test scripts'
-	
+
 	def add_arguments(self, parser):
 		parser.add_argument('-s', help='Run StructureAnomalyRecognition on specific crystal structure', default=False)
 		parser.add_argument('-r', help='Specify residue number range. E.g. 10-25', default=False)
@@ -52,7 +52,7 @@ class Command(BaseBuild):
 
 	def handle(self, *args, **options):
 		if options['a']:
-			structures = Structure.objects.all().filter(protein_conformation__protein__family__parent__parent__parent__slug='001')
+			structures = Structure.objects.all().exclude(structure_type__slug__startswith='af-').filter(protein_conformation__protein__family__parent__parent__parent__slug='001')
 			for s in structures:
 				sar = StructureAnomalyRecognition(s)
 				sar.run_recog()
@@ -143,7 +143,7 @@ class StructureAnomalyRecognition(object):
 		for c in db_constrictions:
 			gn = c.generic_number.label
 			prev_gn = gn[:-1]+str(int(gn[-1])-1)
-			prev_resi = Residue.objects.get(protein_conformation=self.parent_prot_conf, 
+			prev_resi = Residue.objects.get(protein_conformation=self.parent_prot_conf,
 										    display_generic_number__label=dgn(prev_gn, self.parent_prot_conf))
 			db_constrictions_dict[gn] = prev_resi.sequence_number
 			for ca2 in constrictions:
@@ -172,7 +172,7 @@ class StructureAnomalyRecognition(object):
 		for b in db_bulges:
 			gn = b.generic_number.label
 			try:
-				resi = Residue.objects.get(protein_conformation=self.parent_prot_conf, 
+				resi = Residue.objects.get(protein_conformation=self.parent_prot_conf,
 										   display_generic_number__label=dgn(b.generic_number.label, self.parent_prot_conf))
 			except ResidueGenericNumberEquivalent.DoesNotExist:
 				print('Warning: {} ResidueGenericNumberEquivalent object missing from db'.format(gn))
@@ -221,7 +221,3 @@ class StructureAnomalyRecognition(object):
 						print(i,values[i])
 					except:
 						pass
-
-
-
-

@@ -766,7 +766,7 @@ class Command(BaseBuild):
             return
 
     def purge_structures(self):
-        Structure.objects.filter(structure_type__slug='alphafold').delete()
+        Structure.objects.filter(structure_type__slug='af-peptide').delete()
         # ResidueFragmentInteraction.objects.all().delete()
         # ResidueFragmentInteractionType.objects.all().delete()
         # StructureLigandInteraction.objects.all().delete()
@@ -780,7 +780,7 @@ class Command(BaseBuild):
         module_dir = '/tmp/interactions/'
         pdb_id = sd['pdb']
         pdb_name = sd['location'].split('/')[-1]
-        complex_name = sd['location'].split('/')[-2]
+        complex_name = sd['location'].split('/')[-1].split('-r')[0]
         gpcrdb_id = molecule['gpcrdb id']
         pdb_location = module_dir + 'pdbs/' + complex_name + '/' + pdb_name
         web_resource = WebResource.objects.get(slug='pdb')
@@ -800,9 +800,11 @@ class Command(BaseBuild):
 
             protein = structure.protein_conformation
             lig_key = list(data.keys())[0]
-
+            #/tmp/interactions/pdbs/oprd_mouse/oprd_mouse-1643-rank0.pdb
+            prot_pep = sd['location'].split('/')[-1].split('-r')[0]
             # /tmp/interactions/results/ranked_0/interaction
-            f = module_dir + "results/" + pdb_name.strip('.pdb') + "/interaction/" + pdb_name.strip('.pdb') + "_" + lig_key + ".pdb"
+            f = module_dir + "results/" + prot_pep + "/interaction/" + prot_pep + "_" + lig_key + ".pdb"
+            print(f)
 
             if os.path.isfile(f):
                 pdbdata, created = PdbData.objects.get_or_create(pdb=open(f, 'r').read())  # does this close the file?
@@ -857,7 +859,6 @@ class Command(BaseBuild):
         # setting up processes
         complexes = self.parsed_structures.complexes
         complexes = list(set(complexes)) #removing duplicates
-        # count.value = 72
         while count.value < len(complexes):
             print('******************************************')
             cmpx = complexes[count.value]
@@ -885,7 +886,7 @@ class Command(BaseBuild):
             # create a structure record
             # check if there is a ligand
             try:
-                struct = Structure.objects.get(protein_conformation__protein=con, pdb_code__index=sd['pdb'], structure_type__slug='alphafold')
+                struct = Structure.objects.get(protein_conformation__protein=con, pdb_code__index=sd['pdb'], structure_type__slug='af-peptide')
             except Structure.DoesNotExist:
                 struct = Structure()
 

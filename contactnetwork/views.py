@@ -146,7 +146,7 @@ def ShowDistances(request):
     return render(request, 'contactnetwork/distances.html', template_data)
 
 def PdbTreeData(request):
-    data = Structure.objects.values(
+    data = Structure.objects.exclude(structure_type__slug__startswith='af-').values(
         'representative',
         'pdb_code__index',
         'protein_conformation__protein__parent__family__parent__parent__parent__name',
@@ -208,7 +208,7 @@ def PdbTableData(request):
     #    else:
     #        method = "N/A"
     #    methods[c.name] = method
-    data = Structure.objects.all().prefetch_related(
+    data = Structure.objects.all().exclude(structure_type__slug__startswith='af-').prefetch_related(
                 "pdb_code",
                 "state",
                 "stabilizing_agents",
@@ -219,7 +219,7 @@ def PdbTableData(request):
                 "protein_conformation__protein__parent__family__parent",
                 "protein_conformation__protein__parent__family__parent__parent__parent",
                 "protein_conformation__protein__species",Prefetch("ligands", queryset=StructureLigandInteraction.objects.filter(
-                annotated=True).prefetch_related('ligand__ligand_type', 'ligand_role')))
+                annotated=True).exclude(structure__structure_type__slug__startswith='af-').prefetch_related('ligand__ligand_type', 'ligand_role')))
     # get best signalprotein/species/receptor
     # if effector is defined (as one letter), filter by that
     # 'G alpha' = G proteins (all G protein classes starts with G)
@@ -241,14 +241,14 @@ def PdbTableData(request):
         data = data.filter(id__in=complex_structure_ids)
 
     # get a gn residue count for all WT proteins
-    proteins_pks = Structure.objects.all().values_list("protein_conformation__protein__parent__pk", flat=True).distinct()
+    proteins_pks = Structure.objects.all().exclude(structure_type__slug__startswith='af-').values_list("protein_conformation__protein__parent__pk", flat=True).distinct()
     residue_counts = ProteinConformation.objects.filter(protein__pk__in=proteins_pks).values('protein__pk').annotate(res_count = Sum(Case(When(residue__generic_number=None, then=0), default=1, output_field=IntegerField())))
     rcs = {}
     for rc in residue_counts:
         rcs[rc['protein__pk']] = rc['res_count']
 
     # get minimum resolution for every receptor/state pair
-    resolutions = Structure.objects.all().values('protein_conformation__protein__parent','state__name').order_by().annotate(res = Min('resolution'))
+    resolutions = Structure.objects.all().exclude(structure_type__slug__startswith='af-').values('protein_conformation__protein__parent','state__name').order_by().annotate(res = Min('resolution'))
     best_resolutions = {}
     for r in resolutions:
         key = '{}_{}'.format(r['protein_conformation__protein__parent'], r['state__name'])
@@ -1017,7 +1017,7 @@ def InteractionBrowserData(request):
                 all_interaction_residues.add(i[1])
             all_interaction_residues = sorted(list(all_interaction_residues), key=functools.cmp_to_key(gpcrdb_number_comparator))
 
-            all_pdbs = list(Structure.objects.all().values_list('pdb_code__index', flat=True))
+            all_pdbs = list(Structure.objects.all().exclude(structure_type__slug__startswith='af-').values_list('pdb_code__index', flat=True))
             all_pdbs = [x.lower() for x in all_pdbs]
             #generic_number__label__in=all_interaction_residues)
             residues = Residue.objects.filter(protein_conformation__protein__entry_name__in=all_pdbs).exclude(generic_number=None).values(
@@ -2876,7 +2876,7 @@ def ClusteringData(request):
                     signaling_proteins[ps["structure__pdb_code__index"]] = ps['display_name']
 
         # Check for GRK complexes
-        grk_complexes = list(Structure.objects.filter(stabilizing_agents__name__contains="GRK").values_list("pdb_code__index", flat = True))
+        grk_complexes = list(Structure.objects.filter(stabilizing_agents__name__contains="GRK").exclude(structure_type__slug__startswith='af-').values_list("pdb_code__index", flat = True))
         for pdb in grk_complexes:
             if not pdb in signaling_proteins:
                 signaling_proteins[pdb] = "GRK"

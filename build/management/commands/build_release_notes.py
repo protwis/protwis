@@ -100,7 +100,7 @@ class Command(BaseCommand):
             ['Ligand bioactivities GPCRdb', AssayExperiment.objects.all().count(), 'GPCRdb'],
             ['Ligand site mutations GPCRdb', MutationExperiment.objects.all().count(), 'GPCRdb'],
             ['Ligand interactions GPCRdb', ResidueFragmentInteraction.objects.all().count(), 'GPCRdb'],
-            ['GPCRs structures GPCRdb', Structure.objects.filter(protein_conformation__protein__family__slug__startswith="00").count(), 'GPCRdb'],
+            ['GPCRs structures GPCRdb', Structure.objects.filter(protein_conformation__protein__family__slug__startswith="00").exclude(structure_type__slug__startswith='af-').count(), 'GPCRdb'],
             ['GPCRs structure models GPCRdb', StructureModel.objects.filter(protein__accession__isnull=False).count(), 'GPCRdb'],
             ['Generic residues GPCRdb', ResidueGenericNumber.objects.filter(scheme_id__in=[7,8,9,10,11]).values('label').count(), 'GPCRdb'],
             ['Refined structures GPCRdb', StructureModel.objects.filter(protein__accession__isnull=True, protein__family__slug__startswith="00").count() + StructureComplexModel.objects.filter(receptor_protein__accession__isnull=True, receptor_protein__family__slug__startswith="00").count(), 'GPCRdb'],

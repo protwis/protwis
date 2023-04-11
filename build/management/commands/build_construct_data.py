@@ -1,4 +1,4 @@
-from django.core.management.base import BaseCommand, CommandError
+af-from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 from django.utils.text import slugify
 from django.db import IntegrityError
@@ -158,7 +158,7 @@ class Command(BaseCommand):
                     add_construct(d)
 
         if do_all:
-            structures = Structure.objects.all()
+            structures = Structure.objects.all().exclude(structure_type__slug__startswith='af-')
             for s in structures:
                 pdbname = str(s)
                 try:

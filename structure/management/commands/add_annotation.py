@@ -121,7 +121,7 @@ class Command(BaseCommand):
                 #     if p.protein not in max5prot and p.similarity in max5sim:
                 #         max5prot.append(p.protein)
                 # structures = Structure.objects.filter(protein_conformation__protein__parent__in=max5prot)
-                
+
                 # print(len(structures))
                 # print(max5prot)
 
@@ -132,12 +132,12 @@ class Command(BaseCommand):
                     seq = seq[:-5]
 
                 dssp = self.dssp(s, structure[0][data['preferred_chain']], structure)
-                
+
                 if fusion_present or s in ['7V68','7V69','7V6A','7W6P','7W7E','8E9W','8E9X','8E9Y','8E9Z','8EA0']:
                     pw2 = Bio.pairwise2.align.localms(parent_seq, seq, 3, -3, -3.5, -1)
                 else:
                     pw2 = Bio.pairwise2.align.localms(parent_seq, seq, 3, -4, -5, -2)
-                
+
                 ref_seq, temp_seq = str(pw2[0][0]), str(pw2[0][1])
                 ref_i, temp_i = 0, 0
                 res_dict = OrderedDict()
@@ -196,7 +196,7 @@ class Command(BaseCommand):
                     parent_x50 = int(parent_segends[str(i)+'x'])
                     parent_start = int(parent_segends[str(i)+'b'])
                     parent_end = int(parent_segends[str(i)+'e'])
-                    
+
                     ### Start
                     start_range = range(parent_x50, parent_start-1, -1)
                     non_helical, remove_list = self.get_non_helicals(start_range, res_dict)
@@ -308,7 +308,7 @@ class Command(BaseCommand):
                                 e2e_counter+=1
                             segends[s]['e2e'] = wt_pdb_lookup[e2e]
 
-                proteins_in_db = Structure.objects.filter(protein_conformation__protein__parent=parent_protein)
+                proteins_in_db = Structure.objects.filter(protein_conformation__protein__parent=parent_protein).exclude(structure_type__slug__startswith='af-')
                 if len(proteins_in_db)==0:
                     if parent_protein not in new_unique_receptor_structures:
                         new_unique_receptor_structures[parent_protein] = [s]
@@ -328,12 +328,12 @@ class Command(BaseCommand):
                 ### Save to file
                 with open(self.xtal_seg_end_file, 'w') as f1:
                     yaml.dump(self.xtal_seg_ends, f1, default_flow_style=False)
-            
+
         # pprint.pprint(segends)
         # print('New unique receptor structures')
         # pprint.pprint(new_unique_receptor_structures)
 
-        
+
 
     @staticmethod
     def get_non_helicals(res_range, residues):

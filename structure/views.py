@@ -61,7 +61,7 @@ class StructureBrowser(TemplateView):
 
         context = super(StructureBrowser, self).get_context_data(**kwargs)
         try:
-            structures = Structure.objects.all().select_related(
+            structures = Structure.objects.all().exclude(structure_type__slug__startswith='af-').select_related(
                 "state",
                 "structure_type",
                 "pdb_code__web_resource",
@@ -73,7 +73,7 @@ class StructureBrowser(TemplateView):
                 "protein_conformation__protein__parent__endogenous_gtp_set__ligand__ligand_type",
                 "protein_conformation__site_protein_conformation__site","structure_type",
                 Prefetch("ligands", queryset=StructureLigandInteraction.objects.filter(
-                annotated=True).prefetch_related('ligand__ligand_type', 'ligand_role','ligand__ids__web_resource')),
+                annotated=True).exclude(structure__structure_type__slug__startswith='af-').prefetch_related('ligand__ligand_type', 'ligand_role','ligand__ids__web_resource')),
                 Prefetch("extra_proteins", queryset=StructureExtraProteins.objects.all().prefetch_related(
                     'protein_conformation','wt_protein')),
                 Prefetch("signprotcomplex_set", queryset=SignprotComplex.objects.all().prefetch_related('protein')))
@@ -127,7 +127,7 @@ class EffectorStructureBrowser(TemplateView):
                 "protein_conformation__protein__parent__endogenous_gtp_set__ligand__ligand_type",
                 "protein_conformation__site_protein_conformation__site",
                 Prefetch("ligands", queryset=StructureLigandInteraction.objects.filter(
-                annotated=True).prefetch_related('ligand__ligand_type', 'ligand_role','ligand__ids__web_resource')),
+                annotated=True).exclude(structure__structure_type__slug__startswith='af-').prefetch_related('ligand__ligand_type', 'ligand_role','ligand__ids__web_resource')),
                 Prefetch("extra_proteins", queryset=StructureExtraProteins.objects.all().prefetch_related(
                     'protein_conformation','wt_protein', 'wt_protein__species', 'wt_protein__family', 'wt_protein__family__parent')),
                 Prefetch("signprot_complex", queryset=SignprotComplex.objects.all().prefetch_related(
@@ -778,17 +778,17 @@ class StructureStatistics(TemplateView):
             lookup[f.slug] = f.name
 
         #GENERIC
-        all_structs = Structure.objects.all().prefetch_related('protein_conformation__protein__family')
+        all_structs = Structure.objects.all().exclude(structure_type__slug__startswith='af-').prefetch_related('protein_conformation__protein__family')
         all_complexes = all_structs.exclude(ligands=None)
-        unique_structs = Structure.objects.order_by('protein_conformation__protein__family__name', 'state',
+        unique_structs = Structure.objects.exclude(structure_type__slug__startswith='af-').order_by('protein_conformation__protein__family__name', 'state',
             'publication_date', 'resolution').distinct('protein_conformation__protein__family__name').prefetch_related('protein_conformation__protein__family')
-        unique_complexes = StructureLigandInteraction.objects.filter(annotated=True).distinct('ligand', 'structure__protein_conformation__protein__family').prefetch_related('structure', 'structure__protein_conformation', 'structure__protein_conformation__protein', 'structure__protein_conformation__protein__family')
+        unique_complexes = StructureLigandInteraction.objects.filter(annotated=True).exclude(structure__structure_type__slug__startswith='af-').distinct('ligand', 'structure__protein_conformation__protein__family').prefetch_related('structure', 'structure__protein_conformation', 'structure__protein_conformation__protein', 'structure__protein_conformation__protein__family')
         all_active = all_structs.filter(protein_conformation__state__slug = 'active')
         years = self.get_years_range(list(set([x.publication_date.year for x in all_structs])))
         unique_active = unique_structs.filter(protein_conformation__state__slug = 'active')
         #Stats
         # struct_count = Structure.objects.all().annotate(Count('id'))
-        struct_lig_count = Structure.objects.exclude(ligands=None)
+        struct_lig_count = Structure.objects.exclude(ligands=None).exclude(structure_type__slug__startswith='af-')
         context['all_structures'] = len(all_structs)
         context['all_structures_by_class'] = self.count_by_class(all_structs, lookup)
         context['all_complexes'] = len(all_complexes)
@@ -802,7 +802,7 @@ class StructureStatistics(TemplateView):
         context['unique_active'] = len(unique_active)
         context['unique_active_by_class'] = self.count_by_class(unique_active, lookup)
         context['release_notes'] = ReleaseNotes.objects.all()[0]
-        context['latest_structure'] = Structure.objects.latest('publication_date').publication_date
+        context['latest_structure'] = Structure.objects.exclude(structure_type__slug__startswith='af-').latest('publication_date').publication_date
         context['chartdata'] = self.get_per_family_cumulative_data_series(years, unique_structs, lookup)
         context['chartdata_y'] = self.get_per_family_data_series(years, unique_structs, lookup)
         context['chartdata_all'] = self.get_per_family_cumulative_data_series(years, all_structs, lookup)
@@ -864,7 +864,7 @@ class StructureStatistics(TemplateView):
 
             #GPROT
             if self.origin == 'gprot':
-                noncomplex_gprots = SignprotStructure.objects.filter(protein__family__slug__startswith='100').prefetch_related("protein")
+                noncomplex_gprots = SignprotStructure.objects.filter(protein__family__slug__startswith='100').exclude(structure_type__slug__startswith='af-').prefetch_related("protein")
                 context['noncomplex_gprots_by_gclass'] = self.count_by_effector_class(noncomplex_gprots, lookup, nc=True)
                 context['noncomplex_gprots'] = len(noncomplex_gprots)
                 circle_data = all_gprots.values_list(
@@ -884,7 +884,7 @@ class StructureStatistics(TemplateView):
         #ARRESTIN
         else:
             all_arrestins = StructureExtraProteins.objects.filter(category='Arrestin').prefetch_related("wt_protein","wt_protein__family", "wt_protein__family__parent", "structure__protein_conformation__protein__family")
-            noncomplex_arrestins = SignprotStructure.objects.filter(protein__family__slug__startswith='200').prefetch_related("protein")
+            noncomplex_arrestins = SignprotStructure.objects.filter(protein__family__slug__startswith='200').exclude(structure_type__slug__startswith='af-').prefetch_related("protein")
             ###### these are query sets for Arrestin Structure Statistics
             all_arr_A_complexes = all_arrestins.filter(structure__protein_conformation__protein__family__slug__startswith='001')
             all_arr_B1_complexes = all_arrestins.filter(structure__protein_conformation__protein__family__slug__startswith='002')
@@ -1324,7 +1324,7 @@ class StructureStatistics(TemplateView):
         score_copy = {'score': {'a':0,'i':0,'i_weight':0,'m':0,'m_weight':0,'s':0,'s_weight':0} , 'interaction' : {},'mutation': {}}
 
         # Replace above as fractions etc is not required and it was missing xtals that didnt have interactions.
-        unique_structs = list(Structure.objects.order_by('protein_conformation__protein__parent', 'state',
+        unique_structs = list(Structure.objects.exclude(structure_type__slug__startswith='af-').order_by('protein_conformation__protein__parent', 'state',
             'publication_date', 'resolution').distinct('protein_conformation__protein__parent').prefetch_related('protein_conformation__protein__family'))
 
         for s in unique_structs:
@@ -1378,7 +1378,7 @@ class StructureStatistics(TemplateView):
         Prepare data for coverage diagram.
         """
 
-        crystal_proteins = [x.protein_conformation.protein.parent for x in Structure.objects.order_by('protein_conformation__protein__parent', 'state',
+        crystal_proteins = [x.protein_conformation.protein.parent for x in Structure.objects.exclude(structure_type__slug__startswith='af-').order_by('protein_conformation__protein__parent', 'state',
             'publication_date', 'resolution').distinct('protein_conformation__protein__parent').prefetch_related('protein_conformation__protein__parent__family')]
 
         families = []
@@ -1437,7 +1437,7 @@ class StructureStatistics(TemplateView):
         score_copy = {'score': {'a':0,'i':0,'i_weight':0,'m':0,'m_weight':0,'s':0,'s_weight':0} , 'interaction' : {},'mutation': {}}
 
         # Replace above as fractions etc is not required and it was missing xtals that didnt have interactions.
-        unique_structs = list(Structure.objects.order_by('protein_conformation__protein__family__name', 'state',
+        unique_structs = list(Structure.objects.exclude(structure_type__slug__startswith='af-').order_by('protein_conformation__protein__family__name', 'state',
             'publication_date', 'resolution').distinct('protein_conformation__protein__family__name').prefetch_related('protein_conformation__protein__family'))
 
         for s in unique_structs:
@@ -2218,7 +2218,7 @@ class TemplateBrowser(TemplateView):
         a.load_reference_protein_from_selection(simple_selection)
 
         # fetch
-        qs = Structure.objects.all().select_related(
+        qs = Structure.objects.all().exclude(structure_type__slug__startswith='af-').select_related(
             "pdb_code__web_resource",
             "protein_conformation__protein__species",
             "protein_conformation__protein__source",
@@ -2227,7 +2227,7 @@ class TemplateBrowser(TemplateView):
             "stabilizing_agents",
             "protein_conformation__protein__parent__endogenous_gtp_set__ligand__ligand_type",
             Prefetch("ligands", queryset=StructureLigandInteraction.objects.filter(
-            annotated=True).prefetch_related('ligand__ligand_type', 'ligand_role')))
+            annotated=True).exclude(structure__structure_type__slug__startswith='af-').prefetch_related('ligand__ligand_type', 'ligand_role')))
 
         # Dirty but fast
         qsd = {}

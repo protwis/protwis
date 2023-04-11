@@ -104,33 +104,40 @@ def calculate_interactions(pdb, session=None, peptide=None, file_input=False):
     if not file_input:
         pdb_location = projectdir + 'pdbs/' + pdb + '.pdb'
     else:
-        complex_name = pdb.split('/')[-2]
+        complex_name = pdb.split('/')[-1].split('-rank')[0]
         model_name = pdb.split('/')[-1]
         pdb_location = projectdir + 'pdbs/' + complex_name + '/' + model_name + '.pdb'
     if not session:
+        # print('Checking PDB')
         check_pdb(projectdir, pdb, file_input)
+        # print('Checking Dirs')
         checkdirs(projectdir, pdb, file_input)
+        # print('Finding interacting ligand')
         hetlist_display = find_interacting_ligand(pdb_location, pdb, file_input)
         # Defining a shared parser
         parser = PDBParser(QUIET=True)
         if file_input:
-            pdb = model_name
+            pdb = complex_name
         scroller = parser.get_structure(pdb, pdb_location)
+        # print('Creating ligand and poseview')
         create_ligands_and_poseview(hetlist_display, scroller, projectdir, pdb, peptide) #ignore_het (should be global), inchikeys, smiles (should not be used)
+        # print('Building ligand info')
         hetlist, ligand_charged, ligand_donors, ligand_atoms, ligand_acceptors, ligandcenter, ligand_rings = build_ligand_info(
                                                                                                                 scroller, hetlist_display,
                                                                                                                 projectdir, pdb, peptide, hetlist,
                                                                                                                 ligand_atoms, ligand_charged, ligand_donors,
                                                                                                                 ligand_acceptors, ligandcenter, ligand_rings)
-
+        # print('Finding interactions')
         summary_results, new_results, results = find_interactions(
                                                     scroller, projectdir, pdb, peptide,
                                                     hetlist, ligandcenter, radius, summary_results,
                                                     new_results, results, hydrophob_radius, ligand_rings, ligand_charged, pdb_location)
+        # print('Analyzing interactions')
         summary_results, new_results, sortedresults = analyze_interactions(
                                                         projectdir, pdb, results, ligand_donors,
                                                         ligand_acceptors, ligand_charged, new_results,
                                                         summary_results, hetlist_display, sortedresults, pdb_location)
+        # print('Making pretty results')
         pretty_results(projectdir, pdb, summary_results, pdb_location)
 
     else:
@@ -189,7 +196,8 @@ def check_pdb(projectdir, pdb, file_input):  #CAN WE HAVE THE PDB AS A VAR AND N
                 with open(temp_path, "w") as f:
                     f.write(pdbfile)
     else:
-        complex_name = pdb.split('/')[-2]
+        #/protwis/data/protwis/gpcr/af_arman/npy4r_rat-1521-rank0
+        complex_name = pdb.split('/')[-1].split('-rank')[0]
         model_name = pdb.split('/')[-1]
         with open(pdb +'.pdb', 'r') as f:
             pdbfile = f.read()
@@ -223,20 +231,20 @@ def checkdirs(projectdir, pdb, file_input): # DO WE NEED TO HAVE THIS DATA STORE
         if not os.path.exists(directory):
             os.makedirs(directory)
     else:
-        model_name = pdb.split('/')[-1].split('.pdb')[0]
-        directory = projectdir + 'results/' + model_name
+        complex_name = pdb.split('/')[-1].split('-rank')[0]
+        directory = projectdir + 'results/' + complex_name
         if os.path.exists(directory):
             shutil.rmtree(directory)
-        directory = projectdir + 'results/' + model_name + '/interaction'
+        directory = projectdir + 'results/' + complex_name + '/interaction'
         if not os.path.exists(directory):
             os.makedirs(directory)
-        directory = projectdir + 'results/' + model_name + '/ligand' #not really necessary
+        directory = projectdir + 'results/' + complex_name + '/ligand' #not really necessary
         if not os.path.exists(directory):
             os.makedirs(directory)
-        directory = projectdir + 'results/' + model_name + '/output'
+        directory = projectdir + 'results/' + complex_name + '/output'
         if not os.path.exists(directory):
             os.makedirs(directory)
-        directory = projectdir + 'results/' + model_name + '/fragments' #not really necessary
+        directory = projectdir + 'results/' + complex_name + '/fragments' #not really necessary
         if not os.path.exists(directory):
             os.makedirs(directory)
         directory = projectdir + 'temp/'
@@ -249,9 +257,9 @@ def find_interacting_ligand(pdb_location, pdb, file_input):
     if not file_input:
         db_ligs = list(StructureLigandInteraction.objects.filter(structure_id__pdb_code_id__index=pdb.upper()).values_list('pdb_reference', flat=True))
     else:
-        receptor = pdb.split('/')[6].split('_')[0]
-        lig_id = pdb.split('/')[7]
-        code = '_'.join(['AFM', receptor, lig_id]).upper()
+        receptor =  pdb.split('/')[-1].split('-r')[0]
+        # lig_id = pdb.split('/')[-1].split('-')[1]
+        code = '_'.join(['AFM', receptor]).upper()
         db_ligs = list(StructureLigandInteraction.objects.filter(structure_id__pdb_code_id__index=code).values_list('pdb_reference', flat=True))
     f_in = open(pdb_location, 'r')
     d = {}

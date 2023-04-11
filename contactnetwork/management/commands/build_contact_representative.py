@@ -23,7 +23,7 @@ class Command(BaseCommand):
     def receptor_representatives(self):
         print('Script to decide contact representative for a conformation. Maximising highest frequence of common contacts, while minimizing uncommon (50%)')
 
-        structures = Structure.objects.all().prefetch_related(
+        structures = Structure.objects.all().exclude(structure_type__slug__startswith='af-').prefetch_related(
             "pdb_code",
             "state",
             "protein_conformation__protein__parent__family")
@@ -140,7 +140,7 @@ class Command(BaseCommand):
     def class_level_contacts(self):
 
         class_level_contacts = {}
-        structures = Structure.objects.filter(refined=False).prefetch_related(
+        structures = Structure.objects.filter(refined=False).exclude(structure_type__slug__startswith='af-').prefetch_related(
             "pdb_code",
             "state",
             "protein_conformation__protein__parent__family",
@@ -328,7 +328,7 @@ class Command(BaseCommand):
     def class_based_representative(self):
         print('Script to decide contact representative for a conformation. Maximising highest frequence of common contacts, while minimizing uncommon (50%)')
 
-        structures = Structure.objects.filter(refined=False).prefetch_related(
+        structures = Structure.objects.filter(refined=False).exclude(structure_type__slug__startswith='af-').prefetch_related(
             "pdb_code",
             "state",
             "protein_conformation__protein__parent__family")

@@ -14,7 +14,7 @@ class Command(BaseCommand):
         sbc = StructureBuildCheck()
         if not options['signprot']:
             sbc.check_structures()
-            structs = Structure.objects.all()
+            structs = Structure.objects.all().exclude(structure_type__slug__startswith='af-')
             sbc.check_duplicate_residues()
             for s in structs:
                 sbc.check_segment_ends(s)

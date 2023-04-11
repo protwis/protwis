@@ -478,9 +478,9 @@ def get_segment_template (protein, segments=['TM1', 'TM2', 'TM3', 'TM4','TM5','T
     a.load_reference_protein(protein)
     #You are so gonna love it...
     if state:
-        a.load_proteins([x.protein_conformation.protein.parent for x in list(Structure.objects.order_by('protein_conformation__protein__parent','resolution').exclude(protein_conformation__protein=protein.id, protein_conformation__state=state))])
+        a.load_proteins([x.protein_conformation.protein.parent for x in list(Structure.objects.order_by('protein_conformation__protein__parent','resolution').exclude(protein_conformation__protein=protein.id, protein_conformation__state=state, structure_type__slug__startswith='af-'))])
     else:
-        a.load_proteins([x.protein_conformation.protein.parent for x in list(Structure.objects.order_by('protein_conformation__protein__parent','resolution').exclude(protein_conformation__protein=protein.id))])
+        a.load_proteins([x.protein_conformation.protein.parent for x in list(Structure.objects.order_by('protein_conformation__protein__parent','resolution').exclude(protein_conformation__protein=protein.id, structure_type__slug__startswith='af-'))])
     a.load_segments(ProteinSegment.objects.filter(slug__in=segments))
     a.build_alignment()
     a.calculate_similarity()
@@ -491,7 +491,7 @@ def get_segment_template (protein, segments=['TM1', 'TM2', 'TM3', 'TM4','TM5','T
 #==============================================================================
 def fetch_template_structure (template_protein):
 
-    return Structure.objects.get(protein_conformation__protein__parent=template_protein.entry_name)
+    return Structure.objects.get(protein_conformation__protein__parent=template_protein.entry_name).exclude(structure_type__slug__startswith='af-')
 
 
 #==============================================================================
@@ -1122,20 +1122,25 @@ class ParseAFModelsCSV():
     def __init__(self):
         self.complexes = []
         self.structures = {}
-        with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'AF_Arman_Models.csv']), newline='') as csvfile:
-            structures = csv.reader(csvfile, delimiter=',')
-            next(structures, None)
-            for s in structures:
+        with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'AF_Models.csv']), newline='') as csvfile:
+            structs = csv.reader(csvfile, delimiter=',')
+            next(structs, None)
+            for s in structs:
+                #0:complex 1:finished 2:receptor 3:ligand 4:outside_found
+                #5:chosen_rank 6:score 7:relaxed 8:closer_pep_term 9:has_x
                 protein = s[0].split('_')[0]
-                ligand = s[4]
-                complex = protein+'_'+ligand
+                ligand = s[3]
+                organism = s[0].split('-')[0].split('_')[1]
+                # TODO: THIS IS HARDCODED BUT NEED TO BE CHANGED
+                location = '/protwis/data/protwis/gpcr/af_arman/'+s[0]+'-rank'+s[5]+'.pdb'
+                complex = s[0] #protein+'_'+ligand
                 self.complexes.append(complex)
-                self.structures[complex]= {'protein':s[0], 'name':protein.lower(), 'state':s[2], 'peptide_id': s[4], 'preferred_chain':s[3], 'model':s[1], 'location':s[5]}
+                self.structures[complex]= {'protein':s[0].split('-')[0], 'name':protein.lower(), 'state':'Not defined', 'peptide_id': ligand, 'preferred_chain':'A', 'model':'af-peptide', 'location':location, 'organism':organism}
 
     def parse_ligands(self):
         endogenous_peptides = pd.read_csv(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'Peptides_GPRCdb_dump.csv']))
         for complex in self.structures.keys():
-            receptor, pep_id = complex.split('_')[0], complex.split('_')[1]
+            receptor, pep_id = complex.split('_')[0], complex.split('-')[1]
             self.structures[complex]['ligand'] = []
             try:
                 role = endogenous_peptides.loc[(endogenous_peptides['Receptor'].str.match(receptor)) & (endogenous_peptides['GtP ID'] == int(pep_id)), 'Role'].values[0]
@@ -1251,7 +1256,7 @@ class StructureBuildCheck():
                 print('Error: {} Structure object has not been built'.format(pdb))
 
     def check_duplicate_residues(self):
-        for s in Structure.objects.all():
+        for s in Structure.objects.all().exclude(structure_type__slug__startswith='af-'):
             resis = Residue.objects.filter(protein_conformation=s.protein_conformation)
             if len(resis)!=len(resis.values_list('sequence_number').distinct()):
                 for r in resis:
