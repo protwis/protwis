@@ -2,8 +2,9 @@ from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect
 from django.conf import settings
 from django.db.models import Count, Max
-from django.core.cache import cache
+from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
+from django.views.generic import TemplateView
 
 from drugs.models import Drugs
 from protein.models import Protein, ProteinFamily
@@ -229,51 +230,99 @@ def drugstatistics(request):
 
     return render(request, 'drugstatistics.html', {'drugtypes_approved':drugtypes_approved, 'drugtypes_trials':drugtypes_trials,  'drugtypes_estab':drugtypes_estab,  'drugtypes_not_estab':drugtypes_not_estab, 'drugindications_approved':drugindications_approved, 'drugindications_trials':drugindications_trials, 'drugtargets_approved':drugtargets_approved, 'drugtargets_trials':drugtargets_trials, 'phase_trials':phase_trials, 'phase_trials_inactive': phase_trials_inactive, 'moas_trials':moas_trials, 'moas_approved':moas_approved, 'drugfamilies_approved':drugfamilies_approved, 'drugfamilies_trials':drugfamilies_trials, 'drugClasses_approved':drugClasses_approved, 'drugClasses_trials':drugClasses_trials, 'drugs_over_time':drugs_over_time, 'in_trial':len(in_trial), 'not_targeted':not_targeted})
 
-@cache_page(60 * 60 * 24 * 28)
-def drugbrowser(request):
-    # Get drugdata from here somehow
+#@method_decorator(cache_page(60 * 60 * 24 * 28), name='dispatch')
+class DrugBrowser(TemplateView):
+    template_name = 'drugbrowser.html'
 
-    name_of_cache = 'drug_browse3'
-
-    context = cache.get(name_of_cache)
-
-    if context == None:
-        context = list()
-
-        drugs = Drugs.objects.all().prefetch_related('target__family__parent__parent__parent')
-
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        drugs = Drugs.objects.all().prefetch_related('target__family__parent__parent__parent', 'publication')
         drugs_NHS_names = NHSPrescribings.objects.values_list('drugname__name', flat=True).distinct()
+
+        context_data = list()
+
+        def get_pmid(publication):
+            try:
+                pmid = publication.web_link.index if publication.web_link.web_resource.slug == "pubmed" else None
+            except AttributeError:
+                pmid = None
+            return pmid
+
+        # Create the string for the References column under APA rules
+        def format_title(title):
+            return re.sub(r'[\'"]', '-', title) if title else ''
+
+        def format_authors(authors):
+            return f"<b>{authors},</b>" if authors else ''
+
+        def format_year(year):
+            return f"<b>({year})</b><br/>" if year else ''
+
+        def format_journal(journal):
+            return f"<i>{journal.name}</i>" if journal else ''
+
+        def format_volume_and_pages(reference):
+            if reference and ':' in reference:
+                volume, pages = reference.split(':')
+                return f"<b>{volume}:</b><b>{pages}</b>"
+            else:
+                return ''
+
+        def format_pmid_link(pmid):
+            return f"[PMID: <a href='https://pubmed.ncbi.nlm.nih.gov/{pmid}' target='_blank'>{pmid}</a>]<br/>" if pmid else ''
+
+        def format_publication(pub):
+            pmid = get_pmid(pub)
+            return f"{format_authors(pub.authors)} {format_year(pub.year)} {format_title(pub.title)}<br/> {format_journal(pub.journal)}, {format_volume_and_pages(pub.reference)} {format_pmid_link(pmid)}"
 
         for drug in drugs:
             drugname = drug.name
-            drugtype = drug.drugtype
-            status = drug.status
-            approval = drug.approval
-            targetlevel = drug.targetlevel
-            phase = drug.phase
-            moa = drug.moa
-            indication = drug.indication
-            novelty = drug.novelty
-            clinicalstatus = drug.clinicalstatus
-            references = [i for i in drug.references.split('|')]
-
-            if drugname in drugs_NHS_names:
-                NHS = 'yes'
-            else:
-                NHS = 'no'
-
+            NHS = 'yes' if drugname in drugs_NHS_names else 'no'
             target_list = drug.target.all()
+            ref = drug.references.split('|')
+
+            # Filter the publications for specific PMIDs
+            filtered_publications = drug.publication.filter(web_link__index__in=ref)
+            publication_info = [format_publication(pub) for pub in filtered_publications]
+
+
+            publication_info_string = '<br>'.join(publication_info)
+
+            regex = r'\bClass\b' # Regular expression to extract text after the word 'Class'
+
             for protein in target_list:
 
-                clas = str(protein.family.parent.parent.parent.name)
+                # Get the hierarchical class name from the protein family
+                hierarchical_class_name = str(protein.family.parent.parent.parent.name)
+
+                # Remove the word "Class" from the hierarchical class name using the provided regular expression
+                class_name = re.sub(regex, '', hierarchical_class_name)
+
                 family = str(protein.family.parent.name)
 
-                jsondata = {'name': drugname, 'target': str(protein), 'phase': phase, 'approval': approval, 'class': clas, 'family': family, 'indication': indication, 'status': status, 'drugtype': drugtype, 'moa': moa, 'novelty': novelty, 'targetlevel': targetlevel, 'clinicalstatus': clinicalstatus, 'references': references, 'NHS': NHS}
-                context.append(jsondata)
+                jsondata = {
+                    'name': drugname,
+                    'target': str(protein),
+                    'phase': drug.phase,
+                    'approval': drug.approval,
+                    'class': class_name,
+                    'family': family,
+                    'indication': drug.indication,
+                    'status': drug.status,
+                    'drugtype': drug.drugtype,
+                    'moa': drug.moa,
+                    'novelty': drug.novelty,
+                    'targetlevel': drug.targetlevel,
+                    'clinicalstatus': drug.clinicalstatus,
+                    'NHS': NHS,
+                    'publications': publication_info_string
+                }
 
-            cache.set(name_of_cache, context, 60*60*24*28)
+                context_data.append(jsondata)
 
-    return render(request, 'drugbrowser.html', {'drugdata': context})
+        context['drugdata'] = context_data
+
+        return context
 
 @cache_page(60 * 60 * 24 * 28)
 def drugmapping(request):
