@@ -182,13 +182,13 @@ class Command(BaseCommand):
             except Exception as e:
                 print(f'The Drugs {pmid} publication was not added to the data base')
                 print(f'{type(e).__name__} {e} on build_drugs')
-            
+
             drug.save()
 
             # target_list = drug.target.all()
 
         self.logger.info('COMPLETED CREATING DRUGDATA')
-    
+
     def create_NHS(self, filename=False):
         print('Creating NHS')
 
