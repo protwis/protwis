@@ -1133,9 +1133,9 @@ class ParseAFModelsCSV():
                 organism = s[0].split('-')[0].split('_')[1]
                 # TODO: THIS IS HARDCODED BUT NEED TO BE CHANGED
                 location = '/protwis/data/protwis/gpcr/af_arman/'+s[0]+'-rank'+s[5]+'.pdb'
-                complex = s[0] #protein+'_'+ligand
-                self.complexes.append(complex)
-                self.structures[complex]= {'protein':s[0].split('-')[0], 'name':protein.lower(), 'state':'Not defined', 'peptide_id': ligand, 'preferred_chain':'A', 'model':'af-peptide', 'location':location, 'organism':organism}
+                cmpx = s[0] #protein+'_'+ligand
+                self.complexes.append(cmpx)
+                self.structures[cmpx]= {'protein':s[0].split('-')[0], 'name':protein.lower(), 'state':'Not defined', 'peptide_id': ligand, 'preferred_chain':'A', 'model':'af-peptide', 'location':location, 'organism':organism}
 
     def parse_ligands(self):
         endogenous_peptides = pd.read_csv(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'Peptides_GPRCdb_dump.csv']))
