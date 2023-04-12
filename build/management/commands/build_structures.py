@@ -1445,7 +1445,7 @@ class Command(BaseBuild):
                         peptide_chain = ligand['chain']
                         # ligand['name'] = 'pep'
                     if ligand['name'] and ligand['name'] != 'None': # some inserted as none.
-                        ligand['type'] = ligand['type'].lower()
+                        ligand['type'] = ligand['type'].lower().strip()
                         # use annoted ligand type or default type
                         if ligand['type']:
                             lt, created = LigandType.objects.get_or_create(slug=slugify(ligand['type']),
@@ -1511,7 +1511,6 @@ class Command(BaseBuild):
 
                         with lock:
                             l = get_or_create_ligand(ligand_title, ids, ligand['type'])
-
                         # Create LigandPeptideStructure object to store chain ID for peptide ligands - supposed to b TEMP
                         if ligand['type'] in ['peptide','protein']:
                             lps, created = LigandPeptideStructure.objects.get_or_create(structure=s, ligand=l, chain=peptide_chain)
