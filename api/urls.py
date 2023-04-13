@@ -67,6 +67,7 @@ urlpatterns = excluded_apis + [
     url(r'^structure/(?P<pdb_code>[^/]+)/$', views.StructureDetail.as_view(), name='structure-detail'),
     url(r'^structure/(?P<pdb_code>[^/]+)/interaction/$', views.StructureLigandInteractions.as_view(), name='interaction'),
     url(r'^structure/(?P<value>[^/]+)/peptideinteraction/$', views.StructurePeptideLigandInteractions.as_view(), name='peptide-interaction'),
+    url(r'^structure/alphafold/peptideinteraction/$', views.AlphaFoldPeptideLigandInteractions.as_view(), name='alphafold-peptide-interaction'),
     # url(r'^structure/(?P<entry_name>[^/]+)/peptideinteraction/$', views.StructurePeptideLigandInteractionsEntryName.as_view(), name='peptide-entry-name'),
     url(r'^structure/template/(?P<entry_name>[^/]+)/$', views.StructureTemplate.as_view(),
         name='structuretemplate'),
