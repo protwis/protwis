@@ -881,7 +881,7 @@ class Command(BaseBuild):
                 continue
 
             # get the PDB file and save to DB
-            sd['pdb'] = 'AFM_' + cmpx.upper()
+            sd['pdb'] = 'AFM_' + cmpx.replace('-','_').upper()
 
             # create a structure record
             # check if there is a ligand
