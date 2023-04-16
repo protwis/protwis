@@ -104,6 +104,7 @@ def calculate_interactions(pdb, session=None, peptide=None, file_input=False):
     if not file_input:
         pdb_location = projectdir + 'pdbs/' + pdb + '.pdb'
     else:
+        #/protwis/data/protwis/gpcr/af_arman/fpr2_human-6242-rank0
         complex_name = pdb.split('/')[-1].split('-rank')[0]
         model_name = pdb.split('/')[-1]
         pdb_location = projectdir + 'pdbs/' + complex_name + '/' + model_name + '.pdb'
@@ -257,7 +258,7 @@ def find_interacting_ligand(pdb_location, pdb, file_input):
     if not file_input:
         db_ligs = list(StructureLigandInteraction.objects.filter(structure_id__pdb_code_id__index=pdb.upper()).values_list('pdb_reference', flat=True))
     else:
-        receptor =  pdb.split('/')[-1].split('-r')[0]
+        receptor =  pdb.split('/')[-1].split('-r')[0].replace('-','_')
         # lig_id = pdb.split('/')[-1].split('-')[1]
         code = '_'.join(['AFM', receptor]).upper()
         db_ligs = list(StructureLigandInteraction.objects.filter(structure_id__pdb_code_id__index=code).values_list('pdb_reference', flat=True))
@@ -1374,8 +1375,11 @@ def StructureDetails(request, pdbname):
     residuelist = Residue.objects.filter(protein_conformation__protein=p).prefetch_related('protein_segment','display_generic_number','generic_number')
     HelixBox = DrawHelixBox(
                 residuelist, p.get_protein_class(), str(p), nobuttons=1)
-    SnakePlot = DrawSnakePlot(
-                residuelist, p.get_protein_class(), str(p), nobuttons=1)
+    if not pdbname.startswith('AFM'):
+        SnakePlot = DrawSnakePlot(
+                    residuelist, p.get_protein_class(), str(p), nobuttons=1)
+    else:
+        SnakePlot = []
     #adjusting main_ligand and main_ligand_full
     if len(main_ligand) == 0:
         multiple_ligands = False
@@ -1387,6 +1391,7 @@ def StructureDetails(request, pdbname):
         main_ligand_full = main_ligand_full[0]
     else:
         multiple_ligands = True
+
     return render(request, 'interaction/structure.html', {'pdbname': pdbname, 'structures': structures,
                                                           'crystal': crystal, 'protein': p, 'helixbox' : HelixBox, 'snakeplot': SnakePlot, 'residues': residues_browser, 'residues_lookup': residues_lookup, 'display_res': display_res, 'annotated_resn':
                                                           resn_list, 'ligands': ligands,'main_ligand' : main_ligand,'main_ligand_full' : main_ligand_full, 'data': context['data'],
