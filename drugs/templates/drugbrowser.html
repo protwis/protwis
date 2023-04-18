@@ -31,17 +31,15 @@
 
 	table.dataTable thead th,
 	table.dataTable tbody td {
-    max-width: 10px;
-		word-break: break-all;
+    max-width: 1px;
+		word-break: break-word;
 		overflow: hidden;
-		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
 </style>
-
 {% endblock %}
+
 {% block content %}
-<h2>Drug Browser</h2>
 <button onclick="tableToExcel()" type="button" class="btn btn-primary" style="margin-top:10px;margin-top:3px"> Export to Excel </button>
 <div class="row">
     <div class="col-md-12 text-center">
@@ -58,22 +56,22 @@
                   <!-- yadcf filter rows -->
                   <tr>
                     <!-- Drug section -->
-                    <th style="text-align:center; border-left: none;">Name<br/></th>
-                    <th style="text-align:center; border-left: none;">Indication<br/></th>
+                    <th style="text-align:center; border-left: none;">NAME<br/></th>
+                    <th style="text-align:center; border-left: none;">INDICATION<br/></th>
                     <!-- Receptor section -->
-                    <th style="text-align:center; border-left: 1px solid black;">Target<br/></th>
-                    <th style="text-align:center; border-left: none">Target Level<br/></th>
-                    <th style="text-align:center; border-left: none">Class<br/></th>
-                    <th style="text-align:center; border-left: none">Family<br/></th>
-                    <th style="text-align:center; border-left: none;">Status<br/></th>
+                    <th style="text-align:center; border-left: 1px solid black;">TARGET<br/></th>
+                    <th style="text-align:center; border-left: none">TARGET LEVEL<br/></th>
+                    <th style="text-align:center; border-left: none">CLASS<br/></th>
+                    <th style="text-align:center; border-left: none">FAMILY<br/></th>
+                    <th style="text-align:center; border-left: none;">STATUS<br/></th>
                     <!-- Clinical information section -->
-                    <th style="text-align:center; border-left: 1px solid black;">Phase<br/></th>
-                    <th style="text-align:center; border-left: none; ">Clinical Status<br/></th>
-                    <th style="text-align:center; border-left: none;">Year of <br/>Approval<br/></th>
-                    <th style="text-align:center; border-left: none">Drug Type<br/></th>
-                    <th style="text-align:center; border-left: none;">Mechanism of <br/>Action<br/></th>
+                    <th style="text-align:center; border-left: 1px solid black;">PHASE<br/></th>
+                    <th style="text-align:center; border-left: none; ">CLINICAL STATUS<br/></th>
+                    <th style="text-align:center; border-left: none;">YEAR OF <br/>APPROVAL<br/></th>
+                    <th style="text-align:center; border-left: none">DRUG TYPE<br/></th>
+                    <th style="text-align:center; border-left: none;">MECHANISM OF <br/>ACTION<br/></th>
                     <th style="text-align:center; border-left: none;">NHS<br/></th>
-                    <th style="text-align:center; border-left: none">References</th>
+                    <th style="text-align:center; border-left: none">REFERENCES</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -82,7 +80,7 @@
                 {% if row.NHS == 'yes' %}
                   <td data-filter="{{ row.name }}" style="text-align:left;"><a href='/drugs/nhs/{{row.name|safe}} ' target="_blank"> {{row.name|safe}}</a></td>
                 {% else %}
-                  <td data-filter="{{ row.name }}" style="text-align:left">{{row.name|safe}}</a></td>
+                  <td data-filter="{{ row.name }}" style="text-align:left">{{row.name|safe}}</td>
                 {% endif %}
                 <td style="text-align:left">{{row.indication|safe}}</td>
                 <td data-filter="{{row.target}}"  style="text-align:left"> <a href='/protein/{{row.target|safe}} '> {{row.target|safe}} </a></td>
@@ -98,7 +96,7 @@
                   {% if row.NHS == 'yes' %}
                     <td style="text-align:left"><a href='/drugs/nhs/{{row.name|safe}} '> {{row.NHS|safe}}</a></td>
                   {% else %}
-                    <td style="text-align:left">{{row.NHS|safe}}</a></td>
+                    <td style="text-align:left">{{row.NHS|safe}}</td>
                   {% endif %}
                   {% if row.publications %}
                     <td class="name" style="text-align:center;"> <a href="#references" data-toggle="modal" data-book-id="{{ row.publications|safe }}">Refs</a> </td>
@@ -112,7 +110,7 @@
     {% else %}
         <p> Ooops! There is no data to show here yet. </p>
     {% endif %}
-    </div>
+  </div>
 </div>
 <br>
 
@@ -130,7 +128,6 @@
     </div>
   </div>
 </div>
-
 {% endblock %}
 
 
@@ -160,7 +157,7 @@ $('#references').on('show.bs.modal', function(e) {
     function() {
       var table = $('#drugdata').DataTable(
         {
-          autoWidth: true,
+          autoWidth: false,
           'order': [[0, "asc"]],
           scrollY: "65vh",
           scrollX: true,
@@ -168,6 +165,9 @@ $('#references').on('show.bs.modal', function(e) {
           scroller: true,
           paging: false,
           bSortCellsTop: false,
+          columnDefs: [
+            { targets: '_all', width: '100px' }
+          ]
         }
       ); 
       let column_filters = [];
