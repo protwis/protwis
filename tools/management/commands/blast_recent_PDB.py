@@ -97,6 +97,7 @@ class Command(BaseCommand):
                     if top_hit.score > 100:
                         print("HIT", "{0:>7}{1:>8}".format(top_hit.score, round(top_hit.expect,5)), result.query)
                         pdb_list.append(result.query.split('_')[0])
+        print(pdb_list)
         return pdb_list
 
 def grouped(iterable, n):

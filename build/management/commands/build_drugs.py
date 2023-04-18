@@ -85,17 +85,18 @@ class Command(BaseCommand):
 
                 references = data[index:index+1]['PMID'].values[0]
 
+                drug, created = Drugs.objects.get_or_create(name=drugname, synonym=', '.join(drugalias), drugtype=drugtype, indication=indication, novelty=novelty, approval=approval, phase=phase, phasedate=PhaseDate, clinicalstatus=ClinicalStatus, moa=moa, status=status, targetlevel=targetlevel,references=references)
+
                 # fetch protein
                 try:
                     p = Protein.objects.get(entry_name=entry_name)
+                    drug.target.add(p)
+                    drug.save()
                 except Protein.DoesNotExist:
 
                     self.logger.error('Protein not found for entry_name {}'.format(entry_name))
                     continue
 
-                drug, created = Drugs.objects.get_or_create(name=drugname, synonym=', '.join(drugalias), drugtype=drugtype, indication=indication, novelty=novelty, approval=approval, phase=phase, phasedate=PhaseDate, clinicalstatus=ClinicalStatus, moa=moa, status=status, targetlevel=targetlevel,references=references)
-                drug.target.add(p)
-                drug.save()
 
                 # target_list = drug.target.all()
 
