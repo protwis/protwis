@@ -150,8 +150,6 @@ class Command(BaseCommand):
 
             references = row['PMID']
 
-            # fetch protein
-
             drug, _ = Drugs.objects.get_or_create(name=drugname,
                                                     synonym=drugalias,
                                                     drugtype=drugtype,
@@ -166,13 +164,6 @@ class Command(BaseCommand):
                                                     targetlevel=targetlevel,
                                                     references=references)
 
-            try:
-                p = Protein.objects.get(entry_name=entry_name)
-                drug.target.add(p)
-            except Protein.DoesNotExist:
-                print('Protein not found for entry_name {}'.format(entry_name))
-                continue
-
             ref = references.split('|')
             try:
                 for pmid in ref:
@@ -183,9 +174,14 @@ class Command(BaseCommand):
                 print(f'The Drugs {pmid} publication was not added to the data base')
                 print(f'{type(e).__name__} {e} on build_drugs')
 
-            drug.save()
-
-            # target_list = drug.target.all()
+            # fetch protein
+            try:
+                p = Protein.objects.get(entry_name=entry_name)
+                drug.target.add(p)
+                drug.save()
+            except Protein.DoesNotExist:
+                print('Protein not found for entry_name {}'.format(entry_name))
+                continue
 
         self.logger.info('COMPLETED CREATING DRUGDATA')
 
