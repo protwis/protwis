@@ -20,7 +20,7 @@ from structure.assign_generic_numbers_gpcr import GenericNumbering
 from structure.sequence_parser import SequenceParser
 from api.serializers import (ProteinSerializer, ProteinFamilySerializer, SpeciesSerializer, ResidueSerializer,
                              ResidueExtendedSerializer, StructureLigandInteractionSerializer, StructurePeptideLigandInteractionSerializer,
-                             MutationSerializer, ReceptorListSerializer, GuidetoPharmacologySerializer, AlphaFoldPeptideLigandInteractionSerializer)
+                             MutationSerializer, ReceptorListSerializer, GuidetoPharmacologySerializer)
 from api.renderers import PDBRenderer
 from common.alignment import Alignment
 from common.definitions import AMINO_ACIDS, AMINO_ACID_GROUPS
@@ -949,29 +949,6 @@ class StructurePeptideLigandInteractions(generics.ListAPIView):
                             ).order_by('interacting_peptide_pair__peptide_sequence_number','interacting_peptide_pair__receptor_residue__sequence_number')
 
         return queryset
-
-class AlphaFoldPeptideLigandInteractions(generics.ListAPIView):
-
-    """
-    Get a list of interactions between alpha fold structures and peptide ligand
-    \n/structure/alphafold/peptideinteraction/
-    """
-
-    queryset = InteractionPeptide.objects.filter(interacting_peptide_pair__peptide__structure__structure_type__slug__iexact='af-peptide').values('interacting_peptide_pair__peptide__structure__pdb_code__index',
-                        'interacting_peptide_pair__peptide__ligand__name',
-                        'interacting_peptide_pair__peptide__chain',
-                        'interacting_peptide_pair__peptide_amino_acid',
-                        'interacting_peptide_pair__peptide_amino_acid_three_letter',
-                        'interacting_peptide_pair__peptide_sequence_number',
-                        'interacting_peptide_pair__receptor_residue__amino_acid',
-                        'interacting_peptide_pair__receptor_residue__sequence_number',
-                        'interacting_peptide_pair__receptor_residue__display_generic_number__label',
-                        'interaction_type', 'interaction_level').order_by("interacting_peptide_pair__peptide_sequence_number").distinct(
-                        ).annotate(
-                            interaction_count=Count('interaction_type')
-                        ).order_by('interacting_peptide_pair__peptide_sequence_number','interacting_peptide_pair__receptor_residue__sequence_number')
-
-    serializer_class = AlphaFoldPeptideLigandInteractionSerializer
 
 class MutantList(generics.ListAPIView):
 
