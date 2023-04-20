@@ -128,7 +128,7 @@ class Command(BaseCommand):
 
         data = self.read_csv_data(filename, 'drug_data.csv')
         data['PMID'] = data['PMID'].fillna('').astype(str)
-        wrong=True
+ 
         for _, row in data.iterrows():
             drugname = row['Drug Name'].split(",")[0]
             drugalias_raw = row['DrugAliases']
