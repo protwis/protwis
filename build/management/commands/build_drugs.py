@@ -34,7 +34,7 @@ class Command(BaseCommand):
             self.purge_data()
             test_model_updates(self.all_models, self.tracker, initialize=True)
             self.create_drug_data()
-            #self.create_NHS()
+            self.create_NHS()
             test_model_updates(self.all_models, self.tracker, check=True)
         except Exception as msg:
             print(msg)
