@@ -34,7 +34,7 @@ class Command(BaseCommand):
             self.purge_data()
             test_model_updates(self.all_models, self.tracker, initialize=True)
             self.create_drug_data()
-            self.create_NHS()
+            #self.create_NHS()
             test_model_updates(self.all_models, self.tracker, check=True)
         except Exception as msg:
             print(msg)
@@ -128,7 +128,7 @@ class Command(BaseCommand):
 
         data = self.read_csv_data(filename, 'drug_data.csv')
         data['PMID'] = data['PMID'].fillna('').astype(str)
-
+        wrong=True
         for _, row in data.iterrows():
             drugname = row['Drug Name'].split(",")[0]
             drugalias_raw = row['DrugAliases']
@@ -178,10 +178,10 @@ class Command(BaseCommand):
             try:
                 p = Protein.objects.get(entry_name=entry_name)
                 drug.target.add(p)
-                drug.save()
             except Protein.DoesNotExist:
                 print('Protein not found for entry_name {}'.format(entry_name))
-                continue
+
+            drug.save()
 
         self.logger.info('COMPLETED CREATING DRUGDATA')
 
