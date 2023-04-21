@@ -241,6 +241,78 @@ class NumberPDBStructureView(views.APIView):
 
     pass
 
+class StructureModelsList(views.APIView):
+
+    """
+    Get a list of alpha fold model structures
+    \n/structure/
+    """
+
+    def get(self, request, pdb_code=None, entry_name=None, representative=None):
+
+        structures = Structure.objects.filter(structure_type__slug__startswith='af-')
+
+        structures = structures.prefetch_related('protein_conformation__protein__parent__species', 'pdb_code',
+            'protein_conformation__protein__parent__family', 'protein_conformation__protein__parent__species',
+            'protein_conformation__protein__parent__family__parent__parent__parent',
+            'publication__web_link', 'publication__web_link__web_resource', 'structure_type',
+            'structureligandinteraction_set__ligand',
+            'structureligandinteraction_set__ligand__ligand_type',
+            'structureligandinteraction_set__ligand_role','state')
+
+        # convert objects to a list of dictionaries
+        # normal serializers can not be used because of abstraction of tables (e.g. protein_conformation)
+        s = []
+        for structure in structures:
+            # essential fields
+            structure_data = {
+                'pdb_code': structure.pdb_code.index,
+                'protein': structure.protein_conformation.protein.entry_name,
+                'class': structure.protein_conformation.protein.family.parent.parent.parent.name,
+                'family': structure.protein_conformation.protein.family.slug,
+                'species': structure.protein_conformation.protein.species.latin_name,
+                'preferred_chain': structure.preferred_chain,
+                'resolution': structure.resolution,
+                'publication_date': structure.publication_date,
+                'type': structure.structure_type.name,
+                'state': structure.state.name,
+                'distance': structure.distance,
+            }
+
+            # publication
+            if structure.publication:
+                structure_data['publication'] = structure.publication.web_link.__str__()
+            else:
+                structure_data['publication'] = None
+
+            # ligand
+            ligands = []
+            #for interaction in structure.structureligandinteraction_set.filter(annotated=True): # does this cancel prefetch?
+            for interaction in structure.structureligandinteraction_set.all():
+                if interaction.annotated:
+                    ligand = {}
+                    if interaction.ligand.name:
+                        ligand['name'] = interaction.ligand.name
+                    if interaction.ligand.ligand_type and interaction.ligand.ligand_type.name:
+                        ligand['type'] = interaction.ligand.ligand_type.name
+                    if interaction.ligand_role and interaction.ligand_role.name:
+                        ligand['function'] = interaction.ligand_role.name
+                    if interaction.ligand.pdbe:
+                        ligand['PDB'] = interaction.ligand.pdbe
+                    if interaction.ligand.smiles:
+                        ligand['SMILES'] = interaction.ligand.smiles
+                    if ligand:
+                        ligands.append(ligand)
+            structure_data['ligands'] = ligands
+
+            s.append(structure_data)
+
+        # if a structure is selected, return a single dict rather then a list of dicts
+        if len(s) == 1:
+            s = s[0]
+
+        return Response(s)
+
 
 class StructureList(views.APIView):
 

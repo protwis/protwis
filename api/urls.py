@@ -56,6 +56,7 @@ urlpatterns = excluded_apis + [
         name='proteinsimilarityalignment'),
 
     url(r'^structure/$', cache_page(3600*24*7)(views.StructureList.as_view()), name='structure-list'),
+    url(r'^alphafoldmodels/$', cache_page(3600*24*7)(views.StructureModelsList.as_view()), name='structure-list'),
     url(r'^structure/accession_codes_human/$', cache_page(3600*24*7)(views.StructureAccessionHuman.as_view()), name='structure-accession-list'),
     url(r'^structure/representative/$', cache_page(3600*24*7)(views.RepresentativeStructureList.as_view()), {'representative': True},
         name='structure-representative-list'),
