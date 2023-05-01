@@ -676,7 +676,6 @@ class Command(BaseBuild):
                             residue.sequence_number = int(check.strip())
                             residue.amino_acid = AA[residue_name.upper()]
                             residue.protein_conformation = protein_conformation
-
                             try:
                                 seq_num_pos = pdbseq[chain][residue.sequence_number][0]
                             except:
@@ -1074,7 +1073,6 @@ class Command(BaseBuild):
                         prev_gn = None
                         prev_display = None
                     prev_segment = res.protein_segment
-
         bulked_res = Residue.objects.bulk_create(residues_bulk)
         #bulked_rot = PdbData.objects.bulk_create(rotamer_data_bulk)
         bulked_rot = rotamer_data_bulk
@@ -1105,10 +1103,11 @@ class Command(BaseBuild):
         return None
 
 
-    def build_contact_network(self,s,pdb_code):
+    def build_contact_network(self, pdb_code):
         try:
             # interacting_pairs, distances  = compute_interactions(pdb_code, save_to_db=True)
-            compute_interactions(pdb_code, do_interactions=True, do_peptide_ligand=True, save_to_db=True)
+            compute_interactions(pdb_code, protein=None, lig=None, do_interactions=True, do_complexes=False, do_peptide_ligand=True, save_to_db=True, file_input=False)
+            # compute_interactions(pdb_code, do_interactions=True, do_peptide_ligand=True, save_to_db=True)
         except:
             self.logger.error('Error with computing interactions (%s)' % (pdb_code))
             return
@@ -1169,8 +1168,10 @@ class Command(BaseBuild):
 
             for interaction in data[lig_key]['interactions']:
                 aa = interaction[0]
-                aa, pos, _ = regexaa(aa)
-                residue = check_residue(protein, pos, aa)
+                if aa[-1] != structure.preferred_chain:
+                    continue
+                aa_single, pos, _ = regexaa(aa)
+                residue = check_residue(protein, pos, aa_single)
                 f = interaction[1]
                 fragment, rotamer = extract_fragment_rotamer(f, residue, structure, ligand)
                 if fragment is not None:
@@ -1693,7 +1694,7 @@ class Command(BaseBuild):
             if self.run_contactnetwork:
                 try:
                     current = time.time()
-                    self.build_contact_network(s, sd['pdb'])
+                    self.build_contact_network(sd['pdb'])
                     end = time.time()
                     diff = round(end - current,1)
                     self.logger.info('Create contactnetwork done for {}. {} seconds.'.format(s.protein_conformation.protein.entry_name, diff))
@@ -1719,6 +1720,8 @@ class Command(BaseBuild):
                         self.parsecalculation(sd['pdb'], data_results, False)
                         end = time.time()
                         diff = round(end - current,1)
+                        print('Interaction calculations done for {}. {} seconds.'.format(
+                                    s.protein_conformation.protein.entry_name, diff))
                         self.logger.info('Interaction calculations done for {}. {} seconds.'.format(
                                     s.protein_conformation.protein.entry_name, diff))
                     except Exception as msg:
