@@ -25,7 +25,6 @@ import os
 NUM_SKIP_RESIDUES = 0
 
 def compute_interactions(pdb_name, protein=None, lig=None, do_interactions=False, do_complexes=False, do_peptide_ligand=False, save_to_db=False, file_input=False):
-
     classified = []
     classified_complex = []
     with open(os.sep.join([settings.DATA_DIR, 'residue_data', 'unnatural_amino_acids.yaml']), 'r') as f_yaml:
@@ -56,9 +55,9 @@ def compute_interactions(pdb_name, protein=None, lig=None, do_interactions=False
         #     res_obj = DummyResidue(res.get_id()[1], one_letter, res.get_resname())
         #     dbres[res_obj.sequence_number] = res_obj
     else:
-        struc = Structure.objects.get(protein_conformation__protein__entry_name=pdb_name)
-    # Ensure that the PDB name is lowercase
+        # Ensure that the PDB name is lowercase
         pdb_name = pdb_name.lower()
+        struc = Structure.objects.get(protein_conformation__protein__entry_name=pdb_name)
         # Get the pdb structure
         pdb_io = StringIO(struc.pdb_data.pdb)
         # Get the preferred chain
