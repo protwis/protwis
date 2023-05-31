@@ -721,10 +721,10 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
                     if receptor:
                             if not uniprot_pos:
                                 uniprot_pos = pos
-                            # print(chain,pos,uniprot_pos,uniprot_aa)
+                            # print(chain,pos,uniprot_pos)
                             if pdbname in ['7EPE','7EPF'] and pos>1000:
                                 continue
-                            if pdbname in ['7F4D','7F4F','7F4H','7F4I'] and chain!='R':
+                            if pdbname in ['7F4D','7F4F','7F4H','7F4I','8HS2','8HSC'] and chain!='R':
                                 continue
                             if pdbname in ['7XZ5','7XZ6'] and chain!='R':
                                 continue
@@ -1619,7 +1619,7 @@ def construct_structure_annotation_override(pdb_code, removed, deletions):
     elif pdb_code=='3SN6':
         removed = list(range(1002,1161))
     elif pdb_code in ['6ZDV','6ZDR','6MH8','6PS7','6S0Q','6WQA','6AQF','6GT3','6JZH','6LPJ','6LPL','6LPK',
-                                      '5JTB','5OLH','5NM2','5OLG','5OM1','5OLO','5OLZ','5OLV','5OM4','5UVI','5VRA']:
+                      '5JTB','5OLH','5NM2','5OLG','5OM1','5OLO','5OLZ','5OLV','5OM4','5UVI','5VRA']:
         if 1 in removed:
             removed.remove(1)
         if 1 in deletions:
@@ -1699,7 +1699,7 @@ def construct_structure_annotation_override(pdb_code, removed, deletions):
         deletions = list(range(314,400))
         removed = list(range(1,128))+list(range(188,192))
     elif pdb_code=='7F1Q':
-        removed = list(range(1,113))
+        removed = list(range(1,113))+list(range(318,350))
     elif pdb_code in ['7EPE','7EPF']:
         removed, deletions = list(range(1000,1148)), list(range(1000,1148))
     elif pdb_code in ['7EZM','7EZK','7EZH']:

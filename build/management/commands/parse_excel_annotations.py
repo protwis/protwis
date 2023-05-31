@@ -253,6 +253,9 @@ class Command(BaseCommand):
                 for curr_cell in range(num_cells):
                     # cell_type = worksheet.cell_type(curr_row, curr_cell)
                     cell_value = worksheet.cell_value(curr_row, curr_cell)
+                    if "GPCRdb_structure_info.xlsx" in path and headers[curr_cell]=='Date':
+                        cell_value = str(datetime.datetime(*xlrd.xldate_as_tuple(cell_value, workbook.datemode)))[:10]
+
                     # temprow.append(cell_value)
                     if headers[curr_cell] not in d[worksheet_name][key]:
                         #do not overwrite

@@ -52,6 +52,8 @@ class Command(BaseCommand):
 
         self.build_database(proteins, "protwis_human_bundle_blastdb")
 
+        self.build_database(os.sep.join([settings.DATA_DIR, 'g_protein_data', 'g_protein_chimeras.fasta']), 'g_protein_chimeras')
+
     def build_database(self, proteins, blast_db_dir):
         # All sequences
         print("BUILDING BLAST DATABASE", blast_db_dir)
@@ -60,9 +62,13 @@ class Command(BaseCommand):
 
         # fetch sequences
         sequences = []
-        for protein in proteins:
-            sequences.append(SeqRecord(Seq(protein.sequence), id=str(protein.id),
-                description=protein.entry_name))
+        if type(proteins)==type(''):
+            sequences = SeqIO.parse(open(proteins), 'fasta')
+            print(sequences)
+        else:
+            for protein in proteins:
+                sequences.append(SeqRecord(Seq(protein.sequence), id=str(protein.id),
+                    description=protein.entry_name))
 
         # Write sequences to file
         try:
