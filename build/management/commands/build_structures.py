@@ -132,6 +132,8 @@ class Command(BaseBuild):
         for i, j in raw_uaa.items():
             unnatural_amino_acids[i] = j
 
+    exp_method_dict = {'X-ray': 'X-ray diffraction', 'cryo-EM': 'Electron microscopy', 'Electron crystallography': 'Electron crystallography'}
+
 
     def handle(self, *args, **options):
         # delete any existing structure data
@@ -589,6 +591,14 @@ class Command(BaseBuild):
             temp_seq = temp_seq[:4]+temp_seq[53:78]+temp_seq[4:53]+temp_seq[78:]
         elif structure.pdb_code.index=='8HAO':
             temp_seq = temp_seq[:4]+temp_seq[57:78]+temp_seq[4:57]+temp_seq[78:]
+        elif structure.pdb_code.index=='7T8X':
+            temp_seq = temp_seq[:214]+'K'+temp_seq[214:237]+temp_seq[238:]
+        elif structure.pdb_code.index in ['7ZBE','8A6C']:
+            temp_seq = temp_seq[:228]+'T'+temp_seq[228:242]+temp_seq[243:]
+        elif structure.pdb_code.index=='8FMZ':
+            temp_seq = temp_seq[:172]+'A-'+temp_seq[174:]
+        elif structure.pdb_code.index=='8ID4':
+            temp_seq = temp_seq[:72]+'A--'+temp_seq[75:]
 
 
 
@@ -676,7 +686,6 @@ class Command(BaseBuild):
                             residue.sequence_number = int(check.strip())
                             residue.amino_acid = AA[residue_name.upper()]
                             residue.protein_conformation = protein_conformation
-
                             try:
                                 seq_num_pos = pdbseq[chain][residue.sequence_number][0]
                             except:
@@ -718,7 +727,7 @@ class Command(BaseBuild):
                                     elif residue.sequence_number!=wt_r.sequence_number:
                                         # print('WT pos not same pos, mismatch',residue.sequence_number,residue.amino_acid,wt_r.sequence_number,wt_r.amino_acid)
                                         wt_pdb_lookup.append(OrderedDict([('WT_POS',wt_r.sequence_number), ('PDB_POS',residue.sequence_number), ('AA',wt_r.amino_acid)]))
-                                        if structure.pdb_code.index not in ['4GBR','6C1R','6C1Q','7XBX']:
+                                        if structure.pdb_code.index not in ['4GBR','6C1R','6C1Q','7XBX','7F1Q']:
                                             if residue.sequence_number in unmapped_ref:
                                                 #print('residue.sequence_number',residue.sequence_number,'not mapped though')
                                                 if residue.amino_acid == wt_lookup[residue.sequence_number].amino_acid:
@@ -1074,7 +1083,6 @@ class Command(BaseBuild):
                         prev_gn = None
                         prev_display = None
                     prev_segment = res.protein_segment
-
         bulked_res = Residue.objects.bulk_create(residues_bulk)
         #bulked_rot = PdbData.objects.bulk_create(rotamer_data_bulk)
         bulked_rot = rotamer_data_bulk
@@ -1105,10 +1113,11 @@ class Command(BaseBuild):
         return None
 
 
-    def build_contact_network(self,s,pdb_code):
+    def build_contact_network(self, pdb_code):
         try:
             # interacting_pairs, distances  = compute_interactions(pdb_code, save_to_db=True)
-            compute_interactions(pdb_code, do_interactions=True, do_peptide_ligand=True, save_to_db=True)
+            compute_interactions(pdb_code, protein=None, lig=None, do_interactions=True, do_complexes=False, do_peptide_ligand=True, save_to_db=True, file_input=False)
+            # compute_interactions(pdb_code, do_interactions=True, do_peptide_ligand=True, save_to_db=True)
         except:
             self.logger.error('Error with computing interactions (%s)' % (pdb_code))
             return
@@ -1169,8 +1178,10 @@ class Command(BaseBuild):
 
             for interaction in data[lig_key]['interactions']:
                 aa = interaction[0]
-                aa, pos, _ = regexaa(aa)
-                residue = check_residue(protein, pos, aa)
+                if aa[-1] != structure.preferred_chain:
+                    continue
+                aa_single, pos, _ = regexaa(aa)
+                residue = check_residue(protein, pos, aa_single)
                 f = interaction[1]
                 fragment, rotamer = extract_fragment_rotamer(f, residue, structure, ligand)
                 if fragment is not None:
@@ -1335,6 +1346,9 @@ class Command(BaseBuild):
 
             # structure type
             if 'structure_method' in sd and sd['structure_method']:
+                if sd['structure_method']=='unknown':
+                    sd['structure_method'] = self.exp_method_dict[sd['method_from_file']]
+
                 structure_type = sd['structure_method'].capitalize()
                 structure_type_slug = slugify(sd['structure_method'])
                 if sd['pdb']=='6ORV':
@@ -1391,20 +1405,13 @@ class Command(BaseBuild):
                 s.resolution = float(sd['resolution'])
             else:
                 self.logger.warning('Resolution not specified for structure {}'.format(sd['pdb']))
-            if sd['pdb']=='6ORV':
-                sd['publication_date'] = '2020-01-08'
-            elif sd['pdb'] in ['6YVR','6Z4Q','6Z4S','6Z4V','6Z66','6Z8N','6ZA8','6ZIN']:
-                sd['publication_date'] = '2021-02-10'
-            elif sd['pdb']=='7B6W':
-                sd['publication_date'] = '2022-01-12'
-            elif sd['pdb']=='7XBX':
-                sd['publication_date'] = '2022-07-13'
-            elif sd['pdb']=='7F1T':
-                sd['publication_date'] = '2021-07-14'
-            elif sd['pdb']=='7PP1':
-                sd['publication_date'] = '2022-11-02'
+
+            ### Publication date - if pdb file is incorrect, fetch from structures.csv
             if 'publication_date' in sd:
                 s.publication_date = sd['publication_date']
+                if int(s.publication_date[:4])<1990:
+                    s.publication_date = sd['date_from_file']
+                    print('WARNING: publication date for {} is incorrect ({}), switched to ({}) from structures.csv'.format(s, sd['publication_date'], sd['date_from_file']))
             else:
                 self.logger.warning('Publication date not specified for structure {}'.format(sd['pdb']))
 
@@ -1445,7 +1452,7 @@ class Command(BaseBuild):
                         peptide_chain = ligand['chain']
                         # ligand['name'] = 'pep'
                     if ligand['name'] and ligand['name'] != 'None': # some inserted as none.
-                        ligand['type'] = ligand['type'].lower()
+                        ligand['type'] = ligand['type'].lower().strip()
                         # use annoted ligand type or default type
                         if ligand['type']:
                             lt, created = LigandType.objects.get_or_create(slug=slugify(ligand['type']),
@@ -1511,7 +1518,6 @@ class Command(BaseBuild):
 
                         with lock:
                             l = get_or_create_ligand(ligand_title, ids, ligand['type'])
-
                         # Create LigandPeptideStructure object to store chain ID for peptide ligands - supposed to b TEMP
                         if ligand['type'] in ['peptide','protein']:
                             lps, created = LigandPeptideStructure.objects.get_or_create(structure=s, ligand=l, chain=peptide_chain)
@@ -1694,7 +1700,7 @@ class Command(BaseBuild):
             if self.run_contactnetwork:
                 try:
                     current = time.time()
-                    self.build_contact_network(s, sd['pdb'])
+                    self.build_contact_network(sd['pdb'])
                     end = time.time()
                     diff = round(end - current,1)
                     self.logger.info('Create contactnetwork done for {}. {} seconds.'.format(s.protein_conformation.protein.entry_name, diff))
@@ -1720,6 +1726,8 @@ class Command(BaseBuild):
                         self.parsecalculation(sd['pdb'], data_results, False)
                         end = time.time()
                         diff = round(end - current,1)
+                        print('Interaction calculations done for {}. {} seconds.'.format(
+                                    s.protein_conformation.protein.entry_name, diff))
                         self.logger.info('Interaction calculations done for {}. {} seconds.'.format(
                                     s.protein_conformation.protein.entry_name, diff))
                     except Exception as msg:

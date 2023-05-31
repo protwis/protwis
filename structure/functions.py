@@ -29,6 +29,7 @@ import math
 import urllib
 from collections import OrderedDict
 import Bio.PDB as PDB
+from Bio import SeqIO
 import csv
 import numpy
 import json
@@ -1127,7 +1128,7 @@ class ParseStructureCSV():
             next(structures, None)
             for s in structures:
                 self.pdb_ids.append(s[0])
-                self.structures[s[0]]= {'protein':s[1], 'name':s[0].lower(), 'state':s[4], 'preferred_chain':s[5], 'resolution':s[3]}
+                self.structures[s[0]]= {'protein':s[1], 'name':s[0].lower(), 'state':s[4], 'preferred_chain':s[5], 'resolution':s[3], 'date_from_file':s[7], 'method_from_file':s[2]}
         self.fusion_proteins = []
 
     def __str__(self):
@@ -1196,6 +1197,7 @@ class ParseStructureCSV():
 class StructureBuildCheck():
     local_annotation_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation'])
     local_wt_pdb_lookup_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'wt_pdb_lookup'])
+    local_g_protein_chimeras_gapped = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'g_protein_chimeras_gapped.fasta'])
 
     def __init__(self):
         with open(self.local_annotation_dir+'/mod_xtal_segends.yaml', 'r') as f:
@@ -1206,6 +1208,11 @@ class StructureBuildCheck():
         self.start_error = []
         self.end_error = []
         self.duplicate_residue_error = {}
+        self.g_protein_chimeras = SeqIO.to_dict(SeqIO.parse(open(self.local_g_protein_chimeras_gapped), "fasta"))
+        self.g_prot_test_exceptions = {}
+        for i, j in self.g_protein_chimeras.items():
+            if '|' not in i and '-' in j.seq:
+                self.g_prot_test_exceptions[i] = j.seq.count('-')
 
     def check_structures(self):
         for pdb in self.pdbs:
@@ -1293,7 +1300,15 @@ class StructureBuildCheck():
             resis = Residue.objects.filter(protein_conformation=ProteinConformation.objects.get(protein__entry_name=signprot_complex.structure.pdb_code.index.lower()+'_a'))
         elif signprot_complex.protein.family.slug.startswith('200'):
             resis = Residue.objects.filter(protein_conformation=ProteinConformation.objects.get(protein__entry_name=signprot_complex.structure.pdb_code.index.lower()+'_arrestin'))
-        if len(pdb[signprot_complex.alpha])!=len(resis):
+        ppb = PDB.PPBuilder()
+        seq = ""
+        for pp in ppb.build_peptides(pdb[signprot_complex.alpha], aa_only=False):
+            seq += str(pp.get_sequence())
+        ### Skip if difference in length comes from unmappable residues from structure chimera
+        if signprot_complex.protein.entry_name in self.g_prot_test_exceptions and len(seq)-len(resis)<=self.g_prot_test_exceptions[signprot_complex.protein.entry_name]:
+            return 0
+        ### Print structures where residues were not built
+        if len(seq)!=len(resis):
             print(signprot_complex.structure, len(pdb[signprot_complex.alpha]), len(resis))
 
 

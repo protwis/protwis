@@ -1415,8 +1415,7 @@ class AlignedReferenceTemplate(Alignment):
                 if main_st.protein_conformation.protein.parent.entry_name in self.main_temp_ban_list:
                     self.main_temp_ban_list.remove(main_st.protein_conformation.protein.parent.entry_name)
             self.structures_data = self.structures_data.exclude(protein_conformation__protein__parent__entry_name__in=self.main_temp_ban_list)
-        self.load_proteins(
-            [Protein.objects.get(id=target.protein_conformation.protein.parent.id) for target in self.structures_data])
+        self.load_proteins([target.protein_conformation.protein.parent for target in self.structures_data])
 
     def get_main_template(self):
         """Returns main template structure after checking for matching helix start and end positions."""

@@ -24,14 +24,12 @@ import os
 # Distance between residues in peptide
 NUM_SKIP_RESIDUES = 0
 
-def compute_interactions(pdb_name, do_interactions=False, do_complexes=False, do_peptide_ligand=False, save_to_db = False, file_input = False):
-
+def compute_interactions(pdb_name, protein=None, lig=None, do_interactions=False, do_complexes=False, do_peptide_ligand=False, save_to_db=False, file_input=False):
     classified = []
     classified_complex = []
     with open(os.sep.join([settings.DATA_DIR, 'residue_data', 'unnatural_amino_acids.yaml']), 'r') as f_yaml:
         unnatural_amino_acids = yaml.safe_load(f_yaml)
         unnatural_amino_acids = {str(x):unnatural_amino_acids[x] for x in unnatural_amino_acids}
-    struc = Structure.objects.get(pdb_code__index=pdb_name)
     if file_input:
         #read pdb file
         pdb_io = StringIO(pdb_name)
@@ -42,10 +40,11 @@ def compute_interactions(pdb_name, do_interactions=False, do_complexes=False, do
         #s = pdb_get_structure(pdb_name)[0]
         chain = s[preferred_chain]
         # remove residues without GN and only those matching receptor.
-        residues = struc.protein_conformation.residue_set.exclude(generic_number=None).all().prefetch_related('generic_number')
+        residues = protein.protein_conformation.residue_set.exclude(generic_number=None).all().prefetch_related('generic_number')
     else:
-    # Ensure that the PDB name is lowercase
+        # Ensure that the PDB name is lowercase
         pdb_name = pdb_name.lower()
+        struc = Structure.objects.get(protein_conformation__protein__entry_name=pdb_name)
         # Get the pdb structure
         pdb_io = StringIO(struc.pdb_data.pdb)
         # Get the preferred chain

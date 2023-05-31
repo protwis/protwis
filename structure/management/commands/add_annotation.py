@@ -61,7 +61,7 @@ class Command(BaseCommand):
         if options['structure']:
             self.structures_to_annotate = options['structure']
         else:
-            self.structures_to_annotate = None
+            self.structures_to_annotate = []
 
         with open(self.xtal_seg_end_file, 'r') as f:
             self.xtal_seg_ends = yaml.safe_load(f)
@@ -69,12 +69,23 @@ class Command(BaseCommand):
         segends = OrderedDict()
         # mismatches = {}
         new_unique_receptor_structures = {}
+        missing_ligand_info = []
 
         for s, data in self.parsed_structures.structures.items():
             ### New structures
+            if len(self.structures_to_annotate)>0 and s not in self.structures_to_annotate:
+                continue
+            ### Warnings for missing data
             if 'ligand' not in self.parsed_structures.structures[s]:
                 print('WARNING: {} missing ligand annotation'.format(s))
-            if s not in self.xtal_seg_ends or (self.structures_to_annotate and s in self.structures_to_annotate):
+                missing_ligand_info.append(s)
+            else:
+                for l in data['ligand']:
+                    if l['name']=='pep' and l['in_structure'] and l['chain']=='':
+                        print('WARNING: {} {} peptide ligand missing chain ID'.format(s, l['title']))
+                    if l['role']=='':
+                        print('WARNING: {} {} ligand missing modality'.format(s, l['title']))
+            if s not in self.xtal_seg_ends or s in self.structures_to_annotate:
                 print(s)
                 segends[s] = {'1b':'-','1e':'-','i1b':'-','i1e':'-','2b':'-','2e':'-','e1b':'-','e1e':'-',
                               '3b':'-','3e':'-','i2b':'-','i2e':'-','4b':'-','4e':'-','e2b':'-','e2e':'-',
@@ -151,7 +162,7 @@ class Command(BaseCommand):
 
                 dssp = self.dssp(s, structure[0][data['preferred_chain']], structure)
                 
-                if fusion_present or s in ['7V68','7V69','7V6A','7W6P','7W7E','8E9W','8E9X','8E9Y','8E9Z','8EA0']:
+                if fusion_present or s in ['7V68','7V69','7V6A','7W6P','7W7E','8E9W','8E9X','8E9Y','8E9Z','8EA0','7T8X','7T90','7T94','7T96']:
                     pw2 = Bio.pairwise2.align.localms(parent_seq, seq, 3, -3, -3.5, -1)
                 else:
                     pw2 = Bio.pairwise2.align.localms(parent_seq, seq, 3, -4, -5, -2)
@@ -357,7 +368,7 @@ class Command(BaseCommand):
                         new_unique_receptor_structures[parent_protein] = [s]
                     else:
                         new_unique_receptor_structures[parent_protein].append(s)
-                print(new_unique_receptor_structures)
+                # print(new_unique_receptor_structures)
 
                 ### Check with done structures
                 # for seg, val in segends[s].items():
@@ -372,10 +383,12 @@ class Command(BaseCommand):
                 if self.save_annotation:
                     with open(self.xtal_seg_end_file, 'w') as f1:
                         yaml.dump(self.xtal_seg_ends, f1, default_flow_style=False)
-            
+        
+        print('Missing ligand info:')
+        print(missing_ligand_info)
         # pprint.pprint(segends)
-        # print('New unique receptor structures')
-        # pprint.pprint(new_unique_receptor_structures)
+        print('New unique receptor structures')
+        pprint.pprint(new_unique_receptor_structures)
 
         
 

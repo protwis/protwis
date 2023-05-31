@@ -191,7 +191,6 @@ class Command(BaseCommand):
         nhs_data = self.read_csv_data(filename, 'nhs.csv')
 
         for _, entry in nhs_data.iterrows():
-
             date = entry['date']
             quantity = entry['quantity']
             items = entry['items']
@@ -201,10 +200,8 @@ class Command(BaseCommand):
             bnf_section_raw = entry['section']
             bnf_section_name = bnf_section_raw.split(': ')[1]
             drugNameQuery = entry['drugNameQuery']
-
             try:
                 drugname = Drugs.objects.filter(name=drugNameQuery)[0]
-
             except Exception:
                 self.logger.warning('Drug not found for chemical {}'.format(drugNameQuery))
                 continue
