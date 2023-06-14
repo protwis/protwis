@@ -175,8 +175,25 @@ class Command(BaseBuild):
             main_structure = name_list[4]
             build_date = name_list[5]
 
+        try:
+            ### Removing H atoms
+            assign_gn = as_gn.GenericNumbering(pdb_file=os.sep.join([path, modelname, modelname+'.pdb']), sequence_parser=True)
+            pdb_struct = assign_gn.assign_generic_numbers_with_sequence_parser()
+            ### Removing H-atoms from models
+            for chain in pdb_struct:
+                for residue in chain:
+                    for atom in residue.get_unpacked_list():
+                        if atom.element=='H':
+                            residue.detach_child(atom.get_id())
+            io = PDB.PDBIO()
+            io.set_structure(pdb_struct)
+            io.save(os.sep.join([path, modelname, modelname+'.pdb']))
+        except Exception as msg:
+            print(modelname, msg)
+
         with open(os.sep.join([path, modelname, modelname+'.pdb']), 'r') as pdb_file:
             pdb_data = pdb_file.read()
+
         templates_file = os.sep.join([path, modelname, modelname+'.templates.csv'])
         if os.path.exists(templates_file):
             with open(templates_file, 'r') as templates_file:

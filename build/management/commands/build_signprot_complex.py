@@ -29,7 +29,8 @@ class Command(BaseCommand):
             help='Debug mode')
 
     def handle(self, *args, **options):
-        if options['purge']:
+        self.options = options
+        if self.options['purge']:
             print('Purging SignprotComplex model')
             SignprotComplex.objects.all().delete()
             self.tracker = {}

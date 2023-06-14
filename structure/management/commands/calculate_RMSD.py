@@ -10,6 +10,7 @@ import structure.structural_superposition as sp
 import structure.assign_generic_numbers_gpcr as as_gn
 from structure.functions import run_residue_flip, atoms_to_dict
 from residue.models import Residue
+from protein.models import Protein
 
 import Bio.PDB as PDB
 from Bio import SeqIO
@@ -22,11 +23,11 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('files', help='Add any number of files as arguments. First one has to be the reference file.',
                             type=str, nargs='+')
-        parser.add_argument('-p', help='Receptor protein entry name.', type=str)
+        parser.add_argument('-p', help='Protein entry name.', type=str)
         parser.add_argument('-n', help='Specify residue sequence numbers to compare.', type=str, default=False, nargs='+')
         parser.add_argument('-r', help='Specify a range of residue sequence numbers to compare. Format: e.g. 1-300', type=str, default=False, nargs='+')
         parser.add_argument('-c', help='Specify chain ID. If not specified, the program will try to find one that matches.', type=str, default=False)
-        parser.add_argument('--superpose_on', help='Specify superposition type. Supported options: 7TM, nflag', type=str, default=False)
+        parser.add_argument('--superpose_on', help='Specify superposition type. Supported options: base, nflag', type=str, default=False)
         parser.add_argument('--only_backbone', help='Calculate only the backbone atoms RMSD for the custom set.', action='store_true', default=False)
 
     def handle(self, *args, **options):
@@ -54,16 +55,16 @@ class Validation():
     def __init__(self):
         pass
 
-    def run_RMSD_list(self, files, receptor, seq_nums=None, force_chain=None, superpose_on=False, only_backbone=False):
+    def run_RMSD_list(self, files, protein, seq_nums=None, force_chain=None, superpose_on=False, only_backbone=False):
         """Calculates 3 RMSD values between a list of GPCR pdb files.
 
         It compares the files using sequence and generic numbers.
         First file in the list has to be the reference file.
         Params:
-            @receptor: UniProt entry name of GPCR, str
+            @protein: UniProt entry name of GPCR or G protein, str
             @seq_nums: Specified list of sequence residue numbers for the Custom calculation, list
             @force_chain: Specify one letter chain name to use in the pdb files, str
-            @superpose_on: Superimpose only on 7TM backbone atoms (N, CA, C), boolean
+            @superpose_on: Which backbone (N, CA, C) atoms to superimpose on (7TM, nflag), str
             @only_backbone: Calculate RMSD for only the backbone atoms, boolean
         """
         parser = PDB.PDBParser(QUIET=True)
@@ -163,13 +164,22 @@ class Validation():
                             atom_list.append(atom)
             atom_lists.append(atom_list)
 
-        ### Fetching TM data from GPCRdb
-        TM_nums = Residue.objects.filter(protein_conformation__protein__entry_name=receptor, protein_segment__slug__in=['TM1', 'TM2', 'TM3', 'TM4', 'TM5', 'TM6', 'TM7']).values_list('sequence_number', flat=True)
-        TM_target_atom_list = [i for i in atom_lists[0] if i.get_parent().id[1] in TM_nums]
-        TM_target_backbone_atom_list = [i for i in TM_target_atom_list if i.id in ['N','CA','C']]
-        TM_atom_num = len(TM_target_atom_list)
-        print('TM_atom_num:',TM_atom_num)
-        print('TM_backbone_atom_num:',len(TM_target_backbone_atom_list))
+        ### Fetching data from GPCRdb
+        protein = Protein.objects.get(entry_name=protein)
+        # Base definition of receptors: 7TM
+        if protein.family.slug.startswith('00'):
+            base_nums = Residue.objects.filter(protein_conformation__protein=protein, protein_segment__slug__in=['TM1', 'TM2', 'TM3', 'TM4', 'TM5', 'TM6', 'TM7']).values_list('sequence_number', flat=True)
+            base_type = '7TM'
+        # Base definition of G proteins: HN and H5
+        elif protein.family.slug.startswith('100'):
+            base_nums = Residue.objects.filter(protein_conformation__protein=protein, protein_segment__slug__in=['H5']).values_list('sequence_number', flat=True)
+            base_type = 'HN,H5'
+        base_target_atom_list = [i for i in atom_lists[0] if i.get_parent().id[1] in base_nums]
+        base_target_backbone_atom_list = [i for i in base_target_atom_list if i.id in ['N','CA','C']]
+        base_atom_num = len(base_target_atom_list)
+        print('{}_atom_num:'.format(base_type),base_atom_num)
+        print('{}_backbone_atom_num:'.format(base_type),len(base_target_backbone_atom_list))
+        print([i.get_parent() for i in base_target_backbone_atom_list])
 
         ### Running superposition and RMSD calculation
         target_dict = atoms_to_dict(atom_lists[0])
@@ -197,6 +207,7 @@ class Validation():
             #     if i.get_coord()[0]!=j.get_coord()[0]:
             #         print(i.get_parent(), i,i.get_coord(),j.get_coord())
             print('########################################')
+            print('Superposition base type for RMSD is: {}'.format(base_type))
             print('Model {}'.format(c-1))
             if seq_nums:
                 seq_nums = [int(s) for s in seq_nums]
@@ -204,8 +215,8 @@ class Validation():
                 seq_nums = all_keep
             ### Custom calculation
             if superpose_on:
-                if superpose_on=='7TM':
-                    custom_superposed, atoms_used_sp = self.superpose(sorted(atom_lists[0]), sorted(m), list(TM_nums))
+                if superpose_on=='base':
+                    custom_superposed, atoms_used_sp = self.superpose(sorted(atom_lists[0]), sorted(m), list(base_nums))
                 elif superpose_on=='nflag':
                     custom_superposed, atoms_used_sp = self.superpose(sorted(atom_lists[0]), sorted(m), list(seq_nums))
                 superposed = self.fetch_atoms_with_seqnum(custom_superposed, seq_nums, only_backbone)
@@ -224,22 +235,22 @@ class Validation():
             print('Custom RMSD:', rmsd)
 
             # ### 7TM all atoms calculation
-            TM_model_atom_list = [i for i in m if i.get_parent().id[1] in TM_nums]
-            superposed2, atoms_used_sp = self.superpose(sorted(TM_target_atom_list), sorted(TM_model_atom_list), list(TM_nums))
-            rmsd = self.calc_RMSD(sorted(TM_target_atom_list), sorted(superposed2))
-            print('Num atoms sent for superposition: ', len(TM_target_atom_list), len(TM_model_atom_list))
+            TM_model_atom_list = [i for i in m if i.get_parent().id[1] in base_nums]
+            superposed2, atoms_used_sp = self.superpose(sorted(base_target_atom_list), sorted(TM_model_atom_list), list(base_nums))
+            rmsd = self.calc_RMSD(sorted(base_target_atom_list), sorted(superposed2))
+            print('Num atoms sent for superposition: ', len(base_target_atom_list), len(TM_model_atom_list))
             print('Num atoms used for superposition: ', atoms_used_sp)
-            print('Num atoms used for RMSD: ', len(TM_target_atom_list), len(superposed2))
-            print('7TM all RMSD:', rmsd)
+            print('Num atoms used for RMSD: ', len(base_target_atom_list), len(superposed2))
+            print('{} all RMSD:'.format(base_type), rmsd)
 
             # ### 7TM only backbone (N, CA, C) calculation
-            superposed, atoms_used_sp = self.superpose(sorted(TM_target_atom_list), sorted(TM_model_atom_list), list(TM_nums))
-            superposed3 = self.fetch_atoms_with_seqnum(superposed, list(TM_nums), True)
-            rmsd = self.calc_RMSD(sorted(TM_target_backbone_atom_list), sorted(superposed3))
-            print('Num atoms sent for superposition: ', len(TM_target_atom_list), len(TM_model_atom_list))
+            superposed, atoms_used_sp = self.superpose(sorted(base_target_atom_list), sorted(TM_model_atom_list), list(base_nums))
+            superposed3 = self.fetch_atoms_with_seqnum(superposed, list(base_nums), True)
+            rmsd = self.calc_RMSD(sorted(base_target_backbone_atom_list), sorted(superposed3))
+            print('Num atoms sent for superposition: ', len(base_target_atom_list), len(TM_model_atom_list))
             print('Num atoms used for superposition: ', atoms_used_sp)
-            print('Num atoms used for RMSD: ', len(TM_target_backbone_atom_list), len(superposed3))
-            print('7TM backbone RMSD:', rmsd)
+            print('Num atoms used for RMSD: ', len(base_target_backbone_atom_list), len(superposed3))
+            print('{} backbone RMSD:'.format(base_type), rmsd)
 
             c+=1
 
