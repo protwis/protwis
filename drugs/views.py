@@ -15,6 +15,7 @@ import numpy as np
 from collections import OrderedDict
 from copy import deepcopy
 
+
 def get_spaced_colors(n):
     max_value = 16581375 #255**3
     interval = int(max_value / n)
@@ -234,9 +235,8 @@ class DrugBrowser(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        drugs = Drugs.objects.all().prefetch_related('target__family__parent__parent__parent', 'publication')
-        drugs_NHS_names = NHSPrescribings.objects.values_list('drugname__name', flat=True).distinct()
-
+        drugs = Drugs.objects.all().prefetch_related('target', 'target__family__parent__parent__parent', 'publication', 'publication__web_link', 'publication__web_link__web_resource', 'publication__journal')
+        drugs_NHS_names = list(NHSPrescribings.objects.values_list('drugname__name', flat=True).distinct())
         context_data = list()
 
         def get_pmid(publication):
@@ -277,12 +277,9 @@ class DrugBrowser(TemplateView):
             drugname = drug.name
             NHS = 'yes' if drugname in drugs_NHS_names else 'no'
             target_list = drug.target.all()
-            ref = drug.references.split('|')
 
-            # Filter the publications for specific PMIDs
-            filtered_publications = drug.publication.filter(web_link__index__in=ref)
-            publication_info = [format_publication(pub) for pub in filtered_publications]
-
+            publications = drug.publication.all()
+            publication_info = [format_publication(pub) for pub in publications]
 
             publication_info_string = '<br>'.join(publication_info)
 
