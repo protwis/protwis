@@ -28,7 +28,7 @@
     {% block addon_css %}{% endblock %}
 
     {% if google_analytics %}
-      {% with 'home/ga_'|add:current_site|add:'.html' as ga_template %}
+      {% with 'home/ga4.html' as ga_template %}
         {% include ga_template %}
       {% endwith %}
     {% endif %}
