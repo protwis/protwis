@@ -760,6 +760,41 @@ def ServePdbLigandDiagram(request,pdbname,ligand):
     response = HttpResponse(pair.pdb_file.pdb, content_type='text/plain')
     return response
 
+def ServeCleanPdbDiagram(request, pdbname, ligname):
+	structure = Structure.objects.filter(pdb_code__index=pdbname.upper())
+	if structure.exists():
+		structure = structure.get()
+		if structure.pdb_data is None:
+			quit()
+	else:
+		 quit()
+
+	# Obtain and save cleaned PDB
+	parser = PDBParser(QUIET = True)
+	filtered_pdb = StringIO(structure.get_cleaned_pdb(ligands_to_keep=ligname.upper()))
+	pdb_out = PDBIO()
+	pdb_out.set_structure(parser.get_structure(structure.pdb_code.index, filtered_pdb))
+
+	# Send as response
+	out_stream = StringIO()
+	pdb_out.save(out_stream, select = NotDisordered())
+	return HttpResponse(out_stream.getvalue(), content_type = 'chemical/x-pdb')
+
+class NotDisordered(Select):
+    def accept_atom(self, atom):
+        if not atom.is_disordered() or atom.get_altloc() == 'A':
+            atom.set_altloc(' ')
+            return True
+        else:
+            return False
+
+    def accept_residue(self, residue):
+        if residue.is_disordered():
+            residue.disordered = 0
+            for atom in residue.get_list():
+                atom.disordered_flag = 0
+        return True
+
 class StructureStatistics(TemplateView):
     """
     So not ready that EA wanted to publish it.
