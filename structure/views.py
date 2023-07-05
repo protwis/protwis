@@ -42,7 +42,7 @@ import json
 from copy import deepcopy
 from io import StringIO, BytesIO
 from collections import OrderedDict
-from Bio.PDB import PDBIO, PDBParser
+from Bio.PDB import PDBIO, PDBParser, Select
 
 from email.mime.text import MIMEText
 from email.mime.application import MIMEApplication
