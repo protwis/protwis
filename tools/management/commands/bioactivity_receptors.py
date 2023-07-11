@@ -24,7 +24,7 @@ class Command(BaseCommand):
         for state in states:
             result_dictionary[state] = {}
             ligand_structures = StructureLigandInteraction.objects.filter(ligand__ligand_type__slug='small-molecule', ligand_role__slug__in=ligand_modalities[state]).exclude(ligand__smiles = None).exclude(ligand__pdbe = None)\
-                                .values_list('ligand_id', 'structure__protein_conformation__protein__parent__entry_name', 'structure__protein_conformation__protein__parent__family__slug', 'ligand__pdbe', 'structure__pdb_code__index')
+                                .exclude(structure__structure_type__slug__startswith='af-').values_list('ligand_id', 'structure__protein_conformation__protein__parent__entry_name', 'structure__protein_conformation__protein__parent__family__slug', 'ligand__pdbe', 'structure__pdb_code__index')
 
             # Loop over all structures/ligands
             for pair in ligand_structures:
@@ -58,7 +58,7 @@ class Command(BaseCommand):
 
             # Grab all unique smiles from the structure ligands
             structure_smiles = StructureLigandInteraction.objects.filter(ligand__ligand_type__slug='small-molecule', ligand_role__slug__in=ligand_modalities[state]).exclude(ligand__smiles = None).exclude(ligand__pdbe = None)\
-                                .values_list('ligand__pdbe', 'structure__pdb_code__index', 'ligand__smiles').distinct()
+                                .exclude(structure__structure_type__slug__startswith='af-').values_list('ligand__pdbe', 'structure__pdb_code__index', 'ligand__smiles').distinct()
 
             # Create Morgan Fingerprints from the SMILES
             structure_ligands = {}

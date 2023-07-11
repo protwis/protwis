@@ -154,7 +154,6 @@ class StructurePeptideLigandInteractionSerializer(serializers.ModelSerializer):
         fields = ('pdb_code', 'ligand_name', 'ligand_chain', 'peptide_amino_acid', 'peptide_amino_acid_three_letter', 'peptide_residue_number',
                   'receptor_amino_acid', 'receptor_residue_number', 'receptor_residue_generic_number', 'interaction_type', 'interaction_level', 'interaction_count')
 
-
 class MutationSerializer(serializers.ModelSerializer):
     class Meta:
         model = MutationRaw

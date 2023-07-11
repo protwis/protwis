@@ -16,15 +16,15 @@ import traceback
 import yaml
 import pprint
 
-class Command(BaseBuild):  
+class Command(BaseBuild):
     help = 'Build automated chimeric GPCR homology models'
-    
+
     def add_arguments(self, parser):
         super(Command, self).add_arguments(parser=parser)
         parser.add_argument('--verbose', help='Print specific outliers', default=False, action='store_true')
-        
+
     def handle(self, *args, **options):
-        structures = Structure.objects.all().prefetch_related('protein_conformation__protein__parent','pdb_code').annotate(dc=Count('distances'))
+        structures = Structure.objects.all().exclude(structure_type__slug__startswith='af-').prefetch_related('protein_conformation__protein__parent','pdb_code').annotate(dc=Count('distances'))
         structures_with_issue = []
         missing_helices = {}
         segments_query_obj = ProteinSegment.objects.filter(proteinfamily="GPCR")
@@ -55,7 +55,7 @@ class Command(BaseBuild):
             c = 0
             segments = OrderedDict((i,[]) for i in segments_query_obj)
             x50s = [i.display_generic_number.label for i in resis.filter(display_generic_number__label__in=['1.50x50', '2.50x50', '3.50x50', '4.50x50', '5.50x50', '6.50x50', '7.50x50'])]
-            parent_x50_resis = Residue.objects.filter(protein_conformation__protein=s.protein_conformation.protein.parent, 
+            parent_x50_resis = Residue.objects.filter(protein_conformation__protein=s.protein_conformation.protein.parent,
                                                       display_generic_number__label__in=['1.50x50', '2.50x50', '3.50x50', '4.50x50', '5.50x50', '6.50x50', '7.50x50']).prefetch_related('display_generic_number')
             missing_helices[s] = []
             missing_a_helix = False
@@ -125,4 +125,3 @@ class Command(BaseBuild):
         else:
             print_out = 'No structure residue issues detected'
         self.logger.info('Check structure residues: '+print_out)
-

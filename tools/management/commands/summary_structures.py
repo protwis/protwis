@@ -282,7 +282,7 @@ class Command(BaseCommand):
         p2pdb = {}
         pdb2p = {}
         new_pdbs = ['5O9H', '5OLG', '5OLH', '5OLO', '5OLV', '5OLZ', '5OM1', '5OM4', '5V54', '5WF5', '5WF6', '5YQZ', '6AQF', '6B3J', '6B73', '6BQG', '6BQH', '6CM4', '6FFH', '6FFI']
-        for s in Structure.objects.all():
+        for s in Structure.objects.all().exclude(structure_type__slug__startswith='af-'):
            # print(s)
             #print(s.protein_conformation.protein.parent.entry_name)
             proteins.add(s.protein_conformation.protein.parent.entry_name)
@@ -296,4 +296,3 @@ class Command(BaseCommand):
 
         for p in new_pdbs:
             print('New PDB',p,'entry_name',pdb2p[p],'other pdbs for this protein',p2pdb[pdb2p[p]])
-

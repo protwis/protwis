@@ -99,7 +99,7 @@ class Command(BaseCommand):
 
     def rebuild_constructs(self):
         self.purge_construct_data()
-        structures = Structure.objects.all()
+        structures = Structure.objects.all().exclude(structure_type__slug__startswith='af-')
         for s in structures:
             pdbname = str(s)
             cache.delete(pdbname+"_auto_d")

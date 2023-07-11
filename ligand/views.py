@@ -1861,7 +1861,7 @@ class LigandInformationView(TemplateView):
     def get_structure(ligand):
         return_list = list()
         structures = list(
-            StructureLigandInteraction.objects.filter(ligand=ligand))
+            StructureLigandInteraction.objects.filter(ligand=ligand).exclude(structure__structure_type__slug__startswith='af-'))
         for i in structures:
             structure_dict = dict()
             structure_dict['structure_pdb'] = i.structure.pdb_code.index

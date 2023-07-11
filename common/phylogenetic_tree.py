@@ -251,7 +251,7 @@ class PhylogeneticTreeGenerator(object):
     def get_aux_data(self):
 
         self.aux_data['crystals'] = [x.protein_conformation.protein.parent.id for x in
-                                                 Structure.objects.all()
+                                                 Structure.objects.all().exclude(structure_type__slug__startswith='af-')
                                                  .distinct
                                                  ('protein_conformation__protein__parent').prefetch_related('protein_conformation__protein__parent')
                                                  ]

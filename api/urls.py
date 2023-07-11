@@ -56,6 +56,7 @@ urlpatterns = excluded_apis + [
         name='proteinsimilarityalignment'),
 
     url(r'^structure/$', cache_page(3600*24*7)(views.StructureList.as_view()), name='structure-list'),
+    url(r'^alphafoldmodels/$', cache_page(3600*24*7)(views.StructureModelsList.as_view()), name='structure-list'),
     url(r'^structure/accession_codes_human/$', cache_page(3600*24*7)(views.StructureAccessionHuman.as_view()), name='structure-accession-list'),
     url(r'^structure/representative/$', cache_page(3600*24*7)(views.RepresentativeStructureList.as_view()), {'representative': True},
         name='structure-representative-list'),
@@ -66,7 +67,8 @@ urlpatterns = excluded_apis + [
         name='representative-structure-list-protein'),
     url(r'^structure/(?P<pdb_code>[^/]+)/$', views.StructureDetail.as_view(), name='structure-detail'),
     url(r'^structure/(?P<pdb_code>[^/]+)/interaction/$', views.StructureLigandInteractions.as_view(), name='interaction'),
-    url(r'^structure/(?P<pdb_code>[^/]+)/peptideinteraction/$', views.StructurePeptideLigandInteractions.as_view(), name='peptide-interaction'),
+    url(r'^structure/(?P<value>[^/]+)/peptideinteraction/$', views.StructurePeptideLigandInteractions.as_view(), name='peptide-interaction'),
+    # url(r'^structure/(?P<entry_name>[^/]+)/peptideinteraction/$', views.StructurePeptideLigandInteractionsEntryName.as_view(), name='peptide-entry-name'),
     url(r'^structure/template/(?P<entry_name>[^/]+)/$', views.StructureTemplate.as_view(),
         name='structuretemplate'),
     url(r'^structure/template/(?P<entry_name>[^/]+)/(?P<segments>[^/]+)/$', views.StructureTemplatePartial.as_view(),

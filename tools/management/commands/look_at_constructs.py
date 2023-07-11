@@ -25,11 +25,11 @@ class Command(BaseCommand):
 
     logger = logging.getLogger(__name__)
 
-    
+
 
     def handle(self, *args, **options):
 
-        for s in Structure.objects.all():
+        for s in Structure.objects.all().exclude(structure_type__slug__startswith='af-'):
             slug = str(s)
             # if slug != '5N2R':
             #     continue
@@ -50,4 +50,3 @@ class Command(BaseCommand):
                 if 'b562' in seg:
                     print(slug,seg,v)
             # print(d)
-

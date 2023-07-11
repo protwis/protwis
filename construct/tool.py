@@ -129,7 +129,7 @@ def new_tool(request):
     else:
         c_level = ''
 
-    states = list(Structure.objects.filter(protein_conformation__protein__family__slug__startswith=level.split("_")[0]).all().values_list('state__slug', flat = True).distinct())
+    states = list(Structure.objects.filter(protein_conformation__protein__family__slug__startswith=level.split("_")[0]).all().exclude(structure_type__slug__startswith='af-').values_list('state__slug', flat = True).distinct())
     if 'active' in states:
         active_xtals = True
     else:
@@ -226,7 +226,7 @@ def tool(request):
     else:
         c_level = ''
 
-    states = list(Structure.objects.filter(protein_conformation__protein__family__slug__startswith=level.split("_")[0]).all().values_list('state__slug', flat = True).distinct())
+    states = list(Structure.objects.filter(protein_conformation__protein__family__slug__startswith=level.split("_")[0]).all().exclude(structure_type__slug__startswith='af-').values_list('state__slug', flat = True).distinct())
     if 'active' in states:
         active_xtals = True
     else:
