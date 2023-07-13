@@ -11,7 +11,6 @@ urlpatterns = excluded_apis + [
     url(r'^protein/accession/(?P<accession>[^/].+)/$', views.ProteinByAccessionDetail.as_view(),
         name='proteinbyaccession'),
     url(r'^protein/(?P<entry_name>[^/].+)/$', views.ProteinDetail.as_view(), name='protein-detail'),
-
     url(r'^proteinfamily/$', cache_page(3600*24*7)(views.ProteinFamilyList.as_view()), name='proteinfamily-list'),
     url(r'^proteinfamily/(?P<slug>[^/]+)/$', views.ProteinFamilyDetail.as_view(), name='proteinfamily-detail'),
     url(r'^proteinfamily/children/(?P<slug>[^/]+)/$', views.ProteinFamilyChildrenList.as_view(),
@@ -83,5 +82,7 @@ urlpatterns = excluded_apis + [
     url(r'^drugs/(?P<entry_name>[^/].+)/$', views.DrugList.as_view(), name='drugs'),
     url(r'^ligands/(?P<prot_name>[^/].+)/$', views.LigandList.as_view(), name='drugs'),
     url(r'^plot/helixbox/(?P<entry_name>[^/].+)/$', views.HelixBoxView.as_view(), name='helixbox'),
-    url(r'^plot/snake/(?P<entry_name>[^/].+)/$', views.SnakePlotView.as_view(), name='snakeplot')
+    url(r'^plot/snake/(?P<entry_name>[^/].+)/$', views.SnakePlotView.as_view(), name='snakeplot'),
+    url(r'^structure/(?P<pdb_code>[^/]+)/complexinteraction/$', views.ComplexInteractions.as_view(), name='complex-interaction'),
+
 ]

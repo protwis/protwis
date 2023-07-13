@@ -5,8 +5,8 @@ from ligand.models import Endogenous_GTP, LigandID
 from mutation.models import MutationRaw
 from protein.models import Protein, ProteinConformation, ProteinFamily, Species, ProteinSource, ProteinSegment
 from residue.models import Residue, ResidueNumberingScheme, ResidueGenericNumber
-from structure.models import Structure
-from contactnetwork.models import InteractionPeptide
+from structure.models import Structure, StructureComplexModel
+from contactnetwork.models import InteractionPeptide, Interaction
 
 
 class ProteinSerializer(serializers.ModelSerializer):
@@ -153,6 +153,31 @@ class StructurePeptideLigandInteractionSerializer(serializers.ModelSerializer):
         model = InteractionPeptide
         fields = ('pdb_code', 'ligand_name', 'ligand_chain', 'peptide_amino_acid', 'peptide_amino_acid_three_letter', 'peptide_residue_number',
                   'receptor_amino_acid', 'receptor_residue_number', 'receptor_residue_generic_number', 'interaction_type', 'interaction_level', 'interaction_count')
+
+
+class ComplexInteractionSerializer(serializers.ModelSerializer):
+    pdb_code = serializers.ReadOnlyField(
+        source='interacting_pair__res1_id__protein_conformation__protein__entry_name')
+
+    receptor = serializers.ReadOnlyField(
+        source='interacting_pair__res1_id__protein_conformation__protein__parent__entry_name')
+    receptor_generic_residue_number = serializers.ReadOnlyField(source='interacting_pair__res1_id__generic_number__label')
+    receptor_residue_number = serializers.ReadOnlyField(source='interacting_pair__res1_id__sequence_number')
+
+    gprotein = serializers.ReadOnlyField(
+        source='interacting_pair__res1_id__protein_conformation__protein__parent__entry_name')
+    gprotein_generic_residue_number = serializers.ReadOnlyField(source='interacting_pair__res2_id__generic_number__label')
+    gprotein_residue_number = serializers.ReadOnlyField(source='interacting_pair__res2_id__sequence_number')
+
+    interaction_type = serializers.ReadOnlyField()
+    interaction_level = serializers.ReadOnlyField()
+
+    class Meta:
+        model = Interaction
+        fields = ('pdb_code',
+                  'receptor', 'receptor_generic_residue_number', 'receptor_residue_number',
+                  'gprotein', 'gprotein_generic_residue_number', 'gprotein_residue_number',
+                  'interaction_type', 'interaction_level')
 
 
 class MutationSerializer(serializers.ModelSerializer):

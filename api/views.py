@@ -19,13 +19,15 @@ from structure.models import Structure, StructureExtraProteins
 from structure.assign_generic_numbers_gpcr import GenericNumbering
 from structure.sequence_parser import SequenceParser
 from api.serializers import (ProteinSerializer, ProteinFamilySerializer, SpeciesSerializer, ResidueSerializer,
-                             ResidueExtendedSerializer, StructureLigandInteractionSerializer, StructurePeptideLigandInteractionSerializer,
+                             ResidueExtendedSerializer, StructureLigandInteractionSerializer,
+                             ComplexInteractionSerializer,
+                             StructurePeptideLigandInteractionSerializer,
                              MutationSerializer, ReceptorListSerializer, GuidetoPharmacologySerializer, EndogenousLigandSerializer)
 from api.renderers import PDBRenderer
 from common.alignment import Alignment
 from common.definitions import AMINO_ACIDS, AMINO_ACID_GROUPS
 from drugs.models import Drugs
-from contactnetwork.models import InteractionPeptide
+from contactnetwork.models import InteractionPeptide, Interaction
 
 from io import StringIO
 from Bio.PDB import PDBIO, parse_pdb_header
@@ -968,6 +970,59 @@ class StructureLigandInteractions(generics.ListAPIView):
                                                              'fragment__residue__generic_number',
                                                              'fragment__residue__display_generic_number',
                                                              ).order_by('fragment__residue__sequence_number')
+        return queryset
+
+
+class ComplexInteractions(generics.ListAPIView):
+    """
+    Get a list of interactions between structure and G protein/GPCR complex
+    \n/structure/{pdb_code}/interaction/
+    \n{pdb_code} is a structure identifier from the Protein Data Bank, e.g. 2RH1
+    """
+    serializer_class = ComplexInteractionSerializer
+
+    def get_queryset(self):
+        pdb_code = self.kwargs.get('pdb_code')
+
+        queryset = Interaction.objects.filter(
+            interacting_pair__res1_id__protein_conformation__protein__entry_name__iexact=pdb_code,
+            interacting_pair__res2_id__protein_conformation__protein__family__slug__startswith='100'
+        ).values(
+            'interacting_pair__res1_id__protein_conformation__protein__entry_name',
+            'interacting_pair__res1_id__protein_conformation__protein',
+            'interacting_pair__res1_id__protein_conformation__protein__parent',
+            'interacting_pair__res1_id__sequence_number',
+            'interacting_pair__res1_id__generic_number__label',
+            'interacting_pair__res2_id__protein_conformation__protein',
+            'interacting_pair__res2_id__protein_conformation__protein__parent',
+            'interacting_pair__res2_id__sequence_number',
+            'interacting_pair__res2_id__generic_number__label',
+            'interaction_type',
+            'interaction_level'
+        ).distinct().order_by('interacting_pair__res2__generic_number')
+
+
+        """
+
+        pdb_code = self.kwargs.get('pdb_code')
+
+        queryset = Interaction.objects.filter(
+            interacting_pair__res1_id__protein_conformation__protein__entry_name__iexact=pdb_code,
+            interacting_pair__res2_id__protein_conformation__protein__family__slug__startswith='100'
+        ).prefetch_related(
+            'interacting_pair',
+            'interacting_pair__res1',
+            'interacting_pair__res2',
+            'interacting_pair__res1_id__protein_conformation__protein',
+            'interacting_pair__res1_id__generic_number',
+            'interacting_pair__res1_id__sequence_number',
+            'interacting_pair__res2_id__protein_conformation__protein',
+            'interacting_pair__res2_id__generic_number',
+            'interacting_pair__res2_id__sequence_number',
+        ).distinct().order_by('interacting_pair__res2_id__generic_number')
+
+        """
+
         return queryset
 
 
