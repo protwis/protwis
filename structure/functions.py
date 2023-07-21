@@ -1160,6 +1160,19 @@ class ParseAFModelsCSV():
             except IndexError:
                 print('Cannot find information for complex {}'.format(complex))
 
+
+class ParseAFComplexModels():
+    def __init__(self):
+        self.data_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'AlphaFold_multimer'])
+        self.filedirs = os.listdir(self.data_dir)
+        self.complexes = {}
+        for f in self.filedirs:
+            if '-' not in f:
+                continue
+            receptor, signprot = f.split('-')
+            self.complexes[receptor+'-'+signprot] = {'receptor':receptor, 'signprot':signprot, 'location':os.sep.join([self.data_dir, f, f+'.pdb']), 'model':'af-signprot', 'preferred_chain':'A'} 
+
+
 class ParseStructureCSV():
     def __init__(self):
         self.pdb_ids = []

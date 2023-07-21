@@ -24,7 +24,7 @@ import os
 # Distance between residues in peptide
 NUM_SKIP_RESIDUES = 0
 
-def compute_interactions(pdb_name, protein=None, lig=None, do_interactions=False, do_complexes=False, do_peptide_ligand=False, save_to_db=False, file_input=False):
+def compute_interactions(pdb_name, protein=None, signprot=None, lig=None, do_interactions=False, do_complexes=False, do_peptide_ligand=False, save_to_db=False, file_input=False):
     classified = []
     classified_complex = []
     with open(os.sep.join([settings.DATA_DIR, 'residue_data', 'unnatural_amino_acids.yaml']), 'r') as f_yaml:
@@ -42,6 +42,7 @@ def compute_interactions(pdb_name, protein=None, lig=None, do_interactions=False
 
         # fetching residues for wild type structure of protein
         residues = protein.protein_conformation.residue_set.exclude(generic_number=None).all().prefetch_related('generic_number')
+        struc = protein
         # residues = ProteinConformation.objects.get(protein__entry_name=protein.protein.entry_name).residue_set.exclude(generic_number=None).all().prefetch_related('generic_number')
         # CREATING THE DUMMY RESIDUES FOR ALL THE RESIDUES OF CHAIN A (aka protein)
         # for res in chain:
@@ -97,20 +98,26 @@ def compute_interactions(pdb_name, protein=None, lig=None, do_interactions=False
 
     if do_complexes:
         try:
-            # check if structure in signprot_complex
-            signprot_chain = ""
-            extension = ""
-            if StructureExtraProteins.objects.filter(structure=struc, category="Arrestin"):
-                signprot_chain = StructureExtraProteins.objects.get(structure=struc, category="Arrestin").chain
-                extension = "_arrestin"
+            if file_input:
+                signprot_chain = 'B' ### Hardcoded for now
+                extension = ''
+                pdb_name = signprot.entry_name
+                print(pdb_name)
             else:
-                signprot_chain = SignprotComplex.objects.get(structure=struc).alpha
-                extension = "_a"
+                # check if structure in signprot_complex
+                signprot_chain = ""
+                extension = ""
+                if StructureExtraProteins.objects.filter(structure=struc, category="Arrestin"):
+                    signprot_chain = StructureExtraProteins.objects.get(structure=struc, category="Arrestin").chain
+                    extension = "_arrestin"
+                else:
+                    signprot_chain = SignprotComplex.objects.get(structure=struc).alpha
+                    extension = "_a"
 
-            # Workaround for fused receptor - signaling proteins constructs
-            if signprot_chain == preferred_chain:
-                pdb_io = StringIO(struc.pdb_data.pdb)
-                s = PDBParser(PERMISSIVE=True, QUIET=True).get_structure('ref', pdb_io)[0]
+                # Workaround for fused receptor - signaling proteins constructs
+                if signprot_chain == preferred_chain:
+                    pdb_io = StringIO(struc.pdb_data.pdb)
+                    s = PDBParser(PERMISSIVE=True, QUIET=True).get_structure('ref', pdb_io)[0]
 
             # Get all GPCR residue atoms based on preferred chain
             gpcr_atom_list = [ atom for residue in Selection.unfold_entities(s[preferred_chain], 'R') if is_aa(residue) and residue.get_id()[1] in dbres \
