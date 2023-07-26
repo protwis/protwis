@@ -7,7 +7,8 @@ from protein.models import (Protein, ProteinConformation, ProteinState, ProteinS
 from residue.models import Residue
 from common.models import WebLink, WebResource, Publication
 from common.tools import test_model_updates
-from structure.models import Structure, StructureType, PdbData, Rotamer, Fragment
+from common.definitions import G_PROTEIN_DISPLAY_NAME as g_prot_dict
+from structure.models import Structure, StructureType, PdbData, Rotamer, Fragment, StructureExtraProteins
 from construct.functions import *
 
 from contactnetwork.models import *
@@ -898,6 +899,12 @@ class Command(BaseBuild):
             signprot = Protein.objects.get(entry_name=sd['signprot'])
             sc = SignprotComplex.objects.get_or_create(alpha='B', protein=signprot, structure=struct, 
                                                        beta_chain=None, gamma_chain=None, beta_protein=None, gamma_protein=None) # Set to None for now, needs update when beta and gamma subunits get added to models
+
+            ##### StructureExtraProteins
+            g_prot_dict[signprot.entry_name.split('_')[0].upper()]
+            sep = StructureExtraProteins.objects.get_or_create(display_name=g_prot_dict[signprot.entry_name.split('_')[0].upper()], note=None, chain='B', category='G alpha', wt_coverage=100, protein_conformation=None, structure=struct, wt_protein=signprot)
+            # g beta - TO BE ADDED
+            # g gamma - TO BE ADDED
 
             # try:
             current = time.time()
