@@ -1203,17 +1203,19 @@ def AJAX_Interactions(request):
     # if selected_pdbs is false throw and error and get back
     # correct receptor entry names - the ones with '_a' appended
     if effector == 'G alpha':
-        complex_names = [pdb_name.lower() + '_a' for pdb_name in selected_pdbs]
+        complex_names = ['_'.join(pdb_name.split('_')[1:3]).lower() if pdb_name.startswith('AFM') else pdb_name.lower() + '_a' for pdb_name in selected_pdbs]
     elif effector == 'A':
-        complex_names = [pdb_name.lower() + '_arrestin' for pdb_name in selected_pdbs]
-    pdbs_names = [pdb.lower() for pdb in selected_pdbs]
+        complex_names = ['_'.join(pdb_name.split('_')[1:3]).lower() if pdb_name.startswith('AFM') else pdb_name.lower() + '_arrestin' for pdb_name in selected_pdbs]
+    # pdbs_names = [pdb.lower() for pdb in selected_pdbs]
+    pdbs_names = ['_'.join(pdb.split('_')[1:3]).lower() if pdb.startswith('AFM') else pdb.lower() for pdb in selected_pdbs]
+
     complex_objs = SignprotComplex.objects.filter(structure__protein_conformation__protein__entry_name__in=pdbs_names).prefetch_related('structure__protein_conformation__protein')
     # fetching the id of the selected structures
     complex_struc_ids = [co.structure_id for co in complex_objs]
     # protein conformations for those
     prot_conf = ProteinConformation.objects.filter(protein__entry_name__in=complex_names).values_list('id', flat=True)
-    # correct receptor entry names - the ones with '_a' appended
 
+    # correct receptor entry names - the ones with '_a' appended
     interaction_sort_order = [
         "ionic",
         "aromatic",
@@ -1225,6 +1227,7 @@ def AJAX_Interactions(request):
     # getting all the signal protein residues for those protein conformations
     prot_residues = Residue.objects.filter(
         protein_conformation__in=prot_conf
+        # protein_conformation__protein__in=complex_struc_ids
     ).values_list('id', flat=True)
 
     interactions = InteractingResiduePair.objects.filter(
@@ -1281,15 +1284,15 @@ def AJAX_Interactions(request):
         "protein_conformation__structure"
     ).values(
         rec_id=F('protein_conformation__protein__id'),
-        name=F('protein_conformation__protein__parent__name'),
-        entry_name=F('protein_conformation__protein__parent__entry_name'),
+        name=F('protein_conformation__protein__name'),
+        entry_name=F('protein_conformation__protein__entry_name'),
         pdb_id=F('protein_conformation__structure__pdb_code__index'),
         rec_aa=F('amino_acid'),
         rec_gn=F('generic_number__label'),
     ).exclude(
         Q(rec_gn=None)
     )
-
+    
     t2 = time.time()
     print('AJAX Runtime: {}'.format((t2 - t1) * 1000.0))
 
