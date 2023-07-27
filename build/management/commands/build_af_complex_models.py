@@ -897,8 +897,10 @@ class Command(BaseBuild):
 
             ##### SIGNPROT
             signprot = Protein.objects.get(entry_name=sd['signprot'])
-            sc = SignprotComplex.objects.get_or_create(alpha='B', protein=signprot, structure=struct, 
+            sc = SignprotComplex.objects.get_or_create(alpha='B', protein=signprot, structure=struct,
                                                        beta_chain=None, gamma_chain=None, beta_protein=None, gamma_protein=None) # Set to None for now, needs update when beta and gamma subunits get added to models
+            struct.signprot_complex = sc[0]
+            struct.save()
 
             ##### StructureExtraProteins
             g_prot_dict[signprot.entry_name.split('_')[0].upper()]
