@@ -375,7 +375,7 @@ class StructureList(views.APIView):
                         ligand['type'] = interaction.ligand.ligand_type.name
                     if interaction.ligand_role and interaction.ligand_role.name:
                         ligand['function'] = interaction.ligand_role.name
-                    if interaction.pdb_reference:
+                    if interaction.pdb_reference and interaction.pdb_reference != "pep":
                         ligand['PDB'] = interaction.pdb_reference
                     elif interaction.ligand.pdbe:
                         ligand['PDB'] = interaction.ligand.pdbe
