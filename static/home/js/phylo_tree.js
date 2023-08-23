@@ -1041,7 +1041,7 @@ function draw_model_scores(location, element_id, score, startValue, endValue, de
               .attr('y', 33)
               .style("font", "14px sans-serif")
               .style("font-weight", "bold")
-              .text('0');
+              .text(startValue);
 
     first_legend_svg.append('rect')
               .attr('x', 40)
@@ -1055,7 +1055,7 @@ function draw_model_scores(location, element_id, score, startValue, endValue, de
               .attr('y', 33)
               .style("font", "14px sans-serif")
               .style("font-weight", "bold")
-              .text('30');
+              .text(endValue);
 
     legendLabel = first_legend_svg.select('text')['_groups'][0][0].getBBox().width*1.05 + 0.5 * 10;
 
