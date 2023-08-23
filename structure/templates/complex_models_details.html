@@ -18,6 +18,19 @@ canvas {
 }
 </style>
 
+<style>
+.inline {display:inline;}
+.graphcolor {
+              display:inline-block;
+              padding: 1px 5px;
+              text-align: center;
+              margin-left: 10px;
+              vertical-align: middle;
+              width: 20px;
+              height: 20px;
+              margin-top: 5px;}
+</style>
+
 <div class="row text-success">
     <div class="text-center">
         {% if model.receptor_protein.accession %}
@@ -114,8 +127,8 @@ canvas {
         <br>
         <br>
         <br>
-        <div><h4>Model confidence <span class="glyphicon glyphicon-info-sign" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="below" data-content="<b>Interpretation of AlphaFold models</b><br>The pLDDT score from Alphafold estimates the confidence of the placement of an individual residue in relation to its neighboring residues within a 15Å radius. The GPCRdb provides full-length models for nearly all human GPCRs, including receptors that comprise multiple domains. Therefore, one should take into account that, when a model consists of multiple domains, the relative placement of the domains with respect to each other can be erroneous even when the pLDDT score for a given domain is high."></span></h4></div>
-        <div style='width: 80%; display:table; position:relative;'>
+        <div><h4>Model confidence <i class="fas fa-info-circle" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="below" data-content="<b>Interpretation of AlphaFold models</b><br>The pLDDT score from Alphafold estimates the confidence of the placement of an individual residue in relation to its neighboring residues within a 15Å radius. The GPCRdb provides full-length models for nearly all human GPCRs, including receptors that comprise multiple domains. Therefore, one should take into account that, when a model consists of multiple domains, the relative placement of the domains with respect to each other can be erroneous even when the pLDDT score for a given domain is high."></i></h4></div>
+        <div style='width: 90%; display:table; position:relative;'>
             <div style='display: table-cell;'>
               <div class="graphcolor" style="background-color: blue; "></div>
               <span style="margin-left: 5px; vertical-align: middle; padding-top: 5px;">Very high (pLDDT > 90)</span>
@@ -134,7 +147,6 @@ canvas {
               <br>
             </div>
         </div>
-        <br>
         <br>
         <div>
           <h5>PTM Score
@@ -399,16 +411,20 @@ canvas {
     <script src="{% static 'home/js/selection.js' %}"> </script>
     <script src="{% static 'home/js/table2csv.js' %}"> </script>
     <script src="{% static 'home/js/phylo_tree.js' %}"></script>
-
+    <script>
+      $(function () {
+        $("[data-toggle='popover']").popover();
+      });
+    </script>
     <script type="text/javascript" charset="utf-8">
         $(document).ready(function () {
             ClearSelection('targets');
             ClearSelection('reference');
             // Call the function with your desired values
             // function draw_model_scores(location, element_id, legend_label, score, startValue, endValue, definedValue
-            draw_model_scores('PTM_location', 'PTM_divider', 'PTM',  0, 1, 0.2);
-            draw_model_scores('iPTM_location', 'iPTM_divider', 'iPTM',  0, 1, 0.5);
-            draw_model_scores('PAE_location', 'PAE_divider', 'PAE',  0, 31, 12);
+            draw_model_scores('PTM_location', 'PTM_divider', 'PTM',  0, 1, 0.7, 0.2);
+            draw_model_scores('iPTM_location', 'iPTM_divider', 'iPTM',  0, 1, 0.2, 0.5);
+            draw_model_scores('PAE_location', 'PAE_divider', 'PAE',  0, 31, 12, 26);
             var table = $('#rotamers').DataTable({
                 'scrollX': true,
                 'scrollY': '15vh',

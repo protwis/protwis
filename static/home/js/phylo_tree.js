@@ -994,7 +994,7 @@ function draw_heatmap(square_data, data, bible, options, location, element_id, l
 }
 
 
-function draw_model_scores(location, element_id, score, startValue, endValue, definedValue) {
+function draw_model_scores(location, element_id, score, startValue, endValue, definedValue, gradientChange) {
 
     var margin = {top: 30, right: 30, bottom: 30, left: 30};
     var width = 200;
@@ -1008,7 +1008,7 @@ function draw_model_scores(location, element_id, score, startValue, endValue, de
                 .attr("transform", "translate(-30,0)")
                 .attr("id", element_id);
 
-    var greyscale = [ 'rgb(0,255,0)', 'rgb(255,0,0)' ];
+    var greyscale = [ 'rgb(255,0,0)', 'rgb(255, 255, 255)', 'rgb(0,255,0)' ];
 
     var first_legend = svg_home.append('defs')
                          .append('linearGradient')
@@ -1018,14 +1018,21 @@ function draw_model_scores(location, element_id, score, startValue, endValue, de
                          .attr('y1', '0%')
                          .attr('y2', '0%');
 
-     first_legend.selectAll('stop')
-           .data(greyscale)
-           .enter()
-           .append('stop')
-           .style('stop-color', function(d){ return d; })
-           .attr('offset', function(d,i){
-                  return 100 * (i / (greyscale.length - 1)) + '%';
-                });
+     var stopOffset = (gradientChange - startValue) / (endValue - startValue) * 100;
+
+    first_legend.append('stop')
+           .style('stop-color', greyscale[0])
+           .attr('offset', '0%');
+    first_legend.append('stop')
+           .style('stop-color', greyscale[1])
+           .attr('offset', stopOffset + '%');
+    first_legend.append('stop')
+           .style('stop-color', greyscale[1])
+           .attr('offset', stopOffset + '%');
+    first_legend.append('stop')
+           .style('stop-color', greyscale[2])
+           .attr('offset', '100%');
+
 
     var first_legend_svg = svg_home.append("g")
                       .attr("transform", "translate(0,-15)");
