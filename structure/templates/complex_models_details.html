@@ -5,6 +5,7 @@
 {% block addon_css %}
     <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
     <link rel="stylesheet" href="{% static 'home/css/simple_browser.css' %}" type="text/css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
 {% endblock %}
 
 {% block content %}
@@ -15,6 +16,19 @@ canvas {
 .col-md-3 {
     color: black;
 }
+</style>
+
+<style>
+.inline {display:inline;}
+.graphcolor {
+              display:inline-block;
+              padding: 1px 5px;
+              text-align: center;
+              margin-left: 10px;
+              vertical-align: middle;
+              width: 20px;
+              height: 20px;
+              margin-top: 5px;}
 </style>
 
 <div class="row text-success">
@@ -89,7 +103,7 @@ canvas {
     <div class="col-md-3 text-right text-info">
         <h4>MODEL</h4>
     </div>
-    <div class="col-md-9">
+    <div class="col-md-6">
         <div class="btn-group">
             {% if model.receptor_protein.accession %}
                 <a id="download_btn" class="btn btn-primary btn-mini " href="./{{model.receptor_protein.entry_name}}-{{model.sign_protein.entry_name}}/download_pdb">Download</a>
@@ -107,6 +121,51 @@ canvas {
             </div>
             <br>
         </div>
+    </div>
+    <div class="col-md-3">
+        <br>
+        <br>
+        <br>
+        <br>
+        <div><h4>Model confidence <i class="fas fa-info-circle" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="below" data-content="<b>Interpretation of AlphaFold models</b><br>The pLDDT score from Alphafold estimates the confidence of the placement of an individual residue in relation to its neighboring residues within a 15Å radius. The GPCRdb provides full-length models for nearly all human GPCRs, including receptors that comprise multiple domains. Therefore, one should take into account that, when a model consists of multiple domains, the relative placement of the domains with respect to each other can be erroneous even when the pLDDT score for a given domain is high."></i></h4></div>
+        <div style='width: 90%; display:table; position:relative;'>
+            <div style='display: table-cell;'>
+              <div class="graphcolor" style="background-color: blue; "></div>
+              <span style="margin-left: 5px; vertical-align: middle; padding-top: 5px;">Very high (pLDDT > 90)</span>
+              <br>
+              <div class="graphcolor" style="background-color: lightblue; "></div>
+              <span style="margin-left: 5px; vertical-align: middle;">Confident (90 > pLDDT > 70)</span>
+              <br>
+              <div class="graphcolor" style="background-color: yellow; "></div>
+              <span style="margin-left: 5px; vertical-align: middle;">Low (70 > pLDDT > 50)</span>
+              <br>
+              <div class="graphcolor" style="background-color: orange;"></div>
+              <span style="margin-left: 5px; vertical-align: middle;">Very low (pLDDT < 50)</span>
+              <br>
+              <div class="graphcolor" style="background-color: red;"></div>
+              <span style="margin-left: 5px; vertical-align: middle;">Disordered</span>
+              <br>
+            </div>
+        </div>
+        <br>
+        <div>
+          <h5>PTM Score
+            <span class="fa fa-info-circle" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="bottom" data-content="SomeText Goes Here"></span>
+          </h5>
+        </div>
+        <div id="PTM_location"></div>
+        <div>
+          <h5>iPTM Score
+            <span class="fa fa-info-circle" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="bottom" data-content="SomeText Goes Here"></span>
+          </h5>
+        </div>
+        <div id="iPTM_location"></div>
+        <div>
+          <h5>PAE
+            <span class="fa fa-info-circle" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="bottom" data-content="SomeText Goes Here"></span>
+          </h5>
+        </div>
+        <div id="PAE_location"></div>
     </div>
 </div>
 
@@ -343,16 +402,29 @@ canvas {
         });
     </script>
 
+    <script src="{% static 'home/js/d3.min.js' %}"></script>
+    <script src="{% static 'home/js/nv.d3.min.js' %}"></script>
+    <script src="{% static 'home/js/d3.v4.min.js' %}"></script>
     <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
     <script src="{% static 'home/js/dataTables.tableTools.min.js' %}"> </script>
     <script src="{% static 'home/js/jquery.dataTables.columnFilter.js' %}"> </script>
     <script src="{% static 'home/js/selection.js' %}"> </script>
     <script src="{% static 'home/js/table2csv.js' %}"> </script>
-
+    <script src="{% static 'home/js/phylo_tree.js' %}"></script>
+    <script>
+      $(function () {
+        $("[data-toggle='popover']").popover();
+      });
+    </script>
     <script type="text/javascript" charset="utf-8">
         $(document).ready(function () {
             ClearSelection('targets');
             ClearSelection('reference');
+            // Call the function with your desired values
+            // function draw_model_scores(location, element_id, legend_label, score, startValue, endValue, definedValue
+            draw_model_scores('PTM_location', 'PTM_divider', 'PTM',  0, 1, 0.7, 0.2);
+            draw_model_scores('iPTM_location', 'iPTM_divider', 'iPTM',  0, 1, 0.2, 0.5);
+            draw_model_scores('PAE_location', 'PAE_divider', 'PAE',  0, 31, 12, 26);
             var table = $('#rotamers').DataTable({
                 'scrollX': true,
                 'scrollY': '15vh',

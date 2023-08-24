@@ -992,3 +992,100 @@ function draw_heatmap(square_data, data, bible, options, location, element_id, l
     });
 
 }
+
+
+function draw_model_scores(location, element_id, score, startValue, endValue, definedValue, gradientChange) {
+
+    var margin = {top: 30, right: 30, bottom: 30, left: 30};
+    var width = 200;
+    var height = 50;
+
+    // append the svg object to the body of the page
+    var svg_home = d3v4.select("#" + location)
+                .append("svg")
+                .attr("width", width + margin.left + margin.left + margin.right)
+                .attr("height", (margin.top))
+                .attr("transform", "translate(-30,0)")
+                .attr("id", element_id);
+
+    var greyscale = [ 'rgb(255,0,0)', 'rgb(255, 255, 255)', 'rgb(0,255,0)' ];
+
+    var first_legend = svg_home.append('defs')
+                         .append('linearGradient')
+                         .attr('id', 'grad_' + score)
+                         .attr('x1', '0%')
+                         .attr('x2', '100%')
+                         .attr('y1', '0%')
+                         .attr('y2', '0%');
+
+     var stopOffset = (gradientChange - startValue) / (endValue - startValue) * 100;
+
+    first_legend.append('stop')
+           .style('stop-color', greyscale[0])
+           .attr('offset', '0%');
+    first_legend.append('stop')
+           .style('stop-color', greyscale[1])
+           .attr('offset', stopOffset + '%');
+    first_legend.append('stop')
+           .style('stop-color', greyscale[1])
+           .attr('offset', stopOffset + '%');
+    first_legend.append('stop')
+           .style('stop-color', greyscale[2])
+           .attr('offset', '100%');
+
+
+    var first_legend_svg = svg_home.append("g")
+                      .attr("transform", "translate(0,-15)");
+
+    first_legend_svg.append("text")
+              .attr('y', 5)
+              .attr('x', 40)
+              .style("font", "14px sans-serif")
+              .style("font-weight", "bold");
+
+    first_legend_svg.append("text")
+              .attr('x', 30)
+              .attr('y', 33)
+              .style("font", "14px sans-serif")
+              .style("font-weight", "bold")
+              .text(startValue);
+
+    first_legend_svg.append('rect')
+              .attr('x', 40)
+              .attr('y', 20) // Adjust the y-coordinate to add space between gradient and text box
+              .attr('width', (width*0.9))
+              .attr('height', 20)
+              .style('fill', 'url(#grad_' + score + ')');
+
+    first_legend_svg.append("text")
+              .attr('x', width + 20)
+              .attr('y', 33)
+              .style("font", "14px sans-serif")
+              .style("font-weight", "bold")
+              .text(endValue);
+
+    legendLabel = first_legend_svg.select('text')['_groups'][0][0].getBBox().width*1.05 + 0.5 * 10;
+
+    first_legend_svg.select("text")
+              .attr("x", (width + margin.left + margin.right - legendLabel)/2);
+
+    // Draw the black vertical line at the defined value
+    var lineX = (definedValue - startValue) / (endValue - startValue) * (width * 0.9) + 40;
+    svg_home.append("line")
+            .attr("x1", lineX)
+            .attr("y1", height - 45) // Adjust the y-coordinate of the top arrowhead 90
+            .attr("x2", lineX)
+            .attr("y2", height - 25) // Adjust the y-coordinate of the bottom arrowhead 125
+            .attr("stroke", "black")
+            .attr("stroke-width", 2);
+
+    // Add arrowheads
+    svg_home.append("path")
+            .attr("d", "M " + lineX + " " + (height - 45) + " L " + (lineX - 5) + " " + (height - 50) + " L " + (lineX + 5) + " " + (height - 50) + " Z")
+            .attr("fill", "black");
+
+    svg_home.append("path")
+            .attr("d", "M " + lineX + " " + (height - 25) + " L " + (lineX - 5) + " " + (height - 20) + " L " + (lineX + 5) + " " + (height - 20) + " Z")
+            .attr("fill", "black");
+
+}

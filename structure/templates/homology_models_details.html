@@ -104,7 +104,7 @@ canvas {
     <div class="col-md-3 text-right text-info">
         <h4>MODEL</h4>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-6">
         <div class="btn-group">
             <a href="/" class="dropdown-toggle btn btn-primary btn-mini" data-toggle="dropdown" role="button" aria-expanded="false">Download <span class='caret'></span></a>
             <ul class="dropdown-menu" role="menu" style="min-width:50%;">
@@ -129,13 +129,13 @@ canvas {
         </div>
     </div>
 {% if model.protein.accession %}
-    <div class="col-md-4">
+    <div class="col-md-3">
         <br>
         <br>
         <br>
         <br>
         <div><h4>Model confidence <span class="glyphicon glyphicon-info-sign" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="below" data-content="<b>Interpretation of AlphaFold models</b><br>The pLDDT score from Alphafold estimates the confidence of the placement of an individual residue in relation to its neighboring residues within a 15Å radius. The GPCRdb provides full-length models for nearly all human GPCRs, including receptors that comprise multiple domains. Therefore, one should take into account that, when a model consists of multiple domains, the relative placement of the domains with respect to each other can be erroneous even when the pLDDT score for a given domain is high."></span></h4></div>
-        <div style='width: 70%; display:table; position:relative;'>
+        <div style='width: 90%; display:table; position:relative;'>
             <div style='display: table-cell;'>
               <div class="graphcolor" style="background-color: blue; "></div>
               <span style="margin-left: 5px; vertical-align: middle; padding-top: 5px;">Very high (pLDDT > 90)</span>
