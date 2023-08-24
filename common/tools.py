@@ -97,8 +97,12 @@ def fetch_from_cache(path, file_id):
     cache_dir_path = os.sep.join([settings.BUILD_CACHE_DIR] + path)
     cache_file_path = os.sep.join([cache_dir_path, file_id + '.yaml'])
     if os.path.isfile(cache_file_path):
-        with open(cache_file_path) as cache_file:
-            return yaml.load(cache_file, Loader=yaml.FullLoader)
+        try:
+            with open(cache_file_path) as cache_file:
+                return yaml.load(cache_file, Loader=yaml.FullLoader)
+        except TypeError as msg:
+            print('WARNING: cannot properly open {} with TypeError: {}'.format(cache_file_path, msg))
+            return None
     else:
         return None
 
