@@ -39,7 +39,7 @@ class Command(BaseCommand):
                         "request_options":{
                             "paginate":{
                                 "start":0,
-                                "rows":99999
+                                "rows":10000
                             }
                         },
                        "return_type":"entry"
