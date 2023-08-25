@@ -38,6 +38,7 @@ class Structure(models.Model):
     stats_text = models.ForeignKey('StatsText', null=True, on_delete=models.CASCADE)
     mammal = models.BooleanField(default=False) #whether the species of the structure is mammal
     closest_to_human = models.BooleanField(default=False) # A boolean to say if the receptor/state of this structure is the closest structure to human
+    build_check = models.BooleanField(default=False)
 
     def __str__(self):
         return self.pdb_code.index

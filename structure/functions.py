@@ -1262,6 +1262,7 @@ class StructureBuildCheck():
         self.missing_seg = []
         self.start_error = []
         self.end_error = []
+        self.helix_length_error = []
         self.duplicate_residue_error = {}
         self.g_protein_chimeras = SeqIO.to_dict(SeqIO.parse(open(self.local_g_protein_chimeras_gapped), "fasta"))
         self.g_prot_test_exceptions = {}
@@ -1310,6 +1311,8 @@ class StructureBuildCheck():
                     if len(seg_resis)==0:
                         self.missing_seg.append([structure, seg, anno_b, anno_e])
                         continue
+                    if i<8 and len(seg_resis)<5:
+                        self.helix_length_error.append([structure, seg, len(seg_resis)])
                     if seg_resis[0].sequence_number!=anno_b:
                         if parent_seg_resis[0].sequence_number!=seg_resis[0].sequence_number:
                             if structure.pdb_code.index in self.wt_pdb_lookup_files:

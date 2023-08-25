@@ -37,10 +37,7 @@ class Command(BaseCommand):
                             }
                         },
                         "request_options":{
-                            "paginate":{
-                                "start":0,
-                                "rows":99999
-                            }
+                            "return_all_hits": True
                         },
                        "return_type":"entry"
                     }
