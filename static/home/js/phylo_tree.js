@@ -1089,3 +1089,336 @@ function draw_model_scores(location, element_id, score, startValue, endValue, de
             .attr("fill", "black");
 
 }
+
+// This function generates two concentric circles made of aminoAcids
+// then creates lines connecting inner and outer aminoacids, given interactions between them
+function draw_interactions_in_circles(location, interactions, inner_data, outer_data) {
+
+  // D3 select the SVG
+  const svg2 = d3.select("#" + location);
+
+  // Types of interactions and their colors
+  const interactionTypes = {
+    'Aromatic': 'red',
+    'Hydrophobic': 'blue',
+    'Ionic': 'green',
+    'Polar': 'purple',
+    'Van der waals': 'orange'
+  };
+
+  const segmentColors = {
+    'TM1': 'red',
+    'TM2': 'blue',
+    'TM3': 'green',
+    'TM4': 'purple',
+    'TM5': 'orange',
+    'TM6': 'brown',
+    'TM7': 'pink',
+    'IL1': 'grey',
+    'IL2': 'cyan',
+    'IL3': 'yellow'
+  };
+
+  const aminoAcids = [
+    { aminoAcid: "Alanine", singleLetter: "A" },
+    { aminoAcid: "Arginine", singleLetter: "R" },
+    { aminoAcid: "Asparagine", singleLetter: "N" },
+    { aminoAcid: "Aspartic acid", singleLetter: "D" },
+    { aminoAcid: "Cysteine", singleLetter: "C" },
+    { aminoAcid: "Glutamine", singleLetter: "Q" },
+    { aminoAcid: "Glutamic acid", singleLetter: "E" },
+    { aminoAcid: "Glycine", singleLetter: "G" },
+    { aminoAcid: "Histidine", singleLetter: "H" },
+    { aminoAcid: "Isoleucine", singleLetter: "I" },
+    { aminoAcid: "Leucine", singleLetter: "L" },
+    { aminoAcid: "Lysine", singleLetter: "K" },
+    { aminoAcid: "Methionine", singleLetter: "M" },
+    { aminoAcid: "Phenylalanine", singleLetter: "F" },
+    { aminoAcid: "Proline", singleLetter: "P" },
+    { aminoAcid: "Serine", singleLetter: "S" },
+    { aminoAcid: "Threonine", singleLetter: "T" },
+    { aminoAcid: "Tryptophan", singleLetter: "W" },
+    { aminoAcid: "Tyrosine", singleLetter: "Y" },
+    { aminoAcid: "Valine", singleLetter: "V" }
+  ];
+
+  const presetColors = {'D': ['#E60A0A', '#FDFF7B'],'E': ['#E60A0A', '#FDFF7B'],
+                        'K': ['#145AFF', '#FDFF7B'],'R': ['#145AFF', '#FDFF7B'],
+                        'S': ['#A70CC6', '#FDFF7B'],'T': ['#A70CC6', '#FDFF7B'],
+                        'N': ['#A70CC6', '#FDFF7B'],'Q': ['#A70CC6', '#FDFF7B'],
+                        'V': ['#E6E600', '#000000'],'L': ['#E6E600', '#000000'],
+                        'I': ['#E6E600', '#000000'],'A': ['#E6E600', '#000000'],
+                        'M': ['#E6E600', '#000000'],'F': ['#18FF0B', '#000000'],
+                        'Y': ['#18FF0B', '#000000'],'W': ['#0BCF00', '#000000'],
+                        'H': ['#0093DD', '#000000'],'P': ['#CC0099', '#FDFF7B'],
+                        'C': ['#B2B548', '#000000'],'G': ['#FF00F2', '#000000'],
+                        '-': ['#FFFFFF', '#000000'],'+': ['#FFFFFF', '#000000']};
+
+
+  // // This is an example of the structure of interactions data
+  // const mockupInteractions = [
+  //   { innerIndex: 0, outerIndex: 30, type: 'Aromatic' },
+  //   { innerIndex: 1, outerIndex: 31, type: 'Hydrophobic' },
+  //   { innerIndex: 5, outerIndex: 35, type: 'Ionic' },
+  //   { innerIndex: 7, outerIndex: 37, type: 'Polar' },
+  //   // [...]
+  // ];
+  //
+  // // This is an example of the structure of outer beads data
+  // const mockupOuterBeads = [
+  //   { aminoAcid: 'Y', segment: "TM3", generic_number: '1.33x55', interaction: 'Yes'},
+  //   //[...]
+  // ];
+  // // This is an example of the structure of inner beads data
+  // const mockupOuterBeads = [
+  //   { aminoAcid: 'Y', generic_number: '1.33x55', interaction: 'Yes'},
+  //   //[...]
+  // ];
+
+  // Generate random arrays for inner and outer circles
+  const beadInfo = {
+    innerCircle: inner_data,
+    outerCircle: outer_data
+  };
+
+  function sanitizeClassName(name) {
+    return name.toLowerCase().replace(/\s+/g, '-');
+  }
+
+  const tooltip = d3.select("body").append("div")
+    .attr("class", "tooltip")
+    .style("opacity", 0);
+
+  // Function to create a bead
+  function createBead(cx, cy, aminoAcid, segment, index, circleType) {
+
+    const bead = svg2.append("circle")
+      .attr("cx", cx)
+      .attr("cy", cy)
+      .attr("r", 10)
+      .attr("fill", "white")
+      .attr("stroke", "black")
+      .attr("stroke-width", 1)
+      .attr("data-index", index)
+      .attr("data-circle", circleType)
+      .attr("data-aa", aminoAcid)
+      .attr("data-segment", segment)
+      .classed(segment, true)
+      .on("mouseover", function(d) {
+        const event = window.event ? window.event : d3.event;
+        tooltip.transition()
+          .duration(200)
+          .style("opacity", .9);
+        tooltip.html("Amino Acid: " + aminoAcid + "<br/>" +
+                    "Segment: " + segment + "<br/>" +
+                    "Generic Number: " + index + "<br/>" +
+                    "Interaction: TBD") // Assuming you will provide interaction later
+          .style("left", (event.pageX + 5) + "px")
+          .style("top", (event.pageY - 28) + "px");
+      })
+      .on("mouseout", function(d) {
+        const event = d3.event; // get the event object from d3.event
+        tooltip.transition()
+          .duration(500)
+          .style("opacity", 0);
+      });
+
+    // Add text inside the circle to represent the amino acid
+    svg2.append("text")
+      .attr("x", cx)
+      .attr("y", cy)
+      .attr("dy", 5)
+      .attr("text-anchor", "middle")
+      .text(aminoAcid);
+  }
+
+  // Function to create a circle of beads
+  function createCircle(cx, cy, radius, beads, circleType) {
+    const numBeads = beads.length;
+    beads.forEach((bead, index) => {
+      const angle = (index / numBeads) * 2 * Math.PI;
+      const x = cx + radius * Math.cos(angle);
+      const y = cy + radius * Math.sin(angle);
+      createBead(x, y, bead.aminoAcid, bead.segment, index, circleType);
+    });
+  }
+
+  // Create connection
+  function createConnection(innerIndex, outerIndex, type) {
+    const innerBead = d3.select(svg2.selectAll("circle").nodes()[innerIndex]);
+    const outerBead = d3.select(svg2.selectAll("circle").nodes()[outerIndex]);
+
+    const x1 = +innerBead.attr("cx");
+    const y1 = +innerBead.attr("cy");
+    const x2 = +outerBead.attr("cx");
+    const y2 = +outerBead.attr("cy");
+
+    // Calculate angle between two beads
+    const angle = Math.atan2(y2 - y1, x2 - x1);
+
+    // Calculate new coordinates for the line to end at the circle border instead of center
+    const new_x1 = x1 + 10 * Math.cos(angle);
+    const new_y1 = y1 + 10 * Math.sin(angle);
+    const new_x2 = x2 - 10 * Math.cos(angle);
+    const new_y2 = y2 - 10 * Math.sin(angle);
+
+    const sanitizedType = sanitizeClassName(type);
+
+    svg2.append("line")
+      .attr("x1", new_x1)
+      .attr("y1", new_y1)
+      .attr("x2", new_x2)
+      .attr("y2", new_y2)
+      .attr("stroke", interactionTypes[type])
+      .classed(sanitizedType, true);
+  }
+
+  // Create circles of beads
+  createCircle(200, 200, 70, beadInfo.innerCircle, "inner");
+  createCircle(200, 200, 150, beadInfo.outerCircle, "outer");
+
+  // Generate legend
+  const interactionLegend = svg2.append("g")
+    .attr("transform", "translate(390, 30)");
+
+    Object.entries(interactionTypes).forEach(([type, color], i) => {
+      const legendItem = interactionLegend.append("g")
+        .attr("transform", `translate(0, ${i * 25})`);  // Increased spacing between items
+
+      legendItem.append("rect")
+        .attr("width", 20)
+        .attr("height", 20)
+        .attr("fill", color)
+        .attr("stroke", "black")  // Black border
+        .attr("stroke-width", 1)  // Border width
+        .on("click", function() {
+          if(d3.event) {
+            d3.event.stopPropagation(); // Prevent the SVG click event when clicking on the legend
+          }
+          const sanitizedType = sanitizeClassName(type);
+          d3.selectAll("line").attr("stroke-opacity", 0.1); // Make other lines faded
+          d3.selectAll(`.${sanitizedType}`).attr("stroke-opacity", 1); // Highlight the lines of the clicked type
+        });
+
+      legendItem.append("text")
+        .attr("x", 30)  // Adjusted the x position so that text doesn't overlap with rectangle
+        .attr("y", 15)  // Center text in the y-direction
+        .text(type);
+
+      // Header for the interaction legend
+      interactionLegend.append("text")
+        .attr("x", 0)
+        .attr("y", -10)
+        .text("Interactions")
+        .attr("font-family", "Arial")
+        .attr("font-size", "14px")
+        .attr("font-weight", "bold")
+        .attr("fill", "black");
+
+    });
+
+    // Generate legend for segments
+    const segmentLegend = svg2.append("g")
+      .attr("transform", "translate(390, 200)");  // Adjust this to fit your needs
+
+    // Header for the segment legend
+    segmentLegend.append("text")
+      .attr("x", 0)
+      .attr("y", -10)
+      .text("Segments")
+      .attr("font-family", "Arial")
+      .attr("font-size", "14px")
+      .attr("font-weight", "bold")
+      .attr("fill", "black");
+
+  // Filter segments into TMs and ILs
+  const tmSegments = Object.entries(segmentColors).filter(([type]) => type.startsWith('TM'));
+  const ilSegments = Object.entries(segmentColors).filter(([type]) => type.startsWith('IL'));
+
+  const createLegendColumn = (legendData, xOffset) => {
+    legendData.forEach(([type, color], i) => {
+      const legendItem = segmentLegend.append("g")
+        .attr("transform", `translate(${xOffset}, ${i * 25})`);
+
+      legendItem.append("rect")
+        .attr("width", 20)
+        .attr("height", 20)
+        .attr("fill", color)
+        .attr("stroke", "black")
+        .attr("stroke-width", 1)
+        .on("click", function() {
+          if (d3.event) {
+            d3.event.stopPropagation(); // Prevent the SVG click event when clicking on the legend
+          }
+
+          // Reset all beads to white
+          d3.selectAll("circle").attr("fill", "white");
+
+          // Color beads of the clicked segment with the color parameter
+          d3.selectAll(`.${type}`).attr("fill", function(d) {
+            return d3.select(this).attr("fill") === "white" ? color : "white";
+          });
+        });
+
+      legendItem.append("text")
+        .attr("x", 30)
+        .attr("y", 15)
+        .text(type);
+    });
+  }
+
+  // Create TM and IL legend columns
+  createLegendColumn(tmSegments, 0);  // TM segments column starts at x=0
+  createLegendColumn(ilSegments, 75);  // IL segments column starts at x=150
+
+
+  interactions.forEach(({ innerIndex, outerIndex, type }) => createConnection(innerIndex, outerIndex, type));
+
+  function applyPresetColors(svg) {
+    svg.selectAll("circle")
+      .each(function(d, i) {
+        const aa = d3.select(this).attr("data-aa"); // Assuming 'data-aa' stores the amino acid type
+        d3.select(this).attr("fill", presetColors[aa][0]);
+
+        // Assuming the text element immediately follows the circle
+        d3.select(this.nextElementSibling).attr("fill", presetColors[aa][1]);
+      });
+  }
+
+  document.getElementById("propertiesButton").addEventListener("click", function() {
+    applyPresetColors(svg2); // Assuming your SVG is stored in the svg2 variable
+  });
+
+  // Function to reset colors
+  function resetColors(svg) {
+    svg.selectAll("circle")
+      .attr("fill", "white")
+      .attr("stroke", "black");
+
+    // Assuming the text elements are immediate siblings of the circle elements
+    svg.selectAll("text")
+      .attr("fill", "black");
+  }
+
+  // Add event listener for reset button
+  document.getElementById("resetButton").addEventListener("click", function() {
+    resetColors(svg2);  // Reset colors of circles
+    d3.selectAll("line").attr("stroke-opacity", 1);  // Reset opacity of lines
+    d3.selectAll("circle").attr("fill-opacity", 1);  // Reset opacity of lines
+  });
+
+  function applySegmentColors(svg) {
+    svg.selectAll("circle[data-circle='outer']")
+      .each(function(d, i) {
+        const segment = d3.select(this).attr("data-segment");
+        if (segment) {
+          d3.select(this).attr("fill", segmentColors[segment]);
+        }
+      });
+  }
+
+  document.getElementById("segmentButton").addEventListener("click", function() {
+    applySegmentColors(svg2);
+  });
+
+}
