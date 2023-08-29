@@ -22,7 +22,7 @@ import yaml
 import os
 
 # Distance between residues in peptide
-NUM_SKIP_RESIDUES = 0
+NUM_SKIP_RESIDUES = 1
 
 def compute_interactions(pdb_name, protein=None, signprot=None, lig=None, do_interactions=False, do_complexes=False, do_peptide_ligand=False, save_to_db=False, file_input=False):
     classified = []
@@ -92,7 +92,7 @@ def compute_interactions(pdb_name, protein=None, signprot=None, lig=None, do_int
         # Only include contacts between residues more than NUM_SKIP_RESIDUES sequence steps apart
         all_aa_neighbors = [pair for pair in all_aa_neighbors if abs(pair[0].id[1] - pair[1].id[1]) > NUM_SKIP_RESIDUES]
         # For each pair of interacting residues, determine the type of interaction
-        interactions = [InteractingPair(res_pair[0], res_pair[1], dbres[res_pair[0].id[1]], dbres[res_pair[1].id[1]], struc) for res_pair in all_aa_neighbors if not is_water(res_pair[0]) and not is_water(res_pair[1]) ]
+        interactions = [InteractingPair(res_pair[0], res_pair[1], dbres[res_pair[0].id[1]], dbres[res_pair[1].id[1]], struc) for res_pair in all_aa_neighbors if not is_water(res_pair[0]) and not is_water(res_pair[1])]
         # Split unto classified and unclassified.
         classified = [interaction for interaction in interactions if len(interaction.get_interactions()) > 0]
 
