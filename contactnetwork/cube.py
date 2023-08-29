@@ -69,13 +69,19 @@ def compute_interactions(pdb_name, protein=None, signprot=None, lig=None, do_int
         #s = pdb_get_structure(pdb_name)[0]
         chain = s[preferred_chain]
         # remove residues without GN and only those matching receptor.
-        residues = struc.protein_conformation.residue_set.exclude(generic_number=None).all().prefetch_related('generic_number')
+        if do_complexes:
+            residues = struc.protein_conformation.residue_set.all().prefetch_related('generic_number')
+        else:
+            residues = struc.protein_conformation.residue_set.exclude(generic_number=None).all().prefetch_related('generic_number')
 
     dbres = {}
     dblabel = {}
     for r in residues:
         dbres[r.sequence_number] = r
-        dblabel[r.sequence_number] = r.generic_number.label
+        if r.generic_number:
+            dblabel[r.sequence_number] = r.generic_number.label
+        else:
+            dblabel[r.sequence_number] = '-'
     ids_to_remove = []
     for res in chain:
         if not res.id[1] in dbres.keys() and res.get_resname() != "HOH":
@@ -124,7 +130,7 @@ def compute_interactions(pdb_name, protein=None, signprot=None, lig=None, do_int
                             for atom in residue.get_atoms()]
 
             # TOFIX: Current workaround is forcing _a to pdb for indicating alpha-subunit
-            residues_sign = ProteinConformation.objects.get(protein__entry_name=pdb_name+extension).residue_set.exclude(generic_number=None).all().prefetch_related('generic_number')
+            residues_sign = ProteinConformation.objects.get(protein__entry_name=pdb_name+extension).residue_set.all().prefetch_related('generic_number')
 
             # grab labels from sign protein
             dbres_sign = {}
