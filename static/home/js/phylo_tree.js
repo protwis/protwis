@@ -1092,6 +1092,27 @@ function draw_model_scores(location, element_id, score, startValue, endValue, de
 
 // This function generates two concentric circles made of aminoAcids
 // then creates lines connecting inner and outer aminoacids, given interactions between them
+
+// // This is an example of the structure of interactions data
+// const mockupInteractions = [
+//   { innerIndex: 0, outerIndex: 30, type: 'Aromatic' },
+//   { innerIndex: 1, outerIndex: 31, type: 'Hydrophobic' },
+//   { innerIndex: 5, outerIndex: 35, type: 'Ionic' },
+//   { innerIndex: 7, outerIndex: 37, type: 'Polar' },
+//   // [...]
+// ];
+
+// // This is an example of the structure of outer beads data
+// const mockupOuterBeads = [
+//   { aminoAcid: 'Y', segment: "TM3", generic_number: '1.33x55', interaction: 'Yes'},
+//   //[...]
+// ];
+
+// // This is an example of the structure of inner beads data
+// const mockupOuterBeads = [
+//   { aminoAcid: 'Y', generic_number: '1.33x55', interaction: 'Yes'},
+//   //[...]
+// ];
 function draw_interactions_in_circles(location, interactions, inner_data, outer_data) {
 
   // D3 select the SVG
@@ -1154,28 +1175,7 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
                         'C': ['#B2B548', '#000000'],'G': ['#FF00F2', '#000000'],
                         '-': ['#FFFFFF', '#000000'],'+': ['#FFFFFF', '#000000']};
 
-
-  // // This is an example of the structure of interactions data
-  // const mockupInteractions = [
-  //   { innerIndex: 0, outerIndex: 30, type: 'Aromatic' },
-  //   { innerIndex: 1, outerIndex: 31, type: 'Hydrophobic' },
-  //   { innerIndex: 5, outerIndex: 35, type: 'Ionic' },
-  //   { innerIndex: 7, outerIndex: 37, type: 'Polar' },
-  //   // [...]
-  // ];
-  //
-  // // This is an example of the structure of outer beads data
-  // const mockupOuterBeads = [
-  //   { aminoAcid: 'Y', segment: "TM3", generic_number: '1.33x55', interaction: 'Yes'},
-  //   //[...]
-  // ];
-  // // This is an example of the structure of inner beads data
-  // const mockupOuterBeads = [
-  //   { aminoAcid: 'Y', generic_number: '1.33x55', interaction: 'Yes'},
-  //   //[...]
-  // ];
-
-  // Generate random arrays for inner and outer circles
+  // Generate arrays for inner and outer circles
   const beadInfo = {
     innerCircle: inner_data,
     outerCircle: outer_data
@@ -1190,15 +1190,14 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
     .style("opacity", 0);
 
   // Function to create a bead
-  function createBead(cx, cy, aminoAcid, segment, index, circleType) {
-
+  function createBead(cx, cy, aminoAcid, segment, index, circleType, beadRadius, centroidX, centroidY) {
     const bead = svg2.append("circle")
       .attr("cx", cx)
       .attr("cy", cy)
-      .attr("r", 10)
+      .attr("r", beadRadius)
       .attr("fill", "white")
       .attr("stroke", "black")
-      .attr("stroke-width", 1)
+      .attr("stroke-width", 2)
       .attr("data-index", index)
       .attr("data-circle", circleType)
       .attr("data-aa", aminoAcid)
@@ -1230,56 +1229,178 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
       .attr("dy", 5)
       .attr("text-anchor", "middle")
       .text(aminoAcid);
+
+    // Calculate radial text position
+    const angleToCentroid = Math.atan2(cy - centroidY, cx - centroidX);
+
+    const textDistanceFromCenter = beadRadius * 2 + 10; // distance from the center of the bead
+
+    let textX = cx + textDistanceFromCenter * Math.cos(angleToCentroid * (Math.PI / 180));
+    let textY = cy + textDistanceFromCenter * Math.sin(angleToCentroid * (Math.PI / 180));
+
+    // Determine text rotation and alignment
+    let textRotation = angleToCentroid * (180 / Math.PI)
+    let textAnchor = "start";
+
+    // Correct the orientation for better readability
+    if (circleType == 'inner') {
+      if (angleToCentroid < 270 || angleToCentroid > 90) {
+        textRotation += 180;
+        textAnchor = "start";
+        }
+      } else {
+        // Correct the orientation for better readability
+        if (textRotation > 90 || textRotation < -90 ) {
+          textRotation += 180;
+          textAnchor = "end";  // Switch to "end"
+
+          // Shift the text position so it starts from the opposite side
+          textX = cx + (textDistanceFromCenter - 4 * beadRadius - 20) * Math.cos(angleToCentroid * (Math.PI / 180));
+          textY = cy + (textDistanceFromCenter - 2 * beadRadius) * Math.sin(angleToCentroid * (Math.PI / 180));
+        }
+      }
+
+    // Create text
+    svg2.append("text")
+        .attr("x", textX)
+        .attr("y", textY)
+        .attr("dy", "0.3em")  // Adjust as needed for vertical alignment
+        .attr("text-anchor", textAnchor)
+        .attr("transform", `rotate(${textRotation},${cx},${cy})`) // .attr("transform", `rotate(${angleToCentroid * (180 / Math.PI)},${cx},${cy})`)
+        .text(function (d) {
+            if (circleType == 'outer') {
+                return (segment + 'x' + index);
+            } else {
+                return index;
+            }
+        })
+        .style("font-size", "12px")
+        .style("font-family", "Palatino")
+        .attr("font-weight", "bold")
+        .style("fill", "#111");  // or any color of your choice
   }
 
   // Function to create a circle of beads
-  function createCircle(cx, cy, radius, beads, circleType) {
+  function createCircle(cx, cy, beadRadius, beads, circleType) {
     const numBeads = beads.length;
+
+    // Calculate a circle radius based on bead radius to avoid overlap
+    // You can adjust the 1.2 factor to increase/decrease spacing between beads
+    const circleRadius = numBeads * beadRadius / Math.PI * 0.85;
+
+    // The centroid of the circle is simply its center, denoted by (cx, cy)
+    const centroidX = cx;
+    const centroidY = cy;
+
     beads.forEach((bead, index) => {
       const angle = (index / numBeads) * 2 * Math.PI;
-      const x = cx + radius * Math.cos(angle);
-      const y = cy + radius * Math.sin(angle);
-      createBead(x, y, bead.aminoAcid, bead.segment, index, circleType);
+      const x = cx + circleRadius * Math.cos(angle);
+      const y = cy + circleRadius * Math.sin(angle);
+      createBead(x, y, bead.aminoAcid, bead.segment, index, circleType, beadRadius, centroidX, centroidY);
     });
   }
 
-  // Create connection
-  function createConnection(innerIndex, outerIndex, type) {
+  function calculateCentroids(d3Selection) {
+    let sumX = 0;
+    let sumY = 0;
+    let count = 0;
+
+    d3Selection.each(function() {
+      const circle = d3.select(this);
+      sumX += +circle.attr('cx');
+      sumY += +circle.attr('cy');
+      count++;
+    });
+
+    const centroidX = sumX / count;
+    const centroidY = sumY / count;
+
+    return { centroidX, centroidY };
+  }
+
+  function createConnection(innerIndex, outerIndex, type, innerbeads, outerbeads, beadRadius, centroidX, centroidY) {
     const innerBead = d3.select(svg2.selectAll("circle").nodes()[innerIndex]);
     const outerBead = d3.select(svg2.selectAll("circle").nodes()[outerIndex]);
 
-    const x1 = +innerBead.attr("cx");
-    const y1 = +innerBead.attr("cy");
-    const x2 = +outerBead.attr("cx");
-    const y2 = +outerBead.attr("cy");
+    const INNER_RADIUS = innerbeads * beadRadius / Math.PI * 0.95;
+    const OUTER_RADIUS = outerbeads * beadRadius / Math.PI * 0.85;
 
-    // Calculate angle between two beads
-    const angle = Math.atan2(y2 - y1, x2 - x1);
+    // Calculate direction vector for inner bead
+    const innerX = +innerBead.attr("cx");
+    const innerY = +innerBead.attr("cy");
+    const innerDirX = innerX - centroidX;
+    const innerDirY = innerY - centroidY;
 
-    // Calculate new coordinates for the line to end at the circle border instead of center
-    const new_x1 = x1 + 10 * Math.cos(angle);
-    const new_y1 = y1 + 10 * Math.sin(angle);
-    const new_x2 = x2 - 10 * Math.cos(angle);
-    const new_y2 = y2 - 10 * Math.sin(angle);
+    // Calculate direction vector for outer bead
+    const outerX = +outerBead.attr("cx");
+    const outerY = +outerBead.attr("cy");
+    const outerDirX = outerX - centroidX;
+    const outerDirY = outerY - centroidY;
+
+    // Calculate angle to centroid for both beads
+    const angleToCentroidInner = Math.atan2(innerY - centroidY, innerX - centroidX);
+    const angleToCentroidOuter = Math.atan2(outerY - centroidY, outerX - centroidX);
+
+    const INNER_BORDER_RADIUS = INNER_RADIUS + 5 * beadRadius;  // The "inner_border"
+
+    // Normalize direction vectors to calculate intersection points with "inner_border"
+    const lengthInner = Math.sqrt(innerDirX * innerDirX + innerDirY * innerDirY);
+    const unitInnerX = innerDirX / lengthInner;
+    const unitInnerY = innerDirY / lengthInner;
+
+    // Calculate points where the straight lines touch the inner_border
+    const innerBorderX = centroidX + Math.cos(angleToCentroidInner) * INNER_BORDER_RADIUS;
+    const innerBorderY = centroidY + Math.sin(angleToCentroidInner) * INNER_BORDER_RADIUS;
+
+    const lengthOuter = Math.sqrt(outerDirX * outerDirX + outerDirY * outerDirY);
+    const unitOuterX = outerDirX / lengthOuter;
+    const unitOuterY = outerDirY / lengthOuter;
+
+    const outerBorderX = centroidX + Math.cos(angleToCentroidOuter) * INNER_BORDER_RADIUS;
+    const outerBorderY = centroidY + Math.sin(angleToCentroidOuter) * INNER_BORDER_RADIUS;
+
+    // Calculate the start and end points of the bead circles
+    const startX = innerX + unitInnerX * beadRadius;
+    const startY = innerY + unitInnerY * beadRadius;
+
+    const endX = outerX - unitOuterX * beadRadius;
+    const endY = outerY - unitOuterY * beadRadius;
+
+    // Cubic Bezier control points could be strategically placed to ensure the curve stays outside the inner circle
+    const control1X = startX + (innerBorderX - startX) / 3;
+    const control1Y = startY + (innerBorderY - startY) / 3;
+
+    const control2X = innerBorderX + (outerBorderX - innerBorderX) / 3;
+    const control2Y = innerBorderY + (outerBorderY - innerBorderY) / 3;
+
+    const control3X = outerBorderX + (endX - outerBorderX) / 3;
+    const control3Y = outerBorderY + (endY - outerBorderY) / 3;
+
+    // Path data for cubic Bezier curve
+    const pathData = [
+      `M ${startX} ${startY}`,
+      `C ${control1X} ${control1Y}, ${innerBorderX} ${innerBorderY}, ${control2X} ${control2Y}`,
+      `C ${outerBorderX} ${outerBorderY}, ${control3X} ${control3Y}, ${endX} ${endY}`
+    ].join(" ");
 
     const sanitizedType = sanitizeClassName(type);
 
-    svg2.append("line")
-      .attr("x1", new_x1)
-      .attr("y1", new_y1)
-      .attr("x2", new_x2)
-      .attr("y2", new_y2)
+    // Draw the path
+    svg2.append("path")
+      .attr("d", pathData)
       .attr("stroke", interactionTypes[type])
+      .attr("stroke-width", 2)  // Border width
+      .attr("fill", "none")
       .classed(sanitizedType, true);
   }
 
-  // Create circles of beads
-  createCircle(200, 200, 70, beadInfo.innerCircle, "inner");
-  createCircle(200, 200, 150, beadInfo.outerCircle, "outer");
+  // For example, with a bead radius of 20
+  createCircle(600, 500, 20, beadInfo.innerCircle, 'inner');
+  createCircle(600, 500, 20, beadInfo.outerCircle, 'outer');
 
   // Generate legend
   const interactionLegend = svg2.append("g")
-    .attr("transform", "translate(390, 30)");
+    .attr("transform", "translate(1100, 150)");
 
     Object.entries(interactionTypes).forEach(([type, color], i) => {
       const legendItem = interactionLegend.append("g")
@@ -1296,7 +1417,7 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
             d3.event.stopPropagation(); // Prevent the SVG click event when clicking on the legend
           }
           const sanitizedType = sanitizeClassName(type);
-          d3.selectAll("line").attr("stroke-opacity", 0.1); // Make other lines faded
+          d3.selectAll("path").attr("stroke-opacity", 0.1); // Make other lines faded
           d3.selectAll(`.${sanitizedType}`).attr("stroke-opacity", 1); // Highlight the lines of the clicked type
         });
 
@@ -1308,7 +1429,8 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
       // Header for the interaction legend
       interactionLegend.append("text")
         .attr("x", 0)
-        .attr("y", -10)
+        .attr("y", -20) // Moved up to give space between header and legend items
+        .attr("class", "legend-header")
         .text("Interactions")
         .attr("font-family", "Arial")
         .attr("font-size", "14px")
@@ -1319,7 +1441,7 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
 
     // Generate legend for segments
     const segmentLegend = svg2.append("g")
-      .attr("transform", "translate(390, 200)");  // Adjust this to fit your needs
+      .attr("transform", "translate(1100, 350)");  // Adjust this to fit your needs
 
     // Header for the segment legend
     segmentLegend.append("text")
@@ -1371,8 +1493,10 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
   createLegendColumn(tmSegments, 0);  // TM segments column starts at x=0
   createLegendColumn(ilSegments, 75);  // IL segments column starts at x=150
 
+  const innerBeadSelection = svg2.selectAll("circle[data-circle='inner']");  // Assuming the inner beads have a class 'inner-bead'
+  const { centroidX, centroidY } = calculateCentroids(innerBeadSelection);
 
-  interactions.forEach(({ innerIndex, outerIndex, type }) => createConnection(innerIndex, outerIndex, type));
+  interactions.forEach(({ innerIndex, outerIndex, type }) => createConnection(innerIndex, outerIndex, type, 30, 70, 20, centroidX, centroidY));
 
   function applyPresetColors(svg) {
     svg.selectAll("circle")
@@ -1403,7 +1527,7 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
   // Add event listener for reset button
   document.getElementById("resetButton").addEventListener("click", function() {
     resetColors(svg2);  // Reset colors of circles
-    d3.selectAll("line").attr("stroke-opacity", 1);  // Reset opacity of lines
+    d3.selectAll("path").attr("stroke-opacity", 1);  // Reset opacity of lines
     d3.selectAll("circle").attr("fill-opacity", 1);  // Reset opacity of lines
   });
 
