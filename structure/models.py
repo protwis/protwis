@@ -118,6 +118,14 @@ class StructureVectors(models.Model):
     class Meta():
         db_table = 'structure_vectors'
 
+class StructureAFScores(models.Model):
+    structure = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
+    ptm = models.DecimalField(max_digits=4, decimal_places=2)
+    iptm = models.DecimalField(max_digits=4, decimal_places=2)
+    pae_mean = models.DecimalField(max_digits=4, decimal_places=2)
+
+    class Meta():
+        db_table = 'structure_af_scores'
 
 class StructureModel(models.Model):
     protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE)
@@ -126,8 +134,8 @@ class StructureModel(models.Model):
     pdb_data = models.ForeignKey('PdbData', null=True, on_delete=models.CASCADE)
     version = models.DateField()
     stats_text = models.ForeignKey('StatsText', null=True, on_delete=models.CASCADE)
-    ligand = models.ForeignKey('ligand.Ligand', null=True, on_delete=models.CASCADE)
-    type = models.ForeignKey('StructureType', null=True, on_delete=models.CASCADE)
+    # ligand = models.ForeignKey('ligand.Ligand', null=True, on_delete=models.CASCADE)
+    # type = models.ForeignKey('StructureType', null=True, on_delete=models.CASCADE)
 
     def __repr__(self):
         return '<StructureModel: '+str(self.protein.entry_name)+' '+str(self.state)+'>'
