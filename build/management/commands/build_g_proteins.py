@@ -508,12 +508,15 @@ class Command(BaseCommand):
                     rgn, c = ResidueGenericNumber.objects.get_or_create(label=row['CGN'])
                     temp['rgn'][row['CGN']] = rgn
 
+            d, s, n = row['CGN'].split('.')
+            seg = d+'.'+s
+
             # fetch protein segment id
-            if row['CGN'].split(".")[1] in temp['segment']:
-                ps = temp['segment'][row['CGN'].split(".")[1]]
+            if seg in temp['segment']:
+                ps = temp['segment'][seg]
             else:
-                ps, c = ProteinSegment.objects.get_or_create(slug=row['CGN'].split(".")[1], proteinfamily='Alpha')
-                temp['segment'][row['CGN'].split(".")[1]] = ps
+                ps = ProteinSegment.objects.get(slug=seg, proteinfamily='Alpha')
+                temp['segment'][seg] = ps
 
             try:
                 bulk_r = Residue(sequence_number=row['Position'], protein_conformation=pc, amino_acid=row['Residue'],
@@ -582,7 +585,9 @@ class Command(BaseCommand):
         # ResidueGenericNumber.objects.filter(scheme_id=12).delete()
 
         for rgn in residue_generic_numbers.unique():
-            ps, c = ProteinSegment.objects.get_or_create(slug=rgn.split('.')[1], proteinfamily='Alpha')
+            d, s, n = rgn.split('.')
+            seg = d+'.'+s
+            ps = ProteinSegment.objects.get(slug=seg, proteinfamily='Alpha')
 
             rgnsp = []
 

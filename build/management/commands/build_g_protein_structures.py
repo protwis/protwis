@@ -256,8 +256,8 @@ class Command(BaseBuild):
 
                 # Check if HN is mutated to GNAI1 for the scFv16 stabilizer
                 if sc.protein.entry_name!='gnai1_human' and len(remaining_mismatches)>0:
-                    target_HN = resis.filter(protein_segment__slug='HN')
-                    gnai1_HN = Residue.objects.filter(protein_conformation__protein__entry_name='gnai1_human', protein_segment__slug='HN')
+                    target_HN = resis.filter(protein_segment__slug='G.HN')
+                    gnai1_HN = Residue.objects.filter(protein_conformation__protein__entry_name='gnai1_human', protein_segment__slug='G.HN')
                     pdb_HN_seq = ''
                     for num, val in pdb_num_dict.items():
                         if num<=target_HN.reverse()[0].sequence_number:
