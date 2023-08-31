@@ -1170,7 +1170,9 @@ class ParseAFComplexModels():
             if '-' not in f:
                 continue
             receptor, signprot = f.split('-')
-            self.complexes[receptor+'-'+signprot] = {'receptor':receptor, 'signprot':signprot, 'location':os.sep.join([self.data_dir, f, f+'.pdb']), 'model':'af-signprot', 'preferred_chain':'A'} 
+            metrics_file = os.sep.join([self.data_dir, f, f+'_metrics.csv'])
+            metrics = [row for row in csv.DictReader(open(metrics_file, 'r'))][0]
+            self.complexes[receptor+'-'+signprot] = {'receptor':receptor, 'signprot':signprot, 'location':os.sep.join([self.data_dir, f, f+'.pdb']), 'model':'af-signprot', 'preferred_chain':'A', 'PTM':metrics['ptm'], 'iPTM':metrics['iptm'], 'PAE_mean':metrics['pae_mean']}
 
 
 class ParseStructureCSV():

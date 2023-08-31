@@ -8,7 +8,7 @@ from residue.models import Residue
 from common.models import WebLink, WebResource, Publication
 from common.tools import test_model_updates
 from common.definitions import G_PROTEIN_DISPLAY_NAME as g_prot_dict
-from structure.models import Structure, StructureType, PdbData, Rotamer, Fragment, StructureExtraProteins
+from structure.models import Structure, StructureType, PdbData, Rotamer, Fragment, StructureExtraProteins, StructureAFScores
 from construct.functions import *
 
 from contactnetwork.models import *
@@ -902,6 +902,19 @@ class Command(BaseBuild):
                                                        beta_chain=None, gamma_chain=None, beta_protein=None, gamma_protein=None) # Set to None for now, needs update when beta and gamma subunits get added to models
             struct.signprot_complex = sc[0]
             struct.save()
+
+            #### Adding metrics to StructureAFScores
+
+            try:
+                metrics = StructureAFScores.objects.get(structure=struct)
+            except StructureAFScores.DoesNotExist:
+                metrics = StructureAFScores()
+
+            metrics.structure = struct
+            metrics.ptm = sd['PTM']
+            metrics.iptm = sd['iPTM']
+            metrics.pae_mean = sd['PAE_mean']
+            metrics.save()
 
             ##### StructureExtraProteins
             g_prot_dict[signprot.entry_name.split('_')[0].upper()]
