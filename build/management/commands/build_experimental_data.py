@@ -1038,21 +1038,23 @@ class Command(BaseBuild):
                          'Rat Y861': 'rattus_norvegicus', 'Zebra Finch': 'taeniopygia_guttata', 'Chicken': 'gallus_gallus',
                          'MICE': 'mus_musculus', 'Rhesus Monkey': 'macaca_mulatta', 'Zebrafish': 'danio_rerio'}
         if organism in organism_dict.keys():
-            query = 'gene_exact:{0} AND organism:{1}'.format(
+            query = 'gene_exact:{0}+AND+organism_name:{1}'.format(
                 protein.lower(), organism_dict[organism])
         else:
             query = 'gene_exact:{}'.format(protein.lower())
-
         if query not in Command.mapper_cache.keys():
             url = 'https://legacy.uniprot.org/uniprot/'
-            params = {
-                'query': query,
-                'format': 'tab',
-                'columns': 'entry_name'
-            }
-            data = urllib.parse.urlencode(params)
-            data = data.encode('utf-8')
-            req = urllib.request.Request(url, data)
+            url = 'https://rest.uniprot.org/uniprotkb/search?query={}&fields=id&format=tsv'.format(query)
+            # params = {
+            #     'query': query,
+            #     'format': 'tab',
+            #     'columns': 'entry_name'
+            # }
+            # data = urllib.parse.urlencode(params)
+            # data = data.encode('utf-8')
+            # print(url, data)
+            # req = urllib.request.Request(url, data)
+            req = urllib.request.Request(url)
             try:
                 converted = urllib.request.urlopen(
                     req).read().decode('utf-8').split('\n')[1].lower()
