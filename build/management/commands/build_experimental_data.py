@@ -1043,17 +1043,7 @@ class Command(BaseBuild):
         else:
             query = 'gene_exact:{}'.format(protein.lower())
         if query not in Command.mapper_cache.keys():
-            url = 'https://legacy.uniprot.org/uniprot/'
-            url = 'https://rest.uniprot.org/uniprotkb/search?query={}&fields=id&format=tsv'.format(query)
-            # params = {
-            #     'query': query,
-            #     'format': 'tab',
-            #     'columns': 'entry_name'
-            # }
-            # data = urllib.parse.urlencode(params)
-            # data = data.encode('utf-8')
-            # print(url, data)
-            # req = urllib.request.Request(url, data)
+            url = 'https://rest.uniprot.org/uniprotkb/search?query={}&fields=id&format=tsv'.format(urllib.parse.quote(query))
             req = urllib.request.Request(url)
             try:
                 converted = urllib.request.urlopen(
