@@ -1366,21 +1366,17 @@ class Command(BaseBuild):
         elif database == 'PDSP':
             try:
                 test = None
-                if Protein.objects.filter(entry_name=target):
-                    protein = Protein.objects.filter(entry_name=target)
-                    test = protein.get()
-                elif Protein.objects.filter(web_links__index=target, web_links__web_resource__slug='uniprot'):
-                    protein1 = Protein.objects.filter(
-                        web_links__index=target, web_links__web_resource__slug='uniprot')
-                    test = protein1[0]
+                if len(Protein.objects.filter(entry_name=target))>0:
+                    test = Protein.objects.get(entry_name=target)
+                elif len(Protein.objects.filter(web_links__index=target, web_links__web_resource__slug='uniprot'))>0:
+                    test = Protein.objects.get(web_links__index=target, web_links__web_resource__slug='uniprot')
                 return test
             except:
                 return None
         elif database == 'DrugCentral':
             try:
-                protein = Protein.objects.filter(accession=target)
-                test = protein.get()
-                return test
+                protein = Protein.objects.get(accession=target)
+                return protein
             except:
                 return None
 
