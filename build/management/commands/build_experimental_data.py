@@ -1019,7 +1019,7 @@ class Command(BaseBuild):
         vendor_links_data = pd.read_csv(vendor_links_url, dtype=str)
         links = []
         for _, row in vendor_links_data.iterrows():
-            if len(row["SourceRecordURL"]) < 300:
+            if len(row["SourceRecordURL"])<=400 and len(row["RegistryID"])<=500:
                 links.append(LigandVendorLink(
                     vendor_id=vendor_dict[row["SourceName"]], ligand_id=lig_dict[row["chembl_id"]], url=row["SourceRecordURL"], external_id=row["RegistryID"]))
 
