@@ -9,7 +9,6 @@ from django.db.models import Q
 from common.models import WebResource, Publication
 from ligand.models import Ligand, LigandType, BiasedData, Endogenous_GTP, BalancedLigands
 from protein.models import Protein
-from collections import defaultdict
 
 # def get_or_make_ligand(ligand_id, type_id, name = None, pep_or_prot = None):
 #     if type_id=='PubChem CID' or type_id=='SMILES':
@@ -397,10 +396,9 @@ def calculate_first_delta(comparisons, reference, tested, subtype=False):
     return comparisons, tested, skip
 
 def find_best_subtype(comparisons, reference, tested):
-    families = defaultdict(lambda: [-100, None]) # use a defaultdict to avoid checking for key existence
-    to_be_deleted = set() # use a set instead of a list for membership testing
-
-    for ref in comparisons.keys():
+    families = {}
+    to_be_deleted = []
+    for ref in list(comparisons.keys()):
         #assessing the values
         r_emax, r_ec50 = reference[ref]['Emax'], reference[ref]['EC50']
         try:
@@ -410,23 +408,26 @@ def find_best_subtype(comparisons, reference, tested):
             #excepting situations where one value is None or 0.0 [ValueError, TypeError, ZeroDivisionError]
             r_logemaxec50 = -100
 
-        family = reference[ref]['primary_effector_family']
-        current_max = families[family][0]
-
-        if r_logemaxec50 > current_max:
-            #Adding the obsolete tests by comparing old key to updated key
-            to_be_deleted.update(comparisons[families[family][1]] - comparisons[ref])
-            #Delete obsolete key from comparisons register
-            del comparisons[families[family][1]]
-            #update reference key
-            families[family] = [r_logemaxec50, ref]
+        if reference[ref]['primary_effector_family'] not in families.keys():
+            #adding new family and values
+            families[reference[ref]['primary_effector_family']] = [r_logemaxec50, ref]
         else:
-            #Adding the obsolete tests by comparing old key to updated key
-            to_be_deleted.update(comparisons[ref] - comparisons[families[family][1]])
-            #Delete obsolete key from comparisons register
-            del comparisons[ref]
+            #updating with most relevant subtype
+            if r_logemaxec50 > families[reference[ref]['primary_effector_family']][0]:
+                #Adding the obsolete tests by comparing old key to updated key
+                to_be_deleted += list(set(comparisons[families[reference[ref]['primary_effector_family']][1]]) - set(comparisons[ref]))
+                #Delete obsolete key from comparisons register
+                del comparisons[families[reference[ref]['primary_effector_family']][1]]
+                #update reference key
+                families[reference[ref]['primary_effector_family']] = [r_logemaxec50, ref]
+            else:
+                #Adding the obsolete tests by comparing old key to updated key
+                to_be_deleted += list(set(comparisons[ref]) - set(comparisons[families[reference[ref]['primary_effector_family']][1]]))
+                #Delete obsolete key from comparisons register
+                del comparisons[ref]
+
     #get unique obsolete test keys and remove them
-    to_be_deleted = list(to_be_deleted)
+    to_be_deleted = list(set(to_be_deleted))
     for test in to_be_deleted:
         del tested[test]
 
