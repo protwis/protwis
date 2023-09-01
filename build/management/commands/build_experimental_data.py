@@ -1039,11 +1039,11 @@ class Command(BaseBuild):
                          'MICE': 'mus_musculus', 'Rhesus Monkey': 'macaca_mulatta', 'Zebrafish': 'danio_rerio'}
         if organism in organism_dict.keys():
             query = 'gene_exact:{0}+AND+organism_name:{1}'.format(
-                protein.lower(), organism_dict[organism])
+                urllib.parse.quote(protein.lower()), organism_dict[organism])
         else:
-            query = 'gene_exact:{}'.format(protein.lower())
+            query = 'gene_exact:{}'.format(urllib.parse.quote(protein.lower()))
         if query not in Command.mapper_cache.keys():
-            url = 'https://rest.uniprot.org/uniprotkb/search?query={}&fields=id&format=tsv'.format(urllib.parse.quote(query))
+            url = 'https://rest.uniprot.org/uniprotkb/search?query={}&fields=id&format=tsv'.format(query)
             req = urllib.request.Request(url)
             try:
                 converted = urllib.request.urlopen(
