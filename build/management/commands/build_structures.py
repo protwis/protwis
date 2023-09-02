@@ -1209,7 +1209,7 @@ class Command(BaseBuild):
 
         return data
 
-    def main_func(self, positions, count, lock):
+    def main_func(self, positions, iterations, count, lock):
         # setting up processes
         # if not positions[1]:
         #     pdbs = self.parsed_structures[positions[0]:]
