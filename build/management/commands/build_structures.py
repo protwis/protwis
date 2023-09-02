@@ -171,9 +171,9 @@ class Command(BaseBuild):
         try:
             self.logger.info('CREATING STRUCTURES')
             # run the function twice (once for representative structures, once for non-representative)
-            iterations = 1
-            for i in range(1,iterations+1):
-                self.prepare_input(options['proc'], self.parsed_structures.pdb_ids, i)
+            # iterations = 1
+            # for i in range(1,iterations+1):
+            self.prepare_input(options['proc'], self.parsed_structures.pdb_ids)
             test_model_updates(self.all_models, self.tracker, check=True)
             self.logger.info('COMPLETED CREATING STRUCTURES')
         except Exception as msg:
@@ -1209,7 +1209,7 @@ class Command(BaseBuild):
 
         return data
 
-    def main_func(self, positions, iteration, count, lock):
+    def main_func(self, positions, count, lock):
         # setting up processes
         # if not positions[1]:
         #     pdbs = self.parsed_structures[positions[0]:]
@@ -1256,11 +1256,15 @@ class Command(BaseBuild):
 
                 # If update_flag is true then update existing structures
                 # Otherwise only make new structures
-                if not self.incremental_mode or not s.build_check:
+                if not self.incremental_mode:
                     s = s.delete()
                     s = Structure()
                 else:
-                    continue
+                    if not s.build_check:
+                        s = s.delete()
+                        s = Structure()
+                    else:
+                        continue
 
             except Structure.DoesNotExist:
                 s = Structure()
