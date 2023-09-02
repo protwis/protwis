@@ -1169,7 +1169,6 @@ class Command(BaseBuild):
                     ligand = struct_lig_interactions.ligand
                 except Exception as msg:
                     print('error with duplication structureligand',lig_key,msg)
-                    quit() #not sure about this quit
             elif StructureLigandInteraction.objects.filter(pdb_reference=lig_key, structure=structure).exists():
                 try:
                     struct_lig_interactions = StructureLigandInteraction.objects.filter(pdb_reference=lig_key, structure=structure).get()
