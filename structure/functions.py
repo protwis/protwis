@@ -1433,11 +1433,9 @@ def get_pdb_ids(uniprot_id):
                     "value":[ uniprot_id ]
                 }
             },
-            "request_options": {
-                "paginate": {
-                    "start": 0,
-                    "rows": 99999
-            }},
+            "request_options":{
+                "return_all_hits": True
+            },
             "return_type": "entry" }
     url = 'https://search.rcsb.org/rcsbsearch/v2/query'
     req = Request(url)
