@@ -66,7 +66,7 @@ class Command(BaseCommand):
                 'interacting_pair__referenced_structure__pdb_code__index',
                 'interacting_pair__res1__generic_number__label',
                 'interacting_pair__res2__generic_number__label',
-            ).filter(interacting_pair__res1__pk__lt=F('interacting_pair__res2__pk')).distinct())
+            ).exclude(interacting_pair__res1__generic_number__isnull=True).filter(interacting_pair__res1__pk__lt=F('interacting_pair__res2__pk')).distinct())
 
             contacts_in_pdb = {}
             contacts_count = {}
@@ -202,6 +202,7 @@ class Command(BaseCommand):
                     'interacting_pair__referenced_structure__pdb_code',
                     'interacting_pair__res1__generic_number',
                     'interacting_pair__res2__generic_number',
+                ).exclude(interacting_pair__res1__generic_number__isnull=True
                 ).filter(interacting_pair__res1__pk__lt=F('interacting_pair__res2__pk')).distinct('interacting_pair__referenced_structure__pdb_code__index',
                                                                                                   'interacting_pair__res1__generic_number__label',
                                                                                                   'interacting_pair__res2__generic_number__label'))
@@ -282,6 +283,7 @@ class Command(BaseCommand):
                     'interacting_pair__referenced_structure__pdb_code',
                     'interacting_pair__res1__generic_number',
                     'interacting_pair__res2__generic_number',
+                ).exclude(interacting_pair__res1__generic_number__isnull=True
                 ).filter(interacting_pair__res1__pk__lt=F('interacting_pair__res2__pk')).distinct('interacting_pair__referenced_structure__pdb_code__index',
                                                                                                   'interacting_pair__res1__generic_number__label',
                                                                                                   'interacting_pair__res2__generic_number__label'))
