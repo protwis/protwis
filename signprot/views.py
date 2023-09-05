@@ -1233,6 +1233,7 @@ def AJAX_Interactions(request):
     interactions = InteractingResiduePair.objects.filter(
         Q(res1__in=prot_residues) | Q(res2__in=prot_residues),
         referenced_structure__in=complex_struc_ids
+    ).exclude(res1__generic_number__isnull=True
     ).exclude(
         Q(res1__in=prot_residues) & Q(res2__in=prot_residues)
     ).prefetch_related(

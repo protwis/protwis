@@ -306,8 +306,16 @@ var signprotmat = {
         .keys()
         // .sort(d3.descending);
         .sort(function (a, b) {
-          var a_patt = /\.(\S*)\./g;
-          var b_patt = /\.(\S*)\./g;
+          // TEMP FIX for Arrestins - when N. and C. tag is added to segment name, this should be removed
+          if (a.startsWith('N.') || a.startsWith('C.')) {
+            var a_patt = /\.(\S*)\./g;
+            var b_patt = /\.(\S*)\./g;
+          }
+          else {
+            var a_patt = /(\S*)\./g;
+            var b_patt = /(\S*)\./g;
+          }
+          
           var a_match = a_patt.exec(a);
           var b_match = b_patt.exec(b);
           var a_obj = _.find(gprot, function (d) {
