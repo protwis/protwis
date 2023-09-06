@@ -194,7 +194,7 @@ def PdbTreeData(request):
 
     return JsonResponse(data_dict)
 
-# @cache_page(60*60*24*7)
+@cache_page(60*60*24*7)
 def PdbTableData(request):
     exclude_non_interacting = True if request.GET.get('exclude_non_interacting') == 'true' else False
     effector = request.GET.get('effector') if request.GET.get('effector') != 'false' else False
@@ -208,18 +208,7 @@ def PdbTableData(request):
     #    else:
     #        method = "N/A"
     #    methods[c.name] = method
-    data = Structure.objects.all().prefetch_related(
-                "pdb_code",
-                "state",
-                "stabilizing_agents",
-                "structureligandinteraction_set__ligand__ligand_type",
-                "structureligandinteraction_set__ligand_role",
-                "structure_type",
-                "protein_conformation__protein__parent__parent__parent",
-                "protein_conformation__protein__parent__family__parent",
-                "protein_conformation__protein__parent__family__parent__parent__parent",
-                "protein_conformation__protein__species",Prefetch("ligands", queryset=StructureLigandInteraction.objects.filter(
-                annotated=True).prefetch_related('ligand__ligand_type', 'ligand_role')))
+    
     # data = Structure.objects.all().exclude(structure_type__slug__startswith='af-').prefetch_related(
     #             "pdb_code",
     #             "state",
@@ -237,16 +226,40 @@ def PdbTableData(request):
     # 'G alpha' = G proteins (all G protein classes starts with G)
     # 'A' = Arrestin
     if effector:
+        data = Structure.objects.all().prefetch_related(
+                "pdb_code",
+                "state",
+                "stabilizing_agents",
+                "structureligandinteraction_set__ligand__ligand_type",
+                "structureligandinteraction_set__ligand_role",
+                "structure_type",
+                "protein_conformation__protein__parent__parent__parent",
+                "protein_conformation__protein__parent__family__parent",
+                "protein_conformation__protein__parent__family__parent__parent__parent",
+                "protein_conformation__protein__species",Prefetch("ligands", queryset=StructureLigandInteraction.objects.filter(
+                annotated=True).prefetch_related('ligand__ligand_type', 'ligand_role')))
         data = data.filter(extra_proteins__category__startswith=effector).prefetch_related(
         'extra_proteins__protein_conformation','extra_proteins__wt_protein').order_by(
         'extra_proteins__protein_conformation__protein__parent','state').annotate(
         res_count = Sum(Case(When(extra_proteins__structure__protein_conformation__residue__generic_number=None, then=0), default=1, output_field=IntegerField())))
         signal_ps = StructureExtraProteins.objects.filter(category__startswith=effector).values('structure__protein_conformation__protein','structure__protein_conformation__protein__parent','display_name').order_by().annotate(coverage = Max('wt_coverage'))
     else:
+        data = Structure.objects.all().exclude(structure_type__slug__startswith='af-').prefetch_related(
+                "pdb_code",
+                "state",
+                "stabilizing_agents",
+                "structureligandinteraction_set__ligand__ligand_type",
+                "structureligandinteraction_set__ligand_role",
+                "structure_type",
+                "protein_conformation__protein__parent__parent__parent",
+                "protein_conformation__protein__parent__family__parent",
+                "protein_conformation__protein__parent__family__parent__parent__parent",
+                "protein_conformation__protein__species",Prefetch("ligands", queryset=StructureLigandInteraction.objects.filter(
+                annotated=True).exclude(structure__structure_type__slug__startswith='af-').prefetch_related('ligand__ligand_type', 'ligand_role')))
         data = data.prefetch_related('extra_proteins__protein_conformation','extra_proteins__wt_protein').order_by(
         'extra_proteins__protein_conformation__protein__parent','state').annotate(
         res_count = Sum(Case(When(extra_proteins__protein_conformation__residue__generic_number=None, then=0), default=1, output_field=IntegerField())))
-        signal_ps = StructureExtraProteins.objects.all().values('structure__protein_conformation__protein__parent','display_name').order_by().annotate(coverage = Max('wt_coverage'))
+        signal_ps = StructureExtraProteins.objects.all().exclude(category__in=['G beta','G gamma']).values('structure__protein_conformation__protein__parent','display_name').order_by().annotate(coverage = Max('wt_coverage'))
 
     if exclude_non_interacting and effector == 'G alpha':
         complex_structure_ids = SignprotComplex.objects.values_list('structure', flat=True)
@@ -255,7 +268,8 @@ def PdbTableData(request):
     # get a gn residue count for all WT proteins
     proteins_pks = Structure.objects.all().exclude(structure_type__slug__startswith='af-').values_list("protein_conformation__protein__parent__pk", flat=True).distinct()
     proteins_af_pks = Structure.objects.all().filter(structure_type__slug__startswith='af-').values_list("protein_conformation__protein__pk", flat=True).distinct()
-    proteins_pks = list(proteins_pks) + list(proteins_af_pks)
+    if effector:
+        proteins_pks = list(proteins_pks) + list(proteins_af_pks)
     residue_counts = ProteinConformation.objects.filter(protein__pk__in=proteins_pks).values('protein__pk').annotate(res_count = Sum(Case(When(residue__generic_number=None, then=0), default=1, output_field=IntegerField())))
     rcs = {}
     for rc in residue_counts:
@@ -263,7 +277,10 @@ def PdbTableData(request):
 
     # get minimum resolution for every receptor/state pair
     # resolutions = Structure.objects.all().exclude(structure_type__slug__startswith='af-').values('protein_conformation__protein__parent','state__name').order_by().annotate(res = Min('resolution'))
-    resolutions = Structure.objects.all().values('protein_conformation__protein__parent','state__name').order_by().annotate(res = Min('resolution'))
+    if effector:
+        resolutions = Structure.objects.all().values('protein_conformation__protein__parent','state__name').order_by().annotate(res = Min('resolution'))
+    else:
+        resolutions = Structure.objects.all().exclude(structure_type__slug__startswith='af-').values('protein_conformation__protein__parent','state__name').order_by().annotate(res = Min('resolution'))
     best_resolutions = {}
     for r in resolutions:
         key = '{}_{}'.format(r['protein_conformation__protein__parent'], r['state__name'])
@@ -271,7 +288,10 @@ def PdbTableData(request):
 
     best_signal_p = {}
     for ps in signal_ps:
-        key = '{}_{}_{}'.format(ps['structure__protein_conformation__protein'], ps['structure__protein_conformation__protein__parent'], ps['display_name'])
+        if effector:
+            key = '{}_{}_{}'.format(ps['structure__protein_conformation__protein'], ps['structure__protein_conformation__protein__parent'], ps['display_name'])
+        else:
+            key = '{}_{}'.format(ps['structure__protein_conformation__protein__parent'], ps['display_name'])
         best_signal_p[key] = ps['coverage']
 
     data_dict = OrderedDict()
@@ -411,10 +431,14 @@ def PdbTableData(request):
         for ep in s.extra_proteins.filter(category__in=["G alpha", "Arrestin"]):
 #            if ep.category == "Antibody":
 #                continue
-            try:
-                key = '{}_{}_{}'.format(s.protein_conformation.protein.pk, s.protein_conformation.protein.parent.pk, ep)
-            except:
-                key = '{}_{}_{}'.format(s.protein_conformation.protein.pk, s.protein_conformation.protein.parent, ep)
+            if effector:
+                try:
+                    key = '{}_{}_{}'.format(s.protein_conformation.protein.pk, s.protein_conformation.protein.parent.pk, ep)
+                except:
+                    key = '{}_{}_{}'.format(s.protein_conformation.protein.pk, s.protein_conformation.protein.parent, ep)
+            else:
+                key = '{}_{}'.format(s.protein_conformation.protein.parent.pk,ep)
+
             if best_signal_p[key] == ep.wt_coverage:
                 # this is the best coverage
                 r['signal_protein_seq_cons_color'] = 'green'
@@ -572,7 +596,6 @@ def PdbTableData(request):
 
 @csrf_exempt
 def InteractionBrowserData(request):
-
     start_time = time.time()
     def gpcrdb_number_comparator(e1, e2):
             t1 = e1.split('x')
@@ -832,6 +855,7 @@ def InteractionBrowserData(request):
                 interacting_pair__referenced_structure__protein_conformation__protein__family__slug__startswith=gpcr_class
             ).exclude(
                 interacting_pair__res1__protein_conformation_id=F('interacting_pair__res2__protein_conformation_id') # Filter interactions with other proteins
+            ).exclude(interacting_pair__res1__generic_number__isnull=True
             ).distinct(
             ).exclude(
                 specific_type='water-mediated'
@@ -896,6 +920,7 @@ def InteractionBrowserData(request):
             interacting_pair__res1__protein_conformation_id=F('interacting_pair__res2__protein_conformation_id') # Filter interactions with other proteins
         ).filter(
             interacting_pair__res1__pk__lt=F('interacting_pair__res2__pk')
+        ).exclude(interacting_pair__res1__generic_number__isnull=True
         ).filter(
             segment_filter_res1 & segment_filter_res2
         ).values(
@@ -932,8 +957,6 @@ def InteractionBrowserData(request):
         # Interaction type sort - optimize by statically defining interaction type order
         order = ['ionic', 'polar', 'aromatic', 'hydrophobic', 'van-der-waals','None']
         interactions = sorted(interactions, key=lambda x: order.index(x['interaction_type']))
-
-
 
         data = {}
         data['class_ligand_interactions'] = class_ligand_interactions
@@ -1031,6 +1054,7 @@ def InteractionBrowserData(request):
         if not all_pdbs_pairs:
             # To save less, first figure out all possible interaction pairs
             pos_interactions = list(Interaction.objects.all(
+            ).exclude(interacting_pair__res1__generic_number__isnull=True
             ).values_list(
                 'interacting_pair__res1__generic_number__label',
                 'interacting_pair__res2__generic_number__label',
@@ -1716,7 +1740,6 @@ def InteractionBrowserData(request):
                                 gn_values.append("")
                     data['tab4'][gn]['angles_set'] = gn_values
                     data['tab4'][gn]['angles'] = gn_values
-
 
         # Tab 2 data generation
         # Get the relevant interactions
