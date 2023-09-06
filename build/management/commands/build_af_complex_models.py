@@ -8,7 +8,7 @@ from residue.models import Residue
 from common.models import WebLink, WebResource, Publication
 from common.tools import test_model_updates
 from common.definitions import G_PROTEIN_DISPLAY_NAME as g_prot_dict
-from structure.models import Structure, StructureType, PdbData, Rotamer, Fragment, StructureExtraProteins, StructureAFScores
+from structure.models import Structure, StructureType, PdbData, Rotamer, Fragment, StructureExtraProteins, StructureAFScores, StructureModelpLDDT
 from construct.functions import *
 
 from contactnetwork.models import *
@@ -921,6 +921,16 @@ class Command(BaseBuild):
             sep = StructureExtraProteins.objects.get_or_create(display_name=g_prot_dict[signprot.entry_name.split('_')[0].upper()], note=None, chain='B', category='G alpha', wt_coverage=100, protein_conformation=signprot_conf, structure=struct, wt_protein=signprot)
             # g beta - TO BE ADDED
             # g gamma - TO BE ADDED
+
+            #Adding plDDT for rendering
+            resis = []
+            for chain in self.parsed_pdb:
+                for res in chain:
+                    plddt = res['C'].get_bfactor()
+                    res_obj = Residue.objects.get(protein_conformation__protein=con, sequence_number=res.get_id()[1])
+                    r = StructureModelpLDDT(structure=struct, residue=res_obj, pLDDT=plddt)
+                    resis.append(r)
+            StructureModelpLDDT.objects.bulk_create(resis)
 
             # try:
             current = time.time()

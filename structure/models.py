@@ -151,7 +151,8 @@ class StructureModel(models.Model):
 
 
 class StructureModelpLDDT(models.Model):
-    structure_model = models.ForeignKey('StructureModel', on_delete=models.CASCADE)
+    structure_model = models.ForeignKey('StructureModel', null=True, on_delete=models.CASCADE)
+    structure = models.ForeignKey('Structure', null=True, on_delete=models.CASCADE)
     residue = models.ForeignKey('residue.Residue', on_delete=models.CASCADE)
     pLDDT = models.DecimalField(max_digits=4, decimal_places=2)
 
