@@ -812,7 +812,7 @@ class PossibleKnots():
         self.receptor = Protein.objects.get(entry_name=receptor)
         self.signprot = Protein.objects.get(entry_name=signprot)
         self.possible_knots = {'ICL3-H4':[['R','A'],['G.H4.11','G.H4.14','G.H4.15','G.h4s6.01']],
-                               'h1ha-hehf':[['A','A'],['H.HE.08', 'H.hdhe.05']]}
+                               'G.h1ha-H.hehf':[['A','A'],['H.HE.08', 'H.hdhe.05']]}
         self.output = []
 
     def get_resnums(self):
@@ -826,7 +826,7 @@ class PossibleKnots():
                     region1 = list(Residue.objects.filter(protein_conformation__protein=self.signprot, protein_segment__slug=knot_label.split('-')[0]).values_list('sequence_number', flat=True))
                 if len(region1)==0:
                     raise AssertionError('Protein segment slug error for loop knot: No residues found for {} in {} - {}'.format(knot_label.split('-')[0], self.receptor, self.signprot))
-                if knot_label=='h1ha-hehf':
+                if knot_label=='G.h1ha-H.hehf':
                     for i in range(0,3):
                         region1.append(region1[-1]+1)
                 for r in values[1]:
