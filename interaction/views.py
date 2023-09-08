@@ -8,7 +8,7 @@ from django.conf import settings
 from interaction.models import ResidueFragmentInteraction, StructureLigandInteraction, ResidueFragmentInteractionType
 from interaction.forms import PDBform
 from ligand.models import Ligand, LigandType, LigandRole
-from structure.models import Structure, PdbData, Rotamer, Fragment
+from structure.models import Structure, PdbData, Rotamer, Fragment, StructureModel, StructureComplexModel, StructureExtraProteins, StructureVectors, StructureModelRMSD, StructureModelpLDDT, StructureAFScores
 from structure.assign_generic_numbers_gpcr import GenericNumbering
 from protein.models import Protein, ProteinSegment
 from residue.models import Residue, ResidueGenericNumberEquivalent, ResidueNumberingScheme
@@ -18,6 +18,7 @@ from common.diagrams_gpcr import DrawHelixBox, DrawSnakePlot
 from common.selection import Selection, SelectionItem
 from common import definitions
 from common.views import AbsTargetSelection
+from contactnetwork.models import Interaction
 
 import os
 import yaml
@@ -1396,6 +1397,237 @@ def StructureDetails(request, pdbname):
                                                           'number_of_schemes': len(numbering_schemes), "multiple_ligands": multiple_ligands})
 
 
+def remove_duplicate_dicts(dict_list):
+    unique_dicts = []
+    seen = set()
+
+    for d in dict_list:
+        # Convert the dictionary to a string to make it hashable
+        dict_str = json.dumps(d, sort_keys=True)
+
+        # If the string is not in the set, add it back to the list and mark it as seen
+        if dict_str not in seen:
+            seen.add(dict_str)
+            unique_dicts.append(d)
+
+    return unique_dicts
+
+def find_dict_index(dict_list, target_dict):
+    for i, d in enumerate(dict_list):
+        if d == target_dict:
+            return i
+    return -1  # return -1 if the dictionary is not found
+
+def ComplexDetails(request, pdbname):
+    """
+    Show structure details
+    """
+    pdbname = pdbname
+
+    structures = Interaction.objects.values('interacting_pair__referenced_structure__protein_conformation__protein__entry_name', 'interacting_pair__referenced_structure__signprot_complex__protein__entry_name').filter(
+        interacting_pair__referenced_structure__pdb_code__index=pdbname).annotate(numRes=Count('pk', distinct=True)).order_by('-numRes')
+    resn_list = ''
+
+    crystal = Structure.objects.get(pdb_code__index=pdbname)
+    if pdbname.startswith('AFM'):
+        p = Protein.objects.get(id=crystal.protein_conformation.protein.id)
+    else:
+        p = Protein.objects.get(protein=crystal.protein_conformation.protein)
+
+    residuelist = Residue.objects.filter(protein_conformation__protein=p).prefetch_related('protein_segment','display_generic_number','generic_number')
+    lookup = {}
+
+    residues_lookup = {}
+    for r in residuelist:
+        if r.generic_number:
+            lookup[r.generic_number.label] = r.sequence_number
+            residues_lookup[r.sequence_number] = r.amino_acid +str(r.sequence_number)+ " "+ r.generic_number.label
+
+    interactions = Interaction.objects.filter(
+        interacting_pair__referenced_structure__pdb_code__index=pdbname).exclude(interaction_type ='hidden')
+
+    residues_browser = []
+    gpcr_residues = []
+    gprot_residues = []
+    display_res = []
+    residue_table_list = []
+
+    for residue in interactions:
+        type = residue.interaction_type
+        gpcr_aa = residue.interacting_pair.res1.amino_acid
+        gprot_aa = residue.interacting_pair.res2.amino_acid
+        gpcr_pos = residue.interacting_pair.res1.sequence_number
+        gprot_pos = residue.interacting_pair.res2.sequence_number
+        segment = residue.interacting_pair.res1.protein_segment.slug
+        gpcr_grn = residue.interacting_pair.res1.generic_number.label
+        gprot_grn = residue.interacting_pair.res2.generic_number.label
+
+        display_res.append(str(gpcr_pos))
+        display_res.append(str(gprot_pos))
+
+        residues_browser.append({'type': type, 'gpcr_aa': gpcr_aa, 'gprot_aa': gprot_aa,
+                                 'gpcr_pos': gpcr_pos, 'gprot_pos': gprot_pos,
+                                 'gpcr_grn': gpcr_grn, 'gprot_grn': gprot_grn, 'segment': segment})
+
+    display_res = ' or '.join(display_res)
+
+    # RESIDUE TABLE
+    segments = ProteinSegment.objects.all().filter().prefetch_related()
+    proteins = [p]
+    numbering_schemes_selection = [settings.DEFAULT_NUMBERING_SCHEME]
+    numbering_schemes_selection.append(p.residue_numbering_scheme.slug)
+
+    numbering_schemes = ResidueNumberingScheme.objects.filter(slug__in=numbering_schemes_selection).all()
+    default_scheme = numbering_schemes.get(slug=settings.DEFAULT_NUMBERING_SCHEME)
+
+    data = OrderedDict()
+
+    for segment in segments:
+        data[segment.slug] = OrderedDict()
+        residues = Residue.objects.filter(protein_segment=segment,  protein_conformation__protein=p,
+                                          generic_number__label__in=residue_table_list).prefetch_related('protein_conformation__protein',
+                                                                                                         'protein_conformation__state', 'protein_segment',
+                                                                                                         'generic_number', 'display_generic_number', 'generic_number__scheme',
+                                                                                                         'alternative_generic_numbers__scheme')
+        for scheme in numbering_schemes:
+            if scheme == default_scheme and scheme.slug == settings.DEFAULT_NUMBERING_SCHEME:
+                for pos in list(set([x.generic_number.label for x in residues if x.protein_segment == segment])):
+                    data[segment.slug][pos] = {
+                        scheme.slug: pos, 'seq': ['-'] * len(proteins)}
+            elif scheme == default_scheme:
+                for pos in list(set([x.generic_number.label for x in residues if x.protein_segment == segment])):
+                    data[segment.slug][pos] = {
+                        scheme.slug: pos, 'seq': ['-'] * len(proteins)}
+
+        for residue in residues:
+            alternatives = residue.alternative_generic_numbers.all()
+            pos = residue.generic_number
+            for alternative in alternatives:
+                if alternative.scheme not in numbering_schemes:
+                    continue
+                scheme = alternative.scheme
+                if default_scheme.slug == settings.DEFAULT_NUMBERING_SCHEME:
+                    pos = residue.generic_number
+                    if scheme == pos.scheme:
+                        data[segment.slug][pos.label]['seq'][proteins.index(
+                            residue.protein_conformation.protein)] = str(residue)
+                    else:
+                        if scheme.slug not in data[segment.slug][pos.label].keys():
+                            data[segment.slug][pos.label][
+                                scheme.slug] = alternative.label
+                        if alternative.label not in data[segment.slug][pos.label][scheme.slug]:
+                            data[segment.slug][pos.label][
+                                scheme.slug] += " " + alternative.label
+                        data[segment.slug][pos.label]['seq'][proteins.index(
+                            residue.protein_conformation.protein)] = str(residue)
+                else:
+                    if scheme.slug not in data[segment.slug][pos.label].keys():
+                        data[segment.slug][pos.label][
+                            scheme.slug] = alternative.label
+                    if alternative.label not in data[segment.slug][pos.label][scheme.slug]:
+                        data[segment.slug][pos.label][
+                            scheme.slug] += " " + alternative.label
+                    data[segment.slug][pos.label]['seq'][proteins.index(
+                        residue.protein_conformation.protein)] = str(residue)
+
+    # Preparing the dictionary of list of lists. Dealing with tripple nested
+    # dictionary in django templates is a nightmare
+    flattened_data = OrderedDict.fromkeys([x.slug for x in segments], [])
+    for s in iter(flattened_data):
+        flattened_data[s] = [[data[s][x][y.slug]
+                              for y in numbering_schemes] + data[s][x]['seq'] for x in sorted(data[s])]
+
+    context = {}
+    context['header'] = zip([x.short_name for x in numbering_schemes] + [x.name for x in proteins], [x.name for x in numbering_schemes] + [
+                            x.name for x in proteins], [x.name for x in numbering_schemes] + [x.entry_name for x in proteins])
+    context['segments'] = [x.slug for x in segments if len(data[x.slug])]
+    context['data'] = flattened_data
+    context['number_of_schemes'] = len(numbering_schemes)
+
+    residuelist = Residue.objects.filter(protein_conformation__protein=p).prefetch_related('protein_segment','display_generic_number','generic_number')
+    HelixBox = DrawHelixBox(residuelist, p.get_protein_class(), str(p), nobuttons=1)
+
+    ### Implementing same code for calculating the interactions plot
+    model = Structure.objects.get(pdb_code__index=pdbname)
+    scores = StructureAFScores.objects.get(structure=model)
+    #Need to build the plDDT colors
+    model_plddt = StructureModelpLDDT.objects.filter(structure=model)
+    residues_plddt = {}
+    for item in model_plddt:
+        residues_plddt[item.residue.id] = [item.residue, item.pLDDT]
+
+    ### Gathering interaction info and structuring JS data
+    interactions = Interaction.objects.filter(interacting_pair__referenced_structure=model).prefetch_related('interacting_pair__res1', 'interacting_pair__res2')
+
+    gpcr_aminoacids = []
+    gprot_aminoacids = []
+    protein_interactions = []
+    conversion = {'aromatic': 'Aromatic',
+                  'hydrophobic': 'Hydrophobic',
+                  'ionic': 'Ionic',
+                  'polar': 'Polar',
+                  'van-der-waals': 'Van der waals'}
+
+    for pair in interactions:
+        gpcr = {'aminoAcid': pair.interacting_pair.res1.amino_acid,
+                'segment': pair.interacting_pair.res1.protein_segment.slug,
+                'generic_number': pair.interacting_pair.res1.display_generic_number.label
+                }
+        gprot = {'aminoAcid': pair.interacting_pair.res2.amino_acid,
+                'generic_number': pair.interacting_pair.res2.display_generic_number.label
+                }
+        gpcr_aminoacids.append(gpcr)
+        gprot_aminoacids.append(gprot)
+
+    gpcr_aminoacids = remove_duplicate_dicts(gpcr_aminoacids)
+    gprot_aminoacids = remove_duplicate_dicts(gprot_aminoacids)
+    to_push_gpcr = {}
+    to_push_gprot = {}
+    for pair in interactions:
+        if pair.atomname_residue1 in ['C', 'CA', 'N', 'O']:
+            chain_res1 = 'Main'
+        else:
+            chain_res1 = 'Side'
+        if pair.atomname_residue2 in ['C', 'CA', 'N', 'O']:
+            chain_res2 = 'Main'
+        else:
+            chain_res2 = 'Side'
+        gpcr = {'aminoAcid': pair.interacting_pair.res1.amino_acid,
+                'segment': pair.interacting_pair.res1.protein_segment.slug,
+                'generic_number': pair.interacting_pair.res1.display_generic_number.label
+                }
+        gprot = {'aminoAcid': pair.interacting_pair.res2.amino_acid,
+                'generic_number': pair.interacting_pair.res2.display_generic_number.label
+                }
+
+        gpcr_index = find_dict_index(gpcr_aminoacids, gpcr)
+        gprot_index = find_dict_index(gprot_aminoacids, gprot)
+        protein_interactions.append({'innerIndex': gprot_index, 'outerIndex': gpcr_index+len(gprot_aminoacids), 'type': conversion[pair.interaction_type], 'innerChain': chain_res2, 'outerChain': chain_res1})
+        if gpcr_index not in to_push_gpcr.keys():
+            to_push_gpcr[gpcr_index] = []
+        if gprot_index not in to_push_gprot.keys():
+            to_push_gprot[gprot_index] = []
+
+        if (conversion[pair.interaction_type] + ' ') not in to_push_gpcr[gpcr_index]:
+            to_push_gpcr[gpcr_index].append(conversion[pair.interaction_type] + ' ')
+        if (conversion[pair.interaction_type] + ' ') not in to_push_gprot[gprot_index]:
+            to_push_gprot[gprot_index].append(conversion[pair.interaction_type] + ' ')
+
+    protein_interactions = remove_duplicate_dicts(protein_interactions)
+    for key in to_push_gpcr:
+        gpcr_aminoacids[key]['interactions'] = to_push_gpcr[key]
+    for key in to_push_gprot:
+        gprot_aminoacids[key]['interactions'] = to_push_gprot[key]
+
+    return render(request, 'interaction/structure.html', {'pdbname': pdbname, 'structures': structures,
+                                                          'crystal': crystal, 'protein': p, 'helixbox' : HelixBox,
+                                                          'residues': residues_browser, 'residues_lookup': residues_lookup,
+                                                          'display_res': display_res, 'data': context['data'],
+                                                          'header': context['header'], 'segments': context['segments'],
+                                                          'number_of_schemes': context['number_of_schemes'], 'complex': True,
+                                                          'scores': scores, 'refined': True, 'outer': gpcr_aminoacids, 'inner': gprot_aminoacids, 'interactions': protein_interactions})
+
+
 def list_structures(request):
     form = PDBform()
     #structures = ResidueFragmentInteraction.objects.distinct('structure_ligand_pair__structure').all()
@@ -1427,12 +1659,12 @@ def list_structures(request):
         # print(structure.numRes)
     #objects = Model.objects.filter(id__in=object_ids)
     #context = {}
-    print('Structures with ligand information:' + str(structures.count()))
-    print('Distinct genes:' + str(len(genes)))
+    # print('Structures with ligand information:' + str(structures.count()))
+    # print('Distinct genes:' + str(len(genes)))
     #print('ligands:' + str(totalligands))
-    print('interactions:' + str(totalinteractions))
-    print('interactions from top ligands:' + str(totaltopinteractions))
-    print('Distinct ligands as top ligand:' + str(len(countligands)))
+    # print('interactions:' + str(totalinteractions))
+    # print('interactions from top ligands:' + str(totaltopinteractions))
+    # print('Distinct ligands as top ligand:' + str(len(countligands)))
 
     return render(request, 'interaction/list.html', {'form': form, 'structures': structures})
 
@@ -1446,7 +1678,7 @@ def crystal(request):
     p = Protein.objects.get(protein=crystal.protein_conformation.protein)
     residues = ResidueFragmentInteraction.objects.filter(
         structure_ligand_pair__structure__pdb_code__index=pdbname).order_by('rotamer__residue__sequence_number')
-    print("residues", residues)
+    # print("residues", residues)
     return render(request, 'interaction/crystal.html', {'form': form, 'pdbname': pdbname, 'structures': structures, 'crystal': crystal, 'protein': p, 'residues': residues})
 
 
@@ -1514,7 +1746,7 @@ def extract_fragment_rotamer(f, residue, structure, ligand):
         try:
             rotamer = Rotamer.objects.get(residue=residue, structure=structure)
         except Rotamer.DoesNotExist:
-            rotamer, _ = Rotamer.objects.get_or_create(residue=residue, structure=structure, pdbdata=rotamer_data)            
+            rotamer, _ = Rotamer.objects.get_or_create(residue=residue, structure=structure, pdbdata=rotamer_data)
 
         fragment_data, _ = PdbData.objects.get_or_create(pdb=fragment_pdb)
         fragment, created = Fragment.objects.get_or_create(ligand=ligand, structure=structure, pdbdata=fragment_data, residue=residue)
@@ -2051,6 +2283,32 @@ def pdb(request):
     if session:
         session = request.session.session_key
         pdbdata = open('/tmp/interactions/' + session +
+                       '/pdbs/' + pdbname + '.pdb', 'r').read()
+        response = HttpResponse(pdbdata, content_type='text/plain')
+    else:
+        web_resource = WebResource.objects.get(slug='pdb')
+        web_link, created = WebLink.objects.get_or_create(
+            web_resource=web_resource, index=pdbname)
+
+        structure = Structure.objects.filter(pdb_code=web_link)
+        if structure.exists():
+            structure = Structure.objects.get(pdb_code=web_link)
+        else:
+            quit()  # quit!
+
+        if structure.pdb_data is None:
+            quit()
+
+        response = HttpResponse(structure.pdb_data.pdb,
+                                content_type='text/plain')
+    return response
+
+def complexpdb(request):
+    pdbname = request.GET.get('pdb')
+    session = request.GET.get('session')
+    if session:
+        session = request.session.session_key
+        pdbdata = open('/tmp/interactions/complex/' + session +
                        '/pdbs/' + pdbname + '.pdb', 'r').read()
         response = HttpResponse(pdbdata, content_type='text/plain')
     else:

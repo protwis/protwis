@@ -29,7 +29,47 @@ canvas {
     }
 
 </style>
+<style>
+    .tooltip {
+        position: absolute;
+        text-align: center;
+        padding: 10px;
+        background: #f8f8f8;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        pointer-events: none;
+    }
+    .newrow {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+    }
+    .legend-header {
+      font-family: Arial;
+      font-size: 14px;
+      font-weight: bold;
+      fill: black;
+    }
+    path.highlight {
+      stroke-width: 2;
+    }
+    .checkbox-group {
+      display: flex;
+    }
 
+    .checkbox-item {
+      display: inline-block;
+      margin-right: 10px;  /* Add right margin */
+      font-size: 18px;
+    }
+    .dotted {
+      stroke-dasharray: 5,5;
+    }
+    .checkbox-item:last-child {
+      margin-right: 0;  /* Remove right margin for the last item */
+    }
+</style>
 {% endblock %}
 {% block content %}
 <h2>Structure information</h2>
@@ -89,6 +129,8 @@ canvas {
             </div>
         </div>
 
+        {% if complex %}
+        {% else %}
         <div class="row">
             <div class="col-md-4 text-right text-info">
                 <h4>REFERENCE</h4>
@@ -97,7 +139,7 @@ canvas {
             <a href="{{ crystal.publication.web_link }}">{{ crystal.publication.web_link.index }}</a>
             </div>
         </div>
-
+        {% endif %}
         <div class="row">
             <div class="col-md-4 text-right text-info">
                 <h4>PUBLICATION DATE</h4>
@@ -123,6 +165,68 @@ canvas {
     </tr>
     </table>
 </div>
+{% if complex %}
+<h2>Complex Interaction Browser</h2>
+<a href="excel/{{pdbname}}">Download list in excel</a>
+<div class="row">
+    <div class="col-md-11 text-center">
+        {% if residues %}
+        <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;">
+            <table width="100%" class="display" id="residues">
+
+                <thead>
+                    <tr>
+                        <th>GPCR Amino Acid</th>
+                        <th>Generic Number</th>
+                        <th>Segment</th>
+                        <th>G Protein Amino Acid</th>
+                        <th>Generic Number</th>
+                        <th>Interaction Type</th>
+                    </tr>
+                    <tr>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                    </tr>
+                    <tr>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tfoot>
+                    <tr>
+                      <th>GPCR Amino Acid</th>
+                      <th>Generic Number</th>
+                      <th>Segment</th>
+                      <th>G Protein Amino Acid</th>
+                      <th>Generic Number</th>
+                      <th>Interaction Type</th>
+                    </tr>
+                </tfoot>
+                {% for residue in residues %}
+                <tr>
+                <td>{{residue.gpcr_aa}}{{residue.gpcr_pos}}</td>
+                <td>{{residue.gpcr_grn}}
+                <td>{{residue.segment}}</td>
+                <td>{{residue.gprot_aa}}{{residue.gprot_pos}}</td>
+                <td>{{residue.gprot_grn}}</td>
+                <td>{{residue.type}}</td>
+                {% endfor %}
+            </table>
+        </div>
+    {% else %}
+        <p> Ooops! There is no data to show here yet. </p>
+    {% endif %}
+    </div>
+</div>
+{% else %}
 <h2>Ligand Interaction Browser</h2>
 <a href="excel/{{pdbname}}">Download list in excel</a>
 <div class="row">
@@ -179,7 +283,48 @@ canvas {
 
     </div>
 </div>
+{% endif %}
+
 <br>
+{% if complex %}
+<h2>Complex interactions</h2>
+<div class="col-md-12 ">
+    <div id="tooltip" class="tooltip"></div>
+    <div style="display: flex; justify-content: center;">
+      <svg id="visualization" width="100%" height="1115"></svg>
+    </div>
+    <div class="row">
+      <div class="col-md-3 text-right text-info">
+      </div>
+      <div class="col-md-9">
+        <div class="checkbox-group">
+          <div class="checkbox-item">
+            <input type="checkbox" id="main-main" name="chain" value="Main-Main" checked>
+            <label for="main-main">Main-Main</label>
+          </div>
+          <div class="checkbox-item">
+            <input type="checkbox" id="main-side" name="chain" value="Main-Side" checked>
+            <label for="main-side">Main-Side</label>
+          </div>
+          <div class="checkbox-item">
+            <input type="checkbox" id="side-side" name="chain" value="Side-Side" checked>
+            <label for="side-side">Side-Side</label>
+          </div>
+          <div class="checkbox-item">
+            <input type="checkbox" id="side-main" name="chain" value="Side-Main" checked>
+            <label for="side-main">Side-Main</label>
+          </div>
+        </div>
+        <div style="text-align: left;">
+          <button id="interactionsButton">Interactions</button>
+          <button id="propertiesButton">Properties</button>
+          <button id="segmentButton">Segment</button>
+          <button id="resetButton">Reset</button>
+        </div>
+      </div>
+    </div>
+</div>
+{% else %}
 <h2>Ligands</h2>
         {% for ligand in ligands %}
         <div class="row">
@@ -245,24 +390,68 @@ canvas {
     </div>
 </div>
 
-
-
 <h2>Residue Table</h2>
 <div class="col-md-10">
 {% include "residue/residue_table_only.html" with header=header segments=segments data=data onlymutants=1 %}
 </div>
-
+{% endif %}
 
 
 {% endblock %}
 {% block addon_js %}
 <script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
 <script src="{% static 'home/js/diagrams.js' %}"></script>
-   <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
-    <script src="{% static 'home/js/dataTables.tableTools.min.js' %}"> </script>
-    <script src="{% static 'home/js/jquery.dataTables.columnFilter.js' %}"> </script>
-    <script type="text/javascript" charset="utf-8">
+<script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
+<script src="{% static 'home/js/dataTables.tableTools.min.js' %}"> </script>
+<script src="{% static 'home/js/jquery.dataTables.columnFilter.js' %}"> </script>
+<script src="{% static 'home/js/d3.min.js' %}"></script>
+<script src="{% static 'home/js/nv.d3.min.js' %}"></script>
+<script src="{% static 'home/js/d3.v4.min.js' %}"></script>
+<script src="https://d3js.org/d3.v5.min.js"></script>
+<script src="{% static 'home/js/selection.js' %}"> </script>
+<script src="{% static 'home/js/table2csv.js' %}"> </script>
+<script src="{% static 'home/js/phylo_tree.js' %}"></script>
+
+<script type="text/javascript" charset="utf-8">
         $(document).ready(function() {
+            ptm = {{ scores.ptm }};
+            iptm = {{ scores.iptm }};
+            pae = {{ scores.pae_mean }};
+            interactions = {{ interactions | safe }};
+            inner_data = {{ inner | safe}};
+            outer_data = {{ outer | safe }};
+            // Call the function with your desired values
+            draw_interactions_in_circles('visualization', interactions, inner_data, outer_data);
+            // Function to update the highlight based on checkbox selections
+            function updateHighlight() {
+              // Get all selected checkbox values
+              const selectedChains = Array.from(document.querySelectorAll('input[name="chain"]:checked'))
+                                          .map(el => el.value);
+              // Reset all path highlights
+              d3.selectAll('path').classed('highlight', false);
+              d3.selectAll("path")
+                .each(function(d, i) {
+                  const segment = d3.select(this).attr("segment");
+                  if (!segment) {
+                    d3.select(this).attr("stroke-opacity", 0);
+                  }
+                });
+              // d3.selectAll("path").attr("stroke-opacity", 0);
+              // Loop through selected checkbox combinations
+              selectedChains.forEach(chain => {
+                const [innerChain, outerChain] = chain.split('-');
+
+                // Highlight the selected paths
+                d3.selectAll(`path[inner-chain="${innerChain}"][outer-chain="${outerChain}"]`)
+                  .classed('highlight', true)
+                  .attr("stroke-opacity", 1);
+              });
+            }
+            // Attach event listeners to checkboxes
+            document.querySelectorAll('input[name="chain"]').forEach(el => {
+              el.addEventListener('change', updateHighlight);
+            });
+
             var table = $('#residues').DataTable({
                 "scrollX": true,
                 "scrollY": 600,
@@ -295,15 +484,19 @@ canvas {
             $('[data-toggle="tooltip"]').tooltip();
             //$('[data-toggle="tooltip"]').tooltip({html:true});
 
+            // residues_browser.append({'type': key, 'aa': aa, 'ligand': ligand,
+            //                          'pos': pos, 'wt_pos': wt_pos, 'gpcrdb': display, 'segment': segment})
+            // residues_browser.append({'type': type, 'gpcr_aa': gpcr_aa, 'gprot_aa': gprot_aa,
+            //                          'gpcr_pos': gpcr_pos, 'gprot_pos': gprot_pos,
+            //                          'gpcr_grn': gpcr_grn, 'gprot_grn': gprot_grn, 'segment': segment})
 
             function ajaxInteractions(plotid) {
-
                 interactions = {{ residues|safe }};
                 count = [];
                 output = [];
 
                   $.each( interactions, function( index, val ) {
-                    key = val['wt_pos'];
+                    key = val['gpcr_aa'];
 
                     if (key in count) {
                         count[key] += 1;
@@ -312,18 +505,6 @@ canvas {
                         count[key] = 1;
                         output[key] = [val['type']]
                     }
-
-                    // var flags = [], falgsAA = [], output = [], outputAA = [], l = val.length, i;
-                    // for( i=0; i<l; i++) {
-                    //     if( flags[val[i][1]]) continue;
-                    //     flags[val[i][1]] = true;
-                    //     output.push(val[i][1]);
-                    // }
-                    // for( i=0; i<l; i++) {
-                    //     if( flags[val[i][0]]) continue;
-                    //     flags[val[i][0]] = true;
-                    //     outputAA.push(val[i][0]);
-                    // }
 
                       extra = "\n" + String(count[key]) + " interactions | Type: "+ output[key];
 
@@ -342,22 +523,14 @@ canvas {
 
                 $("circle").tooltip('fixTitle');
                 $("text").tooltip('fixTitle');
-
-
             }
-            ajaxInteractions('snakeplot')
-            ajaxInteractions('helixbox')
-
-
             });
     </script>
         <script src="{% static 'home/js/ngl.js' %}"> </script>
         <script>
-        // http://proteinformatics.charite.de/ngl/doc/#User_manual/Usage/Molecular_representations
-        // http://arose.github.io/ngl/api/Stage.html
-        // http://arose.github.io/ngl/js/examples.js
-        // http://arose.github.io/ngl/
-        // http://proteinformatics.charite.de/ngl/doc/#User_manual/Usage/Selection_language
+        // {32: 'T32 1x28', 33: 'V33 1x29', 34: 'S34 1x30', 35: 'Y35 1x31', 36: 'Q36 1x32',
+        // 37: 'V37 1x33', 38: 'I38 1x34', 39: 'T39 1x35', 40: 'S40 1x36', 41: 'L41 1x37',
+        // 42: 'L42 1x38', 43: 'L43 1x39', 44: 'G44 1x40', 45: 'T45 1x41', 46: 'L46 1x42'}
         var residues_lookup = {{ residues_lookup|safe }};
 
         function getPickingMessage( d, prefix ){
@@ -390,13 +563,12 @@ canvas {
             }else{
                 msg = "nothing";
             }
-            //console.log(residues_lookup);
             return prefix + " " + msg;
         }
 
         document.addEventListener( "DOMContentLoaded", function(){
             stage_full = new NGL.Stage( "viewport_full", { backgroundColor: "white" } );
-            stage_full.loadFile( "pdb?pdb={{ pdbname }}", { ext: "pdb" }  ).then( function( o ){
+            stage_full.loadFile( "complexpdb?pdb={{ pdbname }}", { ext: "pdb" }  ).then( function( o ){
 
                 o.addRepresentation( "cartoon", {
                     color: "residueindex", aspectRatio: 4, scale: 0.5
@@ -404,36 +576,17 @@ canvas {
                 o.addRepresentation( "rope", {
                     color: "residueindex", visible: false
                 } );
-                {% if multiple_ligands %}
-                  var pdb_ligs = {{main_ligand|safe}};
-                  for (i=0; i<pdb_ligs.length; i++){
-                    o.addRepresentation("ball+stick", { sele: pdb_ligs[i], scale: 1, aspectRatio: 1 } );
-                    o.addRepresentation("surface", { sele: pdb_ligs[i], opacity: 0.4, useWorker: false } );
-                    o.addRepresentation( "licorice", { sele: "({{display_res}}) and sidechainAttached" , scale: 2, aspectRatio: 1});
-                    o.addRepresentation( "label", {
-                        sele: "({{display_res}}) and .CB",
-                        color: "#113", scale: 2.0
-                    } );
-                    o.addRepresentation( "label", {
-                        sele: "[pdb_ligs[i]] and .C1",
-                        color: "#888", scale: 3.0, labelType: "resname"
-                    } );
-                  }
-                {% else %}
-                  {% if main_ligand != 'none' %}
-                    o.addRepresentation("ball+stick", { sele: "[{{ main_ligand}}]", scale: 1, aspectRatio: 1 } );
-                    o.addRepresentation("surface", { sele: "[{{ main_ligand}}]", opacity: 0.4, useWorker: false } );
-                    o.addRepresentation( "licorice", { sele: "({{display_res}}) and sidechainAttached" , scale: 2, aspectRatio: 1});
-                    o.addRepresentation( "label", {
-                        sele: "({{display_res}}) and .CB",
-                        color: "#113", scale: 2.0
-                    } );
-                    o.addRepresentation( "label", {
-                        sele: "[{{ main_ligand}}] and .C1",
-                        color: "#888", scale: 3.0, labelType: "resname"
-                    } );
-                  {% endif %}
-                {% endif %}
+                o.addRepresentation("ball+stick", { sele: "[{{ main_ligand}}]", scale: 1, aspectRatio: 1 } );
+                o.addRepresentation("surface", { sele: "[{{ main_ligand}}]", opacity: 0.4, useWorker: false } );
+                o.addRepresentation( "licorice", { sele: "({{display_res}}) and sidechainAttached" , scale: 2, aspectRatio: 1});
+                o.addRepresentation( "label", {
+                    sele: "({{display_res}}) and .CB",
+                    color: "#113", scale: 2.0
+                } );
+                o.addRepresentation( "label", {
+                    sele: "[{{ main_ligand}}] and .C1",
+                    color: "#888", scale: 3.0, labelType: "resname"
+                } );
 
                 o.centerView();
             } );

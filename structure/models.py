@@ -107,6 +107,16 @@ class Structure(models.Model):
                 tmp.append(line)
         return '\n'.join(tmp)
 
+    def get_prot_gprot_pair(self):
+        if self.protein_conformation.protein.accession:
+            pgp = ProteinCouplings.objects.filter(protein=self.protein_conformation.protein, g_protein__slug=self.signprot_complex.protein.family.parent.slug, source='GuideToPharma')
+        else:
+            pgp = ProteinCouplings.objects.filter(protein=self.protein_conformation.protein.parent, g_protein__slug=self.signprot_complex.protein.family.parent.slug, source='GuideToPharma')
+        if len(pgp)>0:
+            return pgp[0].transduction
+        else:
+            return 'no evidence'
+
     class Meta():
         db_table = 'structure'
 

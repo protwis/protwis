@@ -10,7 +10,7 @@ from django.shortcuts import redirect
 
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from protein.models import ProteinSegment
-from structure.models import Structure, StructureModel, StructureComplexModel, StructureExtraProteins, StructureVectors, StructureModelRMSD, StructureModelpLDDT
+from structure.models import Structure, StructureModel, StructureComplexModel, StructureExtraProteins, StructureVectors, StructureModelRMSD, StructureModelpLDDT, StructureAFScores
 from structure.functions import CASelector, SelectionParser, GenericNumbersSelector, SubstructureSelector, ModelRotamer
 from structure.assign_generic_numbers_gpcr import GenericNumbering, GenericNumberingFromDB
 from structure.structural_superposition import ProteinSuperpose,FragmentSuperpose
@@ -26,6 +26,7 @@ from common.extensions import MultiFileField
 from common.models import ReleaseNotes
 from common.alignment import Alignment, GProteinAlignment
 from residue.models import Residue
+from contactnetwork.models import Interaction
 
 import io
 import numpy as np
@@ -182,18 +183,29 @@ class ServeComplexModels(TemplateView):
     template_name = "complex_models.html"
     def get_context_data(self, **kwargs):
         context = super(ServeComplexModels, self).get_context_data(**kwargs)
+        # try:
+        #     context['structure_complex_model'] = StructureComplexModel.objects.all().prefetch_related(
+        #         "receptor_protein",
+        #         "receptor_protein__family",
+        #         "receptor_protein__family__parent__parent__parent",
+        #         "receptor_protein__species",
+        #         "sign_protein",
+        #         "sign_protein__family",
+        #         "sign_protein__family__parent__parent__parent",
+        #         "main_template__protein_conformation__protein__parent__family",
+        #         "main_template__pdb_code",
+        #         "main_template__signprot_complex")
+        # except StructureComplexModel.DoesNotExist as e:
+        #     pass
         try:
-            context['structure_complex_model'] = StructureComplexModel.objects.all().prefetch_related(
-                "receptor_protein",
-                "receptor_protein__family",
-                "receptor_protein__family__parent__parent__parent",
-                "receptor_protein__species",
-                "sign_protein",
-                "sign_protein__family",
-                "sign_protein__family__parent__parent__parent",
-                "main_template__protein_conformation__protein__parent__family",
-                "main_template__pdb_code",
-                "main_template__signprot_complex")
+            context['structure_complex_model'] = Structure.objects.filter(structure_type__slug__startswith='af-signprot').prefetch_related(
+                "protein_conformation__protein",
+                "protein_conformation__protein__family",
+                "protein_conformation__protein__family__parent__parent__parent",
+                "protein_conformation__protein__species",
+                "signprot_complex__protein",
+                "signprot_complex__protein__family",
+                "signprot_complex__protein__family__parent__parent__parent")
         except StructureComplexModel.DoesNotExist as e:
             pass
 
@@ -411,56 +423,217 @@ def RefinedModelDetails(request, pdbname):
 
     return HttpResponse(error)
 
-def ComplexModelDetails(request, modelname, signprot):
+def remove_duplicate_dicts(dict_list):
+    unique_dicts = []
+    seen = set()
+
+    for d in dict_list:
+        # Convert the dictionary to a string to make it hashable
+        dict_str = json.dumps(d, sort_keys=True)
+
+        # If the string is not in the set, add it back to the list and mark it as seen
+        if dict_str not in seen:
+            seen.add(dict_str)
+            unique_dicts.append(d)
+
+    return unique_dicts
+
+def find_dict_index(dict_list, target_dict):
+    for i, d in enumerate(dict_list):
+        if d == target_dict:
+            return i
+    return -1  # return -1 if the dictionary is not found
+
+def ComplexModelDetails(request, header):
     """
     Show complex homology models details
     """
     color_palette = ["orange","cyan","yellow","lime","fuchsia","limegreen","teal","olive","thistle","grey","chocolate","blue","red","pink","palegoldenrod","steelblue","tan","lightcoral","skyblue","papayawhip"]
-    model = StructureComplexModel.objects.get(receptor_protein__entry_name=modelname, sign_protein__entry_name=signprot)
-    main_template = model.main_template
-    if model.receptor_protein.accession:
-        receptor_residues = Residue.objects.filter(protein_conformation__protein=model.receptor_protein)
-        signprot_residues = Residue.objects.filter(protein_conformation__protein=model.sign_protein)
-        a = Alignment()
-        a.load_reference_protein(model.receptor_protein)
-        a.load_proteins([model.main_template.protein_conformation.protein.parent])
-        segs = ProteinSegment.objects.filter(id__in=receptor_residues.order_by("protein_segment__slug").distinct("protein_segment__slug").values_list("protein_segment", flat=True))
-        a.load_segments(segs)
-        a.build_alignment()
-        a.calculate_similarity()
-        main_template_seqsim = a.proteins[1].similarity
+    model = Structure.objects.get(pdb_code__index=header)
+    scores = StructureAFScores.objects.get(structure=model)
+    #Need to build the plDDT colors
+    model_plddt = StructureModelpLDDT.objects.filter(structure=model)
+    residues_plddt = {}
+    for item in model_plddt:
+        residues_plddt[item.residue.id] = [item.residue, item.pLDDT]
+
+    ### Gathering interaction info and structuring JS data
+    interactions = Interaction.objects.filter(interacting_pair__referenced_structure=model).prefetch_related('interacting_pair__res1', 'interacting_pair__res2')
+
+    gpcr_aminoacids = []
+    gprot_aminoacids = []
+    protein_interactions = []
+    conversion = {'aromatic': 'Aromatic',
+                  'hydrophobic': 'Hydrophobic',
+                  'ionic': 'Ionic',
+                  'polar': 'Polar',
+                  'van-der-waals': 'Van der waals'}
+
+    for pair in interactions:
+        gpcr = {'aminoAcid': pair.interacting_pair.res1.amino_acid,
+                'segment': pair.interacting_pair.res1.protein_segment.slug,
+                'generic_number': pair.interacting_pair.res1.display_generic_number.label
+                }
+        gprot = {'aminoAcid': pair.interacting_pair.res2.amino_acid,
+                'generic_number': pair.interacting_pair.res2.display_generic_number.label
+                }
+        gpcr_aminoacids.append(gpcr)
+        gprot_aminoacids.append(gprot)
+
+    gpcr_aminoacids = remove_duplicate_dicts(gpcr_aminoacids)
+    gprot_aminoacids = remove_duplicate_dicts(gprot_aminoacids)
+    to_push_gpcr = {}
+    to_push_gprot = {}
+    for pair in interactions:
+        if pair.atomname_residue1 in ['C', 'CA', 'N', 'O']:
+            chain_res1 = 'Main'
+        else:
+            chain_res1 = 'Side'
+        if pair.atomname_residue2 in ['C', 'CA', 'N', 'O']:
+            chain_res2 = 'Main'
+        else:
+            chain_res2 = 'Side'
+        gpcr = {'aminoAcid': pair.interacting_pair.res1.amino_acid,
+                'segment': pair.interacting_pair.res1.protein_segment.slug,
+                'generic_number': pair.interacting_pair.res1.display_generic_number.label
+                }
+        gprot = {'aminoAcid': pair.interacting_pair.res2.amino_acid,
+                'generic_number': pair.interacting_pair.res2.display_generic_number.label
+                }
+
+        gpcr_index = find_dict_index(gpcr_aminoacids, gpcr)
+        gprot_index = find_dict_index(gprot_aminoacids, gprot)
+        protein_interactions.append({'innerIndex': gprot_index, 'outerIndex': gpcr_index+len(gprot_aminoacids), 'type': conversion[pair.interaction_type], 'innerChain': chain_res2, 'outerChain': chain_res1})
+        if gpcr_index not in to_push_gpcr.keys():
+            to_push_gpcr[gpcr_index] = []
+        if gprot_index not in to_push_gprot.keys():
+            to_push_gprot[gprot_index] = []
+
+        if (conversion[pair.interaction_type] + ' ') not in to_push_gpcr[gpcr_index]:
+            to_push_gpcr[gpcr_index].append(conversion[pair.interaction_type] + ' ')
+        if (conversion[pair.interaction_type] + ' ') not in to_push_gprot[gprot_index]:
+            to_push_gprot[gprot_index].append(conversion[pair.interaction_type] + ' ')
+
+    protein_interactions = remove_duplicate_dicts(protein_interactions)
+    for key in to_push_gpcr:
+        gpcr_aminoacids[key]['interactions'] = to_push_gpcr[key]
+    for key in to_push_gprot:
+        gprot_aminoacids[key]['interactions'] = to_push_gprot[key]
+
+    ### Keep old coloring for refined structures
+    if model.structure_type == 'af-signprot-refined':
+        if model.protein_conformation.protein.accession:
+            receptor_residues = Residue.objects.filter(protein_conformation__protein=model.protein_conformation.protein)
+            signprot_residues = Residue.objects.filter(protein_conformation__protein=model.signprot_complex.protein)
+            a = Alignment()
+            a.load_reference_protein(model.protein_conformation.protein)
+            a.load_proteins([model.protein_conformation.protein.parent])
+            segs = ProteinSegment.objects.filter(id__in=receptor_residues.order_by("protein_segment__slug").distinct("protein_segment__slug").values_list("protein_segment", flat=True))
+            a.load_segments(segs)
+            a.build_alignment()
+            a.calculate_similarity()
+            main_template_seqsim = a.proteins[1].similarity
+        else:
+            receptor_residues = Residue.objects.filter(protein_conformation__protein=model.protein_conformation.protein)
+            signprot_residues = Residue.objects.filter(protein_conformation__protein=model.signprot_complex.protein)
+            main_template_seqsim = 100
+        receptor_rotamers, signprot_rotamers = parse_model_statsfile(model.stats_text.stats_text, receptor_residues, signprot_residues)
+
+        loop_segments = ProteinSegment.objects.filter(category='loop', proteinfamily='Alpha')
+
+        signprot_template = SignprotComplex.objects.get(structure=model).protein
+        bb_temps, backbone_templates, r_temps, rotamer_templates, segments_out, bb_main, bb_alt, bb_none, sc_main, sc_alt, sc_none, template_list, colors = format_model_details(receptor_rotamers, model, color_palette, chain='R')
+        signprot_color_palette = [i for i in color_palette if i not in list(colors.values())]
+        bb_temps2, backbone_templates2, r_temps2, rotamer_templates2, segments_out2, bb_main2, bb_alt2, bb_none2, sc_main2, sc_alt2, sc_none2, template_list2, colors2 = format_model_details(signprot_rotamers, model, signprot_color_palette, chain='A', used_colors=colors)
+
+        gp = GProteinAlignment()
+        gp.run_alignment(model.signprot_complex.protein, signprot_template, calculate_similarity=True)
+
+        for n in bb_temps2.values():
+            for s in n:
+                if s.protein_conformation.protein.parent not in bb_temps:
+                    bb_temps[s.protein_conformation.protein.parent] = [s]
+                else:
+                    if s not in bb_temps[s.protein_conformation.protein.parent]:
+                        bb_temps[s.protein_conformation.protein.parent].append(s)
+                        break
+
+        return render(request,'complex_models_details.html',{'model': model, 'modelname': modelname, 'signprot': signprot, 'signprot_template': signprot_template, 'receptor_rotamers': receptor_rotamers, 'signprot_rotamers': signprot_rotamers, 'backbone_templates': bb_temps, 'backbone_templates_number': len(backbone_templates),
+                                                             'rotamer_templates': r_temps, 'rotamer_templates_number': len(rotamer_templates), 'color_residues': json.dumps(segments_out), 'bb_main': round(bb_main/len(receptor_rotamers)*100, 1),
+                                                             'bb_alt': round(bb_alt/len(receptor_rotamers)*100, 1), 'bb_none': round(bb_none/len(receptor_rotamers)*100, 1), 'sc_main': round(sc_main/len(receptor_rotamers)*100, 1),
+                                                             'sc_alt': round(sc_alt/len(receptor_rotamers)*100, 1), 'sc_none': round(sc_none/len(receptor_rotamers)*100, 1), 'main_template_seqsim': main_template_seqsim,
+                                                             'template_list': template_list, 'model_main_template': main_template, 'state': None, 'signprot_sim': int(gp.proteins[1].similarity),
+                                                             'signprot_color_residues': json.dumps(segments_out2), 'loop_segments': loop_segments,
+                                                             'scores': scores, 'refined': True, 'outer': json.dumps(gpcr_aminoacids), 'inner': json.dumps(gprot_aminoacids),
+                                                             'interactions': json.dumps(protein_interactions), 'residues': len(protein_interactions)})#, 'delta_distance': delta_distance})
+
     else:
-        receptor_residues = Residue.objects.filter(protein_conformation__protein=model.receptor_protein.parent)
-        signprot_residues = Residue.objects.filter(protein_conformation__protein=model.sign_protein)
-        main_template_seqsim = 100
-    receptor_rotamers, signprot_rotamers = parse_model_statsfile(model.stats_text.stats_text, receptor_residues, signprot_residues)
 
-    loop_segments = ProteinSegment.objects.filter(category='loop', proteinfamily='Alpha')
+        segments_out = af_model_coloring(residues_plddt)
+        return render(request,'complex_models_details.html',{'model': model,
+                                                             'color_residues': json.dumps(segments_out),
+                                                             'pdbname': header,
+                                                             'scores': scores,
+                                                             'refined': False,
+                                                             'outer': json.dumps(gpcr_aminoacids),
+                                                             'inner': json.dumps(gprot_aminoacids),
+                                                             'interactions': json.dumps(protein_interactions),
+                                                             'residues': len(protein_interactions)
+                                                             })
 
 
-    signprot_template = SignprotComplex.objects.get(structure=main_template).protein
-    bb_temps, backbone_templates, r_temps, rotamer_templates, segments_out, bb_main, bb_alt, bb_none, sc_main, sc_alt, sc_none, template_list, colors = format_model_details(receptor_rotamers, main_template, color_palette, chain='R')
-    signprot_color_palette = [i for i in color_palette if i not in list(colors.values())]
-
-    bb_temps2, backbone_templates2, r_temps2, rotamer_templates2, segments_out2, bb_main2, bb_alt2, bb_none2, sc_main2, sc_alt2, sc_none2, template_list2, colors2 = format_model_details(signprot_rotamers, main_template, signprot_color_palette, chain='A', used_colors=colors)
-
-    gp = GProteinAlignment()
-    gp.run_alignment(model.sign_protein, signprot_template, calculate_similarity=True)
-
-    for n in bb_temps2.values():
-        for s in n:
-            if s.protein_conformation.protein.parent not in bb_temps:
-                bb_temps[s.protein_conformation.protein.parent] = [s]
-            else:
-                if s not in bb_temps[s.protein_conformation.protein.parent]:
-                    bb_temps[s.protein_conformation.protein.parent].append(s)
-                    break
-    return render(request,'complex_models_details.html',{'model': model, 'modelname': modelname, 'signprot': signprot, 'signprot_template': signprot_template, 'receptor_rotamers': receptor_rotamers, 'signprot_rotamers': signprot_rotamers, 'backbone_templates': bb_temps, 'backbone_templates_number': len(backbone_templates),
-                                                         'rotamer_templates': r_temps, 'rotamer_templates_number': len(rotamer_templates), 'color_residues': json.dumps(segments_out), 'bb_main': round(bb_main/len(receptor_rotamers)*100, 1),
-                                                         'bb_alt': round(bb_alt/len(receptor_rotamers)*100, 1), 'bb_none': round(bb_none/len(receptor_rotamers)*100, 1), 'sc_main': round(sc_main/len(receptor_rotamers)*100, 1),
-                                                         'sc_alt': round(sc_alt/len(receptor_rotamers)*100, 1), 'sc_none': round(sc_none/len(receptor_rotamers)*100, 1), 'main_template_seqsim': main_template_seqsim,
-                                                         'template_list': template_list, 'model_main_template': main_template, 'state': None, 'signprot_sim': int(gp.proteins[1].similarity),
-                                                         'signprot_color_residues': json.dumps(segments_out2), 'loop_segments': loop_segments})#, 'delta_distance': delta_distance})
+# def ComplexModelDetails(request, modelname, signprot):
+#     """
+#     Show complex homology models details
+#     """
+#     color_palette = ["orange","cyan","yellow","lime","fuchsia","limegreen","teal","olive","thistle","grey","chocolate","blue","red","pink","palegoldenrod","steelblue","tan","lightcoral","skyblue","papayawhip"]
+#
+#     model = StructureComplexModel.objects.get(receptor_protein__entry_name=modelname, sign_protein__entry_name=signprot)
+#     main_template = model.main_template
+#     if model.receptor_protein.accession:
+#         receptor_residues = Residue.objects.filter(protein_conformation__protein=model.receptor_protein)
+#         signprot_residues = Residue.objects.filter(protein_conformation__protein=model.sign_protein)
+#         a = Alignment()
+#         a.load_reference_protein(model.receptor_protein)
+#         a.load_proteins([model.main_template.protein_conformation.protein.parent])
+#         segs = ProteinSegment.objects.filter(id__in=receptor_residues.order_by("protein_segment__slug").distinct("protein_segment__slug").values_list("protein_segment", flat=True))
+#         a.load_segments(segs)
+#         a.build_alignment()
+#         a.calculate_similarity()
+#         main_template_seqsim = a.proteins[1].similarity
+#     else:
+#         receptor_residues = Residue.objects.filter(protein_conformation__protein=model.receptor_protein.parent)
+#         signprot_residues = Residue.objects.filter(protein_conformation__protein=model.sign_protein)
+#         main_template_seqsim = 100
+#     receptor_rotamers, signprot_rotamers = parse_model_statsfile(model.stats_text.stats_text, receptor_residues, signprot_residues)
+#
+#     loop_segments = ProteinSegment.objects.filter(category='loop', proteinfamily='Alpha')
+#
+#
+#     signprot_template = SignprotComplex.objects.get(structure=main_template).protein
+#     bb_temps, backbone_templates, r_temps, rotamer_templates, segments_out, bb_main, bb_alt, bb_none, sc_main, sc_alt, sc_none, template_list, colors = format_model_details(receptor_rotamers, main_template, color_palette, chain='R')
+#     signprot_color_palette = [i for i in color_palette if i not in list(colors.values())]
+#
+#     bb_temps2, backbone_templates2, r_temps2, rotamer_templates2, segments_out2, bb_main2, bb_alt2, bb_none2, sc_main2, sc_alt2, sc_none2, template_list2, colors2 = format_model_details(signprot_rotamers, main_template, signprot_color_palette, chain='A', used_colors=colors)
+#
+#     gp = GProteinAlignment()
+#     gp.run_alignment(model.sign_protein, signprot_template, calculate_similarity=True)
+#
+#     for n in bb_temps2.values():
+#         for s in n:
+#             if s.protein_conformation.protein.parent not in bb_temps:
+#                 bb_temps[s.protein_conformation.protein.parent] = [s]
+#             else:
+#                 if s not in bb_temps[s.protein_conformation.protein.parent]:
+#                     bb_temps[s.protein_conformation.protein.parent].append(s)
+#                     break
+#
+#     return render(request,'complex_models_details.html',{'model': model, 'modelname': modelname, 'signprot': signprot, 'signprot_template': signprot_template, 'receptor_rotamers': receptor_rotamers, 'signprot_rotamers': signprot_rotamers, 'backbone_templates': bb_temps, 'backbone_templates_number': len(backbone_templates),
+#                                                          'rotamer_templates': r_temps, 'rotamer_templates_number': len(rotamer_templates), 'color_residues': json.dumps(segments_out), 'bb_main': round(bb_main/len(receptor_rotamers)*100, 1),
+#                                                          'bb_alt': round(bb_alt/len(receptor_rotamers)*100, 1), 'bb_none': round(bb_none/len(receptor_rotamers)*100, 1), 'sc_main': round(sc_main/len(receptor_rotamers)*100, 1),
+#                                                          'sc_alt': round(sc_alt/len(receptor_rotamers)*100, 1), 'sc_none': round(sc_none/len(receptor_rotamers)*100, 1), 'main_template_seqsim': main_template_seqsim,
+#                                                          'template_list': template_list, 'model_main_template': main_template, 'state': None, 'signprot_sim': int(gp.proteins[1].similarity),
+#                                                          'signprot_color_residues': json.dumps(segments_out2), 'loop_segments': loop_segments, 'pdbname': model.main_template.protein_conformation.protein.entry_name})#, 'delta_distance': delta_distance})
 
 def parse_model_statsfile(statstext, receptor_residues, signprot_residues=None):
     receptor_rotamers = []
@@ -625,8 +798,10 @@ def ServeHomModDiagram(request, modelname, state):
     response = HttpResponse(model.pdb_data.pdb, content_type='text/plain')
     return response
 
-def ServeComplexModDiagram(request, modelname, signprot):
-    model=StructureComplexModel.objects.filter(receptor_protein__entry_name=modelname, sign_protein__entry_name=signprot)
+# def ServeComplexModDiagram(request, modelname, signprot):
+    # model=StructureComplexModel.objects.filter(receptor_protein__entry_name=modelname, sign_protein__entry_name=signprot)
+def ServeComplexModDiagram(request, modelname):
+    model=Structure.objects.filter(pdb_code__index=modelname)
     if model.exists():
         model=model.get()
     else:
