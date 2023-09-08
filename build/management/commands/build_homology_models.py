@@ -3034,6 +3034,9 @@ class HomologyModeling(object):
                     ligand_pep_structs = LigandPeptideStructure.objects.filter(structure=self.main_structure)
                     for l in ligand_pep_structs:
                         model.write('TER\n')
+                        ### Skip peptide ligands that are not present in structure
+                        if l.chain==' ':
+                            continue
                         if self.debug:
                             print(l)
                         pdbdata = ''

@@ -3,10 +3,14 @@ from django.db import connection
 from django.conf import settings
 
 
-from protein.models import Protein, ProteinState
-from structure.models import Structure, StructureModel, StructureComplexModel, StatsText, PdbData, StructureModelpLDDT
+from protein.models import Protein, ProteinState, ProteinConformation
+from structure.models import Structure, StructureModel, StructureComplexModel, StatsText, PdbData, StructureModelpLDDT, StructureType, StructureExtraProteins
 import structure.assign_generic_numbers_gpcr as as_gn
 from residue.models import Residue
+from common.models import WebResource, WebLink
+from common.definitions import G_PROTEIN_DISPLAY_NAME as g_prot_dict
+from signprot.models import SignprotComplex
+
 
 import Bio.PDB as PDB
 import os
@@ -207,11 +211,30 @@ class Command(BaseBuild):
             stats_text = StatsText.objects.get_or_create(stats_text=''.join(templates))[0]
         pdb = PdbData.objects.get_or_create(pdb=pdb_data)[0]
         
+        ### Alphafold refined structures
         if self.complex:
             m_s = self.get_structures(main_structure)
             r_prot = Protein.objects.get(entry_name=gpcr_prot)
             s_prot = Protein.objects.get(entry_name=sign_prot)
-            StructureComplexModel.objects.get_or_create(receptor_protein=r_prot, sign_protein=s_prot, main_template=m_s, pdb_data=pdb, version=build_date, stats_text=stats_text)
+            # StructureComplexModel.objects.get_or_create(receptor_protein=r_prot, sign_protein=s_prot, main_template=m_s, pdb_data=pdb, version=build_date, stats_text=stats_text)
+            parent_struct = Structure.objects.get(pdb_code__index=main_structure)
+            protconf = ProteinConformation.objects.get(protein=parent_struct.protein_conformation.protein.parent)
+            signprotrefined, _ = StructureType.objects.get_or_create(slug='af-signprot-refined', name='Refined complex')
+            webresource = WebResource.objects.get(slug='pdb')
+            weblink, _ = WebLink.objects.get_or_create(index='AFM-{}'.format(main_structure), web_resource=webresource)
+            struct_obj, _ = Structure.objects.get_or_create(preferred_chain=parent_struct.preferred_chain, publication_date=build_date, pdb_data=pdb, pdb_code=weblink, build_check=True,
+                                                            protein_conformation=protconf, state=parent_struct.state, structure_type=signprotrefined, author_state=parent_struct.author_state)
+            signprot_complex, _ = SignprotComplex.objects.get_or_create(alpha=parent_struct.signprot_complex.alpha, protein=parent_struct.signprot_complex.protein, structure=struct_obj,
+                                                                        beta_chain=parent_struct.signprot_complex.beta_chain, gamma_chain=parent_struct.signprot_complex.gamma_chain,
+                                                                        beta_protein=parent_struct.signprot_complex.beta_protein, gamma_protein=parent_struct.signprot_complex.gamma_protein)
+            struct_obj.signprot_complex = signprot_complex
+            struct_obj.save()
+            g_prot_dict[signprot_complex.protein.entry_name.split('_')[0].upper()]
+            signprot_conf = ProteinConformation.objects.get(protein=signprot_complex.protein)
+            sep, _ = StructureExtraProteins.objects.get_or_create(display_name=g_prot_dict[sign_prot.split('_')[0].upper()], note=None, chain=signprot_complex.alpha, category='G alpha', 
+                                                                  wt_coverage=100, protein_conformation=signprot_conf, structure=struct_obj, wt_protein=signprot_complex.protein)
+            parent_struct.refined = True
+            parent_struct.save()
         else:
             s_state = ProteinState.objects.get(name=state)
             m_s = self.get_structures(main_structure)
