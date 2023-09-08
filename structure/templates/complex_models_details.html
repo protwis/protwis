@@ -31,12 +31,54 @@ canvas {
               margin-top: 5px;}
 </style>
 
+<style>
+    .tooltip {
+        position: absolute;
+        text-align: center;
+        padding: 10px;
+        background: #f8f8f8;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        pointer-events: none;
+    }
+    .newrow {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+    }
+    .legend-header {
+      font-family: Arial;
+      font-size: 14px;
+      font-weight: bold;
+      fill: black;
+    }
+    path.highlight {
+      stroke-width: 2;
+    }
+    .checkbox-group {
+      display: flex;
+    }
+
+    .checkbox-item {
+      display: inline-block;
+      margin-right: 10px;  /* Add right margin */
+      font-size: 18px;
+    }
+    .dotted {
+      stroke-dasharray: 5,5;
+    }
+    .checkbox-item:last-child {
+      margin-right: 0;  /* Remove right margin for the last item */
+    }
+</style>
+
 <div class="row text-success">
     <div class="text-center">
         {% if model.receptor_protein.accession %}
-            <h2>{{ model.receptor_protein.family.name|safe }} - {{ model.sign_protein.name|safe }} complex homology model</h2>
+            <h2>{{ model.protein_conformation.protein.entry_name|safe }} - {{ model.signprot_complex.protein.entry_name|safe }} complex homology model</h2>
         {% else %}
-            <h2>{{ model.receptor_protein.entry_name|upper }} refined </h2>
+            <h2>{{ model.protein_conformation.protein.entry_name|upper }} refined </h2>
         {% endif %}
     </div>
 </div>
@@ -46,7 +88,7 @@ canvas {
         <h4>RECEPTOR CLASS</h4>
     </div>
     <div class="col-md-9">
-        {{ model.receptor_protein.get_protein_class }}
+        {{ model.protein_conformation.protein.get_protein_class }}
     </div>
 </div>
 
@@ -55,10 +97,10 @@ canvas {
         <h4>RECEPTOR</h4>
     </div>
     <div class="col-md-9">
-        {% if model.receptor_protein.accession %}
-            <a href="/protein/{{ model.receptor_protein.entry_name }}">{{ model.receptor_protein.name|safe }}</a>
+        {% if model.protein_conformation.protein.accession %}
+            <a href="/protein/{{ model.receptor_protein.entry_name }}">{{ model.protein_conformation.protein.name|safe }}</a>
         {% else %}
-            <a href="/protein/{{ model.receptor_protein.parent.entry_name }}">{{ model.receptor_protein.parent.name|safe }}</a>
+            <a href="/protein/{{ model.receptor_protein.parent.entry_name }}">{{ model.protein_conformation.protein.parent.name|safe }}</a>
         {% endif %}
     </div>
 </div>
@@ -68,7 +110,7 @@ canvas {
         <h4>SPECIES</h4>
     </div>
     <div class="col-md-9">
-        {{ model.receptor_protein.species.latin_name }}
+        {{ model.protein_conformation.protein.species.latin_name }}
     </div>
 </div>
 
@@ -77,7 +119,7 @@ canvas {
         <h4>G-PROTEIN FAMILY</h4>
     </div>
     <div class="col-md-9">
-        {{ model.sign_protein.family.parent|safe }}
+        {{ model.signprot_complex.protein.family.parent|safe }}
     </div>
 </div>
 
@@ -86,7 +128,7 @@ canvas {
         <h4>G-PROTEIN</h4>
     </div>
     <div class="col-md-9">
-        <a href="/protein/{{ model.sign_protein.entry_name }}">{{ model.sign_protein.name|safe }}</a>
+        <a href="/protein/{{ model.sign_protein.entry_name }}">{{ model.signprot_complex.protein.name|safe }}</a>
     </div>
 </div>
 
@@ -95,7 +137,7 @@ canvas {
         <h4>VERSION</h4>
     </div>
     <div class="col-md-9">
-    {{ model.version|date:"Y-m-d" }}
+    {{ model.publication_date|date:"Y-m-d" }}
     </div>
 </div>
 
@@ -104,13 +146,18 @@ canvas {
         <h4>MODEL</h4>
     </div>
     <div class="col-md-6">
-        <div class="btn-group">
-            {% if model.receptor_protein.accession %}
-                <a id="download_btn" class="btn btn-primary btn-mini " href="./{{model.receptor_protein.entry_name}}-{{model.sign_protein.entry_name}}/download_pdb">Download</a>
-            {% else %}
-                <a id="download_btn" class="btn btn-primary btn-mini " href="./{{model.receptor_protein.entry_name|upper}}-complex/download_pdb">Download</a>
-            {% endif %}
-        </div>
+      <div class="btn-group">
+          <a href="/" class="dropdown-toggle btn btn-primary btn-mini" data-toggle="dropdown" role="button" aria-expanded="false">Download <span class='caret'></span></a>
+          <ul class="dropdown-menu" role="menu" style="min-width:50%;">
+              {% if not model.protein.accession %}
+                  <li><a id="download_btn" href="./{{model.protein_conformation.protein.entry_name|upper}}_full/download_pdb">Full</a></li>
+                  <li><a id="download_btn" href="./{{model.protein_conformation.protein.entry_name|upper}}_noloops/download_pdb">Without loops</a></li>
+              {% else %}
+                  <li><a id="download_btn" href="./{{model.protein_conformation.protein.entry_name}}_{{model.state.slug}}_full/download_pdb">Full</a></li>
+                  <li><a id="download_btn" href="./{{model.protein_conformation.protein.entry_name}}_{{model.state.slug}}_noloops/download_pdb">Without loops</a></li>
+              {% endif %}
+          </ul>
+      </div>
         <div>
             <p>PDB file contains GPCRdb generic numbers in the B-factor field of CA atoms</p>
         </div>
@@ -150,19 +197,21 @@ canvas {
         <br>
         <div>
           <h5>PTM Score
-            <span class="fa fa-info-circle" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="bottom" data-content="SomeText Goes Here"></span>
+            <span class="fa fa-info-circle" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="bottom" data-content="<b>Predicted TM-score </b>:<br /> is an estimate of the TM-score derived from comparing predicted atom positions
+            to true positions under various alignments, emphasizing correct local frame residue interactions in AlphaFold."></span>
           </h5>
         </div>
         <div id="PTM_location"></div>
         <div>
           <h5>iPTM Score
-            <span class="fa fa-info-circle" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="bottom" data-content="SomeText Goes Here"></span>
+            <span class="fa fa-info-circle" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="bottom" data-content="<b>Interface predicted TM-score</b>:<br />
+A modified pTM score, adapted to measure the accuracy of predicted protein interfaces Instead of comparing residues within the same protein chain as in the original TM-score, it compares residues from different chains."></span>
           </h5>
         </div>
         <div id="iPTM_location"></div>
         <div>
-          <h5>PAE
-            <span class="fa fa-info-circle" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="bottom" data-content="SomeText Goes Here"></span>
+          <h5>PAE mean
+            <span class="fa fa-info-circle" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="bottom" data-content="The average expected error in residue x's position when aligning predicted and true structures based on residue y, focusing on inter-chain relationships."></span>
           </h5>
         </div>
         <div id="PAE_location"></div>
@@ -170,26 +219,55 @@ canvas {
 </div>
 
 <div class="row">
-    <div class="col-md-3 text-right text-info">
-        <h4>MAIN TEMPLATE</h4>
-    </div>
-    <div class="col-md-9">
-        <a href="/protein/{{ model.main_template.protein_conformation.protein.parent.entry_name }}">{{ model.main_template.protein_conformation.protein.parent.family.name|safe }}</a> (sequence similarity: {{ main_template_seqsim }}%) PDB: <a href="../{{ model.main_template.pdb_code.index }}">{{ model.main_template.pdb_code.index }}</a>
-        {% if model.receptor_protein.accession %}
-            <div class="btn-group", style="padding: 0px 0px 5px 5px;">
-                <a id="align_btn1" class="btn btn-primary btn-mini " href="javascript:void(0)" style="padding: 2px 5px;">Align</a>
-            </div>
-        {% endif %}
-        <br>
-        <a href="/signprot/{{ signprot_template.entry_name }}">{{ signprot_template.name|safe }}</a> (sequence similarity: {{ signprot_sim }}%)
-        {% if signprot_template.entry_name != model.sign_protein.entry_name %}
-            <div class="btn-group", style="padding: 0px 0px 5px 5px;">
-                <a id="align_btn2" class="btn btn-primary btn-mini " href="javascript:void(0)" style="padding: 2px 5px;">Align</a>
-            </div>
-        {% endif %}
-    </div>
+  <div class="col-md-3 text-right text-info">
+    <h4>INTERACTING RESIDUES</h4>
+  </div>
+  <div class="col-md-9">
+    <a href="/interaction/complex/{{pdbname}}"> {{residues}} interactions (Click to see)</a>
+  </div>
 </div>
 
+<div class="col-md-12 ">
+    <div id="tooltip" class="tooltip"></div>
+    <div style="display: flex; justify-content: center;">
+      <svg id="visualization" width="100%" height="1115"></svg>
+    </div>
+    <div class="row">
+      <div class="col-md-3 text-right text-info">
+      </div>
+      <div class="col-md-9">
+        <div class="checkbox-group">
+          <div class="checkbox-item">
+            <input type="checkbox" id="main-main" name="chain" value="Main-Main" checked>
+            <label for="main-main">Main-Main</label>
+          </div>
+          <div class="checkbox-item">
+            <input type="checkbox" id="main-side" name="chain" value="Main-Side" checked>
+            <label for="main-side">Main-Side</label>
+          </div>
+          <div class="checkbox-item">
+            <input type="checkbox" id="side-side" name="chain" value="Side-Side" checked>
+            <label for="side-side">Side-Side</label>
+          </div>
+          <div class="checkbox-item">
+            <input type="checkbox" id="side-main" name="chain" value="Side-Main" checked>
+            <label for="side-main">Side-Main</label>
+          </div>
+        </div>
+        <div style="text-align: left;">
+          <button id="interactionsButton">Interactions</button>
+          <button id="propertiesButton">Properties</button>
+          <button id="segmentButton">Segment</button>
+          <button id="resetButton">Reset</button>
+        </div>
+      </div>
+      <br>
+      <br>
+    </div>
+
+</div>
+
+{% if refined %}
 <div class="row">
     <div class="col-md-3 text-right text-info">
         <h4>RECEPTOR TEMPLATES</h4>
@@ -371,6 +449,7 @@ canvas {
         </div>
     </div>
 </div>
+{% endif %}
 
 <br>
 <style>
@@ -381,21 +460,18 @@ canvas {
 {% endblock %}
 {% block addon_js %}
     <script src="{% static 'home/js/ngl.js' %}"> </script>
-        <script>
+    <script>
         document.addEventListener( "DOMContentLoaded", function(){
             stage = new NGL.Stage( "viewport", { backgroundColor: "white" } );
             var color_residues = JSON.parse('{{color_residues|safe}}');
-            var color_residues2 = JSON.parse('{{signprot_color_residues|safe}}');
-            color_residues2.push(["darkorchid","*"])
-            var color_array = color_residues.concat(color_residues2);
 
-            var schemeId = NGL.ColorMakerRegistry.addSelectionScheme( color_array );
+            var schemeId = NGL.ColorMakerRegistry.addSelectionScheme( color_residues );
 
-            stage.loadFile( "/structure/complex_models/view/{{modelname}}-{{signprot}}", { ext: "pdb" }  ).then( function( o ){
+            stage.loadFile( "/structure/complex_models/view/{{pdbname}}", { ext: "pdb" }  ).then( function( o ){
                 o.addRepresentation( "cartoon", {color: schemeId} );  // pass schemeId here ,{ color: schemeId }
                 o.centerView();
-            });
-        });
+            } );
+        } );
 
         $( "#fullscreen" ).click(function() {
             stage.toggleFullscreen();
@@ -405,6 +481,7 @@ canvas {
     <script src="{% static 'home/js/d3.min.js' %}"></script>
     <script src="{% static 'home/js/nv.d3.min.js' %}"></script>
     <script src="{% static 'home/js/d3.v4.min.js' %}"></script>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
     <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
     <script src="{% static 'home/js/dataTables.tableTools.min.js' %}"> </script>
     <script src="{% static 'home/js/jquery.dataTables.columnFilter.js' %}"> </script>
@@ -418,13 +495,49 @@ canvas {
     </script>
     <script type="text/javascript" charset="utf-8">
         $(document).ready(function () {
+            ptm = {{ scores.ptm }};
+            iptm = {{ scores.iptm }};
+            pae = {{ scores.pae_mean }};
+            interactions = {{ interactions | safe }};
+            inner_data = {{ inner | safe}};
+            outer_data = {{ outer | safe }};
             ClearSelection('targets');
             ClearSelection('reference');
             // Call the function with your desired values
             // function draw_model_scores(location, element_id, legend_label, score, startValue, endValue, definedValue
-            draw_model_scores('PTM_location', 'PTM_divider', 'PTM',  0, 1, 0.7, 0.2);
-            draw_model_scores('iPTM_location', 'iPTM_divider', 'iPTM',  0, 1, 0.2, 0.5);
-            draw_model_scores('PAE_location', 'PAE_divider', 'PAE',  0, 31, 12, 26);
+            draw_model_scores('PTM_location', 'PTM_divider', 'PTM',  0, 1, ptm, 0.5);
+            draw_model_scores('iPTM_location', 'iPTM_divider', 'iPTM',  0, 1, iptm, 0.2);
+            draw_model_scores('PAE_location', 'PAE_divider', 'PAE',  0, 31, pae, 26, true);
+            draw_interactions_in_circles('visualization', interactions, inner_data, outer_data);
+            // Function to update the highlight based on checkbox selections
+            function updateHighlight() {
+              // Get all selected checkbox values
+              const selectedChains = Array.from(document.querySelectorAll('input[name="chain"]:checked'))
+                                          .map(el => el.value);
+              // Reset all path highlights
+              d3.selectAll('path').classed('highlight', false);
+              d3.selectAll("path")
+                .each(function(d, i) {
+                  const segment = d3.select(this).attr("segment");
+                  if (!segment) {
+                    d3.select(this).attr("stroke-opacity", 0);
+                  }
+                });
+              // d3.selectAll("path").attr("stroke-opacity", 0);
+              // Loop through selected checkbox combinations
+              selectedChains.forEach(chain => {
+                const [innerChain, outerChain] = chain.split('-');
+
+                // Highlight the selected paths
+                d3.selectAll(`path[inner-chain="${innerChain}"][outer-chain="${outerChain}"]`)
+                  .classed('highlight', true)
+                  .attr("stroke-opacity", 1);
+              });
+            }
+            // Attach event listeners to checkboxes
+            document.querySelectorAll('input[name="chain"]').forEach(el => {
+              el.addEventListener('change', updateHighlight);
+            });
             var table = $('#rotamers').DataTable({
                 'scrollX': true,
                 'scrollY': '15vh',
