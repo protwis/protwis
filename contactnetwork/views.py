@@ -295,6 +295,13 @@ def PdbTableData(request):
         best_signal_p[key] = ps['coverage']
 
     data_dict = OrderedDict()
+
+    if effector=='G alpha':
+        signalling_header = 'G protein'
+    elif effector=='A':
+        signalling_header = 'Arrestin'
+    else:
+        signalling_header = 'Signalling protein'
     data_table = "<table id2='structure_selection' border=0 class='structure_selection row-border text-center compact text-nowrap' width='100%'> \
         <thead><tr> \
             <th rowspan=2> <input class ='form-check-input check_all' type='checkbox' value='' onclick='check_all(this);'> </th> \
@@ -302,7 +309,7 @@ def PdbTableData(request):
             <th colspan=3>Species</th> \
             <th colspan=4>Structure</th> \
             <th colspan=3>Receptor state <a href=\"https://docs.gpcrdb.org/structures.html#structure-descriptors\" target=\"_blank\"><span class=\"glyphicon glyphicon-info-sign\"></span></a></th> \
-            <th colspan=4>Signalling protein</th> \
+            <th colspan=4>{}</th> \
             <th colspan=2>Auxiliary protein</th> \
             <th colspan=2>Ligand</th> \
         </tr> \
@@ -320,7 +327,7 @@ def PdbTableData(request):
             <th></th> \
             <th></th> \
             <th>Degree active (%)</th> \
-            <th>TM6 tilt</th>"
+            <th>TM6 tilt</th>".format(signalling_header)
 #            <th><a href=\"http://docs.gpcrdb.org/structures.html\" target=\"_blank\">Cytosolic</br> opening</a></th>"
 #            <th><a href=\"http://docs.gpcrdb.org/structures.html\" target=\"_blank\">7TM Open IC (Å)</a></th> \
 #            <th>TM6 tilt (%, inactive: 0-X, intermed: X-Y, active Y-Z)</th> \
@@ -529,6 +536,11 @@ def PdbTableData(request):
             if l.ligand.ligand_type != None:
                 r['ligand_type'] = l.ligand.ligand_type.name
 
+        if pdb_id.startswith('AFM_'):
+            if len(pdb_id)==8:
+                pdb_id = pdb_id.split('_')[1]+'_refined'
+            else:
+                pdb_id = pdb_id.replace('_HUMAN', '')
 
         data_dict[pdb_id] = r
         data_table += "<tr> \
