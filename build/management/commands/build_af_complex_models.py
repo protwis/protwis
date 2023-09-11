@@ -927,9 +927,15 @@ class Command(BaseBuild):
             for chain in self.parsed_pdb:
                 for res in chain:
                     plddt = res['C'].get_bfactor()
-                    res_obj = Residue.objects.get(protein_conformation__protein=con, sequence_number=res.get_id()[1])
-                    r = StructureModelpLDDT(structure=struct, residue=res_obj, pLDDT=plddt)
-                    resis.append(r)
+                    try:
+                        if chain.get_id()=='A':
+                            res_obj = Residue.objects.get(protein_conformation__protein=con, sequence_number=res.get_id()[1])
+                        elif chain.get_id()=='B':
+                            res_obj = Residue.objects.get(protein_conformation__protein=signprot, sequence_number=res.get_id()[1])
+                        r = StructureModelpLDDT(structure=struct, residue=res_obj, pLDDT=plddt)
+                        resis.append(r)
+                    except Residue.DoesNotExist:
+                        continue
             StructureModelpLDDT.objects.bulk_create(resis)
 
             # try:

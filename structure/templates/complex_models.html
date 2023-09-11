@@ -581,10 +581,10 @@
             {% for model in structure_complex_model %}
                 <tr model_id='{{model.pk}}'>
                     <td class="text-center"><input class="alt" type="checkbox" id="{{ model.pk }}"></td>
-                    {% if model.protein_conformation.protein.accession %}
-                        <td><a target="_blank" href="complex_models/{{ model.protein_conformation.protein.entry_name }}-{{ model.sign_protein.entry_name }}">{{ model.protein_conformation.protein.family.name|safe }} - {{ model.signprot_complex.protein.entry_name }}</a></td>
+                    {% if model.structure_type.slug == 'af-signprot' %}
+                        <td><a target="_blank" href="complex_models/{{ model.pdb_code.index }}-{{ model.pdb_code.index }}">{{ model.protein_conformation.protein.family.name|safe }} - {{ model.signprot_complex.protein.entry_name }}</a></td>
                     {% else %}
-                        <td><a target="_blank" href="refined/{{ model.protein_conformation.protein.entry_name|upper }}">{{ model.protein_conformation.protein.family.name|safe }} - {{ model.signprot_complex.protein.entry_name }}</a></td>
+                        <td><a target="_blank" href="refined/{{ model.pdb_code.index }}">{{ model.protein_conformation.protein.family.name|safe }} - {{ model.signprot_complex.protein.entry_name }}</a></td>
                     {% endif %}
                     <td>{{ model.publication_date|date:"Y-m-d" }}</td>
                     <td>

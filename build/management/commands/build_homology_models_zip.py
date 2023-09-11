@@ -10,6 +10,8 @@ from residue.models import Residue
 from common.models import WebResource, WebLink
 from common.definitions import G_PROTEIN_DISPLAY_NAME as g_prot_dict
 from signprot.models import SignprotComplex
+from contactnetwork.cube import compute_interactions
+
 
 
 import Bio.PDB as PDB
@@ -94,11 +96,12 @@ class Command(BaseBuild):
                 os.chdir('../../')
 
         if options['c'] and options['purge']:
-            for s in StructureComplexModel.objects.all():
+            for s in Structure.objects.filter(structure_type__slug='af-signprot-refined'):
                 s.pdb_data.delete()
-                s.main_template.refined = False
-                s.main_template.save()
-            StructureComplexModel.objects.all().delete()
+                parent_struct = Structure.objects.get(pdb_code__index=s.pdb_code.index.split('_')[1])
+                parent_struct.refined = False
+                parent_struct.save()
+            Structure.objects.filter(structure_type__slug='af-signprot-refined').delete()
         elif options['purge']:
             for s in StructureModel.objects.all():
                 s.pdb_data.delete()
@@ -221,7 +224,7 @@ class Command(BaseBuild):
             protconf = ProteinConformation.objects.get(protein=parent_struct.protein_conformation.protein.parent)
             signprotrefined, _ = StructureType.objects.get_or_create(slug='af-signprot-refined', name='Refined complex')
             webresource = WebResource.objects.get(slug='pdb')
-            weblink, _ = WebLink.objects.get_or_create(index='AFM-{}'.format(main_structure), web_resource=webresource)
+            weblink, _ = WebLink.objects.get_or_create(index='AFM_{}'.format(main_structure), web_resource=webresource)
             struct_obj, _ = Structure.objects.get_or_create(preferred_chain=parent_struct.preferred_chain, publication_date=build_date, pdb_data=pdb, pdb_code=weblink, build_check=True,
                                                             protein_conformation=protconf, state=parent_struct.state, structure_type=signprotrefined, author_state=parent_struct.author_state)
             signprot_complex, _ = SignprotComplex.objects.get_or_create(alpha=parent_struct.signprot_complex.alpha, protein=parent_struct.signprot_complex.protein, structure=struct_obj,
@@ -235,6 +238,10 @@ class Command(BaseBuild):
                                                                   wt_coverage=100, protein_conformation=signprot_conf, structure=struct_obj, wt_protein=signprot_complex.protein)
             parent_struct.refined = True
             parent_struct.save()
+            try:
+                compute_interactions(os.sep.join([path, modelname, modelname+'.pdb']), protein=struct_obj, signprot=signprot_complex.protein, do_complexes=True, save_to_db=True, file_input=True) # add do_complexes
+            except Exception as msg:
+                print('Error with interactions:', modelname, msg)
         else:
             s_state = ProteinState.objects.get(name=state)
             m_s = self.get_structures(main_structure)

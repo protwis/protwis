@@ -108,7 +108,6 @@ def compute_interactions(pdb_name, protein=None, signprot=None, lig=None, do_int
                 signprot_chain = 'B' ### Hardcoded for now
                 extension = ''
                 pdb_name = signprot.entry_name
-                print(pdb_name)
             else:
                 # check if structure in signprot_complex
                 signprot_chain = ""
