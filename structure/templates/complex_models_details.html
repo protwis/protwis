@@ -254,11 +254,35 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
             <label for="side-main">Side-Main</label>
           </div>
         </div>
+        <br/>
         <div style="text-align: left;">
           <button id="interactionsButton">Interactions</button>
           <button id="propertiesButton">Properties</button>
           <button id="segmentButton">Segment</button>
           <button id="resetButton">Reset</button>
+        </div>
+        <br/>
+        <div style="text-align: left;">
+          <div class="btn-group">
+              <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                      aria-haspopup="true" aria-expanded="false">
+                  <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+              </button>
+              <ul class="dropdown-menu">
+                  <li>
+                      <a href="javascript:downloadSVG('visualization', 'interactionsPNG', 'png');">PNG</a>
+                  </li>
+                  <li>
+                      <a href="javascript:downloadSVG('visualization', 'interactionsJPEG', 'jpeg');">JPEG</a>
+                  </li>
+                  <li>
+                      <a href="javascript:downloadSVG('visualization', 'interactionsTIFF', 'tiff');">TIFF</a>
+                  </li>
+                  <li>
+                      <a href="javascript:downloadSVG('visualization', 'interactionsSVG');">SVG</a>
+                  </li>
+              </ul>
+          </div>
         </div>
       </div>
       <br>
@@ -499,8 +523,9 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
             iptm = {{ scores.iptm }};
             pae = {{ scores.pae_mean }};
             interactions = {{ interactions | safe }};
-            inner_data = {{ inner | safe}};
+            inner_data = {{ inner | safe }};
             outer_data = {{ outer | safe }};
+
             ClearSelection('targets');
             ClearSelection('reference');
             // Call the function with your desired values
@@ -650,6 +675,48 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
         function downloadCSV() {
           $('#rotamers').table2csv({filename: 'Complex_model_templates.csv', quoteFields: true});
         }
+        function downloadSVG(svgElementId, filename, format = 'svg') {
+          const svgElement = document.getElementById(svgElementId);
+
+          if (!svgElement) {
+            console.error(`Element with id "${svgElementId}" not found.`);
+            return;
+          }
+
+          if (format === 'svg') {
+            const svgString = new XMLSerializer().serializeToString(svgElement);
+            const blob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = filename + '.svg';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+          } else {
+            const svgString = new XMLSerializer().serializeToString(svgElement);
+            const img = new Image();
+            img.src = 'data:image/svg+xml;base64,' + window.btoa(svgString);
+            img.onload = function() {
+              const canvas = document.createElement('canvas');
+              canvas.width = img.width;
+              canvas.height = img.height;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(img, 0, 0);
+              let mimeType = 'image/png';
+              if (format === 'jpeg') mimeType = 'image/jpeg';
+              else if (format === 'tiff') mimeType = 'image/tiff';
+              canvas.toBlob((blob) => {
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = filename + '.' + format;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+              }, mimeType);
+            };
+          }
+        }
+
     </script>
 
 {% endblock %}

@@ -1178,7 +1178,6 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
   };
 
   const numInnerBeads = beadInfo.innerCircle.length;
-  console.log(numInnerBeads);
 
   const bead_gap = beadInfo.outerCircle.length - beadInfo.innerCircle.length;
 
@@ -1192,7 +1191,6 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
 
   // Function to create a bead
   function createBead(cx, cy, aminoAcid, segment, index, circleType, beadRadius, centroidX, centroidY, grn_number, list_int) {
-    const bbb = index + numInnerBeads;
     const bead = svg2.append("circle")
       .attr("cx", cx)
       .attr("cy", cy)
@@ -1214,7 +1212,7 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
         .each(function(d, i) {
           d3.select(this).attr("stroke-opacity", 0);
         });
-        d3.selectAll(`path[data-outer-bead="${bbb}"]`).attr("stroke-opacity", 1);
+        d3.selectAll(`path[data-${circleType}-bead="${index}"]`).attr("stroke-opacity", 1);
       })
       .on("mouseover", function(d) {
         const event = window.event ? window.event : d3.event;
@@ -1322,33 +1320,35 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
       const x = cx + circleRadius * Math.cos(angle);
       const y = cy + circleRadius * Math.sin(angle);
 
-      if (lastSegment !== bead.segment) {
-        if (lastSegment !== null) {
-          const adjustedStartAngle = segmentStartAngle + gapInRadians;
-          const adjustedEndAngle = angle - gapInRadians;
+      if (circleType == 'outer') {
+        if (lastSegment !== bead.segment) {
+          if (lastSegment !== null) {
+            const adjustedStartAngle = segmentStartAngle + gapInRadians;
+            const adjustedEndAngle = angle - gapInRadians;
 
-          // Draw the segment label at the midpoint of the arc segment
-          const midAngle = (adjustedStartAngle + adjustedEndAngle) / 2;
-          const labelX = cx + (externalCircleRadius + 85) * Math.cos(midAngle);
-          const labelY = cy + (externalCircleRadius + 85) * Math.sin(midAngle);
+            // Draw the segment label at the midpoint of the arc segment
+            const midAngle = (adjustedStartAngle + adjustedEndAngle) / 2;
+            const labelX = cx + (externalCircleRadius + 85) * Math.cos(midAngle);
+            const labelY = cy + (externalCircleRadius + 85) * Math.sin(midAngle);
 
-          svg2.append("text")
-              .attr("x", labelX)
-              .attr("y", labelY)
-              .attr("text-anchor", "middle")
-              .attr("alignment-baseline", "middle")
-              .text(lastSegment)
-              .style("font-size", "18px")
-              .attr("font-weight", "bold")
-              .style("font-family", "Palatino")
-              .style("fill", "#333");
+            svg2.append("text")
+                .attr("x", labelX)
+                .attr("y", labelY)
+                .attr("text-anchor", "middle")
+                .attr("alignment-baseline", "middle")
+                .text(lastSegment)
+                .style("font-size", "18px")
+                .attr("font-weight", "bold")
+                .style("font-family", "Palatino")
+                .style("fill", "#333");
 
-          // Draw the external circle segment
-          drawExternalSegment(cx, cy, externalCircleRadius, adjustedStartAngle, adjustedEndAngle, lastSegment);
+            // Draw the external circle segment
+            drawExternalSegment(cx, cy, externalCircleRadius, adjustedStartAngle, adjustedEndAngle, lastSegment);
+          }
+
+          segmentStartAngle = angle;
+          lastSegment = bead.segment;
         }
-
-        segmentStartAngle = angle;
-        lastSegment = bead.segment;
       }
 
       createBead(x, y, bead.aminoAcid, bead.segment, index, circleType, beadRadius, centerX, centerY, bead.generic_number, bead.interactions);
@@ -1418,8 +1418,8 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
   }
 
   function createConnection(innerIndex, outerIndex, type, innerbeads, outerbeads, beadRadius, centroidX, centroidY, innerChain, outerChain) {
-    const innerBead = d3.select(svg2.selectAll("circle").nodes()[innerIndex]);
-    const outerBead = d3.select(svg2.selectAll("circle").nodes()[outerIndex]);
+    const innerBead = d3.select(`#bead-inner-${innerIndex}`);
+    const outerBead = d3.select(`#bead-outer-${outerIndex}`);
 
     const INNER_RADIUS = innerbeads * beadRadius / Math.PI * 0.95;
     const OUTER_RADIUS = outerbeads * beadRadius / Math.PI * 0.85;
@@ -1507,14 +1507,14 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
       .classed(sanitizedType, true);
   }
 
+  console.log(beadInfo.outerCircle);
   // For example, with a bead radius of 20
-  createCircle(600, 500, 20, beadInfo.innerCircle, 'inner');
-  createCircle(600, 500, 20, beadInfo.outerCircle, 'outer', bead_gap);
-
+  createCircle(500, 520, 20, beadInfo.innerCircle, 'inner');
+  createCircle(500, 520, 20, beadInfo.outerCircle, 'outer', bead_gap);
 
   // Generate legend
   const interactionLegend = svg2.append("g")
-    .attr("transform", "translate(350, 1050)");
+    .attr("transform", "translate(350, 1080)");
 
   // Header for the interaction legend
   interactionLegend.append("text")
