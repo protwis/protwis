@@ -315,11 +315,35 @@ canvas {
             <label for="side-main">Side-Main</label>
           </div>
         </div>
+        <br/>
         <div style="text-align: left;">
           <button id="interactionsButton">Interactions</button>
           <button id="propertiesButton">Properties</button>
           <button id="segmentButton">Segment</button>
           <button id="resetButton">Reset</button>
+        </div>
+        <br/>
+        <div style="text-align: left;">
+          <div class="btn-group">
+              <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                      aria-haspopup="true" aria-expanded="false">
+                  <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+              </button>
+              <ul class="dropdown-menu">
+                  <li>
+                      <a href="javascript:downloadSVG('visualization', 'interactionsPNG', 'png');">PNG</a>
+                  </li>
+                  <li>
+                      <a href="javascript:downloadSVG('visualization', 'interactionsJPEG', 'jpeg');">JPEG</a>
+                  </li>
+                  <li>
+                      <a href="javascript:downloadSVG('visualization', 'interactionsTIFF', 'tiff');">TIFF</a>
+                  </li>
+                  <li>
+                      <a href="javascript:downloadSVG('visualization', 'interactionsSVG');">SVG</a>
+                  </li>
+              </ul>
+          </div>
         </div>
       </div>
     </div>
@@ -447,6 +471,49 @@ canvas {
                   .attr("stroke-opacity", 1);
               });
             }
+            // Function to download the image
+            function downloadSVG(svgElementId, filename, format = 'svg') {
+              const svgElement = document.getElementById(svgElementId);
+
+              if (!svgElement) {
+                console.error(`Element with id "${svgElementId}" not found.`);
+                return;
+              }
+
+              if (format === 'svg') {
+                const svgString = new XMLSerializer().serializeToString(svgElement);
+                const blob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.download = filename + '.svg';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+              } else {
+                const svgString = new XMLSerializer().serializeToString(svgElement);
+                const img = new Image();
+                img.src = 'data:image/svg+xml;base64,' + window.btoa(svgString);
+                img.onload = function() {
+                  const canvas = document.createElement('canvas');
+                  canvas.width = img.width;
+                  canvas.height = img.height;
+                  const ctx = canvas.getContext('2d');
+                  ctx.drawImage(img, 0, 0);
+                  let mimeType = 'image/png';
+                  if (format === 'jpeg') mimeType = 'image/jpeg';
+                  else if (format === 'tiff') mimeType = 'image/tiff';
+                  canvas.toBlob((blob) => {
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(blob);
+                    link.download = filename + '.' + format;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                  }, mimeType);
+                };
+              }
+            }
+
             // Attach event listeners to checkboxes
             document.querySelectorAll('input[name="chain"]').forEach(el => {
               el.addEventListener('change', updateHighlight);
