@@ -239,39 +239,33 @@
                             width: '80px',
                         }
                     },
-                    // {
-                    //     column_number : 12,
-                    //     filter_type: "multi_select",
-                    //     select_type: 'select2',
-                    //     column_data_type: "html",
-                    //     filter_default_label: "Receptor",
-                    //     filter_reset_button_text: false,
-                    //     select_type_options: {
-                    //         width: '100px',
-                    //     }
-                    // },
-                    // {
-                    //     column_number : 13,
-                    //     filter_type: "multi_select",
-                    //     select_type: 'select2',
-                    //     column_data_type: "html",
-                    //     filter_default_label: "G protein",
-                    //     filter_reset_button_text: false,
-                    //     select_type_options: {
-                    //         width: '100px',
-                    //     }
-                    // },
-                    // {
-                    //     column_number : 14,
-                    //     filter_type: "multi_select",
-                    //     select_type: 'select2',
-                    //     column_data_type: "html",
-                    //     filter_default_label: "PDB",
-                    //     filter_reset_button_text: false,
-                    //     select_type_options: {
-                    //         width: '50px',
-                    //     }
-                    // },
+                    {
+                        column_number : 12,
+                        filter_type: "range_number",
+                        filter_default_label: ["Min", "Max"],
+                        filter_reset_button_text: false,
+                        select_type_options: {
+                            width: '30px',
+                        }
+                    },
+                    {
+                        column_number : 13,
+                        filter_type: "range_number",
+                        filter_default_label: ["Min", "Max"],
+                        filter_reset_button_text: false,
+                        select_type_options: {
+                            width: '30px',
+                        }
+                    },
+                    {
+                        column_number : 14,
+                        filter_type: "range_number",
+                        filter_default_label: ["Min", "Max"],
+                        filter_reset_button_text: false,
+                        select_type_options: {
+                            width: '30px',
+                        }
+                    },
                 ],
                 {
                     cumulative_filtering: false
@@ -554,7 +548,7 @@
                     <th colspan=4 class="over_header">MODEL</th>
                     <th colspan=5 class="over_header">RECEPTOR</th>
                     <th colspan=3 class="over_header">G PROTEIN</th>
-                    <!-- <th colspan=3 class="over_header">TEMPLATE</th> -->
+                    <th colspan=3 class="over_header">EXPERIMENTAL DATA</th>
                 </tr>
                 <tr>
                     <th  class='no-sort checkbox_tr'><input class="select-all" type="checkbox" onclick="select_all(this)"></th>
@@ -569,9 +563,9 @@
                     <th></th>
                     <th></th>
                     <th class='rightborder'></th>
-                    <!-- <th></th>
-                    <th></th>
-                    <th class='rightborder'></th> -->
+                    <th style="text-align: center;">Inoue</th>
+                    <th style="text-align: center;">Bouvier</th>
+                    <th style="text-align: center;" class='rightborder'>Guide to Pharmacology</th>
                     <th class='hidden'></th>
                     <th class='hidden'></th>
                 </tr>
@@ -581,42 +575,42 @@
             {% for model in structure_complex_model %}
                 <tr model_id='{{model.pk}}'>
                     <td class="text-center"><input class="alt" type="checkbox" id="{{ model.pk }}"></td>
-                    {% if model.structure_type.slug == 'af-signprot' %}
-                        <td><a target="_blank" href="complex_models/{{ model.pdb_code.index }}-{{ model.pdb_code.index }}">{{ model.protein_conformation.protein.family.name|safe }} - {{ model.signprot_complex.protein.entry_name }}</a></td>
+                    {% if model.structure_type__slug == 'af-signprot' %}
+                        <td><a target="_blank" href="complex_models/{{ model.pdb_code__index }}-{{ model.pdb_code__index }}">{{ model.protein_conformation__protein__family__name|safe }} - {{ model.signprot_complex__protein__entry_name }}</a></td>
                     {% else %}
-                        <td><a target="_blank" href="refined/{{ model.pdb_code.index }}">{{ model.protein_conformation.protein.family.name|safe }} - {{ model.signprot_complex.protein.entry_name }}</a></td>
+                        <td><a target="_blank" href="refined/{{ model.pdb_code__index }}">{{ model.protein_conformation__protein__family__name|safe }} - {{ model.signprot_complex__protein__entry_name }}</a></td>
                     {% endif %}
                     <td>{{ model.publication_date|date:"Y-m-d" }}</td>
                     <td>
-                        {% if not model.protein_conformation.protein.accession %}
-                            Yes
-                        {% else %}
+                        {% if model.structure_type__slug == 'af-signprot' %}
                             No
+                        {% elif model.structure_type__slug == 'af-signprot-refined'  %}
+                           Yes
                         {% endif %}
                     </td>
                     <td>
-                        {% if not model.protein_conformation.protein.accession %}
-                            <a href="http://www.uniprot.org/uniprot/{{ model.protein_conformation.protein.parent.accession }}">{{ model.protein_conformation.protein.parent.entry_short|safe }}</a>
+                        {% if not model.protein_conformation__protein__accession %}
+                            <a href="http://www.uniprot.org/uniprot/{{ model.protein_conformation__protein__parent__accession }}">{{ model.protein_conformation__protein__parent__entry_name }}</a>
                         {% else %}
-                            <a href="http://www.uniprot.org/uniprot/{{ model.protein_conformation.protein.accession }}">{{ model.protein_conformation.protein.entry_short|safe }}</a>
+                            <a href="http://www.uniprot.org/uniprot/{{ model.protein_conformation__protein__accession }}">{{ model.protein_conformation__protein__entry_name }}</a>
                         {% endif %}
                     </td>
                     <td>
-                        {% if not model.protein_conformation.protein.accession %}
-                            <a href="/protein/{{ model.protein_conformation.protein.parent.entry_name }}">{{ model.protein_conformation.protein.parent.short|safe }}</a>
+                        {% if not model.protein_conformation__protein__accession %}
+                            <a href="/protein/{{ model.protein_conformation__protein__parent__entry_name }}">{{ model.protein_conformation__protein__parent__entry_name }}</a>
                         {% else %}
-                            <a href="/protein/{{ model.protein_conformation.protein.entry_name }}">{{ model.protein_conformation.protein.short|safe }}</a>
+                            <a href="/protein/{{ model.protein_conformation__protein__entry_name }}">{{ model.protein_conformation__protein__entry_name }}</a>
                         {% endif %}
                     </td>
-                    <td>{{ model.protein_conformation.protein.family.parent.short|safe }}</td>
-                    <td>{{ model.protein_conformation.protein.family.parent.parent.parent.short }}</td>
-                    <td>{{ model.protein_conformation.protein.species.common_name }}</td>
-                    <td><a href="/signprot/{{ model.sign_protein.entry_name }}">{{ model.signprot_complex.protein.name|safe }}</a></td>
-                    <td>{{ model.signprot_complex.protein.family.name|safe }}</td>
-                    <td>{{ model.get_prot_gprot_pair }}</td>
-                    <!-- <td><a href="/protein/{{ model.main_template.protein_conformation.protein.parent.entry_name }}">{{ model.main_template.protein_conformation.protein.parent.family.name|safe }}</a></td>
-                    <td><a href="/signprot/{{ model.main_template.signprot_complex.protein.entry_name }}">{{ model.main_template.signprot_complex.protein.name|safe }}</a></td>
-                    <td><a href="{{ model.main_template.pdb_code.index }}">{{ model.main_template.pdb_code.index}}</a></td> -->
+                    <td>{{ model.protein_conformation__protein__family__parent__name }}</td>
+                    <td>{{ model.protein_conformation__protein__family__parent__parent__parent__name }}</td>
+                    <td>{{ model.protein_conformation__protein__species__common_name }}</td>
+                    <td><a href="/signprot/{{ model.sign_protein__entry_name }}">{{ model.signprot_complex__protein__name }}</a></td>
+                    <td>{{ model.signprot_complex__protein__family__name }}</td>
+                    <td>{{ model.transduction}}</td>
+                    <td>{{ model.Inoue }}</td>
+                    <td>{{ model.Bouvier}}</td>
+                    <td>{{ model.GuideToPharma}}</td>
                     <td style="display:none;">{{ model.protein_conformation.protein.entry_name }}</td>
                     <td style="display:none;">{{ model.signprot_complex.protein.entry_name }}</td>
                 </tr>
