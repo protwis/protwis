@@ -1119,18 +1119,19 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
     'Polar': 'purple',
     'Van der waals': 'orange',
     'TM1': '#FF0000',  // Red
-    'IL1': '#FF7F00',  // Transition between red and orange
-    'TM2': '#FF7F00',  // Orange
-    'IL2': '#FFFF00',  // Transition between orange and yellow
+    'IL1': '#FF4500',  // Transition between Red and Orange
+    'TM2': '#FFA500',  // Orange
+    'IL2': '#FFD700',  // Transition between Orange and Yellow
     'TM3': '#FFFF00',  // Yellow
-    'IL3': '#7FFF00',  // Transition between yellow and green
+    'IL3': '#ADFF2F',  // Transition between Yellow and Green
     'TM4': '#00FF00',  // Green
-    'TM5': '#0000FF',  // Blue
-    'TM6': '#4B0082',  // Indigo
-    'TM7': '#9400D3',  // Violet
-    'ICL2': '#8B4513', // Brown
-    'H8': '#D3D3D3'    // Light Gray
-  }
+    'TM5': '#00FFFF',  // Transition between Green and Blue
+    'TM6': '#0000FF',  // Blue
+    'TM7': '#8A2BE2',  // Transition between Blue and Violet
+    'ICL1': '#DA70D6', // Transition between Violet and Indigo
+    'ICL2': '#9400D3', // Violet
+    'H8': '#4B0082'    // Indigo
+  };
 
   const aminoAcids = [
     { aminoAcid: "Alanine", singleLetter: "A" },
@@ -1168,7 +1169,7 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
                         '-': ['#FFFFFF', '#000000'],'+': ['#FFFFFF', '#000000']};
 
   // Sort data based on segment
-  const segments = ['TM1','IL1', 'TM2', 'IL2', 'TM3', 'IL3', 'TM4', 'TM5', 'TM6', 'TM7', 'ICL2', 'H8'];
+  const segments = ['TM1','IL1', 'TM2', 'IL2', 'TM3', 'IL3', 'TM4', 'TM5', 'TM6', 'TM7', 'ICL1', 'ICL2', 'H8'];
   outer_data.sort((a, b) => segments.indexOf(a.segment) - segments.indexOf(b.segment));
 
   // Generate arrays for inner and outer circles
@@ -1509,8 +1510,8 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
 
   console.log(beadInfo.outerCircle);
   // For example, with a bead radius of 20
-  createCircle(500, 520, 20, beadInfo.innerCircle, 'inner');
-  createCircle(500, 520, 20, beadInfo.outerCircle, 'outer', bead_gap);
+  createCircle(600, 520, 20, beadInfo.innerCircle, 'inner');
+  createCircle(600, 520, 20, beadInfo.outerCircle, 'outer', bead_gap);
 
   // Generate legend
   const interactionLegend = svg2.append("g")
@@ -1589,7 +1590,8 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
       .attr("fill", "black");
 
     svg.selectAll("path")
-      .attr("stroke", "black");
+      .attr("stroke", "black")
+      .attr("stroke-width", 2)
 
     svg.selectAll("path[segment='external']")
       .each(function(d, i) {

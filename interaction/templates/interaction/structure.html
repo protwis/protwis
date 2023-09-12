@@ -297,21 +297,22 @@ canvas {
       <div class="col-md-3 text-right text-info">
       </div>
       <div class="col-md-9">
+        <p><b>Highlight receptor-transducer interaction</b></p>
         <div class="checkbox-group">
           <div class="checkbox-item">
-            <input type="checkbox" id="main-main" name="chain" value="Main-Main" checked>
+            <input type="checkbox" id="main-main" name="chain" value="Main-Main">
             <label for="main-main">Main-Main</label>
           </div>
           <div class="checkbox-item">
-            <input type="checkbox" id="main-side" name="chain" value="Main-Side" checked>
+            <input type="checkbox" id="main-side" name="chain" value="Main-Side">
             <label for="main-side">Main-Side</label>
           </div>
           <div class="checkbox-item">
-            <input type="checkbox" id="side-side" name="chain" value="Side-Side" checked>
+            <input type="checkbox" id="side-side" name="chain" value="Side-Side">
             <label for="side-side">Side-Side</label>
           </div>
           <div class="checkbox-item">
-            <input type="checkbox" id="side-main" name="chain" value="Side-Main" checked>
+            <input type="checkbox" id="side-main" name="chain" value="Side-Main">
             <label for="side-main">Side-Main</label>
           </div>
         </div>
@@ -436,7 +437,8 @@ canvas {
 <script src="{% static 'home/js/table2csv.js' %}"> </script>
 <script src="{% static 'home/js/phylo_tree.js' %}"></script>
 
-<script type="text/javascript" charset="utf-8">
+{% if complex %}
+  <script type="text/javascript" charset="utf-8">
         $(document).ready(function() {
             ptm = {{ scores.ptm }};
             iptm = {{ scores.iptm }};
@@ -556,7 +558,6 @@ canvas {
             // residues_browser.append({'type': type, 'gpcr_aa': gpcr_aa, 'gprot_aa': gprot_aa,
             //                          'gpcr_pos': gpcr_pos, 'gprot_pos': gprot_pos,
             //                          'gpcr_grn': gpcr_grn, 'gprot_grn': gprot_grn, 'segment': segment})
-
             function ajaxInteractions(plotid) {
                 interactions = {{ residues|safe }};
                 count = [];
@@ -593,56 +594,222 @@ canvas {
             }
             });
     </script>
-        <script src="{% static 'home/js/ngl.js' %}"> </script>
-        <script>
-        // {32: 'T32 1x28', 33: 'V33 1x29', 34: 'S34 1x30', 35: 'Y35 1x31', 36: 'Q36 1x32',
-        // 37: 'V37 1x33', 38: 'I38 1x34', 39: 'T39 1x35', 40: 'S40 1x36', 41: 'L41 1x37',
-        // 42: 'L42 1x38', 43: 'L43 1x39', 44: 'G44 1x40', 45: 'T45 1x41', 46: 'L46 1x42'}
-        var residues_lookup = {{ residues_lookup|safe }};
+    <script src="{% static 'home/js/ngl.js' %}"> </script>
+    <script>
+    // {32: 'T32 1x28', 33: 'V33 1x29', 34: 'S34 1x30', 35: 'Y35 1x31', 36: 'Q36 1x32',
+    // 37: 'V37 1x33', 38: 'I38 1x34', 39: 'T39 1x35', 40: 'S40 1x36', 41: 'L41 1x37',
+    // 42: 'L42 1x38', 43: 'L43 1x39', 44: 'G44 1x40', 45: 'T45 1x41', 46: 'L46 1x42'}
+    var residues_lookup = {{ residues_lookup|safe }};
 
-        function getPickingMessage( d, prefix ){
-            var msg;
-            if( d.atom ){
-                msg = "atom: " +
-                    d.atom.qualifiedName() +
-                    " (" + d.atom.structure.name + ")";
-                var re = /](\d+):/i;
-                var found = d.atom.qualifiedName().match(re);
-                if (found) {
-                    pos = found[1];
-                    if (residues_lookup[pos]) msg = residues_lookup[pos];
-                    }
-            }else if( d.bond ){
-                msg = "bond: " +
-                    d.bond.atom1.qualifiedName() + " - " + d.bond.atom2.qualifiedName() +
-                    " (" + d.bond.structure.name + ")";
-
-                var re = /](\d+):/i;
-                var found = d.bond.atom1.qualifiedName().match(re);
-                if (found) {
-                    pos = found[1];
-                    if (residues_lookup[pos]) msg = residues_lookup[pos];
+    function getPickingMessage( d, prefix ){
+        var msg;
+        if( d.atom ){
+            msg = "atom: " +
+                d.atom.qualifiedName() +
+                " (" + d.atom.structure.name + ")";
+            var re = /](\d+):/i;
+            var found = d.atom.qualifiedName().match(re);
+            if (found) {
+                pos = found[1];
+                if (residues_lookup[pos]) msg = residues_lookup[pos];
                 }
-            }else if( d.volume ){
-                msg = "volume: " +
-                    d.volume.value.toPrecision( 3 ) +
-                    " (" + d.volume.volume.name + ")";
-            }else{
-                msg = "nothing";
+        }else if( d.bond ){
+            msg = "bond: " +
+                d.bond.atom1.qualifiedName() + " - " + d.bond.atom2.qualifiedName() +
+                " (" + d.bond.structure.name + ")";
+
+            var re = /](\d+):/i;
+            var found = d.bond.atom1.qualifiedName().match(re);
+            if (found) {
+                pos = found[1];
+                if (residues_lookup[pos]) msg = residues_lookup[pos];
             }
-            return prefix + " " + msg;
+        }else if( d.volume ){
+            msg = "volume: " +
+                d.volume.value.toPrecision( 3 ) +
+                " (" + d.volume.volume.name + ")";
+        }else{
+            msg = "nothing";
         }
+        return prefix + " " + msg;
+    }
 
-        document.addEventListener( "DOMContentLoaded", function(){
-            stage_full = new NGL.Stage( "viewport_full", { backgroundColor: "white" } );
-            stage_full.loadFile( "complexpdb?pdb={{ pdbname }}", { ext: "pdb" }  ).then( function( o ){
+    document.addEventListener( "DOMContentLoaded", function(){
+        stage_full = new NGL.Stage( "viewport_full", { backgroundColor: "white" } );
+        stage_full.loadFile( "complexpdb?pdb={{ pdbname }}", { ext: "pdb" }  ).then( function( o ){
 
-                o.addRepresentation( "cartoon", {
-                    color: "residueindex", aspectRatio: 4, scale: 0.5
+            o.addRepresentation( "cartoon", {
+                color: "residueindex", aspectRatio: 4, scale: 0.5
+            } );
+            o.addRepresentation( "rope", {
+                color: "residueindex", visible: false
+            } );
+            o.addRepresentation("ball+stick", { sele: "[{{ main_ligand}}]", scale: 1, aspectRatio: 1 } );
+            o.addRepresentation("surface", { sele: "[{{ main_ligand}}]", opacity: 0.4, useWorker: false } );
+            o.addRepresentation( "licorice", { sele: "({{display_res}}) and sidechainAttached" , scale: 2, aspectRatio: 1});
+            o.addRepresentation( "label", {
+                sele: "({{display_res}}) and .CB",
+                color: "#113", scale: 2.0
+            } );
+            o.addRepresentation( "label", {
+                sele: "[{{ main_ligand}}] and .C1",
+                color: "#888", scale: 3.0, labelType: "resname"
+            } );
+
+            o.centerView();
+        } );
+
+        stage_full.signals.clicked.add( function( d ){
+            $('#clicked').html(getPickingMessage( d, "Clicked" ));
+        } );
+        stage_full.signals.hovered.add( function( d ){
+            $('#hovered').html(getPickingMessage( d, "Hovered" ));
+        } );
+
+        $('#viewport_full').find("canvas").after("<div class='overlay'><span id='clicked'></span> | <span id='hovered'></span></div>");
+
+        $( "#fullscreen_full" ).click(function() {
+            stage_full.toggleFullscreen();
+        } );
+    });
+</script>
+    {% else %}
+    <script>
+      $(document).ready(function() {
+            var table = $('#residues').DataTable({
+                "scrollX": true,
+                "scrollY": 600,
+                "bScrollCollapse": true,
+                'paging': false,
+                orderCellsTop: true,
+                "autoWidth": true,
+                dom: 'T<"clear">lfrtip',
+                "aoColumnDefs": [
+                    { "sType": "string", "aTargets": [0] },
+                ],
+                tableTools: {
+                    "sRowSelect": "multi",
+                    "aButtons": []
+                },
+                initComplete: function () {
+                    $('#residues').dataTable().columnFilter({
+                        sPlaceHolder: "head:after",
+                        aoColumns: [
+                            { type: "select" }, //ligand
+                            { type: "select" }, //protein name
+                            { type: "select" }, //Alt Position
+                            { type: "select" }, //Position
+                            { type: "select" }, //Segment
+                        ]
+                    });
+                }
+            });
+
+            $('[data-toggle="tooltip"]').tooltip();
+
+            function ajaxInteractions(plotid) {
+                interactions = {{ residues|safe }};
+                count = [];
+                output = [];
+                $.each( interactions, function( index, val ) {
+                  key = val['wt_pos'];
+
+                  if (key in count) {
+                      count[key] += 1;
+                      if (!(val['type'] in output[key])) output[key].push(val['type'])
+                  } else {
+                      count[key] = 1;
+                      output[key] = [val['type']]
+                  }
+
+                    extra = "\n" + String(count[key]) + " interactions | Type: "+ output[key];
+
+
+                    $('#'+plotid).find("#"+key).css("fill", "#E60A0A");
+                    $('#'+plotid).find("#"+key).next().css("fill", "#FDFF7B");
+
+                    original_title = $('#'+plotid).find("#"+key).attr('original_title')
+
+
+                    $('#'+plotid).find("#"+key).attr('title',original_title+extra);
+                    $('#'+plotid).find("#"+key+"t").attr('title',original_title+extra);
+
+                });
+                $("circle").tooltip('fixTitle');
+                $("text").tooltip('fixTitle');
+              }
+              ajaxInteractions('snakeplot')
+              ajaxInteractions('helixbox')
+            });
+
+    </script>
+    <script src="{% static 'home/js/ngl.js' %}"> </script>
+    <script>
+    // {32: 'T32 1x28', 33: 'V33 1x29', 34: 'S34 1x30', 35: 'Y35 1x31', 36: 'Q36 1x32',
+    // 37: 'V37 1x33', 38: 'I38 1x34', 39: 'T39 1x35', 40: 'S40 1x36', 41: 'L41 1x37',
+    // 42: 'L42 1x38', 43: 'L43 1x39', 44: 'G44 1x40', 45: 'T45 1x41', 46: 'L46 1x42'}
+    var residues_lookup = {{ residues_lookup|safe }};
+
+    function getPickingMessage( d, prefix ){
+        var msg;
+        if( d.atom ){
+            msg = "atom: " +
+                d.atom.qualifiedName() +
+                " (" + d.atom.structure.name + ")";
+            var re = /](\d+):/i;
+            var found = d.atom.qualifiedName().match(re);
+            if (found) {
+                pos = found[1];
+                if (residues_lookup[pos]) msg = residues_lookup[pos];
+                }
+        }else if( d.bond ){
+            msg = "bond: " +
+                d.bond.atom1.qualifiedName() + " - " + d.bond.atom2.qualifiedName() +
+                " (" + d.bond.structure.name + ")";
+
+            var re = /](\d+):/i;
+            var found = d.bond.atom1.qualifiedName().match(re);
+            if (found) {
+                pos = found[1];
+                if (residues_lookup[pos]) msg = residues_lookup[pos];
+            }
+        }else if( d.volume ){
+            msg = "volume: " +
+                d.volume.value.toPrecision( 3 ) +
+                " (" + d.volume.volume.name + ")";
+        }else{
+            msg = "nothing";
+        }
+        return prefix + " " + msg;
+    }
+
+    document.addEventListener( "DOMContentLoaded", function(){
+        stage_full = new NGL.Stage( "viewport_full", { backgroundColor: "white" } );
+        stage_full.loadFile( "pdb?pdb={{ pdbname }}", { ext: "pdb" } ).then( function( o ){
+
+            o.addRepresentation( "cartoon", {
+                color: "residueindex", aspectRatio: 4, scale: 0.5
+            } );
+            o.addRepresentation( "rope", {
+                color: "residueindex", visible: false
+            } );
+            {% if multiple_ligands %}
+              var pdb_ligs = {{main_ligand|safe}};
+              for (i=0; i<pdb_ligs.length; i++){
+                o.addRepresentation("ball+stick", { sele: pdb_ligs[i], scale: 1, aspectRatio: 1 } );
+                o.addRepresentation("surface", { sele: pdb_ligs[i], opacity: 0.4, useWorker: false } );
+                o.addRepresentation( "licorice", { sele: "({{display_res}}) and sidechainAttached" , scale: 2, aspectRatio: 1});
+                o.addRepresentation( "label", {
+                    sele: "({{display_res}}) and .CB",
+                    color: "#113", scale: 2.0
                 } );
-                o.addRepresentation( "rope", {
-                    color: "residueindex", visible: false
+                o.addRepresentation( "label", {
+                    sele: "[pdb_ligs[i]] and .C1",
+                    color: "#888", scale: 3.0, labelType: "resname"
                 } );
+              }
+            {% else %}
+              {% if main_ligand != 'none' %}
                 o.addRepresentation("ball+stick", { sele: "[{{ main_ligand}}]", scale: 1, aspectRatio: 1 } );
                 o.addRepresentation("surface", { sele: "[{{ main_ligand}}]", opacity: 0.4, useWorker: false } );
                 o.addRepresentation( "licorice", { sele: "({{display_res}}) and sidechainAttached" , scale: 2, aspectRatio: 1});
@@ -654,85 +821,48 @@ canvas {
                     sele: "[{{ main_ligand}}] and .C1",
                     color: "#888", scale: 3.0, labelType: "resname"
                 } );
+              {% endif %}
+            {% endif %}
+            o.centerView();
+        } );
 
-                o.centerView();
-            } );
+        stage_full.signals.clicked.add( function( d ){
+            $('#clicked').html(getPickingMessage( d, "Clicked" ));
+        } );
+        stage_full.signals.hovered.add( function( d ){
+            $('#hovered').html(getPickingMessage( d, "Hovered" ));
+        } );
 
-            stage_full.signals.clicked.add( function( d ){
-                $('#clicked').html(getPickingMessage( d, "Clicked" ));
-            } );
-            stage_full.signals.hovered.add( function( d ){
-                $('#hovered').html(getPickingMessage( d, "Hovered" ));
-            } );
+        $('#viewport_full').find("canvas").after("<div class='overlay'><span id='clicked'></span> | <span id='hovered'></span></div>");
 
-            $('#viewport_full').find("canvas").after("<div class='overlay'><span id='clicked'></span> | <span id='hovered'></span></div>");
+        $( "#fullscreen_full" ).click(function() {
+            stage_full.toggleFullscreen();
+        } );
+        // stage_full.setSpin( [ 0, 1, 0 ], 0.005 );
+        // HERE WE NEED TO DIVERISFY
+        {% if multiple_ligands %}
+          var pdb_ligs = {{main_ligand|safe}};
+          var pdb_ligs_full = {{main_ligand_full|safe}};
+          for (i=0; i<pdb_ligs.length; i++){
+              var k = i + 1;
+              stage = new NGL.Stage( "viewport_"+k, { backgroundColor: "white" } );
+              stage.loadFile( "download?ligand="+pdb_ligs_full[i]+"&pdb={{ pdbname }}", { ext: "pdb" }  ).then( function( o ){
 
-            $( "#fullscreen_full" ).click(function() {
-                stage_full.toggleFullscreen();
-            } );
-            // stage_full.setSpin( [ 0, 1, 0 ], 0.005 );
-            // HERE WE NEED TO DIVERISFY
-            {% if multiple_ligands %}
-              var pdb_ligs = {{main_ligand|safe}};
-              var pdb_ligs_full = {{main_ligand_full|safe}};
-              for (i=0; i<pdb_ligs.length; i++){
-                  var k = i + 1;
-                  stage = new NGL.Stage( "viewport_"+k, { backgroundColor: "white" } );
-                  stage.loadFile( "download?ligand="+pdb_ligs_full[i]+"&pdb={{ pdbname }}", { ext: "pdb" }  ).then( function( o ){
-
-                      o.addRepresentation( "ball+stick", { sele: pdb_ligs[i], scale: 1, aspectRatio: 1 } );
-                      // o.addRepresentation( "surface", { sele: pdb_ligs[i], opacity: 0.4, useWorker: false } );
-                      o.addRepresentation( "licorice", { sele: "sidechainAttached and not "+pdb_ligs[i] , scale: 2, aspectRatio: 1});
-                      o.addRepresentation( "label", { sele: ".CB", color: "#113", scale: 2.0} );
-                      // o.addRepresentation( "label", {
-                      //    sele: pdb_ligs[i]+" and .C1",
-                      //    color: "#888", scale: 3.0, labelType: "resname"
-                      // } );
-
-                      o.centerView();
-                  } );
-
-                  // stage.setSpin( [ 0, 1, 0 ], 0.005 );
-
-                  $( "#fullscreen_"+k ).click(function() {
-                      stage.toggleFullscreen();
-                  });
-
-                  stage.signals.clicked.add( function( d ){
-                      $('#clicked_two').html(getPickingMessage( d, "Clicked" ));
-                  } );
-                  stage.signals.hovered.add( function( d ){
-                      $('#hovered_two').html(getPickingMessage( d, "Hovered" ));
-                  } );
-
-                  $('#viewport'+k).find("canvas").after("<div class='overlay'><span id='clicked_two'>&nbsp;</span> | <span id='hovered_two'>&nbsp;</span></div>");
-
-              }
-            {% else %}
-              {% if main_ligand != 'none' %}
-              stage = new NGL.Stage( "viewport", { backgroundColor: "white" } );
-              stage.loadFile( "download?ligand={{ main_ligand_full }}&pdb={{ pdbname }}", { ext: "pdb" }  ).then( function( o ){
-
-
-                  o.addRepresentation("ball+stick", { sele: "{{ main_ligand}}", scale: 1, aspectRatio: 1 } );
-                  o.addRepresentation("surface", { sele: "{{ main_ligand}}", opacity: 0.4,
-                                                  useWorker: false } );
-                  o.addRepresentation( "licorice", { sele: "sidechainAttached and not {{ main_ligand}}" , scale: 2, aspectRatio: 1});
-                  o.addRepresentation( "label", {
-                      sele: ".CB",
-                      color: "#113", scale: 2.0
-                  } );
-                  o.addRepresentation( "label", {
-                      sele: "{{ main_ligand}} and .C1",
-                      color: "#888", scale: 3.0, labelType: "resname"
-                  } );
+                  o.addRepresentation( "ball+stick", { sele: pdb_ligs[i], scale: 1, aspectRatio: 1 } );
+                  // o.addRepresentation( "surface", { sele: pdb_ligs[i], opacity: 0.4, useWorker: false } );
+                  o.addRepresentation( "licorice", { sele: "sidechainAttached and not "+pdb_ligs[i] , scale: 2, aspectRatio: 1});
+                  o.addRepresentation( "label", { sele: ".CB", color: "#113", scale: 2.0} );
+                  // o.addRepresentation( "label", {
+                  //    sele: pdb_ligs[i]+" and .C1",
+                  //    color: "#888", scale: 3.0, labelType: "resname"
+                  // } );
 
                   o.centerView();
               } );
 
               // stage.setSpin( [ 0, 1, 0 ], 0.005 );
 
-              $( "#fullscreen" ).click(function() {
+              $( "#fullscreen_"+k ).click(function() {
                   stage.toggleFullscreen();
               });
 
@@ -743,10 +873,50 @@ canvas {
                   $('#hovered_two').html(getPickingMessage( d, "Hovered" ));
               } );
 
-              $('#viewport').find("canvas").after("<div class='overlay'><span id='clicked_two'>&nbsp;</span> | <span id='hovered_two'>&nbsp;</span></div>");
+              $('#viewport'+k).find("canvas").after("<div class='overlay'><span id='clicked_two'>&nbsp;</span> | <span id='hovered_two'>&nbsp;</span></div>");
 
-              {% endif %}
-            {% endif %}
-        });
-    </script>
+          }
+        {% else %}
+          {% if main_ligand != 'none' %}
+          stage = new NGL.Stage( "viewport", { backgroundColor: "white" } );
+          stage.loadFile( "download?ligand={{ main_ligand_full }}&pdb={{ pdbname }}", { ext: "pdb" }  ).then( function( o ){
+
+
+              o.addRepresentation("ball+stick", { sele: "{{ main_ligand}}", scale: 1, aspectRatio: 1 } );
+              o.addRepresentation("surface", { sele: "{{ main_ligand}}", opacity: 0.4,
+                                              useWorker: false } );
+              o.addRepresentation( "licorice", { sele: "sidechainAttached and not {{ main_ligand}}" , scale: 2, aspectRatio: 1});
+              o.addRepresentation( "label", {
+                  sele: ".CB",
+                  color: "#113", scale: 2.0
+              } );
+              o.addRepresentation( "label", {
+                  sele: "{{ main_ligand}} and .C1",
+                  color: "#888", scale: 3.0, labelType: "resname"
+              } );
+
+              o.centerView();
+          } );
+
+          // stage.setSpin( [ 0, 1, 0 ], 0.005 );
+
+          $( "#fullscreen" ).click(function() {
+              stage.toggleFullscreen();
+          });
+
+          stage.signals.clicked.add( function( d ){
+              $('#clicked_two').html(getPickingMessage( d, "Clicked" ));
+          } );
+          stage.signals.hovered.add( function( d ){
+              $('#hovered_two').html(getPickingMessage( d, "Hovered" ));
+          } );
+
+          $('#viewport').find("canvas").after("<div class='overlay'><span id='clicked_two'>&nbsp;</span> | <span id='hovered_two'>&nbsp;</span></div>");
+
+          {% endif %}
+        {% endif %}
+    });
+</script>
+    {% endif %}
+
 {% endblock %}

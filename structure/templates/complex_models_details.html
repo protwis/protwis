@@ -236,21 +236,22 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
       <div class="col-md-3 text-right text-info">
       </div>
       <div class="col-md-9">
+        <p><b>Highlight receptor-transducer interaction</b></p>
         <div class="checkbox-group">
           <div class="checkbox-item">
-            <input type="checkbox" id="main-main" name="chain" value="Main-Main" checked>
+            <input type="checkbox" id="main-main" name="chain" value="Main-Main">
             <label for="main-main">Main-Main</label>
           </div>
           <div class="checkbox-item">
-            <input type="checkbox" id="main-side" name="chain" value="Main-Side" checked>
+            <input type="checkbox" id="main-side" name="chain" value="Main-Side">
             <label for="main-side">Main-Side</label>
           </div>
           <div class="checkbox-item">
-            <input type="checkbox" id="side-side" name="chain" value="Side-Side" checked>
+            <input type="checkbox" id="side-side" name="chain" value="Side-Side">
             <label for="side-side">Side-Side</label>
           </div>
           <div class="checkbox-item">
-            <input type="checkbox" id="side-main" name="chain" value="Side-Main" checked>
+            <input type="checkbox" id="side-main" name="chain" value="Side-Main">
             <label for="side-main">Side-Main</label>
           </div>
         </div>
@@ -546,6 +547,7 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
                   const segment = d3.select(this).attr("segment");
                   if (!segment) {
                     d3.select(this).attr("stroke-opacity", 0);
+                    d3.select(this).attr("stroke-width", 4);
                   }
                 });
               // d3.selectAll("path").attr("stroke-opacity", 0);
@@ -555,8 +557,8 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
 
                 // Highlight the selected paths
                 d3.selectAll(`path[inner-chain="${innerChain}"][outer-chain="${outerChain}"]`)
-                  .classed('highlight', true)
-                  .attr("stroke-opacity", 1);
+                  .attr("stroke-opacity", 1)
+                  .attr("stroke-width", 4);
               });
             }
             // Attach event listeners to checkboxes
