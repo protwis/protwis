@@ -1583,7 +1583,7 @@ def ComplexDetails(request, pdbname):
 
     gpcr_aminoacids = remove_duplicate_dicts(gpcr_aminoacids)
     gprot_aminoacids = remove_duplicate_dicts(gprot_aminoacids)
-    segments_order = ['TM1','IL1', 'TM2', 'IL2', 'TM3', 'IL3', 'TM4', 'TM5', 'TM6', 'TM7', 'ICL1', 'ICL2', 'H8']
+    segments_order = ['TM1','ICL1', 'TM2', 'ICL2', 'TM3', 'ICL3', 'TM4', 'TM5', 'TM6', 'TM7', 'ICL4', 'H8']
     # Create a dictionary that maps segments to their positions in the custom order
     order_dict = {segment: index for index, segment in enumerate(segments_order)}
     # Sort the list of dictionaries based on the custom order

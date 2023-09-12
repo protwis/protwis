@@ -1119,18 +1119,17 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
     'Polar': 'purple',
     'Van der waals': 'orange',
     'TM1': '#FF0000',  // Red
-    'IL1': '#FF4500',  // Transition between Red and Orange
+    'ICL1': '#FF4500',  // Transition between Red and Orange
     'TM2': '#FFA500',  // Orange
-    'IL2': '#FFD700',  // Transition between Orange and Yellow
+    'ICL2': '#FFD700',  // Transition between Orange and Yellow
     'TM3': '#FFFF00',  // Yellow
-    'IL3': '#ADFF2F',  // Transition between Yellow and Green
+    'ICL3': '#ADFF2F',  // Transition between Yellow and Green
     'TM4': '#00FF00',  // Green
     'TM5': '#00FFFF',  // Transition between Green and Blue
     'TM6': '#0000FF',  // Blue
     'TM7': '#8A2BE2',  // Transition between Blue and Violet
-    'ICL1': '#DA70D6', // Transition between Violet and Indigo
-    'ICL2': '#9400D3', // Violet
-    'H8': '#4B0082'    // Indigo
+    'ICL4': '#DA70D6', // Transition between Violet and Indigo
+    'H8': '#9400D3' // Violet
   };
 
   const aminoAcids = [
@@ -1169,7 +1168,7 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
                         '-': ['#FFFFFF', '#000000'],'+': ['#FFFFFF', '#000000']};
 
   // Sort data based on segment
-  const segments = ['TM1','IL1', 'TM2', 'IL2', 'TM3', 'IL3', 'TM4', 'TM5', 'TM6', 'TM7', 'ICL1', 'ICL2', 'H8'];
+  const segments = ['TM1','ICL1', 'TM2', 'ICL2', 'TM3', 'ICL3', 'TM4', 'TM5', 'TM6', 'TM7', 'ICL4', 'H8'];
   outer_data.sort((a, b) => segments.indexOf(a.segment) - segments.indexOf(b.segment));
 
   // Generate arrays for inner and outer circles
