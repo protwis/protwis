@@ -253,7 +253,7 @@ class ServeComplexModels(TemplateView):
                                                                                                                  "logmaxec50",
                                                                                                                  "protein__entry_name"))
 
-            for cm in complex_models[:100]:
+            for cm in complex_models:
                 cm["GuideToPharma"] = "-"
                 cm["Inoue"] = "-"
                 cm["Roth"] = "-"
