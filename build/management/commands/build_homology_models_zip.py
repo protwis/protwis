@@ -11,6 +11,7 @@ from common.models import WebResource, WebLink
 from common.definitions import G_PROTEIN_DISPLAY_NAME as g_prot_dict
 from signprot.models import SignprotComplex
 from contactnetwork.cube import compute_interactions
+from interaction.models import StructureLigandInteraction
 
 
 
@@ -97,10 +98,13 @@ class Command(BaseBuild):
 
         if options['c'] and options['purge']:
             for s in Structure.objects.filter(structure_type__slug='af-signprot-refined'):
-                s.pdb_data.delete()
-                parent_struct = Structure.objects.get(pdb_code__index=s.pdb_code.index.split('_')[1])
-                parent_struct.refined = False
-                parent_struct.save()
+                try:
+                    s.pdb_data.delete()
+                    parent_struct = Structure.objects.get(pdb_code__index=s.pdb_code.index.split('_')[0])
+                    parent_struct.refined = False
+                    parent_struct.save()
+                except:
+                    pass
             Structure.objects.filter(structure_type__slug='af-signprot-refined').delete()
         elif options['purge']:
             for s in StructureModel.objects.all():
@@ -224,13 +228,21 @@ class Command(BaseBuild):
             protconf = ProteinConformation.objects.get(protein=parent_struct.protein_conformation.protein.parent)
             signprotrefined, _ = StructureType.objects.get_or_create(slug='af-signprot-refined', name='Refined complex')
             webresource = WebResource.objects.get(slug='pdb')
-            weblink, _ = WebLink.objects.get_or_create(index='AFM_{}'.format(main_structure), web_resource=webresource)
+            weblink, _ = WebLink.objects.get_or_create(index='{}_refined'.format(main_structure), web_resource=webresource)
             struct_obj, _ = Structure.objects.get_or_create(preferred_chain=parent_struct.preferred_chain, publication_date=build_date, pdb_data=pdb, pdb_code=weblink, build_check=True,
                                                             protein_conformation=protconf, state=parent_struct.state, structure_type=signprotrefined, author_state=parent_struct.author_state)
             signprot_complex, _ = SignprotComplex.objects.get_or_create(alpha=parent_struct.signprot_complex.alpha, protein=parent_struct.signprot_complex.protein, structure=struct_obj,
                                                                         beta_chain=parent_struct.signprot_complex.beta_chain, gamma_chain=parent_struct.signprot_complex.gamma_chain,
                                                                         beta_protein=parent_struct.signprot_complex.beta_protein, gamma_protein=parent_struct.signprot_complex.gamma_protein)
             struct_obj.signprot_complex = signprot_complex
+            ligands = parent_struct.ligands.all()
+            for l in ligands:
+                try:
+                    parent_sli = StructureLigandInteraction.objects.get(ligand=l, structure=parent_struct)
+                except StructureLigandInteraction.MultipleObjectsReturned:
+                    parent_sli = StructureLigandInteraction.objects.filter(ligand=l, structure=parent_struct)[0]
+                sli, _ = StructureLigandInteraction.objects.get_or_create(pdb_reference=parent_sli.pdb_reference, annotated=True, ligand=parent_sli.ligand, ligand_role=parent_sli.ligand_role, structure=struct_obj)
+                struct_obj.ligands.add(l)
             struct_obj.save()
             g_prot_dict[signprot_complex.protein.entry_name.split('_')[0].upper()]
             signprot_conf = ProteinConformation.objects.get(protein=signprot_complex.protein)

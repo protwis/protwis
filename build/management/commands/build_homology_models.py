@@ -1617,26 +1617,30 @@ class HomologyModeling(object):
                             if i<sp_first_indeces[0]:
                                 atom_num_offset.append(int(pos_list[i])) ### only add OXT induced atom num offset from Receptor, not from sign proteins
                     if self.complex:
+                        if self.revise_xtal:
+                            gpcr_chain, alpha_chain, beta_chain, gamma_chain = self.signprot_complex.structure.preferred_chain, self.signprot_complex.alpha, self.signprot_complex.beta_chain, self.signprot_complex.gamma_chain
+                        else:
+                            gpcr_chain, alpha_chain, beta_chain, gamma_chain = 'R','A','B','G'
                         if i<sp_first_indeces[0]:
                             if len(whitespace)==2:
-                                whitespace = whitespace[0]+'R'
+                                whitespace = whitespace[0]+gpcr_chain
                             else:
-                                whitespace = whitespace[0]+'R'+whitespace[2:]
+                                whitespace = whitespace[0]+gpcr_chain+whitespace[2:]
                         elif sp_first_indeces[0]<=i<sp_first_indeces[1]:
                             if len(whitespace)==2:
-                                whitespace = whitespace[0]+'A'
+                                whitespace = whitespace[0]+alpha_chain
                             else:
-                                whitespace = whitespace[0]+'A'+whitespace[2:]
+                                whitespace = whitespace[0]+alpha_chain+whitespace[2:]
                         elif sp_first_indeces[1]<=i<sp_first_indeces[2]:
                             if len(whitespace)==2:
-                                whitespace = whitespace[0]+'B'
+                                whitespace = whitespace[0]+beta_chain
                             else:
-                                whitespace = whitespace[0]+'B'+whitespace[2:]
+                                whitespace = whitespace[0]+beta_chain+whitespace[2:]
                         elif sp_first_indeces[2]<=i:
                             if len(whitespace)==2:
-                                whitespace = whitespace[0]+'G'
+                                whitespace = whitespace[0]+gamma_chain
                             else:
-                                whitespace = whitespace[0]+'G'+whitespace[2:]
+                                whitespace = whitespace[0]+gamma_chain+whitespace[2:]
                     out_line = group1+whitespace+pos_list[i]+pdb_re.group(4)
                     ### Needed when complex remodel is run
                     if out_line[-1]!='\n':

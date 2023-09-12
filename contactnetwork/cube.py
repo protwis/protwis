@@ -33,7 +33,10 @@ def compute_interactions(pdb_name, protein=None, signprot=None, lig=None, do_int
 
     if file_input:
         # Get the preferred chain
-        preferred_chain = 'A' #I guess?
+        if protein:
+            preferred_chain = protein.preferred_chain
+        else:
+            preferred_chain = 'A' #I guess?
         # Get the Biopython structure for the PDB
         parser = PDBParser()
         s = parser.get_structure("ComplexModel", pdb_name)[0]
@@ -105,7 +108,10 @@ def compute_interactions(pdb_name, protein=None, signprot=None, lig=None, do_int
     if do_complexes:
         try:
             if file_input:
-                signprot_chain = 'B' ### Hardcoded for now
+                if protein:
+                    signprot_chain = protein.signprot_complex.alpha
+                else:
+                    signprot_chain = 'B' ### Hardcoded for now
                 extension = ''
                 pdb_name = signprot.entry_name
             else:

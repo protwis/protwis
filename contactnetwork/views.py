@@ -536,11 +536,11 @@ def PdbTableData(request):
             if l.ligand.ligand_type != None:
                 r['ligand_type'] = l.ligand.ligand_type.name
 
-        if pdb_id.startswith('AFM_'):
-            if len(pdb_id)==8:
-                pdb_id = pdb_id.split('_')[1]+'_refined'
-            else:
-                pdb_id = pdb_id.replace('_HUMAN', '')
+        # if pdb_id.startswith('AFM_'):
+        #     if len(pdb_id)==8:
+        #         pdb_id = pdb_id.split('_')[1]+'_refined'
+        #     else:
+        #         pdb_id = pdb_id.replace('_HUMAN', '')
 
         data_dict[pdb_id] = r
         data_table += "<tr> \

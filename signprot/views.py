@@ -1202,18 +1202,21 @@ def AJAX_Interactions(request):
     # selected_pdbs = request.GET.get('selected_pdbs') if request.GET.get('selected_pdbs') != 'false' else False
     # if selected_pdbs is false throw and error and get back
     # correct receptor entry names - the ones with '_a' appended
-    if effector == 'G alpha':
-        complex_names = ['_'.join(pdb_name.split('_')[1:3]).lower() if pdb_name.startswith('AFM') else pdb_name.lower() + '_a' for pdb_name in selected_pdbs]
-    elif effector == 'A':
-        complex_names = ['_'.join(pdb_name.split('_')[1:3]).lower() if pdb_name.startswith('AFM') else pdb_name.lower() + '_arrestin' for pdb_name in selected_pdbs]
-    # pdbs_names = [pdb.lower() for pdb in selected_pdbs]
-    pdbs_names = ['_'.join(pdb.split('_')[1:3]).lower() if pdb.startswith('AFM') else pdb.lower() for pdb in selected_pdbs]
+    # if effector == 'G alpha':
+    #     complex_names = ['_'.join(pdb_name.split('_')[1:3]).lower() if pdb_name.startswith('AFM') else pdb_name.lower() + '_a' for pdb_name in selected_pdbs]
+    # elif effector == 'A':
+    #     complex_names = ['_'.join(pdb_name.split('_')[1:3]).lower() if pdb_name.startswith('AFM') else pdb_name.lower() + '_arrestin' for pdb_name in selected_pdbs]
+    # # pdbs_names = [pdb.lower() for pdb in selected_pdbs]
+    # pdbs_names = ['_'.join(pdb.split('_')[1:3]).lower() if pdb.startswith('AFM') else pdb.lower() for pdb in selected_pdbs]
 
-    complex_objs = SignprotComplex.objects.filter(structure__protein_conformation__protein__entry_name__in=pdbs_names).prefetch_related('structure__protein_conformation__protein')
+    complex_objs = SignprotComplex.objects.filter(structure__pdb_code__index__in=selected_pdbs).prefetch_related('structure__protein_conformation__protein')
+
+    # complex_objs = SignprotComplex.objects.filter(structure__protein_conformation__protein__entry_name__in=pdbs_names).prefetch_related('structure__protein_conformation__protein')
     # fetching the id of the selected structures
     complex_struc_ids = [co.structure_id for co in complex_objs]
     # protein conformations for those
-    prot_conf = ProteinConformation.objects.filter(protein__entry_name__in=complex_names).values_list('id', flat=True)
+    # prot_conf = ProteinConformation.objects.filter(protein__entry_name__in=complex_names).values_list('id', flat=True)
+    prot_conf = complex_objs.values_list('structure__protein_conformation__id', flat=True)
 
     # correct receptor entry names - the ones with '_a' appended
     interaction_sort_order = [
@@ -1313,12 +1316,14 @@ def InteractionMatrix(request, database='gprotein'):
 
     if database == 'gprotein':
         gprotein_order = ProteinSegment.objects.filter(proteinfamily='Alpha').values('id', 'slug')
+        fam_slug = '100'
     elif database == 'arrestin':
         arrestin_order = ProteinSegment.objects.filter(proteinfamily='Arrestin').values('id', 'slug')
+        fam_slug = '200'
 
     receptor_order = ['N', '1', '12', '2', '23', '3', '34', '4', '45', '5', '56', '6', '67', '7', '78', '8', 'C']
 
-    struc = SignprotComplex.objects.prefetch_related(
+    struc = SignprotComplex.objects.filter(protein__family__slug__startswith=fam_slug).prefetch_related(
         'structure__pdb_code',
         'structure__stabilizing_agents',
         'structure__protein_conformation__protein__species',
