@@ -71,15 +71,36 @@ canvas {
     .checkbox-item:last-child {
       margin-right: 0;  /* Remove right margin for the last item */
     }
+
+    tr td {
+      padding: 5px;
+      text-align: center;
+    }
 </style>
 
 <div class="row text-success">
     <div class="text-center">
-        {% if model.receptor_protein.accession %}
-            <h2>{{ model.protein_conformation.protein.entry_name|safe }} - {{ model.signprot_complex.protein.entry_name|safe }} complex homology model</h2>
-        {% else %}
-            <h2>{{ model.protein_conformation.protein.entry_name|upper }} refined </h2>
-        {% endif %}
+        <div style="display: inline;">
+          {% if model.structure_type.slug == "af-signprot" %}
+              <h2>{{ model.protein_conformation.protein.name|safe }} - {{ model.signprot_complex.protein.family.name|gprot_short }} complex model</h2>
+          {% else %}
+              <h2>{{ model.protein_conformation.protein.entry_name|upper }} refined </h2>
+          {% endif %}
+        </div>
+        <div style="display: inline;">
+          <div class="btn-group">
+              <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  Download <span class="caret"></span>
+              </button>
+              <ul class="dropdown-menu">
+                <li><a id="download_btn1" href="./{{model.protein_conformation.protein.entry_name|upper}}_full/download_pdb">Full</a></li>
+                <li><a id="download_btn2" href="./{{model.protein_conformation.protein.entry_name|upper}}_noloops/download_pdb">Without loops</a></li>
+              </ul>
+          </div>
+        </div>
+        <div style="display: inline;">
+            <i style="color:black;" class="fas fa-info-circle" data-html="true" data-toggle="popover" data-trigger="click" data-placement="below" data-html="true" data-content="The PDB file contains GPCRdb generic residue numbers in the B-factor field of C&alpha; atoms <a target='_blank' href='https://doi.org/10.1016/j.tips.2014.11.001'>Isberg et al. 2015</a>"></i>
+        </div>
     </div>
 </div>
 
@@ -88,11 +109,11 @@ canvas {
         <h4>RECEPTOR CLASS</h4>
     </div>
     <div class="col-md-9">
-        {{ model.protein_conformation.protein.get_protein_class }}
+        {{ model.protein_conformation.protein.get_protein_class|strip_class }}
     </div>
 </div>
 
-<div class="row">
+<!-- <div class="row">
     <div class="col-md-3 text-right text-info">
         <h4>RECEPTOR</h4>
     </div>
@@ -103,7 +124,7 @@ canvas {
             <a href="/protein/{{ model.receptor_protein.parent.entry_name }}">{{ model.protein_conformation.protein.parent.name|safe }}</a>
         {% endif %}
     </div>
-</div>
+</div> -->
 
 <div class="row">
     <div class="col-md-3 text-right text-info">
@@ -116,25 +137,25 @@ canvas {
 
 <div class="row">
     <div class="col-md-3 text-right text-info">
-        <h4>G-PROTEIN FAMILY</h4>
+        <h4>G PROTEIN FAMILY</h4>
     </div>
     <div class="col-md-9">
         {{ model.signprot_complex.protein.family.parent|safe }}
     </div>
 </div>
 
-<div class="row">
+<!-- <div class="row">
     <div class="col-md-3 text-right text-info">
         <h4>G-PROTEIN</h4>
     </div>
     <div class="col-md-9">
         <a href="/protein/{{ model.sign_protein.entry_name }}">{{ model.signprot_complex.protein.name|safe }}</a>
     </div>
-</div>
+</div> -->
 
 <div class="row">
     <div class="col-md-3 text-right text-info">
-        <h4>VERSION</h4>
+        <h4>DATE</h4>
     </div>
     <div class="col-md-9">
     {{ model.publication_date|date:"Y-m-d" }}
@@ -143,40 +164,53 @@ canvas {
 
 <div class="row">
     <div class="col-md-3 text-right text-info">
-        <h4>MODEL</h4>
+        <h4>3D VIEW</h4>
     </div>
     <div class="col-md-4">
-      <div class="btn-group">
-          <a href="/" class="dropdown-toggle btn btn-primary btn-mini" data-toggle="dropdown" role="button" aria-expanded="false">Download <span class='caret'></span></a>
-          <ul class="dropdown-menu" role="menu" style="min-width:50%;">
-              {% if not model.protein.accession %}
-                  <li><a id="download_btn" href="./{{model.protein_conformation.protein.entry_name|upper}}_full/download_pdb">Full</a></li>
-                  <li><a id="download_btn" href="./{{model.protein_conformation.protein.entry_name|upper}}_noloops/download_pdb">Without loops</a></li>
-              {% else %}
-                  <li><a id="download_btn" href="./{{model.protein_conformation.protein.entry_name}}_{{model.state.slug}}_full/download_pdb">Full</a></li>
-                  <li><a id="download_btn" href="./{{model.protein_conformation.protein.entry_name}}_{{model.state.slug}}_noloops/download_pdb">Without loops</a></li>
-              {% endif %}
-          </ul>
+      <div style="float: left; width: 60%;">
+          <div id="viewport" style="width:500px; height:400px;background-color: white;"></div>
+          <div style="width:500px; background-color:#eaeaea; border-radius: 0px 0px 5px 5px;">
+              <p style="padding: 2px 0px 2px 5px; font-size: 10px;"><button id="fullscreen">Full Screen</button><a href="https://github.com/arose/ngl"> NGL</a> is a WebGL based 3D viewer powered by <a href="https://mmtf.rcsb.org">MMTF</a>.</p>
+          </div>
+          <br>
       </div>
-        <div>
-            <p>PDB file contains GPCRdb generic numbers in the B-factor field of CA atoms</p>
-        </div>
-        <div style="float: left; width: 60%;">
-            <div id="viewport" style="width:500px; height:400px;background-color: white;"></div>
-            <div style="width:500px; background-color:#eaeaea; border-radius: 0px 0px 5px 5px;">
-                <p style="padding: 2px 0px 2px 5px; font-size: 10px;"><button id="fullscreen">Full Screen</button><a href="https://github.com/arose/ngl"> NGL</a> is a WebGL based 3D viewer powered by <a href="https://mmtf.rcsb.org">MMTF</a>.</p>
-            </div>
-            <br>
-        </div>
     </div>
-    <div class="col-md-3">
-        <br>
-        <br>
-        <br>
-        <br>
-        <div><h4>Model confidence <i class="fas fa-info-circle" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="below" data-content="<b>Interpretation of AlphaFold models</b><br>The pLDDT score from Alphafold estimates the confidence of the placement of an individual residue in relation to its neighboring residues within a 15Å radius. The GPCRdb provides full-length models for nearly all human GPCRs, including receptors that comprise multiple domains. Therefore, one should take into account that, when a model consists of multiple domains, the relative placement of the domains with respect to each other can be erroneous even when the pLDDT score for a given domain is high."></i></h4></div>
+    <div class="col-md-5">
+        <div><h4>Tertiary structure confidence <i class="fas fa-info-circle" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="below" data-content="<b>Interpretation of AlphaFold models</b><br>The pLDDT score from AlphaFold estimates the confidence of the placement of an individual residue in relation to its neighboring residues within a 15 Å radius."></i></h4></div>
         <div style='width: 90%; display:table; position:relative;'>
-            <div style='display: table-cell;'>
+            <table>
+                <tr>
+                    <td></td>
+                    <td></td>
+                    <td>pLDDT</td>
+                </tr>
+                <tr>
+                    <td class="graphcolor" style="background-color: blue;"></td>
+                    <td>Very high</td>
+                    <td>> 90</td>
+                </tr>
+                <tr>
+                    <td class="graphcolor" style="background-color: lightblue;"></td>
+                    <td>Confident</td>
+                    <td>90-70</td>
+                </tr>
+                <tr>
+                    <td class="graphcolor" style="background-color: yellow;"></td>
+                    <td>Low</td>
+                    <td>70-50</td>
+                </tr>
+                <tr>
+                    <td class="graphcolor" style="background-color: orange;"></td>
+                    <td>Very low</td>
+                    <td>< 50</td>
+                </tr>
+                <tr>
+                    <td class="graphcolor" style="background-color: red;"></td>
+                    <td>Disordered</td>
+                    <td></td>
+                </tr>
+            </table>
+            <!-- <div style='display: table-cell;'>
               <div class="graphcolor" style="background-color: blue; "></div>
               <span style="margin-left: 5px; vertical-align: middle; padding-top: 5px;">Very high (pLDDT > 90)</span>
               <br>
@@ -192,7 +226,7 @@ canvas {
               <div class="graphcolor" style="background-color: red;"></div>
               <span style="margin-left: 5px; vertical-align: middle;">Disordered</span>
               <br>
-            </div>
+            </div> -->
         </div>
         <br>
         <div>
@@ -211,7 +245,7 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
         <div id="iPTM_location"></div>
         <div>
           <h5>PAE mean
-            <span class="fa fa-info-circle" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="bottom" data-content="The average expected error in residue x's position when aligning predicted and true structures based on residue y, focusing on inter-chain relationships."></span>
+            <span class="fa fa-info-circle" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="bottom" data-content="<b>The mean of the predicted alignment errors</b>:<br>The average expected error in residue x's position when aligning predicted and true structures based on residue y, focusing on inter-chain relationships."></span>
           </h5>
         </div>
         <div id="PAE_location"></div>
@@ -266,8 +300,7 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
         <div style="text-align: left;">
           <div class="btn-group">
               <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
-                      aria-haspopup="true" aria-expanded="false">
-                  <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+                      aria-haspopup="true" aria-expanded="false">Download <span class="caret"></span>
               </button>
               <ul class="dropdown-menu">
                   <li>

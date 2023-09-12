@@ -1011,9 +1011,9 @@ function draw_model_scores(location, element_id, score, startValue, endValue, de
                 .attr("id", element_id);
 
     if (inverted == true){
-        var greyscale = ['rgb(0,255,0)', 'rgb(255, 255, 255)', 'rgb(255,0,0)' ];
+        var greyscale = ['rgb(0,0,0)', 'rgb(255, 255, 255)', 'rgb(180,180,180)' ];
     } else {
-        var greyscale = [ 'rgb(255,0,0)', 'rgb(255, 255, 255)', 'rgb(0,255,0)' ];
+        var greyscale = [ 'rgb(180,180,180)', 'rgb(255, 255, 255)', 'rgb(0,0,0)' ];
     };
 
     var first_legend = svg_home.append('defs')
