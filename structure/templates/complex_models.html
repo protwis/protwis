@@ -1,5 +1,6 @@
 {% extends "home/base.html" %}
 {% load static %}
+{% load structure_extras %}
 
 {% block addon_css %}
     <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
@@ -231,12 +232,11 @@
                     },
                     {
                         column_number : 11,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        filter_default_label: "Transducer",
+                        filter_type: "range_number",
+                        filter_default_label: ["Min", "Max"],
                         filter_reset_button_text: false,
                         select_type_options: {
-                            width: '80px',
+                            width: '30px',
                         }
                     },
                     {
@@ -250,15 +250,6 @@
                     },
                     {
                         column_number : 13,
-                        filter_type: "range_number",
-                        filter_default_label: ["Min", "Max"],
-                        filter_reset_button_text: false,
-                        select_type_options: {
-                            width: '30px',
-                        }
-                    },
-                    {
-                        column_number : 14,
                         filter_type: "range_number",
                         filter_default_label: ["Min", "Max"],
                         filter_reset_button_text: false,
@@ -366,7 +357,7 @@
                 ClearSelection('reference');
                 if (oTable.rows('.selected').data().length == 1) {
                     var div = document.createElement("div");
-                    div.innerHTML = oTable.rows('.selected').data()[0][15];
+                    div.innerHTML = oTable.rows('.selected').data()[0][14];
                     // var state1 = table.rows('.selected').data()[0][5];
 
                     if (typeof div.innerText !== "undefined") {
@@ -406,7 +397,7 @@
                 var checked_data = oTable.rows('.alt_selected').data();
                 ClearSelection('targets');
                 for (i = 0; i < checked_data.length; i++) {
-                    AddToSelection('targets', 'structure_complex_receptor',  checked_data[i][15]+'-'+checked_data[i][16] );
+                    AddToSelection('targets', 'protein_entry',  checked_data[i][14] );
 
                 }
                 window.location.href = '/structure/selection_convert_model';
@@ -416,7 +407,7 @@
                 var checked_data = oTable.rows('.alt_selected').data();
                 ClearSelection('targets');
                 for (i = 0; i < checked_data.length; i++) {
-                    AddToSelection('targets', 'structure_complex_signprot',  checked_data[i][16] );
+                    AddToSelection('targets', 'structure',  checked_data[i][15] );
 
                 }
                 window.location.href = '/structure/selection_convert_signprot_model';
@@ -547,7 +538,7 @@
                 <tr class='over_header' style='max-height: 20px'>
                     <th colspan=4 class="over_header">MODEL</th>
                     <th colspan=5 class="over_header">RECEPTOR</th>
-                    <th colspan=3 class="over_header">G PROTEIN</th>
+                    <th colspan=2 class="over_header">G PROTEIN</th>
                     <th colspan=3 class="over_header">EXPERIMENTAL DATA</th>
                 </tr>
                 <tr>
@@ -561,11 +552,10 @@
                     <th></th>
                     <th class='rightborder'></th>
                     <th></th>
-                    <th></th>
                     <th class='rightborder'></th>
-                    <th style="text-align: center;">Inoue</th>
-                    <th style="text-align: center;">Bouvier</th>
-                    <th style="text-align: center;" class='rightborder'>Guide to Pharmacology</th>
+                    <th>Inoue<br>(logEmax/EC50)</th>
+                    <th>Bouvier<br>(logEmax/EC50)</th>
+                    <th class='rightborder'>Guide to Pharmacology<br>(primary/secondary<br>transducer)</th>
                     <th class='hidden'></th>
                     <th class='hidden'></th>
                 </tr>
@@ -576,9 +566,9 @@
                 <tr model_id='{{model.pk}}'>
                     <td class="text-center"><input class="alt" type="checkbox" id="{{ model.pk }}"></td>
                     {% if model.structure_type__slug == 'af-signprot' %}
-                        <td><a target="_blank" href="complex_models/{{ model.pdb_code__index }}-{{ model.pdb_code__index }}">{{ model.protein_conformation__protein__family__name|safe }} - {{ model.signprot_complex__protein__entry_name }}</a></td>
+                        <td><a target="_blank" href="complex_models/{{ model.pdb_code__index }}">{{ model.protein_conformation__protein__family__name|safe }} - {{ model.signprot_complex__protein__name }}</a></td>
                     {% else %}
-                        <td><a target="_blank" href="refined/{{ model.pdb_code__index }}">{{ model.protein_conformation__protein__family__name|safe }} - {{ model.signprot_complex__protein__entry_name }}</a></td>
+                        <td><a target="_blank" href="refined/{{ model.pdb_code__index }}">{{ model.protein_conformation__protein__family__name|safe }} - {{ model.signprot_complex__protein__family }}</a></td>
                     {% endif %}
                     <td>{{ model.publication_date|date:"Y-m-d" }}</td>
                     <td>
@@ -590,29 +580,28 @@
                     </td>
                     <td>
                         {% if not model.protein_conformation__protein__accession %}
-                            <a href="http://www.uniprot.org/uniprot/{{ model.protein_conformation__protein__parent__accession }}">{{ model.protein_conformation__protein__parent__entry_name }}</a>
+                            <a target="_blank" href="http://www.uniprot.org/uniprot/{{ model.protein_conformation__protein__parent__accession }}">{{ model.protein_conformation__protein__entry_name|entry_short }}</a>
                         {% else %}
-                            <a href="http://www.uniprot.org/uniprot/{{ model.protein_conformation__protein__accession }}">{{ model.protein_conformation__protein__entry_name }}</a>
+                            <a target="_blank" href="http://www.uniprot.org/uniprot/{{ model.protein_conformation__protein__accession }}">{{ model.protein_conformation__protein__entry_name|entry_short }}</a>
                         {% endif %}
                     </td>
                     <td>
                         {% if not model.protein_conformation__protein__accession %}
-                            <a href="/protein/{{ model.protein_conformation__protein__parent__entry_name }}">{{ model.protein_conformation__protein__parent__entry_name }}</a>
+                            <a target="_blank" href="/protein/{{ model.protein_conformation__protein__parent__entry_name }}">{{ model.protein_conformation__protein__name|safe }}</a>
                         {% else %}
-                            <a href="/protein/{{ model.protein_conformation__protein__entry_name }}">{{ model.protein_conformation__protein__entry_name }}</a>
+                            <a target="_blank" href="/protein/{{ model.protein_conformation__protein__entry_name }}">{{ model.protein_conformation__protein__name|safe }}</a>
                         {% endif %}
                     </td>
                     <td>{{ model.protein_conformation__protein__family__parent__name }}</td>
                     <td>{{ model.protein_conformation__protein__family__parent__parent__parent__name }}</td>
                     <td>{{ model.protein_conformation__protein__species__common_name }}</td>
-                    <td><a href="/signprot/{{ model.sign_protein__entry_name }}">{{ model.signprot_complex__protein__name }}</a></td>
-                    <td>{{ model.signprot_complex__protein__family__name }}</td>
-                    <td>{{ model.transduction}}</td>
-                    <td>{{ model.Inoue }}</td>
-                    <td>{{ model.Bouvier}}</td>
+                    <td><a href="/signprot/{{ model.signprot_complex_protein__entry_name }}">{{ model.signprot_complex__protein__name }}</a></td>
+                    <td>{{ model.signprot_complex__protein__family__parent__name }}</td>
+                    <td>{{ model.Inoue|floatformat:2 }}</td>
+                    <td>{{ model.Bouvier|floatformat:2}}</td>
                     <td>{{ model.GuideToPharma}}</td>
-                    <td style="display:none;">{{ model.protein_conformation.protein.entry_name }}</td>
-                    <td style="display:none;">{{ model.signprot_complex.protein.entry_name }}</td>
+                    <td style="display:none;">{{ model.protein_conformation__protein__entry_name }}</td>
+                    <td style="display:none;">{{ model.pdb_code__index }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
