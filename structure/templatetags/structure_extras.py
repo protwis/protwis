@@ -171,3 +171,7 @@ def cut_refined ( objs ):
 @register.filter
 def cut_classname ( objs ):
     return objs[5:]
+
+@register.filter
+def entry_short ( objs ):
+    return objs.split("_")[0].upper()
