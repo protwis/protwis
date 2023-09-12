@@ -1191,6 +1191,28 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
 
   // Function to create a bead
   function createBead(cx, cy, aminoAcid, segment, index, circleType, beadRadius, centroidX, centroidY, grn_number, list_int) {
+    // Tooltip show function
+    function showTooltip(d) {
+      const event = window.event ? window.event : d3.event;
+      tooltip.transition()
+        .duration(200)
+        .style("opacity", .9);
+      tooltip.html("Amino Acid: " + aminoAcid + "<br/>" +
+                  "Segment: " + segment + "<br/>" +
+                  "Generic Number: " + grn_number + "<br/>" +
+                  "Interactions: " + list_int + "<br/>"
+                )
+        .style("left", (event.pageX + 5) + "px")
+        .style("top", (event.pageY - 28) + "px");
+    }
+
+    // Tooltip hide function
+    function hideTooltip(d) {
+      tooltip.transition()
+        .duration(500)
+        .style("opacity", 0);
+    }
+
     const bead = svg2.append("circle")
       .attr("cx", cx)
       .attr("cy", cy)
@@ -1214,25 +1236,8 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
         });
         d3.selectAll(`path[data-${circleType}-bead="${index}"]`).attr("stroke-opacity", 1);
       })
-      .on("mouseover", function(d) {
-        const event = window.event ? window.event : d3.event;
-        tooltip.transition()
-          .duration(200)
-          .style("opacity", .9);
-        tooltip.html("Amino Acid: " + aminoAcid + "<br/>" +
-                    "Segment: " + segment + "<br/>" +
-                    "Generic Number: " + grn_number + "<br/>" +
-                    "Interactions: " + list_int + "<br/>"
-                  ) // Assuming you will provide interaction later
-          .style("left", (event.pageX + 5) + "px")
-          .style("top", (event.pageY - 28) + "px");
-      })
-      .on("mouseout", function(d) {
-        const event = d3.event; // get the event object from d3.event
-        tooltip.transition()
-          .duration(500)
-          .style("opacity", 0);
-      });
+      .on("mouseover", showTooltip)
+      .on("mouseout", hideTooltip);
 
     // Add text inside the circle to represent the amino acid
     svg2.append("text")
@@ -1240,7 +1245,9 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
       .attr("y", cy)
       .attr("dy", 5)
       .attr("text-anchor", "middle")
-      .text(aminoAcid);
+      .text(aminoAcid)
+      .on("mouseover", showTooltip)
+      .on("mouseout", hideTooltip);
 
     // Calculate radial text position
     const angleToCentroid = Math.atan2(cy - centroidY, cx - centroidX);
