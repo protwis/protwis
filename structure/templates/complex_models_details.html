@@ -551,7 +551,7 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
               // d3.selectAll("path").attr("stroke-opacity", 0);
               // Loop through selected checkbox combinations
               selectedChains.forEach(chain => {
-                const [innerChain, outerChain] = chain.split('-');
+                const [outerChain, innerChain] = chain.split('-');
 
                 // Highlight the selected paths
                 d3.selectAll(`path[inner-chain="${innerChain}"][outer-chain="${outerChain}"]`)
@@ -698,8 +698,9 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
             img.src = 'data:image/svg+xml;base64,' + window.btoa(svgString);
             img.onload = function() {
               const canvas = document.createElement('canvas');
-              canvas.width = img.width;
-              canvas.height = img.height;
+              const bbox = svgElement.getBBox();
+              canvas.width = bbox.width * 1.2;
+              canvas.height = bbox.height * 1.2;
               const ctx = canvas.getContext('2d');
               ctx.drawImage(img, 0, 0);
               let mimeType = 'image/png';

@@ -17,7 +17,7 @@ from structure.structural_superposition import ProteinSuperpose,FragmentSuperpos
 from structure.forms import *
 from signprot.models import SignprotComplex, SignprotStructure, SignprotStructureExtraProteins
 from interaction.models import ResidueFragmentInteraction,StructureLigandInteraction
-from protein.models import Protein, ProteinFamily
+from protein.models import Protein, ProteinFamily, ProteinCouplings
 from construct.models import Construct
 from construct.functions import convert_ordered_to_disordered_annotation,add_construct
 from common.views import AbsSegmentSelection,AbsReferenceSelection
@@ -197,15 +197,82 @@ class ServeComplexModels(TemplateView):
         #         "main_template__signprot_complex")
         # except StructureComplexModel.DoesNotExist as e:
         #     pass
+        ##### DATA
+        # model.structure_type.slug
+        # model.pdb_code.index
+        #
+        # model.protein_conformation.protein.accession
+        # model.protein_conformation.protein.parent.accession
+        # model.protein_conformation.protein.parent.entry_short
+        # model.protein_conformation.protein.entry_short
+        # model.protein_conformation.protein.entry_name
+        # model.protein_conformation.protein.short
+        # model.protein_conformation.protein.family.name
+        # model.protein_conformation.protein.family.parent.short
+        # model.protein_conformation.protein.family.parent.parent.parent.short
+        # model.protein_conformation.protein.species.common_name
+        #
+        # model.publication_date
+        # model.signprot_complex.protein.name
+        # model.signprot_complex.protein.family.name
+        # model.signprot_complex.protein.entry_name
         try:
-            context['structure_complex_model'] = Structure.objects.filter(structure_type__slug__startswith='af-signprot').prefetch_related(
+            complex_models = list(Structure.objects.filter(structure_type__slug__startswith='af-signprot').prefetch_related(
                 "protein_conformation__protein",
+                "protein_conformation__protein__parent",
                 "protein_conformation__protein__family",
+                "protein_conformation__protein__family__parent",
                 "protein_conformation__protein__family__parent__parent__parent",
                 "protein_conformation__protein__species",
                 "signprot_complex__protein",
-                "signprot_complex__protein__family",
-                "signprot_complex__protein__family__parent__parent__parent")
+                "signprot_complex__protein__family").values("structure_type__slug",
+                                                            "pdb_code__index",
+                                                            "protein_conformation__protein__accession",
+                                                            "protein_conformation__protein__parent__accession",
+                                                            "protein_conformation__protein__parent__name",
+                                                            "protein_conformation__protein__entry_name",
+                                                            "protein_conformation__protein",
+                                                            "protein_conformation__protein__family__name",
+                                                            "protein_conformation__protein__family__parent__name",
+                                                            "protein_conformation__protein__family__parent__parent__parent__name",
+                                                            "protein_conformation__protein__species__common_name",
+                                                            "publication_date",
+                                                            "signprot_complex__protein__name",
+                                                            "signprot_complex__protein__family__name",
+                                                            "signprot_complex__protein__entry_name"))
+
+            couplings_data = list(ProteinCouplings.objects.all().prefetch_related("g_protein", "protein").values("transduction",
+                                                                                                                 "g_protein__name",
+                                                                                                                 "g_protein_subunit__entry_name",
+                                                                                                                 "g_protein_subunit__name",
+                                                                                                                 "protein__name",
+                                                                                                                 "source",
+                                                                                                                 "logmaxec50",
+                                                                                                                 "protein__entry_name"))
+
+            for complex in complex_models:
+                complex["GuideToPharma"] = "-"
+                complex["Inoue"] = "-"
+                complex["Roth"] = "-"
+                complex["Bouvier"] = "-"
+                complex["transduction"] = "-"
+                for coupling in couplings_data:
+                    if coupling["source"] == 'GuideToPharma':
+                        if (complex["protein_conformation__protein__entry_name"] == coupling["protein__entry_name"]) and (complex["signprot_complex__protein__family__name"] == coupling["g_protein__name"]):
+                            complex["transduction"] = coupling["transduction"]
+                            complex["GuideToPharma"] = coupling["transduction"]
+                    else:
+                        if (complex["protein_conformation__protein__entry_name"] == coupling["protein__entry_name"]) and (complex["signprot_complex__protein__name"] == coupling["g_protein_subunit__name"]):
+                            complex["transduction"] = coupling["transduction"]
+                            if coupling["source"] == 'Inoue':
+                                complex["Inoue"] = coupling["logmaxec50"]
+                            elif coupling["source"] == 'Bouvier':
+                                complex["Bouvier"] = coupling["logmaxec50"]
+                            elif coupling["source"] == 'Roth':
+                                complex["Roth"] = coupling["logmaxec50"]
+
+            context['structure_complex_model'] = complex_models
+
         except StructureComplexModel.DoesNotExist as e:
             pass
 
