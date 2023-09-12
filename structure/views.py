@@ -556,9 +556,10 @@ def ComplexModelDetails(request, header):
     gprot_aminoacids = remove_duplicate_dicts(gprot_aminoacids)
     segments_order = ['TM1','ICL1', 'TM2', 'ICL2', 'TM3', 'ICL3', 'TM4', 'TM5', 'TM6', 'TM7', 'ICL4', 'H8']
     # Create a dictionary that maps segments to their positions in the custom order
-    order_dict = {segment: index for index, segment in enumerate(segments_order)}
+    order_gpcr = {segment: index for index, segment in enumerate(segments_order)}
     # Sort the list of dictionaries based on the custom order
-    gpcr_aminoacids = sorted(gpcr_aminoacids, key=lambda x: order_dict.get(x['segment'], float('inf')))
+    gpcr_aminoacids = sorted(gpcr_aminoacids, key=lambda x: order_gpcr.get(x['segment'], float('inf')))
+    gprot_aminoacids = sorted(gprot_aminoacids, key=lambda x: x['generic_number'])
 
     to_push_gpcr = {}
     to_push_gprot = {}

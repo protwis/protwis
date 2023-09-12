@@ -1588,6 +1588,7 @@ def ComplexDetails(request, pdbname):
     order_dict = {segment: index for index, segment in enumerate(segments_order)}
     # Sort the list of dictionaries based on the custom order
     gpcr_aminoacids = sorted(gpcr_aminoacids, key=lambda x: order_dict.get(x['segment'], float('inf')))
+    gprot_aminoacids = sorted(gprot_aminoacids, key=lambda x: x['generic_number'])
 
     to_push_gpcr = {}
     to_push_gprot = {}

@@ -1289,13 +1289,16 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
   // Function to create a circle of beads
   function createCircle(cx, cy, beadRadius, beads, circleType, bead_gap=false) {
     const numBeads = beads.length;
-
     let circleRadius;
 
     if (bead_gap !== false){
       // Calculate a circle radius based on bead radius to avoid overlap
       if (bead_gap < numBeads){
-        circleRadius = (numBeads * 2.5) * beadRadius / Math.PI * 0.85;
+        if (bead_gap < 7){
+          circleRadius = (numBeads * 3) * beadRadius / Math.PI * 0.85;
+        } else {
+          circleRadius = (numBeads * 2.5) * beadRadius / Math.PI * 0.85;
+        }
       }
     } else {
       if (numBeads < 30){
