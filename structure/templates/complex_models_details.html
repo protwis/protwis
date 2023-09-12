@@ -547,7 +547,6 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
                   const segment = d3.select(this).attr("segment");
                   if (!segment) {
                     d3.select(this).attr("stroke-opacity", 0);
-                    d3.select(this).attr("stroke-width", 4);
                   }
                 });
               // d3.selectAll("path").attr("stroke-opacity", 0);
@@ -557,8 +556,7 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
 
                 // Highlight the selected paths
                 d3.selectAll(`path[inner-chain="${innerChain}"][outer-chain="${outerChain}"]`)
-                  .attr("stroke-opacity", 1)
-                  .attr("stroke-width", 4);
+                  .attr("stroke-opacity", 1);
               });
             }
             // Attach event listeners to checkboxes
