@@ -1020,7 +1020,17 @@ class CallHomologyModeling():
                     if section not in missing_sections:
                         missing_sections.append(section)
 
-                    # Shorten ICL3
+                    ### Chimera check
+                    for section in missing_sections:
+                        H5_resis = [s[0] for s in section if s[0]=='G.H5']
+                        if len(H5_resis)>20:
+                            if self.debug:
+                                print('ERROR: incorrect chimera mapping for {}'.format(Homology_model.reference_protein))
+                                print(H5_resis, len(H5_resis))
+                            logger.error('Incorrect chimera mapping for {}'.format(Homology_model.reference_protein))
+                            raise AssertionError
+
+                    ### Shorten ICL3
                     for i in reference_dict:
                         if i.startswith('ICL3'):
                             label = i
@@ -1062,7 +1072,11 @@ class CallHomologyModeling():
                             del alignment_dict[i][ii]
                         for i,ii in delete_m:
                             del main_pdb_array[i][ii]
-                
+
+                if self.debug:
+                    print('Missing sections')
+                    pprint.pprint(missing_sections)
+
                 ### Swap sections
                 seg_dict = {}
                 for i in missing_sections:
