@@ -1,4 +1,5 @@
 from django import template
+from common.definitions import G_PROTEIN_DISPLAY_NAME as g_prot_dict
 
 import re
 
@@ -175,3 +176,11 @@ def cut_classname ( objs ):
 @register.filter
 def entry_short ( objs ):
     return objs.split("_")[0].upper()
+
+@register.filter
+def strip_class ( objs ):
+    return objs.replace('Class','').replace('(','').replace(')','')
+
+@register.filter
+def gprot_short ( objs ):
+    return g_prot_dict[objs]
