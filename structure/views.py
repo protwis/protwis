@@ -515,6 +515,31 @@ def find_dict_index(dict_list, target_dict):
             return i
     return -1  # return -1 if the dictionary is not found
 
+def minimize_distance(connections):
+    outer_to_new_outer = {} # maps old outer index to new outer index
+    inner_to_outer = defaultdict(list) # aggregate all outer indexes for each inner index
+
+    # Invert the mapping for easier manipulation
+    for inner, outers in connections.items():
+        for outer in outers:
+            inner_to_outer[inner].append(outer)
+
+    available_outer_indexes = set()
+    for outers in inner_to_outer.values():
+        available_outer_indexes.update(outers)
+
+    next_available_outer = 0  # Initialize new outer index
+
+    # Loop through sorted inner indexes
+    for inner in sorted(inner_to_outer.keys()):
+        # Sort the outer indexes by their current value
+        for outer in sorted(inner_to_outer[inner]):
+            if outer not in outer_to_new_outer: # Assign new index if not assigned before
+                outer_to_new_outer[outer] = next_available_outer
+                next_available_outer += 1
+
+    return outer_to_new_outer
+
 def sort_and_update(push_gpcr, gpcr, push_gprot, gprot, interactions):
   for key in push_gpcr:
       gpcr[key]['interactions'] = ', '.join(push_gpcr[key])
@@ -527,23 +552,18 @@ def sort_and_update(push_gpcr, gpcr, push_gprot, gprot, interactions):
           matching_dict[record['innerIndex']] = []
       if record['outerIndex'] not in matching_dict[record['innerIndex']]:
           matching_dict[record['innerIndex']].append(record['outerIndex'])
-  # Count frequency of each index in dict_b
-  frequency_count = {}
-  for connections in matching_dict.values():
-      for index in connections:
-          frequency_count[index] = frequency_count.get(index, 0) + 1
-  # Sort the indices by frequency
-  sorted_indices = sorted(frequency_count.keys(), key=lambda x: frequency_count[x], reverse=True)
-  # Create an index mapping
-  index_mapping = {original: i for i, original in enumerate(sorted_indices)}
+
+  conversion = minimize_distance(matching_dict)
+
   # Create new_dict_b by reordering dict_b based on index_mapping
   new_dict_b = [None] * len(gpcr)
-  for original, new in index_mapping.items():
+  for original, new in conversion.items():
       new_dict_b[new] = gpcr[original]
+
   # Remove None values if any (in case dict_b has more elements than mapping_dict)
   gpcr = [item for item in new_dict_b if item is not None]
   for record in interactions:
-      record['outerIndex'] = index_mapping[record['outerIndex']]
+      record['outerIndex'] = conversion[record['outerIndex']]
 
   return gpcr, gprot
 
@@ -719,7 +739,7 @@ def ComplexModelDetails(request, header):
                                                              'template_list': template_list, 'model_main_template': main_template, 'state': None, 'signprot_sim': int(gp.proteins[1].similarity),
                                                              'signprot_color_residues': json.dumps(segments_out2), 'loop_segments': loop_segments,
                                                              'scores': scores, 'refined': True, 'outer': json.dumps(gpcr_aminoacids), 'inner': json.dumps(gprot_aminoacids),
-                                                             'interactions': json.dumps(protein_interactions), 'residues': len(protein_interactions)})#, 'delta_distance': delta_distance})
+                                                             'interactions': json.dumps(protein_interactions), 'residues': len(protein_interactions), 'structure_type': model.structure_type})#, 'delta_distance': delta_distance})
 
     else:
 
@@ -732,7 +752,11 @@ def ComplexModelDetails(request, header):
                                                              'outer': json.dumps(gpcr_aminoacids),
                                                              'inner': json.dumps(gprot_aminoacids),
                                                              'interactions': json.dumps(protein_interactions),
-                                                             'residues': len(protein_interactions)
+                                                             'outer_strict': json.dumps(gpcr_aminoacids_strict),
+                                                             'inner_strict': json.dumps(gprot_aminoacids_strict),
+                                                             'interactions_strict': json.dumps(protein_interactions_strict),
+                                                             'residues': len(protein_interactions),
+                                                             'structure_type': model.structure_type
                                                              })
 
 

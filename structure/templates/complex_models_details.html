@@ -81,7 +81,7 @@ canvas {
 <div class="row text-success">
     <div class="text-center">
         <div style="display: inline;">
-          {% if model.structure_type.slug == "af-signprot" %}
+          {% if structure_type == "af-signprot" %}
               <h2>{{ model.protein_conformation.protein.name|safe }} - {{ model.signprot_complex.protein.family.name|gprot_short }} complex model</h2>
           {% else %}
               <h2>{{ model.protein_conformation.protein.entry_name|upper }} refined </h2>
@@ -113,19 +113,6 @@ canvas {
     </div>
 </div>
 
-<!-- <div class="row">
-    <div class="col-md-3 text-right text-info">
-        <h4>RECEPTOR</h4>
-    </div>
-    <div class="col-md-9">
-        {% if model.protein_conformation.protein.accession %}
-            <a href="/protein/{{ model.receptor_protein.entry_name }}">{{ model.protein_conformation.protein.name|safe }}</a>
-        {% else %}
-            <a href="/protein/{{ model.receptor_protein.parent.entry_name }}">{{ model.protein_conformation.protein.parent.name|safe }}</a>
-        {% endif %}
-    </div>
-</div> -->
-
 <div class="row">
     <div class="col-md-3 text-right text-info">
         <h4>SPECIES</h4>
@@ -143,15 +130,6 @@ canvas {
         {{ model.signprot_complex.protein.family.parent|safe }}
     </div>
 </div>
-
-<!-- <div class="row">
-    <div class="col-md-3 text-right text-info">
-        <h4>G-PROTEIN</h4>
-    </div>
-    <div class="col-md-9">
-        <a href="/protein/{{ model.sign_protein.entry_name }}">{{ model.signprot_complex.protein.name|safe }}</a>
-    </div>
-</div> -->
 
 <div class="row">
     <div class="col-md-3 text-right text-info">
@@ -262,6 +240,13 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
 </div>
 
 <div class="col-md-12 ">
+    <div>
+      <b>Interaction cut-off:</b>
+        <div class="btn-group" role="group" id="cut_off">
+            <button id="strict" class="btn btn-info active">Strict</button>
+            <button id="loose" class="btn btn-info">Loose</button>
+        </div>
+    </div>
     <div id="tooltip" class="tooltip"></div>
     <div style="display: flex; justify-content: center;">
       <svg id="visualization" width="100%" height="1115"></svg>
@@ -559,6 +544,9 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
             interactions = {{ interactions | safe }};
             inner_data = {{ inner | safe }};
             outer_data = {{ outer | safe }};
+            interactions_strict = {{ interactions_strict | safe }};
+            inner_data_strict = {{ inner_strict | safe }};
+            outer_data_strict = {{ outer_strict | safe }};
 
             ClearSelection('targets');
             ClearSelection('reference');
@@ -567,7 +555,29 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
             draw_model_scores('PTM_location', 'PTM_divider', 'PTM',  0, 1, ptm, 0.5);
             draw_model_scores('iPTM_location', 'iPTM_divider', 'iPTM',  0, 1, iptm, 0.2);
             draw_model_scores('PAE_location', 'PAE_divider', 'PAE',  0, 31, pae, 26, true);
-            draw_interactions_in_circles('visualization', interactions, inner_data, outer_data);
+            draw_interactions_in_circles('visualization', interactions_strict, inner_data_strict, outer_data_strict);
+
+            $("#strict").click(function(){
+              console.log("Inside #strict click handler");
+              $("#strict").addClass("active");
+              $("#loose").removeClass("active");
+              console.log("Removed #visualization");
+              d3.select("#visualization").selectAll("*").remove();
+              console.log("Calling draw_interactions_in_circles for strict");
+              draw_interactions_in_circles('visualization', interactions_strict, inner_data_strict, outer_data_strict);
+              d3.selectAll(`.van-der-waals`).attr("stroke-opacity", 0);
+            });
+
+            $("#loose").click(function() {
+              console.log("Inside #loose click handler");
+              $("#strict").removeClass("active");
+              $("#loose").addClass("active");
+              console.log("Removed #visualization");
+              d3.select("#visualization").selectAll("*").remove();
+              console.log("Calling draw_interactions_in_circles for loose");
+              draw_interactions_in_circles('visualization', interactions, inner_data, outer_data);
+              d3.selectAll(`.van-der-waals`).attr("stroke-opacity", 0);
+            });
 
             d3.selectAll(`.van-der-waals`).attr("stroke-opacity", 0);
             // Function to update the highlight based on checkbox selections

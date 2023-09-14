@@ -1208,6 +1208,8 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
   const segments = ['TM1','ICL1', 'TM2', 'ICL2', 'TM3', 'ICL3', 'TM4', 'TM5', 'TM6', 'TM7', 'ICL4', 'H8'];
   // outer_data.sort((a, b) => segments.indexOf(a.segment) - segments.indexOf(b.segment));
 
+  const countInner = inner_data.length;
+  const countOuter = outer_data.length;
   // Generate arrays for inner and outer circles
   const beadInfo = {
     innerCircle: inner_data,
@@ -1340,33 +1342,9 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
   }
 
   // Function to create a circle of beads
-  function createCircle(cx, cy, beadRadius, beads, circleType, bead_gap=false) {
+  function createCircle(cx, cy, beadRadius, beads, circleType, circleRadius) {
     const numBeads = beads.length;
-    let circleRadius;
-    minimumRadius = 30 * beadRadius / Math.PI * 0.85;
-    if (bead_gap !== false){
-      // Calculate a circle radius based on bead radius to avoid overlap
-      if (bead_gap < numBeads){
-        if (bead_gap < 7){
-          circleRadius = (numBeads * 3) * beadRadius / Math.PI * 0.85;
-        } else {
-          circleRadius = (numBeads * 2.5) * beadRadius / Math.PI * 0.85;
-        }
-      }
-      console.log(numBeads);
-      console.log(bead_gap);
-      console.log(circleRadius);
-      console.log(minimumRadius);
-      if (circleRadius < minimumRadius){
-        circleRadius = minimumRadius * 2;
-      }
-    } else {
-      if (numBeads < 30){
-        circleRadius = minimumRadius;
-      } else {
-        circleRadius = numBeads * beadRadius / Math.PI * 0.85;
-      }
-    }
+
     // Add additional distance for the labels, assuming each label needs 15 units of space
     const internalCircleRadius = circleRadius - 35;
 
@@ -1403,7 +1381,7 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
                 .attr("alignment-baseline", "middle")
                 .attr("transform", `rotate(${textAngleDeg}, ${labelX}, ${labelY})`)
                 .text(lastSegment)
-                .style("font-size", "18px")
+                .style("font-size", "14px")
                 .attr("font-weight", "bold")
                 .style("font-family", "Palatino")
                 .style("fill", "#333");
@@ -1437,7 +1415,7 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
         .attr("alignment-baseline", "middle")
         .attr("transform", `rotate(${textAngleDeg}, ${labelX}, ${labelY})`)
         .text(lastSegment)
-        .style("font-size", "18px")
+        .style("font-size", "14px")
         .attr("font-weight", "bold")
         .style("font-family", "Palatino")
         .style("fill", "#333");
@@ -1485,12 +1463,13 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
     return { centroidX, centroidY };
   }
 
-  function createConnection(innerIndex, outerIndex, type, innerbeads, outerbeads, beadRadius, centroidX, centroidY, innerChain, outerChain) {
+  function createConnection(innerIndex, outerIndex, type, countInner, beadRadius, centroidX, centroidY, innerChain, outerChain, smallRadius, bigRadius) {
     const innerBead = d3.select(`#bead-inner-${innerIndex}`);
     const outerBead = d3.select(`#bead-outer-${outerIndex}`);
 
-    const INNER_RADIUS = innerbeads * beadRadius / Math.PI * 0.95;
-    const OUTER_RADIUS = outerbeads * beadRadius / Math.PI * 0.85;
+    console.log(countInner);
+    const INNER_RADIUS = smallRadius;
+    const OUTER_RADIUS = bigRadius;
 
     // Calculate direction vector for inner bead
     const innerX = +innerBead.attr("cx");
@@ -1524,7 +1503,7 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
     const angleToCentroidInner = Math.atan2(innerY - centroidY, innerX - centroidX);
     const angleToCentroidOuter = Math.atan2(outerY - centroidY, outerX - centroidX);
 
-    const INNER_BORDER_RADIUS = INNER_RADIUS + 1;
+    const INNER_BORDER_RADIUS = INNER_RADIUS + 25;
     const MIDDLE_BORDER_RADIUS = INNER_RADIUS + 5 * beadRadius;
     const OUTER_BORDER_RADIUS = OUTER_RADIUS - 4 * beadRadius;
 
@@ -1549,20 +1528,24 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
     const sweepFlagMiddle = calculateSweepFlag(Math.atan2(tangentialOuterY - centroidY, tangentialOuterX - centroidX), Math.atan2(tangentialMiddleY - centroidY, tangentialMiddleX - centroidX));
     const sweepFlagInner = calculateSweepFlag(Math.atan2(tangentialMiddleY - centroidY, tangentialMiddleX - centroidX), angleToCentroidInner);
 
-    const pathData = [
-      `M ${startX} ${startY}`,
-      `A ${OUTER_RADIUS} ${OUTER_RADIUS} 0 0 ${sweepFlagOuter} ${tangentialOuterX} ${tangentialOuterY}`,
-      `A ${MIDDLE_BORDER_RADIUS} ${MIDDLE_BORDER_RADIUS} 0 0 ${sweepFlagMiddle} ${tangentialMiddleX} ${tangentialMiddleY}`,
-      `A ${INNER_BORDER_RADIUS} ${INNER_BORDER_RADIUS} 0 0 ${sweepFlagInner} ${tangentialInnerX} ${tangentialInnerY}`,
-      `L ${adjustedEndX} ${adjustedEndY}`
-    ].join(" ");
-    // const pathData = [
-    //   `M ${startX} ${startY}`,
-    //   `A ${randomOuterRadius} ${randomOuterRadius} 0 0 ${sweepFlagOuter} ${tangentialOuterX} ${tangentialOuterY}`,
-    //   `A ${randomMiddleRadius} ${randomMiddleRadius} 0 0 ${sweepFlagMiddle} ${tangentialMiddleX} ${tangentialMiddleY}`,
-    //   `A ${randomInnerRadius} ${randomInnerRadius} 0 0 ${sweepFlagInner} ${tangentialInnerX} ${tangentialInnerY}`,
-    //   `L ${randomAdjustedEndX} ${randomAdjustedEndY}`
-    // ].join(" ");
+    let pathData;
+
+    if(countInner < 15){
+      pathData = [
+        `M ${startX} ${startY}`,
+        `A ${OUTER_RADIUS} ${OUTER_RADIUS} 0 0 ${sweepFlagOuter} ${tangentialOuterX} ${tangentialOuterY}`,
+        `A ${INNER_BORDER_RADIUS} ${INNER_BORDER_RADIUS} 0 0 ${sweepFlagInner} ${tangentialInnerX} ${tangentialInnerY}`,
+        `L ${adjustedEndX} ${adjustedEndY}`
+      ].join(" ");
+    } else {
+      pathData = [
+        `M ${startX} ${startY}`,
+        `A ${OUTER_RADIUS} ${OUTER_RADIUS} 0 0 ${sweepFlagOuter} ${tangentialOuterX} ${tangentialOuterY}`,
+        `A ${MIDDLE_BORDER_RADIUS} ${MIDDLE_BORDER_RADIUS} 0 0 ${sweepFlagMiddle} ${tangentialMiddleX} ${tangentialMiddleY}`,
+        `A ${INNER_BORDER_RADIUS} ${INNER_BORDER_RADIUS} 0 0 ${sweepFlagInner} ${tangentialInnerX} ${tangentialInnerY}`,
+        `L ${adjustedEndX} ${adjustedEndY}`
+      ].join(" ");
+    }
 
     const sanitizedType = sanitizeClassName(type);
 
@@ -1581,9 +1564,22 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
       .classed(sanitizedType, true);
   }
 
+  let smallRadius;
+  let bigRadius;
+
+  if (countInner< 10){
+    smallRadius = 20 * 20 / Math.PI * 0.85;
+  } else if (countInner> 10 && countInner < 30) {
+    smallRadius = 30 * 20 / Math.PI * 0.85;
+  } else {
+    smallRadius = countInner * 20 / Math.PI * 0.85;
+  };
+
+  bigRadius = smallRadius * 2.7;
+
   // For example, with a bead radius of 20
-  createCircle(600, 520, 20, beadInfo.innerCircle, 'inner');
-  createCircle(600, 520, 20, beadInfo.outerCircle, 'outer', bead_gap);
+  createCircle(600, 520, 20, beadInfo.innerCircle, 'inner', smallRadius);
+  createCircle(600, 520, 20, beadInfo.outerCircle, 'outer', bigRadius);
 
   // Generate legend
   const interactionLegend = svg2.append("g")
@@ -1635,38 +1631,9 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
   const innerBeadSelection = svg2.selectAll("circle[data-circle='inner']");  // Assuming the inner beads have a class 'inner-bead'
   const { centroidX, centroidY } = calculateCentroids(innerBeadSelection);
 
-  // Create the visualization based on rearranged beads and sorted connections
-  function createConnections() {
-    const innerBeadsCount = rearrangedBeads.innerCircle.length;
-    const outerBeadsCount = rearrangedBeads.outerCircle.length;
-    const beadRadius = 20; // Example bead radius, adjust as needed
-    const centroidX = 500; // Example centroid X-coordinate, adjust as needed
-    const centroidY = 500; // Example centroid Y-coordinate, adjust as needed
-
-    sortedConnections.forEach(({ innerIndex, outerIndex, type, innerChain, outerChain }) => {
-      // Use the rearranged bead positions from rearrangedBeads
-      const innerBeadInfo = rearrangedBeads.innerCircle[innerIndex];
-      const outerBeadInfo = rearrangedBeads.outerCircle[outerIndex];
-
-      createConnection(
-        innerIndex,
-        outerIndex,
-        type,
-        innerBeadsCount,
-        outerBeadsCount,
-        beadRadius,
-        centroidX,
-        centroidY,
-        innerChain,
-        outerChain
-      );
-    });
-  }
-
   // createConnections();
-  interactions.forEach(({ innerIndex, outerIndex, type, innerChain, outerChain }) => createConnection(innerIndex, outerIndex, type, 30, 70, 20, centroidX, centroidY, innerChain, outerChain));
+  interactions.forEach(({ innerIndex, outerIndex, type, innerChain, outerChain }) => createConnection(innerIndex, outerIndex, type, countInner, 20, centroidX, centroidY, innerChain, outerChain, smallRadius, bigRadius));
 
-  d3.selectAll(`.van-der-waals`).attr("stroke-opacity", 0);
   // d3.selectAll(`.hydrophobic`).attr("stroke-opacity", 0);
 
   function applyPresetColors(svg) {
