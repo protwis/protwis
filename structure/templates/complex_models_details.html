@@ -499,80 +499,6 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
 <br>
 {% endif %}
 
-<div class="row">
-  <div class="col-md-3 text-right text-info">
-    <h4>INTERACTING RESIDUES</h4>
-  </div>
-  <div class="col-md-9">
-    <a href="/interaction/complex/{{pdbname}}"> {{residues}} interactions (Click to see)</a>
-  </div>
-</div>
-
-<div class="col-md-12 ">
-    <div id="tooltip" class="tooltip"></div>
-    <div style="display: flex; justify-content: center;">
-      <svg id="visualization" width="100%" height="1115"></svg>
-    </div>
-    <div class="row">
-      <div class="col-md-3 text-right text-info">
-      </div>
-      <div class="col-md-9">
-        <p><b>Highlight receptor-transducer interaction</b></p>
-        <div class="checkbox-group">
-          <div class="checkbox-item">
-            <input type="checkbox" id="main-main" name="chain" value="Main-Main">
-            <label for="main-main">Backbone-Backbone</label>
-          </div>
-          <div class="checkbox-item">
-            <input type="checkbox" id="main-side" name="chain" value="Main-Side">
-            <label for="main-side">Backbone-Side</label>
-          </div>
-          <div class="checkbox-item">
-            <input type="checkbox" id="side-side" name="chain" value="Side-Side">
-            <label for="side-side">Side-Side</label>
-          </div>
-          <div class="checkbox-item">
-            <input type="checkbox" id="side-main" name="chain" value="Side-Main">
-            <label for="side-main">Side-Backbone</label>
-          </div>
-        </div>
-        <br/>
-        <div style="text-align: left;">
-          <button id="interactionsButton">Interactions</button>
-          <button id="propertiesButton">Properties</button>
-          <button id="segmentButton">Segment</button>
-          <button id="resetButton">Reset</button>
-        </div>
-        <br/>
-        <div style="text-align: left;">
-          <div class="btn-group">
-              <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
-                      aria-haspopup="true" aria-expanded="false">Download <span class="caret"></span>
-              </button>
-              <ul class="dropdown-menu">
-                  <li>
-                      <a href="javascript:downloadSVG('visualization', 'interactionsPNG', 'png');">PNG</a>
-                  </li>
-                  <li>
-                      <a href="javascript:downloadSVG('visualization', 'interactionsJPEG', 'jpeg');">JPEG</a>
-                  </li>
-                  <li>
-                      <a href="javascript:downloadSVG('visualization', 'interactionsTIFF', 'tiff');">TIFF</a>
-                  </li>
-                  <li>
-                      <a href="javascript:downloadSVG('visualization', 'interactionsSVG');">SVG</a>
-                  </li>
-              </ul>
-          </div>
-        </div>
-      </div>
-      <br>
-      <br>
-    </div>
-
-</div>
-
-
 
 <br>
 <style>
@@ -616,7 +542,7 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
     </script>
     <script type="text/javascript" charset="utf-8">
         $(document).ready(function () {
-            if ({{ refined }}===false) {
+            if ({{ refined }} === false) {
               ptm = {{ scores.ptm }};
               iptm = {{ scores.iptm }};
               pae = {{ scores.pae_mean }};
@@ -635,9 +561,9 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
             ClearSelection('reference');
             // Call the function with your desired values
             // function draw_model_scores(location, element_id, legend_label, score, startValue, endValue, definedValue
-            draw_model_scores('PTM_location', 'PTM_divider', 'PTM',  0, 1, ptm, 0.5);
-            draw_model_scores('iPTM_location', 'iPTM_divider', 'iPTM',  0, 1, iptm, 0.2);
-            draw_model_scores('PAE_location', 'PAE_divider', 'PAE',  0, 31, pae, 26, true);
+            // draw_model_scores('PTM_location', 'PTM_divider', 'PTM',  0, 1, ptm, 0.5);
+            // draw_model_scores('iPTM_location', 'iPTM_divider', 'iPTM',  0, 1, iptm, 0.2);
+            // draw_model_scores('PAE_location', 'PAE_divider', 'PAE',  0, 31, pae, 26, true);
             draw_interactions_in_circles('visualization', interactions_strict, inner_data_strict, outer_data_strict);
 
             $("#strict").click(function(){

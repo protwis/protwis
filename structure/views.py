@@ -604,10 +604,12 @@ def ComplexModelDetails(request, header, refined=False):
             gn1 = pair.interacting_pair.res1.display_generic_number.label
         except AttributeError:
             gn1 = '-'
+
         try:
             gn2 = pair.interacting_pair.res2.display_generic_number.label
         except AttributeError:
             gn2 = '-'
+
         gpcr = {'aminoAcid': pair.interacting_pair.res1.amino_acid,
                 'segment': pair.interacting_pair.res1.protein_segment.slug,
                 'generic_number': gn1,
@@ -626,17 +628,18 @@ def ComplexModelDetails(request, header, refined=False):
 
     gpcr_aminoacids_strict = [record for record in gpcr_aminoacids if record['interaction_level'] == 1]
     gprot_aminoacids_strict = [record for record in gprot_aminoacids if record['interaction_level'] == 1]
-    gpcr_aminoacids_strict = remove_duplicate_dicts(gpcr_aminoacids_strict)
-    gprot_aminoacids_strict = remove_duplicate_dicts(gprot_aminoacids_strict)
-    gpcr_aminoacids = remove_duplicate_dicts(gpcr_aminoacids)
-    gprot_aminoacids = remove_duplicate_dicts(gprot_aminoacids)
 
     gpcr_aminoacids = [{key: value for key, value in d.items() if key != 'interaction_level'} for d in gpcr_aminoacids]
     gprot_aminoacids = [{key: value for key, value in d.items() if key != 'interaction_level'} for d in gprot_aminoacids]
     gpcr_aminoacids_strict = [{key: value for key, value in d.items() if key != 'interaction_level'} for d in gpcr_aminoacids_strict]
     gprot_aminoacids_strict = [{key: value for key, value in d.items() if key != 'interaction_level'} for d in gprot_aminoacids_strict]
 
-    segments_order = ['TM1','ICL1', 'TM2', 'ICL2', 'TM3', 'ICL3', 'TM4', 'TM5', 'TM6', 'TM7', 'ICL4', 'H8']
+    gpcr_aminoacids_strict = remove_duplicate_dicts(gpcr_aminoacids_strict)
+    gprot_aminoacids_strict = remove_duplicate_dicts(gprot_aminoacids_strict)
+    gpcr_aminoacids = remove_duplicate_dicts(gpcr_aminoacids)
+    gprot_aminoacids = remove_duplicate_dicts(gprot_aminoacids)
+
+    segments_order = ['TM1','ICL1', 'TM2', 'ICL2', 'TM3', 'ICL3', 'TM4', 'TM5', 'TM6', 'TM7', 'ICL4', 'H8', 'C-term']
     gprot_segments = ['G.HN','G.hns1','G.S1','G.s1h1','G.H1','G.h1ha','H.HA','H.hahb','H.HB','H.hbhc','H.HC','H.hchd','H.HD','H.hdhe','H.HE','H.hehf','H.HF','G.hfs2','G.S2','G.s2s3','G.S3','G.s3h2','G.H2','G.h2s4','G.S4','G.s4h3','G.H3','G.h3s5','G.S5','G.s5hg','G.HG','G.hgh4','G.H4','G.h4s6','G.S6','G.s6h5','G.H5']
     # Create a dictionary that maps segments to their positions in the custom order
     order_gpcr = {segment: index for index, segment in enumerate(segments_order)}
@@ -645,8 +648,8 @@ def ComplexModelDetails(request, header, refined=False):
     # Sort the list of dictionaries based on the custom order
     # gpcr_aminoacids = sorted(gpcr_aminoacids, key=lambda x: order_gpcr.get(x['segment'], float('inf')))
     # gprot_aminoacids = sorted(gprot_aminoacids, key=lambda x: x['generic_number'])
-    gprot_aminoacids = sorted(gprot_aminoacids, key=lambda x: order_gprot.get(x['segment'], float('inf')))
-    gprot_aminoacids_strict = sorted(gprot_aminoacids_strict, key=lambda x: order_gprot.get(x['segment'], float('inf')))
+    gprot_aminoacids = sorted(gprot_aminoacids, key=lambda x: (order_gprot.get(x['segment'], 9999), int(x['generic_number'].split('.')[-1])))
+    gprot_aminoacids_strict = sorted(gprot_aminoacids_strict, key=lambda x: (order_gprot.get(x['segment'], 9999), int(x['generic_number'].split('.')[-1])))
 
     to_push_gpcr = {}
     to_push_gprot = {}
