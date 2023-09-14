@@ -242,6 +242,7 @@ class ServeComplexModels(TemplateView):
                                                                     "publication_date",
                                                                     "signprot_complex__protein__name",
                                                                     "signprot_complex__protein__family",
+                                                                    "signprot_complex__protein__family__name",
                                                                     "signprot_complex__protein__family__parent__name",
                                                                     "signprot_complex__protein__entry_name"))
 
