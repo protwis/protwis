@@ -1130,6 +1130,7 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
     'TM7': '#8A2BE2',  // Transition between Blue and Violet
     'ICL4': '#DA70D6', // Transition between Violet and Indigo
     'H8': '#9400D3', // Violet
+    'C-term': '#C71585',  // Transition between Violet and starting Red
     "G.HN": "#101010",
     "G.hns1": "#1A1A1A",
     "G.S1": "#242424",
@@ -1303,7 +1304,7 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
 
     // Correct the orientation for better readability
     if (circleType == 'inner') {
-      grn_number = grn_number.split('.')[2];
+      inner_number = grn_number.split('.')[2];
       if (textRotation > 90 || textRotation < -90 ) {
         textRotation += 180;
         textAnchor = "end";
@@ -1313,7 +1314,7 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
         textY = cy + (textDistanceFromCenter - 2 * beadRadius) * Math.sin(angleToCentroid * (Math.PI / 180));
       }
     } else {
-        grn_number= grn_number.replace(/\..*x/, 'x');
+        inner_number= grn_number.replace(/\..*x/, 'x');
         // Correct the orientation for better readability
         if (textRotation > 90 || textRotation < -90 ) {
           textRotation += 180;
@@ -1334,7 +1335,7 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
         .attr("dy", "0.3em")  // Adjust as needed for vertical alignment
         .attr("text-anchor", textAnchor)
         .attr("transform", `rotate(${textRotation},${cx},${cy})`) // .attr("transform", `rotate(${angleToCentroid * (180 / Math.PI)},${cx},${cy})`)
-        .text(grn_number)
+        .text(inner_number)
         .style("font-size", "12px")
         .style("font-family", "Palatino")
         .attr("font-weight", "bold")
@@ -1467,7 +1468,6 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
     const innerBead = d3.select(`#bead-inner-${innerIndex}`);
     const outerBead = d3.select(`#bead-outer-${outerIndex}`);
 
-    console.log(countInner);
     const INNER_RADIUS = smallRadius;
     const OUTER_RADIUS = bigRadius;
 
@@ -1510,11 +1510,11 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
     const tangentialOuterX = centroidX + Math.cos(angleToCentroidOuter) * OUTER_BORDER_RADIUS;
     const tangentialOuterY = centroidY + Math.sin(angleToCentroidOuter) * OUTER_BORDER_RADIUS;
 
-    const tangentialMiddleX = centroidX + Math.cos((angleToCentroidInner + angleToCentroidOuter) / 2) * MIDDLE_BORDER_RADIUS;
-    const tangentialMiddleY = centroidY + Math.sin((angleToCentroidInner + angleToCentroidOuter) / 2) * MIDDLE_BORDER_RADIUS;
+    let tangentialMiddleX = centroidX + Math.cos((angleToCentroidInner + angleToCentroidOuter) / 2) * MIDDLE_BORDER_RADIUS;
+    let tangentialMiddleY = centroidY + Math.sin((angleToCentroidInner + angleToCentroidOuter) / 2) * MIDDLE_BORDER_RADIUS;
 
-    const tangentialInnerX = centroidX + Math.cos(angleToCentroidInner) * INNER_BORDER_RADIUS;
-    const tangentialInnerY = centroidY + Math.sin(angleToCentroidInner) * INNER_BORDER_RADIUS;
+    let tangentialInnerX = centroidX + Math.cos(angleToCentroidInner) * INNER_BORDER_RADIUS;
+    let tangentialInnerY = centroidY + Math.sin(angleToCentroidInner) * INNER_BORDER_RADIUS;
 
     const adjustedEndAngle = Math.atan2(tangentialInnerY - innerY, tangentialInnerX - innerX);
     const adjustedEndX = innerX + Math.cos(adjustedEndAngle) * beadRadius;
@@ -1530,6 +1530,39 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
 
     let pathData;
 
+    const isClockwise = angleToCentroidOuter > angleToCentroidInner;
+
+    let design;
+
+    // if(isClockwise){
+    //   design = 'red';
+    //   controlPoint1X = startX + (tangentialOuterX - startX) / 2;
+    //   controlPoint1Y = startY + (tangentialOuterY - startY) / 2;
+    //   controlPoint2X = endX + (tangentialInnerX - endX) / 2;
+    //   controlPoint2Y = endY + (tangentialInnerY - endY) / 2;
+    //   console.log(MIDDLE_BORDER_RADIUS);
+    //   tangentialMiddleX = centroidX + Math.cos(angleToCentroidOuter + Math.PI / 2) * MIDDLE_BORDER_RADIUS;
+    //   tangentialMiddleY = centroidY + Math.sin(angleToCentroidOuter + Math.PI / 2) * MIDDLE_BORDER_RADIUS;
+    // } else {
+    //   design = 'green';
+    //   controlPoint1X = (startX + tangentialOuterX) / 2;
+    //   controlPoint1Y = (startY + tangentialOuterY) / 2;
+    //   controlPoint2X = (endX + tangentialInnerX) / 2;
+    //   controlPoint2Y = (endY + tangentialInnerY) / 2;
+    // }
+
+    // if(countInner < 15){
+    //   pathData = [
+    //     `M ${startX} ${startY}`,
+    //     `C ${controlPoint1X} ${controlPoint1Y}, ${controlPoint2X} ${controlPoint2Y}, ${adjustedEndX} ${adjustedEndY}`
+    //   ].join(" ");
+    // } else {
+    //   pathData = [
+    //     `M ${startX} ${startY}`,
+    //     `C ${controlPoint1X} ${controlPoint1Y}, ${tangentialMiddleX} ${tangentialMiddleY}, ${tangentialInnerX} ${tangentialInnerY}`,
+    //     `C ${controlPoint2X} ${controlPoint2Y}, ${controlPoint2X} ${controlPoint2Y}, ${adjustedEndX} ${adjustedEndY}`
+    //   ].join(" ");
+    // }
     if(countInner < 15){
       pathData = [
         `M ${startX} ${startY}`,
@@ -1575,7 +1608,11 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
     smallRadius = countInner * 20 / Math.PI * 0.85;
   };
 
-  bigRadius = smallRadius * 2.7;
+  if (countInner < 30 ){
+    bigRadius = smallRadius * 2.7;
+  } else {
+    bigRadius = (countOuter * 20 / Math.PI * 0.95) * 2.2;
+  }
 
   // For example, with a bead radius of 20
   createCircle(600, 520, 20, beadInfo.innerCircle, 'inner', smallRadius);
@@ -1662,7 +1699,7 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
 
     svg.selectAll("path")
       .attr("stroke", "black")
-      .attr("stroke-width", 2)
+      .attr("stroke-width", 2);
 
     svg.selectAll(`.van-der-waals`).attr("stroke-opacity", 0);
 
