@@ -82,24 +82,26 @@ canvas {
     <div class="text-center">
         <div style="display: inline;">
           {% if model.structure_type.slug == "af-signprot" %}
-              <h2>{{ model.protein_conformation.protein.name|safe }} - {{ model.signprot_complex.protein.family.name|gprot_short }} complex model</h2>
+              <h2>{{ model.protein_conformation.protein.name|safe }} - {{ model.signprot_complex.protein.family.name|gprot_short }} complex model
           {% else %}
-              <h2>{{ model.protein_conformation.protein.entry_name|upper }} refined </h2>
+              <h2>{{ model.protein_conformation.protein.entry_name|upper }} refined 
           {% endif %}
-        </div>
-        <div style="display: inline;">
-          <div class="btn-group">
-              <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                  Download <span class="caret"></span>
-              </button>
-              <ul class="dropdown-menu">
-                <li><a id="download_btn1" href="./{{model.protein_conformation.protein.entry_name|upper}}_full/download_pdb">Full</a></li>
-                <li><a id="download_btn2" href="./{{model.protein_conformation.protein.entry_name|upper}}_noloops/download_pdb">Without loops</a></li>
-              </ul>
-          </div>
-        </div>
-        <div style="display: inline;">
-            <i style="color:black;" class="fas fa-info-circle" data-html="true" data-toggle="popover" data-trigger="click" data-placement="below" data-html="true" data-content="The PDB file contains GPCRdb generic residue numbers in the B-factor field of C&alpha; atoms <a target='_blank' href='https://doi.org/10.1016/j.tips.2014.11.001'>Isberg et al. 2015</a>"></i>
+        
+            <div style="display: inline;">
+              <div class="btn-group">
+                  <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                      Download <span class="caret"></span>
+                  </button>
+                  <ul class="dropdown-menu">
+                    <li><a id="download_btn1" href="./{{model.protein_conformation.protein.entry_name|upper}}_full/download_pdb">Full</a></li>
+                    <li><a id="download_btn2" href="./{{model.protein_conformation.protein.entry_name|upper}}_noloops/download_pdb">Without loops</a></li>
+                  </ul>
+              </div>
+            </div>
+            <div style="display: inline;">
+                <i style="color:black; font-size:16px;" class="fas fa-info-circle" data-html="true" data-toggle="popover" data-trigger="click hover" data-placement="below" data-html="true" data-content="The PDB file contains GPCRdb generic residue numbers in the B-factor field of C&alpha; atoms <a target='_blank' href='https://doi.org/10.1016/j.tips.2014.11.001'>Isberg et al. 2015</a>"></i>
+            </div>
+            </h2>
         </div>
     </div>
 </div>
@@ -175,6 +177,7 @@ canvas {
           <br>
       </div>
     </div>
+    {% if refined == "false" %}
     <div class="col-md-5">
         <div><h4>Tertiary structure confidence <i class="fas fa-info-circle" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="below" data-content="<b>Interpretation of AlphaFold models</b><br>The pLDDT score from AlphaFold estimates the confidence of the placement of an individual residue in relation to its neighboring residues within a 15 Å radius."></i></h4></div>
         <div style='width: 90%; display:table; position:relative;'>
@@ -250,7 +253,193 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
         </div>
         <div id="PAE_location"></div>
     </div>
+    {% endif %}
 </div>
+
+{% if refined == "true" %}
+<div class="row">
+    <div class="col-md-3 text-right text-info">
+        <h4>RECEPTOR STRUCTURE SOURCE</h4>
+    </div>
+    <style>
+        .table-th {
+            background:#eaeaea;
+            border-bottom:1px solid #9ea7af;
+            border-right: 1px solid #9ea7af;
+            padding:5px;
+            font-size: 12px;
+            text-align:left;
+            vertical-align:middle;
+        }
+        .table-td {
+            text-align:center;
+            border-right: 1px solid #9ea7af;
+        }
+    </style>
+    <div class="col-md-9">
+        <div style='width: 70%; display:table; position:relative;'>
+            <div style='display: table-cell;'>
+                {% for prot, bts in backbone_templates.items %}
+                    {% for bt in bts %}
+                        <div class="graphcolor" style="background-color:{{ bt.color }}; width: 20px; height: 15px; margin-bottom: 5px; border:solid black 1px;"></div>
+                        {{ bt.pdb_code.index }} ({{ bt.protein_conformation.protein.parent.name|safe}}) <br>
+
+
+                    {% endfor %}
+                {% endfor %}
+                        <div class="graphcolor" style="background-color:white; width: 20px; height: 15px; margin-bottom: 5px; border:solid black 1px;"></div>
+                        AlphaFold2-Multimer
+            </div>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th class='table-th'></th>
+                    <th class='table-th'>Main template (%)</th>
+                    <th class='table-th'>Additional templates (%)</th>
+                    <th class='table-th' style="border-right: 0px;">No template - freely modelled (%)</th>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="border-right: 1px solid #9ea7af; text-align:right; padding: 3px; font-size: 12px;">Backbone</td>
+                    <td class="table-td">{{bb_main}}</td>
+                    <td class="table-td">{{bb_alt}}</td>
+                    <td class="table-td" style="border-right: 0px;">{{bb_none}}</td>
+                </tr>
+                <tr>
+                    <td style="border-right: 1px solid #9ea7af; text-align:right; padding: 3px; font-size: 12px;">Side-chains</td>
+                    <td class="table-td">{{sc_main}}</td>
+                    <td class="table-td">{{sc_alt}}</td>
+                    <td class="table-td" style="border-right: 0px;">{{sc_none}}</td>
+                </tr>
+            </tbody>
+        </table>
+        <!-- <br>
+        Number of backbone templates: {{ backbone_templates_number }}<br>
+        Number of rotamer templates: {{ rotamer_templates_number }}<br><br>
+ -->
+        <style>
+            table.dataTable thead th {padding: 3px 1px 3px 3px;}
+        </style>
+        <div style="padding-top: 0px; font-size: 10px; white-space: nowrap; width: 50%;">
+            <table class="display" id="rotamers">
+                <thead>
+                    <tr>
+                        <th>Segment</th>
+                        <th>Seq.num.</th>
+                        <th>AA</th>
+                        <th>GPCRdb#</th>
+                        <th>Backbone</th>
+                        <th>PDB</th>
+                        <th>Rotamer</th>
+                        <th>PDB</th>
+                    </tr>
+                    <tr>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for rota in receptor_rotamers %}
+                    <tr>
+                        <td>{{ rota.residue.protein_segment.slug }}</td>
+                        <td>{{ rota.residue.sequence_number }}</td>
+                        <td>{{ rota.residue.amino_acid }}</td>
+                        {% if rota.residue.display_generic_number %}
+                            <td>{{ rota.residue.display_generic_number.label }}</td>
+                        {% else %}
+                            <td>-</td>
+                        {% endif %}
+                        {% if rota.backbone_template %}
+                            <td><a href="/protein/{{ rota.backbone_template.protein_conformation.protein.parent.entry_name }}">{{ rota.backbone_template.protein_conformation.protein.parent.name|safe }}</a></td>
+                            <td><a href="../{{ rota.backbone_template.pdb_code.index }}">{{ rota.backbone_template.pdb_code.index }}</a></td>
+                        {% else %}
+                            <td>-</td>
+                            <td>-</td>
+                        {% endif %}
+                        {% if rota.rotamer_template %}
+                            <td><a href="/protein/{{ rota.rotamer_template.protein_conformation.protein.parent.entry_name }}">{{ rota.rotamer_template.protein_conformation.protein.parent.name|safe }}</a></td>
+                            <td><a href="../{{ rota.rotamer_template.pdb_code.index }}">{{ rota.rotamer_template.pdb_code.index }}</a></td>
+                        {% else %}
+                            <td>-</td>
+                            <td>-</td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<br>
+<div class="row">
+    <div class="col-md-3 text-right text-info">
+        <h4>G-PROTEIN STRUCTURE SOURCE</h4>
+    </div>
+    <div class="col-md-9">
+        <style>
+            table.dataTable thead th {padding: 3px 1px 3px 3px;}
+        </style>
+        <div style="padding-top: 0px; font-size: 10px; white-space: nowrap; width: 50%;">
+            <table class="display" id="signprot_rotamers">
+                <thead>
+                    <tr>
+                        <th>Segment</th>
+                        <th>Seq.num.</th>
+                        <th>AA</th>
+                        <th>CGN#</th>
+                        <th>Backbone</th>
+                        <th>PDB</th>
+                        <th>Rotamer</th>
+                        <th>PDB</th>
+                    </tr>
+                    <tr>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for rota in signprot_rotamers %}
+                    <tr>
+                        <td>{{ rota.residue.protein_segment.slug }}</td>
+                        <td>{{ rota.residue.sequence_number }}</td>
+                        <td>{{ rota.residue.amino_acid }}</td>
+                        <td>{{ rota.residue.generic_number.label }}</td>
+                        {% if rota.backbone_template %}
+                            <td><a href="/signprot/{{ rota.backbone_template.signprot_complex.protein.entry_name }}"> {{ rota.backbone_template.signprot_complex.protein.name}}</a></td>
+                            <td><a href="../{{ rota.backbone_template.pdb_code.index }}">{{ rota.backbone_template.pdb_code.index }}</a></td>
+                        {% else %}
+                            <td>-</td>
+                            <td>-</td>
+                        {% endif %}
+                        {% if rota.rotamer_template %}
+                            <td><a href="/signprot/{{ rota.rotamer_template.signprot_complex.protein.entry_name }}"> {{ rota.rotamer_template.signprot_complex.protein.name}}</a></td>
+                            <td><a href="../{{ rota.rotamer_template.pdb_code.index }}">{{ rota.rotamer_template.pdb_code.index }}</a></td>
+                        {% else %}
+                            <td>-</td>
+                            <td>-</td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<br>
+{% endif %}
 
 <div class="row">
   <div class="col-md-3 text-right text-info">
@@ -325,189 +514,7 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
 
 </div>
 
-{% if refined %}
-<div class="row">
-    <div class="col-md-3 text-right text-info">
-        <h4>RECEPTOR TEMPLATES</h4>
-    </div>
-    <style>
-        .table-th {
-            background:#eaeaea;
-            border-bottom:1px solid #9ea7af;
-            border-right: 1px solid #9ea7af;
-            padding:5px;
-            font-size: 12px;
-            text-align:left;
-            vertical-align:middle;
-        }
-        .table-td {
-            text-align:center;
-            border-right: 1px solid #9ea7af;
-        }
-    </style>
-    <div class="col-md-9">
-        <div style='width: 70%; display:table; position:relative;'>
-            <div style='display: table-cell;'>
-                {% for prot, bts in backbone_templates.items %}
-                    {% for bt in bts %}
-                        <div class="graphcolor" style="background-color:{{ bt.color }}; width: 20px; height: 10px; margin-bottom: 5px; border:solid black;"></div>
-                        {{ bt.pdb_code.index }} ({{ bt.protein_conformation.protein.parent.name|safe}}) <br>
 
-
-                    {% endfor %}
-                {% endfor %}
-                        <div class="graphcolor" style="background-color:white; width: 20px; height: 10px; margin-bottom: 5px; border:solid black;"></div>
-                        None
-            </div>
-        </div>
-        <table>
-            <thead>
-                <tr>
-                    <th class='table-th'></th>
-                    <th class='table-th'>Main template (%)</th>
-                    <th class='table-th'>Additional templates (%)</th>
-                    <th class='table-th' style="border-right: 0px;">No template - freely modelled (%)</th>
-            </thead>
-            <tbody>
-                <tr>
-                    <td style="border-right: 1px solid #9ea7af; text-align:right; padding: 3px; font-size: 12px;">Backbone</td>
-                    <td class="table-td">{{bb_main}}</td>
-                    <td class="table-td">{{bb_alt}}</td>
-                    <td class="table-td" style="border-right: 0px;">{{bb_none}}</td>
-                </tr>
-                <tr>
-                    <td style="border-right: 1px solid #9ea7af; text-align:right; padding: 3px; font-size: 12px;">Side-chains</td>
-                    <td class="table-td">{{sc_main}}</td>
-                    <td class="table-td">{{sc_alt}}</td>
-                    <td class="table-td" style="border-right: 0px;">{{sc_none}}</td>
-                </tr>
-            </tbody>
-        </table>
-        <br>
-        Number of backbone templates: {{ backbone_templates_number }}<br>
-        Number of rotamer templates: {{ rotamer_templates_number }}<br><br>
-
-        <style>
-            table.dataTable thead th {padding: 3px 1px 3px 3px;}
-        </style>
-        <div style="padding-top: 0px; font-size: 10px; white-space: nowrap; width: 50%;">
-            <table class="display" id="rotamers">
-                <thead>
-                    <tr>
-                        <th>Segment</th>
-                        <th>Seq.num.</th>
-                        <th>AA</th>
-                        <th>GPCRdb#</th>
-                        <th>Backbone</th>
-                        <th>PDB</th>
-                        <th>Rotamer</th>
-                        <th>PDB</th>
-                    </tr>
-                    <tr>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                {% for rota in receptor_rotamers %}
-                    <tr>
-                        <td>{{ rota.residue.protein_segment.slug }}</td>
-                        <td>{{ rota.residue.sequence_number }}</td>
-                        <td>{{ rota.residue.amino_acid }}</td>
-                        {% if rota.residue.display_generic_number %}
-                            <td>{{ rota.residue.display_generic_number.label }}</td>
-                        {% else %}
-                            <td>-</td>
-                        {% endif %}
-                        {% if rota.backbone_template %}
-                            <td><a href="/protein/{{ rota.backbone_template.protein_conformation.protein.parent.entry_name }}">{{ rota.backbone_template.protein_conformation.protein.parent.name|safe }}</a></td>
-                            <td><a href="../{{ rota.backbone_template.pdb_code.index }}">{{ rota.backbone_template.pdb_code.index }}</a></td>
-                        {% else %}
-                            <td>-</td>
-                            <td>-</td>
-                        {% endif %}
-                        {% if rota.rotamer_template %}
-                            <td><a href="/protein/{{ rota.rotamer_template.protein_conformation.protein.parent.entry_name }}">{{ rota.rotamer_template.protein_conformation.protein.parent.name|safe }}</a></td>
-                            <td><a href="../{{ rota.rotamer_template.pdb_code.index }}">{{ rota.rotamer_template.pdb_code.index }}</a></td>
-                        {% else %}
-                            <td>-</td>
-                            <td>-</td>
-                        {% endif %}
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
-<br>
-<div class="row">
-    <div class="col-md-3 text-right text-info">
-        <h4>G-PROTEIN TEMPLATES</h4>
-    </div>
-    <div class="col-md-9">
-        <style>
-            table.dataTable thead th {padding: 3px 1px 3px 3px;}
-        </style>
-        <div style="padding-top: 0px; font-size: 10px; white-space: nowrap; width: 50%;">
-            <table class="display" id="signprot_rotamers">
-                <thead>
-                    <tr>
-                        <th>Segment</th>
-                        <th>Seq.num.</th>
-                        <th>AA</th>
-                        <th>CGN#</th>
-                        <th>Backbone</th>
-                        <th>PDB</th>
-                        <th>Rotamer</th>
-                        <th>PDB</th>
-                    </tr>
-                    <tr>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                {% for rota in signprot_rotamers %}
-                    <tr>
-                        <td>{{ rota.residue.protein_segment.slug }}</td>
-                        <td>{{ rota.residue.sequence_number }}</td>
-                        <td>{{ rota.residue.amino_acid }}</td>
-                        <td>{{ rota.residue.generic_number.label }}</td>
-                        {% if rota.backbone_template %}
-                            <td><a href="/signprot/{{ rota.backbone_template.signprot_complex.protein.entry_name }}"> {{ rota.backbone_template.signprot_complex.protein.name}}</a></td>
-                            <td><a href="../{{ rota.backbone_template.pdb_code.index }}">{{ rota.backbone_template.pdb_code.index }}</a></td>
-                        {% else %}
-                            <td>-</td>
-                            <td>-</td>
-                        {% endif %}
-                        {% if rota.rotamer_template %}
-                            <td><a href="/signprot/{{ rota.rotamer_template.signprot_complex.protein.entry_name }}"> {{ rota.rotamer_template.signprot_complex.protein.name}}</a></td>
-                            <td><a href="../{{ rota.rotamer_template.pdb_code.index }}">{{ rota.rotamer_template.pdb_code.index }}</a></td>
-                        {% else %}
-                            <td>-</td>
-                            <td>-</td>
-                        {% endif %}
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
-{% endif %}
 
 <br>
 <style>
@@ -522,9 +529,7 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
         document.addEventListener( "DOMContentLoaded", function(){
             stage = new NGL.Stage( "viewport", { backgroundColor: "white" } );
             var color_residues = JSON.parse('{{color_residues|safe}}');
-
             var schemeId = NGL.ColorMakerRegistry.addSelectionScheme( color_residues );
-
             stage.loadFile( "/structure/complex_models/view/{{pdbname}}", { ext: "pdb" }  ).then( function( o ){
                 o.addRepresentation( "cartoon", {color: schemeId} );  // pass schemeId here ,{ color: schemeId }
                 o.centerView();
@@ -553,20 +558,22 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
     </script>
     <script type="text/javascript" charset="utf-8">
         $(document).ready(function () {
-            ptm = {{ scores.ptm }};
-            iptm = {{ scores.iptm }};
-            pae = {{ scores.pae_mean }};
+            if ({{ refined }}===false) {
+              ptm = {{ scores.ptm }};
+              iptm = {{ scores.iptm }};
+              pae = {{ scores.pae_mean }};
+              draw_model_scores('PTM_location', 'PTM_divider', 'PTM',  0, 1, ptm, 0.5);
+              draw_model_scores('iPTM_location', 'iPTM_divider', 'iPTM',  0, 1, iptm, 0.2);
+              draw_model_scores('PAE_location', 'PAE_divider', 'PAE',  0, 31, pae, 26, true);
+            }
             interactions = {{ interactions | safe }};
             inner_data = {{ inner | safe }};
             outer_data = {{ outer | safe }};
-
             ClearSelection('targets');
             ClearSelection('reference');
             // Call the function with your desired values
             // function draw_model_scores(location, element_id, legend_label, score, startValue, endValue, definedValue
-            draw_model_scores('PTM_location', 'PTM_divider', 'PTM',  0, 1, ptm, 0.5);
-            draw_model_scores('iPTM_location', 'iPTM_divider', 'iPTM',  0, 1, iptm, 0.2);
-            draw_model_scores('PAE_location', 'PAE_divider', 'PAE',  0, 31, pae, 26, true);
+            
             draw_interactions_in_circles('visualization', interactions, inner_data, outer_data);
             // Function to update the highlight based on checkbox selections
             function updateHighlight() {

@@ -44,7 +44,10 @@ def compute_interactions(pdb_name, protein=None, signprot=None, lig=None, do_int
         chain = s[preferred_chain]
 
         # fetching residues for wild type structure of protein
-        residues = protein.protein_conformation.residue_set.exclude(generic_number=None).all().prefetch_related('generic_number')
+        if do_complexes:
+            residues = protein.protein_conformation.residue_set.all().prefetch_related('generic_number')
+        else:
+            residues = protein.protein_conformation.residue_set.exclude(generic_number=None).all().prefetch_related('generic_number')
         struc = protein
         # residues = ProteinConformation.objects.get(protein__entry_name=protein.protein.entry_name).residue_set.exclude(generic_number=None).all().prefetch_related('generic_number')
         # CREATING THE DUMMY RESIDUES FOR ALL THE RESIDUES OF CHAIN A (aka protein)

@@ -103,6 +103,7 @@ class Command(BaseBuild):
                     parent_struct = Structure.objects.get(pdb_code__index=s.pdb_code.index.split('_')[0])
                     parent_struct.refined = False
                     parent_struct.save()
+                    s.stats_text.delete()
                 except:
                     pass
             Structure.objects.filter(structure_type__slug='af-signprot-refined').delete()
@@ -230,7 +231,7 @@ class Command(BaseBuild):
             webresource = WebResource.objects.get(slug='pdb')
             weblink, _ = WebLink.objects.get_or_create(index='{}_refined'.format(main_structure), web_resource=webresource)
             struct_obj, _ = Structure.objects.get_or_create(preferred_chain=parent_struct.preferred_chain, publication_date=build_date, pdb_data=pdb, pdb_code=weblink, build_check=True,
-                                                            protein_conformation=protconf, state=parent_struct.state, structure_type=signprotrefined, author_state=parent_struct.author_state)
+                                                            protein_conformation=protconf, state=parent_struct.state, structure_type=signprotrefined, author_state=parent_struct.author_state, stats_text=stats_text)
             signprot_complex, _ = SignprotComplex.objects.get_or_create(alpha=parent_struct.signprot_complex.alpha, protein=parent_struct.signprot_complex.protein, structure=struct_obj,
                                                                         beta_chain=parent_struct.signprot_complex.beta_chain, gamma_chain=parent_struct.signprot_complex.gamma_chain,
                                                                         beta_protein=parent_struct.signprot_complex.beta_protein, gamma_protein=parent_struct.signprot_complex.gamma_protein)
