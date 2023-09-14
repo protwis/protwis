@@ -481,7 +481,7 @@ def RefinedModelDetails(request, pdbname):
                 complex_mod_details = SignprotComplex.objects.filter(structure=structure, beta_protein__isnull=False, gamma_protein__isnull=False) # Temp fix for G protein fragment coupled structures
                 if len(complex_mod_details) > 0:
                     complex_mod = complex_mod_details.first()
-                    return ComplexModelDetails(request, pdbname.lower(), complex_mod.protein.entry_name)
+                    return ComplexModelDetails(request, pdbname.lower(), True)
                 else:
                     return HomologyModelDetails(request, pdbname.lower(), structure.state.slug)
 
@@ -567,18 +567,24 @@ def sort_and_update(push_gpcr, gpcr, push_gprot, gprot, interactions):
 
   return gpcr, gprot
 
-def ComplexModelDetails(request, header):
+def ComplexModelDetails(request, header, refined=False):
     """
     Show complex homology models details
     """
     color_palette = ["orange","cyan","yellow","lime","fuchsia","limegreen","teal","olive","thistle","grey","chocolate","blue","red","pink","palegoldenrod","steelblue","tan","lightcoral","skyblue","papayawhip"]
+    if refined:
+        main_template = Structure.objects.get(pdb_code__index=header.upper())
+        header = header.upper()+'_refined'
     model = Structure.objects.get(pdb_code__index=header)
-    scores = StructureAFScores.objects.get(structure=model)
-    #Need to build the plDDT colors
-    model_plddt = StructureModelpLDDT.objects.filter(structure=model)
-    residues_plddt = {}
-    for item in model_plddt:
-        residues_plddt[item.residue.id] = [item.residue, item.pLDDT]
+
+    if not refined:
+        scores = StructureAFScores.objects.get(structure=model)
+        #Need to build the plDDT colors
+        model_plddt = StructureModelpLDDT.objects.filter(structure=model)
+        residues_plddt = {}
+        for item in model_plddt:
+            residues_plddt[item.residue.id] = [item.residue, item.pLDDT]
+
     ### Gathering interaction info and structuring JS data
     interactions = Interaction.objects.filter(interacting_pair__referenced_structure=model).prefetch_related('interacting_pair__res1', 'interacting_pair__res2')
 
@@ -593,15 +599,23 @@ def ComplexModelDetails(request, header):
                   'van-der-waals': 'Van der waals'}
 
     for pair in interactions:
+        try:
+            gn1 = pair.interacting_pair.res1.display_generic_number.label
+        except AttributeError:
+            gn1 = '-'
+        try:
+            gn2 = pair.interacting_pair.res2.display_generic_number.label
+        except AttributeError:
+            gn2 = '-'
         gpcr = {'aminoAcid': pair.interacting_pair.res1.amino_acid,
                 'segment': pair.interacting_pair.res1.protein_segment.slug,
-                'generic_number': pair.interacting_pair.res1.display_generic_number.label,
+                'generic_number': gn1,
                 'sequence_number': pair.interacting_pair.res1.sequence_number,
                 'interaction_level': pair.interaction_level
                 }
         gprot = {'aminoAcid': pair.interacting_pair.res2.amino_acid,
                 'segment': pair.interacting_pair.res2.protein_segment.slug,
-                'generic_number': pair.interacting_pair.res2.display_generic_number.label,
+                'generic_number': gn2,
                 'sequence_number': pair.interacting_pair.res2.sequence_number,
                 'interaction_level': pair.interaction_level
                 }
@@ -646,15 +660,22 @@ def ComplexModelDetails(request, header):
             chain_res2 = 'Main'
         else:
             chain_res2 = 'Side'
-
+        try:
+            gn1 = pair.interacting_pair.res1.display_generic_number.label
+        except AttributeError:
+            gn1 = '-'
+        try:
+            gn2 = pair.interacting_pair.res2.display_generic_number.label
+        except AttributeError:
+            gn2 = '-'
         gpcr = {'aminoAcid': pair.interacting_pair.res1.amino_acid,
                 'segment': pair.interacting_pair.res1.protein_segment.slug,
-                'generic_number': pair.interacting_pair.res1.display_generic_number.label,
+                'generic_number': gn1,
                 'sequence_number': pair.interacting_pair.res1.sequence_number
                 }
         gprot = {'aminoAcid': pair.interacting_pair.res2.amino_acid,
                 'segment': pair.interacting_pair.res2.protein_segment.slug,
-                'generic_number': pair.interacting_pair.res2.display_generic_number.label,
+                'generic_number': gn2,
                 'sequence_number': pair.interacting_pair.res2.sequence_number
                 }
 
@@ -695,22 +716,23 @@ def ComplexModelDetails(request, header):
     gpcr_aminoacids_strict, gprot_aminoacids_strict = sort_and_update(to_push_gpcr_strict, gpcr_aminoacids_strict, to_push_gprot_strict, gprot_aminoacids_strict, protein_interactions_strict)
 
     ### Keep old coloring for refined structures
-    if model.structure_type == 'af-signprot-refined':
-        if model.protein_conformation.protein.accession:
-            receptor_residues = Residue.objects.filter(protein_conformation__protein=model.protein_conformation.protein)
-            signprot_residues = Residue.objects.filter(protein_conformation__protein=model.signprot_complex.protein)
-            a = Alignment()
-            a.load_reference_protein(model.protein_conformation.protein)
-            a.load_proteins([model.protein_conformation.protein.parent])
-            segs = ProteinSegment.objects.filter(id__in=receptor_residues.order_by("protein_segment__slug").distinct("protein_segment__slug").values_list("protein_segment", flat=True))
-            a.load_segments(segs)
-            a.build_alignment()
-            a.calculate_similarity()
-            main_template_seqsim = a.proteins[1].similarity
-        else:
-            receptor_residues = Residue.objects.filter(protein_conformation__protein=model.protein_conformation.protein)
-            signprot_residues = Residue.objects.filter(protein_conformation__protein=model.signprot_complex.protein)
-            main_template_seqsim = 100
+    if model.structure_type.slug == 'af-signprot-refined':
+        # if model.protein_conformation.protein.accession:
+        # parent_struct = Structure.objects.get(model.pdb_code.index.split('_')[0])
+        # receptor_residues = Residue.objects.filter(protein_conformation__protein=model.protein_conformation.protein)
+        # signprot_residues = Residue.objects.filter(protein_conformation__protein=model.signprot_complex.protein)
+        # a = Alignment()
+        # a.load_reference_protein(parent_struct.protein_conformation.protein)
+        # a.load_proteins([model.protein_conformation.protein])
+        # segs = ProteinSegment.objects.filter(id__in=receptor_residues.order_by("protein_segment__slug").distinct("protein_segment__slug").values_list("protein_segment", flat=True))
+        # a.load_segments(segs)
+        # a.build_alignment()
+        # a.calculate_similarity()
+        # main_template_seqsim = a.proteins[1].similarity
+        # else:
+        receptor_residues = Residue.objects.filter(protein_conformation__protein=model.protein_conformation.protein)
+        signprot_residues = Residue.objects.filter(protein_conformation__protein=model.signprot_complex.protein)
+        main_template_seqsim = 100
         receptor_rotamers, signprot_rotamers = parse_model_statsfile(model.stats_text.stats_text, receptor_residues, signprot_residues)
 
         loop_segments = ProteinSegment.objects.filter(category='loop', proteinfamily='Alpha')
@@ -732,14 +754,14 @@ def ComplexModelDetails(request, header):
                         bb_temps[s.protein_conformation.protein.parent].append(s)
                         break
 
-        return render(request,'complex_models_details.html',{'model': model, 'modelname': modelname, 'signprot': signprot, 'signprot_template': signprot_template, 'receptor_rotamers': receptor_rotamers, 'signprot_rotamers': signprot_rotamers, 'backbone_templates': bb_temps, 'backbone_templates_number': len(backbone_templates),
+        return render(request,'complex_models_details.html',{'model': model, 'signprot_template': signprot_template, 'receptor_rotamers': receptor_rotamers, 'signprot_rotamers': signprot_rotamers, 'backbone_templates': bb_temps, 'backbone_templates_number': len(backbone_templates),
                                                              'rotamer_templates': r_temps, 'rotamer_templates_number': len(rotamer_templates), 'color_residues': json.dumps(segments_out), 'bb_main': round(bb_main/len(receptor_rotamers)*100, 1),
                                                              'bb_alt': round(bb_alt/len(receptor_rotamers)*100, 1), 'bb_none': round(bb_none/len(receptor_rotamers)*100, 1), 'sc_main': round(sc_main/len(receptor_rotamers)*100, 1),
                                                              'sc_alt': round(sc_alt/len(receptor_rotamers)*100, 1), 'sc_none': round(sc_none/len(receptor_rotamers)*100, 1), 'main_template_seqsim': main_template_seqsim,
                                                              'template_list': template_list, 'model_main_template': main_template, 'state': None, 'signprot_sim': int(gp.proteins[1].similarity),
-                                                             'signprot_color_residues': json.dumps(segments_out2), 'loop_segments': loop_segments,
-                                                             'scores': scores, 'refined': True, 'outer': json.dumps(gpcr_aminoacids), 'inner': json.dumps(gprot_aminoacids),
-                                                             'interactions': json.dumps(protein_interactions), 'residues': len(protein_interactions), 'structure_type': model.structure_type})#, 'delta_distance': delta_distance})
+                                                             'signprot_color_residues': json.dumps(segments_out2), 'loop_segments': loop_segments, 'pdbname': header, 'scores': StructureAFScores(),
+                                                             'refined': json.dumps(True), 'outer': json.dumps(gpcr_aminoacids), 'inner': json.dumps(gprot_aminoacids),
+                                                             'interactions': json.dumps(protein_interactions), 'residues': len(protein_interactions)})#, 'delta_distance': delta_distance})
 
     else:
 
@@ -748,7 +770,7 @@ def ComplexModelDetails(request, header):
                                                              'color_residues': json.dumps(segments_out),
                                                              'pdbname': header,
                                                              'scores': scores,
-                                                             'refined': False,
+                                                             'refined': json.dumps(False),
                                                              'outer': json.dumps(gpcr_aminoacids),
                                                              'inner': json.dumps(gprot_aminoacids),
                                                              'interactions': json.dumps(protein_interactions),
