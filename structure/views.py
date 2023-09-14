@@ -30,6 +30,7 @@ from contactnetwork.models import Interaction
 
 import io
 import numpy as np
+from scipy.optimize import linear_sum_assignment
 from Bio.PDB.vectors import Vector, rotmat
 
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
@@ -42,7 +43,7 @@ import json
 
 from copy import deepcopy
 from io import StringIO, BytesIO
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 from Bio.PDB import PDBIO, PDBParser, Select
 
 from email.mime.text import MIMEText
@@ -514,6 +515,38 @@ def find_dict_index(dict_list, target_dict):
             return i
     return -1  # return -1 if the dictionary is not found
 
+def sort_and_update(push_gpcr, gpcr, push_gprot, gprot, interactions):
+  for key in push_gpcr:
+      gpcr[key]['interactions'] = ', '.join(push_gpcr[key])
+  for key in push_gprot:
+      gprot[key]['interactions'] = ', '.join(push_gprot[key])
+
+  matching_dict = {}
+  for record in interactions:
+      if record['innerIndex'] not in matching_dict.keys():
+          matching_dict[record['innerIndex']] = []
+      if record['outerIndex'] not in matching_dict[record['innerIndex']]:
+          matching_dict[record['innerIndex']].append(record['outerIndex'])
+  # Count frequency of each index in dict_b
+  frequency_count = {}
+  for connections in matching_dict.values():
+      for index in connections:
+          frequency_count[index] = frequency_count.get(index, 0) + 1
+  # Sort the indices by frequency
+  sorted_indices = sorted(frequency_count.keys(), key=lambda x: frequency_count[x], reverse=True)
+  # Create an index mapping
+  index_mapping = {original: i for i, original in enumerate(sorted_indices)}
+  # Create new_dict_b by reordering dict_b based on index_mapping
+  new_dict_b = [None] * len(gpcr)
+  for original, new in index_mapping.items():
+      new_dict_b[new] = gpcr[original]
+  # Remove None values if any (in case dict_b has more elements than mapping_dict)
+  gpcr = [item for item in new_dict_b if item is not None]
+  for record in interactions:
+      record['outerIndex'] = index_mapping[record['outerIndex']]
+
+  return gpcr, gprot
+
 def ComplexModelDetails(request, header, refined=False):
     """
     Show complex homology models details
@@ -523,6 +556,7 @@ def ComplexModelDetails(request, header, refined=False):
         main_template = Structure.objects.get(pdb_code__index=header.upper())
         header = header.upper()+'_refined'
     model = Structure.objects.get(pdb_code__index=header)
+
     if not refined:
         scores = StructureAFScores.objects.get(structure=model)
         #Need to build the plDDT colors
@@ -537,6 +571,7 @@ def ComplexModelDetails(request, header, refined=False):
     gpcr_aminoacids = []
     gprot_aminoacids = []
     protein_interactions = []
+    protein_interactions_strict = []
     conversion = {'aromatic': 'Aromatic',
                   'hydrophobic': 'Hydrophobic',
                   'ionic': 'Ionic',
@@ -554,27 +589,48 @@ def ComplexModelDetails(request, header, refined=False):
             gn2 = '-'
         gpcr = {'aminoAcid': pair.interacting_pair.res1.amino_acid,
                 'segment': pair.interacting_pair.res1.protein_segment.slug,
-                'generic_number': gn1
+                'generic_number': gn1,
+                'sequence_number': pair.interacting_pair.res1.sequence_number,
+                'interaction_level': pair.interaction_level
                 }
         gprot = {'aminoAcid': pair.interacting_pair.res2.amino_acid,
                 'segment': pair.interacting_pair.res2.protein_segment.slug,
-                'generic_number': gn2
+                'generic_number': gn2,
+                'sequence_number': pair.interacting_pair.res2.sequence_number,
+                'interaction_level': pair.interaction_level
                 }
 
         gpcr_aminoacids.append(gpcr)
         gprot_aminoacids.append(gprot)
 
+    gpcr_aminoacids_strict = [record for record in gpcr_aminoacids if record['interaction_level'] == 1]
+    gprot_aminoacids_strict = [record for record in gprot_aminoacids if record['interaction_level'] == 1]
+    gpcr_aminoacids_strict = remove_duplicate_dicts(gpcr_aminoacids_strict)
+    gprot_aminoacids_strict = remove_duplicate_dicts(gprot_aminoacids_strict)
     gpcr_aminoacids = remove_duplicate_dicts(gpcr_aminoacids)
     gprot_aminoacids = remove_duplicate_dicts(gprot_aminoacids)
+
+    gpcr_aminoacids = [{key: value for key, value in d.items() if key != 'interaction_level'} for d in gpcr_aminoacids]
+    gprot_aminoacids = [{key: value for key, value in d.items() if key != 'interaction_level'} for d in gprot_aminoacids]
+    gpcr_aminoacids_strict = [{key: value for key, value in d.items() if key != 'interaction_level'} for d in gpcr_aminoacids_strict]
+    gprot_aminoacids_strict = [{key: value for key, value in d.items() if key != 'interaction_level'} for d in gprot_aminoacids_strict]
+
     segments_order = ['TM1','ICL1', 'TM2', 'ICL2', 'TM3', 'ICL3', 'TM4', 'TM5', 'TM6', 'TM7', 'ICL4', 'H8']
+    gprot_segments = ['G.HN','G.hns1','G.S1','G.s1h1','G.H1','G.h1ha','H.HA','H.hahb','H.HB','H.hbhc','H.HC','H.hchd','H.HD','H.hdhe','H.HE','H.hehf','H.HF','G.hfs2','G.S2','G.s2s3','G.S3','G.s3h2','G.H2','G.h2s4','G.S4','G.s4h3','G.H3','G.h3s5','G.S5','G.s5hg','G.HG','G.hgh4','G.H4','G.h4s6','G.S6','G.s6h5','G.H5']
     # Create a dictionary that maps segments to their positions in the custom order
     order_gpcr = {segment: index for index, segment in enumerate(segments_order)}
+    order_gprot = {segment: index for index, segment in enumerate(gprot_segments)}
+
     # Sort the list of dictionaries based on the custom order
-    gpcr_aminoacids = sorted(gpcr_aminoacids, key=lambda x: order_gpcr.get(x['segment'], float('inf')))
-    gprot_aminoacids = sorted(gprot_aminoacids, key=lambda x: x['generic_number'])
+    # gpcr_aminoacids = sorted(gpcr_aminoacids, key=lambda x: order_gpcr.get(x['segment'], float('inf')))
+    # gprot_aminoacids = sorted(gprot_aminoacids, key=lambda x: x['generic_number'])
+    gprot_aminoacids = sorted(gprot_aminoacids, key=lambda x: order_gprot.get(x['segment'], float('inf')))
+    gprot_aminoacids_strict = sorted(gprot_aminoacids_strict, key=lambda x: order_gprot.get(x['segment'], float('inf')))
 
     to_push_gpcr = {}
     to_push_gprot = {}
+    to_push_gpcr_strict = {}
+    to_push_gprot_strict = {}
     for pair in interactions:
         if pair.atomname_residue1 in ['C', 'CA', 'N', 'O']:
             chain_res1 = 'Main'
@@ -594,16 +650,19 @@ def ComplexModelDetails(request, header, refined=False):
             gn2 = '-'
         gpcr = {'aminoAcid': pair.interacting_pair.res1.amino_acid,
                 'segment': pair.interacting_pair.res1.protein_segment.slug,
-                'generic_number': gn1
+                'generic_number': gn1,
+                'sequence_number': pair.interacting_pair.res1.sequence_number
                 }
         gprot = {'aminoAcid': pair.interacting_pair.res2.amino_acid,
                 'segment': pair.interacting_pair.res2.protein_segment.slug,
-                'generic_number': gn2
+                'generic_number': gn2,
+                'sequence_number': pair.interacting_pair.res2.sequence_number
                 }
 
         gpcr_index = find_dict_index(gpcr_aminoacids, gpcr)
         gprot_index = find_dict_index(gprot_aminoacids, gprot)
-        protein_interactions.append({'innerIndex': gprot_index, 'outerIndex': gpcr_index, 'type': conversion[pair.interaction_type], 'innerChain': chain_res2, 'outerChain': chain_res1})
+        protein_interactions.append({'innerIndex': gprot_index, 'outerIndex': gpcr_index, 'type': conversion[pair.interaction_type], 'innerChain': chain_res2, 'outerChain': chain_res1, 'interaction_level': pair.interaction_level})
+
         if gpcr_index not in to_push_gpcr.keys():
             to_push_gpcr[gpcr_index] = []
         if gprot_index not in to_push_gprot.keys():
@@ -614,13 +673,27 @@ def ComplexModelDetails(request, header, refined=False):
         if (conversion[pair.interaction_type]) not in to_push_gprot[gprot_index]:
             to_push_gprot[gprot_index].append(conversion[pair.interaction_type])
 
-    protein_interactions = remove_duplicate_dicts(protein_interactions)
+        if pair.interaction_level == 1:
+            gpcr_index_strict = find_dict_index(gpcr_aminoacids_strict, gpcr)
+            gprot_index_strict = find_dict_index(gprot_aminoacids_strict, gprot)
+            protein_interactions_strict.append({'innerIndex': gprot_index_strict, 'outerIndex': gpcr_index_strict, 'type': conversion[pair.interaction_type], 'innerChain': chain_res2, 'outerChain': chain_res1, 'interaction_level': pair.interaction_level})
+            ### Copy logic for the strict ones
+            if gpcr_index_strict not in to_push_gpcr_strict.keys():
+                to_push_gpcr_strict[gpcr_index_strict] = []
+            if gprot_index_strict not in to_push_gprot_strict.keys():
+                to_push_gprot_strict[gprot_index_strict] = []
 
-    # import pdb; pdb.set_trace()
-    for key in to_push_gpcr:
-        gpcr_aminoacids[key]['interactions'] = ', '.join(to_push_gpcr[key])
-    for key in to_push_gprot:
-        gprot_aminoacids[key]['interactions'] = ', '.join(to_push_gprot[key])
+            if (conversion[pair.interaction_type]) not in to_push_gpcr_strict[gpcr_index_strict]:
+                to_push_gpcr_strict[gpcr_index_strict].append(conversion[pair.interaction_type])
+            if (conversion[pair.interaction_type]) not in to_push_gprot_strict[gprot_index_strict]:
+                to_push_gprot_strict[gprot_index_strict].append(conversion[pair.interaction_type])
+
+
+    protein_interactions = remove_duplicate_dicts(protein_interactions)
+    protein_interactions_strict = remove_duplicate_dicts(protein_interactions_strict)
+
+    gpcr_aminoacids, gprot_aminoacids = sort_and_update(to_push_gpcr, gpcr_aminoacids, to_push_gprot, gprot_aminoacids, protein_interactions)
+    gpcr_aminoacids_strict, gprot_aminoacids_strict = sort_and_update(to_push_gpcr_strict, gpcr_aminoacids_strict, to_push_gprot_strict, gprot_aminoacids_strict, protein_interactions_strict)
 
     ### Keep old coloring for refined structures
     if model.structure_type.slug == 'af-signprot-refined':

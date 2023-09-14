@@ -463,11 +463,11 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
         <div class="checkbox-group">
           <div class="checkbox-item">
             <input type="checkbox" id="main-main" name="chain" value="Main-Main">
-            <label for="main-main">Main-Main</label>
+            <label for="main-main">Backbone-Backbone</label>
           </div>
           <div class="checkbox-item">
             <input type="checkbox" id="main-side" name="chain" value="Main-Side">
-            <label for="main-side">Main-Side</label>
+            <label for="main-side">Backbone-Side</label>
           </div>
           <div class="checkbox-item">
             <input type="checkbox" id="side-side" name="chain" value="Side-Side">
@@ -475,7 +475,7 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
           </div>
           <div class="checkbox-item">
             <input type="checkbox" id="side-main" name="chain" value="Side-Main">
-            <label for="side-main">Side-Main</label>
+            <label for="side-main">Side-Backbone</label>
           </div>
         </div>
         <br/>
@@ -575,6 +575,8 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
             // function draw_model_scores(location, element_id, legend_label, score, startValue, endValue, definedValue
             
             draw_interactions_in_circles('visualization', interactions, inner_data, outer_data);
+
+            d3.selectAll(`.van-der-waals`).attr("stroke-opacity", 0);
             // Function to update the highlight based on checkbox selections
             function updateHighlight() {
               // Get all selected checkbox values
