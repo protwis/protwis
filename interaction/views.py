@@ -30,7 +30,7 @@ import logging
 from subprocess import call
 import urllib
 import collections
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 from io import BytesIO
 from Bio.PDB import PDBIO, PDBParser, Select, Vector
 import xlsxwriter
@@ -1418,6 +1418,58 @@ def find_dict_index(dict_list, target_dict):
             return i
     return -1  # return -1 if the dictionary is not found
 
+def minimize_distance(connections):
+    outer_to_new_outer = {} # maps old outer index to new outer index
+    inner_to_outer = defaultdict(list) # aggregate all outer indexes for each inner index
+
+    # Invert the mapping for easier manipulation
+    for inner, outers in connections.items():
+        for outer in outers:
+            inner_to_outer[inner].append(outer)
+
+    available_outer_indexes = set()
+    for outers in inner_to_outer.values():
+        available_outer_indexes.update(outers)
+
+    next_available_outer = 0  # Initialize new outer index
+
+    # Loop through sorted inner indexes
+    for inner in sorted(inner_to_outer.keys()):
+        # Sort the outer indexes by their current value
+        for outer in sorted(inner_to_outer[inner]):
+            if outer not in outer_to_new_outer: # Assign new index if not assigned before
+                outer_to_new_outer[outer] = next_available_outer
+                next_available_outer += 1
+
+    return outer_to_new_outer
+
+def sort_and_update(push_gpcr, gpcr, push_gprot, gprot, interactions):
+  for key in push_gpcr:
+      gpcr[key]['interactions'] = ', '.join(push_gpcr[key])
+  for key in push_gprot:
+      gprot[key]['interactions'] = ', '.join(push_gprot[key])
+
+  matching_dict = {}
+  for record in interactions:
+      if record['innerIndex'] not in matching_dict.keys():
+          matching_dict[record['innerIndex']] = []
+      if record['outerIndex'] not in matching_dict[record['innerIndex']]:
+          matching_dict[record['innerIndex']].append(record['outerIndex'])
+
+  conversion = minimize_distance(matching_dict)
+
+  # Create new_dict_b by reordering dict_b based on index_mapping
+  new_dict_b = [None] * len(gpcr)
+  for original, new in conversion.items():
+      new_dict_b[new] = gpcr[original]
+
+  # Remove None values if any (in case dict_b has more elements than mapping_dict)
+  gpcr = [item for item in new_dict_b if item is not None]
+  for record in interactions:
+      record['outerIndex'] = conversion[record['outerIndex']]
+
+  return gpcr, gprot
+
 def ComplexDetails(request, pdbname):
     """
     Show structure details
@@ -1459,8 +1511,16 @@ def ComplexDetails(request, pdbname):
         gpcr_pos = residue.interacting_pair.res1.sequence_number
         gprot_pos = residue.interacting_pair.res2.sequence_number
         segment = residue.interacting_pair.res1.protein_segment.slug
-        gpcr_grn = residue.interacting_pair.res1.generic_number.label
-        gprot_grn = residue.interacting_pair.res2.generic_number.label
+        try:
+            gpcr_grn = residue.interacting_pair.res1.display_generic_number.label
+        except AttributeError:
+            gpcr_grn = '-'
+        try:
+            gprot_grn = residue.interacting_pair.res2.display_generic_number.label
+        except AttributeError:
+            gprot_grn = '-'
+        # gpcr_grn = residue.interacting_pair.res1.generic_number.label
+        # gprot_grn = residue.interacting_pair.res2.generic_number.label
 
         display_res.append(str(gpcr_pos))
         display_res.append(str(gprot_pos))
@@ -1562,6 +1622,7 @@ def ComplexDetails(request, pdbname):
     gpcr_aminoacids = []
     gprot_aminoacids = []
     protein_interactions = []
+    protein_interactions_strict = []
     conversion = {'aromatic': 'Aromatic',
                   'hydrophobic': 'Hydrophobic',
                   'ionic': 'Ionic',
@@ -1569,29 +1630,61 @@ def ComplexDetails(request, pdbname):
                   'van-der-waals': 'Van der waals'}
 
     for pair in interactions:
+        try:
+            gn1 = pair.interacting_pair.res1.display_generic_number.label
+        except AttributeError:
+            gn1 = '-'
+
+        try:
+            gn2 = pair.interacting_pair.res2.display_generic_number.label
+        except AttributeError:
+            gn2 = '-'
+
         gpcr = {'aminoAcid': pair.interacting_pair.res1.amino_acid,
                 'segment': pair.interacting_pair.res1.protein_segment.slug,
-                'generic_number': pair.interacting_pair.res1.display_generic_number.label
+                'generic_number': gn1,
+                'sequence_number': pair.interacting_pair.res1.sequence_number,
+                'interaction_level': pair.interaction_level
                 }
         gprot = {'aminoAcid': pair.interacting_pair.res2.amino_acid,
                 'segment': pair.interacting_pair.res2.protein_segment.slug,
-                'generic_number': pair.interacting_pair.res2.display_generic_number.label
+                'generic_number': gn2,
+                'sequence_number': pair.interacting_pair.res2.sequence_number,
+                'interaction_level': pair.interaction_level
                 }
 
         gpcr_aminoacids.append(gpcr)
         gprot_aminoacids.append(gprot)
 
+    gpcr_aminoacids_strict = [record for record in gpcr_aminoacids if record['interaction_level'] == 1]
+    gprot_aminoacids_strict = [record for record in gprot_aminoacids if record['interaction_level'] == 1]
+
+    gpcr_aminoacids = [{key: value for key, value in d.items() if key != 'interaction_level'} for d in gpcr_aminoacids]
+    gprot_aminoacids = [{key: value for key, value in d.items() if key != 'interaction_level'} for d in gprot_aminoacids]
+    gpcr_aminoacids_strict = [{key: value for key, value in d.items() if key != 'interaction_level'} for d in gpcr_aminoacids_strict]
+    gprot_aminoacids_strict = [{key: value for key, value in d.items() if key != 'interaction_level'} for d in gprot_aminoacids_strict]
+
+    gpcr_aminoacids_strict = remove_duplicate_dicts(gpcr_aminoacids_strict)
+    gprot_aminoacids_strict = remove_duplicate_dicts(gprot_aminoacids_strict)
     gpcr_aminoacids = remove_duplicate_dicts(gpcr_aminoacids)
     gprot_aminoacids = remove_duplicate_dicts(gprot_aminoacids)
-    segments_order = ['TM1','ICL1', 'TM2', 'ICL2', 'TM3', 'ICL3', 'TM4', 'TM5', 'TM6', 'TM7', 'ICL4', 'H8']
+
+    segments_order = ['TM1','ICL1', 'TM2', 'ICL2', 'TM3', 'ICL3', 'TM4', 'TM5', 'TM6', 'TM7', 'ICL4', 'H8', 'C-term']
+    gprot_segments = ['G.HN','G.hns1','G.S1','G.s1h1','G.H1','G.h1ha','H.HA','H.hahb','H.HB','H.hbhc','H.HC','H.hchd','H.HD','H.hdhe','H.HE','H.hehf','H.HF','G.hfs2','G.S2','G.s2s3','G.S3','G.s3h2','G.H2','G.h2s4','G.S4','G.s4h3','G.H3','G.h3s5','G.S5','G.s5hg','G.HG','G.hgh4','G.H4','G.h4s6','G.S6','G.s6h5','G.H5']
     # Create a dictionary that maps segments to their positions in the custom order
-    order_dict = {segment: index for index, segment in enumerate(segments_order)}
+    order_gpcr = {segment: index for index, segment in enumerate(segments_order)}
+    order_gprot = {segment: index for index, segment in enumerate(gprot_segments)}
+
     # Sort the list of dictionaries based on the custom order
-    gpcr_aminoacids = sorted(gpcr_aminoacids, key=lambda x: order_dict.get(x['segment'], float('inf')))
-    gprot_aminoacids = sorted(gprot_aminoacids, key=lambda x: x['generic_number'])
+    # gpcr_aminoacids = sorted(gpcr_aminoacids, key=lambda x: order_gpcr.get(x['segment'], float('inf')))
+    # gprot_aminoacids = sorted(gprot_aminoacids, key=lambda x: x['generic_number'])
+    gprot_aminoacids = sorted(gprot_aminoacids, key=lambda x: (order_gprot.get(x['segment'], 9999), int(x['generic_number'].split('.')[-1])))
+    gprot_aminoacids_strict = sorted(gprot_aminoacids_strict, key=lambda x: (order_gprot.get(x['segment'], 9999), int(x['generic_number'].split('.')[-1])))
 
     to_push_gpcr = {}
     to_push_gprot = {}
+    to_push_gpcr_strict = {}
+    to_push_gprot_strict = {}
     for pair in interactions:
         if pair.atomname_residue1 in ['C', 'CA', 'N', 'O']:
             chain_res1 = 'Main'
@@ -1601,18 +1694,29 @@ def ComplexDetails(request, pdbname):
             chain_res2 = 'Main'
         else:
             chain_res2 = 'Side'
+        try:
+            gn1 = pair.interacting_pair.res1.display_generic_number.label
+        except AttributeError:
+            gn1 = '-'
+        try:
+            gn2 = pair.interacting_pair.res2.display_generic_number.label
+        except AttributeError:
+            gn2 = '-'
         gpcr = {'aminoAcid': pair.interacting_pair.res1.amino_acid,
                 'segment': pair.interacting_pair.res1.protein_segment.slug,
-                'generic_number': pair.interacting_pair.res1.display_generic_number.label
+                'generic_number': gn1,
+                'sequence_number': pair.interacting_pair.res1.sequence_number
                 }
         gprot = {'aminoAcid': pair.interacting_pair.res2.amino_acid,
                 'segment': pair.interacting_pair.res2.protein_segment.slug,
-                'generic_number': pair.interacting_pair.res2.display_generic_number.label
+                'generic_number': gn2,
+                'sequence_number': pair.interacting_pair.res2.sequence_number
                 }
 
         gpcr_index = find_dict_index(gpcr_aminoacids, gpcr)
         gprot_index = find_dict_index(gprot_aminoacids, gprot)
-        protein_interactions.append({'innerIndex': gprot_index, 'outerIndex': gpcr_index, 'type': conversion[pair.interaction_type], 'innerChain': chain_res2, 'outerChain': chain_res1})
+        protein_interactions.append({'innerIndex': gprot_index, 'outerIndex': gpcr_index, 'type': conversion[pair.interaction_type], 'innerChain': chain_res2, 'outerChain': chain_res1, 'interaction_level': pair.interaction_level})
+
         if gpcr_index not in to_push_gpcr.keys():
             to_push_gpcr[gpcr_index] = []
         if gprot_index not in to_push_gprot.keys():
@@ -1623,13 +1727,27 @@ def ComplexDetails(request, pdbname):
         if (conversion[pair.interaction_type]) not in to_push_gprot[gprot_index]:
             to_push_gprot[gprot_index].append(conversion[pair.interaction_type])
 
-    protein_interactions = remove_duplicate_dicts(protein_interactions)
+        if pair.interaction_level == 1:
+            gpcr_index_strict = find_dict_index(gpcr_aminoacids_strict, gpcr)
+            gprot_index_strict = find_dict_index(gprot_aminoacids_strict, gprot)
+            protein_interactions_strict.append({'innerIndex': gprot_index_strict, 'outerIndex': gpcr_index_strict, 'type': conversion[pair.interaction_type], 'innerChain': chain_res2, 'outerChain': chain_res1, 'interaction_level': pair.interaction_level})
+            ### Copy logic for the strict ones
+            if gpcr_index_strict not in to_push_gpcr_strict.keys():
+                to_push_gpcr_strict[gpcr_index_strict] = []
+            if gprot_index_strict not in to_push_gprot_strict.keys():
+                to_push_gprot_strict[gprot_index_strict] = []
 
-    # import pdb; pdb.set_trace()
-    for key in to_push_gpcr:
-        gpcr_aminoacids[key]['interactions'] = ', '.join(to_push_gpcr[key])
-    for key in to_push_gprot:
-        gprot_aminoacids[key]['interactions'] = ', '.join(to_push_gprot[key])
+            if (conversion[pair.interaction_type]) not in to_push_gpcr_strict[gpcr_index_strict]:
+                to_push_gpcr_strict[gpcr_index_strict].append(conversion[pair.interaction_type])
+            if (conversion[pair.interaction_type]) not in to_push_gprot_strict[gprot_index_strict]:
+                to_push_gprot_strict[gprot_index_strict].append(conversion[pair.interaction_type])
+
+
+    protein_interactions = remove_duplicate_dicts(protein_interactions)
+    protein_interactions_strict = remove_duplicate_dicts(protein_interactions_strict)
+
+    gpcr_aminoacids, gprot_aminoacids = sort_and_update(to_push_gpcr, gpcr_aminoacids, to_push_gprot, gprot_aminoacids, protein_interactions)
+    gpcr_aminoacids_strict, gprot_aminoacids_strict = sort_and_update(to_push_gpcr_strict, gpcr_aminoacids_strict, to_push_gprot_strict, gprot_aminoacids_strict, protein_interactions_strict)
 
     return render(request, 'interaction/structure.html', {'pdbname': pdbname, 'structures': structures,
                                                           'crystal': crystal, 'protein': p, 'helixbox' : HelixBox,
@@ -1637,7 +1755,13 @@ def ComplexDetails(request, pdbname):
                                                           'display_res': display_res, 'data': context['data'],
                                                           'header': context['header'], 'segments': context['segments'],
                                                           'number_of_schemes': context['number_of_schemes'], 'complex': True,
-                                                          'scores': scores, 'refined': True, 'outer': gpcr_aminoacids, 'inner': gprot_aminoacids, 'interactions': protein_interactions})
+                                                          'scores': scores, 'refined': True,
+                                                          'outer': json.dumps(gpcr_aminoacids),
+                                                          'inner': json.dumps(gprot_aminoacids),
+                                                          'interactions': json.dumps(protein_interactions),
+                                                          'outer_strict': json.dumps(gpcr_aminoacids_strict),
+                                                          'inner_strict': json.dumps(gprot_aminoacids_strict),
+                                                          'interactions_strict': json.dumps(protein_interactions_strict)})
 
 
 def list_structures(request):

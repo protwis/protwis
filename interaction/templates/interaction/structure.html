@@ -289,6 +289,13 @@ canvas {
 {% if complex %}
 <h2>Complex interactions</h2>
 <div class="col-md-12 ">
+  <div>
+    <b>Interaction cut-off:</b>
+      <div class="btn-group" role="group" id="cut_off">
+          <button id="strict" class="btn btn-info active">Strict</button>
+          <button id="loose" class="btn btn-info">Loose</button>
+      </div>
+  </div>
     <div id="tooltip" class="tooltip"></div>
     <div style="display: flex; justify-content: center;">
       <svg id="visualization" width="100%" height="1115"></svg>
@@ -483,116 +490,132 @@ canvas {
 {% if complex %}
   <script type="text/javascript" charset="utf-8">
         $(document).ready(function() {
-            ptm = {{ scores.ptm }};
-            iptm = {{ scores.iptm }};
-            pae = {{ scores.pae_mean }};
-            interactions = {{ interactions | safe }};
-            inner_data = {{ inner | safe}};
-            outer_data = {{ outer | safe }};
-            // Call the function with your desired values
+          interactions = {{ interactions | safe }};
+          inner_data = {{ inner | safe }};
+          outer_data = {{ outer | safe }};
+          interactions_strict = {{ interactions_strict | safe }};
+          inner_data_strict = {{ inner_strict | safe }};
+          outer_data_strict = {{ outer_strict | safe }};
+          draw_interactions_in_circles('visualization', interactions_strict, inner_data_strict, outer_data_strict);
+
+          $("#strict").click(function(){
+            $("#strict").addClass("active");
+            $("#loose").removeClass("active");
+            d3.select("#visualization").selectAll("*").remove();
+            draw_interactions_in_circles('visualization', interactions_strict, inner_data_strict, outer_data_strict);
+            d3.selectAll(`.van-der-waals`).attr("stroke-opacity", 0);
+          });
+
+          $("#loose").click(function() {
+            $("#strict").removeClass("active");
+            $("#loose").addClass("active");
+            d3.select("#visualization").selectAll("*").remove();
             draw_interactions_in_circles('visualization', interactions, inner_data, outer_data);
-            // Function to update the highlight based on checkbox selections
-            function updateHighlight() {
-              // Get all selected checkbox values
-              const selectedChains = Array.from(document.querySelectorAll('input[name="chain"]:checked'))
-                                          .map(el => el.value);
-              // Reset all path highlights
-              d3.selectAll('path').classed('highlight', false);
-              d3.selectAll("path")
-                .each(function(d, i) {
-                  const segment = d3.select(this).attr("segment");
-                  if (!segment) {
-                    d3.select(this).attr("stroke-opacity", 0);
-                  }
-                });
-              // d3.selectAll("path").attr("stroke-opacity", 0);
-              // Loop through selected checkbox combinations
-              selectedChains.forEach(chain => {
-                const [innerChain, outerChain] = chain.split('-');
+            d3.selectAll(`.van-der-waals`).attr("stroke-opacity", 0);
+          });
 
-                // Highlight the selected paths
-                d3.selectAll(`path[inner-chain="${innerChain}"][outer-chain="${outerChain}"]`)
-                  .attr("stroke-opacity", 1);
-              });
-            }
-
-            // Attach event listeners to checkboxes
-            document.querySelectorAll('input[name="chain"]').forEach(el => {
-              el.addEventListener('change', updateHighlight);
-            });
-
-            var table = $('#residues').DataTable({
-                "scrollX": true,
-                "scrollY": 600,
-                "bScrollCollapse": true,
-                'paging': false,
-                orderCellsTop: true,
-                "autoWidth": true,
-                dom: 'T<"clear">lfrtip',
-                "aoColumnDefs": [
-                    { "sType": "string", "aTargets": [0] },
-                ],
-                tableTools: {
-                    "sRowSelect": "multi",
-                    "aButtons": []
-                },
-                initComplete: function () {
-                    $('#residues').dataTable().columnFilter({
-                        sPlaceHolder: "head:after",
-                        aoColumns: [
-                            { type: "select" }, //ligand
-                            { type: "select" }, //protein name
-                            { type: "select" }, //Alt Position
-                            { type: "select" }, //Position
-                            { type: "select" }, //Segment
-                        ]
-                    });
+          d3.selectAll(`.van-der-waals`).attr("stroke-opacity", 0);
+          // Function to update the highlight based on checkbox selections
+          function updateHighlight() {
+            // Get all selected checkbox values
+            const selectedChains = Array.from(document.querySelectorAll('input[name="chain"]:checked'))
+                                        .map(el => el.value);
+            // Reset all path highlights
+            d3.selectAll('path').classed('highlight', false);
+            d3.selectAll("path")
+              .each(function(d, i) {
+                const segment = d3.select(this).attr("segment");
+                if (!segment) {
+                  d3.select(this).attr("stroke-opacity", 0);
                 }
+              });
+            // d3.selectAll("path").attr("stroke-opacity", 0);
+            // Loop through selected checkbox combinations
+            selectedChains.forEach(chain => {
+              const [outerChain, innerChain] = chain.split('-');
+
+              // Highlight the selected paths
+              d3.selectAll(`path[inner-chain="${innerChain}"][outer-chain="${outerChain}"]`)
+                .attr("stroke-opacity", 1);
             });
+          }
+          // Attach event listeners to checkboxes
+          document.querySelectorAll('input[name="chain"]').forEach(el => {
+            el.addEventListener('change', updateHighlight);
+          });
 
-            $('[data-toggle="tooltip"]').tooltip();
-            //$('[data-toggle="tooltip"]').tooltip({html:true});
-
-            // residues_browser.append({'type': key, 'aa': aa, 'ligand': ligand,
-            //                          'pos': pos, 'wt_pos': wt_pos, 'gpcrdb': display, 'segment': segment})
-            // residues_browser.append({'type': type, 'gpcr_aa': gpcr_aa, 'gprot_aa': gprot_aa,
-            //                          'gpcr_pos': gpcr_pos, 'gprot_pos': gprot_pos,
-            //                          'gpcr_grn': gpcr_grn, 'gprot_grn': gprot_grn, 'segment': segment})
-            function ajaxInteractions(plotid) {
-                interactions = {{ residues|safe }};
-                count = [];
-                output = [];
-
-                  $.each( interactions, function( index, val ) {
-                    key = val['gpcr_aa'];
-
-                    if (key in count) {
-                        count[key] += 1;
-                        if (!(val['type'] in output[key])) output[key].push(val['type'])
-                    } else {
-                        count[key] = 1;
-                        output[key] = [val['type']]
-                    }
-
-                      extra = "\n" + String(count[key]) + " interactions | Type: "+ output[key];
-
-
-                      $('#'+plotid).find("#"+key).css("fill", "#E60A0A");
-                      $('#'+plotid).find("#"+key).next().css("fill", "#FDFF7B");
-
-                      original_title = $('#'+plotid).find("#"+key).attr('original_title')
-
-
-                      $('#'+plotid).find("#"+key).attr('title',original_title+extra);
-                      $('#'+plotid).find("#"+key+"t").attr('title',original_title+extra);
-
-
+          var table = $('#residues').DataTable({
+              "scrollX": true,
+              "scrollY": 600,
+              "bScrollCollapse": true,
+              'paging': false,
+              orderCellsTop: true,
+              "autoWidth": true,
+              dom: 'T<"clear">lfrtip',
+              "aoColumnDefs": [
+                  { "sType": "string", "aTargets": [0] },
+              ],
+              tableTools: {
+                  "sRowSelect": "multi",
+                  "aButtons": []
+              },
+              initComplete: function () {
+                  $('#residues').dataTable().columnFilter({
+                      sPlaceHolder: "head:after",
+                      aoColumns: [
+                          { type: "select" }, //ligand
+                          { type: "select" }, //protein name
+                          { type: "select" }, //Alt Position
+                          { type: "select" }, //Position
+                          { type: "select" }, //Segment
+                      ]
                   });
+              }
+          });
 
-                $("circle").tooltip('fixTitle');
-                $("text").tooltip('fixTitle');
-            }
-            });
+          $('[data-toggle="tooltip"]').tooltip();
+          //$('[data-toggle="tooltip"]').tooltip({html:true});
+
+          // residues_browser.append({'type': key, 'aa': aa, 'ligand': ligand,
+          //                          'pos': pos, 'wt_pos': wt_pos, 'gpcrdb': display, 'segment': segment})
+          // residues_browser.append({'type': type, 'gpcr_aa': gpcr_aa, 'gprot_aa': gprot_aa,
+          //                          'gpcr_pos': gpcr_pos, 'gprot_pos': gprot_pos,
+          //                          'gpcr_grn': gpcr_grn, 'gprot_grn': gprot_grn, 'segment': segment})
+          function ajaxInteractions(plotid) {
+              interactions = {{ residues|safe }};
+              count = [];
+              output = [];
+
+                $.each( interactions, function( index, val ) {
+                  key = val['gpcr_aa'];
+
+                  if (key in count) {
+                      count[key] += 1;
+                      if (!(val['type'] in output[key])) output[key].push(val['type'])
+                  } else {
+                      count[key] = 1;
+                      output[key] = [val['type']]
+                  }
+
+                    extra = "\n" + String(count[key]) + " interactions | Type: "+ output[key];
+
+
+                    $('#'+plotid).find("#"+key).css("fill", "#E60A0A");
+                    $('#'+plotid).find("#"+key).next().css("fill", "#FDFF7B");
+
+                    original_title = $('#'+plotid).find("#"+key).attr('original_title')
+
+
+                    $('#'+plotid).find("#"+key).attr('title',original_title+extra);
+                    $('#'+plotid).find("#"+key+"t").attr('title',original_title+extra);
+
+
+                });
+
+              $("circle").tooltip('fixTitle');
+              $("text").tooltip('fixTitle');
+          }
+          });
     </script>
     <script src="{% static 'home/js/ngl.js' %}"> </script>
     <script>
