@@ -81,8 +81,8 @@ canvas {
 <div class="row text-success">
     <div class="text-center">
         <div style="display: inline;">
-          {% if structure_type == "af-signprot" %}
-              <h2>{{ model.protein_conformation.protein.name|safe }} - {{ model.signprot_complex.protein.family.name|gprot_short }} complex model</h2>
+          {% if structure_type.slug == "af-signprot" %}
+              <h2>{{ model.protein_conformation.protein.name|safe }} - {{ model.signprot_complex.protein.family.name|gprot_short }} complex model
           {% else %}
               <h2>{{ model.protein_conformation.protein.entry_name|upper }} refined
           {% endif %}

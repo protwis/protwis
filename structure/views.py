@@ -764,8 +764,9 @@ def ComplexModelDetails(request, header, refined=False):
                                                              'sc_alt': round(sc_alt/len(receptor_rotamers)*100, 1), 'sc_none': round(sc_none/len(receptor_rotamers)*100, 1), 'main_template_seqsim': main_template_seqsim,
                                                              'template_list': template_list, 'model_main_template': main_template, 'state': None, 'signprot_sim': int(gp.proteins[1].similarity),
                                                              'signprot_color_residues': json.dumps(segments_out2), 'loop_segments': loop_segments, 'pdbname': header, 'scores': StructureAFScores(),
-                                                             'refined': json.dumps(True), 'outer': json.dumps(gpcr_aminoacids), 'inner': json.dumps(gprot_aminoacids),
-                                                             'interactions': json.dumps(protein_interactions), 'residues': len(protein_interactions)})#, 'delta_distance': delta_distance})
+                                                             'refined': json.dumps(True), 'outer': json.dumps(gpcr_aminoacids), 'inner': json.dumps(gprot_aminoacids), 'structure_type': model.structure_type,
+                                                             'interactions': json.dumps(protein_interactions), 'outer_strict': json.dumps(gpcr_aminoacids_strict),'inner_strict': json.dumps(gprot_aminoacids_strict),
+                                                             'interactions_strict': json.dumps(protein_interactions_strict),'residues': len(protein_interactions)})
 
     else:
 
