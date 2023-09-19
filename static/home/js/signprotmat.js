@@ -315,7 +315,7 @@ var signprotmat = {
             var a_patt = /(\S*)\./g;
             var b_patt = /(\S*)\./g;
           }
-          
+
           var a_match = a_patt.exec(a);
           var b_match = b_patt.exec(b);
           var a_obj = _.find(gprot, function (d) {
@@ -958,7 +958,11 @@ var signprotmat = {
           const num_pairs = d.pairs.length;
           const max_count = get_max_interface_count();
           const ratio = (num_pairs / max_count) * 100;
-          return _.round(ratio, 0);
+          if (ratio >= 100){
+            return "";
+          } else {
+            return _.round(ratio, 0);
+          }
         });
 
       // * DRAWING AXES

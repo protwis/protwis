@@ -751,6 +751,56 @@ def ComplexModelDetails(request, header, refined=False):
     gpcr_aminoacids, gprot_aminoacids = sort_and_update(to_push_gpcr, gpcr_aminoacids, to_push_gprot, gprot_aminoacids, protein_interactions)
     gpcr_aminoacids_strict, gprot_aminoacids_strict = sort_and_update(to_push_gpcr_strict, gpcr_aminoacids_strict, to_push_gprot_strict, gprot_aminoacids_strict, protein_interactions_strict)
 
+    ### Interaction Matrix copy/paste
+    gprotein_order = ProteinSegment.objects.filter(proteinfamily='Alpha').values('id', 'slug')
+    fam_slug = '100'
+
+    receptor_order = ['N', '1', '12', '2', '23', '3', '34', '4', '45', '5', '56', '6', '67', '7', '78', '8', 'C']
+
+    struc = SignprotComplex.objects.filter(protein__family__slug__startswith=fam_slug).prefetch_related(
+        'structure__pdb_code',
+        'structure__stabilizing_agents',
+        'structure__protein_conformation__protein',
+        'structure__protein_conformation__protein__parent',
+        'structure__protein_conformation__protein__species',
+        'structure__protein_conformation__protein__parent__parent__parent',
+        'structure__protein_conformation__protein__family__parent__parent__parent__parent',
+        'structure__stabilizing_agents',
+        'structure__signprot_complex__protein__family__parent__parent__parent__parent',
+    )
+
+    complex_info = []
+    for s in struc:
+        r = {}
+        s = s.structure
+        r['pdb_id'] = s.pdb_code.index
+        try:
+            r['name'] = s.protein_conformation.protein.parent.short()
+        except:
+            r['name'] = s.protein_conformation.protein.short()
+        try:
+            r['entry_name'] = s.protein_conformation.protein.parent.entry_name
+        except:
+            r['entry_name'] = s.protein_conformation.protein.entry_name
+        r['class'] = s.protein_conformation.protein.get_protein_class()
+        r['family'] = s.protein_conformation.protein.get_protein_family()
+        r['conf_id'] = s.protein_conformation.id
+        r['organism'] = s.protein_conformation.protein.species.common_name
+        try:
+            r['gprot'] = s.get_stab_agents_gproteins()
+        except Exception:
+            r['gprot'] = ''
+        try:
+            r['gprot_class'] = s.get_signprot_gprot_family()
+        except Exception:
+            r['gprot_class'] = ''
+        complex_info.append(r)
+
+    interactions_metadata = json.dumps(complex_info)
+    gprot_order = json.dumps(list(gprotein_order))
+    receptor_order = json.dumps(receptor_order)
+
+
     ### Keep old coloring for refined structures
     if model.structure_type.slug.startswith('af-signprot-refined'):
         # if model.protein_conformation.protein.accession:
@@ -796,11 +846,15 @@ def ComplexModelDetails(request, header, refined=False):
                                                              'sc_alt_perc2': round(sc_alt2/len(signprot_rotamers)*100, 1), 'sc_none_perc2': round(sc_none2/len(signprot_rotamers)*100, 1), 
                                                              'bb_alt2': bb_alt2, 'bb_none2': bb_none2, 
                                                              'sc_alt2': sc_alt2, 'sc_none2': sc_none2,
-                                                             'template_list': template_list, 'model_main_template': main_template, 'state': None,
+                                                             'template_list': template_list, 'model_main_template': main_template, 'state': None, 'plddt_avg': None,
                                                              'signprot_color_residues': json.dumps(segments_out2), 'loop_segments': loop_segments, 'pdbname': header, 'scores': StructureAFScores(),
                                                              'refined': json.dumps(True), 'outer': json.dumps(gpcr_aminoacids), 'inner': json.dumps(gprot_aminoacids), 'structure_type': model.structure_type,
-                                                             'interactions': json.dumps(protein_interactions), 'outer_strict': json.dumps(gpcr_aminoacids_strict),'inner_strict': json.dumps(gprot_aminoacids_strict),
-                                                             'interactions_strict': json.dumps(protein_interactions_strict),'residues': len(protein_interactions)})
+                                                             'interactions': json.dumps(protein_interactions), 
+                                                             'outer_strict': json.dumps(gpcr_aminoacids_strict),
+                                                             'inner_strict': json.dumps(gprot_aminoacids_strict),
+                                                             'interactions_strict': json.dumps(protein_interactions_strict),
+                                                             'residues': len(protein_interactions),
+                                                             'interactions_metadata': interactions_metadata, 'gprot': gprot_order, 'receptor': receptor_order, 'pdb_sel': [header]})
 
     else:
         chains = ['A','B']
@@ -822,7 +876,11 @@ def ComplexModelDetails(request, header, refined=False):
                                                              'interactions_strict': json.dumps(protein_interactions_strict),
                                                              'residues': len(protein_interactions),
                                                              'structure_type': model.structure_type,
-                                                             'plddt_avg': avg_plddt['pLDDT__avg']
+                                                             'plddt_avg': avg_plddt['pLDDT__avg'],
+                                                             'interactions_metadata': interactions_metadata,
+                                                             'gprot': gprot_order,
+                                                             'receptor': receptor_order,
+                                                             'pdb_sel': [header]
                                                              })
 
 
