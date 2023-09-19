@@ -1167,7 +1167,7 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
     'G.h4s6': '#C39900',
     'G.S6': '#BE9200',
     'G.s6h5': '#BA8A00',
-    'G.H5': '#FBD808'
+    'G.H5': '#876400'
   };
 
   const aminoAcids = [
@@ -1213,6 +1213,10 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
   // Remove duplicates by converting to a Set and then back to an array
   const inner_legend = Array.from(new Set(innerArray));
   const outer_legend = Array.from(new Set(outerArray));
+
+  const colorOrder = Object.keys(allColors);
+  outer_legend.sort((a, b) => colorOrder.indexOf(a) - colorOrder.indexOf(b));
+  inner_legend.sort((a, b) => colorOrder.indexOf(a) - colorOrder.indexOf(b));
 
   const countInner = inner_data.length;
   const countOuter = outer_data.length;
@@ -1473,9 +1477,6 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
     const innerBead = d3.select(`#bead-inner-${innerIndex}`);
     const outerBead = d3.select(`#bead-outer-${outerIndex}`);
 
-    const INNER_RADIUS = smallRadius;
-    const OUTER_RADIUS = bigRadius;
-
     // Calculate direction vector for inner bead
     const innerX = +innerBead.attr("cx");
     const innerY = +innerBead.attr("cy");
@@ -1508,15 +1509,17 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
     const angleToCentroidInner = Math.atan2(innerY - centroidY, innerX - centroidX);
     const angleToCentroidOuter = Math.atan2(outerY - centroidY, outerX - centroidX);
 
-    const INNER_BORDER_RADIUS = INNER_RADIUS + 25;
-    const MIDDLE_BORDER_RADIUS = INNER_RADIUS + 5 * beadRadius;
-    const OUTER_BORDER_RADIUS = OUTER_RADIUS - 4 * beadRadius;
+    const INNER_BORDER_RADIUS = smallRadius + 22;
+    const MIDDLE_BORDER_RADIUS = smallRadius + 3 * beadRadius;
+    const OUTER_BORDER_RADIUS = bigRadius - 4 * beadRadius;
+
+    const scaleFactor = 1.4;
 
     const tangentialOuterX = centroidX + Math.cos(angleToCentroidOuter) * OUTER_BORDER_RADIUS;
     const tangentialOuterY = centroidY + Math.sin(angleToCentroidOuter) * OUTER_BORDER_RADIUS;
 
-    let tangentialMiddleX = centroidX + Math.cos((angleToCentroidInner + angleToCentroidOuter) / 2) * MIDDLE_BORDER_RADIUS;
-    let tangentialMiddleY = centroidY + Math.sin((angleToCentroidInner + angleToCentroidOuter) / 2) * MIDDLE_BORDER_RADIUS;
+    let tangentialMiddleX = centroidX + Math.cos((angleToCentroidInner + angleToCentroidOuter) / 2) * MIDDLE_BORDER_RADIUS * scaleFactor;
+    let tangentialMiddleY = centroidY + Math.sin((angleToCentroidInner + angleToCentroidOuter) / 2) * MIDDLE_BORDER_RADIUS * scaleFactor;
 
     let tangentialInnerX = centroidX + Math.cos(angleToCentroidInner) * INNER_BORDER_RADIUS;
     let tangentialInnerY = centroidY + Math.sin(angleToCentroidInner) * INNER_BORDER_RADIUS;
@@ -1525,55 +1528,27 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
     const adjustedEndX = innerX + Math.cos(adjustedEndAngle) * beadRadius;
     const adjustedEndY = innerY + Math.sin(adjustedEndAngle) * beadRadius;
 
-    const calculateSweepFlag = (startAngle, endAngle) => {
-      return startAngle <= endAngle ? 1 : 0;
-    };
-
-    const sweepFlagOuter = calculateSweepFlag(angleToCentroidOuter, Math.atan2(tangentialOuterY - centroidY, tangentialOuterX - centroidX));
-    const sweepFlagMiddle = calculateSweepFlag(Math.atan2(tangentialOuterY - centroidY, tangentialOuterX - centroidX), Math.atan2(tangentialMiddleY - centroidY, tangentialMiddleX - centroidX));
-    const sweepFlagInner = calculateSweepFlag(Math.atan2(tangentialMiddleY - centroidY, tangentialMiddleX - centroidX), angleToCentroidInner);
-
     let pathData;
 
     const isClockwise = angleToCentroidOuter > angleToCentroidInner;
-    const angleGap = angleToCentroidOuter - angleToCentroidInner;
 
     let controlPoint1X = startX + (tangentialOuterX - startX) / 2;
     let controlPoint1Y = startY + (tangentialOuterY - startY) / 2;
     let controlPoint2X = endX + (tangentialInnerX - endX) / 2;
     let controlPoint2Y = endY + (tangentialInnerY - endY) * 20;
 
-    let design; // variable to check the orientation of the angle
-    design = 'purple';
-    if(isClockwise){
-      design = 'red';
-      controlPoint1X = startX + (tangentialOuterX - startX) / 2;
-      controlPoint1Y = startY + (tangentialOuterY - startY) / 2;
-      controlPoint2X = endX + (tangentialInnerX - endX) / 2;
-      controlPoint2Y = endY + (tangentialInnerY - endY) / 2;
-      if (angleGap < 0.1){
-        tangentialMiddleX = centroidX + Math.cos(angleToCentroidOuter + Math.PI / 24) * MIDDLE_BORDER_RADIUS;
-        tangentialMiddleY = centroidY + Math.sin(angleToCentroidOuter + Math.PI / 10) * MIDDLE_BORDER_RADIUS;
-      } else if (angleGap > 1 && angleGap < 2){
-        tangentialMiddleX = centroidX + Math.cos(angleToCentroidOuter + Math.PI / 6);
-        tangentialMiddleY = (centroidY + Math.sin(angleToCentroidOuter + Math.PI / 10)) / 10;
-      } else if (angleGap > 2 && angleGap < 5){
-        tangentialMiddleX = centroidX + Math.abs(Math.cos(angleToCentroidOuter + Math.PI *2)) * MIDDLE_BORDER_RADIUS;
-        tangentialMiddleY = -((centroidY + Math.sin(angleToCentroidOuter + Math.PI / 10)) / 10);
-      } else if (angleGap > 5){
-        tangentialMiddleX = centroidX + Math.cos(angleToCentroidOuter + Math.PI / 20) * MIDDLE_BORDER_RADIUS;
-        tangentialMiddleY = centroidY + Math.sin(angleToCentroidOuter + Math.PI / 10);
+    if(countInner > 15){
+      if(isClockwise){
+        controlPoint1X = startX + (tangentialMiddleX - startX) / 2;
+        controlPoint1Y = startY + (tangentialMiddleY - startY) / 2;
+        controlPoint2X = endX + (tangentialInnerX - endX) / 2;
+        controlPoint2Y = endY + (tangentialInnerY - endY) / 2;
       } else {
-        tangentialMiddleX = centroidX + Math.cos(angleToCentroidOuter + Math.PI / 6) * MIDDLE_BORDER_RADIUS;
-        tangentialMiddleY = centroidY + Math.sin(angleToCentroidOuter + Math.PI / 10) * MIDDLE_BORDER_RADIUS;
+        controlPoint1X = (startX + tangentialMiddleX) / 2;
+        controlPoint1Y = (startY + tangentialMiddleY) / 2;
+        controlPoint2X = (endX + tangentialInnerX) / 2;
+        controlPoint2Y = (endY + tangentialInnerY) / 2;
       }
-
-    } else {
-      design = 'green';
-      controlPoint1X = (startX + tangentialOuterX) / 2;
-      controlPoint1Y = (startY + tangentialOuterY) / 2;
-      controlPoint2X = (endX + tangentialInnerX) / 2;
-      controlPoint2Y = (endY + tangentialInnerY) / 2;
     }
 
     if(countInner < 15){
@@ -1588,26 +1563,6 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
         `C ${controlPoint2X} ${controlPoint2Y}, ${controlPoint2X} ${controlPoint2Y}, ${adjustedEndX} ${adjustedEndY}`
       ].join(" ");
     }
-    // if(countInner < 15){
-    //   pathData = [
-    //     `M ${startX} ${startY}`,
-    //     `C ${controlPoint1X} ${controlPoint1Y}, ${controlPoint2X} ${controlPoint2Y}, ${adjustedEndX} ${adjustedEndY}`
-    //   ].join(" ");
-      // pathData = [
-      //   `M ${startX} ${startY}`,
-      //   `A ${OUTER_RADIUS} ${OUTER_RADIUS} 0 0 ${sweepFlagOuter} ${tangentialOuterX} ${tangentialOuterY}`,
-      //   `A ${INNER_BORDER_RADIUS} ${INNER_BORDER_RADIUS} 0 0 ${sweepFlagInner} ${tangentialInnerX} ${tangentialInnerY}`,
-      //   `L ${adjustedEndX} ${adjustedEndY}`
-      // ].join(" ");
-    // } else {
-    //   pathData = [
-    //     `M ${startX} ${startY}`,
-    //     `A ${OUTER_RADIUS} ${OUTER_RADIUS} 0 0 ${sweepFlagOuter} ${tangentialOuterX} ${tangentialOuterY}`,
-    //     `A ${MIDDLE_BORDER_RADIUS} ${MIDDLE_BORDER_RADIUS} 0 0 ${sweepFlagMiddle} ${tangentialMiddleX} ${tangentialMiddleY}`,
-    //     `A ${INNER_BORDER_RADIUS} ${INNER_BORDER_RADIUS} 0 0 ${sweepFlagInner} ${tangentialInnerX} ${tangentialInnerY}`,
-    //     `L ${adjustedEndX} ${adjustedEndY}`
-    //   ].join(" ");
-    // }
 
     const sanitizedType = sanitizeClassName(type);
 
@@ -1621,9 +1576,6 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
       .attr("stroke-width", 2)  // Border width
       .attr("fill", "none")
       .attr("interaction", type)
-      // .attr("angleGap", angleGap)
-      .attr('angleCentroid', angleToCentroidOuter)
-      .attr('tan', Math.atan2(tangentialOuterY - centroidY, tangentialOuterX - centroidX))
       .attr('inner-chain', innerChain)
       .attr('outer-chain', outerChain)
       .classed(sanitizedType, true);
@@ -1726,10 +1678,7 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
 
   let cumulativeInnerX = txtInnerLen + 20;
 
-  console.log(inner_legend);
-
   Object.entries(inner_legend).forEach((type, i) => {
-    console.log(type[1]);
     const legendInnerItem = innercircleLegend.append("g")
       .attr("transform", `translate(${cumulativeInnerX}, 0)`);
 
@@ -1745,9 +1694,21 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
         if(d3.event) {
           d3.event.stopPropagation();
         }
+        let indexValues = [];
+        // Select all circles with the given segment value and gather the data-index attributes
+        d3.selectAll(`circle[data-segment="${type[1]}"]`).each(function() {
+          const dataIndex = d3.select(this).attr('data-index');
+          if (dataIndex !== null) {
+            indexValues.push(dataIndex);
+          }
+        });
         const sanitizedType = sanitizeClassName(type[1]);
-        d3.selectAll("circle").attr("stroke-opacity", 0);
-        d3.selectAll(`circle[data-segment=${type[1]}]`).attr("stroke-opacity", 1);
+        d3.selectAll("circle").attr("stroke-opacity", 0.2);
+        d3.selectAll("path").attr("stroke-opacity", 0);
+        d3.selectAll(`circle[data-segment="${type[1]}"]`).attr("stroke-opacity", 1);
+        indexValues.forEach(index => {
+          d3.selectAll(`path[data-inner-bead="${index}"]`).attr("stroke-opacity", 1);
+        });
       });
 
     // Draw the text at y=15
@@ -1761,7 +1722,65 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
     cumulativeInnerX += textInnerWidth + 30; // 50 is the space between the rectangle and the next item
   });
 
+  // Creating the inner legend structure
 
+  const headerOuterLegend = outercircleLegend.append("text")
+                              .attr("x", 0)
+                              .attr("y", -20)
+                              .attr("class", "legend-header")
+                              .text("GPCR segments:")
+                              .attr("font-family", "Arial")
+                              .attr("font-size", "14px")
+                              .attr("font-weight", "bold")
+                              .attr("fill", "black");
+
+  const txtOuterLen = headerOuterLegend.node().getComputedTextLength();
+
+  let cumulativeOuterX = txtOuterLen + 20;
+
+  Object.entries(outer_legend).forEach((type, i) => {
+    const legendOuterItem = outercircleLegend.append("g")
+      .attr("transform", `translate(${cumulativeOuterX}, 0)`);
+
+    // Draw the rectangle at y=0
+    legendOuterItem.append("rect")
+      .attr("width", 20)
+      .attr("height", 20)
+      .attr("y", -35)  // <-- Set y to 0 for the rectangle
+      .attr("fill", allColors[type[1]])
+      .attr("stroke", "black")
+      .attr("stroke-width", 1)
+      .on("click", function() {
+        if(d3.event) {
+          d3.event.stopPropagation();
+        }
+        let indexValues = [];
+        // Select all circles with the given segment value and gather the data-index attributes
+        d3.selectAll(`circle[data-segment="${type[1]}"]`).each(function() {
+          const dataIndex = d3.select(this).attr('data-index');
+          if (dataIndex !== null) {
+            indexValues.push(dataIndex);
+          }
+        });
+        const sanitizedType = sanitizeClassName(type[1]);
+        d3.selectAll("circle").attr("stroke-opacity", 0.2);
+        d3.selectAll("path").attr("stroke-opacity", 0);
+        d3.selectAll(`circle[data-segment="${type[1]}"]`).attr("stroke-opacity", 1);
+        indexValues.forEach(index => {
+          d3.selectAll(`path[data-outer-bead="${index}"]`).attr("stroke-opacity", 1);
+        });
+      });
+
+    // Draw the text at y=15
+    const textOuterElement = legendOuterItem.append("text")
+      .attr("x", 25)
+      .attr("y", -20)  // <-- Set y to 15 for the text
+      .text(type[1]);
+
+    // Get text width and update the cumulativeX for the next legend item
+    const textOuterWidth = textOuterElement.node().getComputedTextLength();
+    cumulativeOuterX += textOuterWidth + 30; // 50 is the space between the rectangle and the next item
+  });
 
 
   const innerBeadSelection = svg2.selectAll("circle[data-circle='inner']");  // Assuming the inner beads have a class 'inner-bead'
@@ -1790,7 +1809,8 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
   // Function to reset colors
   function resetColors(svg) {
     svg.selectAll("circle")
-      .attr("fill", "white");
+      .attr("fill", "white")
+      .attr("stroke-opacity", 1);
       // .attr("stroke", "black");
 
     svg.selectAll("text")
