@@ -834,7 +834,9 @@ class CallHomologyModeling():
                     complex_name = Homology_model.reference_protein.parent.entry_name+'-'+Homology_model.signprot
                     af_path =  os.sep.join([self.alphafold_multimer_data_dir, complex_name, complex_name+'.pdb'])
                     if not os.path.exists(af_path):
-                        return 0
+                        af_path = os.sep.join([self.alphafold_multimer_data_dir, complex_name+'_gbb1_human_gbg2_human', complex_name+'_gbb1_human_gbg2_human.pdb'])
+                        if not os.path.exists(af_path):
+                            return 0
                 else:
                     af_path = os.sep.join([self.alphafold_refined_data_dir, Homology_model.main_structure.pdb_code.index+'_refined.pdb'])
                 
