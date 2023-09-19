@@ -432,26 +432,28 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
         <svg id="visualization" width="100%" height="1115"></svg>
       </div>
       <div class="row">
-        <div class="col-md-3 text-right text-info">
+        <div class="col-md-2 text-right text-info">
         </div>
-        <div class="col-md-9">
-          <p><b>Highlight receptor-transducer interaction</b></p>
-          <div class="checkbox-group">
-            <div class="checkbox-item">
-              <input type="checkbox" id="main-main" name="chain" value="Main-Main">
-              <label for="main-main">Backbone-Backbone</label>
-            </div>
-            <div class="checkbox-item">
-              <input type="checkbox" id="main-side" name="chain" value="Main-Side">
-              <label for="main-side">Backbone-Side</label>
-            </div>
-            <div class="checkbox-item">
-              <input type="checkbox" id="side-side" name="chain" value="Side-Side">
-              <label for="side-side">Side-Side</label>
-            </div>
-            <div class="checkbox-item">
-              <input type="checkbox" id="side-main" name="chain" value="Side-Main">
-              <label for="side-main">Side-Backbone</label>
+        <div class="col-md-9" style="padding-left: 90px">
+          <div class="container">
+            <p style="display: inline-block; vertical-align: middle;"><b>GPCR-G protein backbone (bb) or sidechain (sc):</b></p>
+            <div class="checkbox-group" style="display: inline-block; vertical-align: middle; margin-left: 10px;">
+              <div class="checkbox-item">
+                <input type="checkbox" id="main-main" name="chain" value="Main-Main">
+                <label for="main-main">bb-bb</label>
+              </div>
+              <div class="checkbox-item">
+                <input type="checkbox" id="main-side" name="chain" value="Main-Side">
+                <label for="main-side">bb-sc</label>
+              </div>
+              <div class="checkbox-item">
+                <input type="checkbox" id="side-side" name="chain" value="Side-Side">
+                <label for="side-side">sc-sc</label>
+              </div>
+              <div class="checkbox-item">
+                <input type="checkbox" id="side-main" name="chain" value="Side-Main">
+                <label for="side-main">sc-bb</label>
+              </div>
             </div>
           </div>
           <br/>
