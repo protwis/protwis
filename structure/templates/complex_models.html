@@ -73,7 +73,18 @@
             font-family: sans-serif;
             font-size: 100%;
             font-weight: bold;
-
+        }
+        .gpcrdb-link {
+            filter: grayscale(100%);
+        }
+        .gpcrdb-link:hover {
+            filter: grayscale(0%);
+        }
+        /*.model-link {
+            filter: invert(27%) sepia(51%) saturate(2878%) hue-rotate(346deg) brightness(104%) contrast(97%);
+        }*/
+        .model-link:hover {
+            -webkit-filter: hue-rotate(3.142rad);
         }
     </style>
 {% endblock %}
@@ -123,42 +134,7 @@
             yadcf.init(oTable,
                 [
                     {
-                        column_number : 1,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        column_data_type: "html",
-                        html_data_type: "text",
-                        filter_default_label: "Model",
-                        filter_match_mode : "exact",
-                        filter_reset_button_text: false,
-                        select_type_options: {
-                            width: '120px',
-                        }
-                    },
-                    {
-                        column_number : 2,
-                        filter_type: "range_date",
-                        date_format: "yyyy-mm-dd",
-                        select_type: 'select2',
-                        filter_default_label: ["From", "To"],
-                        filter_reset_button_text: false,
-                        select_type_options: {
-                            width: '100px',
-                        }
-                    },
-                    {
                         column_number : 3,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        filter_default_label: "Refined",
-                        filter_reset_button_text: false,
-                        filter_match_mode : "exact",
-                        select_type_options: {
-                            width: '55px',
-                        }
-                    },
-                    {
-                        column_number : 4,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         column_data_type: "html",
@@ -169,28 +145,30 @@
                         }
                     },
                     {
-                        column_number: 5,
+                        column_number : 4,
                         filter_type: "multi_select",
-                        select_type: 'select2',
+                        select_type: "select2",
                         column_data_type: "html",
-                        filter_default_label: "IUPHAR",
+                        html_data_type: "text",
+                        filter_default_label: "GtoPdb",
+                        filter_match_mode : "exact",
                         filter_reset_button_text: false,
                         select_type_options: {
-                            width: '80px',
+                            width: "60px",
                         }
                     },
                     {
-                        column_number: 6,
+                        column_number: 5,
                         filter_type: "multi_select",
                         select_type: 'select2',
-                        filter_default_label: "Rec. family",
+                        filter_default_label: "Family",
                         filter_reset_button_text: false,
                         select_type_options: {
                             width: '100px',
                         }
                     },
                     {
-                        column_number : 7,
+                        column_number : 6,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         filter_default_label: "Class",
@@ -200,10 +178,21 @@
                         }
                     },
                     {
+                        column_number : 7,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "Subtype",
+                        column_data_type: "html",
+                        filter_reset_button_text: false,
+                        select_type_options: {
+                            width: '70px',
+                        }
+                    },
+                    {
                         column_number : 8,
                         filter_type: "multi_select",
                         select_type: 'select2',
-                        filter_default_label: "Species",
+                        filter_default_label: "Family",
                         filter_reset_button_text: false,
                         select_type_options: {
                             width: '60px',
@@ -213,21 +202,19 @@
                         column_number : 9,
                         filter_type: "multi_select",
                         select_type: 'select2',
-                        filter_default_label: "G protein",
-                        column_data_type: "html",
+                        filter_default_label: "Heterotrimer",
                         filter_reset_button_text: false,
                         select_type_options: {
-                            width: '100px',
+                            width: '80px',
                         }
                     },
                     {
                         column_number : 10,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        filter_default_label: "G protein family",
+                        filter_type: "range_number",
+                        filter_default_label: ["Min", "Max"],
                         filter_reset_button_text: false,
                         select_type_options: {
-                            width: '60px',
+                            width: '30px',
                         }
                     },
                     {
@@ -241,8 +228,9 @@
                     },
                     {
                         column_number : 12,
-                        filter_type: "range_number",
-                        filter_default_label: ["Min", "Max"],
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "",
                         filter_reset_button_text: false,
                         select_type_options: {
                             width: '30px',
@@ -250,11 +238,13 @@
                     },
                     {
                         column_number : 13,
-                        filter_type: "range_number",
-                        filter_default_label: ["Min", "Max"],
+                        filter_type: "range_date",
+                        date_format: "yyyy-mm-dd",
+                        select_type: 'select2',
+                        filter_default_label: ["From", "To"],
                         filter_reset_button_text: false,
                         select_type_options: {
-                            width: '30px',
+                            width: '100px',
                         }
                     },
                 ],
@@ -412,6 +402,9 @@
                 }
                 window.location.href = '/structure/selection_convert_signprot_model';
             });
+            $("[data-toggle='popover']").popover({
+              container: 'body'
+            });
         });
 
         function ClearSelection(selection_type) {
@@ -536,26 +529,46 @@
         <table width="100%" class="display compact" id="constructs">
             <thead>
                 <tr class='over_header' style='max-height: 20px'>
-                    <th colspan=4 class="over_header">MODEL</th>
+                    <th colspan=1 class="over_header"></th>
+                    <th colspan=1 class="over_header">   MODEL   </th>
                     <th colspan=5 class="over_header">RECEPTOR</th>
-                    <th colspan=2 class="over_header">G PROTEIN</th>
-                    <th colspan=3 class="over_header">EXPERIMENTAL DATA</th>
+                    <th colspan=3 class="over_header">G PROTEIN</th>
+                    <th colspan=3 class="over_header" style="max-width:50px;">COUPLING DATA</th>
+                    <th colspan=1 class="over_header">DATE</th>
+                </tr>
+                <tr class='over_header cenetered-header'>
+                    <th class='rightborder'></th>
+                    <th class='rightborder'></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th class='rightborder'></th>
+                    <th></th>
+                    <th></th>
+                    <th class='rightborder'></th>
+                    <th>Bouvier<br>log(Emax/EC50)</th>
+                    <th>Inoue<br>log(Emax/EC50)</th>
+                    <th class='rightborder'>GtoPdb<br>1' / 2' <span class="glyphicon glyphicon-info-sign" data-html="true" data-toggle="popover" data-trigger="hover click" data-placement="bottom" data-content="Primary (1') or secondary (2') principle receptor signalling pathway or mechanism, where established. This classification is used to denote the principal signalling activity in order to regulate established physiological function. <a target='_blank' href='https://doi.org/10.1093/nar/gkab1010'>Harding et al. 2022</a>"></span></th>
+                    <th class='rightborder'></th>
+                    <th class='hidden'></th>
+                    <th class='hidden'></th>
                 </tr>
                 <tr>
-                    <th  class='no-sort checkbox_tr'><input class="select-all" type="checkbox" onclick="select_all(this)"></th>
+                    <th class='no-sort checkbox_tr rightborder'><input class="select-all" type="checkbox" onclick="select_all(this)"></th>
+                    <th class='rightborder'></th>
+                    <th>GPCRdb</th>
                     <th></th>
-                    <th>Date</th>
+                    <th></th>
+                    <th></th>
                     <th class='rightborder'></th>
                     <th></th>
                     <th></th>
+                    <th class='rightborder'></th>
                     <th></th>
                     <th></th>
                     <th class='rightborder'></th>
-                    <th></th>
                     <th class='rightborder'></th>
-                    <th>Inoue<br>(logEmax/EC50)</th>
-                    <th>Bouvier<br>(logEmax/EC50)</th>
-                    <th class='rightborder'>Guide to Pharmacology<br>(primary/secondary<br>transducer)</th>
                     <th class='hidden'></th>
                     <th class='hidden'></th>
                 </tr>
@@ -565,41 +578,33 @@
             {% for model in structure_complex_model %}
                 <tr model_id='{{model.pk}}'>
                     <td class="text-center"><input class="alt" type="checkbox" id="{{ model.pk }}"></td>
-                    {% if model.structure_type__slug == 'af-signprot' %}
-                        <td><a target="_blank" href="complex_models/{{ model.pdb_code__index }}">{{ model.protein_conformation__protein__family__name|safe }} - {{ model.signprot_complex__protein__name }}</a></td>
+                    <td style="text-align:center;"><a target="_blank" href="complex_models/{{ model.pdb_code__index }}"><img width="14px" height="20px" class="model-link" src="{% static 'home/images/model-surface.png' %}"></a></div></td>
+                    <td class="text-center"><a target="_blank" href="/protein/{{ model.protein_conformation__protein__entry_name }}"><img width="12px" height="12px" class="gpcrdb-link" src="{% static 'home/logo/gpcr/main.png' %}"></a></td>
+                    <td><a target="_blank" href="http://www.uniprot.org/uniprot/{{ model.protein_conformation__protein__accession }}">{{ model.protein_conformation__protein__entry_name|entry_short }}</a></td>
+                    <td><span>{{ model.protein_conformation__protein__name|receptor_short|safe }}</span></td>
+                    <td>{{ model.protein_conformation__protein__family__parent__name }}</td>
+                    <td>{{ model.protein_conformation__protein__family__parent__parent__parent__name|cut_classname }}</td>
+                    <td><a href="/signprot/{{ model.signprot_complex_protein__entry_name }}">{{ model.signprot_complex__protein__family__name|gprot_short }}</a></td>
+                    <td>{{ model.signprot_complex__protein__family__parent__name }}</td>
+                    <td>{{ model.heterotrimer }}</td>
+                    {% if model.Bouvier == "-" %}
+                        <td>-</td>
                     {% else %}
-                        <td><a target="_blank" href="refined/{{ model.pdb_code__index }}">{{ model.protein_conformation__protein__family__name|safe }} - {{ model.signprot_complex__protein__family }}</a></td>
+                        <td>{{ model.Bouvier|floatformat:1 }}</td>
+                    {% endif %}
+                    {% if model.Inoue == "-" %}
+                        <td>-</td>
+                    {% else %}
+                        <td>{{ model.Inoue|floatformat:1 }}</td>
+                    {% endif %}
+                    {% if model.GuideToPharma ==  "primary" %}
+                        <td>1'</td>
+                    {% elif model.GuideToPharma == "secondary" %}
+                        <td>2'</td>
+                    {% else %}
+                        <td>-</td>
                     {% endif %}
                     <td>{{ model.publication_date|date:"Y-m-d" }}</td>
-                    <td>
-                        {% if model.structure_type__slug == 'af-signprot' %}
-                            No
-                        {% elif model.structure_type__slug == 'af-signprot-refined'  %}
-                           Yes
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if not model.protein_conformation__protein__accession %}
-                            <a target="_blank" href="http://www.uniprot.org/uniprot/{{ model.protein_conformation__protein__parent__accession }}">{{ model.protein_conformation__protein__entry_name|entry_short }}</a>
-                        {% else %}
-                            <a target="_blank" href="http://www.uniprot.org/uniprot/{{ model.protein_conformation__protein__accession }}">{{ model.protein_conformation__protein__entry_name|entry_short }}</a>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if not model.protein_conformation__protein__accession %}
-                            <a target="_blank" href="/protein/{{ model.protein_conformation__protein__parent__entry_name }}">{{ model.protein_conformation__protein__name|safe }}</a>
-                        {% else %}
-                            <a target="_blank" href="/protein/{{ model.protein_conformation__protein__entry_name }}">{{ model.protein_conformation__protein__name|safe }}</a>
-                        {% endif %}
-                    </td>
-                    <td>{{ model.protein_conformation__protein__family__parent__name }}</td>
-                    <td>{{ model.protein_conformation__protein__family__parent__parent__parent__name }}</td>
-                    <td>{{ model.protein_conformation__protein__species__common_name }}</td>
-                    <td><a href="/signprot/{{ model.signprot_complex_protein__entry_name }}">{{ model.signprot_complex__protein__name }}</a></td>
-                    <td>{{ model.signprot_complex__protein__family__parent__name }}</td>
-                    <td>{{ model.Inoue|floatformat:2 }}</td>
-                    <td>{{ model.Bouvier|floatformat:2}}</td>
-                    <td>{{ model.GuideToPharma}}</td>
                     <td style="display:none;">{{ model.protein_conformation__protein__entry_name }}</td>
                     <td style="display:none;">{{ model.pdb_code__index }}</td>
                 </tr>

@@ -251,7 +251,7 @@ class StructureType(models.Model):
         if self.name=="X-ray diffraction":
             return "X-ray"
         elif self.name=="Electron microscopy":
-            return "cryo-EM"
+            return "Cryo-EM"
         elif self.name=="Electron crystallography":
             return "MicroED"
         else:

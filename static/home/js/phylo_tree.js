@@ -1011,9 +1011,9 @@ function draw_model_scores(location, element_id, score, startValue, endValue, de
                 .attr("id", element_id);
 
     if (inverted == true){
-        var greyscale = ['rgb(0,0,0)', 'rgb(255, 255, 255)', 'rgb(180,180,180)' ];
+        var greyscale = ['rgb(0,0,0)', 'rgb(255, 255, 255)' ];
     } else {
-        var greyscale = [ 'rgb(180,180,180)', 'rgb(255, 255, 255)', 'rgb(0,0,0)' ];
+        var greyscale = [ 'rgb(255, 255, 255)', 'rgb(0,0,0)' ];
     };
 
     var first_legend = svg_home.append('defs')
@@ -1029,14 +1029,14 @@ function draw_model_scores(location, element_id, score, startValue, endValue, de
     first_legend.append('stop')
            .style('stop-color', greyscale[0])
            .attr('offset', '0%');
+    // first_legend.append('stop')
+    //        .style('stop-color', greyscale[1])
+    //        .attr('offset', stopOffset + '%');
+    // first_legend.append('stop')
+    //        .style('stop-color', greyscale[1])
+    //        .attr('offset', stopOffset + '%');
     first_legend.append('stop')
            .style('stop-color', greyscale[1])
-           .attr('offset', stopOffset + '%');
-    first_legend.append('stop')
-           .style('stop-color', greyscale[1])
-           .attr('offset', stopOffset + '%');
-    first_legend.append('stop')
-           .style('stop-color', greyscale[2])
            .attr('offset', '100%');
 
 

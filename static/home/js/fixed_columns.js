@@ -521,7 +521,7 @@ function showPDBtable(element) {
                     select_type: "select2",
                     column_data_type: "html",
                     html_data_type: "text",
-                    filter_default_label: "IUPHAR",
+                    filter_default_label: "GtoPdb",
                     filter_match_mode: "exact",
                     filter_reset_button_text: false,
                 },

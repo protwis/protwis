@@ -81,10 +81,10 @@ canvas {
 <div class="row text-success">
     <div class="text-center">
         <div style="display: inline;">
-          {% if structure_type == "af-signprot" %}
-              <h2>{{ model.protein_conformation.protein.name|safe }} - {{ model.signprot_complex.protein.family.name|gprot_short }} complex model</h2>
+          {% if structure_type.slug == "af-signprot" %}
+              <h2>G<sub>{{ model.signprot_complex.protein.family.name|gprot_short|slice:"1:" }}</sub> - {{ model.protein_conformation.protein.name|safe }} complex model
           {% else %}
-              <h2>{{ model.protein_conformation.protein.entry_name|upper }} refined
+              <h2>Refined structure ({{ model.pdb_code.index|entry_short }}) of G<sub>{{ model.signprot_complex.protein.family.name|gprot_short|slice:"1:" }}</sub> - {{ model.protein_conformation.protein.name|safe}}
           {% endif %}
 
             <div style="display: inline;">
@@ -108,10 +108,10 @@ canvas {
 
 <div class="row">
     <div class="col-md-3 text-right text-info">
-        <h4>RECEPTOR CLASS</h4>
+        <h4>RECEPTOR CLASS (FAMILY)</h4>
     </div>
     <div class="col-md-9">
-        {{ model.protein_conformation.protein.get_protein_class|strip_class }}
+        {{ model.protein_conformation.protein.get_protein_class|cut_classname }}
     </div>
 </div>
 
@@ -129,7 +129,7 @@ canvas {
         <h4>G PROTEIN FAMILY</h4>
     </div>
     <div class="col-md-9">
-        {{ model.signprot_complex.protein.family.parent|safe }}
+        G<sub>{{ model.signprot_complex.protein.family.parent|safe|slice:"1:" }}</sub>
     </div>
 </div>
 
@@ -152,14 +152,29 @@ canvas {
           <div style="width:500px; background-color:#eaeaea; border-radius: 0px 0px 5px 5px;">
               <p style="padding: 2px 0px 2px 5px; font-size: 10px;"><button id="fullscreen">Full Screen</button><a href="https://github.com/arose/ngl"> NGL</a> is a WebGL based 3D viewer powered by <a href="https://mmtf.rcsb.org">MMTF</a>.</p>
           </div>
-          <br>
       </div>
+      {% if refined == "true" %}
+      <div style='width: 100%; display:table; position:relative;'>
+          <div style='display: table-cell;'>
+              {% for prot, bts in backbone_templates.items %}
+                  {% for bt in bts %}
+                      <div class="graphcolor" style="background-color:{{ bt.color }}; width: 20px; height: 15px; margin-bottom: 5px; border:solid black 1px;"></div>
+                      Structure ({{ bt.pdb_code.index }})
+                  {% endfor %}
+              {% endfor %}
+                      <div class="graphcolor" style="background-color:white; width: 20px; height: 15px; margin-bottom: 5px; border:solid black 1px; "></div>
+                      Model (AlphaFold2-Multimer)
+          </div>
+      </div>
+      {% endif %}
+      <br>
     </div>
     {% if refined == "false" %}
     <div class="col-md-5">
         <div><h4>Tertiary structure confidence <i class="fas fa-info-circle" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="below" data-content="<b>Interpretation of AlphaFold models</b><br>The pLDDT score from AlphaFold estimates the confidence of the placement of an individual residue in relation to its neighboring residues within a 15 Å radius."></i></h4></div>
+        <p>(pLDDT score) avg.: {{ plddt_avg|floatformat:1 }}</p>
         <div style='width: 90%; display:table; position:relative;'>
-            <table>
+            <!-- <table>
                 <tr>
                     <td></td>
                     <td></td>
@@ -190,24 +205,24 @@ canvas {
                     <td>Disordered</td>
                     <td></td>
                 </tr>
-            </table>
-            <!-- <div style='display: table-cell;'>
+            </table> -->
+            <div style='display: table-cell;'>
               <div class="graphcolor" style="background-color: blue; "></div>
-              <span style="margin-left: 5px; vertical-align: middle; padding-top: 5px;">Very high (pLDDT > 90)</span>
+              <span style="margin-left: 5px; vertical-align: middle; padding-top: 5px;">Very high (>90)</span>
               <br>
               <div class="graphcolor" style="background-color: lightblue; "></div>
-              <span style="margin-left: 5px; vertical-align: middle;">Confident (90 > pLDDT > 70)</span>
+              <span style="margin-left: 5px; vertical-align: middle;">Confident (90-70)</span>
               <br>
               <div class="graphcolor" style="background-color: yellow; "></div>
-              <span style="margin-left: 5px; vertical-align: middle;">Low (70 > pLDDT > 50)</span>
+              <span style="margin-left: 5px; vertical-align: middle;">Low (70-50)</span>
               <br>
               <div class="graphcolor" style="background-color: orange;"></div>
-              <span style="margin-left: 5px; vertical-align: middle;">Very low (pLDDT < 50)</span>
+              <span style="margin-left: 5px; vertical-align: middle;">Very low (<50)</span>
               <br>
               <div class="graphcolor" style="background-color: red;"></div>
               <span style="margin-left: 5px; vertical-align: middle;">Disordered</span>
               <br>
-            </div> -->
+            </div>
         </div>
         <br>
         <div>
@@ -234,12 +249,161 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
     {% endif %}
 </div>
 
+{% if refined == "true" %}
+<div class="row">
+    <div class="col-md-3 text-right text-info">
+        <h4>REFINED G PROTEIN RESIDUES</h4>
+    </div>
+    <div class="col-md-9">
+        <div style="padding-bottom: 10px;">
+            Residue backbones - {{ bb_alt2 }} from structure ({{ bb_alt_perc2 }}%), {{ bb_none2 }} from model ({{ bb_none_perc2 }}%) <br>
+            Residue sidechains - {{ sc_alt2 }} from structure ({{ sc_alt_perc2 }}%), {{ sc_none2 }} from model ({{ sc_none_perc2 }}%)
+        </div>
+        <style>
+            table.dataTable thead th {padding: 3px 1px 3px 3px;}
+        </style>
+        <div style="padding-top: 0px; font-size: 10px; white-space: nowrap; width: 50%;">
+            <table class="display" id="signprot_rotamers">
+                <thead>
+                    <tr>
+                        <th>Segment</th>
+                        <th>Seq.num.</th>
+                        <th>AA</th>
+                        <th>CGN#</th>
+                        <th>Backbone from</th>
+                        <th>Sidechain from</th>
+                    </tr>
+                    <tr>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for rota in signprot_rotamers %}
+                    <tr>
+                        <td>{{ rota.residue.protein_segment.slug }}</td>
+                        <td>{{ rota.residue.sequence_number }}</td>
+                        <td>{{ rota.residue.amino_acid }}</td>
+                        <td style="text-align:left;">{{ rota.residue.display_generic_number.label }}</td>
+                        {% if rota.backbone_template %}
+                            <td style="text-align:left;">Structure</td>
+                        {% else %}
+                            <td style="text-align:left;">AF2</td>
+                        {% endif %}
+                        {% if rota.rotamer_template %}
+                            <td style="text-align:left;">Structure</td>
+                        {% else %}
+                            <td style="text-align:left;">AF2</td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<br>
+<div class="row">
+    <div class="col-md-3 text-right text-info">
+        <h4>REFINED GPCR RESIDUES</h4>
+    </div>
+    <div class="col-md-9">
+        <!-- <table>
+            <thead>
+                <tr>
+                    <th class='table-th'></th>
+                    <th class='table-th'>Main template (%)</th>
+                    <th class='table-th'>Additional templates (%)</th>
+                    <th class='table-th' style="border-right: 0px;">No template - freely modelled (%)</th>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="border-right: 1px solid #9ea7af; text-align:right; padding: 3px; font-size: 12px;">Backbone</td>
+                    <td class="table-td">{{bb_main}}</td>
+                    <td class="table-td">{{bb_alt}}</td>
+                    <td class="table-td" style="border-right: 0px;">{{bb_none}}</td>
+                </tr>
+                <tr>
+                    <td style="border-right: 1px solid #9ea7af; text-align:right; padding: 3px; font-size: 12px;">Side-chains</td>
+                    <td class="table-td">{{sc_main}}</td>
+                    <td class="table-td">{{sc_alt}}</td>
+                    <td class="table-td" style="border-right: 0px;">{{sc_none}}</td>
+                </tr>
+            </tbody>
+        </table> -->
+        <!-- <br>
+        Number of backbone templates: {{ backbone_templates_number }}<br>
+        Number of rotamer templates: {{ rotamer_templates_number }}<br><br>
+ -->
+        <div style="padding-bottom: 10px;">
+            Residue backbones - {{ bb_alt }} from structure ({{ bb_alt_perc }}%), {{ bb_none }} from model ({{ bb_none_perc }}%) <br>
+            Residue sidechains - {{ sc_alt }} from structure ({{ sc_alt_perc }}%), {{ sc_none }} from model ({{ sc_none_perc }}%)
+        </div>
+        <style>
+            table.dataTable thead th {padding: 3px 1px 3px 3px;}
+        </style>
+        <div style="padding-top: 0px; font-size: 10px; white-space: nowrap; width: 50%;">
+            <table class="display" id="rotamers">
+                <thead>
+                    <tr>
+                        <th>Segment</th>
+                        <th>Seq.num.</th>
+                        <th>AA</th>
+                        <th>GPCRdb#</th>
+                        <th>Backbone from</th>
+                        <th>Sidechain from</th>
+                    </tr>
+                    <tr>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for rota in receptor_rotamers %}
+                    <tr>
+                        <td>{{ rota.residue.protein_segment.slug }}</td>
+                        <td>{{ rota.residue.sequence_number }}</td>
+                        <td>{{ rota.residue.amino_acid }}</td>
+                        {% if rota.residue.display_generic_number %}
+                            <td style="text-align:left;">{{ rota.residue.display_generic_number.label }}</td>
+                        {% else %}
+                            <td style="text-align:left;">-</td>
+                        {% endif %}
+                        {% if rota.backbone_template %}
+                            <td style="text-align:left;">Structure</td>
+                        {% else %}
+                            <td style="text-align:left;">AF2</td>
+                        {% endif %}
+                        {% if rota.rotamer_template %}
+                            <td style="text-align:left;">Structure</td>
+                        {% else %}
+                            <td style="text-align:left;">AF2</td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<br>
+{% endif %}
+
 <div class="row">
   <div class="col-md-3 text-right text-info">
     <h4>INTERACTING RESIDUES</h4>
   </div>
   <div class="col-md-9">
-    <a href="/interaction/complex/{{pdbname}}"> {{residues}} interactions (Click to see)</a>
+    <a href="/interaction/complex/{{pdbname}}" target="_blank"> {{residues}} interactions (Click to see)</a>
   </div>
 </div>
 
@@ -336,193 +500,6 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
   </div>
 </div>
 
-{% if refined == 'true' %}
-<div class="row">
-    <div class="col-md-3 text-right text-info">
-        <h4>RECEPTOR STRUCTURE SOURCE</h4>
-    </div>
-    <style>
-        .table-th {
-            background:#eaeaea;
-            border-bottom:1px solid #9ea7af;
-            border-right: 1px solid #9ea7af;
-            padding:5px;
-            font-size: 12px;
-            text-align:left;
-            vertical-align:middle;
-        }
-        .table-td {
-            text-align:center;
-            border-right: 1px solid #9ea7af;
-        }
-    </style>
-    <div class="col-md-9">
-        <div style='width: 70%; display:table; position:relative;'>
-            <div style='display: table-cell;'>
-                {% for prot, bts in backbone_templates.items %}
-                    {% for bt in bts %}
-                        <div class="graphcolor" style="background-color:{{ bt.color }}; width: 20px; height: 15px; margin-bottom: 5px; border:solid black 1px;"></div>
-                        {{ bt.pdb_code.index }} ({{ bt.protein_conformation.protein.parent.name|safe}}) <br>
-
-
-                    {% endfor %}
-                {% endfor %}
-                        <div class="graphcolor" style="background-color:white; width: 20px; height: 15px; margin-bottom: 5px; border:solid black 1px;"></div>
-                        AlphaFold2-Multimer
-            </div>
-        </div>
-        <table>
-            <thead>
-                <tr>
-                    <th class='table-th'></th>
-                    <th class='table-th'>Main template (%)</th>
-                    <th class='table-th'>Additional templates (%)</th>
-                    <th class='table-th' style="border-right: 0px;">No template - freely modelled (%)</th>
-            </thead>
-            <tbody>
-                <tr>
-                    <td style="border-right: 1px solid #9ea7af; text-align:right; padding: 3px; font-size: 12px;">Backbone</td>
-                    <td class="table-td">{{bb_main}}</td>
-                    <td class="table-td">{{bb_alt}}</td>
-                    <td class="table-td" style="border-right: 0px;">{{bb_none}}</td>
-                </tr>
-                <tr>
-                    <td style="border-right: 1px solid #9ea7af; text-align:right; padding: 3px; font-size: 12px;">Side-chains</td>
-                    <td class="table-td">{{sc_main}}</td>
-                    <td class="table-td">{{sc_alt}}</td>
-                    <td class="table-td" style="border-right: 0px;">{{sc_none}}</td>
-                </tr>
-            </tbody>
-        </table>
-        <!-- <br>
-        Number of backbone templates: {{ backbone_templates_number }}<br>
-        Number of rotamer templates: {{ rotamer_templates_number }}<br><br>
- -->
-        <style>
-            table.dataTable thead th {padding: 3px 1px 3px 3px;}
-        </style>
-        <div style="padding-top: 0px; font-size: 10px; white-space: nowrap; width: 50%;">
-            <table class="display" id="rotamers">
-                <thead>
-                    <tr>
-                        <th>Segment</th>
-                        <th>Seq.num.</th>
-                        <th>AA</th>
-                        <th>GPCRdb#</th>
-                        <th>Backbone</th>
-                        <th>PDB</th>
-                        <th>Rotamer</th>
-                        <th>PDB</th>
-                    </tr>
-                    <tr>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                {% for rota in receptor_rotamers %}
-                    <tr>
-                        <td>{{ rota.residue.protein_segment.slug }}</td>
-                        <td>{{ rota.residue.sequence_number }}</td>
-                        <td>{{ rota.residue.amino_acid }}</td>
-                        {% if rota.residue.display_generic_number %}
-                            <td>{{ rota.residue.display_generic_number.label }}</td>
-                        {% else %}
-                            <td>-</td>
-                        {% endif %}
-                        {% if rota.backbone_template %}
-                            <td><a href="/protein/{{ rota.backbone_template.protein_conformation.protein.parent.entry_name }}">{{ rota.backbone_template.protein_conformation.protein.parent.name|safe }}</a></td>
-                            <td><a href="../{{ rota.backbone_template.pdb_code.index }}">{{ rota.backbone_template.pdb_code.index }}</a></td>
-                        {% else %}
-                            <td>-</td>
-                            <td>-</td>
-                        {% endif %}
-                        {% if rota.rotamer_template %}
-                            <td><a href="/protein/{{ rota.rotamer_template.protein_conformation.protein.parent.entry_name }}">{{ rota.rotamer_template.protein_conformation.protein.parent.name|safe }}</a></td>
-                            <td><a href="../{{ rota.rotamer_template.pdb_code.index }}">{{ rota.rotamer_template.pdb_code.index }}</a></td>
-                        {% else %}
-                            <td>-</td>
-                            <td>-</td>
-                        {% endif %}
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
-<br>
-<div class="row">
-    <div class="col-md-3 text-right text-info">
-        <h4>G-PROTEIN STRUCTURE SOURCE</h4>
-    </div>
-    <div class="col-md-9">
-        <style>
-            table.dataTable thead th {padding: 3px 1px 3px 3px;}
-        </style>
-        <div style="padding-top: 0px; font-size: 10px; white-space: nowrap; width: 50%;">
-            <table class="display" id="signprot_rotamers">
-                <thead>
-                    <tr>
-                        <th>Segment</th>
-                        <th>Seq.num.</th>
-                        <th>AA</th>
-                        <th>CGN#</th>
-                        <th>Backbone</th>
-                        <th>PDB</th>
-                        <th>Rotamer</th>
-                        <th>PDB</th>
-                    </tr>
-                    <tr>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                {% for rota in signprot_rotamers %}
-                    <tr>
-                        <td>{{ rota.residue.protein_segment.slug }}</td>
-                        <td>{{ rota.residue.sequence_number }}</td>
-                        <td>{{ rota.residue.amino_acid }}</td>
-                        <td>{{ rota.residue.generic_number.label }}</td>
-                        {% if rota.backbone_template %}
-                            <td><a href="/signprot/{{ rota.backbone_template.signprot_complex.protein.entry_name }}"> {{ rota.backbone_template.signprot_complex.protein.name}}</a></td>
-                            <td><a href="../{{ rota.backbone_template.pdb_code.index }}">{{ rota.backbone_template.pdb_code.index }}</a></td>
-                        {% else %}
-                            <td>-</td>
-                            <td>-</td>
-                        {% endif %}
-                        {% if rota.rotamer_template %}
-                            <td><a href="/signprot/{{ rota.rotamer_template.signprot_complex.protein.entry_name }}"> {{ rota.rotamer_template.signprot_complex.protein.name}}</a></td>
-                            <td><a href="../{{ rota.rotamer_template.pdb_code.index }}">{{ rota.rotamer_template.pdb_code.index }}</a></td>
-                        {% else %}
-                            <td>-</td>
-                            <td>-</td>
-                        {% endif %}
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
-<br>
-{% endif %}
-
-
-<br>
 <style>
 .inline {display:inline;}
 .graphcolor { display:inline-block; border-style:solid; border-width: 1px; padding: 1px 5px; text-align: center}
@@ -535,6 +512,7 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
         document.addEventListener( "DOMContentLoaded", function(){
             stage = new NGL.Stage( "viewport", { backgroundColor: "white" } );
             var color_residues = JSON.parse('{{color_residues|safe}}');
+            console.log(color_residues)
             var schemeId = NGL.ColorMakerRegistry.addSelectionScheme( color_residues );
             stage.loadFile( "/structure/complex_models/view/{{pdbname}}", { ext: "pdb" }  ).then( function( o ){
                 o.addRepresentation( "cartoon", {color: schemeId} );  // pass schemeId here ,{ color: schemeId }
@@ -575,8 +553,8 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
               iptm = {{ scores.iptm }};
               pae = {{ scores.pae_mean }};
               draw_model_scores('PTM_location', 'PTM_divider', 'PTM',  0, 1, ptm, 0.5);
-              draw_model_scores('iPTM_location', 'iPTM_divider', 'iPTM',  0, 1, iptm, 0.2);
-              draw_model_scores('PAE_location', 'PAE_divider', 'PAE',  0, 31, pae, 26, true);
+              draw_model_scores('iPTM_location', 'iPTM_divider', 'iPTM',  0, 1, iptm, 0.5);
+              draw_model_scores('PAE_location', 'PAE_divider', 'PAE',  0, 31, pae, 15.5, true);
             }
             interactions = {{ interactions | safe }};
             inner_data = {{ inner | safe }};

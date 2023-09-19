@@ -178,9 +178,11 @@ def entry_short ( objs ):
     return objs.split("_")[0].upper()
 
 @register.filter
-def strip_class ( objs ):
-    return objs.replace('Class','').replace('(','').replace(')','')
-
-@register.filter
 def gprot_short ( objs ):
     return g_prot_dict[objs]
+
+@register.filter
+def receptor_short ( objs ):
+    if not objs.startswith('mGlu'):
+        objs = objs[0].upper()+objs[1:]
+    return objs.replace(" receptor","").replace("-adrenoceptor","")
