@@ -580,13 +580,18 @@ def ComplexModelDetails(request, header, refined=False):
     if not refined:
         scores = StructureAFScores.objects.get(structure=model)
         #Need to build the plDDT colors
-        model_plddt = StructureModelpLDDT.objects.filter(structure=model)
+        model_plddt = StructureModelpLDDT.objects.filter(structure=model).prefetch_related('residue', 'residue__protein_segment')
         residues_plddt = {}
         for item in model_plddt:
             residues_plddt[item.residue.id] = [item.residue, item.pLDDT]
 
     ### Gathering interaction info and structuring JS data
-    interactions = Interaction.objects.filter(interacting_pair__referenced_structure=model).prefetch_related('interacting_pair__res1', 'interacting_pair__res2')
+    interactions = Interaction.objects.filter(interacting_pair__referenced_structure=model).prefetch_related('interacting_pair__res1',
+                                                                                                             'interacting_pair__res2',
+                                                                                                             'interacting_pair__res2__protein_segment',
+                                                                                                             'interacting_pair__res1__protein_segment',
+                                                                                                             'interacting_pair__res1__display_generic_number',
+                                                                                                             'interacting_pair__res2__display_generic_number')
 
     gpcr_aminoacids = []
     gprot_aminoacids = []
@@ -718,6 +723,56 @@ def ComplexModelDetails(request, header, refined=False):
     gpcr_aminoacids, gprot_aminoacids = sort_and_update(to_push_gpcr, gpcr_aminoacids, to_push_gprot, gprot_aminoacids, protein_interactions)
     gpcr_aminoacids_strict, gprot_aminoacids_strict = sort_and_update(to_push_gpcr_strict, gpcr_aminoacids_strict, to_push_gprot_strict, gprot_aminoacids_strict, protein_interactions_strict)
 
+    ### Interaction Matrix copy/paste
+    gprotein_order = ProteinSegment.objects.filter(proteinfamily='Alpha').values('id', 'slug')
+    fam_slug = '100'
+
+    receptor_order = ['N', '1', '12', '2', '23', '3', '34', '4', '45', '5', '56', '6', '67', '7', '78', '8', 'C']
+
+    struc = SignprotComplex.objects.filter(protein__family__slug__startswith=fam_slug).prefetch_related(
+        'structure__pdb_code',
+        'structure__stabilizing_agents',
+        'structure__protein_conformation__protein',
+        'structure__protein_conformation__protein__parent',
+        'structure__protein_conformation__protein__species',
+        'structure__protein_conformation__protein__parent__parent__parent',
+        'structure__protein_conformation__protein__family__parent__parent__parent__parent',
+        'structure__stabilizing_agents',
+        'structure__signprot_complex__protein__family__parent__parent__parent__parent',
+    )
+
+    complex_info = []
+    for s in struc:
+        r = {}
+        s = s.structure
+        r['pdb_id'] = s.pdb_code.index
+        try:
+            r['name'] = s.protein_conformation.protein.parent.short()
+        except:
+            r['name'] = s.protein_conformation.protein.short()
+        try:
+            r['entry_name'] = s.protein_conformation.protein.parent.entry_name
+        except:
+            r['entry_name'] = s.protein_conformation.protein.entry_name
+        r['class'] = s.protein_conformation.protein.get_protein_class()
+        r['family'] = s.protein_conformation.protein.get_protein_family()
+        r['conf_id'] = s.protein_conformation.id
+        r['organism'] = s.protein_conformation.protein.species.common_name
+        try:
+            r['gprot'] = s.get_stab_agents_gproteins()
+        except Exception:
+            r['gprot'] = ''
+        try:
+            r['gprot_class'] = s.get_signprot_gprot_family()
+        except Exception:
+            r['gprot_class'] = ''
+        complex_info.append(r)
+
+    interactions_metadata = json.dumps(complex_info)
+    gprot_order = json.dumps(list(gprotein_order))
+    receptor_order = json.dumps(receptor_order)
+
+
     ### Keep old coloring for refined structures
     if model.structure_type.slug == 'af-signprot-refined':
         # if model.protein_conformation.protein.accession:
@@ -764,7 +819,8 @@ def ComplexModelDetails(request, header, refined=False):
                                                              'template_list': template_list, 'model_main_template': main_template, 'state': None, 'signprot_sim': int(gp.proteins[1].similarity),
                                                              'signprot_color_residues': json.dumps(segments_out2), 'loop_segments': loop_segments, 'pdbname': header, 'scores': StructureAFScores(),
                                                              'refined': json.dumps(True), 'outer': json.dumps(gpcr_aminoacids), 'inner': json.dumps(gprot_aminoacids),
-                                                             'interactions': json.dumps(protein_interactions), 'residues': len(protein_interactions)})#, 'delta_distance': delta_distance})
+                                                             'interactions': json.dumps(protein_interactions), 'residues': len(protein_interactions),
+                                                             'interactions_metadata': interactions_metadata, 'gprot': gprot_order, 'receptor': receptor_order, 'pdb_sel': [header]})#, 'delta_distance': delta_distance})
 
     else:
 
@@ -781,7 +837,11 @@ def ComplexModelDetails(request, header, refined=False):
                                                              'inner_strict': json.dumps(gprot_aminoacids_strict),
                                                              'interactions_strict': json.dumps(protein_interactions_strict),
                                                              'residues': len(protein_interactions),
-                                                             'structure_type': model.structure_type
+                                                             'structure_type': model.structure_type,
+                                                             'interactions_metadata': interactions_metadata,
+                                                             'gprot': gprot_order,
+                                                             'receptor': receptor_order,
+                                                             'pdb_sel': [header]
                                                              })
 
 

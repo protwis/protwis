@@ -244,74 +244,94 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
 </div>
 
 <div class="col-md-12 ">
-    <div>
-      <b>Interaction cut-off:</b>
-        <div class="btn-group" role="group" id="cut_off">
-            <button id="strict" class="btn btn-info active">Strict</button>
-            <button id="loose" class="btn btn-info">Loose</button>
-        </div>
-    </div>
-    <div id="tooltip" class="tooltip"></div>
-    <div style="display: flex; justify-content: center;">
-      <svg id="visualization" width="100%" height="1115"></svg>
-    </div>
-    <div class="row">
-      <div class="col-md-3 text-right text-info">
+  <ul class="nav nav-tabs">
+    <li class="nav-item active">
+      <a class="nav-link active" data-toggle="tab" href="#circles" id="circles_tab">Bi Circos</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" data-toggle="tab" href="#matrix" id="matrix_tab">Interaction matrix</a>
+    </li>
+  </ul>
+  <br/>
+  <br/>
+  <div class="tab-content">
+    <div class="tab-pane container active" id="circles">
+      <div>
+        <b>Interaction cut-off:</b>
+          <div class="btn-group" role="group" id="cut_off">
+              <button id="strict" class="btn btn-info active">Strict</button>
+              <button id="loose" class="btn btn-info">Loose</button>
+          </div>
       </div>
-      <div class="col-md-9">
-        <p><b>Highlight receptor-transducer interaction</b></p>
-        <div class="checkbox-group">
-          <div class="checkbox-item">
-            <input type="checkbox" id="main-main" name="chain" value="Main-Main">
-            <label for="main-main">Backbone-Backbone</label>
-          </div>
-          <div class="checkbox-item">
-            <input type="checkbox" id="main-side" name="chain" value="Main-Side">
-            <label for="main-side">Backbone-Side</label>
-          </div>
-          <div class="checkbox-item">
-            <input type="checkbox" id="side-side" name="chain" value="Side-Side">
-            <label for="side-side">Side-Side</label>
-          </div>
-          <div class="checkbox-item">
-            <input type="checkbox" id="side-main" name="chain" value="Side-Main">
-            <label for="side-main">Side-Backbone</label>
-          </div>
-        </div>
-        <br/>
-        <div style="text-align: left;">
-          <button id="interactionsButton">Interactions</button>
-          <button id="propertiesButton">Properties</button>
-          <button id="segmentButton">Segment</button>
-          <button id="resetButton">Reset</button>
-        </div>
-        <br/>
-        <div style="text-align: left;">
-          <div class="btn-group">
-              <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
-                      aria-haspopup="true" aria-expanded="false">Download <span class="caret"></span>
-              </button>
-              <ul class="dropdown-menu">
-                  <li>
-                      <a href="javascript:downloadSVG('visualization', 'interactionsPNG', 'png');">PNG</a>
-                  </li>
-                  <li>
-                      <a href="javascript:downloadSVG('visualization', 'interactionsJPEG', 'jpeg');">JPEG</a>
-                  </li>
-                  <li>
-                      <a href="javascript:downloadSVG('visualization', 'interactionsTIFF', 'tiff');">TIFF</a>
-                  </li>
-                  <li>
-                      <a href="javascript:downloadSVG('visualization', 'interactionsSVG');">SVG</a>
-                  </li>
-              </ul>
-          </div>
-        </div>
+      <div id="tooltip" class="tooltip"></div>
+      <div style="display: flex; justify-content: center;">
+        <svg id="visualization" width="100%" height="1115"></svg>
       </div>
-      <br>
-      <br>
+      <div class="row">
+        <div class="col-md-3 text-right text-info">
+        </div>
+        <div class="col-md-9">
+          <p><b>Highlight receptor-transducer interaction</b></p>
+          <div class="checkbox-group">
+            <div class="checkbox-item">
+              <input type="checkbox" id="main-main" name="chain" value="Main-Main">
+              <label for="main-main">Backbone-Backbone</label>
+            </div>
+            <div class="checkbox-item">
+              <input type="checkbox" id="main-side" name="chain" value="Main-Side">
+              <label for="main-side">Backbone-Side</label>
+            </div>
+            <div class="checkbox-item">
+              <input type="checkbox" id="side-side" name="chain" value="Side-Side">
+              <label for="side-side">Side-Side</label>
+            </div>
+            <div class="checkbox-item">
+              <input type="checkbox" id="side-main" name="chain" value="Side-Main">
+              <label for="side-main">Side-Backbone</label>
+            </div>
+          </div>
+          <br/>
+          <div style="text-align: left;">
+            <button id="interactionsButton">Interactions</button>
+            <button id="propertiesButton">Properties</button>
+            <button id="segmentButton">Segment</button>
+            <button id="resetButton">Reset</button>
+          </div>
+          <br/>
+          <div style="text-align: left;">
+            <div class="btn-group">
+                <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                        aria-haspopup="true" aria-expanded="false">Download <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li>
+                        <a href="javascript:downloadSVG('visualization', 'interactionsPNG', 'png');">PNG</a>
+                    </li>
+                    <li>
+                        <a href="javascript:downloadSVG('visualization', 'interactionsJPEG', 'jpeg');">JPEG</a>
+                    </li>
+                    <li>
+                        <a href="javascript:downloadSVG('visualization', 'interactionsTIFF', 'tiff');">TIFF</a>
+                    </li>
+                    <li>
+                        <a href="javascript:downloadSVG('visualization', 'interactionsSVG');">SVG</a>
+                    </li>
+                </ul>
+            </div>
+          </div>
+        </div>
+        <br>
+        <br>
+      </div>
     </div>
+    <div class="tab-pane container" id="matrix">
 
+      <div id="interface-container" class="" >
+          <div id="interface-svg" class="collapse in"></div>
+      </div>
+
+    </div>
+  </div>
 </div>
 
 {% if refined == 'true' %}
@@ -524,17 +544,23 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
             stage.toggleFullscreen();
         });
     </script>
-
     <script src="{% static 'home/js/d3.min.js' %}"></script>
     <script src="{% static 'home/js/nv.d3.min.js' %}"></script>
     <script src="{% static 'home/js/d3.v4.min.js' %}"></script>
     <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script src="{% static 'home/js/d3.tip.v4comp.js' %}"></script>
     <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
     <script src="{% static 'home/js/dataTables.tableTools.min.js' %}"> </script>
     <script src="{% static 'home/js/jquery.dataTables.columnFilter.js' %}"> </script>
     <script src="{% static 'home/js/selection.js' %}"> </script>
     <script src="{% static 'home/js/table2csv.js' %}"> </script>
     <script src="{% static 'home/js/phylo_tree.js' %}"></script>
+    <script src="{% static 'home/js/lodash.min.js' %}"></script>
+    <script src="{% static 'home/js/chroma.min.js' %}"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <script src="{% static 'home/js/matrix_utilities.js' %}"></script>
+    <script src="{% static 'home/js/signprotmat.js' %}"></script>
+    <script src="{% static 'home/js/fixed_columns.js' %}"></script>
     <script>
       $(function () {
         $("[data-toggle='popover']").popover();
@@ -556,14 +582,15 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
             interactions_strict = {{ interactions_strict | safe }};
             inner_data_strict = {{ inner_strict | safe }};
             outer_data_strict = {{ outer_strict | safe }};
+            interactions_metadata = {{ interactions_metadata | safe}};
+            gprot = {{ gprot | safe}};
+            receptor = {{ receptor | safe}};
+            csrf_token = "{{ csrf_token }}";
+            pdb_sel = {{ pdb_sel | safe }};
 
             ClearSelection('targets');
             ClearSelection('reference');
             // Call the function with your desired values
-            // function draw_model_scores(location, element_id, legend_label, score, startValue, endValue, definedValue
-            // draw_model_scores('PTM_location', 'PTM_divider', 'PTM',  0, 1, ptm, 0.5);
-            // draw_model_scores('iPTM_location', 'iPTM_divider', 'iPTM',  0, 1, iptm, 0.2);
-            // draw_model_scores('PAE_location', 'PAE_divider', 'PAE',  0, 31, pae, 26, true);
             draw_interactions_in_circles('visualization', interactions_strict, inner_data_strict, outer_data_strict);
 
             $("#strict").click(function(){
@@ -583,6 +610,65 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
             });
 
             d3.selectAll(`.van-der-waals`).attr("stroke-opacity", 0);
+
+            // Section for the Matrix
+            $.ajax({
+              type: "POST",
+              url: "/signprot/matrix/AJAX_Interactions/",
+              async: false,
+              data: {
+                selected_pdbs: pdb_sel,
+                effector: '-',
+                csrfmiddlewaretoken: csrf_token,
+              },
+              success(data) {
+                non_interactions = data[0];
+                selected_interactions = data[1];
+              }
+            });
+
+            let old_sets = [];
+            let pos_set = [];
+            let neg_set = [];
+
+            // get corresponding protein entry_name values
+            for (var int_meta of interactions_metadata) {
+              if (pdb_sel.indexOf(int_meta["pdb_id"]) !== -1) {
+                pos_set = [int_meta["conf_id"], ...pos_set];
+              }
+            }
+
+            data = signprotmat.data.dataTransformationWrapper(selected_interactions, pdb_sel);
+            svg = signprotmat.d3.setup("div#interface-svg");
+            xScale = signprotmat.d3.xScale(data.transformed, receptor);
+            yScale = signprotmat.d3.yScale(data.transformed, gprot);
+            xAxis = signprotmat.d3.xAxis(xScale);
+            yAxis = signprotmat.d3.yAxis(yScale);
+            xAxisGrid = signprotmat.d3.xAxisGrid(xScale, yScale);
+            yAxisGrid = signprotmat.d3.yAxisGrid(xScale, yScale);
+            pdbScale = signprotmat.d3.pdbScale(data.transformed, interactions_metadata);
+            sigScale = signprotmat.d3.sigScale(data.transformed, interactions_metadata);
+            colScale = signprotmat.d3.colScale(data.inttypes);
+            tooltip = signprotmat.d3.tooltip(svg);
+            signprotmat.d3.renderData(
+              svg,
+              data,
+              non_interactions,
+              interactions_metadata,
+              xScale,
+              yScale,
+              xAxis,
+              yAxis,
+              xAxisGrid,
+              yAxisGrid,
+              colScale,
+              pdbScale,
+              sigScale,
+              tooltip
+            );
+            // document.querySelector("#intbut").classList.add("active");
+            // document.querySelector("#resbut").classList.remove("active");
+
             // Function to update the highlight based on checkbox selections
             function updateHighlight() {
               // Get all selected checkbox values

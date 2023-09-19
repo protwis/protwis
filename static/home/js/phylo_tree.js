@@ -1118,56 +1118,56 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
     'Ionic': 'green',
     'Polar': 'purple',
     'Van der waals': 'orange',
-    'TM1': '#FF0000',  // Red
-    'ICL1': '#FF4500',  // Transition between Red and Orange
-    'TM2': '#FFA500',  // Orange
-    'ICL2': '#FFD700',  // Transition between Orange and Yellow
-    'TM3': '#FFFF00',  // Yellow
-    'ICL3': '#ADFF2F',  // Transition between Yellow and Green
-    'TM4': '#00FF00',  // Green
-    'TM5': '#00FFFF',  // Transition between Green and Blue
-    'TM6': '#0000FF',  // Blue
-    'TM7': '#8A2BE2',  // Transition between Blue and Violet
-    'ICL4': '#DA70D6', // Transition between Violet and Indigo
-    'H8': '#9400D3', // Violet
-    'C-term': '#C71585',  // Transition between Violet and starting Red
-    "G.HN": "#101010",
-    "G.hns1": "#1A1A1A",
-    "G.S1": "#242424",
-    "G.s1h1": "#2E2E2E",
-    "G.H1": "#383838",
-    "G.h1ha": "#424242",
-    "H.HA": "#4C4C4C",
-    "H.hahb": "#565656",
-    "H.HB": "#606060",
-    "H.hbhc": "#6A6A6A",
-    "H.HC": "#747474",
-    "H.hchd": "#7E7E7E",
-    "H.HD": "#888888",
-    "H.hdhe": "#929292",
-    "H.HE": "#9C9C9C",
-    "H.hehf": "#A6A6A6",
-    "H.HF": "#B0B0B0",
-    "G.hfs2": "#BABABA",
-    "G.S2": "#C4C4C4",
-    "G.s2s3": "#CECECE",
-    "G.S3": "#D8D8D8",
-    "G.s3h2": "#E2E2E2",
-    "G.H2": "#ECECEC",
-    "G.h2s4": "#F6F6F6",
-    "G.S4": "#FCFCFC",
-    "G.s4h3": "#F2F2F2",
-    "G.H3": "#E8E8E8",
-    "G.h3s5": "#DEDEDE",
-    "G.S5": "#D4D4D4",
-    "G.s5hg": "#CACACA",
-    "G.HG": "#C0C0C0",
-    "G.hgh4": "#B6B6B6",
-    "G.H4": "#ACACAC",
-    "G.h4s6": "#A2A2A2",
-    "G.S6": "#989898",
-    "G.s6h5": "#8E8E8E",
-    "G.H5": "#848484"
+    'TM1': '#000000',  //Black
+    'ICL1': '#0E0E0E',  //Very Dark Gray
+    'TM2': '#1C1C1C',  //Darker Gray
+    'ICL2': '#2A2A2A',  //Dark Gray
+    'TM3': '#383838',  //Medium-Dark Gray
+    'ICL3': '#464646',  //Medium Gray
+    'TM4': '#545454',  //Medium Gray
+    'TM5': '#626262',  //Medium-Light Gray
+    'TM6': '#707070',  //Lighter Gray
+    'TM7': '#7E7E7E',  //Light Gray
+    'ICL4': '#8C8C8C',  //Light Gray
+    'H8': '#9A9A9A',   //Very Light Gray
+    'C-term': '#CCCCCC',  //Light Gray
+    'G.HN': '#FF0000',
+    'G.hns1': '#FF0C00',
+    'G.S1': '#FF1900',
+    'G.s1h1': '#FF2500',
+    'G.H1': '#FF3200',
+    'G.h1ha': '#FF3E00',
+    'H.HA': '#FF4B00',
+    'H.hahb': '#FF5700',
+    'H.HB': '#FF6400',
+    'H.hbhc': '#FF7100',
+    'H.HC': '#FF7D00',
+    'H.hchd': '#FF8A00',
+    'H.HD': '#FF9600',
+    'H.hdhe': '#FFA300',
+    'H.HE': '#FFAF00',
+    'H.hehf': '#FFBC00',
+    'H.HF': '#FFC900',
+    'G.hfs2': '#FFD500',
+    'G.S2': '#FFE200',
+    'G.s2s3': '#FFEE00',
+    'G.S3': '#FFFB00',
+    'G.s3h2': '#F9F300',
+    'G.H2': '#F4EC00',
+    'G.h2s4': '#F0E400',
+    'G.S4': '#EBDD00',
+    'G.s4h3': '#E7D500',
+    'G.H3': '#E2CE00',
+    'G.h3s5': '#DEC600',
+    'G.S5': '#D9BF00',
+    'G.s5hg': '#D5B700',
+    'G.HG': '#D0B000',
+    'G.hgh4': '#CCA800',
+    'G.H4': '#C7A100',
+    'G.h4s6': '#C39900',
+    'G.S6': '#BE9200',
+    'G.s6h5': '#BA8A00',
+    'G.H5': '#FBD808'
   };
 
   const aminoAcids = [
@@ -1205,9 +1205,14 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
                         'C': ['#B2B548', '#000000'],'G': ['#FF00F2', '#000000'],
                         '-': ['#FFFFFF', '#000000'],'+': ['#FFFFFF', '#000000']};
 
-  // Sort data based on segment
-  const segments = ['TM1','ICL1', 'TM2', 'ICL2', 'TM3', 'ICL3', 'TM4', 'TM5', 'TM6', 'TM7', 'ICL4', 'H8'];
-  // outer_data.sort((a, b) => segments.indexOf(a.segment) - segments.indexOf(b.segment));
+
+  // Extract all 'segment' values from the data array
+  const innerArray = inner_data.map(item => item.segment);
+  const outerArray = outer_data.map(item => item.segment);
+
+  // Remove duplicates by converting to a Set and then back to an array
+  const inner_legend = Array.from(new Set(innerArray));
+  const outer_legend = Array.from(new Set(outerArray));
 
   const countInner = inner_data.length;
   const countOuter = outer_data.length;
@@ -1531,54 +1536,78 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
     let pathData;
 
     const isClockwise = angleToCentroidOuter > angleToCentroidInner;
+    const angleGap = angleToCentroidOuter - angleToCentroidInner;
 
-    let design;
+    let controlPoint1X = startX + (tangentialOuterX - startX) / 2;
+    let controlPoint1Y = startY + (tangentialOuterY - startY) / 2;
+    let controlPoint2X = endX + (tangentialInnerX - endX) / 2;
+    let controlPoint2Y = endY + (tangentialInnerY - endY) * 20;
 
-    // if(isClockwise){
-    //   design = 'red';
-    //   controlPoint1X = startX + (tangentialOuterX - startX) / 2;
-    //   controlPoint1Y = startY + (tangentialOuterY - startY) / 2;
-    //   controlPoint2X = endX + (tangentialInnerX - endX) / 2;
-    //   controlPoint2Y = endY + (tangentialInnerY - endY) / 2;
-    //   console.log(MIDDLE_BORDER_RADIUS);
-    //   tangentialMiddleX = centroidX + Math.cos(angleToCentroidOuter + Math.PI / 2) * MIDDLE_BORDER_RADIUS;
-    //   tangentialMiddleY = centroidY + Math.sin(angleToCentroidOuter + Math.PI / 2) * MIDDLE_BORDER_RADIUS;
-    // } else {
-    //   design = 'green';
-    //   controlPoint1X = (startX + tangentialOuterX) / 2;
-    //   controlPoint1Y = (startY + tangentialOuterY) / 2;
-    //   controlPoint2X = (endX + tangentialInnerX) / 2;
-    //   controlPoint2Y = (endY + tangentialInnerY) / 2;
-    // }
+    let design; // variable to check the orientation of the angle
+    design = 'purple';
+    if(isClockwise){
+      design = 'red';
+      controlPoint1X = startX + (tangentialOuterX - startX) / 2;
+      controlPoint1Y = startY + (tangentialOuterY - startY) / 2;
+      controlPoint2X = endX + (tangentialInnerX - endX) / 2;
+      controlPoint2Y = endY + (tangentialInnerY - endY) / 2;
+      if (angleGap < 0.1){
+        tangentialMiddleX = centroidX + Math.cos(angleToCentroidOuter + Math.PI / 24) * MIDDLE_BORDER_RADIUS;
+        tangentialMiddleY = centroidY + Math.sin(angleToCentroidOuter + Math.PI / 10) * MIDDLE_BORDER_RADIUS;
+      } else if (angleGap > 1 && angleGap < 2){
+        tangentialMiddleX = centroidX + Math.cos(angleToCentroidOuter + Math.PI / 6);
+        tangentialMiddleY = (centroidY + Math.sin(angleToCentroidOuter + Math.PI / 10)) / 10;
+      } else if (angleGap > 2 && angleGap < 5){
+        tangentialMiddleX = centroidX + Math.abs(Math.cos(angleToCentroidOuter + Math.PI *2)) * MIDDLE_BORDER_RADIUS;
+        tangentialMiddleY = -((centroidY + Math.sin(angleToCentroidOuter + Math.PI / 10)) / 10);
+      } else if (angleGap > 5){
+        tangentialMiddleX = centroidX + Math.cos(angleToCentroidOuter + Math.PI / 20) * MIDDLE_BORDER_RADIUS;
+        tangentialMiddleY = centroidY + Math.sin(angleToCentroidOuter + Math.PI / 10);
+      } else {
+        tangentialMiddleX = centroidX + Math.cos(angleToCentroidOuter + Math.PI / 6) * MIDDLE_BORDER_RADIUS;
+        tangentialMiddleY = centroidY + Math.sin(angleToCentroidOuter + Math.PI / 10) * MIDDLE_BORDER_RADIUS;
+      }
 
+    } else {
+      design = 'green';
+      controlPoint1X = (startX + tangentialOuterX) / 2;
+      controlPoint1Y = (startY + tangentialOuterY) / 2;
+      controlPoint2X = (endX + tangentialInnerX) / 2;
+      controlPoint2Y = (endY + tangentialInnerY) / 2;
+    }
+
+    if(countInner < 15){
+      pathData = [
+        `M ${startX} ${startY}`,
+        `C ${controlPoint1X} ${controlPoint1Y}, ${controlPoint2X} ${controlPoint2Y}, ${adjustedEndX} ${adjustedEndY}`
+      ].join(" ");
+    } else {
+      pathData = [
+        `M ${startX} ${startY}`,
+        `C ${controlPoint1X} ${controlPoint1Y}, ${tangentialMiddleX} ${tangentialMiddleY}, ${tangentialInnerX} ${tangentialInnerY}`,
+        `C ${controlPoint2X} ${controlPoint2Y}, ${controlPoint2X} ${controlPoint2Y}, ${adjustedEndX} ${adjustedEndY}`
+      ].join(" ");
+    }
     // if(countInner < 15){
     //   pathData = [
     //     `M ${startX} ${startY}`,
     //     `C ${controlPoint1X} ${controlPoint1Y}, ${controlPoint2X} ${controlPoint2Y}, ${adjustedEndX} ${adjustedEndY}`
     //   ].join(" ");
+      // pathData = [
+      //   `M ${startX} ${startY}`,
+      //   `A ${OUTER_RADIUS} ${OUTER_RADIUS} 0 0 ${sweepFlagOuter} ${tangentialOuterX} ${tangentialOuterY}`,
+      //   `A ${INNER_BORDER_RADIUS} ${INNER_BORDER_RADIUS} 0 0 ${sweepFlagInner} ${tangentialInnerX} ${tangentialInnerY}`,
+      //   `L ${adjustedEndX} ${adjustedEndY}`
+      // ].join(" ");
     // } else {
     //   pathData = [
     //     `M ${startX} ${startY}`,
-    //     `C ${controlPoint1X} ${controlPoint1Y}, ${tangentialMiddleX} ${tangentialMiddleY}, ${tangentialInnerX} ${tangentialInnerY}`,
-    //     `C ${controlPoint2X} ${controlPoint2Y}, ${controlPoint2X} ${controlPoint2Y}, ${adjustedEndX} ${adjustedEndY}`
+    //     `A ${OUTER_RADIUS} ${OUTER_RADIUS} 0 0 ${sweepFlagOuter} ${tangentialOuterX} ${tangentialOuterY}`,
+    //     `A ${MIDDLE_BORDER_RADIUS} ${MIDDLE_BORDER_RADIUS} 0 0 ${sweepFlagMiddle} ${tangentialMiddleX} ${tangentialMiddleY}`,
+    //     `A ${INNER_BORDER_RADIUS} ${INNER_BORDER_RADIUS} 0 0 ${sweepFlagInner} ${tangentialInnerX} ${tangentialInnerY}`,
+    //     `L ${adjustedEndX} ${adjustedEndY}`
     //   ].join(" ");
     // }
-    if(countInner < 15){
-      pathData = [
-        `M ${startX} ${startY}`,
-        `A ${OUTER_RADIUS} ${OUTER_RADIUS} 0 0 ${sweepFlagOuter} ${tangentialOuterX} ${tangentialOuterY}`,
-        `A ${INNER_BORDER_RADIUS} ${INNER_BORDER_RADIUS} 0 0 ${sweepFlagInner} ${tangentialInnerX} ${tangentialInnerY}`,
-        `L ${adjustedEndX} ${adjustedEndY}`
-      ].join(" ");
-    } else {
-      pathData = [
-        `M ${startX} ${startY}`,
-        `A ${OUTER_RADIUS} ${OUTER_RADIUS} 0 0 ${sweepFlagOuter} ${tangentialOuterX} ${tangentialOuterY}`,
-        `A ${MIDDLE_BORDER_RADIUS} ${MIDDLE_BORDER_RADIUS} 0 0 ${sweepFlagMiddle} ${tangentialMiddleX} ${tangentialMiddleY}`,
-        `A ${INNER_BORDER_RADIUS} ${INNER_BORDER_RADIUS} 0 0 ${sweepFlagInner} ${tangentialInnerX} ${tangentialInnerY}`,
-        `L ${adjustedEndX} ${adjustedEndY}`
-      ].join(" ");
-    }
 
     const sanitizedType = sanitizeClassName(type);
 
@@ -1592,6 +1621,9 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
       .attr("stroke-width", 2)  // Border width
       .attr("fill", "none")
       .attr("interaction", type)
+      // .attr("angleGap", angleGap)
+      .attr('angleCentroid', angleToCentroidOuter)
+      .attr('tan', Math.atan2(tangentialOuterY - centroidY, tangentialOuterX - centroidX))
       .attr('inner-chain', innerChain)
       .attr('outer-chain', outerChain)
       .classed(sanitizedType, true);
@@ -1620,28 +1652,40 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
 
   // Generate legend
   const interactionLegend = svg2.append("g")
+    .attr("transform", "translate(350, 1050)");
+
+  // Generate inner legend
+  const innercircleLegend = svg2.append("g")
     .attr("transform", "translate(350, 1080)");
 
-  // Header for the interaction legend
-  interactionLegend.append("text")
-    .attr("x", 0)
-    .attr("y", -20)
-    .attr("class", "legend-header")
-    .text("Interactions")
-    .attr("font-family", "Arial")
-    .attr("font-size", "14px")
-    .attr("font-weight", "bold")
-    .attr("fill", "black");
+  // Generate outer legend
+  const outercircleLegend = svg2.append("g")
+    .attr("transform", "translate(350, 1110)");
 
-  let cumulativeX = 0; // Keep track of the x position
+  // Header for the interaction legend
+  const headerInteractions = interactionLegend.append("text")
+                              .attr("x", 0)
+                              .attr("y", -20)
+                              .attr("class", "legend-header")
+                              .text("Interactions:")
+                              .attr("font-family", "Arial")
+                              .attr("font-size", "14px")
+                              .attr("font-weight", "bold")
+                              .attr("fill", "black");
+
+  const txtLen = headerInteractions.node().getComputedTextLength();
+
+  let cumulativeX = txtLen + 20;
 
   Object.entries(interactionTypes).forEach(([type, color], i) => {
     const legendItem = interactionLegend.append("g")
       .attr("transform", `translate(${cumulativeX}, 0)`);
 
+    // Draw the rectangle at y=0
     legendItem.append("rect")
       .attr("width", 20)
       .attr("height", 20)
+      .attr("y", -35)  // <-- Set y to 0 for the rectangle
       .attr("fill", color)
       .attr("stroke", "black")
       .attr("stroke-width", 1)
@@ -1655,15 +1699,70 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
         d3.selectAll(`.${sanitizedType}`).attr("stroke-opacity", 1);
       });
 
+    // Draw the text at y=15
     const textElement = legendItem.append("text")
       .attr("x", 25)
-      .attr("y", 15)
+      .attr("y", -20)  // <-- Set y to 15 for the text
       .text(type);
 
     // Get text width and update the cumulativeX for the next legend item
     const textWidth = textElement.node().getComputedTextLength();
     cumulativeX += textWidth + 50; // 50 is the space between the rectangle and the next item
   });
+
+  // Creating the inner legend structur
+
+  const headerInnerLegend = innercircleLegend.append("text")
+                              .attr("x", 0)
+                              .attr("y", -20)
+                              .attr("class", "legend-header")
+                              .text("G Protein segments:")
+                              .attr("font-family", "Arial")
+                              .attr("font-size", "14px")
+                              .attr("font-weight", "bold")
+                              .attr("fill", "black");
+
+  const txtInnerLen = headerInnerLegend.node().getComputedTextLength();
+
+  let cumulativeInnerX = txtInnerLen + 20;
+
+  console.log(inner_legend);
+
+  Object.entries(inner_legend).forEach((type, i) => {
+    console.log(type[1]);
+    const legendInnerItem = innercircleLegend.append("g")
+      .attr("transform", `translate(${cumulativeInnerX}, 0)`);
+
+    // Draw the rectangle at y=0
+    legendInnerItem.append("rect")
+      .attr("width", 20)
+      .attr("height", 20)
+      .attr("y", -35)  // <-- Set y to 0 for the rectangle
+      .attr("fill", allColors[type[1]])
+      .attr("stroke", "black")
+      .attr("stroke-width", 1)
+      .on("click", function() {
+        if(d3.event) {
+          d3.event.stopPropagation();
+        }
+        const sanitizedType = sanitizeClassName(type[1]);
+        d3.selectAll("circle").attr("stroke-opacity", 0);
+        d3.selectAll(`circle[data-segment=${type[1]}]`).attr("stroke-opacity", 1);
+      });
+
+    // Draw the text at y=15
+    const textInnerElement = legendInnerItem.append("text")
+      .attr("x", 25)
+      .attr("y", -20)  // <-- Set y to 15 for the text
+      .text(type[1]);
+
+    // Get text width and update the cumulativeX for the next legend item
+    const textInnerWidth = textInnerElement.node().getComputedTextLength();
+    cumulativeInnerX += textInnerWidth + 30; // 50 is the space between the rectangle and the next item
+  });
+
+
+
 
   const innerBeadSelection = svg2.selectAll("circle[data-circle='inner']");  // Assuming the inner beads have a class 'inner-bead'
   const { centroidX, centroidY } = calculateCentroids(innerBeadSelection);
