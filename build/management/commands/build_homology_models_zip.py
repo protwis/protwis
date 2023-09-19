@@ -99,7 +99,7 @@ class Command(BaseBuild):
         if options['c'] and options['purge']:
             for s in Structure.objects.filter(structure_type__slug='af-signprot-refined'):
                 try:
-                    s.pdb_data.delete()
+                    PdbData.objects.filter(pdb=s.pdb_data.pdb).delete()
                     parent_struct = Structure.objects.get(pdb_code__index=s.pdb_code.index.split('_')[0])
                     parent_struct.refined = False
                     parent_struct.save()
@@ -227,7 +227,16 @@ class Command(BaseBuild):
             # StructureComplexModel.objects.get_or_create(receptor_protein=r_prot, sign_protein=s_prot, main_template=m_s, pdb_data=pdb, version=build_date, stats_text=stats_text)
             parent_struct = Structure.objects.get(pdb_code__index=main_structure)
             protconf = ProteinConformation.objects.get(protein=parent_struct.protein_conformation.protein.parent)
-            signprotrefined, _ = StructureType.objects.get_or_create(slug='af-signprot-refined', name='Refined complex')
+            if parent_struct.structure_type.slug=='x-ray-diffraction':
+                refined_type_slug = 'af-signprot-refined-xray'
+                refined_type_name = 'Refined X-ray'
+            elif parent_struct.structure_type.slug=='electron-microscopy':
+                refined_type_slug = 'af-signprot-refined-cem'
+                refined_type_name = 'Refined CEM'
+            elif parent_struct.structure_type.slug=='electron-crystallography':
+                refined_type_slug = 'af-signprot-refined-med'
+                refined_type_name = 'Refined MED'
+            signprotrefined, _ = StructureType.objects.get_or_create(slug=refined_type_slug, name=refined_type_name)
             webresource = WebResource.objects.get(slug='pdb')
             weblink, _ = WebLink.objects.get_or_create(index='{}_refined'.format(main_structure), web_resource=webresource)
             struct_obj, _ = Structure.objects.get_or_create(preferred_chain=parent_struct.preferred_chain, publication_date=build_date, pdb_data=pdb, pdb_code=weblink, build_check=True,

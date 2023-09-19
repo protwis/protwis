@@ -17,7 +17,7 @@ from contactnetwork.cube import compute_interactions
 from Bio.PDB import PDBParser, PPBuilder
 from Bio import pairwise2
 
-from structure.functions import ParseAFModelsCSV, ParseAFComplexModels
+from structure.functions import ParseAFComplexModels
 from ligand.models import Ligand
 from interaction.models import *
 from interaction.views import regexaa, check_residue, extract_fragment_rotamer
@@ -646,7 +646,11 @@ class Command(BaseBuild):
         #     return
 
     def purge_structures(self):
-        Structure.objects.filter(structure_type__slug='af-signprot').delete()
+        models = Structure.objects.filter(structure_type__slug='af-signprot')
+        for m in models:
+            PdbData.objects.filter(pdb=m.pdb_data.pdb).delete()
+            WebLink.objects.filter(index=m.pdb_code.index).delete()
+        models.delete()
         ResidueFragmentInteraction.objects.filter(structure_ligand_pair__structure__structure_type__slug='af-signprot').delete()
         # ResidueFragmentInteractionType.objects.all().delete()
         StructureLigandInteraction.objects.filter(structure__structure_type__slug='af-signprot').delete()
@@ -764,8 +768,8 @@ class Command(BaseBuild):
                 continue
 
             # get the PDB file and save to DB
-            sd['pdb'] = 'AFM_' + cmpx.replace('-','_').upper()
-            print(sd)
+            sd['pdb'] = 'AFM_' + sd['receptor'].upper() + '_' + sd['signprot'].upper()
+
             # create a structure record
             # check if there is a ligand
             try:
@@ -829,7 +833,7 @@ class Command(BaseBuild):
             # structure type
             sd['structure_method'] = sd['model']
             if 'structure_method' in sd and sd['structure_method']:
-                structure_type = sd['structure_method'].capitalize()
+                structure_type = 'Model (AF2)'
                 structure_type_slug = slugify(sd['structure_method'])
                 try:
                     st, created = StructureType.objects.get_or_create(slug=structure_type_slug, defaults={'name': structure_type})
@@ -896,10 +900,17 @@ class Command(BaseBuild):
                 pass
 
             ##### SIGNPROT
+            beta_gamma = sd['beta_gamma']
             signprot = Protein.objects.get(entry_name=sd['signprot'])
             signprot_conf = ProteinConformation.objects.get(protein=signprot)
-            sc = SignprotComplex.objects.get_or_create(alpha='B', protein=signprot, structure=struct,
-                                                       beta_chain=None, gamma_chain=None, beta_protein=None, gamma_protein=None) # Set to None for now, needs update when beta and gamma subunits get added to models
+            if beta_gamma:
+                beta_protconf = ProteinConformation.objects.get(protein__entry_name='gbb1_human')
+                gamma_protconf = ProteinConformation.objects.get(protein__entry_name='gbg2_human')
+                sc = SignprotComplex.objects.get_or_create(alpha='B', protein=signprot, structure=struct,
+                                                           beta_chain='C', gamma_chain='D', beta_protein=beta_protconf.protein, gamma_protein=gamma_protconf.protein)
+            else:
+                sc = SignprotComplex.objects.get_or_create(alpha='B', protein=signprot, structure=struct,
+                                                           beta_chain=None, gamma_chain=None, beta_protein=None, gamma_protein=None)
             struct.signprot_complex = sc[0]
             struct.save()
 
@@ -919,6 +930,9 @@ class Command(BaseBuild):
             ##### StructureExtraProteins
             g_prot_dict[signprot.entry_name.split('_')[0].upper()]
             sep = StructureExtraProteins.objects.get_or_create(display_name=g_prot_dict[signprot.entry_name.split('_')[0].upper()], note=None, chain='B', category='G alpha', wt_coverage=100, protein_conformation=signprot_conf, structure=struct, wt_protein=signprot)
+            if beta_gamma:
+                sep_beta = StructureExtraProteins.objects.get_or_create(display_name='G&beta;1', note=None, chain='C', category='G beta', wt_coverage=100, protein_conformation=beta_protconf, structure=struct, wt_protein=beta_protconf.protein)
+                sep_beta = StructureExtraProteins.objects.get_or_create(display_name='G&gamma;2', note=None, chain='D', category='G gamma', wt_coverage=100, protein_conformation=gamma_protconf, structure=struct, wt_protein=gamma_protconf.protein)
             # g beta - TO BE ADDED
             # g gamma - TO BE ADDED
 
@@ -932,6 +946,10 @@ class Command(BaseBuild):
                             res_obj = Residue.objects.get(protein_conformation__protein=con, sequence_number=res.get_id()[1])
                         elif chain.get_id()=='B':
                             res_obj = Residue.objects.get(protein_conformation__protein=signprot, sequence_number=res.get_id()[1])
+                        elif chain.get_id()=='C':
+                            res_obj = Residue.objects.get(protein_conformation__protein=beta_protconf.protein, sequence_number=res.get_id()[1])
+                        elif chain.get_id()=='D':
+                            res_obj = Residue.objects.get(protein_conformation__protein=gamma_protconf.protein, sequence_number=res.get_id()[1])
                         r = StructureModelpLDDT(structure=struct, residue=res_obj, pLDDT=plddt)
                         resis.append(r)
                     except Residue.DoesNotExist:

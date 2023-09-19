@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.conf import settings
 from django.views.generic import TemplateView, View
 from django.http import HttpResponse, HttpResponseRedirect
-from django.db.models import Count, Q, Prefetch, TextField
+from django.db.models import Count, Q, Prefetch, TextField, Avg
 from django.db.models.functions import Concat
 from django import forms
 
@@ -218,7 +218,7 @@ class ServeComplexModels(TemplateView):
         # model.signprot_complex.protein.family.name
         # model.signprot_complex.protein.entry_name
         try:
-            complex_models = list(Structure.objects.filter(structure_type__slug__startswith='af-signprot').prefetch_related(
+            complex_models = list(Structure.objects.filter(structure_type__slug='af-signprot').prefetch_related(
                 "protein_conformation__protein",
                 "protein_conformation__protein__parent",
                 "protein_conformation__protein__family",
@@ -246,6 +246,10 @@ class ServeComplexModels(TemplateView):
                                                                     "signprot_complex__protein__family__parent__name",
                                                                     "signprot_complex__protein__entry_name"))
 
+            sep = StructureExtraProteins.objects.filter(structure__structure_type__slug='af-signprot').prefetch_related("structure__pdb_code").values("structure__pdb_code__index").annotate(sepcount=Count("structure__pdb_code__index")).order_by()
+            sep_dict = {}
+            for s in sep:
+                sep_dict[s["structure__pdb_code__index"]] = s["sepcount"]
             couplings_data = list(ProteinCouplings.objects.all().prefetch_related("g_protein", "protein").values("transduction",
                                                                                                                  "g_protein__name",
                                                                                                                  "g_protein_subunit__entry_name",
@@ -255,7 +259,14 @@ class ServeComplexModels(TemplateView):
                                                                                                                  "logmaxec50",
                                                                                                                  "protein__entry_name"))
 
-            for cm in complex_models:
+            for i, cm in enumerate(complex_models):
+                ### Heterotrimer
+                if sep_dict[cm["pdb_code__index"]]==3:
+                    heterotrimer = "Yes"
+                else:
+                    heterotrimer = "No"
+                cm["heterotrimer"] =  heterotrimer
+                ### Coupling
                 cm["GuideToPharma"] = "-"
                 cm["Inoue"] = "-"
                 cm["Roth"] = "-"
@@ -311,10 +322,12 @@ def HomologyModelDetails(request, modelname, state):
     modelname = modelname
 
     color_palette = ["orange","cyan","yellow","lime","fuchsia","green","teal","olive","thistle","grey","chocolate","blue","red","pink","maroon"]
-    model_plddt = StructureModelpLDDT.objects.filter(structure_model__protein__entry_name=modelname, structure_model__state__slug=state)
+    model_plddt = StructureModelpLDDT.objects.filter(structure_model__protein__entry_name=modelname, structure_model__state__slug=state).prefetch_related('residue','residue__protein_conformation__protein')
     residues_plddt = {}
     for item in model_plddt:
-        residues_plddt[item.residue.id] = [item.residue, item.pLDDT]
+        if item.residue.protein_conformation.protein not in residues_plddt:
+            residues_plddt[item.residue.protein_conformation.protein] = {}
+        residues_plddt[item.residue.protein_conformation.protein][item.residue.id] = [item.residue, item.pLDDT]
 
     model = StructureModel.objects.get(protein__entry_name=modelname, state__slug=state)
     version = model.version
@@ -359,7 +372,7 @@ def HomologyModelDetails(request, modelname, state):
                                                               })
     ### AF models
     else:
-        segments_out = af_model_coloring(residues_plddt)
+        segments_out = af_model_coloring(residues_plddt, ['A'])
         return render(request,'homology_models_details.html',{'model': model,
                                                               'modelname': modelname,
                                                               'color_residues': json.dumps(segments_out),
@@ -367,47 +380,62 @@ def HomologyModelDetails(request, modelname, state):
                                                               'version': version
                                                               })
 
-def af_model_coloring(residues_plddt):
-    segments, segments_formatted, segment_colors = {},{},{}
+def af_model_coloring(residues_plddt, chains=[]):
+    segments, segments_formatted_chains, segment_colors = {},{},{}
     hex_colors = colour_af_plddt()
-    for r in residues_plddt.keys():
-        color = from_score_to_color(residues_plddt[r][1], hex_colors)
-        if color in segment_colors.keys():
-            segment_colors[color].append(residues_plddt[r][0].sequence_number)
-        else:
-            segment_colors[color] = [residues_plddt[r][0].sequence_number]
-        if residues_plddt[r][0].protein_segment.slug not in segments:
-            segments[residues_plddt[r][0].protein_segment.slug] = [residues_plddt[r][0].sequence_number]
-        else:
-            segments[residues_plddt[r][0].protein_segment.slug].append(residues_plddt[r][0].sequence_number)
+    for chain_i, (prot, pos) in enumerate(residues_plddt.items()):
+        segments_formatted = {}
+        c = chains[chain_i]
+        segment_colors[c] = {}
+        for r, val in pos.items():
+            color = from_score_to_color(val[1], hex_colors)
+            if color in segment_colors[c].keys():
+                segment_colors[c][color].append(val[0].sequence_number)
+            else:
+                segment_colors[c][color] = [val[0].sequence_number]
+            if prot.entry_name=='gbb1_human':
+                seg = 'beta'
+            elif prot.entry_name=='gbg2_human':
+                seg = 'gamma'
+            else:
+                seg = val[0].protein_segment.slug
+            if seg not in segments:
+                segments[seg] = [val[0].sequence_number]
+            else:
+                segments[seg].append(val[0].sequence_number)
 
-    for s, nums in segment_colors.items():
-        for i, num in enumerate(nums):
-            if i==0:
-                segments_formatted[s] = [[num]]
-            elif nums[i-1]!=num-1:
-                if segments_formatted[s][-1][0]==nums[i-1]:
-                    segments_formatted[s][-1] = '{}'.format(segments_formatted[s][-1][0])
-                else:
-                    segments_formatted[s][-1] = '{}-{}'.format(segments_formatted[s][-1][0], nums[i-1])
-                segments_formatted[s].append([num])
-                if i+1==len(segment_colors[s]):
-                    segments_formatted[s][-1] = '{}'.format(segments_formatted[s][-1][0])
-            elif i+1==len(segment_colors[s]):
-                segments_formatted[s][-1] = '{}-{}'.format(segments_formatted[s][-1][0], nums[i-1]+1)
-        if len(nums)==1:
-            segments_formatted[s] = ['{}'.format(segments_formatted[s][0][0])]
+        for s, nums in segment_colors[c].items():
+            for i, num in enumerate(nums):
+                if i==0:
+                    segments_formatted[s] = [[num]]
+                elif nums[i-1]!=num-1:
+                    if segments_formatted[s][-1][0]==nums[i-1]:
+                        segments_formatted[s][-1] = '{}'.format(segments_formatted[s][-1][0])
+                    else:
+                        segments_formatted[s][-1] = '{}-{}'.format(segments_formatted[s][-1][0], nums[i-1])
+                    segments_formatted[s].append([num])
+                    if i+1==len(segment_colors[c][s]):
+                        segments_formatted[s][-1] = '{}'.format(segments_formatted[s][-1][0])
+                elif i+1==len(segment_colors[c][s]):
+                    segments_formatted[s][-1] = '{}-{}'.format(segments_formatted[s][-1][0], nums[i-1]+1)
+            if len(nums)==1:
+                segments_formatted[s] = ['{}'.format(segments_formatted[s][0][0])]
+    
+        for s, nums in segments_formatted.items():
+            if len(nums)>1:
+                text = ':{} and ('.format(chains[chain_i])
+                for n in nums:
+                    text+='{} or '.format(n)
+                    segments_formatted[s] = text[:-4]
+                text+=')'
+            else:
+                segments_formatted[s] = ':{} and ({})'.format(chains[chain_i], segments_formatted[s][0])
+        segments_formatted_chains[chains[chain_i]] = segments_formatted
+    segments_out = []
 
-    for s, nums in segments_formatted.items():
-        if len(nums)>1:
-            text = ''
-            for n in nums:
-                text+='{} or '.format(n)
-                segments_formatted[s] = text[:-4]
-        else:
-            segments_formatted[s] = segments_formatted[s][0]
-
-    segments_out = [[i,j] for i,j in segments_formatted.items()]
+    for chain, segments_formatted in segments_formatted_chains.items():
+        for i,j in segments_formatted.items():
+            segments_out.append([i,j])
 
     return segments_out
 
@@ -581,13 +609,18 @@ def ComplexModelDetails(request, header, refined=False):
     if not refined:
         scores = StructureAFScores.objects.get(structure=model)
         #Need to build the plDDT colors
-        model_plddt = StructureModelpLDDT.objects.filter(structure=model)
+        model_plddt = StructureModelpLDDT.objects.filter(structure=model).order_by('residue__protein_conformation__protein__id').prefetch_related('residue','residue__protein_conformation__protein','residue__protein_segment')
+        avg_plddt = model_plddt.aggregate(Avg('pLDDT'))
         residues_plddt = {}
         for item in model_plddt:
-            residues_plddt[item.residue.id] = [item.residue, item.pLDDT]
+            if item.residue.protein_conformation.protein not in residues_plddt:
+                residues_plddt[item.residue.protein_conformation.protein] = {}
+            residues_plddt[item.residue.protein_conformation.protein][item.residue.id] = [item.residue, item.pLDDT]
 
     ### Gathering interaction info and structuring JS data
-    interactions = Interaction.objects.filter(interacting_pair__referenced_structure=model).prefetch_related('interacting_pair__res1', 'interacting_pair__res2')
+    interactions = Interaction.objects.filter(interacting_pair__referenced_structure=model).prefetch_related('interacting_pair__res1', 'interacting_pair__res2',
+                                                                                                             'interacting_pair__res1__display_generic_number', 'interacting_pair__res2__display_generic_number',
+                                                                                                             'interacting_pair__res1__protein_segment', 'interacting_pair__res2__protein_segment')
 
     gpcr_aminoacids = []
     gprot_aminoacids = []
@@ -712,7 +745,6 @@ def ComplexModelDetails(request, header, refined=False):
             if (conversion[pair.interaction_type]) not in to_push_gprot_strict[gprot_index_strict]:
                 to_push_gprot_strict[gprot_index_strict].append(conversion[pair.interaction_type])
 
-
     protein_interactions = remove_duplicate_dicts(protein_interactions)
     protein_interactions_strict = remove_duplicate_dicts(protein_interactions_strict)
 
@@ -720,7 +752,7 @@ def ComplexModelDetails(request, header, refined=False):
     gpcr_aminoacids_strict, gprot_aminoacids_strict = sort_and_update(to_push_gpcr_strict, gpcr_aminoacids_strict, to_push_gprot_strict, gprot_aminoacids_strict, protein_interactions_strict)
 
     ### Keep old coloring for refined structures
-    if model.structure_type.slug == 'af-signprot-refined':
+    if model.structure_type.slug.startswith('af-signprot-refined'):
         # if model.protein_conformation.protein.accession:
         # parent_struct = Structure.objects.get(model.pdb_code.index.split('_')[0])
         # receptor_residues = Residue.objects.filter(protein_conformation__protein=model.protein_conformation.protein)
@@ -734,20 +766,16 @@ def ComplexModelDetails(request, header, refined=False):
         # a.calculate_similarity()
         # main_template_seqsim = a.proteins[1].similarity
         # else:
-        receptor_residues = Residue.objects.filter(protein_conformation__protein=model.protein_conformation.protein)
-        signprot_residues = Residue.objects.filter(protein_conformation__protein=model.signprot_complex.protein)
+        receptor_residues = Residue.objects.filter(protein_conformation__protein=model.protein_conformation.protein).prefetch_related('protein_conformation__protein', 'protein_conformation__protein__parent', 'display_generic_number', 'protein_segment')
+        signprot_residues = Residue.objects.filter(protein_conformation__protein=model.signprot_complex.protein).prefetch_related('protein_conformation__protein', 'protein_conformation__protein__parent', 'display_generic_number', 'protein_segment')
         main_template_seqsim = 100
         receptor_rotamers, signprot_rotamers = parse_model_statsfile(model.stats_text.stats_text, receptor_residues, signprot_residues)
 
         loop_segments = ProteinSegment.objects.filter(category='loop', proteinfamily='Alpha')
 
-        signprot_template = SignprotComplex.objects.get(structure=model).protein
         bb_temps, backbone_templates, r_temps, rotamer_templates, segments_out, bb_main, bb_alt, bb_none, sc_main, sc_alt, sc_none, template_list, colors = format_model_details(receptor_rotamers, model, color_palette, chain='R')
         signprot_color_palette = [i for i in color_palette if i not in list(colors.values())]
         bb_temps2, backbone_templates2, r_temps2, rotamer_templates2, segments_out2, bb_main2, bb_alt2, bb_none2, sc_main2, sc_alt2, sc_none2, template_list2, colors2 = format_model_details(signprot_rotamers, model, signprot_color_palette, chain='A', used_colors=colors)
-
-        gp = GProteinAlignment()
-        gp.run_alignment(model.signprot_complex.protein, signprot_template, calculate_similarity=True)
 
         for n in bb_temps2.values():
             for s in n:
@@ -758,19 +786,29 @@ def ComplexModelDetails(request, header, refined=False):
                         bb_temps[s.protein_conformation.protein.parent].append(s)
                         break
 
-        return render(request,'complex_models_details.html',{'model': model, 'signprot_template': signprot_template, 'receptor_rotamers': receptor_rotamers, 'signprot_rotamers': signprot_rotamers, 'backbone_templates': bb_temps, 'backbone_templates_number': len(backbone_templates),
-                                                             'rotamer_templates': r_temps, 'rotamer_templates_number': len(rotamer_templates), 'color_residues': json.dumps(segments_out), 'bb_main': round(bb_main/len(receptor_rotamers)*100, 1),
-                                                             'bb_alt': round(bb_alt/len(receptor_rotamers)*100, 1), 'bb_none': round(bb_none/len(receptor_rotamers)*100, 1), 'sc_main': round(sc_main/len(receptor_rotamers)*100, 1),
-                                                             'sc_alt': round(sc_alt/len(receptor_rotamers)*100, 1), 'sc_none': round(sc_none/len(receptor_rotamers)*100, 1), 'main_template_seqsim': main_template_seqsim,
-                                                             'template_list': template_list, 'model_main_template': main_template, 'state': None, 'signprot_sim': int(gp.proteins[1].similarity),
+        return render(request,'complex_models_details.html',{'model': model, 'receptor_rotamers': receptor_rotamers, 'signprot_rotamers': signprot_rotamers, 'backbone_templates': bb_temps, 'backbone_templates_number': len(backbone_templates),
+                                                             'rotamer_templates': r_temps, 'rotamer_templates_number': len(rotamer_templates), 'color_residues': json.dumps(segments_out), 
+                                                             'bb_alt_perc': round(bb_alt/len(receptor_rotamers)*100, 1), 'bb_none_perc': round(bb_none/len(receptor_rotamers)*100, 1), 
+                                                             'sc_alt_perc': round(sc_alt/len(receptor_rotamers)*100, 1), 'sc_none_perc': round(sc_none/len(receptor_rotamers)*100, 1), 
+                                                             'bb_alt': bb_alt, 'bb_none': bb_none, 
+                                                             'sc_alt': sc_alt, 'sc_none': sc_none,
+                                                             'bb_alt_perc2': round(bb_alt2/len(signprot_rotamers)*100, 1), 'bb_none_perc2': round(bb_none2/len(signprot_rotamers)*100, 1), 
+                                                             'sc_alt_perc2': round(sc_alt2/len(signprot_rotamers)*100, 1), 'sc_none_perc2': round(sc_none2/len(signprot_rotamers)*100, 1), 
+                                                             'bb_alt2': bb_alt2, 'bb_none2': bb_none2, 
+                                                             'sc_alt2': sc_alt2, 'sc_none2': sc_none2,
+                                                             'template_list': template_list, 'model_main_template': main_template, 'state': None,
                                                              'signprot_color_residues': json.dumps(segments_out2), 'loop_segments': loop_segments, 'pdbname': header, 'scores': StructureAFScores(),
                                                              'refined': json.dumps(True), 'outer': json.dumps(gpcr_aminoacids), 'inner': json.dumps(gprot_aminoacids), 'structure_type': model.structure_type,
                                                              'interactions': json.dumps(protein_interactions), 'outer_strict': json.dumps(gpcr_aminoacids_strict),'inner_strict': json.dumps(gprot_aminoacids_strict),
                                                              'interactions_strict': json.dumps(protein_interactions_strict),'residues': len(protein_interactions)})
 
     else:
-
-        segments_out = af_model_coloring(residues_plddt)
+        chains = ['A','B']
+        if model.signprot_complex.beta_chain:
+            chains.append('C')
+        if model.signprot_complex.gamma_chain:
+            chains.append('D')
+        segments_out = af_model_coloring(residues_plddt, chains)
         return render(request,'complex_models_details.html',{'model': model,
                                                              'color_residues': json.dumps(segments_out),
                                                              'pdbname': header,
@@ -783,7 +821,8 @@ def ComplexModelDetails(request, header, refined=False):
                                                              'inner_strict': json.dumps(gprot_aminoacids_strict),
                                                              'interactions_strict': json.dumps(protein_interactions_strict),
                                                              'residues': len(protein_interactions),
-                                                             'structure_type': model.structure_type
+                                                             'structure_type': model.structure_type,
+                                                             'plddt_avg': avg_plddt['pLDDT__avg']
                                                              })
 
 

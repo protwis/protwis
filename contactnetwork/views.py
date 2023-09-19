@@ -236,6 +236,9 @@ def PdbTableData(request):
                 "protein_conformation__protein__parent__parent__parent",
                 "protein_conformation__protein__parent__family__parent",
                 "protein_conformation__protein__parent__family__parent__parent__parent",
+                "protein_conformation__protein__parent__parent",
+                "protein_conformation__protein__family__parent",
+                "protein_conformation__protein__family__parent__parent__parent",
                 "protein_conformation__protein__species",Prefetch("ligands", queryset=StructureLigandInteraction.objects.filter(
                 annotated=True).prefetch_related('ligand__ligand_type', 'ligand_role')))
         data = data.filter(extra_proteins__category__startswith=effector).prefetch_related(
@@ -554,7 +557,7 @@ def PdbTableData(request):
                         <td>{}</td> \
                         <td>{}</td> \
                         <td>{}</td> \
-                        <td>{}</td> \
+                        <td class='shorten'>{}</td> \
                         <td><p class='no_margins' style='color:{}'>{}</p></td> \
                         <td>{}</td> \
                         <td>{}</td> \

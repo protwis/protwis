@@ -2264,7 +2264,7 @@ ARRESTIN_SEGMENTS = OrderedDict([
 
 G_PROTEIN_DISPLAY_NAME = { # Alpha
                            'GNAS2':'Gs', 'GNAL':'Golf',
-                           'GNAI1':'Gi1', 'GNAI2':'Gi2', 'GNAI3':'Gi3', 'GNAT1':'Gt1', 'GNAT2':'Gt2', 'GNAT3':'Gt3', 'GNAZ':'Gz', 'GNAO':'Go',
+                           'GNAI1':'Gi1', 'GNAI2':'Gi2', 'GNAI3':'Gi3', 'GNAT1':'Gt1', 'GNAT2':'Gt2', 'GNAT3':'Ggust', 'GNAZ':'Gz', 'GNAO':'Go',
                            'GNAQ':'Gq', 'GNA11':'G11', 'GNA14':'G14', 'GNA15':'G15',
                            'GNA12':'G12', 'GNA13':'G13',
                            'GPa1':'GPa1',
