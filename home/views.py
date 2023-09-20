@@ -27,6 +27,9 @@ def index(request):
     context["site_title"] = site_title(request)["site_title"]  # settings.SITE_TITLE
     context["documentation_url"] = settings.DOCUMENTATION_URL
 
+    # development/production
+    context["debug"] = settings.DEBUG
+
     # analytics
     context["google_analytics_key"] = settings.GOOGLE_ANALYTICS_KEY
 
