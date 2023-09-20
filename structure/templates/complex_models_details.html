@@ -147,7 +147,7 @@ canvas {
     <div class="col-md-3 text-right text-info">
         <h4>3D VIEW</h4>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-5">
       <div style="float: left; width: 60%;">
           <div id="viewport" style="width:500px; height:400px;background-color: white;"></div>
           <div style="width:500px; background-color:#eaeaea; border-radius: 0px 0px 5px 5px;">
@@ -171,7 +171,7 @@ canvas {
       <br>
     </div>
     {% if refined == "false" %}
-    <div class="col-md-5">
+    <div class="col-md-4" style='padding-left: 50px;'>
         <div><h4>Tertiary structure confidence <i class="fas fa-info-circle" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="below" data-content="<b>Interpretation of AlphaFold models</b><br>The pLDDT score from AlphaFold estimates the confidence of the placement of an individual residue in relation to its neighboring residues within a 15 Å radius."></i></h4></div>
         <p>(pLDDT score) avg.: {{ plddt_avg|floatformat:1 }}</p>
         <div style='width: 90%; display:table; position:relative;'>
