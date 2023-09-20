@@ -404,7 +404,7 @@ var signprotmat = {
         "van-der-waals": "#d9d9d9",
         // "edge-to-face": "#969696",
         // "water-mediated": "#7DB144",
-        hydrophobic: "#93d050",
+        hydrophobic: "#A6E15F", //"#93d050",
         // "polar-sidechain-sidechain": "#EAA91F",
         // "polar-sidechain-backbone": "#C38E1A",
         // "polar-backbone-sidechain": "#C3A563",
@@ -412,9 +412,9 @@ var signprotmat = {
         // "h-bond acceptor-donor": "#B24DFF",
         // "cation-pi": "#0070c0",
         // "pi-cation": "#005693",
-        ionic: "#00B9BF",
-        aromatic: "#005693",
-        polar: "#C38E1A",
+        ionic: "#005693",
+        aromatic: "#689235", //"#7DB144",
+        polar: "#7030a0",
       };
       var colScale = d3
         .scaleOrdinal()

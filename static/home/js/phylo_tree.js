@@ -1105,19 +1105,33 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
 
   // Types of interactions and their colors
   const interactionTypes = {
-    'Aromatic': 'red',
-    'Hydrophobic': 'blue',
-    'Ionic': 'green',
-    'Polar': 'purple',
-    'Van der waals': 'orange'
+    'Aromatic': '#689235',
+    'Hydrophobic': '#A6E15F',
+    'Ionic': '#005693',
+    'Polar': '#7030a0',
+    'Van der waals': '#d9d9d9'
   };
 
+  // Continuous Line: ""
+  // Short Dashes: "4,2"
+  // Long Dashes: "8,2"
+  // Dots: "1,3"
+  // Dash-Dot-Dash: "8,2,1,2"
+
+  const strokeShape = {
+    'Aromatic': '',
+    'Hydrophobic': '4,2',
+    'Ionic': '8,2',
+    'Polar': '1,3',
+    'Van der waals': '8,2,1,2'
+    }
+
   const allColors = {
-    'Aromatic': 'red',
-    'Hydrophobic': 'blue',
-    'Ionic': 'green',
-    'Polar': 'purple',
-    'Van der waals': 'orange',
+    'Aromatic': '#689235',
+    'Hydrophobic': '#A6E15F',
+    'Ionic': '#005693',
+    'Polar': '#7030a0',
+    'Van der waals': '#d9d9d9',
     'TM1': '#000000',  //Black
     'ICL1': '#0E0E0E',  //Very Dark Gray
     'TM2': '#1C1C1C',  //Darker Gray
@@ -1578,6 +1592,7 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
       .attr("interaction", type)
       .attr('inner-chain', innerChain)
       .attr('outer-chain', outerChain)
+      .attr("stroke-dasharray", strokeShape[type])
       .classed(sanitizedType, true);
   }
 
@@ -1813,14 +1828,14 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
       .attr("stroke-opacity", 1);
       // .attr("stroke", "black");
 
+    svg.selectAll(`.van-der-waals`).attr("stroke-opacity", 0);
+
     svg.selectAll("text")
       .attr("fill", "black");
 
     svg.selectAll("path")
       .attr("stroke", "black")
       .attr("stroke-width", 2);
-
-    svg.selectAll(`.van-der-waals`).attr("stroke-opacity", 0);
 
     svg.selectAll("path[segment='external']")
       .each(function(d, i) {
