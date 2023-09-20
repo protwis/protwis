@@ -109,7 +109,10 @@ class Command(BaseBuild):
             Structure.objects.filter(structure_type__slug='af-signprot-refined').delete()
         elif options['purge']:
             for s in StructureModel.objects.all():
-                s.pdb_data.delete()
+                try:
+                    s.pdb_data.delete()
+                except:
+                    pass
                 try:
                     s.main_template.refined = False
                     s.main_template.save()
@@ -275,9 +278,19 @@ class Command(BaseBuild):
                 for chain in p:
                     for res in chain:
                         plddt = res['C'].get_bfactor()
-                        res_obj = Residue.objects.get(protein_conformation__protein=prot, sequence_number=res.get_id()[1])
-                        r = StructureModelpLDDT(structure_model=sm, residue=res_obj, pLDDT=plddt)
-                        resis.append(r)
+                        try:
+                            res_obj = Residue.objects.get(protein_conformation__protein=prot, sequence_number=res.get_id()[1])
+                            r = StructureModelpLDDT(structure_model=sm, residue=res_obj, pLDDT=plddt)
+                            resis.append(r)
+                        except Residue.DoesNotExist:
+                            if self.revise_xtal:
+                                m_s.refined = False
+                                m_s.save()
+                            if sm.pdb_data:
+                                sm.pdb_data.delete()
+                            if sm.stats_text:
+                                sm.stats_text.delete()
+                            sm.delete()
                 StructureModelpLDDT.objects.bulk_create(resis)
         if self.revise_xtal:
             m_s.refined = True
