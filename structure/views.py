@@ -422,7 +422,7 @@ def af_model_coloring(residues_plddt, chains=[]):
                     segments_formatted[s][-1] = '{}-{}'.format(segments_formatted[s][-1][0], nums[i-1]+1)
             if len(nums)==1:
                 segments_formatted[s] = ['{}'.format(segments_formatted[s][0][0])]
-    
+
         for s, nums in segments_formatted.items():
             if len(nums)>1:
                 text = ':{} and ('.format(chains[chain_i])
@@ -574,33 +574,6 @@ def minimize_distance(connections):
 
     return outer_to_new_outer
 
-def minimize_jimmy(matching_dict):
-    outer_to_inner = {}
-    for key, value in matching_dict.items():
-        for idx in value:
-            if idx not in outer_to_inner.keys():
-                outer_to_inner[idx] = []
-            outer_to_inner[idx].append(key)
-    sorted_outer = {k: v for k, v in sorted(outer_to_inner.items(), key=lambda item: len(item[1]), reverse=True)}
-
-    median = {}
-    for key, value in sorted_outer.items():
-        median[key] = round(sum(value) / len(value))
-
-    available_idx = list(median.keys())
-
-    conversion_dict = {}
-    for key, value in median.items():
-        if value in available_idx:
-            available_idx.remove(value)
-            conversion_dict[key] = value
-        else:
-            closest_num = min(available_idx, key=lambda x: abs(x - value))
-            conversion_dict[key] = closest_num
-            available_idx.remove(closest_num)
-
-    return conversion_dict
-
 def minimize_circle(matching_dict):
     outer_to_inner = {}
     for key, value in matching_dict.items():
@@ -656,7 +629,10 @@ def sort_and_update(push_gpcr, gpcr, push_gprot, gprot, interactions):
       if record['outerIndex'] not in matching_dict[record['innerIndex']]:
           matching_dict[record['innerIndex']].append(record['outerIndex'])
 
-  conversion = minimize_circle(matching_dict)
+  if len(matching_dict) < 15:
+      conversion = minimize_distance(matching_dict)
+  else:
+      conversion = minimize_circle(matching_dict)
 
   # Create new_dict_b by reordering dict_b based on index_mapping
   new_dict_b = [None] * len(gpcr)
@@ -911,19 +887,19 @@ def ComplexModelDetails(request, header, refined=False):
                         break
 
         return render(request,'complex_models_details.html',{'model': model, 'receptor_rotamers': receptor_rotamers, 'signprot_rotamers': signprot_rotamers, 'backbone_templates': bb_temps, 'backbone_templates_number': len(backbone_templates),
-                                                             'rotamer_templates': r_temps, 'rotamer_templates_number': len(rotamer_templates), 'color_residues': json.dumps(segments_out), 
-                                                             'bb_alt_perc': round(bb_alt/len(receptor_rotamers)*100, 1), 'bb_none_perc': round(bb_none/len(receptor_rotamers)*100, 1), 
-                                                             'sc_alt_perc': round(sc_alt/len(receptor_rotamers)*100, 1), 'sc_none_perc': round(sc_none/len(receptor_rotamers)*100, 1), 
-                                                             'bb_alt': bb_alt, 'bb_none': bb_none, 
+                                                             'rotamer_templates': r_temps, 'rotamer_templates_number': len(rotamer_templates), 'color_residues': json.dumps(segments_out),
+                                                             'bb_alt_perc': round(bb_alt/len(receptor_rotamers)*100, 1), 'bb_none_perc': round(bb_none/len(receptor_rotamers)*100, 1),
+                                                             'sc_alt_perc': round(sc_alt/len(receptor_rotamers)*100, 1), 'sc_none_perc': round(sc_none/len(receptor_rotamers)*100, 1),
+                                                             'bb_alt': bb_alt, 'bb_none': bb_none,
                                                              'sc_alt': sc_alt, 'sc_none': sc_none,
-                                                             'bb_alt_perc2': round(bb_alt2/len(signprot_rotamers)*100, 1), 'bb_none_perc2': round(bb_none2/len(signprot_rotamers)*100, 1), 
-                                                             'sc_alt_perc2': round(sc_alt2/len(signprot_rotamers)*100, 1), 'sc_none_perc2': round(sc_none2/len(signprot_rotamers)*100, 1), 
-                                                             'bb_alt2': bb_alt2, 'bb_none2': bb_none2, 
+                                                             'bb_alt_perc2': round(bb_alt2/len(signprot_rotamers)*100, 1), 'bb_none_perc2': round(bb_none2/len(signprot_rotamers)*100, 1),
+                                                             'sc_alt_perc2': round(sc_alt2/len(signprot_rotamers)*100, 1), 'sc_none_perc2': round(sc_none2/len(signprot_rotamers)*100, 1),
+                                                             'bb_alt2': bb_alt2, 'bb_none2': bb_none2,
                                                              'sc_alt2': sc_alt2, 'sc_none2': sc_none2,
                                                              'template_list': template_list, 'model_main_template': main_template, 'state': None, 'plddt_avg': None,
                                                              'signprot_color_residues': json.dumps(segments_out2), 'loop_segments': loop_segments, 'pdbname': header, 'scores': StructureAFScores(),
                                                              'refined': json.dumps(True), 'outer': json.dumps(gpcr_aminoacids), 'inner': json.dumps(gprot_aminoacids), 'structure_type': model.structure_type,
-                                                             'interactions': json.dumps(protein_interactions), 
+                                                             'interactions': json.dumps(protein_interactions),
                                                              'outer_strict': json.dumps(gpcr_aminoacids_strict),
                                                              'inner_strict': json.dumps(gprot_aminoacids_strict),
                                                              'interactions_strict': json.dumps(protein_interactions_strict),

@@ -6,6 +6,7 @@
     <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
     <link rel="stylesheet" href="{% static 'home/css/simple_browser.css' %}" type="text/css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link href="{% static 'home/css/signprotmat.css' %}" rel="stylesheet">
 {% endblock %}
 
 {% block content %}
@@ -491,9 +492,79 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
       </div>
     </div>
     <div class="tab-pane container" id="matrix">
+      <div class="row">
+          <div class="col-md-12">
+              <div class="panel panel-default">
 
+                  <div class="panel-heading">
+                      <h3 class="panel-title">Structures</h3>
+                  </div>
+
+                  <div class="panel-body">
+
+
+                      <div class="col-md-2" hidden>
+                          <p
+                                  id='single-crystal-group-pdbs-modal-external-text'
+                                  class="crystal-count"
+                                  style="font-weight: 700">
+                          0 structures selected.
+                              </p></h5>
+                              <button
+                                  type="button"
+                                  class="btn btn-primary"
+                                  data-toggle="modal"
+                                  data-target="#interface-modal-table">
+                                  Select Structures
+                              </button>
+                              <button
+                                  type="button"
+                                  class="btn btn-success"
+                                  style="margin-top: 5px"
+                                  onClick='var fasta_data = signprotmat.data.get_data_gap_non_int(pdbScale, xScale, non_interactions, data.receptor);
+                                  signprotmat.data.download_fasta(fasta_data, pdbScale)'>
+                                  Download Fasta
+                              </button>
+                      </div>
+
+                      <div class="col-md-2">
+                          <p><b>Sequence Color</b></p>
+
+                          <div class="btn-group-vertical btn-group-sm" role="group">
+                              <button
+                                  type="button"
+                                  id="resbut"
+                                  class="btn btn-primary"
+                                  onClick="signprotmat.d3.colorBySwitch('res', colScale)">
+                                  Residue
+                              </button>
+                              <button
+                                  type="button"
+                                  id="intbut"
+                                  class="btn btn-primary active"
+                                  onClick="signprotmat.d3.colorBySwitch('int', colScale)">
+                                  Interaction
+                              </button>
+                          </div>
+                      </div>
+
+                      <div id="legend-space" class="col-md-6" hidden>
+                      </div>
+
+                      <div class="col-md-2" hidden>
+                          <p style='margin: 0'><b>Interaction frequency filter (%)</b></p>
+                          <div id="amount_min"></div>
+                          <div id="amount_max"></div>
+
+                          <div id="slider-range"></div>
+                      </div>
+                  </div>
+
+              </div>
+          </div>
+      </div>
       <div id="interface-container" class="" >
-          <div id="interface-svg" class="collapse in"></div>
+          <div id="interface-svg"></div>
       </div>
 
     </div>
@@ -512,7 +583,6 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
         document.addEventListener( "DOMContentLoaded", function(){
             stage = new NGL.Stage( "viewport", { backgroundColor: "white" } );
             var color_residues = JSON.parse('{{color_residues|safe}}');
-            console.log(color_residues)
             var schemeId = NGL.ColorMakerRegistry.addSelectionScheme( color_residues );
             stage.loadFile( "/structure/complex_models/view/{{pdbname}}", { ext: "pdb" }  ).then( function( o ){
                 o.addRepresentation( "cartoon", {color: schemeId} );  // pass schemeId here ,{ color: schemeId }
@@ -529,6 +599,7 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
     <script src="{% static 'home/js/d3.v4.min.js' %}"></script>
     <script src="https://d3js.org/d3.v5.min.js"></script>
     <script src="{% static 'home/js/d3.tip.v4comp.js' %}"></script>
+    <script src="{% static 'home/js/d3-legend.min.js' %}"></script>
     <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
     <script src="{% static 'home/js/dataTables.tableTools.min.js' %}"> </script>
     <script src="{% static 'home/js/jquery.dataTables.columnFilter.js' %}"> </script>
@@ -537,10 +608,11 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
     <script src="{% static 'home/js/phylo_tree.js' %}"></script>
     <script src="{% static 'home/js/lodash.min.js' %}"></script>
     <script src="{% static 'home/js/chroma.min.js' %}"></script>
+    <!-- <script src="{% static 'home/js/jquery.tablesorter.js' %}"></script> -->
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
     <script src="{% static 'home/js/matrix_utilities.js' %}"></script>
     <script src="{% static 'home/js/signprotmat.js' %}"></script>
-    <script src="{% static 'home/js/fixed_columns.js' %}"></script>
+    <!-- <script src="{% static 'home/js/fixed_columns.js' %}"></script> -->
     <script>
       $(function () {
         $("[data-toggle='popover']").popover();
@@ -646,6 +718,18 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
               sigScale,
               tooltip
             );
+            signprotmat.d3.colorBySwitch('res', colScale);
+            var rects = document.querySelectorAll('.res_rect');
+            rects.forEach(function(rect) {
+              rect.setAttribute('height', 40);
+              rect.setAttribute('y', 125);
+            });
+            var rects_vert = document.querySelectorAll('.res_rect_vertical');
+            rects_vert.forEach(function(rect) {
+              rect.setAttribute('width', 40);
+              rect.setAttribute('x', 40);
+            });
+
             // document.querySelector("#intbut").classList.add("active");
             // document.querySelector("#resbut").classList.remove("active");
 

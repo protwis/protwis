@@ -958,7 +958,7 @@ var signprotmat = {
           const num_pairs = d.pairs.length;
           const max_count = get_max_interface_count();
           const ratio = (num_pairs / max_count) * 100;
-          if (ratio >= 100){
+          if (ratio > 100){
             return "";
           } else {
             return _.round(ratio, 0);
@@ -1257,6 +1257,7 @@ var signprotmat = {
         });
       each_res
         .append("rect")
+        .attr("class", "res_rect_vertical")
         .style("fill", function (d) {
           return colScale(d.int_ty[0]);
         })

@@ -39,7 +39,7 @@ import xlsxwriter
 import shutil
 import requests
 import numpy as np
-from math import degrees
+from math import degrees, atan2, cos, sin, pi
 from rdkit import Chem
 from rdkit import RDConfig
 from rdkit.Chem import AllChem
@@ -1443,6 +1443,47 @@ def minimize_distance(connections):
 
     return outer_to_new_outer
 
+def minimize_circle(matching_dict):
+    outer_to_inner = {}
+    for key, value in matching_dict.items():
+        for idx in value:
+            if idx not in outer_to_inner.keys():
+                outer_to_inner[idx] = []
+            outer_to_inner[idx].append(key)
+    sorted_outer = {k: v for k, v in sorted(outer_to_inner.items(), key=lambda item: len(item[1]), reverse=True)}
+
+    positions = len(sorted_outer)
+    median = {}
+    for key, value in sorted_outer.items():
+        x = 0
+        y = 0
+        n = len(value)
+        for val in value:
+            angle = 2 * pi * val / positions
+            x += cos(angle)
+            y += sin(angle)
+        x /= n
+        y /= n
+        angle = atan2(y, x)
+        if angle < 0:
+            angle += 2 * pi
+        median_angle = round(positions * angle / (2 * pi)) % positions  # Bringing the angle back to our scale
+        median[key] = median_angle
+
+    available_idx = list(range(positions))
+
+    conversion_dict = {}
+    for key, value in median.items():
+        if value in available_idx:
+            available_idx.remove(value)
+            conversion_dict[key] = value
+        else:
+            closest_num = min(available_idx, key=lambda x: min(abs(x - value), positions - abs(x - value)))
+            conversion_dict[key] = closest_num
+            available_idx.remove(closest_num)
+
+    return conversion_dict
+
 def sort_and_update(push_gpcr, gpcr, push_gprot, gprot, interactions):
   for key in push_gpcr:
       gpcr[key]['interactions'] = ', '.join(push_gpcr[key])
@@ -1456,7 +1497,10 @@ def sort_and_update(push_gpcr, gpcr, push_gprot, gprot, interactions):
       if record['outerIndex'] not in matching_dict[record['innerIndex']]:
           matching_dict[record['innerIndex']].append(record['outerIndex'])
 
-  conversion = minimize_distance(matching_dict)
+  if len(matching_dict) < 15:
+      conversion = minimize_distance(matching_dict)
+  else:
+      conversion = minimize_circle(matching_dict)
 
   # Create new_dict_b by reordering dict_b based on index_mapping
   new_dict_b = [None] * len(gpcr)
@@ -1529,6 +1573,7 @@ def ComplexDetails(request, pdbname):
                                  'gpcr_pos': gpcr_pos, 'gprot_pos': gprot_pos,
                                  'gpcr_grn': gpcr_grn, 'gprot_grn': gprot_grn, 'segment': segment})
 
+    residues_browser = remove_duplicate_dicts(residues_browser)
     display_res = ' or '.join(display_res)
 
     # RESIDUE TABLE
