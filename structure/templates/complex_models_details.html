@@ -77,6 +77,14 @@ canvas {
       padding: 5px;
       text-align: center;
     }
+    .overlay{
+      border: 1px solid #888888;
+      position: absolute;
+      margin: 0 auto;
+      background:#eeeeee;
+      z-index:2;
+      min-width: 200px;
+    }
 </style>
 
 <div class="row text-success">
@@ -425,7 +433,7 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
   <br/>
   <br/>
   <div class="tab-content">
-    <div class="tab-pane container active" id="circles">
+    <div class="tab-pane container" id="circles">
 
       <div>
         <p>The biflare plot is a modified version of a flareplot, where lines are drawn between an <b>inner concentric circle</b>
@@ -585,14 +593,11 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
       </div>
 
     </div>
-    <div class="tab-pane container" id="3dview">
-      <div id="viewport_full" style="width:100%; height:300px;">
+    <div class="tab-pane container active" id="3dview">
+      <div id="viewport_full" style="width:500px; height:400px; background-color: white;"></div>
+      <div style="width:500px; background-color:#eaeaea; border-radius: 0px 0px 5px 5px;">
+          <p style="padding: 2px 0px 2px 5px; font-size: 10px;"><button id="fullscreen_full">Full Screen</button><a href="https://github.com/arose/ngl"> NGL</a> is a WebGL based 3D viewer powered by <a href="https://mmtf.rcsb.org">MMTF</a>.</p>
       </div>
-      <div style="width:100%; background-color:#eaeaea; border-radius: 0px 0px 5px 5px;">
-          <p style="padding: 2px 0px 2px 5px; font-size: 10px;"><a href="https://github.com/arose/ngl">NGL</a> is a WebGL based 3D viewer powered by <a href="https://mmtf.rcsb.org">MMTF</a>.</p>
-      </div>
-      <button id=fullscreen_full>Full Screen</button>
-       <a href="pdb?pdb={{ pdbname }}">Download PDB file</a>
     </div>
     <div class="tab-pane container" id="table">
       <div class="row">
@@ -655,6 +660,7 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
     <script src="{% static 'home/js/ngl.js' %}"> </script>
     <script>
         document.addEventListener( "DOMContentLoaded", function(){
+            // Model viewer
             stage = new NGL.Stage( "viewport", { backgroundColor: "white" } );
             var color_residues = JSON.parse('{{color_residues|safe}}');
             var schemeId = NGL.ColorMakerRegistry.addSelectionScheme( color_residues );
@@ -662,7 +668,45 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
                 o.addRepresentation( "cartoon", {color: schemeId} );  // pass schemeId here ,{ color: schemeId }
                 o.centerView();
             } );
-        } );
+            // 3D intereaction viewer
+            
+        // } );
+        // $("3dview").on("click", function() {
+            stage_full = new NGL.Stage( "viewport_full", { backgroundColor: "white" } );
+            stage_full.loadFile( "/structure/complex_models/view/{{pdbname}}", { ext: "pdb" }  ).then( function( o ){
+
+                o.addRepresentation( "cartoon", {
+                    color: "chainname"
+                } );
+                // Strict interactions
+                o.addRepresentation( "licorice", { sele: "({{display_res_gpcr_strict}}) and sidechainAttached", color: "red", scale: 2, aspectRatio: 1});
+                o.addRepresentation( "label", {
+                    sele: "({{display_res_gpcr_strict}}) and .CB",
+                    color: "red", borderColor: "black", showBorder: true, scale: 2.0
+                } );
+                o.addRepresentation( "licorice", { sele: "({{display_res_gprot_strict}}) and sidechainAttached", color: "orange", scale: 2, aspectRatio: 1});
+                o.addRepresentation( "label", {
+                    sele: "({{display_res_gprot_strict}}) and .CB",
+                    color: "orange", borderColor: "black", showBorder: true, scale: 2.0
+                } );
+                // Loose interactions
+                o.addRepresentation( "line", { sele: "({{display_res_gpcr_loose}}) and sidechainAttached", color: "grey", scale: 2, aspectRatio: 1});
+                o.addRepresentation( "line", { sele: "({{display_res_gprot_loose}}) and sidechainAttached", color: "grey", scale: 2, aspectRatio: 1});
+                o.centerView();
+            } );
+            stage_full.signals.clicked.add( function( d ){
+                $('#clicked').html(getPickingMessage( d, "Clicked" ));
+            } );
+            stage_full.signals.hovered.add( function( d ){
+                $('#hovered').html(getPickingMessage( d, "Hovered" ));
+            } );
+
+            $('#viewport_full').find("canvas").after("<div class='overlay'><span id='clicked'></span> | <span id='hovered'></span></div>");
+
+            $( "#fullscreen_full" ).click(function() {
+                stage_full.toggleFullscreen();
+            } );
+        });
 
         $( "#fullscreen" ).click(function() {
             stage.toggleFullscreen();
@@ -1040,50 +1084,6 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
                     });
                 },
             });
-
-            $('#align_btn1').click(function () {
-                ClearSelection("targets");
-                AddToSelection("targets", "structure_complex_receptor", "{{model.receptor_protein.entry_name}}-{{model.sign_protein.entry_name}}");
-                AddToSelection("targets", "structure", "{{model.main_template}}");
-
-                window.location.href = '/structure/selection_convert_model';
-            });
-            $('#align_btn2').click(function () {
-                ClearSelection('targets');
-                AddToSelection('targets', 'structure_complex_signprot', "{{model.sign_protein.entry_name}}");
-                AddToSelection('targets', 'structure', "{{model.main_template.pdb_code.index}}");
-
-                window.location.href = '/structure/selection_convert_signprot_model';
-            });
-            $('#superpose_btn').click(function () {
-                var table2 = Array.from("{{template_list}}".split(","));
-                var template_list = []
-                for (i=0; i<table2.length; i++) {
-                    template_list.push(table2[i].replace("&#39;","").replace("&#39;",""))
-                }
-                ClearSelection('targets');
-                ClearSelection('reference');
-                var div = document.createElement("div");
-
-                div.innerHTML = "{{model.receptor_protein.entry_name}}";
-                if (typeof div.innerText !== "undefined") {
-                    AddToSelection('reference', 'structure_complex_receptor', div.innerText.replace(/\s+/g, '').replace('[','').replace(']',''));
-                } else {
-                    AddToSelection('reference', 'structure_complex_receptor', div.textContent.replace(/\s+/g, '').replace('[','').replace(']',''));
-                }
-
-                for (i = 0; i < template_list.length; i++) {
-                    var div = document.createElement("div");
-                    div.innerHTML = template_list[i];
-                    if (typeof div.innerText !== "undefined") {
-                        AddToSelection('targets', 'structure', div.innerText.replace(/\s+/g, '').replace('[','').replace(']',''));
-                    } else {
-                        AddToSelection('targets', 'structure', div.textContent.replace(/\s+/g, '').replace('[','').replace(']',''));
-                    }
-
-                }
-                window.location.href = '/structure/superposition_workflow_index';
-            });
         });
 
         function downloadCSV() {
@@ -1159,9 +1159,8 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
                   $('#'+plotid).find("#"+key+"t").attr('title',original_title+extra);
 
               });
+        }
 
-  </script>
-  <script>
   // {32: 'T32 1x28', 33: 'V33 1x29', 34: 'S34 1x30', 35: 'Y35 1x31', 36: 'Q36 1x32',
   // 37: 'V37 1x33', 38: 'I38 1x34', 39: 'T39 1x35', 40: 'S40 1x36', 41: 'L41 1x37',
   // 42: 'L42 1x38', 43: 'L43 1x39', 44: 'G44 1x40', 45: 'T45 1x41', 46: 'L46 1x42'}
@@ -1199,45 +1198,6 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
       }
       return prefix + " " + msg;
   }
-
-  document.addEventListener( "DOMContentLoaded", function(){
-      stage_full = new NGL.Stage( "viewport_full", { backgroundColor: "white" } );
-      stage_full.loadFile( "complexpdb?pdb={{ pdbname }}", { ext: "pdb" }  ).then( function( o ){
-
-          o.addRepresentation( "cartoon", {
-              color: "residueindex", aspectRatio: 4, scale: 0.5
-          } );
-          o.addRepresentation( "rope", {
-              color: "residueindex", visible: false
-          } );
-          o.addRepresentation("ball+stick", { sele: "[{{ main_ligand}}]", scale: 1, aspectRatio: 1 } );
-          o.addRepresentation("surface", { sele: "[{{ main_ligand}}]", opacity: 0.4, useWorker: false } );
-          o.addRepresentation( "licorice", { sele: "({{display_res}}) and sidechainAttached" , scale: 2, aspectRatio: 1});
-          o.addRepresentation( "label", {
-              sele: "({{display_res}}) and .CB",
-              color: "#113", scale: 2.0
-          } );
-          o.addRepresentation( "label", {
-              sele: "[{{ main_ligand}}] and .C1",
-              color: "#888", scale: 3.0, labelType: "resname"
-          } );
-
-          o.centerView();
-      } );
-
-      stage_full.signals.clicked.add( function( d ){
-          $('#clicked').html(getPickingMessage( d, "Clicked" ));
-      } );
-      stage_full.signals.hovered.add( function( d ){
-          $('#hovered').html(getPickingMessage( d, "Hovered" ));
-      } );
-
-      $('#viewport_full').find("canvas").after("<div class='overlay'><span id='clicked'></span> | <span id='hovered'></span></div>");
-
-      $( "#fullscreen_full" ).click(function() {
-          stage_full.toggleFullscreen();
-      } );
-  });
 </script>
 
 

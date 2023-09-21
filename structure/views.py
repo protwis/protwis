@@ -591,12 +591,15 @@ def ComplexModelDetails(request, header, refined=False):
             residues_plddt[item.residue.protein_conformation.protein][item.residue.id] = [item.residue, item.pLDDT]
 
     ### Gathering interaction info and structuring JS data
-    interactions = Interaction.objects.filter(interacting_pair__referenced_structure=model).prefetch_related('interacting_pair__res1', 'interacting_pair__res2',
-                                                                                                             'interacting_pair__res1__display_generic_number', 'interacting_pair__res2__display_generic_number',
-                                                                                                             'interacting_pair__res1__protein_segment', 'interacting_pair__res2__protein_segment')
+    interactions = Interaction.objects.filter(interacting_pair__referenced_structure=model, 
+                                              interacting_pair__res2__protein_conformation__protein__family__slug__startswith='100').prefetch_related(
+                                                                             'interacting_pair__res1', 'interacting_pair__res2',
+                                                                             'interacting_pair__res1__display_generic_number', 'interacting_pair__res2__display_generic_number',
+                                                                             'interacting_pair__res1__protein_segment', 'interacting_pair__res2__protein_segment')
 
     residues_browser = []
-    display_res = []
+    display_res_gpcr_strict, display_res_gprot_strict = [], []
+    display_res_gpcr_loose, display_res_gprot_loose = [], []
 
     for residue in interactions:
         type = residue.interaction_type
@@ -616,12 +619,30 @@ def ComplexModelDetails(request, header, refined=False):
         # gpcr_grn = residue.interacting_pair.res1.generic_number.label
         # gprot_grn = residue.interacting_pair.res2.generic_number.label
 
-        display_res.append(str(gpcr_pos))
-        display_res.append(str(gprot_pos))
+        if residue.interaction_level==1:
+            if str(gpcr_pos) not in display_res_gpcr_strict:
+                display_res_gpcr_strict.append(str(gpcr_pos))
+            if str(gprot_pos) not in display_res_gprot_strict:
+                display_res_gprot_strict.append(str(gprot_pos))
+        elif residue.interaction_level==0:
+            if str(gpcr_pos) not in display_res_gpcr_loose:
+                display_res_gpcr_loose.append(str(gpcr_pos))
+            if str(gprot_pos) not in display_res_gprot_loose:
+                display_res_gprot_loose.append(str(gprot_pos))
 
         residues_browser.append({'type': type, 'gpcr_aa': gpcr_aa, 'gprot_aa': gprot_aa,
                                  'gpcr_pos': gpcr_pos, 'gprot_pos': gprot_pos,
                                  'gpcr_grn': gpcr_grn, 'gprot_grn': gprot_grn, 'segment': segment})
+
+    ### HARDCODED - FIXME
+    gpcr_chain = 'A'
+    gprot_chain = 'B'
+    ###
+
+    display_res_gpcr_loose = ':'+gpcr_chain+' and ('+' or '.join([i for i in display_res_gpcr_loose if i not in display_res_gpcr_strict])+')'
+    display_res_gprot_loose = ':'+gprot_chain+' and ('+' or '.join([i for i in display_res_gprot_loose if i not in display_res_gprot_strict])+')'
+    display_res_gpcr_strict = ':'+gpcr_chain+' and ('+' or '.join(display_res_gpcr_strict)+')'
+    display_res_gprot_strict = ':'+gprot_chain+' and ('+' or '.join(display_res_gprot_strict)+')'
 
     residues_browser = remove_duplicate_dicts(residues_browser)
 
@@ -801,6 +822,14 @@ def ComplexModelDetails(request, header, refined=False):
     gprot_order = json.dumps(list(gprotein_order))
     receptor_order = json.dumps(receptor_order)
 
+    residuelist = Residue.objects.filter(protein_conformation__protein=model.protein_conformation.protein).prefetch_related('protein_segment','display_generic_number','generic_number')
+    lookup = {}
+
+    residues_lookup = {}
+    for r in residuelist:
+        if r.generic_number:
+            lookup[r.generic_number.label] = r.sequence_number
+            residues_lookup[r.sequence_number] = r.amino_acid +str(r.sequence_number)+ " "+ r.generic_number.label
 
     ### Keep old coloring for refined structures
     if model.structure_type.slug.startswith('af-signprot-refined'):
@@ -819,7 +848,7 @@ def ComplexModelDetails(request, header, refined=False):
         # else:
         receptor_residues = Residue.objects.filter(protein_conformation__protein=model.protein_conformation.protein).prefetch_related('protein_conformation__protein', 'protein_conformation__protein__parent', 'display_generic_number', 'protein_segment')
         signprot_residues = Residue.objects.filter(protein_conformation__protein=model.signprot_complex.protein).prefetch_related('protein_conformation__protein', 'protein_conformation__protein__parent', 'display_generic_number', 'protein_segment')
-        main_template_seqsim = 100
+        
         receptor_rotamers, signprot_rotamers = parse_model_statsfile(model.stats_text.stats_text, receptor_residues, signprot_residues)
 
         loop_segments = ProteinSegment.objects.filter(category='loop', proteinfamily='Alpha')
@@ -856,7 +885,11 @@ def ComplexModelDetails(request, header, refined=False):
                                                              'interactions_strict': json.dumps(protein_interactions_strict),
                                                              'residues': len(protein_interactions), 'residues_browser': residues_browser,
                                                              'interactions_metadata': interactions_metadata, 'gprot': gprot_order, 'receptor': receptor_order, 'pdb_sel': [header],
-                                                             'conversion_dict': json.dumps(matching_dict), 'conversion_dict_strict': json.dumps(matching_dict_strict)})
+                                                             'conversion_dict': json.dumps(matching_dict), 'conversion_dict_strict': json.dumps(matching_dict_strict),
+                                                             'residues_lookup': residues_lookup,
+                                                             'display_res_gpcr_strict': display_res_gpcr_strict, 'display_res_gprot_strict': display_res_gprot_strict,
+                                                             'display_res_gpcr_loose': display_res_gpcr_loose, 'display_res_gprot_loose': display_res_gprot_loose
+                                                             })
 
     else:
         chains = ['A','B']
@@ -885,7 +918,10 @@ def ComplexModelDetails(request, header, refined=False):
                                                              'receptor': receptor_order,
                                                              'pdb_sel': [header],
                                                              'conversion_dict': json.dumps(matching_dict),
-                                                             'conversion_dict_strict': json.dumps(matching_dict_strict)
+                                                             'conversion_dict_strict': json.dumps(matching_dict_strict),
+                                                             'residues_lookup': residues_lookup,
+                                                             'display_res_gpcr_strict': display_res_gpcr_strict, 'display_res_gprot_strict': display_res_gprot_strict,
+                                                             'display_res_gpcr_loose': display_res_gpcr_loose, 'display_res_gprot_loose': display_res_gprot_loose
                                                              })
 
 
