@@ -400,27 +400,44 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
 {% endif %}
 
 <div class="row">
-  <div class="col-md-3 text-right text-info">
-    <h4>INTERACTING RESIDUES</h4>
-  </div>
-  <div class="col-md-9">
-    <a href="/interaction/complex/{{pdbname}}" target="_blank"> {{residues}} interactions (Click to see)</a>
+  <br/>
+  <br/>
+  <div class="col-md-12 text-center">
+    <h2>GPCR - G protein interface interactions</h2>
   </div>
 </div>
 
 <div class="col-md-12 ">
   <ul class="nav nav-tabs">
     <li class="nav-item active">
-      <a class="nav-link active" data-toggle="tab" href="#circles" id="circles_tab">Bi Circos</a>
+      <a class="nav-link active" data-toggle="tab" href="#circles" id="circles_tab">Biflare</a>
     </li>
     <li class="nav-item">
-      <a class="nav-link" data-toggle="tab" href="#matrix" id="matrix_tab">Interaction matrix</a>
+      <a class="nav-link" data-toggle="tab" href="#matrix" id="matrix_tab">Matrix</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" data-toggle="tab" href="#3dview" id="3dview_tab">3D view</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" data-toggle="tab" href="#table" id="table_tab">Table</a>
     </li>
   </ul>
   <br/>
   <br/>
   <div class="tab-content">
     <div class="tab-pane container active" id="circles">
+
+      <div>
+        <p>The biflare plot is a modified version of a flareplot, where lines are drawn between an <b>inner concentric circle</b>
+          <i>(G&alpha; residues)</i>
+          and an <b>outer concentric circle</b> <i>(GPCR residues)</i> depicting the interface interactions.<br/>
+          Different interaction types are shown with different line types (<b>aromatic</b> - <i>solid</i>,
+          <b>hydrophobic</b> - <i>dashed</i>,
+          <b>ionic</b> - <i>long dashed</i>, <b>polar</b> - <i>dotted</i>, <b>Van der Waals</b> - <i>dash-dot</i>).<br/>
+          The interactive features include filtering on interaction type, segments, residues and backbone or sidechain interactions.
+        </p>
+      </div>
+      <br/>
       <div>
         <b>Interaction cut-off:</b>
           <div class="btn-group" role="group" id="cut_off">

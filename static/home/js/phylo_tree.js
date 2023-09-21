@@ -1665,22 +1665,26 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
     bigRadius = (countOuter * 20 / Math.PI * 0.95) * 2.2;
   }
 
+  let svgH = (bigRadius * 2) + 400;
+  svg2.attr("height", svgH);
+  svg2.attr("width", svgH);
+
   // For example, with a bead radius of 20
-  createCircle(600, 520, 20, beadInfo.innerCircle, 'inner', smallRadius);
-  createOuterBeads(600, 520, smallRadius, bigRadius, conversion_dict, beadInfo.outerCircle);
+  createCircle(bigRadius*1.3, bigRadius*1.3, 20, beadInfo.innerCircle, 'inner', smallRadius);
+  createOuterBeads(bigRadius*1.3, bigRadius*1.3, smallRadius, bigRadius, conversion_dict, beadInfo.outerCircle);
   // createCircle(600, 520, 20, beadInfo.outerCircle, 'outer', bigRadius);
 
   // Generate legend
   const interactionLegend = svg2.append("g")
-    .attr("transform", "translate(350, 1050)");
+    .attr("transform", `translate(72, ${svgH - 60})`);
 
   // Generate inner legend
   const innercircleLegend = svg2.append("g")
-    .attr("transform", "translate(350, 1080)");
+    .attr("transform", `translate(72, ${svgH - 30})`);
 
   // Generate outer legend
   const outercircleLegend = svg2.append("g")
-    .attr("transform", "translate(350, 1110)");
+    .attr("transform", `translate(72, ${svgH})`);
 
   // Header for the interaction legend
   const headerInteractions = interactionLegend.append("text")
