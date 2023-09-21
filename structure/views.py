@@ -547,6 +547,15 @@ def find_dict_index(dict_list, target_dict):
     return -1  # return -1 if the dictionary is not found
 
 def minimize_distance(connections):
+
+    outer_to_inner = {}
+    for key, value in connections.items():
+        for idx in value:
+            if idx not in outer_to_inner.keys():
+                outer_to_inner[idx] = []
+            outer_to_inner[idx].append(key)
+    sorted_outer = {k: v for k, v in sorted(outer_to_inner.items(), key=lambda item: len(item[1]), reverse=True)}
+
     inner_to_outer = defaultdict(list)  # Maps each 'inner' index to a list of associated 'outer' indexes
 
     # Invert the mapping for easier manipulation
@@ -572,7 +581,7 @@ def minimize_distance(connections):
                 outer_to_new_outer[outer] = next_available_outer
                 next_available_outer += 1
 
-    return outer_to_new_outer
+    return outer_to_new_outer, sorted_outer
 
 def minimize_circle(matching_dict):
     outer_to_inner = {}
@@ -613,7 +622,7 @@ def minimize_circle(matching_dict):
             conversion_dict[key] = closest_num
             available_idx.remove(closest_num)
 
-    return conversion_dict
+    return conversion_dict, sorted_outer
 
 
 def sort_and_update(push_gpcr, gpcr, push_gprot, gprot, interactions):
@@ -630,21 +639,21 @@ def sort_and_update(push_gpcr, gpcr, push_gprot, gprot, interactions):
           matching_dict[record['innerIndex']].append(record['outerIndex'])
 
   if len(matching_dict) < 15:
-      conversion = minimize_distance(matching_dict)
+      conversion, reversed = minimize_distance(matching_dict)
   else:
-      conversion = minimize_circle(matching_dict)
+      conversion, reversed = minimize_circle(matching_dict)
 
   # Create new_dict_b by reordering dict_b based on index_mapping
-  new_dict_b = [None] * len(gpcr)
-  for original, new in conversion.items():
-      new_dict_b[new] = gpcr[original]
+  # new_dict_b = [None] * len(gpcr)
+  # for original, new in conversion.items():
+  #     new_dict_b[new] = gpcr[original]
 
   # Remove None values if any (in case dict_b has more elements than mapping_dict)
-  gpcr = [item for item in new_dict_b if item is not None]
-  for record in interactions:
-      record['outerIndex'] = conversion[record['outerIndex']]
+  # gpcr = [item for item in new_dict_b if item is not None]
+  # for record in interactions:
+  #     record['outerIndex'] = conversion[record['outerIndex']]
 
-  return gpcr, gprot
+  return gpcr, gprot, reversed
 
 def ComplexModelDetails(request, header, refined=False):
     """
@@ -798,8 +807,8 @@ def ComplexModelDetails(request, header, refined=False):
     protein_interactions = remove_duplicate_dicts(protein_interactions)
     protein_interactions_strict = remove_duplicate_dicts(protein_interactions_strict)
 
-    gpcr_aminoacids, gprot_aminoacids = sort_and_update(to_push_gpcr, gpcr_aminoacids, to_push_gprot, gprot_aminoacids, protein_interactions)
-    gpcr_aminoacids_strict, gprot_aminoacids_strict = sort_and_update(to_push_gpcr_strict, gpcr_aminoacids_strict, to_push_gprot_strict, gprot_aminoacids_strict, protein_interactions_strict)
+    gpcr_aminoacids, gprot_aminoacids, matching_dict = sort_and_update(to_push_gpcr, gpcr_aminoacids, to_push_gprot, gprot_aminoacids, protein_interactions)
+    gpcr_aminoacids_strict, gprot_aminoacids_strict, matching_dict_strict = sort_and_update(to_push_gpcr_strict, gpcr_aminoacids_strict, to_push_gprot_strict, gprot_aminoacids_strict, protein_interactions_strict)
 
     ### Interaction Matrix copy/paste
     gprotein_order = ProteinSegment.objects.filter(proteinfamily='Alpha').values('id', 'slug')
@@ -904,7 +913,8 @@ def ComplexModelDetails(request, header, refined=False):
                                                              'inner_strict': json.dumps(gprot_aminoacids_strict),
                                                              'interactions_strict': json.dumps(protein_interactions_strict),
                                                              'residues': len(protein_interactions),
-                                                             'interactions_metadata': interactions_metadata, 'gprot': gprot_order, 'receptor': receptor_order, 'pdb_sel': [header]})
+                                                             'interactions_metadata': interactions_metadata, 'gprot': gprot_order, 'receptor': receptor_order, 'pdb_sel': [header],
+                                                             'conversion_dict': json.dumps(matching_dict), 'conversion_dict_strict': json.dumps(matching_dict_strict)})
 
     else:
         chains = ['A','B']
@@ -930,7 +940,9 @@ def ComplexModelDetails(request, header, refined=False):
                                                              'interactions_metadata': interactions_metadata,
                                                              'gprot': gprot_order,
                                                              'receptor': receptor_order,
-                                                             'pdb_sel': [header]
+                                                             'pdb_sel': [header],
+                                                             'conversion_dict': json.dumps(matching_dict),
+                                                             'conversion_dict_strict': json.dumps(matching_dict_strict)
                                                              })
 
 
