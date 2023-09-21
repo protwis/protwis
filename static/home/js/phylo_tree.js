@@ -1651,15 +1651,15 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
   let smallRadius;
   let bigRadius;
 
-  if (countInner< 10){
+  if (countInner <= 15){
     smallRadius = 20 * 20 / Math.PI * 0.85;
-  } else if (countInner> 10 && countInner < 30) {
+  } else if (countInner > 15 && countInner <= 30) {
     smallRadius = 30 * 20 / Math.PI * 0.85;
   } else {
     smallRadius = countInner * 20 / Math.PI * 0.85;
   };
 
-  if (countInner < 30 ){
+  if (countInner <= 30 ){
     bigRadius = smallRadius * 2.7;
   } else {
     bigRadius = (countOuter * 20 / Math.PI * 0.95) * 2.2;
