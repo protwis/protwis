@@ -546,85 +546,6 @@ def find_dict_index(dict_list, target_dict):
             return i
     return -1  # return -1 if the dictionary is not found
 
-def minimize_distance(connections):
-
-    outer_to_inner = {}
-    for key, value in connections.items():
-        for idx in value:
-            if idx not in outer_to_inner.keys():
-                outer_to_inner[idx] = []
-            outer_to_inner[idx].append(key)
-    sorted_outer = {k: v for k, v in sorted(outer_to_inner.items(), key=lambda item: len(item[1]), reverse=True)}
-
-    inner_to_outer = defaultdict(list)  # Maps each 'inner' index to a list of associated 'outer' indexes
-
-    # Invert the mapping for easier manipulation
-    for inner, outers in connections.items():
-        for outer in outers:
-            inner_to_outer[inner].append(outer)
-
-    outer_to_new_outer = {}  # Maps old 'outer' index to new 'outer' index
-    next_available_outer = 0  # Initialize new 'outer' index
-
-    # Loop through sorted 'inner' indexes
-    for inner in sorted(inner_to_outer.keys()):
-        outer_indices = np.array(inner_to_outer[inner])  # Convert to a numpy array for easy mean calculation
-
-        # Calculate the mean of the 'outer' indices associated with each 'inner' index
-        mean_outer = np.mean(outer_indices)
-
-        # Sort the 'outer' indexes by how far they are from the mean
-        sorted_outer_indices = sorted(outer_indices, key=lambda x: abs(x - mean_outer))
-
-        for outer in sorted_outer_indices:
-            if outer not in outer_to_new_outer:  # Assign new index if not assigned before
-                outer_to_new_outer[outer] = next_available_outer
-                next_available_outer += 1
-
-    return outer_to_new_outer, sorted_outer
-
-def minimize_circle(matching_dict):
-    outer_to_inner = {}
-    for key, value in matching_dict.items():
-        for idx in value:
-            if idx not in outer_to_inner.keys():
-                outer_to_inner[idx] = []
-            outer_to_inner[idx].append(key)
-    sorted_outer = {k: v for k, v in sorted(outer_to_inner.items(), key=lambda item: len(item[1]), reverse=True)}
-
-    positions = len(sorted_outer)
-    median = {}
-    for key, value in sorted_outer.items():
-        x = 0
-        y = 0
-        n = len(value)
-        for val in value:
-            angle = 2 * pi * val / positions
-            x += cos(angle)
-            y += sin(angle)
-        x /= n
-        y /= n
-        angle = atan2(y, x)
-        if angle < 0:
-            angle += 2 * pi
-        median_angle = round(positions * angle / (2 * pi)) % positions  # Bringing the angle back to our scale
-        median[key] = median_angle
-
-    available_idx = list(range(positions))
-
-    conversion_dict = {}
-    for key, value in median.items():
-        if value in available_idx:
-            available_idx.remove(value)
-            conversion_dict[key] = value
-        else:
-            closest_num = min(available_idx, key=lambda x: min(abs(x - value), positions - abs(x - value)))
-            conversion_dict[key] = closest_num
-            available_idx.remove(closest_num)
-
-    return conversion_dict, sorted_outer
-
-
 def sort_and_update(push_gpcr, gpcr, push_gprot, gprot, interactions):
   for key in push_gpcr:
       gpcr[key]['interactions'] = ', '.join(push_gpcr[key])
@@ -638,22 +559,15 @@ def sort_and_update(push_gpcr, gpcr, push_gprot, gprot, interactions):
       if record['outerIndex'] not in matching_dict[record['innerIndex']]:
           matching_dict[record['innerIndex']].append(record['outerIndex'])
 
-  if len(matching_dict) < 15:
-      conversion, reversed = minimize_distance(matching_dict)
-  else:
-      conversion, reversed = minimize_circle(matching_dict)
+  outer_to_inner = {}
+  for key, value in matching_dict.items():
+      for idx in value:
+          if idx not in outer_to_inner.keys():
+              outer_to_inner[idx] = []
+              outer_to_inner[idx].append(key)
+  sorted_outer = {k: v for k, v in sorted(outer_to_inner.items(), key=lambda item: len(item[1]), reverse=True)}
 
-  # Create new_dict_b by reordering dict_b based on index_mapping
-  # new_dict_b = [None] * len(gpcr)
-  # for original, new in conversion.items():
-  #     new_dict_b[new] = gpcr[original]
-
-  # Remove None values if any (in case dict_b has more elements than mapping_dict)
-  # gpcr = [item for item in new_dict_b if item is not None]
-  # for record in interactions:
-  #     record['outerIndex'] = conversion[record['outerIndex']]
-
-  return gpcr, gprot, reversed
+  return gpcr, gprot, sorted_outer
 
 def ComplexModelDetails(request, header, refined=False):
     """
@@ -738,8 +652,6 @@ def ComplexModelDetails(request, header, refined=False):
     order_gprot = {segment: index for index, segment in enumerate(gprot_segments)}
 
     # Sort the list of dictionaries based on the custom order
-    # gpcr_aminoacids = sorted(gpcr_aminoacids, key=lambda x: order_gpcr.get(x['segment'], float('inf')))
-    # gprot_aminoacids = sorted(gprot_aminoacids, key=lambda x: x['generic_number'])
     gprot_aminoacids = sorted(gprot_aminoacids, key=lambda x: (order_gprot.get(x['segment'], 9999), int(x['generic_number'].split('.')[-1])))
     gprot_aminoacids_strict = sorted(gprot_aminoacids_strict, key=lambda x: (order_gprot.get(x['segment'], 9999), int(x['generic_number'].split('.')[-1])))
 
