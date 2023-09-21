@@ -585,6 +585,63 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
       </div>
 
     </div>
+    <div class="tab-pane container" id="3dview">
+      <div id="viewport_full" style="width:100%; height:300px;">
+      </div>
+      <div style="width:100%; background-color:#eaeaea; border-radius: 0px 0px 5px 5px;">
+          <p style="padding: 2px 0px 2px 5px; font-size: 10px;"><a href="https://github.com/arose/ngl">NGL</a> is a WebGL based 3D viewer powered by <a href="https://mmtf.rcsb.org">MMTF</a>.</p>
+      </div>
+      <button id=fullscreen_full>Full Screen</button>
+       <a href="pdb?pdb={{ pdbname }}">Download PDB file</a>
+    </div>
+    <div class="tab-pane container" id="table">
+      <div class="row">
+          <div class="col-md-11 text-center">
+            {% if residues_browser %}
+            <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;">
+                <table width="100%" class="display" id="residues">
+                    <thead>
+                        <tr>
+                            <th>GPCR Amino Acid</th>
+                            <th>Generic Number</th>
+                            <th>Segment</th>
+                            <th>G Protein Amino Acid</th>
+                            <th>Generic Number</th>
+                            <th>Interaction Type</th>
+                        </tr>
+                        <tr>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                        </tr>
+                        <tr>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    {% for residue in residues_browser %}
+                    <tr>
+                    <td>{{residue.gpcr_aa}}{{residue.gpcr_pos}}</td>
+                    <td>{{residue.gpcr_grn}}
+                    <td>{{residue.segment}}</td>
+                    <td>{{residue.gprot_aa}}{{residue.gprot_pos}}</td>
+                    <td>{{residue.gprot_grn}}</td>
+                    <td>{{residue.type}}</td>
+                    {% endfor %}
+                </table>
+            </div>
+        {% else %}
+            <p> Ooops! There is no data to show here yet. </p>
+        {% endif %}
+        </div>
+      </div>
   </div>
 </div>
 
@@ -681,6 +738,35 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
             });
 
             d3.selectAll(`.van-der-waals`).attr("stroke-opacity", 0);
+
+            var table3 = $('#residues').DataTable({
+                "scrollX": true,
+                "scrollY": 600,
+                "bScrollCollapse": true,
+                'paging': false,
+                orderCellsTop: true,
+                "autoWidth": true,
+                dom: 'T<"clear">lfrtip',
+                "aoColumnDefs": [
+                    { "sType": "string", "aTargets": [0] },
+                ],
+                tableTools: {
+                    "sRowSelect": "multi",
+                    "aButtons": []
+                },
+                initComplete: function () {
+                    $('#residues').dataTable().columnFilter({
+                        sPlaceHolder: "head:after",
+                        aoColumns: [
+                            { type: "select" }, //ligand
+                            { type: "select" }, //protein name
+                            { type: "select" }, //Alt Position
+                            { type: "select" }, //Position
+                            { type: "select" }, //Segment
+                        ]
+                    });
+                }
+            });
 
             // Section for the Matrix
             $.ajax({
@@ -954,6 +1040,7 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
                     });
                 },
             });
+
             $('#align_btn1').click(function () {
                 ClearSelection("targets");
                 AddToSelection("targets", "structure_complex_receptor", "{{model.receptor_protein.entry_name}}-{{model.sign_protein.entry_name}}");
@@ -1045,6 +1132,113 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
           }
         }
 
-    </script>
+        function ajaxInteractions(plotid) {
+            interactions = {{ residues | safe }};
+            count = [];
+            output = [];
+
+              $.each( interactions, function( index, val ) {
+                key = val['gpcr_aa'];
+
+                if (key in count) {
+                    count[key] += 1;
+                    if (!(val['type'] in output[key])) output[key].push(val['type'])
+                } else {
+                    count[key] = 1;
+                    output[key] = [val['type']]
+                }
+
+                  extra = "\n" + String(count[key]) + " interactions | Type: "+ output[key];
+
+                  $('#'+plotid).find("#"+key).css("fill", "#E60A0A");
+                  $('#'+plotid).find("#"+key).next().css("fill", "#FDFF7B");
+
+                  original_title = $('#'+plotid).find("#"+key).attr('original_title')
+
+                  $('#'+plotid).find("#"+key).attr('title',original_title+extra);
+                  $('#'+plotid).find("#"+key+"t").attr('title',original_title+extra);
+
+              });
+
+  </script>
+  <script>
+  // {32: 'T32 1x28', 33: 'V33 1x29', 34: 'S34 1x30', 35: 'Y35 1x31', 36: 'Q36 1x32',
+  // 37: 'V37 1x33', 38: 'I38 1x34', 39: 'T39 1x35', 40: 'S40 1x36', 41: 'L41 1x37',
+  // 42: 'L42 1x38', 43: 'L43 1x39', 44: 'G44 1x40', 45: 'T45 1x41', 46: 'L46 1x42'}
+  var residues_lookup = {{ residues_lookup | safe }};
+
+  function getPickingMessage( d, prefix ){
+      var msg;
+      if( d.atom ){
+          msg = "atom: " +
+              d.atom.qualifiedName() +
+              " (" + d.atom.structure.name + ")";
+          var re = /](\d+):/i;
+          var found = d.atom.qualifiedName().match(re);
+          if (found) {
+              pos = found[1];
+              if (residues_lookup[pos]) msg = residues_lookup[pos];
+              }
+      }else if( d.bond ){
+          msg = "bond: " +
+              d.bond.atom1.qualifiedName() + " - " + d.bond.atom2.qualifiedName() +
+              " (" + d.bond.structure.name + ")";
+
+          var re = /](\d+):/i;
+          var found = d.bond.atom1.qualifiedName().match(re);
+          if (found) {
+              pos = found[1];
+              if (residues_lookup[pos]) msg = residues_lookup[pos];
+          }
+      }else if( d.volume ){
+          msg = "volume: " +
+              d.volume.value.toPrecision( 3 ) +
+              " (" + d.volume.volume.name + ")";
+      }else{
+          msg = "nothing";
+      }
+      return prefix + " " + msg;
+  }
+
+  document.addEventListener( "DOMContentLoaded", function(){
+      stage_full = new NGL.Stage( "viewport_full", { backgroundColor: "white" } );
+      stage_full.loadFile( "complexpdb?pdb={{ pdbname }}", { ext: "pdb" }  ).then( function( o ){
+
+          o.addRepresentation( "cartoon", {
+              color: "residueindex", aspectRatio: 4, scale: 0.5
+          } );
+          o.addRepresentation( "rope", {
+              color: "residueindex", visible: false
+          } );
+          o.addRepresentation("ball+stick", { sele: "[{{ main_ligand}}]", scale: 1, aspectRatio: 1 } );
+          o.addRepresentation("surface", { sele: "[{{ main_ligand}}]", opacity: 0.4, useWorker: false } );
+          o.addRepresentation( "licorice", { sele: "({{display_res}}) and sidechainAttached" , scale: 2, aspectRatio: 1});
+          o.addRepresentation( "label", {
+              sele: "({{display_res}}) and .CB",
+              color: "#113", scale: 2.0
+          } );
+          o.addRepresentation( "label", {
+              sele: "[{{ main_ligand}}] and .C1",
+              color: "#888", scale: 3.0, labelType: "resname"
+          } );
+
+          o.centerView();
+      } );
+
+      stage_full.signals.clicked.add( function( d ){
+          $('#clicked').html(getPickingMessage( d, "Clicked" ));
+      } );
+      stage_full.signals.hovered.add( function( d ){
+          $('#hovered').html(getPickingMessage( d, "Hovered" ));
+      } );
+
+      $('#viewport_full').find("canvas").after("<div class='overlay'><span id='clicked'></span> | <span id='hovered'></span></div>");
+
+      $( "#fullscreen_full" ).click(function() {
+          stage_full.toggleFullscreen();
+      } );
+  });
+</script>
+
 
 {% endblock %}

@@ -595,6 +595,36 @@ def ComplexModelDetails(request, header, refined=False):
                                                                                                              'interacting_pair__res1__display_generic_number', 'interacting_pair__res2__display_generic_number',
                                                                                                              'interacting_pair__res1__protein_segment', 'interacting_pair__res2__protein_segment')
 
+    residues_browser = []
+    display_res = []
+
+    for residue in interactions:
+        type = residue.interaction_type
+        gpcr_aa = residue.interacting_pair.res1.amino_acid
+        gprot_aa = residue.interacting_pair.res2.amino_acid
+        gpcr_pos = residue.interacting_pair.res1.sequence_number
+        gprot_pos = residue.interacting_pair.res2.sequence_number
+        segment = residue.interacting_pair.res1.protein_segment.slug
+        try:
+            gpcr_grn = residue.interacting_pair.res1.display_generic_number.label
+        except AttributeError:
+            gpcr_grn = '-'
+        try:
+            gprot_grn = residue.interacting_pair.res2.display_generic_number.label
+        except AttributeError:
+            gprot_grn = '-'
+        # gpcr_grn = residue.interacting_pair.res1.generic_number.label
+        # gprot_grn = residue.interacting_pair.res2.generic_number.label
+
+        display_res.append(str(gpcr_pos))
+        display_res.append(str(gprot_pos))
+
+        residues_browser.append({'type': type, 'gpcr_aa': gpcr_aa, 'gprot_aa': gprot_aa,
+                                 'gpcr_pos': gpcr_pos, 'gprot_pos': gprot_pos,
+                                 'gpcr_grn': gpcr_grn, 'gprot_grn': gprot_grn, 'segment': segment})
+
+    residues_browser = remove_duplicate_dicts(residues_browser)
+
     gpcr_aminoacids = []
     gprot_aminoacids = []
     protein_interactions = []
@@ -824,7 +854,7 @@ def ComplexModelDetails(request, header, refined=False):
                                                              'outer_strict': json.dumps(gpcr_aminoacids_strict),
                                                              'inner_strict': json.dumps(gprot_aminoacids_strict),
                                                              'interactions_strict': json.dumps(protein_interactions_strict),
-                                                             'residues': len(protein_interactions),
+                                                             'residues': len(protein_interactions), 'residues_browser': residues_browser,
                                                              'interactions_metadata': interactions_metadata, 'gprot': gprot_order, 'receptor': receptor_order, 'pdb_sel': [header],
                                                              'conversion_dict': json.dumps(matching_dict), 'conversion_dict_strict': json.dumps(matching_dict_strict)})
 
@@ -847,6 +877,7 @@ def ComplexModelDetails(request, header, refined=False):
                                                              'inner_strict': json.dumps(gprot_aminoacids_strict),
                                                              'interactions_strict': json.dumps(protein_interactions_strict),
                                                              'residues': len(protein_interactions),
+                                                             'residues_browser': residues_browser,
                                                              'structure_type': model.structure_type,
                                                              'plddt_avg': avg_plddt['pLDDT__avg'],
                                                              'interactions_metadata': interactions_metadata,
