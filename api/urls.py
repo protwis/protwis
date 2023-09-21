@@ -55,7 +55,7 @@ urlpatterns = excluded_apis + [
         name='proteinsimilarityalignment'),
 
     url(r'^structure/$', cache_page(3600*24*7)(views.StructureList.as_view()), name='structure-list'),
-    url(r'^alphafoldmodels/$', cache_page(3600*24*7)(views.StructureModelsList.as_view()), name='structure-list'),
+    url(r'^structure/alphafold_peptide_models/$', cache_page(3600*24*7)(views.StructureModelsList.as_view()), name='structure-list'),
     url(r'^structure/accession_codes_human/$', cache_page(3600*24*7)(views.StructureAccessionHuman.as_view()), name='structure-accession-list'),
     url(r'^structure/representative/$', cache_page(3600*24*7)(views.RepresentativeStructureList.as_view()), {'representative': True},
         name='structure-representative-list'),
@@ -85,6 +85,6 @@ urlpatterns = excluded_apis + [
     url(r'^ligands/(?P<prot_name>[^/].+)/$', views.LigandList.as_view(), name='drugs'),
     url(r'^plot/helixbox/(?P<entry_name>[^/].+)/$', views.HelixBoxView.as_view(), name='helixbox'),
     url(r'^plot/snake/(?P<entry_name>[^/].+)/$', views.SnakePlotView.as_view(), name='snakeplot'),
-    url(r'^structure/(?P<pdb_code>[^/]+)/complexinteraction/$', views.ComplexInteractions.as_view(), name='complex-interaction'),
+    url(r'^structure/(?P<id>[^/]+)/complexinteraction/$', views.ComplexInteractions.as_view(), name='complex-interaction'),
 
 ]

@@ -816,7 +816,7 @@ def ComplexModelDetails(request, header, refined=False):
 
     receptor_order = ['N', '1', '12', '2', '23', '3', '34', '4', '45', '5', '56', '6', '67', '7', '78', '8', 'C']
 
-    struc = SignprotComplex.objects.filter(protein__family__slug__startswith=fam_slug).prefetch_related(
+    struc = SignprotComplex.objects.filter(structure=model).prefetch_related(
         'structure__pdb_code',
         'structure__stabilizing_agents',
         'structure__protein_conformation__protein',
