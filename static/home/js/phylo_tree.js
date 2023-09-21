@@ -1099,7 +1099,7 @@ function draw_model_scores(location, element_id, score, startValue, endValue, de
 // This function generates two concentric circles made of aminoAcids
 // then creates lines connecting inner and outer aminoacids, given interactions between them
 
-function draw_interactions_in_circles(location, interactions, inner_data, outer_data) {
+function draw_interactions_in_circles(location, interactions, inner_data, outer_data, conversion_dict) {
   // D3 select the SVG
   const svg2 = d3.select("#" + location);
 
@@ -1277,13 +1277,21 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
         .style("opacity", 0);
     }
 
+    let strokeWidth;
+
+    if (circleType == 'outer'){
+      strokeWidth = 5;
+    } else {
+      strokeWidth = 3;
+    };
+
     const bead = svg2.append("circle")
       .attr("cx", cx)
       .attr("cy", cy)
       .attr("r", beadRadius)
       .attr("fill", "white")
       .attr("stroke", allColors[segment])
-      .attr("stroke-width", 3)
+      .attr("stroke-width", strokeWidth)
       .attr("data-index", index)
       .attr("data-circle", circleType)
       .attr("data-aa", aminoAcid)
@@ -1307,9 +1315,10 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
     svg2.append("text")
       .attr("x", cx)
       .attr("y", cy)
-      .attr("dy", 5)
+      .attr("dy", 9)
       .attr("text-anchor", "middle")
       .text(aminoAcid)
+      .style("font-size", "23px")
       .on("mouseover", showTooltip)
       .on("mouseout", hideTooltip);
 
@@ -1359,7 +1368,7 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
         .attr("text-anchor", textAnchor)
         .attr("transform", `rotate(${textRotation},${cx},${cy})`) // .attr("transform", `rotate(${angleToCentroid * (180 / Math.PI)},${cx},${cy})`)
         .text(inner_number)
-        .style("font-size", "12px")
+        .style("font-size", "18px")
         .style("font-family", "Palatino")
         .attr("font-weight", "bold")
         .style("fill", "#111");  // or any color of your choice
@@ -1405,7 +1414,7 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
                 .attr("alignment-baseline", "middle")
                 .attr("transform", `rotate(${textAngleDeg}, ${labelX}, ${labelY})`)
                 .text(lastSegment)
-                .style("font-size", "14px")
+                .style("font-size", "17px")
                 .attr("font-weight", "bold")
                 .style("font-family", "Palatino")
                 .style("fill", "#333");
@@ -1447,6 +1456,49 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
     // Draw the remaining external circle segment
     // drawExternalSegment(cx, cy, internalCircleRadius, adjustedStartAngle, adjustedEndAngle, lastSegment);
   }
+
+  // Function to create outer beads based on the connections dictionary
+  function createOuterBeads(centroidX, centroidY, innerCircleRadius, outerCircleRadius, beadConnections, beads) {
+      const beadRadius = 20; // Or whatever the radius of the outer beads is
+
+      const placedBeads = []; // To store the angles at which beads have been placed
+
+      for (const [outerBeadId, connections] of Object.entries(beadConnections)) {
+          // Calculate average angle based on inner bead connections
+          let sumAngles = 0;
+          connections.forEach(connId => {
+              const innerBead = document.querySelector(`#bead-inner-${connId}`);
+              const beadCX = parseFloat(innerBead.getAttribute('cx'));
+              const beadCY = parseFloat(innerBead.getAttribute('cy'));
+              const angleToCentroid = Math.atan2(beadCY - centroidY, beadCX - centroidX);
+              sumAngles += angleToCentroid;
+          });
+
+          let avgAngle = sumAngles / connections.length;
+
+          // If there's only one connection, adjust the outer bead position to align directly with the inner bead
+          if (connections.length === 1) {
+              const innerBead = document.querySelector(`#bead-inner-${connections[0]}`);
+              const beadCX = parseFloat(innerBead.getAttribute('cx'));
+              const beadCY = parseFloat(innerBead.getAttribute('cy'));
+              avgAngle = Math.atan2(beadCY - centroidY, beadCX - centroidX);
+          }
+
+          // Correction factor for overlapping beads
+          let angleCorrection = 0.08;  // This is the angular shift applied. Adjust as needed.
+          while (placedBeads.some(angle => Math.abs(angle - avgAngle) < angleCorrection)) {
+              avgAngle += angleCorrection;
+          }
+          placedBeads.push(avgAngle);
+
+          const outerBeadX = centroidX + outerCircleRadius * Math.cos(avgAngle);
+          const outerBeadY = centroidY + outerCircleRadius * Math.sin(avgAngle);
+
+          let bead = beads[outerBeadId];
+          // You can use the createBead function here
+          createBead(outerBeadX, outerBeadY, bead.aminoAcid, bead.segment, outerBeadId, 'outer', beadRadius, centroidX, centroidY, bead.generic_number, bead.interactions, bead.sequence_number);
+      }
+  };
 
   // Function to draw external circle segment
   function drawExternalSegment(cx, cy, radius, startAngle, endAngle, segment) {
@@ -1615,7 +1667,8 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
 
   // For example, with a bead radius of 20
   createCircle(600, 520, 20, beadInfo.innerCircle, 'inner', smallRadius);
-  createCircle(600, 520, 20, beadInfo.outerCircle, 'outer', bigRadius);
+  createOuterBeads(600, 520, smallRadius, bigRadius, conversion_dict, beadInfo.outerCircle);
+  // createCircle(600, 520, 20, beadInfo.outerCircle, 'outer', bigRadius);
 
   // Generate legend
   const interactionLegend = svg2.append("g")

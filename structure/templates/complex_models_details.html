@@ -639,17 +639,19 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
             receptor = {{ receptor | safe}};
             csrf_token = "{{ csrf_token }}";
             pdb_sel = {{ pdb_sel | safe }};
+            conversion_dict = {{ conversion_dict | safe }};
+            conversion_dict_strict = {{ conversion_dict_strict | safe }};
 
             ClearSelection('targets');
             ClearSelection('reference');
             // Call the function with your desired values
-            draw_interactions_in_circles('visualization', interactions_strict, inner_data_strict, outer_data_strict);
+            draw_interactions_in_circles('visualization', interactions_strict, inner_data_strict, outer_data_strict, conversion_dict_strict);
 
             $("#strict").click(function(){
               $("#strict").addClass("active");
               $("#loose").removeClass("active");
               d3.select("#visualization").selectAll("*").remove();
-              draw_interactions_in_circles('visualization', interactions_strict, inner_data_strict, outer_data_strict);
+              draw_interactions_in_circles('visualization', interactions_strict, inner_data_strict, outer_data_strict, conversion_dict_strict);
               d3.selectAll(`.van-der-waals`).attr("stroke-opacity", 0);
             });
 
@@ -657,7 +659,7 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
               $("#strict").removeClass("active");
               $("#loose").addClass("active");
               d3.select("#visualization").selectAll("*").remove();
-              draw_interactions_in_circles('visualization', interactions, inner_data, outer_data);
+              draw_interactions_in_circles('visualization', interactions, inner_data, outer_data, conversion_dict);
               d3.selectAll(`.van-der-waals`).attr("stroke-opacity", 0);
             });
 
