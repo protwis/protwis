@@ -1525,7 +1525,7 @@ def ComplexDetails(request, pdbname):
     resn_list = ''
 
     crystal = Structure.objects.get(pdb_code__index=pdbname)
-    if pdbname.startswith('AFM'):
+    if crystal.structure_type.slug.startswith('af-'):
         p = Protein.objects.get(id=crystal.protein_conformation.protein.id)
     else:
         p = Protein.objects.get(protein=crystal.protein_conformation.protein)
@@ -1654,7 +1654,10 @@ def ComplexDetails(request, pdbname):
 
     ### Implementing same code for calculating the interactions plot
     model = Structure.objects.get(pdb_code__index=pdbname)
-    scores = StructureAFScores.objects.get(structure=model)
+    if model.structure_type.slug == 'af-signprot':
+        scores = StructureAFScores.objects.get(structure=model)
+    else:
+        scores = StructureAFScores()
     #Need to build the plDDT colors
     model_plddt = StructureModelpLDDT.objects.filter(structure=model)
     residues_plddt = {}

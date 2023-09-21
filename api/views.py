@@ -306,13 +306,13 @@ class NumberPDBStructureView(views.APIView):
 class StructureModelsList(views.APIView):
 
     """
-    Get a list of alpha fold model structures
-    \n/structure/
+    Get a list of GPCR - peptide alphafold model structures
+    \n/structure/alphafold_peptide_models
     """
 
     def get(self, request, pdb_code=None, entry_name=None, representative=None):
 
-        structures = Structure.objects.filter(structure_type__slug__startswith='af-')
+        structures = Structure.objects.filter(structure_type__slug__startswith='af-peptide')
 
         structures = structures.prefetch_related('protein_conformation__protein__parent__species', 'pdb_code',
             'protein_conformation__protein__parent__family', 'protein_conformation__protein__parent__species',
@@ -740,7 +740,7 @@ class ProteinSimilaritySearchAlignment(views.APIView):
             if int(protein_family) < 100:
                 ss = [ s for s in ss if s.proteinfamily == 'GPCR']
             elif protein_family == "100":
-                ss = [ s for s in ss if s.proteinfamily == 'Gprotein']
+                ss = [ s for s in ss if s.proteinfamily == 'Alpha']
             elif protein_family == "200":
                 ss = [ s for s in ss if s.proteinfamily == 'Arrestin']
 
@@ -836,7 +836,7 @@ class ProteinAlignment(views.APIView):
             if int(protein_family) < 100:
                 ss = [ s for s in ss if s.proteinfamily == 'GPCR']
             elif protein_family == "100":
-                ss = [ s for s in ss if s.proteinfamily == 'Gprotein']
+                ss = [ s for s in ss if s.proteinfamily == 'Alpha']
             elif protein_family == "200":
                 ss = [ s for s in ss if s.proteinfamily == 'Arrestin']
 
@@ -1048,52 +1048,32 @@ class StructureLigandInteractions(generics.ListAPIView):
 class ComplexInteractions(generics.ListAPIView):
     """
     Get a list of interactions between structure and G protein/GPCR complex
-    \n/structure/{pdb_code}/interaction/
-    \n{pdb_code} is a structure identifier from the Protein Data Bank, e.g. 2RH1
+    \n/structure/{id}/interaction/
+    \n{id} is a structure identifier from either the Protein Data Bank, e.g. 5UZ7,
+    \na modified PDB identifier to get the refined structure interactions, e.g. 5UZ7_refined,
+    \nor a GproteinDb AlphaFold2-Multimer complex model identifier, e.g. AFM_CALCR_HUMAN_GNAS2_HUMAN
     """
     serializer_class = ComplexInteractionSerializer
 
     def get_queryset(self):
-        pdb_code = self.kwargs.get('pdb_code')
+        struct_id = self.kwargs.get('id')
 
         queryset = Interaction.objects.filter(
-            interacting_pair__res1_id__protein_conformation__protein__entry_name__iexact=pdb_code,
+            interacting_pair__referenced_structure__pdb_code__index=struct_id,
             interacting_pair__res2_id__protein_conformation__protein__family__slug__startswith='100'
         ).values(
             'interacting_pair__res1_id__protein_conformation__protein__entry_name',
             'interacting_pair__res1_id__protein_conformation__protein',
             'interacting_pair__res1_id__protein_conformation__protein__parent',
             'interacting_pair__res1_id__sequence_number',
-            'interacting_pair__res1_id__generic_number__label',
+            'interacting_pair__res1_id__display_generic_number__label',
             'interacting_pair__res2_id__protein_conformation__protein',
             'interacting_pair__res2_id__protein_conformation__protein__parent',
             'interacting_pair__res2_id__sequence_number',
-            'interacting_pair__res2_id__generic_number__label',
+            'interacting_pair__res2_id__display_generic_number__label',
             'interaction_type',
             'interaction_level'
-        ).distinct().order_by('interacting_pair__res2__generic_number')
-
-
-        """
-
-        pdb_code = self.kwargs.get('pdb_code')
-
-        queryset = Interaction.objects.filter(
-            interacting_pair__res1_id__protein_conformation__protein__entry_name__iexact=pdb_code,
-            interacting_pair__res2_id__protein_conformation__protein__family__slug__startswith='100'
-        ).prefetch_related(
-            'interacting_pair',
-            'interacting_pair__res1',
-            'interacting_pair__res2',
-            'interacting_pair__res1_id__protein_conformation__protein',
-            'interacting_pair__res1_id__generic_number',
-            'interacting_pair__res1_id__sequence_number',
-            'interacting_pair__res2_id__protein_conformation__protein',
-            'interacting_pair__res2_id__generic_number',
-            'interacting_pair__res2_id__sequence_number',
-        ).distinct().order_by('interacting_pair__res2_id__generic_number')
-
-        """
+        ).distinct().order_by('interacting_pair__res2__display_generic_number')
 
         return queryset
 

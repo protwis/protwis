@@ -1310,7 +1310,7 @@ def ArrestinInteractionMatrix(request):
 def GProteinInteractionMatrix(request):
     return InteractionMatrix(request, database="gprotein")
 
-# @cache_page(60 * 60 * 24 * 7)
+@cache_page(60 * 60 * 24 * 7)
 def InteractionMatrix(request, database='gprotein'):
     # prot_conf_ids, dataset = interface_dataset()
 
@@ -1324,12 +1324,17 @@ def InteractionMatrix(request, database='gprotein'):
     receptor_order = ['N', '1', '12', '2', '23', '3', '34', '4', '45', '5', '56', '6', '67', '7', '78', '8', 'C']
 
     struc = SignprotComplex.objects.filter(protein__family__slug__startswith=fam_slug).prefetch_related(
+        'structure',
         'structure__pdb_code',
         'structure__stabilizing_agents',
+        'structure__protein_conformation',
+        'structure__protein_conformation__protein',
         'structure__protein_conformation__protein__species',
+        'structure__protein_conformation__protein__parent',
         'structure__protein_conformation__protein__parent__parent__parent',
         'structure__protein_conformation__protein__family__parent__parent__parent__parent',
         'structure__stabilizing_agents',
+        'structure__signprot_complex__protein__family__parent',
         'structure__signprot_complex__protein__family__parent__parent__parent__parent',
     )
 
@@ -1355,7 +1360,7 @@ def InteractionMatrix(request, database='gprotein'):
         except Exception:
             r['gprot'] = ''
         try:
-            r['gprot_class'] = s.get_signprot_gprot_family()
+            r['gprot_class'] = s.signprot_complex.protein.family.parent.name#s.get_signprot_gprot_family()
         except Exception:
             r['gprot_class'] = ''
         complex_info.append(r)
