@@ -384,7 +384,6 @@
                     showAlert("Maximum number of downloadable entries in one query is 1000", "warning");
                     return 0;
                 }
-                console.log(checked_data.length);
                 var selected_ids = [];
                 $.each(checked_data, function(){
                     hom_id = $(this).closest('tr').attr('model_id');
