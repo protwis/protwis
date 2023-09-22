@@ -288,3 +288,11 @@
     {#    </div>#}
 
 {% endblock %}
+
+{% block addon_js %}
+<script>
+    $(".release-notes").find("li").addClass("hidden");
+    $(".gproteindb").removeClass("hidden");
+    $(".all").removeClass("hidden")
+</script>
+{% endblock %}

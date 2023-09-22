@@ -291,3 +291,11 @@
     {#    </div>#}
 
 {% endblock %}
+
+{% block addon_js %}
+<script>
+    $(".release-notes").find("li").addClass("hidden");
+    $(".biasedsignalingatlas").removeClass("hidden");
+    $(".all").removeClass("hidden")
+</script>
+{% endblock %}
