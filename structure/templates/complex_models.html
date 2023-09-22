@@ -375,12 +375,23 @@
             });
 
             $('#download_btn').click(function () {
+                var checked_data = $(".alt_selected");
+                if (checked_data.length === 0) {
+                    showAlert("No models selected for download", "danger");
+                    return 0;
+                }
+                else if (checked_data.length > 1000) {
+                    showAlert("Maximum number of downloadable entries in one query is 1000", "warning");
+                    return 0;
+                }
+                console.log(checked_data.length);
                 var selected_ids = [];
-                 $.each($(".alt_selected"), function(){
+                $.each(checked_data, function(){
                     hom_id = $(this).closest('tr').attr('model_id');
                     selected_ids.push(hom_id);
                 });
                 window.location.href = '/structure/complexmod_download?ids='+selected_ids.join(",");
+
             });
 
             $('#align_btn1').click(function () {

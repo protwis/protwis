@@ -171,7 +171,10 @@ def cut_refined ( objs ):
 
 @register.filter
 def cut_classname ( objs ):
-    return objs[5:]
+    if objs == "Other GPCRs":
+        return "Other"
+    else:
+        return objs[5:]
 
 @register.filter
 def entry_short ( objs ):

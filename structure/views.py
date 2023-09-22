@@ -246,7 +246,8 @@ class ServeComplexModels(TemplateView):
                                                                     "signprot_complex__protein__family",
                                                                     "signprot_complex__protein__family__name",
                                                                     "signprot_complex__protein__family__parent__name",
-                                                                    "signprot_complex__protein__entry_name"))
+                                                                    "signprot_complex__protein__entry_name",
+                                                                    "pk"))
 
             sep = StructureExtraProteins.objects.filter(structure__structure_type__slug='af-signprot').prefetch_related("structure__pdb_code").values("structure__pdb_code__index").annotate(sepcount=Count("structure__pdb_code__index")).order_by()
             sep_dict = {}
@@ -3151,31 +3152,50 @@ def HommodDownload(request):
     return response
 
 def ComplexmodDownload(request):
-    "Download selected complex homology models in zip file"
+    "Download selected complex models in zip file"
     pks = request.GET['ids'].split(',')
 
-    hommodels = StructureComplexModel.objects.filter(pk__in=pks).prefetch_related('receptor_protein__family','main_template__pdb_code').all()
+    models = Structure.objects.filter(pk__in=pks).prefetch_related('protein_conformation__protein','protein_conformation__protein__family','main_template__pdb_code','signprot_complex__protein','pdb_data','pdb_code')
+    scores = StructureAFScores.objects.filter(structure__pk__in=models)
+
     zip_io = BytesIO()
     with zipfile.ZipFile(zip_io, mode='w', compression=zipfile.ZIP_DEFLATED) as backup_zip:
-        for hommod in hommodels:
-            io = StringIO(hommod.pdb_data.pdb)
-            stats_text = StringIO(hommod.stats_text.stats_text)
-            if not hommod.receptor_protein.accession:
-                mod_name = 'Class{}_{}-{}_{}_refined_{}_GPCRDB.pdb'.format(class_dict[hommod.receptor_protein.family.slug[:3]], hommod.receptor_protein.parent.entry_name,
-                                                                   hommod.sign_protein.entry_name, hommod.main_template.pdb_code.index, hommod.version)
-                stat_name = 'Class{}_{}-{}_{}_refined_{}_GPCRDB.templates.csv'.format(class_dict[hommod.receptor_protein.family.slug[:3]], hommod.receptor_protein.parent.entry_name,
-                                                                   hommod.sign_protein.entry_name, hommod.main_template.pdb_code.index, hommod.version)
-            else:
-                mod_name = 'Class{}_{}-{}_{}_{}_GPCRDB.pdb'.format(class_dict[hommod.receptor_protein.family.slug[:3]], hommod.receptor_protein.entry_name,
-                                                                   hommod.sign_protein.entry_name, hommod.main_template.pdb_code.index, hommod.version)
-                stat_name = 'Class{}_{}-{}_{}_{}_GPCRDB.templates.csv'.format(class_dict[hommod.receptor_protein.family.slug[:3]], hommod.receptor_protein.entry_name,
-                                                                   hommod.sign_protein.entry_name, hommod.main_template.pdb_code.index, hommod.version)
-            backup_zip.writestr(mod_name, io.getvalue())
-            backup_zip.writestr(stat_name, stats_text.getvalue())
+        for mod in models:
+            scores_obj = scores.get(structure=mod)
+
+            mod_name, scores_name, pdb_io, scores_io = prepare_AF_complex_download(mod, scores_obj)
+
+            backup_zip.writestr(mod_name, pdb_io.getvalue())
+            backup_zip.writestr(scores_name, scores_io.getvalue())
     response = HttpResponse(zip_io.getvalue(), content_type='application/x-zip-compressed')
-    response['Content-Disposition'] = 'attachment; filename=%s' % 'GPCRDB_complex_homology_models' + ".zip"
+    response['Content-Disposition'] = 'attachment; filename=%s' % 'GPCRDB_complex_models' + ".zip"
     response['Content-Length'] = zip_io.tell()
     return response
+
+def prepare_AF_complex_download(mod, scores_obj=None, refined=False):
+    pdb_io = StringIO(mod.pdb_data.pdb)
+    
+    if refined:
+        scores_text = mod.stats_text.stats_text
+    else:
+        scores_text = """ptm,iptm,pae_mean
+{},{},{}
+""".format(scores_obj.ptm, scores_obj.iptm, scores_obj.pae_mean)
+    scores_io = StringIO(scores_text)
+    classname = class_dict[mod.protein_conformation.protein.family.slug[:3]]
+    gpcr_entry = mod.protein_conformation.protein.entry_name
+    gprot_entry = mod.signprot_complex.protein.entry_name
+    date = mod.publication_date
+
+    if refined:
+        mod_name = 'Class{}_{}-{}_{}_{}_GPCRDB.pdb'.format(classname, gpcr_entry, gprot_entry, mod.pdb_code.index, date)
+        scores_name = 'Class{}_{}-{}_{}_{}_GPCRDB.csv'.format(classname, gpcr_entry, gprot_entry, mod.pdb_code.index, date)
+    else:
+        mod_name = 'Class{}_{}-{}_{}_{}_GPCRDB.pdb'.format(classname, gpcr_entry, gprot_entry, "AF2", date)
+        scores_name = 'Class{}_{}-{}_{}_{}_GPCRDB.scores.csv'.format(classname, gpcr_entry, gprot_entry, "AF2", date)
+
+    return mod_name, scores_name, pdb_io, scores_io
+
 
 def SingleModelDownload(request, modelname, fullness, state=None, csv=False):
     "Download single homology model"
@@ -3259,27 +3279,25 @@ def SingleModelDownload(request, modelname, fullness, state=None, csv=False):
 
     return response
 
-def SingleComplexModelDownload(request, modelname, signprot, csv=False):
+def SingleComplexModelDownload(request, modelname, csv=False):
     "Download single homology model"
 
     zip_io = BytesIO()
-    if signprot=='complex':
-        hommod = StructureComplexModel.objects.get(receptor_protein__entry_name=modelname.lower())
-        mod_name = 'Class{}_{}-{}_{}_refined_{}_GPCRdb.pdb'.format(class_dict[hommod.receptor_protein.family.slug[:3]], hommod.receptor_protein.parent.entry_name,
-                                                            hommod.sign_protein.entry_name, hommod.main_template.pdb_code.index, hommod.version)
-        stat_name = 'Class{}_{}-{}_{}_refined_{}_GPCRdb.templates.csv'.format(class_dict[hommod.receptor_protein.family.slug[:3]], hommod.receptor_protein.parent.entry_name,
-                                                            hommod.sign_protein.entry_name, hommod.main_template.pdb_code.index, hommod.version)
+
+    refined = False
+    if 'refined' in modelname:
+        refined = True
+    mod = Structure.objects.get(pdb_code__index=modelname)
+
+    if refined:
+        mod_name, scores_name, pdb_io, scores_io = prepare_AF_complex_download(mod, None, True)
     else:
-        hommod = StructureComplexModel.objects.get(receptor_protein__entry_name=modelname, sign_protein__entry_name=signprot)
-        mod_name = 'Class{}_{}-{}_{}_{}_GPCRdb.pdb'.format(class_dict[hommod.receptor_protein.family.slug[:3]], hommod.receptor_protein.entry_name,
-                                                            hommod.sign_protein.entry_name, hommod.main_template.pdb_code.index, hommod.version)
-        stat_name = 'Class{}_{}-{}_{}_{}_GPCRdb.templates.csv'.format(class_dict[hommod.receptor_protein.family.slug[:3]], hommod.receptor_protein.entry_name,
-                                                            hommod.sign_protein.entry_name, hommod.main_template.pdb_code.index, hommod.version)
-    io = StringIO(hommod.pdb_data.pdb)
-    stats_text = StringIO(hommod.stats_text.stats_text)
+        scores_obj = StructureAFScores.objects.get(structure=mod)
+        mod_name, scores_name, pdb_io, scores_io = prepare_AF_complex_download(mod, scores_obj, False)
+
     with zipfile.ZipFile(zip_io, mode='w', compression=zipfile.ZIP_DEFLATED) as backup_zip:
-        backup_zip.writestr(mod_name, io.getvalue())
-        backup_zip.writestr(stat_name, stats_text.getvalue())
+        backup_zip.writestr(mod_name, pdb_io.getvalue())
+        backup_zip.writestr(scores_name, scores_io.getvalue())
     response = HttpResponse(zip_io.getvalue(), content_type='application/x-zip-compressed')
     response['Content-Disposition'] = 'attachment; filename=%s' % mod_name.split('.')[0] + ".zip"
     response['Content-Length'] = zip_io.tell()
