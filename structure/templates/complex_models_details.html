@@ -417,13 +417,13 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
 
 <div class="col-md-12 ">
   <ul class="nav nav-tabs">
-    <li class="nav-item active">
+    <li class="nav-item">
       <a class="nav-link active" data-toggle="tab" href="#circles" id="circles_tab">Biflare</a>
     </li>
     <li class="nav-item">
       <a class="nav-link" data-toggle="tab" href="#matrix" id="matrix_tab">Matrix</a>
     </li>
-    <li class="nav-item">
+    <li class="nav-item active">
       <a class="nav-link" data-toggle="tab" href="#3dview" id="3dview_tab">3D view</a>
     </li>
     <li class="nav-item">
@@ -601,17 +601,17 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
     </div>
     <div class="tab-pane container" id="table">
       <div class="row">
-          <div class="col-md-11 text-center">
+          <div class="col-md-9">
             {% if residues_browser %}
-            <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;">
-                <table width="100%" class="display" id="residues">
+            <div style="padding-top: 0px; font-size: 10px; white-space: nowrap; width; 50%;">
+                <table class="display" id="residues">
                     <thead>
                         <tr>
                             <th>GPCR Amino Acid</th>
                             <th>Generic Number</th>
                             <th>Segment</th>
                             <th>G Protein Amino Acid</th>
-                            <th>Generic Number</th>
+                            <th>CGN#</th>
                             <th>Interaction Type</th>
                         </tr>
                         <tr>
@@ -668,10 +668,11 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
                 o.addRepresentation( "cartoon", {color: schemeId} );  // pass schemeId here ,{ color: schemeId }
                 o.centerView();
             } );
+            $( "#fullscreen" ).click(function() {
+                stage.toggleFullscreen();
+            });
+
             // 3D intereaction viewer
-            
-        // } );
-        // $("3dview").on("click", function() {
             stage_full = new NGL.Stage( "viewport_full", { backgroundColor: "white" } );
             stage_full.loadFile( "/structure/complex_models/view/{{pdbname}}", { ext: "pdb" }  ).then( function( o ){
 
@@ -694,24 +695,22 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
                 o.addRepresentation( "line", { sele: "({{display_res_gprot_loose}}) and sidechainAttached", color: "grey", scale: 2, aspectRatio: 1});
                 o.centerView();
             } );
-            stage_full.signals.clicked.add( function( d ){
-                $('#clicked').html(getPickingMessage( d, "Clicked" ));
-            } );
-            stage_full.signals.hovered.add( function( d ){
-                $('#hovered').html(getPickingMessage( d, "Hovered" ));
-            } );
+            // stage_full.signals.clicked.add( function( d ){
+            //     $('#clicked').html(getPickingMessage( d, "Clicked" ));
+            // } );
+            // stage_full.signals.hovered.add( function( d ){
+            //     $('#hovered').html(getPickingMessage( d, "Hovered" ));
+            // } );
 
-            $('#viewport_full').find("canvas").after("<div class='overlay'><span id='clicked'></span> | <span id='hovered'></span></div>");
+            // $('#viewport_full').find("canvas").before("<div class='overlay'><span id='clicked'></span> | <span id='hovered'></span></div>");
 
             $( "#fullscreen_full" ).click(function() {
                 stage_full.toggleFullscreen();
             } );
-        });
-
-        $( "#fullscreen" ).click(function() {
-            stage.toggleFullscreen();
-        });
+            
+        } );
     </script>
+        
     <script src="{% static 'home/js/d3.min.js' %}"></script>
     <script src="{% static 'home/js/nv.d3.min.js' %}"></script>
     <script src="{% static 'home/js/d3.v4.min.js' %}"></script>
@@ -764,7 +763,7 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
             ClearSelection('reference');
             // Call the function with your desired values
             draw_interactions_in_circles('visualization', interactions_strict, inner_data_strict, outer_data_strict, conversion_dict_strict);
-
+          
             $("#strict").click(function(){
               $("#strict").addClass("active");
               $("#loose").removeClass("active");
@@ -806,6 +805,7 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
                             { type: "select" }, //protein name
                             { type: "select" }, //Alt Position
                             { type: "select" }, //Position
+                            { type: "select" }, //Segment
                             { type: "select" }, //Segment
                         ]
                     });
