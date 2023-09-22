@@ -17,10 +17,7 @@
 {% block addon_js %}
 <script>
 	$(".release-notes").find("li").addClass("hidden");
-	$('li:not([class])').removeClass("hiddenn");
-
-    
-
+	$('li:not([class])').removeClass("hidden");
 
 	if ("{{site_title}}" === "GproteinDb") {
 		$(".gproteindb").removeClass("hidden");
