@@ -9,7 +9,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
-        repr_structs = list(Structure.objects.order_by('protein_conformation__protein__parent', 'state',
+        repr_structs = list(Structure.objects.exclude(structure_type__slug__startswith='af-').order_by('protein_conformation__protein__parent', 'state',
             'resolution').distinct('protein_conformation__protein__parent'))
         print(len(repr_structs))
         print("PDB code\tProtein name\tPreferred_chain")

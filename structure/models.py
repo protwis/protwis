@@ -10,7 +10,7 @@ class Structure(models.Model):
     # linked onto the Xtal ProteinConformation, which is linked to the Xtal protein
     protein_conformation = models.ForeignKey('protein.ProteinConformation', on_delete=models.CASCADE)
     structure_type = models.ForeignKey('StructureType', on_delete=models.CASCADE)
-    pdb_code = models.ForeignKey('common.WebLink', on_delete=models.CASCADE)
+    pdb_code = models.ForeignKey('common.WebLink', on_delete=models.CASCADE, null=True)
     state = models.ForeignKey('protein.ProteinState', on_delete=models.CASCADE)
     author_state = models.ForeignKey('protein.ProteinState', null=True, on_delete=models.CASCADE, related_name='author_state')
     publication = models.ForeignKey('common.Publication', null=True, on_delete=models.CASCADE)
@@ -18,7 +18,7 @@ class Structure(models.Model):
     protein_anomalies = models.ManyToManyField('protein.ProteinAnomaly')
     stabilizing_agents = models.ManyToManyField('StructureStabilizingAgent')
     preferred_chain = models.CharField(max_length=20)
-    resolution = models.DecimalField(max_digits=5, decimal_places=3)
+    resolution = models.DecimalField(max_digits=5, decimal_places=3, null=True) #allow null for now, for AF models
     publication_date = models.DateField()
     pdb_data = models.ForeignKey('PdbData', null=True, on_delete=models.CASCADE) #allow null for now, since dump file does not contain.
     representative = models.BooleanField(default=False)
@@ -38,6 +38,7 @@ class Structure(models.Model):
     stats_text = models.ForeignKey('StatsText', null=True, on_delete=models.CASCADE)
     mammal = models.BooleanField(default=False) #whether the species of the structure is mammal
     closest_to_human = models.BooleanField(default=False) # A boolean to say if the receptor/state of this structure is the closest structure to human
+    build_check = models.BooleanField(default=False)
 
     def __str__(self):
         return self.pdb_code.index
@@ -117,6 +118,14 @@ class StructureVectors(models.Model):
     class Meta():
         db_table = 'structure_vectors'
 
+class StructureAFScores(models.Model):
+    structure = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
+    ptm = models.DecimalField(max_digits=4, decimal_places=2)
+    iptm = models.DecimalField(max_digits=4, decimal_places=2)
+    pae_mean = models.DecimalField(max_digits=4, decimal_places=2)
+
+    class Meta():
+        db_table = 'structure_af_scores'
 
 class StructureModel(models.Model):
     protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE)
@@ -125,6 +134,8 @@ class StructureModel(models.Model):
     pdb_data = models.ForeignKey('PdbData', null=True, on_delete=models.CASCADE)
     version = models.DateField()
     stats_text = models.ForeignKey('StatsText', null=True, on_delete=models.CASCADE)
+    # ligand = models.ForeignKey('ligand.Ligand', null=True, on_delete=models.CASCADE)
+    # type = models.ForeignKey('StructureType', null=True, on_delete=models.CASCADE)
 
     def __repr__(self):
         return '<StructureModel: '+str(self.protein.entry_name)+' '+str(self.state)+'>'
@@ -140,7 +151,8 @@ class StructureModel(models.Model):
 
 
 class StructureModelpLDDT(models.Model):
-    structure_model = models.ForeignKey('StructureModel', on_delete=models.CASCADE)
+    structure_model = models.ForeignKey('StructureModel', null=True, on_delete=models.CASCADE)
+    structure = models.ForeignKey('Structure', null=True, on_delete=models.CASCADE)
     residue = models.ForeignKey('residue.Residue', on_delete=models.CASCADE)
     pLDDT = models.DecimalField(max_digits=4, decimal_places=2)
 
@@ -239,7 +251,7 @@ class StructureType(models.Model):
         if self.name=="X-ray diffraction":
             return "X-ray"
         elif self.name=="Electron microscopy":
-            return "cryo-EM"
+            return "Cryo-EM"
         elif self.name=="Electron crystallography":
             return "MicroED"
         else:

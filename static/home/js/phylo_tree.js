@@ -2,6 +2,7 @@ function draw_tree(data, options) {
 
     var branches = {};
     var branch_offset = 0;
+    var thickness = options.depth + 1;
     for (var key in options.branch_length) {
         if (key == options.depth) { continue };
         if (options.label_free.includes(parseInt(key))) {
@@ -55,7 +56,7 @@ function draw_tree(data, options) {
         .each(function (d) { d.target.linkNode = this; })
         .attr("d", diagonal) //function (d) { return step(d.source.x, d.source.y, d.target.x, d.target.y) })
         .style("stroke", function (d) { return d.target.color; })
-        .style("stroke-width", function (d) { if (d.target.depth > 0) { return 4 - d.target.depth; } else { return 0; } })
+        .style("stroke-width", function (d) { if (d.target.depth > 0) { return thickness - d.target.depth; } else { return 0; } })
         .style("fill-opacity", 0)
         .style("opacity", function (d) {
             if ((d.target.interactions > 0 && d.target.mutations_an > 0) || 1 == 1) { return 0.8 } //|| 1==1
@@ -116,14 +117,14 @@ function draw_tree(data, options) {
         .attr("dy", ".31em")
         .attr("name", function (d) { if (d.name == '') { return "branch" } else { return d.name } })
         .attr("text-anchor", function (d) {
-            if (d.depth == 3 ) {
+            if (d.depth == options.depth ) {
               return d.x < 180 ? "start" : "end";
             } else {
               return d.x < 180 ? "end" : "start";
             }
         })
         .attr("transform", function (d) {
-            if (d.depth == 3) {
+            if (d.depth == options.depth) {
                 return d.x < 180 ? "translate(7)" : "rotate(180)translate(-7)";
             } else {
                 return d.x < 180 ? "translate(-12)" : "rotate(180)translate(12)";
@@ -349,8 +350,9 @@ function DrawCircles(location, data, starter, dict, fancy=false, clean=true){
         }
         for (var unit in dict){
           if (keys.indexOf(unit)>= 0) {
-            percentage = 1-(data[x][unit]/sum);
-            color=pSBC (percentage, dict[unit]);
+            // percentage = 1-(data[x][unit]/sum);
+            percentage = data[x][unit];
+            color= pSBC(percentage, dict[unit]);
             multiply = 1+Object.keys(dict).indexOf(unit);
             leaf = svg.selectAll('g[id=X'+x+']');
             var leafwithname = svg.selectAll('g[id=X'+x+']')
@@ -990,5 +992,954 @@ function draw_heatmap(square_data, data, bible, options, location, element_id, l
         }
       }
     });
+
+}
+
+
+function draw_model_scores(location, element_id, score, startValue, endValue, definedValue, gradientChange, inverted=false) {
+
+    var margin = {top: 30, right: 30, bottom: 30, left: 30};
+    var width = 200;
+    var height = 50;
+
+    // append the svg object to the body of the page
+    var svg_home = d3v4.select("#" + location)
+                .append("svg")
+                .attr("width", width + margin.left + margin.left + margin.right)
+                .attr("height", (margin.top))
+                .attr("transform", "translate(-30,0)")
+                .attr("id", element_id);
+
+    if (inverted == true){
+        var greyscale = ['rgb(0,0,0)', 'rgb(255, 255, 255)' ];
+    } else {
+        var greyscale = [ 'rgb(255, 255, 255)', 'rgb(0,0,0)' ];
+    };
+
+    var first_legend = svg_home.append('defs')
+                         .append('linearGradient')
+                         .attr('id', 'grad_' + score)
+                         .attr('x1', '0%')
+                         .attr('x2', '100%')
+                         .attr('y1', '0%')
+                         .attr('y2', '0%');
+
+    var stopOffset = (gradientChange - startValue) / (endValue - startValue) * 100;
+
+    first_legend.append('stop')
+           .style('stop-color', greyscale[0])
+           .attr('offset', '0%');
+    // first_legend.append('stop')
+    //        .style('stop-color', greyscale[1])
+    //        .attr('offset', stopOffset + '%');
+    // first_legend.append('stop')
+    //        .style('stop-color', greyscale[1])
+    //        .attr('offset', stopOffset + '%');
+    first_legend.append('stop')
+           .style('stop-color', greyscale[1])
+           .attr('offset', '100%');
+
+
+    var first_legend_svg = svg_home.append("g")
+                      .attr("transform", "translate(0,-15)");
+
+    first_legend_svg.append("text")
+              .attr('y', 5)
+              .attr('x', 40)
+              .style("font", "14px sans-serif")
+              .style("font-weight", "bold");
+
+    first_legend_svg.append("text")
+              .attr('x', 30)
+              .attr('y', 33)
+              .style("font", "14px sans-serif")
+              .style("font-weight", "bold")
+              .text(startValue);
+
+    first_legend_svg.append('rect')
+              .attr('x', 40)
+              .attr('y', 20) // Adjust the y-coordinate to add space between gradient and text box
+              .attr('width', (width*0.9))
+              .attr('height', 20)
+              .style('fill', 'url(#grad_' + score + ')');
+
+    first_legend_svg.append("text")
+              .attr('x', width + 20)
+              .attr('y', 33)
+              .style("font", "14px sans-serif")
+              .style("font-weight", "bold")
+              .text(endValue);
+
+    legendLabel = first_legend_svg.select('text')['_groups'][0][0].getBBox().width*1.05 + 0.5 * 10;
+
+    first_legend_svg.select("text")
+              .attr("x", (width + margin.left + margin.right - legendLabel)/2);
+
+    // Draw the black vertical line at the defined value
+    var lineX = (definedValue - startValue) / (endValue - startValue) * (width * 0.9) + 40;
+    svg_home.append("line")
+            .attr("x1", lineX)
+            .attr("y1", height - 45) // Adjust the y-coordinate of the top arrowhead 90
+            .attr("x2", lineX)
+            .attr("y2", height - 25) // Adjust the y-coordinate of the bottom arrowhead 125
+            .attr("stroke", "black")
+            .attr("stroke-width", 2);
+
+    // Add arrowheads
+    svg_home.append("path")
+            .attr("d", "M " + lineX + " " + (height - 45) + " L " + (lineX - 5) + " " + (height - 50) + " L " + (lineX + 5) + " " + (height - 50) + " Z")
+            .attr("fill", "black");
+
+    svg_home.append("path")
+            .attr("d", "M " + lineX + " " + (height - 25) + " L " + (lineX - 5) + " " + (height - 20) + " L " + (lineX + 5) + " " + (height - 20) + " Z")
+            .attr("fill", "black");
+
+}
+
+// This function generates two concentric circles made of aminoAcids
+// then creates lines connecting inner and outer aminoacids, given interactions between them
+
+function draw_interactions_in_circles(location, interactions, inner_data, outer_data, conversion_dict) {
+  // D3 select the SVG
+  const svg2 = d3.select("#" + location);
+
+  // Types of interactions and their colors
+  const interactionTypes = {
+    'Aromatic': '#689235',
+    'Hydrophobic': '#A6E15F',
+    'Ionic': '#005693',
+    'Polar': '#7030a0',
+    'Van der waals': '#d9d9d9'
+  };
+
+  // Continuous Line: ""
+  // Short Dashes: "4,2"
+  // Long Dashes: "8,2"
+  // Dots: "1,3"
+  // Dash-Dot-Dash: "8,2,1,2"
+
+  const strokeShape = {
+    'Aromatic': '',
+    'Hydrophobic': '4,2',
+    'Ionic': '8,2',
+    'Polar': '1,3',
+    'Van der waals': '8,2,1,2'
+    }
+
+  const allColors = {
+    'Aromatic': '#689235',
+    'Hydrophobic': '#A6E15F',
+    'Ionic': '#005693',
+    'Polar': '#7030a0',
+    'Van der waals': '#d9d9d9',
+    'TM1': '#000000',  //Black
+    'ICL1': '#0E0E0E',  //Very Dark Gray
+    'TM2': '#1C1C1C',  //Darker Gray
+    'ICL2': '#2A2A2A',  //Dark Gray
+    'TM3': '#383838',  //Medium-Dark Gray
+    'ICL3': '#464646',  //Medium Gray
+    'TM4': '#545454',  //Medium Gray
+    'TM5': '#626262',  //Medium-Light Gray
+    'TM6': '#707070',  //Lighter Gray
+    'TM7': '#7E7E7E',  //Light Gray
+    'ICL4': '#8C8C8C',  //Light Gray
+    'H8': '#9A9A9A',   //Very Light Gray
+    'C-term': '#CCCCCC',  //Light Gray
+    'G.HN': '#FF0000',
+    'G.hns1': '#FF0C00',
+    'G.S1': '#FF1900',
+    'G.s1h1': '#FF2500',
+    'G.H1': '#FF3200',
+    'G.h1ha': '#FF3E00',
+    'H.HA': '#FF4B00',
+    'H.hahb': '#FF5700',
+    'H.HB': '#FF6400',
+    'H.hbhc': '#FF7100',
+    'H.HC': '#FF7D00',
+    'H.hchd': '#FF8A00',
+    'H.HD': '#FF9600',
+    'H.hdhe': '#FFA300',
+    'H.HE': '#FFAF00',
+    'H.hehf': '#FFBC00',
+    'H.HF': '#FFC900',
+    'G.hfs2': '#FFD500',
+    'G.S2': '#FFE200',
+    'G.s2s3': '#FFEE00',
+    'G.S3': '#FFFB00',
+    'G.s3h2': '#F9F300',
+    'G.H2': '#F4EC00',
+    'G.h2s4': '#F0E400',
+    'G.S4': '#EBDD00',
+    'G.s4h3': '#E7D500',
+    'G.H3': '#E2CE00',
+    'G.h3s5': '#DEC600',
+    'G.S5': '#D9BF00',
+    'G.s5hg': '#D5B700',
+    'G.HG': '#D0B000',
+    'G.hgh4': '#CCA800',
+    'G.H4': '#C7A100',
+    'G.h4s6': '#C39900',
+    'G.S6': '#BE9200',
+    'G.s6h5': '#BA8A00',
+    'G.H5': '#876400'
+  };
+
+  const aminoAcids = [
+    { aminoAcid: "Alanine", singleLetter: "A" },
+    { aminoAcid: "Arginine", singleLetter: "R" },
+    { aminoAcid: "Asparagine", singleLetter: "N" },
+    { aminoAcid: "Aspartic acid", singleLetter: "D" },
+    { aminoAcid: "Cysteine", singleLetter: "C" },
+    { aminoAcid: "Glutamine", singleLetter: "Q" },
+    { aminoAcid: "Glutamic acid", singleLetter: "E" },
+    { aminoAcid: "Glycine", singleLetter: "G" },
+    { aminoAcid: "Histidine", singleLetter: "H" },
+    { aminoAcid: "Isoleucine", singleLetter: "I" },
+    { aminoAcid: "Leucine", singleLetter: "L" },
+    { aminoAcid: "Lysine", singleLetter: "K" },
+    { aminoAcid: "Methionine", singleLetter: "M" },
+    { aminoAcid: "Phenylalanine", singleLetter: "F" },
+    { aminoAcid: "Proline", singleLetter: "P" },
+    { aminoAcid: "Serine", singleLetter: "S" },
+    { aminoAcid: "Threonine", singleLetter: "T" },
+    { aminoAcid: "Tryptophan", singleLetter: "W" },
+    { aminoAcid: "Tyrosine", singleLetter: "Y" },
+    { aminoAcid: "Valine", singleLetter: "V" }
+  ];
+
+  const presetColors = {'D': ['#E60A0A', '#FDFF7B'],'E': ['#E60A0A', '#FDFF7B'],
+                        'K': ['#145AFF', '#FDFF7B'],'R': ['#145AFF', '#FDFF7B'],
+                        'S': ['#A70CC6', '#FDFF7B'],'T': ['#A70CC6', '#FDFF7B'],
+                        'N': ['#A70CC6', '#FDFF7B'],'Q': ['#A70CC6', '#FDFF7B'],
+                        'V': ['#E6E600', '#000000'],'L': ['#E6E600', '#000000'],
+                        'I': ['#E6E600', '#000000'],'A': ['#E6E600', '#000000'],
+                        'M': ['#E6E600', '#000000'],'F': ['#18FF0B', '#000000'],
+                        'Y': ['#18FF0B', '#000000'],'W': ['#0BCF00', '#000000'],
+                        'H': ['#0093DD', '#000000'],'P': ['#CC0099', '#FDFF7B'],
+                        'C': ['#B2B548', '#000000'],'G': ['#FF00F2', '#000000'],
+                        '-': ['#FFFFFF', '#000000'],'+': ['#FFFFFF', '#000000']};
+
+
+  // Extract all 'segment' values from the data array
+  const innerArray = inner_data.map(item => item.segment);
+  const outerArray = outer_data.map(item => item.segment);
+
+  // Remove duplicates by converting to a Set and then back to an array
+  const inner_legend = Array.from(new Set(innerArray));
+  const outer_legend = Array.from(new Set(outerArray));
+
+  const colorOrder = Object.keys(allColors);
+  outer_legend.sort((a, b) => colorOrder.indexOf(a) - colorOrder.indexOf(b));
+  inner_legend.sort((a, b) => colorOrder.indexOf(a) - colorOrder.indexOf(b));
+
+  const countInner = inner_data.length;
+  const countOuter = outer_data.length;
+  // Generate arrays for inner and outer circles
+  const beadInfo = {
+    innerCircle: inner_data,
+    outerCircle: outer_data
+  };
+
+  const numInnerBeads = beadInfo.innerCircle.length;
+
+  const bead_gap = beadInfo.outerCircle.length - beadInfo.innerCircle.length;
+
+  function sanitizeClassName(name) {
+    return name.toLowerCase().replace(/\s+/g, '-');
+  }
+
+  const tooltip = d3.select("body").append("div")
+    .attr("class", "tooltip")
+    .style("opacity", 0);
+
+  // Function to create a bead
+  function createBead(cx, cy, aminoAcid, segment, index, circleType, beadRadius, centroidX, centroidY, grn_number, list_int, seq_number) {
+    // Tooltip show function
+    function showTooltip(d) {
+      const event = window.event ? window.event : d3.event;
+      tooltip.transition()
+        .duration(200)
+        .style("opacity", .9);
+      tooltip.html("Amino Acid: " + aminoAcid + "<br/>" +
+                  "Segment: " + segment + "<br/>" +
+                  "Generic Number: " + grn_number + "<br/>" +
+                  "Sequence Number: " + seq_number + "<br/>" +
+                  "Interactions: " + list_int + "<br/>"
+                )
+        .style("left", (event.pageX + 5) + "px")
+        .style("top", (event.pageY - 28) + "px");
+    }
+
+    // Tooltip hide function
+    function hideTooltip(d) {
+      tooltip.transition()
+        .duration(500)
+        .style("opacity", 0);
+    }
+
+    let strokeWidth;
+
+    if (circleType == 'outer'){
+      strokeWidth = 5;
+    } else {
+      strokeWidth = 3;
+    };
+
+    const bead = svg2.append("circle")
+      .attr("cx", cx)
+      .attr("cy", cy)
+      .attr("r", beadRadius)
+      .attr("fill", "white")
+      .attr("stroke", allColors[segment])
+      .attr("stroke-width", strokeWidth)
+      .attr("data-index", index)
+      .attr("data-circle", circleType)
+      .attr("data-aa", aminoAcid)
+      .attr("data-segment", segment)
+      .classed(segment, true)
+      .attr("id", `bead-${circleType}-${index}`)
+      .on("click", function(d) {
+        // Clear all previous highlights
+        d3.selectAll("path").filter(function() {
+          return !d3.select(this).attr("segment");
+        })
+        .each(function(d, i) {
+          d3.select(this).attr("stroke-opacity", 0);
+        });
+        d3.selectAll(`path[data-${circleType}-bead="${index}"]`).attr("stroke-opacity", 1);
+      })
+      .on("mouseover", showTooltip)
+      .on("mouseout", hideTooltip);
+
+    // Add text inside the circle to represent the amino acid
+    svg2.append("text")
+      .attr("x", cx)
+      .attr("y", cy)
+      .attr("dy", 9)
+      .attr("text-anchor", "middle")
+      .text(aminoAcid)
+      .style("font-size", "23px")
+      .on("mouseover", showTooltip)
+      .on("mouseout", hideTooltip);
+
+    // Calculate radial text position
+    const angleToCentroid = Math.atan2(cy - centroidY, cx - centroidX);
+
+    const textDistanceFromCenter = beadRadius * 2 + 5; // distance from the center of the bead
+
+    let textX = cx + textDistanceFromCenter * Math.cos(angleToCentroid * (Math.PI / 180));
+    let textY = cy + textDistanceFromCenter * Math.sin(angleToCentroid * (Math.PI / 180));
+
+    // Determine text rotation and alignment
+    let textRotation = angleToCentroid * (180 / Math.PI)
+    let textAnchor = "start";
+
+    // Correct the orientation for better readability
+    if (circleType == 'inner') {
+      inner_number = grn_number.split('.')[2];
+      if (textRotation > 90 || textRotation < -90 ) {
+        textRotation += 180;
+        textAnchor = "end";
+      } else{
+        textAnchor = "start";
+        textX = cx + (textDistanceFromCenter - 4 * beadRadius - 10) * Math.cos(angleToCentroid * (Math.PI / 180));
+        textY = cy + (textDistanceFromCenter - 2 * beadRadius) * Math.sin(angleToCentroid * (Math.PI / 180));
+      }
+    } else {
+        inner_number= grn_number.replace(/\..*x/, 'x');
+        // Correct the orientation for better readability
+        if (textRotation > 90 || textRotation < -90 ) {
+          textRotation += 180;
+          textAnchor = "end";  // Switch to "end"
+
+          // Shift the text position so it starts from the opposite side
+          textX = cx + (textDistanceFromCenter - 4 * beadRadius + 10) * Math.cos(angleToCentroid * (Math.PI / 180));
+          textY = cy + (textDistanceFromCenter - 2 * beadRadius) * Math.sin(angleToCentroid * (Math.PI / 180));
+        } else {
+          textX = textX - 20;
+        }
+    }
+
+    // Create text
+    svg2.append("text")
+        .attr("x", textX)
+        .attr("y", textY)
+        .attr("dy", "0.3em")  // Adjust as needed for vertical alignment
+        .attr("text-anchor", textAnchor)
+        .attr("transform", `rotate(${textRotation},${cx},${cy})`) // .attr("transform", `rotate(${angleToCentroid * (180 / Math.PI)},${cx},${cy})`)
+        .text(inner_number)
+        .style("font-size", "18px")
+        .style("font-family", "Palatino")
+        .attr("font-weight", "bold")
+        .style("fill", "#111");  // or any color of your choice
+  }
+
+  // Function to create a circle of beads
+  function createCircle(cx, cy, beadRadius, beads, circleType, circleRadius) {
+    const numBeads = beads.length;
+
+    // Add additional distance for the labels, assuming each label needs 15 units of space
+    const internalCircleRadius = circleRadius - 35;
+
+    // The centroid of the circle is simply its center, denoted by (cx, cy)
+    const centerX = cx;
+    const centerY = cy;
+
+    let lastSegment = null;
+    let segmentStartAngle = 0;
+    const gapInRadians = 10 / internalCircleRadius; // 10 pixels space
+
+    beads.forEach((bead, index) => {
+      const angle = (index / numBeads) * 2 * Math.PI;
+      const x = cx + circleRadius * Math.cos(angle);
+      const y = cy + circleRadius * Math.sin(angle);
+
+      if (circleType == 'inner') {
+        if (lastSegment !== bead.segment) {
+          if (lastSegment !== null) {
+            const adjustedStartAngle = segmentStartAngle + gapInRadians;
+            const adjustedEndAngle = angle - gapInRadians;
+
+            // Draw the segment label at the midpoint of the arc segment
+            const midAngle = (adjustedStartAngle + adjustedEndAngle) / 2;
+            const labelX = cx + (internalCircleRadius - 45) * Math.cos(midAngle);
+            const labelY = cy + (internalCircleRadius - 45) * Math.sin(midAngle);
+
+            const textAngleDeg = (midAngle * 180 / Math.PI);  // Convert to degrees and align the text
+
+            svg2.append("text")
+                .attr("x", labelX)
+                .attr("y", labelY)
+                .attr("text-anchor", "middle")
+                .attr("alignment-baseline", "middle")
+                .attr("transform", `rotate(${textAngleDeg}, ${labelX}, ${labelY})`)
+                .text(lastSegment)
+                .style("font-size", "17px")
+                .attr("font-weight", "bold")
+                .style("font-family", "Palatino")
+                .style("fill", "#333");
+
+            // Draw the external circle segment
+            // drawExternalSegment(cx, cy, internalCircleRadius, adjustedStartAngle, adjustedEndAngle, lastSegment);
+          }
+
+          segmentStartAngle = angle;
+          lastSegment = bead.segment;
+        }
+      }
+
+      createBead(x, y, bead.aminoAcid, bead.segment, index, circleType, beadRadius, centerX, centerY, bead.generic_number, bead.interactions, bead.sequence_number);
+    });
+
+    // Draw the remaining external circle segment here, if needed
+    const adjustedStartAngle = segmentStartAngle + gapInRadians;
+    const adjustedEndAngle = 2 * Math.PI - gapInRadians;
+
+    // Draw the segment label for the remaining segment
+    const midAngle = (adjustedStartAngle + adjustedEndAngle) / 2;
+    let labelX = cx + (internalCircleRadius - 45) * Math.cos(midAngle);
+    let labelY = cy + (internalCircleRadius - 45) * Math.sin(midAngle);
+
+    const textAngleDeg = (midAngle * 180 / Math.PI);  // Convert to degrees and align the text
+    svg2.append("text")
+        .attr("x", labelX)
+        .attr("y", labelY)
+        .attr("text-anchor", "middle")
+        .attr("alignment-baseline", "middle")
+        .attr("transform", `rotate(${textAngleDeg}, ${labelX}, ${labelY})`)
+        .text(lastSegment)
+        .style("font-size", "14px")
+        .attr("font-weight", "bold")
+        .style("font-family", "Palatino")
+        .style("fill", "#333");
+
+    // Draw the remaining external circle segment
+    // drawExternalSegment(cx, cy, internalCircleRadius, adjustedStartAngle, adjustedEndAngle, lastSegment);
+  }
+
+  // Function to create outer beads based on the connections dictionary
+  function createOuterBeads(centroidX, centroidY, innerCircleRadius, outerCircleRadius, beadConnections, beads) {
+      const beadRadius = 20; // Or whatever the radius of the outer beads is
+
+      const placedBeads = []; // To store the angles at which beads have been placed
+
+      for (const [outerBeadId, connections] of Object.entries(beadConnections)) {
+          // Calculate average angle based on inner bead connections
+          let sumAngles = 0;
+          connections.forEach(connId => {
+              const innerBead = document.querySelector(`#bead-inner-${connId}`);
+              const beadCX = parseFloat(innerBead.getAttribute('cx'));
+              const beadCY = parseFloat(innerBead.getAttribute('cy'));
+              const angleToCentroid = Math.atan2(beadCY - centroidY, beadCX - centroidX);
+              sumAngles += angleToCentroid;
+          });
+
+          let avgAngle = sumAngles / connections.length;
+
+          // If there's only one connection, adjust the outer bead position to align directly with the inner bead
+          if (connections.length === 1) {
+              const innerBead = document.querySelector(`#bead-inner-${connections[0]}`);
+              const beadCX = parseFloat(innerBead.getAttribute('cx'));
+              const beadCY = parseFloat(innerBead.getAttribute('cy'));
+              avgAngle = Math.atan2(beadCY - centroidY, beadCX - centroidX);
+          }
+
+          // Correction factor for overlapping beads
+          let angleCorrection = 0.08;  // This is the angular shift applied. Adjust as needed.
+          while (placedBeads.some(angle => Math.abs(angle - avgAngle) < angleCorrection)) {
+              avgAngle += angleCorrection;
+          }
+          placedBeads.push(avgAngle);
+
+          const outerBeadX = centroidX + outerCircleRadius * Math.cos(avgAngle);
+          const outerBeadY = centroidY + outerCircleRadius * Math.sin(avgAngle);
+
+          let bead = beads[outerBeadId];
+          // You can use the createBead function here
+          createBead(outerBeadX, outerBeadY, bead.aminoAcid, bead.segment, outerBeadId, 'outer', beadRadius, centroidX, centroidY, bead.generic_number, bead.interactions, bead.sequence_number);
+      }
+  };
+
+  // Function to draw external circle segment
+  function drawExternalSegment(cx, cy, radius, startAngle, endAngle, segment) {
+    const startX = cx + radius * Math.cos(startAngle);
+    const startY = cy + radius * Math.sin(startAngle);
+    const endX = cx + radius * Math.cos(endAngle);
+    const endY = cy + radius * Math.sin(endAngle);
+
+    const d = [
+      `M ${startX} ${startY}`,  // Move to the start point
+      `A ${radius} ${radius} 0 0 1 ${endX} ${endY}`  // Draw an arc to the end point
+    ].join(" ");
+
+    svg2.append("path")
+      .attr("d", d)
+      .attr("stroke", allColors[segment])
+      .attr("interaction", segment)
+      .attr("segment", "external")
+      .attr("stroke-width", 4)
+      .attr("fill", "none");
+  }
+
+  function calculateCentroids(d3Selection) {
+    let sumX = 0;
+    let sumY = 0;
+    let count = 0;
+
+    d3Selection.each(function() {
+      const circle = d3.select(this);
+      sumX += +circle.attr('cx');
+      sumY += +circle.attr('cy');
+      count++;
+    });
+
+    const centroidX = sumX / count;
+    const centroidY = sumY / count;
+
+    return { centroidX, centroidY };
+  }
+
+  function createConnection(innerIndex, outerIndex, type, countInner, beadRadius, centroidX, centroidY, innerChain, outerChain, smallRadius, bigRadius) {
+    const innerBead = d3.select(`#bead-inner-${innerIndex}`);
+    const outerBead = d3.select(`#bead-outer-${outerIndex}`);
+
+    // Calculate direction vector for inner bead
+    const innerX = +innerBead.attr("cx");
+    const innerY = +innerBead.attr("cy");
+    const innerDirX = innerX - centroidX;
+    const innerDirY = innerY - centroidY;
+
+    // Calculate direction vector for outer bead
+    const outerX = +outerBead.attr("cx");
+    const outerY = +outerBead.attr("cy");
+    const outerDirX = outerX - centroidX;
+    const outerDirY = outerY - centroidY;
+
+    const lengthInner = Math.sqrt(innerDirX * innerDirX + innerDirY * innerDirY);
+    const unitInnerX = -innerDirX / lengthInner;
+    const unitInnerY = -innerDirY / lengthInner;
+
+    const lengthOuter = Math.sqrt(outerDirX * outerDirX + outerDirY * outerDirY);
+    const unitOuterX = -outerDirX / lengthOuter;
+    const unitOuterY = -outerDirY / lengthOuter;
+
+    // Calculate the start and end points of the bead circles
+    // For the start point: on the external border of the outer bead, facing INNER_BORDER_RADIUS
+    const startX = outerX + unitOuterX * beadRadius;
+    const startY = outerY + unitOuterY * beadRadius;
+
+    // For the end point: on the external border of the inner bead, facing INNER_BORDER_RADIUS
+    const endX = innerX - unitInnerX * beadRadius;
+    const endY = innerY - unitInnerY * beadRadius;
+
+    const angleToCentroidInner = Math.atan2(innerY - centroidY, innerX - centroidX);
+    const angleToCentroidOuter = Math.atan2(outerY - centroidY, outerX - centroidX);
+
+    const INNER_BORDER_RADIUS = smallRadius + 22;
+    const MIDDLE_BORDER_RADIUS = smallRadius + 3 * beadRadius;
+    const OUTER_BORDER_RADIUS = bigRadius - 4 * beadRadius;
+
+    const scaleFactor = 1.4;
+
+    const tangentialOuterX = centroidX + Math.cos(angleToCentroidOuter) * OUTER_BORDER_RADIUS;
+    const tangentialOuterY = centroidY + Math.sin(angleToCentroidOuter) * OUTER_BORDER_RADIUS;
+
+    let tangentialMiddleX = centroidX + Math.cos((angleToCentroidInner + angleToCentroidOuter) / 2) * MIDDLE_BORDER_RADIUS * scaleFactor;
+    let tangentialMiddleY = centroidY + Math.sin((angleToCentroidInner + angleToCentroidOuter) / 2) * MIDDLE_BORDER_RADIUS * scaleFactor;
+
+    let tangentialInnerX = centroidX + Math.cos(angleToCentroidInner) * INNER_BORDER_RADIUS;
+    let tangentialInnerY = centroidY + Math.sin(angleToCentroidInner) * INNER_BORDER_RADIUS;
+
+    const adjustedEndAngle = Math.atan2(tangentialInnerY - innerY, tangentialInnerX - innerX);
+    const adjustedEndX = innerX + Math.cos(adjustedEndAngle) * beadRadius;
+    const adjustedEndY = innerY + Math.sin(adjustedEndAngle) * beadRadius;
+
+    let pathData;
+
+    const isClockwise = angleToCentroidOuter > angleToCentroidInner;
+
+    let controlPoint1X = startX + (tangentialOuterX - startX) / 2;
+    let controlPoint1Y = startY + (tangentialOuterY - startY) / 2;
+    let controlPoint2X = endX + (tangentialInnerX - endX) / 2;
+    let controlPoint2Y = endY + (tangentialInnerY - endY) * 20;
+
+    if(countInner > 15){
+      if(isClockwise){
+        controlPoint1X = startX + (tangentialMiddleX - startX) / 2;
+        controlPoint1Y = startY + (tangentialMiddleY - startY) / 2;
+        controlPoint2X = endX + (tangentialInnerX - endX) / 2;
+        controlPoint2Y = endY + (tangentialInnerY - endY) / 2;
+      } else {
+        controlPoint1X = (startX + tangentialMiddleX) / 2;
+        controlPoint1Y = (startY + tangentialMiddleY) / 2;
+        controlPoint2X = (endX + tangentialInnerX) / 2;
+        controlPoint2Y = (endY + tangentialInnerY) / 2;
+      }
+    }
+
+    if(countInner < 15){
+      pathData = [
+        `M ${startX} ${startY}`,
+        `C ${controlPoint1X} ${controlPoint1Y}, ${controlPoint2X} ${controlPoint2Y}, ${adjustedEndX} ${adjustedEndY}`
+      ].join(" ");
+    } else {
+      pathData = [
+        `M ${startX} ${startY}`,
+        `C ${controlPoint1X} ${controlPoint1Y}, ${tangentialMiddleX} ${tangentialMiddleY}, ${tangentialInnerX} ${tangentialInnerY}`,
+        `C ${controlPoint2X} ${controlPoint2Y}, ${controlPoint2X} ${controlPoint2Y}, ${adjustedEndX} ${adjustedEndY}`
+      ].join(" ");
+    }
+
+    const sanitizedType = sanitizeClassName(type);
+
+    // Draw the path
+    svg2.append("path")
+      .attr("d", pathData)
+      .attr("id", `path-${innerIndex}-${outerIndex}`)
+      .attr("data-inner-bead", innerIndex)
+      .attr("data-outer-bead", outerIndex)
+      .attr("stroke", "black")
+      .attr("stroke-width", 2)  // Border width
+      .attr("fill", "none")
+      .attr("interaction", type)
+      .attr('inner-chain', innerChain)
+      .attr('outer-chain', outerChain)
+      .attr("stroke-dasharray", strokeShape[type])
+      .classed(sanitizedType, true);
+  }
+
+  let smallRadius;
+  let bigRadius;
+
+  if (countInner <= 15){
+    smallRadius = 20 * 20 / Math.PI * 0.85;
+  } else if (countInner > 15 && countInner <= 30) {
+    smallRadius = 30 * 20 / Math.PI * 0.85;
+  } else {
+    smallRadius = countInner * 20 / Math.PI * 0.85;
+  };
+
+  if (countInner <= 30 ){
+    bigRadius = smallRadius * 2.7;
+  } else {
+    bigRadius = (countOuter * 20 / Math.PI * 0.95) * 2.2;
+  }
+
+  let svgH = (bigRadius * 2) + 400;
+  svg2.attr("height", svgH);
+  svg2.attr("width", svgH);
+
+  // For example, with a bead radius of 20
+  createCircle(bigRadius*1.3, bigRadius*1.3, 20, beadInfo.innerCircle, 'inner', smallRadius);
+  createOuterBeads(bigRadius*1.3, bigRadius*1.3, smallRadius, bigRadius, conversion_dict, beadInfo.outerCircle);
+  // createCircle(600, 520, 20, beadInfo.outerCircle, 'outer', bigRadius);
+
+  // Generate legend
+  const interactionLegend = svg2.append("g")
+    .attr("transform", `translate(72, ${svgH - 60})`);
+
+  // Generate inner legend
+  const innercircleLegend = svg2.append("g")
+    .attr("transform", `translate(72, ${svgH - 30})`);
+
+  // Generate outer legend
+  const outercircleLegend = svg2.append("g")
+    .attr("transform", `translate(72, ${svgH})`);
+
+  // Header for the interaction legend
+  const headerInteractions = interactionLegend.append("text")
+                              .attr("x", 0)
+                              .attr("y", -20)
+                              .attr("class", "legend-header")
+                              .text("Interactions:")
+                              .attr("font-family", "Arial")
+                              .attr("font-size", "14px")
+                              .attr("font-weight", "bold")
+                              .attr("fill", "black");
+
+  const txtLen = headerInteractions.node().getComputedTextLength();
+
+  let cumulativeX = txtLen + 20;
+
+  Object.entries(interactionTypes).forEach(([type, color], i) => {
+    const legendItem = interactionLegend.append("g")
+      .attr("transform", `translate(${cumulativeX}, 0)`);
+
+    // Draw the rectangle at y=0
+    legendItem.append("rect")
+      .attr("width", 20)
+      .attr("height", 20)
+      .attr("y", -35)  // <-- Set y to 0 for the rectangle
+      .attr("fill", color)
+      .attr("stroke", "black")
+      .attr("stroke-width", 1)
+      .on("click", function() {
+        if(d3.event) {
+          d3.event.stopPropagation();
+        }
+        const sanitizedType = sanitizeClassName(type);
+        d3.selectAll("path").attr("stroke-opacity", 0);
+        d3.selectAll("path[segment='external']").attr("stroke-opacity", 1);
+        d3.selectAll(`.${sanitizedType}`).attr("stroke-opacity", 1);
+      });
+
+    // Draw the text at y=15
+    const textElement = legendItem.append("text")
+      .attr("x", 25)
+      .attr("y", -20)  // <-- Set y to 15 for the text
+      .text(type);
+
+    // Get text width and update the cumulativeX for the next legend item
+    const textWidth = textElement.node().getComputedTextLength();
+    cumulativeX += textWidth + 50; // 50 is the space between the rectangle and the next item
+  });
+
+  // Creating the inner legend structur
+
+  const headerInnerLegend = innercircleLegend.append("text")
+                              .attr("x", 0)
+                              .attr("y", -20)
+                              .attr("class", "legend-header")
+                              .text("G Protein segments:")
+                              .attr("font-family", "Arial")
+                              .attr("font-size", "14px")
+                              .attr("font-weight", "bold")
+                              .attr("fill", "black");
+
+  const txtInnerLen = headerInnerLegend.node().getComputedTextLength();
+
+  let cumulativeInnerX = txtInnerLen + 20;
+
+  Object.entries(inner_legend).forEach((type, i) => {
+    const legendInnerItem = innercircleLegend.append("g")
+      .attr("transform", `translate(${cumulativeInnerX}, 0)`);
+
+    // Draw the rectangle at y=0
+    legendInnerItem.append("rect")
+      .attr("width", 20)
+      .attr("height", 20)
+      .attr("y", -35)  // <-- Set y to 0 for the rectangle
+      .attr("fill", allColors[type[1]])
+      .attr("stroke", "black")
+      .attr("stroke-width", 1)
+      .on("click", function() {
+        if(d3.event) {
+          d3.event.stopPropagation();
+        }
+        let indexValues = [];
+        // Select all circles with the given segment value and gather the data-index attributes
+        d3.selectAll(`circle[data-segment="${type[1]}"]`).each(function() {
+          const dataIndex = d3.select(this).attr('data-index');
+          if (dataIndex !== null) {
+            indexValues.push(dataIndex);
+          }
+        });
+        const sanitizedType = sanitizeClassName(type[1]);
+        d3.selectAll("circle").attr("stroke-opacity", 0.2);
+        d3.selectAll("path").attr("stroke-opacity", 0);
+        d3.selectAll(`circle[data-segment="${type[1]}"]`).attr("stroke-opacity", 1);
+        indexValues.forEach(index => {
+          d3.selectAll(`path[data-inner-bead="${index}"]`).attr("stroke-opacity", 1);
+        });
+      });
+
+    // Draw the text at y=15
+    const textInnerElement = legendInnerItem.append("text")
+      .attr("x", 25)
+      .attr("y", -20)  // <-- Set y to 15 for the text
+      .text(type[1]);
+
+    // Get text width and update the cumulativeX for the next legend item
+    const textInnerWidth = textInnerElement.node().getComputedTextLength();
+    cumulativeInnerX += textInnerWidth + 30; // 50 is the space between the rectangle and the next item
+  });
+
+  // Creating the inner legend structure
+
+  const headerOuterLegend = outercircleLegend.append("text")
+                              .attr("x", 0)
+                              .attr("y", -20)
+                              .attr("class", "legend-header")
+                              .text("GPCR segments:")
+                              .attr("font-family", "Arial")
+                              .attr("font-size", "14px")
+                              .attr("font-weight", "bold")
+                              .attr("fill", "black");
+
+  const txtOuterLen = headerOuterLegend.node().getComputedTextLength();
+
+  let cumulativeOuterX = txtOuterLen + 20;
+
+  Object.entries(outer_legend).forEach((type, i) => {
+    const legendOuterItem = outercircleLegend.append("g")
+      .attr("transform", `translate(${cumulativeOuterX}, 0)`);
+
+    // Draw the rectangle at y=0
+    legendOuterItem.append("rect")
+      .attr("width", 20)
+      .attr("height", 20)
+      .attr("y", -35)  // <-- Set y to 0 for the rectangle
+      .attr("fill", allColors[type[1]])
+      .attr("stroke", "black")
+      .attr("stroke-width", 1)
+      .on("click", function() {
+        if(d3.event) {
+          d3.event.stopPropagation();
+        }
+        let indexValues = [];
+        // Select all circles with the given segment value and gather the data-index attributes
+        d3.selectAll(`circle[data-segment="${type[1]}"]`).each(function() {
+          const dataIndex = d3.select(this).attr('data-index');
+          if (dataIndex !== null) {
+            indexValues.push(dataIndex);
+          }
+        });
+        const sanitizedType = sanitizeClassName(type[1]);
+        d3.selectAll("circle").attr("stroke-opacity", 0.2);
+        d3.selectAll("path").attr("stroke-opacity", 0);
+        d3.selectAll(`circle[data-segment="${type[1]}"]`).attr("stroke-opacity", 1);
+        indexValues.forEach(index => {
+          d3.selectAll(`path[data-outer-bead="${index}"]`).attr("stroke-opacity", 1);
+        });
+      });
+
+    // Draw the text at y=15
+    const textOuterElement = legendOuterItem.append("text")
+      .attr("x", 25)
+      .attr("y", -20)  // <-- Set y to 15 for the text
+      .text(type[1]);
+
+    // Get text width and update the cumulativeX for the next legend item
+    const textOuterWidth = textOuterElement.node().getComputedTextLength();
+    cumulativeOuterX += textOuterWidth + 30; // 50 is the space between the rectangle and the next item
+  });
+
+
+  const innerBeadSelection = svg2.selectAll("circle[data-circle='inner']");  // Assuming the inner beads have a class 'inner-bead'
+  const { centroidX, centroidY } = calculateCentroids(innerBeadSelection);
+
+  // createConnections();
+  interactions.forEach(({ innerIndex, outerIndex, type, innerChain, outerChain }) => createConnection(innerIndex, outerIndex, type, countInner, 20, centroidX, centroidY, innerChain, outerChain, smallRadius, bigRadius));
+
+  // d3.selectAll(`.hydrophobic`).attr("stroke-opacity", 0);
+
+  function applyPresetColors(svg) {
+    svg.selectAll("circle")
+      .each(function(d, i) {
+        const aa = d3.select(this).attr("data-aa"); // Assuming 'data-aa' stores the amino acid type
+        d3.select(this).attr("fill", presetColors[aa][0]);
+
+        // Assuming the text element immediately follows the circle
+        d3.select(this.nextElementSibling).attr("fill", presetColors[aa][1]);
+      });
+  }
+
+  document.getElementById("propertiesButton").addEventListener("click", function() {
+    applyPresetColors(svg2); // Assuming your SVG is stored in the svg2 variable
+  });
+
+  // Function to reset colors
+  function resetColors(svg) {
+    svg.selectAll("circle")
+      .attr("fill", "white")
+      .attr("stroke-opacity", 1);
+      // .attr("stroke", "black");
+
+    svg.selectAll(`.van-der-waals`).attr("stroke-opacity", 0);
+
+    svg.selectAll("text")
+      .attr("fill", "black");
+
+    svg.selectAll("path")
+      .attr("stroke", "black")
+      .attr("stroke-width", 2);
+
+    svg.selectAll("path[segment='external']")
+      .each(function(d, i) {
+        const interaction = d3.select(this).attr("interaction");
+        d3.select(this).attr("stroke", allColors[interaction]);
+      });
+  }
+
+  // Add event listener for reset button
+  document.getElementById("resetButton").addEventListener("click", function() {
+    resetColors(svg2);  // Reset colors of circles
+    d3.selectAll("path").attr("stroke-opacity", 1);  // Reset opacity of lines
+    d3.selectAll("circle").attr("fill-opacity", 1);  // Reset opacity of lines
+  });
+
+  function applySegmentColors(svg) {
+    svg.selectAll("circle[data-circle='outer']")
+      .each(function(d, i) {
+        const segment = d3.select(this).attr("data-segment");
+        if (segment) {
+          d3.select(this).attr("fill", allColors[segment]);
+        }
+      });
+    svg.selectAll("path[segment='external']")
+      .each(function(d, i) {
+        const interaction = d3.select(this).attr("interaction");
+        d3.select(this).attr("stroke", allColors[interaction]);
+      });
+  }
+
+  document.getElementById("segmentButton").addEventListener("click", function() {
+    applySegmentColors(svg2);
+  });
+
+  function applyInteractionColors(svg) {
+    svg.selectAll("path")
+      .filter(function() {
+        return !d3.select(this).attr("segment");
+      })
+      .each(function(d, i) {
+        const interaction = d3.select(this).attr("interaction");
+        d3.select(this).attr("stroke", allColors[interaction]);
+      });
+  }
+
+  document.getElementById("interactionsButton").addEventListener("click", function() {
+    applyInteractionColors(svg2);
+  });
 
 }

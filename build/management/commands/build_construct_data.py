@@ -158,7 +158,7 @@ class Command(BaseCommand):
                     add_construct(d)
 
         if do_all:
-            structures = Structure.objects.all()
+            structures = Structure.objects.all().exclude(structure_type__slug__startswith='af-')
             for s in structures:
                 pdbname = str(s)
                 try:

@@ -1,7 +1,7 @@
 {% extends "home/base.html" %}
 
 {% block content %}
-<h3>Release notes</h3>
+<h3>{{site_title}} release notes</h3>
 
 {% for note in release_notes %}
 <div class="col-md-12 panel panel-primary">
@@ -14,3 +14,27 @@
 
 {% endblock %}
 
+{% block addon_js %}
+<script>
+	$(".release-notes").find("li").addClass("hidden");
+	$('li:not([class])').removeClass("hidden");
+
+	if ("{{site_title}}" === "GproteinDb") {
+		$(".gproteindb").removeClass("hidden");
+    	$(".all").removeClass("hidden")
+	}
+    else if ("{{site_title}}" === "ArrestinDb") {
+		$(".arrestindb").removeClass("hidden");
+    	$(".all").removeClass("hidden")
+	}
+	else if ("{{site_title}}" === "Biased Signaling Atlas") {
+		$(".biasedsignalingatlas").removeClass("hidden");
+    	$(".all").removeClass("hidden")
+	}
+	// Else default to GPCRdb
+	else {
+		$(".gpcrdb").removeClass("hidden");
+    	$(".all").removeClass("hidden")
+	}
+</script>
+{% endblock %}

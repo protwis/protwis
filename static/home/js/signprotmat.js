@@ -306,8 +306,16 @@ var signprotmat = {
         .keys()
         // .sort(d3.descending);
         .sort(function (a, b) {
-          var a_patt = /\.(\S*)\./g;
-          var b_patt = /\.(\S*)\./g;
+          // TEMP FIX for Arrestins - when N. and C. tag is added to segment name, this should be removed
+          if (a.startsWith('N.') || a.startsWith('C.')) {
+            var a_patt = /\.(\S*)\./g;
+            var b_patt = /\.(\S*)\./g;
+          }
+          else {
+            var a_patt = /(\S*)\./g;
+            var b_patt = /(\S*)\./g;
+          }
+
           var a_match = a_patt.exec(a);
           var b_match = b_patt.exec(b);
           var a_obj = _.find(gprot, function (d) {
@@ -396,7 +404,7 @@ var signprotmat = {
         "van-der-waals": "#d9d9d9",
         // "edge-to-face": "#969696",
         // "water-mediated": "#7DB144",
-        hydrophobic: "#93d050",
+        hydrophobic: "#A6E15F", //"#93d050",
         // "polar-sidechain-sidechain": "#EAA91F",
         // "polar-sidechain-backbone": "#C38E1A",
         // "polar-backbone-sidechain": "#C3A563",
@@ -404,9 +412,9 @@ var signprotmat = {
         // "h-bond acceptor-donor": "#B24DFF",
         // "cation-pi": "#0070c0",
         // "pi-cation": "#005693",
-        ionic: "#00B9BF",
-        aromatic: "#005693",
-        polar: "#C38E1A",
+        ionic: "#005693",
+        aromatic: "#689235", //"#7DB144",
+        polar: "#7030a0",
       };
       var colScale = d3
         .scaleOrdinal()
@@ -950,7 +958,11 @@ var signprotmat = {
           const num_pairs = d.pairs.length;
           const max_count = get_max_interface_count();
           const ratio = (num_pairs / max_count) * 100;
-          return _.round(ratio, 0);
+          if (ratio > 100){
+            return "";
+          } else {
+            return _.round(ratio, 0);
+          }
         });
 
       // * DRAWING AXES
@@ -1245,6 +1257,7 @@ var signprotmat = {
         });
       each_res
         .append("rect")
+        .attr("class", "res_rect_vertical")
         .style("fill", function (d) {
           return colScale(d.int_ty[0]);
         })

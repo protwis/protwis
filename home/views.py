@@ -27,6 +27,9 @@ def index(request):
     context["site_title"] = site_title(request)["site_title"]  # settings.SITE_TITLE
     context["documentation_url"] = settings.DOCUMENTATION_URL
 
+    # development/production
+    context["debug"] = settings.DEBUG
+
     # analytics
     context["google_analytics_key"] = settings.GOOGLE_ANALYTICS_KEY
 
@@ -74,6 +77,8 @@ def index(request):
     # get release notes
     try:
         context["release_notes"] = ReleaseNotes.objects.all()[0]
+        ### DB specific release notes
+        # context["release_notes"] = ReleaseNotes.objects.filter(database=context["site_title"])[0]
         rel_stats = list(ReleaseStatistics.objects.filter(release=context["release_notes"], database=context["site_title"]).values_list("statistics_type__name", "value"))
         # Create dictionary and process part of the results
         context["release_statistics"] = []

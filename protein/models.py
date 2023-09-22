@@ -106,10 +106,7 @@ class ProteinConformation(models.Model):
         return False
 
     def sodium_pocket(self):
-        try:
-            site = Site.objects.get(slug='sodium_pocket')
-        except:
-            site = Site.objects.create(slug='sodium_pocket', name='Sodium ion pocket')
+        site = Site.objects.get(slug='sodium_pocket', name='Sodium ion pocket')
         try:
             ex_site = IdentifiedSites.objects.get(protein_conformation=self)
 

@@ -70,6 +70,7 @@ class Command(BaseCommand):
             ['build_arrestin_structures'],
             ['build_structure_extra_proteins'],
             ['build_structure_model_rmsd'],
+            ['build_af_models', {'proc': safe_proc_num}],
             ['build_blast_database']
         ]
         phase2 = [

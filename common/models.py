@@ -221,6 +221,7 @@ class PublicationJournal(models.Model):
 class ReleaseNotes(models.Model):
     date = models.DateField()
     html = models.TextField()
+    # database = models.TextField(null=True)
 
     def __str__(self):
         return str(self.date)

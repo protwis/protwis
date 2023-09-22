@@ -1202,18 +1202,23 @@ def AJAX_Interactions(request):
     # selected_pdbs = request.GET.get('selected_pdbs') if request.GET.get('selected_pdbs') != 'false' else False
     # if selected_pdbs is false throw and error and get back
     # correct receptor entry names - the ones with '_a' appended
-    if effector == 'G alpha':
-        complex_names = [pdb_name.lower() + '_a' for pdb_name in selected_pdbs]
-    elif effector == 'A':
-        complex_names = [pdb_name.lower() + '_arrestin' for pdb_name in selected_pdbs]
-    pdbs_names = [pdb.lower() for pdb in selected_pdbs]
-    complex_objs = SignprotComplex.objects.filter(structure__protein_conformation__protein__entry_name__in=pdbs_names).prefetch_related('structure__protein_conformation__protein')
+    # if effector == 'G alpha':
+    #     complex_names = ['_'.join(pdb_name.split('_')[1:3]).lower() if pdb_name.startswith('AFM') else pdb_name.lower() + '_a' for pdb_name in selected_pdbs]
+    # elif effector == 'A':
+    #     complex_names = ['_'.join(pdb_name.split('_')[1:3]).lower() if pdb_name.startswith('AFM') else pdb_name.lower() + '_arrestin' for pdb_name in selected_pdbs]
+    # # pdbs_names = [pdb.lower() for pdb in selected_pdbs]
+    # pdbs_names = ['_'.join(pdb.split('_')[1:3]).lower() if pdb.startswith('AFM') else pdb.lower() for pdb in selected_pdbs]
+
+    complex_objs = SignprotComplex.objects.filter(structure__pdb_code__index__in=selected_pdbs).prefetch_related('structure__protein_conformation__protein')
+
+    # complex_objs = SignprotComplex.objects.filter(structure__protein_conformation__protein__entry_name__in=pdbs_names).prefetch_related('structure__protein_conformation__protein')
     # fetching the id of the selected structures
     complex_struc_ids = [co.structure_id for co in complex_objs]
     # protein conformations for those
-    prot_conf = ProteinConformation.objects.filter(protein__entry_name__in=complex_names).values_list('id', flat=True)
-    # correct receptor entry names - the ones with '_a' appended
+    # prot_conf = ProteinConformation.objects.filter(protein__entry_name__in=complex_names).values_list('id', flat=True)
+    prot_conf = complex_objs.values_list('structure__protein_conformation__id', flat=True)
 
+    # correct receptor entry names - the ones with '_a' appended
     interaction_sort_order = [
         "ionic",
         "aromatic",
@@ -1225,11 +1230,13 @@ def AJAX_Interactions(request):
     # getting all the signal protein residues for those protein conformations
     prot_residues = Residue.objects.filter(
         protein_conformation__in=prot_conf
+        # protein_conformation__protein__in=complex_struc_ids
     ).values_list('id', flat=True)
 
     interactions = InteractingResiduePair.objects.filter(
         Q(res1__in=prot_residues) | Q(res2__in=prot_residues),
         referenced_structure__in=complex_struc_ids
+    ).exclude(res1__generic_number__isnull=True
     ).exclude(
         Q(res1__in=prot_residues) & Q(res2__in=prot_residues)
     ).prefetch_related(
@@ -1281,15 +1288,15 @@ def AJAX_Interactions(request):
         "protein_conformation__structure"
     ).values(
         rec_id=F('protein_conformation__protein__id'),
-        name=F('protein_conformation__protein__parent__name'),
-        entry_name=F('protein_conformation__protein__parent__entry_name'),
+        name=F('protein_conformation__protein__name'),
+        entry_name=F('protein_conformation__protein__entry_name'),
         pdb_id=F('protein_conformation__structure__pdb_code__index'),
         rec_aa=F('amino_acid'),
         rec_gn=F('generic_number__label'),
     ).exclude(
         Q(rec_gn=None)
     )
-
+    
     t2 = time.time()
     print('AJAX Runtime: {}'.format((t2 - t1) * 1000.0))
 
@@ -1303,24 +1310,31 @@ def ArrestinInteractionMatrix(request):
 def GProteinInteractionMatrix(request):
     return InteractionMatrix(request, database="gprotein")
 
-# @cache_page(60 * 60 * 24 * 7)
+@cache_page(60 * 60 * 24 * 7)
 def InteractionMatrix(request, database='gprotein'):
     # prot_conf_ids, dataset = interface_dataset()
 
     if database == 'gprotein':
         gprotein_order = ProteinSegment.objects.filter(proteinfamily='Alpha').values('id', 'slug')
+        fam_slug = '100'
     elif database == 'arrestin':
         arrestin_order = ProteinSegment.objects.filter(proteinfamily='Arrestin').values('id', 'slug')
+        fam_slug = '200'
 
     receptor_order = ['N', '1', '12', '2', '23', '3', '34', '4', '45', '5', '56', '6', '67', '7', '78', '8', 'C']
 
-    struc = SignprotComplex.objects.prefetch_related(
+    struc = SignprotComplex.objects.filter(protein__family__slug__startswith=fam_slug).prefetch_related(
+        'structure',
         'structure__pdb_code',
         'structure__stabilizing_agents',
+        'structure__protein_conformation',
+        'structure__protein_conformation__protein',
         'structure__protein_conformation__protein__species',
+        'structure__protein_conformation__protein__parent',
         'structure__protein_conformation__protein__parent__parent__parent',
         'structure__protein_conformation__protein__family__parent__parent__parent__parent',
         'structure__stabilizing_agents',
+        'structure__signprot_complex__protein__family__parent',
         'structure__signprot_complex__protein__family__parent__parent__parent__parent',
     )
 
@@ -1329,8 +1343,14 @@ def InteractionMatrix(request, database='gprotein'):
         r = {}
         s = s.structure
         r['pdb_id'] = s.pdb_code.index
-        r['name'] = s.protein_conformation.protein.parent.short()
-        r['entry_name'] = s.protein_conformation.protein.parent.entry_name
+        try:
+            r['name'] = s.protein_conformation.protein.parent.short()
+        except:
+            r['name'] = s.protein_conformation.protein.short()
+        try:
+            r['entry_name'] = s.protein_conformation.protein.parent.entry_name
+        except:
+            r['entry_name'] = s.protein_conformation.protein.entry_name
         r['class'] = s.protein_conformation.protein.get_protein_class()
         r['family'] = s.protein_conformation.protein.get_protein_family()
         r['conf_id'] = s.protein_conformation.id
@@ -1340,7 +1360,7 @@ def InteractionMatrix(request, database='gprotein'):
         except Exception:
             r['gprot'] = ''
         try:
-            r['gprot_class'] = s.get_signprot_gprot_family()
+            r['gprot_class'] = s.signprot_complex.protein.family.parent.name#s.get_signprot_gprot_family()
         except Exception:
             r['gprot_class'] = ''
         complex_info.append(r)

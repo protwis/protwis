@@ -37,7 +37,7 @@ class Command(BaseCommand):
         class_dict = {'001': 'A', '002': 'B1', '003': 'B2', '004': 'C', '005': 'D1', '006': 'F', '007': 'T', '008': 'Other'}
 
         # proteins with a structure
-        structures = Structure.objects.order_by('protein_conformation__protein__parent__entry_name').distinct(
+        structures = Structure.objects.exclude(structure_type__slug__startswith='af-').order_by('protein_conformation__protein__parent__entry_name').distinct(
             'protein_conformation__protein__parent__entry_name')
         if structures:
             ps = ProteinSet.objects.create(name='All') # David's request

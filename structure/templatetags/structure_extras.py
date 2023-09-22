@@ -1,4 +1,5 @@
 from django import template
+from common.definitions import G_PROTEIN_DISPLAY_NAME as g_prot_dict
 
 import re
 
@@ -170,4 +171,21 @@ def cut_refined ( objs ):
 
 @register.filter
 def cut_classname ( objs ):
-    return objs[5:]
+    if objs == "Other GPCRs":
+        return "Other"
+    else:
+        return objs[5:]
+
+@register.filter
+def entry_short ( objs ):
+    return objs.split("_")[0].upper()
+
+@register.filter
+def gprot_short ( objs ):
+    return g_prot_dict[objs]
+
+@register.filter
+def receptor_short ( objs ):
+    if not objs.startswith('mGlu'):
+        objs = objs[0].upper()+objs[1:]
+    return objs.replace(" receptor","").replace("-adrenoceptor","")

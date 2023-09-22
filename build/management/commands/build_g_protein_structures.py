@@ -94,7 +94,7 @@ class Command(BaseBuild):
                             data = fetch_signprot_data(pdb, a, os.listdir(self.local_uniprot_beta_dir), os.listdir(self.local_uniprot_gamma_dir))
                             if data:
                                 ss = build_signprot_struct(a, pdb, data)
-                                self.build_g_prot_extra_proteins(a, pdb, ss, data)
+                                self.build_gprot_extra_proteins(a, ss, data)
                         except Exception as msg:
                             self.logger.error("SignprotStructure of {} {} failed\n{}: {}".format(a.entry_name, pdb, type(msg), msg))
             test_model_updates(self.all_models, self.tracker, check=True)
@@ -256,8 +256,8 @@ class Command(BaseBuild):
 
                 # Check if HN is mutated to GNAI1 for the scFv16 stabilizer
                 if sc.protein.entry_name!='gnai1_human' and len(remaining_mismatches)>0:
-                    target_HN = resis.filter(protein_segment__slug='HN')
-                    gnai1_HN = Residue.objects.filter(protein_conformation__protein__entry_name='gnai1_human', protein_segment__slug='HN')
+                    target_HN = resis.filter(protein_segment__slug='G.HN')
+                    gnai1_HN = Residue.objects.filter(protein_conformation__protein__entry_name='gnai1_human', protein_segment__slug='G.HN')
                     pdb_HN_seq = ''
                     for num, val in pdb_num_dict.items():
                         if num<=target_HN.reverse()[0].sequence_number:
@@ -481,7 +481,7 @@ class Command(BaseBuild):
         if data["alpha"]:
             alpha_sep = SignprotStructureExtraProteins()
             alpha_sep.wt_protein = alpha_prot
-            alpha_sep.structure = ss
+            alpha_sep.structure = signprot_structure
             alpha_sep.protein_conformation = ProteinConformation.objects.get(protein=alpha_prot)
             alpha_sep.display_name = self.display_name_lookup[alpha_prot.family.name]
             alpha_sep.note = None
@@ -489,7 +489,7 @@ class Command(BaseBuild):
             alpha_sep.category = "G alpha"
             cov = round(data["alpha_coverage"]/len(alpha_prot.sequence)*100)
             if cov>100:
-                self.logger.warning("SignprotStructureExtraProtein Alpha subunit sequence coverage of {} is {}% which is longer than 100% in structure {}".format(alpha_sep, cov, ss))
+                self.logger.warning("SignprotStructureExtraProtein Alpha subunit sequence coverage of {} is {}% which is longer than 100% in structure {}".format(alpha_sep, cov, signprot_structure))
                 cov = 100
             alpha_sep.wt_coverage = cov
             alpha_sep.save()
@@ -498,7 +498,7 @@ class Command(BaseBuild):
             beta_prot = Protein.objects.get(accession=data["beta"])
             beta_sep = SignprotStructureExtraProteins()
             beta_sep.wt_protein = beta_prot
-            beta_sep.structure = ss
+            beta_sep.structure = signprot_structure
             beta_sep.protein_conformation = ProteinConformation.objects.get(protein=beta_prot)
             beta_sep.display_name = self.display_name_lookup[beta_prot.name]
             beta_sep.note = None
@@ -519,4 +519,4 @@ class Command(BaseBuild):
             gamma_sep.category = "G gamma"
             gamma_sep.wt_coverage = None
             gamma_sep.save()
-        self.logger.info("Created SignprotStructure: {}".format(ss.pdb_code))
+        self.logger.info("Created SignprotStructure: {}".format(signprot_structure.pdb_code))

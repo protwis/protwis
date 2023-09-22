@@ -624,7 +624,7 @@ class designPDB(AbsTargetSelection):
         context['structures'] = ResidueFragmentInteraction.objects.values('structure_ligand_pair__structure__pdb_code__index', 'structure_ligand_pair__structure__protein_conformation__protein__parent__entry_name').annotate(
             num_ligands=Count('structure_ligand_pair', distinct=True), num_interactions=Count('pk', distinct=True)).order_by('structure_ligand_pair__structure__pdb_code__index')
         context['form'] = PDBform()
-        context['pdb_ids'] = json.dumps({s:s for s in Structure.objects.all().values_list('pdb_code__index', flat=True)})
+        context['pdb_ids'] = json.dumps({s:s for s in Structure.objects.all().exclude(structure_type__slug__startswith='af-').values_list('pdb_code__index', flat=True)})
         return context
 
 class design(AbsReferenceSelection):
@@ -2224,7 +2224,7 @@ def contactMutationDesign(request, goal = "both"):
                 actives = []
                 active_structs = Structure.objects.filter(\
                     protein_conformation__protein__family__slug__startswith=target_class, \
-                    state__name='Active', resolution__lte=3.7, gprot_bound_likeness__gte=90)\
+                    state__name='Active', resolution__lte=3.7, gprot_bound_likeness__gte=90).exclude(structure_type__slug__startswith='af-')\
                     .prefetch_related(
                                 "pdb_code",
                                 "state",
@@ -2234,7 +2234,7 @@ def contactMutationDesign(request, goal = "both"):
                                 "protein_conformation__protein__parent__family__parent",
                                 "protein_conformation__protein__parent__family__parent__parent__parent",
                                 "protein_conformation__protein__species", Prefetch("ligands", queryset=StructureLigandInteraction.objects.filter(
-                                annotated=True).prefetch_related('ligand__ligand_type', 'ligand_role')))\
+                                annotated=True).exclude(structure__structure_type__slug__startswith='af-').prefetch_related('ligand__ligand_type', 'ligand_role')))\
                     .annotate(res_count = Sum(Case(When(protein_conformation__residue__generic_number=None, then=0), default=1, output_field=IntegerField())))
 
                 for s in active_structs:
@@ -2304,7 +2304,7 @@ def contactMutationDesign(request, goal = "both"):
                 inactives = []
                 inactive_structs = Structure.objects.filter(\
                     protein_conformation__protein__family__slug__startswith=target_class, \
-                    state__name='Inactive', resolution__lte=3.7, gprot_bound_likeness__lte=20)\
+                    state__name='Inactive', resolution__lte=3.7, gprot_bound_likeness__lte=20).exclude(structure_type__slug__startswith='af-')\
                     .prefetch_related(
                                 "pdb_code",
                                 "state",
@@ -2316,7 +2316,7 @@ def contactMutationDesign(request, goal = "both"):
                                 "protein_conformation__protein__parent__family__parent",
                                 "protein_conformation__protein__parent__family__parent__parent__parent",
                                 "protein_conformation__protein__species", Prefetch("ligands", queryset=StructureLigandInteraction.objects.filter(
-                                annotated=True).prefetch_related('ligand__ligand_type', 'ligand_role')))\
+                                annotated=True).exclude(structure__structure_type__slug__startswith='af-').prefetch_related('ligand__ligand_type', 'ligand_role')))\
                     .annotate(res_count = Sum(Case(When(protein_conformation__residue__generic_number=None, then=0), default=1, output_field=IntegerField())))
 
                 for s in inactive_structs:

@@ -171,9 +171,9 @@ class Command(BaseBuild):
         try:
             self.logger.info('CREATING STRUCTURES')
             # run the function twice (once for representative structures, once for non-representative)
-            iterations = 1
-            for i in range(1,iterations+1):
-                self.prepare_input(options['proc'], self.parsed_structures.pdb_ids, i)
+            # iterations = 1
+            # for i in range(1,iterations+1):
+            self.prepare_input(options['proc'], self.parsed_structures.pdb_ids)
             test_model_updates(self.all_models, self.tracker, check=True)
             self.logger.info('COMPLETED CREATING STRUCTURES')
         except Exception as msg:
@@ -407,7 +407,7 @@ class Command(BaseBuild):
             seq = seq[:265]
         elif structure.pdb_code.index in ['1GZM', '3C9L']:
             seq = seq[:-3]
-        if structure.pdb_code.index in ['6NBI','6NBF','6NBH','6U1N','6M1H','6PWC','7JVR','7SHF','7EJ0','7EJ8','7EJA','7EJK','7VVJ','7TS0','7W6P','7W7E']:
+        if structure.pdb_code.index in ['6NBI','6NBF','6NBH','6U1N','6M1H','6PWC','7JVR','7SHF','7EJ0','7EJ8','7EJA','7EJK','7VVJ','7TS0','7W6P','7W7E','8IRS','8FLQ','8FLR','8FLS','8FLU','8FU6']:
             pw2 = pairwise2.align.localms(parent_seq, seq, 3, -4, -3, -1)
         elif structure.pdb_code.index in ['6KUX', '6KUY', '6KUW','7SRS']:
             pw2 = pairwise2.align.localms(parent_seq, seq, 3, -4, -4, -1.5)
@@ -599,7 +599,16 @@ class Command(BaseBuild):
             temp_seq = temp_seq[:172]+'A-'+temp_seq[174:]
         elif structure.pdb_code.index=='8ID4':
             temp_seq = temp_seq[:72]+'A--'+temp_seq[75:]
-
+        elif structure.pdb_code.index=='7XJJ':
+            temp_seq = temp_seq[:140]+'R'+temp_seq[140:146]+temp_seq[147:]
+        elif structure.pdb_code.index=='8DZS':
+            temp_seq = temp_seq[:247]+'S----'+temp_seq[252:]
+        elif structure.pdb_code.index=='8G94':
+            temp_seq = temp_seq[:36]+'I'+temp_seq[36:44]+temp_seq[45:]
+        elif structure.pdb_code.index=='8IW1':
+            temp_seq = temp_seq[:170]+'G'+temp_seq[170:188]+temp_seq[189:]
+        elif structure.pdb_code.index in ['8IW4','8IWE']:
+            temp_seq = temp_seq[:180]+'V-'+temp_seq[182:]
 
 
         for i, r in enumerate(ref_seq, 1): #loop over alignment to create lookups (track pos)
@@ -727,9 +736,9 @@ class Command(BaseBuild):
                                     elif residue.sequence_number!=wt_r.sequence_number:
                                         # print('WT pos not same pos, mismatch',residue.sequence_number,residue.amino_acid,wt_r.sequence_number,wt_r.amino_acid)
                                         wt_pdb_lookup.append(OrderedDict([('WT_POS',wt_r.sequence_number), ('PDB_POS',residue.sequence_number), ('AA',wt_r.amino_acid)]))
-                                        if structure.pdb_code.index not in ['4GBR','6C1R','6C1Q','7XBX','7F1Q']:
+                                        if structure.pdb_code.index not in ['4GBR','6C1R','6C1Q','7XBX','7F1Q','7ZLY']:
                                             if residue.sequence_number in unmapped_ref:
-                                                #print('residue.sequence_number',residue.sequence_number,'not mapped though')
+                                                # print('residue.sequence_number',residue.sequence_number,'not mapped though')
                                                 if residue.amino_acid == wt_lookup[residue.sequence_number].amino_acid:
                                                     #print('they are same amino acid!')
                                                     wt_r = wt_lookup[residue.sequence_number]
@@ -1160,7 +1169,6 @@ class Command(BaseBuild):
                     ligand = struct_lig_interactions.ligand
                 except Exception as msg:
                     print('error with duplication structureligand',lig_key,msg)
-                    quit() #not sure about this quit
             elif StructureLigandInteraction.objects.filter(pdb_reference=lig_key, structure=structure).exists():
                 try:
                     struct_lig_interactions = StructureLigandInteraction.objects.filter(pdb_reference=lig_key, structure=structure).get()
@@ -1200,7 +1208,7 @@ class Command(BaseBuild):
 
         return data
 
-    def main_func(self, positions, iteration, count, lock):
+    def main_func(self, positions, iterations, count, lock):
         # setting up processes
         # if not positions[1]:
         #     pdbs = self.parsed_structures[positions[0]:]
@@ -1251,7 +1259,11 @@ class Command(BaseBuild):
                     s = s.delete()
                     s = Structure()
                 else:
-                    continue
+                    if not s.build_check:
+                        s = s.delete()
+                        s = Structure()
+                    else:
+                        continue
 
             except Structure.DoesNotExist:
                 s = Structure()
@@ -1739,3 +1751,6 @@ class Command(BaseBuild):
                         self.interaction_errors.append(s)
 
                         # print('{} done'.format(sd['pdb']))
+
+            s.build_check = True
+            s.save()

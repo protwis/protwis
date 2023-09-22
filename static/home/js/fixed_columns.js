@@ -521,7 +521,7 @@ function showPDBtable(element) {
                     select_type: "select2",
                     column_data_type: "html",
                     html_data_type: "text",
-                    filter_default_label: "IUPHAR",
+                    filter_default_label: "GtoPdb",
                     filter_match_mode: "exact",
                     filter_reset_button_text: false,
                 },
@@ -697,7 +697,7 @@ function showPDBtable(element) {
                     column_number: 16,
                     filter_type: "multi_select",
                     select_type: "select2",
-                    filter_default_label: "Sign Prot",
+                    filter_default_label: "Family",
                     select_type_options: {
                         width: "70px"
                     },
@@ -707,7 +707,7 @@ function showPDBtable(element) {
                     column_number: 17,
                     filter_type: "multi_select",
                     select_type: "select2",
-                    filter_default_label: "Family",
+                    filter_default_label: "Subtype",
                     select_type_options: {
                         width: "70px"
                     },

@@ -14,13 +14,16 @@ class Command(BaseCommand):
         sbc = StructureBuildCheck()
         if not options['signprot']:
             sbc.check_structures()
-            structs = Structure.objects.all()
+            structs = Structure.objects.all().exclude(structure_type__slug__startswith='af-')
             sbc.check_duplicate_residues()
             for s in structs:
                 sbc.check_segment_ends(s)
             print("Missing segments: ", len(sbc.missing_seg))
             for i in sbc.missing_seg:
                 print("Error: Missing segment {} {} has no residue objects. Should have {} to {}".format(i[0],i[1],i[2],i[3]))
+            print("Very short helix segments: ", len(sbc.helix_length_error))
+            for i in sbc.helix_length_error:
+                print("Error: Very short helix segment for {}: {} {}".format(i[0],i[1],i[2]))
             print("Start errors: ", len(sbc.start_error))
             for i in sbc.start_error:
                 print("Error: {} {} starts at {} instead of annotated {}".format(i[0],i[1],i[2],i[3]))

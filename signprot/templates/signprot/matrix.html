@@ -15,6 +15,21 @@
 <link href="{% static 'home/css/flareplot-contactbrowser.css' %}" rel="stylesheet">
 <link href="{% static 'home/css/flareplot-selectors.css' %}" rel="stylesheet">
 <link href="{% static 'home/css/flareplot-rangeslider.css' %}" rel="stylesheet">
+<style type="text/css">
+    .gpcrdb-link {
+        filter: grayscale(100%);
+    }
+    .gpcrdb-link:hover {
+        filter: grayscale(0%);
+    }
+    .shorten {
+      max-width: 100px;
+      text-overflow: ellipsis;
+      word-break: normal;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -192,7 +207,7 @@
                 <a href="javascript:saveSvgAsTiff(document.getElementsByClassName('interaction')[0], 'GPCR-GProtein_interface_matrix.tiff');">TIFF</a>
             </li>
             <li>
-                <a href="javascript:saveSvg(document.getElementsByClassName('interaction')[0], 'GPCR-GProtein_interface_matrix'.svg');">SVG</a>
+                <a href="javascript:saveSvg(document.getElementsByClassName('interaction')[0], 'GPCR-GProtein_interface_matrix.svg');">SVG</a>
             </li>
         </ul>
     </div>

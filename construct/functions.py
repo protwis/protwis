@@ -34,10 +34,10 @@ starttime = datetime.now()
 # def look_for_value(d,k):
 #     ### look for a value in dict if found, give back, otherwise None
 
-def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=False):
+def fetch_pdb_info(pdbname, protein ,new_xtal=False, ignore_gasper_annotation=False, model=False):
     # ignore_gaspar_annotation skips PDB_RANGE edits that mark missing residues as deleted, which messes up constructs.
     if not protein:
-        if pdbname in ['6ORV','6YVR','6Z4Q','6Z4S','6Z4V','6Z66','6Z8N','6ZA8','6ZIN','7B6W']:
+        if pdbname in ['6ORV','6YVR','6Z4Q','6Z4S','6Z4V','6Z66','6Z8N','6ZA8','6ZIN','7B6W'] or model==True:
             with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'pdbs', '{}.pdb'.format(pdbname)]), 'r') as pdbcustom:
                 pdbdata_raw = pdbcustom.read()
         else:
@@ -67,8 +67,15 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
     #d = {}
     d = OrderedDict()
     d['construct_crystal'] = {}
-    d['construct_crystal']['pdb'] = pdbname
-    d['construct_crystal']['pdb_name'] = 'auto_'+pdbname
+    if model:
+        d['construct_crystal']['pdb'] = pdbname.split('/')[-1]
+        d['construct_crystal']['pdb_name'] = 'auto_'+pdbname.split('/')[-1]
+        d['pdb'] = pdbname.split('/')[-1]
+    else:
+        d['construct_crystal']['pdb'] = pdbname
+        d['construct_crystal']['pdb_name'] = 'auto_'+pdbname
+        d['pdb'] = pdbname
+
     try:
         d['construct_crystal']['uniprot'] = protein.parent.entry_name
         d['protein'] = protein.parent.name
@@ -88,7 +95,6 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
     d['contact_info']['date'] = time.strftime('%m/%d/%Y')
     d['contact_info']['address'] = ''
 
-    d['pdb'] = pdbname
     d['links'] = []
     d['xml_not_observed'] = []
     d['xml_segments'] = []
@@ -97,15 +103,26 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
 
     # GET PDB FILE TO GET INITIAL VALUES - remove known WT that do not exist
     pdbdata_raw = None
-    try:
-        structure = Structure.objects.filter(pdb_code__index=d['construct_crystal']['pdb'].upper()).get()
-        if structure.pdb_data.pdb:
-            pdbdata_raw = structure.pdb_data.pdb
-    except:
-        pass
+    if model == True:
+        try:
+            structure = Structure.objects.filter(protein_conformation__protein=protein, structure_type__slug='alphafold').get()
+            if structure.pdb_data.pdb:
+                pdbdata_raw = structure.pdb_data.pdb
+        except:
+            pass
+    else:
+        try:
+            structure = Structure.objects.filter(pdb_code__index=d['construct_crystal']['pdb'].upper()).get()
+            if structure.pdb_data.pdb:
+                pdbdata_raw = structure.pdb_data.pdb
+        except:
+            pass
     if not pdbdata_raw:
         pdb_data_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'pdbs'])
-        pdb_path = os.sep.join([pdb_data_dir, pdbname + '.pdb'])
+        if model:
+            pdb_path = pdbname
+        else:
+            pdb_path = os.sep.join([pdb_data_dir, pdbname + '.pdb'])
         if not os.path.isfile(pdb_path):
             url = 'https://www.rcsb.org/pdb/files/%s.pdb' % pdbname
             pdbdata_raw = urlopen(url).read().decode('utf-8')
@@ -724,9 +741,9 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
                             # print(chain,pos,uniprot_pos)
                             if pdbname in ['7EPE','7EPF'] and pos>1000:
                                 continue
-                            if pdbname in ['7F4D','7F4F','7F4H','7F4I','8HS2','8HSC'] and chain!='R':
+                            if pdbname in ['7F4D','7F4F','7F4H','7F4I','8HS2','8HSC','7XZ5','7XZ6','8IW4','8IW9','8ITF'] and chain!='R':
                                 continue
-                            if pdbname in ['7XZ5','7XZ6'] and chain!='R':
+                            if pdbname in ['8HJ5'] and chain!='F':
                                 continue
                             wt_aa = d['wt_seq'][uniprot_pos-1]
                             prev_receptor = True
@@ -1564,6 +1581,7 @@ def construct_structure_annotation_override(pdb_code, removed, deletions):
         deletions = [1]+list(range(209,219))+list(range(306,413))
     elif pdb_code in ['5WIU','5WIV']:
         removed = removed+[1001]
+        deletions = []
     elif pdb_code=='6QZH':
         removed = list(range(1001,1473))+list(range(255,260))
     elif pdb_code in ['6KUX', '6KUY']:
@@ -1771,8 +1789,12 @@ def construct_structure_annotation_override(pdb_code, removed, deletions):
         for i in range(362,368):
             if i in deletions:
                 deletions.remove(i)
+    elif pdb_code in ['8HJ5']:
+        removed = list(range(1,26))
     ### make deletions and removed empty
-    elif pdb_code in ['7SF7','7SF8','7EB2','7X1T','7X1U','7SRS','7UL2','7UL3','7UL5','7XBX']:
+    elif pdb_code in ['7SF7','7SF8','7EB2','7X1T','7X1U','7SRS','7UL2','7UL3','7UL5','7XBX','7XWO','8G2Y','7XJJ']:
         deletions, removed = [], []
+    elif pdb_code in ['7ZLY']:
+        deletions = []
 
     return removed, deletions

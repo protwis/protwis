@@ -122,7 +122,7 @@ class SignprotModeling():
         
         # Custom fix for engineered and distorted alphas
         if self.main_structure.pdb_code.index in ['7JVQ','6WHA','7D77','7D7M','7BW0','6PLB','6NBI','6XOX']: # FIXME - need non-hardcoded approach here
-            for seg in ['H1', 'h1ha']:
+            for seg in ['G.H1', 'G.h1ha']:
                 for i in signprot_pdb_array[seg]:
                     signprot_pdb_array[seg][i] = 'x'
 
@@ -132,7 +132,7 @@ class SignprotModeling():
         segs_for_alt_complex_struct = []
         alt_templates_H_domain = self.get_alpha_templates(True)
         if self.main_structure.id not in alt_templates_H_domain[1]:
-            segs_for_alt_complex_struct = ['H1', 'h1ha', 'HA', 'hahb', 'HB', 'hbhc', 'HC', 'hchd', 'HD', 'hdhe', 'HE', 'hehf', 'HF', 'hfs2']
+            segs_for_alt_complex_struct = ['G.H1', 'G.h1ha', 'H.HA', 'H.hahb', 'H.HB', 'H.hbhc', 'H.HC', 'H.hchd', 'H.HD', 'H.hdhe', 'H.HE', 'H.hehf', 'H.HF', 'G.hfs2']
             alt_complex_struct = self.find_h_domain_template(self.target_signprot, alt_templates_H_domain[0])
             if self.debug:
                 print('Helical domain alternative template: {}'.format(alt_complex_struct))
@@ -140,12 +140,12 @@ class SignprotModeling():
             alt_signprot_pdb_array = parse.create_g_alpha_pdb_array(alt_signprot_complex)
             before_cgns = ['G.HN.50', 'G.HN.51', 'G.HN.52', 'G.HN.53']
             after_cgns =  ['G.H5.03', 'G.H5.04', 'G.H5.05', 'G.H5.06']
-            orig_residues1 = parse.fetch_residues_from_array(signprot_pdb_array['HN'], before_cgns)
-            orig_residues2 = parse.fetch_residues_from_array(signprot_pdb_array['H5'], after_cgns)
+            orig_residues1 = parse.fetch_residues_from_array(signprot_pdb_array['G.HN'], before_cgns)
+            orig_residues2 = parse.fetch_residues_from_array(signprot_pdb_array['G.H5'], after_cgns)
             orig_residues = parse.add_two_ordereddict(orig_residues1, orig_residues2)
 
-            alt_residues1 = parse.fetch_residues_from_array(alt_signprot_pdb_array['HN'], before_cgns)
-            alt_residues2 = parse.fetch_residues_from_array(alt_signprot_pdb_array['H5'], after_cgns)
+            alt_residues1 = parse.fetch_residues_from_array(alt_signprot_pdb_array['G.HN'], before_cgns)
+            alt_residues2 = parse.fetch_residues_from_array(alt_signprot_pdb_array['G.H5'], after_cgns)
             
             alt_middle = OrderedDict()
             for s in segs_for_alt_complex_struct:
@@ -164,7 +164,7 @@ class SignprotModeling():
             new_residues = superpose.run()
             key_list = list(new_residues.keys())[4:-4]
             for key in key_list:
-                seg = key.split('.')[1]
+                seg = key.split('.')[0]+'.'+key.split('.')[1]
                 if key in signprot_pdb_array[seg] and signprot_pdb_array[seg][key]!='x':
                     continue
                 signprot_pdb_array[seg][key] = new_residues[key]
@@ -186,19 +186,19 @@ class SignprotModeling():
                 signprot_pdb_array[seg] = new_seg_dict
 
             # remove h1ha residues as those are usually distorted
-            h1ha = Residue.objects.filter(protein_conformation__protein=alt_signprot_complex.protein, protein_segment__slug='h1ha')
+            h1ha = Residue.objects.filter(protein_conformation__protein=alt_signprot_complex.protein, protein_segment__slug='G.h1ha')
             h1ha_dict = OrderedDict()
             for h in h1ha:
                 h1ha_dict[h.generic_number.label] = 'x'
-            self.template_source = update_template_source(self.template_source, list(self.template_source['h1ha'].keys()), None, 'h1ha')
-            signprot_pdb_array['h1ha'] = h1ha_dict
+            self.template_source = update_template_source(self.template_source, list(self.template_source['H.h1ha'].keys()), None, 'G.h1ha')
+            signprot_pdb_array['H.h1ha'] = h1ha_dict
 
             # Custom fixes
             if self.main_structure.pdb_code.index in ['7D76','7D77']:
-                signprot_pdb_array['H1']['G.H1.09'] = 'x'
-                signprot_pdb_array['H1']['G.H1.10'] = 'x'
-                signprot_pdb_array['H1']['G.H1.11'] = 'x'
-                self.template_source = update_template_source(self.template_source, ['G.H1.09','G.H1.10','G.H1.11'], None, 'H1')
+                signprot_pdb_array['G.H1']['G.H1.09'] = 'x'
+                signprot_pdb_array['G.H1']['G.H1.10'] = 'x'
+                signprot_pdb_array['G.H1']['G.H1.11'] = 'x'
+                self.template_source = update_template_source(self.template_source, ['G.H1.09','G.H1.10','G.H1.11'], None, 'G.H1')
                 
             # Let Modeller model buffer regions
             self.trimmed_residues.append('s1h1_6')
@@ -280,7 +280,7 @@ class SignprotModeling():
                     key_list = list(new_residues.keys())[4:-4]
                     self.trimmed_residues+=[list(new_residues.keys())[3], list(new_residues.keys())[4], list(new_residues.keys())[-5], list(new_residues.keys())[-4]]
                     for key in key_list:
-                        seg = key.split('.')[1]
+                        seg = key.split('.')[0]+'.'+key.split('.')[1]
                         if key in signprot_pdb_array[seg] and signprot_pdb_array[seg][key]!='x':
                             continue
                         signprot_pdb_array[seg][key] = new_residues[key]
@@ -545,24 +545,24 @@ class SignprotModeling():
 
         # Removing HN residues before G.HN.30
         delete_HN_begin = []
-        for i in self.a.reference_dict['HN']:
+        for i in self.a.reference_dict['G.HN']:
             if i=='G.HN.30':
                 break
             delete_HN_begin.append(i)
 
         for d in delete_HN_begin:
-            del self.a.reference_dict['HN'][d]
+            del self.a.reference_dict['G.HN'][d]
             try:
-                del self.a.template_dict['HN'][d]
+                del self.a.template_dict['G.HN'][d]
             except:
                 pass
             try:
-                del self.a.alignment_dict['HN'][d]
+                del self.a.alignment_dict['G.HN'][d]
             except:
                 pass
-            del self.main_pdb_array['HN'][d]
+            del self.main_pdb_array['G.HN'][d]
             try:
-                del self.template_source['HN'][d]
+                del self.template_source['G.HN'][d]
             except:
                 pass
 
@@ -588,7 +588,7 @@ class SignprotModeling():
             self.trimmed_residues.append('G.HG.17')
         if structure_signprot!=self.target_signprot or (alt_signprot_complex and alt_signprot_complex.protein not in [None, self.target_signprot]):
             # hbhc
-            hbhc_keys = list(self.a.reference_dict['hbhc'].keys())
+            hbhc_keys = list(self.a.reference_dict['H.hbhc'].keys())
             self.trimmed_residues.append(hbhc_keys[2])
             self.trimmed_residues.append(hbhc_keys[3])
             self.trimmed_residues.append(hbhc_keys[-3])

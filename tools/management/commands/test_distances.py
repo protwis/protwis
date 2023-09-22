@@ -24,7 +24,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
-        strucs = Structure.objects.all().prefetch_related('pdb_code')[:100]
+        strucs = Structure.objects.all().exclude(structure_type__slug__startswith='af-').prefetch_related('pdb_code')[:100]
         ss = []
         for s in strucs:
             ss.append(s.pdb_code.index)
@@ -60,7 +60,7 @@ class Command(BaseCommand):
             d.fetch_agg()
             print(i,'pdbs',time.time()-current, 'time spent with individual records (semi DB)')
             del d
-            
+
 
             # d = Distances()
             # d.load_pdbs(ss[:i])
