@@ -566,7 +566,8 @@ def sort_and_update(push_gpcr, gpcr, push_gprot, gprot, interactions):
       for idx in value:
           if idx not in outer_to_inner.keys():
               outer_to_inner[idx] = []
-              outer_to_inner[idx].append(key)
+          outer_to_inner[idx].append(key)
+
   sorted_outer = {k: v for k, v in sorted(outer_to_inner.items(), key=lambda item: len(item[1]), reverse=True)}
 
   return gpcr, gprot, sorted_outer

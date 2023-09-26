@@ -1504,6 +1504,18 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
     });
   }
 
+  function averageAngle(angles) {
+      let sumX = 0;
+      let sumY = 0;
+
+      for (let angle of angles) {
+          sumX += Math.cos(angle);
+          sumY += Math.sin(angle);
+      }
+
+      return Math.atan2(sumY / angles.length, sumX / angles.length);
+  }
+
   // Function to create outer beads based on the connections dictionary
   function createOuterBeads(centroidX, centroidY, innerCircleRadius, outerCircleRadius, beadConnections, beads) {
       const beadRadius = 20; // Or whatever the radius of the outer beads is
@@ -1532,8 +1544,14 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
                   chosenAnglePair = [connectionAngles[i], connectionAngles[(i+1) % connectionAngles.length]];
               }
           }
+          // Calculate average vector direction
+          const avgCos = connectionAngles.reduce((sum, angle) => sum + Math.cos(angle), 0) / connectionAngles.length;
+          const avgSin = connectionAngles.reduce((sum, angle) => sum + Math.sin(angle), 0) / connectionAngles.length;
 
-          let avgAngle = (chosenAnglePair[0] + chosenAnglePair[1]) / 2;
+          // let avgAngle = (chosenAnglePair[0] + chosenAnglePair[1]) / 2;
+          // let avgAngle = connectionAngles.reduce((a, b) => a + b, 0) / connectionAngles.length;
+          // let avgAngle = Math.atan2(avgSin, avgCos);
+          let avgAngle = averageAngle(chosenAnglePair);
 
           // Correction factor for overlapping beads
           let angleCorrection = 0.08;  // This is the angular shift applied. Adjust as needed.
@@ -1550,9 +1568,6 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
           createBead(outerBeadX, outerBeadY, bead.aminoAcid, bead.segment, outerBeadId, 'outer', beadRadius, centroidX, centroidY, bead.generic_number, bead.interactions, bead.sequence_number);
       }
   };
-
-
-
 
   function computeBezierPath(startX, startY, endX, endY, beadRadius) {
       // Calculate the direction vector between start and end
@@ -1576,7 +1591,7 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
 
       // Determine a control point distance factor for the curve
       // We'll give a gentle pull for the control point near the destination
-      let curveFactor = 0.3 * len;
+      let curveFactor = 0.1 * len;
 
       // Determine the control points
       // The first control point will be in the direct line between start and end
@@ -1592,8 +1607,7 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
       return pathData;
   }
 
-
-  function drawConnectionLines(connections, svg2) {
+  function drawConnectionLines(connections, svg2, innerCircleRadius) {
       connections.forEach(connection => {
           const innerBead = d3.select(`#bead-inner-${connection.innerIndex}`);
           const outerBead = d3.select(`#bead-outer-${connection.outerIndex}`);
@@ -1823,11 +1837,11 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
   createOuterBeads(bigRadius*1.3, bigRadius*1.3, smallRadius, bigRadius, conversion_dict, beadInfo.outerCircle);
   // createCircle(600, 520, 20, beadInfo.outerCircle, 'outer', bigRadius);
 
-  // drawConnectionLines(interactions, svg2);
+  drawConnectionLines(interactions, svg2, smallRadius);
   const innerBeadSelection = svg2.selectAll("circle[data-circle='inner']");  // Assuming the inner beads have a class 'inner-bead'
   const { centroidX, centroidY } = calculateCentroids(innerBeadSelection);
 
-  interactions.forEach(({ innerIndex, outerIndex, type, innerChain, outerChain }) => createConnection(innerIndex, outerIndex, type, countInner, 20, centroidX, centroidY, innerChain, outerChain, smallRadius, bigRadius));
+  // interactions.forEach(({ innerIndex, outerIndex, type, innerChain, outerChain }) => createConnection(innerIndex, outerIndex, type, countInner, 20, centroidX, centroidY, innerChain, outerChain, smallRadius, bigRadius));
 
 
   // Generate legend
