@@ -25,7 +25,7 @@
 <div class="row text-success">
     <div class="text-center">
         <div style="display: inline;">
-            <h2>G<sub>{{ crystal.signprot_complex.protein.family.name|gprot_short|slice:"1:" }}</sub> - {{ crystal.protein_conformation.protein.family.name|safe }}
+            <h2><a href="../protein/{{ crystal.signprot_complex.protein.entry_name }}">G<sub>{{ crystal.signprot_complex.protein.family.name|gprot_short|slice:"1:" }}</sub></a> - <a href="../protein/{{ crystal.protein_conformation.protein.parent.entry_name }}">{{ crystal.protein_conformation.protein.family.name|safe }}</a>
 
             <div style="display: inline;">
               <div class="btn-group">
@@ -52,15 +52,6 @@
   </div>
   <div class="col-md-9">
     {{ crystal.protein_conformation.protein.get_protein_class }}
-  </div>
-</div>
-
-<div class="row">
-  <div class="col-md-3 text-right text-info">
-    <h4>GPCR</h4>
-  </div>
-  <div class="col-md-9">
-    <a href="../protein/{{ crystal.protein_conformation.protein.parent.entry_name }}">{{ crystal.protein_conformation.protein.parent.name|safe }}</a>
   </div>
 </div>
 
@@ -193,25 +184,16 @@
 {% else %}
 <div class="row text-success">
   <div class="text-center">
-    <h2>{{ crystal.protein_conformation.protein.family.name|safe }}</h2>
+    <a href="../protein/{{ crystal.protein_conformation.protein.parent.entry_name }}"><h2>{{ crystal.protein_conformation.protein.family.name|safe }}</h2></a>
   </div>
 </div>
 
 <div class="row">
   <div class="col-md-3 text-right text-info">
-    <h4>PROTEIN CLASS</h4>
+    <h4>GPCR CLASS (FAMILY)</h4>
   </div>
   <div class="col-md-9">
     {{ crystal.protein_conformation.protein.get_protein_class }}
-  </div>
-</div>
-
-<div class="row">
-  <div class="col-md-3 text-right text-info">
-    <h4>RECEPTOR</h4>
-  </div>
-  <div class="col-md-9">
-    <a href="../protein/{{ crystal.protein_conformation.protein.parent.entry_name }}">{{ crystal.protein_conformation.protein.parent.name|safe }}</a>
   </div>
 </div>
 
@@ -270,7 +252,7 @@
 </div>
 <div class="row">
   <div class="col-md-3 text-right text-info">
-    <h4>RECEPTOR PDB</h4>
+    <h4>3D VIEW</h4>
   </div>
   <div class="col-md-9">
     <div id="viewport" style="width:500px; height:400px;background-color: white;"></div>
@@ -283,7 +265,7 @@
 
 <div class="row">
   <div class="col-md-3 text-right text-info">
-    <h4>INTERACTING RESIDUES</h4>
+    <h4>LIGAND INTERACTIONS</h4>
   </div>
   <div class="col-md-9">
     <a href="../interaction/{{pdbname}}"> {{residues|length}} interactions (Click to see)</a>
