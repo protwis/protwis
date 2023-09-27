@@ -22,5 +22,5 @@ urlpatterns = [
     url(r'^ajax/(?P<slug>[-\w]+)/$', views.ajax, name='ajax'),
     url(r'^ajaxLigand/(?P<slug>[-\w]+)/(?P<ligand>.+)$', views.ajaxLigand, name='ajax'),
     url(r'^(?P<pdbname>\w+)$', views.StructureDetails, name='structure_details'),
-    url(r'^complex/(?P<pdbname>\w+)$', views.ComplexDetails, name='structure_details'),
+    # url(r'^complex/(?P<pdbname>\w+)$', views.ComplexDetails, name='structure_details'),
 ]
