@@ -1019,27 +1019,23 @@
 </script>
 {% endif %}
 <!-- NGL -->
-<script type="text/javascript" src="https://cdn.rawgit.com/arose/ngl/v2.0.0-dev.39/dist/ngl.js"> </script>
+<!-- <script type="text/javascript" src="https://cdn.rawgit.com/arose/ngl/v2.0.0-dev.39/dist/ngl.js"> </script> -->
+{% if signaling_complex %}
+<script src="{% static 'home/js/ngl.js' %}"> </script>
 <script>
+    //stage.loadFile( "rcsb://1crn.mmtf", { defaultRepresentation: true } );
   // http://proteinformatics.charite.de/ngl/doc/#User_manual/Usage/Molecular_representations
   // http://arose.github.io/ngl/api/Stage.html
   // http://arose.github.io/ngl/js/examples.js
   // http://arose.github.io/ngl/
   document.addEventListener("DOMContentLoaded", function() {
-    stage = new NGL.Stage("viewport", {
-      backgroundColor: "white"
-    });
 
-    stage.loadFile("pdb/{{pdbname}}", {
-      ext: "pdb"
-    }).then(function(o) {
+    var stage_full;
+    var stage = new NGL.Stage("viewport", {backgroundColor: "white"});
+
+    stage.loadFile("pdb/{{pdbname}}", {ext: "pdb"}).then(function(o) {
       let preferred_chain = "{{ crystal.preferred_chain }}";
-
-      {% if signaling_complex %}
-        o.addRepresentation("cartoon", {colorScheme: "chainid"});
-      {% else %}
-        o.addRepresentation("cartoon", {sele: ":" + preferred_chain, colorScheme: "atomindex"});
-      {% endif %}
+      o.addRepresentation("cartoon", {colorScheme: "atomindex"});
 
       {% if main_ligand != "None" %}
         o.addRepresentation("licorice", {
@@ -1065,104 +1061,152 @@
       let center_axis = "{{ center_axis }}";
       let gn_list = JSON.parse("{{ gn_list }}");
       let ref_tm1 = parseInt("{{ ref_tm1 }}");
-      if (translation !== "" && typeof center_axis !== "") {
-        translation = JSON.parse(translation);
-        center_axis = JSON.parse(center_axis);
-
-        // calculate rotation and apply
-        let v1 = new NGL.Vector3(0, 1, 0)
-        let v2 = new NGL.Vector3(center_axis[0], center_axis[1], center_axis[2])
-        let quaternion = new NGL.Quaternion(); // create one and reuse it
-        quaternion.setFromUnitVectors(v2, v1)
-        o.setRotation(quaternion)
-
-        // calculate translation and apply
-        let v = new NGL.Vector3(-1 * translation[0], -1 * translation[1], -1 * translation[2])
-        v.applyMatrix4(o.matrix)
-        o.setPosition([-1 * v.x, -1 * v.y, -1 * v.z])
-
-        // calculate H8 position (based on TM1)
-        if (ref_tm1 > 0) {
-          let tm1_vector;
-          o.structure.eachAtom(function(ap) {
-              tm1_vector = new NGL.Vector3(ap.x, ap.y, ap.z)
-              tm1_vector.applyMatrix4(o.matrix)
-            }, new NGL.Selection(":" + preferred_chain + " and " + ref_tm1 + " and .CA"))
-          tm1_vector.y = 0 // height position doesn't matter
-          tm1_vector.normalize()
-
-          // calculate rotation angle around Y-axis (as the GPCR is now upright)
-          let v3 = new NGL.Vector3(-1, 0, 0)
-          let m = new NGL.Matrix4()
-          if (tm1_vector.z < 0)
-            m.makeRotationY(v3.angleTo(tm1_vector))
-          else if (tm1_vector.z > 0)
-            m.makeRotationY(-1 * v3.angleTo(tm1_vector))
-
-          o.setTransform(m)
-        }
-      }
 
       // Optimize view
-      o.autoView(":" + preferred_chain + " and (" + gn_list.join(", ") + ") and (.CA)")
+      o.centerView(":" + preferred_chain + " and (" + gn_list.join(", ") + ") and (.CA)")
 
-    });
-    //stage.loadFile( "rcsb://1crn.mmtf", { defaultRepresentation: true } );
-  {% if signaling_complex %}
-  // Initialize the second NGL viewer but only when its container is visible
-    function initializeStageFull() {
-        stage_full = new NGL.Stage("viewport_full", { backgroundColor: "white" });
-        stage_full.loadFile("/structure/complex_models/view/{{pdbname}}", { ext: "pdb" }).then(function(o){
-            o.addRepresentation( "cartoon", {
-                color: "chainname"
-            } );
-            // Strict interactions
-            o.addRepresentation( "licorice", { sele: "({{display_res_gpcr_strict}}) and sidechainAttached", color: "red", scale: 2, aspectRatio: 1});
-            o.addRepresentation( "label", {
-                sele: "({{display_res_gpcr_strict}}) and .CB",
-                color: "red", borderColor: "black", showBorder: true, scale: 2.0
-            } );
-            o.addRepresentation( "licorice", { sele: "({{display_res_gprot_strict}}) and sidechainAttached", color: "orange", scale: 2, aspectRatio: 1});
-            o.addRepresentation( "label", {
-                sele: "({{display_res_gprot_strict}}) and .CB",
-                color: "orange", borderColor: "black", showBorder: true, scale: 2.0
-            } );
-            // Loose interactions
-            o.addRepresentation( "line", { sele: "({{display_res_gpcr_loose}}) and sidechainAttached", color: "grey", scale: 2, aspectRatio: 1});
-            o.addRepresentation( "line", { sele: "({{display_res_gprot_loose}}) and sidechainAttached", color: "grey", scale: 2, aspectRatio: 1});
-            o.centerView();
-        });
+      // Initialize the second NGL viewer but only when its container is visible
+      function initializeStageFull() {
+          stage_full = new NGL.Stage("viewport_full", { backgroundColor: "white" });
+          stage_full.loadFile("pdb/{{pdbname}}", { ext: "pdb" }).then(function(o){
+              o.addRepresentation( "cartoon", {color: "chainname"});
+              // Strict interactions
+              o.addRepresentation( "licorice", { sele: "({{display_res_gpcr_strict}}) and sidechainAttached", color: "red", scale: 2, aspectRatio: 1});
+              o.addRepresentation( "label", {
+                  sele: "({{display_res_gpcr_strict}}) and .CB",
+                  color: "red", borderColor: "black", showBorder: true, scale: 2.0
+              } );
+              o.addRepresentation( "licorice", { sele: "({{display_res_gprot_strict}}) and sidechainAttached", color: "orange", scale: 2, aspectRatio: 1});
+              o.addRepresentation( "label", {
+                  sele: "({{display_res_gprot_strict}}) and .CB",
+                  color: "orange", borderColor: "black", showBorder: true, scale: 2.0
+              } );
+              // Loose interactions
+              o.addRepresentation( "line", { sele: "({{display_res_gpcr_loose}}) and sidechainAttached", color: "grey", scale: 2, aspectRatio: 1});
+              o.addRepresentation( "line", { sele: "({{display_res_gprot_loose}}) and sidechainAttached", color: "grey", scale: 2, aspectRatio: 1});
+              o.centerView();
+          });
 
-        $("#fullscreen_full").click(function() {
-            stage_full.toggleFullscreen();
-        });
+          $("#fullscreen_full").click(function() {
+              stage_full.toggleFullscreen();
+          });
 
-        // Ensure the viewer adjusts to its container's dimensions
-        stage_full.handleResize();
-    }
+          // Ensure the viewer adjusts to its container's dimensions
+          stage_full.handleResize();
+      }
 
-    // Assuming #tab2 reveals the container for stage_full
-    $("#3dview_tab").on("click", function() {
-        if (!window.stage_full_initialized) {
-            console.log('first click happened');
-            initializeStageFull();
-            window.stage_full_initialized = true;
+      // Assuming #tab2 reveals the container for stage_full
+      $("#3dview_tab").on("click", function() {
+          if (!window.stage_full_initialized) {
+              console.log('first click happened');
+              initializeStageFull();
+              window.stage_full_initialized = true;
+              setTimeout(function() {
+                  if (stage_full) stage_full.handleResize();
+              }, 100);
+          } else {
+            console.log('here again');
             setTimeout(function() {
                 if (stage_full) stage_full.handleResize();
             }, 100);
-        } else {
-          setTimeout(function() {
-              if (stage_full) stage_full.handleResize();
-          }, 100);
-        }
+          }
+      });
+
+      $( "#fullscreen" ).click(function() {
+          stage.toggleFullscreen();
+      });
+
+      });
     });
-    {% endif %}
-
-  });
-  $("#fullscreen").click(function() {
-    stage.toggleFullscreen();
-  });
-
 </script>
+{% else %}
+<script type="text/javascript" src="https://cdn.rawgit.com/arose/ngl/v2.0.0-dev.39/dist/ngl.js"> </script>
+<script>
+    // http://proteinformatics.charite.de/ngl/doc/#User_manual/Usage/Molecular_representations
+    // http://arose.github.io/ngl/api/Stage.html
+    // http://arose.github.io/ngl/js/examples.js
+    // http://arose.github.io/ngl/
+    document.addEventListener("DOMContentLoaded", function() {
+      stage = new NGL.Stage("viewport", {
+        backgroundColor: "white"
+      });
 
+      stage.loadFile("pdb/{{pdbname}}", {
+        ext: "pdb"
+      }).then(function(o) {
+        let preferred_chain = "{{ crystal.preferred_chain }}";
+          o.addRepresentation("cartoon", {sele: ":" + preferred_chain, colorScheme: "atomindex"});
+
+        {% if main_ligand != "None" %}
+          o.addRepresentation("licorice", {
+            sele: ":" + preferred_chain + " and [{{ main_ligand}}] and hetero "
+          });
+
+          o.addRepresentation("surface", {
+            sele: ":" + preferred_chain + " and [{{ main_ligand}}]",
+            opacity: 0.4,
+            useWorker: false
+          });
+
+          o.addRepresentation("label", {
+            sele: ":" + preferred_chain + " and [{{ main_ligand}}] and hetero and .C1",
+            color: "#888",
+            scale: 4.0,
+            labelType: "resname"
+          });
+        {% endif %}
+
+        // Automatic GPCR positioning
+        let translation = "{{ translation }}";
+        let center_axis = "{{ center_axis }}";
+        let gn_list = JSON.parse("{{ gn_list }}");
+        let ref_tm1 = parseInt("{{ ref_tm1 }}");
+        if (translation !== "" && typeof center_axis !== "") {
+          translation = JSON.parse(translation);
+          center_axis = JSON.parse(center_axis);
+
+          // calculate rotation and apply
+          let v1 = new NGL.Vector3(0, 1, 0)
+          let v2 = new NGL.Vector3(center_axis[0], center_axis[1], center_axis[2])
+          let quaternion = new NGL.Quaternion(); // create one and reuse it
+          quaternion.setFromUnitVectors(v2, v1)
+          o.setRotation(quaternion)
+
+          // calculate translation and apply
+          let v = new NGL.Vector3(-1 * translation[0], -1 * translation[1], -1 * translation[2])
+          v.applyMatrix4(o.matrix)
+          o.setPosition([-1 * v.x, -1 * v.y, -1 * v.z])
+
+          // calculate H8 position (based on TM1)
+          if (ref_tm1 > 0) {
+            let tm1_vector;
+            o.structure.eachAtom(function(ap) {
+                tm1_vector = new NGL.Vector3(ap.x, ap.y, ap.z)
+                tm1_vector.applyMatrix4(o.matrix)
+              }, new NGL.Selection(":" + preferred_chain + " and " + ref_tm1 + " and .CA"))
+            tm1_vector.y = 0 // height position doesn't matter
+            tm1_vector.normalize()
+
+            // calculate rotation angle around Y-axis (as the GPCR is now upright)
+            let v3 = new NGL.Vector3(-1, 0, 0)
+            let m = new NGL.Matrix4()
+            if (tm1_vector.z < 0)
+              m.makeRotationY(v3.angleTo(tm1_vector))
+            else if (tm1_vector.z > 0)
+              m.makeRotationY(-1 * v3.angleTo(tm1_vector))
+
+            o.setTransform(m)
+          }
+        }
+
+        // Optimize view
+        o.autoView(":" + preferred_chain + " and (" + gn_list.join(", ") + ") and (.CA)")
+
+      });
+    });
+    $("#fullscreen").click(function() {
+      stage.toggleFullscreen();
+    });
+</script>
+{% endif %}
 {% endblock %}
