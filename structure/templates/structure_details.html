@@ -33,7 +33,7 @@
                       Download <span class="caret"></span>
                   </button>
                   <ul class="dropdown-menu">
-                    <li><a id="download_btn1" href="./{{crystal.pdb_code.index}}/download_complex_pdb">Full</a></li>
+                    <li><a id="download_btn1" href="./{{crystal.pdb_code.index}}/download_pdb">Full</a></li>
                     <!-- <li><a id="download_btn2" href="./{{model.protein_conformation.protein.entry_name|upper}}_noloops/download_pdb">Without loops</a></li> -->
                   </ul>
               </div>
@@ -182,11 +182,32 @@
   </div>
 </div>
 {% else %}
+
 <div class="row text-success">
-  <div class="text-center">
-    <a href="../protein/{{ crystal.protein_conformation.protein.parent.entry_name }}"><h2>{{ crystal.protein_conformation.protein.family.name|safe }}</h2></a>
-  </div>
+    <div class="text-center">
+        <div style="display: inline;">
+            <h2><a href="../protein/{{ crystal.protein_conformation.protein.parent.entry_name }}">{{ crystal.protein_conformation.protein.family.name|safe }}</a>
+
+            <div style="display: inline;">
+              <div class="btn-group">
+                  <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                      Download <span class="caret"></span>
+                  </button>
+                  <ul class="dropdown-menu">
+                    <li><a id="download_btn1" href="./{{crystal.pdb_code.index}}/download_pdb">Full</a></li>
+                    <!-- <li><a id="download_btn2" href="./{{model.protein_conformation.protein.entry_name|upper}}_noloops/download_pdb">Without loops</a></li> -->
+                  </ul>
+              </div>
+            </div>
+            <div style="display: inline;">
+                <i style="color:black; font-size:16px;" class="fas fa-info-circle" data-html="true" data-toggle="popover" data-trigger="click hover" data-placement="below" data-html="true" data-content="The PDB file contains GPCRdb generic residue numbers in the B-factor field of C&alpha; atoms <a target='_blank' href='https://doi.org/10.1016/j.tips.2014.11.001'>Isberg et al. 2015</a>"></i>
+            </div>
+            </h2>
+        </div>
+    </div>
 </div>
+
+
 
 <div class="row">
   <div class="col-md-3 text-right text-info">
