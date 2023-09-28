@@ -23,6 +23,15 @@
      padding: 0px;
   }
 </style>
+
+    <!-- Overview modal -->
+    <div id="overview-modal" class="modal" style="text-align:center;">
+        <div class="modal-content" style='height: 90%; width: 60%; vertical-align:middle;'>
+            <img id="overview-modal-image" src="{% static 'home/images/GproteinDb_overview.png' %}" style='height: 95%;'>
+            <button id="close-overview-modal"  style="position:absolute;" aria-hidden="false" aria-label="Close" class="close" data-dismiss="overview-modal">&times;</button>
+        </div>
+    </div>
+
     <!-- Carousel -->
     <div class="row">
 
@@ -165,6 +174,17 @@
                     </div>
                 </div>
 
+                <!-- Overview -->
+                <div class="col-md-4">
+                    <div class="panel panel-primary">
+                        <div class="panel-body">
+                            <h3>Overview</h3>
+                            <br />
+                            <img role="button" id="overview-image" src="{% static 'home/images/GproteinDb_overview.png' %}" style='height: 100%; width: 100%; object-fit: contain'>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Release Notes -->
                 <div class="col-md-4">
                     <div class="panel panel-primary">
@@ -174,15 +194,6 @@
                             {{ release_notes.html|safe }}
                             <br />
                             <strong><a href="/pages/releasenotes">All releases</a></strong>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Publications -->
-                <div class="col-md-4">
-                    <div class="panel panel-primary">
-                        <div class="panel-body">
-                            <a href="https://www.youtube.com/watch?v=X8j_xpryZ4U&start=778&end=3732;" target="_blank"><img style="width: 100%;" src="{% static '/home/images/gprot_resource.png' %}". ></img></a>
                         </div>
                     </div>
                 </div>
@@ -208,6 +219,13 @@
                     Pandy-Szekeres G, Esguerra M, Hauser AS, Caroli J, Munk C, Pilger S, Keseru GM, Kooistra AJ, Gloriam DE<br />
                     <a href='https://doi.org/10.1093/NAR/GKAB852' target='_blank'><i>Nucleic acids research</i>, 2022, 50:D518-D525</a><br />
                     <br />
+                </div>
+            </div>
+
+            <!-- Youtube link -->
+            <div class="panel panel-primary">
+                <div class="panel-body">
+                    <a href="https://www.youtube.com/watch?v=X8j_xpryZ4U&start=778&end=3732;" target="_blank"><img style="width: 100%;" src="{% static '/home/images/gprot_resource.png' %}". ></img></a>
                 </div>
             </div>
 
@@ -295,5 +313,20 @@
     $(".release-notes").find("li").addClass("hidden");
     $(".gproteindb").removeClass("hidden");
     $(".all").removeClass("hidden")
+
+    $("#overview-image").click(function() {
+        // $("#overview-modal-image").attr("src", $("#overview-image").attr("src"));
+        $("#overview-modal").css("display","block");
+    })
+    var modal = document.getElementById("overview-modal");
+    var span = document.getElementById("close-overview-modal");
+    span.onclick = function() {
+        modal.style.display = "none";
+    }
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            modal.style.display = "none";
+        }
+    }
 </script>
 {% endblock %}

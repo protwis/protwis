@@ -15,5 +15,6 @@ urlpatterns = [
     #     name="favicon"
     # ),
     url(r'^citations', views.citations_json, name='citation'),
-    url(r'^cite_gpcrdb', views.citeGPCRdb.as_view(), name='citation')
+    url(r'^cite_gpcrdb', views.citeGPCRdb.as_view(), name='citation'),
+    url(r'^cite_gproteindb', views.citeGproteinDb.as_view(), name='citation')
 ]

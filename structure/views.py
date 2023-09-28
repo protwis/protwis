@@ -635,10 +635,8 @@ def ComplexModelDetails(request, header, refined=False):
                                  'gpcr_pos': gpcr_pos, 'gprot_pos': gprot_pos,
                                  'gpcr_grn': gpcr_grn, 'gprot_grn': gprot_grn, 'segment': segment})
 
-    ### HARDCODED - FIXME
-    gpcr_chain = 'A'
-    gprot_chain = 'B'
-    ###
+    gpcr_chain = model.preferred_chain
+    gprot_chain = model.signprot_complex.alpha
 
     display_res_gpcr_loose = ':'+gpcr_chain+' and ('+' or '.join([i for i in display_res_gpcr_loose if i not in display_res_gpcr_strict])+')'
     display_res_gprot_loose = ':'+gprot_chain+' and ('+' or '.join([i for i in display_res_gprot_loose if i not in display_res_gprot_strict])+')'
@@ -832,6 +830,20 @@ def ComplexModelDetails(request, header, refined=False):
             lookup[r.generic_number.label] = r.sequence_number
             residues_lookup[r.sequence_number] = r.amino_acid +str(r.sequence_number)+ " "+ r.generic_number.label
 
+    chain_color_palette = ['grey', '#fc660f']
+
+    chains = [gpcr_chain, gprot_chain]
+    if model.signprot_complex.beta_chain:
+        chains.append(model.signprot_complex.beta_chain)
+        chain_color_palette.append('#f79862')
+    if model.signprot_complex.gamma_chain:
+        chains.append(model.signprot_complex.gamma_chain)
+        chain_color_palette.append('#ffbf00')
+
+    chain_colors = []
+    for i,c in enumerate(chains):
+        chain_colors.append([chain_color_palette[i],":{}".format(c)])
+
     ### Keep old coloring for refined structures
     if model.structure_type.slug.startswith('af-signprot-refined'):
         # if model.protein_conformation.protein.accession:
@@ -852,11 +864,21 @@ def ComplexModelDetails(request, header, refined=False):
         
         receptor_rotamers, signprot_rotamers = parse_model_statsfile(model.stats_text.stats_text, receptor_residues, signprot_residues)
 
-        loop_segments = ProteinSegment.objects.filter(category='loop', proteinfamily='Alpha')
-
-        bb_temps, backbone_templates, r_temps, rotamer_templates, segments_out, bb_main, bb_alt, bb_none, sc_main, sc_alt, sc_none, template_list, colors = format_model_details(receptor_rotamers, model, color_palette, chain='R')
+        bb_temps, backbone_templates, r_temps, rotamer_templates, segments_out, bb_main, bb_alt, bb_none, sc_main, sc_alt, sc_none, template_list, colors = format_model_details(receptor_rotamers, model, color_palette, chain=gpcr_chain)
         signprot_color_palette = [i for i in color_palette if i not in list(colors.values())]
-        bb_temps2, backbone_templates2, r_temps2, rotamer_templates2, segments_out2, bb_main2, bb_alt2, bb_none2, sc_main2, sc_alt2, sc_none2, template_list2, colors2 = format_model_details(signprot_rotamers, model, signprot_color_palette, chain='A', used_colors=colors)
+        bb_temps2, backbone_templates2, r_temps2, rotamer_templates2, segments_out2, bb_main2, bb_alt2, bb_none2, sc_main2, sc_alt2, sc_none2, template_list2, colors2 = format_model_details(signprot_rotamers, model, signprot_color_palette, chain=gprot_chain, used_colors=colors)
+        segments_out+=segments_out2
+
+        ### Color overwrite
+        segments_out[0][0] = 'black' #GPCR AF
+        segments_out[1][0] = chain_color_palette[0] #GPCR Structure
+        segments_out[2][0] = 'black' #Gprot AF
+        segments_out[3][0] = chain_color_palette[1] #Gprot Structure
+
+        if model.signprot_complex.beta_protein:
+            segments_out+=[[chain_color_palette[2],":{}".format(model.signprot_complex.beta_chain)]]
+        if model.signprot_complex.gamma_protein:
+            segments_out+=[[chain_color_palette[3],":{}".format(model.signprot_complex.gamma_chain)]]
 
         for n in bb_temps2.values():
             for s in n:
@@ -878,7 +900,7 @@ def ComplexModelDetails(request, header, refined=False):
                                                              'bb_alt2': bb_alt2, 'bb_none2': bb_none2,
                                                              'sc_alt2': sc_alt2, 'sc_none2': sc_none2,
                                                              'template_list': template_list, 'model_main_template': main_template, 'state': None, 'plddt_avg': None,
-                                                             'signprot_color_residues': json.dumps(segments_out2), 'loop_segments': loop_segments, 'pdbname': header, 'scores': StructureAFScores(),
+                                                             'signprot_color_residues': json.dumps(segments_out2), 'pdbname': header, 'scores': StructureAFScores(),
                                                              'refined': json.dumps(True), 'outer': json.dumps(gpcr_aminoacids), 'inner': json.dumps(gprot_aminoacids), 'structure_type': model.structure_type,
                                                              'interactions': json.dumps(protein_interactions),
                                                              'outer_strict': json.dumps(gpcr_aminoacids_strict),
@@ -889,15 +911,11 @@ def ComplexModelDetails(request, header, refined=False):
                                                              'conversion_dict': json.dumps(matching_dict), 'conversion_dict_strict': json.dumps(matching_dict_strict),
                                                              'residues_lookup': residues_lookup,
                                                              'display_res_gpcr_strict': display_res_gpcr_strict, 'display_res_gprot_strict': display_res_gprot_strict,
-                                                             'display_res_gpcr_loose': display_res_gpcr_loose, 'display_res_gprot_loose': display_res_gprot_loose
+                                                             'display_res_gpcr_loose': display_res_gpcr_loose, 'display_res_gprot_loose': display_res_gprot_loose,
+                                                             'chain_colors': json.dumps(chain_colors), 'chain_color_palette': chain_color_palette
                                                              })
 
     else:
-        chains = ['A','B']
-        if model.signprot_complex.beta_chain:
-            chains.append('C')
-        if model.signprot_complex.gamma_chain:
-            chains.append('D')
         segments_out = af_model_coloring(residues_plddt, chains)
         return render(request,'complex_models_details.html',{'model': model,
                                                              'color_residues': json.dumps(segments_out),
@@ -922,7 +940,8 @@ def ComplexModelDetails(request, header, refined=False):
                                                              'conversion_dict_strict': json.dumps(matching_dict_strict),
                                                              'residues_lookup': residues_lookup,
                                                              'display_res_gpcr_strict': display_res_gpcr_strict, 'display_res_gprot_strict': display_res_gprot_strict,
-                                                             'display_res_gpcr_loose': display_res_gpcr_loose, 'display_res_gprot_loose': display_res_gprot_loose
+                                                             'display_res_gpcr_loose': display_res_gpcr_loose, 'display_res_gprot_loose': display_res_gprot_loose,
+                                                             'chain_colors': json.dumps(chain_colors)
                                                              })
 
 

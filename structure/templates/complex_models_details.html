@@ -85,15 +85,24 @@ canvas {
       z-index:2;
       min-width: 200px;
     }
+    .wide-popover {
+      min-width: 40%;
+      max-width: 650px;
+    }
+    #interaction-cutoffs th {
+      text-align: center;
+    }
 </style>
 
 <div class="row text-success">
     <div class="text-center">
         <div style="display: inline;">
           {% if structure_type.slug == "af-signprot" %}
-              <h2>G<sub>{{ model.signprot_complex.protein.family.name|gprot_short|slice:"1:" }}</sub> - {{ model.protein_conformation.protein.name|safe }} complex model
+              <h2><a href="/protein/{{ model.signprot_complex.protein.entry_name }}" target="_blank">G<sub>{{ model.signprot_complex.protein.family.name|gprot_short|slice:"1:" }}</sub></a> - 
+                  <a href="/protein/{{ model.protein_conformation.protein.entry_name }}" target="_blank">{{ model.protein_conformation.protein.name|safe }}</a> complex model
           {% else %}
-              <h2>Refined structure ({{ model.pdb_code.index|entry_short }}) of G<sub>{{ model.signprot_complex.protein.family.name|gprot_short|slice:"1:" }}</sub> - {{ model.protein_conformation.protein.name|safe}}
+              <h2>Refined structure ({{ model.pdb_code.index|entry_short }}) of <a href="/protein/{{ model.signprot_complex.protein.entry_name }}" target="_blank">G<sub>{{ model.signprot_complex.protein.family.name|gprot_short|slice:"1:" }}</sub></a> - 
+                <a href="/protein/{{ model.protein_conformation.protein.entry_name }}" target="_blank">{{ model.protein_conformation.protein.name|safe}}</a>
           {% endif %}
 
             <div style="display: inline;">
@@ -108,7 +117,7 @@ canvas {
               </div>
             </div>
             <div style="display: inline;">
-                <i style="color:black; font-size:16px;" class="fas fa-info-circle" data-html="true" data-toggle="popover" data-trigger="click hover" data-placement="below" data-html="true" data-content="The PDB file contains GPCRdb generic residue numbers in the B-factor field of C&alpha; atoms <a target='_blank' href='https://doi.org/10.1016/j.tips.2014.11.001'>Isberg et al. 2015</a>"></i>
+                <i style="color:black; font-size:16px;" class="fas fa-info-circle simple-popover" data-html="true" data-toggle="popover" data-trigger="click hover" data-placement="below" data-html="true" data-content="The PDB file contains GPCRdb generic residue numbers in the B-factor field of C&alpha; atoms <a target='_blank' href='https://doi.org/10.1016/j.tips.2014.11.001'>Isberg et al. 2015</a>"></i>
             </div>
             </h2>
         </div>
@@ -117,7 +126,7 @@ canvas {
 
 <div class="row">
     <div class="col-md-3 text-right text-info">
-        <h4>RECEPTOR CLASS (FAMILY)</h4>
+        <h4>GPCR CLASS (FAMILY)</h4>
     </div>
     <div class="col-md-9">
         {{ model.protein_conformation.protein.get_protein_class|cut_classname }}
@@ -165,14 +174,24 @@ canvas {
       {% if refined == "true" %}
       <div style='width: 100%; display:table; position:relative;'>
           <div style='display: table-cell;'>
-              {% for prot, bts in backbone_templates.items %}
+              Structure {{ chain_color.0}}<br>
+              <div class="graphcolor" style="background-color:{{ chain_color_palette.0 }}; width: 20px; height: 15px; margin-bottom: 5px; border:solid black 1px;"></div> GPCR
+              <div class="graphcolor" style="background-color:{{ chain_color_palette.1 }}; width: 20px; height: 15px; margin-bottom: 5px; border:solid black 1px;"></div> G&alpha;
+              {% if chain_color_palette|length > 2 %}
+              <div class="graphcolor" style="background-color:{{ chain_color_palette.2 }}; width: 20px; height: 15px; margin-bottom: 5px; border:solid black 1px;"></div> G&beta;
+              {% endif %}
+              {% if chain_color_palette|length > 3 %}
+              <div class="graphcolor" style="background-color:{{ chain_color_palette.3 }}; width: 20px; height: 15px; margin-bottom: 5px; border:solid black 1px;"></div> G&gamma;
+              {% endif %}
+              <!-- {% for prot, bts in backbone_templates.items %}
                   {% for bt in bts %}
                       <div class="graphcolor" style="background-color:{{ bt.color }}; width: 20px; height: 15px; margin-bottom: 5px; border:solid black 1px;"></div>
                       Structure ({{ bt.pdb_code.index }})
                   {% endfor %}
-              {% endfor %}
-                      <div class="graphcolor" style="background-color:white; width: 20px; height: 15px; margin-bottom: 5px; border:solid black 1px; "></div>
-                      Model (AlphaFold2-Multimer)
+              {% endfor %} -->
+              <br>Model<br>
+              <div class="graphcolor" style="background-color:black; width: 20px; height: 15px; margin-bottom: 5px; border:solid black 1px; "></div> AlphaFold2-Multimer
+                      
           </div>
       </div>
       {% endif %}
@@ -180,7 +199,7 @@ canvas {
     </div>
     {% if refined == "false" %}
     <div class="col-md-4" style='padding-left: 50px;'>
-        <div><h4>Tertiary structure confidence <i class="fas fa-info-circle" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="below" data-content="<b>Interpretation of AlphaFold models</b><br>The pLDDT score from AlphaFold estimates the confidence of the placement of an individual residue in relation to its neighboring residues within a 15 Å radius."></i></h4></div>
+        <div><h4>Tertiary structure confidence <i class="fas fa-info-circle simple-popover" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="below" data-content="<b>Interpretation of AlphaFold models</b><br>The pLDDT score from AlphaFold estimates the confidence of the placement of an individual residue in relation to its neighboring residues within a 15 Å radius."></i></h4></div>
         <p>(pLDDT score) avg.: {{ plddt_avg|floatformat:1 }}</p>
         <div style='width: 90%; display:table; position:relative;'>
             <!-- <table>
@@ -236,21 +255,21 @@ canvas {
         <br>
         <div>
           <h5>PTM Score
-            <span class="fa fa-info-circle" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="bottom" data-content="<b>Predicted TM-score </b>:<br /> is an estimate of the TM-score derived from comparing predicted atom positions
+            <span class="fa fa-info-circle simple-popover" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="bottom" data-content="<b>Predicted TM-score </b>:<br /> is an estimate of the TM-score derived from comparing predicted atom positions
             to true positions under various alignments, emphasizing correct local frame residue interactions in AlphaFold."></span>
           </h5>
         </div>
         <div id="PTM_location"></div>
         <div>
           <h5>iPTM Score
-            <span class="fa fa-info-circle" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="bottom" data-content="<b>Interface predicted TM-score</b>:<br />
+            <span class="fa fa-info-circle simple-popover" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="bottom" data-content="<b>Interface predicted TM-score</b>:<br />
 A modified pTM score, adapted to measure the accuracy of predicted protein interfaces Instead of comparing residues within the same protein chain as in the original TM-score, it compares residues from different chains."></span>
           </h5>
         </div>
         <div id="iPTM_location"></div>
         <div>
           <h5>PAE mean
-            <span class="fa fa-info-circle" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="bottom" data-content="<b>The mean of the predicted alignment errors</b>:<br>The average expected error in residue x's position when aligning predicted and true structures based on residue y, focusing on inter-chain relationships."></span>
+            <span class="fa fa-info-circle simple-popover" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="bottom" data-content="<b>The mean of the predicted alignment errors</b>:<br>The average expected error in residue x's position when aligning predicted and true structures based on residue y, focusing on inter-chain relationships."></span>
           </h5>
         </div>
         <div id="PAE_location"></div>
@@ -594,6 +613,45 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
 
     </div>
     <div class="tab-pane container active" id="3dview">
+      <p class="inline"><span style="color:#fc660ff0;">G&alpha;</span>, 
+        {% if model.signprot_complex.beta_protein %}
+        <span style="color:#f79862;">G&beta;</span>, 
+        {% endif %}
+        {% if model.signprot_complex.gamma_protein %}
+        <span style="color:#ffbf00;">G&gamma;</span>, 
+        {% endif %}
+        <span style="color:grey;">GPCR</span><br />
+        Interaction cut-off: strict (stick), loose (line) 
+          <i style="color:black; font-size:16px;" id="wide-popover" class="fas fa-info-circle" data-html="true" data-container="body" data-toggle="popover" data-trigger="click hover" data-placement="below" data-html="true" data-content="
+          <table id='interaction-cutoffs'>
+            <thead>
+              <th>Interaction type</th>
+              <th>Strict definition</th>
+              <th>Loose definition</th>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Polar</td>
+                <td>donor-acceptor dist. ≤3.5Å + donor angle ≥120°</td>
+                <td>donor-acceptor dist. ≤4Å</td>
+              </tr>
+              <tr>
+                <td>Aromatic</td>
+                <td>Face-to-face: dist. ≤4.4Å + angle ≤30° <br/>Face-to-edge: dist. ≤5.5Å + angle >30° <br/>Cation-π: dist. to cat. ≤6.6Å + angle ≤30°</td>
+                <td>dist. ≤5.5Å OR Cation-π</td>
+              </tr>
+              <tr>
+                <td>Hydrophobic</td>
+                <td>≥3 atom pairs</td>
+                <td>≥1 atom pair</td>
+              </tr>
+              <tr>
+                <td>van der Waals</td>
+                <td>≥3 atom pairs</td>
+                <td>≥1 atom pair</td>
+            </tbody>
+          </table>"></i>
+      </p>
       <div id="viewport_full" style="width:500px; height:400px; background-color: white;"></div>
       <div style="width:500px; background-color:#eaeaea; border-radius: 0px 0px 5px 5px;">
           <p style="padding: 2px 0px 2px 5px; font-size: 10px;"><button id="fullscreen_full">Full Screen</button><a href="https://github.com/arose/ngl"> NGL</a> is a WebGL based 3D viewer powered by <a href="https://mmtf.rcsb.org">MMTF</a>.</p>
@@ -674,25 +732,28 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
 
             // 3D intereaction viewer
             stage_full = new NGL.Stage( "viewport_full", { backgroundColor: "white" } );
-            stage_full.loadFile( "/structure/complex_models/view/{{pdbname}}", { ext: "pdb" }  ).then( function( o ){
 
+            var galpha = "#fc660f";
+
+            stage_full.loadFile( "/structure/complex_models/view/{{pdbname}}", { ext: "pdb" }  ).then( function( o ){
+                var schemeId2 = NGL.ColorMakerRegistry.addSelectionScheme( JSON.parse('{{chain_colors|safe}}') );
                 o.addRepresentation( "cartoon", {
-                    color: "chainname"
+                    color: schemeId2
                 } );
                 // Strict interactions
-                o.addRepresentation( "licorice", { sele: "({{display_res_gpcr_strict}}) and sidechainAttached", color: "red", scale: 2, aspectRatio: 1});
+                o.addRepresentation( "licorice", { sele: "({{display_res_gpcr_strict}}) and sidechainAttached", color: "grey", scale: 2, aspectRatio: 1});
                 o.addRepresentation( "label", {
                     sele: "({{display_res_gpcr_strict}}) and .CB",
-                    color: "red", borderColor: "black", showBorder: true, scale: 2.0
+                    color: "grey", borderColor: "black", showBorder: true, backgroundColor: "white", backgroundOpacity: .7, showBackground: true, scale: 2.0
                 } );
-                o.addRepresentation( "licorice", { sele: "({{display_res_gprot_strict}}) and sidechainAttached", color: "orange", scale: 2, aspectRatio: 1});
+                o.addRepresentation( "licorice", { sele: "({{display_res_gprot_strict}}) and sidechainAttached", color: galpha, scale: 2, aspectRatio: 1});
                 o.addRepresentation( "label", {
                     sele: "({{display_res_gprot_strict}}) and .CB",
-                    color: "orange", borderColor: "black", showBorder: true, scale: 2.0
+                    color: galpha, borderColor: "black", showBorder: true, backgroundColor: "white", backgroundOpacity: .7, showBackground: true, scale: 2.0
                 } );
                 // Loose interactions
                 o.addRepresentation( "line", { sele: "({{display_res_gpcr_loose}}) and sidechainAttached", color: "grey", scale: 2, aspectRatio: 1});
-                o.addRepresentation( "line", { sele: "({{display_res_gprot_loose}}) and sidechainAttached", color: "grey", scale: 2, aspectRatio: 1});
+                o.addRepresentation( "line", { sele: "({{display_res_gprot_loose}}) and sidechainAttached", color: galpha, scale: 2, aspectRatio: 1});
                 o.centerView();
             } );
             // stage_full.signals.clicked.add( function( d ){
@@ -732,7 +793,8 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
     <!-- <script src="{% static 'home/js/fixed_columns.js' %}"></script> -->
     <script>
       $(function () {
-        $("[data-toggle='popover']").popover();
+        $(".simple-popover").popover();
+        $('#wide-popover').popover().data('bs.popover').tip().addClass('wide-popover');
       });
     </script>
     <script type="text/javascript" charset="utf-8">
@@ -761,6 +823,7 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
 
             ClearSelection('targets');
             ClearSelection('reference');
+
             // Call the function with your desired values
             draw_interactions_in_circles('visualization', interactions_strict, inner_data_strict, outer_data_strict, conversion_dict_strict);
           
