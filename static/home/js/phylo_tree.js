@@ -1413,8 +1413,8 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
 
             // Draw the segment label at the midpoint of the arc segment
             let midAngle = (adjustedStartAngle + adjustedEndAngle) / 2;
-            let labelX = cx + (internalCircleRadius - 45) * Math.cos(midAngle);
-            let labelY = cy + (internalCircleRadius - 45) * Math.sin(midAngle);
+            let labelX = cx + (internalCircleRadius - 55) * Math.cos(midAngle);
+            let labelY = cy + (internalCircleRadius - 55) * Math.sin(midAngle);
 
             let textAngleDeg = (midAngle * 180 / Math.PI);  // Convert to degrees and align the text
 
@@ -1434,7 +1434,7 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
                 // .attr("alignment-baseline", "middle")
                 .attr("transform", `rotate(${textAngleDeg}, ${labelX}, ${labelY})`)
                 .text(lastSegment)
-                .style("font-size", "10px")
+                .style("font-size", "14px")
                 .attr("font-weight", "bold")
                 .style("font-family", "Palatino")
                 .style("fill", "#333");
@@ -1476,7 +1476,7 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
         // .attr("alignment-baseline", "middle")
         .attr("transform", `rotate(${textAngleDeg}, ${labelX}, ${labelY})`)
         .text(lastSegment)
-        .style("font-size", "10px")
+        .style("font-size", "14px")
         .attr("font-weight", "bold")
         .style("font-family", "Palatino")
         .style("fill", "#333");
@@ -1814,16 +1814,27 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
   let smallRadius;
   let bigRadius;
 
+  // if (countInner <= 15){
+  //   smallRadius = 20 * 20 / Math.PI * 0.85;
+  // } else if (countInner > 15 && countInner <= 30) {
+  //   smallRadius = 30 * 20 / Math.PI * 0.85;
+  // } else {
+  //   smallRadius = countInner * 20 / Math.PI * 0.85;
+  // };
+
   if (countInner <= 15){
-    smallRadius = 20 * 20 / Math.PI * 0.85;
-  } else if (countInner > 15 && countInner <= 30) {
-    smallRadius = 30 * 20 / Math.PI * 0.85;
+    smallRadius = 25 * 20 / Math.PI * 0.85;
+  } else if (countInner > 15 && countInner <= 35) {
+    smallRadius = 35 * 20 / Math.PI * 0.85;
   } else {
     smallRadius = countInner * 20 / Math.PI * 0.85;
   };
 
-  if (countInner <= 30 ){
-    bigRadius = smallRadius * 2.7;
+
+  if (countInner <= 15){
+    bigRadius = smallRadius * 1.8;
+  } else if (countInner > 15 && countInner <= 35 ){
+    bigRadius = smallRadius * 2.2;
   } else {
     bigRadius = (countOuter * 20 / Math.PI * 0.95) * 2.2;
   }
