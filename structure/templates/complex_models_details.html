@@ -552,6 +552,10 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
       <div class="row">
           <div class="col-md-9">
             {% if residues_browser %}
+            <!-- Arg list: GlobalTableToExcel(table, name, filename) -->
+            <a id="dlink" style="display:none;"></a>
+            <div id="excel_table" style2="display:none;"></div>
+            <button onclick="GlobalTableToExcel('residues', 'Interface_interactions', 'InterfaceInteractions.xls')" type="button" class="btn btn-primary" style="margin-top:10px;margin-top:3px"> Export to Excel </button>
             <div style="padding-top: 0px; font-size: 10px; white-space: nowrap; width: 100%;">
                 <table class="display" id="residues" style="margin-left:0px;">
                     <thead>
@@ -694,6 +698,7 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
     <script src="{% static 'home/js/phylo_tree.js' %}"></script>
     <script src="{% static 'home/js/lodash.min.js' %}"></script>
     <script src="{% static 'home/js/chroma.min.js' %}"></script>
+    <script src="{% static 'home/js/gpcrdb.js' %}"></script>
     <!-- <script src="{% static 'home/js/jquery.tablesorter.js' %}"></script> -->
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
     <script src="{% static 'home/js/matrix_utilities.js' %}"></script>
