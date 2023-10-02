@@ -1262,8 +1262,8 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
         .style("opacity", .9);
       tooltip.html("Amino Acid: " + aminoAcid + "<br/>" +
                   "Segment: " + segment + "<br/>" +
-                  "Generic Number: " + grn_number + "<br/>" +
-                  "Sequence Number: " + seq_number + "<br/>" +
+                  "Generic residue number: " + grn_number + "<br/>" +
+                  "Sequence number: " + seq_number + "<br/>" +
                   "Interactions: " + list_int + "<br/>"
                 )
         .style("left", (event.pageX + 5) + "px")
@@ -1360,6 +1360,14 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
         }
     }
 
+    let generic_label, protein_label;
+    if(circleType=='inner'){
+      generic_label = grn_number + "_gprot";
+      protein_label = seq_number + "_gprot";
+    } else {
+      generic_label = grn_number + "_GPCR";
+      protein_label = seq_number + "_GPCR";
+    }
     // Create text
     svg2.append("text")
         .attr("x", textX)
@@ -1368,6 +1376,8 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
         .attr("text-anchor", textAnchor)
         .attr("transform", `rotate(${textRotation},${cx},${cy})`) // .attr("transform", `rotate(${angleToCentroid * (180 / Math.PI)},${cx},${cy})`)
         .text(inner_number)
+        .attr("generic-nr", generic_label)
+        .attr("protein-nr", protein_label)
         .style("font-size", "18px")
         .style("font-family", "Palatino")
         .attr("font-weight", "bold")
@@ -1386,6 +1396,7 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
     const centerY = cy;
 
     let lastSegment = null;
+    let textAnchor;
     let segmentStartAngle = 0;
     const gapInRadians = 10 / internalCircleRadius; // 10 pixels space
 
@@ -1401,20 +1412,29 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
             const adjustedEndAngle = angle - gapInRadians;
 
             // Draw the segment label at the midpoint of the arc segment
-            const midAngle = (adjustedStartAngle + adjustedEndAngle) / 2;
-            const labelX = cx + (internalCircleRadius - 45) * Math.cos(midAngle);
-            const labelY = cy + (internalCircleRadius - 45) * Math.sin(midAngle);
+            let midAngle = (adjustedStartAngle + adjustedEndAngle) / 2;
+            let labelX = cx + (internalCircleRadius - 45) * Math.cos(midAngle);
+            let labelY = cy + (internalCircleRadius - 45) * Math.sin(midAngle);
 
-            const textAngleDeg = (midAngle * 180 / Math.PI);  // Convert to degrees and align the text
+            let textAngleDeg = (midAngle * 180 / Math.PI);  // Convert to degrees and align the text
+
+            if (textAngleDeg > 90 || textAngleDeg < -90 ) {
+              textAngleDeg += 180;
+              textAnchor = "end";
+            } else{
+              textAnchor = "start";
+              // labelX = cx + (internalCircleRadius - 4 * beadRadius - 10) * Math.cos(midAngle * (Math.PI / 180));
+              // labelY = cy + (internalCircleRadius - 2 * beadRadius) * Math.sin(midAngle * (Math.PI / 180));
+            }
 
             svg2.append("text")
                 .attr("x", labelX)
                 .attr("y", labelY)
-                .attr("text-anchor", "middle")
-                .attr("alignment-baseline", "middle")
+                .attr("text-anchor", textAnchor)
+                // .attr("alignment-baseline", "middle")
                 .attr("transform", `rotate(${textAngleDeg}, ${labelX}, ${labelY})`)
                 .text(lastSegment)
-                .style("font-size", "17px")
+                .style("font-size", "10px")
                 .attr("font-weight", "bold")
                 .style("font-family", "Palatino")
                 .style("fill", "#333");
@@ -1434,55 +1454,104 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
     // Draw the remaining external circle segment here, if needed
     const adjustedStartAngle = segmentStartAngle + gapInRadians;
     const adjustedEndAngle = 2 * Math.PI - gapInRadians;
-
+    let smallTextAnchor;
     // Draw the segment label for the remaining segment
     const midAngle = (adjustedStartAngle + adjustedEndAngle) / 2;
     let labelX = cx + (internalCircleRadius - 45) * Math.cos(midAngle);
     let labelY = cy + (internalCircleRadius - 45) * Math.sin(midAngle);
 
-    const textAngleDeg = (midAngle * 180 / Math.PI);  // Convert to degrees and align the text
+    let textAngleDeg = (midAngle * 180 / Math.PI);  // Convert to degrees and align the text
+
+    if (textAngleDeg > 90 || textAngleDeg < -90 ) {
+      textAngleDeg += 180;
+      smallTextAnchor = "end";
+    } else{
+      smallTextAnchor = "start";
+    }
+
     svg2.append("text")
         .attr("x", labelX)
         .attr("y", labelY)
-        .attr("text-anchor", "middle")
-        .attr("alignment-baseline", "middle")
+        .attr("text-anchor", smallTextAnchor)
+        // .attr("alignment-baseline", "middle")
         .attr("transform", `rotate(${textAngleDeg}, ${labelX}, ${labelY})`)
         .text(lastSegment)
-        .style("font-size", "14px")
+        .style("font-size", "10px")
         .attr("font-weight", "bold")
         .style("font-family", "Palatino")
         .style("fill", "#333");
 
-    // Draw the remaining external circle segment
-    // drawExternalSegment(cx, cy, internalCircleRadius, adjustedStartAngle, adjustedEndAngle, lastSegment);
+    // Split the centerText into two lines
+    let lines = 'G\nprotein'.split('\n');
+
+    // Determine the vertical offset for the text lines to make them appear centered
+    const fontSize = 14; // Assuming a font size of 20 for illustration, adjust as needed
+    const lineHeight = fontSize * 1.2;  // Assuming a line height 20% greater than font size, adjust as needed
+    const totalHeight = lines.length * lineHeight;
+
+    // Draw text lines in the center of the circle
+    lines.forEach((line, index) => {
+        svg2.append("text")
+            .attr("x", cx)  // set x-coordinate to the center x-coordinate
+            .attr("y", cy - totalHeight / 2 + (index + 0.5) * lineHeight) // adjust y-coordinate based on line index
+            .attr("text-anchor", "middle")  // align horizontally to the middle
+            .attr("alignment-baseline", "middle")  // align vertically to the middle
+            .text(line)  // set the text string for the current line
+            .style("font-size", `${fontSize}px`)  // set font size
+            .attr("font-weight", "bold")  // set font weight
+            .style("font-family", "Palatino")  // set font family
+            .style("fill", "#333");  // set font color
+    });
+  }
+
+  function averageAngle(angles) {
+      let sumX = 0;
+      let sumY = 0;
+
+      for (let angle of angles) {
+          sumX += Math.cos(angle);
+          sumY += Math.sin(angle);
+      }
+
+      return Math.atan2(sumY / angles.length, sumX / angles.length);
   }
 
   // Function to create outer beads based on the connections dictionary
   function createOuterBeads(centroidX, centroidY, innerCircleRadius, outerCircleRadius, beadConnections, beads) {
       const beadRadius = 20; // Or whatever the radius of the outer beads is
-
       const placedBeads = []; // To store the angles at which beads have been placed
 
       for (const [outerBeadId, connections] of Object.entries(beadConnections)) {
-          // Calculate average angle based on inner bead connections
-          let sumAngles = 0;
-          connections.forEach(connId => {
+          const connectionAngles = connections.map(connId => {
               const innerBead = document.querySelector(`#bead-inner-${connId}`);
               const beadCX = parseFloat(innerBead.getAttribute('cx'));
               const beadCY = parseFloat(innerBead.getAttribute('cy'));
-              const angleToCentroid = Math.atan2(beadCY - centroidY, beadCX - centroidX);
-              sumAngles += angleToCentroid;
+              return Math.atan2(beadCY - centroidY, beadCX - centroidX);
           });
 
-          let avgAngle = sumAngles / connections.length;
+          connectionAngles.sort((a, b) => a - b);
 
-          // If there's only one connection, adjust the outer bead position to align directly with the inner bead
-          if (connections.length === 1) {
-              const innerBead = document.querySelector(`#bead-inner-${connections[0]}`);
-              const beadCX = parseFloat(innerBead.getAttribute('cx'));
-              const beadCY = parseFloat(innerBead.getAttribute('cy'));
-              avgAngle = Math.atan2(beadCY - centroidY, beadCX - centroidX);
+          // Find the maximum angle difference
+          let maxDifference = -Infinity;
+          let chosenAnglePair = [];
+          for (let i = 0; i < connectionAngles.length; i++) {
+              let diff = connectionAngles[(i+1) % connectionAngles.length] - connectionAngles[i];
+              if (diff < 0) {
+                  diff += 2 * Math.PI;
+              }
+              if (diff > maxDifference) {
+                  maxDifference = diff;
+                  chosenAnglePair = [connectionAngles[i], connectionAngles[(i+1) % connectionAngles.length]];
+              }
           }
+          // Calculate average vector direction
+          const avgCos = connectionAngles.reduce((sum, angle) => sum + Math.cos(angle), 0) / connectionAngles.length;
+          const avgSin = connectionAngles.reduce((sum, angle) => sum + Math.sin(angle), 0) / connectionAngles.length;
+
+          // let avgAngle = (chosenAnglePair[0] + chosenAnglePair[1]) / 2;
+          // let avgAngle = connectionAngles.reduce((a, b) => a + b, 0) / connectionAngles.length;
+          // let avgAngle = Math.atan2(avgSin, avgCos);
+          let avgAngle = averageAngle(chosenAnglePair);
 
           // Correction factor for overlapping beads
           let angleCorrection = 0.08;  // This is the angular shift applied. Adjust as needed.
@@ -1499,6 +1568,76 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
           createBead(outerBeadX, outerBeadY, bead.aminoAcid, bead.segment, outerBeadId, 'outer', beadRadius, centroidX, centroidY, bead.generic_number, bead.interactions, bead.sequence_number);
       }
   };
+
+  function computeBezierPath(startX, startY, endX, endY, beadRadius) {
+      // Calculate the direction vector between start and end
+      let dx = endX - startX;
+      let dy = endY - startY;
+
+      // Calculate the normalized direction vector
+      let len = Math.sqrt(dx * dx + dy * dy);
+      let nx = dx / len;
+      let ny = dy / len;
+
+      // Compute the points where the curve touches the bead border
+      let adjustedStartX = startX + nx * beadRadius;
+      let adjustedStartY = startY + ny * beadRadius;
+      let adjustedEndX = endX - nx * beadRadius;
+      let adjustedEndY = endY - ny * beadRadius;
+
+      // Calculate the normal vector (perpendicular)
+      let nxPerpendicular = -ny;
+      let nyPerpendicular = nx;
+
+      // Determine a control point distance factor for the curve
+      // We'll give a gentle pull for the control point near the destination
+      let curveFactor = 0.1 * len;
+
+      // Determine the control points
+      // The first control point will be in the direct line between start and end
+      let controlPoint1X = adjustedStartX + 0.5 * (adjustedEndX - adjustedStartX);
+      let controlPoint1Y = adjustedStartY + 0.5 * (adjustedEndY - adjustedStartY);
+      // The second control point will be slightly pulled out using the normal vector
+      let controlPoint2X = adjustedEndX - nx * curveFactor + nxPerpendicular * curveFactor;
+      let controlPoint2Y = adjustedEndY - ny * curveFactor + nyPerpendicular * curveFactor;
+
+      // Create the Bezier curve path
+      let pathData = `M${adjustedStartX},${adjustedStartY} C${controlPoint1X},${controlPoint1Y} ${controlPoint2X},${controlPoint2Y} ${adjustedEndX},${adjustedEndY}`;
+
+      return pathData;
+  }
+
+  function drawConnectionLines(connections, svg2, innerCircleRadius) {
+      connections.forEach(connection => {
+          const innerBead = d3.select(`#bead-inner-${connection.innerIndex}`);
+          const outerBead = d3.select(`#bead-outer-${connection.outerIndex}`);
+
+          const innerBeadX = parseFloat(innerBead.attr('cx'));
+          const innerBeadY = parseFloat(innerBead.attr('cy'));
+          const outerBeadX = parseFloat(outerBead.attr('cx'));
+          const outerBeadY = parseFloat(outerBead.attr('cy'));
+
+          const beadRadius = 20;
+          const pathData = computeBezierPath(outerBeadX, outerBeadY, innerBeadX, innerBeadY, beadRadius);
+
+          const sanitizedType = sanitizeClassName(connection.type);
+
+          svg2.append("path")
+              .attr("d", pathData)
+              .attr("id", `path-${connection.innerIndex}-${connection.outerIndex}`)
+              .attr("data-inner-bead", connection.innerIndex)
+              .attr("data-outer-bead", connection.outerIndex)
+              .attr("stroke", "black")
+              .attr("stroke-width", 2)
+              .attr("fill", "none")
+              .attr("interaction", connection.type)
+              .attr('inner-chain', connection.innerChain)
+              .attr('outer-chain', connection.outerChain)
+              .attr("stroke-dasharray", strokeShape[connection.type])
+              .classed(sanitizedType, true);
+      });
+  }
+
 
   // Function to draw external circle segment
   function drawExternalSegment(cx, cy, radius, startAngle, endAngle, segment) {
@@ -1584,15 +1723,39 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
     const tangentialOuterX = centroidX + Math.cos(angleToCentroidOuter) * OUTER_BORDER_RADIUS;
     const tangentialOuterY = centroidY + Math.sin(angleToCentroidOuter) * OUTER_BORDER_RADIUS;
 
-    let tangentialMiddleX = centroidX + Math.cos((angleToCentroidInner + angleToCentroidOuter) / 2) * MIDDLE_BORDER_RADIUS * scaleFactor;
-    let tangentialMiddleY = centroidY + Math.sin((angleToCentroidInner + angleToCentroidOuter) / 2) * MIDDLE_BORDER_RADIUS * scaleFactor;
+    const dynamicScaleFactor = (countInner > 15) ? 1.6 : 1.4; // Adjust based on your requirements
+    let tangentialMiddleX = centroidX + Math.cos((angleToCentroidInner + angleToCentroidOuter) / 2) * MIDDLE_BORDER_RADIUS * dynamicScaleFactor;
+    let tangentialMiddleY = centroidY + Math.sin((angleToCentroidInner + angleToCentroidOuter) / 2) * MIDDLE_BORDER_RADIUS * dynamicScaleFactor;
 
     let tangentialInnerX = centroidX + Math.cos(angleToCentroidInner) * INNER_BORDER_RADIUS;
     let tangentialInnerY = centroidY + Math.sin(angleToCentroidInner) * INNER_BORDER_RADIUS;
 
-    const adjustedEndAngle = Math.atan2(tangentialInnerY - innerY, tangentialInnerX - innerX);
-    const adjustedEndX = innerX + Math.cos(adjustedEndAngle) * beadRadius;
-    const adjustedEndY = innerY + Math.sin(adjustedEndAngle) * beadRadius;
+    // Function to check if a given point overlaps with any inner bead
+    function overlapsWithInnerBead(x, y) {
+        for (let i = 0; i < countInner; i++) {
+            if (i !== innerIndex) {
+                const otherBead = d3.select(`#bead-inner-${i}`);
+                const otherX = +otherBead.attr("cx");
+                const otherY = +otherBead.attr("cy");
+                const distance = Math.sqrt((x - otherX) ** 2 + (y - otherY) ** 2);
+                if (distance < 2 * beadRadius) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    let adjustedEndAngle = Math.atan2(tangentialInnerY - innerY, tangentialInnerX - innerX);
+    let adjustedEndX = innerX + Math.cos(adjustedEndAngle) * beadRadius;
+    let adjustedEndY = innerY + Math.sin(adjustedEndAngle) * beadRadius;
+
+    if (overlapsWithInnerBead(adjustedEndX, adjustedEndY)) {
+        const offsetAngle = 0.05 * innerIndex;
+        adjustedEndAngle += offsetAngle;
+        adjustedEndX = innerX + Math.cos(adjustedEndAngle) * beadRadius;
+        adjustedEndY = innerY + Math.sin(adjustedEndAngle) * beadRadius;
+    }
 
     let pathData;
 
@@ -1673,6 +1836,28 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
   createCircle(bigRadius*1.3, bigRadius*1.3, 20, beadInfo.innerCircle, 'inner', smallRadius);
   createOuterBeads(bigRadius*1.3, bigRadius*1.3, smallRadius, bigRadius, conversion_dict, beadInfo.outerCircle);
   // createCircle(600, 520, 20, beadInfo.outerCircle, 'outer', bigRadius);
+
+  drawConnectionLines(interactions, svg2, smallRadius);
+  const innerBeadSelection = svg2.selectAll("circle[data-circle='inner']");  // Assuming the inner beads have a class 'inner-bead'
+  const { centroidX, centroidY } = calculateCentroids(innerBeadSelection);
+
+  // interactions.forEach(({ innerIndex, outerIndex, type, innerChain, outerChain }) => createConnection(innerIndex, outerIndex, type, countInner, 20, centroidX, centroidY, innerChain, outerChain, smallRadius, bigRadius));
+
+
+  // Generate legend
+  const outerCircleLabel = svg2.append("g")
+    .attr("transform", `translate(0, ${svgH - 180})`);
+
+  outerCircleLabel.append("text")
+                  .attr("x", (bigRadius*1.3))
+                  .attr("y", -20)
+                  .text("GPCR")
+                  .attr("text-anchor", "middle")  // align horizontally to the middle
+                  .attr("alignment-baseline", "middle")  // align vertically to the middle
+                  .attr("font-family", "Arial")
+                  .attr("font-size", "14px")
+                  .attr("font-weight", "bold")
+                  .attr("fill", "black");
 
   // Generate legend
   const interactionLegend = svg2.append("g")
@@ -1853,13 +2038,6 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
     const textOuterWidth = textOuterElement.node().getComputedTextLength();
     cumulativeOuterX += textOuterWidth + 30; // 50 is the space between the rectangle and the next item
   });
-
-
-  const innerBeadSelection = svg2.selectAll("circle[data-circle='inner']");  // Assuming the inner beads have a class 'inner-bead'
-  const { centroidX, centroidY } = calculateCentroids(innerBeadSelection);
-
-  // createConnections();
-  interactions.forEach(({ innerIndex, outerIndex, type, innerChain, outerChain }) => createConnection(innerIndex, outerIndex, type, countInner, 20, centroidX, centroidY, innerChain, outerChain, smallRadius, bigRadius));
 
   // d3.selectAll(`.hydrophobic`).attr("stroke-opacity", 0);
 

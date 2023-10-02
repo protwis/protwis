@@ -178,13 +178,13 @@ class SequenceParser(object):
 
     residue_list = ["ARG","ASP","GLU","HIS","ASN","GLN","LYS","SER","THR", "HIS", "HID","PHE","LEU","ILE","TYR","TRP","VAL","MET","PRO","CYS","ALA","GLY"]
 
-    def __init__(self, pdb_file=None, sequence=None, wt_protein_id=None):
+    def __init__(self, pdb_file=None, sequence=None, wt_protein_id=None, db='protwis_blastdb'):
 
         # dictionary of 'ParsedResidue' object storing information about alignments and bw numbers
         self.mapping = {}
         self.residues = {}
         self.segments = {}
-        self.blast = BlastSearch(blastdb=os.sep.join([settings.STATICFILES_DIRS[0], 'blast', 'protwis_blastdb']))
+        self.blast = BlastSearch(blastdb=os.sep.join([settings.STATICFILES_DIRS[0], 'blast', db]))
         self.wt_protein_id = wt_protein_id
 
         if pdb_file is not None:
