@@ -241,6 +241,9 @@
       <div class="row">
           <div class="col-md-9">
             {% if residues_browser %}
+            <a id="dlink" style="display:none;"></a>
+            <div id="excel_table" style2="display:none;"></div>
+            <button onclick="GlobalTableToExcel('residues', 'Interface_interactions', 'InterfaceInteractions.xls')" type="button" class="btn btn-primary" style="margin-top:10px;margin-top:3px"> Export to Excel </button>
             <div style="padding-top: 0px; font-size: 10px; white-space: nowrap; width: 100%;">
                 <table class="display" id="residues" style="margin-left:0px;">
                     <thead>

@@ -59,6 +59,7 @@ urlpatterns = [
     url(r'^homology_models/(?P<modelname>\w+)_(?P<state>\w+)_(?P<fullness>\w+)/download_pdb$', SingleModelDownload, name='single_model_download'),
     url(r'^refined/(?P<modelname>\w+)_(?P<fullness>\w+)/download_pdb$', SingleModelDownload, name='single_model_download'),
 #    url(r'^homology_models/(?P<modelname>\w+)_(?P<state>\w+)/download_csv$', SingleModelDownload, {'csv':True}, name='single_model_download'),
+    url(r'^(?P<pdbcode>\w+)/download_pdb$', SingleStructureDownload, name='single_structure_download'),
     url(r'^refined/(?P<pdbname>\w+)$', cache_page(60*60*24*7)(RefinedModelDetails), name="refined_model_details"),
     url(r'^complex_models/(?P<modelname>\w+)/download_complex_pdb$', SingleComplexModelDownload, name='single_complex_model_download'),
     url(r'^refined/(?P<modelname>\w+)/download_complex_pdb$', SingleComplexModelDownload, name='single_complex_model_download'),

@@ -3280,6 +3280,36 @@ def prepare_AF_complex_download(mod, scores_obj=None, refined=False):
 
     return mod_name, scores_name, pdb_io, scores_io
 
+def SingleStructureDownload(request, pdbcode):
+    "Download single homology model"
+    zip_io = BytesIO()
+    struct = Structure.objects.get(pdb_code__index=pdbcode.upper())
+    stat_name = None
+    stats_lines = ''
+    if not struct.refined:
+        version = struct.pdb_data.pdb.split('\n')[0][-10:]
+        mod_name = 'Class{}_{}_{}_refined_{}_{}_GPCRdb.pdb'.format(class_dict[struct.protein_conformation.protein.family.slug[:3]], struct.protein_conformation.protein.parent.entry_name,
+                                                                 struct.pdb_code.index, struct.state.name, version)
+    else:
+        mod_name = 'Class{}_{}_{}_{}_GPCRdb.pdb'.format(class_dict[struct.protein_conformation.protein.family.slug[:3]], struct.protein_conformation.protein.entry_name,
+                                                                           struct.state.name, struct.publication_date)
+    pdb_lines = struct.pdb_data.pdb
+    if stat_name:
+        stats_lines = struct.stats_text.stats_text
+
+    io = StringIO(pdb_lines)
+    stats_text = StringIO(stats_lines)
+    with zipfile.ZipFile(zip_io, mode='w', compression=zipfile.ZIP_DEFLATED) as backup_zip:
+        backup_zip.writestr(mod_name, io.getvalue())
+        if stat_name:
+            backup_zip.writestr(stat_name, stats_text.getvalue())
+
+    response = HttpResponse(zip_io.getvalue(), content_type='application/x-zip-compressed')
+    response['Content-Disposition'] = 'attachment; filename=%s' % mod_name.split('.')[0] + ".zip"
+    response['Content-Length'] = zip_io.tell()
+
+    return response
+
 
 def SingleModelDownload(request, modelname, fullness, state=None, csv=False):
     "Download single homology model"
