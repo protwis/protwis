@@ -2976,7 +2976,7 @@ class PDBClean(TemplateView):
 
             elif selection.targets != [] and selection.targets[0].type in ['structure_model', 'structure_model_Inactive', 'structure_model_Intermediate', 'structure_model_Active']:
                 for hommod in [x for x in selection.targets if x.type in ['structure_model', 'structure_model_Inactive', 'structure_model_Intermediate', 'structure_model_Active']]:
-                    mod_name = 'Class{}_{}_{}_{}_{}_GPCRDB.pdb'.format(class_dict[hommod.item.protein.family.slug[:3]], hommod.item.protein.entry_name,
+                    mod_name = 'Class{}_{}_{}_{}_{}_GPCRdb.pdb'.format(class_dict[hommod.item.protein.family.slug[:3]], hommod.item.protein.entry_name,
                                                                                   hommod.item.state.name, hommod.item.main_template.pdb_code.index, hommod.item.version)
                     tmp = StringIO(hommod.item.pdb)
                     request.session['substructure_mapping'] = 'full'
@@ -3111,7 +3111,7 @@ class PDBDownload(View):
             if hommods == False:
                 response['Content-Disposition'] = 'attachment; filename="pdb_structures.zip"'
             else:
-                response['Content-Disposition'] = 'attachment; filename="GPCRDB_homology_models.zip"'
+                response['Content-Disposition'] = 'attachment; filename="GPCRdb_models.zip"'
             response.write(out_stream.getvalue())
 
         return response
@@ -3216,14 +3216,14 @@ def HommodDownload(request):
             io = StringIO(hommod.pdb_data.pdb)
 
             if not hommod.protein.accession:
-                mod_name = 'Class{}_{}_{}_refined_{}_{}_GPCRDB.pdb'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.parent.entry_name,
+                mod_name = 'Class{}_{}_{}_refined_{}_{}_GPCRdb.pdb'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.parent.entry_name,
                                                                    hommod.main_template.pdb_code.index, hommod.state.name, hommod.version)
-                stat_name = 'Class{}_{}_{}_refined_{}_{}_GPCRDB.templates.csv'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.parent.entry_name,
+                stat_name = 'Class{}_{}_{}_refined_{}_{}_GPCRdb.templates.csv'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.parent.entry_name,
                                                                    hommod.main_template.pdb_code.index, hommod.state.name, hommod.version)
             else:
-                mod_name = 'Class{}_{}_{}_{}_{}_GPCRDB.pdb'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.entry_name,
+                mod_name = 'Class{}_{}_{}_{}_{}_GPCRdb.pdb'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.entry_name,
                                                                           hommod.state.name, 'AF', hommod.version)
-                stat_name = 'Class{}_{}_{}_{}_{}_GPCRDB.templates.csv'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.entry_name,
+                stat_name = 'Class{}_{}_{}_{}_{}_GPCRdb.templates.csv'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.entry_name,
                                                                           hommod.state.name, 'AF', hommod.version)
             backup_zip.writestr(mod_name, io.getvalue())
             if hommod.stats_text:
@@ -3231,7 +3231,7 @@ def HommodDownload(request):
                 backup_zip.writestr(stat_name, stats_text.getvalue())
 
     response = HttpResponse(zip_io.getvalue(), content_type='application/x-zip-compressed')
-    response['Content-Disposition'] = 'attachment; filename=%s' % 'GPCRDB_homology_models' + ".zip"
+    response['Content-Disposition'] = 'attachment; filename=%s' % 'GPCRdb_models' + ".zip"
     response['Content-Length'] = zip_io.tell()
     return response
 
@@ -3252,7 +3252,7 @@ def ComplexmodDownload(request):
             backup_zip.writestr(mod_name, pdb_io.getvalue())
             backup_zip.writestr(scores_name, scores_io.getvalue())
     response = HttpResponse(zip_io.getvalue(), content_type='application/x-zip-compressed')
-    response['Content-Disposition'] = 'attachment; filename=%s' % 'GPCRDB_complex_models' + ".zip"
+    response['Content-Disposition'] = 'attachment; filename=%s' % 'GproteinDb_complex_models' + ".zip"
     response['Content-Length'] = zip_io.tell()
     return response
 
@@ -3272,41 +3272,20 @@ def prepare_AF_complex_download(mod, scores_obj=None, refined=False):
     date = mod.publication_date
 
     if refined:
-        mod_name = 'Class{}_{}-{}_{}_{}_GPCRDB.pdb'.format(classname, gpcr_entry, gprot_entry, mod.pdb_code.index, date)
-        scores_name = 'Class{}_{}-{}_{}_{}_GPCRDB.csv'.format(classname, gpcr_entry, gprot_entry, mod.pdb_code.index, date)
+        mod_name = 'Class{}_{}-{}_{}_{}_GproteinDb.pdb'.format(classname, gpcr_entry, gprot_entry, mod.pdb_code.index, date)
+        scores_name = 'Class{}_{}-{}_{}_{}_GproteinDb.csv'.format(classname, gpcr_entry, gprot_entry, mod.pdb_code.index, date)
     else:
-        mod_name = 'Class{}_{}-{}_{}_{}_GPCRDB.pdb'.format(classname, gpcr_entry, gprot_entry, "AF2", date)
-        scores_name = 'Class{}_{}-{}_{}_{}_GPCRDB.scores.csv'.format(classname, gpcr_entry, gprot_entry, "AF2", date)
+        mod_name = 'Class{}_{}-{}_{}_{}_GproteinDb.pdb'.format(classname, gpcr_entry, gprot_entry, "AF2", date)
+        scores_name = 'Class{}_{}-{}_{}_{}_GproteinDb.scores.csv'.format(classname, gpcr_entry, gprot_entry, "AF2", date)
 
     return mod_name, scores_name, pdb_io, scores_io
 
 def SingleStructureDownload(request, pdbcode):
-    "Download single homology model"
-    zip_io = BytesIO()
+    "Download single structure"
     struct = Structure.objects.get(pdb_code__index=pdbcode.upper())
-    stat_name = None
-    stats_lines = ''
-    if not struct.refined:
-        version = struct.pdb_data.pdb.split('\n')[0][-10:]
-        mod_name = 'Class{}_{}_{}_refined_{}_{}_GPCRdb.pdb'.format(class_dict[struct.protein_conformation.protein.family.slug[:3]], struct.protein_conformation.protein.parent.entry_name,
-                                                                 struct.pdb_code.index, struct.state.name, version)
-    else:
-        mod_name = 'Class{}_{}_{}_{}_GPCRdb.pdb'.format(class_dict[struct.protein_conformation.protein.family.slug[:3]], struct.protein_conformation.protein.entry_name,
-                                                                           struct.state.name, struct.publication_date)
-    pdb_lines = struct.pdb_data.pdb
-    if stat_name:
-        stats_lines = struct.stats_text.stats_text
-
-    io = StringIO(pdb_lines)
-    stats_text = StringIO(stats_lines)
-    with zipfile.ZipFile(zip_io, mode='w', compression=zipfile.ZIP_DEFLATED) as backup_zip:
-        backup_zip.writestr(mod_name, io.getvalue())
-        if stat_name:
-            backup_zip.writestr(stat_name, stats_text.getvalue())
-
-    response = HttpResponse(zip_io.getvalue(), content_type='application/x-zip-compressed')
-    response['Content-Disposition'] = 'attachment; filename=%s' % mod_name.split('.')[0] + ".zip"
-    response['Content-Length'] = zip_io.tell()
+    struct_name = '{}.pdb'.format(pdbcode)
+    response = HttpResponse(struct.pdb_data.pdb, content_type='text/html; charset=utf-8')
+    response['Content-Disposition'] = 'attachment; filename={}'.format(struct_name)
 
     return response
 
@@ -3321,11 +3300,10 @@ def SingleModelDownload(request, modelname, fullness, state=None, csv=False):
     stat_name = None
     stats_lines = ''
     if not hommod.protein.accession:
-        version = hommod.pdb_data.pdb.split('\n')[0][-10:]
         mod_name = 'Class{}_{}_{}_refined_{}_{}_GPCRdb.pdb'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.parent.entry_name,
-                                                                 hommod.main_template.pdb_code.index, hommod.state.name, version)
+                                                                 hommod.main_template.pdb_code.index, hommod.state.name, hommod.version)
         stat_name = 'Class{}_{}_{}_refined_{}_{}_GPCRdb.templates.csv'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.parent.entry_name,
-                                                                 hommod.main_template.pdb_code.index, hommod.state.name, version)
+                                                                 hommod.main_template.pdb_code.index, hommod.state.name, hommod.version)
     else:
         if hommod.main_template:
             mod_name = 'Class{}_{}_{}_{}_{}_GPCRdb.pdb'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.entry_name,
