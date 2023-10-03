@@ -963,7 +963,7 @@ def StructureDetails(request, pdbname):  ###JIMMY CHECKPOINT
         center_axis = sv.center_axis
 
     # Check if the structure is in complex with a signaling protein
-    signaling_complex = SignprotComplex.objects.filter(structure=crystal).count() > 0
+    signaling_complex = SignprotComplex.objects.filter(structure=crystal, protein__family__slug__startswith='100').count() > 0
 
     # GN list
     only_gns = list(crystal.protein_conformation.residue_set.exclude(generic_number=None).values_list('protein_segment__slug','sequence_number','generic_number__label','display_generic_number__label').all())
