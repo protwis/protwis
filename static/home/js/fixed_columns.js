@@ -589,7 +589,7 @@ function showPDBtable(element) {
                     column_number: 9,
                     filter_type: "multi_select",
                     select_type: "select2",
-                    filter_default_label: "Method",
+                    filter_default_label: "Type",
                     select_type_options: {
                         width: "70px"
                     },

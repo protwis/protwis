@@ -14,7 +14,7 @@ from construct.functions import *
 from contactnetwork.models import *
 from contactnetwork.cube import compute_interactions
 
-from Bio.PDB import PDBParser, PPBuilder
+from Bio.PDB import PDBParser, PPBuilder, PDBIO
 from Bio import pairwise2
 
 from structure.functions import ParseAFComplexModels
@@ -22,6 +22,7 @@ from ligand.models import Ligand
 from interaction.models import *
 from interaction.views import regexaa, check_residue, extract_fragment_rotamer
 from signprot.models import SignprotComplex
+import structure.assign_generic_numbers_gpcr as as_gn
 
 import django.apps
 import logging
@@ -32,6 +33,7 @@ import gc
 from collections import OrderedDict
 from datetime import datetime, date
 import json
+from io import StringIO
 from Bio.PDB.Selection import *
 
 # import traceback
@@ -141,7 +143,12 @@ class Command(BaseBuild):
         self.parsed_structures = ParseAFComplexModels()
 
         if options['structure']:
-            self.parsed_structures.complexes = [i for i in self.parsed_structures.complexes if i in options['structure'] or i.lower() in options['structure']]
+            filtered_set = {}
+            for i in options['structure']:
+                if i in self.parsed_structures.complexes:
+                    filtered_set[i] = self.parsed_structures.complexes[i]
+            self.parsed_structures.complexes = filtered_set
+            # self.parsed_structures.complexes = [i for i in self.parsed_structures.complexes if i in options['structure'] or i.lower() in options['structure']]
 
         if options['incremental']:
             self.incremental_mode = True
@@ -805,7 +812,8 @@ class Command(BaseBuild):
 
 
             pdb_path = sd['location']
-            print(pdb_path)
+
+            header = ''
             if not os.path.isfile(pdb_path):
                 print('Generated model file for protein {} is not available, skipping.'.format(sd['protein']))
                 self.logger.info('Generated model file for protein {} is not available, skipping.'.format(sd['protein']))
@@ -813,15 +821,33 @@ class Command(BaseBuild):
             else:
                 try:
                     with open(pdb_path, 'r') as pdb_file:
-                        pdbdata_raw = pdb_file.read()
+                        lines = pdb_file.readlines()
+                        header = lines[0]
+                        pdbdata_raw = ''.join(lines)
                 except FileNotFoundError:
                     print('File {} does not exist. Skipping'.format(pdb_path))
                     continue
+            
+            ### GPCR GN assign
+            try:
+                pdb_struct = StringIO(pdbdata_raw)
+                assign_gn = as_gn.GenericNumbering(pdb_file=pdb_struct, blastdb=os.sep.join([settings.STATICFILES_DIRS[0], 'blast', 'protwis_human_blastdb']), sequence_parser=True)
+                pdb_struct = assign_gn.assign_generic_numbers_with_sequence_parser()
+                io = PDBIO()
+                io.set_structure(pdb_struct)
+
+                ### Use temp file for now
+                io.save('./{}.pdb'.format(sd['pdb']))
+                with open('./{}.pdb'.format(sd['pdb']), 'r') as pdb_file:
+                    pdbdata_raw = header+pdb_file.read()
+                os.remove('./{}.pdb'.format(sd['pdb']))
+            except KeyError:
+                print("////////////////////////////WARNING: {} GN assign failed".format(sd['pdb']))
 
             pdbdata, created = PdbData.objects.get_or_create(pdb=pdbdata_raw)
             struct.pdb_data = pdbdata
 
-            self.parsed_pdb = PDBParser(PERMISSIVE=True, QUIET=True).get_structure('ref', pdb_path)[0]
+            self.parsed_pdb = PDBParser(PERMISSIVE=True, QUIET=True, get_header=True).get_structure('ref', pdb_path)[0]
 
             if 'pdb' in sd:
                 web_resource = WebResource.objects.get(slug='pdb')

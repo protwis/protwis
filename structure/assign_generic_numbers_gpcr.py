@@ -50,7 +50,10 @@ class GenericNumbering(object):
                 if pdb_code:
                     s = SequenceParser(pdb_file=self.pdb_file, wt_protein_id=struct.protein_conformation.protein.parent.id)
                 else:
-                    s = SequenceParser(pdb_file=self.pdb_file)#, wt_protein_id=struct.protein_conformation.protein.parent.id)
+                    if blastdb.endswith('protwis_human_blastdb'):
+                        s = SequenceParser(pdb_file=self.pdb_file, db='protwis_human_blastdb')
+                    else:
+                        s = SequenceParser(pdb_file=self.pdb_file)#, wt_protein_id=struct.protein_conformation.protein.parent.id)
             else:
                 s = SequenceParser(pdb_file=self.pdb_file, wt_protein_id=signprot.id)
             self.pdb_structure = s.pdb_struct
