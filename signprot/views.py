@@ -1236,7 +1236,7 @@ def AJAX_Interactions(request):
     interactions = InteractingResiduePair.objects.filter(
         Q(res1__in=prot_residues) | Q(res2__in=prot_residues),
         referenced_structure__in=complex_struc_ids
-    ).exclude(res1__generic_number__isnull=True
+    # ).exclude(res1__generic_number__isnull=True
     ).exclude(
         Q(res1__in=prot_residues) & Q(res2__in=prot_residues)
     ).prefetch_related(
@@ -1276,6 +1276,8 @@ def AJAX_Interactions(request):
 
     conf_ids = set()
     for i in interactions:
+        if i['rec_gn'] == None:
+            i['rec_gn'] =  '-'
         i['int_ty'] = sort_a_by_b(i['int_ty'], interaction_sort_order)
         conf_ids.update([i['conf_id']])
 
@@ -1296,7 +1298,7 @@ def AJAX_Interactions(request):
     ).exclude(
         Q(rec_gn=None)
     )
-    
+
     t2 = time.time()
     print('AJAX Runtime: {}'.format((t2 - t1) * 1000.0))
 

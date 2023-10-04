@@ -1365,6 +1365,26 @@ def ClearSelection(request):
 
     return render(request, 'common/selection_lists.html', selection.dict(selection_type))
 
+def CheckSelection(request):
+    """Check all selected items of the selected type from the session"""
+    selection_type = request.GET['selection_type']
+
+    # get simple selection from session
+    simple_selection = request.session.get('selection', False)
+
+    # create full selection and import simple selection (if it exists)
+    selection = Selection()
+    if simple_selection:
+        selection.importer(simple_selection)
+
+    if selection_type == 'reference':
+        tot = len(selection.reference)
+    else:
+        tot = len(selection.targets)
+
+    return JsonResponse({'total': tot})
+
+
 def SelectRange(request):
     """Adds generic numbers within the given range"""
 

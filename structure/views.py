@@ -593,7 +593,7 @@ def ComplexModelDetails(request, header, refined=False):
                 residues_plddt[item.residue.protein_conformation.protein] = {}
             residues_plddt[item.residue.protein_conformation.protein][item.residue.id] = [item.residue, item.pLDDT]
 
-    (chains, gpcr_aminoacids, gprot_aminoacids, protein_interactions, gpcr_aminoacids_strict, gprot_aminoacids_strict, protein_interactions_strict, 
+    (chains, gpcr_aminoacids, gprot_aminoacids, protein_interactions, gpcr_aminoacids_strict, gprot_aminoacids_strict, protein_interactions_strict,
      residues_browser, interactions_metadata, gprot_order, receptor_order, matching_dict, matching_dict_strict, residues_lookup,
      display_res_gpcr_strict, display_res_gprot_strict, display_res_gpcr_loose, display_res_gprot_loose, chain_colors, conversion_dict_residue_numbers,
      gpcr_chain, gprot_chain, chain_color_palette) = complex_interactions(model)
@@ -975,7 +975,7 @@ def StructureDetails(request, pdbname):  ###JIMMY CHECKPOINT
 
     if signaling_complex:
     #Adding all the section for the tabs stuff. Add also a different render so they don't mix
-        (chains, gpcr_aminoacids, gprot_aminoacids, protein_interactions, gpcr_aminoacids_strict, gprot_aminoacids_strict, protein_interactions_strict, 
+        (chains, gpcr_aminoacids, gprot_aminoacids, protein_interactions, gpcr_aminoacids_strict, gprot_aminoacids_strict, protein_interactions_strict,
          residues_browser, interactions_metadata, gprot_order, receptor_order, matching_dict, matching_dict_strict, residues_lookup,
          display_res_gpcr_strict, display_res_gprot_strict, display_res_gpcr_loose, display_res_gprot_loose, chain_colors, conversion_dict_residue_numbers,
          gpcr_chain, gprot_chain, chain_color_palette) = complex_interactions(crystal)
@@ -1013,7 +1013,7 @@ def StructureDetails(request, pdbname):  ###JIMMY CHECKPOINT
                                                        'display_res_gpcr_strict': display_res_gpcr_strict, 'display_res_gprot_strict': display_res_gprot_strict,
                                                        'display_res_gpcr_loose': display_res_gpcr_loose, 'display_res_gprot_loose': display_res_gprot_loose,
                                                        'residue_number_labels': conversion_dict_residue_numbers, 'gpcr_chain': gpcr_chain, 'gprot_chain': gprot_chain,
-                                                       'chain_colors': json.dumps(chain_colors), 
+                                                       'chain_colors': json.dumps(chain_colors),
                                                        'display_res_gpcr_strict': display_res_gpcr_strict, 'display_res_gprot_strict': display_res_gprot_strict,
                                                        'display_res_gpcr_loose': display_res_gpcr_loose, 'display_res_gprot_loose': display_res_gprot_loose})
 
@@ -1211,7 +1211,7 @@ def complex_interactions(model):
     gprotein_order = ProteinSegment.objects.filter(proteinfamily='Alpha').values('id', 'slug')
     fam_slug = '100'
 
-    receptor_order = ['N', '1', '12', '2', '23', '3', '34', '4', '45', '5', '56', '6', '67', '7', '78', '8', 'C']
+    receptor_order = ['N', '1', '12', '2', '23', '3', '34', '4', '45', '5', '56', '6', '67', '7', '78', '8', 'C', '-']
 
     struc = SignprotComplex.objects.filter(structure=model).prefetch_related(
         'structure__pdb_code',
@@ -1279,7 +1279,7 @@ def complex_interactions(model):
     for i,c in enumerate(chains):
         chain_colors.append([chain_color_palette[i],":{}".format(c)])
 
-    return (chains, gpcr_aminoacids, gprot_aminoacids, protein_interactions, gpcr_aminoacids_strict, gprot_aminoacids_strict, protein_interactions_strict, 
+    return (chains, gpcr_aminoacids, gprot_aminoacids, protein_interactions, gpcr_aminoacids_strict, gprot_aminoacids_strict, protein_interactions_strict,
             residues_browser, interactions_metadata, gprot_order, receptor_order, matching_dict, matching_dict_strict, residues_lookup,
             display_res_gpcr_strict, display_res_gprot_strict, display_res_gpcr_loose, display_res_gprot_loose, chain_colors, conversion_dict_residue_numbers,
             gpcr_chain, gprot_chain, chain_color_palette)
@@ -2325,6 +2325,10 @@ class SuperpositionWorkflowIndex(TemplateView):
     """
 
     header = "Upload or select your structures:"
+
+    #adapt to two options
+    first_header = "Upload or select your template structure:"
+    second_header = "Upload or select your structures to superpose:"
     #
     upload_form_data = OrderedDict([
         ('ref_file', forms.FileField(label="Reference structure")),
@@ -2333,6 +2337,19 @@ class SuperpositionWorkflowIndex(TemplateView):
         ])
     form_code = forms.Form()
     form_code.fields = upload_form_data
+
+    #Splitting into two forms
+    upload_template = OrderedDict([
+        ('ref_file', forms.FileField(label="Reference structure"))])
+    upload_superpose = OrderedDict([
+        ('alt_files', MultiFileField(label="Structure(s) to superpose", max_num=10, min_num=1))])
+
+    form_template = forms.Form()
+    form_template.fields = upload_template
+    form_superpose = forms.Form()
+    form_superpose.fields = upload_superpose
+
+
     form_id = 'superpose_files'
     url = '/structure/superposition_workflow_selection'
     mid_section = 'superposition_workflow_upload_file_form.html'
@@ -2356,12 +2373,13 @@ class SuperpositionWorkflowIndex(TemplateView):
         # get selection from session and add to context
         # get simple selection from session
         simple_selection = self.request.session.get('selection', False)
+        print(simple_selection)
         # print(simple_selection)
         # create full selection and import simple selection (if it exists)
         selection = Selection()
         if simple_selection:
             selection.importer(simple_selection)
-        # print(self.kwargs.keys())
+        print(self.kwargs.keys())
         #Clearing selections for fresh run
         if 'clear' in self.kwargs.keys():
             selection.clear('reference')
@@ -2378,11 +2396,13 @@ class SuperpositionWorkflowIndex(TemplateView):
 
         # get attributes of this class and add them to the context
         context['form_code'] = str(self.form_code)
+        context['form_template'] = str(self.form_template)
+        context['form_superpose'] = str(self.form_superpose)
         attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
         for a in attributes:
             if not(a[0].startswith('__') and a[0].endswith('__')):
                 context[a[0]] = a[1]
-        # print(context)
+        print(context)
         return context
 
 

@@ -156,6 +156,29 @@ function AddToSelection(selection_type, selection_subtype, selection_id) {
     });
 }
 
+function CheckSelection(selection_type) {
+    var result = null;
+
+    $.ajax({
+        'url': '/common/checkselection',
+        'data': {
+            selection_type: selection_type
+        },
+        'type': 'GET',
+        'dataType': 'json',  // Expecting JSON response from the server
+        'async': false,
+        'success': function(response) {
+            result = response.total;
+        },
+        'error': function(error) {
+            console.error("An error occurred:", error);
+        }
+    });
+
+    return result;
+}
+
+
 function select_all(e, table1_id, table2_id) {
     $('#loading_div').show();
     var rows = $("#"+table1_id).dataTable().$('tr', {filter:"applied"});
