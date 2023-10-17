@@ -613,7 +613,38 @@ function gproteinstructurebrowser(effector) {
     });
 
     $("#superpose_btn").click(function() {
-        superposition(oTable2, [7,1,2,3,4,5,11,28], "structure_browser");
+        superposition(oTable2, [0,1,11,14,15,16,17,18,29], "g_protein_structure_browser", "gprot", true);
+    });
+
+    $('#superpose_template_btn').click(function () {
+        var checked_data = oTable2.rows('.alt_selected').data();
+        if (checked_data.length == 1) {
+            var value = CheckSelection('reference');
+            var div = document.createElement("div");
+            div.innerHTML = checked_data[0][11];
+            var destination;
+            if (value != 0){
+              destination = 'targets';
+            } else {
+              destination = 'reference';
+            }
+            if (typeof div.innerText !== "undefined") {
+                AddToSelection(destination, 'signprot', div.innerText.replace(/\s+/g, ''));
+            } else {
+                AddToSelection(destination, 'signprot', div.textContent.replace(/\s+/g, ''));
+            }
+        } else {
+          for (i = 0; i < checked_data.length; i++) {
+              var div = document.createElement("div");
+              div.innerHTML = checked_data[i][11];
+              if (typeof div.innerText !== "undefined") {
+                  AddToSelection('targets', 'signprot', div.innerText.replace(/\s+/g, ''));
+              } else {
+                  AddToSelection('targets', 'signprot', div.textContent.replace(/\s+/g, ''));
+              }
+          }
+        }
+        window.location.href = '/structure/superposition_workflow_gprot_index';
     });
 
     $("#download_btn").click(function () {
@@ -621,7 +652,7 @@ function gproteinstructurebrowser(effector) {
         var checked_data = oTable2.rows(".alt_selected").data();
         for (i = 0; i < checked_data.length; i++) {
             var div = document.createElement("div");
-            div.innerHTML = checked_data[i][7];
+            div.innerHTML = checked_data[i][2];
             if (typeof div.innerText !== "undefined") {
                 AddToSelection("targets", "structure",  div.innerText.replace(/\s+/g, "") );
             } else {
@@ -653,11 +684,6 @@ function gproteinstructurebrowser(effector) {
 
     $("#reset_filters_btn").click(function () {
         window.location.href = "/structure/";
-    });
-
-    $(".close_modal").click(function () {
-        var modal = document.getElementById("myModal");
-        modal.style.display = "none";
     });
 
     $(".dataTables_scrollBody").append("<div id=overlay><table id=\"overlay_table\" class=\"row-border text-center compact dataTable no-footer text-nowrap\"><tbody></tbody></table></div>");
@@ -701,6 +727,42 @@ function gproteinstructurebrowser(effector) {
     // $("#yadcf-filter--structures_scrollable-from-12").width(10);
     // console.log($("#yadcf-filter--structures_scrollable-from-12").width());
 
+}
+
+function CheckSelection(selection_type) {
+    var result = null;
+
+    $.ajax({
+        'url': '/common/checkselection',
+        'data': {
+            selection_type: selection_type
+        },
+        'type': 'GET',
+        'dataType': 'json',  // Expecting JSON response from the server
+        'async': false,
+        'success': function(response) {
+            result = response.total;
+        },
+        'error': function(error) {
+            console.error("An error occurred:", error);
+        }
+    });
+
+    return result;
+}
+
+function ClearSelection(selection_type) {
+    $.ajax({
+        'url': '/common/clearselection',
+        'data': {
+            selection_type: selection_type
+        },
+        'type': 'GET',
+        'async': false,
+        'success': function (data) {
+            $("#selection-" + selection_type).html(data);
+        }
+    });
 }
 
 function copyDropdown() {

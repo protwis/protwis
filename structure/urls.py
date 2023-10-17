@@ -7,7 +7,9 @@ from django.views.decorators.cache import cache_page
 
 urlpatterns = [
     url(r'^$', cache_page(60*60*24)(StructureBrowser.as_view()), name='structure_browser'),
+    # url(r'^$', StructureBrowser.as_view(), name='structure_browser'),
     url(r'^g_protein_structure_browser$', cache_page(60*60*24)(EffectorStructureBrowser.as_view(effector='gprot')), name='g_protein_structure_browser'),
+    # url(r'^g_protein_structure_browser$', EffectorStructureBrowser.as_view(effector='gprot'), name='g_protein_structure_browser'),
     url(r'^arrestin_structure_browser$', cache_page(60*60*24)(EffectorStructureBrowser.as_view(effector='arrestin')), name='arrestin_structure_browser'),
 
     url(r'^browser$', RedirectBrowser, name='redirect_browser'),
@@ -23,6 +25,7 @@ urlpatterns = [
     url(r'^arrestin_statistics$', cache_page(60*60*24)(StructureStatistics.as_view(origin='arrestin')), name='structure_statistics'),
     url(r'^statistics$', cache_page(60*60*24)(StructureStatistics.as_view()), name='structure_statistics'),
     url(r'^homology_models$', cache_page(60*60*24)(ServeHomologyModels.as_view()), name='homology_models'),
+    # url(r'^homology_models$', ServeHomologyModels.as_view(), name='homology_models'),
     url(r'^complex_models$', cache_page(60*60*24)(ServeComplexModels.as_view()), name='complex_models'),
     # url(r'^complex_models$', ServeComplexModels.as_view(), name='complex_models'),
     url(r'^model_statistics$', cache_page(60*60*24)(ServeModelStatistics.as_view()), name='model_statistics'),
@@ -36,8 +39,11 @@ urlpatterns = [
     url(r'^generic_numbering_results/(?P<substructure>\w+)$', GenericNumberingDownload.as_view(), name='generic_numbering'),
     url(r'^generic_numbering_selection', GenericNumberingSelection.as_view(), name='generic_numbering'),
     url(r'^superposition_workflow_index$', SuperpositionWorkflowIndex.as_view(), name='superposition_workflow'),
+    url(r'^superposition_workflow_gprot_index$', SuperpositionWorkflowIndex.as_view(website='gprot'), name='superposition_workflow_gprot'),
     url(r'^superposition_workflow_index/(?P<clear>\w{4})$', SuperpositionWorkflowIndex.as_view(), name='superposition_workflow'),
+    url(r'^superposition_workflow_gprot_index/(?P<clear>\w{4})$', SuperpositionWorkflowIndex.as_view(website='gprot'), name='superposition_workflow_gprot'),
     url(r'^superposition_workflow_selection', SuperpositionWorkflowSelection.as_view(), name='superposition_workflow'),
+    url(r'^superposition_workflow_selection_gprot', SuperpositionWorkflowSelection.as_view(website='gprot'), name='superposition_workflow'),
     url(r'^superposition_workflow_results$', SuperpositionWorkflowResults.as_view(), name='superposition_workflow'),
     url(r'^superposition_workflow_results/(?P<substructure>\w+)$', SuperpositionWorkflowDownload.as_view(), name='superposition_workflow'),
 #    url(r'^fragment_superposition_index', FragmentSuperpositionIndex.as_view(), name='fragment_superposition'),
@@ -67,6 +73,7 @@ urlpatterns = [
     url(r'^homology_models/view/(?P<modelname>\w+)_(?P<state>\w+)$', ServeHomModDiagram, name='hommod_serve_view'),
     # url(r'^complex_models/(?P<modelname>\w+)-(?P<signprot>\w+)$', cache_page(60*60*24*7)(ComplexModelDetails), name='complex_model_details'),
     url(r'^complex_models/(?P<header>\w+)$',cache_page(60*60*24*7)(ComplexModelDetails), name='complex_model_details'),
+    # url(r'^complex_models/(?P<header>\w+)$',ComplexModelDetails, name='complex_model_details'),
     # url(r'^complex_models/view/(?P<modelname>\w+)-(?P<signprot>\w+)$', ServeComplexModDiagram, name='complexmod_serve_view'),
     url(r'^complex_models/view/(?P<modelname>\w+)$', ServeComplexModDiagram, name='complexmod_serve_view'),
     url(r'^pdb/(?P<pdbname>\w+)/ligand/(?P<ligand>.+)$', ServePdbLigandDiagram, name='structure_serve_pdb_ligand'),

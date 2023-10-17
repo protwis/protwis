@@ -11,6 +11,7 @@
                   {{ form_template }}
               </form>
           </div>
+          {% if source == 'gpcr'%}
           <div class="text-center">
               <a class="btn btn-primary btn-mini " href="/structure#keepselectionreference">Select from structure browser</a>
           </div>
@@ -18,6 +19,15 @@
           <div class="text-center">
               <a class="btn btn-primary btn-mini " href="/structure/homology_models#keepselectionreference">Select from structure model browser</a>
           </div>
+          {% else %}
+          <div class="text-center">
+              <a class="btn btn-primary btn-mini " href="/structure/g_protein_structure_browser#keepselectionreference">Select from Gprotein structure browser</a>
+          </div>
+          <br/>
+          <div class="text-center">
+              <a class="btn btn-primary btn-mini " href="/structure/complex_models#keepselectionreference">Select from Gprotein structure model browser</a>
+          </div>
+          {% endif %}
       </div>
   </div>
   <div class='col-md-12 panel panel-primary'>
@@ -31,6 +41,7 @@
                   {{ form_superpose }}
               </form>
           </div>
+          {% if source == 'gpcr'%}
           <div class="text-center">
               <a class="btn btn-primary btn-mini " href="/structure#keepselectiontargets">Select from structure browser</a>
           </div>
@@ -38,6 +49,15 @@
           <div class="text-center">
               <a class="btn btn-primary btn-mini " href="/structure/homology_models#keepselectiontargets">Select from structure model browser</a>
           </div>
+          {% else %}
+          <div class="text-center">
+              <a class="btn btn-primary btn-mini " href="/structure/g_protein_structure_browser#keepselectiontargets">Select from Gprotein structure browser</a>
+          </div>
+          <br/>
+          <div class="text-center">
+              <a class="btn btn-primary btn-mini " href="/structure/complex_models#keepselectiontargets">Select from Gprotein structure model browser</a>
+          </div>
+          {% endif %}
       </div>
   </div>
 </div>

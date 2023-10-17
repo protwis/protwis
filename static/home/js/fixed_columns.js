@@ -503,295 +503,521 @@ function showPDBtable(element) {
                 null,
                 null,
                 null,
-            ]
+            ],
+            initComplete: function(settings, json){
+              // yadcf initialization
+              yadcf.init(oTable[mode],
+                  [{
+                          column_number: 1,
+                          filter_type: "multi_select",
+                          select_type: "select2",
+                          filter_default_label: "UniProt",
+                          filter_reset_button_text: false,
+                      },
+                      {
+                          column_number: 2,
+                          filter_type: "multi_select",
+                          select_type: "select2",
+                          column_data_type: "html",
+                          html_data_type: "text",
+                          filter_default_label: "GtoPdb",
+                          filter_match_mode: "exact",
+                          filter_reset_button_text: false,
+                      },
+                      {
+                          column_number: 3,
+                          filter_type: "multi_select",
+                          select_type: "select2",
+                          html_data_type: "text",
+                          select_type_options: {
+                              width: "150px"
+                          },
+                          filter_default_label: "Rec Family",
+                          filter_match_mode: "exact",
+                          filter_reset_button_text: false,
+                      },
+                      {
+                          column_number: 4,
+                          filter_type: "multi_select",
+                          select_type: "select2",
+                          filter_default_label: "Cl",
+                          select_type_options: {
+                              width: "30px"
+                          },
+                          filter_reset_button_text: false,
+                      },
+                      {
+                          column_number: 5,
+                          filter_type: "range_number",
+                          select_type_options: {
+                              width: "70px"
+                          },
+                          filter_default_label: ["From","to"],
+                          filter_reset_button_text: false,
+                      },
+                      {
+                          column_number: 6,
+                          filter_type: "multi_select",
+                          filter_container_id: mode_without_space + "_species",
+                          select_type: "select2",
+                          column_data_type: "html",
+                          filter_default_label: "Species",
+                          filter_reset_button_text: false,
+                      },
+                      {
+                          column_number: 7,
+                          filter_type: "select",
+                          select_type: "select2",
+                          select_type_options: {
+                              width: "90px",
+                              minimumResultsForSearch: -1 // remove search box
+                          },
+                          filter_default_label: "All",
+                          filter_reset_button_text: false,
+                      },
+                      {
+                          column_number: 8,
+                          filter_type: "range_number",
+                          select_type_options: {
+                              width: "70px"
+                          },
+                          filter_default_label: ["From","to"],
+                          filter_reset_button_text: false,
+                      },
+                      {
+                          column_number: 9,
+                          filter_type: "multi_select",
+                          select_type: "select2",
+                          filter_default_label: "Type",
+                          select_type_options: {
+                              width: "70px"
+                          },
+                          filter_reset_button_text: false,
+                      },
+                      {
+                          column_number: 10,
+                          filter_type: "multi_select",
+                          select_type: "select2",
+                          select_type_options: {
+                              width: "70px"
+                          },
+                          filter_default_label: "PDB",
+                          filter_reset_button_text: false,
+                      },
+                      {
+                          column_number: 11,
+                          filter_type: "range_number",
+                          select_type_options: {
+                              width: "70px"
+                          },
+                          filter_default_label: ["Res (Å)",""],
+                          filter_reset_button_text: false,
+                      },
+                      {
+                          column_number: 12,
+                          // filter_container_id: mode_without_space + "_best_res",
+                          filter_type: "select",
+                          select_type: "select2",
+                          select_type_options: {
+                              width: "90px",
+                              minimumResultsForSearch: -1 // remove search box
+                          },
+                          filter_default_label: "All",
+                          filter_reset_button_text: false,
+                      },
+                      {
+                          column_number: 13,
+                          filter_type: "multi_select",
+                          select_type: "select2",
+                          filter_default_label: "State",
+                          select_type_options: {
+                              width: "70px"
+                          },
+                          filter_match_mode: "exact",
+                          filter_reset_button_text: false,
+
+                      },
+                      {
+                          column_number: 14,
+                          filter_type: "range_number",
+                          select_type_options: {
+                              width: "70px"
+                          },
+                          filter_default_label: ["From","to"],
+                          // filter_default_label: "Gprot-bound likeness",
+                          filter_reset_button_text: false,
+                      },
+                      {
+                          column_number: 15,
+                          filter_type: "range_number",
+                          select_type_options: {
+                              width: "70px"
+                          },
+                          filter_default_label: ["From","to"],
+                          filter_reset_button_text: false,
+
+                      },
+                      /*{
+                          column_number: 13,
+                          filter_type: "multi_select",
+                          select_type: "select2",
+                          filter_default_label: "7TM Open IC (Å)",
+                          filter_reset_button_text: false,
+                      },*/
+                      {
+                          column_number: 16,
+                          filter_type: "multi_select",
+                          select_type: "select2",
+                          filter_default_label: "Family",
+                          select_type_options: {
+                              width: "70px"
+                          },
+                          filter_reset_button_text: false,
+                      },
+                      {
+                          column_number: 17,
+                          filter_type: "multi_select",
+                          select_type: "select2",
+                          filter_default_label: "Subtype",
+                          select_type_options: {
+                              width: "70px"
+                          },
+                          filter_reset_button_text: false,
+                      },
+                      {
+                          column_number: 19,
+                          filter_type: "range_number",
+                          select_type_options: {
+                              width: "50px"
+                          },
+                          column_data_type: "html",
+                          filter_default_label: ["From","to"],
+                          filter_reset_button_text: false,
+                      },
+                      {
+                          column_number: 20,
+                          filter_type: "multi_select",
+                          select_type: "select2",
+                          filter_default_label: "Fusion",
+                          filter_reset_button_text: false,
+                      },
+                      {
+                          column_number: 21,
+                          filter_type: "multi_select",
+                          select_type: "select2",
+                          filter_default_label: "Antibody",
+                          column_data_type: "html",
+                          filter_reset_button_text: false,
+                      },
+                      {
+                          column_number: 22,
+                          filter_type: "multi_select",
+                          select_type: "select2",
+                          filter_default_label: "Ligand",
+                          filter_reset_button_text: false,
+                      },
+                      {
+                          column_number: 23,
+                          filter_type: "multi_select",
+                          select_type: "select2",
+                          filter_default_label: "Modality",
+                          filter_match_mode: "exact",
+                          filter_reset_button_text: false,
+                      },
+                  ], {
+                      cumulative_filtering: false,
+                      // filters_tr_index: 1
+                  }
+              );
+            }
         });
         console.timeEnd("DataTable");
         console.time("yadcf");
-        yadcf.init(oTable[mode],
-            [{
-                    column_number: 1,
-                    filter_type: "multi_select",
-                    select_type: "select2",
-                    filter_default_label: "UniProt",
-                    filter_reset_button_text: false,
-                },
-                {
-                    column_number: 2,
-                    filter_type: "multi_select",
-                    select_type: "select2",
-                    column_data_type: "html",
-                    html_data_type: "text",
-                    filter_default_label: "GtoPdb",
-                    filter_match_mode: "exact",
-                    filter_reset_button_text: false,
-                },
-                {
-                    column_number: 3,
-                    filter_type: "multi_select",
-                    select_type: "select2",
-                    html_data_type: "text",
-                    select_type_options: {
-                        width: "150px"
-                    },
-                    filter_default_label: "Rec Family",
-                    filter_match_mode: "exact",
-                    filter_reset_button_text: false,
-                },
-                {
-                    column_number: 4,
-                    filter_type: "multi_select",
-                    select_type: "select2",
-                    filter_default_label: "Cl",
-                    select_type_options: {
-                        width: "30px"
-                    },
-                    filter_reset_button_text: false,
-                },
-                {
-                    column_number: 5,
-                    filter_type: "range_number",
-                    select_type_options: {
-                        width: "70px"
-                    },
-                    filter_default_label: ["From","to"],
-                    filter_reset_button_text: false,
-                },
-                {
-                    column_number: 6,
-                    filter_type: "multi_select",
-                    filter_container_id: mode_without_space + "_species",
-                    select_type: "select2",
-                    column_data_type: "html",
-                    filter_default_label: "Species",
-                    filter_reset_button_text: false,
-                },
-                {
-                    column_number: 7,
-                    filter_type: "select",
-                    select_type: "select2",
-                    select_type_options: {
-                        width: "90px",
-                        minimumResultsForSearch: -1 // remove search box
-                    },
-                    filter_default_label: "All",
-                    filter_reset_button_text: false,
-                },
-                {
-                    column_number: 8,
-                    filter_type: "range_number",
-                    select_type_options: {
-                        width: "70px"
-                    },
-                    filter_default_label: ["From","to"],
-                    filter_reset_button_text: false,
-                },
-                {
-                    column_number: 9,
-                    filter_type: "multi_select",
-                    select_type: "select2",
-                    filter_default_label: "Type",
-                    select_type_options: {
-                        width: "70px"
-                    },
-                    filter_reset_button_text: false,
-                },
-                {
-                    column_number: 10,
-                    filter_type: "multi_select",
-                    select_type: "select2",
-                    select_type_options: {
-                        width: "70px"
-                    },
-                    filter_default_label: "PDB",
-                    filter_reset_button_text: false,
-                },
-                {
-                    column_number: 11,
-                    filter_type: "range_number",
-                    select_type_options: {
-                        width: "70px"
-                    },
-                    filter_default_label: ["Res (Å)",""],
-                    filter_reset_button_text: false,
-                },
-                // {
-                //     column_number: 12,
-                //     filter_type: "multi_select",
-                //     select_type: "select2",
-                //     filter_default_label: "Best res.",
-                //     select_type_options: {
-                //         width: "70px"
-                //     },
-                //     filter_reset_button_text: false,
-                // },
-                {
-                    column_number: 12,
-                    // filter_container_id: mode_without_space + "_best_res",
-                    filter_type: "select",
-                    select_type: "select2",
-                    select_type_options: {
-                        width: "90px",
-                        minimumResultsForSearch: -1 // remove search box
-                    },
-                    filter_default_label: "All",
-                    filter_reset_button_text: false,
-                },
-                {
-                    column_number: 13,
-                    filter_type: "multi_select",
-                    select_type: "select2",
-                    filter_default_label: "State",
-                    select_type_options: {
-                        width: "70px"
-                    },
-                    filter_match_mode: "exact",
-                    filter_reset_button_text: false,
-
-                },
-                // {
-                //     column_number : 10,
-                //     filter_type: "multi_select",
-                //     select_type: "select2",
-                //     filter_default_label: "",
-                //     filter_match_mode : "exact",
-                //     filter_reset_button_text: false,
-
-                // },
-                // {
-                //     column_number : 11,
-                //     filter_type: "multi_select",
-                //     select_type: "select2",
-                //     filter_default_label: "",
-                //     filter_match_mode : "exact",
-                //     filter_reset_button_text: false,
-
-                // },
-                {
-                    column_number: 14,
-                    filter_type: "range_number",
-                    select_type_options: {
-                        width: "70px"
-                    },
-                    filter_default_label: ["From","to"],
-                    // filter_default_label: "Gprot-bound likeness",
-                    filter_reset_button_text: false,
-                },
-                {
-                    column_number: 15,
-                    filter_type: "range_number",
-                    select_type_options: {
-                        width: "70px"
-                    },
-                    filter_default_label: ["From","to"],
-                    filter_reset_button_text: false,
-
-                },
-                /*{
-                    column_number: 13,
-                    filter_type: "multi_select",
-                    select_type: "select2",
-                    filter_default_label: "7TM Open IC (Å)",
-                    filter_reset_button_text: false,
-                },*/
-                {
-                    column_number: 16,
-                    filter_type: "multi_select",
-                    select_type: "select2",
-                    filter_default_label: "Family",
-                    select_type_options: {
-                        width: "70px"
-                    },
-                    filter_reset_button_text: false,
-                },
-                {
-                    column_number: 17,
-                    filter_type: "multi_select",
-                    select_type: "select2",
-                    filter_default_label: "Subtype",
-                    select_type_options: {
-                        width: "70px"
-                    },
-                    filter_reset_button_text: false,
-                },
-                {
-                    column_number: 19,
-                    filter_type: "range_number",
-                    select_type_options: {
-                        width: "50px"
-                    },
-                    column_data_type: "html",
-                    filter_default_label: ["From","to"],
-                    filter_reset_button_text: false,
-                },
-                {
-                    column_number: 20,
-                    filter_type: "multi_select",
-                    select_type: "select2",
-                    filter_default_label: "Fusion",
-                    filter_reset_button_text: false,
-                },
-                {
-                    column_number: 21,
-                    filter_type: "multi_select",
-                    select_type: "select2",
-                    filter_default_label: "Antibody",
-                    column_data_type: "html",
-                    filter_reset_button_text: false,
-                },
-                {
-                    column_number: 22,
-                    filter_type: "multi_select",
-                    select_type: "select2",
-                    filter_default_label: "Ligand",
-                    filter_reset_button_text: false,
-                },
-                {
-                    column_number: 23,
-                    filter_type: "multi_select",
-                    select_type: "select2",
-                    filter_default_label: "Modality",
-                    filter_match_mode: "exact",
-                    filter_reset_button_text: false,
-                },
-                // {
-                //     column_number: 24,
-                //     filter_type: "multi_select",
-                //     select_type: "select2",
-                //     filter_default_label: "Modality",
-                //     filter_reset_button_text: false,
-                // },
-                // {
-                //     column_number: 25,
-                //     filter_container_id: mode_without_space+"_external_filter_container_0",
-                //     html_data_type: "text",
-                //     select_type: "select2",
-                //     // filter_type: "multi_select",
-                //     filter_default_label: "All species and structures",
-                //     filter_reset_button_text: false,
-                //     text_data_delimiter: ",",
-                //     select_type_options: {
-                //         width: "300px",
-                //         minimumResultsForSearch: -1 // remove search box
-                //     },
-                // },
-                // {
-                //     column_number: 23,
-                //     filter_container_id: mode_without_space+"_external_filter_container_1",
-                //     html_data_type: "text",
-                //     select_type: "select2",
-                //     // filter_type: "multi_select",
-                //     filter_default_label: "All Structures",
-                //     filter_reset_button_text: false,
-                //     select_type_options: {
-                //         width: "250px",
-                //         minimumResultsForSearch: -1 // remove search box
-                //     },
-                // },
-            ], {
-                cumulative_filtering: false,
-                // filters_tr_index: 1
-            }
-        );
+        // yadcf.init(oTable[mode],
+        //     [{
+        //             column_number: 1,
+        //             filter_type: "multi_select",
+        //             select_type: "select2",
+        //             filter_default_label: "UniProt",
+        //             filter_reset_button_text: false,
+        //         },
+        //         {
+        //             column_number: 2,
+        //             filter_type: "multi_select",
+        //             select_type: "select2",
+        //             column_data_type: "html",
+        //             html_data_type: "text",
+        //             filter_default_label: "GtoPdb",
+        //             filter_match_mode: "exact",
+        //             filter_reset_button_text: false,
+        //         },
+        //         {
+        //             column_number: 3,
+        //             filter_type: "multi_select",
+        //             select_type: "select2",
+        //             html_data_type: "text",
+        //             select_type_options: {
+        //                 width: "150px"
+        //             },
+        //             filter_default_label: "Rec Family",
+        //             filter_match_mode: "exact",
+        //             filter_reset_button_text: false,
+        //         },
+        //         {
+        //             column_number: 4,
+        //             filter_type: "multi_select",
+        //             select_type: "select2",
+        //             filter_default_label: "Cl",
+        //             select_type_options: {
+        //                 width: "30px"
+        //             },
+        //             filter_reset_button_text: false,
+        //         },
+        //         {
+        //             column_number: 5,
+        //             filter_type: "range_number",
+        //             select_type_options: {
+        //                 width: "70px"
+        //             },
+        //             filter_default_label: ["From","to"],
+        //             filter_reset_button_text: false,
+        //         },
+        //         {
+        //             column_number: 6,
+        //             filter_type: "multi_select",
+        //             filter_container_id: mode_without_space + "_species",
+        //             select_type: "select2",
+        //             column_data_type: "html",
+        //             filter_default_label: "Species",
+        //             filter_reset_button_text: false,
+        //         },
+        //         {
+        //             column_number: 7,
+        //             filter_type: "select",
+        //             select_type: "select2",
+        //             select_type_options: {
+        //                 width: "90px",
+        //                 minimumResultsForSearch: -1 // remove search box
+        //             },
+        //             filter_default_label: "All",
+        //             filter_reset_button_text: false,
+        //         },
+        //         {
+        //             column_number: 8,
+        //             filter_type: "range_number",
+        //             select_type_options: {
+        //                 width: "70px"
+        //             },
+        //             filter_default_label: ["From","to"],
+        //             filter_reset_button_text: false,
+        //         },
+        //         {
+        //             column_number: 9,
+        //             filter_type: "multi_select",
+        //             select_type: "select2",
+        //             filter_default_label: "Type",
+        //             select_type_options: {
+        //                 width: "70px"
+        //             },
+        //             filter_reset_button_text: false,
+        //         },
+        //         {
+        //             column_number: 10,
+        //             filter_type: "multi_select",
+        //             select_type: "select2",
+        //             select_type_options: {
+        //                 width: "70px"
+        //             },
+        //             filter_default_label: "PDB",
+        //             filter_reset_button_text: false,
+        //         },
+        //         {
+        //             column_number: 11,
+        //             filter_type: "range_number",
+        //             select_type_options: {
+        //                 width: "70px"
+        //             },
+        //             filter_default_label: ["Res (Å)",""],
+        //             filter_reset_button_text: false,
+        //         },
+        //         // {
+        //         //     column_number: 12,
+        //         //     filter_type: "multi_select",
+        //         //     select_type: "select2",
+        //         //     filter_default_label: "Best res.",
+        //         //     select_type_options: {
+        //         //         width: "70px"
+        //         //     },
+        //         //     filter_reset_button_text: false,
+        //         // },
+        //         {
+        //             column_number: 12,
+        //             // filter_container_id: mode_without_space + "_best_res",
+        //             filter_type: "select",
+        //             select_type: "select2",
+        //             select_type_options: {
+        //                 width: "90px",
+        //                 minimumResultsForSearch: -1 // remove search box
+        //             },
+        //             filter_default_label: "All",
+        //             filter_reset_button_text: false,
+        //         },
+        //         {
+        //             column_number: 13,
+        //             filter_type: "multi_select",
+        //             select_type: "select2",
+        //             filter_default_label: "State",
+        //             select_type_options: {
+        //                 width: "70px"
+        //             },
+        //             filter_match_mode: "exact",
+        //             filter_reset_button_text: false,
+        //
+        //         },
+        //         // {
+        //         //     column_number : 10,
+        //         //     filter_type: "multi_select",
+        //         //     select_type: "select2",
+        //         //     filter_default_label: "",
+        //         //     filter_match_mode : "exact",
+        //         //     filter_reset_button_text: false,
+        //
+        //         // },
+        //         // {
+        //         //     column_number : 11,
+        //         //     filter_type: "multi_select",
+        //         //     select_type: "select2",
+        //         //     filter_default_label: "",
+        //         //     filter_match_mode : "exact",
+        //         //     filter_reset_button_text: false,
+        //
+        //         // },
+        //         {
+        //             column_number: 14,
+        //             filter_type: "range_number",
+        //             select_type_options: {
+        //                 width: "70px"
+        //             },
+        //             filter_default_label: ["From","to"],
+        //             // filter_default_label: "Gprot-bound likeness",
+        //             filter_reset_button_text: false,
+        //         },
+        //         {
+        //             column_number: 15,
+        //             filter_type: "range_number",
+        //             select_type_options: {
+        //                 width: "70px"
+        //             },
+        //             filter_default_label: ["From","to"],
+        //             filter_reset_button_text: false,
+        //
+        //         },
+        //         /*{
+        //             column_number: 13,
+        //             filter_type: "multi_select",
+        //             select_type: "select2",
+        //             filter_default_label: "7TM Open IC (Å)",
+        //             filter_reset_button_text: false,
+        //         },*/
+        //         {
+        //             column_number: 16,
+        //             filter_type: "multi_select",
+        //             select_type: "select2",
+        //             filter_default_label: "Family",
+        //             select_type_options: {
+        //                 width: "70px"
+        //             },
+        //             filter_reset_button_text: false,
+        //         },
+        //         {
+        //             column_number: 17,
+        //             filter_type: "multi_select",
+        //             select_type: "select2",
+        //             filter_default_label: "Subtype",
+        //             select_type_options: {
+        //                 width: "70px"
+        //             },
+        //             filter_reset_button_text: false,
+        //         },
+        //         {
+        //             column_number: 19,
+        //             filter_type: "range_number",
+        //             select_type_options: {
+        //                 width: "50px"
+        //             },
+        //             column_data_type: "html",
+        //             filter_default_label: ["From","to"],
+        //             filter_reset_button_text: false,
+        //         },
+        //         {
+        //             column_number: 20,
+        //             filter_type: "multi_select",
+        //             select_type: "select2",
+        //             filter_default_label: "Fusion",
+        //             filter_reset_button_text: false,
+        //         },
+        //         {
+        //             column_number: 21,
+        //             filter_type: "multi_select",
+        //             select_type: "select2",
+        //             filter_default_label: "Antibody",
+        //             column_data_type: "html",
+        //             filter_reset_button_text: false,
+        //         },
+        //         {
+        //             column_number: 22,
+        //             filter_type: "multi_select",
+        //             select_type: "select2",
+        //             filter_default_label: "Ligand",
+        //             filter_reset_button_text: false,
+        //         },
+        //         {
+        //             column_number: 23,
+        //             filter_type: "multi_select",
+        //             select_type: "select2",
+        //             filter_default_label: "Modality",
+        //             filter_match_mode: "exact",
+        //             filter_reset_button_text: false,
+        //         },
+        //         // {
+        //         //     column_number: 24,
+        //         //     filter_type: "multi_select",
+        //         //     select_type: "select2",
+        //         //     filter_default_label: "Modality",
+        //         //     filter_reset_button_text: false,
+        //         // },
+        //         // {
+        //         //     column_number: 25,
+        //         //     filter_container_id: mode_without_space+"_external_filter_container_0",
+        //         //     html_data_type: "text",
+        //         //     select_type: "select2",
+        //         //     // filter_type: "multi_select",
+        //         //     filter_default_label: "All species and structures",
+        //         //     filter_reset_button_text: false,
+        //         //     text_data_delimiter: ",",
+        //         //     select_type_options: {
+        //         //         width: "300px",
+        //         //         minimumResultsForSearch: -1 // remove search box
+        //         //     },
+        //         // },
+        //         // {
+        //         //     column_number: 23,
+        //         //     filter_container_id: mode_without_space+"_external_filter_container_1",
+        //         //     html_data_type: "text",
+        //         //     select_type: "select2",
+        //         //     // filter_type: "multi_select",
+        //         //     filter_default_label: "All Structures",
+        //         //     filter_reset_button_text: false,
+        //         //     select_type_options: {
+        //         //         width: "250px",
+        //         //         minimumResultsForSearch: -1 // remove search box
+        //         //     },
+        //         // },
+        //     ], {
+        //         cumulative_filtering: false,
+        //         // filters_tr_index: 1
+        //     }
+        // );
 
         console.timeEnd("yadcf");
         oTable[mode].columns.adjust();

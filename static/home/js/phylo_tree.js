@@ -936,7 +936,7 @@ function draw_heatmap(square_data, data, bible, options, location, element_id, l
         .append("rect")
         .attr("x", function(d) { return x(d.col) })
         .attr("y", function(d) { return y(d.row) })
-        .attr("width", "15px" )
+        .attr("width", "16px" )
         .attr("height", y.bandwidth() )
         .style("fill", function(d) { return d.value} )
 
@@ -1814,14 +1814,6 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
   let smallRadius;
   let bigRadius;
 
-  // if (countInner <= 15){
-  //   smallRadius = 20 * 20 / Math.PI * 0.85;
-  // } else if (countInner > 15 && countInner <= 30) {
-  //   smallRadius = 30 * 20 / Math.PI * 0.85;
-  // } else {
-  //   smallRadius = countInner * 20 / Math.PI * 0.85;
-  // };
-
   if (countInner <= 15){
     smallRadius = 25 * 20 / Math.PI * 0.85;
   } else if (countInner > 15 && countInner <= 35) {
@@ -1829,7 +1821,6 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
   } else {
     smallRadius = countInner * 20 / Math.PI * 0.85;
   };
-
 
   if (countInner <= 15){
     bigRadius = smallRadius * 1.8;
@@ -1846,7 +1837,6 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
   // For example, with a bead radius of 20
   createCircle(bigRadius*1.3, bigRadius*1.3, 20, beadInfo.innerCircle, 'inner', smallRadius);
   createOuterBeads(bigRadius*1.3, bigRadius*1.3, smallRadius, bigRadius, conversion_dict, beadInfo.outerCircle);
-  // createCircle(600, 520, 20, beadInfo.outerCircle, 'outer', bigRadius);
 
   drawConnectionLines(interactions, svg2, smallRadius);
   const innerBeadSelection = svg2.selectAll("circle[data-circle='inner']");  // Assuming the inner beads have a class 'inner-bead'
@@ -1889,7 +1879,7 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
                               .attr("class", "legend-header")
                               .text("Interactions:")
                               .attr("font-family", "Arial")
-                              .attr("font-size", "14px")
+                              .attr("font-size", "16px")
                               .attr("font-weight", "bold")
                               .attr("fill", "black");
 
@@ -1938,7 +1928,7 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
                               .attr("class", "legend-header")
                               .text("G Protein segments:")
                               .attr("font-family", "Arial")
-                              .attr("font-size", "14px")
+                              .attr("font-size", "16px")
                               .attr("font-weight", "bold")
                               .attr("fill", "black");
 
@@ -1998,7 +1988,7 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
                               .attr("class", "legend-header")
                               .text("GPCR segments:")
                               .attr("font-family", "Arial")
-                              .attr("font-size", "14px")
+                              .attr("font-size", "16px")
                               .attr("font-weight", "bold")
                               .attr("fill", "black");
 

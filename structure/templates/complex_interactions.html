@@ -2,7 +2,35 @@
   <br/>
   <br/>
   <div class="col-md-12 text-center">
-    <h2>GPCR - G protein interface interactions</h2>
+    <h2>GPCR - G protein interface interactions <i style="color:black; font-size:16px;" id="wide-popover" class="fas fa-info-circle" data-html="true" data-container="body" data-toggle="popover" data-trigger="click hover" data-placement="below" data-html="true" data-content="
+              <table id='interaction-cutoffs'>
+                <thead>
+                  <th>Interaction type</th>
+                  <th>Strict definition</th>
+                  <th>Loose definition</th>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Polar</td>
+                    <td>donor-acceptor dist. ≤3.5Å + donor angle ≥120°</td>
+                    <td>donor-acceptor dist. ≤4Å</td>
+                  </tr>
+                  <tr>
+                    <td>Aromatic</td>
+                    <td>Face-to-face: dist. ≤4.4Å + angle ≤30° <br/>Face-to-edge: dist. ≤5.5Å + angle >30° <br/>Cation-π: dist. to cat. ≤6.6Å + angle ≤30°</td>
+                    <td>dist. ≤5.5Å OR Cation-π</td>
+                  </tr>
+                  <tr>
+                    <td>Hydrophobic</td>
+                    <td>≥3 atom pairs</td>
+                    <td>≥1 atom pair</td>
+                  </tr>
+                  <tr>
+                    <td>van der Waals</td>
+                    <td>≥3 atom pairs</td>
+                    <td>≥1 atom pair</td>
+                </tbody>
+              </table>"></i></h2>
   </div>
 </div>
 
@@ -193,44 +221,15 @@
 
     </div>
     <div class="tab-pane container" id="3dview">
-      <p class="inline"><span style="color:#fc660ff0;">G&alpha;</span>, 
+      <p class="inline" style='font-size: 18px;'><span style="color:#fc660ff0;">G&alpha;</span>,
         {% if model.signprot_complex.beta_protein %}
-        <span style="color:#f79862;">G&beta;</span>, 
+        <span style="color:#f79862;">G&beta;</span>,
         {% endif %}
         {% if model.signprot_complex.gamma_protein %}
-        <span style="color:#ffbf00;">G&gamma;</span>, 
+        <span style="color:#ffbf00;">G&gamma;</span>,
         {% endif %}
         <span style="color:grey;">GPCR</span><br />
-        Interaction cut-off: strict (stick), loose (line) 
-          <i style="color:black; font-size:16px;" id="wide-popover" class="fas fa-info-circle" data-html="true" data-container="body" data-toggle="popover" data-trigger="click hover" data-placement="below" data-html="true" data-content="
-          <table id='interaction-cutoffs'>
-            <thead>
-              <th>Interaction type</th>
-              <th>Strict definition</th>
-              <th>Loose definition</th>
-            </thead>
-            <tbody>
-              <tr>
-                <td>Polar</td>
-                <td>donor-acceptor dist. ≤3.5Å + donor angle ≥120°</td>
-                <td>donor-acceptor dist. ≤4Å</td>
-              </tr>
-              <tr>
-                <td>Aromatic</td>
-                <td>Face-to-face: dist. ≤4.4Å + angle ≤30° <br/>Face-to-edge: dist. ≤5.5Å + angle >30° <br/>Cation-π: dist. to cat. ≤6.6Å + angle ≤30°</td>
-                <td>dist. ≤5.5Å OR Cation-π</td>
-              </tr>
-              <tr>
-                <td>Hydrophobic</td>
-                <td>≥3 atom pairs</td>
-                <td>≥1 atom pair</td>
-              </tr>
-              <tr>
-                <td>van der Waals</td>
-                <td>≥3 atom pairs</td>
-                <td>≥1 atom pair</td>
-            </tbody>
-          </table>"></i>
+        Interaction cut-off: strict (stick), loose (line)
       </p>
       <div id="viewport_full" style="width:500px; height:400px; background-color: white;"></div>
       <div style="width:500px; background-color:#eaeaea; border-radius: 0px 0px 5px 5px;">

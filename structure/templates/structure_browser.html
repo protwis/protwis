@@ -35,8 +35,8 @@
           border-width: 1px;
           padding: 3px;
       }
-      .highlight {
-          background-color: yellow;
+      .highlight_1 {
+          background-color: cyan;
       }
     </style>
 {% endblock %}
@@ -99,13 +99,13 @@
               // Update the button for #keepselectionreference
               button.innerText = "Add reference to superposition";
               button.id = "superpose_template_btn";
-              button.classList.add("highlight");
+              button.classList.add("highlight_1");
               break;
           case "#keepselectiontargets":
               // Update the button for #keepselectiontargets
               button.innerText = "Add targets to superposition";
               button.id = "superpose_template_btn";
-              button.classList.add("highlight");
+              button.classList.add("highlight_1");
               break;
           default:
               // Default configuration (if no recognized hash)

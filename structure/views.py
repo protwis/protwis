@@ -2311,7 +2311,7 @@ class GenericNumberingDownload(View):
 class SuperpositionWorkflowIndex(TemplateView):
 
     template_name = "common_structural_tools.html"
-
+    website = 'gpcr'
     #Left panel
     step = 1
     number_of_steps = 3
@@ -2351,7 +2351,11 @@ class SuperpositionWorkflowIndex(TemplateView):
 
 
     form_id = 'superpose_files'
-    url = '/structure/superposition_workflow_selection'
+    if website == 'gpcr':
+        url = '/structure/superposition_workflow_selection'
+    elif website == 'gprot':
+        url = '/structure/superposition_workflow_selection_gprot'
+
     mid_section = 'superposition_workflow_upload_file_form.html'
 
     #Buttons
@@ -2373,13 +2377,11 @@ class SuperpositionWorkflowIndex(TemplateView):
         # get selection from session and add to context
         # get simple selection from session
         simple_selection = self.request.session.get('selection', False)
-        print(simple_selection)
         # print(simple_selection)
         # create full selection and import simple selection (if it exists)
         selection = Selection()
         if simple_selection:
             selection.importer(simple_selection)
-        print(self.kwargs.keys())
         #Clearing selections for fresh run
         if 'clear' in self.kwargs.keys():
             selection.clear('reference')
@@ -2398,6 +2400,7 @@ class SuperpositionWorkflowIndex(TemplateView):
         context['form_code'] = str(self.form_code)
         context['form_template'] = str(self.form_template)
         context['form_superpose'] = str(self.form_superpose)
+        context['source'] = self.website
         attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
         for a in attributes:
             if not(a[0].startswith('__') and a[0].endswith('__')):
@@ -2418,7 +2421,7 @@ class SuperpositionWorkflowSelection(AbsSegmentSelection):
 
     #Mid section
     #mid_section = 'segment_selection.html'
-
+    website = 'gpcr'
     #Right panel
     segment_list = True
     buttons = {
@@ -2523,11 +2526,13 @@ class SuperpositionWorkflowResults(TemplateView):
             ref_file = StringIO(self.request.session['ref_file'].file.read().decode('UTF-8'))
         elif selection.reference != []:
             ref_file = StringIO(selection.reference[0].item.get_cleaned_pdb())
+
         if 'alt_files' in self.request.session.keys():
             alt_files = [StringIO(alt_file.file.read().decode('UTF-8')) for alt_file in self.request.session['alt_files']]
         elif selection.targets != []:
             alt_files = [StringIO(x.item.get_cleaned_pdb()) for x in selection.targets if x.type in ['structure', 'structure_model', 'structure_model_Inactive', 'structure_model_Intermediate', 'structure_model_Active']]
 
+        print(selection.reference[0])
         superposition = ProteinSuperpose(deepcopy(ref_file),alt_files, selection)
         out_structs = superposition.run()
         if 'alt_files' in self.request.session.keys():
