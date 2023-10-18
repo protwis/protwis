@@ -32,6 +32,10 @@
             }
         }
 
+        .highlight_1 {
+            background-color: cyan;
+        }
+
         table.dataTable.compact thead th.over_header {
             border-right: 1px solid;
             border-left: 0px solid;
@@ -128,8 +132,18 @@
             $('.select-all').prop('checked',false)
             //
 
-            ClearSelection('reference');
-            ClearSelection('targets');
+            switch (window.location.hash) {
+                case "#keepselectionreference":
+                    ClearSelection("reference");
+                    break;
+                case "#keepselectiontargets":
+                    ClearSelection("targets");
+                    break;
+                default:
+                    ClearSelection("targets");
+                    ClearSelection("reference");
+                    break;
+            }
 
             yadcf.init(oTable,
                 [
@@ -527,19 +541,19 @@
                   // Update the button for #keepselectionreference
                   button.innerText = "Add reference to superposition";
                   button.id = "superpose_template_btn";
-                  button.classList.add("highlight");
+                  button.classList.add("highlight_1");
                   break;
               case "#keepselectiontargets":
                   // Update the button for #keepselectiontargets
                   button.innerText = "Add targets to superposition";
                   button.id = "superpose_template_btn";
-                  button.classList.add("highlight");
+                  button.classList.add("highlight_1");
                   break;
               default:
                   // Default configuration (if no recognized hash)
                   button.innerText = "Superposition";
                   button.id = "superpose_btn";
-                  button.classList.remove("highlight");
+                  button.classList.remove("highlight_1");
                   break;
           }
       }

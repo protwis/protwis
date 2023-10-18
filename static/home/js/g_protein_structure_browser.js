@@ -11,8 +11,19 @@ function gproteinstructurebrowser(effector) {
     $(".alt").prop("checked",false);
     $(".select-all").prop("checked",false);
     //
-    ClearSelection("targets");
-    ClearSelection("reference");
+
+    switch (window.location.hash) {
+        case "#keepselectionreference":
+            ClearSelection("reference");
+            break;
+        case "#keepselectiontargets":
+            ClearSelection("targets");
+            break;
+        default:
+            ClearSelection("targets");
+            ClearSelection("reference");
+            break;
+    }
 
     $("#loading_div").hide();
 
