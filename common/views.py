@@ -17,6 +17,7 @@ from structure.models import Structure, StructureModel, StructureComplexModel
 from protein.models import Protein, ProteinFamily, ProteinSegment, Species, ProteinSource, ProteinSet, ProteinCouplings
 from residue.models import ResidueGenericNumber, ResidueNumberingScheme, ResidueGenericNumberEquivalent, ResiduePositionSet, Residue
 from interaction.forms import PDBform
+from signprot.models import SignprotStructure
 from construct.tool import FileUploadForm
 
 from svglib.svglib import SvgRenderer
@@ -1222,14 +1223,31 @@ def AddToSelection(request):
 
         elif selection_subtype == 'set':
             o.append(ProteinSet.objects.get(pk=selection_id))
-
+        # AddToSelection('reference', 'structure',  $(this).children().eq(11).text()+"_refined");
+        # 4IAQ
         elif selection_subtype == 'structure':
             o.append(Structure.objects.get(pdb_code__index=selection_id.upper()))
 
         elif selection_subtype == 'structure_many':
             selection_subtype = 'structure'
             for pdb_code in selection_id.split(","):
+                print(pdb_code)
                 o.append(Structure.objects.get(pdb_code__index=pdb_code.upper()))
+
+        elif selection_subtype == 'signprot_many':
+            selection_subtype = 'structure'
+            for pdb_code in selection_id.split(","):
+                try:
+                    o.append(SignprotStructure.objects.get(pdb_code__index=pdb_code.upper()))
+                except SignprotStructure.DoesNotExist:
+                    o.append(Structure.objects.get(pdb_code__index=pdb_code.upper()))
+
+        elif selection_subtype == 'signprot':
+            selection_subtype = 'structure'
+            try:
+                o.append(SignprotStructure.objects.get(pdb_code__index=selection_id.upper()))
+            except SignprotStructure.DoesNotExist:
+                o.append(Structure.objects.get(pdb_code__index=selection_id.upper()))
 
         elif selection_subtype == 'structure_complex_receptor':
             receptor, signprot = selection_id.split('-')
@@ -1246,9 +1264,9 @@ def AddToSelection(request):
             state = selection_id.split('_')[-1]
             entry_name = '_'.join(selection_id.split('_')[:-1])
             try:
-                sm = StructureModel.objects.get(protein__entry_name=entry_name, state__name=state)
+                sm = StructureModel.objects.get(protein__entry_name=entry_name.lower(), state__name=state)
             except StructureModel.DoesNotExist:
-                sm = StructureModel.objects.get(protein__parent__entry_name=entry_name, state__name=state)
+                sm = StructureModel.objects.get(protein__parent__entry_name=entry_name.lower(), state__name=state)
             o.append(sm)
 
         elif selection_subtype == 'structure_models_many':
@@ -1256,7 +1274,10 @@ def AddToSelection(request):
             for model in selection_id.split(","):
                 state = model.split('_')[-1]
                 entry_name = '_'.join(model.split('_')[:-1])
-                o.append(StructureModel.objects.get(protein__entry_name=entry_name, state__name=state))
+                if state == 'refined':
+                    o.append(StructureModel.objects.get(protein__entry_name=entry_name.lower()))
+                else:
+                    o.append(StructureModel.objects.get(protein__entry_name=entry_name.lower(), state__name=state))
 
 
     elif selection_type == 'segments':
@@ -1320,7 +1341,6 @@ def RemoveFromSelection(request):
 
     # remove the selected item to the selection
     selection.remove(selection_type, selection_subtype, selection_id)
-
     # export simple selection that can be serialized
     simple_selection = selection.exporter()
 
