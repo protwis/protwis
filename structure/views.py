@@ -2405,7 +2405,6 @@ class SuperpositionWorkflowIndex(TemplateView):
         for a in attributes:
             if not(a[0].startswith('__') and a[0].endswith('__')):
                 context[a[0]] = a[1]
-        print(context)
         return context
 
 
@@ -2532,7 +2531,6 @@ class SuperpositionWorkflowResults(TemplateView):
         elif selection.targets != []:
             alt_files = [StringIO(x.item.get_cleaned_pdb()) for x in selection.targets if x.type in ['structure', 'structure_model', 'structure_model_Inactive', 'structure_model_Intermediate', 'structure_model_Active']]
 
-        print(selection.reference[0])
         superposition = ProteinSuperpose(deepcopy(ref_file),alt_files, selection)
         out_structs = superposition.run()
         if 'alt_files' in self.request.session.keys():

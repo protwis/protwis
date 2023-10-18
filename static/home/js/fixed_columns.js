@@ -358,7 +358,6 @@ function create_overlay(table_id) {
             $(":checkbox", this).trigger("click");
             if ($(":checkbox", this).length === 0) {
                 var pdb_id = $(this).attr("id").split("_")[1];
-                console.log(pdb_id);
                 var checkbox = $(".dataTables_scrollBody").find("#" + pdb_id);
                 checkbox.trigger("click");
             }
@@ -376,8 +375,6 @@ function showPDBtable(element) {
     mode_without_space = mode.replace(/ /g, "_");
 
     if (!$.fn.DataTable.isDataTable(element + " .tableview table")) {
-        console.log(mode);
-
         $(element + " #best_species").html('<div class2="pull-right">\
                                             <div class="btn-group btn-toggle" column="7" mode="'+ mode +'"> \
                                             <button class="btn btn-xs btn-default" value="On">&nbsp;</button> \

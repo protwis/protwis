@@ -69,7 +69,6 @@ function superposition(oTable, columns, site, source='gpcr', hide_first_column=f
     } else if (site == "g_protein_structure_browser"){
       for (i = 0; i < checked_data.length; i++) {
           var div = document.createElement("div");
-          console.log(checked_data[i]);
           div.innerHTML = checked_data[i][11];
           if (typeof div.innerText !== "undefined") {
               selected_ids.push(div.innerText.replace(/\s+/g, ''));
@@ -77,7 +76,6 @@ function superposition(oTable, columns, site, source='gpcr', hide_first_column=f
               selected_ids.push(div.textContent.replace(/\s+/g, ''));
           }
       }
-      console.log(selected_ids.join(","));
       AddToSelection('targets', 'signprot_many', selected_ids.join(","));
     }// add new logic here for new site
 
@@ -406,7 +404,6 @@ function match_scroll_position() {
 
 function copyToClipboard(array, delimiter, data_name, powertip_object=false) {
     var link = array;
-    console.log(link);
     var out = "";
     link.each(function() {
         var ele = $(this).attr("href").split("/");
