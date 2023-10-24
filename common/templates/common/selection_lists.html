@@ -24,6 +24,8 @@
                 {% else %}
                     {{ selected_item.item.protein.name|safe }} {{ selected_item.item.state.slug}}
                 {% endif %}
+            {% elif selected_item.type == 'signprot' %}
+                {{ selected_item.item.pdb_code.index }}
             {% else %}
                 {{ selected_item.item.name|safe }}
                 {% if selected_item.item.species.common_name %}

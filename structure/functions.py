@@ -183,7 +183,10 @@ class SelectionParser(object):
         for segment in selection.segments:
             logger.debug('Segments in selection: {}'.format(segment))
             if segment.type == 'helix':
-                self.helices.append(int(segment.item.slug[-1]))
+                try:
+                    self.helices.append(int(segment.item.slug[-1]))
+                except ValueError:
+                    self.helices.append(segment.item.slug)
             elif segment.type == 'residue':
                 self.generic_numbers.append(segment.item.label.replace('x','.'))
             else:
@@ -247,11 +250,12 @@ class SubstructureSelector(Select):
 class CASelector(object):
 
     def __init__ (self, parsed_selection, ref_pdbio_struct, alt_structs):
-
+        # CASelector(self.selection, self.ref_struct, self.alt_structs)
         self.ref_atoms = []
         self.alt_atoms = {}
 
         self.selection = parsed_selection
+        print(parsed_selection.generic_numbers)
         try:
             self.ref_atoms.extend(self.select_generic_numbers(ref_pdbio_struct))
             self.ref_atoms.extend(self.select_helices(ref_pdbio_struct))
@@ -259,6 +263,8 @@ class CASelector(object):
             logger.warning("Can't select atoms from the reference structure!\n{!s}".format(msg))
 
         for alt_struct in alt_structs:
+            print(alt_struct)
+            print(alt_struct.id)
             try:
                 self.alt_atoms[alt_struct.id] = []
                 self.alt_atoms[alt_struct.id].extend(self.select_generic_numbers(alt_struct))
@@ -273,10 +279,14 @@ class CASelector(object):
         if self.selection.generic_numbers == []:
             return []
 
+        print(self.selection.generic_numbers)
         atom_list = []
-
         for chain in structure:
             for res in chain:
+                print(res)
+                print(res['CA'].get_bfactor())
+                print("{:.2f}".format(res['CA'].get_bfactor()))
+                print("{:.3f}".format(-res['CA'].get_bfactor() + 0.001))
                 try:
                     if "{:.2f}".format(res['CA'].get_bfactor()) in self.selection.generic_numbers:
                         atom_list.append(res['CA'])
@@ -286,7 +296,7 @@ class CASelector(object):
                     continue
 
         if atom_list == []:
-            logger.warning("No atoms with given generic numbers {} for  {!s}".format(self.selection.generic_numbers, structure.id))
+            logger.warning("No atoms with given generic numbers {} for {!s}".format(self.selection.generic_numbers, structure.id))
         return atom_list
 
 
@@ -1170,7 +1180,7 @@ class ParseAFComplexModels():
         for f in self.filedirs:
             if '-' not in f:
                 continue
-            
+
             receptor, signprot = f.split('-')
             metrics_file = os.sep.join([self.data_dir, f, f+'_metrics.csv'])
             metrics = [row for row in csv.DictReader(open(metrics_file, 'r'))][0]

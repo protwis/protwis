@@ -25,7 +25,7 @@ from common.selection import Selection, SelectionItem
 from common.extensions import MultiFileField
 from common.models import ReleaseNotes
 from common.alignment import Alignment, GProteinAlignment
-from residue.models import Residue
+from residue.models import Residue, ResidueNumberingScheme, ResiduePositionSet
 from contactnetwork.models import Interaction
 
 import io
@@ -2349,12 +2349,7 @@ class SuperpositionWorkflowIndex(TemplateView):
     form_superpose = forms.Form()
     form_superpose.fields = upload_superpose
 
-
     form_id = 'superpose_files'
-    if website == 'gpcr':
-        url = '/structure/superposition_workflow_selection'
-    elif website == 'gprot':
-        url = '/structure/superposition_workflow_selection_gprot'
 
     mid_section = 'superposition_workflow_upload_file_form.html'
 
@@ -2401,13 +2396,15 @@ class SuperpositionWorkflowIndex(TemplateView):
         context['form_template'] = str(self.form_template)
         context['form_superpose'] = str(self.form_superpose)
         context['source'] = self.website
+        # if self.website == 'gpcr':
+        context['url'] = '/structure/superposition_workflow_selection'
+        # elif self.website == 'gprot':
+        #     context['url'] = '/structure/segmentselectiongprot'
         attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
         for a in attributes:
             if not(a[0].startswith('__') and a[0].endswith('__')):
                 context[a[0]] = a[1]
         return context
-
-
 
 #Class rendering selection box for sequence segments
 class SuperpositionWorkflowSelection(AbsSegmentSelection):
@@ -2417,10 +2414,9 @@ class SuperpositionWorkflowSelection(AbsSegmentSelection):
     number_of_steps = 3
 
     docs = 'structures.html#structure-superposition'
-
     #Mid section
     #mid_section = 'segment_selection.html'
-    website = 'gpcr'
+
     #Right panel
     segment_list = True
     buttons = {
@@ -2434,7 +2430,6 @@ class SuperpositionWorkflowSelection(AbsSegmentSelection):
     selection_boxes = OrderedDict([('reference', False),
         ('targets', False),
         ('segments', True),])
-
 
     def post (self, request, *args, **kwargs):
 
@@ -2484,14 +2479,102 @@ class SuperpositionWorkflowSelection(AbsSegmentSelection):
         for selection_box, include in self.selection_boxes.items():
             if include:
                 context['selection'][selection_box] = selection.dict(selection_box)['selection'][selection_box]
+        print(context)
+        # get attributes of this class and add them to the context
+        attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
+        for a in attributes:
+            if not(a[0].startswith('__') and a[0].endswith('__')):
+                context[a[0]] = a[1]
+
+        return context
+
+class SegmentSelectionGprotein(AbsSegmentSelection):
+    #Left panel
+    step = 2
+    number_of_steps = 3
+
+    docs = 'structures.html#structure-superposition'
+    description = 'Select sequence segments in the middle column for G proteins. You can expand every structural element and select individual' \
+        + ' residues by clicking on the down arrows next to each helix, sheet or loop.\n\n You can select the full sequence or show all structured regions at the same time.\n\nSelected segments will appear in the' \
+        + ' right column, where you can edit the list.\n\nOnce you have selected all your segments, click the green' \
+        + ' button.'
+
+    template_name = 'common/segmentselection.html'
+    #Right panel
+    segment_list = True
+    buttons = {
+        'continue': {
+            'label': 'Superpose G proteins',
+            'url': '/structure/superposition_workflow_results_gprot',
+            'color': 'success',
+        },
+    }
+
+    position_type = 'gprotein'
+    rsets = ResiduePositionSet.objects.filter(name__in=['Gprotein Barcode', 'YM binding site']).prefetch_related('residue_position')
+
+    ss = ProteinSegment.objects.filter(partial=False, proteinfamily='Alpha').prefetch_related('generic_numbers')
+    ss_cats = ss.values_list('category').order_by('category').distinct('category')
+
+    # OrderedDict to preserve the order of the boxes
+    selection_boxes = OrderedDict([('reference', False),
+        ('targets', False),
+        ('segments', True),])
+
+    def post (self, request, *args, **kwargs):
+        # create full selection and import simple selection (if it exists)
+        simple_selection = request.session.get('selection', False)
+        selection = Selection()
+        if simple_selection:
+            selection.importer(simple_selection)
+
+        if 'ref_file' in request.FILES:
+            request.session['ref_file'] = request.FILES['ref_file']
+        if 'alt_files' in request.FILES:
+            request.session['alt_files'] = request.FILES.getlist('alt_files')
+
+        context = super(SegmentSelectionGprotein, self).get_context_data(**kwargs)
+        context['selection'] = {}
+        for selection_box, include in self.selection_boxes.items():
+            if include:
+                context['selection'][selection_box] = selection.dict(selection_box)['selection'][selection_box]
+
+        attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
+        for a in attributes:
+            if not(a[0].startswith('__') and a[0].endswith('__')):
+                context[a[0]] = a[1]
+        return render(request, self.template_name, context)
+
+    def get_context_data(self, **kwargs):
+
+        self.buttons = {
+            'continue': {
+                'label': 'Download substructures',
+                'url': '/structure/superposition_workflow_results/custom',
+                'color': 'success',
+            },
+        }
+        context = super(SegmentSelectionGprotein, self).get_context_data(**kwargs)
+
+        simple_selection = self.request.session.get('selection', False)
+        selection = Selection()
+        if simple_selection:
+            selection.importer(simple_selection)
+
+        context['selection'] = {}
+        context['selection']['site_residue_groups'] = selection.site_residue_groups
+        context['selection']['active_site_residue_group'] = selection.active_site_residue_group
+        for selection_box, include in self.selection_boxes.items():
+            if include:
+                context['selection'][selection_box] = selection.dict(selection_box)['selection'][selection_box]
 
         # get attributes of this class and add them to the context
         attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
         for a in attributes:
             if not(a[0].startswith('__') and a[0].endswith('__')):
                 context[a[0]] = a[1]
-        return context
 
+        return context
 
 #Class rendering results from superposition workflow
 class SuperpositionWorkflowResults(TemplateView):
@@ -2506,11 +2589,10 @@ class SuperpositionWorkflowResults(TemplateView):
     number_of_steps = 3
     title = "SELECT SUBSTRUCTURE"
     description = 'Download the desired substructures.'
-
+    website = 'gpcr'
     #Mid section
     mid_section = 'superposition_results.html'
     #Buttons - none
-
 
     def get_context_data (self, **kwargs):
 
@@ -2524,14 +2606,23 @@ class SuperpositionWorkflowResults(TemplateView):
         if 'ref_file' in self.request.session.keys():
             ref_file = StringIO(self.request.session['ref_file'].file.read().decode('UTF-8'))
         elif selection.reference != []:
-            ref_file = StringIO(selection.reference[0].item.get_cleaned_pdb())
+            if self.website == 'gprot':
+                ref_file = StringIO(selection.reference[0].item.get_cleaned_pdb(pref_chain=False))
+            else:
+                ref_file = StringIO(selection.reference[0].item.get_cleaned_pdb())
 
         if 'alt_files' in self.request.session.keys():
             alt_files = [StringIO(alt_file.file.read().decode('UTF-8')) for alt_file in self.request.session['alt_files']]
         elif selection.targets != []:
-            alt_files = [StringIO(x.item.get_cleaned_pdb()) for x in selection.targets if x.type in ['structure', 'structure_model', 'structure_model_Inactive', 'structure_model_Intermediate', 'structure_model_Active']]
+            if self.website == 'gprot':
+                alt_files = [StringIO(x.item.get_cleaned_pdb(pref_chain=False)) for x in selection.targets if x.type in ['structure', 'signprot', 'structure_model', 'structure_model_Inactive', 'structure_model_Intermediate', 'structure_model_Active']]
+            else:
+                alt_files = [StringIO(x.item.get_cleaned_pdb()) for x in selection.targets if x.type in ['structure', 'signprot', 'structure_model', 'structure_model_Inactive', 'structure_model_Intermediate', 'structure_model_Active']]
 
-        superposition = ProteinSuperpose(deepcopy(ref_file),alt_files, selection)
+        # if self.website == 'gprot':
+        #     superposition = ConvertedSuperpose(deepcopy(ref_file), alt_files, selection)
+        # else:
+        superposition = ProteinSuperpose(deepcopy(ref_file), alt_files, selection)
         out_structs = superposition.run()
         if 'alt_files' in self.request.session.keys():
             alt_file_names = [x.name for x in self.request.session['alt_files']]
@@ -2541,7 +2632,11 @@ class SuperpositionWorkflowResults(TemplateView):
                 if x.type=='structure':
                     alt_file_names.append('{}_{}.pdb'.format(x.item.protein_conformation.protein.entry_name, x.item.pdb_code.index))
                 elif x.type=='structure_model' or x.type=='structure_model_Inactive' or x.type=='structure_model_Intermediate' or x.type=='structure_model_Active':
-                    alt_file_names.append('Class{}_{}_{}_{}_GPCRdb.pdb'.format(class_dict[x.item.protein.family.slug[:3]], x.item.protein.entry_name, x.item.state.name, x.item.main_template.pdb_code.index))
+                    if hasattr(x.item.main_template, 'pdb_code'):
+                        alt_file_names.append('Class{}_{}_{}_{}_GPCRdb.pdb'.format(class_dict[x.item.protein.family.slug[:3]], x.item.protein.entry_name, x.item.state.name, x.item.main_template.pdb_code.index))
+                    else:
+                        alt_file_names.append('Class{}_{}_{}_GPCRdb.pdb'.format(class_dict[x.item.protein.family.slug[:3]], x.item.protein.entry_name, x.item.state.name))
+
         if len(out_structs) == 0:
             self.success = False
         elif len(out_structs) >= 1:

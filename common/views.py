@@ -1231,22 +1231,22 @@ def AddToSelection(request):
         elif selection_subtype == 'structure_many':
             selection_subtype = 'structure'
             for pdb_code in selection_id.split(","):
-                print(pdb_code)
                 o.append(Structure.objects.get(pdb_code__index=pdb_code.upper()))
 
         elif selection_subtype == 'signprot_many':
-            selection_subtype = 'structure'
+            selection_subtype = 'signprot'
             for pdb_code in selection_id.split(","):
                 try:
                     o.append(SignprotStructure.objects.get(pdb_code__index=pdb_code.upper()))
                 except SignprotStructure.DoesNotExist:
+                    selection_subtype = 'structure'
                     o.append(Structure.objects.get(pdb_code__index=pdb_code.upper()))
 
         elif selection_subtype == 'signprot':
-            selection_subtype = 'structure'
             try:
                 o.append(SignprotStructure.objects.get(pdb_code__index=selection_id.upper()))
             except SignprotStructure.DoesNotExist:
+                selection_subtype = 'structure'
                 o.append(Structure.objects.get(pdb_code__index=selection_id.upper()))
 
         elif selection_subtype == 'structure_complex_receptor':
@@ -1597,7 +1597,6 @@ def SelectAlignableResidues(request):
     selection = Selection()
     if simple_selection:
         selection.importer(simple_selection)
-
     if "protein_type" in request.GET:
         if request.GET['protein_type'] == 'gprotein':
             segmentlist = definitions.G_PROTEIN_SEGMENTS
@@ -1629,6 +1628,8 @@ def SelectAlignableResidues(request):
                 r_prot = simple_selection.reference[0].item
             elif simple_selection.reference[0].type == 'structure':
                 r_prot = simple_selection.reference[0].item.protein_conformation.protein
+            elif simple_selection.reference[0].type == 'signprot':
+                r_prot = simple_selection.reference[0].item.protein
 
             seg_ids_all = get_protein_segment_ids(r_prot, seg_ids_all)
             if r_prot.residue_numbering_scheme not in numbering_schemes:
@@ -1636,6 +1637,7 @@ def SelectAlignableResidues(request):
 
         if simple_selection and simple_selection.targets:
             for t in simple_selection.targets:
+                print(t.type)
                 if t.type == 'family':
                     proteins = Protein.objects.filter(family__slug__startswith=t.item.slug)
                     t_prot = proteins[0]
@@ -1643,6 +1645,14 @@ def SelectAlignableResidues(request):
                     t_prot = t.item
                 elif t.type == 'structure':
                     t_prot = t.item.protein_conformation.protein
+                elif t.type == 'structure_model':
+                    t_prot = t.item.protein
+                elif t.type == 'signprot':
+                    try:
+                        t_prot = t.item.protein_conformation.protein
+                    except AttributeError:
+                        t_prot = t.item.protein
+
                 seg_ids_all = get_protein_segment_ids(t_prot, seg_ids_all)
                 if t_prot.residue_numbering_scheme not in numbering_schemes:
                     numbering_schemes.append(t_prot.residue_numbering_scheme)
