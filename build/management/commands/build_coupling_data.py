@@ -343,7 +343,7 @@ class Command(BaseCommand):
         signprots = Protein.objects.filter(Q(family__slug__istartswith='100_001') | Q(family__slug__istartswith='200'), species__common_name='Human', accession__isnull=False).prefetch_related('family', 'family__parent')
 
         ### Predefined subtype columns where variants (isoform, GRK) are considered separate entries
-        ###### Needs updating if new subtypes, variants (column headers) are added to master excel 
+        ###### Needs updating if new subtypes, variants (column headers) are added to master excel
         signprot_dict = {### G proteins
                          'GsL': signprots.get(entry_name='gnas2_human'), 'Gi1': signprots.get(entry_name='gnai1_human'), 'Gi2': signprots.get(entry_name='gnai2_human'), 
                          'Gi3': signprots.get(entry_name='gnai3_human'),
@@ -368,7 +368,7 @@ class Command(BaseCommand):
                     # rec, receptor_variant = receptor.split('+')
                     receptor = receptor.replace('+','/')
                 data[source][receptor] = {}
-                ### Loop through 
+                ### Loop through
                 for sp_key, sp in signprot_dict.items():
                     ### Skip is G prot subtype not in this source
                     if sp_key not in row:
@@ -395,7 +395,7 @@ class Command(BaseCommand):
                     ###### Subtype values
                     if sp_key in row and source_metadata['Parameter']=='log(Emax/EC50)':
                         data[source][receptor][sp_key]['logemaxec50'] = round(row[sp_key],1)
-                    
+
                     if sp_key in row and source_metadata['Parameter']=='Kon (1/𝜏)':
                         data[source][receptor][sp_key]['kon_mean'] = round(row[sp_key],1)
 
@@ -414,7 +414,7 @@ class Command(BaseCommand):
                             data[source][receptor]['ligand_physiological'] = True
                         else:
                             data[source][receptor]['ligand_physiological'] = False
-                    if 'Ligand ID type' in row and row['Ligand ID type']=='_FASTA seq (peptide)': 
+                    if 'Ligand ID type' in row and row['Ligand ID type']=='_FASTA seq (peptide)':
                         del data[source][receptor]['ligand_id']
                     ### DOI
                     if 'DOI' in row:
@@ -493,7 +493,7 @@ class Command(BaseCommand):
 
                 for header in gproteins:
                     # print("PROCESSING: "+str(header)+" COLUMN")
-                    if type(couplings[header])==type({}):
+                    if isinstance(couplings[header], dict):
                         gp = couplings[header]['prot_obj']
                     else:
                         continue
@@ -549,14 +549,14 @@ class Command(BaseCommand):
                             if key in couplings[header]:
                                 vals[key] = couplings[header][key]
                         # print(p,g,gp,l,source,vals)
-                        gpair = ProteinCouplings(protein=p, g_protein=g, g_protein_subunit=gp, ligand=l, source=source, physiological_ligand=lig_phys_surr, 
-                                                 variant=vals['variant'], 
-                                                 logemaxec50=vals['logemaxec50'],  
-                                                 percent_of_primary_subtype=vals['subtype_percent'], 
-                                                 kon_mean=vals['kon_mean'], 
-                                                 deltaGDP_conc=vals['deltaGDP_conc'], 
-                                                 family_rank=vals['fam_rank'], 
-                                                 percent_of_primary_family=vals['fam_percent'], 
+                        gpair = ProteinCouplings(protein=p, g_protein=g, g_protein_subunit=gp, ligand=l, source=source, physiological_ligand=lig_phys_surr,
+                                                 variant=vals['variant'],
+                                                 logemaxec50=vals['logemaxec50'],
+                                                 percent_of_primary_subtype=vals['subtype_percent'],
+                                                 kon_mean=vals['kon_mean'],
+                                                 deltaGDP_conc=vals['deltaGDP_conc'],
+                                                 family_rank=vals['fam_rank'],
+                                                 percent_of_primary_family=vals['fam_percent'],
                                                  logemaxec50_family=vals['fam_logemaxec50'],
                                                  kon_mean_family=vals['fam_kon_mean'],
                                                  deltaGDP_conc_family=vals['fam_deltaGDP_conc'],

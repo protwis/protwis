@@ -345,7 +345,7 @@ class ProteinCouplings(models.Model):
     percent_of_primary_subtype = models.IntegerField(null=True)
     kon_mean = models.DecimalField(max_digits=4, decimal_places=1, null=True)
     deltaGDP_conc = models.DecimalField(max_digits=4, decimal_places=2, null=True)
-    
+
     def __str__(self):
         # NOTE: The following return breaks when there's no data for transduction since a null
         # can't be concatenated with strings.

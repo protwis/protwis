@@ -181,6 +181,7 @@ div#hide_filter3 {
 .gpcrdb-link {
     filter: grayscale(100%);
 }
+
 .gpcrdb-link:hover {
     filter: grayscale(0%);
 }

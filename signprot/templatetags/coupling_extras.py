@@ -1,7 +1,5 @@
 from django import template
-from common.definitions import G_PROTEIN_DISPLAY_NAME as g_prot_dict
 
-import re
 
 register = template.Library()
 
