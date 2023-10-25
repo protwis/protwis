@@ -542,6 +542,16 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
                       // If the element exists, update its text
                       if (!textElement.empty()) {
                           textElement.text(new_label);
+                          let textAnchor = textElement.attr("text-anchor");
+                          let currentX = parseFloat(textElement.attr("x"));
+
+                          if (textAnchor === "start" && key.includes("_gprot")) {
+                              // If 'text-anchor' is 'start', add 5 points to the current 'x'
+                              textElement.attr("x", currentX + 5);
+                          } else if (textAnchor === "end" && key.includes("_gprot")) {
+                              // If 'text-anchor' is 'end', subtract 5 points from the current 'x'
+                              textElement.attr("x", currentX - 5);
+                          }
                       }
                   }
               }
@@ -558,6 +568,16 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
                       // If the element exists, update its text
                       if (!textElement.empty()) {
                           textElement.text(key.split('_')[0]);
+                          let textAnchor = textElement.attr("text-anchor");
+                          let currentX = parseFloat(textElement.attr("x"));
+
+                          if (textAnchor === "start" && key.includes("_gprot")) {
+                              // If 'text-anchor' is 'start', add 5 points to the current 'x'
+                              textElement.attr("x", currentX - 5);
+                          } else if (textAnchor === "end" && key.includes("_gprot")) {
+                              // If 'text-anchor' is 'end', subtract 5 points from the current 'x'
+                              textElement.attr("x", currentX + 5);
+                          }
                       }
                   }
               }

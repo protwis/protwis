@@ -1513,7 +1513,7 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
 
     // Draw text lines in the center of the circle
     lines.forEach((line, index) => {
-        svg2.append("text")
+        const textElement = svg2.append("text")
             .attr("x", cx)  // set x-coordinate to the center x-coordinate
             .attr("y", cy - totalHeight / 2 + (index + 0.5) * lineHeight) // adjust y-coordinate based on line index
             .attr("text-anchor", "middle")  // align horizontally to the middle
@@ -1522,7 +1522,19 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
             .style("font-size", `${fontSize}px`)  // set font size
             .attr("font-weight", "bold")  // set font weight
             .style("font-family", "Arial")  // set font family
-            .style("fill", "#333");  // set font color
+            .style("fill", "white");  // set font color
+
+        // Create a bounding box for the text and use it to add a background rectangle
+        const textBoundingBox = textElement.node().getBBox();
+
+        svg2.insert("rect", ":first-child")
+            .attr("x", textBoundingBox.x - 5) // Adjust the padding as needed
+            .attr("y", textBoundingBox.y - 2) // Adjust the padding as needed
+            .attr("width", textBoundingBox.width + 10) // Adjust the padding as needed
+            .attr("height", textBoundingBox.height + 4) // Adjust the padding as needed
+            .attr("rx", 6) // Adjust the border radius as needed
+            .attr("ry", 6) // Adjust the border radius as needed
+            .style("fill", "gray"); // set background color to gray
     });
   }
 
@@ -1871,6 +1883,13 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
   const outerCircleLabel = svg2.append("g")
     .attr("transform", `translate(0, ${bigRadius*1.3})`);
 
+  outerCircleLabel.append("rect")  // Add a rectangle for the background
+      .attr("x", 0)
+      .attr("y", -10) // Adjust the position as needed
+      .attr("width", 42) // Adjust the width as needed
+      .attr("height", 18) // Adjust the height as needed
+      .attr("fill", "gray"); // Set the background color to gray
+
   outerCircleLabel.append("text")
                   .attr("x", 20)
                   .attr("y", 0)
@@ -1880,7 +1899,7 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
                   .attr("font-family", "Arial")
                   .attr("font-size", "14px")
                   .attr("font-weight", "bold")
-                  .attr("fill", "black");
+                  .attr("fill", "white");
 
   // Generate legend
   const interactionLegend = svg2.append("g")
