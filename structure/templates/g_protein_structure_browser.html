@@ -12,6 +12,11 @@
     <link href="{% static 'home/css/sequenceviewer.css' %}" rel="stylesheet">
     <link href="{% static 'home/css/modal.css' %}" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="{% static 'home/css/jquery.powertip.css' %}" />
+    <style>
+      .highlight_1 {
+          background-color: cyan;
+      }
+    </style>
 {% endblock %}
 
 {% block addon_js %}
@@ -30,7 +35,38 @@
         gproteinstructurebrowser(effector);
     });
 </script>
+<script>
+  window.addEventListener("hashchange", updateButtonConfiguration, false);
 
+  function updateButtonConfiguration() {
+      const button = document.getElementById("superpose_template_btn");
+
+      switch (window.location.hash) {
+          case "#keepselectionreference":
+              // Update the button for #keepselectionreference
+              button.innerText = "Add reference to superposition";
+              button.id = "superpose_template_btn";
+              button.classList.add("highlight_1");
+              break;
+          case "#keepselectiontargets":
+              // Update the button for #keepselectiontargets
+              button.innerText = "Add targets to superposition";
+              button.id = "superpose_template_btn";
+              button.classList.add("highlight_1");
+              break;
+          default:
+              // Default configuration (if no recognized hash)
+              button.innerText = "Superposition";
+              button.id = "superpose_btn";
+              button.classList.remove("highlight_1");
+              break;
+      }
+  }
+  // Call this function on page load to set the initial configuration
+  document.addEventListener("DOMContentLoaded", updateButtonConfiguration);
+
+
+</script>
 {% endblock %}
 
 
@@ -46,6 +82,9 @@
         <div class="btn-group" style='padding-left:10px;'>
             <label class="btn btn-default btn-s" id="align_btn_g_prot" href="javascript:void(0)">
                 Align seqs
+            </label>
+            <label class="btn btn-default btn-s" id="superpose_template_btn" href="javascript:void(0)">
+                Superposition
             </label>
             <!-- <label class="btn btn-default btn-s" id="download_btn" href="javascript:void(0)">
                 Download PDBs
@@ -548,25 +587,25 @@
     </div>
     <!-- </div> -->
 </div>
-<div id="myModal" class="modal">
+<div id="superposition-modal" class="modal">
   <!-- Modal content -->
     <div class="modal-content">
-        <button style="float:right;display:inline;" aria-hidden="true" aria-label="Close" class="close close_modal" href="javascript:void(0)">&times;</button>
+        <button id="close_superposition_modal" style="float:right;display:inline;" aria-hidden="true" aria-label="Close" class="close" data-dismiss="superposition-modal">&times;</button>
         <h3>Pick template from selection</h3>
         <p>Superpositions structures selected in the browser to the template checked in this table</p>
         <br>
-        <table id="modal_table" class="display compact" width="100%">
+        <table id="superposition_modal_table" class="display compact" width="100%">
             <thead>
                 <tr>
-                    <th></th>
-                    <th>PDB</th>
-                    <th>UniProt</th>
-                    <th>IUPHAR</th>
-                    <th>Rec. family</th>
-                    <th>Class</th>
-                    <th>Species</th>
-                    <th>State</th>
-                    <th>PDB Date</th>
+                  <th></th>
+                  <th>Gprotein family</th>
+                  <th>PDB</th>
+                  <th>UniProt</th>
+                  <th>IUPHAR</th>
+                  <th>Rec. family</th>
+                  <th>Class</th>
+                  <th>Species</th>
+                  <th>PDB Date</th>
                 </tr>
             </thead>
             <tbody>
@@ -575,4 +614,5 @@
         </table>
     </div>
 </div>
+
 {% endblock %}

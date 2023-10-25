@@ -14,6 +14,7 @@ function update_text_in_modal() {
     var group;
     group = $(".tableview:visible").attr("group-number");
     if (group) mode = mode + group;
+    
     $(".pdb_selected", oTable[mode].cells().nodes()).each(function() {
         if ($(this).prop("checked")) {
             $(this).closest("tr").addClass("selected");
@@ -358,7 +359,6 @@ function create_overlay(table_id) {
             $(":checkbox", this).trigger("click");
             if ($(":checkbox", this).length === 0) {
                 var pdb_id = $(this).attr("id").split("_")[1];
-                console.log(pdb_id);
                 var checkbox = $(".dataTables_scrollBody").find("#" + pdb_id);
                 checkbox.trigger("click");
             }
@@ -376,8 +376,6 @@ function showPDBtable(element) {
     mode_without_space = mode.replace(/ /g, "_");
 
     if (!$.fn.DataTable.isDataTable(element + " .tableview table")) {
-        console.log(mode);
-
         $(element + " #best_species").html('<div class2="pull-right">\
                                             <div class="btn-group btn-toggle" column="7" mode="'+ mode +'"> \
                                             <button class="btn btn-xs btn-default" value="On">&nbsp;</button> \
@@ -503,7 +501,7 @@ function showPDBtable(element) {
                 null,
                 null,
                 null,
-            ]
+            ],
         });
         console.timeEnd("DataTable");
         console.time("yadcf");
@@ -802,8 +800,6 @@ function showPDBtable(element) {
         // yadcf.exFilterColumn(oTable[mode], [
         //     [21, "*Only show mammalian structures and those from human or closest species"],
         //   ]);
-
-
 
         oTable[mode].on("draw.dt", function(e, oSettings) {
             console.time("create_overlay");

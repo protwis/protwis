@@ -1,5 +1,5 @@
 /*eslint complexity: ["error", 8]*/
-/*global ClearSelection, AddToSelection, superposition, copyToClipboard, showAlert*/
+/*global ClearSelection, CheckSelection, AddToSelection, superposition, copyToClipboard, showAlert*/
 
 function structurebrowser() {
 
@@ -57,8 +57,13 @@ function structurebrowser() {
     $(".alt").prop("checked",false);
     $(".select-all").prop("checked",false);
 
-    ClearSelection("targets");
-    ClearSelection("reference");
+    const validPrefixes = ["#keepselection"];
+
+    if (validPrefixes.some(prefix => window.location.hash.startsWith(prefix))) {}
+    else {
+      ClearSelection('targets');
+      ClearSelection('reference');
+    }
 
     $("#loading_div").hide();
 
@@ -497,7 +502,38 @@ function structurebrowser() {
     });
 
     $("#superpose_btn").click(function() {
-        superposition(oTable2, [7,1,2,3,4,5,11,29], "structure_browser");
+        superposition(oTable2, [0,7,1,2,3,4,5,11,29], "structure_browser", true);
+    });
+
+    $('#superpose_template_btn').click(function () {
+        var checked_data = oTable2.rows('.alt_selected').data();
+        if (checked_data.length == 1) {
+            var value = CheckSelection('reference');
+            var div = document.createElement("div");
+            div.innerHTML = checked_data[0][7];
+            var destination;
+            if (value != 0){
+              destination = 'targets';
+            } else {
+              destination = 'reference';
+            }
+            if (typeof div.innerText !== "undefined") {
+                AddToSelection(destination, 'structure', div.innerText.replace(/\s+/g, ''));
+            } else {
+                AddToSelection(destination, 'structure', div.textContent.replace(/\s+/g, ''));
+            }
+        } else {
+          for (i = 0; i < checked_data.length; i++) {
+              var div = document.createElement("div");
+              div.innerHTML = checked_data[i][7];
+              if (typeof div.innerText !== "undefined") {
+                  AddToSelection('targets', 'structure', div.innerText.replace(/\s+/g, ''));
+              } else {
+                  AddToSelection('targets', 'structure', div.textContent.replace(/\s+/g, ''));
+              }
+          }
+        }
+        window.location.href = '/structure/superposition_workflow_index';
     });
 
     $("#download_btn").click(function () {

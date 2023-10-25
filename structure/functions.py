@@ -183,7 +183,10 @@ class SelectionParser(object):
         for segment in selection.segments:
             logger.debug('Segments in selection: {}'.format(segment))
             if segment.type == 'helix':
-                self.helices.append(int(segment.item.slug[-1]))
+                try:
+                    self.helices.append(int(segment.item.slug[-1]))
+                except ValueError:
+                    self.helices.append(segment.item.slug)
             elif segment.type == 'residue':
                 self.generic_numbers.append(segment.item.label.replace('x','.'))
             else:
@@ -286,7 +289,7 @@ class CASelector(object):
                     continue
 
         if atom_list == []:
-            logger.warning("No atoms with given generic numbers {} for  {!s}".format(self.selection.generic_numbers, structure.id))
+            logger.warning("No atoms with given generic numbers {} for {!s}".format(self.selection.generic_numbers, structure.id))
         return atom_list
 
 
@@ -1170,7 +1173,7 @@ class ParseAFComplexModels():
         for f in self.filedirs:
             if '-' not in f:
                 continue
-            
+
             receptor, signprot = f.split('-')
             metrics_file = os.sep.join([self.data_dir, f, f+'_metrics.csv'])
             metrics = [row for row in csv.DictReader(open(metrics_file, 'r'))][0]

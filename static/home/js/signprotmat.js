@@ -281,10 +281,18 @@ var signprotmat = {
           var a_match = a_patt.exec(a);
           var b_match = b_patt.exec(b);
           var a_obj = _.findIndex(receptor, function (d) {
-            return d === a_match[1];
+            if (a_match){
+              return d === a_match[1];
+            } else if (a === '-'){
+              return d === a;
+            }
           });
           var b_obj = _.findIndex(receptor, function (d) {
-            return d === b_match[1];
+            if (b_match){
+              return d === b_match[1];
+            } else if (b === '-'){
+              return d === b;
+            }
           });
           // console.log(a_obj);
           return d3.ascending(a_obj, b_obj);
