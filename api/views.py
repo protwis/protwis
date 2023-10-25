@@ -43,7 +43,7 @@ class JSONOpenAPIRenderer(OpenAPIRenderer):
 @api_view()
 @renderer_classes([SwaggerUIRenderer, OpenAPIRenderer, JSONOpenAPIRenderer])
 def schema_view(request):
-    generator = schemas.SchemaGenerator(title='GPCRdb API')
+    generator = schemas.SchemaGenerator(title='API calls')
     return Response(generator.get_schema(request=request))
 
 class ProteinDetail(generics.RetrieveAPIView):

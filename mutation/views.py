@@ -3102,8 +3102,8 @@ def gprotMutationDesign(request, goal):
 
         # Other coupling data
         other_couplings = ProteinCouplings.objects.exclude(source="GuideToPharma")\
-                        .filter(protein__family__slug__startswith=target_class, g_protein_subunit__family__slug__startswith="100_001", logmaxec50__gt=0)\
-                        .values_list('protein__entry_name', 'g_protein__name', 'source', 'logmaxec50', 'g_protein_subunit__entry_name')
+                        .filter(protein__family__slug__startswith=target_class, g_protein_subunit__family__slug__startswith="100_001", logemaxec50__gt=0)\
+                        .values_list('protein__entry_name', 'g_protein__name', 'source', 'logemaxec50', 'g_protein_subunit__entry_name')
 
         coupling_data = {}
         for pairing in other_couplings:

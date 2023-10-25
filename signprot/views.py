@@ -1,7 +1,7 @@
 #mccabe complexity: ["error", 31]
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.core.cache import cache
-from django.db.models import F, Q, Count
+from django.db.models import F, Q, Count, Prefetch
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, redirect
 from django.utils.decorators import method_decorator
@@ -15,6 +15,7 @@ from common.diagrams_gpcr import DrawSnakePlot
 from common.diagrams_gprotein import DrawGproteinPlot
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from common.views import AbsTargetSelection
+from common.models import Publication
 from contactnetwork.models import InteractingResiduePair
 from mutation.models import MutationExperiment
 from protein.models import (Gene, Protein, ProteinAlias, ProteinConformation, ProteinFamily,
@@ -131,6 +132,263 @@ class TargetSelection(AbsTargetSelection):
 
 
 class CouplingBrowser(TemplateView):
+    """Class based generic view which serves family specific coupling data between Receptors and G-proteins.
+    Data coming from Guide to Pharmacology, Asuka Inuoue, Michel Bouvier, Bryan Roth and Kirill Martemyanov at the moment.
+    More data might come later from Roth and Strachan TRUPATH biosensor and Neville Lambert."""
+    page = "gprot"
+    subunit_filter = "100_001"
+    families = ["Gs", "Gi/o", "Gq/11", "G12/13"]
+    template_name = "signprot/coupling_browser.html"
+
+    @method_decorator(csrf_exempt)
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        tab_fields, header = self.tab_fields(self.subunit_filter, self.families)
+
+        context['tabfields'] = tab_fields
+        context['header'] = header
+        flat_list = [item for sublist in header.values() for item in sublist]
+        context['subunitheader'] = flat_list
+        subunitkeys = []
+        for i in flat_list:
+            if i=='Go<br><span class="couplingvariant">isoform 2<br>(GoB)</span>':
+                key = 'GoB'
+            elif i=='Go<br><span class="couplingvariant">isoform 1<br>(GoA)</span>':
+                key = 'GoA'
+            elif i=='Gs<br><span class="couplingvariant">isoform 1<br>(GsL)</span>':
+                key = 'GsL'
+            elif i=='Gs<br><span class="couplingvariant">isoform 2<br>(GsS)</span>':
+                key = 'GsS'
+            else:
+                key = i
+            subunitkeys.append(key)
+        context['subunitkeys'] = subunitkeys
+        context['activation_rate_subunitheader'] = [i for i in flat_list if i in ['Gs<br><span class="couplingvariant">isoform 1<br>(GsL)</span>','Go<br><span class="couplingvariant">isoform 1<br>(GoA)</span>','Gq','G15','G13']]
+        context['activation_rate_subunitkeys'] = [i for i in subunitkeys if i in ['GsL','GoA','Gq','G15','G13']]
+        context['page'] = self.page
+        context['gprots_tested'] = self.gprots_tested
+
+        return context
+
+    def tab_fields(self, subunit_filter, families):
+        ### Initialize protein data, headers and dictotemplate
+        self.get_base_data(subunit_filter, families)
+
+        self.gprots_tested = {}
+        for c in self.couplings_all:
+            ### Check ligand
+            if c.ligand:
+                ligand_id, ligand_name = c.ligand_id, c.ligand.name
+                if c.physiological_ligand:
+                    physio = 'Phys'
+                else:
+                    physio = 'Surr'
+                ligand_present = 'agonist'
+            else:
+                ligand_id, ligand_name, physio = None, None, None
+                ligand_present = 'constitutive'
+            ### Use Lab+biosensor+ligand/no_ligand as key to not overwrite different sets from same lab
+            source = '{}-{}-{}'.format(c.source, c.biosensor.name, ligand_present)
+            ### Make duplicate for receptor variational entries - e.g. CALCR+RAMP3
+            if c.other_protein:
+                protein = '{}-{}'.format(c.protein, c.other_protein)
+                if protein not in self.dictotemplate:
+                    self.dictotemplate[protein] = {'protein': self.dictotemplate[c.protein]['protein'], 'supp_sets':{}, 'sets':{}}
+            else:
+                protein = c.protein
+
+            if source not in self.dictotemplate[protein]:
+                
+                if source not in self.dictotemplate[protein]['sets']:
+                    self.dictotemplate[protein]['sets'][source] = {'lab':c.source,'biosensor':c.biosensor, 'supp_fam':[], 'prim_fam':None, 'supp_subtype':[], 'prim_subtype':'-', 
+                                                                     'ligand_id':ligand_id, 'ligand_name':ligand_name, 'ligand_physiological':physio, 'doi':c.references.all()[0]}
+            ### Family level
+            g_protein_fam = slugify(c.g_protein.name)
+            if g_protein_fam not in self.dictotemplate[protein]['sets'][source]:
+                self.dictotemplate[protein]['sets'][source][g_protein_fam] = {'family_rank':c.family_rank, 'percent_of_primary_family':c.percent_of_primary_family, 
+                                                                            'logemaxec50_family':c.logemaxec50_family, 'kon_mean_family':c.kon_mean_family, 
+                                                                            'deltaGDP_conc_family':c.deltaGDP_conc_family}
+                ### Add primary family where available
+                if c.family_rank==1:
+                    self.dictotemplate[protein]['sets'][source]['prim_fam'] = c.g_protein.name
+                ### Check if family is supported or not and update support count
+                if source.startswith('Martemyanov'):
+                    self.check_support(protein, g_protein_fam, source, c.kon_mean)
+                elif source.startswith('Lambert'):
+                    self.check_support(protein, g_protein_fam, source, c.deltaGDP_conc)
+                else:
+                    self.check_support(protein, g_protein_fam, source, c.logemaxec50_family, c.logemaxec50)
+            ### Check if other members of this family have supporting data - Martemyanov Gq and G15
+            if self.dictotemplate[protein]['sets'][source][g_protein_fam]['support']==0:
+                if source.startswith('Martemyanov'):
+                    self.check_support(protein, g_protein_fam, source, c.kon_mean)
+
+            ### Update None family value
+            if c.kon_mean_family and self.dictotemplate[protein]['sets'][source][g_protein_fam]==None:
+                self.dictotemplate[protein]['sets'][source][g_protein_fam] = c.kon_mean_family
+            if c.deltaGDP_conc and self.dictotemplate[protein]['sets'][source][g_protein_fam]==None:
+                self.dictotemplate[protein]['sets'][source][g_protein_fam] = c.deltaGDP_conc_family
+
+            ### Subtype level
+            g_protein = definitions.G_PROTEIN_DISPLAY_NAME[c.g_protein_subunit.entry_name.split('_')[0].upper()]
+            if c.variant=='isoform 1 (GsL)':
+                g_protein+='L'
+            elif c.variant=='isoform 2 (GsS)':
+                g_protein+='S'
+            elif c.variant=='isoform 1 (GoA)':
+                g_protein+='A'
+            elif c.variant=='isoform 2 (GoB)':
+                g_protein+='B'
+
+            ###### Calculate #gprots tested
+            if source not in self.gprots_tested:
+                self.gprots_tested[source] = []
+            if g_protein not in self.gprots_tested[source]:
+                self.gprots_tested[source].append(g_protein)
+
+            if g_protein not in self.dictotemplate[protein]['sets'][source]:
+                self.dictotemplate[protein]['sets'][source][g_protein] = {'percent_of_primary_subtype':c.percent_of_primary_subtype, 
+                                                                      'logemaxec50':c.logemaxec50, 'kon_mean':c.kon_mean, 'deltaGDP_conc':c.deltaGDP_conc}
+                ### Add primary subtype
+                if c.percent_of_primary_subtype==100:
+                    self.dictotemplate[protein]['sets'][source]['prim_subtype'] = g_protein
+                if g_protein not in self.dictotemplate[protein]['sets'][source]['supp_subtype']:
+                    if source.startswith('Martemyanov'):
+                        if c.kon_mean>0:
+                            self.dictotemplate[protein]['sets'][source]['supp_subtype'].append(g_protein)
+                    elif source.startswith('Lambert'):
+                        if c.deltaGDP_conc and c.deltaGDP_conc>0:
+                            self.dictotemplate[protein]['sets'][source]['supp_subtype'].append(g_protein)
+                    else:
+                        if c.logemaxec50>0:
+                            self.dictotemplate[protein]['sets'][source]['supp_subtype'].append(g_protein)
+
+        return self.dictotemplate, self.coupling_header_names
+
+    def get_base_data(self, subunit_filter, families):
+        coupling_receptors = list(ProteinCouplings.objects.filter(g_protein__slug__startswith=subunit_filter).values_list("protein__entry_name", flat = True).distinct())
+
+        proteins = Protein.objects.filter(entry_name__in=coupling_receptors, sequence_type__slug='wt',
+                                          family__slug__startswith='00').prefetch_related(
+                                          'family', 'family__parent__parent__parent', 'web_links')
+
+        proteins_links = Protein.objects.filter(entry_name__in=coupling_receptors, sequence_type__slug='wt',
+                                          family__slug__startswith='00', web_links__web_resource__slug='gtop').prefetch_related(
+                                          'family', 'family__parent__parent__parent', 'web_links').values_list(
+                                          'id', 'web_links__web_resource__url').distinct()
+
+        couplings = ProteinCouplings.objects.filter(source="GuideToPharma").values_list('protein__entry_name',
+                                                                                           'g_protein__name',
+                                                                                           'transduction')
+
+        links = {}
+        for item in proteins_links:
+            if item[0] not in links.keys():
+                links[item[0]] = item[1].replace('$index', str(item[0]))
+
+        signaling_data = {}
+        for pairing in couplings:
+            if pairing[0] not in signaling_data:
+                signaling_data[pairing[0]] = {}
+            signaling_data[pairing[0]][pairing[1]] = pairing[2]
+
+        protein_data = {}
+        for prot in proteins:
+            protein_data[prot.id] = {}
+            protein_data[prot.id]['class'] = prot.family.parent.parent.parent.shorter()
+            protein_data[prot.id]['family'] = prot.family.parent.short()
+            protein_data[prot.id]['uniprot'] = prot.entry_short()
+            protein_data[prot.id]['iuphar'] = prot.family.name.replace('receptor', '').strip()
+            protein_data[prot.id]['accession'] = prot.accession
+            protein_data[prot.id]['entryname'] = prot.entry_name
+            protein_data[prot.id]['gtp_fam_supp'] = []
+
+            # Add link to GtP:
+            if prot.id in links.keys():
+                protein_data[prot.id]['gtp_link'] = links[prot.id]
+
+            #VARIABLE (arrestins/gprots)
+            # gprotein_families = ["Gs", "Gi/o", "Gq/11", "G12/13"]
+            for gprotein in families:
+                gprotein_clean = slugify(gprotein)
+                if prot.entry_name in signaling_data and gprotein in signaling_data[prot.entry_name]:
+                    if signaling_data[prot.entry_name][gprotein] == "primary":
+                        protein_data[prot.id][gprotein_clean] = "1'"
+                        if "1'" not in protein_data[prot.id]['gtp_fam_supp']:
+                            protein_data[prot.id]['gtp_fam_supp'].append("1'")
+                    elif signaling_data[prot.entry_name][gprotein] == "secondary":
+                        protein_data[prot.id][gprotein_clean] = "2'"
+                        if "2'" not in protein_data[prot.id]['gtp_fam_supp']:
+                            protein_data[prot.id]['gtp_fam_supp'].append("2'")
+                    else:
+                        protein_data[prot.id][gprotein_clean] = "-"
+                else:
+                    protein_data[prot.id][gprotein_clean] = "-"
+
+        #VARIABLE
+        self.couplings_all = ProteinCouplings.objects.filter(g_protein_subunit__family__slug__startswith=subunit_filter) \
+            .order_by("g_protein_subunit__family__slug", "source", "-variant") \
+            .prefetch_related('g_protein_subunit__family', 'g_protein', 'ligand', 'protein', 'biosensor', Prefetch('references', queryset=Publication.objects.filter(web_link__web_resource__name='DOI').prefetch_related('web_link')))
+
+        #VARIABLE
+        coupling_headers = ProteinCouplings.objects.exclude(source__in=["GuideToPharma"]) \
+            .filter(g_protein_subunit__family__slug__startswith=subunit_filter) \
+            .order_by("g_protein_subunit__family__slug", "source", "variant") \
+            .values_list("g_protein_subunit__family__name", "g_protein_subunit__family__parent__name", "variant").distinct()
+
+        self.coupling_header_names = {}
+        coupling_reverse_header_names = {}
+        coupling_placeholder = {}
+        coupling_placeholder2 = {}
+        coupling_placeholder3 = {}
+        for name in coupling_headers:
+            subtype = definitions.G_PROTEIN_DISPLAY_NAME[name[0]]
+            if name[2] == "Regular":
+                subname = subtype
+            else:
+                subname = subtype + '<br><span class="couplingvariant">' + name[2].replace(' (','<br>(') + '</span>'
+            if name[1] not in self.coupling_header_names:
+                self.coupling_header_names[name[1]] = []
+                coupling_placeholder3[name[1]] = []
+            coupling_reverse_header_names[subname] = name[1]
+            if subname not in self.coupling_header_names[name[1]]:
+                self.coupling_header_names[name[1]].append(subname)
+            coupling_placeholder[subname] = "-"
+            coupling_placeholder2[subname] = []
+
+        self.dictotemplate = {}
+        ### Protein data
+        for protein in proteins:
+            self.dictotemplate[protein] = {'protein':protein_data[protein.pk], 'supp_sets':{}, 'sets':{}}
+            ### Add GtoPdb support first
+            for gprot in families:
+                if protein_data[protein.pk][slugify(gprot)]!='-':
+                    self.dictotemplate[protein]['supp_sets'][slugify(gprot)] = ['GuideToPharma']
+
+    def check_support(self, p, g, s, val, backup_val=None):
+        if val and val>0:
+            self.dictotemplate[p]['sets'][s][g]['support'] = 1
+            if g not in self.dictotemplate[p]['sets'][s]['supp_fam']:
+                self.dictotemplate[p]['sets'][s]['supp_fam'].append(g)
+            if g not in self.dictotemplate[p]['supp_sets']:
+                self.dictotemplate[p]['supp_sets'][g] = [s]
+            elif s not in self.dictotemplate[p]['supp_sets'][g]:
+                self.dictotemplate[p]['supp_sets'][g].append(s)
+        else:
+            if backup_val and backup_val>0:
+                self.dictotemplate[p]['sets'][s][g]['support'] = 1
+                if g not in self.dictotemplate[p]['sets'][s]['supp_fam']:
+                    self.dictotemplate[p]['sets'][s]['supp_fam'].append(g)
+                if g not in self.dictotemplate[p]['supp_sets']:
+                    self.dictotemplate[p]['supp_sets'][g] = [s]
+                elif s not in self.dictotemplate[p]['supp_sets'][g]:
+                    self.dictotemplate[p]['supp_sets'][g].append(s)
+            else:
+                self.dictotemplate[p]['sets'][s][g]['support'] = 0
+
+
+class CouplingBrowser_deprecated(TemplateView):
     """
     Class based generic view which serves coupling data between Receptors and G-proteins.
     Data coming from Guide to Pharmacology, Asuka Inuoue and Michel Bouvier at the moment.
@@ -142,7 +400,7 @@ class CouplingBrowser(TemplateView):
     page = "gprot"
     subunit_filter = "100_001"
     families = ["Gs", "Gi/o", "Gq/11", "G12/13"]
-    template_name = "signprot/coupling_browser.html"
+    template_name = "signprot/coupling_browser_deprecated.html"
 
     @method_decorator(csrf_exempt)
     def get_context_data(self, **kwargs):
@@ -166,7 +424,7 @@ class CouplingBrowser(TemplateView):
 
         :return: key.value pairs from dictotemplate dictionary
         keys =id values in ProteinCouplings table.
-        values = source, class, family, variant, uniprotid, iupharid, logmaxec50, pec50, emax, stand_dev
+        values = source, class, family, variant, uniprotid, iupharid, logemaxec50, pec50, emax, stand_dev
         """
 
         coupling_receptors = list(ProteinCouplings.objects.filter(g_protein__slug__startswith=subunit_filter).values_list("protein__entry_name", flat = True).distinct())
@@ -257,7 +515,7 @@ class CouplingBrowser(TemplateView):
         # First create and populate the dictionary for all receptors
         dictotemplate = {}
         sourcenames = set()
-        readouts = ["logemaxec50", "pec50", "emax", "std"]
+        readouts = ["logemaxec50"]#, "pec50", "emax"]
         for protein in proteins:
             dictotemplate[protein.pk] = {}
             dictotemplate[protein.pk]['protein'] = protein_data[protein.pk]
@@ -275,9 +533,9 @@ class CouplingBrowser(TemplateView):
         for pair in couplings2:
             if pair.source not in dictotemplate[pair.protein_id]['coupling']:
                 ## check the physiological property
-                physio = 'Physiological'
+                physio = 'Phys'
                 if not pair.physiological_ligand:
-                    physio = 'Surrogate'
+                    physio = 'Surr'
 
                 sourcenames.add(pair.source)
                 dictotemplate[pair.protein_id]['coupling'][pair.source] = {}
@@ -299,12 +557,10 @@ class CouplingBrowser(TemplateView):
 
             # Combine values
             exp_values = {
-                "logemaxec50": round(pair.logmaxec50, 1),
-                "pec50": round(pair.pec50, 1),
-                "emax": round(pair.emax),
-                "std": 0}
-            if pair.stand_dev != None:
-                exp_values["std"] = round(pair.stand_dev, 1)
+                "logemaxec50": round(pair.logemaxec50, 1)
+                # "pec50": round(pair.pec50, 1),
+                # "emax": round(pair.emax)
+                }
 
             for readout in readouts:
                 dictotemplate[pair.protein_id]['coupling'][pair.source][readout][subunit] = exp_values[readout]
@@ -444,6 +700,35 @@ class CouplingBrowser(TemplateView):
 
         return dictotemplate, coupling_header_names
 
+def CouplingDataOverview(request):
+    context = OrderedDict()
+    csv = """Gs;;;Gi/o;;;;;;;Gq/11;;;;G12/13;;#wt;#;Lab;Biosensor;Parameter;Measured;Measured;Measured;Downstream signaling processes;;Biosensor;Couplings from;GproteinDb
+;;;;;;;;;;;;;;;;Gprots;Rec;;short name;;molecule;molecule;process;(after GPCR binding);;from;;release
+GsS;GsL;Golf;Gi1;Gi2;Gi3;GoA;GoB;Gz;Ggust;Gq;G11;G14;G15;G12;G13;tested;;;;;1;2;;#;Pathway processes;;;
+;;;;;;;;;;;;;;;;;;Bouvier;;;Ga;Gbg;Dissociation;1;G protein dissociation;2006 (9);;
+;;;;;;;;;;;;;;;;;;Bouvier;;;GPCR;Ga;;;;2005 (8);;
+;;;;;;;;;;;;;;;;;;Bouvier;;;GPCR;Gb;;;;2005 (8);;
+;;;;;;;;;;;;;;;;;;Bouvier;;;GPCR;Gg;;;;2005 (8);;
+;x;;;;;;;;;;;;;;;1;100;Bouvier;EMTA;log(Emax/EC50);Ga;Membrane;Dissociation;2;Ga-Gbg dissociation - Ga–membrane dissociation;2022 (6);2022 (6);2022
+;;;x;x;;x;x;x;;x;x;x;x;x;x;11;100;Bouvier;GEMTA;log(Emax/EC50);Gi/o fam: Rap1GAP Gq/11 fam: p63-RhoGEF G12/13 fam: PDZ-RhoGEF;Membrane;Recruitment;3;G protein dissociation, Ga– “measured molecule 1” association, “measured molecule 1”–membrane recruitment;2022 (6);2022 (6);2022
+ch;ch;ch;ch;ch;ch;ch;ch;ch;ch;x;ch;ch;ch;ch;ch;1*;150;Inoue;TGF-α shedding;log(Emax/EC50);p-NP (yellow color);-;Shedding;5;G protein dissociation, PKC activation, ADAM17 (metalloprotease) activation, AP-TGF-α ectodomain shedding, p-NP production from p-NPP;2012 (13);2019 (7);2022
+x;;;x;x;x;x;;;;x;;;;x;x;8;8;Inoue;NanoBiT-G;???;Ga;Gbg;Dissociation;1;Ga-Gbg dissociation;2019 (7,14);2019 (7);2024
+;x;;x;;;;;;;x;;;x;;x;6;;Lambert;RG-GDP;DGDP conc;GPCR;Gbg;Dissociation;0;Not downstream, measures GPCR binding;(10,11);2021 (4);2024
+;x;;;;;x;;;;x;;;x;;x;5;117;Martemyanov;FREEBG;Kon, 1/τ (s-1);Gbg;GRK3;Association;2;G protein dissociation, Gbg-GRK association;2009 (10) (optimized in (15,16));2023 (1);2024
+;;;;;;;;;;;;;;;;0*;;Orlandi;???;;;;;;;;2021 (5);-
+x;x;x;x;x;x;x;x;x;x;x;x;;x;x;x;15;4;Roth;TRUPATH;log(Emax/EC50);Ga;Gbg;Dissociation;1;Ga-Gbg dissociation;2020 (17);2020 (17);2022"""
+    lines = csv.split('\n')
+    array = []
+    for i, l in enumerate(lines):
+        if i>2:
+            array.append(l.split(';'))
+    context['array'] = array
+    import pprint
+    pprint.pprint(context['array'])
+    return render(request,
+                  'signprot/couplings_data_overview.html',
+                  context
+    )
 
 def CouplingProfiles(request, render_part="both", signalling_data="empty"):
     name_of_cache = 'coupling_profiles_' + signalling_data
@@ -534,10 +819,10 @@ def CouplingProfiles(request, render_part="both", signalling_data="empty"):
                                     .order_by("protein__entry_name")\
                                     .values_list("protein__entry_name", flat=True)\
                                     .distinct())
-                    # Other coupling data with logmaxec50 greater than 0
+                    # Other coupling data with logemaxec50 greater than 0
                     other_couplings = list(ProteinCouplings.objects.filter(protein__family__slug__startswith=slug)\
                                     .exclude(source="GuideToPharma")
-                                    .filter(g_protein=gp, logmaxec50__gt=0)\
+                                    .filter(g_protein=gp, logemaxec50__gt=0)\
                                     .order_by("protein__entry_name")\
                                     .values_list("protein__entry_name").distinct()\
                                     .annotate(num_sources=Count("source", distinct=True)))
@@ -593,7 +878,7 @@ def CouplingProfiles(request, render_part="both", signalling_data="empty"):
                 for arr in arrestins:
                     # arrestins?
                     arrestin_couplings = list(ProteinCouplings.objects.filter(protein__family__slug__startswith=slug, g_protein_subunit=arr)\
-                                    .filter(logmaxec50__gt=0)\
+                                    .filter(logemaxec50__gt=0)\
                                     .order_by("protein__entry_name")\
                                     .values_list("protein__entry_name", flat=True)\
                                     .distinct())
@@ -1355,10 +1640,10 @@ def InteractionMatrix(request, database='gprotein'):
         r['family'] = s.protein_conformation.protein.get_protein_family()
         r['conf_id'] = s.protein_conformation.id
         r['organism'] = s.protein_conformation.protein.species.common_name
-        try:
-            r['gprot'] = s.get_stab_agents_gproteins()
-        except Exception:
-            r['gprot'] = ''
+        if database=='gprotein':
+            r['gprot'] = definitions.G_PROTEIN_DISPLAY_NAME[s.signprot_complex.protein.entry_name.split('_')[0].upper()]#s.get_stab_agents_gproteins()
+        elif database=='arrestin':
+            r['gprot'] = definitions.ARRESTIN_DISPLAY_NAME[s.signprot_complex.protein.entry_name]
         try:
             r['gprot_class'] = s.signprot_complex.protein.family.parent.name#s.get_signprot_gprot_family()
         except Exception:

@@ -19,7 +19,7 @@ $(document).ready(function() {
   $("[data-toggle='popover']").popover();
 
   // Create the ranks for the families table
-  for (let i = 14; i <= 29; i++) {
+  for (let i = 14; i <= 24; i++) {
     createRank("#familiestabletab", i); // GS
   }
 
@@ -38,14 +38,14 @@ $(document).ready(function() {
     bSortCellsTop: false, //prevent sort arrows going on bottom row
     aaSorting: [],
     order: [
-      [3, "asc"],
-      [5, "asc"],
-      [29, "asc"],
+      [2, "asc"],
+      [4, "asc"],
+      [24, "asc"],
     ],
     autoWidth: false,
     bInfo: true,
     columnDefs: [{
-      targets: [29],
+      targets: [24],
       visible: false
     }],
   });
@@ -55,22 +55,22 @@ $(document).ready(function() {
   column_filters = column_filters.concat(createYADCFfilters(0, 1, "none"));
   // Receptor section
   column_filters = column_filters.concat(createYADCFfilters(1, 1, "multi_select", "select2", "", false, null, "html", "80px"));
-  column_filters = column_filters.concat(createYADCFfilters(2, 1, "multi_select", "select2", "", false, null, null, "80px"));
-  column_filters = column_filters.concat(createYADCFfilters(3, 1, "multi_select", "select2", "", false, null, null, "40px"));
-  column_filters = column_filters.concat(createYADCFfilters(4, 1, "multi_select", "select2", "", false, null, null, "200px"));
-  column_filters = column_filters.concat(createYADCFfilters(5, 1, "multi_select", "select2", "", false, "exact", "html", "200px"));
-  column_filters = column_filters.concat(createYADCFfilters(6, 1, "multi_select", "select2", "", false, "exact", "html", "80px"));
+  // column_filters = column_filters.concat(createYADCFfilters(2, 1, "multi_select", "select2", "", false, null, null, "80px"));
+  column_filters = column_filters.concat(createYADCFfilters(2, 1, "multi_select", "select2", "", false, null, null, "40px"));
+  column_filters = column_filters.concat(createYADCFfilters(3, 1, "multi_select", "select2", "", false, null, null, "100px"));
+  column_filters = column_filters.concat(createYADCFfilters(4, 1, "multi_select", "select2", "", false, "exact", "html", "80px"));
+  column_filters = column_filters.concat(createYADCFfilters(5, 1, "multi_select", "select2", "", false, "exact", "html", "80px"));
   // Ligands section
-  column_filters = column_filters.concat(createYADCFfilters(7, 1, "multi_select", "select2", "", false, "exact", "html", "200px"));
-  column_filters = column_filters.concat(createYADCFfilters(8, 1, "multi_select", "select2", "", false, null, null, "100px"));
+  column_filters = column_filters.concat(createYADCFfilters(6, 1, "multi_select", "select2", "", false, "exact", "html", "100px"));
+  column_filters = column_filters.concat(createYADCFfilters(7, 1, "multi_select", "select2", "", false, null, null, "50px"));
   // Guide to Pharmacology section
-  column_filters = column_filters.concat(createYADCFfilters(9, 4, "multi_select", "select2", "", false, null, null, "40px"));
+  column_filters = column_filters.concat(createYADCFfilters(8, 4, "multi_select", "select2", "", false, null, null, "40px"));
   // Coupling data filters
-  column_filters = column_filters.concat(make_rank_col_filters(13, 16, "hide_rankfam", rankedRangeFiltert1));
+  column_filters = column_filters.concat(make_rank_col_filters(12, 12, "hide_rankfam", rankedRangeFiltert1));
   // Hidden GPCRdb support type column calls customized function
   column_filters = column_filters.concat([
     {
-      column_number: 29,
+      column_number: 24,
       filter_type: "custom_func",
       custom_func: supportFilter,
       filter_container_id: "hide_filter1",
@@ -107,7 +107,7 @@ $(document).ready(function() {
   // This prefilters the value 2 in the hidden column 29 which corresponds to being in at least two of the supporting GPCRdb
   // datasets
   yadcf.exFilterColumn(oTable1, [
-    [29, 2]
+    [24, 2]
   ]);
   //    yadcf.exResetAllFilters(oTable1);
 
@@ -186,7 +186,7 @@ function initCouplingTable2() {
   table2_initialized = true;
 
   // Create the ranks for the subtypes table
-  for (let i = 14; i <= 69; i++) {
+  for (let i = 14; i <= 68; i++) {
     createRank("#subtypestabletab", i); // GS
   }
 
@@ -204,12 +204,12 @@ function initCouplingTable2() {
     order: [
       [3, "asc"],
       [5, "asc"],
-      [69, "asc"]
+      [68, "asc"]
     ],
     autoWidth: false,
     bInfo: true,
     columnDefs: [{
-      targets: [69],
+      targets: [68],
       visible: false
     }],
   });
@@ -219,22 +219,22 @@ function initCouplingTable2() {
   column_filters = column_filters.concat(createYADCFfilters(0, 1, "none"));
   // Receptor section
   column_filters = column_filters.concat(createYADCFfilters(1, 1, "multi_select", "select2", "", false, null, "html", "80px"));
-  column_filters = column_filters.concat(createYADCFfilters(2, 1, "multi_select", "select2", "", false, null, null, "80px"));
-  column_filters = column_filters.concat(createYADCFfilters(3, 1, "multi_select", "select2", "", false, null, null, "40px"));
-  column_filters = column_filters.concat(createYADCFfilters(4, 1, "multi_select", "select2", "", false, null, null, "200px"));
-  column_filters = column_filters.concat(createYADCFfilters(5, 1, "multi_select", "select2", "", false, "exact", "html", "200px"));
-  column_filters = column_filters.concat(createYADCFfilters(6, 1, "multi_select", "select2", "", false, "exact", "html", "80px"));
+  // column_filters = column_filters.concat(createYADCFfilters(2, 1, "multi_select", "select2", "", false, null, null, "80px"));
+  column_filters = column_filters.concat(createYADCFfilters(2, 1, "multi_select", "select2", "", false, null, null, "40px"));
+  column_filters = column_filters.concat(createYADCFfilters(3, 1, "multi_select", "select2", "", false, null, null, "100px"));
+  column_filters = column_filters.concat(createYADCFfilters(4, 1, "multi_select", "select2", "", false, "exact", "html", "80px"));
+  column_filters = column_filters.concat(createYADCFfilters(5, 1, "multi_select", "select2", "", false, "exact", "html", "80px"));
   // Ligands section
-  column_filters = column_filters.concat(createYADCFfilters(7, 1, "multi_select", "select2", "", false, "exact", "html", "200px"));
-  column_filters = column_filters.concat(createYADCFfilters(8, 1, "multi_select", "select2", "", false, null, null, "100px"));
+  column_filters = column_filters.concat(createYADCFfilters(6, 1, "multi_select", "select2", "", false, "exact", "html", "100px"));
+  column_filters = column_filters.concat(createYADCFfilters(7, 1, "multi_select", "select2", "", false, null, null, "50px"));
   // Guide to Pharmacology section
-  column_filters = column_filters.concat(createYADCFfilters(9, 4, "multi_select", "select2", "", false, null, null, "40px"));
+  column_filters = column_filters.concat(createYADCFfilters(8, 4, "multi_select", "select2", "", false, null, null, "40px"));
   // Coupling data filters
-  column_filters = column_filters.concat(make_rank_col_filters(13, 56, "hide_ranksub", rankedRangeFiltert2));
+  column_filters = column_filters.concat(make_rank_col_filters(12, 56, "hide_ranksub", rankedRangeFiltert2));
   // Hidden GPCRdb support type column calls customized function
   column_filters = column_filters.concat([
     {
-      column_number: 69,
+      column_number: 68,
       filter_type: "custom_func",
       custom_func: supportFilter,
       filter_container_id: "hide_filter2",
@@ -267,7 +267,7 @@ function initCouplingTable2() {
     lastRangeRankFilter = "";
   });
   yadcf.exFilterColumn(oTable2, [
-    [69, 2]
+    [68, 2]
   ]);
 
   //  Select clicked-on boxes for subtypes table

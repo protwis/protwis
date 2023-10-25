@@ -1,0 +1,197 @@
+{% extends "home/base.html" %}
+{% load static %}
+
+{% block addon_css %}
+    <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css"/>
+    <link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css"/>
+    <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css"/>
+    <link rel="stylesheet" href="{% static 'home/css/signprot-multitabtable.css' %}" type="text/css"/>
+{% endblock %}
+
+{% block content %}
+<div>
+    <h3>G protein activation/signaling data and biosensors.</h3>
+    <p>Of note, the biosensors do not measure G protein coupling (receptor binding) but rather downstream processes representing activation (Gα–Gβγ dissociation) or signaling. *GproteinDb excludes Gα protein chimera (ch) including only wildtype (wt) Gα proteins. All biosensors used HEK293 cells. Abbreviations: AP-TGF-α: alkaline phosphatase-fused TGF-α reporter construct, Ch: Chimeric Gα protein excluded from GproteinDb, Biosensor full names: EMTA: Effector Membrane Translocation Assay, FREEBG: Free βγ assay, Rec: Receptors, GEMTA: G protein Effector Membrane Translocation Assay, NanoBiT-G: NanoLuc Binary Technology (12) – G proteins, RG-GDP: Receptor-G protein GDP sensitivity biosensor and TRUPATH: G protein TRansdUcer PATHways.</p>
+</div>
+<div style='padding-top: 0px; white-space: nowrap; width:100%; overflow-y:hidden; display:inline-block;'>
+    <table class="compact display" id="data_overview">
+        <thead>
+            <tr>
+                <th colspan=3 style='height:35px; text-align:left;'>
+                    Gs
+                </th>
+                <th colspan=7 style='height:35px; text-align:left;'>
+                    Gi/o
+                </th>
+                <th colspan=4 style='height:35px; text-align:left;'>
+                    Gq/11
+                </th>
+
+                <th colspan=2 style='height:35px; text-align:left;'>
+                    G12/13
+                </th>
+                <th colspan=1 style='height:35px; text-align:left;'>
+                    #wt<br>Gprots<br>tested
+                </th>
+                <th colspan=1 style='height:35px; text-align:left;'>
+                    No. Rec
+                </th>
+                <th colspan=1 style='height:35px; text-align:left;'>
+                    Lab
+                </th>
+                <th colspan=1 style='height:35px; text-align:left;'>
+                    Biosensor<br>short<br>name
+                </th>
+                <th colspan=1 style='height:35px; text-align:left;'>
+                    Parameter
+                </th>
+                <th colspan=1 style='height:35px; text-align:left;'>
+                    Measured<br>molecule<br>1
+                </th>
+                <th colspan=1 style='height:35px; text-align:left;'>
+                    Measured<br>molecule<br>2
+                </th>
+                <th colspan=1 style='height:35px; text-align:left;'>
+                    Measured<br>process
+                </th>
+                <th colspan=2 style='height:35px; text-align:left;'>
+                    *Downstream singaling<br>processes<br>(after GPCR binding)
+                </th>
+                <th colspan=1 style='height:35px; text-align:left;'>
+                    Biosensor from
+                </th>
+                <th colspan=1 style='height:35px; text-align:left;'>
+                    Couplings from
+                </th>
+                <th colspan=1 style='height:35px; text-align:left;'>
+                    GprotienDb<br>release
+                </th>
+            </tr>
+            <tr>
+                <th>GsS</th>
+                <th>GsL</th>
+                <th>Golf</th>
+                <th>Gi1</th>
+                <th>Gi2</th>
+                <th>Gi3</th>
+                <th>GoA</th>
+                <th>GoB</th>
+                <th>Gz</th>
+                <th>Ggust</th>
+                <th>Gq</th>
+                <th>G11</th>
+                <th>G14</th>
+                <th>G15</th>
+                <th>G12</th>
+                <th>G13</th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th>#</th>
+                <th>Pathway processes</th>
+                <th></th>
+                <th></th>
+                <th></th>
+            </tr>
+            <tr>
+                {% for n in "x"|rjust:"29" %}
+                    <th></th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in array %}
+                <tr>
+                    {% for val in row %}
+                        <td>{{ val }}</td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+            <!-- <tr>
+                {% for n in "x"|rjust:"18" %}
+                    <td></td>
+                {% endfor %}
+                <td>Bouvier</td>
+                <td></td>
+                <td></td>
+                <td>G&alpha;</td>
+                <td>G&beta;&gamma;</td>
+                <td>Dissociation</td>
+                <td>HEK293T</td>
+                <td>1</td>
+                <td>G protein dissociation</td>
+                <td><span>2006 (9)</span></td>
+                <td></td>
+                <td></td>
+            </tr> -->
+        <tbody>
+    </table>
+</div>
+<div style="padding-top:20px;">
+    <h3>References</h3>
+    <p>1.  Masuho, I., Kise, R., Gainza, P., Von Moo, E., Li, X., Tany, R., Wakasugi-Masuho, H., Correia, B.E. and Martemyanov, K.A. (2023) Rules and mechanisms governing G protein coupling selectivity of GPCRs. Cell reports, 42, 113173.</p>
+    <p>2.  Hauser, A.S., Avet, C., Normand, C., Mancini, A., Inoue, A., Bouvier, M. and Gloriam, D.E. (2022) Common coupling map advances GPCR-G protein selectivity. Elife, 11, 22.</p>
+    <p>3.  Pándy-Szekeres, G., Esguerra, M., Hauser, A.S., Caroli, J., Munk, C., Pilger, S., Keseru, G.M., Kooistra, A.J. and Gloriam, D.E. (2022) The G protein database, GproteinDb. Nucleic Acids Res., 50, D518-D525.</p>
+    <p>4.  Lu, S., Jang, W., Inoue, A. and Lambert, N.A. (2021) Constitutive G protein coupling profiles of understudied orphan GPCRs. PLoS One, 16, e0247743.</p>
+    <p>5.  Watkins, L.R. and Orlandi, C. (2021) In vitro profiling of orphan G protein coupled receptor (GPCR) constitutive activity. Br J Pharmacol, 178, 2963-2975.</p>
+    <p>6.  Avet, C., Mancini, A., Breton, B., Le Gouill, C., Hauser, A.S., Normand, C., Kobayashi, H., Gross, F., Hogue, M., Lukasheva, V. et al. (2022) Effector membrane translocation biosensors reveal G protein and betaarrestin coupling profiles of 100 therapeutically relevant GPCRs. Elife, 11, 2020.2004.2020.052027.</p>
+    <p>7.  Inoue, A., Raimondi, F., Kadji, F.M.N., Singh, G., Kishi, T., Uwamizu, A., Ono, Y., Shinjo, Y., Ishida, S., Arang, N. et al. (2019) Illuminating G-Protein-Coupling Selectivity of GPCRs. Cell, 177, 1933-1947 e1925.</p>
+    <p>8.  Gales, C., Rebois, R.V., Hogue, M., Trieu, P., Breit, A., Hebert, T.E. and Bouvier, M. (2005) Real-time monitoring of receptor and G-protein interactions in living cells. Nat. Methods, 2, 177-184.</p>
+    <p>9.  Gales, C., Van Durm, J.J., Schaak, S., Pontier, S., Percherancier, Y., Audet, M., Paris, H. and Bouvier, M. (2006) Probing the activation-promoted structural rearrangements in preassembled receptor-G protein complexes. Nat. Struct. Mol. Biol., 13, 778-786.</p>
+    <p>10. Hollins, B., Kuravi, S., Digby, G.J. and Lambert, N.A. (2009) The c-terminus of GRK3 indicates rapid dissociation of G protein heterotrimers. Cell. Signal., 21, 1015-1021.</p>
+    <p>11. Wan, Q., Okashah, N., Inoue, A., Nehmé, R., Carpenter, B., Tate, C.G. and Lambert, N.A. (2018) Mini G protein probes for active G protein–coupled receptors (GPCRs) in live cells. J. Biol. Chem., 293, 7466-7473.</p>
+    <p>12. Dixon, A.S., Schwinn, M.K., Hall, M.P., Zimmerman, K., Otto, P., Lubben, T.H., Butler, B.L., Binkowski, B.F., Machleidt, T., Kirkland, T.A. et al. (2016) NanoLuc Complementation Reporter Optimized for Accurate Measurement of Protein Interactions in Cells. ACS Chemical Biology, 11, 400-408.</p>
+    <p>13. Inoue, A., Ishiguro, J., Kitamura, H., Arima, N., Okutani, M., Shuto, A., Higashiyama, S., Ohwada, T., Arai, H., Makide, K. and Aoki, J. (2012) TGFalpha shedding assay: an accurate and versatile method for detecting GPCR activation. Nat. Methods, 9, 1021-1029.</p>
+    <p>14. Kato, H.E., Zhang, Y., Hu, H., Suomivuori, C.M., Kadji, F.M.N., Aoki, J., Krishna Kumar, K., Fonseca, R., Hilger, D., Huang, W. et al. (2019) Conformational transitions of a neurotensin receptor 1-Gi1 complex. Nature, 572, 80-85.</p>
+    <p>15. Masuho, I., Martemyanov, K.A. and Lambert, N.A. (2015) Monitoring G Protein Activation in Cells with BRET. Methods Mol. Biol., 1335, 107-113.</p>
+    <p>16. Masuho, I., Ostrovskaya, O., Kramer, G.M., Jones, C.D., Xie, K. and Martemyanov, K.A. (2015) Distinct profiles of functional discrimination among G proteins determine the actions of G protein-coupled receptors. Science signaling, 8, ra123.</p>
+    <p>17. Olsen, R.H.J., DiBerto, J.F., English, J.G., Glaudin, A.M., Krumm, B.E., Slocum, S.T., Che, T., Gavin, A.C., McCorvy, J.D., Roth, B.L. and Strachan, R.T. (2020) TRUPATH, an open-source biosensor platform for interrogating the GPCR transducerome. Nat. Chem. Biol., 16, 841-849.</p>
+</div>
+
+{% endblock %}
+
+{% block addon_js %}
+    <script src="{% static 'home/js/jquery.dataTables.min.js' %}"></script>
+    <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"></script>
+    <script src="{% static 'home/js/select2.js' %}"></script>
+    <script src="{% static 'home/js/gpcrdb.js' %}"></script>
+
+    <script type="text/javascript" charset="utf-8">
+        $(document).ready(function () {
+            let oTable1 = $("#data_overview").DataTable({
+                deferRender: true,
+                scrollY: '55vh',
+                scrollX: true,
+                scrollCollapse: true,
+                scroller: true,
+                paging: false,
+                bSortCellsTop: false, //prevent sort arrows going on bottom row
+                aaSorting: [],
+                // order: [
+                //   [2, "asc"],
+                //   [4, "asc"]
+                // ],
+                autoWidth: true,
+                bInfo: true,
+            });
+
+            let column_filters = [];
+
+            column_filters = column_filters.concat(createYADCFfilters(0, 21, "multi_select", "select2", "", false, null, "text", "50px"));
+            column_filters = column_filters.concat(createYADCFfilters(22, 1, "text", "select2", "", false, null, "text", "50px"));
+            column_filters = column_filters.concat(createYADCFfilters(23, 2, "multi_select", "select2", "", false, null, "text", "50px"));
+            column_filters = column_filters.concat(createYADCFfilters(25, 1, "text", "select2", "", false, null, "text", "50px"));
+            column_filters = column_filters.concat(createYADCFfilters(26, 3, "multi_select", "select2", "", false, null, "text", "50px"));
+
+            yadcf.init(oTable1, column_filters, {
+                cumulative_filtering: false
+            });
+            oTable1.columns.adjust();
+        })
+    </script>
+{% endblock %}

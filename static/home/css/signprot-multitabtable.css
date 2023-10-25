@@ -81,6 +81,10 @@ input.yadcf-filter {
   font-weight: bold;
 }
 
+.yadcf-filter-range {
+  min-width: 35px;
+}
+
 .clicked_button {
   background-color: rgb(215, 215, 215);
 }
@@ -155,4 +159,46 @@ div#hide_filter1,
 div#hide_filter2,
 div#hide_filter3 {
   display: none;
+}
+
+.expand {
+  max-width: 100px;
+  text-overflow: ellipsis;
+  word-break: normal;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.expand:hover {
+  overflow: visible;
+  white-space: normal;
+}
+
+.bold-text {
+  font-weight: bold;
+}
+
+.gpcrdb-link {
+    filter: grayscale(100%);
+}
+
+.gpcrdb-link:hover {
+    filter: grayscale(0%);
+}
+
+.grey {
+  color: #BEBEBE;
+  font-size: 10px;
+}
+
+table.dataTable.compact thead th.rightborder {
+  border-right: 1px solid;
+}
+
+tr.header-center th {
+  text-align: center;
+}
+
+td {
+  text-align: right;
 }
