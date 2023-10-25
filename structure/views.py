@@ -260,7 +260,7 @@ class ServeComplexModels(TemplateView):
                                                                                                                  "g_protein_subunit__name",
                                                                                                                  "protein__name",
                                                                                                                  "source",
-                                                                                                                 "logmaxec50",
+                                                                                                                 "logemaxec50",
                                                                                                                  "protein__entry_name"))
 
             for i, cm in enumerate(complex_models):
@@ -285,11 +285,11 @@ class ServeComplexModels(TemplateView):
                         if (cm["protein_conformation__protein__entry_name"] == coupling["protein__entry_name"]) and (cm["signprot_complex__protein__name"] == coupling["g_protein_subunit__name"]):
                             # cm["transduction"] = coupling["transduction"]
                             if coupling["source"] == 'Inoue':
-                                cm["Inoue"] = coupling["logmaxec50"]
+                                cm["Inoue"] = coupling["logemaxec50"]
                             elif coupling["source"] == 'Bouvier':
-                                cm["Bouvier"] = coupling["logmaxec50"]
+                                cm["Bouvier"] = coupling["logemaxec50"]
                             elif coupling["source"] == 'Roth':
-                                cm["Roth"] = coupling["logmaxec50"]
+                                cm["Roth"] = coupling["logemaxec50"]
 
             context['structure_complex_model'] = complex_models
 
@@ -963,6 +963,7 @@ def StructureDetails(request, pdbname):  ###JIMMY CHECKPOINT
         center_axis = sv.center_axis
 
     # Check if the structure is in complex with a signaling protein
+    ### Modified to filter out arrestins for now
     signaling_complex = SignprotComplex.objects.filter(structure=crystal, protein__family__slug__startswith='100').count() > 0
 
     # GN list
