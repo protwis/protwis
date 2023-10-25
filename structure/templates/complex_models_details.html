@@ -98,10 +98,10 @@ canvas {
     <div class="text-center">
         <div style="display: inline;">
           {% if structure_type.slug == "af-signprot" %}
-              <h2><a href="/protein/{{ model.signprot_complex.protein.entry_name }}" target="_blank">G<sub>{{ model.signprot_complex.protein.family.name|gprot_short|slice:"1:" }}</sub></a> - 
+              <h2><a href="/protein/{{ model.signprot_complex.protein.entry_name }}" target="_blank">G<sub>{{ model.signprot_complex.protein.family.name|gprot_short|slice:"1:" }}</sub></a> -
                   <a href="/protein/{{ model.protein_conformation.protein.entry_name }}" target="_blank">{{ model.protein_conformation.protein.name|safe }}</a> complex model
           {% else %}
-              <h2>Refined structure (<a href="/structure/{{ model.pdb_code.index|entry_short }}" target="_blank">{{ model.pdb_code.index|entry_short }}</a>) of <a href="/protein/{{ model.signprot_complex.protein.entry_name }}" target="_blank">G<sub>{{ model.signprot_complex.protein.family.name|gprot_short|slice:"1:" }}</sub></a> - 
+              <h2>Refined structure (<a href="/structure/{{ model.pdb_code.index|entry_short }}" target="_blank">{{ model.pdb_code.index|entry_short }}</a>) of <a href="/protein/{{ model.signprot_complex.protein.entry_name }}" target="_blank">G<sub>{{ model.signprot_complex.protein.family.name|gprot_short|slice:"1:" }}</sub></a> -
                 <a href="/protein/{{ model.protein_conformation.protein.entry_name }}" target="_blank">{{ model.protein_conformation.protein.name|safe}}</a>
           {% endif %}
 
@@ -191,7 +191,7 @@ canvas {
               {% endfor %} -->
               <br>Model<br>
               <div class="graphcolor" style="background-color:black; width: 20px; height: 15px; margin-bottom: 5px; border:solid black 1px; "></div> AlphaFold2-Multimer
-                      
+
           </div>
       </div>
       {% endif %}
@@ -222,21 +222,21 @@ canvas {
         </div>
         <br>
         <div>
-          <h5>PTM Score
+          <h5>PTM Score: <b>{{ scores.ptm|floatformat:1 }}</b>
             <span class="fa fa-info-circle simple-popover" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="bottom" data-content="<b>Predicted TM-score </b>:<br /> is an estimate of the TM-score derived from comparing predicted atom positions
             to true positions under various alignments, emphasizing correct local frame residue interactions in AlphaFold."></span>
           </h5>
         </div>
         <div id="PTM_location"></div>
         <div>
-          <h5>iPTM Score
+          <h5>iPTM Score: <b>{{ scores.iptm|floatformat:1 }}</b>
             <span class="fa fa-info-circle simple-popover" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="bottom" data-content="<b>Interface predicted TM-score</b>:<br />
 A modified pTM score, adapted to measure the accuracy of predicted protein interfaces Instead of comparing residues within the same protein chain as in the original TM-score, it compares residues from different chains."></span>
           </h5>
         </div>
         <div id="iPTM_location"></div>
         <div>
-          <h5>PAE mean
+          <h5>PAE mean: <b>{{ scores.pae_mean|floatformat:1 }}</b>
             <span class="fa fa-info-circle simple-popover" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="bottom" data-content="<b>The mean of the predicted alignment errors</b>:<br>The average expected error in residue x's position when aligning predicted and true structures based on residue y, focusing on inter-chain relationships."></span>
           </h5>
         </div>

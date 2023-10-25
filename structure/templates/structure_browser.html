@@ -35,6 +35,9 @@
           border-width: 1px;
           padding: 3px;
       }
+      .highlight_1 {
+          background-color: cyan;
+      }
     </style>
 {% endblock %}
 
@@ -85,6 +88,38 @@
     });
 </script>
 
+<script>
+  window.addEventListener("hashchange", updateButtonConfiguration, false);
+
+  function updateButtonConfiguration() {
+      const button = document.getElementById("superpose_template_btn");
+
+      switch (window.location.hash) {
+          case "#keepselectionreference":
+              // Update the button for #keepselectionreference
+              button.innerText = "Add reference to superposition";
+              button.id = "superpose_template_btn";
+              button.classList.add("highlight_1");
+              break;
+          case "#keepselectiontargets":
+              // Update the button for #keepselectiontargets
+              button.innerText = "Add targets to superposition";
+              button.id = "superpose_template_btn";
+              button.classList.add("highlight_1");
+              break;
+          default:
+              // Default configuration (if no recognized hash)
+              button.innerText = "Superposition";
+              button.id = "superpose_btn";
+              button.classList.remove("highlight");
+              break;
+      }
+  }
+
+  // Call this function on page load to set the initial configuration
+  document.addEventListener("DOMContentLoaded", updateButtonConfiguration);
+
+</script>
 {% endblock %}
 
 
@@ -105,7 +140,7 @@
             <label class="btn btn-default btn-s" id="download_btn" href="javascript:void(0)">
                 Download PDBs
             </label>
-            <label class="btn btn-default btn-s" id="superpose_btn" href="javascript:void(0)">
+            <label class="btn btn-default btn-s" id="superpose_template_btn" href="javascript:void(0)">
                 Superposition
             </label>
             <input class="btn btn-default btn-s" type="button" onclick="GlobalTableToExcel('structures_scrollable', 'Structure data', 'GPCRdb_structures.xls')" value="Export Excel"></input>
