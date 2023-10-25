@@ -201,12 +201,12 @@ class CouplingBrowser(TemplateView):
             if source not in self.dictotemplate[protein]:
                 
                 if source not in self.dictotemplate[protein]['sets']:
-                    self.dictotemplate[protein]['sets'][source] = {'lab':c.source,'biosensor':c.biosensor, 'supp_fam':[], 'prim_fam':None, 'supp_subtype':[], 'prim_subtype':'-', 
+                    self.dictotemplate[protein]['sets'][source] = {'lab':c.source,'biosensor':c.biosensor, 'supp_fam':[], 'prim_fam':None, 'supp_subtype':[], 'prim_subtype':'-',
                                                                      'ligand_id':ligand_id, 'ligand_name':ligand_name, 'ligand_physiological':physio, 'doi':c.references.all()[0]}
             ### Family level
             g_protein_fam = slugify(c.g_protein.name)
             if g_protein_fam not in self.dictotemplate[protein]['sets'][source]:
-                self.dictotemplate[protein]['sets'][source][g_protein_fam] = {'family_rank':c.family_rank, 'percent_of_primary_family':c.percent_of_primary_family, 
+                self.dictotemplate[protein]['sets'][source][g_protein_fam] = {'family_rank':c.family_rank, 'percent_of_primary_family':c.percent_of_primary_family,
                                                                             'logemaxec50_family':c.logemaxec50_family, 'kon_mean_family':c.kon_mean_family, 
                                                                             'deltaGDP_conc_family':c.deltaGDP_conc_family}
                 ### Add primary family where available
@@ -248,7 +248,7 @@ class CouplingBrowser(TemplateView):
                 self.gprots_tested[source].append(g_protein)
 
             if g_protein not in self.dictotemplate[protein]['sets'][source]:
-                self.dictotemplate[protein]['sets'][source][g_protein] = {'percent_of_primary_subtype':c.percent_of_primary_subtype, 
+                self.dictotemplate[protein]['sets'][source][g_protein] = {'percent_of_primary_subtype':c.percent_of_primary_subtype,
                                                                       'logemaxec50':c.logemaxec50, 'kon_mean':c.kon_mean, 'deltaGDP_conc':c.deltaGDP_conc}
                 ### Add primary subtype
                 if c.percent_of_primary_subtype==100:
@@ -702,26 +702,34 @@ class CouplingBrowser_deprecated(TemplateView):
 
 def CouplingDataOverview(request):
     context = OrderedDict()
-    csv = """Gs;;;Gi/o;;;;;;;Gq/11;;;;G12/13;;#wt;#;Lab;Biosensor;Parameter;Measured;Measured;Measured;Downstream signaling processes;;Biosensor;Couplings from;GproteinDb
-;;;;;;;;;;;;;;;;Gprots;Rec;;short name;;molecule;molecule;process;(after GPCR binding);;from;;release
-GsS;GsL;Golf;Gi1;Gi2;Gi3;GoA;GoB;Gz;Ggust;Gq;G11;G14;G15;G12;G13;tested;;;;;1;2;;#;Pathway processes;;;
-;;;;;;;;;;;;;;;;;;Bouvier;;;Ga;Gbg;Dissociation;1;G protein dissociation;2006 (9);;
-;;;;;;;;;;;;;;;;;;Bouvier;;;GPCR;Ga;;;;2005 (8);;
-;;;;;;;;;;;;;;;;;;Bouvier;;;GPCR;Gb;;;;2005 (8);;
-;;;;;;;;;;;;;;;;;;Bouvier;;;GPCR;Gg;;;;2005 (8);;
-;x;;;;;;;;;;;;;;;1;100;Bouvier;EMTA;log(Emax/EC50);Ga;Membrane;Dissociation;2;Ga-Gbg dissociation - Ga–membrane dissociation;2022 (6);2022 (6);2022
-;;;x;x;;x;x;x;;x;x;x;x;x;x;11;100;Bouvier;GEMTA;log(Emax/EC50);Gi/o fam: Rap1GAP Gq/11 fam: p63-RhoGEF G12/13 fam: PDZ-RhoGEF;Membrane;Recruitment;3;G protein dissociation, Ga– “measured molecule 1” association, “measured molecule 1”–membrane recruitment;2022 (6);2022 (6);2022
-ch;ch;ch;ch;ch;ch;ch;ch;ch;ch;x;ch;ch;ch;ch;ch;1*;150;Inoue;TGF-α shedding;log(Emax/EC50);p-NP (yellow color);-;Shedding;5;G protein dissociation, PKC activation, ADAM17 (metalloprotease) activation, AP-TGF-α ectodomain shedding, p-NP production from p-NPP;2012 (13);2019 (7);2022
-x;;;x;x;x;x;;;;x;;;;x;x;8;8;Inoue;NanoBiT-G;???;Ga;Gbg;Dissociation;1;Ga-Gbg dissociation;2019 (7,14);2019 (7);2024
-;x;;x;;;;;;;x;;;x;;x;6;;Lambert;RG-GDP;DGDP conc;GPCR;Gbg;Dissociation;0;Not downstream, measures GPCR binding;(10,11);2021 (4);2024
-;x;;;;;x;;;;x;;;x;;x;5;117;Martemyanov;FREEBG;Kon, 1/τ (s-1);Gbg;GRK3;Association;2;G protein dissociation, Gbg-GRK association;2009 (10) (optimized in (15,16));2023 (1);2024
-;;;;;;;;;;;;;;;;0*;;Orlandi;???;;;;;;;;2021 (5);-
-x;x;x;x;x;x;x;x;x;x;x;x;;x;x;x;15;4;Roth;TRUPATH;log(Emax/EC50);Ga;Gbg;Dissociation;1;Ga-Gbg dissociation;2020 (17);2020 (17);2022"""
+    csv = """Lab,Biosensor,Parameter,Year,Ref,#,#wt,Gs,,,Gi/o,,,,,,,Gq/11,,,,G12/13,,Year in,Note
+,,,,,Rec,Gprots,,,,,,,,,,,,,,,,,GproteinDb,
+,,,,,,tested,GsS,GsL,Golf,Gi1,Gi2,Gi3,GoA,GoB,Gz,Ggust,Gq,G11,G14,G15,G12,G13,,
+Bouvier,EMTA / GEMTA,log(Emax/EC50),2022,(7),100,12,,x,,x,x,,x,x,x,,x,x,x,x,x,x,2022,
+Inoue,NanoBiT-G,log(Emax/EC50),2019,(8),8,8,x,,,x,x,x,x,,,,x,,,,x,x,2024,
+Inoue,TGF&alpha;-shedding,log(Emax/EC50),2019,(8),150,1*,,,,,,,,,,,x,,,,,,2022,
+Lambert,RGB-GDP,Efficacy,-,Unp,14,6,,x,,x,,,,,,,x,,,x,x,x,2024,Adhesions
+Lambert,RGB-GDP,E<sub>constitutiv</sub><br>Efficacy,-,Unp,8,4,,x,,x,,,,,,,x,,,,x,,2024,
+Lambert,RGB-GDP,E<sub>constitutive</sub><br>Efficacy,2019,(9),16,4,,x,,x,,,,,,,x,,,,x,,2024,
+Lambert,RGB-GDP,E<sub>constitutive</sub><br>Efficacy,2020,(10),3,4,,x,,x,,,,,,,x,,,,x,,2024,
+Lambert,RGB-GDP,E<sub>constitutive</sub>,2021,(11),49,5,,x,,x,,,,,,,x,,,x,,x,2024,Orphans
+Martemyanov,FREEBG-Nluc,K<sub>on</sub> (1/t),2023,(12),117,5,,x,,,,,x,,,,x,,,x,,x,2024,
+Roth,TRUPATH,log(Emax/EC50),2020,(13),4,15,x,x,x,x,x,x,x,x,x,x,x,x,,x,x,x,2022,"""
     lines = csv.split('\n')
     array = []
     for i, l in enumerate(lines):
         if i>2:
-            array.append(l.split(';'))
+            split = l.split(',')
+            out = {}
+            c = 0
+            for j in split:
+                print(j)
+                if j=='x':
+                    j = '&#x2713;'
+                out[c] = j
+                c+=1
+
+            array.append(out)
     context['array'] = array
     import pprint
     pprint.pprint(context['array'])
@@ -1561,8 +1569,6 @@ def AJAX_Interactions(request):
 
     conf_ids = set()
     for i in interactions:
-        if i['rec_gn'] == None:
-            i['rec_gn'] =  '-'
         i['int_ty'] = sort_a_by_b(i['int_ty'], interaction_sort_order)
         conf_ids.update([i['conf_id']])
 
