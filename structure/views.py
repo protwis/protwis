@@ -1038,7 +1038,8 @@ def complex_interactions(model):
         gprot_aa = residue.interacting_pair.res2.amino_acid
         gpcr_pos = residue.interacting_pair.res1.sequence_number
         gprot_pos = residue.interacting_pair.res2.sequence_number
-        segment = residue.interacting_pair.res1.protein_segment.slug
+        gpcr_segment = residue.interacting_pair.res1.protein_segment.slug
+        gprot_segment = residue.interacting_pair.res2.protein_segment.slug
         try:
             gpcr_grn = residue.interacting_pair.res1.display_generic_number.label
         except AttributeError:
@@ -1064,7 +1065,8 @@ def complex_interactions(model):
         residues_browser.append({'type': type, 'gpcr_aa': gpcr_aa, 'gprot_aa': gprot_aa,
                                  'gpcr_pos': gpcr_pos, 'gprot_pos': gprot_pos,
                                  'gpcr_grn': re.sub(r'\..*?x', 'x', gpcr_grn),
-                                 'gprot_grn': gprot_grn, 'segment': segment})
+                                 'gprot_grn': gprot_grn, 'gpcr_segment': gpcr_segment,
+                                 'gprot_segment': gprot_segment})
 
     gpcr_chain = model.preferred_chain
     gprot_chain = model.signprot_complex.alpha

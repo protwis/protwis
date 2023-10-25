@@ -40,10 +40,10 @@
       <a class="nav-link active" data-toggle="tab" href="#circles" id="circles_tab">Biflare</a>
     </li>
     <li class="nav-item">
-      <a class="nav-link" data-toggle="tab" href="#matrix" id="matrix_tab">Matrix</a>
+      <a class="nav-link" data-toggle="tab" href="#3dview" id="3dview_tab">3D view</a>
     </li>
     <li class="nav-item">
-      <a class="nav-link" data-toggle="tab" href="#3dview" id="3dview_tab">3D view</a>
+      <a class="nav-link" data-toggle="tab" href="#matrix" id="matrix_tab">Matrix</a>
     </li>
     <li class="nav-item">
       <a class="nav-link" data-toggle="tab" href="#table" id="table_tab">Table</a>
@@ -244,51 +244,47 @@
             <div id="excel_table" style2="display:none;"></div>
             <button onclick="GlobalTableToExcel('residues', 'Interface_interactions', 'InterfaceInteractions.xls')" type="button" class="btn btn-primary" style="margin-top:10px;margin-top:3px"> Export to Excel </button>
             <div style="padding-top: 0px; font-size: 10px; white-space: nowrap; width: 100%;">
-                <table class="display" id="residues" style="margin-left:0px;">
-                    <thead>
-                        <tr>
-                            <th>GPCR AA</th>
-                            <th>GPCR number</th>
-                            <th>GPCRdb#</th>
-                            <th>Segment</th>
-                            <th>G protein AA</th>
-                            <th>G protein number</th>
-                            <th>CGN#</th>
-                            <th>Interaction Type</th>
-                        </tr>
-                        <tr>
-                            <th></th>
-                            <th></th>
-                            <th></th>
-                            <th></th>
-                            <th></th>
-                            <th></th>
-                            <th></th>
-                            <th></th>
-                        </tr>
-                        <tr>
-                            <th></th>
-                            <th></th>
-                            <th></th>
-                            <th></th>
-                            <th></th>
-                            <th></th>
-                            <th></th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    {% for residue in residues_browser %}
-                    <tr>
-                    <td>{{residue.gpcr_aa}}</td>
-                    <td>{{residue.gpcr_pos}}</td>
-                    <td>{{residue.gpcr_grn}}</td>
-                    <td>{{residue.segment}}</td>
-                    <td>{{residue.gprot_aa}}</td>
-                    <td>{{residue.gprot_pos}}</td>
-                    <td>{{residue.gprot_grn}}</td>
-                    <td>{{residue.type}}</td>
-                    {% endfor %}
-                </table>
+              <table class="display" id="residues" style="margin-left:0px;">
+                  <thead>
+                      <tr>
+                          <th align="center">Interaction<br>type</th>
+                          <th align="center">GPCR<br>Segment</th>
+                          <th align="center">AA</th>
+                          <th align="center">Number</th>
+                          <th align="center">Generic<br>number</th>
+                          <th align="center">G&alpha;<br>segment</th>
+                          <th align="center">AA</th>
+                          <th align="center">Number</th>
+                          <th align="center">Generic<br>number</th>
+                      </tr>
+                      <tr>
+                          <th></th>
+                          <th></th>
+                          <th></th>
+                          <th></th>
+                          <th></th>
+                          <th></th>
+                          <th></th>
+                          <th></th>
+                          <th></th>
+                      </tr>
+                  </thead>
+                  <tbody>
+                      {% for residue in residues_browser %}
+                      <tr>
+                          <td>{{residue.type|capfirst}}</td>
+                          <td>{{residue.gpcr_segment}}</td>
+                          <td>{{residue.gpcr_aa}}</td>
+                          <td>{{residue.gpcr_pos}}</td>
+                          <td>{{residue.gpcr_grn}}</td>
+                          <td>{{residue.gprot_segment}}</td>
+                          <td>{{residue.gprot_aa}}</td>
+                          <td>{{residue.gprot_pos}}</td>
+                          <td>{{residue.gprot_grn}}</td>
+                      </tr>
+                      {% endfor %}
+                  </tbody>
+              </table>
             </div>
         {% else %}
             <p> Ooops! There is no data to show here yet. </p>

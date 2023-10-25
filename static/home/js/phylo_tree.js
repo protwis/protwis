@@ -1521,7 +1521,7 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
             .text(line)  // set the text string for the current line
             .style("font-size", `${fontSize}px`)  // set font size
             .attr("font-weight", "bold")  // set font weight
-            .style("font-family", "Palatino")  // set font family
+            .style("font-family", "Arial")  // set font family
             .style("fill", "#333");  // set font color
     });
   }
@@ -1869,11 +1869,11 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
 
   // Generate legend
   const outerCircleLabel = svg2.append("g")
-    .attr("transform", `translate(0, ${svgH - 180})`);
+    .attr("transform", `translate(0, ${bigRadius*1.3})`);
 
   outerCircleLabel.append("text")
-                  .attr("x", (bigRadius*1.3))
-                  .attr("y", -20)
+                  .attr("x", 20)
+                  .attr("y", 0)
                   .text("GPCR")
                   .attr("text-anchor", "middle")  // align horizontally to the middle
                   .attr("alignment-baseline", "middle")  // align vertically to the middle
