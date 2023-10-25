@@ -5,18 +5,39 @@
     <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css"/>
     <link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css"/>
     <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css"/>
-    <link rel="stylesheet" href="{% static 'home/css/signprot-multitabtable.css' %}" type="text/css"/>
+    <!-- <link rel="stylesheet" href="{% static 'home/css/signprot-multitabtable.css' %}" type="text/css"/> -->
 {% endblock %}
 
 {% block content %}
 <div>
-    <h3>G protein activation/signaling data and biosensors.</h3>
-    <p>Of note, the biosensors do not measure G protein coupling (receptor binding) but rather downstream processes representing activation (Gα–Gβγ dissociation) or signaling. *GproteinDb excludes Gα protein chimera (ch) including only wildtype (wt) Gα proteins. All biosensors used HEK293 cells. Abbreviations: AP-TGF-α: alkaline phosphatase-fused TGF-α reporter construct, Ch: Chimeric Gα protein excluded from GproteinDb, Biosensor full names: EMTA: Effector Membrane Translocation Assay, FREEBG: Free βγ assay, Rec: Receptors, GEMTA: G protein Effector Membrane Translocation Assay, NanoBiT-G: NanoLuc Binary Technology (12) – G proteins, RG-GDP: Receptor-G protein GDP sensitivity biosensor and TRUPATH: G protein TRansdUcer PATHways.</p>
+    <h3>G protein coupling datasets in GproteinDb</h3>
+    <p>In addition to these subtype-level couplings, GproteinDb includes family-level couplings from the Guide to Pharmacology database (6). Biosensor are described in Table 2. This table is adapted from GproteinDb’s page Coupling data overview where the latest version is always available.</p> 
 </div>
 <div style='padding-top: 0px; white-space: nowrap; width:100%; overflow-y:hidden; display:inline-block;'>
     <table class="compact display" id="data_overview">
         <thead>
             <tr>
+                <th colspan=1 style='height:35px; text-align:left;'>
+                    Lab
+                </th>
+                <th colspan=1 style='height:35px; text-align:left;'>
+                    Biosensor
+                </th>
+                <th colspan=1 style='height:35px; text-align:left;'>
+                    Parameter
+                </th>
+                <th colspan=1 style='height:35px; text-align:left;'>
+                    Year
+                </th>
+                <th colspan=1 style='height:35px; text-align:left;'>
+                    Ref
+                </th>
+                <th colspan=1 style='height:35px; text-align:left;'>
+                    #Rec
+                </th>
+                <th colspan=1 style='height:35px; text-align:left;'>
+                    #wt<br>Gprots<br>tested
+                </th>
                 <th colspan=3 style='height:35px; text-align:left;'>
                     Gs
                 </th>
@@ -31,43 +52,21 @@
                     G12/13
                 </th>
                 <th colspan=1 style='height:35px; text-align:left;'>
-                    #wt<br>Gprots<br>tested
+                    Year<br>added
                 </th>
                 <th colspan=1 style='height:35px; text-align:left;'>
-                    No. Rec
+                    Note
                 </th>
-                <th colspan=1 style='height:35px; text-align:left;'>
-                    Lab
-                </th>
-                <th colspan=1 style='height:35px; text-align:left;'>
-                    Biosensor<br>short<br>name
-                </th>
-                <th colspan=1 style='height:35px; text-align:left;'>
-                    Parameter
-                </th>
-                <th colspan=1 style='height:35px; text-align:left;'>
-                    Measured<br>molecule<br>1
-                </th>
-                <th colspan=1 style='height:35px; text-align:left;'>
-                    Measured<br>molecule<br>2
-                </th>
-                <th colspan=1 style='height:35px; text-align:left;'>
-                    Measured<br>process
-                </th>
-                <th colspan=2 style='height:35px; text-align:left;'>
-                    *Downstream singaling<br>processes<br>(after GPCR binding)
-                </th>
-                <th colspan=1 style='height:35px; text-align:left;'>
-                    Biosensor from
-                </th>
-                <th colspan=1 style='height:35px; text-align:left;'>
-                    Couplings from
-                </th>
-                <th colspan=1 style='height:35px; text-align:left;'>
-                    GprotienDb<br>release
-                </th>
+
             </tr>
             <tr>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
                 <th>GsS</th>
                 <th>GsL</th>
                 <th>Golf</th>
@@ -86,20 +85,9 @@
                 <th>G13</th>
                 <th></th>
                 <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th>#</th>
-                <th>Pathway processes</th>
-                <th></th>
-                <th></th>
-                <th></th>
             </tr>
             <tr>
-                {% for n in "x"|rjust:"29" %}
+                {% for n in "x"|rjust:"25" %}
                     <th></th>
                 {% endfor %}
             </tr>
@@ -107,8 +95,14 @@
         <tbody>
             {% for row in array %}
                 <tr>
-                    {% for val in row %}
-                        <td>{{ val }}</td>
+                    {% for i, val in row.items %}
+                        {% if i == 5 or i == 6 %}
+                            <td class="text-right"><span>{{ val|safe }}</span></td>
+                        {% elif i == 0 or i == 1 or i == 2 %}
+                            <td class="text-left"><span>{{ val|safe }}</span></td>
+                        {% else %}
+                            <td class="text-center"><span>{{ val|safe }}</span></td>
+                        {% endif %}
                     {% endfor %}
                 </tr>
             {% endfor %}
@@ -131,6 +125,9 @@
             </tr> -->
         <tbody>
     </table>
+</div>
+<div>
+    <p>* G&alpha; chimera excluded</p>
 </div>
 <div style="padding-top:20px;">
     <h3>References</h3>
@@ -182,11 +179,15 @@
 
             let column_filters = [];
 
-            column_filters = column_filters.concat(createYADCFfilters(0, 21, "multi_select", "select2", "", false, null, "text", "50px"));
-            column_filters = column_filters.concat(createYADCFfilters(22, 1, "text", "select2", "", false, null, "text", "50px"));
-            column_filters = column_filters.concat(createYADCFfilters(23, 2, "multi_select", "select2", "", false, null, "text", "50px"));
-            column_filters = column_filters.concat(createYADCFfilters(25, 1, "text", "select2", "", false, null, "text", "50px"));
-            column_filters = column_filters.concat(createYADCFfilters(26, 3, "multi_select", "select2", "", false, null, "text", "50px"));
+            column_filters = column_filters.concat(createYADCFfilters(0, 3, "multi_select", "select2", "", false, null, "html", "90px"));
+            column_filters = column_filters.concat(createYADCFfilters(3, 4, "multi_select", "select2", "", false, null, "html", "50px"));
+            column_filters = column_filters.concat(createYADCFfilters(7, 16, "multi_select", "select2", "", false, null, "html", "25px"));
+            column_filters = column_filters.concat(createYADCFfilters(23, 1, "multi_select", "select2", "", false, null, "html", "50px"));
+            column_filters = column_filters.concat(createYADCFfilters(24, 1, "multi_select", "select2", "", false, null, "html", "90px"));
+            // column_filters = column_filters.concat(createYADCFfilters(22, 1, "text", "select2", "", false, null, "text", "50px"));
+            // column_filters = column_filters.concat(createYADCFfilters(23, 2, "multi_select", "select2", "", false, null, "text", "50px"));
+            // column_filters = column_filters.concat(createYADCFfilters(25, 1, "text", "select2", "", false, null, "text", "50px"));
+            // column_filters = column_filters.concat(createYADCFfilters(25, 1, "multi_select", "select2", "", false, null, "text", "50px"));
 
             yadcf.init(oTable1, column_filters, {
                 cumulative_filtering: false
