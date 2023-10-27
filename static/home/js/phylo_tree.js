@@ -321,9 +321,14 @@ function DrawCircles(location, data, starter, dict, fancy=false, clean=true){
       const newR = Math.round(r + (255 - r) * percentage);
       const newG = Math.round(g + (255 - g) * percentage);
       const newB = Math.round(b + (255 - b) * percentage);
+      let newColorCode;
 
+      if (percentage == 1) {
+        newColorCode = colorCode;
+      } else {
+        newColorCode = `#${newR.toString(16).padStart(2, '0')}${newG.toString(16).padStart(2, '0')}${newB.toString(16).padStart(2, '0')}`;
+      }
       // Convert the RGB values back to a hexadecimal color with two digits per channel
-      const newColorCode = `#${newR.toString(16).padStart(2, '0')}${newG.toString(16).padStart(2, '0')}${newB.toString(16).padStart(2, '0')}`;
 
       return newColorCode;
     }
