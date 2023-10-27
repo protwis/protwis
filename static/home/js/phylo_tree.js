@@ -1512,6 +1512,9 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
     const totalHeight = lines.length * lineHeight;
 
     // Draw text lines in the center of the circle
+    let maxWidth = 0;
+    let maxHeight = 0;
+
     lines.forEach((line, index) => {
         const textElement = svg2.append("text")
             .attr("x", cx)  // set x-coordinate to the center x-coordinate
@@ -1524,18 +1527,23 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
             .style("font-family", "Arial")  // set font family
             .style("fill", "white");  // set font color
 
-        // Create a bounding box for the text and use it to add a background rectangle
+        // Create a bounding box for the text
         const textBoundingBox = textElement.node().getBBox();
 
-        svg2.insert("rect", ":first-child")
-            .attr("x", textBoundingBox.x - 5) // Adjust the padding as needed
-            .attr("y", textBoundingBox.y - 2) // Adjust the padding as needed
-            .attr("width", textBoundingBox.width + 10) // Adjust the padding as needed
-            .attr("height", textBoundingBox.height + 4) // Adjust the padding as needed
-            .attr("rx", 6) // Adjust the border radius as needed
-            .attr("ry", 6) // Adjust the border radius as needed
-            .style("fill", "gray"); // set background color to gray
+        // Update maxWidth and maxHeight based on the current bounding box
+        maxWidth = Math.max(maxWidth, textBoundingBox.width);
+        maxHeight = Math.max(maxHeight, textBoundingBox.height);
     });
+
+    // Create a single rectangle that serves as the background for all text lines
+    svg2.insert("rect", ":first-child")
+        .attr("x", cx - maxWidth / 2 - 5) // Adjust the padding as needed
+        .attr("y", cy - totalHeight/2 - maxHeight/2 +5) // Adjust the padding as needed
+        .attr("width", maxWidth + 10) // Use the maximum width
+        .attr("height", totalHeight + 4) // Use the total height of all text lines
+        .attr("rx", 6) // Adjust the border radius as needed
+        .attr("ry", 6) // Adjust the border radius as needed
+        .style("fill", "gray"); // set background color to gray
   }
 
   function averageAngle(angles) {
@@ -1884,14 +1892,16 @@ function draw_interactions_in_circles(location, interactions, inner_data, outer_
     .attr("transform", `translate(0, ${bigRadius*1.3})`);
 
   outerCircleLabel.append("rect")  // Add a rectangle for the background
-      .attr("x", 0)
-      .attr("y", -10) // Adjust the position as needed
-      .attr("width", 42) // Adjust the width as needed
-      .attr("height", 18) // Adjust the height as needed
+      .attr("x", 1)
+      .attr("y", -14) // Adjust the position as needed
+      .attr("width", 50) // Adjust the width as needed
+      .attr("height", 25) // Adjust the height as needed
+      .attr("rx", 6) // Adjust the border radius as needed
+      .attr("ry", 6) // Adjust the border radius as needed
       .attr("fill", "gray"); // Set the background color to gray
 
   outerCircleLabel.append("text")
-                  .attr("x", 20)
+                  .attr("x", 25)
                   .attr("y", 0)
                   .text("GPCR")
                   .attr("text-anchor", "middle")  // align horizontally to the middle
