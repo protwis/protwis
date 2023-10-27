@@ -309,7 +309,7 @@ function DrawCircles(location, data, starter, dict, fancy=false, clean=true, fix
     //     if(h)return"rgb"+(f?"a(":"(")+r+","+g+","+b+(f?","+m(a*1000)/1000:"")+")";
     //     else return"#"+(4294967296+r*16777216+g*65536+b*256+(f?m(a*255):0)).toString(16).slice(1,f?undefined:-2)
     // }
-    console.log('fancy', fancy);
+
     // Function to calculate the color shade based on percentage
     function calculateColorShade(percentage, colorCode) {
       // Parse the color code to RGB

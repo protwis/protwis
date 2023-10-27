@@ -964,7 +964,7 @@ def CouplingProfiles(request, render_part="both", signalling_data="empty"):
         for key in list(table.keys())[1:]:
             table[key].append((sum([pair[0] for pair in table[key]]),' '.join([pair[1] for pair in table[key]])+' '))
         # context["selectivitydata"] = selectivitydata
-        print(selectivitydata_gtp_plus)
+
         context["selectivitydata_gtp_plus"] = selectivitydata_gtp_plus
         context["table"] = table
 
