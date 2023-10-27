@@ -40,7 +40,7 @@ $(document).ready(function() {
   column_filters = column_filters.concat(createYADCFfilters(2, 1, "multi_select", "select2", "", false, "exact", "html", "80px"));
   column_filters = column_filters.concat(createYADCFfilters(3, 1, "none"));
   column_filters = column_filters.concat(createYADCFfilters(4, 1, "multi_select", "select2", "", false, "exact", null, "80px"));
-  column_filters = column_filters.concat(createYADCFfilters(5, 1, "multi_select", "select2", "", false, null, "html", "35px"));
+  column_filters = column_filters.concat(createYADCFfilters(5, 1, "multi_select", "select2", "", false, null, "html", "45px"));
   column_filters = column_filters.concat(createYADCFfilters(6, 1, "multi_select", "select2", "", false, null, null, "100px"));
   //Source section
   column_filters = column_filters.concat(createYADCFfilters(7, 2, "multi_select", "select2", "", false, null, null, "90px"));
