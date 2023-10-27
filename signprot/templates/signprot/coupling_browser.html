@@ -16,23 +16,23 @@
     <div style='width:100%; display:inline;'>
         <div class="btn-group" style="padding-left:10px;">
             
-            <input class="btn btn-primary btn-sm" type="button" onclick="reset_tab(oTable1);" value="Remove filters">
+            <input class="btn btn-default btn-s" type="button" onclick="reset_tab(oTable1);" value="Remove filters">
         </div>
 
         <div class="btn-group" style="padding-left:10px;">
             <a id="dlink" style="display:none;"></a>
             <div id="excel_table" style="display:none;"></div>
-            <input class="btn btn-primary btn-sm" type="button"
+            <input class="btn btn-default btn-s" type="button"
                    onclick="GlobalTableToExcel('familiestabletab', 'Families data', 'GproteinDb_families_coupling.xls')"
                    value="Excel (selection)"></input>
             <a href="https://files.gpcrdb.org/GPCR-G_protein_couplings.xlsx">
-            <input class="btn btn-primary btn-sm" type="button"
+            <input class="btn btn-default btn-s" type="button"
                    value="Excel (underlying datasets)"></a></input>
             
         </div>
         <div class="btn-group" style="padding-left:10px;">
-            <input class="btn btn-primary btn-sm" type="button" onclick="resetHiddenColumns(oTable1)" id="toggle"
-                   value="Show hidden columns" style="background-color:darkorchid;border-color:darkorchid;">
+            <input class="btn btn-default btn-s" type="button" onclick="resetHiddenColumns(oTable1)" id="toggle"
+                   value="Show hidden (x) columns" style="color:darkorchid;border-color:darkorchid;">
         </div>
         <div style="display:inline;">See the <a href="/signprot/datasets_and_biosensors" target="_blank">Datasets & biosensors</a> page for more information about the G protein datasets and biosensors</div>
     </div>
@@ -87,7 +87,7 @@
                     </button>
                 </th>
                 <th colspan=5 style='height:35px; text-align:center;' class="rightborder">
-                    Quantitative values<br>(family is max among subtypes)
+                    Quantitative values <i class="glyphicon glyphicon-info-sign" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="bottom" data-container="body" data-content="Each G protein family is assigned the maximum value among all its tested member subtypes."></i>
                     <button type="button" class="close hide_columns1" columns="33,34,35,36,37"
                             style="float:right;display:inline;color:darkorchid;opacity:0.7;" aria-label="Close"><span aria-hidden="true">&times;</span>
                     </button>

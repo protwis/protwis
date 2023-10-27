@@ -239,7 +239,7 @@ class ProteinFamily(models.Model):
 
     def shorter(self):
         import re
-        return re.sub(r'\(.*\)', ' ', self.name).replace("Class ","").replace(" receptors","").replace(" receptor family","")
+        return re.sub(r'\(.*\)', ' ', self.name).replace("Class ","").replace(" receptors","").replace(" receptor family","").strip()
 
     def __str__(self):
         return self.name
@@ -339,7 +339,7 @@ class ProteinCouplings(models.Model):
     percent_of_primary_family = models.IntegerField(null=True)
     logemaxec50_family = models.DecimalField(max_digits=4, decimal_places=1, null=True)
     kon_mean_family = models.DecimalField(max_digits=4, decimal_places=1, null=True)
-    deltaGDP_conc_family = models.DecimalField(max_digits=4, decimal_places=1, null=True)
+    deltaGDP_conc_family = models.DecimalField(max_digits=4, decimal_places=2, null=True)
     ### Subtype based values
     logemaxec50 = models.FloatField(null=True, blank=True)
     percent_of_primary_subtype = models.IntegerField(null=True)

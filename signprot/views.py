@@ -700,21 +700,21 @@ class CouplingBrowser_deprecated(TemplateView):
 
         return dictotemplate, coupling_header_names
 
-def CouplingDataOverview(request):
+def CouplingDatasets(request):
     context = OrderedDict()
     csv = """Lab,Biosensor,Parameter,Year,Ref,#,#wt,Gs,,,Gi/o,,,,,,,Gq/11,,,,G12/13,,Year in,Note
 ,,,,,Rec,Gprots,,,,,,,,,,,,,,,,,GproteinDb,
 ,,,,,,tested,GsS,GsL,Golf,Gi1,Gi2,Gi3,GoA,GoB,Gz,Ggust,Gq,G11,G14,G15,G12,G13,,
-Bouvier,EMTA / GEMTA,log(Emax/EC50),2022,(7),100,12,,x,,x,x,,x,x,x,,x,x,x,x,x,x,2022,
-Inoue,NanoBiT-G,log(Emax/EC50),2019,(8),8,8,x,,,x,x,x,x,,,,x,,,,x,x,2024,
-Inoue,TGF&alpha;-shedding,log(Emax/EC50),2019,(8),150,1*,,,,,,,,,,,x,,,,,,2022,
+Bouvier,EMTA / GEMTA,log(Emax/EC50),2022,(2),100,12,,x,,x,x,,x,x,x,,x,x,x,x,x,x,2022,
+Inoue,NanoBiT-G,log(Emax/EC50),2019,(3),8,8,x,,,x,x,x,x,,,,x,,,,x,x,2024,
+Inoue,TGF&alpha;-shedding,log(Emax/EC50),2019,(3),150,1*,,,,,,,,,,,x,,,,,,2022,*Only Gq<br>is wt/used
 Lambert,RGB-GDP,Efficacy,-,Unp,14,6,,x,,x,,,,,,,x,,,x,x,x,2024,Adhesions
-Lambert,RGB-GDP,E<sub>constitutiv</sub><br>Efficacy,-,Unp,8,4,,x,,x,,,,,,,x,,,,x,,2024,
-Lambert,RGB-GDP,E<sub>constitutive</sub><br>Efficacy,2019,(9),16,4,,x,,x,,,,,,,x,,,,x,,2024,
-Lambert,RGB-GDP,E<sub>constitutive</sub><br>Efficacy,2020,(10),3,4,,x,,x,,,,,,,x,,,,x,,2024,
-Lambert,RGB-GDP,E<sub>constitutive</sub>,2021,(11),49,5,,x,,x,,,,,,,x,,,x,,x,2024,Orphans
-Martemyanov,FREEBG-Nluc,K<sub>on</sub> (1/t),2023,(12),117,5,,x,,,,,x,,,,x,,,x,,x,2024,
-Roth,TRUPATH,log(Emax/EC50),2020,(13),4,15,x,x,x,x,x,x,x,x,x,x,x,x,,x,x,x,2022,"""
+Lambert,RGB-GDP,E<sub>const.</sub>| Efficacy,-,Unp,8,4,,x,,x,,,,,,,x,,,,x,,2024,
+Lambert,RGB-GDP,E<sub>const.</sub>| Efficacy,2019,(4),16,4,,x,,x,,,,,,,x,,,,x,,2024,
+Lambert,RGB-GDP,E<sub>const.</sub>| Efficacy,2020,(5),3,4,,x,,x,,,,,,,x,,,,x,,2024,
+Lambert,RGB-GDP,E<sub>const.</sub>,2021,(6),49,5,,x,,x,,,,,,,x,,,x,,x,2024,Orphans
+Martemyanov,FREEBG-Nluc,K<sub>on</sub> (1/t),2023,(7),117,5,,x,,,,,x,,,,x,,,x,,x,2024,
+Roth,TRUPATH,log(Emax/EC50),2020,(8),4,15,x,x,x,x,x,x,x,x,x,x,x,x,,x,x,x,2022,"""
     lines = csv.split('\n')
     array = []
     for i, l in enumerate(lines):
@@ -726,15 +726,49 @@ Roth,TRUPATH,log(Emax/EC50),2020,(13),4,15,x,x,x,x,x,x,x,x,x,x,x,x,,x,x,x,2022,"
                 print(j)
                 if j=='x':
                     j = '&#x2713;'
+                elif '|' in j:
+                    j = j.replace('|',',')
                 out[c] = j
                 c+=1
 
             array.append(out)
     context['array'] = array
-    import pprint
-    pprint.pprint(context['array'])
+
     return render(request,
-                  'signprot/couplings_data_overview.html',
+                  'signprot/coupling_datasets.html',
+                  context
+    )
+
+def CouplingBiosensors(request):
+    context = OrderedDict()
+    csv2 = """Lab,Biosensor type*,Biosensor#,Parameter,#Down-stream steps,Downstream steps before measurement,Labeled molecule 1,Labeled molecule 2,Measured process,Year,Ref
+Bouvier,RG,RGB,log(Emax/EC50),0,-,Receptor,G&alpha;| G&beta;1| G&gamma;2,Association,2005,(10)
+Lambert,RG,RGB-GDP,E<sub>const.</sub>| Efficacy<br>(w/wo ligand),0,-,Receptor,G&beta;1| G&gamma;2,Dissociation,2019,(4) (more G proteins (6))
+Bouvier,GG,GABY,log(Emax/EC50),1,-,G&alpha;,G&gamma;,Dissociation,2006,(11) (Rev (12))
+Roth,GG,TRUPATH,log(Emax/EC50),1,-,G&alpha;,G&gamma;9,Dissociation,2020,(8)
+Inoue,GG,NanoBiT-G,log(Emax/EC50),1,-,G&alpha;,G&beta;1,Dissociation,2019,(3|13)
+Lambert,GE,FREEBG-Rluc,Kon (1/t),2,G protein dissociation,G&beta;&gamma;,GRK3,Association,2009,(14)
+Martemyanov,GE,FREEBG-Nluc,Kon (1/t),2,G protein dissociation,G&beta;&gamma;,GRK3,Association,2015,(15|16)
+Bouvier,GM,EMTA,log(Emax/EC50),2,G&alpha;-Gbg dissociation - G&alpha;,G&alpha;,Membrane (CAAX),Dissociation,2022,(2)
+Bouvier,EM,GEMTA,log(Emax/EC50),3,G protein dissociation| G&alpha; - labeled molecule 1 association,Rap1GAP (Gi/o)| p63-RhoGEF (Gq/11)| PDZ-RhoGEF (G12/13),Membrane (CAAX),Recruitment,2022,(2)
+Inoue,O,TGF-α,log(Emax/EC50),5,G protein dissociation| PKC activation| ADAM17 (metalloprotease) activation| AP-TGF-α ectodomain shedding| p-NP production from p-NPP,- (p-NP| yellow color),-,Shedding,2012,(17)"""
+    lines = csv2.split('\n')
+    array2 = []
+    for i, l in enumerate(lines):
+        if i>0:
+            split = l.split(',')
+            out = {}
+            c = 0
+            for j in split:
+                if '|' in j:
+                    j = j.replace('|',',')
+                out[c] = j
+                c+=1
+            array2.append(out)
+    context['array2'] = array2
+
+    return render(request,
+                  'signprot/coupling_biosensors.html',
                   context
     )
 
@@ -830,11 +864,10 @@ def CouplingProfiles(request, render_part="both", signalling_data="empty"):
                     # Other coupling data with logemaxec50 greater than 0
                     other_couplings = list(ProteinCouplings.objects.filter(protein__family__slug__startswith=slug)\
                                     .exclude(source="GuideToPharma")
-                                    .filter(g_protein=gp, logemaxec50__gt=0)\
+                                    .filter(g_protein=gp).filter(Q(logemaxec50__gt=0) | Q(deltaGDP_conc__gt=0) | Q(kon_mean__gt=0))\
                                     .order_by("protein__entry_name")\
                                     .values_list("protein__entry_name").distinct()\
                                     .annotate(num_sources=Count("source", distinct=True)))
-
                     # Initialize selectivity array
                     processed_receptors = []
                     key = str(gp).split(' ')[0]
@@ -849,10 +882,10 @@ def CouplingProfiles(request, render_part="both", signalling_data="empty"):
                         if count >= 2:
                             # Add to selectivity data (for tree)
                             if receptor_only not in selectivitydata_gtp_plus:
-                                selectivitydata_gtp_plus[receptor_only] = []
+                                selectivitydata_gtp_plus[receptor_only] = {}
 
                             if key not in selectivitydata_gtp_plus[receptor_only]:
-                                selectivitydata_gtp_plus[receptor_only].append(key)
+                                selectivitydata_gtp_plus[receptor_only][key] = count
 
                             # Add to json data for Venn diagram
                             jsondata_gtp_plus[key].append(str(receptor_name) + '\n')
@@ -863,10 +896,10 @@ def CouplingProfiles(request, render_part="both", signalling_data="empty"):
                         receptor_dictionary.append(receptor_name)
                         receptor_only = receptor_name.split('_')[0].upper()
                         if receptor_only not in selectivitydata_gtp_plus:
-                            selectivitydata_gtp_plus[receptor_only] = []
+                            selectivitydata_gtp_plus[receptor_only] = {}
 
                         if key not in selectivitydata_gtp_plus[receptor_only]:
-                            selectivitydata_gtp_plus[receptor_only].append(key)
+                            selectivitydata_gtp_plus[receptor_only][key] = 1
 
                         jsondata_gtp_plus[key].append(str(receptor_name) + '\n')
 
@@ -931,6 +964,7 @@ def CouplingProfiles(request, render_part="both", signalling_data="empty"):
         for key in list(table.keys())[1:]:
             table[key].append((sum([pair[0] for pair in table[key]]),' '.join([pair[1] for pair in table[key]])+' '))
         # context["selectivitydata"] = selectivitydata
+        print(selectivitydata_gtp_plus)
         context["selectivitydata_gtp_plus"] = selectivitydata_gtp_plus
         context["table"] = table
 

@@ -394,7 +394,7 @@
             $('#download_btn').click(function () {
                 var checked_data = $(".alt_selected");
                 if (checked_data.length === 0) {
-                    showAlert("No models selected for download", "danger");
+                    showAlert("No models (rows) selected for download.", "danger");
                     return 0;
                 }
                 else if (checked_data.length > 1000) {
@@ -413,7 +413,7 @@
             $('#align_btn1').click(function () {
                 var checked_data = oTable.rows('.alt_selected').data();
                 if (checked_data.length === 0){
-                  showAlert("Please select at least two receptors before continuing.", "danger");
+                  showAlert("No models (rows) selected for receptor alignment.", "danger");
                   return;
                 }
 
@@ -428,7 +428,7 @@
             $('#align_btn2').click(function () {
                 var checked_data = oTable.rows('.alt_selected').data();
                 if (checked_data.length === 0){
-                  showAlert("Please select at least two G proteins before continuing.", "danger");
+                  showAlert("No models (rows) selected for G protein alignment.", "danger");
                   return;
                 }
                 ClearSelection('targets');

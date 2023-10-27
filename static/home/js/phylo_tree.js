@@ -283,7 +283,7 @@ function changeLeavesLabels(location, value, dict){
 * @clean {boolean} clean - remove the inner circles in the plot
 */
 
-function DrawCircles(location, data, starter, dict, fancy=false, clean=true){
+function DrawCircles(location, data, starter, dict, fancy=false, clean=true, fixed_total=false, gradient=true){
 
     // const pSBC=(p,c0,c1,l)=>{
     //     let r,g,b,P,f,t,h,i=parseInt,m=Math.round,a=typeof(c1)=="string";
@@ -309,7 +309,7 @@ function DrawCircles(location, data, starter, dict, fancy=false, clean=true){
     //     if(h)return"rgb"+(f?"a(":"(")+r+","+g+","+b+(f?","+m(a*1000)/1000:"")+")";
     //     else return"#"+(4294967296+r*16777216+g*65536+b*256+(f?m(a*255):0)).toString(16).slice(1,f?undefined:-2)
     // }
-
+    console.log('fancy', fancy);
     // Function to calculate the color shade based on percentage
     function calculateColorShade(percentage, colorCode) {
       // Parse the color code to RGB
@@ -318,9 +318,9 @@ function DrawCircles(location, data, starter, dict, fancy=false, clean=true){
       const b = parseInt(colorCode.slice(5, 7), 16);
 
       // Calculate the new RGB values based on the percentage
-      const newR = Math.round(r + (255 - r) * percentage);
-      const newG = Math.round(g + (255 - g) * percentage);
-      const newB = Math.round(b + (255 - b) * percentage);
+      const newR = Math.round(r + (255 - r) * (1-percentage));
+      const newG = Math.round(g + (255 - g) * (1-percentage));
+      const newB = Math.round(b + (255 - b) * (1-percentage));
 
       // Convert the RGB values back to a hexadecimal color with two digits per channel
       const newColorCode = `#${newR.toString(16).padStart(2, '0')}${newG.toString(16).padStart(2, '0')}${newB.toString(16).padStart(2, '0')}`;
@@ -343,15 +343,21 @@ function DrawCircles(location, data, starter, dict, fancy=false, clean=true){
     var spacer = 8;
       for (var x in data){
         for (var unit in dict){
-          if (data[x].indexOf(unit)>= 0) {
-            // variable to set the location of the different circle drawing
-            multiply = 1+Object.keys(dict).indexOf(unit);
-            var leafwithname = svg.selectAll('g[id=X'+x+']')
-                .append("circle")
-                .attr("r", 3.25)
-                .style("fill", dict[unit])
-                .attr("transform", "translate(" + (Math.ceil(starter) + multiply*spacer) + ",0)");
-              }
+            // if (data[x].constructor == Object) {
+            //     var index = Object.keys(data[x]).indexOf(unit);
+            // }
+            // else {
+            var index = data[x].indexOf(unit);
+            // }
+            if (index >= 0) {
+                // variable to set the location of the different circle drawing
+                multiply = 1+Object.keys(dict).indexOf(unit);
+                var leafwithname = svg.selectAll('g[id=X'+x+']')
+                    .append("circle")
+                    .attr("r", 3.25)
+                    .style("fill", dict[unit])
+                    .attr("transform", "translate(" + (Math.ceil(starter) + multiply*spacer) + ",0)");
+            }
         }
       }
     } else {
@@ -368,13 +374,26 @@ function DrawCircles(location, data, starter, dict, fancy=false, clean=true){
         }
         for (var unit in dict){
           if (keys.indexOf(unit)>= 0) {
-            // percentage = 1-(data[x][unit]/sum);
-            total = Object.values(data[x]).reduce((acc, val) => acc + val, 0);
-            // percentage = data[x][unit];
-            value = data[x][unit];
-            percentage = (value / total) * 100;
-            // color= pSBC(percentage, dict[unit]);
-            color = calculateColorShade(percentage / 100, dict[unit]);
+            if (gradient) {
+                // Caculate percentage with fixed total
+                if (fixed_total) {
+                    total = fixed_total;
+                }
+                else {
+                    total = Object.values(data[x]).reduce((acc, val) => acc + val, 0);
+                }
+                value = data[x][unit];
+                percentage = (value / total) * 100;
+                // Overwrite percentage to have empty circles for entries with data length = 1
+                if (fixed_total && Object.keys(data[x]).length===1) {
+                    percentage = 0;
+                }
+                // color= pSBC(percentage, dict[unit]);
+                color = calculateColorShade(percentage / 100, dict[unit]);
+            }
+            else {
+                color = dict[unit];
+            }
             multiply = 1+Object.keys(dict).indexOf(unit);
             leaf = svg.selectAll('g[id=X'+x+']');
             var leafwithname = svg.selectAll('g[id=X'+x+']')
