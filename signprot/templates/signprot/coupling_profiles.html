@@ -775,7 +775,8 @@ $(window).on("load",function() {
       <div class="panel-body">
         <div>
           {% if signalling_data == "gprot" %}
-          <p><h4><strong>GPCR selectivity tree.</strong> The four dots depict both primary and secondary G protein coupling.</h4></p>
+          <p><h4><strong>GPCR selectivity tree</strong> </h4></p>
+          <p>The four dots depict both primary and secondary G protein coupling from GtoPdb and any ranked coupling supported by at least two quantitative datasets.</p>
           {% else %}
           <p><h4><strong>GPCR selectivity tree.</strong> The four dots depict both primary and secondary Arrestin coupling.</h4></p>
           {% endif %}
@@ -804,7 +805,7 @@ $(window).on("load",function() {
               <span class="gprot_red">&#9675; <b>G&alpha;<sub>i/o</sub></b></span>
               <span class="gprot_black">&#9675; <b>G&alpha;<sub>q/11</sub></b></span>
               <span class="gprot_green">&#9675; <b>G&alpha;<sub>12/13</sub></b></span>
-              <span class="gprot_pink">&#9675; <b>GPa1</b></span>
+              <!-- <span class="gprot_pink">&#9675; <b>GPa1</b></span> -->
     </div>
   </div>
   {% elif signalling_data == 'arrestin' %}

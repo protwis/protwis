@@ -382,7 +382,7 @@ class Command(BaseCommand):
                     ###### Family values
                     if '{}-fam'.format(sp.family.parent.name) in row and source_metadata['Parameter']=='log(Emax/EC50)':
                         data[source][receptor][sp_key]['fam_logemaxec50'] = round(row['{}-fam'.format(sp.family.parent.name)],1)
-                    if '{}-fam'.format(sp.family.parent.name) in row and source_metadata['Parameter']=='Kon (1/𝜏)':
+                    if '{}-fam'.format(sp.family.parent.name) in row and source_metadata['Parameter']=='Activation rate (s-1)':
                         data[source][receptor][sp_key]['fam_kon_mean'] = round(row['{}-fam'.format(sp.family.parent.name)],1)
                     if '{}-fam'.format(sp.family.parent.name) in row and source_metadata['Parameter'] in ['Efficacy','Econstitutive']:
                         data[source][receptor][sp_key]['fam_deltaGDP_conc'] = round(row['{}-fam'.format(sp.family.parent.name)],2)
@@ -396,7 +396,7 @@ class Command(BaseCommand):
                     if sp_key in row and source_metadata['Parameter']=='log(Emax/EC50)':
                         data[source][receptor][sp_key]['logemaxec50'] = round(row[sp_key],1)
 
-                    if sp_key in row and source_metadata['Parameter']=='Kon (1/𝜏)':
+                    if sp_key in row and source_metadata['Parameter']=='Activation rate (s-1)':
                         data[source][receptor][sp_key]['kon_mean'] = round(row[sp_key],1)
 
                     if sp_key in row and source_metadata['Parameter'] in ['Efficacy','Econstitutive']:
