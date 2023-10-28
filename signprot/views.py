@@ -223,6 +223,8 @@ class CouplingBrowser(TemplateView):
             if self.dictotemplate[protein]['sets'][source][g_protein_fam]['support']==0:
                 if source.startswith('Martemyanov'):
                     self.check_support(protein, g_protein_fam, source, c.kon_mean)
+                elif source.startswith('Lambert'):
+                    self.check_support(protein, g_protein_fam, source, c.deltaGDP_conc)
 
             ### Update None family value
             if c.kon_mean_family and self.dictotemplate[protein]['sets'][source][g_protein_fam]==None:
@@ -713,7 +715,7 @@ Lambert,RGB-GDP,E<sub>const.</sub>| Efficacy,-,Unp,8,4,,x,,x,,,,,,,x,,,,x,,2024,
 Lambert,RGB-GDP,E<sub>const.</sub>| Efficacy,2019,(4),16,4,,x,,x,,,,,,,x,,,,x,,2024,
 Lambert,RGB-GDP,E<sub>const.</sub>| Efficacy,2020,(5),3,4,,x,,x,,,,,,,x,,,,x,,2024,
 Lambert,RGB-GDP,E<sub>const.</sub>,2021,(6),49,5,,x,,x,,,,,,,x,,,x,,x,2024,Orphans
-Martemyanov,FREEBG-Nluc,K<sub>on</sub> (1/t),2023,(7),117,5,,x,,,,,x,,,,x,,,x,,x,2024,
+Martemyanov,FRee&beta;&gamma;-Nluc,Activation rate (s<sup>-1</sup>),2023,(7),117,5,,x,,,,,x,,,,x,,,x,,x,2024,
 Roth,TRUPATH,log(Emax/EC50),2020,(8),4,15,x,x,x,x,x,x,x,x,x,x,x,x,,x,x,x,2022,"""
     lines = csv.split('\n')
     array = []
@@ -723,7 +725,6 @@ Roth,TRUPATH,log(Emax/EC50),2020,(8),4,15,x,x,x,x,x,x,x,x,x,x,x,x,,x,x,x,2022,""
             out = {}
             c = 0
             for j in split:
-                print(j)
                 if j=='x':
                     j = '&#x2713;'
                 elif '|' in j:
@@ -742,16 +743,18 @@ Roth,TRUPATH,log(Emax/EC50),2020,(8),4,15,x,x,x,x,x,x,x,x,x,x,x,x,,x,x,x,2022,""
 def CouplingBiosensors(request):
     context = OrderedDict()
     csv2 = """Lab,Biosensor type*,Biosensor#,Parameter,#Down-stream steps,Downstream steps before measurement,Labeled molecule 1,Labeled molecule 2,Measured process,Year,Ref
-Bouvier,RG,RGB,log(Emax/EC50),0,-,Receptor,G&alpha;| G&beta;1| G&gamma;2,Association,2005,(10)
-Lambert,RG,RGB-GDP,E<sub>const.</sub>| Efficacy<br>(w/wo ligand),0,-,Receptor,G&beta;1| G&gamma;2,Dissociation,2019,(4) (more G proteins (6))
-Bouvier,GG,GABY,log(Emax/EC50),1,-,G&alpha;,G&gamma;,Dissociation,2006,(11) (Rev (12))
-Roth,GG,TRUPATH,log(Emax/EC50),1,-,G&alpha;,G&gamma;9,Dissociation,2020,(8)
-Inoue,GG,NanoBiT-G,log(Emax/EC50),1,-,G&alpha;,G&beta;1,Dissociation,2019,(3|13)
-Lambert,GE,FREEBG-Rluc,Kon (1/t),2,G protein dissociation,G&beta;&gamma;,GRK3,Association,2009,(14)
-Martemyanov,GE,FREEBG-Nluc,Kon (1/t),2,G protein dissociation,G&beta;&gamma;,GRK3,Association,2015,(15|16)
-Bouvier,GM,EMTA,log(Emax/EC50),2,G&alpha;-Gbg dissociation - G&alpha;,G&alpha;,Membrane (CAAX),Dissociation,2022,(2)
-Bouvier,EM,GEMTA,log(Emax/EC50),3,G protein dissociation| G&alpha; - labeled molecule 1 association,Rap1GAP (Gi/o)| p63-RhoGEF (Gq/11)| PDZ-RhoGEF (G12/13),Membrane (CAAX),Recruitment,2022,(2)
-Inoue,O,TGF-α,log(Emax/EC50),5,G protein dissociation| PKC activation| ADAM17 (metalloprotease) activation| AP-TGF-α ectodomain shedding| p-NP production from p-NPP,- (p-NP| yellow color),-,Shedding,2012,(17)"""
+Bouvier,RG,RGB,log(Emax/EC50),0,-,Receptor,G&alpha;| G&beta;1| G&gamma;2,Association,2005,(1)
+Lambert,RG,RGB-GDP,E<sub>const.</sub>| Efficacy<br>(w/wo ligand),0,-,Receptor,G&beta;1| G&gamma;2,Dissociation,2019,(2) (more G proteins (3))
+Bouvier,GG,GABY,log(Emax/EC50),1,-,G&alpha;,G&gamma;,Dissociation,2006,(4) (Rev (5))
+Roth,GG,TRUPATH,log(Emax/EC50),1,-,G&alpha;,G&gamma;9,Dissociation,2020,(6)
+Inoue,GG,NanoBiT-G,log(Emax/EC50),1,-,G&alpha;,G&beta;1,Dissociation,2019,(7|8)
+Lambert,GE,Free&beta;&gamma;-Rluc,Activation rate (s<sup>-1</sup>),2,G protein dissociation,G&beta;1&gamma;2,GRK3,Association,2009,(9)
+Martemyanov,GE,Free&beta;&gamma;-Nluc,Activation rate (s<sup>-1</sup>),2,G protein dissociation,G&beta;1&gamma;2,GRK3,Association,2015,(10|11)
+Bouvier,GM,EMTA (Gs),log(Emax/EC50),2,G&alpha;-G&beta;&gamma; dissociation - G&alpha;,G&alpha;,Membrane (CAAX),Dissociation,2022,(12)
+Bouvier,EM,GEMTA<br>(Gi/o),log(Emax/EC50),3,G protein dissociation| G&alpha; - Rap1GAP association,Rap1GAP,Membrane (CAAX),Recruitment,2022,(12)
+Bouvier,EM,GEMTA<br>(Gq/11),log(Emax/EC50),3,G protein dissociation| G&alpha; - p63-RhoGEF association,p63-RhoGEF,Membrane (CAAX),Recruitment,2022,(12)
+Bouvier,EM,GEMTA<br>(G12/13),log(Emax/EC50),3,G protein dissociation| G&alpha; - PDZ-RhoGEF association,PDZ-RhoGEF,Membrane (CAAX),Recruitment,2022,(12)
+Inoue,O,TGF-α,log(Emax/EC50),5,G protein dissociation| PKC activation| ADAM17 (metalloprotease) activation| AP-TGF-α ectodomain shedding| p-NP production from p-NPP,- (p-NP| yellow color),-,Shedding,2012,(13)"""
     lines = csv2.split('\n')
     array2 = []
     for i, l in enumerate(lines):

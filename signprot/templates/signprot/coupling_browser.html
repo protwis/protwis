@@ -34,7 +34,7 @@
             <input class="btn btn-default btn-s" type="button" onclick="resetHiddenColumns(oTable1)" id="toggle"
                    value="Show hidden (x) columns" style="color:darkorchid;border-color:darkorchid;">
         </div>
-        <div style="display:inline;">See the <a href="/signprot/datasets_and_biosensors" target="_blank">Datasets & biosensors</a> page for more information about the G protein datasets and biosensors</div>
+        <div style="display:inline;">See the <a href="/signprot/coupling_datasets" target="_blank">Datasets</a> and <a href='/signprot/coupling_biosensors'>Biosensors</a> pages for more information about the underlying data.</div>
     </div>
 
     <div style='padding-top: 0px; white-space: nowrap; width:100%; overflow-y:hidden; display:inline-block;'>
@@ -400,7 +400,11 @@
                             <td>-</td>
                         {% endif %}
 
-                        <td class="text-center">{{ cvals.biosensor.parameter }}</td>
+                        {% if cvals.biosensor.parameter == "Activation rate (s-1)" %}
+                            <td class="text-center"><span>Activation rate (s<sup>-1</sup>)</span></td>
+                        {% else %}
+                            <td class="text-center"><span>{{ cvals.biosensor.parameter }}</span></td>
+                        {% endif %}
                         {% if cvals.biosensor.parameter == "log(Emax/EC50)" %}
                             {% if cvals.gs and cvals.gs.logemaxec50_family != None %}
                                 <td>{{ cvals.gs.logemaxec50_family }}</td>
@@ -422,7 +426,7 @@
                             {% else %}
                                 <td>-</td>
                             {% endif %}
-                        {% elif cvals.biosensor.parameter == "Kon (1/𝜏)" %}
+                        {% elif cvals.biosensor.parameter == "Activation rate (s-1)" %}
                             {% if cvals.gs and cvals.gs.kon_mean_family != None %}
                                 <td>{{ cvals.gs.kon_mean_family }}</td>
                             {% else %}
@@ -480,11 +484,15 @@
                             {% endif %}
                         {% endfor %}
 
-                        <td class="text-center">{{ cvals.biosensor.parameter }}</td>
+                        {% if cvals.biosensor.parameter == "Activation rate (s-1)" %}
+                            <td class="text-center"><span>Activation rate (s<sup>-1</sup>)</span></td>
+                        {% else %}
+                            <td class="text-center"><span>{{ cvals.biosensor.parameter }}</span></td>
+                        {% endif %}
                         {% for subval in subunitkeys %}
                             {% if cvals.biosensor.parameter == "log(Emax/EC50)" and cvals|dict_check:subval %}
                                 <td>{{ cvals|dict_check:subval|dict_check:"logemaxec50" }}</td>
-                            {% elif cvals.biosensor.parameter == "Kon (1/𝜏)" and cvals|dict_check:subval %}
+                            {% elif cvals.biosensor.parameter == "Activation rate (s-1)" and cvals|dict_check:subval %}
                                 <td>{{ cvals|dict_check:subval|dict_check:"kon_mean" }}</td>
                             {% elif cvals.biosensor.parameter == "Efficacy" or cvals.biosensor.parameter == "Econstitutive" %} 
                                 {% if cvals|dict_check:subval %}
