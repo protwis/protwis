@@ -1046,7 +1046,7 @@ class AbsSegmentSelection(TemplateView):
         + ' residues by clicking on the down arrows next to each helix.\n\nSelected segments will appear in the' \
         + ' right column, where you can edit the list.\n\nOnce you have selected all your segments, click the green' \
         + ' button. \n\n' \
-        + ' <b>G Protein superposition is perfomed on the GPCR receptor. \nFull implementation will be implemented in a few days.</b>'
+        + ' <b>G Protein superposition is perfomed on the GPCR receptor. \nFull implementation will be added in a few days.</b>'
     documentation_url = settings.DOCUMENTATION_URL
     docs = False
     segment_list = True
