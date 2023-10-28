@@ -15,7 +15,7 @@
     </div>
     {% endif %}
     <div class="row">
-        
+
         <!-- description column -->
         <div class="col-md-4">
 
@@ -26,7 +26,7 @@
                     <h2>STEP {{ step }} of {{ number_of_steps }}</h2>
                     {% endif %}
                     <h4>{{ title }}</h4>
-                    {{ description|linebreaks }}
+                    {{ description | safe | linebreaks}}
                 </div>
             </div>
 
@@ -47,7 +47,7 @@
         {% block middle_column %}
         {% endblock %}
         </div>
-        
+
         <!-- selection column -->
         <div class="col-md-4">
 
@@ -57,7 +57,7 @@
                 {% include 'common/selection_buttons.html' %}
             </div>
             {% endif %}
-            
+
             <!-- show the selection -->
             {% for selection_box, include in selection_boxes.items %}
                 {% if include %}
