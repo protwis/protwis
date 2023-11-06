@@ -202,3 +202,11 @@ tr.header-center th {
 td {
   text-align: right;
 }
+
+.purple-border {
+  color:darkorchid;
+  opacity:0.7;
+  border: 1px solid !important;
+  border-color: darkorchid;
+  border-radius: 5px;
+}

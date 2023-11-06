@@ -52,15 +52,15 @@ $(document).ready(function() {
   column_filters = column_filters.concat(createYADCFfilters(13, 1, "multi_select", "select2", "", false, null, null, "50px"));
   // Supporting datasets, Guide to Pharmacology and family rank orders section
   column_filters = column_filters.concat(createYADCFfilters(14, 4, "multi_select", "select2", "", false, null, "html", "40px"));
-  column_filters = column_filters.concat(createYADCFfilters(18, 11, "multi_select", "select2", "", false, null, null, "40px"));
+  column_filters = column_filters.concat(createYADCFfilters(18, 6, "multi_select", "select2", "", false, null, null, "40px"));
+  column_filters = column_filters.concat(createYADCFfilters(24, 4, "range_number", null, ["Min", "Max"], false, null, null, "40px", null, "-"));
+  column_filters = column_filters.concat(createYADCFfilters(28, 1, "multi_select", "select2", "", false, null, "html", "90px"));
   column_filters = column_filters.concat(createYADCFfilters(29, 4, "range_number", null, ["Min", "Max"], false, null, null, "40px", null, "-"));
-  column_filters = column_filters.concat(createYADCFfilters(33, 1, "multi_select", "select2", "", false, null, "html", "90px"));
-  column_filters = column_filters.concat(createYADCFfilters(34, 4, "range_number", null, ["Min", "Max"], false, null, null, "40px", null, "-"));
 
-  column_filters = column_filters.concat(createYADCFfilters(38, 1, "multi_select", "select2", "", false, null, null, "60px"));
-  column_filters = column_filters.concat(createYADCFfilters(39, 16, "range_number", null, ["Min", "Max"], false, null, null, "40px", null, "-"));
-  column_filters = column_filters.concat(createYADCFfilters(55, 1, "multi_select", "select2", "", false, null, "html", "90px"));
-  column_filters = column_filters.concat(createYADCFfilters(56, 16, "range_number", null, ["Min", "Max"], false, null, null, "40px", null, "-"));
+  column_filters = column_filters.concat(createYADCFfilters(33, 1, "multi_select", "select2", "", false, null, null, "60px"));
+  column_filters = column_filters.concat(createYADCFfilters(34, 16, "range_number", null, ["Min", "Max"], false, null, null, "40px", null, "-"));
+  column_filters = column_filters.concat(createYADCFfilters(50, 1, "multi_select", "select2", "", false, null, "html", "90px"));
+  column_filters = column_filters.concat(createYADCFfilters(51, 16, "range_number", null, ["Min", "Max"], false, null, null, "40px", null, "-"));
   // Coupling data filters
 
   yadcf.init(oTable1, column_filters, {

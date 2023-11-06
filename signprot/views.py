@@ -189,7 +189,17 @@ class CouplingBrowser(TemplateView):
                 ligand_id, ligand_name, physio = None, None, None
                 ligand_present = 'constitutive'
             ### Use Lab+biosensor+ligand/no_ligand as key to not overwrite different sets from same lab
-            source = '{}-{}-{}'.format(c.source, c.biosensor.name, ligand_present)
+            if not c.biosensor and c.source=='GuideToPharma':
+                biosensor = None
+                biosensor_name = '- (annotated from literature)'
+                source = 'GtoPdb'
+                lab = source
+            else:
+                biosensor = c.biosensor
+                biosensor_name = biosensor.name
+                source = '{}-{}-{}'.format(c.source, biosensor_name, ligand_present)
+                lab = c.source
+
             ### Make duplicate for receptor variational entries - e.g. CALCR+RAMP3
             if c.other_protein:
                 protein = '{}-{}'.format(c.protein, c.other_protein)
@@ -201,14 +211,22 @@ class CouplingBrowser(TemplateView):
             if source not in self.dictotemplate[protein]:
                 
                 if source not in self.dictotemplate[protein]['sets']:
-                    self.dictotemplate[protein]['sets'][source] = {'lab':c.source,'biosensor':c.biosensor, 'supp_fam':[], 'prim_fam':None, 'supp_subtype':[], 'prim_subtype':'-',
-                                                                     'ligand_id':ligand_id, 'ligand_name':ligand_name, 'ligand_physiological':physio, 'doi':c.references.all()[0]}
+                    self.dictotemplate[protein]['sets'][source] = {'lab':lab, 'biosensor':biosensor, 'biosensor_name':biosensor_name, 'supp_fam':[], 'prim_fam':None, 'supp_subtype':[], 'prim_subtype':'-',
+                                                                     'ligand_id':ligand_id, 'ligand_name':ligand_name, 'ligand_physiological':physio, 'doi':c.references.all()}
             ### Family level
             g_protein_fam = slugify(c.g_protein.name)
             if g_protein_fam not in self.dictotemplate[protein]['sets'][source]:
                 self.dictotemplate[protein]['sets'][source][g_protein_fam] = {'family_rank':c.family_rank, 'percent_of_primary_family':c.percent_of_primary_family,
                                                                             'logemaxec50_family':c.logemaxec50_family, 'kon_mean_family':c.kon_mean_family, 
                                                                             'deltaGDP_conc_family':c.deltaGDP_conc_family}
+                ### GtoPdb exception
+                if source=='GtoPdb':
+                    if c.transduction=='primary':
+                        self.dictotemplate[protein]['sets'][source][g_protein_fam]['family_rank'] = 1
+                    elif c.transduction=='secondary':
+                        self.dictotemplate[protein]['sets'][source][g_protein_fam]['family_rank'] = 2
+                    self.dictotemplate[protein]['sets'][source]['prim_fam'] = c.g_protein.name
+                    self.dictotemplate[protein]['sets'][source]['supp_fam'].append(g_protein_fam)
                 ### Add primary family where available
                 if c.family_rank==1:
                     self.dictotemplate[protein]['sets'][source]['prim_fam'] = c.g_protein.name
@@ -233,38 +251,39 @@ class CouplingBrowser(TemplateView):
                 self.dictotemplate[protein]['sets'][source][g_protein_fam] = c.deltaGDP_conc_family
 
             ### Subtype level
-            g_protein = definitions.G_PROTEIN_DISPLAY_NAME[c.g_protein_subunit.entry_name.split('_')[0].upper()]
-            if c.variant=='isoform 1 (GsL)':
-                g_protein+='L'
-            elif c.variant=='isoform 2 (GsS)':
-                g_protein+='S'
-            elif c.variant=='isoform 1 (GoA)':
-                g_protein+='A'
-            elif c.variant=='isoform 2 (GoB)':
-                g_protein+='B'
+            if c.g_protein_subunit:
+                g_protein = definitions.G_PROTEIN_DISPLAY_NAME[c.g_protein_subunit.entry_name.split('_')[0].upper()]
+                if c.variant=='isoform 1 (GsL)':
+                    g_protein+='L'
+                elif c.variant=='isoform 2 (GsS)':
+                    g_protein+='S'
+                elif c.variant=='isoform 1 (GoA)':
+                    g_protein+='A'
+                elif c.variant=='isoform 2 (GoB)':
+                    g_protein+='B'
 
-            ###### Calculate #gprots tested
-            if source not in self.gprots_tested:
-                self.gprots_tested[source] = []
-            if g_protein not in self.gprots_tested[source]:
-                self.gprots_tested[source].append(g_protein)
+                ###### Calculate #gprots tested
+                if source not in self.gprots_tested:
+                    self.gprots_tested[source] = []
+                if g_protein not in self.gprots_tested[source]:
+                    self.gprots_tested[source].append(g_protein)
 
-            if g_protein not in self.dictotemplate[protein]['sets'][source]:
-                self.dictotemplate[protein]['sets'][source][g_protein] = {'percent_of_primary_subtype':c.percent_of_primary_subtype,
-                                                                      'logemaxec50':c.logemaxec50, 'kon_mean':c.kon_mean, 'deltaGDP_conc':c.deltaGDP_conc}
-                ### Add primary subtype
-                if c.percent_of_primary_subtype==100:
-                    self.dictotemplate[protein]['sets'][source]['prim_subtype'] = g_protein
-                if g_protein not in self.dictotemplate[protein]['sets'][source]['supp_subtype']:
-                    if source.startswith('Martemyanov'):
-                        if c.kon_mean>0:
-                            self.dictotemplate[protein]['sets'][source]['supp_subtype'].append(g_protein)
-                    elif source.startswith('Lambert'):
-                        if c.deltaGDP_conc and c.deltaGDP_conc>0:
-                            self.dictotemplate[protein]['sets'][source]['supp_subtype'].append(g_protein)
-                    else:
-                        if c.logemaxec50>0:
-                            self.dictotemplate[protein]['sets'][source]['supp_subtype'].append(g_protein)
+                if g_protein not in self.dictotemplate[protein]['sets'][source]:
+                    self.dictotemplate[protein]['sets'][source][g_protein] = {'percent_of_primary_subtype':c.percent_of_primary_subtype,
+                                                                          'logemaxec50':c.logemaxec50, 'kon_mean':c.kon_mean, 'deltaGDP_conc':c.deltaGDP_conc}
+                    ### Add primary subtype
+                    if c.percent_of_primary_subtype==100:
+                        self.dictotemplate[protein]['sets'][source]['prim_subtype'] = g_protein
+                    if g_protein not in self.dictotemplate[protein]['sets'][source]['supp_subtype']:
+                        if source.startswith('Martemyanov'):
+                            if c.kon_mean>0:
+                                self.dictotemplate[protein]['sets'][source]['supp_subtype'].append(g_protein)
+                        elif source.startswith('Lambert'):
+                            if c.deltaGDP_conc and c.deltaGDP_conc>0:
+                                self.dictotemplate[protein]['sets'][source]['supp_subtype'].append(g_protein)
+                        else:
+                            if c.logemaxec50>0:
+                                self.dictotemplate[protein]['sets'][source]['supp_subtype'].append(g_protein)
 
         return self.dictotemplate, self.coupling_header_names
 
@@ -329,9 +348,9 @@ class CouplingBrowser(TemplateView):
                     protein_data[prot.id][gprotein_clean] = "-"
 
         #VARIABLE
-        self.couplings_all = ProteinCouplings.objects.filter(g_protein_subunit__family__slug__startswith=subunit_filter) \
+        self.couplings_all = ProteinCouplings.objects.filter(g_protein__slug__startswith=subunit_filter) \
             .order_by("g_protein_subunit__family__slug", "source", "-variant") \
-            .prefetch_related('g_protein_subunit__family', 'g_protein', 'ligand', 'protein', 'biosensor', Prefetch('references', queryset=Publication.objects.filter(web_link__web_resource__name='DOI').prefetch_related('web_link')))
+            .prefetch_related('g_protein_subunit__family', 'g_protein', 'ligand', 'protein', 'biosensor', Prefetch('references', queryset=Publication.objects.filter(web_link__web_resource__name__in=['DOI','PubMed']).prefetch_related('web_link','web_link__web_resource','journal')))
 
         #VARIABLE
         coupling_headers = ProteinCouplings.objects.exclude(source__in=["GuideToPharma"]) \
