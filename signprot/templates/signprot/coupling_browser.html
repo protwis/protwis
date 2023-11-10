@@ -36,7 +36,7 @@
     </div>
 
     <div style='padding-top: 0px; white-space: nowrap; width:100%; overflow-y:hidden; display:inline-block;'>
-        <table class="compact display" id="familiestabletab" style="display:none; float:left;">
+        <table class="compact row-border" id="familiestabletab" style="display:none; float:left;">
             <thead>
 
             <tr>
@@ -212,7 +212,11 @@
             <tbody>
             {% for p, pvals in tabfields.items %}
                 {% for c, cvals in pvals.sets.items %}
-                    <tr data-source="{{ c }}"> {# And then use the data to apply the javascript filters.#}
+                    {% if cvals.lab == "GproteinDb" %}
+                    <tr data-source="{{ c }}" class="gproteindb-row">
+                    {% else %}
+                    <tr data-source="{{ c }}">
+                    {% endif %}
                         <td class="text-center"><input class="alt" type="checkbox"></td>
                         <td class="uniprot1 text-left">
                             <a href="https://www.uniprot.org/uniprot/{{ pvals.protein.accession }}" target="_blank">{{ pvals.protein.uniprot|safe }}</a>
@@ -236,7 +240,11 @@
                         {% else %}
                             <td class="text-center">{{ p|split:"-,1" }}</td>
                         {% endif %}
-                        <td class="text-left">{{ cvals.lab }}</td>
+                        {% if cvals.lab == "GproteinDb" %}
+                            <td class="text-left bold-text">{{ cvals.lab }}</td>
+                        {% else %}
+                            <td class="text-left">{{ cvals.lab }}</td>
+                        {% endif %}
                         <td class="text-left expand">{{ cvals.biosensor_name }}</td>
                         {% if cvals.biosensor != None %}
                             <td>{{ cvals.biosensor.downstream_steps }}</td>
@@ -246,7 +254,7 @@
                             <td>-</td>
                         {% endif %}
                         
-                        {% if cvals.doi|length == 0 or cvals.doi.web_link.index == "Unpublished" %}
+                        {% if cvals.doi|length == 0 or cvals.doi.0.web_link.index == "Unpublished" %}
                             <td class="text-center">-</td>
                         {% else %}
                             <td class="text-center">
@@ -256,7 +264,7 @@
                         <td class="text-left expand">
                             {% if cvals.ligand_name != None and cvals.lab != "GtoPdb" %}
                             <a href="/ligand/{{ cvals.ligand_id }}/info" target="_blank"><span>{{ cvals.ligand_name|safe }}</span></a>
-                            {% elif cvals.lab == "GtoPdb" %}
+                            {% elif cvals.lab == "GtoPdb" or cvals.lab == "GproteinDb" %}
                             <span>-</span>
                             {% else %}
                             <span>None (constitutive activity)</span>
@@ -463,6 +471,8 @@
 
                         {% for subval in subunitkeys %}
                             {% if cvals.biosensor != None and cvals|dict_check:subval %}
+                                <td>{{ cvals|dict_check:subval|dict_check:"percent_of_primary_subtype" }}</td>
+                            {% elif cvals.lab == "GproteinDb" and cvals|dict_check:subval %}
                                 <td>{{ cvals|dict_check:subval|dict_check:"percent_of_primary_subtype" }}</td>
                             {% else %}
                                 <td>-</td>

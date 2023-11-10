@@ -210,3 +210,7 @@ td {
   border-color: darkorchid;
   border-radius: 5px;
 }
+
+.gproteindb-row {
+  background-color: #E8E8E8 !important;
+}
