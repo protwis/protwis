@@ -176,6 +176,7 @@ class CouplingBrowser(TemplateView):
         self.get_base_data(subunit_filter, families)
 
         self.gprots_tested = {}
+        gprot_fams, gprot_subtypes = [],[]
         for c in self.couplings_all:
             ### Check ligand
             if c.ligand:
@@ -189,7 +190,17 @@ class CouplingBrowser(TemplateView):
                 ligand_id, ligand_name, physio = None, None, None
                 ligand_present = 'constitutive'
             ### Use Lab+biosensor+ligand/no_ligand as key to not overwrite different sets from same lab
-            source = '{}-{}-{}'.format(c.source, c.biosensor.name, ligand_present)
+            if not c.biosensor and c.source=='GuideToPharma':
+                biosensor = None
+                biosensor_name = '- (annotated from literature)'
+                source = 'GtoPdb'
+                lab = source
+            else:
+                biosensor = c.biosensor
+                biosensor_name = biosensor.name
+                source = '{}-{}-{}'.format(c.source, biosensor_name, ligand_present)
+                lab = c.source
+
             ### Make duplicate for receptor variational entries - e.g. CALCR+RAMP3
             if c.other_protein:
                 protein = '{}-{}'.format(c.protein, c.other_protein)
@@ -201,14 +212,24 @@ class CouplingBrowser(TemplateView):
             if source not in self.dictotemplate[protein]:
                 
                 if source not in self.dictotemplate[protein]['sets']:
-                    self.dictotemplate[protein]['sets'][source] = {'lab':c.source,'biosensor':c.biosensor, 'supp_fam':[], 'prim_fam':None, 'supp_subtype':[], 'prim_subtype':'-',
-                                                                     'ligand_id':ligand_id, 'ligand_name':ligand_name, 'ligand_physiological':physio, 'doi':c.references.all()[0]}
+                    self.dictotemplate[protein]['sets'][source] = {'lab':lab, 'biosensor':biosensor, 'biosensor_name':biosensor_name, 'supp_fam':[], 'prim_fam':None, 'supp_subtype':[], 'prim_subtype':'-',
+                                                                     'ligand_id':ligand_id, 'ligand_name':ligand_name, 'ligand_physiological':physio, 'doi':c.references.all()}
             ### Family level
             g_protein_fam = slugify(c.g_protein.name)
+            if g_protein_fam not in gprot_fams:
+                gprot_fams.append(g_protein_fam)
             if g_protein_fam not in self.dictotemplate[protein]['sets'][source]:
                 self.dictotemplate[protein]['sets'][source][g_protein_fam] = {'family_rank':c.family_rank, 'percent_of_primary_family':c.percent_of_primary_family,
                                                                             'logemaxec50_family':c.logemaxec50_family, 'kon_mean_family':c.kon_mean_family, 
                                                                             'deltaGDP_conc_family':c.deltaGDP_conc_family}
+                ### GtoPdb exception
+                if source=='GtoPdb':
+                    if c.transduction=='primary':
+                        self.dictotemplate[protein]['sets'][source][g_protein_fam]['family_rank'] = 1
+                        self.dictotemplate[protein]['sets'][source]['prim_fam'] = c.g_protein.name
+                    elif c.transduction=='secondary':
+                        self.dictotemplate[protein]['sets'][source][g_protein_fam]['family_rank'] = 2
+                    self.dictotemplate[protein]['sets'][source]['supp_fam'].append(g_protein_fam)
                 ### Add primary family where available
                 if c.family_rank==1:
                     self.dictotemplate[protein]['sets'][source]['prim_fam'] = c.g_protein.name
@@ -233,38 +254,108 @@ class CouplingBrowser(TemplateView):
                 self.dictotemplate[protein]['sets'][source][g_protein_fam] = c.deltaGDP_conc_family
 
             ### Subtype level
-            g_protein = definitions.G_PROTEIN_DISPLAY_NAME[c.g_protein_subunit.entry_name.split('_')[0].upper()]
-            if c.variant=='isoform 1 (GsL)':
-                g_protein+='L'
-            elif c.variant=='isoform 2 (GsS)':
-                g_protein+='S'
-            elif c.variant=='isoform 1 (GoA)':
-                g_protein+='A'
-            elif c.variant=='isoform 2 (GoB)':
-                g_protein+='B'
+            if c.g_protein_subunit:
+                g_protein = definitions.G_PROTEIN_DISPLAY_NAME[c.g_protein_subunit.entry_name.split('_')[0].upper()]
+                if c.variant=='isoform 1 (GsL)':
+                    g_protein+='L'
+                elif c.variant=='isoform 2 (GsS)':
+                    g_protein+='S'
+                elif c.variant=='isoform 1 (GoA)':
+                    g_protein+='A'
+                elif c.variant=='isoform 2 (GoB)':
+                    g_protein+='B'
 
-            ###### Calculate #gprots tested
-            if source not in self.gprots_tested:
-                self.gprots_tested[source] = []
-            if g_protein not in self.gprots_tested[source]:
-                self.gprots_tested[source].append(g_protein)
+                if g_protein not in gprot_subtypes:
+                    gprot_subtypes.append(g_protein)
 
-            if g_protein not in self.dictotemplate[protein]['sets'][source]:
-                self.dictotemplate[protein]['sets'][source][g_protein] = {'percent_of_primary_subtype':c.percent_of_primary_subtype,
-                                                                      'logemaxec50':c.logemaxec50, 'kon_mean':c.kon_mean, 'deltaGDP_conc':c.deltaGDP_conc}
-                ### Add primary subtype
-                if c.percent_of_primary_subtype==100:
-                    self.dictotemplate[protein]['sets'][source]['prim_subtype'] = g_protein
-                if g_protein not in self.dictotemplate[protein]['sets'][source]['supp_subtype']:
-                    if source.startswith('Martemyanov'):
-                        if c.kon_mean>0:
-                            self.dictotemplate[protein]['sets'][source]['supp_subtype'].append(g_protein)
-                    elif source.startswith('Lambert'):
-                        if c.deltaGDP_conc and c.deltaGDP_conc>0:
-                            self.dictotemplate[protein]['sets'][source]['supp_subtype'].append(g_protein)
+                ###### Calculate #gprots tested
+                if source not in self.gprots_tested:
+                    self.gprots_tested[source] = []
+                if g_protein not in self.gprots_tested[source]:
+                    self.gprots_tested[source].append(g_protein)
+
+                if g_protein not in self.dictotemplate[protein]['sets'][source]:
+                    self.dictotemplate[protein]['sets'][source][g_protein] = {'percent_of_primary_subtype':c.percent_of_primary_subtype,
+                                                                          'logemaxec50':c.logemaxec50, 'kon_mean':c.kon_mean, 'deltaGDP_conc':c.deltaGDP_conc}
+                    ### Add primary subtype
+                    if c.percent_of_primary_subtype==100 and self.dictotemplate[protein]['sets'][source]['prim_subtype']=='-':
+                        self.dictotemplate[protein]['sets'][source]['prim_subtype'] = g_protein
+                    if g_protein not in self.dictotemplate[protein]['sets'][source]['supp_subtype']:
+                        if source.startswith('Martemyanov'):
+                            if c.kon_mean>0:
+                                self.dictotemplate[protein]['sets'][source]['supp_subtype'].append(g_protein)
+                        elif source.startswith('Lambert'):
+                            if c.deltaGDP_conc and c.deltaGDP_conc>0:
+                                self.dictotemplate[protein]['sets'][source]['supp_subtype'].append(g_protein)
+                        else:
+                            if c.logemaxec50>0:
+                                self.dictotemplate[protein]['sets'][source]['supp_subtype'].append(g_protein)
+
+        ### GproteinDb rows
+        slug_dict = {'gs':'Gs','gio':'Gi/o','gq11':'Gq/11','g1213':'G12/13'}
+        for prot, vals in self.dictotemplate.items():
+            gproteindb, gproteindb_fam, gproteindb_sub = {}, {}, {}
+            for dataset, gprots in vals['sets'].items():
+                for g_fam in gprot_fams:
+                    if g_fam in gprots:
+                        if g_fam not in gproteindb_fam and gprots[g_fam]['percent_of_primary_family']!=None:
+                            gproteindb_fam[g_fam] = [gprots[g_fam]['percent_of_primary_family']]
+                        elif gprots[g_fam]['percent_of_primary_family']!=None:
+                            gproteindb_fam[g_fam].append(gprots[g_fam]['percent_of_primary_family'])
+                for g_sub in gprot_subtypes:
+                    if g_sub in gprots:
+                        if g_sub not in gproteindb_sub and gprots[g_sub]['percent_of_primary_subtype']!=None:
+                            gproteindb_sub[g_sub] = [gprots[g_sub]['percent_of_primary_subtype']]
+                        elif gprots[g_sub]['percent_of_primary_subtype']!=None:
+                            gproteindb_sub[g_sub].append(gprots[g_sub]['percent_of_primary_subtype'])
+
+            if len(gproteindb_fam)==0:
+                if 'GtoPdb' in vals['sets']:
+                    gproteindb = deepcopy(vals['sets']['GtoPdb'])
+                    try:
+                        if prot.entry_name=='acthr_human':
+                            print(vals['sets']['GtoPdb'])
+                    except:
+                        pass
+                else:
+                    continue
+            else:
+                ### Calculate quantitative mean
+                for g_fam, percentages in gproteindb_fam.items():
+                    gproteindb_fam[g_fam] = {'percent_of_primary_family':round(sum(percentages)/len(percentages)), 'deltaGDP_conc_family':None, 'kon_mean_family':None, 'logemaxec50_family':None}
+                for g_sub, percentages2 in gproteindb_sub.items():
+                    gproteindb_sub[g_sub] = {'percent_of_primary_subtype':round(sum(percentages2)/len(percentages2)), 'deltaGDP_conc':None, 'kon_mean':None, 'logemaxec50':None}
+                ### Order families and subtypes by mean percent of primary between G prot fams/subtypes
+                ordered_g_fam = dict(sorted(gproteindb_fam.items(), key=lambda x: -x[1]['percent_of_primary_family']))
+                ordered_g_sub = dict(sorted(gproteindb_sub.items(), key=lambda x: -x[1]['percent_of_primary_subtype']))
+                ### Determine primary family/subtype if percentage > 0
+                if ordered_g_fam[list(ordered_g_fam.keys())[0]]['percent_of_primary_family']>0:
+                    gproteindb['prim_fam'] = slug_dict[list(ordered_g_fam.keys())[0]]
+                else:
+                    gproteindb['prim_fam'] = None
+                if ordered_g_sub[list(ordered_g_sub.keys())[0]]['percent_of_primary_subtype']>0:
+                    gproteindb['prim_subtype'] = list(ordered_g_sub.keys())[0]
+                else:
+                    gproteindb['prim_subtype'] = '-'
+                ### Add supports
+                gproteindb['supp_fam'] = [i for i in list(gproteindb_fam.keys()) if gproteindb_fam[i]['percent_of_primary_family']>0]
+                gproteindb['supp_subtype'] = [i for i in list(gproteindb_sub.keys()) if gproteindb_sub[i]['percent_of_primary_subtype']>0]
+                ### Get ranks
+                for i, key in enumerate(list(ordered_g_fam.keys())):
+                    if ordered_g_fam[key]['percent_of_primary_family']==0:
+                        gproteindb_fam[key]['family_rank'] = 0
                     else:
-                        if c.logemaxec50>0:
-                            self.dictotemplate[protein]['sets'][source]['supp_subtype'].append(g_protein)
+                        gproteindb_fam[key]['family_rank'] = i+1
+                gproteindb.update(gproteindb_fam)
+                gproteindb.update(gproteindb_sub)
+
+            gproteindb['biosensor_name'] = 'merged data'
+            gproteindb['lab'] = 'GproteinDb'
+            gproteindb['doi'] = []
+            gproteindb['ligand_id'], gproteindb['ligand_name'], gproteindb['ligand_physiological'] = None, None, None
+
+            ### Add to master dictionary
+            self.dictotemplate[prot]['sets']['GproteinDb'] = gproteindb
 
         return self.dictotemplate, self.coupling_header_names
 
@@ -329,9 +420,9 @@ class CouplingBrowser(TemplateView):
                     protein_data[prot.id][gprotein_clean] = "-"
 
         #VARIABLE
-        self.couplings_all = ProteinCouplings.objects.filter(g_protein_subunit__family__slug__startswith=subunit_filter) \
+        self.couplings_all = ProteinCouplings.objects.filter(g_protein__slug__startswith=subunit_filter) \
             .order_by("g_protein_subunit__family__slug", "source", "-variant") \
-            .prefetch_related('g_protein_subunit__family', 'g_protein', 'ligand', 'protein', 'biosensor', Prefetch('references', queryset=Publication.objects.filter(web_link__web_resource__name='DOI').prefetch_related('web_link')))
+            .prefetch_related('g_protein_subunit__family', 'g_protein', 'ligand', 'protein', 'biosensor', Prefetch('references', queryset=Publication.objects.filter(web_link__web_resource__name__in=['DOI','PubMed']).prefetch_related('web_link','web_link__web_resource','journal')))
 
         #VARIABLE
         coupling_headers = ProteinCouplings.objects.exclude(source__in=["GuideToPharma"]) \

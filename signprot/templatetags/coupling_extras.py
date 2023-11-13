@@ -48,3 +48,11 @@ def replace(objs, arg):
         replace_from = arg[0]
         replace_to = arg[1]
         return objs.replace(replace_from, replace_to)
+
+@register.filter
+def pub_out(objs):
+    # if objs.authors:
+    main_auth = objs.authors.split(',')[0]
+    return '{} et al. <i>{}</i> {}'.format(main_auth, objs.journal.name, objs.year)
+    # else:
+    #     return 'weird {}'.format(objs)

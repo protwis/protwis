@@ -119,18 +119,10 @@ class Command(BaseCommand):
                                                                   web_link__web_resource__slug='pubmed')
                                 except Publication.DoesNotExist as e:
                                     pub = Publication()
-                                    try:
-                                        pub.web_link = WebLink.objects.get(index=pmid,
-                                                                           web_resource__slug='pubmed')
-                                    except WebLink.DoesNotExist:
-                                        wl = WebLink.objects.create(index=pmid,
-                                                                    web_resource=WebResource.objects.get(slug='pubmed'))
-                                        pub.web_link = wl
-                                pub.update_from_pubmed_data(index=pmid)
-                                pub.save()
-                                pub_years[pub.year] += 1
-                                pub_years_protein[pub.year].add(entry_name)
+                                    pub.get_or_create_from_pmid(pmid)
+                                    pub.save()
                                 gpair.references.add(pub)
+                                gpair.save()
 
                     except Exception as e:
                         print("error in primary assignment", p, gp, e)
@@ -157,18 +149,10 @@ class Command(BaseCommand):
                                                                   web_link__web_resource__slug='pubmed')
                                 except Publication.DoesNotExist as e:
                                     pub = Publication()
-                                    try:
-                                        pub.web_link = WebLink.objects.get(index=pmid,
-                                                                           web_resource__slug='pubmed')
-                                    except WebLink.DoesNotExist:
-                                        wl = WebLink.objects.create(index=pmid,
-                                                                    web_resource=WebResource.objects.get(slug='pubmed'))
-                                        pub.web_link = wl
-                                pub.update_from_pubmed_data(index=pmid)
-                                pub.save()
-                                pub_years[pub.year] += 1
-                                pub_years_protein[pub.year].add(entry_name)
+                                    pub.get_or_create_from_pmid(pmid)
+                                    pub.save()
                                 gpair.references.add(pub)
+                                gpair.save()
                     except Exception as e:
                         print("error in secondary assignment", p, gp, e)
 
@@ -410,7 +394,7 @@ class Command(BaseCommand):
                     if 'Ligand ID' in row and 'ligand_id' not in data[source][receptor]:
                         data[source][receptor]['ligand_id'] = row['Ligand ID']
                     if 'Phys/ Surr' in row and 'ligand_physiological' not in data[source][receptor]:
-                        if row['Phys/ Surr']=='Phys':
+                        if row['Phys/ Surr'] in ['Phys','Physiological']:
                             data[source][receptor]['ligand_physiological'] = True
                         else:
                             data[source][receptor]['ligand_physiological'] = False
