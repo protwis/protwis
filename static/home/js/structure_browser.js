@@ -502,7 +502,7 @@ function structurebrowser() {
     });
 
     $("#superpose_btn").click(function() {
-        superposition(oTable2, [0,7,1,2,3,4,5,11,29], "structure_browser", true);
+        superposition(oTable2, [0,7,1,2,3,4,5,11,29], "structure_browser", "gpcr", true);
     });
 
     $('#superpose_template_btn').click(function () {
