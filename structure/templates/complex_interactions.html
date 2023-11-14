@@ -247,22 +247,22 @@
               <table class="display" id="residues" style="margin-left:0px;">
                   <thead>
                       <tr>
-                          <th align="center">Interaction<br>type</th>
+                          <th style='border-right: 1px solid;' align="center">Interaction<br>type</th>
                           <th align="center">GPCR<br>Segment</th>
-                          <th align="center">AA</th>
-                          <th align="center">Number</th>
-                          <th align="center">Generic<br>number</th>
+                          <th align="center"> <br>AA</th>
+                          <th align="center"> <br>Number</th>
+                          <th style='border-right: 1px solid;' align="center">Generic<br>number</th>
                           <th align="center">G&alpha;<br>segment</th>
-                          <th align="center">AA</th>
-                          <th align="center">Number</th>
+                          <th align="center"> <br>AA</th>
+                          <th align="center"> <br>Number</th>
                           <th align="center">Generic<br>number</th>
                       </tr>
                       <tr>
+                          <th style='border-right: 1px solid;'></th>
                           <th></th>
                           <th></th>
                           <th></th>
-                          <th></th>
-                          <th></th>
+                          <th style='border-right: 1px solid;'></th>
                           <th></th>
                           <th></th>
                           <th></th>
@@ -272,11 +272,11 @@
                   <tbody>
                       {% for residue in residues_browser %}
                       <tr>
-                          <td>{{residue.type|capfirst}}</td>
+                          <td style='border-right: 1px solid;'>{{residue.type|capfirst}}</td>
                           <td>{{residue.gpcr_segment}}</td>
                           <td>{{residue.gpcr_aa}}</td>
                           <td>{{residue.gpcr_pos}}</td>
-                          <td>{{residue.gpcr_grn}}</td>
+                          <td style='border-right: 1px solid;'>{{residue.gpcr_grn}}</td>
                           <td>{{residue.gprot_segment}}</td>
                           <td>{{residue.gprot_aa}}</td>
                           <td>{{residue.gprot_pos}}</td>
