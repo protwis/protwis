@@ -13,7 +13,7 @@ from protein.models import ProteinSegment
 from structure.models import Structure, StructureModel, StructureComplexModel, StructureExtraProteins, StructureVectors, StructureModelRMSD, StructureModelpLDDT, StructureAFScores
 from structure.functions import CASelector, SelectionParser, GenericNumbersSelector, SubstructureSelector, ModelRotamer
 from structure.assign_generic_numbers_gpcr import GenericNumbering, GenericNumberingFromDB
-from structure.structural_superposition import ProteinSuperpose,FragmentSuperpose
+from structure.structural_superposition import ProteinSuperpose, FragmentSuperpose, ConvertSuperpose
 from structure.forms import *
 from signprot.models import SignprotComplex, SignprotStructure, SignprotStructureExtraProteins
 from interaction.models import ResidueFragmentInteraction,StructureLigandInteraction
@@ -48,7 +48,6 @@ from copy import deepcopy
 from io import StringIO, BytesIO
 from collections import OrderedDict, defaultdict
 from Bio.PDB import PDBIO, PDBParser, Select
-
 from email.mime.text import MIMEText
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
@@ -2398,10 +2397,12 @@ class SuperpositionWorkflowIndex(TemplateView):
         context['form_template'] = str(self.form_template)
         context['form_superpose'] = str(self.form_superpose)
         context['source'] = self.website
-        # if self.website == 'gpcr':
-        context['url'] = '/structure/superposition_workflow_selection'
-        # elif self.website == 'gprot':
-        #     context['url'] = '/structure/segmentselectiongprot'
+        if self.website == 'gpcr':
+            context['url'] = '/structure/superposition_workflow_selection'
+        elif self.website == 'gprot':
+            # context['url'] = '/structure/superposition_workflow_selection_gprot'
+            context['url'] = '/structure/segmentselectiongprot'
+
         attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
         for a in attributes:
             if not(a[0].startswith('__') and a[0].endswith('__')):
@@ -2418,7 +2419,7 @@ class SuperpositionWorkflowSelection(AbsSegmentSelection):
     docs = 'structures.html#structure-superposition'
     #Mid section
     #mid_section = 'segment_selection.html'
-
+    website = 'gpcr'
     #Right panel
     segment_list = True
     buttons = {
@@ -2457,6 +2458,7 @@ class SuperpositionWorkflowSelection(AbsSegmentSelection):
         for a in attributes:
             if not(a[0].startswith('__') and a[0].endswith('__')):
                 context[a[0]] = a[1]
+
         return render(request, self.template_name, context)
 
     def get_context_data(self, **kwargs):
@@ -2481,7 +2483,6 @@ class SuperpositionWorkflowSelection(AbsSegmentSelection):
         for selection_box, include in self.selection_boxes.items():
             if include:
                 context['selection'][selection_box] = selection.dict(selection_box)['selection'][selection_box]
-        print(context)
         # get attributes of this class and add them to the context
         attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
         for a in attributes:
@@ -2621,11 +2622,13 @@ class SuperpositionWorkflowResults(TemplateView):
             else:
                 alt_files = [StringIO(x.item.get_cleaned_pdb()) for x in selection.targets if x.type in ['structure', 'signprot', 'structure_model', 'structure_model_Inactive', 'structure_model_Intermediate', 'structure_model_Active']]
 
-        # if self.website == 'gprot':
-        #     superposition = ConvertedSuperpose(deepcopy(ref_file), alt_files, selection)
-        # else:
-        superposition = ProteinSuperpose(deepcopy(ref_file), alt_files, selection)
+        if self.website == 'gprot':
+            superposition = ConvertSuperpose(deepcopy(ref_file), alt_files, selection)
+        else:
+            superposition = ProteinSuperpose(deepcopy(ref_file), alt_files, selection)
+
         out_structs = superposition.run()
+
         if 'alt_files' in self.request.session.keys():
             alt_file_names = [x.name for x in self.request.session['alt_files']]
         else:

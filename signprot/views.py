@@ -1385,6 +1385,7 @@ def InteractionMatrix(request, database='gprotein'):
     # )
 
     if database == "gprotein":
+        adjust = True
         context = {
             'page': database,
             # 'interactions': json.dumps(dataset),
@@ -1392,8 +1393,10 @@ def InteractionMatrix(request, database='gprotein'):
             # 'non_interactions': json.dumps(list(remaining_residues)),
             'gprot': json.dumps(list(gprotein_order)),
             'receptor': json.dumps(receptor_order),
+            'adjust': json.dumps(adjust),
         }
     elif database == "arrestin":
+        adjust = True
         context = {
             'page': database,
             # 'interactions': json.dumps(dataset),
@@ -1401,6 +1404,7 @@ def InteractionMatrix(request, database='gprotein'):
             # 'non_interactions': json.dumps(list(remaining_residues)),
             'gprot': json.dumps(list(arrestin_order)),
             'receptor': json.dumps(receptor_order),
+            'adjust': json.dumps(adjust),
         }
 
     request.session['signature'] = None

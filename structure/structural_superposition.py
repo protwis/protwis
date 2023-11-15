@@ -6,6 +6,7 @@ import numpy as np
 import Bio.PDB.Polypeptide as polypeptide
 from Bio.PDB import *
 from Bio.Seq import Seq
+from copy import deepcopy
 from structure.functions import *
 from structure.sequence_parser import *
 from structure.assign_generic_numbers_gpcr import GenericNumbering
@@ -22,30 +23,72 @@ class ConvertSuperpose(object):
 
         self.selection = SelectionParser(simple_selection)
         print('Generic numbers beginning of ProteinSuperpose')
-        self.ref_struct = PDBParser(PERMISSIVE=True).get_structure('ref', ref_file)[0]
+        self.ref_struct = PDBParser(PERMISSIVE=True).get_structure('ref', deepcopy(ref_file))[0]
         assert self.ref_struct, self.logger.error("Can't parse the ref file %s".format(ref_file))
         if self.selection.generic_numbers != [] or self.selection.helices != []:
-            print('Assessing generic numbers')
-            self.ref_struct = SequenceParser(self.ref_struct, db='g_protein_chimeras')
+            # if not check_gn(self.ref_struct):
+            blastdb=os.sep.join([settings.STATICFILES_DIRS[0], 'blast', 'g_protein_chimeras'])
+            gn_assigner = GenericNumbering(pdb_file=deepcopy(ref_file), structure=self.ref_struct, sequence_parser=True, blastdb=blastdb)
+            self.ref_struct = gn_assigner.assign_cgn_with_sequence_parser('A')
+            self.ref_selector = gn_assigner.filtering_cgn(self.ref_struct, self.selection)
 
         self.alt_structs = []
-        print('Parsing the targets')
+        self.alt_selector = []
+        self.og_alt_structs = []
         for alt_id, alt_file in enumerate(alt_files):
             try:
-                tmp_struct = PDBParser(PERMISSIVE=True).get_structure(alt_id, alt_file)[0]
+                tmp_struct = PDBParser(PERMISSIVE=True).get_structure(alt_id, deepcopy(alt_file))[0]
                 if self.selection.generic_numbers != [] or self.selection.helices != []:
-                    if not check_gn(tmp_struct):
-                        print('Assessing generic numbers for target structure')
-                        gn_assigner = GenericNumbering(structure=tmp_struct)
-                        self.alt_structs.append(gn_assigner.assign_generic_numbers())
-                        self.alt_structs[-1].id = alt_id
-                    else:
-                        self.alt_structs.append(tmp_struct)
+                    gn_assigner = GenericNumbering(pdb_file=deepcopy(alt_file), structure=tmp_struct, sequence_parser=True, blastdb=blastdb)
+                    tmp_alt_cgn = gn_assigner.assign_cgn_with_sequence_parser('A')
+                    self.og_alt_structs.append(tmp_struct)
+                    self.og_alt_structs[-1].id = alt_id
+                    self.alt_structs.append(tmp_alt_cgn)
+                    self.alt_structs[-1].id = alt_id
+                    self.alt_selector.append(gn_assigner.filtering_cgn(tmp_alt_cgn, self.selection))
+                    self.alt_selector[-1].id = alt_id
+
             except Exception as e:
                 print("Can't parse the file {!s}\n{!s}".format(alt_id, e))
                 logger.warning("Can't parse the file {!s}\n{!s}".format(alt_id, e))
         print('Selection: {}. Ref Struct: {}. Alt Structs: {}'.format(self.selection, self.ref_struct, self.alt_structs))
-        self.selector = CASelector(self.selection, self.ref_struct, self.alt_structs)
+
+    def get_consensus_atom_sets(self, alt):
+
+        tmp_ref, tmp_alt = [], []
+        ref_atoms, alt_atoms = {}, {}
+
+        for segment in self.ref_selector.keys():
+            try:
+                for atom in self.ref_selector[segment].keys():
+                    if atom != 'x':
+                        ref_atoms[atom] = self.ref_selector[segment][atom]
+            except:
+                continue
+
+        for segment in self.alt_selector[alt].keys():
+            try:
+                for atom in self.alt_selector[alt][segment].keys():
+                    if atom != 'x':
+                        alt_atoms[atom] = self.alt_selector[alt][segment][atom]
+            except:
+                continue
+
+        for ref_cgn in ref_atoms.keys():
+            if ref_cgn in alt_atoms.keys():
+                for ref_atom in ref_atoms[ref_cgn]:
+                    for alt_atom in alt_atoms[ref_cgn]:
+                        try:
+                            if (ref_atom.name in ['CA', 'C', 'N']) and (ref_atom.name == alt_atom.name):
+                                tmp_ref.append(ref_atom)
+                                tmp_alt.append(alt_atom)
+                        except:
+                            continue
+
+        if len(tmp_ref) != len(tmp_alt):
+            return ([], [])
+
+        return (tmp_ref, tmp_alt)
 
     def run (self):
 
@@ -56,16 +99,13 @@ class ConvertSuperpose(object):
         super_imposer = Superimposer()
         for alt_struct in self.alt_structs:
             try:
-                ref, alt = self.selector.get_consensus_atom_sets(alt_struct.id)
+                ref, alt = self.get_consensus_atom_sets(alt_struct.id)
                 super_imposer.set_atoms(ref, alt)
-                super_imposer.apply(alt_struct.get_atoms())
-                print("RMS(reference, model {!s}) = {:f}".format(alt_struct.id, super_imposer.rms))
+                super_imposer.apply(self.og_alt_structs[alt_struct.id])
                 logger.info("RMS(reference, model {!s}) = {:f}".format(alt_struct.id, super_imposer.rms))
             except Exception as msg:
-                print("Failed to superpose structures {} and {}\n{}".format(self.ref_struct.id, alt_struct.id, msg))
                 logger.error("Failed to superpose structures {} and {}\n{}".format(self.ref_struct.id, alt_struct.id, msg))
-
-        return self.alt_structs
+        return self.og_alt_structs
 
 #==============================================================================
 class ProteinSuperpose(object):

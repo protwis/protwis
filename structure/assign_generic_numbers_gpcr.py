@@ -40,7 +40,7 @@ class GenericNumbering(object):
         # list of uniprot ids returned from blast
         self.prot_id_list = []
         #setup for local blast search
-        self.blast = BlastSearch(blast_path=blast_path, blastdb=blastdb,top_results=top_results)
+        self.blast = BlastSearch(blast_path=blast_path, blastdb=blastdb, top_results=top_results)
 
         # calling sequence parser
         if sequence_parser:
@@ -68,7 +68,6 @@ class GenericNumbering(object):
                 self.pdb_structure = structure
 
             self.parse_structure(self.pdb_structure)
-
 
     def parse_structure(self, pdb_struct):
         """
@@ -216,6 +215,8 @@ class GenericNumbering(object):
         alignments = {}
         #blast search goes first, looping through all the chains
         for chain in self.pdb_seq.keys():
+            print('Performing check on chain {}'.format(chain))
+            print('Comparing chain {} to chain {}'.format(chain, self.pdb_seq[chain]))
             alignments[chain] = self.blast.run(self.pdb_seq[chain])
 
         #map the results onto pdb sequence for every sequence pair from blast
@@ -265,13 +266,28 @@ class GenericNumbering(object):
                             continue
                 except:
                     pass
-            this_cat, this_seg, this_num = key_list[j].split('.')
+            segment = '.'.join([category, segment])
             try:
                 pdb_array[segment][vals.gpcrdb] = self.pdb_structure[target_chain][key-i].get_list()
             except:
                 pdb_array[segment][vals.gpcrdb] = 'x'
             j+=1
         return pdb_array
+
+    def filtering_cgn(self, pdb_array, selection):
+        selected = selection.generic_numbers + selection.helices + selection.substructures
+        filtered_array = OrderedDict()
+        for segment, value in pdb_array.items():
+            if segment in selected:
+                filtered_array[segment] = value
+                continue
+            else:
+                if pdb_array[segment]:
+                    for cgn, val in pdb_array[segment].items():
+                        if cgn in selected:
+                            filtered_array[cgn] = val
+        return filtered_array
+
 
 
 class GenericNumberingFromDB(GenericNumbering):
