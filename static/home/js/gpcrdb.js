@@ -100,56 +100,148 @@ function createYADCFfilters(start_column, num_cols, filter_type, select_type = n
 }
 
  
+
+
 /**
- * GlobalTableToExcel: Exports an HTML table to an Excel file.
- * 
- * @param {string} table - The ID of the HTML table element to be exported.
- * @param {string} [name='SheetJS'] - The name of the Excel sheet. Defaults to 'SheetJS'.
- * @param {string} [filename='out.xlsx'] - The name of the exported Excel file. Defaults to 'out.xlsx'.
+ * Exports a specified table to an Excel file.
+ * @param {string} tableId - The ID of the table element to be exported.
+ * @param {string} sheetName - The name to be given to the Excel sheet.
+ * @param {string} fileName - The name of the file to be created.
  */
+function GlobalTableToExcel(tableId, sheetName, fileName) {
+  // Get the table element by ID.
+  const tableElement = document.getElementById(tableId);
 
-function GlobalTableToExcel(table, name, filename) {
-  var wb = XLSX.utils.book_new();
-  var ws_name = name || 'SheetJS';
-  
-  // Retrieve the table element using its ID
-  var tableElement = document.getElementById(table);
-  
-  // Create a deep clone of the table to manipulate without affecting the original
-  var clonedTable = tableElement.cloneNode(true);
+  // If the table doesn't exist, log an error and exit the function.
+  if (!tableElement) {
+    console.error(`Table with ID "${tableId}" not found.`);
+    return;
+  }
 
-  // Remove elements related to the 'yadcf' filter and any buttons
-  $(clonedTable).find('.yadcf-filter-wrapper').closest('tr').remove();
-  $(clonedTable).find('button').remove();
-  
-  // Iterate through each cell to find images within hyperlinks
-  // If found, replace the cell's content with the hyperlink
-  $(clonedTable).find('td').each(function() {
-    var img = $(this).find('img');
-    if (img.length > 0 && img[0].parentNode.tagName === 'A') {
-      $(this).text(img[0].parentNode.href);
+  // Create a new Excel workbook.
+  const wb = XLSX.utils.book_new();
+
+  // Clean the table and prepare it for export.
+  const clonedTable = cleanTable(tableElement.cloneNode(true));
+  const exportTable = prepareExportTable(clonedTable);
+
+  // Convert the prepared table to an Excel worksheet.
+  const ws_data = XLSX.utils.table_to_sheet(exportTable);
+
+  // Add the worksheet to the workbook and write it to a file.
+  XLSX.utils.book_append_sheet(wb, ws_data, sheetName);
+  XLSX.writeFile(wb, fileName, { bookSST: true });
+}
+
+/**
+ * Cleans the table by removing unwanted elements, cleaning headers, and processing cells.
+ * @param {HTMLElement} table - The table to be cleaned.
+ * @return {HTMLElement} The cleaned table.
+ */
+function cleanTable(table) {
+  // Remove unwanted elements, clean headers, and process cells.
+  removeUnwantedElements(table);
+  cleanTableHeaders(table);
+  processTableCells(table);
+
+  // Return the cleaned table.
+  return table;
+}
+
+/**
+ * Removes specific unwanted elements from the table.
+ * @param {HTMLElement} table - The table to be cleaned.
+ */
+function removeUnwantedElements(table) {
+  // Remove elements with class '.yadcf-filter-wrapper' and all buttons.
+  table.querySelectorAll('.yadcf-filter-wrapper').forEach(element => element.closest('tr').remove());
+  table.querySelectorAll('button').forEach(button => button.remove());
+}
+
+/**
+ * Cleans the headers of the table.
+ * @param {HTMLElement} table - The table with headers to be cleaned.
+ */
+function cleanTableHeaders(table) {
+  // Process each header, remove 'span' elements and replace 'br' with space.
+  table.querySelectorAll('th').forEach(th => {
+    const clonedTh = th.cloneNode(true);
+    clonedTh.querySelectorAll('span').forEach(span => span.remove());
+    clonedTh.querySelectorAll('br').forEach(br => br.replaceWith(' '));
+    th.textContent = clonedTh.textContent;
+  });
+}
+
+/**
+ * Processes each cell in the table.
+ * @param {HTMLElement} table - The table with cells to be processed.
+ */
+function processTableCells(table) {
+  // Iterate over each cell to remove comment nodes and process links and line breaks.
+  table.querySelectorAll('td').forEach(td => {
+    Array.from(td.childNodes).forEach(node => {
+      if (node.nodeType === Node.COMMENT_NODE) {
+        node.remove();
+      }
+    });
+    handleImageLinks(td);
+    replaceLineBreaks(td);
+    replaceRefinedLinks(td);
+  });
+}
+
+/**
+ * Converts image links in a table cell to text.
+ * @param {HTMLElement} td - The table cell to process.
+ */
+function handleImageLinks(td) {
+  // If an image within a link is found, replace its content with the link's URL.
+  const img = td.querySelector('img');
+  if (img && img.parentNode.tagName === 'A') {
+    td.textContent = img.parentNode.href;
+  }
+}
+
+/**
+ * Replaces line breaks in a table cell and wraps content in a paragraph tag.
+ * @param {HTMLElement} td - The table cell to process.
+ */
+function replaceLineBreaks(td) {
+  // Get specific HTML content, replace line breaks, and wrap in a paragraph tag.
+  const htmlContent = td.querySelector('a i.glyphicon.glyphicon-file.simple-popover.gpcrdb-link')?.getAttribute('data-content');
+  if (htmlContent) {
+    let newTextContent = htmlContent.replace(/<br>/g, "_X_").replace(/<[^>]*>/g, '').replace(/_X_/g, '<br>' );
+    td.innerHTML = `<p>${newTextContent}</p>`;
+  }
+}
+
+/**
+ * Converts refined links in a table cell to plain text.
+ * @param {HTMLElement} td - The table cell to process.
+ */
+function replaceRefinedLinks(td) {
+  // Replace the text of certain links with their URLs.
+  td.querySelectorAll('a').forEach(a => {
+    if (a.textContent.endsWith('_refined')) {
+      a.textContent = a.href;
     }
   });
-  
-  // Check for rows that are selected (with class 'alt_selected')
-  var selectedRows = $(clonedTable).find('tr.alt_selected');
-  var exportTable;
-  if(selectedRows.length > 0) {
-      // If there are selected rows, create a new table for exporting
-      // This new table includes the header from the original and the selected rows
-      exportTable = document.createElement('table');
-      $(exportTable).append($(clonedTable).find('thead').clone());
-      $(exportTable).append(selectedRows);
+}
+
+/**
+ * Prepares the table for export, selecting specific rows or the entire table.
+ * @param {HTMLElement} clonedTable - The cloned table to be prepared for export.
+ * @return {HTMLElement} The table prepared for export.
+ */
+function prepareExportTable(clonedTable) {
+  // Create a new table with selected rows or return the whole table.
+  const selectedRows = clonedTable.querySelectorAll('tr.alt_selected');
+  if (selectedRows.length > 0) {
+    const exportTable = document.createElement('table');
+    exportTable.appendChild(clonedTable.querySelector('thead').cloneNode(true));
+    selectedRows.forEach(row => exportTable.appendChild(row.cloneNode(true)));
+    return exportTable;
   } else {
-      // If no rows are selected, use the entire cloned table for exporting
-      exportTable = clonedTable;
+    return clonedTable;
   }
-  // Convert the table (whether it's the full table or just selected rows) to a worksheet
-  var ws_data = XLSX.utils.table_to_sheet(exportTable);
-  
-  // Add the worksheet to the workbook with the specified sheet name
-  XLSX.utils.book_append_sheet(wb, ws_data, ws_name);
-  
-  // Write the workbook and trigger the download of the Excel file
-  XLSX.writeFile(wb, filename || 'out.xlsx');
 }
