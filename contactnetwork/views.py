@@ -236,16 +236,21 @@ def PdbTableData(request):
                 "protein_conformation__protein__parent__parent__parent",
                 "protein_conformation__protein__parent__family__parent",
                 "protein_conformation__protein__parent__family__parent__parent__parent",
+                "protein_conformation__protein__parent",
                 "protein_conformation__protein__parent__parent",
                 "protein_conformation__protein__family__parent",
                 "protein_conformation__protein__family__parent__parent__parent",
                 "protein_conformation__protein__species",Prefetch("ligands", queryset=StructureLigandInteraction.objects.filter(
-                annotated=True).prefetch_related('ligand__ligand_type', 'ligand_role')))
+                annotated=True).prefetch_related('ligand', 'ligand__ligand_type', 'ligand_role')))
         data = data.filter(extra_proteins__category__startswith=effector).prefetch_related(
         'extra_proteins__protein_conformation','extra_proteins__wt_protein').order_by(
         'extra_proteins__protein_conformation__protein__parent','state').annotate(
         res_count = Sum(Case(When(extra_proteins__structure__protein_conformation__residue__generic_number=None, then=0), default=1, output_field=IntegerField())))
-        signal_ps = StructureExtraProteins.objects.filter(category__startswith=effector).values('structure__protein_conformation__protein','structure__protein_conformation__protein__parent','display_name').order_by().annotate(coverage = Max('wt_coverage'))
+        signal_ps = StructureExtraProteins.objects.filter(category__startswith=effector).values(
+                            'structure__pdb_code__index','structure__protein_conformation__protein','structure__protein_conformation__protein__parent','display_name',
+                            'wt_coverage','wt_protein__family__parent__parent__name','wt_protein__family__parent__name','category','note'
+                            ).order_by().annotate(coverage = Max('wt_coverage'))
+        ep = {s['structure__pdb_code__index']:s for s in signal_ps}
     else:
         data = Structure.objects.all().exclude(structure_type__slug__startswith='af-').prefetch_related(
                 "pdb_code",
@@ -257,12 +262,20 @@ def PdbTableData(request):
                 "protein_conformation__protein__parent__parent__parent",
                 "protein_conformation__protein__parent__family__parent",
                 "protein_conformation__protein__parent__family__parent__parent__parent",
+                "protein_conformation__protein__parent",
+                "protein_conformation__protein__parent__parent",
+                "protein_conformation__protein__family__parent",
+                "protein_conformation__protein__family__parent__parent__parent",
                 "protein_conformation__protein__species",Prefetch("ligands", queryset=StructureLigandInteraction.objects.filter(
-                annotated=True).exclude(structure__structure_type__slug__startswith='af-').prefetch_related('ligand__ligand_type', 'ligand_role')))
+                annotated=True).exclude(structure__structure_type__slug__startswith='af-').prefetch_related('ligand', 'ligand__ligand_type', 'ligand_role')))
         data = data.prefetch_related('extra_proteins__protein_conformation','extra_proteins__wt_protein').order_by(
         'extra_proteins__protein_conformation__protein__parent','state').annotate(
         res_count = Sum(Case(When(extra_proteins__protein_conformation__residue__generic_number=None, then=0), default=1, output_field=IntegerField())))
-        signal_ps = StructureExtraProteins.objects.all().exclude(category__in=['G beta','G gamma']).values('structure__protein_conformation__protein__parent','display_name').order_by().annotate(coverage = Max('wt_coverage'))
+        signal_ps = StructureExtraProteins.objects.all().exclude(category__in=['G beta','G gamma']).values(
+                            'structure__pdb_code__index','structure__protein_conformation__protein__parent','display_name',
+                            'wt_coverage','wt_protein__family__parent__parent__name','wt_protein__family__parent__name','category','note'
+                            ).order_by().annotate(coverage = Max('wt_coverage'))
+        ep = {s['structure__pdb_code__index']:s for s in signal_ps}
 
     if exclude_non_interacting and effector == 'G alpha':
         complex_structure_ids = SignprotComplex.objects.values_list('structure', flat=True)
@@ -437,40 +450,40 @@ def PdbTableData(request):
         r['signal_protein_note'] = ''
         r['signal_protein_seq_cons'] = ''
         r['signal_protein_seq_cons_color'] = ''
-        # Only show alpha-subunit or arrestin in
-        for ep in s.extra_proteins.filter(category__in=["G alpha", "Arrestin"]):
-#            if ep.category == "Antibody":
-#                continue
+
+        ### StructureExtraProtein data parsing
+        if pdb_id in ep:
             if effector:
                 try:
-                    key = '{}_{}_{}'.format(s.protein_conformation.protein.pk, s.protein_conformation.protein.parent.pk, ep)
+                    key = '{}_{}_{}'.format(s.protein_conformation.protein.pk, s.protein_conformation.protein.parent.pk, ep[pdb_id]['display_name'])
                 except:
-                    key = '{}_{}_{}'.format(s.protein_conformation.protein.pk, s.protein_conformation.protein.parent, ep)
+                    key = '{}_{}_{}'.format(s.protein_conformation.protein.pk, s.protein_conformation.protein.parent, ep[pdb_id]['display_name'])
             else:
-                key = '{}_{}'.format(s.protein_conformation.protein.parent.pk,ep)
+                key = '{}_{}'.format(s.protein_conformation.protein.parent.pk,ep[pdb_id]['display_name'])
 
-            if best_signal_p[key] == ep.wt_coverage:
+            if best_signal_p[key] == ep[pdb_id]['wt_coverage']:
                 # this is the best coverage
                 r['signal_protein_seq_cons_color'] = 'green'
             else:
                 r['signal_protein_seq_cons_color'] = 'red'
-            if ep.category == "Arrestin":
-                 r['signal_protein'] = ep.wt_protein.family.parent.parent.name
+            if ep[pdb_id]['category'] == "Arrestin":
+                 r['signal_protein'] = ep[pdb_id]['wt_protein__family__parent__parent__name']
             else:
-                 r['signal_protein'] = ep.wt_protein.family.parent.name
+                 r['signal_protein'] = ep[pdb_id]['wt_protein__family__parent__name']
 
             # Slight reformatting along the lines of the structure browser
-            r['signal_protein_subtype'] = ep.display_name
-            if ep.category == "G alpha" and r['signal_protein_subtype'][0] == 'G':
+            r['signal_protein_subtype'] = ep[pdb_id]['display_name']
+            if ep[pdb_id]['category'] == "G alpha" and r['signal_protein_subtype'][0] == 'G':
                 r['signal_protein_subtype'] = '&alpha;' + r['signal_protein_subtype'][1:]
 
-            if ep.note:
-                if len(ep.note) > 20:
-                    r['signal_protein_note'] = "<span title='{}'>{}...</span>".format(ep.note, ep.note[:20])
+            note = ep[pdb_id]['note']
+            if note:
+                if len(note) > 20:
+                    r['signal_protein_note'] = "<span title='{}'>{}...</span>".format(note, note[:20])
                 else:
-                    r['signal_protein_note'] = ep.note
+                    r['signal_protein_note'] = note
 
-            r['signal_protein_seq_cons'] = ep.wt_coverage
+            r['signal_protein_seq_cons'] = ep[pdb_id]['wt_coverage']
 
         #if pdb_id in methods:
         #    r['method'] = methods[pdb_id]

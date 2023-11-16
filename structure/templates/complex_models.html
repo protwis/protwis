@@ -222,26 +222,26 @@
                             width: '80px',
                         }
                     },
+                    // {
+                    //     column_number : 10,
+                    //     filter_type: "range_number",
+                    //     filter_default_label: ["Min", "Max"],
+                    //     filter_reset_button_text: false,
+                    //     select_type_options: {
+                    //         width: '30px',
+                    //     }
+                    // },
+                    // {
+                    //     column_number : 11,
+                    //     filter_type: "range_number",
+                    //     filter_default_label: ["Min", "Max"],
+                    //     filter_reset_button_text: false,
+                    //     select_type_options: {
+                    //         width: '30px',
+                    //     }
+                    // },
                     {
                         column_number : 10,
-                        filter_type: "range_number",
-                        filter_default_label: ["Min", "Max"],
-                        filter_reset_button_text: false,
-                        select_type_options: {
-                            width: '30px',
-                        }
-                    },
-                    {
-                        column_number : 11,
-                        filter_type: "range_number",
-                        filter_default_label: ["Min", "Max"],
-                        filter_reset_button_text: false,
-                        select_type_options: {
-                            width: '30px',
-                        }
-                    },
-                    {
-                        column_number : 12,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         filter_default_label: "",
@@ -251,7 +251,7 @@
                         }
                     },
                     {
-                        column_number : 13,
+                        column_number : 11,
                         filter_type: "range_date",
                         date_format: "yyyy-mm-dd",
                         select_type: 'select2',
@@ -365,7 +365,7 @@
                 if (checked_data.length == 1) {
                     var value = CheckSelection('reference');
                     var div = document.createElement("div");
-                    div.innerHTML = checked_data[0][15];
+                    div.innerHTML = checked_data[0][13];
                     var destination;
                     if (value != 0){
                       destination = 'targets';
@@ -394,7 +394,7 @@
             $('#download_btn').click(function () {
                 var checked_data = $(".alt_selected");
                 if (checked_data.length === 0) {
-                    showAlert("No models selected for download", "danger");
+                    showAlert("No models (rows) selected for download.", "danger");
                     return 0;
                 }
                 else if (checked_data.length > 1000) {
@@ -413,13 +413,13 @@
             $('#align_btn1').click(function () {
                 var checked_data = oTable.rows('.alt_selected').data();
                 if (checked_data.length === 0){
-                  showAlert("Please select at least two receptors before continuing.", "danger");
+                  showAlert("No models (rows) selected for receptor alignment.", "danger");
                   return;
                 }
 
                 ClearSelection('targets');
                 for (i = 0; i < checked_data.length; i++) {
-                    AddToSelection('targets', 'protein_entry',  checked_data[i][14] );
+                    AddToSelection('targets', 'protein_entry',  checked_data[i][12] );
 
                 }
                 window.location.href = '/structure/selection_convert_model';
@@ -428,12 +428,12 @@
             $('#align_btn2').click(function () {
                 var checked_data = oTable.rows('.alt_selected').data();
                 if (checked_data.length === 0){
-                  showAlert("Please select at least two G proteins before continuing.", "danger");
+                  showAlert("No models (rows) selected for G protein alignment.", "danger");
                   return;
                 }
                 ClearSelection('targets');
                 for (i = 0; i < checked_data.length; i++) {
-                    AddToSelection('targets', 'structure',  checked_data[i][15] );
+                    AddToSelection('targets', 'structure',  checked_data[i][13] );
 
                 }
                 window.location.href = '/structure/selection_convert_signprot_model';
@@ -602,7 +602,7 @@
                     <th colspan=1 class="over_header">   MODEL   </th>
                     <th colspan=5 class="over_header">RECEPTOR</th>
                     <th colspan=3 class="over_header">G PROTEIN</th>
-                    <th colspan=3 class="over_header" style="max-width:50px;">COUPLING DATA</th>
+                    <th colspan=1 class="over_header" style="max-width:50px;">COUPLING DATA</th>
                     <th colspan=1 class="over_header">DATE</th>
                 </tr>
                 <tr class='over_header cenetered-header'>
@@ -616,8 +616,8 @@
                     <th></th>
                     <th></th>
                     <th class='rightborder'></th>
-                    <th>Bouvier<br>log(Emax/EC50)</th>
-                    <th>Inoue<br>log(Emax/EC50)</th>
+                 <!--    <th>Bouvier<br>log(Emax/EC50)</th>
+                    <th>Inoue<br>log(Emax/EC50)</th> -->
                     <th class='rightborder'>GtoPdb<br>1' / 2' <span class="glyphicon glyphicon-info-sign" data-html="true" data-toggle="popover" data-trigger="hover click" data-placement="bottom" data-content="Primary (1') or secondary (2') principle receptor signalling pathway or mechanism, where established. This classification is used to denote the principal signalling activity in order to regulate established physiological function. <a target='_blank' href='https://doi.org/10.1093/nar/gkab1010'>Harding et al. 2022</a>"></span></th>
                     <th class='rightborder'></th>
                     <th class='hidden'></th>
@@ -634,8 +634,8 @@
                     <th></th>
                     <th></th>
                     <th class='rightborder'></th>
-                    <th></th>
-                    <th></th>
+                  <!--   <th></th>
+                    <th></th> -->
                     <th class='rightborder'></th>
                     <th class='rightborder'></th>
                     <th class='hidden'></th>
@@ -656,7 +656,7 @@
                     <td><a href="/signprot/{{ model.signprot_complex_protein__entry_name }}">{{ model.signprot_complex__protein__family__name|gprot_short }}</a></td>
                     <td>{{ model.signprot_complex__protein__family__parent__name }}</td>
                     <td>{{ model.heterotrimer }}</td>
-                    {% if model.Bouvier == "-" %}
+            <!--         {% if model.Bouvier == "-" %}
                         <td>-</td>
                     {% else %}
                         <td>{{ model.Bouvier|floatformat:1 }}</td>
@@ -665,7 +665,7 @@
                         <td>-</td>
                     {% else %}
                         <td>{{ model.Inoue|floatformat:1 }}</td>
-                    {% endif %}
+                    {% endif %} -->
                     {% if model.GuideToPharma ==  "primary" %}
                         <td>1'</td>
                     {% elif model.GuideToPharma == "secondary" %}

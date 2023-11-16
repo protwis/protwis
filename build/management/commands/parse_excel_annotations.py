@@ -205,9 +205,9 @@ class Command(BaseCommand):
         with open(self.xtal_seg_end_file, 'a') as outfile:
             yaml.dump(pdb_info_all, outfile, indent=4)
 
-    def parse_excel(self,path):
-        workbook = xlrd.open_workbook(path)
-        worksheets = workbook.sheet_names()
+    def parse_excel(self,path,remove_header_linebreak=False):
+        self.workbook = xlrd.open_workbook(path)
+        worksheets = self.workbook.sheet_names()
         d = {}
         for worksheet_name in worksheets:
             if worksheet_name in d:
@@ -215,7 +215,7 @@ class Command(BaseCommand):
                 continue
 
             d[worksheet_name] = OrderedDict()
-            worksheet = workbook.sheet_by_name(worksheet_name)
+            worksheet = self.workbook.sheet_by_name(worksheet_name)
 
             num_rows = worksheet.nrows - 1
             num_cells = worksheet.ncols - 1
@@ -230,9 +230,11 @@ class Command(BaseCommand):
                 if h in headers:
                     # print('already have ',h)
                     h += "_"+str(i)
-                # print(h)
-                headers.append(worksheet.cell_value(0, i))
-
+                if remove_header_linebreak:
+                    h = h.replace('\n', ' ')
+                    headers.append(h)
+                else:
+                    headers.append(worksheet.cell_value(0, i))
             for curr_row in range(1,num_rows+1):
                 row = worksheet.row(curr_row)
                 key = worksheet.cell_value(curr_row, 0)
@@ -254,7 +256,7 @@ class Command(BaseCommand):
                     # cell_type = worksheet.cell_type(curr_row, curr_cell)
                     cell_value = worksheet.cell_value(curr_row, curr_cell)
                     if "GPCRdb_structure_info.xlsx" in path and headers[curr_cell]=='Date':
-                        cell_value = str(datetime.datetime(*xlrd.xldate_as_tuple(cell_value, workbook.datemode)))[:10]
+                        cell_value = str(datetime.datetime(*xlrd.xldate_as_tuple(cell_value, self.workbook.datemode)))[:10]
 
                     # temprow.append(cell_value)
                     if headers[curr_cell] not in d[worksheet_name][key]:

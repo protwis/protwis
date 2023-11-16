@@ -813,6 +813,7 @@ class Command(BaseBuild):
 
             pdb_path = sd['location']
 
+            header = ''
             if not os.path.isfile(pdb_path):
                 print('Generated model file for protein {} is not available, skipping.'.format(sd['protein']))
                 self.logger.info('Generated model file for protein {} is not available, skipping.'.format(sd['protein']))
@@ -820,11 +821,13 @@ class Command(BaseBuild):
             else:
                 try:
                     with open(pdb_path, 'r') as pdb_file:
-                        pdbdata_raw = pdb_file.read()
+                        lines = pdb_file.readlines()
+                        header = lines[0]
+                        pdbdata_raw = ''.join(lines)
                 except FileNotFoundError:
                     print('File {} does not exist. Skipping'.format(pdb_path))
                     continue
-
+            
             ### GPCR GN assign
             try:
                 pdb_struct = StringIO(pdbdata_raw)
@@ -836,7 +839,7 @@ class Command(BaseBuild):
                 ### Use temp file for now
                 io.save('./{}.pdb'.format(sd['pdb']))
                 with open('./{}.pdb'.format(sd['pdb']), 'r') as pdb_file:
-                    pdbdata_raw = pdb_file.read()
+                    pdbdata_raw = header+pdb_file.read()
                 os.remove('./{}.pdb'.format(sd['pdb']))
             except KeyError:
                 print("////////////////////////////WARNING: {} GN assign failed".format(sd['pdb']))

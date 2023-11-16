@@ -1,0 +1,189 @@
+{% extends "home/base.html" %}
+{% load static %}
+
+{% block addon_css %}
+    <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css"/>
+    <link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css"/>
+    <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css"/>
+    <!-- <link rel="stylesheet" href="{% static 'home/css/signprot-multitabtable.css' %}" type="text/css"/> -->
+{% endblock %}
+
+{% block content %}
+<div>
+    <h3>G protein coupling datasets deposited in GproteinDb</h3>
+    <p>In addition to the subtype-level couplings, GproteinDb includes family-level couplings from the Guide to Pharmacology database (1). Biosensors are described in the <a href="/signprot/coupling_biosensors">Biosensors</a> page. Adapted from Pándy-Szekeres et al., <i>Nucl Acids Res</i>, 2024 (manuscript).</p> 
+</div>
+<div style='padding-top: 0px; white-space: nowrap; width:100%; overflow-y:hidden; display:inline-block;'>
+    <table class="compact display" id="data_overview">
+        <thead>
+            <tr>
+                <th colspan=1 style='height:35px; text-align:left;'>
+                    Lab
+                </th>
+                <th colspan=1 style='height:35px; text-align:left;'>
+                    Biosensor
+                </th>
+                <th colspan=1 style='height:35px; text-align:left;'>
+                    Parameter
+                </th>
+                <th colspan=1 style='height:35px; text-align:left;'>
+                    Year
+                </th>
+                <th colspan=1 style='height:35px; text-align:left;'>
+                    Ref
+                </th>
+                <th colspan=1 style='height:35px; text-align:left;'>
+                    #Rec
+                </th>
+                <th colspan=1 style='height:35px; text-align:left;'>
+                    #wt<br>Gprots<br>tested
+                </th>
+                <th colspan=3 style='height:35px; text-align:left;'>
+                    Gs
+                </th>
+                <th colspan=7 style='height:35px; text-align:left;'>
+                    Gi/o
+                </th>
+                <th colspan=4 style='height:35px; text-align:left;'>
+                    Gq/11
+                </th>
+
+                <th colspan=2 style='height:35px; text-align:left;'>
+                    G12/13
+                </th>
+                <th colspan=1 style='height:35px; text-align:left;'>
+                    Year<br>added
+                </th>
+                <th colspan=1 style='height:35px; text-align:left;'>
+                    Note
+                </th>
+
+            </tr>
+            <tr>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th>GsS</th>
+                <th>GsL</th>
+                <th>Golf</th>
+                <th>Gi1</th>
+                <th>Gi2</th>
+                <th>Gi3</th>
+                <th>GoA</th>
+                <th>GoB</th>
+                <th>Gz</th>
+                <th>Ggust</th>
+                <th>Gq</th>
+                <th>G11</th>
+                <th>G14</th>
+                <th>G15</th>
+                <th>G12</th>
+                <th>G13</th>
+                <th></th>
+                <th></th>
+            </tr>
+            <tr>
+                {% for n in "x"|rjust:"25" %}
+                    <th></th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in array %}
+                <tr>
+                    {% for i, val in row.items %}
+                        {% if i == 5 or i == 6 %}
+                            <td class="text-right"><span>{{ val|safe }}</span></td>
+                        {% elif i == 0 or i == 1 or i == 2 or i == 24 %}
+                            <td class="text-left"><span>{{ val|safe }}</span></td>
+                        {% else %}
+                            <td class="text-center"><span>{{ val|safe }}</span></td>
+                        {% endif %}
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+            <!-- <tr>
+                {% for n in "x"|rjust:"18" %}
+                    <td></td>
+                {% endfor %}
+                <td>Bouvier</td>
+                <td></td>
+                <td></td>
+                <td>G&alpha;</td>
+                <td>G&beta;&gamma;</td>
+                <td>Dissociation</td>
+                <td>HEK293T</td>
+                <td>1</td>
+                <td>G protein dissociation</td>
+                <td><span>2006 (9)</span></td>
+                <td></td>
+                <td></td>
+            </tr> -->
+        <tbody>
+    </table>
+</div>
+
+<div style="padding-top:20px;">
+    <h3>References</h3>
+    <p>1. Harding, S.D., Armstrong, J.F., Faccenda, E., Southan, C., Alexander, S.P.H., Davenport, A.P., Pawson, A.J., Spedding, M., Davies, J.A. and Nc, I. (2022) The IUPHAR/BPS guide to PHARMACOLOGY in 2022: curating pharmacology for COVID-19, malaria and antibacterials. Nucleic Acids Res., 50, D1282-D1294.</p>
+    <p>2. Avet, C., Mancini, A., Breton, B., Le Gouill, C., Hauser, A.S., Normand, C., Kobayashi, H., Gross, F., Hogue, M., Lukasheva, V. et al. (2022) Effector membrane translocation biosensors reveal G protein and betaarrestin coupling profiles of 100 therapeutically relevant GPCRs. Elife, 11, 2020.2004.2020.052027.</p>
+    <p>3. Inoue, A., Raimondi, F., Kadji, F.M.N., Singh, G., Kishi, T., Uwamizu, A., Ono, Y., Shinjo, Y., Ishida, S., Arang, N. et al. (2019) Illuminating G-Protein-Coupling Selectivity of GPCRs. Cell, 177, 1933-1947 e1925.</p>
+    <p>4. Okashah, N., Wan, Q., Ghosh, S., Sandhu, M., Inoue, A., Vaidehi, N. and Lambert, N.A. (2019) Variable G protein determinants of GPCR coupling selectivity. Proceedings of the National Academy of Sciences, 116, 12054-12059.</p>
+    <p>5. Okashah, N., Wright, S.C., Kawakami, K., Mathiasen, S., Zhou, J., Lu, S., Javitch, J.A., Inoue, A., Bouvier, M. and Lambert, N.A. (2020) Agonist-induced formation of unproductive receptor-G12 complexes. Proceedings of the National Academy of Sciences of the United States of America, 117, 21723-21730.</p>
+    <p>6. Lu, S., Jang, W., Inoue, A. and Lambert, N.A. (2021) Constitutive G protein coupling profiles of understudied orphan GPCRs. PLoS One, 16, e0247743.</p>
+    <p>7. Masuho, I., Kise, R., Gainza, P., Von Moo, E., Li, X., Tany, R., Wakasugi-Masuho, H., Correia, B.E. and Martemyanov, K.A. (2023) Rules and mechanisms governing G protein coupling selectivity of GPCRs. Cell reports, 42, 113173.</p>
+    <p>8. Olsen, R.H.J., DiBerto, J.F., English, J.G., Glaudin, A.M., Krumm, B.E., Slocum, S.T., Che, T., Gavin, A.C., McCorvy, J.D., Roth, B.L. and Strachan, R.T. (2020) TRUPATH, an open-source biosensor platform for interrogating the GPCR transducerome. Nat. Chem. Biol., 16, 841-849.</p>
+</div>
+
+{% endblock %}
+
+{% block addon_js %}
+    <script src="{% static 'home/js/jquery.dataTables.min.js' %}"></script>
+    <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"></script>
+    <script src="{% static 'home/js/select2.js' %}"></script>
+    <script src="{% static 'home/js/gpcrdb.js' %}"></script>
+
+    <script type="text/javascript" charset="utf-8">
+        $(document).ready(function () {
+            let oTable1 = $("#data_overview").DataTable({
+                deferRender: true,
+                scrollY: '55vh',
+                scrollX: true,
+                scrollCollapse: true,
+                scroller: true,
+                paging: false,
+                bSortCellsTop: false, //prevent sort arrows going on bottom row
+                aaSorting: [],
+                // order: [
+                //   [2, "asc"],
+                //   [4, "asc"]
+                // ],
+                autoWidth: true,
+                bInfo: false,
+            });
+
+            let column_filters = [];
+
+            column_filters = column_filters.concat(createYADCFfilters(0, 3, "multi_select", "select2", "", false, null, "html", "90px"));
+            column_filters = column_filters.concat(createYADCFfilters(3, 3, "multi_select", "select2", "", false, null, "html", "50px"));
+            column_filters = column_filters.concat(createYADCFfilters(6, 1, "multi_select", "select2", "", false, null, "html", "40px"));
+            column_filters = column_filters.concat(createYADCFfilters(7, 16, "multi_select", "select2", "", false, null, "html", "25px"));
+            column_filters = column_filters.concat(createYADCFfilters(23, 1, "multi_select", "select2", "", false, null, "html", "50px"));
+            column_filters = column_filters.concat(createYADCFfilters(24, 1, "multi_select", "select2", "", false, null, "html", "70px"));
+            // column_filters = column_filters.concat(createYADCFfilters(22, 1, "text", "select2", "", false, null, "text", "50px"));
+            // column_filters = column_filters.concat(createYADCFfilters(23, 2, "multi_select", "select2", "", false, null, "text", "50px"));
+            // column_filters = column_filters.concat(createYADCFfilters(25, 1, "text", "select2", "", false, null, "text", "50px"));
+            // column_filters = column_filters.concat(createYADCFfilters(25, 1, "multi_select", "select2", "", false, null, "text", "50px"));
+
+            yadcf.init(oTable1, column_filters, {
+                cumulative_filtering: false
+            });
+            oTable1.columns.adjust();
+
+        })
+    </script>
+{% endblock %}

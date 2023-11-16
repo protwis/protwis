@@ -250,12 +250,11 @@ class SubstructureSelector(Select):
 class CASelector(object):
 
     def __init__ (self, parsed_selection, ref_pdbio_struct, alt_structs):
-        # CASelector(self.selection, self.ref_struct, self.alt_structs)
+
         self.ref_atoms = []
         self.alt_atoms = {}
 
         self.selection = parsed_selection
-        print(parsed_selection.generic_numbers)
         try:
             self.ref_atoms.extend(self.select_generic_numbers(ref_pdbio_struct))
             self.ref_atoms.extend(self.select_helices(ref_pdbio_struct))
@@ -263,8 +262,6 @@ class CASelector(object):
             logger.warning("Can't select atoms from the reference structure!\n{!s}".format(msg))
 
         for alt_struct in alt_structs:
-            print(alt_struct)
-            print(alt_struct.id)
             try:
                 self.alt_atoms[alt_struct.id] = []
                 self.alt_atoms[alt_struct.id].extend(self.select_generic_numbers(alt_struct))
@@ -279,14 +276,10 @@ class CASelector(object):
         if self.selection.generic_numbers == []:
             return []
 
-        print(self.selection.generic_numbers)
         atom_list = []
+
         for chain in structure:
             for res in chain:
-                print(res)
-                print(res['CA'].get_bfactor())
-                print("{:.2f}".format(res['CA'].get_bfactor()))
-                print("{:.3f}".format(-res['CA'].get_bfactor() + 0.001))
                 try:
                     if "{:.2f}".format(res['CA'].get_bfactor()) in self.selection.generic_numbers:
                         atom_list.append(res['CA'])

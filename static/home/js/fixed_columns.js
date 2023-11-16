@@ -68,46 +68,54 @@ function update_text_in_modal() {
 }
 
 function thisPDB(elem) {
-    var mode = $("ul#mode_nav").find("li.active").find("a").text().trim();
-    var ReceptorName = $(elem).attr("long");
 
-    var referenceObject = $(elem).closest(".dataTables_scroll")
+    loading_anim = $('#interface-modal-table' + " .loading_overlay");
+    loading_anim.show();
+    setTimeout(() => {
 
-    // Fixed/frozen columns check
-    if (elem.id.startsWith("overlaycheck_")){
-        elem = $(".dataTables_scrollBody:visible").find("#" + elem.id.replace("overlaycheck_", ""))[0]
+        var mode = $("ul#mode_nav").find("li.active").find("a").text().trim();
+        var ReceptorName = $(elem).attr("long");
 
-       $(elem).prop("checked", !elem.checked)
-    } else {
-      other = referenceObject.find("#overlaycheck_" + elem.id)
-      other.prop("checked", elem.checked)
-    }
+        var referenceObject = $(elem).closest(".dataTables_scroll")
 
-    var pdbName = $(elem).attr("id");
-    if (mode === "Single structure") {
-        if ($("input", oTable[mode].cells().nodes()).filter(":checkbox").not(elem).length > 0) {
-          $("input", oTable[mode].cells().nodes()).filter(":checkbox").not(elem).each(function(i,e)
-            { if (referenceObject.find("#overlaycheck_" + e.id).length > 0)
-              { referenceObject.find("#overlaycheck_" + e.id)[ 0 ].checked = false;
-              }
-            }
-          ); // deselect from overlay
-          $("input", oTable[mode].cells().nodes()).filter(":checkbox").not(elem).prop("checked", false); // deselect from original table
-        }
-        var pdbs = [];
-        if ($(elem).prop("checked")) {
-            pdbs.push(pdbName);
-            // Update view
-            $(".crystal-count:visible").html(ReceptorName + " - " + pdbName + " selected.");
+        // Fixed/frozen columns check
+        if (elem.id.startsWith("overlaycheck_")){
+            elem = $(".dataTables_scrollBody:visible").find("#" + elem.id.replace("overlaycheck_", ""))[0]
+
+        $(elem).prop("checked", !elem.checked)
         } else {
-            // Update view
-            $(".crystal-count:visible").html("No structure selected.");
+        other = referenceObject.find("#overlaycheck_" + elem.id)
+        other.prop("checked", elem.checked)
         }
-        $(".crystal-count:visible").parent().parent().find(".crystal-pdb").val(JSON.stringify(pdbs));
-    }
 
-    update_text_in_modal();
+        var pdbName = $(elem).attr("id");
+        if (mode === "Single structure") {
+            if ($("input", oTable[mode].cells().nodes()).filter(":checkbox").not(elem).length > 0) {
+            $("input", oTable[mode].cells().nodes()).filter(":checkbox").not(elem).each(function(i,e)
+                { if (referenceObject.find("#overlaycheck_" + e.id).length > 0)
+                { referenceObject.find("#overlaycheck_" + e.id)[ 0 ].checked = false;
+                }
+                }
+            ); // deselect from overlay
+            $("input", oTable[mode].cells().nodes()).filter(":checkbox").not(elem).prop("checked", false); // deselect from original table
+            }
+            var pdbs = [];
+            if ($(elem).prop("checked")) {
+                pdbs.push(pdbName);
+                // Update view
+                $(".crystal-count:visible").html(ReceptorName + " - " + pdbName + " selected.");
+            } else {
+                // Update view
+                $(".crystal-count:visible").html("No structure selected.");
+            }
+            $(".crystal-count:visible").parent().parent().find(".crystal-pdb").val(JSON.stringify(pdbs));
+        }
+
+        update_text_in_modal();
+        loading_anim.hide();
+    }, 100);
 }
+
 
 function resetselection(not_update = false, reset_filters = false) {
     var mode = $("ul#mode_nav").find("li.active").find("a").text().trim();
@@ -801,14 +809,40 @@ function showPDBtable(element) {
         //     [21, "*Only show mammalian structures and those from human or closest species"],
         //   ]);
 
+        var loading_anim = $(element + " .loading_overlay");
+        var delayDraw = true; 
+
+        oTable[mode].on('preDraw.dt', function() {
+            console.time('preDrawing');
+            console.timeEnd('preDrawing')
+            if (delayDraw) {
+                console.log('ON ---------------------------------');
+                console.time('showing');
+                loading_anim.show();
+                console.timeEnd('showing');
+                console.log(loading_anim.css('display'));
+
+                setTimeout(function() {
+                delayDraw = false; 
+                oTable[mode].draw(); 
+                }, 100);
+
+                return false;
+            } 
+        });
+
         oTable[mode].on("draw.dt", function(e, oSettings) {
             console.time("create_overlay");
             create_overlay(element + " .structure_selection");
             console.timeEnd("create_overlay");
+            loading_anim.hide();
+            delayDraw = true;
             console.time("update_text_in_modal");
             update_text_in_modal();
             console.timeEnd("update_text_in_modal");
         });
+
+
 
 
         // $(element + ' .dataTables_scrollBody').append('<div class="structure_overlay"><table id="overlay_table" class="overlay_table row-border text-center compact dataTable no-footer text-nowrap"><tbody></tbody></table></div>');

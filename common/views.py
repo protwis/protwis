@@ -1045,7 +1045,7 @@ class AbsSegmentSelection(TemplateView):
     description = 'Select sequence segments in the middle column. You can expand helices and select individual' \
         + ' residues by clicking on the down arrows next to each helix.\n\nSelected segments will appear in the' \
         + ' right column, where you can edit the list.\n\nOnce you have selected all your segments, click the green' \
-        + ' button. \n\n' 
+        + ' button. \n\n'
     documentation_url = settings.DOCUMENTATION_URL
     docs = False
     segment_list = True
