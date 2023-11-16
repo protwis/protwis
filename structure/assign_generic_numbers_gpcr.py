@@ -254,7 +254,7 @@ class GenericNumbering(object):
         for s in G_PROTEIN_SEGMENTS['Full']:
             pdb_array[s] = OrderedDict()
         i, j = 0, 0
-        key_list = [i.gpcrdb for i in list(self.mapping[target_chain].values())]
+        # key_list = [i.gpcrdb for i in list(self.mapping[target_chain].values())]
         for key, vals in self.mapping[target_chain].items():
             category, segment, num = vals.gpcrdb.split('.')
             if self.pdb_code in self.exceptions:

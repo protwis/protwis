@@ -63,7 +63,7 @@ class ConvertSuperpose(object):
                 for atom in self.ref_selector[segment].keys():
                     if atom != 'x':
                         ref_atoms[atom] = self.ref_selector[segment][atom]
-            except:
+            except AttributeError:
                 continue
 
         for segment in self.alt_selector[alt].keys():
@@ -71,7 +71,7 @@ class ConvertSuperpose(object):
                 for atom in self.alt_selector[alt][segment].keys():
                     if atom != 'x':
                         alt_atoms[atom] = self.alt_selector[alt][segment][atom]
-            except:
+            except AttributeError:
                 continue
 
         for ref_cgn in ref_atoms.keys():
