@@ -210,7 +210,7 @@ class CouplingBrowser(TemplateView):
                 protein = c.protein
 
             if source not in self.dictotemplate[protein]:
-                
+
                 if source not in self.dictotemplate[protein]['sets']:
                     self.dictotemplate[protein]['sets'][source] = {'lab':lab, 'biosensor':biosensor, 'biosensor_name':biosensor_name, 'supp_fam':[], 'prim_fam':None, 'supp_subtype':[], 'prim_subtype':'-',
                                                                      'ligand_id':ligand_id, 'ligand_name':ligand_name, 'ligand_physiological':physio, 'doi':c.references.all()}
@@ -220,7 +220,7 @@ class CouplingBrowser(TemplateView):
                 gprot_fams.append(g_protein_fam)
             if g_protein_fam not in self.dictotemplate[protein]['sets'][source]:
                 self.dictotemplate[protein]['sets'][source][g_protein_fam] = {'family_rank':c.family_rank, 'percent_of_primary_family':c.percent_of_primary_family,
-                                                                            'logemaxec50_family':c.logemaxec50_family, 'kon_mean_family':c.kon_mean_family, 
+                                                                            'logemaxec50_family':c.logemaxec50_family, 'kon_mean_family':c.kon_mean_family,
                                                                             'deltaGDP_conc_family':c.deltaGDP_conc_family}
                 ### GtoPdb exception
                 if source=='GtoPdb':
@@ -869,9 +869,9 @@ Inoue,O,TGF-α,log(Emax/EC50),5,G protein dissociation| PKC activation| ADAM17 (
 def CouplingProfiles(request, render_part="both", signalling_data="empty"):
     name_of_cache = 'coupling_profiles_' + signalling_data
 
-    context = cache.get(name_of_cache)
+    # context = cache.get(name_of_cache)
     # NOTE cache disabled for development only!
-    # context = None
+    context = None
     if context == None:
 
         context = OrderedDict()
@@ -1015,20 +1015,19 @@ def CouplingProfiles(request, render_part="both", signalling_data="empty"):
                     arrestin_couplings = list(ProteinCouplings.objects.filter(protein__family__slug__startswith=slug, g_protein_subunit=arr)\
                                     .filter(logemaxec50__gt=0)\
                                     .order_by("protein__entry_name")\
-                                    .values_list("protein__entry_name", flat=True)\
-                                    .distinct())
-
+                                    .values_list("protein__entry_name")\
+                                    .distinct().annotate(num_sources=Count("source", distinct=True)))
                     key = arrestin_translate[arr]
                     jsondata_gtp_plus[key] = []
                     for coupling in arrestin_couplings:
-                        receptor_name = coupling
+                        receptor_name = coupling[0]
                         receptor_dictionary.append(receptor_name)
                         receptor_only = receptor_name.split('_')[0].upper()
                         if receptor_only not in selectivitydata_gtp_plus:
-                            selectivitydata_gtp_plus[receptor_only] = []
+                            selectivitydata_gtp_plus[receptor_only] = {}
 
                         if key not in selectivitydata_gtp_plus[receptor_only]:
-                            selectivitydata_gtp_plus[receptor_only].append(key)
+                            selectivitydata_gtp_plus[receptor_only][key] = coupling[1]
 
                         # Add to json data for Venn diagram
                         jsondata_gtp_plus[key].append(str(receptor_name) + '\n')
