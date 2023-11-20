@@ -1673,9 +1673,9 @@ Inoue,O,TGF-α,log(Emax/EC50),5,G protein dissociation| PKC activation| ADAM17 (
 def CouplingProfiles(request, render_part="both", signalling_data="empty"):
     name_of_cache = 'coupling_profiles_' + signalling_data
 
-    context = cache.get(name_of_cache)
+    # context = cache.get(name_of_cache)
     # NOTE cache disabled for development only!
-    # context = None
+    context = None
     if context == None:
 
         context = OrderedDict()
