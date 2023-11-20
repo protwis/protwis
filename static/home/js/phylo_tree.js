@@ -340,26 +340,26 @@ function DrawCircles(location, data, starter, dict, fancy=false, clean=true, fix
       node.selectAll("circle").remove();
     }
     if (fancy === false) {
-    var spacer = 8;
-      for (var x in data){
-        for (var unit in dict){
-            // if (data[x].constructor == Object) {
-            //     var index = Object.keys(data[x]).indexOf(unit);
-            // }
-            // else {
-            var index = data[x].indexOf(unit);
-            // }
-            if (index >= 0) {
-                // variable to set the location of the different circle drawing
-                multiply = 1+Object.keys(dict).indexOf(unit);
-                var leafwithname = svg.selectAll('g[id=X'+x+']')
-                    .append("circle")
-                    .attr("r", 3.25)
-                    .style("fill", dict[unit])
-                    .attr("transform", "translate(" + (Math.ceil(starter) + multiply*spacer) + ",0)");
-            }
+      var spacer = 8;
+        for (var x in data){
+          for (var unit in dict){
+              // if (data[x].constructor == Object) {
+              //     var index = Object.keys(data[x]).indexOf(unit);
+              // }
+              // else {
+              var index = data[x].indexOf(unit);
+              // }
+              if (index >= 0) {
+                  // variable to set the location of the different circle drawing
+                  multiply = 1+Object.keys(dict).indexOf(unit);
+                  var leafwithname = svg.selectAll('g[id=X'+x+']')
+                      .append("circle")
+                      .attr("r", 3.25)
+                      .style("fill", dict[unit])
+                      .attr("transform", "translate(" + (Math.ceil(starter) + multiply*spacer) + ",0)");
+              }
+          }
         }
-      }
     } else {
       var spacer = 10;
       node.selectAll("ellipse").remove();
