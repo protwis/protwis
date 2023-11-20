@@ -82,7 +82,7 @@ class ConvertSuperpose(object):
                             if (ref_atom.name in ['CA', 'C', 'N']) and (ref_atom.name == alt_atom.name):
                                 tmp_ref.append(ref_atom)
                                 tmp_alt.append(alt_atom)
-                        except:
+                        except (AttributeError, ValueError):
                             continue
 
         if len(tmp_ref) != len(tmp_alt):
