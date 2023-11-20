@@ -27,10 +27,11 @@ from api.renderers import PDBRenderer
 from common.alignment import Alignment
 from common.definitions import AMINO_ACIDS, AMINO_ACID_GROUPS
 from drugs.models import Drugs
-from contactnetwork.models import InteractionPeptide, Interaction
+from contactnetwork.models import InteractionPeptide, Interaction, InteractingPeptideResiduePair
 
 from io import StringIO
-from Bio.PDB import PDBIO, parse_pdb_header
+import numpy as np
+from Bio.PDB import PDBIO, PDBParser, parse_pdb_header
 from collections import OrderedDict
 
 # FIXME add
@@ -1112,6 +1113,7 @@ class StructurePeptideLigandInteractions(generics.ListAPIView):
                             'interacting_peptide_pair__receptor_residue__amino_acid',
                             'interacting_peptide_pair__receptor_residue__sequence_number',
                             'interacting_peptide_pair__receptor_residue__display_generic_number__label',
+                            'interacting_peptide_pair_id',
                             'interaction_type', 'interaction_level').order_by("interacting_peptide_pair__peptide_sequence_number").distinct(
                             ).annotate(
                                 interaction_count=Count('interaction_type')
@@ -1252,3 +1254,94 @@ class SnakePlotView(views.APIView):
             p = Protein.objects.get(entry_name=entry_name)
 
             return Response(str(p.get_snake_plot()).split("\n"))
+
+class PeptideInteractionCADistances(views.APIView):
+
+    """
+    Returns the distance between the C-alpha of receptor residue and C-alpha of peptide ligand
+    \nfrom the given interaction id
+    \n/structure/peptideinteraction/ca_distances/{interaction_id}/
+    \n{interaction_id} is a peptide-ligand interaction ID derived from GPCRdb API
+    """
+
+    one_to_three = {
+        "A": "ALA",
+        "R": "ARG",
+        "N": "ASN",
+        "D": "ASP",
+        "C": "CYS",
+        "Q": "GLN",
+        "E": "GLU",
+        "G": "GLY",
+        "H": "HIS",
+        "I": "ILE",
+        "L": "LEU",
+        "K": "LYS",
+        "M": "MET",
+        "F": "PHE",
+        "P": "PRO",
+        "S": "SER",
+        "T": "THR",
+        "W": "TRP",
+        "Y": "TYR",
+        "V": "VAL",
+    }
+
+    def get(self, request, interaction_id=None):
+        if interaction_id is not None:
+            interaction_record = InteractingPeptideResiduePair.objects.filter(id=test_id)[0]
+            conformation_id = interaction_record.receptor_residue.protein_conformation.id
+            peptide_amino, peptide_pos, receptor_residue = interaction_record.peptide_amino_acid_three_letter, interaction_record.peptide_sequence_number, interaction_record.receptor_residue
+            struct = Structure.objects.filter(protein_conformation=conformation_id)[0]
+
+            # Create a StringIO object to simulate reading from a file-like object
+            pdb_io = StringIO(struct.pdb_data.pdb)
+
+            # Define the residue names and residue numbers for the two residues
+            residue1_name = one_to_three[receptor_residue.amino_acid]
+            residue1_number = receptor_residue.sequence_number
+            residue2_name = peptide_amino
+            residue2_number = peptide_pos
+
+            # Create a PDB parser
+            parser = PDBParser(QUIET=True)
+
+            # Parse the PDB file
+            pdb_struct = parser.get_structure("protein", pdb_io)
+
+            # Iterate through the structure and find the Cα atoms of the specified residues
+            ca1 = None
+            ca2 = None
+            cb = None
+            for model in pdb_struct:
+                for chain in model:
+                    for res in chain:
+                        if res.get_resname() == residue1_name and res.get_id()[1] == residue1_number:
+                            ca1 = res["CA"].get_coord()
+                            cb = res["CB"].get_coord()
+                        elif res.get_resname() == residue2_name and res.get_id()[1] == residue2_number:
+                            ca2 = res["CA"].get_coord()
+
+
+            # Check if both Cα atoms were found
+            if ca1 is not None and ca2 is not None:
+                # Calculate the Euclidean distance between the Cα atoms
+                distance = np.linalg.norm(ca1 - ca2)
+                # Calculate vectors for ca1-ca2 (ligand Cα to receptor Cα) and ca2-CB (ligand Cα to receptor Carbon-Beta)
+                vector_ca1_ca2 = ca2 - ca1
+                vector_ca2_CB = cb - ca2
+                # Calculate the dot product between the vectors
+                dot_product = np.dot(vector_ca1_ca2, vector_ca2_CB)
+                # Calculate the magnitudes (norms) of the vectors
+                magnitude_ca1_ca2 = np.linalg.norm(vector_ca1_ca2)
+                magnitude_ca2_CB = np.linalg.norm(vector_ca2_CB)
+                # Calculate the cosine of the angle between the vectors using the dot product and magnitudes
+                cosine_angle = dot_product / (magnitude_ca1_ca2 * magnitude_ca2_CB)
+                # Calculate the angle in radians using the arccosine function (cosine rule)
+                angle_radians = np.arccos(cosine_angle)
+                # Convert the angle from radians to degrees
+                angle_degrees = np.degrees(angle_radians)
+                result = [{'Ca distance': distance,
+                          'Ca-Ca-CB angle (degrees)': angle_degrees,
+                          'Ca-Ca-CB angle (radians)': angle_radians}]
+                return Response(result)
