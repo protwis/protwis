@@ -28,6 +28,8 @@ urlpatterns = [
     # url(r'^homology_models$', ServeHomologyModels.as_view(), name='homology_models'),
     url(r'^complex_models$', cache_page(60*60*24)(ServeComplexModels.as_view()), name='complex_models'),
     # url(r'^complex_models$', ServeComplexModels.as_view(), name='complex_models'),
+    # url(r'^arrestin_models$', cache_page(60*60*24)(ServeComplexModels.as_view(signalling_protein = 'af-arrestin')), name='complex_models'),
+    url(r'^arrestin_models$', ServeComplexModels.as_view(signalling_protein = 'af-arrestin'), name='complex_models'),
     url(r'^model_statistics$', cache_page(60*60*24)(ServeModelStatistics.as_view()), name='model_statistics'),
     # url(r'^pdb_download_index$', PDBClean.as_view(), name='pdb_download'),
     url(r'pdb_segment_selection', PDBSegmentSelection.as_view(), name='pdb_download'),

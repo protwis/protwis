@@ -185,6 +185,7 @@ class ServeHomologyModels(TemplateView):
 class ServeComplexModels(TemplateView):
 
     template_name = "complex_models.html"
+    signalling_protein = 'af-signprot'
     def get_context_data(self, **kwargs):
         context = super(ServeComplexModels, self).get_context_data(**kwargs)
         # try:
@@ -221,7 +222,8 @@ class ServeComplexModels(TemplateView):
         # model.signprot_complex.protein.family.name
         # model.signprot_complex.protein.entry_name
         try:
-            complex_models = list(Structure.objects.filter(structure_type__slug='af-signprot').prefetch_related(
+            print(self.signalling_protein)
+            complex_models = list(Structure.objects.filter(structure_type__slug=self.signalling_protein).prefetch_related(
                 "protein_conformation__protein",
                 "protein_conformation__protein__parent",
                 "protein_conformation__protein__family",
