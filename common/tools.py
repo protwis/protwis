@@ -3,6 +3,7 @@ from django.utils.text import slugify
 from django.core.cache import cache
 
 import os
+import sys
 import yaml
 import time
 import logging
@@ -20,6 +21,71 @@ import xml.etree.ElementTree as etree
 from http.client import HTTPException
 
 
+def test_model_updates(model, master_data, initialize=False, check=False, rerun=False):
+    #check if the input is a single model or a list of models
+    #and initialize the dictionary with the model name and length (set to 0)
+    if initialize:
+        print('Initializing master database of built models')
+        if len(model) == 1:
+            if model[0] not in master_data.keys():
+                master_data[model[0]] = model[0].objects.all().count()
+        else:
+            for table in model:
+                if table not in master_data.keys():
+                    master_data[table] = table.objects.all().count()
+    if check:
+        CHECK = False
+        if len(model) == 1:
+            OG = master_data[model[0]]
+            NEW = model[0].objects.all().count()
+            if NEW != OG:
+                master_data[model[0]] = NEW
+                print('Changes have been applied to the model: ' + str(model[0]))
+                CHECK = True
+                if NEW > OG:
+                    diff = NEW - OG
+                    print(str(diff) + ' records have been added')
+                else:
+                    diff = OG - NEW
+                    print(str(diff) + ' records have been removed')
+        else:
+            for table in model:
+                OG = master_data[table]
+                NEW = table.objects.all().count()
+                if NEW != OG:
+                    master_data[table] = NEW
+                    print('Changes have been applied to the model: ' + str(table))
+                    CHECK = True
+                    if NEW > OG:
+                        diff = NEW - OG
+                        print(str(diff) + ' records have been added')
+                    else:
+                        diff = OG - NEW
+                        print(str(diff) + ' records have been removed')
+
+        if not CHECK:
+            print('EXITING: No module have been updated. Probably some error?')
+            sys.exit()
+
+    if rerun:
+        print('Checking if changes have happened during a build rerun')
+        if len(model) == 1:
+            OG = master_data[model[0]]
+            NEW = model[0].objects.all().count()
+            if NEW != OG:
+                print('Something had changed in the record of the model ' + str(model[0]))
+                print('Previous number of records: ' +str(OG))
+                print('New number of records: ' +str(NEW))
+        else:
+            for table in model:
+                OG = master_data[table]
+                NEW = table.objects.all().count()
+                if NEW != OG:
+                    print('Something had changed in the record of the model ' + str(table))
+                    print('Previous number of records: ' +str(OG))
+                    print('New number of records: ' +str(NEW))
+
+
 def save_to_cache(path, file_id, data):
     create_cache_dirs(path)
     cache_dir_path = os.sep.join([settings.BUILD_CACHE_DIR] + path)
@@ -31,8 +97,12 @@ def fetch_from_cache(path, file_id):
     cache_dir_path = os.sep.join([settings.BUILD_CACHE_DIR] + path)
     cache_file_path = os.sep.join([cache_dir_path, file_id + '.yaml'])
     if os.path.isfile(cache_file_path):
-        with open(cache_file_path) as cache_file:
-            return yaml.load(cache_file, Loader=yaml.FullLoader)
+        try:
+            with open(cache_file_path) as cache_file:
+                return yaml.load(cache_file, Loader=yaml.FullLoader)
+        except TypeError as msg:
+            print('WARNING: cannot properly open {} with TypeError: {}'.format(cache_file_path, msg))
+            return None
     else:
         return None
 

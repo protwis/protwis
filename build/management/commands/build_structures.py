@@ -10,6 +10,7 @@ from protein.models import (Protein, ProteinConformation, ProteinState, ProteinA
     ProteinSegment)
 from residue.models import ResidueGenericNumber, ResidueNumberingScheme, Residue, ResidueGenericNumberEquivalent
 from common.models import WebLink, WebResource, Publication
+from common.tools import test_model_updates
 from structure.models import Structure, StructureType, StructureStabilizingAgent,PdbData, Rotamer, Fragment
 from construct.functions import *
 
@@ -17,16 +18,17 @@ from contactnetwork.models import *
 import contactnetwork.interaction as ci
 from contactnetwork.cube import compute_interactions
 
-from Bio.PDB import PDBParser,PPBuilder
+from Bio.PDB import PDBParser, PPBuilder, Polypeptide
 from Bio import pairwise2
 
 from structure.assign_generic_numbers_gpcr import GenericNumbering
 from structure.functions import StructureBuildCheck, ParseStructureCSV
 from ligand.models import Ligand, LigandType, LigandRole, LigandPeptideStructure
 from interaction.models import *
-from interaction.views import runcalculation,parsecalculation
+from interaction.views import runcalculation_2022, regexaa, check_residue, extract_fragment_rotamer
 from residue.functions import dgn
 
+import django.apps
 import logging
 import os
 import re
@@ -38,6 +40,8 @@ import json
 from urllib.request import urlopen
 from Bio.PDB import parse_pdb_header
 from Bio.PDB.Selection import *
+
+# import traceback
 
 
 ## FOR VIGNIR ORDERED DICT YAML IMPORT/DUMP
@@ -93,6 +97,10 @@ class Command(BaseBuild):
             default=False,
             help='Print info for debugging')
 
+    tracker = {}
+    all_models = django.apps.apps.get_models()[6:]
+    test_model_updates(all_models, tracker, initialize=True)
+
     # source file directory
     pdb_data_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'pdbs'])
 
@@ -114,12 +122,26 @@ class Command(BaseBuild):
     for segment in s:
         segments[segment.slug] = segment
 
+    parsed_pdb = None
+
+    construct_errors, rotamer_errors, contactnetwork_errors, interaction_errors = [],[],[],[]
+
+    with open(os.sep.join([settings.DATA_DIR, 'residue_data', 'unnatural_amino_acids.yaml']), 'r') as f_yaml:
+        raw_uaa = yaml.safe_load(f_yaml)
+        unnatural_amino_acids = {}
+        for i, j in raw_uaa.items():
+            unnatural_amino_acids[i] = j
+
+    exp_method_dict = {'X-ray': 'X-ray diffraction', 'cryo-EM': 'Electron microscopy', 'Electron crystallography': 'Electron crystallography'}
+
 
     def handle(self, *args, **options):
         # delete any existing structure data
         if options['purge']:
             try:
                 self.purge_structures()
+                self.tracker = {}
+                test_model_updates(self.all_models, self.tracker, initialize=True)
             except Exception as msg:
                 print(msg)
                 self.logger.error(msg)
@@ -133,6 +155,8 @@ class Command(BaseBuild):
         self.parsed_structures.parse_ligands()
         self.parsed_structures.parse_nanobodies()
         self.parsed_structures.parse_fusion_proteins()
+        self.parsed_structures.parse_ramp()
+        self.parsed_structures.parse_grk()
 
         if options['structure']:
             self.parsed_structures.pdb_ids = [i for i in self.parsed_structures.pdb_ids if i in options['structure'] or i.lower() in options['structure']]
@@ -147,14 +171,23 @@ class Command(BaseBuild):
         try:
             self.logger.info('CREATING STRUCTURES')
             # run the function twice (once for representative structures, once for non-representative)
-            iterations = 1
-            for i in range(1,iterations+1):
-                self.prepare_input(options['proc'], self.parsed_structures.pdb_ids, i)
-
+            # iterations = 1
+            # for i in range(1,iterations+1):
+            self.prepare_input(options['proc'], self.parsed_structures.pdb_ids)
+            test_model_updates(self.all_models, self.tracker, check=True)
             self.logger.info('COMPLETED CREATING STRUCTURES')
         except Exception as msg:
             print(msg)
             self.logger.error(msg)
+
+        print('Construct errors:')
+        print(self.construct_errors)
+        print('Rotamer erros:')
+        print(self.rotamer_errors)
+        print('Contact network errors')
+        print(self.contactnetwork_errors)
+        print('Interaction errors')
+        print(self.interaction_errors)
 
     @staticmethod
     def queryset_iterator(qs, batchsize = 5000, gc_collect = True):
@@ -243,134 +276,7 @@ class Command(BaseBuild):
                                 removed.append(i)
         # Reset removed, since it causes more problems than not
 
-        # Overwrite reset to fix annotation
-        if structure.pdb_code.index in ['6H7N','6H7J','6H7L','6H7M','6H7O']:
-            removed = list(range(3,40))
-            deletions = deletions+list(range(244,272))
-        elif structure.pdb_code.index=='6MEO':
-            removed = []
-        elif structure.pdb_code.index=='5N2R':
-            deletions = [1]+list(range(209,219))+list(range(306,413))
-        elif structure.pdb_code.index in ['5WIU','5WIV']:
-            removed = removed+[1001]
-        elif structure.pdb_code.index=='6QZH':
-            removed = list(range(1001,1473))+list(range(255,260))
-        elif structure.pdb_code.index in ['6KUX', '6KUY']:
-            deletions = list(range(1,20))
-        elif structure.pdb_code.index=='7BZ2':
-            deletions = list(range(240,265))
-        elif structure.pdb_code.index=='7C6A':
-            removed = list(range(1,35))
-        elif structure.pdb_code.index=='6S0L':
-            removed = [-1,0] + list(range(1001,1107))
-        elif structure.pdb_code.index=='7D7M':
-            deletions = list(range(1,4)) + list(range(367,489))
-        elif structure.pdb_code.index in ['7D77', '7D76', '4GRV']:
-            deletions = []
-        elif structure.pdb_code.index=='6A94':
-            removed.remove(69)
-            deletions.remove(69)
-        elif structure.pdb_code.index in ['6LI1']:
-            for i in range(261,265):
-                removed.remove(i)
-                deletions.remove(i)
-        elif structure.pdb_code.index=='6LI2':
-            for i in range(263,265):
-                removed.remove(i)
-                deletions.remove(i)
-        elif structure.pdb_code.index=='5JQH':
-            for i in range(1023,1030):
-                removed.remove(i)
-            for i in range(23,30):
-                deletions.remove(i)
-        elif structure.pdb_code.index=='5T1A':
-            for i in range(226,241):
-                deletions.remove(i)
-            removed.append(1002)
-            removed.remove(234)
-            removed.remove(319)
-            removed.remove(320)
-        elif structure.pdb_code.index=='5UEN':
-            for i in range(220,228):
-                removed.remove(i)
-                deletions.remove(i)
-        elif structure.pdb_code.index=='3SN6':
-            removed = list(range(1002,1161))
-        elif structure.pdb_code.index in ['6ZDV','6ZDR','6MH8','6PS7','6S0Q','6WQA','6AQF','6GT3','6JZH','6LPJ','6LPL','6LPK',
-                                          '5JTB','5OLH','5NM2','5OLG','5OM1','5OLO','5OLZ','5OLV','5OM4','5UVI','5VRA']:
-            removed.remove(1)
-            deletions.remove(1)
-        elif structure.pdb_code.index in ['5NLX','5NM4']:
-            removed.remove(10)
-            deletions.remove(1)
-            for i in range(209,214):
-                deletions.remove(i)
-            for i in range(218,223):
-                removed.remove(i)
-        elif structure.pdb_code.index=='6N48':
-            for i in range(1023,1029):
-                removed.remove(i)
-            for i in range(23,29):
-                deletions.remove(i)
-        elif structure.pdb_code.index=='5ZK3':
-            deletions.remove(382)
-        elif structure.pdb_code.index=='6A93':
-            removed.remove(69)
-            deletions.remove(69)
-        elif structure.pdb_code.index=='6IBL':
-            removed = list(range(1003,1110))
-            for i in range(41,44):
-                deletions.remove(i)
-            deletions.remove(243)
-            deletions.append(271)
-        elif structure.pdb_code.index=='6LUQ':
-            removed.remove(387)
-            deletions.remove(366)
-        elif structure.pdb_code.index=='6W2Y':
-            for i in range(845,862):
-                deletions.remove(i)
-        elif structure.pdb_code.index in ['4Z34','4Z35','4Z36']:
-            removed.remove(327)
-            deletions.remove(327)
-        elif structure.pdb_code.index=='6TKO':
-            removed.remove(358)
-            deletions.remove(358)
-        elif structure.pdb_code.index=='6DO1':
-            removed = []
-        elif structure.pdb_code.index=='5D6L':
-            for i in range(224,231):
-                removed.remove(i)
-                deletions.remove(i)
-        elif structure.pdb_code.index=='7DFL':
-            deletions = list(range(222,405))
-        elif structure.pdb_code.index=='2I35':
-            removed = [330,331,332]
-        elif structure.pdb_code.index in ['7ARO', '7RM5']:
-            removed.remove(1)
-            deletions.remove(1)
-        elif structure.pdb_code.index in ['7BTS','7BU6','7BU7','7BVQ']:
-            removed, deletions = list(range(884,1054)), list(range(884,1054))
-        elif structure.pdb_code.index=='7D68':
-            for i in range(395,456):
-                deletions.remove(i)
-        elif structure.pdb_code.index=='7EB2':
-            deletions, removed = [], []
-        elif structure.pdb_code.index=='7F1R':
-            deletions = list(range(314,400))
-            removed = list(range(1,128))+list(range(188,192))
-        elif structure.pdb_code.index=='7F1Q':
-            removed = list(range(1,113))
-        elif structure.pdb_code.index in ['7EPE','7EPF']:
-            removed, deletions = list(range(1000,1148)), list(range(1000,1148))
-        elif structure.pdb_code.index in ['7EZM','7EZK','7EZH']:
-            for i in range(38,64):
-                removed.remove(i)
-        elif structure.pdb_code.index in ['6ZFZ', '6ZG4', '6ZG9']:
-            for i in range(21,27):
-                removed.remove(i)
-                deletions.remove(i)
-        elif structure.pdb_code.index=='7EWR':
-            removed, deletions = [], []
+        removed, deletions = construct_structure_annotation_override(structure.pdb_code.index, removed, deletions)
 
         if self.debug:
             print('Deletions: ', deletions)
@@ -380,7 +286,7 @@ class Command(BaseBuild):
             removed = []
             deletions = []
 
-        s = PDBParser(PERMISSIVE=True, QUIET=True).get_structure('ref', pdb_path)[0]
+        s = self.parsed_pdb
         chain = s[preferred_chain] #select only one chain (avoid n-mer receptors)
 
         ppb=PPBuilder()
@@ -501,9 +407,9 @@ class Command(BaseBuild):
             seq = seq[:265]
         elif structure.pdb_code.index in ['1GZM', '3C9L']:
             seq = seq[:-3]
-        if structure.pdb_code.index in ['6NBI','6NBF','6NBH','6U1N','6M1H','6PWC','7JVR','7SHF']:
+        if structure.pdb_code.index in ['6NBI','6NBF','6NBH','6U1N','6M1H','6PWC','7JVR','7SHF','7EJ0','7EJ8','7EJA','7EJK','7VVJ','7TS0','7W6P','7W7E','8IRS','8FLQ','8FLR','8FLS','8FLU','8FU6']:
             pw2 = pairwise2.align.localms(parent_seq, seq, 3, -4, -3, -1)
-        elif structure.pdb_code.index in ['6KUX', '6KUY', '6KUW']:
+        elif structure.pdb_code.index in ['6KUX', '6KUY', '6KUW','7SRS']:
             pw2 = pairwise2.align.localms(parent_seq, seq, 3, -4, -4, -1.5)
         else:
             pw2 = pairwise2.align.localms(parent_seq, seq, 3, -4, -5, -2)
@@ -597,6 +503,113 @@ class Command(BaseBuild):
             temp_seq = temp_seq[:36]+'I'+temp_seq[36:44]+temp_seq[45:]
         elif structure.pdb_code.index in ['7EWP','7EWR']:
             temp_seq = temp_seq[:667]+'S'+temp_seq[667:701]+temp_seq[702:]
+        elif structure.pdb_code.index in ['7T10','7T11']:
+            temp_seq = temp_seq[:237]+temp_seq[239:246]+'R'+temp_seq[251:]
+            ref_seq = ref_seq[:244]+ref_seq[245:253]+ref_seq[258:]
+        elif structure.pdb_code.index in ['7FIY']:
+            temp_seq = temp_seq[:306]+'R---'+temp_seq[310:]
+        elif structure.pdb_code.index in ['7B6W']:
+            temp_seq = temp_seq[:318]+'L----'+temp_seq[323:]
+            temp_seq = temp_seq[:245]+temp_seq[246:282]+'-S'+temp_seq[283:]
+        elif structure.pdb_code.index in ['7SIL','7SIM','7SIN']:
+            temp_seq = temp_seq[:702]+'L'+temp_seq[702:720]+temp_seq[721:]
+        elif structure.pdb_code.index in ['7WIH']:
+            temp_seq = temp_seq[:26]+'E'+temp_seq[26:33]+temp_seq[34:94]+'L'+temp_seq[94:117]+temp_seq[118:]
+        elif structure.pdb_code.index=='7SBF':
+            temp_seq = temp_seq[:8]+temp_seq[10:]
+            ref_seq = ref_seq[2:]
+        elif structure.pdb_code.index=='7RA3':
+            temp_seq = temp_seq[:306]+'R'+temp_seq[306:311]+temp_seq[312:]
+        elif structure.pdb_code.index in ['7EJ8']:
+            temp_seq = temp_seq[:182]+'P'+temp_seq[182:200]+temp_seq[201:]
+        elif structure.pdb_code.index in ['7EJ0']:
+            temp_seq = temp_seq[:242]+'R'+temp_seq[242:377]+temp_seq[378:]
+        elif structure.pdb_code.index in ['7EJK']:
+            temp_seq = temp_seq[:182]+'P'+temp_seq[182:200]+temp_seq[201:242]+'R'+temp_seq[242:379]+temp_seq[380:]
+        elif structure.pdb_code.index=='7EZC':
+            temp_seq = temp_seq[:146]+'Q'+temp_seq[146:155]+temp_seq[156:]
+        elif structure.pdb_code.index=='7RBT':
+            temp_seq = temp_seq[:306]+'R'+temp_seq[306:311]+temp_seq[312:]
+        elif structure.pdb_code.index=='7WUJ':
+            temp_seq = temp_seq[:158]+'T'+temp_seq[158:163]+temp_seq[164:]
+        elif structure.pdb_code.index=='5JQH':
+            temp_seq = temp_seq[:211]+'--D'+temp_seq[214:]
+        elif structure.pdb_code.index=='2YCW':
+            temp_seq = temp_seq[:242]+'R'+temp_seq[242:270]+temp_seq[271:]
+        elif structure.pdb_code.index=='7EPT':
+            temp_seq = temp_seq[:197]+'SA'+temp_seq[197:208]+temp_seq[210:]
+        elif structure.pdb_code.index=='7SK5':
+            temp_seq = temp_seq[:186]+'S--'+temp_seq[189:]
+        elif structure.pdb_code.index=='7WU9':
+            temp_seq = temp_seq[:261]+'Q'+temp_seq[261:275]+temp_seq[276:]
+        elif structure.pdb_code.index=='7SRS':
+            temp_seq = temp_seq[:246]+'VRLLS'+61*'-'+'R'+temp_seq[313:]
+        elif structure.pdb_code.index=='7UL2':
+            ref_seq = ref_seq[:257]+ref_seq[259:305]+ref_seq[306:]
+            temp_seq = temp_seq[:264]+'SVRL'+19*'-'+'LSGS'+temp_seq[291:296]+temp_seq[298:308]+temp_seq[309:]
+        elif structure.pdb_code.index=='7UL3':
+            ref_seq = ref_seq[:202]+ref_seq[206:211]+ref_seq[212:236]+ref_seq[242:244]+ref_seq[246:255]+ref_seq[256:]
+            temp_seq = temp_seq[:208]+'LKSVRLLS'+5*'-'+'SRE'+temp_seq[235:247]+'L'+temp_seq[251:]
+        elif structure.pdb_code.index=='7UL5':
+            ref_seq = ref_seq[:244]+ref_seq[245:253]+ref_seq[258:]
+            temp_seq = temp_seq[:237]+temp_seq[239:242]+'LSGSR'+temp_seq[251:]
+        elif structure.pdb_code.index=='7PP1':
+            temp_seq = temp_seq[:128]+'P'+temp_seq[128:134]+temp_seq[135:161]+'L'+temp_seq[161:177]+temp_seq[178:]
+        elif structure.pdb_code.index=='7RAN':
+            temp_seq = temp_seq[:283]+'C'+temp_seq[283:287]+temp_seq[288:]
+        elif structure.pdb_code.index=='7S0F':
+            temp_seq = temp_seq[:247]+temp_seq[248:283]+'F'+temp_seq[283:]
+        elif structure.pdb_code.index=='7VIH':
+            temp_seq = temp_seq[:33]+'KL'+temp_seq[33:45]+temp_seq[47:]
+        elif structure.pdb_code.index=='7VQX':
+            temp_seq = temp_seq[:288]+'S'+temp_seq[288:297]+temp_seq[298:]
+        elif structure.pdb_code.index in ['7VVK']:
+            temp_seq = temp_seq[:4]+temp_seq[65:84]+temp_seq[4:65]+temp_seq[84:]
+        elif structure.pdb_code.index in ['7VVL']:
+            temp_seq = temp_seq[:4]+temp_seq[62:81]+temp_seq[4:62]+temp_seq[81:]
+        elif structure.pdb_code.index in ['7VVM']:
+            temp_seq = temp_seq[:4]+temp_seq[61:80]+temp_seq[4:61]+temp_seq[80:]
+        elif structure.pdb_code.index=='7VVN':
+            temp_seq = temp_seq[:6]+temp_seq[78:95]+temp_seq[6:67]+temp_seq[95:102]+11*'-'+temp_seq[102:365]+'T'+temp_seq[365:372]+temp_seq[373:403]+'T'+temp_seq[403:408]+temp_seq[409:]
+        elif structure.pdb_code.index=='7VVO':
+            temp_seq = temp_seq[:6]+temp_seq[79:99]+temp_seq[6:79]+temp_seq[99:]
+        elif structure.pdb_code.index=='7W57':
+            temp_seq = temp_seq[:192]+'P'+temp_seq[192:198]+temp_seq[199:]
+        elif structure.pdb_code.index in ['7W6P']:
+            temp_seq = temp_seq[:182]+'P'+temp_seq[182:200]+temp_seq[201:]
+        elif structure.pdb_code.index=='7W7E':
+            temp_seq = temp_seq[:182]+'P'+temp_seq[182:200]+temp_seq[201:242]+'R'+temp_seq[242:377]+temp_seq[378:]
+        elif structure.pdb_code.index=='7WBJ':
+            temp_seq = temp_seq[:288]+'S'+temp_seq[288:297]+temp_seq[298:]
+        elif structure.pdb_code.index in ['7X8R']:
+            temp_seq = temp_seq[:7]+temp_seq[89:113]+temp_seq[7:89]+temp_seq[113:]
+        elif structure.pdb_code.index in ['7X8S']:
+            temp_seq = temp_seq[:7]+temp_seq[90:114]+temp_seq[7:90]+temp_seq[114:]
+        elif structure.pdb_code.index=='8HA0':
+            temp_seq = temp_seq[:4]+temp_seq[58:78]+temp_seq[4:58]+temp_seq[78:]
+        elif structure.pdb_code.index=='8HAF':
+            temp_seq = temp_seq[:4]+temp_seq[53:78]+temp_seq[4:53]+temp_seq[78:]
+        elif structure.pdb_code.index=='8HAO':
+            temp_seq = temp_seq[:4]+temp_seq[57:78]+temp_seq[4:57]+temp_seq[78:]
+        elif structure.pdb_code.index=='7T8X':
+            temp_seq = temp_seq[:214]+'K'+temp_seq[214:237]+temp_seq[238:]
+        elif structure.pdb_code.index in ['7ZBE','8A6C']:
+            temp_seq = temp_seq[:228]+'T'+temp_seq[228:242]+temp_seq[243:]
+        elif structure.pdb_code.index=='8FMZ':
+            temp_seq = temp_seq[:172]+'A-'+temp_seq[174:]
+        elif structure.pdb_code.index=='8ID4':
+            temp_seq = temp_seq[:72]+'A--'+temp_seq[75:]
+        elif structure.pdb_code.index=='7XJJ':
+            temp_seq = temp_seq[:140]+'R'+temp_seq[140:146]+temp_seq[147:]
+        elif structure.pdb_code.index=='8DZS':
+            temp_seq = temp_seq[:247]+'S----'+temp_seq[252:]
+        elif structure.pdb_code.index=='8G94':
+            temp_seq = temp_seq[:36]+'I'+temp_seq[36:44]+temp_seq[45:]
+        elif structure.pdb_code.index=='8IW1':
+            temp_seq = temp_seq[:170]+'G'+temp_seq[170:188]+temp_seq[189:]
+        elif structure.pdb_code.index in ['8IW4','8IWE']:
+            temp_seq = temp_seq[:180]+'V-'+temp_seq[182:]
+
 
         for i, r in enumerate(ref_seq, 1): #loop over alignment to create lookups (track pos)
             if self.debug:
@@ -682,7 +695,6 @@ class Command(BaseBuild):
                             residue.sequence_number = int(check.strip())
                             residue.amino_acid = AA[residue_name.upper()]
                             residue.protein_conformation = protein_conformation
-
                             try:
                                 seq_num_pos = pdbseq[chain][residue.sequence_number][0]
                             except:
@@ -724,9 +736,9 @@ class Command(BaseBuild):
                                     elif residue.sequence_number!=wt_r.sequence_number:
                                         # print('WT pos not same pos, mismatch',residue.sequence_number,residue.amino_acid,wt_r.sequence_number,wt_r.amino_acid)
                                         wt_pdb_lookup.append(OrderedDict([('WT_POS',wt_r.sequence_number), ('PDB_POS',residue.sequence_number), ('AA',wt_r.amino_acid)]))
-                                        if structure.pdb_code.index not in ['4GBR','6C1R','6C1Q']:
+                                        if structure.pdb_code.index not in ['4GBR','6C1R','6C1Q','7XBX','7F1Q','7ZLY']:
                                             if residue.sequence_number in unmapped_ref:
-                                                #print('residue.sequence_number',residue.sequence_number,'not mapped though')
+                                                # print('residue.sequence_number',residue.sequence_number,'not mapped though')
                                                 if residue.amino_acid == wt_lookup[residue.sequence_number].amino_acid:
                                                     #print('they are same amino acid!')
                                                     wt_r = wt_lookup[residue.sequence_number]
@@ -735,7 +747,6 @@ class Command(BaseBuild):
                                         ### REPLACE seq number with WT to fix odd PDB annotation. FIXME kinda dangerous, but best way to ensure consistent GN numbering
                                         ### 2019.01.18 DISABLED underneat, to be sure that sequence number can be found in DB correctly.
                                         # residue.sequence_number = wt_r.sequence_number
-
                                     if residue.amino_acid!=wt_r.amino_acid:
                                         if debug: print('aa mismatch',residue.sequence_number,residue.amino_acid,wt_r.sequence_number,wt_r.amino_acid)
                                         aa_mismatch += 1
@@ -830,9 +841,9 @@ class Command(BaseBuild):
                                                     residue.generic_number = None
                                         elif residue.protein_segment.slug=='ICL2':
                                             if seg_ends['i2b']!='-' and seg_ends['i2e']!='-':
-                                                if residue.sequence_number<seg_ends['i2b']:
-                                                    residue.protein_segment = self.segments['TM3']
-                                                elif residue.sequence_number>seg_ends['i2e'] and residue.sequence_number>=seg_ends['4b']:
+                                                # if residue.sequence_number<seg_ends['i2b']:
+                                                #     residue.protein_segment = self.segments['TM3']
+                                                if residue.sequence_number>seg_ends['i2e'] and residue.sequence_number>=seg_ends['4b']:
                                                     residue.protein_segment = self.segments['TM4']
                                                 elif (residue.sequence_number>=seg_ends['i2b'] and residue.sequence_number<=seg_ends['i2e']) and residue.generic_number is None:
                                                     if debug: print("Missing GN in loop!",residue.sequence_number)
@@ -1081,7 +1092,6 @@ class Command(BaseBuild):
                         prev_gn = None
                         prev_display = None
                     prev_segment = res.protein_segment
-
         bulked_res = Residue.objects.bulk_create(residues_bulk)
         #bulked_rot = PdbData.objects.bulk_create(rotamer_data_bulk)
         bulked_rot = rotamer_data_bulk
@@ -1112,15 +1122,93 @@ class Command(BaseBuild):
         return None
 
 
-    def build_contact_network(self,s,pdb_code):
+    def build_contact_network(self, pdb_code):
         try:
-            interacting_pairs, distances  = compute_interactions(pdb_code, save_to_db=True)
+            # interacting_pairs, distances  = compute_interactions(pdb_code, save_to_db=True)
+            compute_interactions(pdb_code, protein=None, lig=None, do_interactions=True, do_complexes=False, do_peptide_ligand=True, save_to_db=True, file_input=False)
+            # compute_interactions(pdb_code, do_interactions=True, do_peptide_ligand=True, save_to_db=True)
         except:
             self.logger.error('Error with computing interactions (%s)' % (pdb_code))
             return
 
+    @staticmethod
+    def parsecalculation(pdb_id, data, debug=True, ignore_ligand_preset=False):
+        module_dir = '/tmp/interactions'
+        web_resource = WebResource.objects.get(slug='pdb')
+        web_link, _ = WebLink.objects.get_or_create(web_resource=web_resource, index=pdb_id)
+        structure = Structure.objects.filter(pdb_code=web_link)
+        if structure.exists():
+            structure = Structure.objects.get(pdb_code=web_link)
 
-    def main_func(self, positions, iteration,count,lock):
+            if structure.pdb_data is None:
+                f = module_dir + "/pdbs/" + pdb_id + ".pdb"
+                if os.path.isfile(f):
+                    pdbdata, created = PdbData.objects.get_or_create(pdb=open(f, 'r').read())  # does this close the file?
+                else:
+                    print('quitting due to no pdb in filesystem')
+                    quit()
+                structure.pdb_data = pdbdata
+                structure.save()
+
+            protein = structure.protein_conformation
+            lig_key = list(data.keys())[0]
+
+            f = module_dir + "/results/" + pdb_id + "/interaction" + "/" + pdb_id + "_" + lig_key + ".pdb"
+            if os.path.isfile(f):
+                pdbdata, created = PdbData.objects.get_or_create(pdb=open(f, 'r').read())  # does this close the file?
+                print("Found file" + f)
+            else:
+                print('quitting due to no pdb for fragment in filesystem', f)
+                quit()
+
+            struct_lig_interactions = StructureLigandInteraction.objects.filter(pdb_reference=lig_key, structure=structure, annotated=True) #, pdb_file=None
+            if struct_lig_interactions.exists():  # if the annotated exists
+                try:
+                    struct_lig_interactions = struct_lig_interactions.get()
+                    struct_lig_interactions.pdb_file = pdbdata
+                    ligand = struct_lig_interactions.ligand
+                except Exception as msg:
+                    print('error with duplication structureligand',lig_key,msg)
+            elif StructureLigandInteraction.objects.filter(pdb_reference=lig_key, structure=structure).exists():
+                try:
+                    struct_lig_interactions = StructureLigandInteraction.objects.filter(pdb_reference=lig_key, structure=structure).get()
+                    struct_lig_interactions.pdb_file = pdbdata
+                except StructureLigandInteraction.DoesNotExist: #already there
+                    struct_lig_interactions = StructureLigandInteraction.objects.filter(pdb_reference=lig_key, structure=structure, pdb_file=pdbdata).get()
+                ligand = struct_lig_interactions.ligand
+            else:  # create ligand and pair
+                print(pdb_id, "Skipping interactions with ", pdb_id)
+                pass
+
+            struct_lig_interactions.save()
+
+            ResidueFragmentInteraction.objects.filter(structure_ligand_pair=struct_lig_interactions).delete()
+
+            for interaction in data[lig_key]['interactions']:
+                aa = interaction[0]
+                if aa[-1] != structure.preferred_chain:
+                    continue
+                aa_single, pos, _ = regexaa(aa)
+                residue = check_residue(protein, pos, aa_single)
+                f = interaction[1]
+                fragment, rotamer = extract_fragment_rotamer(f, residue, structure, ligand)
+                if fragment is not None:
+                    interaction_type, created = ResidueFragmentInteractionType.objects.get_or_create(
+                                                slug=interaction[2],
+                                                name=interaction[3],
+                                                type=interaction[4], direction=interaction[5])
+                    fragment_interaction, created = ResidueFragmentInteraction.objects.get_or_create(
+                                                    structure_ligand_pair=struct_lig_interactions,
+                                                    interaction_type=interaction_type,
+                                                    fragment=fragment, rotamer=rotamer)
+        else:
+            pass
+
+        # results = sorted(results, key=itemgetter(3), reverse=True)
+
+        return data
+
+    def main_func(self, positions, iterations, count, lock):
         # setting up processes
         # if not positions[1]:
         #     pdbs = self.parsed_structures[positions[0]:]
@@ -1171,7 +1259,11 @@ class Command(BaseBuild):
                     s = s.delete()
                     s = Structure()
                 else:
-                    continue
+                    if not s.build_check:
+                        s = s.delete()
+                        s = Structure()
+                    else:
+                        continue
 
             except Structure.DoesNotExist:
                 s = Structure()
@@ -1231,6 +1323,8 @@ class Command(BaseBuild):
             pdbdata, created = PdbData.objects.get_or_create(pdb=pdbdata_raw)
             s.pdb_data = pdbdata
 
+            self.parsed_pdb = PDBParser(PERMISSIVE=True, QUIET=True).get_structure('ref', pdb_path)[0]
+
             # UPDATE HETSYN with its PDB reference instead + GRAB PUB DATE, PMID, DOI AND RESOLUTION
             hetsyn = {}
             hetsyn_reverse = {}
@@ -1264,11 +1358,14 @@ class Command(BaseBuild):
 
             # structure type
             if 'structure_method' in sd and sd['structure_method']:
+                if sd['structure_method']=='unknown':
+                    sd['structure_method'] = self.exp_method_dict[sd['method_from_file']]
+
                 structure_type = sd['structure_method'].capitalize()
                 structure_type_slug = slugify(sd['structure_method'])
                 if sd['pdb']=='6ORV':
                     structure_type_slug = 'electron-microscopy'
-                elif sd['pdb'] in ['6YVR','6Z4Q','6Z4S','6Z4V','6Z66','6Z8N','6ZA8','6ZIN']:
+                elif sd['pdb'] in ['6YVR','6Z4Q','6Z4S','6Z4V','6Z66','6Z8N','6ZA8','6ZIN','7B6W']:
                     structure_type_slug = 'x-ray-diffraction'
 
                 try:
@@ -1317,18 +1414,16 @@ class Command(BaseBuild):
             else:
                 self.logger.warning('Preferred chain not specified for structure {}'.format(sd['pdb']))
             if 'resolution' in sd:
-                # if sd['pdb']=='6ORV':
-                #     s.resolution = 3.00
-                # else:
                 s.resolution = float(sd['resolution'])
             else:
                 self.logger.warning('Resolution not specified for structure {}'.format(sd['pdb']))
-            if sd['pdb']=='6ORV':
-                sd['publication_date'] = '2020-01-08'
-            elif sd['pdb'] in ['6YVR','6Z4Q','6Z4S','6Z4V','6Z66','6Z8N','6ZA8','6ZIN']:
-                sd['publication_date'] = '2021-02-10'
+
+            ### Publication date - if pdb file is incorrect, fetch from structures.csv
             if 'publication_date' in sd:
                 s.publication_date = sd['publication_date']
+                if int(s.publication_date[:4])<1990:
+                    s.publication_date = sd['date_from_file']
+                    print('WARNING: publication date for {} is incorrect ({}), switched to ({}) from structures.csv'.format(s, sd['publication_date'], sd['date_from_file']))
             else:
                 self.logger.warning('Publication date not specified for structure {}'.format(sd['pdb']))
 
@@ -1341,10 +1436,10 @@ class Command(BaseBuild):
             except:
                 self.logger.error('Error saving publication'.format(sd['pdb']))
 
-            if sd['pdb'] in self.xtal_seg_ends and not self.incremental_mode:
-                s.annotated = True
-            else:
-                s.annotated = False
+            # if sd['pdb'] in self.xtal_seg_ends and not self.incremental_mode:
+            s.annotated = True
+            # else:
+            #     s.annotated = False
 
             s.refined = False
             s.stats_text = None
@@ -1355,6 +1450,8 @@ class Command(BaseBuild):
 
             # ligands
             peptide_chain = ""
+            if self.debug:
+                print(sd)
             if 'ligand' in sd and sd['ligand'] and sd['ligand']!='None':
                 if isinstance(sd['ligand'], list):
                     ligands = sd['ligand']
@@ -1363,11 +1460,11 @@ class Command(BaseBuild):
                 for ligand in ligands:
                     l = False
                     peptide_chain = ""
-                    if 'chain'!='':
+                    if ligand['chain']!='':
                         peptide_chain = ligand['chain']
                         # ligand['name'] = 'pep'
                     if ligand['name'] and ligand['name'] != 'None': # some inserted as none.
-                        ligand['type'] = ligand['type'].lower()
+                        ligand['type'] = ligand['type'].lower().strip()
                         # use annoted ligand type or default type
                         if ligand['type']:
                             lt, created = LigandType.objects.get_or_create(slug=slugify(ligand['type']),
@@ -1416,10 +1513,23 @@ class Command(BaseBuild):
                             for entry in uc_entries:
                                 if entry["type"] not in ids:
                                     ids[entry["type"]] = entry["id"]
+                        # sequence
+                        if peptide_chain in self.parsed_pdb:
+                            seq = ''
+                            for res in self.parsed_pdb[peptide_chain]:
+                                try:
+                                    one_letter = Polypeptide.three_to_one(res.get_resname())
+                                except KeyError:
+                                    if res.get_resname() in self.unnatural_amino_acids:
+                                        one_letter = self.unnatural_amino_acids[res.get_resname()]
+                                    else:
+                                        print('WARNING: {} residue in structure {} is missing from unnatural amino acid definitions (data/protwis/gpcr/residue_data/unnatural_amino_acids.yaml)'.format(res, s))
+                                        continue
+                                seq+=one_letter
+                            ids['sequence'] = seq
 
                         with lock:
                             l = get_or_create_ligand(ligand_title, ids, ligand['type'])
-
                         # Create LigandPeptideStructure object to store chain ID for peptide ligands - supposed to b TEMP
                         if ligand['type'] in ['peptide','protein']:
                             lps, created = LigandPeptideStructure.objects.get_or_create(structure=s, ligand=l, chain=peptide_chain)
@@ -1550,7 +1660,6 @@ class Command(BaseBuild):
 
             # save structure
             s.save()
-
             #Delete previous interaction data to prevent errors.
             ResidueFragmentInteraction.objects.filter(structure_ligand_pair__structure=s).delete()
             #Remove previous Rotamers/Residues to prepare repopulate
@@ -1576,6 +1685,8 @@ class Command(BaseBuild):
                 print('ERROR WITH CONSTRUCT FETCH {}'.format(sd['pdb']))
                 self.logger.error('ERROR WITH CONSTRUCT FETCH for {}'.format(sd['pdb']))
 
+                self.construct_errors.append(s)
+
             try:
                 current = time.time()
                 self.create_rotamers(s,pdb_path,d)
@@ -1591,6 +1702,8 @@ class Command(BaseBuild):
                 print('ERROR WITH ROTAMERS {}'.format(sd['pdb']))
                 self.logger.error('Error with rotamers for {}'.format(sd['pdb']))
 
+                self.rotamer_errors.append(s)
+
             try:
                 s.protein_conformation.generate_sites()
             except:
@@ -1599,48 +1712,45 @@ class Command(BaseBuild):
             if self.run_contactnetwork:
                 try:
                     current = time.time()
-                    self.build_contact_network(s,sd['pdb'])
+                    self.build_contact_network(sd['pdb'])
                     end = time.time()
                     diff = round(end - current,1)
-                    self.logger.info('Create contactnetwork done for {}. {} seconds.'.format(
-                                s.protein_conformation.protein.entry_name, diff))
+                    self.logger.info('Create contactnetwork done for {}. {} seconds.'.format(s.protein_conformation.protein.entry_name, diff))
                 except Exception as msg:
                     print(msg)
                     print('ERROR WITH CONTACTNETWORK {}'.format(sd['pdb']))
                     self.logger.error('Error with contactnetwork for {}'.format(sd['pdb']))
 
-                try:
-                    current = time.time()
-                    mypath = '/tmp/interactions/results/' + sd['pdb'] + '/output'
-                    # if not os.path.isdir(mypath):
-                    #     #Only run calcs, if not already in temp
-                    runcalculation(sd['pdb'],peptide_chain)
+                    self.contactnetwork_errors.append(s)
 
-                    parsecalculation(sd['pdb'],False)
-                    end = time.time()
-                    diff = round(end - current,1)
-                    self.logger.info('Interaction calculations done for {}. {} seconds.'.format(
-                                s.protein_conformation.protein.entry_name, diff))
-                except Exception as msg:
+            for ligand in ligands:
+                if ligand['type'].strip() in ['small molecule', 'protein', 'peptide'] and ligand['in_structure']:
                     try:
                         current = time.time()
-                        mypath = '/tmp/interactions/results/' + sd['pdb'] + '/output'
+                        peptide_chain = ""
+                        if ligand['chain']!='':
+                            peptide_chain = ligand['chain']
+                        # mypath = '/tmp/interactions/results/' + sd['pdb'] + '/output'
                         # if not os.path.isdir(mypath):
                         #     #Only run calcs, if not already in temp
-                        runcalculation(sd['pdb'], peptide_chain)
-
-                        parsecalculation(sd['pdb'],False)
+                        # runcalculation(sd['pdb'],peptide_chain)
+                        data_results = runcalculation_2022(sd['pdb'], peptide_chain)
+                        self.parsecalculation(sd['pdb'], data_results, False)
                         end = time.time()
                         diff = round(end - current,1)
-                        self.logger.info('Interaction calculations done (again) for {}. {} seconds.'.format(
+                        print('Interaction calculations done for {}. {} seconds.'.format(
+                                    s.protein_conformation.protein.entry_name, diff))
+                        self.logger.info('Interaction calculations done for {}. {} seconds.'.format(
                                     s.protein_conformation.protein.entry_name, diff))
                     except Exception as msg:
-
                         print(msg)
+                        # print(traceback.format_exc())
                         print('ERROR WITH INTERACTIONS {}'.format(sd['pdb']))
                         self.logger.error('Error parsing interactions output for {}'.format(sd['pdb']))
 
+                        self.interaction_errors.append(s)
 
+                        # print('{} done'.format(sd['pdb']))
 
-
-                    # print('{} done'.format(sd['pdb']))
+            s.build_check = True
+            s.save()

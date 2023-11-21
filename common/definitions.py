@@ -2244,8 +2244,8 @@ STRUCTURAL_SWITCHES = {
     }
 
 G_PROTEIN_SEGMENTS = OrderedDict([
-        ('Full', ['HN', 'hns1', 'S1', 's1h1', 'H1', 'h1ha', 'HA', 'hahb', 'HB', 'hbhc', 'HC', 'hchd', 'HD', 'hdhe', 'HE', 'hehf', 'HF', 'hfs2', 'S2', 's2s3', 'S3', 's3h2', 'H2', 'h2s4', 'S4', 's4h3', 'H3', 'h3s5', 'S5', 's5hg', 'HG', 'hgh4', 'H4', 'h4s6', 'S6', 's6h5', 'H5']),
-        ('Structured', ['HN', 'S1', 'H1', 'HA', 'HB', 'HC', 'HD', 'HE', 'HF', 'S2', 'S3', 'H2', 'S4', 'H3', 'S5', 'HG', 'H4', 'S6', 'H5']),
+        ('Full', ['G.HN', 'G.hns1', 'G.S1', 'G.s1h1', 'G.H1', 'G.h1ha', 'H.HA', 'H.hahb', 'H.HB', 'H.hbhc', 'H.HC', 'H.hchd', 'H.HD', 'H.hdhe', 'H.HE', 'H.hehf', 'H.HF', 'G.hfs2', 'G.S2', 'G.s2s3', 'G.S3', 'G.s3h2', 'G.H2', 'G.h2s4', 'G.S4', 'G.s4h3', 'G.H3', 'G.h3s5', 'G.S5', 'G.s5hg', 'G.HG', 'G.hgh4', 'G.H4', 'G.h4s6', 'G.S6', 'G.s6h5', 'G.H5']),
+        ('Structured', ['G.HN', 'G.S1', 'G.H1', 'H.HA', 'H.HB', 'H.HC', 'H.HD', 'H.HE', 'H.HF', 'G.S2', 'G.S3', 'G.H2', 'G.S4', 'G.H3', 'G.S5', 'G.HG', 'G.H4', 'G.S6', 'G.H5']),
     ])
 
 ARRESTIN_SEGMENTS = OrderedDict([
@@ -2255,9 +2255,24 @@ ARRESTIN_SEGMENTS = OrderedDict([
        's8s9', 'S9', 's9s10', 'S10', 's10s11', 'S11',
        's11s12', 'S12', 's12s13', 'S13', 's13s14', 'S14',
        's14s15', 'S15', 's15s16', 'S16', 's16s17', 'S17',
-       's17s18', 'S18', 's18s19', 'S19', 's19c']),
+       's17s18', 'S18', 's18s19', 'S19', 's19s20', 'S20', 's20c']),
         ('Structured', ['S1', 'S2', 'S3',
        'S4', 'S5', 'S6', 'H1', 'S7', 'S8',
        'S9', 'S10', 'S11', 'S12', 'S13', 'S14',
-       'S15', 'S16', 'S17', 'S18', 'S19']),
+       'S15', 'S16', 'S17', 'S18', 'S19', 'S20']),
     ])
+
+G_PROTEIN_DISPLAY_NAME = { # Alpha
+                           'GNAS2':'Gs', 'GNAL':'Golf',
+                           'GNAI1':'Gi1', 'GNAI2':'Gi2', 'GNAI3':'Gi3', 'GNAT1':'Gt1', 'GNAT2':'Gt2', 'GNAT3':'Ggust', 'GNAZ':'Gz', 'GNAO':'Go',
+                           'GNAQ':'Gq', 'GNA11':'G11', 'GNA14':'G14', 'GNA15':'G15',
+                           'GNA12':'G12', 'GNA13':'G13',
+                           'GPa1':'GPa1', 'GPA1':'GPa1',
+                           # Beta
+                           'G(I)/G(S)/G(T) subunit beta-1':'G&beta;1',
+                           'BJ4_G0051350.mRNA.1.CDS.1':'STE4 isoform 1',
+                           # Gamma
+                           'G(T) subunit gamma-T1':'G&gamma;T1', 'G(I)/G(S)/G(O) subunit gamma-2':'G&gamma;2',
+                           'subunit gamma':'G&gamma;'}
+
+ARRESTIN_DISPLAY_NAME = {'arrs_mouse':'S-arrestin', 'arrs_bovin':'S-arrestin', 'arrb1_human':'Beta-arrestin-1', 'arrb1_rat':'Beta-arrestin-1'}

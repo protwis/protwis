@@ -19,6 +19,9 @@ class InteractingResiduePair(models.Model):
         with connection.cursor() as cursor:
             cursor.execute('TRUNCATE TABLE "{0}" RESTART IDENTITY CASCADE'.format(cls._meta.db_table))
 
+    def __str__(self):
+        return '<{}-{}-{}>'.format(self.res1, self.res2, self.referenced_structure)
+
     class Meta():
         db_table = 'interacting_residue_pair'
 
@@ -41,6 +44,36 @@ class Interaction(models.Model):
 
     class Meta():
         db_table = 'interaction'
+
+
+class InteractingPeptideResiduePair(models.Model):
+    peptide_amino_acid_three_letter = models.CharField(max_length=3)
+    peptide_amino_acid = models.CharField(max_length=1)
+    peptide_sequence_number = models.IntegerField(null=False)
+    peptide = models.ForeignKey('ligand.LigandPeptideStructure', related_name='peptide', on_delete=models.CASCADE)
+    receptor_residue = models.ForeignKey('residue.Residue', related_name='receptor_residue', on_delete=models.CASCADE)
+
+    def __str__(self):
+        return '<{}{}-{}>'.format(self.peptide_amino_acid_three_letter, self.peptide_sequence_number, self.receptor_residue)
+
+    class Meta():
+        db_table = 'interacting_peptide_residue_pair'
+
+
+class InteractionPeptide(models.Model):
+    interacting_peptide_pair = models.ForeignKey('contactnetwork.InteractingPeptideResiduePair', related_name='pair', on_delete=models.CASCADE)
+    peptide_atom = models.CharField(max_length=10)
+    receptor_atom = models.CharField(max_length=10)
+    interaction_type = models.CharField(max_length=100)
+    specific_type = models.CharField(max_length=100, null=True)
+    interaction_level = models.IntegerField()
+
+    def __str__(self):
+        return '<{}-{}>'
+
+    class Meta():
+        db_table = 'interaction_peptide'
+
 
 class ConsensusInteraction(models.Model):
     gn1 = models.ForeignKey('residue.ResidueGenericNumber', on_delete=models.CASCADE, related_name='GN_1')

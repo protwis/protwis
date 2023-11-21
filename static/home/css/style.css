@@ -173,7 +173,7 @@ span.text-forest-highlight {
   margin-top: 0;
 }
 
-select.form-control {
+select.form-control :not(#numberingschemeselect) {
   width: auto;
   height: 22px;
   font-size: 11px;
@@ -290,10 +290,11 @@ span.stats_entry {
 span.stats_title {
   padding-top: 0.25em;
   padding-bottom: 0.25em;
+  text-align: left;
 }
 
 span.stats_value {
-  width: 5em;
+  width: 3.5em;
   display: inline-block;
   text-align: right;
 }

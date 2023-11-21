@@ -2,7 +2,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 from django.utils.text import slugify
 from django.db import IntegrityError
-
+from common.tools import test_model_updates
 from protein.models import Protein, ProteinConformation
 from residue.models import Residue
 from structure.models import Structure
@@ -19,6 +19,7 @@ import csv
 import os
 import json
 import datetime
+import django.apps
 
 class Command(BaseCommand):
     help = 'Build construct data'
@@ -36,6 +37,10 @@ class Command(BaseCommand):
     construct_data_dir = os.sep.join([settings.DATA_DIR, 'structure_data','construct_data'])
     construct_data_local_dir = "../files/construct_data"
 
+    tracker = {}
+    all_models = django.apps.apps.get_models()[6:]
+    test_model_updates(all_models, tracker, initialize=True)
+
     def handle(self, *args, **options):
         if options['filename']:
             filenames = options['filename']
@@ -49,12 +54,15 @@ class Command(BaseCommand):
 
         if options['purge']:
             self.purge_construct_data()
+            self.tracker = {}
+            test_model_updates(self.all_models, self.tracker, initialize=True)
 
-        print(filenames)
         if not local_fill:
             self.create_construct_data(filenames)
+            test_model_updates(self.all_models, self.tracker, check=True)
         else:
             self.create_construct_local_data()
+            test_model_updates(self.all_models, self.tracker, check=True)
         # except Exception as msg:
         #     print("ERROR: "+str(msg))
         #     self.logger.error(msg)
@@ -150,7 +158,7 @@ class Command(BaseCommand):
                     add_construct(d)
 
         if do_all:
-            structures = Structure.objects.all()
+            structures = Structure.objects.all().exclude(structure_type__slug__startswith='af-')
             for s in structures:
                 pdbname = str(s)
                 try:

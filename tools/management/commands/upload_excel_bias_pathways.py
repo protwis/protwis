@@ -3,11 +3,12 @@ from build.management.commands.build_ligand_functions import get_or_create_ligan
 from protein.models import Protein
 from ligand.models import BiasedPathwaysAssay, BiasedPathways
 from common.models import Publication
-
+from common.tools import test_model_updates
 from django.conf import settings
 import logging
 import os
 import xlrd
+import django.apps
 
 class Command(BaseBuild):
     mylog = logging.getLogger(__name__)
@@ -17,7 +18,9 @@ class Command(BaseBuild):
     file_handler.setLevel(logging.ERROR)
     file_handler.setFormatter(formatter)
     mylog.addHandler(file_handler)
-
+    tracker = {}
+    all_models = django.apps.apps.get_models()[6:]
+    test_model_updates(all_models, tracker, initialize=True)
     help = 'Reads bias data and imports it'
     # source file directory
     structure_data_dir = os.sep.join([settings.DATA_DIR, 'ligand_data', 'bias_data', 'pathways'])
@@ -58,12 +61,15 @@ class Command(BaseBuild):
         if options['purge']:
             try:
                 self.purge_bias_data()
+                self.tracker = {}
+                test_model_updates(self.all_models, self.tracker, initialize=True)
             except Exception as msg:
                 print(msg)
                 self.logger.error(msg)
 
         print('CREATING BIAS PATHWAYS DATA')
         self.prepare_all_data(options['filename'])
+        test_model_updates(self.all_models, self.tracker, check=True)
         self.logger.info('COMPLETED CREATING BIAS')
 
     def purge_bias_data(self):
@@ -105,7 +111,7 @@ class Command(BaseBuild):
             self.logger.info(
                 "The error appeared during reading the excel" + num_rows)
 
-    def analyse_rows(self, rows, source_file):
+    def analyse_rows(self, rows):
         """
         Reads excel rows one by one.
         Fetch data to models.
@@ -118,7 +124,6 @@ class Command(BaseBuild):
             if r[4] != '':  # checks if the receptor field exists
                 # try:
                 d['submitting_group'] = r[0]
-                d['relevance'] = r[15]
                 # doi
                 d['reference'] = r[1]
                 # protein
@@ -128,16 +133,17 @@ class Command(BaseBuild):
                 d['ligand_name'] = r[6]
                 d['ligand_type'] = r[7]
                 d['ligand_id'] = r[8]
-                # pathway
-                d['pathway_outcome'] = r[14]
-                d['pathway_summary'] = r[13]
-                d['pathway_detail'] = r[12]
                 #experiment
-                d['experiment_disctinction'] = r[9]
+                d['experiment_distinction'] = r[9]
                 d['experiment_system'] = r[10]
                 d['experiment_method'] = r[11]
-
-                d['source_file'] = source_file + str(i)
+                # pathway
+                d['pathway_detail'] = r[12]
+                d['pathway_summary'] = r[13]
+                d['pathway_outcome'] = r[14]
+                #Therapeutic
+                d['effect_type'] = r[15]
+                d['relevance'] = r[16]
 
                 if not isinstance(d['ligand_id'], str):
                     d['ligand_id'] = int(d['ligand_id'])
@@ -146,24 +152,28 @@ class Command(BaseBuild):
                 pub = self.fetch_publication(d['reference'])
 
                 # fetch main ligand
-                # TODO - replace this one
-                l = get_or_create_ligand(d['ligand_name'], {self.mol_types[d['ligand_type']]: d['ligand_id']})
-
-                #fetch ChEMBL
-                chembl = self.fetch_chembl(l)
+                ligand = None
+                chembl = None
+                if d['ligand_name'] is not None and d['ligand_name'] != "":
+                    ids = {}
+                    if d['ligand_type'] in self.mol_types:
+                        ids = {self.mol_types[d['ligand_type']]: d['ligand_id']}
+                    ligand = get_or_create_ligand(d['ligand_name'], ids)
+                    chembl = self.fetch_chembl(ligand)
 
                 # fetch protein
-                protein = self.fetch_protein(d['receptor'], d['source_file'])
+                protein = self.fetch_protein(d['receptor'])
                 if protein == None:
                     continue
 
                 ## TODO:  check if it was already uploaded
                 experiment_entry = BiasedPathways(submission_author=d['submitting_group'],
                                                     publication=pub,
-                                                    ligand=l,
+                                                    ligand=ligand,
                                                     receptor=protein,
                                                     chembl = chembl,
                                                     relevance = d['relevance'],
+                                                    effect_type = d['effect_type'],
                                                     signalling_protein = d['signalling_protein']
                                                     )
                 experiment_entry.save()
@@ -172,7 +182,7 @@ class Command(BaseBuild):
                                                   pathway_outcome_high = d['pathway_outcome'],
                                                   pathway_outcome_summary = d['pathway_summary'],
                                                   pathway_outcome_detail  = d['pathway_detail'],
-                                                  experiment_pathway_distinction = d['experiment_disctinction'],
+                                                  experiment_pathway_distinction = d['experiment_distinction'],
                                                   experiment_system = d['experiment_system'],
                                                   experiment_outcome_method= d['experiment_method']
                                                    )
@@ -193,7 +203,7 @@ class Command(BaseBuild):
         else:
             return None
 
-    def fetch_protein(self, protein_from_excel, source):
+    def fetch_protein(self, protein_from_excel):
         """
         fetch receptor with Protein model
         requires: protein id, source
@@ -244,8 +254,7 @@ class Command(BaseBuild):
             filenames = os.listdir(self.structure_data_dir)
         for source_file in filenames:
             # print("source_file " + str(source_file))
-            source_file_path = os.sep.join(
-                [self.structure_data_dir, source_file]).replace('//', '/')
+            source_file_path = os.sep.join([self.structure_data_dir, source_file]).replace('//', '/')
             # print("source_file_path " + str(source_file_path))
             if os.path.isfile(source_file_path) and source_file[0] != '.':
                 self.logger.info('Reading file {}'.format(source_file_path))
@@ -257,7 +266,7 @@ class Command(BaseBuild):
                         # ignore open excel files
                         continue
                     rows = self.loaddatafromexcel(source_file_path)
-                    rows = self.analyse_rows(rows, source_file)
+                    rows = self.analyse_rows(rows)
                 else:
                     self.mylog.debug('unknown format'.source_file)
                     continue

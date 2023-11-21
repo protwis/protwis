@@ -15,6 +15,21 @@
 <link href="{% static 'home/css/flareplot-contactbrowser.css' %}" rel="stylesheet">
 <link href="{% static 'home/css/flareplot-selectors.css' %}" rel="stylesheet">
 <link href="{% static 'home/css/flareplot-rangeslider.css' %}" rel="stylesheet">
+<style type="text/css">
+    .gpcrdb-link {
+        filter: grayscale(100%);
+    }
+    .gpcrdb-link:hover {
+        filter: grayscale(0%);
+    }
+    .shorten {
+      max-width: 100px;
+      text-overflow: ellipsis;
+      word-break: normal;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -142,6 +157,7 @@
                 <div class="col-md-12">
                     <span id="single-crystal-group-pdbs-modal-text">0 structure(s) selected</span>
                     <button type="button" onclick="resetselection();" class="btn btn-xs btn-primary reset-selection">Reset selection</button>
+                    <p style="display:inline;">Filtering and selection might take up a few seconds.</p>
                     <div class="tableview"></div>
                 </div>
             </div>
@@ -173,9 +189,32 @@
     <!-- <div id="conseq-svg" class="collapse in"></div>            -->
 </div>
 
-<div id="sigmatch-container" class="svg-container" style="display: none; padding-bottom:
-    10%">
-    <div>
+
+<div id="sigmatch-container" class="svg-container" style="display: none; padding-bottom:10%"><div>
+  <div class="text-center">
+    <div class="btn-group">
+        <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                aria-haspopup="true" aria-expanded="false">
+            <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu">
+            <li>
+                <a href="javascript:saveSvgAsPng(document.getElementsByClassName('interaction')[0], 'GPCR-GProtein_interface_matrix.png');">PNG</a>
+            </li>
+            <li>
+                <a href="javascript:saveSvgAsJpg(document.getElementsByClassName('interaction')[0], 'GPCR-GProtein_interface_matrix.jpg');">JPG</a>
+            </li>
+            <li>
+                <a href="javascript:saveSvgAsTiff(document.getElementsByClassName('interaction')[0], 'GPCR-GProtein_interface_matrix.tiff');">TIFF</a>
+            </li>
+            <li>
+                <a href="javascript:saveSvg(document.getElementsByClassName('interaction')[0], 'GPCR-GProtein_interface_matrix.svg');">SVG</a>
+            </li>
+        </ul>
+    </div>
+  </div>
+  <br />
+  <br />
         <h2>Interface Property Consensus Conservation in Class</h2>
 
         <!-- <div class="row">                                                                                 -->
@@ -291,7 +330,8 @@ const csrf_token = "{{ csrf_token }}"
 <script src="{% static 'home/js/d3.v5.min.js' %}"></script>
 <script src="{% static 'home/js/d3.tip.v4comp.js' %}"></script>
 <script src="{% static 'home/js/d3-legend.min.js' %}"></script>
-
+<script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
+<script src="{% static 'home/js/saveSvg.js' %}"></script>
 <script src="{% static 'home/js/lodash.min.js' %}"></script>
 <script src="{% static 'home/js/chroma.min.js' %}"></script>
 

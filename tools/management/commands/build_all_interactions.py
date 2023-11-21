@@ -14,7 +14,7 @@ class Command(BaseBuild):
     help = "Function to calculate interaction for all GPCR structures."
 
     logger = logging.getLogger(__name__)
-    pdbs = Structure.objects.all().values_list('pdb_code__index', flat=True)
+    pdbs = Structure.objects.all().exclude(structure_type__slug__startswith='af-').values_list('pdb_code__index', flat=True)
 
 
     def add_arguments(self, parser):
@@ -41,6 +41,7 @@ class Command(BaseBuild):
                 pdb = pdbs[count.value]
                 count.value +=1
             try:
-                compute_interactions(pdb, True)
+                # compute_interactions(pdb, True)
+                compute_interactions(pdb, do_interactions=True, do_peptide_ligand=True, save_to_db=True)
             except:
                 print('Issue making interactions for',pdb)

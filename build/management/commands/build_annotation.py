@@ -10,9 +10,11 @@ from residue.models import Residue
 from residue.functions import *
 from protein.models import Protein, ProteinConformation, ProteinSegment, ProteinFamily
 
+from common.tools import test_model_updates
 from Bio import pairwise2
 from Bio.Align import substitution_matrices
 
+import django.apps
 import logging
 import os
 import sys
@@ -43,6 +45,11 @@ class Command(BaseBuild):
             help='Number of processes to run')
 
     logger = logging.getLogger(__name__)
+
+    #Setting the variables for the test tracking of the model upadates
+    tracker = {}
+    all_models = django.apps.apps.get_models()[6:]
+    test_model_updates(all_models, tracker, initialize=True)
 
     # source file directory
     annotation_source_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'Structural_Annotation.xlsx'])
@@ -88,7 +95,7 @@ class Command(BaseBuild):
 
             # self.main_func([0, False],0)
             # self.analyse_rf_annotations()
-
+            test_model_updates(self.all_models, self.tracker, check=True)
             self.logger.info('COMPLETED CREATING RESIDUES')
         except Exception as msg:
             print(msg)
@@ -316,6 +323,8 @@ class Command(BaseBuild):
                         human_ortholog = Protein.objects.filter(entry_name='5ht5a_human')
                     elif entry_name.startswith('taar4_'):
                         human_ortholog = Protein.objects.filter(entry_name='taar2_human')
+                    elif entry_name in ['q764p5_letca','a0a1e1g6x5_takru','a0a1e1g6y2_danre','h2u5s9_takru','w5n9z3_lepoc','a0a1e1g6y8_oncmy','a0a0n9n9h8_danre','r9r6d2_oryla','f1nu85_chick','r9r6c6_oryla','w5j8f8_anoda','q8ji05_takru','q868g4_brabe','q95p33_cioin','q5sbp8_pladu','q1l4c8_utast','e7fee5_danre','a0a0k0ybe3_pladu']:
+                        human_ortholog = Protein.objects.filter(entry_name='opn5_human')
                     ###
                     if human_ortholog.exists():
                         human_ortholog = human_ortholog.get()

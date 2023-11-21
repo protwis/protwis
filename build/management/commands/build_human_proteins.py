@@ -7,9 +7,10 @@ from build.management.commands.base_build import Command as BaseBuild
 from protein.models import (Protein, ProteinConformation, ProteinState, ProteinFamily, ProteinAlias,
         ProteinSequenceType, Species, Gene, ProteinSource, ProteinSegment)
 from common.models import WebResource, WebLink
-
 from residue.models import ResidueNumberingScheme
+from common.tools import test_model_updates
 
+import django.apps
 import shlex
 import os
 from urllib.request import urlopen
@@ -28,6 +29,10 @@ class Command(BaseBuild):
     with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'sequences.yaml']), 'r') as f:
         excel_sequences = yaml.load(f, Loader=yaml.FullLoader)
     remote_uniprot_dir = 'http://www.uniprot.org/uniprot/'
+    #Setting the variables for the test tracking of the model upadates
+    tracker = {}
+    all_models = django.apps.apps.get_models()[6:]
+    test_model_updates(all_models, tracker, initialize=True)
 
     def handle(self, *args, **options):
         # use a smaller protein file if in test mode
@@ -38,6 +43,7 @@ class Command(BaseBuild):
         # create parent protein family, 000
         try:
             self.create_parent_protein_family()
+            test_model_updates(self.all_models, self.tracker, check=True)
         except Exception as msg:
             # print(msg)
             self.logger.error(msg)
@@ -45,6 +51,7 @@ class Command(BaseBuild):
         # create proteins and families
         try:
             self.create_proteins_and_families()
+            test_model_updates(self.all_models, self.tracker, check=True)
         except Exception as msg:
             print(msg)
             self.logger.error(msg)
@@ -216,6 +223,7 @@ class Command(BaseBuild):
             self.logger.info('Created protein {}'.format(p.entry_name))
         except Exception as e:
             self.logger.error('Failed creating protein {} {}'.format(p.entry_name, str(e)))
+            print('WARNING:', p.family, p.species, p.source, p.residue_numbering_scheme, p.sequence_type, p.accession, p.entry_name, p.name, p.sequence, e)
 
         # protein conformations
         try:

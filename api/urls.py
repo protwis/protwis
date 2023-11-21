@@ -3,13 +3,14 @@ from django.views.decorators.cache import cache_page
 from api import views
 
 
-urlpatterns = [
+excluded_apis = [
     url(r'^$', views.schema_view),
-    url(r'^reference/', views.schema_view),
+    url(r'^reference/', views.schema_view)]
+
+urlpatterns = excluded_apis + [
     url(r'^protein/accession/(?P<accession>[^/].+)/$', views.ProteinByAccessionDetail.as_view(),
         name='proteinbyaccession'),
     url(r'^protein/(?P<entry_name>[^/].+)/$', views.ProteinDetail.as_view(), name='protein-detail'),
-
     url(r'^proteinfamily/$', cache_page(3600*24*7)(views.ProteinFamilyList.as_view()), name='proteinfamily-list'),
     url(r'^proteinfamily/(?P<slug>[^/]+)/$', views.ProteinFamilyDetail.as_view(), name='proteinfamily-detail'),
     url(r'^proteinfamily/children/(?P<slug>[^/]+)/$', views.ProteinFamilyChildrenList.as_view(),
@@ -54,6 +55,8 @@ urlpatterns = [
         name='proteinsimilarityalignment'),
 
     url(r'^structure/$', cache_page(3600*24*7)(views.StructureList.as_view()), name='structure-list'),
+    url(r'^structure/alphafold_peptide_models/$', cache_page(3600*24*7)(views.StructureModelsList.as_view()), name='structure-list'),
+    url(r'^structure/accession_codes_human/$', cache_page(3600*24*7)(views.StructureAccessionHuman.as_view()), name='structure-accession-list'),
     url(r'^structure/representative/$', cache_page(3600*24*7)(views.RepresentativeStructureList.as_view()), {'representative': True},
         name='structure-representative-list'),
     url(r'^structure/protein/(?P<entry_name>[^/]+)/$', views.StructureListProtein.as_view(),
@@ -63,6 +66,8 @@ urlpatterns = [
         name='representative-structure-list-protein'),
     url(r'^structure/(?P<pdb_code>[^/]+)/$', views.StructureDetail.as_view(), name='structure-detail'),
     url(r'^structure/(?P<pdb_code>[^/]+)/interaction/$', views.StructureLigandInteractions.as_view(), name='interaction'),
+    url(r'^structure/(?P<value>[^/]+)/peptideinteraction/$', views.StructurePeptideLigandInteractions.as_view(), name='peptide-interaction'),
+    # url(r'^structure/(?P<entry_name>[^/]+)/peptideinteraction/$', views.StructurePeptideLigandInteractionsEntryName.as_view(), name='peptide-entry-name'),
     url(r'^structure/template/(?P<entry_name>[^/]+)/$', views.StructureTemplate.as_view(),
         name='structuretemplate'),
     url(r'^structure/template/(?P<entry_name>[^/]+)/(?P<segments>[^/]+)/$', views.StructureTemplatePartial.as_view(),
@@ -71,9 +76,15 @@ urlpatterns = [
         name='assign_generic_numbers'),
     url(r'structure/parse_pdb$', views.StructureSequenceParser.as_view(), name='sequence_parser'),
     url(r'^species/$', cache_page(3600*24*7)(views.SpeciesList.as_view()), name='species-list'),
+    url(r'^ligands/gtp_ids/$', views.GtPIDList.as_view(), name='gtp-ids'),
+    url(r'^ligands/endogenousligands/$', views.EndogenousLigands.as_view(), name='gtp-ids'),
+    url(r'^ligands/peptides/$', views.PeptideList.as_view(), name='peptide-list'),
     url(r'^species/(?P<latin_name>[^/]+)/$', views.SpeciesDetail.as_view(), name='species-detail'),
     url(r'^mutants/(?P<entry_name>[^/].+)/$', views.MutantList.as_view(), name='mutants'),
     url(r'^drugs/(?P<entry_name>[^/].+)/$', views.DrugList.as_view(), name='drugs'),
+    url(r'^ligands/(?P<prot_name>[^/].+)/$', views.LigandList.as_view(), name='drugs'),
     url(r'^plot/helixbox/(?P<entry_name>[^/].+)/$', views.HelixBoxView.as_view(), name='helixbox'),
-    url(r'^plot/snake/(?P<entry_name>[^/].+)/$', views.SnakePlotView.as_view(), name='snakeplot')
+    url(r'^plot/snake/(?P<entry_name>[^/].+)/$', views.SnakePlotView.as_view(), name='snakeplot'),
+    url(r'^structure/(?P<id>[^/]+)/complexinteraction/$', views.ComplexInteractions.as_view(), name='complex-interaction'),
+
 ]

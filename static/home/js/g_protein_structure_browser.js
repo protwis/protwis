@@ -11,8 +11,19 @@ function gproteinstructurebrowser(effector) {
     $(".alt").prop("checked",false);
     $(".select-all").prop("checked",false);
     //
-    ClearSelection("targets");
-    ClearSelection("reference");
+
+    switch (window.location.hash) {
+        case "#keepselectionreference":
+            ClearSelection("reference");
+            break;
+        case "#keepselectiontargets":
+            ClearSelection("targets");
+            break;
+        default:
+            ClearSelection("targets");
+            ClearSelection("reference");
+            break;
+    }
 
     $("#loading_div").hide();
 
@@ -613,7 +624,38 @@ function gproteinstructurebrowser(effector) {
     });
 
     $("#superpose_btn").click(function() {
-        superposition(oTable2, [7,1,2,3,4,5,11,28], "structure_browser");
+        superposition(oTable2, [0,1,11,14,15,16,17,18,29], "g_protein_structure_browser", "gprot", true);
+    });
+
+    $('#superpose_template_btn').click(function () {
+        var checked_data = oTable2.rows('.alt_selected').data();
+        if (checked_data.length == 1) {
+            var value = CheckSelection('reference');
+            var div = document.createElement("div");
+            div.innerHTML = checked_data[0][11];
+            var destination;
+            if (value != 0){
+              destination = 'targets';
+            } else {
+              destination = 'reference';
+            }
+            if (typeof div.innerText !== "undefined") {
+                AddToSelection(destination, 'signprot', div.innerText.replace(/\s+/g, ''));
+            } else {
+                AddToSelection(destination, 'signprot', div.textContent.replace(/\s+/g, ''));
+            }
+        } else {
+          for (i = 0; i < checked_data.length; i++) {
+              var div = document.createElement("div");
+              div.innerHTML = checked_data[i][11];
+              if (typeof div.innerText !== "undefined") {
+                  AddToSelection('targets', 'signprot', div.innerText.replace(/\s+/g, ''));
+              } else {
+                  AddToSelection('targets', 'signprot', div.textContent.replace(/\s+/g, ''));
+              }
+          }
+        }
+        window.location.href = '/structure/superposition_workflow_gprot_index';
     });
 
     $("#download_btn").click(function () {
@@ -621,7 +663,7 @@ function gproteinstructurebrowser(effector) {
         var checked_data = oTable2.rows(".alt_selected").data();
         for (i = 0; i < checked_data.length; i++) {
             var div = document.createElement("div");
-            div.innerHTML = checked_data[i][7];
+            div.innerHTML = checked_data[i][2];
             if (typeof div.innerText !== "undefined") {
                 AddToSelection("targets", "structure",  div.innerText.replace(/\s+/g, "") );
             } else {
@@ -653,11 +695,6 @@ function gproteinstructurebrowser(effector) {
 
     $("#reset_filters_btn").click(function () {
         window.location.href = "/structure/";
-    });
-
-    $(".close_modal").click(function () {
-        var modal = document.getElementById("myModal");
-        modal.style.display = "none";
     });
 
     $(".dataTables_scrollBody").append("<div id=overlay><table id=\"overlay_table\" class=\"row-border text-center compact dataTable no-footer text-nowrap\"><tbody></tbody></table></div>");
@@ -703,43 +740,41 @@ function gproteinstructurebrowser(effector) {
 
 }
 
-var tableToExcel = (function () {
-    var uri = "data:application/vnd.ms-excel;base64,",
-        template = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>{worksheet}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body><table>{table}</table></body></html>',
-        base64 = function (s) {
-            return window.btoa(unescape(encodeURIComponent(s)));
-        }, format = function (s, c) {
-            return s.replace(/{(\w+)}/g, function (m, p) {
-                return c[p];
-            })
-        }
-    return function (table, name, filename) {
-            var table= $("#"+table).clone();
-            $("#excel_table").html(table);
-            // Clean up table to remove yadcf stuff
-            $("#excel_table thead tr").css("height","");
-            $("#excel_table thead th").css("height","");
-            $("#excel_table thead div").css("height","");
-            $("#excel_table thead .yadcf-filter-wrapper").remove();
-            $("#excel_table thead button").remove();
-            var tr = $("#excel_table thead tr:eq(1)");
-            // reattach th titles
-            tr.find("th").each (function( column, th) {
-              if ($(th).attr("title")){
-                $(th).html($(th).attr("title"));
-              }
-            });
+function CheckSelection(selection_type) {
+    var result = null;
 
-        var ctx = {
-            worksheet: name || "Worksheet",
-            table: $("#excel_table").html()
+    $.ajax({
+        'url': '/common/checkselection',
+        'data': {
+            selection_type: selection_type
+        },
+        'type': 'GET',
+        'dataType': 'json',  // Expecting JSON response from the server
+        'async': false,
+        'success': function(response) {
+            result = response.total;
+        },
+        'error': function(error) {
+            console.error("An error occurred:", error);
         }
-        $("#excel_table").html("");
-        document.getElementById("dlink").href = uri + base64(format(template, ctx));
-        document.getElementById("dlink").download = filename;
-        document.getElementById("dlink").click();
-    }
-})()
+    });
+
+    return result;
+}
+
+function ClearSelection(selection_type) {
+    $.ajax({
+        'url': '/common/clearselection',
+        'data': {
+            selection_type: selection_type
+        },
+        'type': 'GET',
+        'async': false,
+        'success': function (data) {
+            $("#selection-" + selection_type).html(data);
+        }
+    });
+}
 
 function copyDropdown() {
     document.getElementById("Dropdown").classList.toggle("show");

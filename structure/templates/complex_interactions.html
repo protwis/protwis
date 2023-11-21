@@ -1,0 +1,300 @@
+<div class="row">
+  <br/>
+  <br/>
+  <div class="col-md-12 text-center">
+    <h2>GPCR - G protein interface interactions <i style="color:black; font-size:16px;" id="wide-popover" class="fas fa-info-circle" data-html="true" data-container="body" data-toggle="popover" data-trigger="click hover" data-placement="bottom" data-html="true" data-content="
+              <table id='interaction-cutoffs'>
+                <thead>
+                  <th>Interaction type</th>
+                  <th>Strict definition</th>
+                  <th>Loose definition</th>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Polar</td>
+                    <td>donor-acceptor dist. ≤3.5Å + donor angle ≥120°</td>
+                    <td>donor-acceptor dist. ≤4Å</td>
+                  </tr>
+                  <tr>
+                    <td>Aromatic</td>
+                    <td>Face-to-face: dist. ≤4.4Å + angle ≤30° <br/>Face-to-edge: dist. ≤5.5Å + angle >30° <br/>Cation-π: dist. to cat. ≤6.6Å + angle ≤30°</td>
+                    <td>dist. ≤5.5Å OR Cation-π</td>
+                  </tr>
+                  <tr>
+                    <td>Hydrophobic</td>
+                    <td>≥3 atom pairs</td>
+                    <td>≥1 atom pair</td>
+                  </tr>
+                  <tr>
+                    <td>van der Waals</td>
+                    <td>≥3 atom pairs</td>
+                    <td>≥1 atom pair</td>
+                </tbody>
+              </table>"></i></h2>
+  </div>
+</div>
+
+<div class="col-md-12 ">
+  <ul class="nav nav-tabs">
+    <li class="nav-item active">
+      <a class="nav-link active" data-toggle="tab" href="#circles" id="circles_tab">Biflare</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" data-toggle="tab" href="#3dview" id="3dview_tab">3D view</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" data-toggle="tab" href="#matrix" id="matrix_tab">Matrix</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" data-toggle="tab" href="#table" id="table_tab">Table</a>
+    </li>
+  </ul>
+  <br/>
+  <br/>
+  <div class="tab-content">
+    <div class="tab-pane container active" id="circles">
+
+      <div>
+        <p>The biflare plot is a modified version of a flareplot, where lines are drawn between an <b>inner concentric circle</b>
+          <i>(G&alpha; residues)</i>
+          and an <b>outer concentric circle</b> <i>(GPCR residues)</i> depicting the interface interactions.<br/>
+          Different interaction types are shown with different line types (<b>aromatic</b> - <i>solid</i>,
+          <b>hydrophobic</b> - <i>dashed</i>,
+          <b>ionic</b> - <i>long dashed</i>, <b>polar</b> - <i>dotted</i>, <b>Van der Waals</b> - <i>dash-dot</i>).<br/>
+          The interactive features include filtering on interaction type, segments, residues and backbone or sidechain interactions.
+        </p>
+      </div>
+      <br/>
+      <div>
+        <b>Interaction cut-off:</b>
+          <div class="btn-group" role="group" id="cut_off">
+              <button id="strict" class="btn btn-info active">Strict</button>
+              <button id="loose" class="btn btn-info">Loose</button>
+          </div>
+      </div>
+      <br />
+      <div>
+        <b>Residue numbering:</b>
+          <div class="btn-group" role="group" id="cut_off">
+              <button id="generic" class="btn btn-info active">Generic</button>
+              <button id="protein" class="btn btn-info">Protein</button>
+          </div>
+      </div>
+      <div id="tooltip" class="tooltip"></div>
+      <div style="display: flex; justify-content: center;">
+        <svg id="visualization" width="100%" height="1115"></svg>
+      </div>
+      <div class="row">
+        <div class="col-md-2 text-right text-info">
+        </div>
+        <div class="col-md-9" style="padding-left: 90px">
+          <div class="container">
+            <p style="display: inline-block; vertical-align: middle;"><b>GPCR-G protein backbone (bb) or sidechain (sc):</b></p>
+            <div class="checkbox-group" style="display: inline-block; vertical-align: middle; margin-left: 10px;">
+              <div class="checkbox-item">
+                <input type="checkbox" id="main-main" name="chain" value="Main-Main">
+                <label for="main-main">bb-bb</label>
+              </div>
+              <div class="checkbox-item">
+                <input type="checkbox" id="main-side" name="chain" value="Main-Side">
+                <label for="main-side">bb-sc</label>
+              </div>
+              <div class="checkbox-item">
+                <input type="checkbox" id="side-side" name="chain" value="Side-Side">
+                <label for="side-side">sc-sc</label>
+              </div>
+              <div class="checkbox-item">
+                <input type="checkbox" id="side-main" name="chain" value="Side-Main">
+                <label for="side-main">sc-bb</label>
+              </div>
+            </div>
+          </div>
+          <br/>
+          <div style="text-align: left;">
+            <button id="interactionsButton">Interactions</button>
+            <button id="propertiesButton">Properties</button>
+            <button id="segmentButton">Segment</button>
+            <button id="resetButton">Reset</button>
+          </div>
+          <br/>
+          <div style="text-align: left;">
+            <div class="btn-group">
+                <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                        aria-haspopup="true" aria-expanded="false">Download <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li>
+                        <a href="javascript:downloadSVG('visualization', 'interactionsPNG', 'png');">PNG</a>
+                    </li>
+                    <li>
+                        <a href="javascript:downloadSVG('visualization', 'interactionsJPEG', 'jpeg');">JPEG</a>
+                    </li>
+                    <li>
+                        <a href="javascript:downloadSVG('visualization', 'interactionsTIFF', 'tiff');">TIFF</a>
+                    </li>
+                    <li>
+                        <a href="javascript:downloadSVG('visualization', 'interactionsSVG');">SVG</a>
+                    </li>
+                </ul>
+            </div>
+          </div>
+        </div>
+        <br>
+        <br>
+      </div>
+    </div>
+    <div class="tab-pane container" id="matrix">
+      <div class="row">
+          <div class="col-md-12">
+              <div class="panel panel-default">
+
+                  <div class="panel-heading">
+                      <h3 class="panel-title">Structures</h3>
+                  </div>
+
+                  <div class="panel-body">
+
+
+                      <div class="col-md-2" hidden>
+                          <p
+                                  id='single-crystal-group-pdbs-modal-external-text'
+                                  class="crystal-count"
+                                  style="font-weight: 700">
+                          0 structures selected.
+                              </p></h5>
+                              <button
+                                  type="button"
+                                  class="btn btn-primary"
+                                  data-toggle="modal"
+                                  data-target="#interface-modal-table">
+                                  Select Structures
+                              </button>
+                              <button
+                                  type="button"
+                                  class="btn btn-success"
+                                  style="margin-top: 5px"
+                                  onClick='var fasta_data = signprotmat.data.get_data_gap_non_int(pdbScale, xScale, non_interactions, data.receptor);
+                                  signprotmat.data.download_fasta(fasta_data, pdbScale)'>
+                                  Download Fasta
+                              </button>
+                      </div>
+
+                      <div class="col-md-2">
+                          <p><b>Sequence Color</b></p>
+
+                          <div class="btn-group-vertical btn-group-sm" role="group">
+                              <button
+                                  type="button"
+                                  id="resbut"
+                                  class="btn btn-primary"
+                                  onClick="signprotmat.d3.colorBySwitch('res', colScale)">
+                                  Residue
+                              </button>
+                              <button
+                                  type="button"
+                                  id="intbut"
+                                  class="btn btn-primary active"
+                                  onClick="signprotmat.d3.colorBySwitch('int', colScale)">
+                                  Interaction
+                              </button>
+                          </div>
+                      </div>
+
+                      <div id="legend-space" class="col-md-6">
+                      </div>
+
+                      <div class="col-md-2" hidden>
+                          <p style='margin: 0'><b>Interaction frequency filter (%)</b></p>
+                          <div id="amount_min"></div>
+                          <div id="amount_max"></div>
+
+                          <div id="slider-range"></div>
+                      </div>
+                  </div>
+
+              </div>
+          </div>
+      </div>
+      <div id="interface-container" class="" >
+          <div id="interface-svg"></div>
+      </div>
+
+    </div>
+    <div class="tab-pane container" id="3dview">
+      <p class="inline" style='font-size: 18px;'><span style="color:#fc660ff0;">G&alpha;</span>,
+        {% if model.signprot_complex.beta_protein %}
+        <span style="color:#f79862;">G&beta;</span>,
+        {% endif %}
+        {% if model.signprot_complex.gamma_protein %}
+        <span style="color:#ffbf00;">G&gamma;</span>,
+        {% endif %}
+        <span style="color:grey;">GPCR</span><br />
+        Interaction cut-off: strict (stick), loose (line)
+      </p>
+      <div id="viewport_full" style="width:500px; height:400px; background-color: white;"></div>
+      <div style="width:500px; background-color:#eaeaea; border-radius: 0px 0px 5px 5px;">
+          <p style="padding: 2px 0px 2px 5px; font-size: 10px;"><button id="fullscreen_full">Full Screen</button><a href="https://github.com/arose/ngl"> NGL</a> is a WebGL based 3D viewer powered by <a href="https://mmtf.rcsb.org">MMTF</a>.</p>
+      </div>
+    </div>
+    <div class="tab-pane container" id="table">
+      <div class="row">
+          <div class="col-md-9">
+            {% if residues_browser %}
+            <a id="dlink" style="display:none;"></a>
+            <div id="excel_table" style2="display:none;"></div>
+            <button onclick="GlobalTableToExcel('residues', 'Interface_interactions', 'InterfaceInteractions.xls')" type="button" class="btn btn-primary" style="margin-top:10px;margin-top:3px"> Export to Excel </button>
+            <div style="padding-top: 0px; font-size: 10px; white-space: nowrap; width: 100%;">
+              <table class="display" id="residues" style="margin-left:0px;">
+                  <thead>
+                      <tr>
+                          <th style='border-right: 1px solid;' align="center">Interaction<br>type</th>
+                          <th align="center">GPCR<br>Segment</th>
+                          <th align="center"> <br>AA</th>
+                          <th align="center"> <br>Number</th>
+                          <th style='border-right: 1px solid;' align="center">Generic<br>number</th>
+                          <th align="center">G&alpha;<br>segment</th>
+                          <th align="center"> <br>AA</th>
+                          <th align="center"> <br>Number</th>
+                          <th align="center">Generic<br>number</th>
+                      </tr>
+                      <tr>
+                          <th style='border-right: 1px solid;'></th>
+                          <th></th>
+                          <th></th>
+                          <th></th>
+                          <th style='border-right: 1px solid;'></th>
+                          <th></th>
+                          <th></th>
+                          <th></th>
+                          <th></th>
+                      </tr>
+                  </thead>
+                  <tbody>
+                      {% for residue in residues_browser %}
+                      <tr>
+                          <td style='border-right: 1px solid;'>{{residue.type|capfirst}}</td>
+                          <td>{{residue.gpcr_segment}}</td>
+                          <td>{{residue.gpcr_aa}}</td>
+                          <td>{{residue.gpcr_pos}}</td>
+                          <td style='border-right: 1px solid;'>{{residue.gpcr_grn}}</td>
+                          <td>{{residue.gprot_segment}}</td>
+                          <td>{{residue.gprot_aa}}</td>
+                          <td>{{residue.gprot_pos}}</td>
+                          <td>{{residue.gprot_grn}}</td>
+                      </tr>
+                      {% endfor %}
+                  </tbody>
+              </table>
+            </div>
+        {% else %}
+            <p> Ooops! There is no data to show here yet. </p>
+        {% endif %}
+        </div>
+      </div>
+  </div>
+</div>
+
+<style>
+  .inline {display:inline;}
+  .graphcolor { display:inline-block; border-style:solid; border-width: 1px; padding: 1px 5px; text-align: center}
+</style>

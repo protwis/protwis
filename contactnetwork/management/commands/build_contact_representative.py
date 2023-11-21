@@ -23,7 +23,7 @@ class Command(BaseCommand):
     def receptor_representatives(self):
         print('Script to decide contact representative for a conformation. Maximising highest frequence of common contacts, while minimizing uncommon (50%)')
 
-        structures = Structure.objects.all().prefetch_related(
+        structures = Structure.objects.all().exclude(structure_type__slug__startswith='af-').prefetch_related(
             "pdb_code",
             "state",
             "protein_conformation__protein__parent__family")
@@ -66,7 +66,7 @@ class Command(BaseCommand):
                 'interacting_pair__referenced_structure__pdb_code__index',
                 'interacting_pair__res1__generic_number__label',
                 'interacting_pair__res2__generic_number__label',
-            ).filter(interacting_pair__res1__pk__lt=F('interacting_pair__res2__pk')).distinct())
+            ).exclude(interacting_pair__res1__generic_number__isnull=True).filter(interacting_pair__res1__pk__lt=F('interacting_pair__res2__pk')).distinct())
 
             contacts_in_pdb = {}
             contacts_count = {}
@@ -106,7 +106,9 @@ class Command(BaseCommand):
                 pdb_common_contacts = common_contacts.intersection(contacts_in_pdb[pdb])
                 pdb_uncommon_contacts = uncommon_contacts.intersection(contacts_in_pdb[pdb])
                 score = len(pdb_common_contacts) + len(uncommon_contacts) - len(pdb_uncommon_contacts)
-                score /= (len(common_contacts)+len(uncommon_contacts))
+                if len(common_contacts)+len(uncommon_contacts) > 0:
+                    score /= (len(common_contacts)+len(uncommon_contacts))
+                score = 0
                 print(pdb,score,resolution_lookup[pdb],len(pdb_common_contacts),len(pdb_uncommon_contacts),len(contacts_in_pdb[pdb]))
                 pdbs_scored.append([pdb,score,resolution_lookup[pdb],len(pdb_common_contacts),len(pdb_uncommon_contacts),len(contacts_in_pdb[pdb])])
                 s = Structure.objects.get(pdb_code__index=pdb)
@@ -138,7 +140,7 @@ class Command(BaseCommand):
     def class_level_contacts(self):
 
         class_level_contacts = {}
-        structures = Structure.objects.filter(refined=False).prefetch_related(
+        structures = Structure.objects.filter(refined=False).exclude(structure_type__slug__startswith='af-').prefetch_related(
             "pdb_code",
             "state",
             "protein_conformation__protein__parent__family",
@@ -200,6 +202,7 @@ class Command(BaseCommand):
                     'interacting_pair__referenced_structure__pdb_code',
                     'interacting_pair__res1__generic_number',
                     'interacting_pair__res2__generic_number',
+                ).exclude(interacting_pair__res1__generic_number__isnull=True
                 ).filter(interacting_pair__res1__pk__lt=F('interacting_pair__res2__pk')).distinct('interacting_pair__referenced_structure__pdb_code__index',
                                                                                                   'interacting_pair__res1__generic_number__label',
                                                                                                   'interacting_pair__res2__generic_number__label'))
@@ -280,6 +283,7 @@ class Command(BaseCommand):
                     'interacting_pair__referenced_structure__pdb_code',
                     'interacting_pair__res1__generic_number',
                     'interacting_pair__res2__generic_number',
+                ).exclude(interacting_pair__res1__generic_number__isnull=True
                 ).filter(interacting_pair__res1__pk__lt=F('interacting_pair__res2__pk')).distinct('interacting_pair__referenced_structure__pdb_code__index',
                                                                                                   'interacting_pair__res1__generic_number__label',
                                                                                                   'interacting_pair__res2__generic_number__label'))
@@ -326,7 +330,7 @@ class Command(BaseCommand):
     def class_based_representative(self):
         print('Script to decide contact representative for a conformation. Maximising highest frequence of common contacts, while minimizing uncommon (50%)')
 
-        structures = Structure.objects.filter(refined=False).prefetch_related(
+        structures = Structure.objects.filter(refined=False).exclude(structure_type__slug__startswith='af-').prefetch_related(
             "pdb_code",
             "state",
             "protein_conformation__protein__parent__family")

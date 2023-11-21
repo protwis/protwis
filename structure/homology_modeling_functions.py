@@ -125,6 +125,76 @@ class GPCRDBParsingPDB(object):
                 direction += 1
             return str(split[0])+delimiter+str(int(str(split[1])[:2])+direction)
 
+    @staticmethod
+    def find_before_4_gns(section, reference_dict, distorted_residues, segment_labels):
+        minus_offset, minus_gns = [], []
+        first_index = list(reference_dict[section[0][0]]).index(section[0][1])
+        first_seg = section[0][0]
+        ### If not 4 residues in this segment, start from prev segment
+        if first_index<4:
+            first_seg = segment_labels[segment_labels.index(section[0][0])-1]
+            for fi in range(first_index-1, -1, -1):
+                minus_offset.append([section[0][0], list(reference_dict[section[0][0]])[fi]])
+            if len(reference_dict[first_seg])<4:
+                for fi in range(len(reference_dict[first_seg])-1, -1, -1):
+                    minus_offset.append([first_seg, list(reference_dict[first_seg])[fi]])
+                first_seg = segment_labels[segment_labels.index(first_seg)-1]
+            first_index = len(reference_dict[first_seg])
+        first_index_orig = first_index
+        minus_gns = []
+
+        ### Find before 4
+        for j in range(1, 5):
+            while list(reference_dict[first_seg])[first_index-j] in distorted_residues[first_seg]:
+                minus_offset.append([first_seg,list(reference_dict[first_seg])[first_index-j]])
+                first_index-=1
+                if first_index_orig>0 and first_index-j<0:
+                    first_seg = segment_labels[segment_labels.index(first_seg)-1]
+                    first_index = len(reference_dict[first_seg])
+                    j = 1
+            minus_gns.append(list(reference_dict[first_seg])[first_index-j])
+
+        minus_gns.reverse()
+        if len(minus_offset)>0:
+            for m_s, m_gn in minus_offset:
+                section = [[m_s, m_gn]]+section
+
+        return section, minus_gns, first_seg
+
+    @staticmethod
+    def find_after_4_gns(section, reference_dict, distorted_residues, segment_labels):
+        ''' Find after 4 residues for superpositioning'''
+        plus_offset, plus_gns = [], []
+        last_index = list(reference_dict[section[-1][0]]).index(section[-1][1])
+        last_seg = section[-1][0]
+        last_seg_orig = last_seg
+
+        ### If not 4 residues in this segment, end in next segment
+        if len(reference_dict[section[-1][0]])-last_index<5:
+            last_seg = segment_labels[segment_labels.index(section[-1][0])+1]
+            for li in range(last_index+1, len(reference_dict[section[-1][0]])):
+                plus_offset.append([section[-1][0], list(reference_dict[section[-1][0]])[li]])
+            if len(reference_dict[last_seg])<4:
+                for li in range(0, len(reference_dict[last_seg])+1, 1):
+                    plus_offset.append([last_seg, list(reference_dict[last_seg])[li]])
+                last_seg = segment_labels[segment_labels.index(last_seg)+1]
+            last_index = 0
+        if last_seg!=last_seg_orig:
+            r = range(0,4)
+        else:
+            r = range(1,5)
+        for k in r:
+            while list(reference_dict[last_seg])[last_index+k] in distorted_residues[last_seg]:
+                plus_offset.append([last_seg,list(reference_dict[last_seg])[last_index+k]])
+                last_index+=1
+            plus_gns.append(list(reference_dict[last_seg])[last_index+k])
+        
+        if len(plus_offset)>0:
+            for p_s, p_gn in plus_offset:
+                section.append([p_s, p_gn])
+
+        return section, plus_gns, last_seg
+
     def fetch_residues_from_pdb(self, structure, generic_numbers, modify_bulges=False, just_nums=False):
         ''' Fetches specific lines from pdb file by generic number (if generic number is
             not available then by residue number). Returns nested OrderedDict()
@@ -261,7 +331,6 @@ class GPCRDBParsingPDB(object):
                                 atom.set_bfactor(gn)
                             atom_list.append(atom)
                         output[r.protein_segment.slug][ggn(r.display_generic_number.label).replace('x','.')] = atom_list
-            pprint.pprint(output)
             return output
         else:
             assign_gn = as_gn.GenericNumbering(pdb_file=io, pdb_code=structure.pdb_code.index, sequence_parser=True)
@@ -381,11 +450,14 @@ class ImportHomologyModel():
     ''' Imports receptor homology model for complex model building pipeline. The idea is to save time by not rerunning the receptor modeling
         when separate complex models are built with different subunits for the same receptor.
     '''
-    def __init__(self, receptor, sign_prot, zip_path='./structure/complex_models_zip/'):
+    def __init__(self, receptor, sign_prot=None, zip_path='./structure/complex_models_zip/'):
         self.receptor = receptor
         self.sign_prot = sign_prot
         self.zip_path = zip_path
-        self.receptor_segments = [i.slug for i in ProteinSegment.objects.filter(proteinfamily='GPCR')]
+        if sign_prot:
+            self.segments = [i.slug for i in ProteinSegment.objects.filter(proteinfamily=sign_prot)]
+        else:
+            self.segments = [i.slug for i in ProteinSegment.objects.filter(proteinfamily='GPCR')]
         self.path_to_pdb = ''
 
     def find_files(self):
@@ -441,7 +513,7 @@ class ImportHomologyModel():
         ''' Parses model file.
         '''
         reference_dict, main_pdb_array = OrderedDict(), OrderedDict()
-        for i in self.receptor_segments:
+        for i in self.segments:
             reference_dict[i] = OrderedDict()
             main_pdb_array[i] = OrderedDict()
         resis = Residue.objects.filter(protein_conformation__protein__entry_name=self.receptor)
@@ -449,15 +521,22 @@ class ImportHomologyModel():
             seqnum = res.get_id()[1]
             this_res = resis.get(sequence_number=seqnum)
             try:
-                reference_dict[this_res.protein_segment.slug][this_res.generic_number.label] = this_res.amino_acid
-            except:
+                if self.sign_prot=='Alpha':
+                    reference_dict[this_res.protein_segment.slug][this_res.display_generic_number.label] = this_res.amino_acid
+                else:
+                    reference_dict[this_res.protein_segment.slug][ggn(this_res.display_generic_number.label)] = this_res.amino_acid
+            except AttributeError:
                 reference_dict[this_res.protein_segment.slug][str(this_res.sequence_number)] = this_res.amino_acid
             atoms_list = []
             for atom in res:
-                atoms_list.append(atom)
+                if atom.element!='H':
+                    atoms_list.append(atom)
             try:
-                main_pdb_array[this_res.protein_segment.slug][this_res.generic_number.label.replace('x','.')] = atoms_list
-            except:
+                if self.sign_prot=='Alpha':
+                    main_pdb_array[this_res.protein_segment.slug][this_res.display_generic_number.label] = atoms_list
+                else:
+                    main_pdb_array[this_res.protein_segment.slug][ggn(this_res.display_generic_number.label).replace('x','.')] = atoms_list
+            except AttributeError:
                 main_pdb_array[this_res.protein_segment.slug][str(this_res.sequence_number)] = atoms_list
 
         return reference_dict, reference_dict, reference_dict, main_pdb_array
@@ -467,7 +546,7 @@ class ImportHomologyModel():
         '''
         structure_dict = {}
         template_source = OrderedDict()
-        for i in self.receptor_segments:
+        for i in self.segments:
             template_source[i] = OrderedDict()
         for line in source_file[1:]:
             split_line = line.split(',')
@@ -534,6 +613,21 @@ class ImportHomologyModel():
                 c+=1
         print('FIND disulfides: {}'.format(disulfide_pairs))
         return disulfide_pairs
+
+
+class DummyStructure():
+    def __init__(self, preferred_chain):
+        self.preferred_chain = preferred_chain
+        self.pdb_code = DummyPDBCode()
+        self.protein_conformation = ProteinConformation(protein=Protein(entry_name='AF', parent=Protein(entry_name='AF')))
+
+    def __str__(self):
+        return self.pdb_code.index
+
+
+class DummyPDBCode():
+    def __init__(self):
+        self.index = "AF"
 
 
 class Remodeling():

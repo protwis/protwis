@@ -5,8 +5,10 @@ from common import views
 
 urlpatterns = [
     url(r'^addtoselection', views.AddToSelection, name='addtoselection'),
+    url(r'^checkselection', views.CheckSelection, name='checkselection'),
     url(r'^removefromselection', views.RemoveFromSelection, name='removefromselection'),
     url(r'^clearselection', views.ClearSelection, name='clearselection'),
+    url(r'^importtargetselection', views.ImportTargetSelection, name='importtargetselection'),
     url(r'^selectrange', views.SelectRange, name='selectrange'),
     url(r'^togglefamilytreenode', views.ToggleFamilyTreeNode, name='togglefamilytreenode'),
     url(r'^selectionannotation', views.SelectionAnnotation, name='selectionannotation'),

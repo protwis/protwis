@@ -21,42 +21,49 @@
                 <!-- Wrapper for carousel slides -->
                 <div class="carousel-inner" role="listbox">
                     <div class="item active">
-                        <img src="{% static 'home/carousel/seqali_phyltree.png' %}">
+                      <a href="https://docs.gpcrdb.org/structures.html#structure-models" target="_blank">
+                        <img src="{% static 'home/carousel/alphafold_models.png' %}">
+                      </a>
                         <div class="carousel-caption">
-                            <h3><a href="/alignment/targetselection" target="_blank">Alignments</a> and <a href="/phylogenetic_trees/targetselection" target="_blank">Trees</a></h3>
-                            <p>Segment and residue customized sequence alignments and phylogenetic trees.</p>
+                            <h3>New state-specific <a href="structure/homology_models" target="_blank">structure models</a></h3>
+                            <p>Models and refined structures using AlphaFold2.</p>
+                        </div>
+                    </div>
+                    <div class="item">
+                      <a href="https://docs.gpcrdb.org/index.html" target="_blank">
+                        <img src="{% static 'home/carousel/ligand_resources.png' %}">
+                      </a>
+                        <div class="carousel-caption">
+                            <h3>New <a href="ligand/endogenousbrowser/" target="_blank">ligand</a> resources</h3>
+                            <p>Endogenous ligands and tool compounds.</p>
+                        </div>
+                    </div>
+                    <div class="item">
+                      <a href="https://docs.gpcrdb.org/structure_comparison.html#structure-comparison-tool" target="_blank">
+                        <img src="{% static 'home/carousel/struct_comparison_tool.png' %}">
+                      </a>
+                        <div class="carousel-caption">
+                            <h3>New <a href="/structure_comparison/comparative_analysis" target="_blank">structure analysis</a> resource</h3>
+                            <p>Structure comparison tool and similarity trees.</p>
                         </div>
                     </div>
 
                     <div class="item">
-                        <img src="{% static 'home/carousel/constructs.png' %}">
-                        <div class="carousel-caption">
-                            <h3>Structure <a href="/construct/design" target="_blank">Determination</a> Resource</h3>
-                            <p>Construct design tool and suggested thermostabilizing mutations.</p>
-                        </div>
-                    </div>
-
-                    <div class="item">
-                        <img src="{% static 'home/carousel/strbrowser.png' %}">
-                        <div class="carousel-caption">
-                            <h3>Structure <a href="structure" target="_blank">Browser</a> and <a href="structure/statistics" target="_blank">Stats</a></h3>
-                            <p>Detailed browser for currently available GPCR structures and refinements.</p>
-                        </div>
-                    </div>
-
-                    <div class="item">
-                        <img src="{% static 'home/carousel/homomodels.png' %}">
-                        <div class="carousel-caption">
-                            <h3>Homology <a href="structure/homology_models" target="_blank">Models</a></h3>
-                            <p>Multiple template homology models for the whole GPCRome.</p>
-                        </div>
-                    </div>
-
-                    <div class="item">
+                      <a href="https://docs.gpcrdb.org/sites.html#sites" target="_blank">
                         <img src="{% static 'home/carousel/residplots.png' %}">
+                      <a>
                         <div class="carousel-caption">
                             <h3>Residue Plots</h3>
-                            <p>Customizable helix and snake plots for GPCR's, G-proteins and B-arrestins.</p>
+                            <p>Custom helix and snake plots .</p>
+                        </div>
+                    </div>
+                    <div class="item">
+                      <a href="https://docs.gpcrdb.org/sequences.html#structure-based-alignments" target="_blank">
+                        <img src="{% static 'home/carousel/seqali_phyltree.png' %}">
+                      </a>
+                        <div class="carousel-caption">
+                            <h3><a href="/alignment/targetselection" target="_blank">Alignments</a> and <a href="/phylogenetic_trees/targetselection" target="_blank">Trees</a></h3>
+                            <p>Customized sequence alignments and phylogenetic trees .</p>
                         </div>
                     </div>
 
@@ -84,40 +91,157 @@
     <!-- GPCRdb intro -->
     <div class="row">
 
-        <div class="col-md-8">
+        <div class="col-md-9">
             <div class="panel panel-primary">
                 <div class="panel-body">
-                    <div class="col-md-1 text-center">
-                        <img style="height:90%; margin-right:20% " src="{% static 'home/logo/gpcr/main.png' %}">
+                    <div class="col-md-4">
+                      <br />
+                        <p style='text-align:center'>
+                        <img style="height:90%; " src="{% static 'home/logo/gpcr/main.png' %}">
+                        </p>
+                        <p style='text-align:center; font-size: 20px; margin-top:0px;'>
+                        GPCRdb
+                        </p>
                     </div>
-                    <div class="col-md-1">
-                    </div>
-                    <div class="col-md-10">
-                        <p style="text-align:justify">GPCRdb contains reference data, interactive
+                    <!-- <div class="col-md-1">
+                    </div> -->
+                    <div class="col-md-4" id='center_menu'>
+                        <p style='text-align:justify'>
+                            GPCRdb offers:<br/>
+                            <ul>
+                              <li>Reference data</li>
+                              <li>Analysis tools</li>
+                              <li>Visualization</li>
+                              <li>Experiment design</li> <!-- need to add popup image onclick -->
+                              <li>Data deposition</li>
+                              <li><a href='https://gpcrdb.org/cite_gpcrdb' target='_blank'>Overview figure and references</a></li>
+                            <!-- GPCRdb contains reference data, interactive
                             visualisation and experiment design tools for G protein-coupled receptors (GPCRs). GPCRdb
                             curates sequence alignments, structures and receptor mutations from literature. Interactive
                             diagrams visualise receptor residues (e.g. snakeplot and helix box plot) and relationships
                             (e.g phylogenetic trees). See the GPCRdb graphical <a href="/static/home/poster/overview.pdf">overview</a>,
                             <a href="https://files.gpcrdb.org/video/GPCRdb-David_Gloriam.mp4">video</a>,
                             <a onclick="citation_tool(window.location.href);" href="#">articles</a> or
-                            <a href="https://docs.gpcrdb.org/">documentation</a>.</p>
-                        <p style="text-align:justify"><b><a href="https://gproteindb.org">GproteinDb</a> has been, and <a href="https://arrestindb.org">ArrestinDb</a> will be, published as separate web resources.</b><p>
+                            <a href="https://docs.gpcrdb.org/">documentation</a>. -->
+                        </p>
+
+                    </div>
+
+                    <div class="col-md-4">
+                        <p style="text-align:justify">
+                          <br />
+                           G protein-coupled receptors (GPCRs) are cell-surface receptors mediating the responses of 2/3<sup>rds</sup> of human hormones<sup><a href='https://doi.org/10.1016/j.cell.2019.10.010' target='_blank'>1</a></sup> and 1/3<sup>rd</sup> of
+                           drugs<sup><a href='https://doi.org/10.1038/nrd.2017.178' target='_blank'>2</a></sup>.
+                           Each GPCR can bind several transducers, G proteins, GPCR kinases (GRKs) and arrestins
+                           leading to distinct intracellular signaling networks and functional outcomes.
+                        </p>
                     </div>
                 </div>
             </div>
+                <!-- Stats -->
+                <div class="col-md-4">
+                    <div class="panel panel-primary">
+                        <div class="panel-body">
+                            <h3>Data</h3>
+                            <ul class="stats_list">
+                                {% for stat in release_statistics %}
+                                    <li>
+                                        {{ stat.value| safe }} {{ stat.statistics_type | safe }}
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Release Notes -->
+                <div class="col-md-4" id='releases'>
+                    <div class="panel panel-primary">
+                        <div class="panel-body">
+                            <h3>Latest <a href="/pages/releasenotes">release</a></h3>
+                            <strong>{{ release_notes.date }}</strong>
+                            {{ release_notes.html|safe }}
+                            <br />
+                            <strong><a href="/pages/releasenotes">All releases</a></strong>
+                        </div>
+                    </div>
+
+                    <div class="panel panel-primary">
+                        <div class="panel-body">
+                            <a href="https://youtu.be/EZAQYeR49zI" target="_blank"><img style="width: 100%;" src="{% static '/home/images/GPCRdb_youtube_introduction.png' %}". ></img></a>
+                            <!-- <h3><a href="https://files.gpcrdb.org/video/GPCRdb-David_Gloriam.mp4">Videos</a></h3> -->
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Publications -->
+                <div class="col-md-4">
+                    <div class="panel panel-primary">
+                        <div class="panel-body">
+                            <h3>Publications</h3>
+                            <div style='max-height: 470px; overflow-y: scroll;'>
+                              <p>
+                              GPCRdb in 2023: State-specific structure models using AlphaFold2 and expansion of ligand resources.<br />
+                              Pándy-Szekeres, G., Caroli, J., Mamyrbekov, A., Kermani, A.A., Keserű, G.M., Kooistra, A.J. and Gloriam, D.E.<br />
+                              <a href ='https://doi.org/10.1093/nar/gkac1013' target='_blank'><i>Nucleic Acids Research</i>, 2023</a><br />
+                              <br />
+                              GPCRdb in 2021: integrating GPCR sequence, structure and function.<br />
+                              Kooistra AJ, Mordalski S, Pandy-Szekeres G, Esguerra M, Mamyrbekov A, Munk C, Keseru GM, Gloriam DE<br />
+                              <a href ='https://doi.org/10.1093/NAR/GKAA1080' target='_blank'><i>Nucleic acids research</i>, 2021, 49:D335-D343</a><br />
+                              <br />
+                              Structure of the class D GPCR Ste2 dimer coupled to two G proteins.<br />
+                              Velazhahan V, Ma N, Pandy-Szekeres G, Kooistra AJ, Lee Y, Gloriam DE, Vaidehi N, Tate CG<br />
+                              <a href ='https://doi.org/10.1038/S41586-020-2994-1' target='_blank'><i>Nature</i>, 2021, 589:148-153</a><br />
+                              <br />
+                              An online GPCR structure analysis platform.<br />
+                              Kooistra AJ, Munk C, Hauser AS, Gloriam DE<br />
+                              <a href ='https://doi.org/10.1038/S41594-021-00675-6' target='_blank'><i>Nature structural & molecular biology</i>, 2021, 28:875-878</a><br />
+                              <br />
+                              Combinatorial expression of GPCR isoforms affects signalling and drug responses.<br />
+                              Marti-Solano M, Crilly SE, Malinverni D, Munk C, Harris M, Pearce A, Quon T, Mackenzie AE, Wang X, Peng J, Tobin AB, Ladds G, Milligan G, Gloriam DE, Puthenveedu MA, Babu MM<br />
+                              <a href ='https://doi.org/10.1038/S41586-020-2888-2' target='_blank'><i>Nature</i>, 2020, 587:650-656</a><br />
+                              <br />
+                              An online resource for GPCR structure determination and analysis.<br />
+                              Munk C, Mutt E, Isberg V, Nikolajsen LF, Bibbe JM, Flock T, Hanson MA, Stevens RC, Deupi X, Gloriam DE<br />
+                              <a href ='https://doi.org/10.1038/S41592-018-0302-X' target='_blank'><i>Nature methods</i>, 2019, 16:151-162</a><br />
+                              <br />
+                              </p>
+                            </div>
+                            <div style='height: 30px; margin-top: 10px; position: relative;'>
+                              <span style="position: absolute; bottom 0;"><strong><a href='https://gpcrdb.org/cite_gpcrdb' target='_blank'>Citing GPCRdb</a></strong></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
         </div>
 
-        <div class="col-md-4">
+        <div class="col-md-3">
+
             <div class="panel panel-primary">
                 <div class="panel-body">
-                    <p>GPCRdb is developed by the <a href="https://drug.ku.dk/staff/?pure=en/persons/352279" target="_blank"> David</a>
-                        Gloriam group, integrates data from the large GPCR community and maintains an active collaboration with the
-                        <a href="https://www.guidetopharmacology.org/">Guide To Pharmacology</a> (IUPHAR),
-                        <a href="http://gpcrmd.org/">GPCRmd</a> and <a href="https://ernest-gpcr.eu" target="_blank">ERNEST</a>.
-                        If you use the GPCRdb, please remember to <a onclick="citation_tool(window.location.href);" href="#">cite us</a>.
-                    </p>
+                    <h3>Related resources</h3>
+                    <a href='https://gpcrdb.org/' target='_blank'>GPCRdb</a>, <a href='https://gproteindb.org/' target='_blank'>GproteinDb</a>,
+                    <a href='https://arrestindb.org/' target='_blank'>ArrestinDb</a> and <a href='https://biasedsignalingatlas.org/' target='_blank'>Biased Signaling Atlas</a>
+                    cover related aspects of signal transduction while serving dedicated research communities and use cases.
+                    {% if users %}
+                        {{ users|safe }}
+                    {% endif %}
+                    <br />
+                    <br />
+                    <h4>External GPCR <a href="{{ documentation_url }}external_sites.html">sites</a></h4>
                 </div>
             </div>
+
+            <div class="panel panel-primary">
+                <div class="panel-body">
+                    <h3>
+                        <a class="twitter-timeline" data-height="400" data-theme="light" href="https://twitter.com/gpcrdb"></a>
+                    </h3>
+                    <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+                </div>
+            </div>
+
         </div>
 
 
@@ -144,50 +268,7 @@
     {#            </div>#}
     {#        </div>#}
 
-    <!-- Twitter, release notes, database stats.  -->
-    <div class="row">
 
-        <!-- Stats -->
-        <div class="col-md-4">
-            <div class="panel panel-primary">
-                <div class="panel-body">
-                    <h3>GPCRdb <a href="/structure/statistics">statistics</a></h3>
-                    <ul class="stats_list">
-                        {% for stat in release_statistics %}
-                            <li>
-                                {{ stat.value| safe }} {{ stat.statistics_type | safe }}
-                            </li>
-                        {% endfor %}
-                    </ul>
-                    {% if users %}
-                        {{ users|safe }}
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-
-        <!-- Release Notes -->
-        <div class="col-md-4">
-            <div class="panel panel-primary">
-                <div class="panel-body">
-                    <h3>Latest <a href="/pages/releasenotes">release</a></h3>
-                    <strong>{{ release_notes.date }}</strong>
-                    {{ release_notes.html|safe }}
-                </div>
-            </div>
-        </div>
-
-        <!-- Twitter feed -->
-        <div class="col-md-4">
-            <div class="panel panel-primary">
-                <div class="panel-body">
-                    <h3>
-                        <a class="twitter-timeline" data-height="400" data-theme="light" href="https://twitter.com/gpcrdb"></a>
-                    </h3>
-                    <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
-                </div>
-            </div>
-        </div>
 
         {#<!-- News -->#}
         {#        <div class="col-md-3">#}
@@ -203,7 +284,6 @@
         {#            </div>#}
         {#        </div> #}
 
-    </div>
 
     <!-- Gloriam Group and Collabs -->
     {#    <div class="row">#}
@@ -222,4 +302,12 @@
     {#        </div>#}
     {#    </div>#}
 
+{% endblock %}
+
+{% block addon_js %}
+<script>
+    $(".release-notes").find("li").addClass("hidden");
+    $(".gpcrdb").removeClass("hidden");
+    $(".all").removeClass("hidden")
+</script>
 {% endblock %}

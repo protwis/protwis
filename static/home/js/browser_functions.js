@@ -1,7 +1,7 @@
 /*global showAlert*/
 /*eslint no-undef: "error"*/
 
-function superposition(oTable, columns, site, hide_first_column) {
+function superposition(oTable, columns, site, source='gpcr', hide_first_column=false) {
     // oTable: DataTable object of table of entries
     // columns: Column indeces of oTable to be extracted to build table for reference selection. First column has to be structure/model string used for superposition workflow
     // site: Structure browser or Homology model browser (add new logic when expanding to new sites)
@@ -55,12 +55,34 @@ function superposition(oTable, columns, site, hide_first_column) {
             }
         }
         AddToSelection('targets', 'structure_models_many', selected_ids.join(","));
-    } // add new logic here for new site
+    } else if (site==='complex_models') {
+        for (i = 0; i < checked_data.length; i++) {
+            var div = document.createElement("div");
+            div.innerHTML = checked_data[i][15];
+            if (typeof div.innerText !== "undefined") {
+                selected_ids.push(div.innerText.replace(/\s+/g, ''));
+            } else {
+                selected_ids.push(div.textContent.replace(/\s+/g, ''));
+            }
+        }
+        AddToSelection('targets', 'structure_many', selected_ids.join(","));
+    } else if (site == "g_protein_structure_browser"){
+      for (i = 0; i < checked_data.length; i++) {
+          var div = document.createElement("div");
+          div.innerHTML = checked_data[i][11];
+          if (typeof div.innerText !== "undefined") {
+              selected_ids.push(div.innerText.replace(/\s+/g, ''));
+          } else {
+              selected_ids.push(div.textContent.replace(/\s+/g, ''));
+          }
+      }
+      AddToSelection('targets', 'signprot_many', selected_ids.join(","));
+    }// add new logic here for new site
 
     $('#superposition_modal_table tbody').empty();
     var modal = document.getElementById("superposition-modal");
     var span = document.getElementById("close_superposition_modal");
-    
+
     modal.style.display = "block";
     span.onclick = function() {
         modal.style.display = "none";
@@ -80,10 +102,18 @@ function superposition(oTable, columns, site, hide_first_column) {
         row.appendChild(checkbox);
         var column_count = 0;
         columns.forEach(function(column) {
-            div.innerHTML = checked_data[i][column];
-            cell = document.createElement('td');
-            textnode = document.createTextNode(div.innerText.replace(/\s+/g, ''));
-            if(column_count===0 && typeof hide_first_column==="undefined") {}
+            if (column === 0){
+              div.innerHTML = checked_data[i][column];
+              cell = document.createElement('td');
+              let matched = div.innerHTML.match(/id="(\d+)"/);
+              let idValue = matched ? matched[1] : ''; // If no match, idValue will be an empty string
+              textnode = document.createTextNode(idValue);
+            } else {
+              div.innerHTML = checked_data[i][column];
+              cell = document.createElement('td');
+              textnode = document.createTextNode(div.innerText.replace(/\s+/g, ''));
+            }
+            if(column_count===0 && typeof hide_first_column===false) {}
             else if (column_count===0 && hide_first_column===true) {
                 cell.style.display = "none";
             }
@@ -95,18 +125,32 @@ function superposition(oTable, columns, site, hide_first_column) {
     }
     $("#superposition_modal_table tbody tr").click(function() {
         if (site==='structure_browser') {
-            AddToSelection('reference', 'structure', $(this).children().eq(1).text());
-        } else if (site==='homology_model_browser') { //FIXME
+            AddToSelection('reference', 'structure', $(this).children().eq(2).text());
+            RemoveFromSelection('targets', 'structure', $(this).children().eq(1).text());
+        } else if (site==='homology_model_browser') {
             if ($(this).children().eq(9).text()==='Yes') {
                 AddToSelection('reference', 'structure',  $(this).children().eq(11).text()+"_refined");
+                RemoveFromSelection('targets', 'structure',  $(this).children().eq(1).text());
             }
             else {
                 var state = $(this).children().eq(8).text();
-                AddToSelection('reference', 'structure_model', $(this).children().eq(1).text()+"_"+state);
+                AddToSelection('reference', 'structure_model', $(this).children().eq(2).text()+"_"+$(this).children().eq(6).text()+"_"+state);
+                RemoveFromSelection('targets', 'structure_model', $(this).children().eq(1).text());
             }
-        } // Add logic here for new site
+        } else if (site==='complex_models') {
+          AddToSelection('reference', 'structure', $(this).children().eq(8).text());
+          RemoveFromSelection('targets', 'structure', $(this).children().eq(1).text());
+        } else if (site==='g_protein_structure_browser') {
+          AddToSelection('reference', 'signprot', $(this).children().eq(3).text());
+          RemoveFromSelection('targets', 'structure', $(this).children().eq(1).text());
+        }// Add logic here for new site
         $(this).children(':first').prop("checked",true);
-        window.location.href = '/structure/superposition_workflow_index';
+        if (source=='gpcr'){
+          window.location.href = '/structure/superposition_workflow_index';
+        } else {
+          window.location.href = '/structure/superposition_workflow_gprot_index';
+        }
+
     })
 };
 
@@ -155,6 +199,45 @@ function AddToSelection(selection_type, selection_subtype, selection_id) {
         },
     });
 }
+
+function RemoveFromSelection(selection_type, selection_subtype, selection_id) {
+    $.ajax({
+        'url': '/common/removefromselection',
+        'data': {
+            selection_type: selection_type,
+            selection_subtype: selection_subtype,
+            selection_id: selection_id
+        },
+        'type': 'GET',
+        'async': false,
+        'success': function(data) {
+            $("#selection-" + selection_type).html(data);
+        },
+    });
+}
+
+function CheckSelection(selection_type) {
+    var result = null;
+
+    $.ajax({
+        'url': '/common/checkselection',
+        'data': {
+            selection_type: selection_type
+        },
+        'type': 'GET',
+        'dataType': 'json',  // Expecting JSON response from the server
+        'async': false,
+        'success': function(response) {
+            result = response.total;
+        },
+        'error': function(error) {
+            console.error("An error occurred:", error);
+        }
+    });
+
+    return result;
+}
+
 
 function select_all(e, table1_id, table2_id) {
     $('#loading_div').show();
@@ -319,47 +402,8 @@ function match_scroll_position() {
     });
 }
 
-var tableToExcel = function () {
-    var uri = "data:application/vnd.ms-excel;base64,",
-        template = "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:x='urn:schemas-microsoft-com:office:excel' xmlns='http://www.w3.org/TR/REC-html40'><head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>{worksheet}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body><table>{table}</table></body></html>",
-        base64 = function (s) {
-            return window.btoa(unescape(encodeURIComponent(s)));
-        }, format = function (s, c) {
-            return s.replace(/{(\w+)}/g, function (m, p) {
-                return c[p];
-            });
-        };
-    return function (table, name, filename) {
-            table= $("#"+table).clone();
-            $("#excel_table").html(table);
-            // Clean up table to remove yadcf stuff
-            $("#excel_table thead tr").css("height","");
-            $("#excel_table thead th").css("height","");
-            $("#excel_table thead div").css("height","");
-            $("#excel_table thead .yadcf-filter-wrapper").remove();
-            $("#excel_table thead button").remove();
-            var tr = $("#excel_table thead tr:eq(1)");
-            // reattach th titles
-            tr.find("th").each (function( column, th) {
-                if ($(th).attr("title")) {
-                    $(th).html($(th).attr("title"))
-                }
-            });
-
-        var ctx = {
-            worksheet: name || "Worksheet",
-            table: $("#excel_table").html()
-        };
-        $("#excel_table").html("");
-        document.getElementById("dlink").href = uri + base64(format(template, ctx));
-        document.getElementById("dlink").download = filename;
-        document.getElementById("dlink").click();
-    }
-}();
-
 function copyToClipboard(array, delimiter, data_name, powertip_object=false) {
     var link = array;
-    console.log(link);
     var out = "";
     link.each(function() {
         var ele = $(this).attr("href").split("/");

@@ -6,14 +6,21 @@
         ArrestinDb<span class="caret"></span>
     </a>
     <ul class="dropdown-menu" role="menu">
+        <li><a role="button" id='cite_arrestindb'>Citing ArrestinDb</a></li>
+        <li class="divider"></li>
         <li><a href="{{ hosts.arrestin }}/signprot/arrestin">Arrestin page</a></li>
 
         <!-- ARRESTIN COUPLING -->
         <li class="divider"></li>
-        <li class="nav-header disabled text-left"><a>ARRESTIN COUPLING</a></li>
-        <li><a href="{{ hosts.arrestin }}/signprot/arrestincouplings">Arrestin couplings</a></li>
-        <li><a href="{{ hosts.arrestin }}/signprot/arrestin_venn">Arrestin selectivity Venn</a></li>
-        <li><a href="{{ hosts.arrestin }}/signprot/arrestin_tree">Arrestin selectivity tree</a></li>
+        <li class="nav-header disabled text-left"><a>COUPLINGS</a></li>
+        <li><a href="{{ hosts.arrestin }}/signprot/arrestincouplings">Couplings</a></li>
+
+        <!-- ARRESTIN COUPLING -->
+        <li class="divider"></li>
+        <li class="nav-header disabled text-left"><a>COUPLING ANALYSIS</a></li>
+        <li><a href="{{ hosts.arrestin }}/signprot/arrestin_tree">Coupling selectivity (tree)</a></li>
+        <li><a href="{{ hosts.arrestin }}/signprot/arrestin_venn">Coupling selectivity (Venn)</a></li>
+        
 
         <!-- SEQUENCES -->
         <li class="divider"></li>
@@ -25,13 +32,17 @@
         <!-- STRUCTURES -->
         <li class="divider"></li>
         <li class="nav-header disabled text-left"><a>STRUCTURES</a></li>
-        <li><a href="{{ hosts.arrestin }}/structure/arrestin_statistics">Structure statistics</a></li>
+        <li><a href="{{ hosts.arrestin }}/structure/arrestin_statistics">Structure coverage</a></li>
         <li><a href="{{ hosts.arrestin }}/structure/arrestin_structure_browser">Structures</a></li>
 
         <!-- STRUCTURE COMPARISON -->
         <li class="divider"></li>
-        <li class="nav-header disabled text-left"><a>STRUCTURE COMPARISON</a></li>
-        <li><a href="{{ hosts.arrestin }}/signprot/arr_matrix">Interface interactions & profiling</a></li>
+        <li class="nav-header disabled text-left"><a>STRUCTURE ANALYSIS</a></li>
+        <li><a href="{{ hosts.arrestin }}/signprot/arr_matrix">Interface interactions (single structure)</a></li>
 
+        <!-- DETERMINANTS & MUTATIONS -->
+        <li class="divider"></li>
+        <li class="nav-header disabled text-left"><a>DETERMINANTS & MUTATIONS</a></li>
+        <li><a href="https://files.gpcrdb.org/GPCR-Arrestin_Mutations.xlsx">Interface mutations</a></li>
     </ul>
 </li>

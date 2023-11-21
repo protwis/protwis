@@ -1,4 +1,5 @@
 from django import template
+from common.definitions import G_PROTEIN_DISPLAY_NAME as g_prot_dict
 
 import re
 
@@ -26,7 +27,7 @@ def endo_format ( objs ):
 
 @register.filter
 def create_struct_links ( objs ):
-    return ", ".join(["<a href=\"structure/" + obj.pdb_code.index + "\">" + obj.pdb_code.index + "</a>" for obj in objs])
+    return ", ".join(["<a href=\"/structure/" + obj.pdb_code.index + "\">" + obj.pdb_code.index + "</a>" for obj in objs])
 
 @register.filter
 def dashwhenempty (obj):
@@ -135,7 +136,7 @@ def only_fusions ( objs ):
 
 @register.filter
 def only_antibodies ( objs ):
-    elements = [element for obj in objs for element in obj.name.split(',') if re.match(".*bod.*|.*Ab.*|.*scFv.*|.*Fab.*|.*activity.*|.*RAMP.*|Unidentified peptide|.*CD4.*|.*IgG.*|.*NB.*|.*Fv.*", element)]
+    elements = [element for obj in objs for element in obj.name.split(',') if re.match(".*bod.*|.*Ab.*|.*scFv.*|.*Fab.*|.*activity.*|.*RAMP.*|.*GRK.*|Unidentified peptide|.*CD4.*|.*IgG.*|.*NB.*|.*Fv.*", element)]
     if len(elements) > 0:
         return "\n".join(elements)
     else:
@@ -170,4 +171,21 @@ def cut_refined ( objs ):
 
 @register.filter
 def cut_classname ( objs ):
-    return objs[5:]
+    if objs == "Other GPCRs":
+        return "Other"
+    else:
+        return objs[5:]
+
+@register.filter
+def entry_short ( objs ):
+    return objs.split("_")[0].upper()
+
+@register.filter
+def gprot_short ( objs ):
+    return g_prot_dict[objs]
+
+@register.filter
+def receptor_short ( objs ):
+    if not objs.startswith('mGlu'):
+        objs = objs[0].upper()+objs[1:]
+    return objs.replace(" receptor","").replace("-adrenoceptor","")

@@ -21,6 +21,9 @@ class InteractingPair:
         self.interactions = []
         self.compute_interactions()
 
+    def __repr__(self):
+        return '<InteractingPair: {}-{}-{}>'.format(self.dbres1, self.dbres2, self.structure)
+
     def add_interactions(self, interaction):
         self.interactions.append(interaction)
 
@@ -110,9 +113,18 @@ class InteractingPair:
         # Add the interactions to the pair'
         bulk = []
         for i in self.get_interactions():
-            ni = Interaction(interaction_type=i.get_type(),specific_type=i.get_details(), interacting_pair=pair, atomname_residue1=i.atomname_residue1, atomname_residue2=i.atomname_residue2, interaction_level = i.get_level())
+            ni = Interaction(interaction_type=i.get_type(),specific_type=i.get_details(), interacting_pair=pair, atomname_residue1=i.atomname_residue1, atomname_residue2=i.atomname_residue2, interaction_level=i.get_level())
             bulk.append(ni)
         Interaction.objects.bulk_create(bulk)
+
+    def save_peptide_interactions(self, peptide):
+        pair, _ = InteractingPeptideResiduePair.objects.get_or_create(peptide_amino_acid_three_letter=self.dbres2.three_letter, peptide_amino_acid=self.dbres2.amino_acid, peptide_sequence_number=self.dbres2.sequence_number,
+                                                                            peptide=peptide, receptor_residue=self.dbres1)
+        bulk = []
+        for i in self.get_interactions():
+            ip = InteractionPeptide(interacting_peptide_pair=pair, peptide_atom=i.atomname_residue2, receptor_atom=i.atomname_residue1, interaction_type=i.get_type(), specific_type=i.get_details(), interaction_level=i.get_level())
+            bulk.append(ip)
+        InteractionPeptide.objects.bulk_create(bulk)
 
     def ionic_interactions(self):
         # Only oppositely charged residues
@@ -137,33 +149,32 @@ class InteractingPair:
 
         found = False
 
-        if is_hbd(hbd) and is_hba(hba):
-            # Get acceptors
-            acceptors = get_hbond_acceptors(hba)
+        # Get acceptors
+        acceptors = get_hbond_acceptors(hba)
 
-            # Get H-bond donor information
-            donors = get_hbond_donor_references(hbd)
-            for donor in donors:
-                # Pairs within 3.5A?
-                pairs = [ [donor, acceptor] for acceptor in acceptors if donor in hbd.child_dict and acceptor in hba.child_dict and distance_between(hbd.child_dict[donor].coord, hba.child_dict[acceptor].coord) <= 3.5 ]
+        # Get H-bond donor information
+        donors = get_hbond_donor_references(hbd)
+        for donor in donors:
+            # Pairs within 3.5A?
+            pairs = [ [donor, acceptor] for acceptor in acceptors if donor in hbd.child_dict and acceptor in hba.child_dict and distance_between(hbd.child_dict[donor].coord, hba.child_dict[acceptor].coord) <= 3.5 ]
 
-                # Check angles
-                if len(pairs) > 0:
-                    #if is_water(hbd):
-                    #    for pair in pairs:
-                    #        return True
-                    #else:
-                    for pair in pairs:
-                        donor = pair[0]
-                        acceptor = pair[1]
+            # Check angles
+            if len(pairs) > 0:
+                #if is_water(hbd):
+                #    for pair in pairs:
+                #        return True
+                #else:
+                for pair in pairs:
+                    donor = pair[0]
+                    acceptor = pair[1]
 
-                        if InteractingPair.verify_hbond_angle(hbd, donor, hba, acceptor):
-                            if switch:
-                                self.add_interactions(HydrogenBondADInteraction(acceptor, donor))
-                                found = True
-                            else:
-                                self.add_interactions(HydrogenBondDAInteraction(donor, acceptor))
-                                found = True
+                    if InteractingPair.verify_hbond_angle(hbd, donor, hba, acceptor):
+                        if switch:
+                            self.add_interactions(HydrogenBondADInteraction(acceptor, donor))
+                            found = True
+                        else:
+                            self.add_interactions(HydrogenBondDAInteraction(donor, acceptor))
+                            found = True
         if not switch:
             found = self.strict_hbond_interactions(switch = True) or found
         return found
@@ -209,7 +220,7 @@ class InteractingPair:
                         # 1. grab previous connected residue (if numbering switches, this might give an error)
                         # 2. grab coordinate atom previous residue
                         hbd_chain = hbd_residue.get_parent()
-                        if hbd_residue.has_id(hbd_residue.id[1]-1):
+                        if hbd_chain.has_id(hbd_residue.id[1]-1):
                             p3 = hbd_chain[hbd_residue.id[1]-1].child_dict[donor_set[3]].coord
                         else:
                             continue
@@ -244,33 +255,31 @@ class InteractingPair:
             hbd = self.res2
             hba = self.res1
 
-        if is_hbd(hbd) and is_hba(hba):
-            # Get acceptors
-            acceptors = get_hbond_acceptors(hba)
+        # Get acceptors
+        acceptors = get_hbond_acceptors(hba)
 
-            # Get H-bond donor information
-            donors = get_hbond_donor_references(hbd)
-            for donor in donors:
-                # Matching donor-acceptor pairs within 4A - no angle requirements
-                pairs = [ [donor, acceptor] for acceptor in acceptors if donor in hbd.child_dict and acceptor in hba.child_dict and distance_between(hbd.child_dict[donor].coord, hba.child_dict[acceptor].coord) <= 4 ]
-                for pair in pairs:
-                    donor = pair[0]
-                    acceptor = pair[1]
+        # Get H-bond donor information
+        donors = get_hbond_donor_references(hbd)
+        for donor in donors:
+            # Matching donor-acceptor pairs within 4A - no angle requirements
+            pairs = [ [donor, acceptor] for acceptor in acceptors if donor in hbd.child_dict and acceptor in hba.child_dict and distance_between(hbd.child_dict[donor].coord, hba.child_dict[acceptor].coord) <= 4 ]
+            for pair in pairs:
+                donor = pair[0]
+                acceptor = pair[1]
 
-                    if switch:
-                        self.add_interactions(LooseHydrogenBondADInteraction(acceptor, donor))
-                    else:
-                        self.add_interactions(LooseHydrogenBondDAInteraction(donor, acceptor))
+                if switch:
+                    self.add_interactions(LooseHydrogenBondADInteraction(acceptor, donor))
+                else:
+                    self.add_interactions(LooseHydrogenBondDAInteraction(donor, acceptor))
 
         if not switch:
             self.loose_hbond_interactions(switch = True)
 
     def hbond_interactions(self):
         # calculate interactions for pair
-        if (is_hbd(self.res1) and is_hba(self.res2)) or (is_hbd(self.res2) and is_hba(self.res1)):
-            found = self.strict_hbond_interactions()
-            if not found:
-                self.loose_hbond_interactions()
+        found = self.strict_hbond_interactions()
+        if not found:
+            self.loose_hbond_interactions()
 
 
     def aromatic_interactions(self):

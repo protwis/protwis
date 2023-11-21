@@ -18,7 +18,7 @@ import requests
 import xlrd
 import xmltodict, json
 import yaml
-
+import django.apps
 import Bio.PDB as PDB
 from Bio import SeqIO, pairwise2
 from Bio.pairwise2 import format_alignment
@@ -36,6 +36,7 @@ from residue.models import (Residue, ResidueGenericNumber,
                             ResidueNumberingScheme)
 from signprot.models import SignprotBarcode, SignprotComplex, SignprotStructure, SignprotStructureExtraProteins
 from structure.models import Structure, StructureStabilizingAgent, StructureType, StructureExtraProteins
+from common.tools import test_model_updates
 
 
 class Command(BaseCommand):
@@ -57,7 +58,10 @@ class Command(BaseCommand):
     local_uniprot_beta_dir = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'uniprot_beta'])
     local_uniprot_gamma_dir = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'uniprot_gamma'])
     remote_uniprot_dir = 'https://www.uniprot.org/uniprot/'
-
+    #Setting the variables for the test tracking of the model upadates
+    tracker = {}
+    all_models = django.apps.apps.get_models()[6:]
+    test_model_updates(all_models, tracker, initialize=True)
 
     logger = logging.getLogger(__name__)
 
@@ -87,8 +91,10 @@ class Command(BaseCommand):
             filenames = False
         if self.options['wt']:
             self.add_entry()
+            test_model_updates(self.all_models, self.tracker, check=True)
         elif self.options['build_datafile']:
             self.build_table_from_fasta()
+            test_model_updates(self.all_models, self.tracker, check=True)
         else:
             # Add G-proteins from CGN-db Common G-alpha Numbering <https://www.mrc-lmb.cam.ac.uk/CGN/>
             try:
@@ -128,7 +134,7 @@ class Command(BaseCommand):
                 self.logger.info('PASS: create_barcode')
                 self.add_other_subunits()
                 self.logger.info('PASS: add_other_subunits')
-
+                test_model_updates(self.all_models, self.tracker, check=True)
             except Exception as msg:
                 exc_type, exc_obj, exc_tb = sys.exc_info()
                 fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
@@ -502,12 +508,15 @@ class Command(BaseCommand):
                     rgn, c = ResidueGenericNumber.objects.get_or_create(label=row['CGN'])
                     temp['rgn'][row['CGN']] = rgn
 
+            d, s, n = row['CGN'].split('.')
+            seg = d+'.'+s
+
             # fetch protein segment id
-            if row['CGN'].split(".")[1] in temp['segment']:
-                ps = temp['segment'][row['CGN'].split(".")[1]]
+            if seg in temp['segment']:
+                ps = temp['segment'][seg]
             else:
-                ps, c = ProteinSegment.objects.get_or_create(slug=row['CGN'].split(".")[1], proteinfamily='Alpha')
-                temp['segment'][row['CGN'].split(".")[1]] = ps
+                ps = ProteinSegment.objects.get(slug=seg, proteinfamily='Alpha')
+                temp['segment'][seg] = ps
 
             try:
                 bulk_r = Residue(sequence_number=row['Position'], protein_conformation=pc, amino_acid=row['Residue'],
@@ -576,7 +585,9 @@ class Command(BaseCommand):
         # ResidueGenericNumber.objects.filter(scheme_id=12).delete()
 
         for rgn in residue_generic_numbers.unique():
-            ps, c = ProteinSegment.objects.get_or_create(slug=rgn.split('.')[1], proteinfamily='Alpha')
+            d, s, n = rgn.split('.')
+            seg = d+'.'+s
+            ps = ProteinSegment.objects.get(slug=seg, proteinfamily='Alpha')
 
             rgnsp = []
 
@@ -817,7 +828,7 @@ class Command(BaseCommand):
         #             structure.save()
 
     def signprot_struct_ids(self):
-        structs = Structure.objects.count()
+        structs = Structure.objects.exclude(structure_type__slug__startswith='af-').count()
         s_structs = SignprotStructure.objects.count()
         offset = 1000
         if s_structs == None:

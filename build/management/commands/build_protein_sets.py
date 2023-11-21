@@ -3,13 +3,17 @@ from django.conf import settings
 
 from protein.models import ProteinSet
 from structure.models import Structure
-
+from common.tools import test_model_updates
 import logging
+import django.apps
 
 class Command(BaseCommand):
     help = 'Reads source data and creates common database tables'
 
     logger = logging.getLogger(__name__)
+    tracker = {}
+    all_models = django.apps.apps.get_models()[6:]
+    test_model_updates(all_models, tracker, initialize=True)
 
     def handle(self, *args, **options):
         functions = [
@@ -23,6 +27,7 @@ class Command(BaseCommand):
             except Exception as msg:
                 print(msg)
                 self.logger.error(msg)
+        test_model_updates(self.all_models, self.tracker, check=True)
 
     def create_protein_sets(self):
         self.logger.info('CREATING PROTEIN SETS')
@@ -32,7 +37,7 @@ class Command(BaseCommand):
         class_dict = {'001': 'A', '002': 'B1', '003': 'B2', '004': 'C', '005': 'D1', '006': 'F', '007': 'T', '008': 'Other'}
 
         # proteins with a structure
-        structures = Structure.objects.order_by('protein_conformation__protein__parent__entry_name').distinct(
+        structures = Structure.objects.exclude(structure_type__slug__startswith='af-').order_by('protein_conformation__protein__parent__entry_name').distinct(
             'protein_conformation__protein__parent__entry_name')
         if structures:
             ps = ProteinSet.objects.create(name='All') # David's request

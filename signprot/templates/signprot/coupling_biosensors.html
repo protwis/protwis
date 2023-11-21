@@ -1,0 +1,142 @@
+{% extends "home/base.html" %}
+{% load static %}
+
+{% block addon_css %}
+    <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css"/>
+    <link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css"/>
+    <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css"/>
+    <!-- <link rel="stylesheet" href="{% static 'home/css/signprot-multitabtable.css' %}" type="text/css"/> -->
+{% endblock %}
+
+{% block content %}
+
+<div>
+    <h3>Biosensors used for GproteinDb’s couplings data</h3>
+    <p>Of note, most biosensors do not measure G protein coupling (receptor binding) but rather downstream processes representing activation (Gα–Gβγ dissociation) or signaling. All biosensors were expressed in HEK293 cells. Published couplings from the RGB and GABY biosensors are being annotated for deposition in GproteinDb (not added yet). GEMTA is here listed as three separate biosensors, as they label distinct effectors of the Gi/o, Gq/11 and G12/13 families. Adapted from Pándy-Szekeres et al., <i>Nucl Acids Res</i>, 2024 (manuscript).</p>
+</div>
+<div>
+    <table class="compact display" id="biosensor_overview">
+        <thead>
+            <tr>
+                <th style='height:35px; text-align:left;'>
+                    Lab
+                </th>
+                <th style='height:35px; text-align:left;'>
+                    Biosensor<br>type*
+                </th>
+                <th style='height:35px; text-align:left;'>
+                    Biosensor<sup>#</sup>
+                </th>
+                <th style='height:35px; text-align:left;'>
+                    Parameter
+                </th>
+                <th style='height:35px; text-align:left;'>
+                    #Down-<br>stream<br>steps
+                </th>
+                <th style='height:35px; text-align:left;'>
+                    Downstream steps before measurement<br>(after receptor binding)
+                </th>
+                <th style='height:35px; text-align:left;'>
+                    Labeled molecule<br>1
+                </th>
+                <th style='height:35px; text-align:left;'>
+                    Labeled molecule<br>2
+                </th>
+                <th style='height:35px; text-align:left;'>
+                    Measured<br>process
+                </th>
+                <th style='height:35px; text-align:left;'>
+                    Year
+                </th>
+                <th style='height:35px; text-align:left;'>
+                    Ref
+                </th>
+            </tr>
+            <tr>
+                {% for row in array2.0 %}
+                    <th></th>
+                {% endfor %}
+            </tr>
+        </thead>
+            {% for row in array2 %}
+                <tr>
+                    {% for i, val in row.items %}
+                        {% if i == 4 %}
+                            <td class="text-right"><span>{{val|safe}}</span></td>
+                        {% else %}
+                            <td><span>{{val|safe}}</span></td>
+                        {% endif %}
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        <tbody>
+        </tbody>
+    </table>
+</div>
+<div>
+    <p>*Biosensor type (letter from labeled molecule type): (E)ffector, (G) protein, (M)embrane, (O)ther and (R)eceptor.
+#Biosensor full names: GABY: G&alpha;&beta;&gamma; assays, EMTA: Effector Membrane Translocation Assay, FreeG&beta;&gamma;: Free &beta;&gamma; assay (Rluc and Nluc versions), GEMTA: G protein Effector Membrane Translocation Assay, NanoBiT-G: NanoLuc Binary Technology (14) – G proteins, RGB: Receptor – G protein BRET, RGB-GDP: Receptor-G protein GDP sensitivity biosensor and TRUPATH: G protein TRansdUcer PATHways.</p>
+</div>
+<div style="padding-top:20px;">
+    <h3>References</h3>
+    <p>1.  Gales, C., Rebois, R.V., Hogue, M., Trieu, P., Breit, A., Hebert, T.E. and Bouvier, M. (2005) Real-time monitoring of receptor and G-protein interactions in living cells. Nat. Methods, 2, 177-184.</p>
+    <p>2.  Okashah, N., Wan, Q., Ghosh, S., Sandhu, M., Inoue, A., Vaidehi, N. and Lambert, N.A. (2019) Variable G protein determinants of GPCR coupling selectivity. Proceedings of the National Academy of Sciences, 116, 12054-12059.</p>
+    <p>3.  Lu, S., Jang, W., Inoue, A. and Lambert, N.A. (2021) Constitutive G protein coupling profiles of understudied orphan GPCRs. PLoS One, 16, e0247743.</p>
+    <p>4.  Gales, C., Van Durm, J.J., Schaak, S., Pontier, S., Percherancier, Y., Audet, M., Paris, H. and Bouvier, M. (2006) Probing the activation-promoted structural rearrangements in preassembled receptor-G protein complexes. Nat. Struct. Mol. Biol., 13, 778-786.</p>
+    <p>5.  Wright, S.C. and Bouvier, M. (2021) Illuminating the complexity of GPCR pathway selectivity – advances in biosensor development. Curr. Opin. Struct. Biol., 69, 142-149.</p>
+    <p>6.  Olsen, R.H.J., DiBerto, J.F., English, J.G., Glaudin, A.M., Krumm, B.E., Slocum, S.T., Che, T., Gavin, A.C., McCorvy, J.D., Roth, B.L. and Strachan, R.T. (2020) TRUPATH, an open-source biosensor platform for interrogating the GPCR transducerome. Nat. Chem. Biol., 16, 841-849.</p>
+    <p>7.  Inoue, A., Raimondi, F., Kadji, F.M.N., Singh, G., Kishi, T., Uwamizu, A., Ono, Y., Shinjo, Y., Ishida, S., Arang, N. et al. (2019) Illuminating G-Protein-Coupling Selectivity of GPCRs. Cell, 177, 1933-1947 e1925.</p>
+    <p>8.  Kato, H.E., Zhang, Y., Hu, H., Suomivuori, C.M., Kadji, F.M.N., Aoki, J., Krishna Kumar, K., Fonseca, R., Hilger, D., Huang, W. et al. (2019) Conformational transitions of a neurotensin receptor 1-Gi1 complex. Nature, 572, 80-85.</p>
+    <p>9.  Hollins, B., Kuravi, S., Digby, G.J. and Lambert, N.A. (2009) The c-terminus of GRK3 indicates rapid dissociation of G protein heterotrimers. Cell. Signal., 21, 1015-1021.</p>
+    <p>10. Masuho, I., Martemyanov, K.A. and Lambert, N.A. (2015) Monitoring G Protein Activation in Cells with BRET. Methods Mol. Biol., 1335, 107-113.</p>
+    <p>11. Masuho, I., Ostrovskaya, O., Kramer, G.M., Jones, C.D., Xie, K. and Martemyanov, K.A. (2015) Distinct profiles of functional discrimination among G proteins determine the actions of G protein-coupled receptors. Science signaling, 8, ra123.</p>
+    <p>12. Avet, C., Mancini, A., Breton, B., Le Gouill, C., Hauser, A.S., Normand, C., Kobayashi, H., Gross, F., Hogue, M., Lukasheva, V. et al. (2022) Effector membrane translocation biosensors reveal G protein and betaarrestin coupling profiles of 100 therapeutically relevant GPCRs. Elife, 11, 2020.2004.2020.052027.</p>
+    <p>13. Inoue, A., Ishiguro, J., Kitamura, H., Arima, N., Okutani, M., Shuto, A., Higashiyama, S., Ohwada, T., Arai, H., Makide, K. and Aoki, J. (2012) TGFalpha shedding assay: an accurate and versatile method for detecting GPCR activation. Nat. Methods, 9, 1021-1029.</p>
+    <p>14. Dixon, A.S., Schwinn, M.K., Hall, M.P., Zimmerman, K., Otto, P., Lubben, T.H., Butler, B.L., Binkowski, B.F., Machleidt, T., Kirkland, T.A. et al. (2016) NanoLuc Complementation Reporter Optimized for Accurate Measurement of Protein Interactions in Cells. ACS Chemical Biology, 11, 400-408.</p>
+</div>
+
+{% endblock %}
+
+{% block addon_js %}
+    <script src="{% static 'home/js/jquery.dataTables.min.js' %}"></script>
+    <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"></script>
+    <script src="{% static 'home/js/select2.js' %}"></script>
+    <script src="{% static 'home/js/gpcrdb.js' %}"></script>
+
+    <script type="text/javascript" charset="utf-8">
+        $(document).ready(function () {
+            let oTable2 = $("#biosensor_overview").DataTable({
+                deferRender: true,
+                scrollY: '55vh',
+                scrollX: true,
+                scrollCollapse: true,
+                scroller: true,
+                paging: false,
+                bSortCellsTop: false, //prevent sort arrows going on bottom row
+                aaSorting: [],
+                // order: [
+                //   [2, "asc"],
+                //   [4, "asc"]
+                // ],
+                autoWidth: true,
+                bInfo: false,
+            });
+
+            let column_filters2 = [];
+
+            column_filters2 = column_filters2.concat(createYADCFfilters(0, 3, "multi_select", "select2", "", false, null, "html", "90px"));
+            column_filters2 = column_filters2.concat(createYADCFfilters(3, 1, "multi_select", "select2", "", false, null, "html", "120px"));
+            column_filters2 = column_filters2.concat(createYADCFfilters(4, 1, "multi_select", "select2", "", false, null, "html", "60px"));
+            column_filters2 = column_filters2.concat(createYADCFfilters(5, 1, "multi_select", "select2", "", false, null, "html", "220px"));
+            column_filters2 = column_filters2.concat(createYADCFfilters(6, 1, "multi_select", "select2", "", false, null, "html", "120px"));
+            column_filters2 = column_filters2.concat(createYADCFfilters(7, 4, "multi_select", "select2", "", false, null, "html", "90px"));
+
+            yadcf.init(oTable2, column_filters2, {
+                cumulative_filtering: false
+            });
+            oTable2.columns.adjust();
+
+            
+        })
+    </script>
+{% endblock %}

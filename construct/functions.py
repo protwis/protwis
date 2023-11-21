@@ -21,6 +21,7 @@ from collections import OrderedDict
 import pickle
 import logging
 import os
+from datetime import datetime
 
 AA_three = {'CYS': 'C', 'ASP': 'D', 'SER': 'S', 'GLN': 'Q', 'LYS': 'K',
      'ILE': 'I', 'PRO': 'P', 'THR': 'T', 'PHE': 'F', 'ASN': 'N',
@@ -28,15 +29,15 @@ AA_three = {'CYS': 'C', 'ASP': 'D', 'SER': 'S', 'GLN': 'Q', 'LYS': 'K',
      'ALA': 'A', 'VAL':'V', 'GLU': 'E', 'TYR': 'Y', 'MET': 'M'}
 # to override some faulty PDB DBREF entries
 uniprot_convert_table = {'Q548Y0_HUMAN':'OX2R_HUMAN'}
+starttime = datetime.now()
 
 # def look_for_value(d,k):
 #     ### look for a value in dict if found, give back, otherwise None
 
-def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=False):
+def fetch_pdb_info(pdbname, protein ,new_xtal=False, ignore_gasper_annotation=False, model=False):
     # ignore_gaspar_annotation skips PDB_RANGE edits that mark missing residues as deleted, which messes up constructs.
-
     if not protein:
-        if pdbname in ['6ORV','6YVR','6Z4Q','6Z4S','6Z4V','6Z66','6Z8N','6ZA8','6ZIN']:
+        if pdbname in ['6ORV','6YVR','6Z4Q','6Z4S','6Z4V','6Z66','6Z8N','6ZA8','6ZIN','7B6W'] or model==True:
             with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'pdbs', '{}.pdb'.format(pdbname)]), 'r') as pdbcustom:
                 pdbdata_raw = pdbcustom.read()
         else:
@@ -66,8 +67,15 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
     #d = {}
     d = OrderedDict()
     d['construct_crystal'] = {}
-    d['construct_crystal']['pdb'] = pdbname
-    d['construct_crystal']['pdb_name'] = 'auto_'+pdbname
+    if model:
+        d['construct_crystal']['pdb'] = pdbname.split('/')[-1]
+        d['construct_crystal']['pdb_name'] = 'auto_'+pdbname.split('/')[-1]
+        d['pdb'] = pdbname.split('/')[-1]
+    else:
+        d['construct_crystal']['pdb'] = pdbname
+        d['construct_crystal']['pdb_name'] = 'auto_'+pdbname
+        d['pdb'] = pdbname
+
     try:
         d['construct_crystal']['uniprot'] = protein.parent.entry_name
         d['protein'] = protein.parent.name
@@ -87,7 +95,6 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
     d['contact_info']['date'] = time.strftime('%m/%d/%Y')
     d['contact_info']['address'] = ''
 
-    d['pdb'] = pdbname
     d['links'] = []
     d['xml_not_observed'] = []
     d['xml_segments'] = []
@@ -96,15 +103,26 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
 
     # GET PDB FILE TO GET INITIAL VALUES - remove known WT that do not exist
     pdbdata_raw = None
-    try:
-        structure = Structure.objects.filter(pdb_code__index=d['construct_crystal']['pdb'].upper()).get()
-        if structure.pdb_data.pdb:
-            pdbdata_raw = structure.pdb_data.pdb
-    except:
-        pass
+    if model == True:
+        try:
+            structure = Structure.objects.filter(protein_conformation__protein=protein, structure_type__slug='alphafold').get()
+            if structure.pdb_data.pdb:
+                pdbdata_raw = structure.pdb_data.pdb
+        except:
+            pass
+    else:
+        try:
+            structure = Structure.objects.filter(pdb_code__index=d['construct_crystal']['pdb'].upper()).get()
+            if structure.pdb_data.pdb:
+                pdbdata_raw = structure.pdb_data.pdb
+        except:
+            pass
     if not pdbdata_raw:
         pdb_data_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'pdbs'])
-        pdb_path = os.sep.join([pdb_data_dir, pdbname + '.pdb'])
+        if model:
+            pdb_path = pdbname
+        else:
+            pdb_path = os.sep.join([pdb_data_dir, pdbname + '.pdb'])
         if not os.path.isfile(pdb_path):
             url = 'https://www.rcsb.org/pdb/files/%s.pdb' % pdbname
             pdbdata_raw = urlopen(url).read().decode('utf-8')
@@ -362,14 +380,17 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
     # print(pdb_range)
     #https://files.gpcrdb.org/uniprot_mapping.txt
     ## get uniprot to name mapping
-    uniprot_mapping = cache.get('gpcrdb_uniprot_mapping')
-    if not uniprot_mapping:
-        url = 'https://files.gpcrdb.org/uniprot_mapping.txt'
-        req = urlopen(url)
-        uniprot_mapping = req.read().decode('UTF-8')
-        rows = ( line.split(' ') for line in uniprot_mapping.split('\n') )
-        uniprot_mapping = { row[0]:row[1:] for row in rows }
-        cache.set('gpcrdb_uniprot_mapping',uniprot_mapping,60*60*24)
+    # uniprot_mapping = cache.get('gpcrdb_uniprot_mapping')
+    # if not uniprot_mapping:
+    # url = 'https://files.gpcrdb.org/uniprot_mapping.txt'
+    # req = urlopen(url)
+    # uniprot_mapping = req.read().decode('UTF-8')
+
+    with open(os.sep.join([settings.DATA_DIR, 'protein_data', 'uniprot_mapping.txt']), 'r') as f:
+        uniprot_mapping = f.read()
+    rows = ( line.split(' ') for line in uniprot_mapping.split('\n') )
+    uniprot_mapping = { row[0]:row[1:] for row in rows }
+        # cache.set('gpcrdb_uniprot_mapping',uniprot_mapping,60*60*24)
 
     #errors, fix it.
     uniprot_mapping['P08483'] = ['acm3_rat']
@@ -717,8 +738,12 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False, ignore_gasper_annotation=Fals
                     if receptor:
                             if not uniprot_pos:
                                 uniprot_pos = pos
-                            # print(chain,pos,uniprot_pos,uniprot_aa)
+                            # print(chain,pos,uniprot_pos)
                             if pdbname in ['7EPE','7EPF'] and pos>1000:
+                                continue
+                            if pdbname in ['7F4D','7F4F','7F4H','7F4I','8HS2','8HSC','7XZ5','7XZ6','8IW4','8IW9','8ITF'] and chain!='R':
+                                continue
+                            if pdbname in ['8HJ5'] and chain!='F':
                                 continue
                             wt_aa = d['wt_seq'][uniprot_pos-1]
                             prev_receptor = True
@@ -1187,7 +1212,7 @@ def add_construct(d):
                                                        pi_email = d['contact_info']['pi_email'],
                                                        pi_name = d['contact_info']['pi_name'],
                                                        urls = d['contact_info']['url'],
-                                                       date = datetime.datetime.strptime(d['contact_info']['date'], '%m/%d/%Y').strftime('%Y-%m-%d'),
+                                                       date = datetime.strptime(d['contact_info']['date'], '%m/%d/%Y').strftime('%Y-%m-%d'),
                                                        address = d['contact_info']['address'])
 
     construct.save()
@@ -1544,3 +1569,232 @@ def convert_ordered_to_disordered_annotation(d):
         i+=1
 
     return d
+
+def construct_structure_annotation_override(pdb_code, removed, deletions):
+    # Overwrite reset to fix annotation
+    if pdb_code in ['6H7N','6H7J','6H7L','6H7M','6H7O']:
+        removed = list(range(3,40))
+        deletions = deletions+list(range(244,272))
+    elif pdb_code=='6MEO':
+        removed = []
+    elif pdb_code=='5N2R':
+        deletions = [1]+list(range(209,219))+list(range(306,413))
+    elif pdb_code in ['5WIU','5WIV']:
+        removed = removed+[1001]
+        deletions = []
+    elif pdb_code=='6QZH':
+        removed = list(range(1001,1473))+list(range(255,260))
+    elif pdb_code in ['6KUX', '6KUY']:
+        deletions = list(range(1,20))
+    elif pdb_code=='7BZ2':
+        deletions = list(range(240,265))
+    elif pdb_code=='7C6A':
+        removed = list(range(1,35))
+    elif pdb_code=='6S0L':
+        removed = [-1,0] + list(range(1001,1107))
+    elif pdb_code=='7D7M':
+        deletions = list(range(1,4)) + list(range(367,489))
+    elif pdb_code in ['7D77', '7D76', '4GRV']:
+        deletions = []
+    elif pdb_code=='6A94':
+        if 69 in removed:
+            removed.remove(69)
+        if 69 in deletions:
+            deletions.remove(69)
+    elif pdb_code in ['6LI1']:
+        for i in range(261,265):
+            if i in removed:
+                removed.remove(i)
+            if i in deletions:
+                deletions.remove(i)
+    elif pdb_code=='6LI2':
+        for i in range(263,265):
+            if i in removed:
+                removed.remove(i)
+            if i in deletions:
+                deletions.remove(i)
+    elif pdb_code=='5JQH':
+        for i in range(1023,1030):
+            if i in removed:
+                removed.remove(i)
+        for i in range(23,30):
+            if i in deletions:
+                deletions.remove(i)
+    elif pdb_code=='5T1A':
+        for i in range(226,241):
+            if i in deletions:
+                deletions.remove(i)
+        removed.append(1002)
+        for i in [234, 319, 320]:
+            if i in removed:
+                removed.remove(i)
+    elif pdb_code=='5UEN':
+        for i in range(220,228):
+            if i in removed:
+                removed.remove(i)
+            if i in deletions:
+                deletions.remove(i)
+    elif pdb_code=='3SN6':
+        removed = list(range(1002,1161))
+    elif pdb_code in ['6ZDV','6ZDR','6MH8','6PS7','6S0Q','6WQA','6AQF','6GT3','6JZH','6LPJ','6LPL','6LPK',
+                      '5JTB','5OLH','5NM2','5OLG','5OM1','5OLO','5OLZ','5OLV','5OM4','5UVI','5VRA']:
+        if 1 in removed:
+            removed.remove(1)
+        if 1 in deletions:
+            deletions.remove(1)
+    elif pdb_code in ['5NLX','5NM4']:
+        if 10 in removed:
+            removed.remove(10)
+        if 1 in deletions:
+            deletions.remove(1)
+        for i in range(209,214):
+            if i in deletions:
+                deletions.remove(i)
+        for i in range(218,223):
+            if i in removed:
+                removed.remove(i)
+    elif pdb_code=='6N48':
+        for i in range(1023,1029):
+            if i in removed:
+                removed.remove(i)
+        for i in range(23,29):
+            if i in deletions:
+                deletions.remove(i)
+    elif pdb_code=='5ZK3':
+        if 382 in deletions:
+            deletions.remove(382)
+    elif pdb_code=='6A93':
+        if 69 in removed:
+            removed.remove(69)
+        if 69 in deletions:
+            deletions.remove(69)
+    elif pdb_code=='6IBL':
+        removed = list(range(1003,1110))
+        for i in range(41,44):
+            if i in deletions:
+                deletions.remove(i)
+        if 243 in deletions:
+            deletions.remove(243)
+        deletions.append(271)
+    elif pdb_code=='6W2Y':
+        for i in range(845,862):
+            if i in deletions:
+                deletions.remove(i)
+    elif pdb_code in ['4Z34','4Z35','4Z36']:
+        if 327 in removed:
+            removed.remove(327)
+        if 327 in deletions:
+            deletions.remove(327)
+    elif pdb_code=='6TKO':
+        if 358 in removed:
+            removed.remove(358)
+        if 358 in deletions:
+            deletions.remove(358)
+    elif pdb_code=='6DO1':
+        removed = []
+    elif pdb_code=='5D6L':
+        for i in range(224,231):
+            if i in removed:
+                removed.remove(i)
+            if i in deletions:
+                deletions.remove(i)
+    elif pdb_code=='7DFL':
+        deletions = list(range(222,405))
+    elif pdb_code=='2I35':
+        removed = [330,331,332]
+    elif pdb_code in ['7ARO', '7RM5']:
+        if 1 in removed:
+            removed.remove(1)
+        if 1 in deletions:
+            deletions.remove(1)
+    elif pdb_code in ['7BTS','7BU6','7BU7','7BVQ']:
+        removed, deletions = list(range(884,1054)), list(range(884,1054))
+    elif pdb_code=='7D68':
+        for i in range(395,456):
+            if i in deletions:
+                deletions.remove(i)
+    elif pdb_code=='7F1R':
+        deletions = list(range(314,400))
+        removed = list(range(1,128))+list(range(188,192))
+    elif pdb_code=='7F1Q':
+        removed = list(range(1,113))+list(range(318,350))
+    elif pdb_code in ['7EPE','7EPF']:
+        removed, deletions = list(range(1000,1148)), list(range(1000,1148))
+    elif pdb_code in ['7EZM','7EZK','7EZH']:
+        for i in range(38,64):
+            if i in removed:
+                removed.remove(i)
+    elif pdb_code in ['6ZFZ', '6ZG4', '6ZG9']:
+        for i in range(21,27):
+            if i in removed:
+                removed.remove(i)
+            if i in deletions:
+                deletions.remove(i)
+    elif pdb_code=='7EWR':
+        removed, deletions = [], []
+    elif pdb_code in ['7T10', '7T11']:
+        deletions = []
+    elif pdb_code in ['7PX4','7PYR']:
+        if 1 in deletions:
+            deletions.remove(1)
+        if 1 in removed:
+            removed.remove(1)
+    elif pdb_code=='7B6W':
+        deletions = list(range(352,525))
+    elif pdb_code=='7V9M':
+        deletions = []
+    elif pdb_code=='7F4F':
+        deletions = []
+    elif pdb_code in ['7EVY','7EVZ','7EW0']:
+        removed = list(range(1,47))
+    elif pdb_code=='7VAB':
+        removed = list(range(1,127))
+    elif pdb_code=='7SBF':
+        for i in range(65,73):
+            if i in deletions:
+                deletions.remove(i)
+    elif pdb_code=='2YCW':
+        deletions = []
+    elif pdb_code in ['4LDE','4LDL','4LDO']:
+        if 263 in deletions:
+            deletions.remove(263)
+    elif pdb_code in ['8DCR','8DCS']:
+        for i in range(139,243):
+            if i in deletions:
+                deletions.remove(i)
+        for i in range(247,358):
+            if i in deletions:
+                deletions.remove(i)
+    elif pdb_code=='7T32':
+        for i in range(315,399):
+            if i in deletions:
+                deletions.remove(i)
+    elif pdb_code in ['7UTZ', '7T9I', '7T9N', '7T9M']:
+        deletions = []
+    elif pdb_code=='7F1T':
+        removed+=list(range(1001,1055))
+        deletions = []
+    elif pdb_code=='7PP1':
+        deletions = []
+    elif pdb_code=='6LUQ':
+        if 387 in removed:
+            removed.remove(387)
+        if 366 in deletions:
+            deletions.remove(366)
+    elif pdb_code=='7Y27':
+        for i in range(40, 63):
+            if i in removed:
+                removed.remove(i)
+    elif pdb_code in ['7W56','7W53']:
+        for i in range(362,368):
+            if i in deletions:
+                deletions.remove(i)
+    elif pdb_code in ['8HJ5']:
+        removed = list(range(1,26))
+    ### make deletions and removed empty
+    elif pdb_code in ['7SF7','7SF8','7EB2','7X1T','7X1U','7SRS','7UL2','7UL3','7UL5','7XBX','7XWO','8G2Y','7XJJ']:
+        deletions, removed = [], []
+    elif pdb_code in ['7ZLY']:
+        deletions = []
+
+    return removed, deletions

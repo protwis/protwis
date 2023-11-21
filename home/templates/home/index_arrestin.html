@@ -15,13 +15,12 @@
                     <li data-target="#carousel-example-generic" data-slide-to="1"></li>
                     <li data-target="#carousel-example-generic" data-slide-to="2"></li>
                     <li data-target="#carousel-example-generic" data-slide-to="3"></li>
-                    <li data-target="#carousel-example-generic" data-slide-to="4"></li>
                 </ol>
 
                 <!-- Wrapper for carousel slides -->
                 <div class="carousel-inner" role="listbox">
                     <div class="item active">
-                        <img src="{% static 'home/carousel/seqali_phyltree.png' %}">
+                        <img src="{% static 'home/carousel/arrest_seqalign.png' %}">
                         <div class="carousel-caption">
                             <h3>Sequence alignments</h3>
                             <p>Alignments with generic residue numbers and residue plots.</p>
@@ -29,33 +28,25 @@
                     </div>
 
                     <div class="item">
-                        <img src="{% static 'home/carousel/constructs.png' %}">
+                        <img src="{% static 'home/carousel/arrest_couplings.png' %}">
                         <div class="carousel-caption">
-                            <h3>G protein couplings</h3>
-                            <p>Unified coupling atlas and G protein selectivity profiles.</p>
+                            <h3>Arrestin couplings</h3>
+                            <p>Unified coupling atlas and Arrestin selectivity profiles.</p>
                         </div>
                     </div>
 
                     <div class="item">
-                        <img src="{% static 'home/carousel/strbrowser.png' %}">
+                        <img src="{% static 'home/carousel/arrest_structures.png' %}">
                         <div class="carousel-caption">
                             <h3>Structures</h3>
-                            <p>G protein structure statistics and browser with unique annotation.</p>
+                            <p>Arrestin structure statistics and browser with unique annotation.</p>
                         </div>
                     </div>
 
                     <div class="item">
-                        <img src="{% static 'home/carousel/homomodels.png' %}">
+                        <img src="{% static 'home/carousel/arrest_interface.png' %}">
                         <div class="carousel-caption">
-                            <h3>Structure models</a></h3>
-                            <p>GPCR-G protein structure models.</p>
-                        </div>
-                    </div>
-
-                    <div class="item">
-                        <img src="{% static 'home/carousel/residplots.png' %}">
-                        <div class="carousel-caption">
-                            <h3>GPCR-G protein structure interface</h3>
+                            <h3>Arrestin structure interface</h3>
                             <p>Structure based coupling interface interactions.</p>
                         </div>
                     </div>
@@ -81,42 +72,142 @@
         </div>
     </div>
 
-    <!-- GPCRdb intro -->
+    <!-- NEW STUFF -->
+
     <div class="row">
 
-        <div class="col-md-8">
+        <div class="col-md-9">
             <div class="panel panel-primary">
                 <div class="panel-body">
-                    <div class="col-md-1 text-center">
-                        <img style="height:90%; width:100px; margin-right:20% " src="{% static 'home/logo/arrestin/main.png' %}">
+                    <div class="col-md-4">
+                      <br />
+                        <p style='text-align:center'>
+                        <img style="height:90%; width:100px;" src="{% static 'home/logo/arrestin/main.png' %}">
+                        </p>
+                        <p style='text-align:center; font-size: 20px; margin-top:0px;'>
+                        ArrestinDb
+                        </p>
                     </div>
-                    <div class="col-md-1">
-                    </div>
-                    <div class="col-md-10">
-                        <p style="text-align:justify">ArrestinDb contains reference data, interactive
-                            visualization and experiment design tools for arrestins. ArrestinDb
-                            curates sequence alignments, structures and mutations from literature. Interactive
-                            diagrams visualise arrestin residues (e.g. snakeplot) and interactions with receptors. 
-                            <!-- See the GPCRdb graphical <a href="/static/home/poster/overview.pdf">overview</a>,
-                            <a href="https://files.gpcrdb.org/video/GPCRdb-David_Gloriam.mp4">video</a>,
-                            <a onclick="citation_tool(window.location.href);" href="#">articles</a> or
-                            <a href="https://docs.gpcrdb.org/">documentation</a>.</p> -->
-                    </div>
-                </div>
-            </div>
-        </div>
+                    <!-- <div class="col-md-1">
+                    </div> -->
+                    <div class="col-md-4" id='center_menu'>
+                        <p style='text-align:justify'>
+                            ArrestinDb (Arrestin database) offers:<br/>
+                            <ul>
+                              <li>Reference data (see Data box)</li>
+                              <li>Analysis tools (browse menu)</li>
+                              <li>Visualization (e.g., <a href='https://gpcrdb.org/protein/' target='_blank'>snakeplots</a>)</li>
+                              <li>Data deposition (for arrestin couplings and interface mutations)</li>
+                        </p>
 
-        <div class="col-md-4">
-            <div class="panel panel-primary">
-                <div class="panel-body">
-                    <p>ArrestinDb is developed by the <a href="https://drug.ku.dk/staff/?pure=en/persons/352279" target="_blank"> David</a>
-                        Gloriam <a href="https://drug.ku.dk/disciplines/peptides-and-proteins/gloriam-group/" target="_blank">group</a>, integrates data from the research community and maintains an active collaboration with the
-                        <a href="https://www.guidetopharmacology.org/">Guide To Pharmacology</a> (IUPHAR),
-                        <a href="http://gpcrmd.org/">GPCRmd</a>, <a href="https://ernest-gpcr.eu" target="_blank">ERNEST</a> and <a href="https://drgpcr.com" target="_blank">DrGPCR</a>.
-                        If you use the ArrestinDb, please remember to <a onclick="citation_tool(window.location.href);" href="#">cite us</a>.
-                    </p>
+                    </div>
+
+                    <div class="col-md-4">
+                        <p style="text-align:justify;">
+                          <br />
+                          Arrestins can 'arrest' signaling by blocking GPCR-mediated G protein coupling and inducing receptor internalization.
+                          They are also scaffold proteins rectruiting and assembling other signaling proteins and can be involved in biased
+                          signaling<sup><a href='https://en.wikipedia.org/wiki/Arrestin' target='_blank'>1</a></sup>
+                        </p>
+                    </div>
                 </div>
             </div>
+                <!-- Stats -->
+                <div class="col-md-4">
+                    <div class="panel panel-primary">
+                      <div class="panel-body" id='releases'>
+                          <h3>Data</h3>
+                          <ul class="stats_list">
+                              {% for stat in release_statistics %}
+                                  <li>
+                                      {{ stat.value| safe }} {{ stat.statistics_type | safe }}
+                                  </li>
+                              {% endfor %}
+                          </ul>
+                      </div>
+                    </div>
+                </div>
+
+                <!-- Release Notes -->
+                <div class="col-md-8">
+                    <div class="panel panel-primary">
+                        <div class="panel-body">
+                            <h3>Welcome</h3>
+                            A new database has been born. ArrestinDb is dedicated to arrestin proteins,
+                            which like G proteins, are major GPCR transducers but also have their own highly active research
+                            community. The publication is planned for end of 2023 or early 2024.
+                            Meanwhile, try it out and let us know what you think.
+                        </div>
+                    </div>
+                </div>
+
+              <!-- commented stuff for POST preprint -->
+          <!-- <div class="col-md-4">
+                  <div class="panel panel-primary">
+                      <div class="panel-body">
+                          <h3><a href="/structure/statistics">Data</a></h3>
+                          <ul class="stats_list">
+                              {% for stat in release_statistics %}
+                                  <li>
+                                      {{ stat.value| safe }} {{ stat.statistics_type | safe }}
+                                  </li>
+                              {% endfor %}
+                          </ul>
+                          {% if users %}
+                              {{ users|safe }}
+                          {% endif %}
+                      </div>
+                  </div>
+              </div> -->
+
+              <!-- Release Notes -->
+        <!-- <div class="col-md-4">
+                  <div class="panel panel-primary">
+                      <div class="panel-body">
+                          <h3>Latest <a href="/pages/releasenotes">release</a></h3>
+                          <strong>{{ release_notes.date }}</strong>
+                          {{ release_notes.html|safe }}
+                          <br />
+                          <strong><a href="/pages/releasenotes">All releases</a></strong>
+                      </div>
+                  </div>
+
+                  <div class="panel panel-primary">
+                      <div class="panel-body">
+                          <h3><a href="https://files.gpcrdb.org/video/GPCRdb-David_Gloriam.mp4">Videos</a></h3>
+                      </div>
+                  </div>
+
+              </div> -->
+
+              <!-- Publications -->
+        <!-- <div class="col-md-4">
+                  <div class="panel panel-primary">
+                      <div class="panel-body" style='max-height: 530px; overflow-y: scroll;'>
+                          <h3>Publications</h3>
+                          <p>
+                          The arrestin database, ArrestinDb<br />
+                          Jimmy Caroli, Gáspár Pándy-Szekeres, Alexander S. Hauser, György M. Keserű, Albert J. Kooistra and David E. Gloriam<br />
+                          <a href='#' target='_blank'><i>Manuscript</i>, 2022</a>
+                          </p>
+                      </div>
+                  </div>
+              </div> -->
+      </div>
+        <div class="col-md-3">
+
+            <div class="panel panel-primary">
+                <div class="panel-body">
+                    <h3>Related resources</h3>
+                    <a href='https://gpcrdb.org/' target='_blank'>GPCRdb</a>, <a href='https://gproteindb.org/' target='_blank'>GproteinDb</a>,
+                    <a href='https://arrestindb.org/' target='_blank'>ArrestinDb</a> and <a href='https://biasedsignalingatlas.org/' target='_blank'>Biased Signaling Atlas</a>
+                    cover related aspects of signal transduction while serving dedicated research communities and use cases.
+                    {% if users %}
+                        {{ users|safe }}
+                    {% endif %}
+                </div>
+            </div>
+
         </div>
 
 
@@ -143,57 +234,25 @@
     {#            </div>#}
     {#        </div>#}
 
-    <!-- Twitter, release notes, database stats.  -->
-    <div class="row">
 
-        <!-- Stats -->
-        <div class="col-md-4">
-            <div class="panel panel-primary">
-                <div class="panel-body">
-                    <h3>ArrestinDb <a href="/structure/statistics">statistics</a></h3>
-                    <ul class="stats_list">
-                        {% for stat in release_statistics %}
-                            <li>
-                                {{ stat.value| safe }} {{ stat.statistics_type | safe }} 
-                            </li>
-                        {% endfor %}
-                    </ul>
-                    {% if users %}
-                        {{ users|safe }}
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-
-        <!-- Release Notes -->
-        <div class="col-md-4">
-            <div class="panel panel-primary">
-                <div class="panel-body">
-                    <h3>Latest <a href="/pages/releasenotes">release</a></h3>
-                    <strong>{{ release_notes.date }}</strong>
-                    {{ release_notes.html|safe }}
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-4">
+        <!-- <div class="col-md-4">
             <div class="panel panel-primary">
                 <div class="panel-body">
                     <iframe width="100%" height="200" src="https://www.youtube.com/embed/X8j_xpryZ4U?start=778&end=3732;" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
                 </div>
             </div>
-        </div>
+        </div> -->
 
         <!-- Twitter feed -->
-        <!-- <div class="col-md-4"> 
-            <div class="panel panel-primary"> 
-                <div class="panel-body"> 
-                    <h3> 
+        <!-- <div class="col-md-4">
+            <div class="panel panel-primary">
+                <div class="panel-body">
+                    <h3>
                         <a class="twitter-timeline" data-height="400" data-theme="light" href="https://twitter.com/gpcrdb"></a>
-                    </h3> 
+                    </h3>
                    <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
-                </div> 
-            </div> 
+                </div>
+            </div>
         </div> -->
 
         {#<!-- News -->#}
@@ -209,8 +268,6 @@
         {#                </div>#}
         {#            </div>#}
         {#        </div> #}
-
-    </div>
 
     <!-- Gloriam Group and Collabs -->
     {#    <div class="row">#}
@@ -229,4 +286,12 @@
     {#        </div>#}
     {#    </div>#}
 
+{% endblock %}
+
+{% block addon_js %}
+<script>
+    $(".release-notes").find("li").addClass("hidden");
+    $(".arrestindb").removeClass("hidden");
+    $(".all").removeClass("hidden")
+</script>
 {% endblock %}

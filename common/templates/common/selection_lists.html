@@ -7,7 +7,7 @@
             <span class="glyphicon glyphicon-remove"></span> Clear
         </a>
         {% endif %}
-    </p>    
+    </p>
         {% for selected_item in selected_items %}
         <div class="target-selection">
             {% if selection_type == 'segments' %}
@@ -24,12 +24,8 @@
                 {% else %}
                     {{ selected_item.item.protein.name|safe }} {{ selected_item.item.state.slug}}
                 {% endif %}
-            <!-- {% elif selected_item.type == 'structure_model_Inactive' %}
-                {{ selected_item.item.protein.name|safe }} {{ selected_item.item.state.slug}}
-            {% elif selected_item.type == 'structure_model_Intermediate' %}
-                {{ selected_item.item.protein.name|safe }} {{ selected_item.item.state.slug}}
-            {% elif selected_item.type == 'structure_model_Active' %}
-                {{ selected_item.item.protein.name|safe }} {{ selected_item.item.state.slug}} -->
+            {% elif selected_item.type == 'signprot' %}
+                {{ selected_item.item.pdb_code.index }}
             {% else %}
                 {{ selected_item.item.name|safe }}
                 {% if selected_item.item.species.common_name %}
@@ -37,8 +33,8 @@
                 {% endif %}
             {% endif %}
             {% if selected_item.properties.only_aligned_residues %} (Only GN) {% endif %}
-            ({{ selected_item.type_title }})
-            <a 
+            ({{ selected_item.type_title|safe }})
+            <a
             onclick="RemoveFromSelection('{{ selection_type }}', '{{ selected_item.type }}',
             {{ selected_item.item.id }})" class="btn btn-danger btn-xs">
                 <span class="glyphicon glyphicon-remove"></span>

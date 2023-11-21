@@ -1,5 +1,6 @@
 from django.shortcuts import get_object_or_404, render
 from django.conf import settings
+from django.http import HttpResponse
 from django.views import generic
 from django.core.cache import cache
 from django.views.decorators.cache import cache_page
@@ -62,6 +63,10 @@ def linear_gradient(start_hex="#4682B4", finish_hex="#FFB347", n=10):
 
 @cache_page(60 * 60 * 24 * 7)
 def detail(request, slug):
+    # FULL class A is too big for consensus
+    if slug == "001":
+        return HttpResponse("Displaying a consensus of all class A receptors is currently not supported.")
+
     # get family
     pf = ProteinFamily.objects.get(slug=slug)
 
@@ -83,7 +88,7 @@ def detail(request, slug):
 
     # get structures of this family
     structures = Structure.objects.filter(protein_conformation__protein__parent__family__slug__startswith=slug
-        ).order_by('-representative', 'resolution').prefetch_related('pdb_code__web_resource')
+        ).exclude(structure_type__slug__startswith='af-').order_by('-representative', 'resolution').prefetch_related('pdb_code__web_resource')
 
     mutations = MutationExperiment.objects.filter(protein__in=proteins).prefetch_related('residue__generic_number',
                                 'exp_qual', 'ligand')

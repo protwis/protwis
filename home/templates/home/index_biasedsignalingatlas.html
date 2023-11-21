@@ -1,0 +1,310 @@
+{% extends "home/base.html" %}
+{% load static %}
+{% load humanize %}
+
+{% block content %}
+
+    <!-- Carousel -->
+    <div class="row">
+
+        <div class='col-md-12'>
+            <div id="carousel-example-generic" class="carousel slide" data-ride="carousel" data-interval="30000">
+                <!-- Indicators -->
+                <ol class="carousel-indicators">
+                    <li data-target="#carousel-example-generic" data-slide-to="0" class="active"></li>
+                    <li data-target="#carousel-example-generic" data-slide-to="1"></li>
+                    <li data-target="#carousel-example-generic" data-slide-to="2"></li>
+                    <li data-target="#carousel-example-generic" data-slide-to="3"></li>
+                    <li data-target="#carousel-example-generic" data-slide-to="4"></li>
+                </ol>
+
+                <!-- Wrapper for carousel slides -->
+                <div class="carousel-inner" role="listbox">
+                    <div class="item active">
+                        <img src="{% static 'home/carousel/bsa_biased_ligands.png' %}">
+                        <div class="carousel-caption">
+                            <h3>Biased ligands</h3>
+                            <p>Biased ligands, receptor pathways coverage & bias rank orders.</p>
+                        </div>
+                    </div>
+
+                    <div class="item">
+                        <img src="{% static 'home/carousel/bsa_pathway_effects.png' %}">
+                        <div class="carousel-caption">
+                            <h3>Pathway effects</h3>
+                            <p>Pathway effects and therapeutic relevance.</p>
+                        </div>
+                    </div>
+
+                    <div class="item">
+                        <img src="{% static 'home/carousel/bsa_reference_ligands.png' %}">
+                        <div class="carousel-caption">
+                            <h3>Reference ligands</h3>
+                            <p>Reference ligands for pathway-/physiology-bias.</p>
+                        </div>
+                    </div>
+
+                    <div class="item">
+                        <img src="{% static 'home/carousel/bsa_bias_calculation_spreadsheet.png' %}">
+                        <div class="carousel-caption">
+                            <h3>Bias calculation spreadsheet</a></h3>
+                            <p>Swifty calculate bias factors.</p>
+                        </div>
+                    </div>
+
+                    <div class="item">
+                        <img src="{% static 'home/carousel/bsa_data_deposition.png' %}">
+                        <div class="carousel-caption">
+                            <h3>Data deposition</h3>
+                            <p>Deposit biased ligands & pathway effects.</p>
+                        </div>
+                    </div>
+
+                    <!-- Controls -->
+                    <a class="left carousel-control" href="#carousel-example-generic" role="button" data-slide="prev">
+                        <span class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span>
+                        <span class="sr-only">Previous</span>
+                    </a>
+                    <a class="right carousel-control" href="#carousel-example-generic" role="button" data-slide="next">
+                        <span class="glyphicon glyphicon-chevron-right" aria-hidden="true"></span>
+                        <span class="sr-only">Next</span>
+                    </a>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">&nbsp;
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">&nbsp;
+        </div>
+    </div>
+
+    <!-- <div class="row">
+      <div class="col-md-12">
+
+          <div class="panel panel-primary">
+              <div class="panel-body" style="background-color:#b3d1ff;">
+                  <h2 style='text-align: center'>Published!</h2>
+                  <p style='text-align: center'>
+                    <b>The main article <a href='https://doi.org/10.1038/s41589-023-01292-8' target="_blank">A community Biased signaling Atlas</a>
+                    has been published on <a href='https://www.nature.com/nchembio/' target="_blank">Nature Chemical Biology</a>. <br />
+                    We invite you all to read the article to have a deeper insight of this new resource.</b>
+                  </p>
+              </div>
+          </div>
+
+      </div>
+    </div> -->
+
+
+    <div class="row">
+        <div class="col-md-12">&nbsp;
+        </div>
+    </div>
+
+    <div class="row">
+
+        <div class="col-md-9">
+            <div class="panel panel-primary">
+                <div class="panel-body">
+                    <div class="col-md-4">
+                      <br />
+                        <p style='text-align:center'>
+                        <img style="height:90%; width:100px;" src="{% static 'home/logo/biasedsignalingatlas/main.png' %}">
+                        </p>
+                        <p style='text-align:center; font-size: 20px; margin-top:0px;'>
+                        Biased Signaling Atlas
+                        </p>
+                    </div>
+                    <!-- <div class="col-md-1">
+                    </div> -->
+                    <div class="col-md-4" id='center_menu'>
+                        <p style='text-align:justify'>
+                            The Biased Signaling Atlas offers:<br/>
+                            <ul>
+                              <li>Reference data (see Data box)</li>
+                              <li>Analysis tools (browse menu)</li>
+                              <li>Visualization</li>
+                              <li>Experiment design (e.g., <a href="{{ hosts.biasedsignalingatlas }}/biased_signalling/reference_selection">Reference ligand selection</a>)</li>
+                              <li>Data deposition (<a href='https://docs.gpcrdb.org/biasedsignaling.html#data-submission' target='_blank'>biased ligands</a>
+                                and <a href='https://docs.gpcrdb.org/biasedsignaling.html#data-submission' target='_blank'>pathway effects</a>)</li>
+                        </p>
+
+                    </div>
+
+                    <div class="col-md-4">
+                        <p style="text-align:justify;">
+                          <br />
+                        Biased signaling entails hormones, probes, or drugs binding the same GPCR but engaging different intracellular
+                        signaling pathways leading to distinct functional outcomes. This may let drugs favor therapeutic over adverse signal pathways.
+                        </p>
+                    </div>
+                </div>
+            </div>
+                <!-- Stats -->
+                <div class="col-md-4">
+                    <div class="panel panel-primary">
+                      <div class="panel-body" id='releases'>
+                          <h3>Data</h3>
+                          <ul class="stats_list">
+                              {% for stat in release_statistics %}
+                                  <li>
+                                      {{ stat.value| safe }} {{ stat.statistics_type | safe }}
+                                  </li>
+                              {% endfor %}
+                          </ul>
+                      </div>
+                    </div>
+                </div>
+
+                <!-- Release Notes -->
+                <div class="col-md-8">
+                    <div class="panel panel-primary">
+                        <div class="panel-body">
+                            <h3>Welcome</h3>
+                            The Biased Signaling Atlas is a new community platform.<br />
+                            Read the <a href='https://doi.org/10.1038/s41589-023-01292-8' target="_blank">article</a>, try it out and let us know what you think.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- commented stuff for POST preprint -->
+            <!-- <div class="col-md-4">
+                    <div class="panel panel-primary">
+                        <div class="panel-body">
+                            <h3><a href="/structure/statistics">Data</a></h3>
+                            <ul class="stats_list">
+                                {% for stat in release_statistics %}
+                                    <li>
+                                        {{ stat.value| safe }} {{ stat.statistics_type | safe }}
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                            {% if users %}
+                                {{ users|safe }}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div> -->
+
+                <!-- Release Notes -->
+          <!-- <div class="col-md-4">
+                    <div class="panel panel-primary">
+                        <div class="panel-body">
+                            <h3>Latest <a href="/pages/releasenotes">release</a></h3>
+                            <strong>{{ release_notes.date }}</strong>
+                            {{ release_notes.html|safe }}
+                            <br />
+                            <strong><a href="/pages/releasenotes">All releases</a></strong>
+                        </div>
+                    </div>
+
+                    <div class="panel panel-primary">
+                        <div class="panel-body">
+                            <h3><a href="https://files.gpcrdb.org/video/GPCRdb-David_Gloriam.mp4">Videos</a></h3>
+                        </div>
+                    </div>
+
+                </div> -->
+
+                <!-- Publications -->
+          <!-- <div class="col-md-4">
+                    <div class="panel panel-primary">
+                        <div class="panel-body" style='max-height: 530px; overflow-y: scroll;'>
+                            <h3>Publications</h3>
+                            <p>
+                            The arrestin database, ArrestinDb<br />
+                            Jimmy Caroli, Gáspár Pándy-Szekeres, Alexander S. Hauser, György M. Keserű, Albert J. Kooistra and David E. Gloriam<br />
+                            <a href='#' target='_blank'><i>Manuscript</i>, 2022</a>
+                            </p>
+                        </div>
+                    </div>
+                </div> -->
+
+
+
+        </div>
+
+        <div class="col-md-3">
+
+            <div class="panel panel-primary">
+                <div class="panel-body">
+                    <h3>Related resources</h3>
+                    <a href='https://gpcrdb.org/' target='_blank'>GPCRdb</a>, <a href='https://gproteindb.org/' target='_blank'>GproteinDb</a>,
+                    <a href='https://arrestindb.org/' target='_blank'>ArrestinDb</a> and <a href='https://biasedsignalingatlas.org/' target='_blank'>Biased Signaling Atlas</a>
+                    cover related aspects of signal transduction while serving dedicated research communities and use cases.
+                    {% if users %}
+                        {{ users|safe }}
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="panel panel-primary">
+                <div class="panel-body" style='max-height: 530px; overflow-y: scroll;'>
+                    <h3>Publications</h3>
+                    <p><a href='https://doi.org/10.1038/s41589-023-01292-8' target='_blank'>A community Biased Signaling Atlas.</a><br />
+                    Caroli J, Mamyrbekov A, Harpsøe K, Gardizi S, Dörries L, Ghosh E, Hauser AS, Kooistra AJ & Gloriam DE <br />
+                    <i>Nature Chemical Biology</i>, 2023<br /></p>
+                </div>
+            </div>
+
+        </div>
+
+
+
+    </div>
+
+
+    {#        <!-- Highlighted news -->#}
+    {#        <div class="row">#}
+    {#            <div class="col-md-12">#}
+    {#                <div class="panel panel-primary">#}
+    {#                    <div class="panel-body">#}
+    {#                        <div class='col-md-10'>#}
+    {#                            <h4>GPCR-G protein selectivity</h4>#}
+    {#                            The selective coupling of G-protein-coupled receptors (GPCRs) to specific G proteins is critical to trigger the appropriate physiological response. However, the determinants of selective binding have remained elusive. Here we reveal the existence of a selectivity barcode (that is, patterns of amino acids) on each of the 16 human G proteins that is recognized by distinct regions on the approximately 800 human receptors. Although universally conserved positions in the barcode allow the receptors to bind and activate G proteins in a similar manner, different receptors ...<a href="/news">Read more</a><br>#}
+    {#                            Nature: <a href="http://dx.doi.org/10.1038/nature22070">10.1038/nature22070</a><br>#}
+    {#                            <a href="http://healthsciences.ku.dk/news/2017/05/researchers-show-how-cell-receptors-regulate-specific-physiological-effects/">Press release</a>#}
+    {#                        </div>#}
+    {#                        <div class='col-md-2 text-left'>#}
+    {#                            <img src="{% static 'home/images/news/naturecover.png' %}" style="height:170px;width:170px;">#}
+    {#                            <p class="text-muted small">Photo: MRC Laboratory of Molecular Biology in Cambridge</p>#}
+    {#                        </div>#}
+    {#                    </div>#}
+    {#                </div>#}
+    {#            </div>#}
+    {#        </div>#}
+
+    <!-- Gloriam Group and Collabs -->
+    {#    <div class="row">#}
+    {#        <div class="col-md-12">#}
+    {#            <div class="panel panel-primary">#}
+    {#                <div class="panel-body">#}
+    {#                    <p class="text-center"> The GPCRdb is developed by the Gloriam <a href="http://gloriamgroup.org" target="_blank">group</a>.#}
+    {#                        It integrates data from the large GPCR community and maintains an active collaboration with the#}
+    {#                        Guide To Pharmacology (IUPHAR), <a href="http://gpcrmd.org/">GPCRmd</a> and the European Research Network on Signal#}
+    {#                        Transduction <a href="https://ernest-gpcr.eu" target="_blank">(ERNEST)</a>.#}
+    {#                        If you use the GPCRdb, please remember to <a onclick="citation_tool(window.location.href);" href="#">cite us</a>.#}
+    {#                    </p>#}
+    {#                    #}
+    {#                </div>#}
+    {#            </div>#}
+    {#        </div>#}
+    {#    </div>#}
+
+{% endblock %}
+
+{% block addon_js %}
+<script>
+    $(".release-notes").find("li").addClass("hidden");
+    $(".biasedsignalingatlas").removeClass("hidden");
+    $(".all").removeClass("hidden")
+</script>
+{% endblock %}

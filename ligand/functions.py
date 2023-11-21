@@ -190,7 +190,7 @@ def assess_reference(data_dict, user=False):
     tested = {}
     skip = False
     reference_ligand = None
-    checks = ['Principal', 'Secondary', None]
+    checks = ['Principal', 'Secondary', 'None', None]
     #if reference ligand is not provided by user
     if user == False:
         receptor_id = data_dict[list(data_dict.keys())[0]]['receptor_id']
@@ -202,7 +202,7 @@ def assess_reference(data_dict, user=False):
                                                            endogenous_status=status).values_list("ligand", flat=True).distinct())
 
             if len(endo_objs) > 0:
-                if status != None:
+                if status not in ['None', None]:
                     #if either principal or secondary check numerosity
                     data = list(Endogenous_GTP.objects.filter(Q(ligand_species_id__common_name="Human") | Q(ligand_species_id__isnull=True),
                                                          receptor=receptor_id,
@@ -444,11 +444,19 @@ def calculate_second_delta(comparisons, tested, rank_method, subtype=False, path
             reference_ec50 = tested[path1]['EC50']
             path_count = 1
             for test in ranking[drug][1:]:
-                #Match pathway levels + skip matching if Arrestin involved
-                if (tested[test]['pathway_level'] == tested[path1]['pathway_level']) or ('Arrestin' in [tested[path1]['primary_effector_family'], tested[test]['primary_effector_family']]):
+
+                if subtype:
+                    tested[test]['P1'] = tested[path1]['primary_effector_subtype']
+                    #Match pathway levels and primary family for sake of subtype investigation
+                    conditions = (tested[test]['pathway_level'] == tested[path1]['pathway_level']) and (tested[test]['primary_effector_family'] == tested[path1]['primary_effector_family'])
+                else:
+                    tested[test]['P1'] = tested[path1]['primary_effector_family']
+                    #Match pathway levels + skip matching if Arrestin involved
+                    conditions = (tested[test]['pathway_level'] == tested[path1]['pathway_level']) or ('Arrestin' in [tested[path1]['primary_effector_family'], tested[test]['primary_effector_family']])
+
+                if conditions:
                     path_count +=1
                     tested[test]['Pathway Rank'] = 'P'+str(path_count)
-                    tested[test]['P1'] = tested[path1]['primary_effector_family']
                     if subtype:
                         tested[test]['P1'] = tested[path1]['primary_effector_subtype']
                     if pathway:

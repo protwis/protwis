@@ -10,10 +10,12 @@ from residue.models import (ResidueNumberingScheme, ResidueGenericNumber, Residu
 from signprot.models import SignprotComplex, SignprotStructure, SignprotStructureExtraProteins
 from common.models import WebResource, WebLink, Publication
 from structure.models import StructureType, StructureStabilizingAgent, PdbData, Rotamer
-from structure.functions import get_pdb_ids
+from structure.functions import get_pdb_ids, create_structure_rotamer, fetch_signprot_data, build_signprot_struct
+from common.tools import test_model_updates
+from protein.management.commands.blastp import CustomBlast
 
 import re
-from Bio import pairwise2
+from Bio import pairwise2, SeqIO
 from collections import OrderedDict
 import logging
 import shlex, subprocess
@@ -24,7 +26,7 @@ import pprint
 import json
 import yaml
 import urllib
-
+import django.apps
 import traceback
 import sys, os
 import datetime
@@ -37,12 +39,13 @@ AA = {"ALA":"A", "ARG":"R", "ASN":"N", "ASP":"D",
      "THR":"T", "TRP":"W", "TYR":"Y", "VAL":"V",
      "YCM":"C", "CSD":"C", "TYS":"Y", "SEP":"S"} #non-standard AAs
 
-atom_num_dict = {'E':9, 'S':6, 'Y':12, 'G':4, 'A':5, 'V':7, 'M':8, 'L':8, 'I':8, 'T':7, 'F':11, 'H':10, 'K':9,
-                 'D':8, 'C':6, 'R':11, 'P':7, 'Q':9, 'N':8, 'W':14, '-':0}
-
 
 class Command(BaseBuild):
 
+    #Setting the variables for the test tracking of the model upadates
+    tracker = {}
+    all_models = django.apps.apps.get_models()[6:]
+    test_model_updates(all_models, tracker, initialize=True)
     local_uniprot_dir = os.sep.join([settings.DATA_DIR, "g_protein_data", "uniprot"])
     local_uniprot_beta_dir = os.sep.join([settings.DATA_DIR, "g_protein_data", "uniprot_beta"])
     local_uniprot_gamma_dir = os.sep.join([settings.DATA_DIR, "g_protein_data", "uniprot_gamma"])
@@ -64,31 +67,37 @@ class Command(BaseBuild):
             Residue.objects.filter(protein_conformation__protein__entry_name__endswith="_a", protein_conformation__protein__family__parent__parent__name="Alpha").delete()
             ProteinConformation.objects.filter(protein__entry_name__endswith="_a", protein__family__parent__parent__name="Alpha").delete()
             Protein.objects.filter(entry_name__endswith="_a", family__parent__parent__name="Alpha").delete()
+            self.tracker = {}
+            test_model_updates(self.all_models, self.tracker, initialize=True)
         if self.options["purge_non_complex"]:
             SignprotStructureExtraProteins.objects.all().delete()
             SignprotStructure.objects.all().delete()
+            self.tracker = {}
+            test_model_updates(self.all_models, self.tracker, initialize=True)
 
         if not self.options["only_signprot_structures"]:
             if self.options["s"]:
                 self.scs = SignprotComplex.objects.filter(structure__pdb_code__index__in=[i.upper() for i in self.options["s"]])
             else:
-                self.scs = SignprotComplex.objects.all()
+                self.scs = SignprotComplex.objects.filter(protein__family__slug__startswith='100_001')
             self.prepare_input(self.options['proc'], self.scs, 1)
-
+            test_model_updates(self.all_models, self.tracker, check=True)
         if not self.options["s"]:
             ### Build SignprotStructure objects from non-complex signprots
             g_prot_alphas = Protein.objects.filter(family__slug__startswith="100_001", accession__isnull=False)#.filter(entry_name="gnai1_human")
-            complex_structures = SignprotComplex.objects.all().values_list("structure__pdb_code__index", flat=True)
+            complex_structures = SignprotComplex.objects.filter(protein__family__slug__startswith="100_001").values_list("structure__pdb_code__index", flat=True)
             for a in g_prot_alphas:
                 pdb_list = get_pdb_ids(a.accession)
                 for pdb in pdb_list:
                     if pdb not in complex_structures:
                         try:
-                            data = self.fetch_gprot_data(pdb, a)
+                            data = fetch_signprot_data(pdb, a, os.listdir(self.local_uniprot_beta_dir), os.listdir(self.local_uniprot_gamma_dir))
                             if data:
-                                self.build_g_prot_struct(a, pdb, data)
+                                ss = build_signprot_struct(a, pdb, data)
+                                self.build_gprot_extra_proteins(a, ss, data)
                         except Exception as msg:
                             self.logger.error("SignprotStructure of {} {} failed\n{}: {}".format(a.entry_name, pdb, type(msg), msg))
+            test_model_updates(self.all_models, self.tracker, check=True)
         if self.options["debug"]:
             print(datetime.datetime.now() - startTime)
 
@@ -105,8 +114,6 @@ class Command(BaseBuild):
         #         count.value +=1
         for sc in scs:
             # Building protein and protconf objects for g protein structure in complex
-            
-            # for sc in scs:
             self.logger.info("Protein, ProteinConformation and Residue build for alpha subunit of {} is building".format(sc))
             try:
                 # Alpha subunit
@@ -141,10 +148,15 @@ class Command(BaseBuild):
                 structure_seq = ''
                 for res in chain:
                     if "CA" in res and res.id[0]==" ":
+                        if sc.structure.pdb_code.index=='7RYC':
+                            if res.get_id()[1]<1005:
+                                continue
                         nums.append(res.get_id()[1])
                         structure_seq+=Polypeptide.three_to_one(res.get_resname())
 
                 if self.options['debug']:
+                    print('Annotated protein:')
+                    print(sc.protein)
                     print('Structure seq:')
                     print(structure_seq)
 
@@ -153,18 +165,42 @@ class Command(BaseBuild):
                 temp_seq2 = ""
                 pdb_num_dict = OrderedDict()
                 # Create first alignment based on sequence numbers
-                for n in nums:
-                    if sc.structure.pdb_code.index=="6OIJ" and n<30:
-                        nr = n+6
-                    elif sc.structure.pdb_code.index in ['7MBY', '7F9Y', '7F9Z'] and n>58:
-                        nr = n-35
-                    elif sc.structure.pdb_code.index in ['7EIB', '7F2O']:
-                        nr = n-2
-                    elif sc.structure.pdb_code.index in ['7P00'] and n>52:
-                        nr = n-18
-                    else:
-                        nr = n
-                    pdb_num_dict[n] = [chain[n], resis.get(sequence_number=nr)]
+                try:
+                    for n in nums:
+                        if sc.structure.pdb_code.index=="6OIJ" and n<30:
+                            nr = n+6
+                        elif sc.structure.pdb_code.index in ['7MBY', '7F9Y', '7F9Z'] and n>58:
+                            nr = n-35
+                        elif sc.structure.pdb_code.index in ['7EIB', '7F2O']:
+                            nr = n-2
+                        elif sc.structure.pdb_code.index in ['7P00'] and n>52:
+                            nr = n-18
+                        elif sc.structure.pdb_code.index=='7RYC':
+                            nr = n-994
+                        elif sc.structure.pdb_code.index in ['7W53','7W55','7W56','7W57','7WKD']:
+                            nr = n-2
+                        elif sc.structure.pdb_code.index=='7X9Y' and n>58:
+                            nr = n-408
+                        elif sc.structure.pdb_code.index in ['7WXU','7WY5'] and n>63:
+                            nr = n-35
+                        elif sc.structure.pdb_code.index=='7WY0':
+                            if n<67:
+                                nr = n+8
+                            elif n>66:
+                                nr = n-1
+                        elif sc.structure.pdb_code.index=='7XW9' and n>52:
+                            nr = n-50
+                        elif sc.structure.pdb_code.index=='8H8J':
+                            nr = n-3
+                        else:
+                            nr = n
+                        pdb_num_dict[n] = [chain[n], resis.get(sequence_number=nr)]
+                except Residue.DoesNotExist:
+                    nr = resis[0].sequence_number
+                    for n in nums:
+                        nr = n-(n-nr)
+                        pdb_num_dict[n] = [chain[n], resis.get(sequence_number=nr)]
+
                 # Find mismatches
                 mismatches = []
                 for n, res in pdb_num_dict.items():
@@ -216,12 +252,12 @@ class Command(BaseBuild):
                     print(remaining_mismatches)
                     pprint.pprint(pdb_num_dict)
 
-                no_seqnum_shift = ['6OY9', '6OYA', '6LPB', '6WHA', '7D77', '6XOX', '7L1U', '7L1V', '7MBY', '7EIB', '7F9Y', '7F9Z', '7F2O', '7P00']
+                no_seqnum_shift = ['6OY9', '6OYA', '6LPB', '6WHA', '7D77', '6XOX', '7L1U', '7L1V']
 
                 # Check if HN is mutated to GNAI1 for the scFv16 stabilizer
                 if sc.protein.entry_name!='gnai1_human' and len(remaining_mismatches)>0:
-                    target_HN = resis.filter(protein_segment__slug='HN')
-                    gnai1_HN = Residue.objects.filter(protein_conformation__protein__entry_name='gnai1_human', protein_segment__slug='HN')
+                    target_HN = resis.filter(protein_segment__slug='G.HN')
+                    gnai1_HN = Residue.objects.filter(protein_conformation__protein__entry_name='gnai1_human', protein_segment__slug='G.HN')
                     pdb_HN_seq = ''
                     for num, val in pdb_num_dict.items():
                         if num<=target_HN.reverse()[0].sequence_number:
@@ -246,7 +282,7 @@ class Command(BaseBuild):
                         if self.options['debug']:
                             print(identity)
                         if identity>85 and length/len(temp_seq)>.5:
-                            if sc.structure.pdb_code.index not in ['7DFL']:
+                            if sc.structure.pdb_code.index not in ['7DFL','7S8L','7S8P','7S8N','7MBY','7AUE','7XW9']:
                                 no_seqnum_shift.append(sc.structure.pdb_code.index)
                             if self.options['debug']:
                                 print('INFO: HN has {}% with gnai1_human HN, skipping seqnum shift correction'.format(round(identity)))
@@ -259,39 +295,63 @@ class Command(BaseBuild):
                     seq = ""
                     for pp in ppb.build_peptides(chain, aa_only=False):
                         seq += str(pp.get_sequence())
+                    seq = structure_seq
                     if sc.structure.pdb_code.index in ['7JVQ','7L1U','7L1V','7D68','7EZK']:
                         pw2 = pairwise2.align.localms(sc.protein.sequence, seq, 3, -4, -3, -1)
                     else:
                         pw2 = pairwise2.align.localms(sc.protein.sequence, seq, 2, -1, -.5, -.1)
                     ref_seq, temp_seq = str(pw2[0][0]), str(pw2[0][1])
+                    if self.options['debug']:
+                        print('default pw')
+                        for i,j in zip(ref_seq, temp_seq):
+                            print(i,j)
+                        print('==========')
 
-                    # Custom fix for A->G mutation at pos 18
-                    if sc.structure.pdb_code.index=='7JJO':
-                        ref_seq = ref_seq[:18]+ref_seq[19:]
-                        temp_seq = temp_seq[:17]+temp_seq[18:]
-                    # Custom alignment fixes
-                    elif sc.structure.pdb_code.index=='7DFL':
-                        ref_seq  = 'MTLESIMACCLSEEAKEARRINDEIERQLRRDKRDARRELKLLLLGTGESGKSTFIKQMRIIHGSGYSDEDKRGFTKLVYQNIFTAMQAMIRAMDTLKIPYKYEHNKAHAQLVREVDVEKVSAFENPYVDAIKSLWNDPGIQECYDRRREYQLSDSTKYYLNDLDRVADPAYLPTQQDVLRVRVPTTGIIEYPFDLQSVIFRMVDVGGQRSERRKWIHCFENVTSIMFLVALSEYDQVLVESDNENRMEESKALFRTIITYPWFQNSSVILFLNKKDLLEEKIMYSHLVDYFPEYDGPQRDAQAAREFILKMFVDLNPDSDKIIYSHFTCATDTENIRFVFAAVKDTILQLNLKEYNLV'
-                        temp_seq = '--------CTLSAEDKAAVERSKMIDRNLREDGEKARRELKLLLLGTGESGKSTFIKQMRIIHG--------------------------------------------------------------------------------------------------------------------------TGIIEYPFDLQSVIFRMVDVGGQRSERRKWIHCFENVTSIMFLVALSEYDQV----DNENRMEESKALFRTIITYPWFQNSSVILFLNKKDLLEEKIMYSHLVDYFPEYDGPQRDAQAAREFILKMFVDLNPDSDKILYSHFTCATDTENIRFVFAAVKDTILQLNLKEYNLV'
-                    elif sc.structure.pdb_code.index=='7JOZ':
-                        temp_seq = temp_seq[:67]+('-'*14)+'FNGDS'+temp_seq[86:]
-                    elif sc.structure.pdb_code.index=='7AUE':
-                        ref_seq = ref_seq[:31].replace('-','')+ref_seq[31:]
-                        temp_seq = (9*'-')+temp_seq[2:5]+temp_seq[5:54].replace('-','')+temp_seq[54:]
-                    elif sc.structure.pdb_code.index=='7D68':
-                        temp_seq = temp_seq[:203]+'-T'+temp_seq[205:]
-                    elif sc.structure.pdb_code.index=='7EZK':
-                        temp_seq = temp_seq[:12]+temp_seq[157:204]+(145*'-')+temp_seq[204:]
-                    elif sc.structure.pdb_code.index=='7F8W':
-                        ref_seq =  'MTLESIMACCLSEEAKEARRINDEIERQLRRDKRDARRELKLLLLGTGESGKSTFIKQMRIIHGSGYSDEDKRGFTKLVYQNIFTAMQAMIRAMDTLKIPYKYEHNKAHAQLVREVDVEKVSAFENPYVDAIKSLWNDPGIQECYDRRREYQLSDSTKYYLNDLDRVADPAYLPTQQDVLRVRVPTTGIIEYPFDLQSVIFRMVDVGGQRSERRKWIHCFENVTSIMFLVALSEYDQVLVESDNENRMEESKALFRTIITYPWFQNSSVILFLNKKDLLEEKIMYSHLVDYFPEYDGPQRDAQAAREFILKMFVDLNPDSDKIIYSHFTCATDTENIRFVFAAVKDTILQLNLKEYNLV'
-                        temp_seq = '------------AEDKAAVERSKMIDRNLRRDKRDARRELKLLLLGTGESGKSTFIKQMRIIHG---------------------------------------------------------------------------------------------------------------------------GIIEYPFDLQSVIFRMVDVGGQRSERRKWIHCFENVTSIMFLVALSEYDQVLVESDNENRMEESKALFRTIITYPWFQNSSVILFLNKKDLLEEKIMYSHLVDYFPEYDGPQRDAQAAREFILKMFVDLNPDSDKIIYSHFTCATDTENIRFVFAAVKDTILQLNLKEYNLV'
-                    elif sc.structure.pdb_code.index=='7P02':
-                        ref_seq =  'MGCLGNSKTEDQRNEEKAQREANKKIEKQLQKDKQVYRATHRLLLLGAGESGKSTIVKQMRILHVNGFNGEGGEEDPQAARSNSDGEKATKVQDIKNNLKEAIETIVAAMSNLVPPVELANPENQFRVDYILSVMNVPDFDFPPEFYEHAKALWEDEGVRACYERSNEYQLIDCAQYFLDKIDVIKQADYVPSDQDLLRCRVLTSGIFETKFQVDKVNFHMFDVGGQRDERRKWIQCFNDVTAIIFVVASSSYNMVIREDNQTNRLQEALNLFKSIWNNRWLRTISVILFLNKQDLLAEKVLAGKSKIEDYFPEFARYTTPEDATPEPGEDPRVTRAKYFIRDEFLRISTASGDGRHYCYPHFTCAVDTENIRRVFNDCRDIIQRMHLRQYELL'
-                        temp_seq = '---------CTLSAEDKAAVERSKMIEKQLQKDKQVYRATHRLLLLGADNSGKSTIV-----------------------------------------------------------------------------------------------------------------------------------------------------IFETKFQVDKVNFHMFDVGGQRDERRKWIQCFNDVTAIIFVVDSSDYN----------RLQEALNLFKSIWNNRWLRTISVILFLNKQDLLAEKVLAGKSKIEDYFPEFARYTTPEDATPEPGEDPRVTRAKYFIRDEFLRISTASGDGRHYCYPHFTCAVDTENARRIFNDCRDIIQRMHLRQYELL'
+                    alignment_fragments = [i for i in str(pw2[0][1]).split('-') if i!='' and len(i)<10]
+
+                    ### Try constricted alignment with higher gap penalty for H5 fragment structures
+                    if len(alignment_fragments)>0 and len(seq)<50:
+                        pw2 = pairwise2.align.localms(sc.protein.sequence, seq, 3, -4, -3, -1)
+                        ref_seq, temp_seq = str(pw2[0][0]), str(pw2[0][1])
+                        if self.options['debug']:
+                            print('strict pw')
+                            for i,j in zip(ref_seq, temp_seq):
+                                print(i,j)
+                            print('==========')
+                        alignment_fragments = [i for i in str(pw2[0][1]).split('-') if i!='' and len(i)<10]
+
+                    ### Chimera mapping to wt ###
+                    if len(alignment_fragments)>0:
+                        # blast chimeras to find best chimera match
+                        cb = CustomBlast(os.sep.join([settings.STATICFILES_DIRS[0], 'blast', 'g_protein_chimeras']))
+                        matched_chimera_key = cb.run(temp_seq)
+
+                        # parsing gapped chimera fasta
+                        chimeras = SeqIO.to_dict(SeqIO.parse(open(os.sep.join([settings.DATA_DIR, 'g_protein_data', 'g_protein_chimeras_gapped.fasta'])), "fasta"))
+                        if self.options['debug']:
+                            print('matched chimera', matched_chimera_key, chimeras[matched_chimera_key].seq)
+
+                        # pairwise alignment to best match
+                        chimera_pw2 = pairwise2.align.localms(chimeras[matched_chimera_key].seq, seq, 3, -4, -3, -.5)
+                        ref_seq_chim, temp_seq_chim = str(chimera_pw2[0][0]), str(chimera_pw2[0][1])
+                        if self.options['debug']:
+                            print('chimera pw')
+                            for i,j in zip(ref_seq_chim, temp_seq_chim):
+                                print(i,j)
+                            print('==========')
+                        chimera_wt_key = matched_chimera_key.split('|')[0]
+
+                        # reassign wt best match as ref
+                        ref_seq = chimeras[chimera_wt_key].seq
+                        temp_seq = temp_seq_chim
+                    ##############################
 
                     wt_pdb_dict = OrderedDict()
                     pdb_wt_dict = OrderedDict()
                     j, k = 0, 0
+                    if self.options["debug"]:
+                        print('wt pw')
+                        print(len(ref_seq), len(temp_seq))
                     for i, ref, temp in zip(range(0,len(ref_seq)), ref_seq, temp_seq):
                         if self.options["debug"]:
                             print(i, ref, temp) # alignment check
@@ -300,6 +360,8 @@ class Command(BaseBuild):
                             pdb_wt_dict[pdb_num_dict[nums[k]][0]] = resis[j]
                             j+=1
                             k+=1
+                        elif ref=="-" and temp=="-":
+                            pass
                         elif ref=="-":
                             wt_pdb_dict[i] = pdb_num_dict[nums[k]]
                             pdb_wt_dict[pdb_num_dict[nums[k]][0]] = i
@@ -308,6 +370,7 @@ class Command(BaseBuild):
                             wt_pdb_dict[resis[j]] = i
                             pdb_wt_dict[i] = resis[j]
                             j+=1
+
                     # Custom fix for 7JJO isoform difference
                     if sc.structure.pdb_code.index in ['7JJO', '7JOZ', '7AUE', '7EZK']:
                         pdb_num_dict = OrderedDict()
@@ -333,32 +396,24 @@ class Command(BaseBuild):
                             pdb_num_dict[235][1] = Residue.objects.get(protein_conformation__protein=sc.protein, sequence_number=383)
                         elif sc.structure.pdb_code.index=='6PB0':
                             pdb_num_dict[205][1] = Residue.objects.get(protein_conformation__protein=sc.protein, sequence_number=205)
+                        elif sc.structure.pdb_code.index=='7RYC':
+                            pdb_num_dict[1198][1] = Residue.objects.get(protein_conformation__protein=sc.protein, sequence_number=314)
+                            pdb_num_dict[1110][1] = Residue.objects.get(protein_conformation__protein=sc.protein, sequence_number=230)
+                        elif sc.structure.pdb_code.index=='7P00':
+                            pdb_num_dict[272][1] = Residue.objects.get(protein_conformation__protein=sc.protein, sequence_number=271)
+                        elif sc.structure.pdb_code.index in ['7EIB','7F2O']:
+                            pdb_num_dict[256][1] = Residue.objects.get(protein_conformation__protein=sc.protein, sequence_number=271)
+                        elif sc.structure.pdb_code.index in ['7F9Y','7F9Z','7MBY']:
+                            pdb_num_dict[289][1] = Residue.objects.get(protein_conformation__protein=sc.protein, sequence_number=271)
+
                 ### Custom alignment fix for 6WHA, 7MBY mini-Gq/Gi/Gs chimera
-                elif sc.structure.pdb_code.index in ['6WHA', '7MBY', '7EIB', '7F9Y', '7F9Z', '7F2O', '7S8L', '7S8N', '7S8P', '7P00']:
+                elif sc.structure.pdb_code.index in ['6WHA']:
                     if sc.structure.pdb_code.index=='6WHA':
                         ref_seq  = "MTLESIMACCLSEEAKEARRINDEIERQLRRDKRDARRELKLLLLGTGESGKSTFIKQMRIIHGSGYSDEDKRGFTKLVYQNIFTAMQAMIRAMDTLKIPYKYEHNKAHAQLVREVDVEKVSAFENPYVDAIKSLWNDPGIQECYDRRREYQLSDSTKYYLNDLDRVADPAYLPTQQDVLRVRVPTTGIIEYPFDLQSVIFRMVDVGGQRSERRKWIHCFENVTSIMFLVALSEYDQVLVESDNENRMEESKALFRTIITYPWFQNSSVILFLNKKDLLEEKIM--YSHLVDYFPEYDGP----QRDAQAAREFILKMFVDL---NPDSDKIIYSHFTCATDTENIRFVFAAVKDTILQLNLKEYNLV"
                         temp_seq = "----------VSAEDKAAAERSKMIDKNLREDGEKARRTLRLLLLGADNSGKSTIVK----------------------------------------------------------------------------------------------------------------------------------GIFETKFQVDKVNFHMFDVG-----RRKWIQCFNDVTAIIFVVDSSDYNR----------LQEALNDFKSIWNNRWLRTISVILFLNKQDLLAEKVLAGKSKIEDYFPEFARYTTPDPRVTRAKY-FIRKEFVDISTASGDGRHICYPHFTC-VDTENARRIFNDCKDIILQMNLREYNLV"
-                    elif sc.structure.pdb_code.index=='7MBY':
-                        ref_seq =  'MTLESIMACCLSEEAKEARRINDEIERQLRRDKRDARRELKLLLLGTGESGKSTFIKQMRIIHGSGYSDEDKRGFTKLVYQNIFTAMQAMIRAMDTLKIPYKYEHNKAHAQLVREVDVEKVSAFENPYVDAIKSLWNDPGIQECYDRRREYQLSDSTKYYLNDLDRVADPAYLPTQQDVLRVRVPTTGIIEYPFDLQSVIFRMVDVGGQRSERRKWIHCFENVTSIMFLVALSEYDQVLVESDNENRMEESKALFRTIITYPWFQNSSVILFLNKKDLLEEKIM-YSHLVDYFPEYDGP----QRDAQAAREFILKMFVDL---NPDSDKIIYSHFTCATDTENIRFVFAAVKDTILQLNLKEYNLV'
-                        temp_seq = '----------------AAVERSKMIDRNLREDGEKARRTLRLLLLGADNSGKSTIVKQ----------------------------------------------------------------------------------------------------------------------------------IFETKFQVDKVNFHMFDVG-----RRKWIQCFNDVTAIIFVVDSSDYN----------RLQEALNDFKSIWNNRWLRTISVILFLNKQDLLAEKVLA-SKIEDYFPEFARYTTEDPRVTRAKY-FIRKEFVDISTASGDGRHICYPHFTCAVDTENARRIFNDCKDIILQMNLREYNLV'
-                    elif sc.structure.pdb_code.index=='7EIB':
-                        ref_seq =  'MTLESIMACCLSEEAKEARRINDEIERQLRRDKRDARRELKLLLLGTGESGKSTFIKQMRIIHGSGYSDEDKRGFTKLVYQNIFTAMQAMIRAMDTLKIPYKYEHNKAHAQLVREVDVEKVSAFENPYVDAIKSLWNDPGIQECYDRRREYQLSDSTKYYLNDLDRVADPAYLPTQQDVLRVRVPTTGIIEYPFDLQSVIFRMVDVGGQRSERRKWIHCFENVTSIMFLVALSEYDQVLVESDNENRMEESKALFRTIITYPWFQNSSVILFLNKKDLLEEKIMY--SHLVDYFPEYDGPQR------------DAQAAREFILKMFVDL---NPDSDKIIYSHFTCATDTENIRFVFAAVKDTILQLNLKEYNLV'
-                        temp_seq = '----------LSAEDKAAVERSKMIEKQLQKDKQVYRRTLRLLLLGADNSGKSTIVKQMRIYH-------------------------------------------------------------------------------------------------------------------------KTSGIFETKFQVDKVNFHMFDVGAQRDERRKWIQCFNDVTAIIFVVDSSDYN----------RLQEALNDFKSIWNNRWLRTISVILFLNKQDLLAEKVLAGKSKIEDYFPEFARYTTPEDATPEPGEDPRVTRAKYFIRKEFVDISTASGDGRHICYPHFTCSVDTENARRIFNDCKDIILQMNLREYNLV'
-                    elif sc.structure.pdb_code.index in ['7F9Y', '7F9Z']:
-                        ref_seq =  'MTLESIMACCLSEEAKEARRINDEIERQLRRDKRDARRELKLLLLGTGESGKSTFIKQMRIIHGSGYSDEDKRGFTKLVYQNIFTAMQAMIRAMDTLKIPYKYEHNKAHAQLVREVDVEKVSAFENPYVDAIKSLWNDPGIQECYDRRREYQLSDSTKYYLNDLDRVADPAYLPTQQDVLRVRVPTTGIIEYPFDLQSVIFRMVDVGGQRSERRKWIHCFENVTSIMFLVALSEYDQVLVESDNENRMEESKALFRTIITYPWFQNSSVILFLNKKDLLEEKIMY--SHLVDYFPEYDGPQR------------DAQAAREFILKMFVDL---NPDSDKIIYSHFTCATDTENIRFVFAAVKDTILQLNLKEYNLV'
-                        temp_seq = '-------------EDKAAVERSKMIEKQLQKDKQVYRRTLRLLLLGADNSGKSTIVKQMRI----------------------------------------------------------------------------------------------------------------------------TSGIFETKFQVDKVNFHMFDVGAQRDERRKWIQCFNDVTAIIFVVDSSDN-----------RLQEALNDFKSIWNNRWLRTISVILFLNKQDLLAEKVLAGKSKIEDYFPEFARYTTPEDATPEPGEDPRVTRAKYFIRKEFVDISTASGDGRHICYPHFTCSVDTENARRIFNDCKDIILQMNLREYNLV'
-                    elif sc.structure.pdb_code.index=='7F2O':
-                        ref_seq =  'MTLESIMACCLSEEAKEARRINDEIERQLRRDKRDARRELKLLLLGTGESGKSTFIKQMRIIHGSGYSDEDKRGFTKLVYQNIFTAMQAMIRAMDTLKIPYKYEHNKAHAQLVREVDVEKVSAFENPYVDAIKSLWNDPGIQECYDRRREYQLSDSTKYYLNDLDRVADPAYLPTQQDVLRVRVPTTGIIEYPFDLQSVIFRMVDVGGQRSERRKWIHCFENVTSIMFLVALSEYDQVLVESDNENRMEESKALFRTIITYPWFQNSSVILFLNKKDLLEEKIMY--SHLVDYFPEYDGPQR-------------DAQAAREFILKMFVDLNPDSDKIIYSHFTCATDTENIRFVFAAVKDTILQLNLKEYNLV'
-                        temp_seq = '----------LSAEDKAAVERSKMIEKQLQKDKQVYRRTLRLLLLGADNSGKSTIVKQMR----------------------------------------------------------------------------------------------------------------------------KTSGIFETKFQVDKVNFHMFDVGAQRDERRKWIQCFNDVTAIIFVVDSSDYN----------RLQEALNDFKSIWNNRWLRTISVILFLNKQDLLAEKVLAGKSKIEDYFPEFARYTTPEDATPGEDPRVTRAKYFIRKEFVDISTASGDGRHICYPHFTCSVDTENARRIFNDCKDIILQMNLREYNLV'
-                    elif sc.structure.pdb_code.index in ['7S8L', '7S8N']:
-                        ref_seq =  'MTLESIMACCLSEEAKEARRINDEIERQLRRDKRDARRELKLLLLGTGESGKSTFIKQMRIIHGSGYSDEDKRGFTKLVYQNIFTAMQAMIRAMDTLKIPYKYEHNKAHAQLVREVDVEKVSAFENPYVDAIKSLWNDPGIQECYDRRREYQLSDSTKYYLNDLDRVADPAYLPTQQDVLRVRVPTTGIIEYPFDLQSVIFRMVDVGGQRSERRKWIHCFENVTSIMFLVALSEYDQVLVESDNENRMEESKALFRTIITYPWFQNSSVILFLNKKDLLEEKIMY--SHLVDYFPEYDGPQR---------------DAQAAREFILKMFVDLNPDSDKIIYSHFTCATDTENIRFVFAAVKDTILQLNLKEYNLV'
-                        temp_seq = '----------VSAEDKAAAERSKMIDKNLREDGEKARRTLRLLLLGADNSGKSTIVK----------------------------------------------------------------------------------------------------------------------------------GIFETKFQVDKVNFHMFDVG-----RRKWIQCFNDVTAIIFVVDSSDYN----------RLQEALNDFKSIWNNRWLRTISVILFLNKQDLLAEKVLAGKSKIEDYFPEFARYTTPEDATPEPGEDPRVTRAKYFIRKEFVDISTASGDGRHICYPHFTCAVDTENARRIFNDCKDIILQMNLREYNLV'
-                    elif sc.structure.pdb_code.index in ['7S8P']:
-                        ref_seq =  'MTLESIMACCLSEEAKEARRINDEIERQLRRDKRDARRELKLLLLGTGESGKSTFIKQMRIIHGSGYSDEDKRGFTKLVYQNIFTAMQAMIRAMDTLKIPYKYEHNKAHAQLVREVDVEKVSAFENPYVDAIKSLWNDPGIQECYDRRREYQLSDSTKYYLNDLDRVADPAYLPTQQDVLRVRVPTTGIIEYPFDLQSVIFRMVDVGGQRSERRKWIHCFENVTSIMFLVALSEYDQVLVESDNENRMEESKALFRTIITYPWFQNSSVILFLNKKDLLEEKIMY--SHLVDYFPEYDGPQR---------------DAQAAREFILKMFVDLNPDSDKIIYSHFTCATDTENIRFVFAAVKDTILQLNLKEYNLV'
-                        temp_seq = '---------TVSAEDKAAAERSKMIDKNLREDGEKARRTLRLLLLGADNSGKSTIVK----------------------------------------------------------------------------------------------------------------------------------GIFETKFQVDKVNFHMFDVG-----RRKWIQCFNDVTAIIFVVDSSDYN----------RLQEALNDFKSIWNNRWLRTISVILFLNKQDLLAEKVLAGKSKIEDYFPEFARYTTPEDATPEPGEDPRVTRAKYFIRKEFVDISTASGDGRHICYPHFTCAVDTENARRIFNDCKDIILQMNLREYNLV'
-                    elif sc.structure.pdb_code.index in ['7P00']:
-                        ref_seq =  'MTLESIMACCLSEEAKEARRINDEIERQLRRDKRDARRELKLLLLGTGESGKSTFIKQMRIIHGSGYSDEDKRGFTKLVYQNIFTAMQAMIRAMDTLKIPYKYEHNKAHAQLVREVDVEKVSAFENPYVDAIKSLWNDPGIQECYDRRREYQLSDSTKYYLNDLDRVADPAYLPTQQDVLRVRVPTTGIIEYPFDLQSVIFRMVDVGGQRSERRKWIHCFENVTSIMFLVALSEYDQVLVESDNENRMEESKALFRTIITYPWFQNSSVILFLNKKDLLEEKIMY--SHLVDYFPEYDGPQR---------------DAQAAREFILKMFVDLNPDSDKIIYSHFTCATDTENIRFVFAAVKDTILQLNLKEYNLV'
-                        temp_seq = '--------CTLSAEDKAAVERSKMIEKQLQKDKQVYRATHRLLLLGADNSGKSTIVKQ----------------------------------------------------------------------------------------------------------------------------------IFETKFQVDKVNFHMFDVGGQRDERRKWIQCFNDVTAIIFVVDSSDYN----------RLQEALNLFKSIWNNRWLRTISVILFLNKQDLLAEKVLAGKSKIEDYFPEFARYTTPEDATPEPGEDPRVTRAKYFIRDEFLRISTASGDGRHYCYPHFTCAVDTENARRIFNDCKDIILQMNLREYNLV'
+
+
+
                     pdb_num_dict = OrderedDict()
                     temp_resis = [res for res in chain]
                     temp_i = 0
@@ -393,7 +448,7 @@ class Command(BaseBuild):
                         res_obj.protein_conformation = alpha_protconf
                         res_obj.protein_segment = val[1].protein_segment
                         res_obj.save()
-                        rot = self.create_structure_rotamer(val[0], res_obj, sc.structure)
+                        rot = create_structure_rotamer(val[0], res_obj, sc.structure)
                         bulked_rotamers.append(rot)
                     else:
                         self.logger.info("Skipped {} as no annotation was present, while building for alpha subunit of {}".format(val[1], sc))
@@ -405,18 +460,6 @@ class Command(BaseBuild):
                 if self.options["debug"]:
                     print("Error: ", sc, msg)
                 self.logger.info("Protein, ProteinConformation and Residue build for alpha subunit of {} has failed".format(sc))
-
-    @staticmethod
-    def create_structure_rotamer(PDB_residue, residue_object, structure):
-        out_stream = StringIO()
-        io = PDBIO()
-        # print(PDB_residue)
-        io.set_structure(PDB_residue)
-        io.save(out_stream)
-        pdbdata = PdbData.objects.get_or_create(pdb=out_stream.getvalue())[0]
-        missing_atoms = atom_num_dict[Polypeptide.three_to_one(PDB_residue.get_resname())] > len(PDB_residue.get_unpacked_list())
-        rot = Rotamer(missing_atoms=missing_atoms, pdbdata=pdbdata, residue=residue_object, structure=structure)
-        return rot
 
     @staticmethod
     def get_next_presumed_cgn(res):
@@ -431,142 +474,14 @@ class Command(BaseBuild):
         except ResidueGenericNumber.DoesNotExist:
             return False
 
-    def fetch_gprot_data(self, pdb, alpha_protein):
-        data = {}
-        beta_uniprots = os.listdir(self.local_uniprot_beta_dir)
-        gamma_uniprots = os.listdir(self.local_uniprot_gamma_dir)
 
-        response = urllib.request.urlopen("https://data.rcsb.org/rest/v1/core/entry/{}".format(pdb))
-        json_data = json.loads(response.read())
-        response.close()
-
-        data["method"] = json_data["exptl"][0]["method"]
-        if data["method"].startswith("THEORETICAL") or data["method"] in ["SOLUTION NMR","SOLID-STATE NMR"]:
-            return None
-        if "citation" in json_data and "pdbx_database_id_doi" in json_data["citation"]:
-            data["doi"] = json_data["citation"]["pdbx_database_id_doi"]
-        else:
-            data["doi"] = None
-        if "pubmed_id" in json_data["rcsb_entry_container_identifiers"]:
-            data["pubmedId"] = json_data["rcsb_entry_container_identifiers"]["pubmed_id"]
-        else:
-            data["pubmedId"] = None
-
-        # Format server time stamp to match release date shown on entry pages
-        # print(pdb, json_data["rcsb_accession_info"]["initial_release_date"])
-        # date = datetime.date.fromisoformat(json_data["rcsb_accession_info"]["initial_release_date"][:10])
-        # date += datetime.timedelta(days=1)
-        # print(datetime.date.isoformat(date))
-        # data["release_date"] = datetime.date.isoformat(date)
-        data["release_date"] = json_data["rcsb_accession_info"]["initial_release_date"][:10]
-        data["resolution"] = json_data["rcsb_entry_info"]["resolution_combined"][0]
-        entities_num = len(json_data["rcsb_entry_container_identifiers"]["polymer_entity_ids"])
-        data["alpha"] = alpha_protein.accession
-        data["alpha_chain"] = None
-        data["alpha_coverage"] = None
-        data["beta"] = None
-        data["beta_chain"] = None
-        data["gamma"] = None
-        data["gamma_chain"] = None
-        data["other"] = []
-        for i in range(1,entities_num+1):
-            response = urllib.request.urlopen("https://data.rcsb.org/rest/v1/core/polymer_entity/{}/{}".format(pdb, i))
-            json_data = json.loads(response.read())
-            response.close()
-            if "uniprot_ids" in json_data["rcsb_polymer_entity_container_identifiers"]:
-                for j, u_id in enumerate(json_data["rcsb_polymer_entity_container_identifiers"]["uniprot_ids"]):
-                    if u_id+".txt" in beta_uniprots:
-                        data["beta"] = u_id
-                        data["beta_chain"] = json_data["rcsb_polymer_entity_container_identifiers"]["auth_asym_ids"][j][0]
-                    elif u_id+".txt" in gamma_uniprots:
-                        data["gamma"] = u_id
-                        data["gamma_chain"] = json_data["rcsb_polymer_entity_container_identifiers"]["auth_asym_ids"][j][0]
-                    elif u_id==alpha_protein.accession:
-                        data["alpha"] = u_id
-                        data["alpha_coverage"] = json_data["entity_poly"]["rcsb_sample_sequence_length"]
-                        # pprint.pprint(json_data)
-                        try:
-                            data["alpha_chain"] = json_data["rcsb_polymer_entity_container_identifiers"]["auth_asym_ids"][j][0]
-                        except IndexError as e:
-                            data["alpha_chain"] = json_data["rcsb_polymer_entity_container_identifiers"]["auth_asym_ids"][j-1][0]
-                    else:
-                        if json_data["rcsb_polymer_entity"]["pdbx_description"] not in data["other"]:
-                            data["other"].append(json_data["rcsb_polymer_entity"]["pdbx_description"])
-            else:
-                if json_data["rcsb_polymer_entity"]["pdbx_description"] not in data["other"]:
-                    data["other"].append(json_data["rcsb_polymer_entity"]["pdbx_description"])
-        return data
-
-    def build_g_prot_struct(self, alpha_prot, pdb, data):
-        ss = SignprotStructure()
-        pdb_code, p_c = WebLink.objects.get_or_create(index=pdb, web_resource=WebResource.objects.get(slug="pdb"))
-        pub_date = data["release_date"]
-        # Structure type
-        if "x-ray" in data["method"].lower():
-            structure_type_slug = "x-ray-diffraction"
-        elif "electron" in data["method"].lower():
-            structure_type_slug = "electron-microscopy"
-        else:
-            structure_type_slug = "-".join(data["method"].lower().split(" "))
-        try:
-            structure_type = StructureType.objects.get(slug=structure_type_slug)
-        except StructureType.DoesNotExist as e:
-            structure_type, c = StructureType.objects.get_or_create(slug=structure_type_slug, name=data["method"])
-            self.logger.info("Created StructureType:"+str(structure_type))
-
-        # Publication
-        pub = None
-        if data["doi"]:
-            try:
-                pub = Publication.get_or_create_from_doi(data["doi"])
-            except:
-                # 2nd try (in case of paralellization clash)
-                pub = Publication.get_or_create_from_doi(data["doi"])
-        elif data["pubmedId"]:
-            try:
-                pub = Publication.get_or_create_from_pubmed(data["pubmedId"])
-            except:
-                # 2nd try (in case of paralellization clash)
-                pub = Publication.get_or_create_from_pubmed(data["pubmedId"])
-
-        # PDB data
-        url = 'https://www.rcsb.org/pdb/files/{}.pdb'.format(pdb)
-        req = urllib.request.Request(url)
-        with urllib.request.urlopen(req) as response:
-            pdbdata_raw = response.read().decode('utf-8')
-        pdbdata_object = PdbData.objects.get_or_create(pdb=pdbdata_raw)[0]
-        ss.pdb_code = pdb_code
-        ss.structure_type = structure_type
-        ss.resolution = data["resolution"]
-        ss.publication_date = pub_date
-        ss.publication = pub
-        ss.protein = alpha_prot
-        ss.pdb_data = pdbdata_object
-        if len(SignprotStructure.objects.filter(pdb_code=ss.pdb_code))>0:
-            self.logger.warning('SignprotStructure {} already created, skipping'.format(pdb_code))
-            return 0
-        ss.save()
-        # Stabilizing agent
-        for o in data["other"]:
-            if len(o)>75:
-                continue
-            if o=="REGULATOR OF G-PROTEIN SIGNALING 14":
-                o = "Regulator of G-protein signaling 14"
-            elif o=="Nanobody 35":
-                o = "Nanobody-35"
-            elif o=="ADENYLATE CYCLASE, TYPE V":
-                o = "Adenylate cyclase, type V"
-            elif o=="1-phosphatidylinositol-4,5-bisphosphate phosphodiesterase beta-3":
-                o = "1-phosphatidylinositol 4,5-bisphosphate phosphodiesterase beta-3"
-            stabagent, sa_created = StructureStabilizingAgent.objects.get_or_create(slug=o.replace(" ","-").replace(" ","-"), name=o)
-            ss.stabilizing_agents.add(stabagent)
-        ss.save()
+    def build_gprot_extra_proteins(self, alpha_prot, signprot_structure, data):
         # Extra proteins
         # Alpha - ### A bit redundant, consider changing this in the future
         if data["alpha"]:
             alpha_sep = SignprotStructureExtraProteins()
             alpha_sep.wt_protein = alpha_prot
-            alpha_sep.structure = ss
+            alpha_sep.structure = signprot_structure
             alpha_sep.protein_conformation = ProteinConformation.objects.get(protein=alpha_prot)
             alpha_sep.display_name = self.display_name_lookup[alpha_prot.family.name]
             alpha_sep.note = None
@@ -574,7 +489,7 @@ class Command(BaseBuild):
             alpha_sep.category = "G alpha"
             cov = round(data["alpha_coverage"]/len(alpha_prot.sequence)*100)
             if cov>100:
-                self.logger.warning("SignprotStructureExtraProtein Alpha subunit sequence coverage of {} is {}% which is longer than 100% in structure {}".format(alpha_sep, cov, ss))
+                self.logger.warning("SignprotStructureExtraProtein Alpha subunit sequence coverage of {} is {}% which is longer than 100% in structure {}".format(alpha_sep, cov, signprot_structure))
                 cov = 100
             alpha_sep.wt_coverage = cov
             alpha_sep.save()
@@ -583,7 +498,7 @@ class Command(BaseBuild):
             beta_prot = Protein.objects.get(accession=data["beta"])
             beta_sep = SignprotStructureExtraProteins()
             beta_sep.wt_protein = beta_prot
-            beta_sep.structure = ss
+            beta_sep.structure = signprot_structure
             beta_sep.protein_conformation = ProteinConformation.objects.get(protein=beta_prot)
             beta_sep.display_name = self.display_name_lookup[beta_prot.name]
             beta_sep.note = None
@@ -596,7 +511,7 @@ class Command(BaseBuild):
             gamma_prot = Protein.objects.get(accession=data["gamma"])
             gamma_sep = SignprotStructureExtraProteins()
             gamma_sep.wt_protein = gamma_prot
-            gamma_sep.structure = ss
+            gamma_sep.structure = signprot_structure
             gamma_sep.protein_conformation = ProteinConformation.objects.get(protein=gamma_prot)
             gamma_sep.display_name = self.display_name_lookup[gamma_prot.name]
             gamma_sep.note = None
@@ -604,4 +519,4 @@ class Command(BaseBuild):
             gamma_sep.category = "G gamma"
             gamma_sep.wt_coverage = None
             gamma_sep.save()
-        self.logger.info("Created SignprotStructure: {}".format(ss.pdb_code))
+        self.logger.info("Created SignprotStructure: {}".format(signprot_structure.pdb_code))

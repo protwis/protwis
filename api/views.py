@@ -1,25 +1,33 @@
-from rest_framework import views, generics
+from rest_framework import views, generics, schemas
+from rest_framework.decorators import api_view, renderer_classes
 from rest_framework.response import Response
 from rest_framework.parsers import FileUploadParser
 from rest_framework.renderers import JSONRenderer
-from django.template.loader import render_to_string
 
-from django.db.models import Prefetch, Q
+from rest_framework_swagger.views import get_swagger_view
+from rest_framework_swagger.renderers import OpenAPIRenderer, SwaggerUIRenderer
+
+from django.template.loader import render_to_string
+from django.db.models import Prefetch, Q, Min, Count
 
 from interaction.models import ResidueFragmentInteraction
 from mutation.models import MutationRaw
 from protein.models import Protein, ProteinFamily, Species, ProteinSegment
+from ligand.models import LigandID, AssayExperiment, Ligand, LigandPeptideStructure, Endogenous_GTP
 from residue.models import Residue, ResidueGenericNumberEquivalent
 from structure.models import Structure, StructureExtraProteins
 from structure.assign_generic_numbers_gpcr import GenericNumbering
 from structure.sequence_parser import SequenceParser
 from api.serializers import (ProteinSerializer, ProteinFamilySerializer, SpeciesSerializer, ResidueSerializer,
                              ResidueExtendedSerializer, StructureLigandInteractionSerializer,
-                             MutationSerializer, ReceptorListSerializer)
+                             ComplexInteractionSerializer,
+                             StructurePeptideLigandInteractionSerializer,
+                             MutationSerializer, ReceptorListSerializer, GuidetoPharmacologySerializer, EndogenousLigandSerializer)
 from api.renderers import PDBRenderer
 from common.alignment import Alignment
 from common.definitions import AMINO_ACIDS, AMINO_ACID_GROUPS
 from drugs.models import Drugs
+from contactnetwork.models import InteractionPeptide, Interaction
 
 from io import StringIO
 from Bio.PDB import PDBIO, parse_pdb_header
@@ -28,10 +36,15 @@ from collections import OrderedDict
 # FIXME add
 # getMutations
 # numberPDBfile
-from rest_framework.decorators import renderer_classes
-from rest_framework_swagger.views import get_swagger_view
 
-schema_view = get_swagger_view(title='GPCRdb API')
+class JSONOpenAPIRenderer(OpenAPIRenderer):
+    media_type = 'application/json'
+
+@api_view()
+@renderer_classes([SwaggerUIRenderer, OpenAPIRenderer, JSONOpenAPIRenderer])
+def schema_view(request):
+    generator = schemas.SchemaGenerator(title='API calls')
+    return Response(generator.get_schema(request=request))
 
 class ProteinDetail(generics.RetrieveAPIView):
 
@@ -64,7 +77,7 @@ class ReceptorList(generics.ListAPIView):
     \n/receptorlist/
     """
 
-    queryset = Protein.objects.filter(accession__isnull=False, parent__isnull=True, family__slug__startswith="00", source__name="SWISSPROT").prefetch_related('family','endogenous_ligands')
+    queryset = Protein.objects.filter(accession__isnull=False, parent__isnull=True, family__slug__startswith="00", source__name="SWISSPROT").prefetch_related('family','endogenous_gtp_set')
     serializer_class = ReceptorListSerializer
 
 class ProteinFamilyList(generics.ListAPIView):
@@ -157,7 +170,7 @@ class ProteinsInFamilySpeciesList(generics.ListAPIView):
         family = self.kwargs.get('slug')
         species = self.kwargs.get('latin_name')
         return queryset.filter(sequence_type__slug='wt', family__slug__startswith=family,
-                               species__latin_name=species).prefetch_related('family',
+                               species__latin_name__iexact=species).prefetch_related('family',
                                'species', 'source', 'residue_numbering_scheme', 'genes')
 
 
@@ -199,6 +212,75 @@ class SpeciesList(generics.ListAPIView):
     queryset = Species.objects.all()
     serializer_class = SpeciesSerializer
 
+class GtPIDList(generics.ListAPIView):
+
+    """
+    Get a list of Guide to Pharmacology ligand IDs
+    \n/ligands/gtop_ids/
+    """
+
+    queryset = LigandID.objects.filter(web_resource_id__slug="gtoplig").values('index', 'ligand__name')
+    serializer_class = GuidetoPharmacologySerializer
+
+class EndogenousLigands(generics.ListAPIView):
+
+    """
+    Get a list of endogenous ligands - receptor pairs
+    \n/ligands/endogenousligands/
+    """
+
+    queryset = Endogenous_GTP.objects.all().prefetch_related('ligand_id', 'ligand_id_ligand_type_id',
+                                                             'receptor_id','receptor_id__family_id').values('endogenous_status', 'potency_ranking',
+                                                                                                            'ligand_id__name', 'ligand_id__sequence',
+                                                                                                            'ligand_id__ligand_type_id__slug', 'receptor_id__entry_name')
+    serializer_class = EndogenousLigandSerializer
+
+
+class PeptideList(views.APIView):
+
+    """
+    Get a list of peptide ligands with detailed info
+    \n/ligands/peptides/
+    """
+    def get(self, request):
+        peptides_ids = Ligand.objects.filter(ligand_type_id=2).values_list('id', flat=True)
+        peptides_data = Ligand.objects.filter(ligand_type_id=2).values_list('id', flat=True).values_list('name', 'sequence')
+        peptides_with_structures = LigandPeptideStructure.objects.filter(ligand_id__in=peptides_ids).prefetch_related('structure', 'structure_id__web_link',
+                                                                                           'structure__protein_conformation', 'structure__protein_conformation__protein',
+                                                                                           'structure__protein_conformation__protein__family').values_list(
+                                                                                           'ligand_id__name', 'ligand_id__sequence', 'structure_id__pdb_code_id__index',
+                                                                                           'structure_id__protein_conformation_id__protein_id__parent_id__entry_name',
+                                                                                           'structure_id__protein_conformation_id__protein_id__family__parent__name',
+                                                                                           'structure_id__protein_conformation_id__protein_id__family__parent__parent__parent__name',
+                                                                                           'chain')
+        s = []
+        for peptide in peptides_with_structures:
+            peptide_info = {
+                'Peptide name': peptide[0],
+                'Sequence': peptide[1],
+                'Sequence length': len(peptide[1]) if peptide[1] is not None else None,
+                'PDB': peptide[2],
+                'Chain': peptide[6],
+                'Receptor': peptide[3],
+                'Family': peptide[4],
+                'GPCR Class': peptide[5]
+            }
+            s.append(peptide_info)
+        for peptide in peptides_data:
+            peptide_info = {
+                'Peptide name': peptide[0],
+                'Sequence': peptide[1],
+                'Sequence length': len(peptide[1]) if peptide[1] != None else None,
+                'PDB': '-',
+                'Chain': '-',
+                'Receptor': '-',
+                'Family': '-',
+                'GPCR Class': '-'
+            }
+            s.append(peptide_info)
+
+
+        return Response(s)
 
 class SpeciesDetail(generics.RetrieveAPIView):
 
@@ -221,39 +303,24 @@ class NumberPDBStructureView(views.APIView):
 
     pass
 
-
-class StructureList(views.APIView):
+class StructureModelsList(views.APIView):
 
     """
-    Get a list of structures
-    \n/structure/
+    Get a list of GPCR - peptide alphafold model structures
+    \n/structure/alphafold_peptide_models
     """
 
     def get(self, request, pdb_code=None, entry_name=None, representative=None):
-        if pdb_code:
-            structures = Structure.objects.filter(pdb_code__index=pdb_code)
-        elif entry_name and representative:
-            structures = Structure.objects.filter(protein_conformation__protein__parent__entry_name=entry_name,
-                representative=True)
-        elif entry_name:
-            structures = Structure.objects.filter(protein_conformation__protein__parent__entry_name=entry_name)
-        elif representative:
-            structures = Structure.objects.filter(representative=True)
-        else:
-            structures = Structure.objects.all()
+
+        structures = Structure.objects.filter(structure_type__slug__startswith='af-peptide')
 
         structures = structures.prefetch_related('protein_conformation__protein__parent__species', 'pdb_code',
             'protein_conformation__protein__parent__family', 'protein_conformation__protein__parent__species',
+            'protein_conformation__protein__parent__family__parent__parent__parent',
             'publication__web_link', 'publication__web_link__web_resource', 'structure_type',
             'structureligandinteraction_set__ligand',
             'structureligandinteraction_set__ligand__ligand_type',
-            'structureligandinteraction_set__ligand_role',
-            'signprot_complex', 'signprot_complex__protein', 'signprot_complex__protein__parent',
-            'signprot_complex__beta_protein', 'signprot_complex__gamma_protein',
-            'signprot_complex__protein__parent__family', 'signprot_complex__protein__parent__species', 'state',
-            Prefetch('extra_proteins', queryset=StructureExtraProteins.objects.filter(wt_protein__family__slug__startswith="200")),
-            'extra_proteins__wt_protein')
-
+            'structureligandinteraction_set__ligand_role','state')
 
         # convert objects to a list of dictionaries
         # normal serializers can not be used because of abstraction of tables (e.g. protein_conformation)
@@ -262,9 +329,10 @@ class StructureList(views.APIView):
             # essential fields
             structure_data = {
                 'pdb_code': structure.pdb_code.index,
-                'protein': structure.protein_conformation.protein.parent.entry_name,
-                'family': structure.protein_conformation.protein.parent.family.slug,
-                'species': structure.protein_conformation.protein.parent.species.latin_name,
+                'protein': structure.protein_conformation.protein.entry_name,
+                'class': structure.protein_conformation.protein.family.parent.parent.parent.name,
+                'family': structure.protein_conformation.protein.family.slug,
+                'species': structure.protein_conformation.protein.species.latin_name,
                 'preferred_chain': structure.preferred_chain,
                 'resolution': structure.resolution,
                 'publication_date': structure.publication_date,
@@ -299,6 +367,96 @@ class StructureList(views.APIView):
                         ligands.append(ligand)
             structure_data['ligands'] = ligands
 
+            s.append(structure_data)
+
+        # if a structure is selected, return a single dict rather then a list of dicts
+        if len(s) == 1:
+            s = s[0]
+
+        return Response(s)
+
+
+class StructureList(views.APIView):
+
+    """
+    Get a list of structures
+    \n/structure/
+    """
+
+    def get(self, request, pdb_code=None, entry_name=None, representative=None):
+        if pdb_code:
+            structures = Structure.objects.filter(pdb_code__index=pdb_code)
+        elif entry_name and representative:
+            structures = Structure.objects.filter(protein_conformation__protein__parent__entry_name=entry_name,
+                representative=True).exclude(structure_type__slug__startswith='af-')
+        elif entry_name:
+            structures = Structure.objects.filter(protein_conformation__protein__parent__entry_name=entry_name).exclude(structure_type__slug__startswith='af-')
+        elif representative:
+            structures = Structure.objects.filter(representative=True).exclude(structure_type__slug__startswith='af-')
+        else:
+            structures = Structure.objects.all().exclude(structure_type__slug__startswith='af-')
+
+        structures = structures.prefetch_related('protein_conformation__protein__parent__species', 'pdb_code',
+            'protein_conformation__protein__parent__family', 'protein_conformation__protein__parent__species',
+            'protein_conformation__protein__parent__family__parent__parent__parent',
+            'publication__web_link', 'publication__web_link__web_resource', 'structure_type',
+            'structureligandinteraction_set__ligand',
+            'structureligandinteraction_set__ligand__ligand_type',
+            'structureligandinteraction_set__ligand_role',
+            'signprot_complex', 'signprot_complex__protein', 'signprot_complex__protein__parent',
+            'signprot_complex__beta_protein', 'signprot_complex__gamma_protein',
+            'signprot_complex__protein__parent__family', 'signprot_complex__protein__parent__species', 'state',
+            Prefetch('extra_proteins', queryset=StructureExtraProteins.objects.filter(wt_protein__family__slug__startswith="200")),
+            'extra_proteins__wt_protein')
+
+
+        # convert objects to a list of dictionaries
+        # normal serializers can not be used because of abstraction of tables (e.g. protein_conformation)
+        s = []
+        for structure in structures:
+            # essential fields
+            structure_data = {
+                'pdb_code': structure.pdb_code.index,
+                'protein': structure.protein_conformation.protein.parent.entry_name,
+                'class': structure.protein_conformation.protein.parent.family.parent.parent.parent.name,
+                'family': structure.protein_conformation.protein.parent.family.slug,
+                'species': structure.protein_conformation.protein.parent.species.latin_name,
+                'preferred_chain': structure.preferred_chain,
+                'resolution': structure.resolution,
+                'publication_date': structure.publication_date,
+                'type': structure.structure_type.name,
+                'state': structure.state.name,
+                'distance': structure.distance,
+            }
+
+            # publication
+            if structure.publication:
+                structure_data['publication'] = structure.publication.web_link.__str__()
+            else:
+                structure_data['publication'] = None
+
+            # ligand
+            ligands = []
+            #for interaction in structure.structureligandinteraction_set.filter(annotated=True): # does this cancel prefetch?
+            for interaction in structure.structureligandinteraction_set.all():
+                if interaction.annotated:
+                    ligand = {}
+                    if interaction.ligand.name:
+                        ligand['name'] = interaction.ligand.name
+                    if interaction.ligand.ligand_type and interaction.ligand.ligand_type.name:
+                        ligand['type'] = interaction.ligand.ligand_type.name
+                    if interaction.ligand_role and interaction.ligand_role.name:
+                        ligand['function'] = interaction.ligand_role.name
+                    if interaction.pdb_reference and interaction.pdb_reference != "pep":
+                        ligand['PDB'] = interaction.pdb_reference
+                    elif interaction.ligand.pdbe:
+                        ligand['PDB'] = interaction.ligand.pdbe
+                    if interaction.ligand.smiles:
+                        ligand['SMILES'] = interaction.ligand.smiles
+                    if ligand:
+                        ligands.append(ligand)
+            structure_data['ligands'] = ligands
+
             # signalling protein
             if structure.signprot_complex:
                 sign_prot = {'type': 'G protein', 'data': {}}
@@ -321,8 +479,7 @@ class StructureList(views.APIView):
         return Response(s)
 
     def get_structures(self, pdb_code=None, representative=None):
-        return Structure.objects.all()
-
+        return Structure.objects.all().exclude(structure_type__slug__startswith='af-')
 
 class RepresentativeStructureList(StructureList):
 
@@ -358,6 +515,20 @@ class StructureDetail(StructureList):
     def get_structures(self, pdb_code=None, representative=None):
         return Structure.objects.filter(pdb_code__index=pdb_code)
 
+class StructureAccessionHuman(views.APIView):
+
+    """
+    Get a list of all (human) UniProt accession codes for which receptor types an experimental structure is available
+    \n/structure/accession_codes_human/
+    """
+
+    def get(self, request):
+        unique_slugs = list(Structure.objects.filter(protein_conformation__protein__family__slug__startswith="00").exclude(structure_type__slug__startswith='af-')\
+            .order_by('protein_conformation__protein__family__slug').values_list('protein_conformation__protein__family__slug', flat=True).distinct())
+        accession_codes = list(Protein.objects.filter(family__slug__in=unique_slugs, sequence_type__slug='wt', species__latin_name='Homo sapiens')\
+                            .values_list('entry_name', flat=True))
+        accessions = [x.split("_")[0].upper() for x in accession_codes]
+        return Response(accessions)
 
 class FamilyAlignment(views.APIView):
 
@@ -373,7 +544,7 @@ class FamilyAlignment(views.APIView):
             # Check for specific species
             if latin_name is not None:
                 ps = Protein.objects.filter(sequence_type__slug='wt', family__slug__startswith=slug,
-                    species__latin_name=latin_name)
+                    species__latin_name__iexact=latin_name)
             else:
                 if not include_trembl:
                     ps = Protein.objects.filter(sequence_type__slug='wt', family__slug__startswith=slug, source__id=1)
@@ -525,7 +696,8 @@ class ProteinSimilaritySearchAlignment(views.APIView):
     Get a segment sequence alignment of two or more proteins ranked by similarity
     \n/alignment/similarity/{proteins}/{segments}/
     \n{proteins} is a comma separated list of protein identifiers, e.g. adrb2_human,5ht2a_human,cxcr4_human,
-    where the first protein is the query protein and the following the proteins to compare it to
+    where the first protein is the query protein and the following are compared to it. Now PDB IDs can also be
+    used to align structure sequences with wild type sequences, e.g. adrb2_human,3SN6
     \n{segments} is a comma separated list of protein segment identifiers and/ or
     generic GPCRdb numbers, e.g. TM2,TM3,ECL2,4x50
     """
@@ -534,11 +706,14 @@ class ProteinSimilaritySearchAlignment(views.APIView):
         if proteins is not None:
             protein_list = proteins.split(",")
             # first in API should be reference
-            ps = Protein.objects.filter(sequence_type__slug='wt', entry_name__in=protein_list[1:])
-            reference = Protein.objects.filter(sequence_type__slug='wt', entry_name__in=[protein_list[0]])
+            reference = Protein.objects.filter(entry_name__iexact=protein_list[0])
+            q_list = Q()
+            for q in [Q(entry_name__iexact=p) for p in protein_list[1:]]:
+                q_list |= q
+            ps = Protein.objects.filter(q_list)
 
             # take the numbering scheme from the first protein
-            s_slug = Protein.objects.get(entry_name=protein_list[0]).residue_numbering_scheme_id
+            s_slug = reference[0].residue_numbering_scheme_id
 
             protein_family = ps[0].family.slug[:3]
 
@@ -567,7 +742,7 @@ class ProteinSimilaritySearchAlignment(views.APIView):
             if int(protein_family) < 100:
                 ss = [ s for s in ss if s.proteinfamily == 'GPCR']
             elif protein_family == "100":
-                ss = [ s for s in ss if s.proteinfamily == 'Gprotein']
+                ss = [ s for s in ss if s.proteinfamily == 'Alpha']
             elif protein_family == "200":
                 ss = [ s for s in ss if s.proteinfamily == 'Arrestin']
 
@@ -620,13 +795,17 @@ class ProteinAlignment(views.APIView):
     """
     Get a full sequence alignment of two or more proteins
     \n/alignment/protein/{proteins}/
-    \n{proteins} is a comma separated list of protein identifiers, e.g. adrb2_human,5ht2a_human
+    \n{proteins} is a comma separated list of protein identifiers, e.g. adrb2_human,5ht2a_human. PDB IDs can also be
+    used to align structure sequences with wild type sequences, e.g. adrb2_human,3SN6
     """
 
     def get(self, request, proteins=None, segments=None, statistics=False):
         if proteins is not None:
             protein_list = proteins.split(",")
-            ps = Protein.objects.filter(sequence_type__slug='wt', entry_name__in=protein_list)
+            q_list = Q()
+            for q in [Q(entry_name__iexact=p) for p in protein_list]:
+                q_list |= q
+            ps = Protein.objects.filter(q_list)
 
             # take the numbering scheme from the first protein
             #s_slug = Protein.objects.get(entry_name=protein_list[0]).residue_numbering_scheme_id
@@ -659,7 +838,7 @@ class ProteinAlignment(views.APIView):
             if int(protein_family) < 100:
                 ss = [ s for s in ss if s.proteinfamily == 'GPCR']
             elif protein_family == "100":
-                ss = [ s for s in ss if s.proteinfamily == 'Gprotein']
+                ss = [ s for s in ss if s.proteinfamily == 'Alpha']
             elif protein_family == "200":
                 ss = [ s for s in ss if s.proteinfamily == 'Arrestin']
 
@@ -857,18 +1036,88 @@ class StructureLigandInteractions(generics.ListAPIView):
     serializer_class = StructureLigandInteractionSerializer
 
     def get_queryset(self):
-        queryset = ResidueFragmentInteraction.objects.all()
-        queryset = queryset.prefetch_related('structure_ligand_pair__structure__pdb_code',
-                                             'interaction_type',
-                                             'fragment__residue__generic_number',
-                                             'fragment__residue__display_generic_number',
-                                             )
-        #queryset = queryset.exclude(interaction_type__type='hidden').order_by('fragment__residue__sequence_number')
-        queryset = queryset.order_by('fragment__residue__sequence_number')
-        slug = self.kwargs.get('pdb_code')
-        return queryset.filter(structure_ligand_pair__structure__pdb_code__index=slug,
-                               structure_ligand_pair__annotated=True)
+        pdb_code = self.kwargs.get('pdb_code')
 
+        queryset = ResidueFragmentInteraction.objects.filter(structure_ligand_pair__structure__pdb_code__index__iexact=pdb_code,
+                                                             structure_ligand_pair__annotated=True).prefetch_related('structure_ligand_pair__structure__pdb_code',
+                                                             'interaction_type',
+                                                             'fragment__residue__generic_number',
+                                                             'fragment__residue__display_generic_number',
+                                                             ).order_by('fragment__residue__sequence_number')
+        return queryset
+
+
+class ComplexInteractions(generics.ListAPIView):
+    """
+    Get a list of interactions between structure and G protein/GPCR complex
+    \n/structure/{id}/interaction/
+    \n{id} is a structure identifier from either the Protein Data Bank, e.g. 5UZ7,
+    \na modified PDB identifier to get the refined structure interactions, e.g. 5UZ7_refined,
+    \nor a GproteinDb AlphaFold2-Multimer complex model identifier, e.g. AFM_CALCR_HUMAN_GNAS2_HUMAN
+    """
+    serializer_class = ComplexInteractionSerializer
+
+    def get_queryset(self):
+        struct_id = self.kwargs.get('id')
+
+        queryset = Interaction.objects.filter(
+            interacting_pair__referenced_structure__pdb_code__index=struct_id,
+            interacting_pair__res2_id__protein_conformation__protein__family__slug__startswith='100'
+        ).values(
+            'interacting_pair__res1_id__protein_conformation__protein__entry_name',
+            'interacting_pair__res1_id__protein_conformation__protein',
+            'interacting_pair__res1_id__protein_conformation__protein__parent',
+            'interacting_pair__res1_id__sequence_number',
+            'interacting_pair__res1_id__display_generic_number__label',
+            'interacting_pair__res2_id__protein_conformation__protein',
+            'interacting_pair__res2_id__protein_conformation__protein__parent',
+            'interacting_pair__res2_id__sequence_number',
+            'interacting_pair__res2_id__display_generic_number__label',
+            'interaction_type',
+            'interaction_level'
+        ).distinct().order_by('interacting_pair__res2__display_generic_number')
+
+        return queryset
+
+
+class StructurePeptideLigandInteractions(generics.ListAPIView):
+
+    """
+    Get a list of interactions between structure and peptide ligand
+    \n/structure/{value}/peptideinteraction/
+    \n{value} can be a structure identifier from the Protein Data Bank, e.g. 5VBL
+    \n{value} can also be a protein identifier from Uniprot, e.g. adrb2_human
+    \n{value} can also be a protein identifier from Uniprot, e.g. P07550
+    \nThe inserted value will be queried in the following order: PDB code --> UniProt entry name --> UniProt accession
+    \nBy default, UniProt values (entry name and accession) will be queried to AlphaFold Models interaction data
+    """
+    serializer_class = StructurePeptideLigandInteractionSerializer
+
+    def get_queryset(self):
+        value = self.kwargs.get('value')
+        #trying different inputs: pdb_code, entry_name, accession_number
+        queryset = InteractionPeptide.objects.filter(interacting_peptide_pair__peptide__structure__pdb_code__index__iexact=value)
+        if len(queryset) == 0:
+            queryset = InteractionPeptide.objects.filter(interacting_peptide_pair__peptide__model__protein__entry_name__iexact=value)
+        if len(queryset) == 0:
+            queryset = InteractionPeptide.objects.filter(interacting_peptide_pair__peptide__model__protein__accession__iexact=value)
+
+
+        queryset = queryset.values('interacting_peptide_pair__peptide__structure__pdb_code__index',
+                            'interacting_peptide_pair__peptide__ligand__name',
+                            'interacting_peptide_pair__peptide__chain',
+                            'interacting_peptide_pair__peptide_amino_acid',
+                            'interacting_peptide_pair__peptide_amino_acid_three_letter',
+                            'interacting_peptide_pair__peptide_sequence_number',
+                            'interacting_peptide_pair__receptor_residue__amino_acid',
+                            'interacting_peptide_pair__receptor_residue__sequence_number',
+                            'interacting_peptide_pair__receptor_residue__display_generic_number__label',
+                            'interaction_type', 'interaction_level').order_by("interacting_peptide_pair__peptide_sequence_number").distinct(
+                            ).annotate(
+                                interaction_count=Count('interaction_type')
+                            ).order_by('interacting_peptide_pair__peptide_sequence_number','interacting_peptide_pair__receptor_residue__sequence_number')
+
+        return queryset
 
 class MutantList(generics.ListAPIView):
 
@@ -912,6 +1161,68 @@ class DrugList(views.APIView):
 
         return Response(druglist)
 
+class LigandList(views.APIView):
+
+    """
+    Get a list of ligands for a single protein instance by entry name
+    \n/ligands/{prot_name}/
+    \n{prot_name} is a protein identifier from Uniprot, e.g. adrb2_human
+    """
+    def get(self, request, prot_name=None):
+        ligands = AssayExperiment.objects.filter(protein__entry_name=prot_name).prefetch_related('ligand','protein','publication').order_by('ligand_id__name')
+        ligands = ligands.values('value_type',
+                                 'standard_relation',
+                                 'standard_activity_value',
+                                 'assay_description',
+                                 'assay_type',
+                                 'p_activity_value',
+                                 'p_activity_ranges',
+                                 'source',
+                                 'ligand__name',
+                                 'ligand__ligand_type__name',
+                                 'protein__species__common_name',
+                                 'protein__entry_name',
+                                 'protein__name',
+                                 'ligand__rotatable_bonds',
+                                 'ligand__smiles',
+                                 'protein',
+                                 'publication__web_link__index',
+                                 'publication__web_link__web_resource__url',
+                                 'affinity',
+                                 'potency')
+
+        ligandlist = []
+        for compound in ligands:
+            protein = compound['protein__name']
+            lig_name = compound['ligand__name']
+            lig_type = compound['ligand__ligand_type__name'].replace('-',' ')
+            smiles = compound['ligand__smiles']
+            p_activity_ranges = compound['p_activity_ranges']
+            p_activity_value = compound['p_activity_value']
+            value_type = compound['value_type']
+            assay_type = compound['assay_type']
+            assay_description = compound['assay_description']
+            standard_value = compound['standard_activity_value']
+            source = compound['source']
+            if compound['publication__web_link__index'] is not None:
+                DOI = compound['publication__web_link__web_resource__url'].strip('$index') + compound['publication__web_link__index']
+            else:
+                DOI = 'Not Available'
+
+            ligandlist.append({'Protein name':protein,
+                               'Ligand name': lig_name,
+                               'Ligand type': lig_type,
+                               'Smiles': smiles,
+                               'Activity ranges (P)': p_activity_ranges,
+                               'Activity value (P)': p_activity_value,
+                               'Activity value (Standard)': standard_value,
+                               'Value type': value_type,
+                               'Assay type': assay_type,
+                               'Assay description': assay_description,
+                               'Source': source,
+                               'DOI': DOI})
+
+        return Response(ligandlist)
 
 class HelixBoxView(views.APIView):
 

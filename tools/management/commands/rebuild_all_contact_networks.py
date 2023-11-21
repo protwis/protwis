@@ -52,7 +52,7 @@ class Command(BaseCommand):
                 last = False
             else:
                 last = chunk_size * (i + 1)
-    
+
             p = Process(target=self.main_func, args=([(first, last), iteration,num,lock]))
             procs.append(p)
             p.start()
@@ -67,12 +67,13 @@ class Command(BaseCommand):
         Interaction.truncate()
 
     def build_contact_network(self,s,pdb_code):
-        interacting_pairs, distances  = compute_interactions(pdb_code, save_to_db=True)
+        # interacting_pairs, distances  = compute_interactions(pdb_code, save_to_db=True)
+        interacting_pairs = compute_interactions(pdb_code, do_interactions=True, do_peptide_ligand=True, do_complexes=True, save_to_db=True)
 
 
     def handle(self, *args, **options):
 
-        self.ss = Structure.objects.all()
+        self.ss = Structure.objects.all().exclude(structure_type__slug__startswith='af-')
         self.structure_data_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'structures'])
         if self.purge:
             self.purge_contact_network()
@@ -97,13 +98,13 @@ class Command(BaseCommand):
                     count.value +=1
                     # print(s, count.value)
                 else:
-                    break 
+                    break
 
             source_file_path = os.sep.join([self.structure_data_dir, s.pdb_code.index.upper() + ".yaml"])
             if os.path.isfile(source_file_path):
                 with open(source_file_path, 'r') as f:
                     sd = yaml.load(f, Loader=yaml.FullLoader)
-                    
+
             peptide_chain = ""
             if 'ligand' in sd and sd['ligand'] and sd['ligand']!='None':
                 if isinstance(sd['ligand'], list):
@@ -114,7 +115,7 @@ class Command(BaseCommand):
                     peptide_chain = ""
                     if 'chain' in ligand:
                         peptide_chain = ligand['chain']
-            
+
             # self.purge_contact_network(s)
             current = time.time()
             if self.update:

@@ -42,6 +42,7 @@ class Command(BaseCommand):
         # BLAST database only human GPCR sequences for 7TM bundle
         proteins = Protein.objects.filter(sequence_type__slug="wt", species__common_name="Human", family__slug__startswith="00")
 
+        c = 0
         for protein in proteins:
             # Process sequences to obtain bundle only
             segment_start = ProteinSegment.objects.get(slug="TM1")
@@ -49,8 +50,13 @@ class Command(BaseCommand):
             residues = Residue.objects.filter(protein_conformation__protein=protein, protein_segment_id__gte=segment_start.pk, protein_segment_id__lte=segment_end.pk) \
                         .order_by("id").values_list("amino_acid", flat=True)
             protein.sequence = "".join(residues)
+            if protein.sequence=="":
+                c+=1
 
-        self.build_database(proteins, "protwis_human_bundle_blastdb")
+        if len(proteins)!=c:
+            self.build_database(proteins, "protwis_human_bundle_blastdb")
+
+        self.build_database(os.sep.join([settings.DATA_DIR, 'g_protein_data', 'g_protein_chimeras.fasta']), 'g_protein_chimeras')
 
     def build_database(self, proteins, blast_db_dir):
         # All sequences
@@ -60,9 +66,12 @@ class Command(BaseCommand):
 
         # fetch sequences
         sequences = []
-        for protein in proteins:
-            sequences.append(SeqRecord(Seq(protein.sequence), id=str(protein.id),
-                description=protein.entry_name))
+        if type(proteins)==type(''):
+            sequences = SeqIO.parse(open(proteins), 'fasta')
+        else:
+            for protein in proteins:
+                sequences.append(SeqRecord(Seq(protein.sequence), id=str(protein.id),
+                    description=protein.entry_name))
 
         # Write sequences to file
         try:
@@ -82,6 +91,7 @@ class Command(BaseCommand):
             out, err = makeblastdb.communicate()
             if len(err) != 0:
                 self.logger.error(err)
+                print('ERROR:', blast_db_dir)
         except Exception as e:
             self.logger.error("Makeblastdb failed")
 

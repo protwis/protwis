@@ -13,7 +13,7 @@ except:
 
 from alignment.functions import get_proteins_from_selection
 from common import definitions
-from common.selection import Selection
+from common.selection import Selection, SelectionItem
 from common.views import AbsTargetSelection, AbsTargetSelectionTable
 from common.views import AbsSegmentSelection
 from common.views import AbsMiscSelection
@@ -277,7 +277,11 @@ def render_alignment(request):
     a = Alignment()
 
     # load data from selection into the alignment
-    a.load_proteins_from_selection(simple_selection)
+    # only show wildtype protein entries if selection type is family
+    if len([t for t in simple_selection.targets if t.type=='family'])>0:
+        a.load_proteins_from_selection(simple_selection, only_wildtype=True)
+    else:
+        a.load_proteins_from_selection(simple_selection)
     a.load_segments_from_selection(simple_selection)
 
     key = "ALIGNMENT_" + a.get_hash()
@@ -345,10 +349,17 @@ def render_family_alignment(request, slug):
         segments_ids.append(s.slug)
     segments_list = ','.join(str(x) for x in sorted(segments_ids))
 
+    # Store proteins and segments as selection to enable Fasta/Excel/CSV downloads
+    selection = Selection()
+    for prot in proteins:
+        selection.add('targets', 'protein', SelectionItem('protein', prot))
+    for segment in segments:
+        selection.add('segments', 'protein_segment', SelectionItem('protein_segment', segment))
+    request.session['selection'] = selection.exporter()
+
     s = str(protein_list+"_"+segments_list)
     key = "ALIGNMENT_"+hashlib.md5(s.encode('utf-8')).hexdigest()
     return_html = cache_alignment.get(key)
-
     if return_html==None:
         # load data into the alignment
         a.load_proteins(proteins)

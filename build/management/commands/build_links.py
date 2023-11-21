@@ -1,10 +1,10 @@
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
-
 from common.models import WebResource, WebLink
 from protein.models import Protein
-
 from optparse import make_option
+from common.tools import test_model_updates
+import django.apps
 import logging
 import shlex
 import os
@@ -20,13 +20,17 @@ class Command(BaseCommand):
 
     # source file directory
     links_data_dir = os.sep.join([settings.DATA_DIR, 'protein_data', 'links'])
+    #Setting the variables for the test tracking of the model upadates
+    tracker = {}
+    all_models = django.apps.apps.get_models()[6:]
+    test_model_updates(all_models, tracker, initialize=True)
 
     def handle(self, *args, **options):
         if options['filename']:
             filenames = options['filename']
         else:
             filenames = False
-        
+
         try:
             self.create_links(filenames)
         except Exception as msg:
@@ -57,7 +61,7 @@ class Command(BaseCommand):
             filepath = os.sep.join([self.links_data_dir, filename])
             with open(filepath, "r", encoding='UTF-8') as f:
                 self.logger.info('Parsing file {}'.format(filepath))
-                
+
                 for row in f:
                     split_row = shlex.split(row)
                     accession = split_row[0]
@@ -81,5 +85,5 @@ class Command(BaseCommand):
 
             if num_created_links:
                 self.logger.info('Created {} web links for resource {}'.format(num_created_links, resource.name))
-
+        test_model_updates(self.all_models, self.tracker, check=True)
         self.logger.info('COMPLETED CREATING LINKS')

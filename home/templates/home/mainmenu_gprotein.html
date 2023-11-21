@@ -1,0 +1,52 @@
+<!-- INFO -->
+{% include "home/common.html" %}
+
+<!-- GPCRdb -->
+{% include "home/gpcrdb.html" %}
+
+<!-- GproteinDb -->
+{% include "home/gproteindb.html" %}
+
+<!-- ArrestinDb -->
+{% include "home/arrestindb.html" %}
+
+<!-- Cite and join us -->
+{% include "home/cite_and_join_us.html" %}
+
+
+{% load static %}
+<link href="{% static 'home/css/mainmenu.css' %}" rel="stylesheet">
+<link href="{% static 'home/css/modal.css' %}" rel="stylesheet">
+<link rel="stylesheet" type="text/css" href="{% static 'home/css/jquery.powertip.css' %}" />
+<script src="{% static 'home/js/jquery-3.1.1.min.js' %}"></script>
+<script src="{% static 'home/js/citation_tool.js' %}"></script>
+<script src="{% static 'home/js/joinus_tool.js' %}"></script>
+<script type="text/javascript" charset="utf-8">
+    $(document).ready(function() {
+        if (window.location.pathname!='/') {
+            $('#ref_widget_div').css('display','block');
+            check_for_video(window.location.href);
+        }
+        $('#cite').click(function(){
+            citation_tool(window.location.href);
+        })
+        $('#icon_citation').click(function(){
+            citation_tool(window.location.href);
+        })
+        $('.dropdown-menu').on('click', '.article_option', function(){
+            highlight_article($(this).parent().attr('id'));
+            var anchor_id = $('#'+$(this).parent().attr('id').toString()+'_tag').parent().parent().parent().attr('id')
+            document.getElementById(anchor_id).scrollIntoView(true);
+            $('#page_select_button').html($(this).text());
+        })
+        $('#ref_widget_openclose').click(function(){
+            toggle_widget();
+        })
+        setTimeout(function() {
+            if ($('#widget_chevron').hasClass("glyphicon glyphicon-chevron-left")) {
+                toggle_widget();
+            }
+        }, 8000)
+
+    });
+</script>

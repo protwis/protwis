@@ -2,6 +2,13 @@
 {% load structure_extras %}
 {% load static %}
 
+{% block addon_css %}
+    <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/simple_browser.css' %}" type="text/css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link href="{% static 'home/css/signprotmat.css' %}" rel="stylesheet">
+{% endblock %}
+
 {% block content %}
 <style>
   canvas {
@@ -12,15 +19,36 @@
   }
 </style>
 
+
+{% if signaling_complex %}
+
 <div class="row text-success">
-  <div class="text-center">
-    <h2>{{ crystal.protein_conformation.protein.family.name|safe }}</h2>
-  </div>
+    <div class="text-center">
+        <div style="display: inline;">
+            <h2><a href="../protein/{{ crystal.protein_conformation.protein.parent.entry_name }}">{{ crystal.protein_conformation.protein.family.name|safe }}</a> - <a href="../protein/{{ crystal.signprot_complex.protein.entry_name }}">G<sub>{{ crystal.signprot_complex.protein.family.name|gprot_short|slice:"1:" }}</sub></a>
+
+            <div style="display: inline;">
+              <div class="btn-group">
+                  <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                      Download <span class="caret"></span>
+                  </button>
+                  <ul class="dropdown-menu">
+                    <li><a id="download_btn1" href="./{{crystal.pdb_code.index}}/download_pdb">Full</a></li>
+                    <!-- <li><a id="download_btn2" href="./{{model.protein_conformation.protein.entry_name|upper}}_noloops/download_pdb">Without loops</a></li> -->
+                  </ul>
+              </div>
+            </div>
+            <div style="display: inline;">
+                <i style="color:black; font-size:16px;" class="fas fa-info-circle" data-html="true" data-toggle="popover" data-trigger="click hover" data-placement="below" data-html="true" data-content="The PDB file contains GPCRdb generic residue numbers in the B-factor field of C&alpha; atoms <a target='_blank' href='https://doi.org/10.1016/j.tips.2014.11.001'>Isberg et al. 2015</a>"></i>
+            </div>
+            </h2>
+        </div>
+    </div>
 </div>
 
 <div class="row">
   <div class="col-md-3 text-right text-info">
-    <h4>PROTEIN CLASS</h4>
+    <h4>GPCR CLASS (FAMILY)</h4>
   </div>
   <div class="col-md-9">
     {{ crystal.protein_conformation.protein.get_protein_class }}
@@ -29,10 +57,37 @@
 
 <div class="row">
   <div class="col-md-3 text-right text-info">
-    <h4>RECEPTOR</h4>
+    <h4>GPCR SPECIES</h4>
   </div>
   <div class="col-md-9">
-    <a href="../protein/{{ crystal.protein_conformation.protein.parent.entry_name }}">{{ crystal.protein_conformation.protein.parent.name|safe }}</a>
+    {{ crystal.protein_conformation.protein.species.latin_name }}
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-3 text-right text-info">
+    <h4>GPCR PREFERRED CHAIN</h4>
+  </div>
+  <div class="col-md-9">
+    {{ crystal.preferred_chain }}
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-3 text-right text-info">
+    <h4>G PROTEIN (FAMILY)</h4>
+  </div>
+  <div class="col-md-9">
+    {{ crystal.signprot_complex.protein.family.parent.name }}
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-3 text-right text-info">
+    <h4>G PROTEIN SPECIES</h4>
+  </div>
+  <div class="col-md-9">
+    {{ crystal.signprot_complex.protein.species.latin_name }}
   </div>
 </div>
 
@@ -47,28 +102,10 @@
 
 <div class="row">
   <div class="col-md-3 text-right text-info">
-    <h4>SPECIES</h4>
-  </div>
-  <div class="col-md-9">
-    {{ crystal.protein_conformation.protein.species.latin_name }}
-  </div>
-</div>
-
-<div class="row">
-  <div class="col-md-3 text-right text-info">
     <h4>RESOLUTION</h4>
   </div>
   <div class="col-md-9">
-    {{ crystal.resolution}}
-  </div>
-</div>
-
-<div class="row">
-  <div class="col-md-3 text-right text-info">
-    <h4>PREFERRED CHAIN</h4>
-  </div>
-  <div class="col-md-9">
-    {{ crystal.preferred_chain }}
+    {{ crystal.resolution|floatformat:"1" }} Å
   </div>
 </div>
 
@@ -90,24 +127,21 @@
   </div>
 </div>
 
-
-
 <div class="row">
   <div class="col-md-3 text-right text-info">
-    <h4>RECEPTOR PDB</h4>
+    <h4>3D VIEW</h4>
   </div>
   <div class="col-md-9">
     <div id="viewport" style="width:500px; height:400px;background-color: white;"></div>
     <div style="width:500px; background-color:#eaeaea; border-radius: 0px 0px 5px 5px;">
-      <p style="padding: 2px 0px 2px 5px; font-size: 10px;"><a href="https://github.com/arose/ngl">NGL</a> is a WebGL based 3D viewer powered by <a href="https://mmtf.rcsb.org">MMTF</a>.</p>
+      <p style="padding: 2px 0px 2px 5px; font-size: 10px;"><button id="fullscreen">Full Screen</button><a href="https://github.com/arose/ngl"> NGL</a> is a WebGL based 3D viewer powered by <a href="https://mmtf.rcsb.org">MMTF</a>.</p>
     </div>
-    <div> <button id=fullscreen>Full Screen</button></div>
   </div>
 </div>
 
 <div class="row">
   <div class="col-md-3 text-right text-info">
-    <h4>INTERACTING RESIDUES</h4>
+    <h4>LIGAND INTERACTIONS</h4>
   </div>
   <div class="col-md-9">
     <a href="../interaction/{{pdbname}}"> {{residues|length}} interactions (Click to see)</a>
@@ -146,32 +180,606 @@
     </p>
   </div>
 </div>
+{% else %}
+
+<div class="row text-success">
+    <div class="text-center">
+        <div style="display: inline;">
+            <h2><a href="../protein/{{ crystal.protein_conformation.protein.parent.entry_name }}">{{ crystal.protein_conformation.protein.family.name|safe }}</a>
+
+            <div style="display: inline;">
+              <div class="btn-group">
+                  <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                      Download <span class="caret"></span>
+                  </button>
+                  <ul class="dropdown-menu">
+                    <li><a id="download_btn1" href="./{{crystal.pdb_code.index}}/download_pdb">Full</a></li>
+                    <!-- <li><a id="download_btn2" href="./{{model.protein_conformation.protein.entry_name|upper}}_noloops/download_pdb">Without loops</a></li> -->
+                  </ul>
+              </div>
+            </div>
+            <div style="display: inline;">
+                <i style="color:black; font-size:16px;" class="fas fa-info-circle" data-html="true" data-toggle="popover" data-trigger="click hover" data-placement="below" data-html="true" data-content="The PDB file contains GPCRdb generic residue numbers in the B-factor field of C&alpha; atoms <a target='_blank' href='https://doi.org/10.1016/j.tips.2014.11.001'>Isberg et al. 2015</a>"></i>
+            </div>
+            </h2>
+        </div>
+    </div>
+</div>
+
+
+
+<div class="row">
+  <div class="col-md-3 text-right text-info">
+    <h4>GPCR CLASS (FAMILY)</h4>
+  </div>
+  <div class="col-md-9">
+    {{ crystal.protein_conformation.protein.get_protein_class }}
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-3 text-right text-info">
+    <h4>PDB CODE</h4>
+  </div>
+  <div class="col-md-9">
+    <a href="https://www.rcsb.org/structure/{{ crystal.pdb_code.index }}">{{ crystal.pdb_code.index }}</a>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-3 text-right text-info">
+    <h4>SPECIES</h4>
+  </div>
+  <div class="col-md-9">
+    {{ crystal.protein_conformation.protein.species.latin_name }}
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-3 text-right text-info">
+    <h4>RESOLUTION</h4>
+  </div>
+  <div class="col-md-9">
+    {{ crystal.resolution|floatformat:"1" }} Å
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-3 text-right text-info">
+    <h4>PREFERRED CHAIN</h4>
+  </div>
+  <div class="col-md-9">
+    {{ crystal.preferred_chain }}
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-3 text-right text-info">
+    <h4>REFERENCE</h4>
+  </div>
+  <div class="col-md-9">
+    <a href="{{ crystal.publication.web_link }}">{{ crystal.publication.web_link.index }}</a>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-3 text-right text-info">
+    <h4>PUBLICATION DATE</h4>
+  </div>
+  <div class="col-md-9">
+    {{ crystal.publication_date }}
+  </div>
+</div>
+<div class="row">
+  <div class="col-md-3 text-right text-info">
+    <h4>3D VIEW</h4>
+  </div>
+  <div class="col-md-9">
+    <div id="viewport" style="width:500px; height:400px;background-color: white;"></div>
+    <div style="width:500px; background-color:#eaeaea; border-radius: 0px 0px 5px 5px;">
+      <p style="padding: 2px 0px 2px 5px; font-size: 10px;"><a href="https://github.com/arose/ngl">NGL</a> is a WebGL based 3D viewer powered by <a href="https://mmtf.rcsb.org">MMTF</a>.</p>
+    </div>
+    <div> <button id=fullscreen>Full Screen</button></div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-3 text-right text-info">
+    <h4>LIGAND INTERACTIONS</h4>
+  </div>
+  <div class="col-md-9">
+    <a href="../interaction/{{pdbname}}"> {{residues|length}} interactions (Click to see)</a>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-3 text-right text-info">
+    <h4>LIGANDS</h4>
+  </div>
+  <div class="col-md-9">
+    {% for l in ligands %}
+    <p style="display: inline;">{{ l.ligand.name|safe }} - {{l.ligand_role.name|safe}}
+      {% for link in l.ligand.ids.all %}
+      <a href="{{link}}" target="_blank">{{link.web_resource.slug}}</a>
+      {% endfor %}
+      {% if forloop.last %}{% else %}, {% endif %}
+    </p>
+    {% empty %}
+    No ligands
+    {% endfor %}
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-3 text-right text-info">
+    <h4>ENDOGENOUS LIGANDS</h4>
+  </div>
+  <div class="col-md-9">
+    <p style="display: inline;">
+      {% if crystal.protein_conformation.protein.parent.endogenous_gtp_set.all.count > 0 %}
+        {{ crystal.protein_conformation.protein.parent.endogenous_gtp_set.all | endo_format | safe }}
+      {% else %}
+        No endogenous ligands available
+      {% endif %}
+    </p>
+  </div>
+</div>
+{% endif %}
+
+<!-- Complex interactions load in -->
+{% if signaling_complex %}
+
+  {% include 'complex_interactions.html' %}
+
+{% endif %}
 
 {% endblock %}
 {% block addon_js %}
-<!-- NGL -->
-<script type="text/javascript" src="https://cdn.rawgit.com/arose/ngl/v2.0.0-dev.39/dist/ngl.js"> </script>
+
+{% if signaling_complex %}
+<script src="{% static 'home/js/d3.min.js' %}"></script>
+<script src="{% static 'home/js/nv.d3.min.js' %}"></script>
+<script src="{% static 'home/js/d3.v4.min.js' %}"></script>
+<script src="https://d3js.org/d3.v5.min.js"></script>
+<script src="{% static 'home/js/d3.tip.v4comp.js' %}"></script>
+<script src="{% static 'home/js/d3-legend.min.js' %}"></script>
+<script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
+<script src="{% static 'home/js/dataTables.tableTools.min.js' %}"> </script>
+<script src="{% static 'home/js/jquery.dataTables.columnFilter.js' %}"> </script>
+<script src="{% static 'home/js/selection.js' %}"> </script>
+<script src="{% static 'home/js/table2csv.js' %}"> </script>
+<script src="{% static 'home/js/phylo_tree.js' %}"></script>
+<script src="{% static 'home/js/lodash.min.js' %}"></script>
+<script src="{% static 'home/js/chroma.min.js' %}"></script>
+<!-- <script src="{% static 'home/js/jquery.tablesorter.js' %}"></script> -->
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+<script src="{% static 'home/js/matrix_utilities.js' %}"></script>
+<script src="{% static 'home/js/signprotmat.js' %}"></script>
+<script src="{% static 'home/js/gpcrdb.js' %}"></script>
+<!-- <script src="{% static 'home/js/fixed_columns.js' %}"></script> -->
 <script>
+  $(function () {
+    $("[data-toggle='popover']").popover();
+  });
+</script>
+<script type="text/javascript" charset="utf-8">
+    $(document).ready(function () {
+        interactions = {{ interactions | safe }};
+        inner_data = {{ inner | safe }};
+        outer_data = {{ outer | safe }};
+        interactions_strict = {{ interactions_strict | safe }};
+        inner_data_strict = {{ inner_strict | safe }};
+        outer_data_strict = {{ outer_strict | safe }};
+        interactions_metadata = {{ interactions_metadata | safe}};
+        gprot = {{ gprot | safe}};
+        receptor = {{ receptor | safe}};
+        csrf_token = "{{ csrf_token }}";
+        pdb_sel = {{ pdb_sel | safe }};
+        conversion_dict = {{ conversion_dict | safe }};
+        conversion_dict_strict = {{ conversion_dict_strict | safe }};
+        residue_labels = {{ residue_number_labels | safe }};
+
+        ClearSelection('targets');
+        ClearSelection('reference');
+        // Call the function with your desired values
+        draw_interactions_in_circles('visualization', interactions_strict, inner_data_strict, outer_data_strict, conversion_dict_strict);
+
+        $("#strict").click(function(){
+          $("#strict").addClass("active");
+          $("#loose").removeClass("active");
+          d3.select("#visualization").selectAll("*").remove();
+          draw_interactions_in_circles('visualization', interactions_strict, inner_data_strict, outer_data_strict, conversion_dict_strict);
+          d3.selectAll(`.van-der-waals`).attr("stroke-opacity", 0);
+        });
+
+        $("#loose").click(function() {
+          $("#strict").removeClass("active");
+          $("#loose").addClass("active");
+          d3.select("#visualization").selectAll("*").remove();
+          draw_interactions_in_circles('visualization', interactions, inner_data, outer_data, conversion_dict);
+          d3.selectAll(`.van-der-waals`).attr("stroke-opacity", 0);
+        });
+
+        $("#generic").click(function(){
+          $("#generic").addClass("active");
+          $("#protein").removeClass("active");
+          for (let key in residue_labels) {
+              if (residue_labels.hasOwnProperty(key)) {
+                  // Use D3 to select the text element with the matching data-key attribute
+                  let textElement = d3.select(`[protein-nr="${key}"]`);
+
+                  let new_label = residue_labels[key].split('_')[0];
+
+                  if(new_label.includes('x')){
+                    new_label = new_label.replace(/\..*x/, 'x');
+                  } else if (new_label == '-'){
+
+                  } else {
+                    new_label = new_label.split('.')[2];
+                  }
+                  // If the element exists, update its text
+                  if (!textElement.empty()) {
+                      textElement.text(new_label);
+                  }
+              }
+          }
+        });
+
+        $("#protein").click(function() {
+          $("#generic").removeClass("active");
+          $("#protein").addClass("active");
+          for (let key in residue_labels) {
+              if (residue_labels.hasOwnProperty(key)) {
+                  // Use D3 to select the text element with the matching data-key attribute
+                  let textElement = d3.select(`[protein-nr="${key}"]`);
+
+                  // If the element exists, update its text
+                  if (!textElement.empty()) {
+                      textElement.text(key.split('_')[0]);
+                  }
+              }
+          }
+        });
+
+        d3.selectAll(`.van-der-waals`).attr("stroke-opacity", 0);
+
+        var table3 = $('#residues').DataTable({
+            "scrollX": true,
+            "scrollY": 600,
+            "bScrollCollapse": true,
+            'paging': false,
+            orderCellsTop: true,
+            "autoWidth": true,
+            dom: 'T<"clear">lfrtip',
+            "aoColumnDefs": [
+                { "sType": "string", "aTargets": [0] },
+            ],
+            tableTools: {
+                "sRowSelect": "multi",
+                "aButtons": []
+            },
+            initComplete: function () {
+                $('#residues').dataTable().columnFilter({
+                    sPlaceHolder: "head:after",
+                    aoColumns: [
+                        { type: "select" }, //ligand
+                        { type: "select" }, //protein name
+                        { type: "select" }, //Alt Position
+                        { type: "select" }, //Position
+                        { type: "select" }, //Segment
+                        { type: "select" }, //Segment
+                        { type: "select" }, //Segment
+                        { type: "select" }, //Segment
+                    ]
+                });
+            }
+        });
+
+        // Section for the Matrix
+        $.ajax({
+          type: "POST",
+          url: "/signprot/matrix/AJAX_Interactions/",
+          async: false,
+          data: {
+            selected_pdbs: pdb_sel,
+            effector: '-',
+            csrfmiddlewaretoken: csrf_token,
+          },
+          success(data) {
+            non_interactions = data[0];
+            selected_interactions = data[1];
+          }
+        });
+
+        let old_sets = [];
+        let pos_set = [];
+        let neg_set = [];
+
+        // get corresponding protein entry_name values
+        for (var int_meta of interactions_metadata) {
+          if (pdb_sel.indexOf(int_meta["pdb_id"]) !== -1) {
+            pos_set = [int_meta["conf_id"], ...pos_set];
+          }
+        }
+
+        data = signprotmat.data.dataTransformationWrapper(selected_interactions, pdb_sel);
+        svg = signprotmat.d3.setup("div#interface-svg");
+        xScale = signprotmat.d3.xScale(data.transformed, receptor);
+        yScale = signprotmat.d3.yScale(data.transformed, gprot);
+        xAxis = signprotmat.d3.xAxis(xScale);
+        yAxis = signprotmat.d3.yAxis(yScale);
+        xAxisGrid = signprotmat.d3.xAxisGrid(xScale, yScale);
+        yAxisGrid = signprotmat.d3.yAxisGrid(xScale, yScale);
+        pdbScale = signprotmat.d3.pdbScale(data.transformed, interactions_metadata);
+        sigScale = signprotmat.d3.sigScale(data.transformed, interactions_metadata);
+        colScale = signprotmat.d3.colScale(data.inttypes);
+        tooltip = signprotmat.d3.tooltip(svg);
+        signprotmat.d3.renderData(
+          svg,
+          data,
+          non_interactions,
+          interactions_metadata,
+          xScale,
+          yScale,
+          xAxis,
+          yAxis,
+          xAxisGrid,
+          yAxisGrid,
+          colScale,
+          pdbScale,
+          sigScale,
+          tooltip
+        );
+        signprotmat.d3.colorBySwitch('res', colScale);
+        var rects = document.querySelectorAll('.res_rect');
+        rects.forEach(function(rect) {
+          rect.setAttribute('height', 40);
+          rect.setAttribute('y', 125);
+        });
+        var rects_vert = document.querySelectorAll('.res_rect_vertical');
+        rects_vert.forEach(function(rect) {
+          rect.setAttribute('width', 40);
+          rect.setAttribute('x', 40);
+        });
+
+        d3.select("#legend-space").selectAll("*").remove();
+
+        var scale = {
+          A: { bg_color: "#E6E600", font_color: "#000000" },
+          C: { bg_color: "#B2B548", font_color: "#000000" },
+          D: { bg_color: "#E60A0A", font_color: "#FDFF7B" },
+          E: { bg_color: "#E60A0A", font_color: "#FDFF7B" },
+          F: { bg_color: "#18FF0B", font_color: "#000000" },
+          G: { bg_color: "#FF00F2", font_color: "#000000" },
+          H: { bg_color: "#0093DD", font_color: "#000000" },
+          I: { bg_color: "#E6E600", font_color: "#000000" },
+          K: { bg_color: "#145AFF", font_color: "#FDFF7B" },
+          L: { bg_color: "#E6E600", font_color: "#000000" },
+          M: { bg_color: "#E6E600", font_color: "#000000" },
+          N: { bg_color: "#A70CC6", font_color: "#FDFF7B" },
+          P: { bg_color: "#CC0099", font_color: "#FDFF7B" },
+          Q: { bg_color: "#A70CC6", font_color: "#FDFF7B" },
+          R: { bg_color: "#145AFF", font_color: "#FDFF7B" },
+          S: { bg_color: "#A70CC6", font_color: "#FDFF7B" },
+          T: { bg_color: "#A70CC6", font_color: "#FDFF7B" },
+          V: { bg_color: "#E6E600", font_color: "#000000" },
+          W: { bg_color: "#0BCF00", font_color: "#000000" },
+          Y: { bg_color: "#18FF0B", font_color: "#000000" },
+          "-": { bg_color: "#FFFFFF", font_color: "#000000" },
+          _: { bg_color: "#EDEDED", font_color: "#000000" },
+          "+": { bg_color: "#FFFFFF", font_color: "#000000" },
+        };
+
+        var ordinal = d3
+          .scaleOrdinal()
+          .domain(Object.keys(scale))
+          .range(Object.values(scale).map((x) => x.bg_color));
+
+        var legendSvg = d3
+          .select("#legend-space")
+          .append("svg")
+          .attr("width", 554)
+          .attr("height", 110);
+
+        legendSvg
+          .append("g")
+          .attr("class", "legendOrdinal")
+          .attr("transform", "translate(10,20)");
+
+        var legendOrdinal = d3
+          .legendColor()
+          .orient("horizontal")
+          .labelAlign("center")
+          .shapePadding(20)
+          .scale(ordinal);
+
+        legendSvg
+          .select(".legendOrdinal")
+          .call(legendOrdinal)
+          .selectAll("rect")
+          .attr("rx", 3)
+          .attr("ry", 3);
+
+        legendSvg.select(".legendOrdinal").selectAll("text").attr("class", "legend");
+
+        // * ADDING Interaction Type LEGEND
+        let size = 2;
+        let window_starts = _.range(0, colScale.domain().length + 1, size);
+
+        let i = 0;
+        for (let windo of window_starts) {
+          let start = windo;
+          let stop = windo + size;
+          let element_ids = _.range(start, stop);
+          let filter_elements = _.pullAt(colScale.domain(), element_ids);
+
+          legendSvg
+            .append("g")
+            .attr("class", "legendOrdinal" + i)
+            .attr(
+              "transform",
+              "translate(" +
+                // (xScale.step() / 2 + i * 10 * xScale.step()) + ","
+                (10 + i * 160) +
+                "," +
+                65 +
+                ")"
+            );
+
+          let legendOrdinal = d3
+            .legendColor()
+            .cellFilter(function (d) {
+              return filter_elements.includes(d.label);
+            })
+            .orient("vertical")
+            .labelAlign("start")
+            .shapePadding(20)
+            .scale(colScale);
+          legendSvg
+            .select(".legendOrdinal" + i)
+            .call(legendOrdinal)
+            .selectAll("rect")
+            .attr("rx", 3)
+            .attr("ry", 3);
+          legendSvg
+            .select(".legendOrdinal" + i)
+            .selectAll("text")
+            .attr("class", "legend" + i);
+          i += 1;
+        }
+
+        legendSvg.select(".legendOrdinal").selectAll("text").attr("transform", "translate(7,25)");
+        legendSvg.select(".legendOrdinal0").selectAll("text").attr("transform", "translate(20,12)");
+        legendSvg.select(".legendOrdinal1").selectAll("text").attr("transform", "translate(20,12)");
+        legendSvg.select(".legendOrdinal2").selectAll("text").attr("transform", "translate(20,12)");
+        // document.querySelector("#intbut").classList.add("active");
+        // document.querySelector("#resbut").classList.remove("active");
+
+        // Function to update the highlight based on checkbox selections
+        function updateHighlight() {
+          // Get all selected checkbox values
+          const selectedChains = Array.from(document.querySelectorAll('input[name="chain"]:checked'))
+                                      .map(el => el.value);
+          // Reset all path highlights
+          d3.selectAll('path').classed('highlight', false);
+          d3.selectAll("path")
+            .each(function(d, i) {
+              const segment = d3.select(this).attr("segment");
+              if (!segment) {
+                d3.select(this).attr("stroke-opacity", 0);
+              }
+            });
+          // d3.selectAll("path").attr("stroke-opacity", 0);
+          // Loop through selected checkbox combinations
+          selectedChains.forEach(chain => {
+            const [outerChain, innerChain] = chain.split('-');
+
+            // Highlight the selected paths
+            d3.selectAll(`path[inner-chain="${innerChain}"][outer-chain="${outerChain}"]`)
+              .attr("stroke-opacity", 1);
+          });
+        }
+        // Attach event listeners to checkboxes
+        document.querySelectorAll('input[name="chain"]').forEach(el => {
+          el.addEventListener('change', updateHighlight);
+        });
+
+    });
+
+    function downloadSVG(svgElementId, filename, format = 'svg') {
+      const svgElement = document.getElementById(svgElementId);
+
+      if (!svgElement) {
+        console.error(`Element with id "${svgElementId}" not found.`);
+        return;
+      }
+
+      if (format === 'svg') {
+        const svgString = new XMLSerializer().serializeToString(svgElement);
+        const blob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = filename + '.svg';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else {
+        const svgString = new XMLSerializer().serializeToString(svgElement);
+        const img = new Image();
+        img.src = 'data:image/svg+xml;base64,' + window.btoa(svgString);
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          const bbox = svgElement.getBBox();
+          canvas.width = bbox.width * 1.2;
+          canvas.height = bbox.height * 1.2;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0);
+          let mimeType = 'image/png';
+          if (format === 'jpeg') mimeType = 'image/jpeg';
+          else if (format === 'tiff') mimeType = 'image/tiff';
+          canvas.toBlob((blob) => {
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = filename + '.' + format;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+          }, mimeType);
+        };
+      }
+    }
+
+    function ajaxInteractions(plotid) {
+        interactions = {{ tot_interactions | safe }};
+        count = [];
+        output = [];
+
+          $.each( interactions, function( index, val ) {
+            key = val['gpcr_aa'];
+
+            if (key in count) {
+                count[key] += 1;
+                if (!(val['type'] in output[key])) output[key].push(val['type'])
+            } else {
+                count[key] = 1;
+                output[key] = [val['type']]
+            }
+
+              extra = "\n" + String(count[key]) + " interactions | Type: "+ output[key];
+
+              $('#'+plotid).find("#"+key).css("fill", "#E60A0A");
+              $('#'+plotid).find("#"+key).next().css("fill", "#FDFF7B");
+
+              original_title = $('#'+plotid).find("#"+key).attr('original_title')
+
+              $('#'+plotid).find("#"+key).attr('title',original_title+extra);
+              $('#'+plotid).find("#"+key+"t").attr('title',original_title+extra);
+
+          });
+    }
+
+    var residues_lookup = {{ residues_lookup | safe }};
+
+</script>
+{% endif %}
+<!-- NGL -->
+<!-- <script type="text/javascript" src="https://cdn.rawgit.com/arose/ngl/v2.0.0-dev.39/dist/ngl.js"> </script> -->
+{% if signaling_complex %}
+<script src="{% static 'home/js/ngl.js' %}"> </script>
+<script>
+    //stage.loadFile( "rcsb://1crn.mmtf", { defaultRepresentation: true } );
   // http://proteinformatics.charite.de/ngl/doc/#User_manual/Usage/Molecular_representations
   // http://arose.github.io/ngl/api/Stage.html
   // http://arose.github.io/ngl/js/examples.js
   // http://arose.github.io/ngl/
   document.addEventListener("DOMContentLoaded", function() {
-    stage = new NGL.Stage("viewport", {
-      backgroundColor: "white"
-    });
 
-    stage.loadFile("pdb/{{pdbname}}", {
-      ext: "pdb"
-    }).then(function(o) {
+    var stage_full;
+    var stage = new NGL.Stage("viewport", {backgroundColor: "white"});
+    console.log('here 1')
+    stage.loadFile("pdb/{{pdbname}}", {ext: "pdb"}).then(function(o) {
       let preferred_chain = "{{ crystal.preferred_chain }}";
-
-      {% if signaling_complex %}
-        o.addRepresentation("cartoon", {colorScheme: "chainid"});
-      {% else %}
-        o.addRepresentation("cartoon", {sele: ":" + preferred_chain, colorScheme: "atomindex"});
-      {% endif %}
-
+      o.addRepresentation("cartoon", {colorScheme: "atomindex"});
       {% if main_ligand != "None" %}
         o.addRepresentation("licorice", {
           sele: ":" + preferred_chain + " and [{{ main_ligand}}] and hetero "
@@ -190,58 +798,170 @@
           labelType: "resname"
         });
       {% endif %}
-
+      console.log('here 2')
       // Automatic GPCR positioning
       let translation = "{{ translation }}";
       let center_axis = "{{ center_axis }}";
       let gn_list = JSON.parse("{{ gn_list }}");
       let ref_tm1 = parseInt("{{ ref_tm1 }}");
-      if (translation !== "" && typeof center_axis !== "") {
-        translation = JSON.parse(translation);
-        center_axis = JSON.parse(center_axis);
-
-        // calculate rotation and apply
-        let v1 = new NGL.Vector3(0, 1, 0)
-        let v2 = new NGL.Vector3(center_axis[0], center_axis[1], center_axis[2])
-        let quaternion = new NGL.Quaternion(); // create one and reuse it
-        quaternion.setFromUnitVectors(v2, v1)
-        o.setRotation(quaternion)
-
-        // calculate translation and apply
-        let v = new NGL.Vector3(-1 * translation[0], -1 * translation[1], -1 * translation[2])
-        v.applyMatrix4(o.matrix)
-        o.setPosition([-1 * v.x, -1 * v.y, -1 * v.z])
-
-        // calculate H8 position (based on TM1)
-        if (ref_tm1 > 0) {
-          let tm1_vector;
-          o.structure.eachAtom(function(ap) {
-              tm1_vector = new NGL.Vector3(ap.x, ap.y, ap.z)
-              tm1_vector.applyMatrix4(o.matrix)
-            }, new NGL.Selection(":" + preferred_chain + " and " + ref_tm1 + " and .CA"))
-          tm1_vector.y = 0 // height position doesn't matter
-          tm1_vector.normalize()
-
-          // calculate rotation angle around Y-axis (as the GPCR is now upright)
-          let v3 = new NGL.Vector3(-1, 0, 0)
-          let m = new NGL.Matrix4()
-          if (tm1_vector.z < 0)
-            m.makeRotationY(v3.angleTo(tm1_vector))
-          else if (tm1_vector.z > 0)
-            m.makeRotationY(-1 * v3.angleTo(tm1_vector))
-
-          o.setTransform(m)
-        }
-      }
 
       // Optimize view
-      o.autoView(":" + preferred_chain + " and (" + gn_list.join(", ") + ") and (.CA)")
+      o.centerView(":" + preferred_chain + " and (" + gn_list.join(", ") + ") and (.CA)")
+      console.log('here 3')
+      // Initialize the second NGL viewer but only when its container is visible
+      function initializeStageFull() {
+          // 3D intereaction viewer
+          stage_full = new NGL.Stage( "viewport_full", { backgroundColor: "white" } );
 
+          var galpha = "#fc660f";
+
+          stage_full.loadFile( "pdb/{{pdbname}}", { ext: "pdb" }  ).then( function( o ){
+              var schemeId2 = NGL.ColorMakerRegistry.addSelectionScheme( JSON.parse('{{chain_colors|safe}}') );
+              o.addRepresentation( "cartoon", {
+                  color: schemeId2
+              } );
+              // Strict interactions
+              o.addRepresentation( "licorice", { sele: "({{display_res_gpcr_strict}}) and sidechainAttached", color: "grey", scale: 2, aspectRatio: 1});
+              o.addRepresentation( "label", {
+                  sele: "({{display_res_gpcr_strict}}) and .CB",
+                  color: "grey", borderColor: "black", showBorder: true, backgroundColor: "white", backgroundOpacity: .7, showBackground: true, scale: 2.0
+              } );
+              o.addRepresentation( "licorice", { sele: "({{display_res_gprot_strict}}) and sidechainAttached", color: galpha, scale: 2, aspectRatio: 1});
+              o.addRepresentation( "label", {
+                  sele: "({{display_res_gprot_strict}}) and .CB",
+                  color: galpha, borderColor: "black", showBorder: true, backgroundColor: "white", backgroundOpacity: .7, showBackground: true, scale: 2.0
+              } );
+              // Loose interactions
+              o.addRepresentation( "line", { sele: "({{display_res_gpcr_loose}}) and sidechainAttached", color: "grey", scale: 2, aspectRatio: 1});
+              o.addRepresentation( "line", { sele: "({{display_res_gprot_loose}}) and sidechainAttached", color: galpha, scale: 2, aspectRatio: 1});
+              o.centerView();
+          } );
+          // stage_full.signals.clicked.add( function( d ){
+          //     $('#clicked').html(getPickingMessage( d, "Clicked" ));
+          // } );
+          // stage_full.signals.hovered.add( function( d ){
+          //     $('#hovered').html(getPickingMessage( d, "Hovered" ));
+          // } );
+
+          $("#fullscreen_full").click(function() {
+              stage_full.toggleFullscreen();
+          });
+
+          // Ensure the viewer adjusts to its container's dimensions
+          stage_full.handleResize();
+      }
+
+      // Assuming #tab2 reveals the container for stage_full
+      $("#3dview_tab").on("click", function() {
+          if (!window.stage_full_initialized) {
+              console.log('first click happened');
+              initializeStageFull();
+              window.stage_full_initialized = true;
+              setTimeout(function() {
+                  if (stage_full) stage_full.handleResize();
+              }, 100);
+          } else {
+            console.log('here again');
+            setTimeout(function() {
+                if (stage_full) stage_full.handleResize();
+            }, 100);
+          }
+      });
+
+      $( "#fullscreen" ).click(function() {
+          stage.toggleFullscreen();
+      });
     });
-    //stage.loadFile( "rcsb://1crn.mmtf", { defaultRepresentation: true } );
-  });
-  $("#fullscreen").click(function() {
-    stage.toggleFullscreen();
   });
 </script>
+{% else %}
+<script type="text/javascript" src="https://cdn.rawgit.com/arose/ngl/v2.0.0-dev.39/dist/ngl.js"> </script>
+<script>
+    // http://proteinformatics.charite.de/ngl/doc/#User_manual/Usage/Molecular_representations
+    // http://arose.github.io/ngl/api/Stage.html
+    // http://arose.github.io/ngl/js/examples.js
+    // http://arose.github.io/ngl/
+    document.addEventListener("DOMContentLoaded", function() {
+      stage = new NGL.Stage("viewport", {
+        backgroundColor: "white"
+      });
+
+      stage.loadFile("pdb/{{pdbname}}", {
+        ext: "pdb"
+      }).then(function(o) {
+        let preferred_chain = "{{ crystal.preferred_chain }}";
+          o.addRepresentation("cartoon", {sele: ":" + preferred_chain, colorScheme: "atomindex"});
+
+        {% if main_ligand != "None" %}
+          o.addRepresentation("licorice", {
+            sele: ":" + preferred_chain + " and [{{ main_ligand}}] and hetero "
+          });
+
+          o.addRepresentation("surface", {
+            sele: ":" + preferred_chain + " and [{{ main_ligand}}]",
+            opacity: 0.4,
+            useWorker: false
+          });
+
+          o.addRepresentation("label", {
+            sele: ":" + preferred_chain + " and [{{ main_ligand}}] and hetero and .C1",
+            color: "#888",
+            scale: 4.0,
+            labelType: "resname"
+          });
+        {% endif %}
+
+        // Automatic GPCR positioning
+        let translation = "{{ translation }}";
+        let center_axis = "{{ center_axis }}";
+        let gn_list = JSON.parse("{{ gn_list }}");
+        let ref_tm1 = parseInt("{{ ref_tm1 }}");
+        if (translation !== "" && typeof center_axis !== "") {
+          translation = JSON.parse(translation);
+          center_axis = JSON.parse(center_axis);
+
+          // calculate rotation and apply
+          let v1 = new NGL.Vector3(0, 1, 0)
+          let v2 = new NGL.Vector3(center_axis[0], center_axis[1], center_axis[2])
+          let quaternion = new NGL.Quaternion(); // create one and reuse it
+          quaternion.setFromUnitVectors(v2, v1)
+          o.setRotation(quaternion)
+
+          // calculate translation and apply
+          let v = new NGL.Vector3(-1 * translation[0], -1 * translation[1], -1 * translation[2])
+          v.applyMatrix4(o.matrix)
+          o.setPosition([-1 * v.x, -1 * v.y, -1 * v.z])
+
+          // calculate H8 position (based on TM1)
+          if (ref_tm1 > 0) {
+            let tm1_vector;
+            o.structure.eachAtom(function(ap) {
+                tm1_vector = new NGL.Vector3(ap.x, ap.y, ap.z)
+                tm1_vector.applyMatrix4(o.matrix)
+              }, new NGL.Selection(":" + preferred_chain + " and " + ref_tm1 + " and .CA"))
+            tm1_vector.y = 0 // height position doesn't matter
+            tm1_vector.normalize()
+
+            // calculate rotation angle around Y-axis (as the GPCR is now upright)
+            let v3 = new NGL.Vector3(-1, 0, 0)
+            let m = new NGL.Matrix4()
+            if (tm1_vector.z < 0)
+              m.makeRotationY(v3.angleTo(tm1_vector))
+            else if (tm1_vector.z > 0)
+              m.makeRotationY(-1 * v3.angleTo(tm1_vector))
+
+            o.setTransform(m)
+          }
+        }
+
+        // Optimize view
+        o.autoView(":" + preferred_chain + " and (" + gn_list.join(", ") + ") and (.CA)")
+
+      });
+    });
+    $("#fullscreen").click(function() {
+      stage.toggleFullscreen();
+    });
+</script>
+{% endif %}
 {% endblock %}

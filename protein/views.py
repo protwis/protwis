@@ -14,6 +14,7 @@ from interaction.models import ResidueFragmentInteraction,StructureLigandInterac
 from mutation.models import MutationExperiment
 from common.selection import Selection
 from common.views import AbsBrowseSelection
+from ligand.models import Ligand, LigandID
 
 import json
 from copy import deepcopy
@@ -87,7 +88,7 @@ def detail(request, slug):
         alt_genes = genes[1:]
 
     # get structures of this protein
-    structures = Structure.objects.filter(protein_conformation__protein__parent=p)
+    structures = Structure.objects.filter(protein_conformation__protein__parent=p).exclude(structure_type__slug__startswith='af-')
 
     # get residues
     residues = Residue.objects.filter(protein_conformation=pc).order_by('sequence_number').prefetch_related(
@@ -174,16 +175,19 @@ def SelectionAutocomplete(request):
             protein_source_list.append(protein_source.item)
 
         # find proteins
-        if type_of_selection!='navbar':
+        if type_of_selection!='navbar' and type_of_selection!='ligands':
             ps = Protein.objects.filter(Q(name__icontains=q) | Q(entry_name__icontains=q),
                                         species__in=(species_list),
                                         source__in=(protein_source_list)).exclude(family__slug__startswith=exclusion_slug).exclude(sequence_type__slug='consensus')[:10]
+        elif type_of_selection == 'ligands':
+            ps = Ligand.objects.filter(Q(name__icontains=q) | Q(id__icontains=q) | Q(inchikey__contains=q) | Q(smiles__icontains=q))[:10]
+            indexes = LigandID.objects.filter(index=q).values_list('ligand_id','ligand_id__name','web_resource_id__name')
         else:
             ps = Protein.objects.filter(Q(name__icontains=q) | Q(entry_name__icontains=q) | Q(family__name__icontains=q) | Q(accession=q),
                                         species__common_name='Human', source__name='SWISSPROT').exclude(entry_name__endswith='_a').exclude(sequence_type__slug='consensus')[:10]
 
         # Try matching protein name after stripping html tags
-        if ps.count() == 0:
+        if ps.count() == 0 and type_of_selection != 'ligands':
             ps = Protein.objects.annotate(filtered=Func(F('name'), Value('<[^>]+>'), Value(''), Value('gi'), function='regexp_replace')) \
                 .filter(Q(filtered__icontains=q), species__common_name='Human', source__name='SWISSPROT')
 
@@ -201,17 +205,35 @@ def SelectionAutocomplete(request):
                         .exclude(family__slug__startswith=exclusion_slug).exclude(sequence_type__slug='consensus')[:10]
 
 
-        for p in ps:
-            p_json = {}
-            p_json['id'] = p.id
-            p_json['label'] = p.name + " [" + p.species.common_name + "]"
-            p_json['slug'] = p.entry_name
-            p_json['type'] = 'protein'
-            p_json['category'] = 'Receptors'
-            results.append(p_json)
+        if type_of_selection != 'ligands':
+            for p in ps:
+                p_json = {}
+                p_json['id'] = p.id
+                p_json['label'] = p.name + " [" + p.species.common_name + "]"
+                p_json['slug'] = p.entry_name
+                p_json['type'] = 'protein'
+                p_json['category'] = 'Receptors'
+                results.append(p_json)
+        else:
+            if len(indexes) != 0:
+                print(indexes)
+                for p in indexes:
+                    p_json = {}
+                    p_json['id'] = p[0]
+                    p_json['label'] = p[1]
+                    p_json['type'] = 'Ligand'
+                    p_json['category'] = p[2].split('_')[0]
+                    results.append(p_json)
+            else:
+                for p in ps:
+                    p_json = {}
+                    p_json['id'] = p.id
+                    p_json['label'] = p.name
+                    p_json['type'] = 'ligand'
+                    p_json['category'] = 'GPCRdb data'
+                    results.append(p_json)
 
-
-        if type_of_selection!='navbar' or (type_of_selection=='navbar' and ps.count() == 0):
+        if (type_of_selection not in ['navbar', 'ligands']) or (type_of_selection=='navbar' and ps.count() == 0):
             # find protein aliases
             if type_of_selection != 'navbar':
                 pas = ProteinAlias.objects.prefetch_related('protein').filter(name__icontains=q,
@@ -232,7 +254,7 @@ def SelectionAutocomplete(request):
                 if pa_json not in results:
                     results.append(pa_json)
 
-        if type_of_selection!='navbar':
+        if type_of_selection not in ['navbar', 'ligands']:
             # protein families
             if (type_of_selection == 'targets' or type_of_selection == 'browse' or type_of_selection == 'gproteins') and selection_only_receptors!="True":
                 # find protein families
@@ -250,7 +272,6 @@ def SelectionAutocomplete(request):
                     pf_json['type'] = 'family'
                     pf_json['category'] = 'Receptor orthologues'
                     results.append(pf_json)
-
         data = json.dumps(results)
     else:
         data = 'fail'

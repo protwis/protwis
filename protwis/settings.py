@@ -80,7 +80,7 @@ USE_I18N = True
 USE_L10N = True
 USE_TZ = True
 
-# Default site configuration (gpcr - GPCRdb, gprotein - GproteinDb, arrestin - ArrestinDb)
+# Default site configuration (gpcr - GPCRdb, gprotein - GproteinDb, arrestin - ArrestinDb, biasedsignalingatlas - Biased Signaling Atlas)
 DEFAULT_SITE = "gpcr"
 
 # Static files (CSS, JavaScript, Images)
@@ -95,6 +95,7 @@ SESSION_SERIALIZER = 'django.contrib.sessions.serializers.PickleSerializer'
 SESSION_COOKIE_AGE = 86400 #Expire cookies and session after 24 hrs
 SWAGGER_SETTINGS = {
     'USE_SESSION_AUTH' : False,
+    "exclude_namespaces": ["excluded_apis"],
 }
 
 # Templates

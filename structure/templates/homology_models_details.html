@@ -22,14 +22,14 @@ canvas {
         {% if not model.protein.accession %}
         <h2>{{ model.protein.entry_name|upper }} refined</h2>
         {% else %}
-        <h2>{{ model.protein.family.name|safe }} homology model</h2>
+        <h2>{{ model.protein.family.name|safe }} structure model</h2>
         {% endif %}
     </div>
 </div>
 
 <div class="row">
     <div class="col-md-3 text-right text-info">
-        <h4>PROTEIN CLASS</h4>
+        <h4>GPCR CLASS</h4>
     </div>
     <div class="col-md-9">
         {{ model.protein.get_protein_class }}
@@ -77,17 +77,34 @@ canvas {
     </div>
 </div>
 
+<div class="row">
+    <div class="col-md-3 text-right text-info">
+        <h4>METHOD</h4>
+    </div>
+    <div class="col-md-9">
+        <a href="https://doi.org/10.1002/prot.26382" target="_blank">AlphaFold-Multistate</a>
+    </div>
+</div>
+
 
 <style>
 .inline {display:inline;}
-.graphcolor { display:inline-block; border-style:solid; border-width: 1px; padding: 1px 5px; text-align: center}
+.graphcolor {
+              display:inline-block;
+              padding: 1px 5px;
+              text-align: center;
+              margin-left: 20px;
+              vertical-align: middle;
+              width: 20px;
+              height: 20px;
+              margin-top: 5px;}
 </style>
 
 <div class="row">
     <div class="col-md-3 text-right text-info">
         <h4>MODEL</h4>
     </div>
-    <div class="col-md-9">
+    <div class="col-md-6">
         <div class="btn-group">
             <a href="/" class="dropdown-toggle btn btn-primary btn-mini" data-toggle="dropdown" role="button" aria-expanded="false">Download <span class='caret'></span></a>
             <ul class="dropdown-menu" role="menu" style="min-width:50%;">
@@ -101,7 +118,8 @@ canvas {
             </ul>
         </div>
         <div>
-            <p>PDB file contains GPCRdb generic numbers in the B-factor field of CA atoms</p>
+            <p>PDB file contains GPCRdb generic numbers in the B-factor field of C&alpha; atoms {% if model.protein.accession %} and AlphFold pLDDT scores in the B-factor field of C atoms{% endif %}</p>
+
         </div>
         <div style="float: left; width: 60%;">
             <div id="viewport" style="width:500px; height:400px;background-color: white;"></div>
@@ -110,6 +128,35 @@ canvas {
             </div>
         </div>
     </div>
+{% if model.protein.accession %}
+    <div class="col-md-3">
+        <br>
+        <br>
+        <br>
+        <br>
+        <div><h4>Model confidence <span class="glyphicon glyphicon-info-sign" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="below" data-content="<b>Interpretation of AlphaFold models</b><br>The pLDDT score from Alphafold estimates the confidence of the placement of an individual residue in relation to its neighboring residues within a 15Å radius. The GPCRdb provides full-length models for nearly all human GPCRs, including receptors that comprise multiple domains. Therefore, one should take into account that, when a model consists of multiple domains, the relative placement of the domains with respect to each other can be erroneous even when the pLDDT score for a given domain is high."></span></h4></div>
+        <div style='width: 90%; display:table; position:relative;'>
+            <div style='display: table-cell;'>
+              <div class="graphcolor" style="background-color: blue; "></div>
+              <span style="margin-left: 5px; vertical-align: middle; padding-top: 5px;">Very high (pLDDT > 90)</span>
+              <br>
+              <div class="graphcolor" style="background-color: lightblue; "></div>
+              <span style="margin-left: 5px; vertical-align: middle;">Confident (90 > pLDDT > 70)</span>
+              <br>
+              <div class="graphcolor" style="background-color: yellow; "></div>
+              <span style="margin-left: 5px; vertical-align: middle;">Low (70 > pLDDT > 50)</span>
+              <br>
+              <div class="graphcolor" style="background-color: orange;"></div>
+              <span style="margin-left: 5px; vertical-align: middle;">Very low (pLDDT < 50)</span>
+              <br>
+              <div class="graphcolor" style="background-color: red;"></div>
+              <span style="margin-left: 5px; vertical-align: middle;">Disordered</span>
+              <br>
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
 </div>
 
 <div class="row">
@@ -153,12 +200,12 @@ canvas {
             <div style='display: table-cell;'>
                 {% for prot, bts in backbone_templates.items %}
                     {% for bt in bts %}
-                        <div class="graphcolor" style="background-color:{{ bt.color }}; width: 20px; height: 10px; margin-top: 5px;"></div>
+                        <div class="graphcolor" style="background-color:{{ bt.color }}; width: 20px; height: 10px; margin-bottom: 5px; border:solid black;"></div>
                         {{ bt.pdb_code.index }} ({{ bt.protein_conformation.protein.parent.name|safe}}) <br>
                     {% endfor %}
                 {% endfor %}
-                        <div class="graphcolor" style="background-color:white; width: 20px; height: 10px;"></div>
-                        None
+                        <div class="graphcolor" style="background-color:white; width: 20px; height: 10px; margin-bottom: 5px; border: solid black;"></div>
+                        AlphaFold
             </div>
         </div>
         <table>
@@ -166,36 +213,34 @@ canvas {
                 <tr>
                     <th class='table-th'></th>
                     <th class='table-th'>Main template (%)</th>
-                    <th class='table-th'>Additional templates (%)</th>
-                    <th class='table-th' style="border-right: 0px;">No template - freely modelled (%)</th>
+                    <!-- <th class='table-th'>Additional templates (%)</th> -->
+                    <th class='table-th' style="border-right: 0px;">AlphaFold (%)</th>
             </thead>
             <tbody>
                 <tr>
                     <td style="border-right: 1px solid #9ea7af; text-align:right; padding: 3px; font-size: 12px;">Backbone</td>
                     <td class="table-td">{{bb_main}}</td>
-                    <td class="table-td">{{bb_alt}}</td>
+                    <!-- <td class="table-td">{{bb_alt}}</td> -->
                     <td class="table-td" style="border-right: 0px;">{{bb_none}}</td>
                 </tr>
                 <tr>
                     <td style="border-right: 1px solid #9ea7af; text-align:right; padding: 3px; font-size: 12px;">Side-chains</td>
                     <td class="table-td">{{sc_main}}</td>
-                    <td class="table-td">{{sc_alt}}</td>
+                    <!-- <td class="table-td">{{sc_alt}}</td> -->
                     <td class="table-td" style="border-right: 0px;">{{sc_none}}</td>
                 </tr>
             </tbody>
         </table>
         <br>
-        Number of backbone templates: {{ backbone_templates_number }}<br>
-        Number of rotamer templates: {{ rotamer_templates_number }}<br><br>
+        <!-- Number of backbone templates: {{ backbone_templates_number }}<br>
+        Number of rotamer templates: {{ rotamer_templates_number }}<br><br> -->
   <!--   </div>
 </div>
-
 <br>
 <style>
 .inline {display:inline;}
 .graphcolor { display:inline-block; border-style:solid; border-width: 1px; padding: 1px 5px; text-align: center}
 </style>
-
 <div class="inline"> -->
     <!-- <div>
         <div style="float: left; width: 50%;">
@@ -216,7 +261,6 @@ canvas {
                             <div class="graphcolor" style="background-color:white; width: 12%;">None</div>
                 </div>
             </div>
-
         </div>
     </div> -->
 
@@ -270,15 +314,15 @@ canvas {
                                 <td><a href="/protein/{{ rota.backbone_template.protein_conformation.protein.parent.entry_name }}">{{ rota.backbone_template.protein_conformation.protein.parent.name|safe }}</a></td>
                                 <td><a href="../{{ rota.backbone_template.pdb_code.index }}">{{ rota.backbone_template.pdb_code.index|safe }}</a></td>
                             {% else %}
-                                <td>-</td>
-                                <td>-</td>
+                                <td>AlphaFold</td>
+                                <td>AlphaFold</td>
                             {% endif %}
                             {% if rota.rotamer_template %}
                                 <td><a href="/protein/{{ rota.rotamer_template.protein_conformation.protein.parent.entry_name }}">{{ rota.rotamer_template.protein_conformation.protein.parent.name|safe }}</a></td>
                                 <td><a href="../{{ rota.rotamer_template.pdb_code.index }}">{{ rota.rotamer_template.pdb_code.index|safe }}</a></td>
                             {% else %}
-                                <td>-</td>
-                                <td>-</td>
+                                <td>AlphaFold</td>
+                                <td>AlphaFold</td>
                             {% endif %}
                         </tr>
                         {% endfor %}
@@ -288,7 +332,7 @@ canvas {
         </div>
     </div>
 </div>
-
+{% endif %}
 {% endblock %}
 {% block addon_js %}
     <script src="{% static 'home/js/ngl.js' %}"> </script>
@@ -319,6 +363,9 @@ canvas {
 
     <script type="text/javascript" charset="utf-8">
         $(document).ready(function () {
+            // Activate popovers from Bootstrap
+            $("[data-toggle='popover']").popover();
+
             ClearSelection('targets');
             ClearSelection('reference');
             var table = $('#rotamers').DataTable({

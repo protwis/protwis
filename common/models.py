@@ -221,6 +221,7 @@ class PublicationJournal(models.Model):
 class ReleaseNotes(models.Model):
     date = models.DateField()
     html = models.TextField()
+    # database = models.TextField(null=True)
 
     def __str__(self):
         return str(self.date)
@@ -233,6 +234,7 @@ class ReleaseNotes(models.Model):
 class ReleaseStatistics(models.Model):
     release = models.ForeignKey('ReleaseNotes', on_delete=models.CASCADE)
     statistics_type = models.ForeignKey('ReleaseStatisticsType', on_delete=models.CASCADE)
+    database = models.TextField(null=True)
     value = models.IntegerField()
 
     def __str__(self):

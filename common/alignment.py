@@ -332,7 +332,7 @@ class Alignment:
 
 
         self.number_of_residues_total = len(rs)
-        if self.number_of_residues_total>120000: #300 receptors, 400 residues limit
+        if self.number_of_residues_total>125000: #300 receptors, 400 residues limit
             return "Too large"
 
         # AJK: performance boost -> Internal caching (not for very small alignments)
@@ -1403,20 +1403,21 @@ class AlignedReferenceTemplate(Alignment):
             self.structures_data = Structure.objects.filter(
                 state__name__in=self.query_states).filter(Q(protein_conformation__protein__parent__family__parent__parent__parent=template_family) |
                                                           Q(protein_conformation__protein__parent__family__parent__parent__parent=self.reference_protein.family.parent.parent.parent)
-                                                          ).order_by('protein_conformation__protein__parent','resolution').filter(annotated=True).distinct()
+                                                          ).order_by('protein_conformation__protein__parent','resolution').filter(annotated=True
+                                                          ).exclude(structure_type__slug__startswith='af-').distinct()
         else:
             self.structures_data = Structure.objects.filter(
                 state__name__in=self.query_states, protein_conformation__protein__parent__family__parent__parent__parent=
                 template_family).order_by('protein_conformation__protein__parent',
-                                          'resolution').filter(annotated=True).distinct()
+                                          'resolution').filter(annotated=True
+                                          ).exclude(structure_type__slug__startswith='af-').distinct()
         if self.revise_xtal==None:
             if self.force_main_temp:
                 main_st = Structure.objects.get(pdb_code__index=self.force_main_temp.upper())
                 if main_st.protein_conformation.protein.parent.entry_name in self.main_temp_ban_list:
                     self.main_temp_ban_list.remove(main_st.protein_conformation.protein.parent.entry_name)
             self.structures_data = self.structures_data.exclude(protein_conformation__protein__parent__entry_name__in=self.main_temp_ban_list)
-        self.load_proteins(
-            [Protein.objects.get(id=target.protein_conformation.protein.parent.id) for target in self.structures_data])
+        self.load_proteins([target.protein_conformation.protein.parent for target in self.structures_data])
 
     def get_main_template(self):
         """Returns main template structure after checking for matching helix start and end positions."""
@@ -1893,15 +1894,15 @@ class ClosestReceptorHomolog():
             return this_structs[0].protein_conformation.protein.parent
         else:
             if p.family.slug[:3]=='008':
-                structures = Structure.objects.all().exclude(annotated=False).exclude(protein_conformation__protein__parent__entry_name__in=exclusion_list)
+                structures = Structure.objects.all().exclude(structure_type__slug__startswith='af-').exclude(annotated=False).exclude(protein_conformation__protein__parent__entry_name__in=exclusion_list)
             elif isinstance(self.family_mapping[p.family.slug[:3]], list):
                 structures = []
                 for slug in self.family_mapping[p.family.slug[:3]]:
                     structures+=list(Structure.objects.filter(protein_conformation__protein__parent__family__slug__istartswith=slug).exclude(
-                    annotated=False).exclude(protein_conformation__protein__parent__entry_name__in=exclusion_list))
+                    annotated=False).exclude(structure_type__slug__startswith='af-').exclude(protein_conformation__protein__parent__entry_name__in=exclusion_list))
             else:
                 structures = Structure.objects.filter(protein_conformation__protein__parent__family__slug__istartswith=self.family_mapping[p.family.slug[:3]]).exclude(
-                    annotated=False).exclude(protein_conformation__protein__parent__entry_name__in=exclusion_list)
+                    annotated=False).exclude(structure_type__slug__startswith='af-').exclude(protein_conformation__protein__parent__entry_name__in=exclusion_list)
             a.load_reference_protein(p)
             structure_proteins = []
             for i in structures:

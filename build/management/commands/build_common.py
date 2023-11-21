@@ -1,13 +1,14 @@
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
-
 from common.models import WebResource, WebLink, PublicationJournal, Publication
+from common.tools import test_model_updates
 from protein.models import (ProteinSegment, ProteinAnomaly, ProteinAnomalyType, ProteinAnomalyRuleSet,
-    ProteinAnomalyRule)
+    ProteinAnomalyRule, Site)
 from ligand.models import Ligand, LigandType, LigandRole
 from residue.models import ResidueGenericNumber, ResidueNumberingScheme
 from news.models import News
 
+import django.apps
 import logging
 import shlex
 import os
@@ -17,7 +18,6 @@ class Command(BaseCommand):
     help = 'Reads source data and creates common database tables'
 
     logger = logging.getLogger(__name__)
-
     resource_source_file = os.sep.join([settings.DATA_DIR, 'common_data', 'resources.txt'])
     ligands_source_file = os.sep.join([settings.DATA_DIR, 'ligand_data', 'ligands.yaml'])
     publications_source_file = os.sep.join([settings.DATA_DIR, 'publications_data', 'publications.yaml'])
@@ -25,7 +25,10 @@ class Command(BaseCommand):
     residue_number_scheme_source_file = os.sep.join([settings.DATA_DIR, 'residue_data', 'generic_numbers',
         'schemes.txt'])
     anomaly_source_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'anomalies'])
-
+    #Setting the variables for the test tracking of the model upadates
+    tracker = {}
+    all_models = django.apps.apps.get_models()[6:]
+    test_model_updates(all_models, tracker, initialize=True)
     def handle(self, *args, **options):
         functions = [
             'create_resources',
@@ -41,6 +44,11 @@ class Command(BaseCommand):
             except Exception as msg:
                 print(msg)
                 self.logger.error(msg)
+
+    def create_protein_sites(self):
+        self.logger.info('CREATING PROTEIN SITES')
+        Site.objects.get_or_create(slug='sodium_pocket', name='Sodium ion pocket')
+        self.logger.info('COMPLETED PROTEIN SITES')
 
     def create_resources(self):
         self.logger.info('CREATING RESOURCES')
@@ -66,6 +74,7 @@ class Command(BaseCommand):
                     self.logger.error('Failed creating resource ' + split_row[0])
                     continue
 
+        test_model_updates(self.all_models, self.tracker, check=True)
         self.logger.info('COMPLETED CREATING RESOURCES')
 
     def create_protein_segments(self):
@@ -98,7 +107,7 @@ class Command(BaseCommand):
                     # print('Failed creating protein segment', split_row, msg)
                     self.logger.error('Failed creating protein segment', split_row)
                     # continue
-
+        test_model_updates(self.all_models, self.tracker, check=True)
         self.logger.info('COMPLETED CREATING PROTEIN SEGMENTS')
 
     def create_residue_numbering_schemes(self):
@@ -131,6 +140,7 @@ class Command(BaseCommand):
                     self.logger.error('Failed creating residue numbering scheme {}'.format(split_row[0]))
                     continue
 
+        test_model_updates(self.all_models, self.tracker, check=True)
         self.logger.info('COMPLETED CREATING RESIDUE NUMBERING SCHEMES')
 
     def create_anomalies(self):
@@ -214,5 +224,5 @@ class Command(BaseCommand):
                                 else:
                                     self.logger.error('Missing values for rule {:d} in file {}'.format((i+1),
                                         source_file))
-
+        test_model_updates(self.all_models, self.tracker, check=True)
         self.logger.info('COMPLETED CREATING PROTEIN ANOMALIES')

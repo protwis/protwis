@@ -7,12 +7,12 @@ from xml.etree.ElementTree import fromstring
 import pandas as pd
 import requests
 import xlrd
-
+import django.apps
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.core.management.color import no_style
 from django.db import IntegrityError, connection
-from common.tools import urlopen_with_retry
+from common.tools import urlopen_with_retry, test_model_updates
 from protein.models import (Gene, Protein, ProteinAlias, ProteinConformation,
                             ProteinFamily, ProteinSegment,
                             ProteinSequenceType, ProteinSource, ProteinState, Species)
@@ -30,7 +30,10 @@ class Command(BaseCommand):
     arrestin_data_file = os.sep.join([settings.DATA_DIR, 'arrestin_data', 'ortholog_alignment.xlsx'])
     local_uniprot_dir = os.sep.join([settings.DATA_DIR, 'protein_data', 'uniprot'])
     remote_uniprot_dir = 'https://uniprot.org/uniprot/'
-
+    #Setting the variables for the test tracking of the model upadates
+    tracker = {}
+    all_models = django.apps.apps.get_models()[6:]
+    test_model_updates(all_models, tracker, initialize=True)
     logger = logging.getLogger(__name__)
 
     def add_arguments(self, parser):
@@ -62,6 +65,8 @@ class Command(BaseCommand):
             self.add_can_residues()
             self.logger.info('PASS: add_can_residues')
 
+            #Perform model update check
+            test_model_updates(self.all_models, self.tracker, check=True)
         except Exception as msg:
             exc_type, exc_obj, exc_tb = sys.exc_info()
             fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
@@ -305,7 +310,7 @@ class Command(BaseCommand):
         #         self.logger.info('Created structure ' + structure.PDB_code + ' for protein ' + p.name)
 
     def signprot_struct_ids(self):
-        structs = Structure.objects.count()
+        structs = Structure.objects.exclude(structure_type__slug__startswith='af-').count()
         s_structs = SignprotStructure.objects.count()
         offset = 1000
         if s_structs == None:

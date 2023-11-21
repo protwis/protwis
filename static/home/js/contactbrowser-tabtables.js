@@ -24,8 +24,6 @@ function filter_browser() {
             filtered_gns.push(gns[0]);
             filtered_gns.push(gns[1]);
 
-
-
             if (analys_mode == "#two-crystal-groups") {
                 if (!(gns[0] in filtered_gns_abs_diff_values)) filtered_gns_abs_diff_values[gns[0]] = [];
                 if (!(gns[1] in filtered_gns_abs_diff_values)) filtered_gns_abs_diff_values[gns[1]] = [];
@@ -1874,13 +1872,13 @@ function renderBrowser(data) {
             all_angles_1 = data['all_angles'][gn1];
             all_angles_2 = data['all_angles'][gn2];
 
-            if (all_angles_1) {
+            if (all_angles_1 && data['pdbs'][0].toUpperCase() in all_angles_1) {
                 all_angles_1 = all_angles_1[data['pdbs'][0].toUpperCase()][12];
             } else {
                 all_angles_1 = '';
             }
 
-            if (all_angles_2) {
+            if (all_angles_2 && data['pdbs'][0].toUpperCase() in all_angles_2) {
                 all_angles_2 = all_angles_2[data['pdbs'][0].toUpperCase()][12];
             } else {
                 all_angles_2 = '';
@@ -2580,13 +2578,13 @@ function renderBrowser_2(data) {
             all_angles_1 = data['all_angles'][gn1];
             all_angles_2 = data['all_angles'][gn2];
 
-            if (all_angles_1) {
+            if (all_angles_1 && data['pdbs'][0].toUpperCase() in all_angles_1) {
                 all_angles_1 = all_angles_1[data['pdbs'][0].toUpperCase()][12];
             } else {
                 all_angles_1 = '';
             }
 
-            if (all_angles_2) {
+            if (all_angles_2 && data['pdbs'][0].toUpperCase() in all_angles_2) {
                 all_angles_2 = all_angles_2[data['pdbs'][0].toUpperCase()][12];
             } else {
                 all_angles_2 = '';
@@ -3437,7 +3435,7 @@ function renderBrowser_4(data) {
 
             all_angles_1 = data['all_angles'][i];
 
-            if (all_angles_1) {
+            if (all_angles_1 && data['pdbs'][0].toUpperCase() in all_angles_1) {
                 all_angles_1 = all_angles_1[data['pdbs'][0].toUpperCase()][12];
             } else {
                 all_angles_1 = '';

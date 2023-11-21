@@ -25,7 +25,7 @@ class GenericNumbering(object):
     exceptions = {'6GDG':[255, 10]}
 
     def __init__ (self, pdb_file=None, pdb_filename=None, structure=None, pdb_code=None, blast_path='blastp',
-        blastdb=os.sep.join([settings.STATICFILES_DIRS[0], 'blast', 'protwis_blastdb']),top_results=1, sequence_parser=False, signprot=False):
+        blastdb=os.sep.join([settings.STATICFILES_DIRS[0], 'blast', 'protwis_gpcr_blastdb']),top_results=1, sequence_parser=False, signprot=False):
 
         # pdb_file can be either a name/path or a handle to an open file
         self.pdb_file = pdb_file
@@ -50,7 +50,10 @@ class GenericNumbering(object):
                 if pdb_code:
                     s = SequenceParser(pdb_file=self.pdb_file, wt_protein_id=struct.protein_conformation.protein.parent.id)
                 else:
-                    s = SequenceParser(pdb_file=self.pdb_file)#, wt_protein_id=struct.protein_conformation.protein.parent.id)
+                    if blastdb.endswith('protwis_human_blastdb'):
+                        s = SequenceParser(pdb_file=self.pdb_file, db='protwis_human_blastdb')
+                    else:
+                        s = SequenceParser(pdb_file=self.pdb_file)#, wt_protein_id=struct.protein_conformation.protein.parent.id)
             else:
                 s = SequenceParser(pdb_file=self.pdb_file, wt_protein_id=signprot.id)
             self.pdb_structure = s.pdb_struct
@@ -221,7 +224,8 @@ class GenericNumbering(object):
                 if alignment == []:
                     continue
                 for hsps in alignment[1].hsps:
-                    self.map_blast_seq(alignment[0], hsps, chain)
+                    if Protein.objects.get(id=alignment[0]).family.slug.startswith('00'):
+                        self.map_blast_seq(alignment[0], hsps, chain)
 
         return self.get_annotated_structure()
 

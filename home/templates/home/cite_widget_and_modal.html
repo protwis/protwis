@@ -1,5 +1,21 @@
+<!-- Join us widget -->
+<div id="join-us" class="modal modal-sm">
+    <div class="modal-content">
+        <div class="modal-header">
+          <button style="float:right;display:inline;" aria-hidden="true" aria-label="Close" class="close close_modal" onclick="javascript:$('#join-us').modal('toggle');">&times;</button>
+          <h3 class="modal-title">
+            Join us
+          </h3>
+        </div>
+        <div class="modal-body">
+          <p>
+          </p>
+        </div>
+    </div>
+</div>
+
 <!-- References widget -->
-<div style='display: none; position: absolute; left: 0px; top: 50px; height: 30px; width: auto; z-index: 10;' role='button' class='page-selection' id='ref_widget_div'>
+<!-- <div style='display: none; position: absolute; left: 0px; top: 50px; height: 30px; width: auto; z-index: 10;' role='button' class='page-selection' id='ref_widget_div'>
     <div id='ref_widget' style='display:inline; float: left; height: 30px;'>
         <div style='overflow: hidden; white-space: nowrap; height: 30px; text-align:center;'>
             <a class='widget-link' id="icon_citation"><span class="glyphicon glyphicon-book icon-button" style='padding: 0px 5px 3px 3px;'></span>Cite this page</a>
@@ -10,10 +26,10 @@
         <span id="widget_infosign" class="glyphicon glyphicon-info-sign" style="display: none;"></span>
         <span id="widget_chevron" class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span>
     </div>
-</div>
+</div> -->
 
+<!-- Citation widget -->
 <div id="citation-tool" class="modal-higher">
-  <!-- Modal content -->
     <div class="modal-content modal-scroll">
         <div class="modal-header">
             <button id="close-citation" style="float:right;display:inline;" aria-hidden="true" aria-label="Close" class="close">&times;</button>
@@ -21,7 +37,7 @@
         </div>
         <div class='modal-body'>
             <div>
-                <h4>Main references</h4>
+                <h4>Main reference</h4>
                 <li id='main_reference'></li>
             </div>
 
@@ -32,7 +48,7 @@
                 </li>
             </div>
             <div style='padding: 0px 0px 0px 10px; display:inline-block;'>
-                <p class='alert'><i>Please cite the main reference and the reference for the GPCRdb page that you are using.</i></p>
+                <p class='alert'><i>Please cite the main reference and the reference for the page that you are using.</i></p>
             </div>
             <li id='article_list'></li>
         </div>

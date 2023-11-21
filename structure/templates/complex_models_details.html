@@ -5,6 +5,8 @@
 {% block addon_css %}
     <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
     <link rel="stylesheet" href="{% static 'home/css/simple_browser.css' %}" type="text/css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link href="{% static 'home/css/signprotmat.css' %}" rel="stylesheet">
 {% endblock %}
 
 {% block content %}
@@ -17,35 +19,117 @@ canvas {
 }
 </style>
 
+<style>
+.inline {display:inline;}
+.graphcolor {
+              display:inline-block;
+              padding: 1px 5px;
+              text-align: center;
+              margin-left: 10px;
+              vertical-align: middle;
+              width: 20px;
+              height: 20px;
+              margin-top: 5px;}
+</style>
+
+<style>
+    .tooltip {
+        position: absolute;
+        text-align: center;
+        padding: 10px;
+        background: #f8f8f8;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        pointer-events: none;
+    }
+    .newrow {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+    }
+    .legend-header {
+      font-family: Arial;
+      font-size: 14px;
+      font-weight: bold;
+      fill: black;
+    }
+    path.highlight {
+      stroke-width: 2;
+    }
+    .checkbox-group {
+      display: flex;
+    }
+
+    .checkbox-item {
+      display: inline-block;
+      margin-right: 10px;  /* Add right margin */
+      font-size: 18px;
+    }
+    .dotted {
+      stroke-dasharray: 5,5;
+    }
+    .checkbox-item:last-child {
+      margin-right: 0;  /* Remove right margin for the last item */
+    }
+
+    tr td {
+      padding: 5px;
+      text-align: center;
+    }
+    .overlay{
+      border: 1px solid #888888;
+      position: absolute;
+      margin: 0 auto;
+      background:#eeeeee;
+      z-index:2;
+      min-width: 200px;
+    }
+    .wide-popover {
+      min-width: 40%;
+      max-width: 650px;
+    }
+    #interaction-cutoffs th {
+      text-align: center;
+    }
+</style>
+
 <div class="row text-success">
     <div class="text-center">
-        {% if model.receptor_protein.accession %}
-            <h2>{{ model.receptor_protein.family.name|safe }} - {{ model.sign_protein.name|safe }} complex homology model</h2>
-        {% else %}
-            <h2>{{ model.receptor_protein.entry_name|upper }} refined </h2>
-        {% endif %}
+        <div style="display: inline;">
+          {% if structure_type.slug == "af-signprot" %}
+              <h2><a href="/protein/{{ model.signprot_complex.protein.entry_name }}" target="_blank">G<sub>{{ model.signprot_complex.protein.family.name|gprot_short|slice:"1:" }}</sub></a> -
+                  <a href="/protein/{{ model.protein_conformation.protein.entry_name }}" target="_blank">{{ model.protein_conformation.protein.name|safe }}</a> complex model
+          {% else %}
+              <h2>Refined structure (<a href="/structure/{{ model.pdb_code.index|entry_short }}" target="_blank">{{ model.pdb_code.index|entry_short }}</a>) of <a href="/protein/{{ model.signprot_complex.protein.entry_name }}" target="_blank">G<sub>{{ model.signprot_complex.protein.family.name|gprot_short|slice:"1:" }}</sub></a> -
+                <a href="/protein/{{ model.protein_conformation.protein.entry_name }}" target="_blank">{{ model.protein_conformation.protein.name|safe}}</a>
+          {% endif %}
+
+            <div style="display: inline;">
+              <div class="btn-group">
+                  <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                      Download <span class="caret"></span>
+                  </button>
+                  <ul class="dropdown-menu">
+                    <li><a id="download_btn1" href="./{{model.pdb_code.index}}/download_complex_pdb">Full</a></li>
+                    <!-- <li><a id="download_btn2" href="./{{model.protein_conformation.protein.entry_name|upper}}_noloops/download_pdb">Without loops</a></li> -->
+                  </ul>
+              </div>
+            </div>
+            <div style="display: inline;">
+                <i style="color:black; font-size:16px;" class="fas fa-info-circle simple-popover" data-html="true" data-toggle="popover" data-trigger="click hover" data-placement="below" data-html="true" data-content="The PDB file contains GPCRdb generic residue numbers in the B-factor field of C&alpha; atoms <a target='_blank' href='https://doi.org/10.1016/j.tips.2014.11.001'>Isberg et al. 2015</a>"></i>
+            </div>
+            </h2>
+        </div>
     </div>
 </div>
 
 <div class="row">
     <div class="col-md-3 text-right text-info">
-        <h4>RECEPTOR CLASS</h4>
+        <h4>GPCR CLASS (FAMILY)</h4>
     </div>
     <div class="col-md-9">
-        {{ model.receptor_protein.get_protein_class }}
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-md-3 text-right text-info">
-        <h4>RECEPTOR</h4>
-    </div>
-    <div class="col-md-9">
-        {% if model.receptor_protein.accession %}
-            <a href="/protein/{{ model.receptor_protein.entry_name }}">{{ model.receptor_protein.name|safe }}</a>
-        {% else %}
-            <a href="/protein/{{ model.receptor_protein.parent.entry_name }}">{{ model.receptor_protein.parent.name|safe }}</a>
-        {% endif %}
+        {{ model.protein_conformation.protein.get_protein_class|cut_classname }}
     </div>
 </div>
 
@@ -54,146 +138,182 @@ canvas {
         <h4>SPECIES</h4>
     </div>
     <div class="col-md-9">
-        {{ model.receptor_protein.species.latin_name }}
+        {{ model.protein_conformation.protein.species.latin_name }}
     </div>
 </div>
 
 <div class="row">
     <div class="col-md-3 text-right text-info">
-        <h4>G-PROTEIN FAMILY</h4>
+        <h4>G PROTEIN FAMILY</h4>
     </div>
     <div class="col-md-9">
-        {{ model.sign_protein.family.parent|safe }}
+        G<sub>{{ model.signprot_complex.protein.family.parent|safe|slice:"1:" }}</sub>
     </div>
 </div>
 
 <div class="row">
     <div class="col-md-3 text-right text-info">
-        <h4>G-PROTEIN</h4>
+        <h4>DATE</h4>
     </div>
     <div class="col-md-9">
-        <a href="/protein/{{ model.sign_protein.entry_name }}">{{ model.sign_protein.name|safe }}</a>
+    {{ model.publication_date|date:"Y-m-d" }}
     </div>
 </div>
 
 <div class="row">
     <div class="col-md-3 text-right text-info">
-        <h4>VERSION</h4>
+        <h4>3D VIEW</h4>
     </div>
-    <div class="col-md-9">
-    {{ model.version|date:"Y-m-d" }}
-    </div>
-</div>
+    <div class="col-md-5">
+      <div style="float: left; width: 60%;">
+          <div id="viewport" style="width:500px; height:400px;background-color: white;"></div>
+          <div style="width:500px; background-color:#eaeaea; border-radius: 0px 0px 5px 5px;">
+              <p style="padding: 2px 0px 2px 5px; font-size: 10px;"><button id="fullscreen">Full Screen</button><a href="https://github.com/arose/ngl"> NGL</a> is a WebGL based 3D viewer powered by <a href="https://mmtf.rcsb.org">MMTF</a>.</p>
+          </div>
+      </div>
+      {% if refined == "true" %}
+      <div style='width: 100%; display:table; position:relative;'>
+          <div style='display: table-cell;'>
+              Structure {{ chain_color.0}}<br>
+              <div class="graphcolor" style="background-color:{{ chain_color_palette.0 }}; width: 20px; height: 15px; margin-bottom: 5px; border:solid black 1px;"></div> GPCR
+              <div class="graphcolor" style="background-color:{{ chain_color_palette.1 }}; width: 20px; height: 15px; margin-bottom: 5px; border:solid black 1px;"></div> G&alpha;
+              {% if chain_color_palette|length > 2 %}
+              <div class="graphcolor" style="background-color:{{ chain_color_palette.2 }}; width: 20px; height: 15px; margin-bottom: 5px; border:solid black 1px;"></div> G&beta;
+              {% endif %}
+              {% if chain_color_palette|length > 3 %}
+              <div class="graphcolor" style="background-color:{{ chain_color_palette.3 }}; width: 20px; height: 15px; margin-bottom: 5px; border:solid black 1px;"></div> G&gamma;
+              {% endif %}
+              <!-- {% for prot, bts in backbone_templates.items %}
+                  {% for bt in bts %}
+                      <div class="graphcolor" style="background-color:{{ bt.color }}; width: 20px; height: 15px; margin-bottom: 5px; border:solid black 1px;"></div>
+                      Structure ({{ bt.pdb_code.index }})
+                  {% endfor %}
+              {% endfor %} -->
+              <br>Model<br>
+              <div class="graphcolor" style="background-color:black; width: 20px; height: 15px; margin-bottom: 5px; border:solid black 1px; "></div> AlphaFold2-Multimer
 
-<div class="row">
-    <div class="col-md-3 text-right text-info">
-        <h4>MODEL</h4>
+          </div>
+      </div>
+      {% endif %}
+      <br>
     </div>
-    <div class="col-md-9">
-        <div class="btn-group">
-            {% if model.receptor_protein.accession %}
-                <a id="download_btn" class="btn btn-primary btn-mini " href="./{{model.receptor_protein.entry_name}}-{{model.sign_protein.entry_name}}/download_pdb">Download</a>
-            {% else %}
-                <a id="download_btn" class="btn btn-primary btn-mini " href="./{{model.receptor_protein.entry_name|upper}}-complex/download_pdb">Download</a>
-            {% endif %}
-        </div>
-        <div>
-            <p>PDB file contains GPCRdb generic numbers in the B-factor field of CA atoms</p>
-        </div>
-        <div style="float: left; width: 60%;">
-            <div id="viewport" style="width:500px; height:400px;background-color: white;"></div>
-            <div style="width:500px; background-color:#eaeaea; border-radius: 0px 0px 5px 5px;">
-                <p style="padding: 2px 0px 2px 5px; font-size: 10px;"><button id="fullscreen">Full Screen</button><a href="https://github.com/arose/ngl"> NGL</a> is a WebGL based 3D viewer powered by <a href="https://mmtf.rcsb.org">MMTF</a>.</p>
-            </div>
-            <br>
-        </div>
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-md-3 text-right text-info">
-        <h4>MAIN TEMPLATE</h4>
-    </div>
-    <div class="col-md-9">
-        <a href="/protein/{{ model.main_template.protein_conformation.protein.parent.entry_name }}">{{ model.main_template.protein_conformation.protein.parent.family.name|safe }}</a> (sequence similarity: {{ main_template_seqsim }}%) PDB: <a href="../{{ model.main_template.pdb_code.index }}">{{ model.main_template.pdb_code.index }}</a>
-        {% if model.receptor_protein.accession %}
-            <div class="btn-group", style="padding: 0px 0px 5px 5px;">
-                <a id="align_btn1" class="btn btn-primary btn-mini " href="javascript:void(0)" style="padding: 2px 5px;">Align</a>
-            </div>
-        {% endif %}
-        <br>
-        <a href="/signprot/{{ signprot_template.entry_name }}">{{ signprot_template.name|safe }}</a> (sequence similarity: {{ signprot_sim }}%)
-        {% if signprot_template.entry_name != model.sign_protein.entry_name %}
-            <div class="btn-group", style="padding: 0px 0px 5px 5px;">
-                <a id="align_btn2" class="btn btn-primary btn-mini " href="javascript:void(0)" style="padding: 2px 5px;">Align</a>
-            </div>
-        {% endif %}
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-md-3 text-right text-info">
-        <h4>RECEPTOR TEMPLATES</h4>
-    </div>
-    <style>
-        .table-th {
-            background:#eaeaea;
-            border-bottom:1px solid #9ea7af;
-            border-right: 1px solid #9ea7af;
-            padding:5px;
-            font-size: 12px;
-            text-align:left;
-            vertical-align:middle;
-        }
-        .table-td {
-            text-align:center;
-            border-right: 1px solid #9ea7af;
-        }
-    </style>
-    <div class="col-md-9">
-        <div style='width: 70%; display:table; position:relative;'>
+    {% if refined == "false" %}
+    <div class="col-md-4" style='padding-left: 50px;'>
+        <div><h4>Tertiary structure confidence <i class="fas fa-info-circle simple-popover" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="below" data-content="<b>Interpretation of AlphaFold models</b><br>The pLDDT score from AlphaFold estimates the confidence of the placement of an individual residue in relation to its neighboring residues within a 15 Å radius."></i></h4></div>
+        <p>(pLDDT score) avg.: {{ plddt_avg|floatformat:1 }}</p>
+        <div style='width: 90%; display:table; position:relative;'>
             <div style='display: table-cell;'>
-                {% for prot, bts in backbone_templates.items %}
-                    {% for bt in bts %}
-                        <div class="graphcolor" style="background-color:{{ bt.color }}; width: 20px; height: 10px; margin-top: 5px;"></div>
-                        {{ bt.pdb_code.index }} ({{ bt.protein_conformation.protein.parent.name|safe}}) <br>
-
-
-                    {% endfor %}
-                {% endfor %}
-                        <div class="graphcolor" style="background-color:white; width: 20px; height: 10px;"></div>
-                        None
+              <div class="graphcolor" style="background-color: blue; "></div>
+              <span style="margin-left: 5px; vertical-align: middle; padding-top: 5px;">Very high (>90)</span>
+              <br>
+              <div class="graphcolor" style="background-color: lightblue; "></div>
+              <span style="margin-left: 5px; vertical-align: middle;">Confident (90-70)</span>
+              <br>
+              <div class="graphcolor" style="background-color: yellow; "></div>
+              <span style="margin-left: 5px; vertical-align: middle;">Low (70-50)</span>
+              <br>
+              <div class="graphcolor" style="background-color: orange;"></div>
+              <span style="margin-left: 5px; vertical-align: middle;">Very low (<50)</span>
+              <br>
+              <div class="graphcolor" style="background-color: red;"></div>
+              <span style="margin-left: 5px; vertical-align: middle;">Disordered</span>
+              <br>
             </div>
         </div>
-        <table>
-            <thead>
-                <tr>
-                    <th class='table-th'></th>
-                    <th class='table-th'>Main template (%)</th>
-                    <th class='table-th'>Additional templates (%)</th>
-                    <th class='table-th' style="border-right: 0px;">No template - freely modelled (%)</th>
-            </thead>
-            <tbody>
-                <tr>
-                    <td style="border-right: 1px solid #9ea7af; text-align:right; padding: 3px; font-size: 12px;">Backbone</td>
-                    <td class="table-td">{{bb_main}}</td>
-                    <td class="table-td">{{bb_alt}}</td>
-                    <td class="table-td" style="border-right: 0px;">{{bb_none}}</td>
-                </tr>
-                <tr>
-                    <td style="border-right: 1px solid #9ea7af; text-align:right; padding: 3px; font-size: 12px;">Side-chains</td>
-                    <td class="table-td">{{sc_main}}</td>
-                    <td class="table-td">{{sc_alt}}</td>
-                    <td class="table-td" style="border-right: 0px;">{{sc_none}}</td>
-                </tr>
-            </tbody>
-        </table>
         <br>
-        Number of backbone templates: {{ backbone_templates_number }}<br>
-        Number of rotamer templates: {{ rotamer_templates_number }}<br><br>
+        <div>
+          <h5>PTM Score: <b>{{ scores.ptm|floatformat:1 }}</b>
+            <span class="fa fa-info-circle simple-popover" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="bottom" data-content="<b>Predicted TM-score </b>:<br /> is an estimate of the TM-score derived from comparing predicted atom positions
+            to true positions under various alignments, emphasizing correct local frame residue interactions in AlphaFold."></span>
+          </h5>
+        </div>
+        <div id="PTM_location"></div>
+        <div>
+          <h5>iPTM Score: <b>{{ scores.iptm|floatformat:1 }}</b>
+            <span class="fa fa-info-circle simple-popover" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="bottom" data-content="<b>Interface predicted TM-score</b>:<br />
+A modified pTM score, adapted to measure the accuracy of predicted protein interfaces Instead of comparing residues within the same protein chain as in the original TM-score, it compares residues from different chains."></span>
+          </h5>
+        </div>
+        <div id="iPTM_location"></div>
+        <div>
+          <h5>PAE mean: <b>{{ scores.pae_mean|floatformat:1 }}</b>
+            <span class="fa fa-info-circle simple-popover" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="bottom" data-content="<b>The mean of the predicted alignment errors</b>:<br>The average expected error in residue x's position when aligning predicted and true structures based on residue y, focusing on inter-chain relationships."></span>
+          </h5>
+        </div>
+        <div id="PAE_location"></div>
+    </div>
+    {% endif %}
+</div>
 
+{% if refined == "true" %}
+<div class="row">
+    <div class="col-md-3 text-right text-info">
+        <h4>REFINED G PROTEIN RESIDUES</h4>
+    </div>
+    <div class="col-md-9">
+        <div style="padding-bottom: 10px;">
+            Residue backbones - {{ bb_alt2 }} from structure ({{ bb_alt_perc2 }}%), {{ bb_none2 }} from model ({{ bb_none_perc2 }}%) <br>
+            Residue sidechains - {{ sc_alt2 }} from structure ({{ sc_alt_perc2 }}%), {{ sc_none2 }} from model ({{ sc_none_perc2 }}%)
+        </div>
         <style>
-            table.dataTable thead th {padding: 3px 1px 3px 3px;}
+            #signprot_rotamers thead th {padding: 3px 1px 3px 3px;}
+        </style>
+        <div style="padding-top: 0px; font-size: 10px; white-space: nowrap; width: 50%;">
+            <table class="display" id="signprot_rotamers">
+                <thead>
+                    <tr>
+                        <th>Segment</th>
+                        <th>Seq.num.</th>
+                        <th>AA</th>
+                        <th>CGN#</th>
+                        <th>Backbone from</th>
+                        <th>Sidechain from</th>
+                    </tr>
+                    <tr>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for rota in signprot_rotamers %}
+                    <tr>
+                        <td>{{ rota.residue.protein_segment.slug }}</td>
+                        <td>{{ rota.residue.sequence_number }}</td>
+                        <td>{{ rota.residue.amino_acid }}</td>
+                        <td style="text-align:left;">{{ rota.residue.display_generic_number.label }}</td>
+                        {% if rota.backbone_template %}
+                            <td style="text-align:left;">Structure</td>
+                        {% else %}
+                            <td style="text-align:left;">AF2</td>
+                        {% endif %}
+                        {% if rota.rotamer_template %}
+                            <td style="text-align:left;">Structure</td>
+                        {% else %}
+                            <td style="text-align:left;">AF2</td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<br>
+<div class="row">
+    <div class="col-md-3 text-right text-info">
+        <h4>REFINED GPCR RESIDUES</h4>
+    </div>
+    <div class="col-md-9">
+        <div style="padding-bottom: 10px;">
+            Residue backbones - {{ bb_alt }} from structure ({{ bb_alt_perc }}%), {{ bb_none }} from model ({{ bb_none_perc }}%) <br>
+            Residue sidechains - {{ sc_alt }} from structure ({{ sc_alt_perc }}%), {{ sc_none }} from model ({{ sc_none_perc }}%)
+        </div>
+        <style>
+            #rotamers thead th {padding: 3px 1px 3px 3px;}
         </style>
         <div style="padding-top: 0px; font-size: 10px; white-space: nowrap; width: 50%;">
             <table class="display" id="rotamers">
@@ -203,14 +323,10 @@ canvas {
                         <th>Seq.num.</th>
                         <th>AA</th>
                         <th>GPCRdb#</th>
-                        <th>Backbone</th>
-                        <th>PDB</th>
-                        <th>Rotamer</th>
-                        <th>PDB</th>
+                        <th>Backbone from</th>
+                        <th>Sidechain from</th>
                     </tr>
                     <tr>
-                        <th></th>
-                        <th></th>
                         <th></th>
                         <th></th>
                         <th></th>
@@ -226,84 +342,19 @@ canvas {
                         <td>{{ rota.residue.sequence_number }}</td>
                         <td>{{ rota.residue.amino_acid }}</td>
                         {% if rota.residue.display_generic_number %}
-                            <td>{{ rota.residue.display_generic_number.label }}</td>
+                            <td style="text-align:left;">{{ rota.residue.display_generic_number.label }}</td>
                         {% else %}
-                            <td>-</td>
+                            <td style="text-align:left;">-</td>
                         {% endif %}
                         {% if rota.backbone_template %}
-                            <td><a href="/protein/{{ rota.backbone_template.protein_conformation.protein.parent.entry_name }}">{{ rota.backbone_template.protein_conformation.protein.parent.name|safe }}</a></td>
-                            <td><a href="../{{ rota.backbone_template.pdb_code.index }}">{{ rota.backbone_template.pdb_code.index }}</a></td>
+                            <td style="text-align:left;">Structure</td>
                         {% else %}
-                            <td>-</td>
-                            <td>-</td>
+                            <td style="text-align:left;">AF2</td>
                         {% endif %}
                         {% if rota.rotamer_template %}
-                            <td><a href="/protein/{{ rota.rotamer_template.protein_conformation.protein.parent.entry_name }}">{{ rota.rotamer_template.protein_conformation.protein.parent.name|safe }}</a></td>
-                            <td><a href="../{{ rota.rotamer_template.pdb_code.index }}">{{ rota.rotamer_template.pdb_code.index }}</a></td>
+                            <td style="text-align:left;">Structure</td>
                         {% else %}
-                            <td>-</td>
-                            <td>-</td>
-                        {% endif %}
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
-<br>
-<div class="row">
-    <div class="col-md-3 text-right text-info">
-        <h4>G-PROTEIN TEMPLATES</h4>
-    </div>
-    <div class="col-md-9">
-        <style>
-            table.dataTable thead th {padding: 3px 1px 3px 3px;}
-        </style>
-        <div style="padding-top: 0px; font-size: 10px; white-space: nowrap; width: 50%;">
-            <table class="display" id="signprot_rotamers">
-                <thead>
-                    <tr>
-                        <th>Segment</th>
-                        <th>Seq.num.</th>
-                        <th>AA</th>
-                        <th>CGN#</th>
-                        <th>Backbone</th>
-                        <th>PDB</th>
-                        <th>Rotamer</th>
-                        <th>PDB</th>
-                    </tr>
-                    <tr>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                {% for rota in signprot_rotamers %}
-                    <tr>
-                        <td>{{ rota.residue.protein_segment.slug }}</td>
-                        <td>{{ rota.residue.sequence_number }}</td>
-                        <td>{{ rota.residue.amino_acid }}</td>
-                        <td>{{ rota.residue.generic_number.label }}</td>
-                        {% if rota.backbone_template %}
-                            <td><a href="/signprot/{{ rota.backbone_template.signprot_complex.protein.entry_name }}"> {{ rota.backbone_template.signprot_complex.protein.name}}</a></td>
-                            <td><a href="../{{ rota.backbone_template.pdb_code.index }}">{{ rota.backbone_template.pdb_code.index }}</a></td>
-                        {% else %}
-                            <td>-</td>
-                            <td>-</td>
-                        {% endif %}
-                        {% if rota.rotamer_template %}
-                            <td><a href="/signprot/{{ rota.rotamer_template.signprot_complex.protein.entry_name }}"> {{ rota.rotamer_template.signprot_complex.protein.name}}</a></td>
-                            <td><a href="../{{ rota.rotamer_template.pdb_code.index }}">{{ rota.rotamer_template.pdb_code.index }}</a></td>
-                        {% else %}
-                            <td>-</td>
-                            <td>-</td>
+                            <td style="text-align:left;">AF2</td>
                         {% endif %}
                     </tr>
                     {% endfor %}
@@ -314,45 +365,467 @@ canvas {
 </div>
 
 <br>
-<style>
-.inline {display:inline;}
-.graphcolor { display:inline-block; border-style:solid; border-width: 1px; padding: 1px 5px; text-align: center}
-</style>
+{% endif %}
+
+<!-- Complex interactions load in -->
+{% include 'complex_interactions.html' %}
 
 {% endblock %}
 {% block addon_js %}
     <script src="{% static 'home/js/ngl.js' %}"> </script>
-        <script>
+    <script>
         document.addEventListener( "DOMContentLoaded", function(){
-            stage = new NGL.Stage( "viewport", { backgroundColor: "white" } );
+            // Model viewer
+            var stage_full;
+            var stage = new NGL.Stage( "viewport", { backgroundColor: "white" } );
             var color_residues = JSON.parse('{{color_residues|safe}}');
-            var color_residues2 = JSON.parse('{{signprot_color_residues|safe}}');
-            color_residues2.push(["darkorchid","*"])
-            var color_array = color_residues.concat(color_residues2);
-
-            var schemeId = NGL.ColorMakerRegistry.addSelectionScheme( color_array );
-
-            stage.loadFile( "/structure/complex_models/view/{{modelname}}-{{signprot}}", { ext: "pdb" }  ).then( function( o ){
+            var schemeId = NGL.ColorMakerRegistry.addSelectionScheme( color_residues );
+            stage.loadFile( "/structure/complex_models/view/{{pdbname}}", { ext: "pdb" }  ).then( function( o ){
                 o.addRepresentation( "cartoon", {color: schemeId} );  // pass schemeId here ,{ color: schemeId }
                 o.centerView();
+            } );
+            $( "#fullscreen" ).click(function() {
+                stage.toggleFullscreen();
             });
-        });
 
-        $( "#fullscreen" ).click(function() {
-            stage.toggleFullscreen();
-        });
+            // Initialize the second NGL viewer but only when its container is visible
+            function initializeStageFull() {
+                // 3D intereaction viewer
+                stage_full = new NGL.Stage( "viewport_full", { backgroundColor: "white" } );
+
+                var galpha = "#fc660f";
+
+                stage_full.loadFile( "/structure/complex_models/view/{{pdbname}}", { ext: "pdb" }  ).then( function( o ){
+                    var schemeId2 = NGL.ColorMakerRegistry.addSelectionScheme( JSON.parse('{{chain_colors|safe}}') );
+                    o.addRepresentation( "cartoon", {
+                        color: schemeId2
+                    } );
+                    // Strict interactions
+                    o.addRepresentation( "licorice", { sele: "({{display_res_gpcr_strict}}) and sidechainAttached", color: "grey", scale: 2, aspectRatio: 1});
+                    o.addRepresentation( "label", {
+                        sele: "({{display_res_gpcr_strict}}) and .CB",
+                        color: "grey", borderColor: "black", showBorder: true, backgroundColor: "white", backgroundOpacity: .7, showBackground: true, scale: 2.0
+                    } );
+                    o.addRepresentation( "licorice", { sele: "({{display_res_gprot_strict}}) and sidechainAttached", color: galpha, scale: 2, aspectRatio: 1});
+                    o.addRepresentation( "label", {
+                        sele: "({{display_res_gprot_strict}}) and .CB",
+                        color: galpha, borderColor: "black", showBorder: true, backgroundColor: "white", backgroundOpacity: .7, showBackground: true, scale: 2.0
+                    } );
+                    // Loose interactions
+                    o.addRepresentation( "line", { sele: "({{display_res_gpcr_loose}}) and sidechainAttached", color: "grey", scale: 2, aspectRatio: 1});
+                    o.addRepresentation( "line", { sele: "({{display_res_gprot_loose}}) and sidechainAttached", color: galpha, scale: 2, aspectRatio: 1});
+                    o.centerView();
+                } );
+                // stage_full.signals.clicked.add( function( d ){
+                //     $('#clicked').html(getPickingMessage( d, "Clicked" ));
+                // } );
+                // stage_full.signals.hovered.add( function( d ){
+                //     $('#hovered').html(getPickingMessage( d, "Hovered" ));
+                // } );
+
+                $("#fullscreen_full").click(function() {
+                    stage_full.toggleFullscreen();
+                });
+
+                // Ensure the viewer adjusts to its container's dimensions
+                stage_full.handleResize();
+            }
+
+            // Assuming #tab2 reveals the container for stage_full
+            $("#3dview_tab").on("click", function() {
+                if (!window.stage_full_initialized) {
+                    console.log('first click happened');
+                    initializeStageFull();
+                    window.stage_full_initialized = true;
+                    setTimeout(function() {
+                        if (stage_full) stage_full.handleResize();
+                    }, 100);
+                } else {
+                  setTimeout(function() {
+                      if (stage_full) stage_full.handleResize();
+                  }, 100);
+                }
+            });
+        } );
     </script>
 
+    <script src="{% static 'home/js/d3.min.js' %}"></script>
+    <script src="{% static 'home/js/nv.d3.min.js' %}"></script>
+    <script src="{% static 'home/js/d3.v4.min.js' %}"></script>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script src="{% static 'home/js/d3.tip.v4comp.js' %}"></script>
+    <script src="{% static 'home/js/d3-legend.min.js' %}"></script>
     <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
     <script src="{% static 'home/js/dataTables.tableTools.min.js' %}"> </script>
     <script src="{% static 'home/js/jquery.dataTables.columnFilter.js' %}"> </script>
     <script src="{% static 'home/js/selection.js' %}"> </script>
     <script src="{% static 'home/js/table2csv.js' %}"> </script>
-
+    <script src="{% static 'home/js/phylo_tree.js' %}"></script>
+    <script src="{% static 'home/js/lodash.min.js' %}"></script>
+    <script src="{% static 'home/js/chroma.min.js' %}"></script>
+    <script src="{% static 'home/js/gpcrdb.js' %}"></script>
+    <!-- <script src="{% static 'home/js/jquery.tablesorter.js' %}"></script> -->
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <script src="{% static 'home/js/matrix_utilities.js' %}"></script>
+    <script src="{% static 'home/js/signprotmat.js' %}"></script>
+    <!-- <script src="{% static 'home/js/fixed_columns.js' %}"></script> -->
+    <script>
+      $(function () {
+        $(".simple-popover").popover();
+        $('#wide-popover').popover().data('bs.popover').tip().addClass('wide-popover');
+      });
+    </script>
     <script type="text/javascript" charset="utf-8">
         $(document).ready(function () {
+            if ({{ refined }} === false) {
+              ptm = {{ scores.ptm }};
+              iptm = {{ scores.iptm }};
+              pae = {{ scores.pae_mean }};
+              draw_model_scores('PTM_location', 'PTM_divider', 'PTM',  0, 1, ptm, 0.5);
+              draw_model_scores('iPTM_location', 'iPTM_divider', 'iPTM',  0, 1, iptm, 0.5);
+              draw_model_scores('PAE_location', 'PAE_divider', 'PAE',  0, 31, pae, 15.5, true);
+            }
+            interactions = {{ interactions | safe }};
+            inner_data = {{ inner | safe }};
+            outer_data = {{ outer | safe }};
+            interactions_strict = {{ interactions_strict | safe }};
+            inner_data_strict = {{ inner_strict | safe }};
+            outer_data_strict = {{ outer_strict | safe }};
+            interactions_metadata = {{ interactions_metadata | safe}};
+            gprot = {{ gprot | safe}};
+            receptor = {{ receptor | safe}};
+            csrf_token = "{{ csrf_token }}";
+            pdb_sel = {{ pdb_sel | safe }};
+            conversion_dict = {{ conversion_dict | safe }};
+            conversion_dict_strict = {{ conversion_dict_strict | safe }};
+            residue_labels = {{ residue_number_labels | safe }};
+
             ClearSelection('targets');
             ClearSelection('reference');
+
+            // Call the function with your desired values
+            draw_interactions_in_circles('visualization', interactions_strict, inner_data_strict, outer_data_strict, conversion_dict_strict);
+
+            $("#strict").click(function(){
+              $("#strict").addClass("active");
+              $("#loose").removeClass("active");
+              d3.select("#visualization").selectAll("*").remove();
+              draw_interactions_in_circles('visualization', interactions_strict, inner_data_strict, outer_data_strict, conversion_dict_strict);
+              d3.selectAll(`.van-der-waals`).attr("stroke-opacity", 0);
+            });
+
+            $("#loose").click(function() {
+              $("#strict").removeClass("active");
+              $("#loose").addClass("active");
+              d3.select("#visualization").selectAll("*").remove();
+              draw_interactions_in_circles('visualization', interactions, inner_data, outer_data, conversion_dict);
+              d3.selectAll(`.van-der-waals`).attr("stroke-opacity", 0);
+            });
+
+            $("#generic").click(function(){
+              $("#generic").addClass("active");
+              $("#protein").removeClass("active");
+              for (let key in residue_labels) {
+                  if (residue_labels.hasOwnProperty(key)) {
+                      // Use D3 to select the text element with the matching data-key attribute
+                      let textElement = d3.select(`[protein-nr="${key}"]`);
+
+                      let new_label = residue_labels[key].split('_')[0];
+
+                      if(new_label.includes('x')){
+                        new_label = new_label.replace(/\..*x/, 'x');
+                      } else if (new_label == '-'){
+
+                      } else {
+                        new_label = new_label.split('.')[2];
+                      }
+                      // If the element exists, update its text
+                      if (!textElement.empty()) {
+                          textElement.text(new_label);
+                          let textAnchor = textElement.attr("text-anchor");
+                          let currentX = parseFloat(textElement.attr("x"));
+
+                          if (textAnchor === "start" && key.includes("_gprot")) {
+                              // If 'text-anchor' is 'start', add 5 points to the current 'x'
+                              textElement.attr("x", currentX + 5);
+                          } else if (textAnchor === "end" && key.includes("_gprot")) {
+                              // If 'text-anchor' is 'end', subtract 5 points from the current 'x'
+                              textElement.attr("x", currentX - 5);
+                          }
+                      }
+                  }
+              }
+            });
+
+            $("#protein").click(function() {
+              $("#generic").removeClass("active");
+              $("#protein").addClass("active");
+              for (let key in residue_labels) {
+                  if (residue_labels.hasOwnProperty(key)) {
+                      // Use D3 to select the text element with the matching data-key attribute
+                      let textElement = d3.select(`[protein-nr="${key}"]`);
+
+                      // If the element exists, update its text
+                      if (!textElement.empty()) {
+                          textElement.text(key.split('_')[0]);
+                          let textAnchor = textElement.attr("text-anchor");
+                          let currentX = parseFloat(textElement.attr("x"));
+
+                          if (textAnchor === "start" && key.includes("_gprot")) {
+                              // If 'text-anchor' is 'start', add 5 points to the current 'x'
+                              textElement.attr("x", currentX - 5);
+                          } else if (textAnchor === "end" && key.includes("_gprot")) {
+                              // If 'text-anchor' is 'end', subtract 5 points from the current 'x'
+                              textElement.attr("x", currentX + 5);
+                          }
+                      }
+                  }
+              }
+            });
+
+            d3.selectAll(`.van-der-waals`).attr("stroke-opacity", 0);
+
+            var table3 = $('#residues').DataTable({
+                "scrollX": true,
+                "scrollY": 600,
+                "bScrollCollapse": true,
+                'paging': false,
+                orderCellsTop: true,
+                "autoWidth": true,
+                dom: 'T<"clear">lfrtip',
+                "aoColumnDefs": [
+                    { "sType": "string", "aTargets": [0] },
+                ],
+                tableTools: {
+                    "sRowSelect": "multi",
+                    "aButtons": []
+                },
+                initComplete: function () {
+                    $('#residues').dataTable().columnFilter({
+                        sPlaceHolder: "head:after",
+                        aoColumns: [
+                            { type: "select" }, //ligand
+                            { type: "select" }, //protein name
+                            { type: "select" }, //Alt Position
+                            { type: "select" }, //Position
+                            { type: "select" }, //Segment
+                            { type: "select" }, //Segment
+                            { type: "select" }, //Segment
+                            { type: "select" }, //Segment
+                            { type: "select" }, //Segment
+                        ]
+                    });
+                }
+            });
+
+            // Section for the Matrix
+            $.ajax({
+              type: "POST",
+              url: "/signprot/matrix/AJAX_Interactions/",
+              async: false,
+              data: {
+                selected_pdbs: pdb_sel,
+                effector: '-',
+                csrfmiddlewaretoken: csrf_token,
+              },
+              success(data) {
+                non_interactions = data[0];
+                selected_interactions = data[1];
+              }
+            });
+
+            let old_sets = [];
+            let pos_set = [];
+            let neg_set = [];
+
+            // get corresponding protein entry_name values
+            for (var int_meta of interactions_metadata) {
+              if (pdb_sel.indexOf(int_meta["pdb_id"]) !== -1) {
+                pos_set = [int_meta["conf_id"], ...pos_set];
+              }
+            }
+
+            data = signprotmat.data.dataTransformationWrapper(selected_interactions, pdb_sel);
+            svg = signprotmat.d3.setup("div#interface-svg");
+            xScale = signprotmat.d3.xScale(data.transformed, receptor);
+            yScale = signprotmat.d3.yScale(data.transformed, gprot);
+            xAxis = signprotmat.d3.xAxis(xScale);
+            yAxis = signprotmat.d3.yAxis(yScale);
+            xAxisGrid = signprotmat.d3.xAxisGrid(xScale, yScale);
+            yAxisGrid = signprotmat.d3.yAxisGrid(xScale, yScale);
+            pdbScale = signprotmat.d3.pdbScale(data.transformed, interactions_metadata);
+            sigScale = signprotmat.d3.sigScale(data.transformed, interactions_metadata);
+            colScale = signprotmat.d3.colScale(data.inttypes);
+            tooltip = signprotmat.d3.tooltip(svg);
+            signprotmat.d3.renderData(
+              svg,
+              data,
+              non_interactions,
+              interactions_metadata,
+              xScale,
+              yScale,
+              xAxis,
+              yAxis,
+              xAxisGrid,
+              yAxisGrid,
+              colScale,
+              pdbScale,
+              sigScale,
+              tooltip
+            );
+            signprotmat.d3.colorBySwitch('res', colScale);
+            var rects = document.querySelectorAll('.res_rect');
+            rects.forEach(function(rect) {
+              rect.setAttribute('height', 40);
+              rect.setAttribute('y', 125);
+            });
+            var rects_vert = document.querySelectorAll('.res_rect_vertical');
+            rects_vert.forEach(function(rect) {
+              rect.setAttribute('width', 40);
+              rect.setAttribute('x', 40);
+            });
+
+            d3.select("#legend-space").selectAll("*").remove();
+
+            var scale = {
+              A: { bg_color: "#E6E600", font_color: "#000000" },
+              C: { bg_color: "#B2B548", font_color: "#000000" },
+              D: { bg_color: "#E60A0A", font_color: "#FDFF7B" },
+              E: { bg_color: "#E60A0A", font_color: "#FDFF7B" },
+              F: { bg_color: "#18FF0B", font_color: "#000000" },
+              G: { bg_color: "#FF00F2", font_color: "#000000" },
+              H: { bg_color: "#0093DD", font_color: "#000000" },
+              I: { bg_color: "#E6E600", font_color: "#000000" },
+              K: { bg_color: "#145AFF", font_color: "#FDFF7B" },
+              L: { bg_color: "#E6E600", font_color: "#000000" },
+              M: { bg_color: "#E6E600", font_color: "#000000" },
+              N: { bg_color: "#A70CC6", font_color: "#FDFF7B" },
+              P: { bg_color: "#CC0099", font_color: "#FDFF7B" },
+              Q: { bg_color: "#A70CC6", font_color: "#FDFF7B" },
+              R: { bg_color: "#145AFF", font_color: "#FDFF7B" },
+              S: { bg_color: "#A70CC6", font_color: "#FDFF7B" },
+              T: { bg_color: "#A70CC6", font_color: "#FDFF7B" },
+              V: { bg_color: "#E6E600", font_color: "#000000" },
+              W: { bg_color: "#0BCF00", font_color: "#000000" },
+              Y: { bg_color: "#18FF0B", font_color: "#000000" },
+              "-": { bg_color: "#FFFFFF", font_color: "#000000" },
+              _: { bg_color: "#EDEDED", font_color: "#000000" },
+              "+": { bg_color: "#FFFFFF", font_color: "#000000" },
+            };
+
+            var ordinal = d3
+              .scaleOrdinal()
+              .domain(Object.keys(scale))
+              .range(Object.values(scale).map((x) => x.bg_color));
+
+            var legendSvg = d3
+              .select("#legend-space")
+              .append("svg")
+              .attr("width", 554)
+              .attr("height", 110);
+
+            legendSvg
+              .append("g")
+              .attr("class", "legendOrdinal")
+              .attr("transform", "translate(10,20)");
+
+            var legendOrdinal = d3
+              .legendColor()
+              .orient("horizontal")
+              .labelAlign("center")
+              .shapePadding(20)
+              .scale(ordinal);
+
+            legendSvg
+              .select(".legendOrdinal")
+              .call(legendOrdinal)
+              .selectAll("rect")
+              .attr("rx", 3)
+              .attr("ry", 3);
+
+            legendSvg.select(".legendOrdinal").selectAll("text").attr("class", "legend");
+
+            // * ADDING Interaction Type LEGEND
+            let size = 2;
+            let window_starts = _.range(0, colScale.domain().length + 1, size);
+
+            let i = 0;
+            for (let windo of window_starts) {
+              let start = windo;
+              let stop = windo + size;
+              let element_ids = _.range(start, stop);
+              let filter_elements = _.pullAt(colScale.domain(), element_ids);
+
+              legendSvg
+                .append("g")
+                .attr("class", "legendOrdinal" + i)
+                .attr(
+                  "transform",
+                  "translate(" +
+                    // (xScale.step() / 2 + i * 10 * xScale.step()) + ","
+                    (10 + i * 160) +
+                    "," +
+                    65 +
+                    ")"
+                );
+
+              let legendOrdinal = d3
+                .legendColor()
+                .cellFilter(function (d) {
+                  return filter_elements.includes(d.label);
+                })
+                .orient("vertical")
+                .labelAlign("start")
+                .shapePadding(20)
+                .scale(colScale);
+              legendSvg
+                .select(".legendOrdinal" + i)
+                .call(legendOrdinal)
+                .selectAll("rect")
+                .attr("rx", 3)
+                .attr("ry", 3);
+              legendSvg
+                .select(".legendOrdinal" + i)
+                .selectAll("text")
+                .attr("class", "legend" + i);
+              i += 1;
+            }
+
+            legendSvg.select(".legendOrdinal").selectAll("text").attr("transform", "translate(7,25)");
+            legendSvg.select(".legendOrdinal0").selectAll("text").attr("transform", "translate(20,12)");
+            legendSvg.select(".legendOrdinal1").selectAll("text").attr("transform", "translate(20,12)");
+            legendSvg.select(".legendOrdinal2").selectAll("text").attr("transform", "translate(20,12)");
+            // document.querySelector("#intbut").classList.add("active");
+            // document.querySelector("#resbut").classList.remove("active");
+
+            // Function to update the highlight based on checkbox selections
+            function updateHighlight() {
+              // Get all selected checkbox values
+              const selectedChains = Array.from(document.querySelectorAll('input[name="chain"]:checked'))
+                                          .map(el => el.value);
+              // Reset all path highlights
+              d3.selectAll('path').classed('highlight', false);
+              d3.selectAll("path")
+                .each(function(d, i) {
+                  const segment = d3.select(this).attr("segment");
+                  if (!segment) {
+                    d3.select(this).attr("stroke-opacity", 0);
+                  }
+                });
+              // d3.selectAll("path").attr("stroke-opacity", 0);
+              // Loop through selected checkbox combinations
+              selectedChains.forEach(chain => {
+                const [outerChain, innerChain] = chain.split('-');
+
+                // Highlight the selected paths
+                d3.selectAll(`path[inner-chain="${innerChain}"][outer-chain="${outerChain}"]`)
+                  .attr("stroke-opacity", 1);
+              });
+            }
+            // Attach event listeners to checkboxes
+            document.querySelectorAll('input[name="chain"]').forEach(el => {
+              el.addEventListener('change', updateHighlight);
+            });
             var table = $('#rotamers').DataTable({
                 'scrollX': true,
                 'scrollY': '15vh',
@@ -417,54 +890,121 @@ canvas {
                     });
                 },
             });
-            $('#align_btn1').click(function () {
-                ClearSelection("targets");
-                AddToSelection("targets", "structure_complex_receptor", "{{model.receptor_protein.entry_name}}-{{model.sign_protein.entry_name}}");
-                AddToSelection("targets", "structure", "{{model.main_template}}");
-
-                window.location.href = '/structure/selection_convert_model';
-            });
-            $('#align_btn2').click(function () {
-                ClearSelection('targets');
-                AddToSelection('targets', 'structure_complex_signprot', "{{model.sign_protein.entry_name}}");
-                AddToSelection('targets', 'structure', "{{model.main_template.pdb_code.index}}");
-
-                window.location.href = '/structure/selection_convert_signprot_model';
-            });
-            $('#superpose_btn').click(function () {
-                var table2 = Array.from("{{template_list}}".split(","));
-                var template_list = []
-                for (i=0; i<table2.length; i++) {
-                    template_list.push(table2[i].replace("&#39;","").replace("&#39;",""))
-                }
-                ClearSelection('targets');
-                ClearSelection('reference');
-                var div = document.createElement("div");
-
-                div.innerHTML = "{{model.receptor_protein.entry_name}}";
-                if (typeof div.innerText !== "undefined") {
-                    AddToSelection('reference', 'structure_complex_receptor', div.innerText.replace(/\s+/g, '').replace('[','').replace(']',''));
-                } else {
-                    AddToSelection('reference', 'structure_complex_receptor', div.textContent.replace(/\s+/g, '').replace('[','').replace(']',''));
-                }
-
-                for (i = 0; i < template_list.length; i++) {
-                    var div = document.createElement("div");
-                    div.innerHTML = template_list[i];
-                    if (typeof div.innerText !== "undefined") {
-                        AddToSelection('targets', 'structure', div.innerText.replace(/\s+/g, '').replace('[','').replace(']',''));
-                    } else {
-                        AddToSelection('targets', 'structure', div.textContent.replace(/\s+/g, '').replace('[','').replace(']',''));
-                    }
-
-                }
-                window.location.href = '/structure/superposition_workflow_index';
-            });
         });
 
         function downloadCSV() {
           $('#rotamers').table2csv({filename: 'Complex_model_templates.csv', quoteFields: true});
         }
-    </script>
+        function downloadSVG(svgElementId, filename, format = 'svg') {
+          const svgElement = document.getElementById(svgElementId);
+
+          if (!svgElement) {
+            console.error(`Element with id "${svgElementId}" not found.`);
+            return;
+          }
+
+          if (format === 'svg') {
+            const svgString = new XMLSerializer().serializeToString(svgElement);
+            const blob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = filename + '.svg';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+          } else {
+            const svgString = new XMLSerializer().serializeToString(svgElement);
+            const img = new Image();
+            img.src = 'data:image/svg+xml;base64,' + window.btoa(svgString);
+            img.onload = function() {
+              const canvas = document.createElement('canvas');
+              const bbox = svgElement.getBBox();
+              canvas.width = bbox.width * 1.2;
+              canvas.height = bbox.height * 1.2;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(img, 0, 0);
+              let mimeType = 'image/png';
+              if (format === 'jpeg') mimeType = 'image/jpeg';
+              else if (format === 'tiff') mimeType = 'image/tiff';
+              canvas.toBlob((blob) => {
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = filename + '.' + format;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+              }, mimeType);
+            };
+          }
+        }
+
+        function ajaxInteractions(plotid) {
+            interactions = {{ residues | safe }};
+            count = [];
+            output = [];
+
+              $.each( interactions, function( index, val ) {
+                key = val['gpcr_aa'];
+
+                if (key in count) {
+                    count[key] += 1;
+                    if (!(val['type'] in output[key])) output[key].push(val['type'])
+                } else {
+                    count[key] = 1;
+                    output[key] = [val['type']]
+                }
+
+                  extra = "\n" + String(count[key]) + " interactions | Type: "+ output[key];
+
+                  $('#'+plotid).find("#"+key).css("fill", "#E60A0A");
+                  $('#'+plotid).find("#"+key).next().css("fill", "#FDFF7B");
+
+                  original_title = $('#'+plotid).find("#"+key).attr('original_title')
+
+                  $('#'+plotid).find("#"+key).attr('title',original_title+extra);
+                  $('#'+plotid).find("#"+key+"t").attr('title',original_title+extra);
+
+              });
+        }
+
+        // {32: 'T32 1x28', 33: 'V33 1x29', 34: 'S34 1x30', 35: 'Y35 1x31', 36: 'Q36 1x32',
+        // 37: 'V37 1x33', 38: 'I38 1x34', 39: 'T39 1x35', 40: 'S40 1x36', 41: 'L41 1x37',
+        // 42: 'L42 1x38', 43: 'L43 1x39', 44: 'G44 1x40', 45: 'T45 1x41', 46: 'L46 1x42'}
+        var residues_lookup = {{ residues_lookup | safe }};
+
+        function getPickingMessage( d, prefix ){
+            var msg;
+            if( d.atom ){
+                msg = "atom: " +
+                    d.atom.qualifiedName() +
+                    " (" + d.atom.structure.name + ")";
+                var re = /](\d+):/i;
+                var found = d.atom.qualifiedName().match(re);
+                if (found) {
+                    pos = found[1];
+                    if (residues_lookup[pos]) msg = residues_lookup[pos];
+                    }
+            }else if( d.bond ){
+                msg = "bond: " +
+                    d.bond.atom1.qualifiedName() + " - " + d.bond.atom2.qualifiedName() +
+                    " (" + d.bond.structure.name + ")";
+
+                var re = /](\d+):/i;
+                var found = d.bond.atom1.qualifiedName().match(re);
+                if (found) {
+                    pos = found[1];
+                    if (residues_lookup[pos]) msg = residues_lookup[pos];
+                }
+            }else if( d.volume ){
+                msg = "volume: " +
+                    d.volume.value.toPrecision( 3 ) +
+                    " (" + d.volume.volume.name + ")";
+            }else{
+                msg = "nothing";
+            }
+            return prefix + " " + msg;
+        }
+</script>
+
 
 {% endblock %}

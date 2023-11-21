@@ -20,7 +20,7 @@ canvas {
 }
 
 
-#viewport_full, #viewport {
+#viewport_full, #viewport, #viewport_1, #viewport_2, #viewport_3  {
     /*border: 1px solid #888888;*/
     position: relative;
     margin: 0 auto;
@@ -29,7 +29,47 @@ canvas {
     }
 
 </style>
+<style>
+    .tooltip {
+        position: absolute;
+        text-align: center;
+        padding: 10px;
+        background: #f8f8f8;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        pointer-events: none;
+    }
+    .newrow {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+    }
+    .legend-header {
+      font-family: Arial;
+      font-size: 14px;
+      font-weight: bold;
+      fill: black;
+    }
+    path.highlight {
+      stroke-width: 2;
+    }
+    .checkbox-group {
+      display: flex;
+    }
 
+    .checkbox-item {
+      display: inline-block;
+      margin-right: 10px;  /* Add right margin */
+      font-size: 18px;
+    }
+    .dotted {
+      stroke-dasharray: 5,5;
+    }
+    .checkbox-item:last-child {
+      margin-right: 0;  /* Remove right margin for the last item */
+    }
+</style>
 {% endblock %}
 {% block content %}
 <h2>Structure information</h2>
@@ -97,7 +137,6 @@ canvas {
             <a href="{{ crystal.publication.web_link }}">{{ crystal.publication.web_link.index }}</a>
             </div>
         </div>
-
         <div class="row">
             <div class="col-md-4 text-right text-info">
                 <h4>PUBLICATION DATE</h4>
@@ -179,7 +218,9 @@ canvas {
 
     </div>
 </div>
+
 <br>
+
 <h2>Ligands</h2>
         {% for ligand in ligands %}
         <div class="row">
@@ -193,11 +234,19 @@ canvas {
 <!--                  <div style="height: 380px; width: 400px; position: relative;" class='viewer_3Dmoljs'  data-backgroundcolor='0xffffff' data-href='download?ligand={{ ligand }}&pdb={{ pdbname }}' data-type='pdb' data-backgroundcolor='0xffffff' data-labelres1='fontSize:10;opacity:1;color:white;backgroundOpacity:0.8' data-select1='{"hetflag":false}' data-style1='stick' data-select2='{"hetflag":true}' data-style2='{"stick":{"colorscheme":"greenCarbon"}}'></div>
  -->
                  <a href="download?ligand={{ ligand }}&pdb={{ pdbname }}">Download PDB file</a>
+                 {% if multiple_ligands %}
+                 <div id="viewport_{{ forloop.counter }}" style="width:100%; height:300px;"></div>
+                 <div style="width:100%; background-color:#eaeaea; border-radius: 0px 0px 5px 5px; text-align: left;">
+                    <p style="padding: 2px 0px 2px 5px; font-size: 10px;"><a href="https://github.com/arose/ngl">NGL</a><font color='black'> is a WebGL based 3D viewer powered by </font><a href="https://mmtf.rcsb.org">MMTF</a>.</p>
+                 </div>
+                 <div> <button id="fullscreen_{{ forloop.counter }}">Full Screen</button></div>
+                 {% else %}
                  <div id="viewport" style="width:100%; height:300px;"></div>
                  <div style="width:100%; background-color:#eaeaea; border-radius: 0px 0px 5px 5px; text-align: left;">
                     <p style="padding: 2px 0px 2px 5px; font-size: 10px;"><a href="https://github.com/arose/ngl">NGL</a><font color='black'> is a WebGL based 3D viewer powered by </font><a href="https://mmtf.rcsb.org">MMTF</a>.</p>
                  </div>
-                 <div> <button id=fullscreen>Full Screen</button></div>
+                 <div> <button id="fullscreen">Full Screen</button></div>
+                 {% endif %}
             </div>
 {% comment %}
               {# PoseView has been pending for years #}
@@ -237,24 +286,73 @@ canvas {
     </div>
 </div>
 
-
-
 <h2>Residue Table</h2>
 <div class="col-md-10">
 {% include "residue/residue_table_only.html" with header=header segments=segments data=data onlymutants=1 %}
 </div>
 
 
-
 {% endblock %}
 {% block addon_js %}
 <script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
 <script src="{% static 'home/js/diagrams.js' %}"></script>
-   <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
-    <script src="{% static 'home/js/dataTables.tableTools.min.js' %}"> </script>
-    <script src="{% static 'home/js/jquery.dataTables.columnFilter.js' %}"> </script>
-    <script type="text/javascript" charset="utf-8">
-        $(document).ready(function() {
+<script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
+<script src="{% static 'home/js/dataTables.tableTools.min.js' %}"> </script>
+<script src="{% static 'home/js/jquery.dataTables.columnFilter.js' %}"> </script>
+<script src="{% static 'home/js/d3.min.js' %}"></script>
+<script src="{% static 'home/js/nv.d3.min.js' %}"></script>
+<script src="{% static 'home/js/d3.v4.min.js' %}"></script>
+<script src="https://d3js.org/d3.v5.min.js"></script>
+<script src="{% static 'home/js/selection.js' %}"> </script>
+<script src="{% static 'home/js/table2csv.js' %}"> </script>
+<script src="{% static 'home/js/phylo_tree.js' %}"></script>
+<script>
+  // Function to download the image
+  function downloadSVG(svgElementId, filename, format = 'svg') {
+    const svgElement = document.getElementById(svgElementId);
+
+    if (!svgElement) {
+      console.error(`Element with id "${svgElementId}" not found.`);
+      return;
+    }
+
+    if (format === 'svg') {
+      const svgString = new XMLSerializer().serializeToString(svgElement);
+      const blob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = filename + '.svg';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } else {
+      const svgString = new XMLSerializer().serializeToString(svgElement);
+      const img = new Image();
+      img.src = 'data:image/svg+xml;base64,' + window.btoa(svgString);
+      img.onload = function() {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        let mimeType = 'image/png';
+        if (format === 'jpeg') mimeType = 'image/jpeg';
+        else if (format === 'tiff') mimeType = 'image/tiff';
+        canvas.toBlob((blob) => {
+          const link = document.createElement('a');
+          link.href = URL.createObjectURL(blob);
+          link.download = filename + '.' + format;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }, mimeType);
+      };
+    }
+  }
+</script>
+
+    <script>
+      $(document).ready(function() {
             var table = $('#residues').DataTable({
                 "scrollX": true,
                 "scrollY": 600,
@@ -285,187 +383,217 @@ canvas {
             });
 
             $('[data-toggle="tooltip"]').tooltip();
-            //$('[data-toggle="tooltip"]').tooltip({html:true});
-
 
             function ajaxInteractions(plotid) {
-
                 interactions = {{ residues|safe }};
                 count = [];
                 output = [];
+                $.each( interactions, function( index, val ) {
+                  key = val['wt_pos'];
 
-                  $.each( interactions, function( index, val ) {
-                    key = val['wt_pos'];
+                  if (key in count) {
+                      count[key] += 1;
+                      if (!(val['type'] in output[key])) output[key].push(val['type'])
+                  } else {
+                      count[key] = 1;
+                      output[key] = [val['type']]
+                  }
 
-                    if (key in count) {
-                        count[key] += 1;
-                        if (!(val['type'] in output[key])) output[key].push(val['type'])
-                    } else {
-                        count[key] = 1;
-                        output[key] = [val['type']]
-                    }
-
-                    // var flags = [], falgsAA = [], output = [], outputAA = [], l = val.length, i;
-                    // for( i=0; i<l; i++) {
-                    //     if( flags[val[i][1]]) continue;
-                    //     flags[val[i][1]] = true;
-                    //     output.push(val[i][1]);
-                    // }
-                    // for( i=0; i<l; i++) {
-                    //     if( flags[val[i][0]]) continue;
-                    //     flags[val[i][0]] = true;
-                    //     outputAA.push(val[i][0]);
-                    // }
-
-                      extra = "\n" + String(count[key]) + " interactions | Type: "+ output[key];
+                    extra = "\n" + String(count[key]) + " interactions | Type: "+ output[key];
 
 
-                      $('#'+plotid).find("#"+key).css("fill", "#E60A0A");
-                      $('#'+plotid).find("#"+key).next().css("fill", "#FDFF7B");
+                    $('#'+plotid).find("#"+key).css("fill", "#E60A0A");
+                    $('#'+plotid).find("#"+key).next().css("fill", "#FDFF7B");
 
-                      original_title = $('#'+plotid).find("#"+key).attr('original_title')
-
-
-                      $('#'+plotid).find("#"+key).attr('title',original_title+extra);
-                      $('#'+plotid).find("#"+key+"t").attr('title',original_title+extra);
+                    original_title = $('#'+plotid).find("#"+key).attr('original_title')
 
 
-                  });
+                    $('#'+plotid).find("#"+key).attr('title',original_title+extra);
+                    $('#'+plotid).find("#"+key+"t").attr('title',original_title+extra);
 
+                });
                 $("circle").tooltip('fixTitle');
                 $("text").tooltip('fixTitle');
-
-
-            }
-            ajaxInteractions('snakeplot')
-            ajaxInteractions('helixbox')
-
-
+              }
+              ajaxInteractions('snakeplot')
+              ajaxInteractions('helixbox')
             });
+
     </script>
-        <script src="{% static 'home/js/ngl.js' %}"> </script>
-        <script>
-        // http://proteinformatics.charite.de/ngl/doc/#User_manual/Usage/Molecular_representations
-        // http://arose.github.io/ngl/api/Stage.html
-        // http://arose.github.io/ngl/js/examples.js
-        // http://arose.github.io/ngl/
-        // http://proteinformatics.charite.de/ngl/doc/#User_manual/Usage/Selection_language
-        var residues_lookup = {{ residues_lookup|safe }};
+    <script src="{% static 'home/js/ngl.js' %}"> </script>
+    <script>
+    // {32: 'T32 1x28', 33: 'V33 1x29', 34: 'S34 1x30', 35: 'Y35 1x31', 36: 'Q36 1x32',
+    // 37: 'V37 1x33', 38: 'I38 1x34', 39: 'T39 1x35', 40: 'S40 1x36', 41: 'L41 1x37',
+    // 42: 'L42 1x38', 43: 'L43 1x39', 44: 'G44 1x40', 45: 'T45 1x41', 46: 'L46 1x42'}
+    var residues_lookup = {{ residues_lookup|safe }};
 
-        function getPickingMessage( d, prefix ){
-            var msg;
-            if( d.atom ){
-                msg = "atom: " +
-                    d.atom.qualifiedName() +
-                    " (" + d.atom.structure.name + ")";
-                var re = /](\d+):/i;
-                var found = d.atom.qualifiedName().match(re);
-                if (found) {
-                    pos = found[1];
-                    if (residues_lookup[pos]) msg = residues_lookup[pos];
-                    }
-            }else if( d.bond ){
-                msg = "bond: " +
-                    d.bond.atom1.qualifiedName() + " - " + d.bond.atom2.qualifiedName() +
-                    " (" + d.bond.structure.name + ")";
-
-                var re = /](\d+):/i;
-                var found = d.bond.atom1.qualifiedName().match(re);
-                if (found) {
-                    pos = found[1];
-                    if (residues_lookup[pos]) msg = residues_lookup[pos];
+    function getPickingMessage( d, prefix ){
+        var msg;
+        if( d.atom ){
+            msg = "atom: " +
+                d.atom.qualifiedName() +
+                " (" + d.atom.structure.name + ")";
+            var re = /](\d+):/i;
+            var found = d.atom.qualifiedName().match(re);
+            if (found) {
+                pos = found[1];
+                if (residues_lookup[pos]) msg = residues_lookup[pos];
                 }
-            }else if( d.volume ){
-                msg = "volume: " +
-                    d.volume.value.toPrecision( 3 ) +
-                    " (" + d.volume.volume.name + ")";
-            }else{
-                msg = "nothing";
+        }else if( d.bond ){
+            msg = "bond: " +
+                d.bond.atom1.qualifiedName() + " - " + d.bond.atom2.qualifiedName() +
+                " (" + d.bond.structure.name + ")";
+
+            var re = /](\d+):/i;
+            var found = d.bond.atom1.qualifiedName().match(re);
+            if (found) {
+                pos = found[1];
+                if (residues_lookup[pos]) msg = residues_lookup[pos];
             }
-            //console.log(residues_lookup);
-            return prefix + " " + msg;
+        }else if( d.volume ){
+            msg = "volume: " +
+                d.volume.value.toPrecision( 3 ) +
+                " (" + d.volume.volume.name + ")";
+        }else{
+            msg = "nothing";
         }
+        return prefix + " " + msg;
+    }
 
-        document.addEventListener( "DOMContentLoaded", function(){
+    document.addEventListener( "DOMContentLoaded", function(){
+        stage_full = new NGL.Stage( "viewport_full", { backgroundColor: "white" } );
+        stage_full.loadFile( "pdb?pdb={{ pdbname }}", { ext: "pdb" } ).then( function( o ){
 
-            stage_full = new NGL.Stage( "viewport_full", { backgroundColor: "white" } );
-            stage_full.loadFile( "pdb?pdb={{ pdbname }}", { ext: "pdb" }  ).then( function( o ){
-
-                o.addRepresentation( "cartoon", {
-                    color: "residueindex", aspectRatio: 4, scale: 0.5
-                } );
-                o.addRepresentation( "rope", {
-                    color: "residueindex", visible: false
-                } );
-
-                {% if main_ligand != 'none' %}
-                  o.addRepresentation("ball+stick", { sele: "[{{ main_ligand}}]", scale: 1, aspectRatio: 1 } );
-                  o.addRepresentation("surface", { sele: "[{{ main_ligand}}]", opacity: 0.4, useWorker: false } );
-                  o.addRepresentation( "licorice", { sele: "({{display_res}}) and sidechainAttached" , scale: 2, aspectRatio: 1});
-                  o.addRepresentation( "label", {
-                      sele: "({{display_res}}) and .CB",
-                      color: "#113", scale: 2.0
-                  } );
-                  o.addRepresentation( "label", {
-                      sele: "[{{ main_ligand}}] and .C1",
-                      color: "#888", scale: 3.0, labelType: "resname"
-                  } );
-                {% endif %}
-
-                o.centerView();
+            o.addRepresentation( "cartoon", {
+                color: "residueindex", aspectRatio: 4, scale: 0.5
             } );
-
-            stage_full.signals.clicked.add( function( d ){
-                $('#clicked').html(getPickingMessage( d, "Clicked" ));
+            o.addRepresentation( "rope", {
+                color: "residueindex", visible: false
             } );
-            stage_full.signals.hovered.add( function( d ){
-                $('#hovered').html(getPickingMessage( d, "Hovered" ));
-            } );
-
-            $('#viewport_full').find("canvas").after("<div class='overlay'><span id='clicked'></span> | <span id='hovered'></span></div>");
-
-            $( "#fullscreen_full" ).click(function() {
-                stage_full.toggleFullscreen();
-            } );
-            // stage_full.setSpin( [ 0, 1, 0 ], 0.005 );
-            {% if main_ligand != 'none' %}
-            stage = new NGL.Stage( "viewport", { backgroundColor: "white" } );
-            stage.loadFile( "download?ligand={{ main_ligand_full }}&pdb={{ pdbname }}", { ext: "pdb" }  ).then( function( o ){
-
-
-                o.addRepresentation("ball+stick", { sele: "{{ main_ligand}}", scale: 1, aspectRatio: 1 } );
-                o.addRepresentation("surface", { sele: "{{ main_ligand}}", opacity: 0.4,
-                                                useWorker: false } );
-                o.addRepresentation( "licorice", { sele: "sidechainAttached and not {{ main_ligand}}" , scale: 2, aspectRatio: 1});
+            {% if multiple_ligands %}
+              var pdb_ligs = {{main_ligand|safe}};
+              for (i=0; i<pdb_ligs.length; i++){
+                o.addRepresentation("ball+stick", { sele: pdb_ligs[i], scale: 1, aspectRatio: 1 } );
+                o.addRepresentation("surface", { sele: pdb_ligs[i], opacity: 0.4, useWorker: false } );
+                o.addRepresentation( "licorice", { sele: "({{display_res}}) and sidechainAttached" , scale: 2, aspectRatio: 1});
                 o.addRepresentation( "label", {
-                    sele: ".CB",
+                    sele: "({{display_res}}) and .CB",
                     color: "#113", scale: 2.0
                 } );
                 o.addRepresentation( "label", {
-                    sele: "{{ main_ligand}} and .C1",
+                    sele: "[pdb_ligs[i]] and .C1",
                     color: "#888", scale: 3.0, labelType: "resname"
                 } );
+              }
+            {% else %}
+              {% if main_ligand != 'none' %}
+                o.addRepresentation("ball+stick", { sele: "[{{ main_ligand}}]", scale: 1, aspectRatio: 1 } );
+                o.addRepresentation("surface", { sele: "[{{ main_ligand}}]", opacity: 0.4, useWorker: false } );
+                o.addRepresentation( "licorice", { sele: "({{display_res}}) and sidechainAttached" , scale: 2, aspectRatio: 1});
+                o.addRepresentation( "label", {
+                    sele: "({{display_res}}) and .CB",
+                    color: "#113", scale: 2.0
+                } );
+                o.addRepresentation( "label", {
+                    sele: "[{{ main_ligand}}] and .C1",
+                    color: "#888", scale: 3.0, labelType: "resname"
+                } );
+              {% endif %}
+            {% endif %}
+            o.centerView();
+        } );
 
-                o.centerView();
-            } );
+        stage_full.signals.clicked.add( function( d ){
+            $('#clicked').html(getPickingMessage( d, "Clicked" ));
+        } );
+        stage_full.signals.hovered.add( function( d ){
+            $('#hovered').html(getPickingMessage( d, "Hovered" ));
+        } );
 
-            // stage.setSpin( [ 0, 1, 0 ], 0.005 );
+        $('#viewport_full').find("canvas").after("<div class='overlay'><span id='clicked'></span> | <span id='hovered'></span></div>");
 
-            $( "#fullscreen" ).click(function() {
-                stage.toggleFullscreen();
-            });
+        $( "#fullscreen_full" ).click(function() {
+            stage_full.toggleFullscreen();
+        } );
+        // stage_full.setSpin( [ 0, 1, 0 ], 0.005 );
+        // HERE WE NEED TO DIVERISFY
+        {% if multiple_ligands %}
+          var pdb_ligs = {{main_ligand|safe}};
+          var pdb_ligs_full = {{main_ligand_full|safe}};
+          for (i=0; i<pdb_ligs.length; i++){
+              var k = i + 1;
+              stage = new NGL.Stage( "viewport_"+k, { backgroundColor: "white" } );
+              stage.loadFile( "download?ligand="+pdb_ligs_full[i]+"&pdb={{ pdbname }}", { ext: "pdb" }  ).then( function( o ){
 
-            stage.signals.clicked.add( function( d ){
-                $('#clicked_two').html(getPickingMessage( d, "Clicked" ));
-            } );
-            stage.signals.hovered.add( function( d ){
-                $('#hovered_two').html(getPickingMessage( d, "Hovered" ));
-            } );
+                  o.addRepresentation( "ball+stick", { sele: pdb_ligs[i], scale: 1, aspectRatio: 1 } );
+                  // o.addRepresentation( "surface", { sele: pdb_ligs[i], opacity: 0.4, useWorker: false } );
+                  o.addRepresentation( "licorice", { sele: "sidechainAttached and not "+pdb_ligs[i] , scale: 2, aspectRatio: 1});
+                  o.addRepresentation( "label", { sele: ".CB", color: "#113", scale: 2.0} );
+                  // o.addRepresentation( "label", {
+                  //    sele: pdb_ligs[i]+" and .C1",
+                  //    color: "#888", scale: 3.0, labelType: "resname"
+                  // } );
 
-            $('#viewport').find("canvas").after("<div class='overlay'><span id='clicked_two'>&nbsp;</span> | <span id='hovered_two'>&nbsp;</span></div>");
+                  o.centerView();
+              } );
 
+              // stage.setSpin( [ 0, 1, 0 ], 0.005 );
+
+              $( "#fullscreen_"+k ).click(function() {
+                  stage.toggleFullscreen();
+              });
+
+              stage.signals.clicked.add( function( d ){
+                  $('#clicked_two').html(getPickingMessage( d, "Clicked" ));
+              } );
+              stage.signals.hovered.add( function( d ){
+                  $('#hovered_two').html(getPickingMessage( d, "Hovered" ));
+              } );
+
+              $('#viewport'+k).find("canvas").after("<div class='overlay'><span id='clicked_two'>&nbsp;</span> | <span id='hovered_two'>&nbsp;</span></div>");
+
+          }
+        {% else %}
+          {% if main_ligand != 'none' %}
+          stage = new NGL.Stage( "viewport", { backgroundColor: "white" } );
+          stage.loadFile( "download?ligand={{ main_ligand_full }}&pdb={{ pdbname }}", { ext: "pdb" }  ).then( function( o ){
+
+
+              o.addRepresentation("ball+stick", { sele: "{{ main_ligand}}", scale: 1, aspectRatio: 1 } );
+              o.addRepresentation("surface", { sele: "{{ main_ligand}}", opacity: 0.4,
+                                              useWorker: false } );
+              o.addRepresentation( "licorice", { sele: "sidechainAttached and not {{ main_ligand}}" , scale: 2, aspectRatio: 1});
+              o.addRepresentation( "label", {
+                  sele: ".CB",
+                  color: "#113", scale: 2.0
+              } );
+              o.addRepresentation( "label", {
+                  sele: "{{ main_ligand}} and .C1",
+                  color: "#888", scale: 3.0, labelType: "resname"
+              } );
+
+              o.centerView();
+          } );
+
+          // stage.setSpin( [ 0, 1, 0 ], 0.005 );
+
+          $( "#fullscreen" ).click(function() {
+              stage.toggleFullscreen();
+          });
+
+          stage.signals.clicked.add( function( d ){
+              $('#clicked_two').html(getPickingMessage( d, "Clicked" ));
+          } );
+          stage.signals.hovered.add( function( d ){
+              $('#hovered_two').html(getPickingMessage( d, "Hovered" ));
+          } );
+
+          $('#viewport').find("canvas").after("<div class='overlay'><span id='clicked_two'>&nbsp;</span> | <span id='hovered_two'>&nbsp;</span></div>");
+
+          {% endif %}
         {% endif %}
+    });
+</script>
+  
 
-        });
-    </script>
 {% endblock %}

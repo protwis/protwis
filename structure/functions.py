@@ -1,5 +1,5 @@
-﻿from Bio.Blast import NCBIXML, NCBIWWW
-from Bio.PDB import PDBParser
+from Bio.Blast import NCBIXML, NCBIWWW
+from Bio.PDB import PDBParser, PDBIO
 from Bio.PDB.PDBIO import Select
 import Bio.PDB.Polypeptide as polypeptide
 from Bio.PDB.AbstractPropertyMap import AbstractPropertyMap
@@ -10,16 +10,19 @@ except:
     from Bio.PDB import rotaxis
 
 from django.conf import settings
-from common.selection import SimpleSelection
 from common.alignment import Alignment
 from common.tools import urlopen_with_retry
+from common.models import WebResource, WebLink, Publication
 from protein.models import Protein, ProteinSegment, ProteinConformation, ProteinState
-from residue.functions import dgn, ggn
+from residue.functions import dgn
 from residue.models import Residue, ResidueGenericNumberEquivalent
-from structure.models import Structure, Rotamer
+from structure.models import Structure, Rotamer, PdbData, StructureStabilizingAgent, StructureType
+from signprot.models import SignprotStructure
+from ligand.models import Endogenous_GTP
 
 from subprocess import Popen, PIPE
 from io import StringIO
+import pandas as pd
 import os
 import sys
 import tempfile
@@ -28,14 +31,13 @@ import math
 import urllib
 from collections import OrderedDict
 import Bio.PDB as PDB
+from Bio import SeqIO
 import csv
-# from openpyxl import Workbook
 import numpy
-import zipfile
-import pprint
 import json
 import yaml
 from urllib.request import urlopen, Request
+import re
 
 
 logger = logging.getLogger("protwis")
@@ -72,7 +74,7 @@ class BlastSearch(object):
                 stdout=PIPE, stderr=PIPE)
             (blast_out, blast_err) = blast.communicate()
         else:
-        #Rest of the world:
+            #Rest of the world:
             blast = Popen('%s -db %s -outfmt 5' % (self.blast_path, self.blastdb), universal_newlines=True, shell=True,
                 stdin=PIPE, stdout=PIPE, stderr=PIPE)
             (blast_out, blast_err) = blast.communicate(input=str(input_seq))
@@ -181,7 +183,10 @@ class SelectionParser(object):
         for segment in selection.segments:
             logger.debug('Segments in selection: {}'.format(segment))
             if segment.type == 'helix':
-                self.helices.append(int(segment.item.slug[-1]))
+                try:
+                    self.helices.append(int(segment.item.slug[-1]))
+                except ValueError:
+                    self.helices.append(segment.item.slug)
             elif segment.type == 'residue':
                 self.generic_numbers.append(segment.item.label.replace('x','.'))
             else:
@@ -276,15 +281,15 @@ class CASelector(object):
         for chain in structure:
             for res in chain:
                 try:
-                    if 0 < res['CA'].get_bfactor() < 8.1 and "{:.2f}".format(res['CA'].get_bfactor()) in self.selection.generic_numbers:
+                    if "{:.2f}".format(res['CA'].get_bfactor()) in self.selection.generic_numbers:
                         atom_list.append(res['CA'])
                     if -8.1 < res['CA'].get_bfactor() < 0 and "{:.3f}".format(-res['CA'].get_bfactor() + 0.001) in self.selection.generic_numbers:
                         atom_list.append(res['CA'])
-                except :
+                except:
                     continue
 
         if atom_list == []:
-            logger.warning("No atoms with given generic numbers {} for  {!s}".format(self.selection.generic_numbers, structure.id))
+            logger.warning("No atoms with given generic numbers {} for {!s}".format(self.selection.generic_numbers, structure.id))
         return atom_list
 
 
@@ -299,7 +304,8 @@ class CASelector(object):
                 try:
                     if -8.1 < res['CA'].get_bfactor() < 8.1 and int(math.floor(abs(res['CA'].get_bfactor()))) in self.selection.helices:
                         atom_list.append(res['CA'])
-                except Exception as msg:
+                except Exception:
+                    logger.warning("No CA for residues {!s} in {!s}".format(res.id, structure.id))
                     continue
 
         if atom_list == []:
@@ -400,13 +406,14 @@ class BackboneSelector():
                 try:
                     gn = self.get_generic_number(res)
                     if gn == fragment.rotamer.residue.display_generic_number.label:
-                        # logger.info("Ref {}:{}\tFragment {}:{}".format(polypeptide.three_to_one(res.resname), self.get_generic_number(res), fragment.rotamer.residue.amino_acid, fragment.rotamer.residue.display_generic_number.label))
                         if polypeptide.three_to_one(res.resname) == fragment.rotamer.residue.amino_acid:
                             return [res['CA'], res['N'], res['O']]
                         else:
                             if use_similar:
                                 for rule in self.similarity_rules:
-                                    if polypeptide.three_to_one(res.resname) in rule[self.similarity_dict["target_residue"]] and fragment.rotamer.residue.amino_acid in rule[self.similarity_dict["target_residue"]] and fragment.interaction_type.slug in rule[self.similarity_dict["interaction_type"]]:
+                                    if polypeptide.three_to_one(res.resname) in rule[self.similarity_dict["target_residue"]] and \
+                                        fragment.rotamer.residue.amino_acid in rule[self.similarity_dict["target_residue"]] and \
+                                        fragment.interaction_type.slug in rule[self.similarity_dict["interaction_type"]]:
                                         return [res['CA'], res['N'], res['O']]
                         # else:
                         #     if fragment.interaction_type.slug not in ['acc', 'hyd']:
@@ -476,9 +483,9 @@ def get_segment_template (protein, segments=['TM1', 'TM2', 'TM3', 'TM4','TM5','T
     a.load_reference_protein(protein)
     #You are so gonna love it...
     if state:
-        a.load_proteins([x.protein_conformation.protein.parent for x in list(Structure.objects.order_by('protein_conformation__protein__parent','resolution').exclude(protein_conformation__protein=protein.id, protein_conformation__state=state))])
+        a.load_proteins([x.protein_conformation.protein.parent for x in list(Structure.objects.order_by('protein_conformation__protein__parent','resolution').exclude(protein_conformation__protein=protein.id, protein_conformation__state=state, structure_type__slug__startswith='af-'))])
     else:
-        a.load_proteins([x.protein_conformation.protein.parent for x in list(Structure.objects.order_by('protein_conformation__protein__parent','resolution').exclude(protein_conformation__protein=protein.id))])
+        a.load_proteins([x.protein_conformation.protein.parent for x in list(Structure.objects.order_by('protein_conformation__protein__parent','resolution').exclude(protein_conformation__protein=protein.id, structure_type__slug__startswith='af-'))])
     a.load_segments(ProteinSegment.objects.filter(slug__in=segments))
     a.build_alignment()
     a.calculate_similarity()
@@ -489,7 +496,7 @@ def get_segment_template (protein, segments=['TM1', 'TM2', 'TM3', 'TM4','TM5','T
 #==============================================================================
 def fetch_template_structure (template_protein):
 
-    return Structure.objects.get(protein_conformation__protein__parent=template_protein.entry_name)
+    return Structure.objects.get(protein_conformation__protein__parent=template_protein.entry_name).exclude(structure_type__slug__startswith='af-')
 
 
 #==============================================================================
@@ -599,18 +606,11 @@ class HSExposureCB(AbstractPropertyMap):
         if model.get_id()!=0:
             model = model[0]
         residues_in_pdb,residues_with_proper_CA=[],[]
-        if check_chain_breaks==True:
-            # for m in model:
-                for chain in model:
-                    for res in chain:
-                        # try:
-                            if is_aa(res):
-                                residues_in_pdb.append(res.get_id()[1])
-                        # except:
-                        #     if is_aa(chain):
-                        #         residues_in_pdb.append(chain.get_id()[1])
-                        #         print('chain', chain, res)
-                        #         break
+        if check_chain_breaks is True:
+            for chain in model:
+                for res in chain:
+                    if is_aa(res):
+                        residues_in_pdb.append(res.get_id()[1])
         het_resis, het_resis_close, het_resis_clash = [], [], []
         for chain in model:
             for res in chain:
@@ -662,7 +662,7 @@ class HSExposureCB(AbstractPropertyMap):
                                 raise Exception
                         except:
                             if pp1 is pp2 and abs(i-j)<=offset:
-                            # neighboring residues in the chain are ignored
+                                # neighboring residues in the chain are ignored
                                 continue
                         ro=pp2[j]
                         if not is_aa(ro) or not ro.has_id('CA'):
@@ -727,9 +727,9 @@ class HSExposureCB(AbstractPropertyMap):
                     ref_vector = atom.get_vector()
                     for other_res in residue_up:
                         try:
-                            if other_res==pp1[i-1] and include_prev==False:
+                            if other_res==pp1[i-1] and include_prev is False:
                                 continue
-                            elif len(pp1)>=i+1 and other_res==pp1[i+1] and include_next==False:
+                            elif len(pp1)>=i+1 and other_res==pp1[i+1] and include_next is False:
                                 continue
                             else:
                                 raise Exception
@@ -737,7 +737,7 @@ class HSExposureCB(AbstractPropertyMap):
                             for other_atom in other_res:
                                 other_vector = other_atom.get_vector()
                                 d = other_vector-ref_vector
-                                if d.norm()<2:
+                                if d.norm()<1.5:
                                     if len(str(pp1[i]['CA'].get_bfactor()).split('.')[1])==1:
                                         clash_res1 = float(str(pp1[i]['CA'].get_bfactor())+'0')
                                     else:
@@ -759,7 +759,7 @@ class HSExposureCB(AbstractPropertyMap):
         ### GP checking HETRESIS to remove if not interacting with AAs
         self.hetresis_to_remove = []
         for i in het_resis:
-            if i not in het_resis and i not in het_resis_close or i in het_resis_clash:
+            if i not in self.hetresis_to_remove and i not in het_resis_close or i in het_resis_clash:
                 self.hetresis_to_remove.append(i)
         # self.hetresis_to_remove = [i for i in het_resis if i not in het_resis_close or i in het_resis_clash]
         if check_chain_breaks:
@@ -816,7 +816,7 @@ class PossibleKnots():
         self.receptor = Protein.objects.get(entry_name=receptor)
         self.signprot = Protein.objects.get(entry_name=signprot)
         self.possible_knots = {'ICL3-H4':[['R','A'],['G.H4.11','G.H4.14','G.H4.15','G.h4s6.01']],
-                               'h1ha-hehf':[['A','A'],['H.HE.08', 'H.hdhe.05']]}
+                               'G.h1ha-H.hehf':[['A','A'],['H.HE.08', 'H.hdhe.05']]}
         self.output = []
 
     def get_resnums(self):
@@ -829,8 +829,8 @@ class PossibleKnots():
                 if len(region1)==0:
                     region1 = list(Residue.objects.filter(protein_conformation__protein=self.signprot, protein_segment__slug=knot_label.split('-')[0]).values_list('sequence_number', flat=True))
                 if len(region1)==0:
-                    raise AssertionError('Protein segment slug error for loop knot: No residues found for {} in {}'.format(knot_label.split('-')[0], self.receptor, self.signprot))
-                if knot_label=='h1ha-hehf':
+                    raise AssertionError('Protein segment slug error for loop knot: No residues found for {} in {} - {}'.format(knot_label.split('-')[0], self.receptor, self.signprot))
+                if knot_label=='G.h1ha-H.hehf':
                     for i in range(0,3):
                         region1.append(region1[-1]+1)
                 for r in values[1]:
@@ -918,7 +918,7 @@ class PdbStateIdentifier():
         self.structure_type = None
 
         try:
-            if structure.protein_conformation.protein.parent==None:
+            if structure.protein_conformation.protein.parent is None:
                 raise Exception
             self.structure = structure
             self.structure_type = 'structure'
@@ -969,7 +969,7 @@ class PdbStateIdentifier():
             tm6 = self.get_residue_distance(self.tm2_gn, self.tm6_gn)
             tm7 = self.get_residue_distance(self.tm3_gn, self.tm7_gn)
             print(tm6, tm7, tm6-tm7)
-            if tm6!=False and tm7!=False:
+            if tm6 is not False and tm7 is not False:
                 self.activation_value = tm6-tm7
                 if self.activation_value<self.inactive_cutoff:
                     self.state = ProteinState.objects.get(slug='inactive')
@@ -986,7 +986,7 @@ class PdbStateIdentifier():
 
             tm6 = self.get_residue_distance(tm2_gn_b, tm6_gn_b)
             tm7 = self.get_residue_distance(tm3_gn_b, tm7_gn_b)
-            if tm6!=False and tm7!=False:
+            if tm6 is not False and tm7 is not False:
                 self.activation_value = tm6-tm7
                 if self.activation_value<self.inactive_cutoff:
                     self.state = ProteinState.objects.get(slug='inactive')
@@ -1003,7 +1003,7 @@ class PdbStateIdentifier():
 
             tm6 = self.get_residue_distance(tm2_gn_c, tm6_gn_c)
             tm7 = self.get_residue_distance(tm3_gn_c, tm7_gn_c)
-            if tm6!=False and tm7!=False:
+            if tm6 is not False and tm7 is not False:
                 self.activation_value = tm6-tm7
                 if self.activation_value<self.inactive_cutoff:
                     self.state = ProteinState.objects.get(slug='inactive')
@@ -1022,7 +1022,7 @@ class PdbStateIdentifier():
 
             tm6 = self.get_residue_distance(tm2_gn_f, tm6_gn_f)
             tm7 = self.get_residue_distance(tm3_gn_f, tm7_gn_f)
-            if tm6!=False and tm7!=False:
+            if tm6 is not False and tm7 is not False:
                 self.activation_value = tm6-tm7
                 if self.activation_value<0:
                     self.state = ProteinState.objects.get(slug='inactive')
@@ -1123,17 +1123,87 @@ class StructureSeqNumOverwrite():
                 r.sequence_number = int(target_dict[r.sequence_number])
                 r.save()
 
+class ParseAFModelsCSV():
+    def __init__(self):
+        self.complexes = []
+        self.structures = {}
+        with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'AF_Models.csv']), newline='') as csvfile:
+            structs = csv.reader(csvfile, delimiter=',')
+            next(structs, None)
+            for s in structs:
+                #0:complex 1:finished 2:receptor 3:ligand 4:outside_found
+                #5:chosen_rank 6:score 7:relaxed 8:closer_pep_term 9:has_x
+                protein = s[0].split('_')[0]
+                ligand = s[3]
+                organism = s[0].split('-')[0].split('_')[1]
+                # TODO: THIS IS HARDCODED BUT NEED TO BE CHANGED
+                rankedpdbname = +s[0]+'-rank'+s[5]+'.pdb'
+                location = os.sep.join([settings.DATA_DIR, 'structure_data', 'af_peptide', rankedpdbname]) #'/protwis/data/protwis/gpcr/structure_data/af_peptide/'+s[0]+'-rank'+s[5]+'.pdb'
+                cmpx = s[0] #protein+'_'+ligand
+                self.complexes.append(cmpx)
+                self.structures[cmpx]= {'protein':s[0].split('-')[0], 'name':protein.lower(), 'state':'Not defined', 'peptide_id': ligand, 'preferred_chain':'A', 'model':'af-peptide', 'location':location, 'organism':organism}
+
+    def parse_ligands(self):
+        endogenous_peptides = pd.read_csv(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'Peptides_GPRCdb_dump.csv']))
+        for complex in self.structures.keys():
+            receptor, pep_id = complex.split('_')[0], complex.split('-')[1]
+            self.structures[complex]['ligand'] = []
+            try:
+                role = endogenous_peptides.loc[(endogenous_peptides['Receptor'].str.match(receptor)) & (endogenous_peptides['GtP ID'] == int(pep_id)), 'Role'].values[0]
+                name = endogenous_peptides.loc[(endogenous_peptides['Receptor'].str.match(receptor)) & (endogenous_peptides['GtP ID'] == int(pep_id)), 'Ligand Name'].values[0]
+                type = endogenous_peptides.loc[(endogenous_peptides['Receptor'].str.match(receptor)) & (endogenous_peptides['GtP ID'] == int(pep_id)), 'Type'].values[0]
+                gpcrdb_id = endogenous_peptides.loc[(endogenous_peptides['Receptor'].str.match(receptor)) & (endogenous_peptides['GtP ID'] == int(pep_id)), 'GPCRdb ID'].values[0]
+                self.structures[complex]['ligand'].append(
+                                {'chain':'B',
+                                 'name':pep_id,
+                                 'role':role,
+                                 'title':name,
+                                 'type':type,
+                                 'gpcrdb id': gpcrdb_id,
+                                 'in_structure': True})
+            except IndexError:
+                print('Cannot find information for complex {}'.format(complex))
+
+
+class ParseAFComplexModels():
+    def __init__(self):
+        self.data_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'AlphaFold_multimer'])
+        self.filedirs = os.listdir(self.data_dir)
+        self.complexes = {}
+        for f in self.filedirs:
+            if '-' not in f:
+                continue
+
+            receptor, signprot = f.split('-')
+            metrics_file = os.sep.join([self.data_dir, f, f+'_metrics.csv'])
+            metrics = [row for row in csv.DictReader(open(metrics_file, 'r'))][0]
+            location = os.sep.join([self.data_dir, f, f+'.pdb'])
+            ### Grab model date/version from pdb file
+            with open(location, 'r') as model_file:
+                line = model_file.readlines()[0]
+                date_re = re.search('HEADER[A-Z\S\D]+(\d{4}-\d{2}-\d{2})', line)
+                model_date = date_re.group(1)
+            ### Check if model has full heterotrimer
+            if 'gbb1_human' in f:
+                signprot = signprot.split('_')[0]+'_human'
+                beta_gamma = True
+            else:
+                beta_gamma = False
+            self.complexes[receptor+'-'+signprot] = {'receptor':receptor, 'signprot':signprot, 'beta_gamma':beta_gamma, 'publication_date':model_date, 'location':location, 'model':'af-signprot', 'preferred_chain':'A', 'PTM':metrics['ptm'], 'iPTM':metrics['iptm'], 'PAE_mean':metrics['pae_mean']}
+
 
 class ParseStructureCSV():
     def __init__(self):
         self.pdb_ids = []
         self.structures = {}
+        self.parent_segends = {}
         with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'structures.csv']), newline='') as csvfile:
             structures = csv.reader(csvfile, delimiter='\t')
             next(structures, None)
             for s in structures:
                 self.pdb_ids.append(s[0])
-                self.structures[s[0]]= {'protein':s[1], 'name':s[0].lower(), 'state':s[4], 'preferred_chain':s[5], 'resolution':s[3]}
+                self.structures[s[0]]= {'protein':s[1], 'name':s[0].lower(), 'state':s[4], 'preferred_chain':s[5], 'resolution':s[3], 'date_from_file':s[7], 'method_from_file':s[2]}
+        self.fusion_proteins = []
 
     def __str__(self):
         return '<ParsedStructures: {} entries>'.format(len(self.pdb_ids))
@@ -1142,28 +1212,25 @@ class ParseStructureCSV():
         with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'ligands.csv']), newline='') as csvfile:
             ligands = csv.reader(csvfile, delimiter='\t')
             next(ligands, None)
-            for l in ligands:
-                if 'ligand' not in self.structures[l[0]]:
-                    self.structures[l[0]]['ligand'] = []
-                self.structures[l[0]]['ligand'].append({'chain':l[1], 'name':l[2], 'pubchemId':l[3], 'role':l[4], 'title':l[5], 'type': l[6]})
+            for ligand in ligands:
+                if 'ligand' not in self.structures[ligand[0]]:
+                    self.structures[ligand[0]]['ligand'] = []
+                in_structure = True
+                if ligand[8]!='':
+                    in_structure = False
+                self.structures[ligand[0]]['ligand'].append({'chain':ligand[1], 'name':ligand[2], 'pubchemId':ligand[3], 'role':ligand[4], 'title':ligand[5], 'type': ligand[6], 'in_structure': in_structure})
 
     def parse_nanobodies(self):
-        with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'nanobodies.csv']), newline='') as csvfile:
-            nanobodies = csv.reader(csvfile, delimiter='\t')
-            next(nanobodies, None)
-            for n in nanobodies:
-                if 'auxiliary_protein' not in self.structures[n[0]]:
-                    self.structures[n[0]]['auxiliary_protein'] = []
-                self.structures[n[0]]['auxiliary_protein'].append(n[1])
+        self.parse_aux_file('nanobodies.csv')
 
     def parse_fusion_proteins(self):
-        with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'fusion_proteins.csv']), newline='') as csvfile:
-            fusions = csv.reader(csvfile, delimiter='\t')
-            next(fusions, None)
-            for f in fusions:
-                if 'auxiliary_protein' not in self.structures[f[0]]:
-                    self.structures[f[0]]['auxiliary_protein'] = []
-                self.structures[f[0]]['auxiliary_protein'].append(f[1])
+        self.parse_aux_file('fusion_proteins.csv')
+
+    def parse_ramp(self):
+        self.parse_aux_file('ramp.csv')
+
+    def parse_grk(self):
+        self.parse_aux_file('grk.csv')
 
     def parse_g_proteins(self):
         with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'g_proteins.csv']), newline='') as csvfile:
@@ -1179,21 +1246,48 @@ class ParseStructureCSV():
             for a in arrestins:
                 self.structures[a[0]]['arrestin'] = {'protein': a[1], 'chain': a[2], 'note': a[3]}
 
+    def parse_aux_file(self, aux_csv):
+        with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', aux_csv]), newline='') as csvfile:
+            aux = csv.reader(csvfile, delimiter='\t')
+            next(aux, None)
+            for a in aux:
+                if 'auxiliary_protein' not in self.structures[a[0]]:
+                    self.structures[a[0]]['auxiliary_protein'] = []
+                self.structures[a[0]]['auxiliary_protein'].append(a[1])
+                if aux_csv=='fusion_proteins.csv':
+                    if a[1] not in self.fusion_proteins:
+                        self.fusion_proteins.append(a[1])
+
+    @staticmethod
+    def parse_yaml_file(yaml_file):
+        with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', yaml_file]), 'r') as yfile:
+            y = yaml.safe_load(yfile)
+        return y
+
+    def parse_parent_segends(self):
+        self.parent_segends = self.parse_yaml_file('non_xtal_segends.yaml')
 
 
 class StructureBuildCheck():
     local_annotation_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation'])
     local_wt_pdb_lookup_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'wt_pdb_lookup'])
+    local_g_protein_chimeras_gapped = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'g_protein_chimeras_gapped.fasta'])
 
     def __init__(self):
-        with open(self.local_annotation_dir+'/xtal_segends.yaml', 'r') as f:
+        with open(self.local_annotation_dir+'/mod_xtal_segends.yaml', 'r') as f:
             self.segends_dict = yaml.safe_load(f)
         self.pdbs = ParseStructureCSV().pdb_ids
         self.wt_pdb_lookup_files = [i.split('.')[0] for i in os.listdir(self.local_wt_pdb_lookup_dir)]
         self.missing_seg = []
         self.start_error = []
         self.end_error = []
+        self.helix_length_error = []
         self.duplicate_residue_error = {}
+        self.g_protein_chimeras = SeqIO.to_dict(SeqIO.parse(open(self.local_g_protein_chimeras_gapped), "fasta"))
+        self.g_prot_test_exceptions = {}
+        for i, j in self.g_protein_chimeras.items():
+            if '|' not in i and '-' in j.seq:
+                self.g_prot_test_exceptions[i] = j.seq.count('-')
 
     def check_structures(self):
         for pdb in self.pdbs:
@@ -1203,7 +1297,7 @@ class StructureBuildCheck():
                 print('Error: {} Structure object has not been built'.format(pdb))
 
     def check_duplicate_residues(self):
-        for s in Structure.objects.all():
+        for s in Structure.objects.all().exclude(structure_type__slug__startswith='af-'):
             resis = Residue.objects.filter(protein_conformation=s.protein_conformation)
             if len(resis)!=len(resis.values_list('sequence_number').distinct()):
                 for r in resis:
@@ -1216,7 +1310,7 @@ class StructureBuildCheck():
                             self.duplicate_residue_error[s] = [r]
 
     def check_segment_ends(self, structure):
-        key = structure.protein_conformation.protein.parent.entry_name + '_' + structure.pdb_code.index
+        key = structure.pdb_code.index
         if key in self.segends_dict:
             parent_residues = Residue.objects.filter(protein_conformation__protein=structure.protein_conformation.protein.parent)
             structure_residues = Residue.objects.filter(protein_conformation=structure.protein_conformation)
@@ -1236,6 +1330,8 @@ class StructureBuildCheck():
                     if len(seg_resis)==0:
                         self.missing_seg.append([structure, seg, anno_b, anno_e])
                         continue
+                    if i<8 and len(seg_resis)<5:
+                        self.helix_length_error.append([structure, seg, len(seg_resis)])
                     if seg_resis[0].sequence_number!=anno_b:
                         if parent_seg_resis[0].sequence_number!=seg_resis[0].sequence_number:
                             if structure.pdb_code.index in self.wt_pdb_lookup_files:
@@ -1275,10 +1371,21 @@ class StructureBuildCheck():
         else:
             print('Warning: {} not annotated'.format(key))
 
-    def check_g_prot_struct_residues(self, signprot_complex):
+    def check_signprot_struct_residues(self, signprot_complex):
         pdb = PDBParser(PERMISSIVE=True, QUIET=True).get_structure('struct', StringIO(str(signprot_complex.structure.pdb_data.pdb)))[0]
-        resis = Residue.objects.filter(protein_conformation=ProteinConformation.objects.get(protein__entry_name=signprot_complex.structure.pdb_code.index.lower()+'_a'))
-        if len(pdb[signprot_complex.alpha])!=len(resis):
+        if signprot_complex.protein.family.slug.startswith('100'):
+            resis = Residue.objects.filter(protein_conformation=ProteinConformation.objects.get(protein__entry_name=signprot_complex.structure.pdb_code.index.lower()+'_a'))
+        elif signprot_complex.protein.family.slug.startswith('200'):
+            resis = Residue.objects.filter(protein_conformation=ProteinConformation.objects.get(protein__entry_name=signprot_complex.structure.pdb_code.index.lower()+'_arrestin'))
+        ppb = PDB.PPBuilder()
+        seq = ""
+        for pp in ppb.build_peptides(pdb[signprot_complex.alpha], aa_only=False):
+            seq += str(pp.get_sequence())
+        ### Skip if difference in length comes from unmappable residues from structure chimera
+        if signprot_complex.protein.entry_name in self.g_prot_test_exceptions and len(seq)-len(resis)<=self.g_prot_test_exceptions[signprot_complex.protein.entry_name]:
+            return 0
+        ### Print structures where residues were not built
+        if len(seq)!=len(resis):
             print(signprot_complex.structure, len(pdb[signprot_complex.alpha]), len(resis))
 
 
@@ -1292,7 +1399,7 @@ def update_template_source(template_source, keys, struct, segment, just_rot=Fals
     ''' Update the template_source dictionary with structure info for backbone and rotamers.
     '''
     for k in keys:
-        if just_rot==True:
+        if just_rot is True:
             try:
                 template_source[segment][k][1] = struct
             except:
@@ -1323,7 +1430,7 @@ def right_rotamer_select(rotamer, chain=None):
     '''
     if len(rotamer)>1:
         for i in rotamer:
-            if i.pdbdata.pdb.startswith('COMPND')==False:
+            if i.pdbdata.pdb.startswith('COMPND') is False:
                 if chain!=None and chain==i.pdbdata.pdb[21]:
                     rotamer = i
                     break
@@ -1334,15 +1441,27 @@ def right_rotamer_select(rotamer, chain=None):
 
 def get_pdb_ids(uniprot_id):
     pdb_list = []
-    data = { "query": { "type": "terminal", "service": "text", "parameters":{ "attribute":"rcsb_polymer_entity_container_identifiers.reference_sequence_identifiers.database_accession", "operator":"in", "value":[ uniprot_id ] } }, "request_options": { "pager": {"start": 0,"rows": 99999 }}, "return_type": "entry" }
-    url = 'https://search.rcsb.org/rcsbsearch/v1/query'
+    data = { "query": {
+                "type": "terminal",
+                "service": "text",
+                "parameters": {
+                    "attribute" : "rcsb_polymer_entity_container_identifiers.reference_sequence_identifiers.database_accession",
+                    "operator":"in",
+                    "value":[ uniprot_id ]
+                }
+            },
+            "request_options":{
+                "return_all_hits": True
+            },
+            "return_type": "entry" }
+    url = 'https://search.rcsb.org/rcsbsearch/v2/query'
     req = Request(url)
     req.add_header('Content-Type', 'application/json; charset=utf-8')
     jsondata = json.dumps(data)
     jsondataasbytes = jsondata.encode('utf-8')
     req.add_header('Content-Length', len(jsondataasbytes))
     response = urlopen_with_retry(req, jsondataasbytes)
-    if response == False:
+    if response is False or response is None:
         logger.warning(f"ERROR: no valid response from RCSB for accession code {uniprot_id}")
         return []
 
@@ -1355,3 +1474,176 @@ def get_pdb_ids(uniprot_id):
 
     response.close()
     return pdb_list
+
+
+def create_structure_rotamer(PDB_residue, residue_object, structure):
+    atom_num_dict = {'E':9, 'S':6, 'Y':12, 'G':4, 'A':5, 'V':7, 'M':8, 'L':8, 'I':8, 'T':7, 'F':11, 'H':10, 'K':9,
+                 'D':8, 'C':6, 'R':11, 'P':7, 'Q':9, 'N':8, 'W':14, '-':0}
+    out_stream = StringIO()
+    io = PDBIO()
+    io.set_structure(PDB_residue)
+    io.save(out_stream)
+    pdbdata = PdbData.objects.get_or_create(pdb=out_stream.getvalue())[0]
+    missing_atoms = atom_num_dict[polypeptide.three_to_one(PDB_residue.get_resname())] > len(PDB_residue.get_unpacked_list())
+    rot = Rotamer(missing_atoms=missing_atoms, pdbdata=pdbdata, residue=residue_object, structure=structure)
+    return rot
+
+def fetch_signprot_data(pdb, protein, beta_uniprots=[], gamma_uniprots=[]):
+    data = {}
+
+    response = urllib.request.urlopen("https://data.rcsb.org/rest/v1/core/entry/{}".format(pdb))
+    json_data = json.loads(response.read())
+    response.close()
+
+    data["method"] = json_data["exptl"][0]["method"]
+    if data["method"].startswith("THEORETICAL") or data["method"] in ["SOLUTION NMR","SOLID-STATE NMR"]:
+        return None
+    if "citation" in json_data and "pdbx_database_id_doi" in json_data["citation"]:
+        data["doi"] = json_data["citation"]["pdbx_database_id_doi"]
+    else:
+        data["doi"] = None
+    if "pubmed_id" in json_data["rcsb_entry_container_identifiers"]:
+        data["pubmedId"] = json_data["rcsb_entry_container_identifiers"]["pubmed_id"]
+    else:
+        data["pubmedId"] = None
+
+    data["release_date"] = json_data["rcsb_accession_info"]["initial_release_date"][:10]
+    data["resolution"] = json_data["rcsb_entry_info"]["resolution_combined"][0]
+    entities_num = len(json_data["rcsb_entry_container_identifiers"]["polymer_entity_ids"])
+    data["alpha"] = protein.accession
+    data["alpha_chain"] = None
+    data["alpha_coverage"] = None
+    data["beta"] = None
+    data["beta_chain"] = None
+    data["gamma"] = None
+    data["gamma_chain"] = None
+    data["other"] = []
+    for i in range(1,entities_num+1):
+        response = urllib.request.urlopen("https://data.rcsb.org/rest/v1/core/polymer_entity/{}/{}".format(pdb, i))
+        json_data = json.loads(response.read())
+        response.close()
+        if "uniprot_ids" in json_data["rcsb_polymer_entity_container_identifiers"]:
+            for j, u_id in enumerate(json_data["rcsb_polymer_entity_container_identifiers"]["uniprot_ids"]):
+                if u_id+".txt" in beta_uniprots:
+                    data["beta"] = u_id
+                    data["beta_chain"] = json_data["rcsb_polymer_entity_container_identifiers"]["auth_asym_ids"][j][0]
+                elif u_id+".txt" in gamma_uniprots:
+                    data["gamma"] = u_id
+                    data["gamma_chain"] = json_data["rcsb_polymer_entity_container_identifiers"]["auth_asym_ids"][j][0]
+                elif u_id==protein.accession:
+                    data["alpha"] = u_id
+                    data["alpha_coverage"] = json_data["entity_poly"]["rcsb_sample_sequence_length"]
+                    try:
+                        data["alpha_chain"] = json_data["rcsb_polymer_entity_container_identifiers"]["auth_asym_ids"][j][0]
+                    except IndexError as e:
+                        data["alpha_chain"] = json_data["rcsb_polymer_entity_container_identifiers"]["auth_asym_ids"][j-1][0]
+                else:
+                    if json_data["rcsb_polymer_entity"]["pdbx_description"] not in data["other"]:
+                        data["other"].append(json_data["rcsb_polymer_entity"]["pdbx_description"])
+        else:
+            if json_data["rcsb_polymer_entity"]["pdbx_description"] not in data["other"]:
+                data["other"].append(json_data["rcsb_polymer_entity"]["pdbx_description"])
+    return data
+
+
+def build_signprot_struct(protein, pdb, data):
+    ss = SignprotStructure()
+    pdb_code, p_c = WebLink.objects.get_or_create(index=pdb, web_resource=WebResource.objects.get(slug="pdb"))
+    pub_date = data["release_date"]
+    # Structure type
+    if "x-ray" in data["method"].lower():
+        structure_type_slug = "x-ray-diffraction"
+    elif "electron" in data["method"].lower():
+        structure_type_slug = "electron-microscopy"
+    else:
+        structure_type_slug = "-".join(data["method"].lower().split(" "))
+    try:
+        structure_type = StructureType.objects.get(slug=structure_type_slug)
+    except StructureType.DoesNotExist as e:
+        structure_type, c = StructureType.objects.get_or_create(slug=structure_type_slug, name=data["method"])
+        # self.logger.info("Created StructureType:"+str(structure_type))
+
+    # Publication
+    pub = None
+    if data["doi"]:
+        try:
+            pub = Publication.get_or_create_from_doi(data["doi"])
+        except:
+            # 2nd try (in case of paralellization clash)
+            pub = Publication.get_or_create_from_doi(data["doi"])
+    elif data["pubmedId"]:
+        try:
+            pub = Publication.get_or_create_from_pubmed(data["pubmedId"])
+        except:
+            # 2nd try (in case of paralellization clash)
+            pub = Publication.get_or_create_from_pubmed(data["pubmedId"])
+
+    # PDB data
+    url = 'https://www.rcsb.org/pdb/files/{}.pdb'.format(pdb)
+    req = urllib.request.Request(url)
+    with urllib.request.urlopen(req) as response:
+        pdbdata_raw = response.read().decode('utf-8')
+    pdbdata_object = PdbData.objects.get_or_create(pdb=pdbdata_raw)[0]
+    ss.pdb_code = pdb_code
+    ss.structure_type = structure_type
+    ss.resolution = data["resolution"]
+    ss.publication_date = pub_date
+    ss.publication = pub
+    ss.protein = protein
+    ss.pdb_data = pdbdata_object
+    if len(SignprotStructure.objects.filter(pdb_code=ss.pdb_code))>0:
+        # self.logger.warning('SignprotStructure {} already created, skipping'.format(pdb_code))
+        return 0
+    ss.save()
+    # Stabilizing agent
+    for o in data["other"]:
+        if len(o)>75:
+            continue
+        if o=="REGULATOR OF G-PROTEIN SIGNALING 14":
+            o = "Regulator of G-protein signaling 14"
+        elif o=="Nanobody 35":
+            o = "Nanobody-35"
+        elif o=="ADENYLATE CYCLASE, TYPE V":
+            o = "Adenylate cyclase, type V"
+        elif o=="1-phosphatidylinositol-4,5-bisphosphate phosphodiesterase beta-3":
+            o = "1-phosphatidylinositol 4,5-bisphosphate phosphodiesterase beta-3"
+        elif o=="FAB30 HEAVY CHAIN":
+            o = "Fab30 Heavy Chain"
+        elif o=="FAB30 LIGHT CHAIN":
+            o = "Fab30 Light Chain"
+        elif o=="VASOPRESSIN V2 RECEPTOR PHOSPHOPEPTIDE":
+            o = "Vasopressin V2 receptor phosphopeptide"
+        elif o=="AP-2 COMPLEX SUBUNIT BETA-1":
+            o = "AP-2 complex subunit Beta-1"
+        stabagent, sa_created = StructureStabilizingAgent.objects.get_or_create(slug=o.replace(" ","-").replace(" ","-"), name=o)
+        ss.stabilizing_agents.add(stabagent)
+    ss.save()
+    return ss
+
+def flip_residue(atoms, atom_type):
+    for a in atoms:
+        if a.get_id()==atom_type+'1':
+            one_index = atoms.index(a)
+            one_coords = a.get_coord()
+        elif a.get_id()==atom_type+'2':
+            atoms[one_index].coord = a.get_coord()
+            a.coord = one_coords
+    return atoms
+
+def run_residue_flip(atoms, atom_types=None):
+    if not atom_types:
+        atom_types = ['CD','CE','CG','OE','OD','NH']
+    for at in atom_types:
+        atoms = flip_residue(atoms, at)
+    return atoms
+
+def atoms_to_dict(atom_list):
+    prev_res = 0
+    atom_resis = OrderedDict()
+    for a in atom_list:
+        if a.get_parent().get_id()[1]!=prev_res:
+            atom_resis[a.get_parent().get_id()[1]] = [a]
+        else:
+            atom_resis[a.get_parent().get_id()[1]].append(a)
+        prev_res = a.get_parent().get_id()[1]
+    return atom_resis

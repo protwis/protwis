@@ -16,7 +16,7 @@ class Command(BaseCommand):
     help = "Function to run against the local ."
 
     logger = logging.getLogger(__name__)
-    rcsb_search_url = "https://search.rcsb.org/rcsbsearch/v1/query"
+    rcsb_search_url = "https://search.rcsb.org/rcsbsearch/v2/query"
     rcsb_fasta_url = "https://www.rcsb.org/fasta"
     months = 2
 
@@ -37,10 +37,7 @@ class Command(BaseCommand):
                             }
                         },
                         "request_options":{
-                            "pager":{
-                                "start":0,
-                                "rows":99999
-                            }
+                            "return_all_hits": True
                         },
                        "return_type":"entry"
                     }
@@ -72,7 +69,7 @@ class Command(BaseCommand):
             if rcsb_response.status_code == 200:
                 for header,sequence in grouped(rcsb_response.text.splitlines(), 2):
                     # Removal of RNA sequences and short sequences
-                    if not "U" in sequence and len(sequence) > 100:
+                    if "U" not in sequence and len(sequence) > 100:
                         fasta_results = fasta_results + header + "\n" + sequence + "\n"
             else:
                 print("Incorrect response from RCSB web services - exiting")
@@ -97,6 +94,7 @@ class Command(BaseCommand):
                     if top_hit.score > 100:
                         print("HIT", "{0:>7}{1:>8}".format(top_hit.score, round(top_hit.expect,5)), result.query)
                         pdb_list.append(result.query.split('_')[0])
+        print(pdb_list)
         return pdb_list
 
 def grouped(iterable, n):

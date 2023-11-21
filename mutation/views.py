@@ -331,7 +331,6 @@ def render_mutations(request, protein = None, family = None, download = None, re
 
         if not mutation.refs_title:
             mutation.refs_title = ''
-
         row = '''
                 <tr>
                 <td><a href="/protein/%s">%s</a></td>
@@ -340,7 +339,7 @@ def render_mutations(request, protein = None, family = None, download = None, re
                 <td>%s</td>
                 <td>%s => %s</td>
 
-                <td><a class="foldchange" href="#" data-toogle="tooltip"  data-html="true" data-original-title="%s" data-placement="top"> %s</a></td>
+                <td data-filter="%s" data-sort="%s"><a href="#" data-html="true" data-original-title="%s" data-toggle="tooltip" data-placement="right">%s</a></td>
 
                 <td>%s</td>
                 <td>
@@ -351,7 +350,12 @@ def render_mutations(request, protein = None, family = None, download = None, re
                 <a class="citation-tooltip" target="_blank" href="%s" data-toggle="tooltip"  data-container="body" data-html="true" data-original-title="%s" data-placement="left" >%s</a></td>
                  </tr>
         ''' % (mutation.protein.entry_name,mutation.protein.entry_name,gn_display,mutation.residue.sequence_number,mutation.residue.protein_segment.slug,
-               mutation.residue.amino_acid, mutation.mutation.amino_acid,mutation.getCalculation(),mutation.getFoldorQual(),exp_type,smiles,lig_name,
+               mutation.residue.amino_acid, mutation.mutation.amino_acid,float(mutation.foldchange),
+               float(mutation.foldchange),
+               mutation.getCalculation(),
+               # mutation.foldchange,
+               mutation.getFoldorQual(),
+               exp_type,smiles,lig_name,
                lig_role_name,lig_name,mutation.refs_link,mutation.refs_title,mutation.refs_main,mutation.review_link,mutation.review_title,mutation.review_main)
         mutation_tables += row
     # mutation_tables = ''.join(mutation_tables)
@@ -620,7 +624,7 @@ class designPDB(AbsTargetSelection):
         context['structures'] = ResidueFragmentInteraction.objects.values('structure_ligand_pair__structure__pdb_code__index', 'structure_ligand_pair__structure__protein_conformation__protein__parent__entry_name').annotate(
             num_ligands=Count('structure_ligand_pair', distinct=True), num_interactions=Count('pk', distinct=True)).order_by('structure_ligand_pair__structure__pdb_code__index')
         context['form'] = PDBform()
-        context['pdb_ids'] = json.dumps({s:s for s in Structure.objects.all().values_list('pdb_code__index', flat=True)})
+        context['pdb_ids'] = json.dumps({s:s for s in Structure.objects.all().exclude(structure_type__slug__startswith='af-').values_list('pdb_code__index', flat=True)})
         return context
 
 class design(AbsReferenceSelection):
@@ -2220,7 +2224,7 @@ def contactMutationDesign(request, goal = "both"):
                 actives = []
                 active_structs = Structure.objects.filter(\
                     protein_conformation__protein__family__slug__startswith=target_class, \
-                    state__name='Active', resolution__lte=3.7, gprot_bound_likeness__gte=90)\
+                    state__name='Active', resolution__lte=3.7, gprot_bound_likeness__gte=90).exclude(structure_type__slug__startswith='af-')\
                     .prefetch_related(
                                 "pdb_code",
                                 "state",
@@ -2230,7 +2234,7 @@ def contactMutationDesign(request, goal = "both"):
                                 "protein_conformation__protein__parent__family__parent",
                                 "protein_conformation__protein__parent__family__parent__parent__parent",
                                 "protein_conformation__protein__species", Prefetch("ligands", queryset=StructureLigandInteraction.objects.filter(
-                                annotated=True).prefetch_related('ligand__ligand_type', 'ligand_role')))\
+                                annotated=True).exclude(structure__structure_type__slug__startswith='af-').prefetch_related('ligand__ligand_type', 'ligand_role')))\
                     .annotate(res_count = Sum(Case(When(protein_conformation__residue__generic_number=None, then=0), default=1, output_field=IntegerField())))
 
                 for s in active_structs:
@@ -2300,7 +2304,7 @@ def contactMutationDesign(request, goal = "both"):
                 inactives = []
                 inactive_structs = Structure.objects.filter(\
                     protein_conformation__protein__family__slug__startswith=target_class, \
-                    state__name='Inactive', resolution__lte=3.7, gprot_bound_likeness__lte=20)\
+                    state__name='Inactive', resolution__lte=3.7, gprot_bound_likeness__lte=20).exclude(structure_type__slug__startswith='af-')\
                     .prefetch_related(
                                 "pdb_code",
                                 "state",
@@ -2312,7 +2316,7 @@ def contactMutationDesign(request, goal = "both"):
                                 "protein_conformation__protein__parent__family__parent",
                                 "protein_conformation__protein__parent__family__parent__parent__parent",
                                 "protein_conformation__protein__species", Prefetch("ligands", queryset=StructureLigandInteraction.objects.filter(
-                                annotated=True).prefetch_related('ligand__ligand_type', 'ligand_role')))\
+                                annotated=True).exclude(structure__structure_type__slug__startswith='af-').prefetch_related('ligand__ligand_type', 'ligand_role')))\
                     .annotate(res_count = Sum(Case(When(protein_conformation__residue__generic_number=None, then=0), default=1, output_field=IntegerField())))
 
                 for s in inactive_structs:
@@ -3098,8 +3102,8 @@ def gprotMutationDesign(request, goal):
 
         # Other coupling data
         other_couplings = ProteinCouplings.objects.exclude(source="GuideToPharma")\
-                        .filter(protein__family__slug__startswith=target_class, g_protein_subunit__family__slug__startswith="100_001", logmaxec50__gt=0)\
-                        .values_list('protein__entry_name', 'g_protein__name', 'source', 'logmaxec50', 'g_protein_subunit__entry_name')
+                        .filter(protein__family__slug__startswith=target_class, g_protein_subunit__family__slug__startswith="100_001", logemaxec50__gt=0)\
+                        .values_list('protein__entry_name', 'g_protein__name', 'source', 'logemaxec50', 'g_protein_subunit__entry_name')
 
         coupling_data = {}
         for pairing in other_couplings:

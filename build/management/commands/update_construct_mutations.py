@@ -5,7 +5,7 @@ from django.core.management import call_command
 from django.conf import settings
 from django.db import connection
 from django.core.cache import cache
-
+from common.tools import test_model_updates
 from build.management.commands.build_ligand_functions import get_or_create_ligand
 
 from structure.models import Structure
@@ -23,6 +23,7 @@ from optparse import make_option
 import os
 import xlrd
 import json
+import django.apps
 
 import time
 from collections import OrderedDict
@@ -35,6 +36,9 @@ class Command(BaseCommand):
 
     path = os.sep.join([settings.DATA_DIR, 'structure_data', 'construct_data', 'Stabilising_Mutations_In_Xtal_Constructs.xlsx'])
     annotation_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'construct_data', 'construct_annotations.xlsx'])
+    tracker = {}
+    all_models = django.apps.apps.get_models()[6:]
+    test_model_updates(all_models, tracker, initialize=True)
 
     def handle(self, *args, **options):
 
@@ -68,6 +72,7 @@ class Command(BaseCommand):
         self.import_solub()
         self.import_puri()
         self.import_xtal()
+        test_model_updates(self.all_models, self.tracker, check=True)
 
     def purge_construct_data(self):
         Construct.objects.all().delete()
@@ -94,7 +99,7 @@ class Command(BaseCommand):
 
     def rebuild_constructs(self):
         self.purge_construct_data()
-        structures = Structure.objects.all()
+        structures = Structure.objects.all().exclude(structure_type__slug__startswith='af-')
         for s in structures:
             pdbname = str(s)
             cache.delete(pdbname+"_auto_d")
