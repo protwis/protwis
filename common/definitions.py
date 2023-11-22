@@ -2296,3 +2296,4 @@ _AFTER_NAR2025_CLASSLESS_PARENT_GPCR_SLUGS = {'010'}
 # protein.models fixes 'CLASSLESS_PARENT_GPCR_SLUGS' in case of changes in its definition
 # Uncomment next line in the future
 # CLASSLESS_PARENT_GPCR_SLUGS = {'010'}
+
