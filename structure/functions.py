@@ -1206,13 +1206,10 @@ class ParseAFComplexModels():
                 peptide_id = parts[1]
                 peptide = "-" + peptide_id
                 signprot = parts[2]
-                model = 'af-signprot-peptide'
                 chain_e_sequence = self.get_ligand_sequence(location, 'E')
-
             else:  # Case without peptide
                 peptide = None
                 signprot = parts[1]
-                model = 'af-signprot'
                 chain_e_sequence = None
 
             # Grab model date/version from pdb file
@@ -1224,35 +1221,35 @@ class ParseAFComplexModels():
 
                 model_date = date_re.group(1)
 
-            # Check signprot type
-
-            if signprot.startswith('gna'):
-
-                # Check if model has full heterotrimer
-                if 'gbb1_human' in f:
-                    signprot = signprot.split('_')[0]+'_human'
-                    beta_gamma = True
-                else:
-                    beta_gamma = False
-
-            else:
-                model = 'af-arrestin'
-                beta_gamma = False
-
-            self.complexes[f'{receptor}{peptide}-{signprot}'] = {
+            complex_info = {
                 'receptor': receptor,
                 'peptide': peptide,
                 'signprot': signprot,
-                'beta_gamma': beta_gamma,
                 'publication_date': model_date,
                 'location': location,
-                'model': model,
+                'model': 'af-signprot',
                 'preferred_chain': 'A',
                 'PTM': metrics['ptm'],
                 'iPTM': metrics['iptm'],
                 'PAE_mean': metrics['pae_mean'],
                 'chain_e_sequence': chain_e_sequence
             }
+
+            # Check for type of signprot
+            if signprot.startswith('gna'):
+                # Check if model has full heterotrimer
+                if 'gbb1_human' in f:
+                    signprot = signprot.split('_')[0] + '_human'
+                    beta_gamma = True
+                else:
+                    beta_gamma = False
+            else:
+                complex_info['model'] = 'af-arrestin'
+                beta_gamma = False
+
+            complex_info['beta_gamma'] = beta_gamma
+
+            self.complexes[f'{receptor}{peptide}-{signprot}'] = complex_info
 
     def get_ligand_sequence(self, pdb_file, chain_id):
         sequence = ""
@@ -1264,7 +1261,6 @@ class ParseAFComplexModels():
                     if len(sequence) < res_seq:
                         sequence += self.residue_to_one_letter.get(residue, 'X')
         return sequence
-
 
 class ParseRFAAModels():
     def __init__(self):
