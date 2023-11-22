@@ -79,6 +79,16 @@ class BlastSearch(object):
                 stdin=PIPE, stdout=PIPE, stderr=PIPE)
             (blast_out, blast_err) = blast.communicate(input=str(input_seq))
 
+            # Log the BLAST output and errors for inspection
+            logger.debug("BLAST Output: {}".format(blast_out))
+            if blast_err:
+                logger.error("BLAST Error: {}".format(blast_err))
+
+            # Check if BLAST output is empty
+            if not blast_out.strip():
+                logger.error("No output returned from BLAST command.")
+                return []
+
         if len(blast_err) != 0:
             logger.debug(blast_err)
         if blast_out!='\n':
@@ -1183,13 +1193,35 @@ class ParseAFComplexModels():
                 line = model_file.readlines()[0]
                 date_re = re.search('HEADER[A-Z\S\D]+(\d{4}-\d{2}-\d{2})', line)
                 model_date = date_re.group(1)
-            ### Check if model has full heterotrimer
-            if 'gbb1_human' in f:
-                signprot = signprot.split('_')[0]+'_human'
-                beta_gamma = True
+
+            complex_info = {
+                'receptor': receptor,
+                'signprot': signprot,
+                'publication_date': model_date,
+                'location': location,
+                'model': 'af-signprot',
+                'preferred_chain': 'A',
+                'PTM': metrics['ptm'],
+                'iPTM': metrics['iptm'],
+                'PAE_mean': metrics['pae_mean']
+            }
+
+            # Check for type of signprot
+            if signprot.startswith('gna'):
+
+                ### Check if model has full heterotrimer
+                if 'gbb1_human' in f:
+                    signprot = signprot.split('_')[0] + '_human'
+                    beta_gamma = True
+                else:
+                    beta_gamma = False
             else:
+                complex_info['model'] = 'af-arrestin'
                 beta_gamma = False
-            self.complexes[receptor+'-'+signprot] = {'receptor':receptor, 'signprot':signprot, 'beta_gamma':beta_gamma, 'publication_date':model_date, 'location':location, 'model':'af-signprot', 'preferred_chain':'A', 'PTM':metrics['ptm'], 'iPTM':metrics['iptm'], 'PAE_mean':metrics['pae_mean']}
+
+            complex_info['beta_gamma'] = beta_gamma
+
+            self.complexes[receptor + '-' + signprot] = complex_info
 
 
 class ParseStructureCSV():
