@@ -2275,4 +2275,12 @@ G_PROTEIN_DISPLAY_NAME = { # Alpha
                            'G(T) subunit gamma-T1':'G&gamma;T1', 'G(I)/G(S)/G(O) subunit gamma-2':'G&gamma;2',
                            'subunit gamma':'G&gamma;'}
 
-ARRESTIN_DISPLAY_NAME = {'arrs_mouse':'S-arrestin', 'arrs_bovin':'S-arrestin', 'arrb1_human':'Beta-arrestin-1', 'arrb1_rat':'Beta-arrestin-1'}
+ARRESTIN_DISPLAY_NAME = {
+                        'arrs_mouse':'S-arrestin', 
+                        'arrs_bovin':'S-arrestin', 
+                        'arrb1_human':'Beta-arrestin-1', 
+                        'arrs_human': 'S-arrestin',
+                        'arrc_human': 'Arrestin-C',
+                        'arrb2_human': 'Beta-arrestin-2',
+                        'arrb1_rat':'Beta-arrestin-1'
+                        }
