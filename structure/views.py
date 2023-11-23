@@ -252,7 +252,7 @@ class ServeComplexModels(TemplateView):
                                                                     "signprot_complex__protein__entry_name",
                                                                     "pk"))
 
-            sep = StructureExtraProteins.objects.filter(structure__structure_type__slug='af-signprot').prefetch_related("structure__pdb_code").values("structure__pdb_code__index").annotate(sepcount=Count("structure__pdb_code__index")).order_by()
+            sep = StructureExtraProteins.objects.filter(structure__structure_type__slug=self.signalling_protein).prefetch_related("structure__pdb_code").values("structure__pdb_code__index").annotate(sepcount=Count("structure__pdb_code__index")).order_by()
             sep_dict = {}
             for s in sep:
                 sep_dict[s["structure__pdb_code__index"]] = s["sepcount"]

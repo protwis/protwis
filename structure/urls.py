@@ -42,13 +42,17 @@ urlpatterns = [
     url(r'^generic_numbering_selection', GenericNumberingSelection.as_view(), name='generic_numbering'),
     url(r'^superposition_workflow_index$', SuperpositionWorkflowIndex.as_view(), name='superposition_workflow'),
     url(r'^superposition_workflow_gprot_index$', SuperpositionWorkflowIndex.as_view(website='gprot'), name='superposition_workflow_gprot'),
+    url(r'^superposition_workflow_arrestin_index$', SuperpositionWorkflowIndex.as_view(website='arrestin'), name='superposition_workflow_gprot'),
     url(r'^segmentselectiongprot$', SegmentSelectionGprotein.as_view(), name='superposition_workflow_gprot'),
     url(r'^superposition_workflow_index/(?P<clear>\w{4})$', SuperpositionWorkflowIndex.as_view(), name='superposition_workflow'),
     url(r'^superposition_workflow_gprot_index/(?P<clear>\w{4})$', SuperpositionWorkflowIndex.as_view(website='gprot'), name='superposition_workflow_gprot'),
+    url(r'^superposition_workflow_arrestin_index/(?P<clear>\w{4})$', SuperpositionWorkflowIndex.as_view(website='arrestin'), name='superposition_workflow_gprot'),
     url(r'^superposition_workflow_selection', SuperpositionWorkflowSelection.as_view(), name='superposition_workflow'),
     url(r'^superposition_workflow_selection_gprot', SuperpositionWorkflowSelection.as_view(), name='superposition_workflow'), #GO HERE segmentselectiongprot
+    url(r'^superposition_workflow_selection_arrestin', SuperpositionWorkflowSelection.as_view(), name='superposition_workflow'), #GO HERE segmentselectiongprot
     url(r'^superposition_workflow_results$', SuperpositionWorkflowResults.as_view(), name='superposition_workflow'),
     url(r'^superposition_workflow_results_gprot$', SuperpositionWorkflowResults.as_view(website='gprot'), name='superposition_workflow'),
+    url(r'^superposition_workflow_results_arrestin$', SuperpositionWorkflowResults.as_view(website='arrestin'), name='superposition_workflow'),
     url(r'^superposition_workflow_results/(?P<substructure>\w+)$', SuperpositionWorkflowDownload.as_view(), name='superposition_workflow'),
 #    url(r'^fragment_superposition_index', FragmentSuperpositionIndex.as_view(), name='fragment_superposition'),
 #    url(r'^fragment_superposition_results', FragmentSuperpositionResults.as_view(), name='fragment_superposition'),
