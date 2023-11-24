@@ -653,7 +653,11 @@
                     <td><span>{{ model.protein_conformation__protein__name|receptor_short|safe }}</span></td>
                     <td>{{ model.protein_conformation__protein__family__parent__name }}</td>
                     <td>{{ model.protein_conformation__protein__family__parent__parent__parent__name|cut_classname }}</td>
-                    <td><a href="/signprot/{{ model.signprot_complex_protein__entry_name }}">{{ model.signprot_complex__protein__family__name|gprot_short }}</a></td>
+                    {% if signalling_protein == 'gprot' %}
+                    <td><a href="/signprot/{{ model.signprot__complex_protein__entry_name }}">{{ model.signprot_complex__protein__family__name|gprot_short }}</a></td>
+                    {% else %}
+                    <td><a href="/signprot/{{ model.signprot_complex__protein__entry_name }}">{{ model.signprot_complex__protein__entry_name|arr_short }}</a></td>
+                    {% endif %}
                     <td>{{ model.signprot_complex__protein__family__parent__name }}</td>
                     <td>{{ model.heterotrimer }}</td>
             <!--         {% if model.Bouvier == "-" %}
