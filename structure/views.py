@@ -222,7 +222,6 @@ class ServeComplexModels(TemplateView):
         # model.signprot_complex.protein.family.name
         # model.signprot_complex.protein.entry_name
         try:
-            print(self.signalling_protein)
             complex_models = list(Structure.objects.filter(structure_type__slug=self.signalling_protein).prefetch_related(
                 "protein_conformation__protein",
                 "protein_conformation__protein__parent",
@@ -294,7 +293,7 @@ class ServeComplexModels(TemplateView):
                                 cm["Roth"] = coupling["logemaxec50"]
 
             context['structure_complex_model'] = complex_models
-
+            context['signalling_protein'] = self.signalling_protein
         except StructureComplexModel.DoesNotExist as e:
             pass
 
@@ -583,7 +582,6 @@ def ComplexModelDetails(request, header, refined=False):
         main_template = Structure.objects.get(pdb_code__index=header.upper())
         header = header.upper()+'_refined'
     model = Structure.objects.get(pdb_code__index=header)
-
     if not refined:
         scores = StructureAFScores.objects.get(structure=model)
         #Need to build the plDDT colors
@@ -668,7 +666,8 @@ def ComplexModelDetails(request, header, refined=False):
                                                              'residues_lookup': residues_lookup,
                                                              'display_res_gpcr_strict': display_res_gpcr_strict, 'display_res_gprot_strict': display_res_gprot_strict,
                                                              'display_res_gpcr_loose': display_res_gpcr_loose, 'display_res_gprot_loose': display_res_gprot_loose, 'residue_number_labels':conversion_dict_residue_numbers,
-                                                             'chain_colors': json.dumps(chain_colors), 'chain_color_palette': chain_color_palette
+                                                             'chain_colors': json.dumps(chain_colors), 'chain_color_palette': chain_color_palette,
+                                                             'signalling_protein': model.structure_type.slug
                                                              })
 
     else:
@@ -687,6 +686,7 @@ def ComplexModelDetails(request, header, refined=False):
                                                              'residues': len(protein_interactions),
                                                              'residues_browser': residues_browser,
                                                              'structure_type': model.structure_type,
+                                                             'signalling_protein': model.structure_type.slug,
                                                              'plddt_avg': avg_plddt['pLDDT__avg'],
                                                              'interactions_metadata': interactions_metadata,
                                                              'gprot': gprot_order,
@@ -1025,8 +1025,10 @@ def StructureDetails(request, pdbname):  ###JIMMY CHECKPOINT
 
 def complex_interactions(model):
     ### Gathering interaction info and structuring JS data
-    interactions = Interaction.objects.filter(interacting_pair__referenced_structure=model,
-                                              interacting_pair__res2__protein_conformation__protein__family__slug__startswith='100').prefetch_related(
+    interactions = Interaction.objects.filter(
+                                              Q(interacting_pair__res2__protein_conformation__protein__family__slug__startswith='100') |
+                                              Q(interacting_pair__res2__protein_conformation__protein__family__slug__startswith='200'),
+                                              interacting_pair__referenced_structure=model).prefetch_related(
                                                                              'interacting_pair__res1', 'interacting_pair__res2',
                                                                              'interacting_pair__res1__display_generic_number', 'interacting_pair__res2__display_generic_number',
                                                                              'interacting_pair__res1__protein_segment', 'interacting_pair__res2__protein_segment')
@@ -1137,9 +1139,13 @@ def complex_interactions(model):
 
     segments_order = ['TM1','ICL1', 'TM2', 'ICL2', 'TM3', 'ICL3', 'TM4', 'TM5', 'TM6', 'TM7', 'ICL4', 'H8', 'C-term']
     gprot_segments = ['G.HN','G.hns1','G.S1','G.s1h1','G.H1','G.h1ha','H.HA','H.hahb','H.HB','H.hbhc','H.HC','H.hchd','H.HD','H.hdhe','H.HE','H.hehf','H.HF','G.hfs2','G.S2','G.s2s3','G.S3','G.s3h2','G.H2','G.h2s4','G.S4','G.s4h3','G.H3','G.h3s5','G.S5','G.s5hg','G.HG','G.hgh4','G.H4','G.h4s6','G.S6','G.s6h5','G.H5']
+    arrestin_segments = ['ns1', 'S1', 's1s2', 'S2', 's2s3', 'S3', 's3s4', 'S4', 's4s5', 'S5', 's5s6', 'S6', 's6h1', 'H1', 'h1s7', 'S7', 's7s8', 'S8', 's8s9', 'S9', 's9s10', 'S10', 's10s11', 'S11', 's11s12', 'S12', 's12s13', 'S13', 's13s14', 'S14', 's14s15', 'S15', 's15s16', 'S16', 's16s17', 'S17', 's17s18', 'S18', 's18s19', 'S19', 's19s20', 'S20', 's20c']
     # Create a dictionary that maps segments to their positions in the custom order
     order_gpcr = {segment: index for index, segment in enumerate(segments_order)}
-    order_gprot = {segment: index for index, segment in enumerate(gprot_segments)}
+    if model.structure_type.slug == "af-arrestin":
+        order_gprot = {segment: index for index, segment in enumerate(arrestin_segments)}
+    else:
+        order_gprot = {segment: index for index, segment in enumerate(gprot_segments)}
 
     # Sort the list of dictionaries based on the custom order
     gprot_aminoacids = sorted(gprot_aminoacids, key=lambda x: (order_gprot.get(x['segment'], 9999), int(x['generic_number'].split('.')[-1])))
@@ -1270,15 +1276,19 @@ def complex_interactions(model):
             lookup[r.generic_number.label] = r.sequence_number
             residues_lookup[r.sequence_number] = r.amino_acid +str(r.sequence_number)+ " "+ r.generic_number.label
 
-    chain_color_palette = ['grey', '#fc660f']
 
     chains = [gpcr_chain, gprot_chain]
-    if model.signprot_complex.beta_chain:
-        chains.append(model.signprot_complex.beta_chain)
-        chain_color_palette.append('#f79862')
-    if model.signprot_complex.gamma_chain:
-        chains.append(model.signprot_complex.gamma_chain)
-        chain_color_palette.append('#ffbf00')
+
+    if model.structure_type.slug == "af-arrestin":
+        chain_color_palette = ['grey', '#50C878']
+    else:
+        chain_color_palette = ['grey', '#fc660f']
+        if model.signprot_complex.beta_chain:
+            chains.append(model.signprot_complex.beta_chain)
+            chain_color_palette.append('#f79862')
+        if model.signprot_complex.gamma_chain:
+            chains.append(model.signprot_complex.gamma_chain)
+            chain_color_palette.append('#ffbf00')
 
     chain_colors = []
     for i,c in enumerate(chains):

@@ -100,6 +100,9 @@ canvas {
           {% if structure_type.slug == "af-signprot" %}
               <h2><a href="/protein/{{ model.signprot_complex.protein.entry_name }}" target="_blank">G<sub>{{ model.signprot_complex.protein.family.name|gprot_short|slice:"1:" }}</sub></a> -
                   <a href="/protein/{{ model.protein_conformation.protein.entry_name }}" target="_blank">{{ model.protein_conformation.protein.name|safe }}</a> complex model
+          {% elif structure_type.slug == "af-arrestin" %}
+          <h2><a href="/protein/{{ model.signprot_complex.protein.entry_name }}" target="_blank">{{ model.signprot_complex.protein.entry_name|arr_short }}</a> -
+              <a href="/protein/{{ model.protein_conformation.protein.entry_name }}" target="_blank">{{ model.protein_conformation.protein.name|safe }}</a> complex model
           {% else %}
               <h2>Refined structure (<a href="/structure/{{ model.pdb_code.index|entry_short }}" target="_blank">{{ model.pdb_code.index|entry_short }}</a>) of <a href="/protein/{{ model.signprot_complex.protein.entry_name }}" target="_blank">G<sub>{{ model.signprot_complex.protein.family.name|gprot_short|slice:"1:" }}</sub></a> -
                 <a href="/protein/{{ model.protein_conformation.protein.entry_name }}" target="_blank">{{ model.protein_conformation.protein.name|safe}}</a>
@@ -142,6 +145,16 @@ canvas {
     </div>
 </div>
 
+{% if structure_type.slug == "af-arrestin" %}
+<div class="row">
+    <div class="col-md-3 text-right text-info">
+        <h4>ARRESTIN FAMILY</h4>
+    </div>
+    <div class="col-md-9">
+        {{ model.signprot_complex.protein.family.parent|safe }}
+    </div>
+</div>
+{% else %}
 <div class="row">
     <div class="col-md-3 text-right text-info">
         <h4>G PROTEIN FAMILY</h4>
@@ -150,6 +163,7 @@ canvas {
         G<sub>{{ model.signprot_complex.protein.family.parent|safe|slice:"1:" }}</sub>
     </div>
 </div>
+{% endif %}
 
 <div class="row">
     <div class="col-md-3 text-right text-info">
@@ -377,6 +391,7 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
         document.addEventListener( "DOMContentLoaded", function(){
             // Model viewer
             var stage_full;
+            var structure_type = "{{ structure_type.slug }}";
             var stage = new NGL.Stage( "viewport", { backgroundColor: "white" } );
             var color_residues = JSON.parse('{{color_residues|safe}}');
             var schemeId = NGL.ColorMakerRegistry.addSelectionScheme( color_residues );
@@ -393,7 +408,12 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
                 // 3D intereaction viewer
                 stage_full = new NGL.Stage( "viewport_full", { backgroundColor: "white" } );
 
-                var galpha = "#fc660f";
+                let galpha;
+                if (structure_type == 'af-arrestin'){
+                  galpha = "#50C878";
+                } else {
+                  galpha = "#fc660f";
+                };
 
                 stage_full.loadFile( "/structure/complex_models/view/{{pdbname}}", { ext: "pdb" }  ).then( function( o ){
                     var schemeId2 = NGL.ColorMakerRegistry.addSelectionScheme( JSON.parse('{{chain_colors|safe}}') );
@@ -499,18 +519,20 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
             conversion_dict = {{ conversion_dict | safe }};
             conversion_dict_strict = {{ conversion_dict_strict | safe }};
             residue_labels = {{ residue_number_labels | safe }};
+            signalling_protein = "{{ signalling_protein }}";
+            console.log(signalling_protein);
 
             ClearSelection('targets');
             ClearSelection('reference');
 
             // Call the function with your desired values
-            draw_interactions_in_circles('visualization', interactions_strict, inner_data_strict, outer_data_strict, conversion_dict_strict);
+            draw_interactions_in_circles('visualization', interactions_strict, inner_data_strict, outer_data_strict, conversion_dict_strict, signalling_protein);
 
             $("#strict").click(function(){
               $("#strict").addClass("active");
               $("#loose").removeClass("active");
               d3.select("#visualization").selectAll("*").remove();
-              draw_interactions_in_circles('visualization', interactions_strict, inner_data_strict, outer_data_strict, conversion_dict_strict);
+              draw_interactions_in_circles('visualization', interactions_strict, inner_data_strict, outer_data_strict, conversion_dict_strict, signalling_protein);
               d3.selectAll(`.van-der-waals`).attr("stroke-opacity", 0);
             });
 
@@ -518,7 +540,7 @@ A modified pTM score, adapted to measure the accuracy of predicted protein inter
               $("#strict").removeClass("active");
               $("#loose").addClass("active");
               d3.select("#visualization").selectAll("*").remove();
-              draw_interactions_in_circles('visualization', interactions, inner_data, outer_data, conversion_dict);
+              draw_interactions_in_circles('visualization', interactions, inner_data, outer_data, conversion_dict, signalling_protein);
               d3.selectAll(`.van-der-waals`).attr("stroke-opacity", 0);
             });
 
