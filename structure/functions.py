@@ -37,6 +37,7 @@ import numpy
 import json
 import yaml
 from urllib.request import urlopen, Request
+from datetime import datetime
 import re
 
 
@@ -1192,7 +1193,11 @@ class ParseAFComplexModels():
             with open(location, 'r') as model_file:
                 line = model_file.readlines()[0]
                 date_re = re.search('HEADER[A-Z\S\D]+(\d{4}-\d{2}-\d{2})', line)
-                model_date = date_re.group(1)
+                try:
+                    model_date = date_re.group(1)
+                except AttributeError:
+                    current_date = datetime.now().date()
+                    model_date = current_date.strftime('%Y-%m-%d')
 
             complex_info = {
                 'receptor': receptor,

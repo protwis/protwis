@@ -1219,8 +1219,12 @@ def complex_interactions(model):
     gpcr_aminoacids_strict, gprot_aminoacids_strict, matching_dict_strict = sort_and_update(to_push_gpcr_strict, gpcr_aminoacids_strict, to_push_gprot_strict, gprot_aminoacids_strict, protein_interactions_strict)
 
     ### Interaction Matrix copy/paste
-    gprotein_order = ProteinSegment.objects.filter(proteinfamily='Alpha').values('id', 'slug')
-    fam_slug = '100'
+    if model.structure_type.slug == "af-arrestin":
+        gprotein_order = ProteinSegment.objects.filter(proteinfamily='Arrestin').values('id', 'slug')
+        fam_slug = '200'
+    else:
+        gprotein_order = ProteinSegment.objects.filter(proteinfamily='Alpha').values('id', 'slug')
+        fam_slug = '100'
 
     receptor_order = ['N', '1', '12', '2', '23', '3', '34', '4', '45', '5', '56', '6', '67', '7', '78', '8', 'C', '-']
 
@@ -2494,7 +2498,6 @@ class SuperpositionWorkflowSelection(AbsSegmentSelection):
         for selection_box, include in self.selection_boxes.items():
             if include:
                 context['selection'][selection_box] = selection.dict(selection_box)['selection'][selection_box]
-        print(context)
         # get attributes of this class and add them to the context
         attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
         for a in attributes:
