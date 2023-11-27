@@ -294,6 +294,13 @@ class ServeComplexModels(TemplateView):
 
             context['structure_complex_model'] = complex_models
             context['signalling_protein'] = self.signalling_protein
+            if self.signalling_protein == 'af-arrestin':
+                context['sign_header'] = 'ARRESTIN'  # the key probably needs to be changed
+            else:
+                context['sign_header'] = 'G PROTEIN'
+
+
+
         except StructureComplexModel.DoesNotExist as e:
             pass
 

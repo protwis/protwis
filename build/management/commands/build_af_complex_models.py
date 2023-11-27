@@ -658,12 +658,12 @@ class Command(BaseBuild):
             PdbData.objects.filter(pdb=m.pdb_data.pdb).delete()
             WebLink.objects.filter(index=m.pdb_code.index).delete()
         models.delete()
-        ResidueFragmentInteraction.objects.filter(structure_ligand_pair__structure__structure_type__slug='af-signprot').delete()
+        ResidueFragmentInteraction.objects.filter(structure_ligand_pair__structure__structure_type__slug__in=['af-signprot', 'af-arrestin']).delete()
         # ResidueFragmentInteractionType.objects.all().delete()
-        StructureLigandInteraction.objects.filter(structure__structure_type__slug='af-signprot').delete()
+        StructureLigandInteraction.objects.filter(structure__structure_type__slug__in=['af-signprot', 'af-arrestin']).delete()
         #Remove previous Rotamers/Residues to prepare repopulate
-        Fragment.objects.filter(structure__structure_type__slug='af-signprot').delete()
-        Rotamer.objects.filter(structure__structure_type__slug='af-signprot').delete()
+        Fragment.objects.filter(structure__structure_type__slug__in=['af-signprot', 'af-arrestin']).delete()
+        Rotamer.objects.filter(structure__structure_type__slug__in=['af-signprot', 'af-arrestin']).delete()
         # PdbData.objects.all().delete()
 
     @staticmethod
