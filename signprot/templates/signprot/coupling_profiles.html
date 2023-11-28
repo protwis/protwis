@@ -460,6 +460,14 @@ function copyToClipboard(txt) {
     color: forestgreen;
   }
 
+  .gprot_aquamarine {
+    color: aquamarine;
+  }
+
+  .gprot_cornflower {
+    color: #6495ED;
+  }
+
   .graydiv {
       height: 20px;
       width: 350px;
@@ -794,7 +802,7 @@ $(window).on("load",function() {
   </div>
   {% if signalling_data == 'gprot' %}
   <br />
-  <div>
+  <div class="row">
     <div style="float: right; position: relative" class="text-center">
       <b>No. of supporting datasets (from low to high)</b>
       <div class="graydiv"></div>
@@ -810,17 +818,17 @@ $(window).on("load",function() {
   </div>
   {% elif signalling_data == 'arrestin' %}
   <br />
-  <div>
-    <div style="float: right; position: relative" class="text-center">
+  <div class="row">
+    <!-- <div style="float: right; position: relative" class="text-center">
       <b>No. of supporting datasets (from low to high)</b>
       <div class="graydiv"></div>
-    </div>
+    </div> -->
     <div style="float: left; position: relative" class="text-center">
       <b>Arrestin complexes</b> <br />
-          <span class="gprot_orange">&#9675; &beta;-Arrestin<sub>1</sub></span>
-          <span class="gprot_purple">&#9675; &beta;-Arrestin<sub>2</sub></span>
-          <span class="gprot_aquamarine">&#9675; Arrestin-C</span>
-          <span class="gprot_cornflower">&#9675; S-Arrestin</span>
+          <span class="gprot_orange">&#11044; &beta;-Arrestin<sub>1</sub></span>
+          <span class="gprot_purple">&#11044; &beta;-Arrestin<sub>2</sub></span>
+          <span class="gprot_aquamarine">&#11044; Arrestin-C</span>
+          <span class="gprot_cornflower">&#11044; S-Arrestin</span>
     </div>
   </div>
   {% endif %}
