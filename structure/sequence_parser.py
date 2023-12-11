@@ -11,6 +11,7 @@ import Bio.PDB.Polypeptide as polypeptide
 
 from collections import OrderedDict
 import os, xlsxwriter
+from io import StringIO
 
 from datetime import datetime, date
 startTime = datetime.now()
@@ -184,6 +185,7 @@ class SequenceParser(object):
         self.segments = {}
         self.blast = BlastSearch(blastdb=os.sep.join([settings.STATICFILES_DIRS[0], 'blast', db]))
         self.wt_protein_id = wt_protein_id
+        self.expects = {}
 
         if pdb_file is not None:
             self.pdb_struct = PDBParser(QUIET=True).get_structure('pdb', pdb_file)[0]
@@ -216,6 +218,7 @@ class SequenceParser(object):
         self.fusions = []
 
         self.parse_pdb(self.pdb_struct)
+
         #if self.seqres:
         #    self.map_seqres()
         self.mark_deletions()
@@ -320,44 +323,108 @@ class SequenceParser(object):
 
 
     def map_to_wt_blast(self, chain_id, residues = None, sequence=None, starting_aa = 1, seqres = False):
-
         if residues:
             seq = self.get_peptide_sequence(residues)
         elif sequence:
             seq = sequence
         else:
             seq = self.get_chain_sequence(chain_id)
+
         alignments = self.blast.run(seq)
         if self.wt_protein_id!=None:
             self.wt = Protein.objects.get(id=self.wt_protein_id)
         else:
             self.wt = None
         for alignment in alignments:
-            if self.wt==None:
-                try:
-                    self.wt = Protein.objects.get(entry_name=str(alignment[1].hit_def))
-                    wt_resi = list(Residue.objects.filter(protein_conformation__protein=self.wt.id))
-                    self.mapping[chain_id] = {x.sequence_number: ParsedResidue(x.amino_acid, x.sequence_number, str(x.display_generic_number) if x.display_generic_number else None, x.protein_segment) for x in wt_resi}
-                except:
-                    pass
+            chimera_key = alignment[0]
+            if alignment[1].hit_def=='No definition line':
+                if '|' in alignment[0]:
+                    entry_name = alignment[0].split('|')[-1].lower()+'_a'
+                else:
+                    entry_name = alignment[0]
+                hit_def = Protein.objects.get(entry_name=entry_name)
+                identifier = hit_def.id
             else:
-                wt_resi = list(Residue.objects.filter(protein_conformation__protein=self.wt.id))
+                hit_def = alignment[1].hit_def
+                identifier = alignment[0]
+            try:
+                if hasattr(hit_def, "entry_name"):
+                    self.wt = hit_def
+                else:
+                    self.wt = Protein.objects.get(entry_name=str(hit_def))
+                wt_resi = list(Residue.objects.filter(protein_conformation__protein=self.wt.id).prefetch_related('display_generic_number','protein_segment'))
                 self.mapping[chain_id] = {x.sequence_number: ParsedResidue(x.amino_acid, x.sequence_number, str(x.display_generic_number) if x.display_generic_number else None, x.protein_segment) for x in wt_resi}
-            if alignment[1].hsps[0].expect > .5 and residues:
+                
+                # PDB data import for G prot chimera hits
+                if entry_name.endswith('_a'):
+                    pdb = entry_name.split('_')[0].upper()
+                    sbjct = Structure.objects.get(pdb_code__index=pdb)
+                    sbjct_chain = sbjct.signprot_complex.alpha
+                    pdb_chain = PDBParser(QUIET=True).get_structure('pdb', StringIO(sbjct.pdb_data.pdb))[0][sbjct_chain]
+                    resis = [i for i in pdb_chain]
+                    # Mapping correction for mostly Gq chimeras where not all residue objects got built
+                    if len(self.mapping)<len(resis):
+                        start = list(self.mapping[chain_id].keys())[0]
+                        for r in resis:
+                            resnum = r.get_id()[1]
+                            if resnum not in self.mapping[chain_id] and resnum>start:
+                                try:
+                                    one_letter_res = polypeptide.three_to_one(r.resname.replace('HID', 'HIS'))
+                                except KeyError:
+                                    continue
+                                self.mapping[chain_id][resnum] = ParsedResidue(one_letter_res, resnum, None, None)
+
+            except Protein.DoesNotExist:
+                continue
+
+            self.expects[chain_id] = alignment[1].hsps[0].expect
+            if alignment[1].hsps[0].expect > .3 and residues:
                 # self.fusions.append(AuxProtein(residues))
                 #The case when auxiliary protein is in a separate chain
                 if self.get_chain_sequence(chain_id) == self.get_peptide_sequence(residues) and chain_id in self.mapping:
                     del self.mapping[chain_id]
                 continue
-            try:
-                if self.wt.id != int(alignment[0]):
-                    continue
-            except ValueError:
-                continue
-            for hsps in alignment[1].hsps:
-                self.map_hsps(hsps, chain_id, starting_aa, seqres)
-                # break
 
+            for hsps in alignment[1].hsps:
+                if self.blast.blastdb.endswith('g_protein_chimeras'):
+                    self.map_structure(seq, chain_id, residues, chimera_key, starting_aa)
+                else:
+                    self.map_hsps(hsps, chain_id, starting_aa, seqres)
+
+    def map_structure(self, query_seq, chain_id, residues, chimera_key, offset = 1):
+        '''
+        Used when mapping to aligned and gapped structure sequence. E.g. G prot chimera mapping
+        '''
+        # parsing gapped chimera fasta
+        chimeras = SeqIO.to_dict(SeqIO.parse(open(os.sep.join([settings.DATA_DIR, 'g_protein_data', 'g_protein_chimeras_gapped.fasta'])), "fasta"))
+        
+        # pairwise alignment to best match
+        chimera_pw2 = pairwise2.align.localms(chimeras[chimera_key].seq, query_seq, 3, -4, -3, -.5)
+        sbjct, q = str(chimera_pw2[0][0]), str(chimera_pw2[0][1])
+        
+        query_residue_numbers = [r.get_id()[1] for r in residues]
+        sbjct_residue_numbers = sorted(list(self.mapping[chain_id].keys()))
+        sbjct_counter, q_counter = 0, 0
+
+        for s, q in zip(sbjct, q):
+            if s==q:
+                if s=='-':
+                    pass
+                else:
+                    self.mapping[chain_id][sbjct_residue_numbers[sbjct_counter]].set_pdb_res_num(query_residue_numbers[q_counter])
+                    sbjct_counter+=1
+                    q_counter+=1
+            elif s!='-' and q!='-':
+                self.mapping[chain_id][sbjct_residue_numbers[sbjct_counter]].set_pdb_res_num(query_residue_numbers[q_counter])
+                self.mapping[chain_id][sbjct_residue_numbers[sbjct_counter]].set_mutation(q)
+                sbjct_counter+=1
+                q_counter+=1
+            elif s=='-' and q!='-':
+                print('WARNING: could not map residue:', query_residue_numbers[q_counter])
+                q_counter+=1
+            elif s!='-' and q=='-':
+                self.mapping[chain_id][sbjct_residue_numbers[sbjct_counter]].set_deletion()
+                sbjct_counter+=1
 
     def map_hsps(self, hsps, chain_id, offset = 1, seqres = False):
         """

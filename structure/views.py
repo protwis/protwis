@@ -168,7 +168,7 @@ class ServeHomologyModels(TemplateView):
     def get_context_data(self, **kwargs):
         context = super(ServeHomologyModels, self).get_context_data(**kwargs)
         try:
-            context['structure_model'] = StructureModel.objects.all().prefetch_related(
+            context['structure_model'] = StructureModel.objects.filter(main_template__isnull=True).prefetch_related(
                 "protein__family",
                 "state",
                 "protein__family__parent__parent__parent",
@@ -2329,8 +2329,9 @@ class SuperpositionWorkflowIndex(TemplateView):
     header = "Upload or select your structures:"
 
     #adapt to two options
-    first_header = "Upload or select your template structure:"
-    second_header = "Upload or select your structures to superpose:"
+    first_header = "Select your reference structure:"
+    second_header = "Select your structures to superpose:"
+    third_header = "Upload your own reference and/or target structures"
     #
     upload_form_data = OrderedDict([
         ('ref_file', forms.FileField(label="Reference structure")),
@@ -2339,17 +2340,6 @@ class SuperpositionWorkflowIndex(TemplateView):
         ])
     form_code = forms.Form()
     form_code.fields = upload_form_data
-
-    #Splitting into two forms
-    upload_template = OrderedDict([
-        ('ref_file', forms.FileField(label="Reference structure"))])
-    upload_superpose = OrderedDict([
-        ('alt_files', MultiFileField(label="Structure(s) to superpose", max_num=10, min_num=1))])
-
-    form_template = forms.Form()
-    form_template.fields = upload_template
-    form_superpose = forms.Form()
-    form_superpose.fields = upload_superpose
 
     form_id = 'superpose_files'
 
@@ -2395,13 +2385,10 @@ class SuperpositionWorkflowIndex(TemplateView):
 
         # get attributes of this class and add them to the context
         context['form_code'] = str(self.form_code)
-        context['form_template'] = str(self.form_template)
-        context['form_superpose'] = str(self.form_superpose)
         context['source'] = self.website
         if self.website == 'gpcr':
             context['url'] = '/structure/superposition_workflow_selection'
         elif self.website == 'gprot':
-            # context['url'] = '/structure/superposition_workflow_selection_gprot'
             context['url'] = '/structure/segmentselectiongprot'
 
         attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
@@ -2478,6 +2465,7 @@ class SuperpositionWorkflowSelection(AbsSegmentSelection):
         if simple_selection:
             selection.importer(simple_selection)
 
+        context['source'] = self.website
         context['selection'] = {}
         context['selection']['site_residue_groups'] = selection.site_residue_groups
         context['selection']['active_site_residue_group'] = selection.active_site_residue_group
@@ -2554,7 +2542,7 @@ class SegmentSelectionGprotein(AbsSegmentSelection):
         self.buttons = {
             'continue': {
                 'label': 'Download substructures',
-                'url': '/structure/superposition_workflow_results/custom',
+                'url': '/structure/superposition_workflow_results_gprot/custom',
                 'color': 'success',
             },
         }
@@ -2598,7 +2586,7 @@ class SuperpositionWorkflowResults(TemplateView):
     mid_section = 'superposition_results.html'
     #Buttons - none
 
-    def get_context_data (self, **kwargs):
+    def get_context_data(self, **kwargs):
 
         context = super(SuperpositionWorkflowResults, self).get_context_data(**kwargs)
 
@@ -2615,33 +2603,42 @@ class SuperpositionWorkflowResults(TemplateView):
             else:
                 ref_file = StringIO(selection.reference[0].item.get_cleaned_pdb())
 
+        alt_files = []
         if 'alt_files' in self.request.session.keys():
             alt_files = [StringIO(alt_file.file.read().decode('UTF-8')) for alt_file in self.request.session['alt_files']]
-        elif selection.targets != []:
+        if selection.targets != []:
             if self.website == 'gprot':
-                alt_files = [StringIO(x.item.get_cleaned_pdb(pref_chain=False)) for x in selection.targets if x.type in ['structure', 'signprot', 'structure_model', 'structure_model_Inactive', 'structure_model_Intermediate', 'structure_model_Active']]
+                alt_files += [StringIO(x.item.get_cleaned_pdb(pref_chain=False)) for x in selection.targets if x.type in ['structure', 'signprot', 'structure_model', 'structure_model_Inactive', 'structure_model_Intermediate', 'structure_model_Active']]
             else:
-                alt_files = [StringIO(x.item.get_cleaned_pdb()) for x in selection.targets if x.type in ['structure', 'signprot', 'structure_model', 'structure_model_Inactive', 'structure_model_Intermediate', 'structure_model_Active']]
+                alt_files += [StringIO(x.item.get_cleaned_pdb()) for x in selection.targets if x.type in ['structure', 'signprot', 'structure_model', 'structure_model_Inactive', 'structure_model_Intermediate', 'structure_model_Active']]
 
         if self.website == 'gprot':
-            superposition = ConvertSuperpose(deepcopy(ref_file), alt_files, selection)
+            try:
+                superposition = ConvertSuperpose(deepcopy(ref_file), alt_files, selection)
+                out_structs = superposition.run()
+            except AssertionError as msg:
+                out_structs = []
+                self.message = msg
         else:
             superposition = ProteinSuperpose(deepcopy(ref_file), alt_files, selection)
+            out_structs = superposition.run()
 
-        out_structs = superposition.run()
-
+        alt_file_names = []
         if 'alt_files' in self.request.session.keys():
             alt_file_names = [x.name for x in self.request.session['alt_files']]
-        else:
-            alt_file_names = []
-            for x in selection.targets:
-                if x.type=='structure':
-                    alt_file_names.append('{}_{}.pdb'.format(x.item.protein_conformation.protein.entry_name, x.item.pdb_code.index))
-                elif x.type=='structure_model' or x.type=='structure_model_Inactive' or x.type=='structure_model_Intermediate' or x.type=='structure_model_Active':
-                    if hasattr(x.item.main_template, 'pdb_code'):
-                        alt_file_names.append('Class{}_{}_{}_{}_GPCRdb.pdb'.format(class_dict[x.item.protein.family.slug[:3]], x.item.protein.entry_name, x.item.state.name, x.item.main_template.pdb_code.index))
-                    else:
-                        alt_file_names.append('Class{}_{}_{}_GPCRdb.pdb'.format(class_dict[x.item.protein.family.slug[:3]], x.item.protein.entry_name, x.item.state.name))
+        for x in selection.targets:
+            if x.type=='structure':
+                if x.item.structure_type.slug.startswith('af-'):
+                    alt_file_names.append('{}.pdb'.format(x.item.pdb_code.index))
+                elif not hasattr(x.item, 'protein_conformation'):
+                    alt_file_names.append('{}_{}.pdb'.format(x.item.protein.entry_name, x.item.pdb_code.index))
+                else:
+                    alt_file_names.append('{}_{}.pdb'.format(x.item.protein_conformation.protein.parent.entry_name, x.item.pdb_code.index))
+            elif x.type=='structure_model' or x.type=='structure_model_Inactive' or x.type=='structure_model_Intermediate' or x.type=='structure_model_Active':
+                if hasattr(x.item.main_template, 'pdb_code'):
+                    alt_file_names.append('Class{}_{}_{}_{}_GPCRdb.pdb'.format(class_dict[x.item.protein.family.slug[:3]], x.item.protein.entry_name, x.item.state.name, x.item.main_template.pdb_code.index))
+                else:
+                    alt_file_names.append('Class{}_{}_{}_GPCRdb.pdb'.format(class_dict[x.item.protein.family.slug[:3]], x.item.protein.entry_name, x.item.state.name))
 
         if len(out_structs) == 0:
             self.success = False
@@ -2660,12 +2657,15 @@ class SuperpositionWorkflowResults(TemplateView):
         for a in attributes:
             if not(a[0].startswith('__') and a[0].endswith('__')):
                 context[a[0]] = a[1]
+
+        context['source'] = self.website
         return context
 
 class SuperpositionWorkflowDownload(View):
     """
     Serve the (sub)structures depending on user's choice.
     """
+    website = 'gpcr'
 
     def get(self, request, *args, **kwargs):
 
@@ -2680,6 +2680,7 @@ class SuperpositionWorkflowDownload(View):
         if simple_selection:
             selection.importer(simple_selection)
         self.alt_substructure_mapping = {}
+
         #reference
         if 'ref_file' in request.session.keys():
             self.request.session['ref_file'].file.seek(0)
@@ -2687,25 +2688,35 @@ class SuperpositionWorkflowDownload(View):
             gn_assigner = GenericNumbering(structure=ref_struct)
             gn_assigner.assign_generic_numbers()
             self.ref_substructure_mapping = gn_assigner.get_substructure_mapping_dict()
-            ref_name = self.request.session['ref_file'].name
+            ref_name = self.request.session['ref_file'].name.replace('.pdb','_ref.pdb')
         elif selection.reference != []:
-            ref_struct = PDBParser(PERMISSIVE=True, QUIET=True).get_structure('ref', StringIO(selection.reference[0].item.get_cleaned_pdb()))[0]
-            gn_assigner = GenericNumbering(structure=ref_struct)
-            gn_assigner.assign_generic_numbers()
-            self.ref_substructure_mapping = gn_assigner.get_substructure_mapping_dict()
+            if self.website=='gprot':
+                ref_struct = PDBParser(PERMISSIVE=True, QUIET=True).get_structure('ref', StringIO(selection.reference[0].item.pdb_data.pdb))[0]
+            elif self.website=='gpcr':
+                ref_struct = PDBParser(PERMISSIVE=True, QUIET=True).get_structure('ref', StringIO(selection.reference[0].item.get_cleaned_pdb()))[0]
+                gn_assigner = GenericNumbering(structure=ref_struct)
+                gn_assigner.assign_generic_numbers()
+                self.ref_substructure_mapping = gn_assigner.get_substructure_mapping_dict()
             if selection.reference[0].type=='structure':
-                ref_name = '{}_{}_ref.pdb'.format(selection.reference[0].item.protein_conformation.protein.entry_name, selection.reference[0].item.pdb_code.index)
+                if selection.reference[0].item.structure_type.slug.startswith('af-'):
+                    ref_name = '{}_ref.pdb'.format(selection.reference[0].item.pdb_code.index)
+                else:
+                    if not hasattr(selection.reference[0].item, 'protein_conformation'):
+                        ref_name = '{}_{}_ref.pdb'.format(selection.reference[0].item.protein.entry_name, selection.reference[0].item.pdb_code.index)
+                    else:
+                        ref_name = '{}_{}_ref.pdb'.format(selection.reference[0].item.protein_conformation.protein.parent.entry_name, selection.reference[0].item.pdb_code.index)
             elif selection.reference[0].type=='structure_model' or selection.reference[0].type=='structure_model_Inactive' or selection.reference[0].type=='structure_model_Intermediate' or selection.reference[0].type=='structure_model_Active':
-                ref_name = 'Class{}_{}_{}_{}_GPCRdb_ref.pdb'.format(class_dict[selection.reference[0].item.protein.family.slug[:3]], selection.reference[0].item.protein.entry_name,
-                                                                    selection.reference[0].item.state.name, selection.reference[0].item.main_template.pdb_code.index)
+                ref_name = 'Class{}_{}_{}_GPCRdb_ref.pdb'.format(class_dict[selection.reference[0].item.protein.family.slug[:3]], selection.reference[0].item.protein.entry_name,
+                                                                    selection.reference[0].item.state.name)
 
         alt_structs = {}
         for alt_id, st in self.request.session['alt_structs'].items():
             st.seek(0)
             alt_structs[alt_id] = PDBParser(PERMISSIVE=True, QUIET=True).get_structure(alt_id, st)[0]
-            gn_assigner = GenericNumbering(structure=alt_structs[alt_id])
-            gn_assigner.assign_generic_numbers()
-            self.alt_substructure_mapping[alt_id] = gn_assigner.get_substructure_mapping_dict()
+            if self.website=='gpcr':
+                gn_assigner = GenericNumbering(structure=alt_structs[alt_id])
+                gn_assigner.assign_generic_numbers()
+                self.alt_substructure_mapping[alt_id] = gn_assigner.get_substructure_mapping_dict()
 
         if self.kwargs['substructure'] == 'full':
 

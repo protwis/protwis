@@ -33,10 +33,6 @@
             }
         }
 
-        .highlight_1 {
-            background-color: cyan;
-        }
-
         table.dataTable.compact thead th.over_header {
             border-right: 1px solid;
             border-left: 0px solid;
@@ -109,35 +105,10 @@
 </system.webServer>
 
 <script>
-  window.addEventListener("hashchange", updateButtonConfiguration, false);
-
-  function updateButtonConfiguration() {
-      const button = document.getElementById("superpose_template_btn");
-
-      switch (window.location.hash) {
-          case "#keepselectionreference":
-              // Update the button for #keepselectionreference
-              button.innerText = "Add reference to superposition";
-              button.id = "superpose_template_btn";
-              button.classList.add("highlight_1");
-              break;
-          case "#keepselectiontargets":
-              // Update the button for #keepselectiontargets
-              button.innerText = "Add targets to superposition";
-              button.id = "superpose_template_btn";
-              button.classList.add("highlight_1");
-              break;
-          default:
-              // Default configuration (if no recognized hash)
-              button.innerText = "Superposition";
-              button.id = "superpose_btn";
-              button.classList.remove("highlight_1");
-              break;
-      }
-  }
+  window.addEventListener("hashchange", updateSuperpositionButtonConfiguration, false);
 
   // Call this function on page load to set the initial configuration
-  document.addEventListener("DOMContentLoaded", updateButtonConfiguration);
+  document.addEventListener("DOMContentLoaded", updateSuperpositionButtonConfiguration);
 
 </script>
     <script type="text/javascript" charset="utf-8">
@@ -341,12 +312,11 @@
                       AddToSelection('targets', 'structure_model', checked_data[i][12]+"_"+checked_data[i][3]);
                   }
                 }
-                window.location.href = '/structure/superposition_workflow_index';
+                window.location.href = '/structure/superposition_workflow_index#keepselection';
             });
 
             $("#superpose_btn").click(function() {
-                console.log('clicked');
-                superposition(oTable, [0,5,6,7,8,9,2,3,4,10,11], "homology_model_browser", 'gpcr', true);
+                superposition(oTable, [5,6,7,8,9,2,3,4,10,11,12], "homology_model_browser", 'gpcr', 12, [12]);
             });
         });
 

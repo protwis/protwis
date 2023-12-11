@@ -1,45 +1,49 @@
 /*global showAlert*/
 /*eslint no-undef: "error"*/
 
-function superposition(oTable, columns, site, source='gpcr', hide_first_column=false) {
+function superposition(oTable, columns, site, source='gpcr', structure_column_index, hidden_columns=[]) {
     // oTable: DataTable object of table of entries
     // columns: Column indeces of oTable to be extracted to build table for reference selection. First column has to be structure/model string used for superposition workflow
     // site: Structure browser or Homology model browser (add new logic when expanding to new sites)
-    // if(window.location.hash === "#keepselection") {}
-    // else {
+    // source: Through which db is the call launced: gpcr, gprot
+    // structure_column_index: column index of the object identifier, int
+    // hidden_columns: array of indexes from the columns parameter that should be hidden in the modal 
+
     ClearSelection('targets');
     ClearSelection('reference');
-    // }
 
     var checked_data = oTable.rows('.alt_selected').data();
     if (checked_data.length===0) {
         showAlert("No entries selected for superposition", "danger");
         return 0;
     }
-    else if (checked_data.length > 100) {
-        showAlert("Maximum number of selected entries is 100", "warning");
+    else if (checked_data.length > 50) {
+        showAlert("Maximum number of selected entries is 50", "warning");
         return 0;
     }
-    var selected_ids = []
+    var selected_ids = [];
+    var selection_type = '';
+
     if (site==='structure_browser') {
         for (i = 0; i < checked_data.length; i++) {
             var div = document.createElement("div");
-            div.innerHTML = checked_data[i][7];
+            div.innerHTML = checked_data[i][structure_column_index];
             if (typeof div.innerText !== "undefined") {
                 selected_ids.push(div.innerText.replace(/\s+/g, ''));
             } else {
                 selected_ids.push(div.textContent.replace(/\s+/g, ''));
             }
         }
-        AddToSelection('targets', 'structure_many', selected_ids.join(","));
+        selection_type = 'structure_many';
+    }
 
-    } else if (site==='homology_model_browser') {
+    else if (site==='homology_model_browser') {
         for (i = 0; i < checked_data.length; i++) {
             var div = document.createElement("div");
-            div.innerHTML = checked_data[i][12];
+            div.innerHTML = checked_data[i][structure_column_index];
             var state = checked_data[i][3];
             if (checked_data[i][4]==='Yes') {
-                div.innerHTML = checked_data[i][11];
+                div.innerHTML = checked_data[i][structure_column_index];
                 if (typeof div.innerText !== "undefined") {
                     selected_ids.push(div.innerText.replace(/\s+/g, '')+"_refined");
                 } else {
@@ -54,30 +58,35 @@ function superposition(oTable, columns, site, source='gpcr', hide_first_column=f
                 }
             }
         }
-        AddToSelection('targets', 'structure_models_many', selected_ids.join(","));
-    } else if (site==='complex_models') {
+        selection_type = 'structure_model_many';
+    }
+
+    else if (site==='complex_models') {
         for (i = 0; i < checked_data.length; i++) {
             var div = document.createElement("div");
-            div.innerHTML = checked_data[i][15];
+            div.innerHTML = checked_data[i][structure_column_index];
             if (typeof div.innerText !== "undefined") {
                 selected_ids.push(div.innerText.replace(/\s+/g, ''));
             } else {
                 selected_ids.push(div.textContent.replace(/\s+/g, ''));
             }
         }
-        AddToSelection('targets', 'structure_many', selected_ids.join(","));
-    } else if (site == "g_protein_structure_browser"){
+        selection_type = 'structure_many';
+    }
+
+    else if (site == "g_protein_structure_browser"){
       for (i = 0; i < checked_data.length; i++) {
           var div = document.createElement("div");
-          div.innerHTML = checked_data[i][11];
+          div.innerHTML = checked_data[i][structure_column_index];
           if (typeof div.innerText !== "undefined") {
               selected_ids.push(div.innerText.replace(/\s+/g, ''));
           } else {
               selected_ids.push(div.textContent.replace(/\s+/g, ''));
           }
       }
-      AddToSelection('targets', 'signprot_many', selected_ids.join(","));
-    }// add new logic here for new site
+      selection_type = 'signprot_many';
+    }
+    // add new logic here for new site
 
     $('#superposition_modal_table tbody').empty();
     var modal = document.getElementById("superposition-modal");
@@ -93,66 +102,139 @@ function superposition(oTable, columns, site, source='gpcr', hide_first_column=f
         }
     }
     var checked_data = oTable.rows('.alt_selected').data();
-    // var needed_columns = [6,1,2,3,4,5,10,26]
+    // Create modal table HTML
     for (i=0; i<checked_data.length; i++) {
         var div = document.createElement("div");
         row = document.createElement('tr');
         var checkbox = document.createElement('input');
         checkbox.type = "checkbox";
         row.appendChild(checkbox);
-        var column_count = 0;
         columns.forEach(function(column) {
-            if (column === 0){
-              div.innerHTML = checked_data[i][column];
-              cell = document.createElement('td');
-              let matched = div.innerHTML.match(/id="(\d+)"/);
-              let idValue = matched ? matched[1] : ''; // If no match, idValue will be an empty string
-              textnode = document.createTextNode(idValue);
-            } else {
-              div.innerHTML = checked_data[i][column];
-              cell = document.createElement('td');
-              textnode = document.createTextNode(div.innerText.replace(/\s+/g, ''));
-            }
-            if(column_count===0 && typeof hide_first_column===false) {}
-            else if (column_count===0 && hide_first_column===true) {
+            div.innerHTML = checked_data[i][column];
+            cell = document.createElement('td');
+            if (hidden_columns.includes(column)) {
                 cell.style.display = "none";
             }
+            textnode = document.createTextNode(div.innerText.replace(/\s+/g, ''));
             cell.appendChild(textnode);
             row.appendChild(cell);
-            column_count++;
         });
         $('#superposition_modal_table tbody').append(row)
     }
     $("#superposition_modal_table tbody tr").click(function() {
+        var ref_id = '';
+
         if (site==='structure_browser') {
-            AddToSelection('reference', 'structure', $(this).children().eq(2).text());
-            RemoveFromSelection('targets', 'structure', $(this).children().eq(1).text());
-        } else if (site==='homology_model_browser') {
-            if ($(this).children().eq(9).text()==='Yes') {
-                AddToSelection('reference', 'structure',  $(this).children().eq(11).text()+"_refined");
-                RemoveFromSelection('targets', 'structure',  $(this).children().eq(1).text());
+            ref_id = $(this).children().eq(columns.indexOf(structure_column_index)+1).text();
+            AddToSelection('reference', 'structure', ref_id);
+        }
+
+        else if (site==='homology_model_browser') {
+            if ($(this).children().eq(8).text()==='Yes') {
+                ref_id = $(this).children().eq(11).text()+"_refined";
+                AddToSelection('reference', 'structure', ref_id);
             }
             else {
-                var state = $(this).children().eq(8).text();
-                AddToSelection('reference', 'structure_model', $(this).children().eq(2).text()+"_"+$(this).children().eq(6).text()+"_"+state);
-                RemoveFromSelection('targets', 'structure_model', $(this).children().eq(1).text());
+                var state = $(this).children().eq(7).text();
+                ref_id = $(this).children().eq(columns.indexOf(structure_column_index)+1).text()+"_"+state;
+                AddToSelection('reference', 'structure_model', ref_id);
             }
-        } else if (site==='complex_models') {
-          AddToSelection('reference', 'structure', $(this).children().eq(8).text());
-          RemoveFromSelection('targets', 'structure', $(this).children().eq(1).text());
-        } else if (site==='g_protein_structure_browser') {
-          AddToSelection('reference', 'signprot', $(this).children().eq(3).text());
-          RemoveFromSelection('targets', 'structure', $(this).children().eq(1).text());
-        }// Add logic here for new site
+        }
+
+        else if (site==='complex_models') {
+            AddToSelection('reference', 'structure', $(this).children().eq(columns.indexOf(structure_column_index)+1).text());
+        }
+
+        else if (site==='g_protein_structure_browser') {
+            ref_id = $(this).children().eq(columns.indexOf(structure_column_index)+1).text();
+            AddToSelection('reference', 'signprot', ref_id);
+        }
+        // Add logic here for new site
+
+        // Bulk add targets to selection
+        selected_ids.splice(selected_ids.indexOf(ref_id), 1);
+        AddToSelection('targets', selection_type, selected_ids.join(","));
+
         $(this).children(':first').prop("checked",true);
         if (source=='gpcr'){
-          window.location.href = '/structure/superposition_workflow_index';
+          window.location.href = '/structure/superposition_workflow_index#keepselection';
         } else {
-          window.location.href = '/structure/superposition_workflow_gprot_index';
+          window.location.href = '/structure/superposition_workflow_gprot_index#keepselection';
         }
 
     })
 };
+
+function direct_superposition(oTable, source="gpcr", structure_column_index, selection_type) {
+    var data_type = document.getElementById("superpose_template_btn").dataset.type;
+    var checked_data = oTable.rows('.alt_selected').data();
+    var selected_ids = [];
+    if (checked_data.length == 0) {
+        showAlert("No entries selected")
+        return 0;
+    }
+    if (data_type == "reference") {
+        if (checked_data.length > 1) {
+            showAlert("Only select one entry as reference", "danger");
+            return 0;
+        }
+        var div = document.createElement("div");
+        div.innerHTML = checked_data[0][structure_column_index];
+        if (typeof div.innerText !== "undefined") {
+            AddToSelection('reference', selection_type, div.innerText.replace(/\s+/g, ''));
+        } else {
+            AddToSelection('reference', selection_type, div.textContent.replace(/\s+/g, ''));
+        }
+    }
+    else if (data_type == "targets") {
+        if (checked_data.length > 50) {
+            showAlert("Maximum number of selected targets is 50");
+            return 0;
+        }
+        for (i = 0; i < checked_data.length; i++) {
+            var div = document.createElement("div");
+            div.innerHTML = checked_data[i][structure_column_index];
+            selected_ids.push(div.textContent.replace(/\s+/g, ''));
+        }
+        AddToSelection('targets', selection_type+"_many", selected_ids.join(","));
+    }
+    if (source=="gprot") {
+        window.location.href = '/structure/superposition_workflow_gprot_index#keepselection';
+    } else {
+        window.location.href = '/structure/superposition_workflow_index#keepselection';
+    }
+}
+
+function updateSuperpositionButtonConfiguration() {
+    const button = document.getElementById("superpose_template_btn");
+
+    switch (window.location.hash) {
+        case "#keepselectionreference":
+            // Update the button for #keepselectionreference
+            button.innerText = "Add reference to superposition";
+            button.id = "superpose_template_btn";
+            button.classList.remove("btn-default");
+            button.classList.add("btn-primary");
+            button.dataset.type = "reference";
+            break;
+        case "#keepselectiontargets":
+            // Update the button for #keepselectiontargets
+            button.innerText = "Add targets to superposition";
+            button.id = "superpose_template_btn";
+            button.classList.remove("btn-default");
+            button.classList.add("btn-primary");
+            button.dataset.type = "targets";
+            break;
+        default:
+            // Default configuration (if no recognized hash)
+            button.innerText = "Superposition";
+            button.id = "superpose_btn";
+            button.classList.remove("btn-primary");
+            button.classList.add("btn-default");
+            button.dataset.type = "default";
+          break;
+    }
+}
 
 function Sort(clicked_th, table1, table2) {
     if (clicked_th.parent().parent().parent().attr('class').includes('scrollable')) {

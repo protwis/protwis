@@ -41,24 +41,25 @@ class GenericNumbering(object):
         self.prot_id_list = []
         #setup for local blast search
         self.blast = BlastSearch(blast_path=blast_path, blastdb=blastdb, top_results=top_results)
+        # E-vals for BLAST
+        self.expects = {}
 
         # calling sequence parser
         if sequence_parser:
+            wt_protein_id = None
             if pdb_code:
                 struct = Structure.objects.get(pdb_code__index=self.pdb_code)
             if not signprot:
                 if pdb_code:
-                    s = SequenceParser(pdb_file=self.pdb_file, wt_protein_id=struct.protein_conformation.protein.parent.id)
-                else:
-                    if blastdb.endswith('protwis_human_blastdb'):
-                        s = SequenceParser(pdb_file=self.pdb_file, db='protwis_human_blastdb')
-                    else:
-                        s = SequenceParser(pdb_file=self.pdb_file)#, wt_protein_id=struct.protein_conformation.protein.parent.id)
+                    wt_protein_id = struct.protein_conformation.protein.parent.id
             else:
-                s = SequenceParser(pdb_file=self.pdb_file, wt_protein_id=signprot.id)
+                wt_protein_id = signprot.id
+
+            s = SequenceParser(pdb_file=self.pdb_file, wt_protein_id=wt_protein_id, db=blastdb.split('/')[-1])
             self.pdb_structure = s.pdb_struct
             self.mapping = s.mapping
             self.wt = s.wt
+            self.expects = s.expects
         else:
             if self.pdb_file:
                 self.pdb_structure = PDBParser(PERMISSIVE=True, QUIET=True).get_structure('ref', self.pdb_file)[0]
@@ -215,8 +216,6 @@ class GenericNumbering(object):
         alignments = {}
         #blast search goes first, looping through all the chains
         for chain in self.pdb_seq.keys():
-            print('Performing check on chain {}'.format(chain))
-            print('Comparing chain {} to chain {}'.format(chain, self.pdb_seq[chain]))
             alignments[chain] = self.blast.run(self.pdb_seq[chain])
 
         #map the results onto pdb sequence for every sequence pair from blast
@@ -253,25 +252,16 @@ class GenericNumbering(object):
         pdb_array = OrderedDict()
         for s in G_PROTEIN_SEGMENTS['Full']:
             pdb_array[s] = OrderedDict()
-        i, j = 0, 0
-        # key_list = [i.gpcrdb for i in list(self.mapping[target_chain].values())]
         for key, vals in self.mapping[target_chain].items():
-            category, segment, num = vals.gpcrdb.split('.')
-            if self.pdb_code in self.exceptions:
-                try:
-                    if self.pdb_structure[target_chain][key].get_id()[1]>=self.exceptions[self.pdb_code][0]:
-                        if i<self.exceptions[self.pdb_code][1]:
-                            pdb_array[segment][vals.gpcrdb] = 'x'
-                            i+=1
-                            continue
-                except:
-                    pass
+            try:
+                category, segment, num = vals.gpcrdb.split('.')
+            except ValueError:
+                continue
             segment = '.'.join([category, segment])
             try:
-                pdb_array[segment][vals.gpcrdb] = self.pdb_structure[target_chain][key-i].get_list()
-            except:
-                pdb_array[segment][vals.gpcrdb] = 'x'
-            j+=1
+                pdb_array[segment][vals.gpcrdb] = self.pdb_structure[target_chain][vals.resnum].get_list()
+            except KeyError:
+                pass
         return pdb_array
 
     def filtering_cgn(self, pdb_array, selection):
@@ -285,7 +275,10 @@ class GenericNumbering(object):
                 if pdb_array[segment]:
                     for cgn, val in pdb_array[segment].items():
                         if cgn in selected:
-                            filtered_array[cgn] = val
+                            if segment in filtered_array:
+                                filtered_array[segment][cgn] = val
+                            else:
+                                filtered_array[segment] = {cgn:val}
         return filtered_array
 
 
@@ -314,7 +307,6 @@ class GenericNumberingFromDB(GenericNumbering):
         for resn in self.residues[chain].keys():
             if resn in self.residues[chain] and resn in self.resis:
                 db_res = self.resis[resn]
-                # print(db_res)
                 if db_res.protein_segment:
                     segment = db_res.protein_segment.slug
                     self.residues[chain][resn].add_segment(segment)

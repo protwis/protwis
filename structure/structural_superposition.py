@@ -20,73 +20,67 @@ logger = logging.getLogger("protwis")
 class ConvertSuperpose(object):
 
     def __init__ (self, ref_file, alt_files, simple_selection):
-
-        self.selection = SelectionParser(simple_selection)
-        print('Generic numbers beginning of ProteinSuperpose')
+        self.selection = SelectionParser(simple_selection, True)
         self.ref_struct = PDBParser(PERMISSIVE=True).get_structure('ref', deepcopy(ref_file))[0]
         assert self.ref_struct, self.logger.error("Can't parse the ref file %s".format(ref_file))
-        if self.selection.generic_numbers != [] or self.selection.helices != []:
-            # if not check_gn(self.ref_struct):
+        if self.selection.generic_numbers != [] or self.selection.helices != [] or self.selection.substructures:
             blastdb=os.sep.join([settings.STATICFILES_DIRS[0], 'blast', 'g_protein_chimeras'])
             gn_assigner = GenericNumbering(pdb_file=deepcopy(ref_file), structure=self.ref_struct, sequence_parser=True, blastdb=blastdb)
-            self.ref_struct = gn_assigner.assign_cgn_with_sequence_parser('A')
+            self.check_mapping(gn_assigner)
+            assert len(list(gn_assigner.mapping.keys()))==1, 'Could not map reference sequence correctly'
+            self.ref_struct = gn_assigner.assign_cgn_with_sequence_parser(list(gn_assigner.mapping.keys())[0])
             self.ref_selector = gn_assigner.filtering_cgn(self.ref_struct, self.selection)
 
         self.alt_structs = []
         self.alt_selector = []
         self.og_alt_structs = []
-        for alt_id, alt_file in enumerate(alt_files):
-            try:
-                tmp_struct = PDBParser(PERMISSIVE=True).get_structure(alt_id, deepcopy(alt_file))[0]
-                if self.selection.generic_numbers != [] or self.selection.helices != []:
-                    gn_assigner = GenericNumbering(pdb_file=deepcopy(alt_file), structure=tmp_struct, sequence_parser=True, blastdb=blastdb)
-                    tmp_alt_cgn = gn_assigner.assign_cgn_with_sequence_parser('A')
-                    self.og_alt_structs.append(tmp_struct)
-                    self.og_alt_structs[-1].id = alt_id
-                    self.alt_structs.append(tmp_alt_cgn)
-                    self.alt_structs[-1].id = alt_id
-                    self.alt_selector.append(gn_assigner.filtering_cgn(tmp_alt_cgn, self.selection))
-                    self.alt_selector[-1].id = alt_id
 
-            except Exception as e:
-                print("Can't parse the file {!s}\n{!s}".format(alt_id, e))
-                logger.warning("Can't parse the file {!s}\n{!s}".format(alt_id, e))
-        print('Selection: {}. Ref Struct: {}. Alt Structs: {}'.format(self.selection, self.ref_struct, self.alt_structs))
+        for alt_id, alt_file in enumerate(alt_files):
+            tmp_struct = PDBParser(PERMISSIVE=True).get_structure(alt_id, deepcopy(alt_file))[0]
+            if self.selection.generic_numbers != [] or self.selection.helices != []:
+                gn_assigner = GenericNumbering(pdb_file=deepcopy(alt_file), structure=tmp_struct, sequence_parser=True, blastdb=blastdb)
+                self.check_mapping(gn_assigner)
+                assert len(list(gn_assigner.mapping.keys()))==1, 'Could not map target {} sequence correctly'.format(alt_id)
+                tmp_alt_cgn = gn_assigner.assign_cgn_with_sequence_parser(list(gn_assigner.mapping.keys())[0])
+                self.og_alt_structs.append(tmp_struct)
+                self.og_alt_structs[-1].id = alt_id
+                self.alt_structs.append(tmp_alt_cgn)
+                self.alt_structs[-1].id = alt_id
+                self.alt_selector.append(gn_assigner.filtering_cgn(tmp_alt_cgn, self.selection))
+                self.alt_selector[-1].id = alt_id
+
+        assert len(self.ref_selector)>0, 'No selected residues found in reference'
+
+        for alt in self.alt_selector:
+            assert len(alt)>0, 'No selected residues found for {} index structure'.format(alt.id)
+
+    @staticmethod
+    def check_mapping(gn_assigner):
+        '''Check mapping on BLAST E-value if other chains are present and remove them
+        '''
+        if len(list(gn_assigner.mapping.keys()))>1:
+            sorted_expects = sorted(gn_assigner.expects.items(), key=lambda x: x[1])
+            for i, chain in enumerate(sorted_expects[1:]):
+                if chain[0] in gn_assigner.mapping:
+                    del gn_assigner.mapping[chain[0]]
 
     def get_consensus_atom_sets(self, alt):
-
         tmp_ref, tmp_alt = [], []
-        ref_atoms, alt_atoms = {}, {}
+        ref_atoms = {}
+        for segment, residues in self.ref_selector.items():
+            for gn, atoms in residues.items():
+                ref_atoms[gn] = {}
+                for atom in atoms:
+                    if atom.name in ['CA','C','N']:
+                        ref_atoms[gn][atom.name] = atom
 
-        for segment in self.ref_selector.keys():
-            try:
-                for atom in self.ref_selector[segment].keys():
-                    if atom != 'x':
-                        ref_atoms[atom] = self.ref_selector[segment][atom]
-            except AttributeError:
-                continue
-
-        for segment in self.alt_selector[alt].keys():
-            try:
-                for atom in self.alt_selector[alt][segment].keys():
-                    if atom != 'x':
-                        alt_atoms[atom] = self.alt_selector[alt][segment][atom]
-            except AttributeError:
-                continue
-
-        for ref_cgn in ref_atoms.keys():
-            if ref_cgn in alt_atoms.keys():
-                for ref_atom in ref_atoms[ref_cgn]:
-                    for alt_atom in alt_atoms[ref_cgn]:
-                        try:
-                            if (ref_atom.name in ['CA', 'C', 'N']) and (ref_atom.name == alt_atom.name):
-                                tmp_ref.append(ref_atom)
-                                tmp_alt.append(alt_atom)
-                        except (AttributeError, ValueError):
-                            continue
-
-        if len(tmp_ref) != len(tmp_alt):
-            return ([], [])
+        for segment, residues in self.alt_selector[alt].items():
+            for gn, atoms in residues.items():
+                if gn in ref_atoms:
+                    for atom in atoms:
+                        if atom.name in ['CA','C','N'] and atom.name in ref_atoms[gn]:
+                            tmp_ref.append(ref_atoms[gn][atom.name])
+                            tmp_alt.append(atom)
 
         return (tmp_ref, tmp_alt)
 
@@ -102,9 +96,10 @@ class ConvertSuperpose(object):
                 ref, alt = self.get_consensus_atom_sets(alt_struct.id)
                 super_imposer.set_atoms(ref, alt)
                 super_imposer.apply(self.og_alt_structs[alt_struct.id])
-                logger.info("RMS(reference, model {!s}) = {:f}".format(alt_struct.id, super_imposer.rms))
+                logger.info("RMS(reference, model {!s}) = {:f}".format(alt_struct, super_imposer.rms))
             except Exception as msg:
-                logger.error("Failed to superpose structures {} and {}\n{}".format(self.ref_struct.id, alt_struct.id, msg))
+                logger.error("Failed to superpose structures {} and {}\n{}".format(self.ref_struct, alt_struct, msg))
+
         return self.og_alt_structs
 
 #==============================================================================
@@ -113,32 +108,27 @@ class ProteinSuperpose(object):
     def __init__ (self, ref_file, alt_files, simple_selection):
 
         self.selection = SelectionParser(simple_selection)
-        print('Generic numbers beginning of ProteinSuperpose')
         self.ref_struct = PDBParser(PERMISSIVE=True).get_structure('ref', ref_file)[0]
         assert self.ref_struct, self.logger.error("Can't parse the ref file %s".format(ref_file))
         if self.selection.generic_numbers != [] or self.selection.helices != []:
             if not check_gn(self.ref_struct):
                 gn_assigner = GenericNumbering(structure=self.ref_struct)
-                print('Assessing generic numbers')
                 self.ref_struct = gn_assigner.assign_generic_numbers()
 
         self.alt_structs = []
-        print('Parsing the targets')
         for alt_id, alt_file in enumerate(alt_files):
             try:
                 tmp_struct = PDBParser(PERMISSIVE=True).get_structure(alt_id, alt_file)[0]
                 if self.selection.generic_numbers != [] or self.selection.helices != []:
                     if not check_gn(tmp_struct):
-                        print('Assessing generic numbers for target structure')
                         gn_assigner = GenericNumbering(structure=tmp_struct)
                         self.alt_structs.append(gn_assigner.assign_generic_numbers())
                         self.alt_structs[-1].id = alt_id
                     else:
                         self.alt_structs.append(tmp_struct)
+                        self.alt_structs[-1].id = alt_id
             except Exception as e:
-                print("Can't parse the file {!s}\n{!s}".format(alt_id, e))
                 logger.warning("Can't parse the file {!s}\n{!s}".format(alt_id, e))
-        print('Selection: {}. Ref Struct: {}. Alt Structs: {}'.format(self.selection, self.ref_struct, self.alt_structs))
         self.selector = CASelector(self.selection, self.ref_struct, self.alt_structs)
 
     def run (self):
@@ -153,10 +143,8 @@ class ProteinSuperpose(object):
                 ref, alt = self.selector.get_consensus_atom_sets(alt_struct.id)
                 super_imposer.set_atoms(ref, alt)
                 super_imposer.apply(alt_struct.get_atoms())
-                print("RMS(reference, model {!s}) = {:f}".format(alt_struct.id, super_imposer.rms))
                 logger.info("RMS(reference, model {!s}) = {:f}".format(alt_struct.id, super_imposer.rms))
             except Exception as msg:
-                print("Failed to superpose structures {} and {}\n{}".format(self.ref_struct.id, alt_struct.id, msg))
                 logger.error("Failed to superpose structures {} and {}\n{}".format(self.ref_struct.id, alt_struct.id, msg))
 
         return self.alt_structs
