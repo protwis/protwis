@@ -66,7 +66,7 @@ class Structure(models.Model):
             save_line = False
             if pref_chain:
                 # or 'refined' bit needs rework, it fucks up the extraction
-                if (line.startswith('ATOM') or line.startswith('HET')) and (line[21] == self.preferred_chain[0] or 'refined' in self.pdb_code.index):
+                if (line.startswith('ATOM') or line.startswith('HET')) and line[21] == self.preferred_chain[0]:
                 # if (line.startswith('ATOM') or line.startswith('HET')) and (line[21] == self.preferred_chain[0]):
                     save_line = True
             else:

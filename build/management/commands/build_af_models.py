@@ -776,7 +776,6 @@ class Command(BaseBuild):
         # setting up processes
         complexes = self.parsed_structures.complexes
         complexes = list(set(complexes)) #removing duplicates
-        complexes = complexes[730:]
         while count.value < len(complexes):
             print('******************************************')
             cmpx = complexes[count.value]

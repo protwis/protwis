@@ -32,10 +32,6 @@
             }
         }
 
-        .highlight_1 {
-            background-color: cyan;
-        }
-
         table.dataTable.compact thead th.over_header {
             border-right: 1px solid;
             border-left: 0px solid;
@@ -137,7 +133,6 @@
                     ClearSelection("reference");
                     break;
                 case "#keepselectiontargets":
-                    ClearSelection("targets");
                     break;
                 default:
                     ClearSelection("targets");
@@ -357,38 +352,11 @@
             } );
 
             $("#superpose_btn").click(function() {
-                superposition(oTable, [0,3,4,5,6,7,8,15], "complex_models", "gprot", true);
+                superposition(oTable, [3,4,5,6,7,8,9,11,13], "complex_models", "gprot", 13, [13]);
             });
 
             $('#superpose_template_btn').click(function () {
-                var checked_data = oTable.rows('.alt_selected').data();
-                if (checked_data.length == 1) {
-                    var value = CheckSelection('reference');
-                    var div = document.createElement("div");
-                    div.innerHTML = checked_data[0][13];
-                    var destination;
-                    if (value != 0){
-                      destination = 'targets';
-                    } else {
-                      destination = 'reference';
-                    }
-                    if (typeof div.innerText !== "undefined") {
-                        AddToSelection(destination, 'structure', div.innerText.replace(/\s+/g, ''));
-                    } else {
-                        AddToSelection(destination, 'structure', div.textContent.replace(/\s+/g, ''));
-                    }
-                } else {
-                  for (i = 0; i < checked_data.length; i++) {
-                      var div = document.createElement("div");
-                      div.innerHTML = checked_data[i][15];
-                      if (typeof div.innerText !== "undefined") {
-                          AddToSelection('targets', 'structure', div.innerText.replace(/\s+/g, ''));
-                      } else {
-                          AddToSelection('targets', 'structure', div.textContent.replace(/\s+/g, ''));
-                      }
-                  }
-                }
-                window.location.href = '/structure/superposition_workflow_gprot_index';
+                direct_superposition(oTable, "gprot", 13, "signprot");
             });
 
             $('#download_btn').click(function () {
@@ -531,35 +499,10 @@
 
     </script>
     <script>
-      window.addEventListener("hashchange", updateButtonConfiguration, false);
-
-      function updateButtonConfiguration() {
-          const button = document.getElementById("superpose_template_btn");
-
-          switch (window.location.hash) {
-              case "#keepselectionreference":
-                  // Update the button for #keepselectionreference
-                  button.innerText = "Add reference to superposition";
-                  button.id = "superpose_template_btn";
-                  button.classList.add("highlight_1");
-                  break;
-              case "#keepselectiontargets":
-                  // Update the button for #keepselectiontargets
-                  button.innerText = "Add targets to superposition";
-                  button.id = "superpose_template_btn";
-                  button.classList.add("highlight_1");
-                  break;
-              default:
-                  // Default configuration (if no recognized hash)
-                  button.innerText = "Superposition";
-                  button.id = "superpose_btn";
-                  button.classList.remove("highlight_1");
-                  break;
-          }
-      }
+      window.addEventListener("hashchange", updateSuperpositionButtonConfiguration, false);
 
       // Call this function on page load to set the initial configuration
-      document.addEventListener("DOMContentLoaded", updateButtonConfiguration);
+      document.addEventListener("DOMContentLoaded", updateSuperpositionButtonConfiguration);
 
     </script>
 {% endblock %}
@@ -686,8 +629,8 @@
   <!-- Modal content -->
     <div class="modal-content">
         <button id="close_superposition_modal" style="float:right;display:inline;" aria-hidden="true" aria-label="Close" class="close" data-dismiss="superposition-modal">&times;</button>
-        <h3>Pick template from selection</h3>
-        <p>Superpositions structures selected in the browser to the template checked in this table</p>
+        <h3>Pick reference from selection</h3>
+        <p>Superpositions models selected in the browser to the reference checked in this table</p>
         <br>
         <table id="superposition_modal_table" class="display compact" width="100%">
             <thead>
@@ -699,7 +642,8 @@
                     <th>Class</th>
                     <th>G protein subtype</th>
                     <th>G protein family</th>
-                    <th>Model code</th>
+                    <th>Heterotrimer</th>
+                    <th>Date</th>
                 </tr>
             </thead>
             <tbody>
