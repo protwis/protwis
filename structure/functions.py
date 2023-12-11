@@ -1140,7 +1140,7 @@ class ParseAFModelsCSV():
                 ligand = s[3]
                 organism = s[0].split('-')[0].split('_')[1]
                 # TODO: THIS IS HARDCODED BUT NEED TO BE CHANGED
-                rankedpdbname = +s[0]+'-rank'+s[5]+'.pdb'
+                rankedpdbname = s[0] + '-rank' + s[5] + '.pdb'
                 location = os.sep.join([settings.DATA_DIR, 'structure_data', 'af_peptide', rankedpdbname]) #'/protwis/data/protwis/gpcr/structure_data/af_peptide/'+s[0]+'-rank'+s[5]+'.pdb'
                 cmpx = s[0] #protein+'_'+ligand
                 self.complexes.append(cmpx)

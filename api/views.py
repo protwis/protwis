@@ -1264,30 +1264,29 @@ class PeptideInteractionCADistances(views.APIView):
     \n{interaction_id} is a peptide-ligand interaction ID derived from GPCRdb API
     """
 
-    one_to_three = {
-        "A": "ALA",
-        "R": "ARG",
-        "N": "ASN",
-        "D": "ASP",
-        "C": "CYS",
-        "Q": "GLN",
-        "E": "GLU",
-        "G": "GLY",
-        "H": "HIS",
-        "I": "ILE",
-        "L": "LEU",
-        "K": "LYS",
-        "M": "MET",
-        "F": "PHE",
-        "P": "PRO",
-        "S": "SER",
-        "T": "THR",
-        "W": "TRP",
-        "Y": "TYR",
-        "V": "VAL",
-    }
-
     def get(self, request, interaction_id=None):
+        one_to_three = {
+            "A": "ALA",
+            "R": "ARG",
+            "N": "ASN",
+            "D": "ASP",
+            "C": "CYS",
+            "Q": "GLN",
+            "E": "GLU",
+            "G": "GLY",
+            "H": "HIS",
+            "I": "ILE",
+            "L": "LEU",
+            "K": "LYS",
+            "M": "MET",
+            "F": "PHE",
+            "P": "PRO",
+            "S": "SER",
+            "T": "THR",
+            "W": "TRP",
+            "Y": "TYR",
+            "V": "VAL",
+        }
         if interaction_id is not None:
             interaction_record = InteractingPeptideResiduePair.objects.filter(id=test_id)[0]
             conformation_id = interaction_record.receptor_residue.protein_conformation.id
