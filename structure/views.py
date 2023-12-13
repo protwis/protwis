@@ -2331,7 +2331,7 @@ class SuperpositionWorkflowIndex(TemplateView):
     #adapt to two options
     first_header = "Select your reference structure:"
     second_header = "Select your structures to superpose:"
-    third_header = "Upload your own reference and/or target structures"
+    third_header = "Upload your own reference and/or target structures (max. 25 MB)"
     #
     upload_form_data = OrderedDict([
         ('ref_file', forms.FileField(label="Reference structure")),
