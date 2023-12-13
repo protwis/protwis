@@ -170,7 +170,7 @@ function direct_superposition(oTable, source="gpcr", structure_column_index, sel
     var checked_data = oTable.rows('.alt_selected').data();
     var selected_ids = [];
     if (checked_data.length == 0) {
-        showAlert("No entries selected")
+        showAlert("No entries selected", "danger")
         return 0;
     }
     if (data_type == "reference") {
