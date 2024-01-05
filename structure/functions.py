@@ -185,7 +185,7 @@ class MappedResidue(object):
 #turns selection into actual residues
 class SelectionParser(object):
 
-    def __init__ (self, selection):
+    def __init__ (self, selection, full_helix_name=False):
 
         self.generic_numbers = []
         self.helices = []
@@ -194,10 +194,13 @@ class SelectionParser(object):
         for segment in selection.segments:
             logger.debug('Segments in selection: {}'.format(segment))
             if segment.type == 'helix':
-                try:
-                    self.helices.append(int(segment.item.slug[-1]))
-                except ValueError:
+                if full_helix_name:
                     self.helices.append(segment.item.slug)
+                else:
+                    try:
+                        self.helices.append(int(segment.item.slug[-1]))
+                    except ValueError:
+                        self.helices.append(segment.item.slug)
             elif segment.type == 'residue':
                 self.generic_numbers.append(segment.item.label.replace('x','.'))
             else:
@@ -1148,7 +1151,7 @@ class ParseAFModelsCSV():
                 ligand = s[3]
                 organism = s[0].split('-')[0].split('_')[1]
                 # TODO: THIS IS HARDCODED BUT NEED TO BE CHANGED
-                rankedpdbname = +s[0]+'-rank'+s[5]+'.pdb'
+                rankedpdbname = s[0] + '-rank' + s[5] + '.pdb'
                 location = os.sep.join([settings.DATA_DIR, 'structure_data', 'af_peptide', rankedpdbname]) #'/protwis/data/protwis/gpcr/structure_data/af_peptide/'+s[0]+'-rank'+s[5]+'.pdb'
                 cmpx = s[0] #protein+'_'+ligand
                 self.complexes.append(cmpx)

@@ -8,6 +8,7 @@
         {% else %}
         Failed to superpose onto structure {{ input_file }}
         {% endif %}
+        <br>
         {{ message }}
     </div>
     <hr />
@@ -18,9 +19,13 @@
             <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
         </button>
         <ul class="dropdown-menu">
-            <li><a href="/structure/superposition_workflow_results/full">Full proteins</a></li>
-            <li><a href="/structure/superposition_workflow_results/substr">Superposed substructures only</a></li>
-            <li><a href="/structure/superposition_workflow_results/select">Advanced segment selection</a></li>
+            {% if source == "gprot" %}
+                <li><a href="/structure/superposition_workflow_results_gprot/full">Full proteins</a></li>
+            {% else %}
+                <li><a href="/structure/superposition_workflow_results/full">Full proteins</a></li>
+                <li><a href="/structure/superposition_workflow_results/substr">Superposed substructures only</a></li>
+                <li><a href="/structure/superposition_workflow_results/select">Advanced segment selection</a></li>
+            {% endif %}
     </div>
     {% endif %}
 </div>
