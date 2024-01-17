@@ -1205,6 +1205,9 @@ class ParseStructureCSV():
             next(structures, None)
             for s in structures:
                 self.pdb_ids.append(s[0])
+                # Chain ID format check - remove .0 from number type chain ID e.g. 8JCU
+                if '.' in s[5]:
+                    s[5] = s[5][0]
                 self.structures[s[0]]= {'protein':s[1], 'name':s[0].lower(), 'state':s[4], 'preferred_chain':s[5], 'resolution':s[3], 'date_from_file':s[7], 'method_from_file':s[2]}
         self.fusion_proteins = []
 
@@ -1299,13 +1302,29 @@ class StructureBuildCheck():
             except Structure.DoesNotExist:
                 print('Error: {} Structure object has not been built'.format(pdb))
 
-    def check_duplicate_residues(self):
-        for s in Structure.objects.all().exclude(structure_type__slug__startswith='af-'):
-            resis = Residue.objects.filter(protein_conformation=s.protein_conformation)
-            if len(resis)!=len(resis.values_list('sequence_number').distinct()):
+    def check_duplicate_residues(self, structs, check_on='sequence_number'):
+        for s in structs:
+            if hasattr(s, 'protein_conformation'):
+                resis = Residue.objects.filter(protein_conformation=s.protein_conformation)
+            else:
+                if s.protein.family.slug.startswith('100'):
+                    tag = '_a'
+                elif s.protein.family.slug.startswith('200'):
+                    tag = '_arrestin'
+                resis = Residue.objects.filter(protein_conformation__protein__entry_name=s.structure.pdb_code.index.lower()+tag)
+            if len(resis)!=len(resis.values_list(check_on).distinct()):
                 for r in resis:
                     try:
-                        Residue.objects.get(protein_conformation=s.protein_conformation, sequence_number=r.sequence_number)
+                        if hasattr(s, 'protein_conformation'):
+                            if check_on=='sequence_number':
+                                Residue.objects.get(protein_conformation=s.protein_conformation, sequence_number=r.sequence_number)
+                            elif check_on=='display_generic_number':
+                                Residue.objects.get(protein_conformation=s.protein_conformation, display_generic_number=r.display_generic_number)
+                        else:
+                            if check_on=='sequence_number':
+                                re = Residue.objects.get(protein_conformation__protein__entry_name=s.structure.pdb_code.index.lower()+tag, sequence_number=r.sequence_number)
+                            elif check_on=='display_generic_number':
+                                re = Residue.objects.get(protein_conformation__protein__entry_name=s.structure.pdb_code.index.lower()+tag, display_generic_number=r.display_generic_number)
                     except Residue.MultipleObjectsReturned:
                         if s in self.duplicate_residue_error:
                             self.duplicate_residue_error[s].append(r)
@@ -1378,6 +1397,9 @@ class StructureBuildCheck():
         pdb = PDBParser(PERMISSIVE=True, QUIET=True).get_structure('struct', StringIO(str(signprot_complex.structure.pdb_data.pdb)))[0]
         if signprot_complex.protein.family.slug.startswith('100'):
             resis = Residue.objects.filter(protein_conformation=ProteinConformation.objects.get(protein__entry_name=signprot_complex.structure.pdb_code.index.lower()+'_a'))
+            H5 = resis.filter(protein_segment__slug='G.H5')
+            if len(H5)<10:
+                self.missing_seg.append(['G.H5', signprot_complex.structure, len(H5)])
         elif signprot_complex.protein.family.slug.startswith('200'):
             resis = Residue.objects.filter(protein_conformation=ProteinConformation.objects.get(protein__entry_name=signprot_complex.structure.pdb_code.index.lower()+'_arrestin'))
         ppb = PDB.PPBuilder()

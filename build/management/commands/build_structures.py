@@ -124,8 +124,6 @@ class Command(BaseBuild):
 
     parsed_pdb = None
 
-    construct_errors, rotamer_errors, contactnetwork_errors, interaction_errors = [],[],[],[]
-
     with open(os.sep.join([settings.DATA_DIR, 'residue_data', 'unnatural_amino_acids.yaml']), 'r') as f_yaml:
         raw_uaa = yaml.safe_load(f_yaml)
         unnatural_amino_acids = {}
@@ -150,6 +148,8 @@ class Command(BaseBuild):
             self.run_contactnetwork=False
         else:
             self.run_contactnetwork=True
+
+        self.construct_errors, self.rotamer_errors, self.contactnetwork_errors, self.interaction_errors = [],[],[],[]
 
         self.parsed_structures = ParseStructureCSV()
         self.parsed_structures.parse_ligands()
@@ -407,10 +407,12 @@ class Command(BaseBuild):
             seq = seq[:265]
         elif structure.pdb_code.index in ['1GZM', '3C9L']:
             seq = seq[:-3]
-        if structure.pdb_code.index in ['6NBI','6NBF','6NBH','6U1N','6M1H','6PWC','7JVR','7SHF','7EJ0','7EJ8','7EJA','7EJK','7VVJ','7TS0','7W6P','7W7E','8IRS','8FLQ','8FLR','8FLS','8FLU','8FU6']:
+        if structure.pdb_code.index in ['6NBI','6NBF','6NBH','6U1N','6M1H','6PWC','7JVR','7SHF','7EJ0','7EJ8','7EJA','7EJK','7VVJ','7TS0','7W6P','7W7E','8IRS','8FLQ','8FLR','8FLS','8FLU','8FU6','8IRU','7Y35','7Y36']:
             pw2 = pairwise2.align.localms(parent_seq, seq, 3, -4, -3, -1)
-        elif structure.pdb_code.index in ['6KUX', '6KUY', '6KUW','7SRS']:
+        elif structure.pdb_code.index in ['6KUX','6KUY','6KUW','7SRS']:
             pw2 = pairwise2.align.localms(parent_seq, seq, 3, -4, -4, -1.5)
+        elif structure.pdb_code.index in ['7YMJ']:
+            pw2 = pairwise2.align.localms(parent_seq, seq, 3, -5, -4, -4)
         else:
             pw2 = pairwise2.align.localms(parent_seq, seq, 3, -4, -5, -2)
 
@@ -609,6 +611,22 @@ class Command(BaseBuild):
             temp_seq = temp_seq[:170]+'G'+temp_seq[170:188]+temp_seq[189:]
         elif structure.pdb_code.index in ['8IW4','8IWE']:
             temp_seq = temp_seq[:180]+'V-'+temp_seq[182:]
+        elif structure.pdb_code.index in ['8JWY','8JWZ']:
+            ref_seq = ref_seq[:221]+ref_seq[222:]
+            temp_seq = temp_seq[:217]+temp_seq[218:]
+        elif structure.pdb_code.index in ['7Y35','7Y36']:
+            temp_seq = temp_seq[:31]+'R'+temp_seq[31:77]+temp_seq[78:]
+        elif structure.pdb_code.index=='7YMJ':
+            ref_seq = ref_seq[:215]+ref_seq[216:]
+            temp_seq = temp_seq[:212]+temp_seq[214:217]+40*'-'+temp_seq[218:222]+temp_seq[223:227]+'D'+temp_seq[232:236]+'RITRLVL'+temp_seq[276:]
+        elif structure.pdb_code.index=='8H0P':
+            temp_seq = temp_seq[:244]+'N'+temp_seq[244:250]+temp_seq[251:]
+        elif structure.pdb_code.index in ['8JCV','8JCX']:
+            temp_seq = temp_seq[:641]+'I'+temp_seq[641:655]+temp_seq[656:]
+        elif structure.pdb_code.index in ['8JD1']:
+            temp_seq = temp_seq[:642]+'F'+temp_seq[642:654]+temp_seq[655:]
+        elif structure.pdb_code.index in ['8JRV']:
+            temp_seq = temp_seq[79:100]+temp_seq[:79]+temp_seq[100:]
 
 
         for i, r in enumerate(ref_seq, 1): #loop over alignment to create lookups (track pos)
@@ -686,7 +704,7 @@ class Command(BaseBuild):
                     else: #if this is a new residue
                         #print(pdb.splitlines()[i+1][22:26].strip(),check)
                         temp += line + "\n"
-                        if structure.pdb_code.index=='7E9H' and line[17:20]=='SEP':
+                        if structure.pdb_code.index in ['7E9H','8JD6'] and line[17:20]=='SEP':
                             continue
                         #(int(check.strip())<2000 or structure.pdb_code.index=="4PHU") and
                         if int(check.strip()) not in removed:
@@ -736,7 +754,7 @@ class Command(BaseBuild):
                                     elif residue.sequence_number!=wt_r.sequence_number:
                                         # print('WT pos not same pos, mismatch',residue.sequence_number,residue.amino_acid,wt_r.sequence_number,wt_r.amino_acid)
                                         wt_pdb_lookup.append(OrderedDict([('WT_POS',wt_r.sequence_number), ('PDB_POS',residue.sequence_number), ('AA',wt_r.amino_acid)]))
-                                        if structure.pdb_code.index not in ['4GBR','6C1R','6C1Q','7XBX','7F1Q','7ZLY']:
+                                        if structure.pdb_code.index not in ['4GBR','6C1R','6C1Q','7XBX','7F1Q','7ZLY','8JWY','8JWZ']:
                                             if residue.sequence_number in unmapped_ref:
                                                 # print('residue.sequence_number',residue.sequence_number,'not mapped though')
                                                 if residue.amino_acid == wt_lookup[residue.sequence_number].amino_acid:
@@ -1410,7 +1428,11 @@ class Command(BaseBuild):
 
             # insert into plain text fields
             if 'preferred_chain' in sd:
-                s.preferred_chain = sd['preferred_chain']
+                if '.' in sd['preferred_chain']:
+                    pref_c = sd['preferred_chain'].split('.')[0]
+                else:
+                    pref_c = sd['preferred_chain']
+                s.preferred_chain = pref_c
             else:
                 self.logger.warning('Preferred chain not specified for structure {}'.format(sd['pdb']))
             if 'resolution' in sd:
@@ -1672,7 +1694,7 @@ class Command(BaseBuild):
             try:
                 current = time.time()
                 #protein = Protein.objects.filter(entry_name=s.protein_conformation).get()
-                d = fetch_pdb_info(sd['pdb'],con)
+                d = fetch_pdb_info(sd['pdb'],con, preferred_chain=s.preferred_chain)
                 #delete before adding new
                 #Construct.objects.filter(name=d['construct_crystal']['pdb_name']).delete()
                 # add_construct(d)
@@ -1735,6 +1757,8 @@ class Command(BaseBuild):
                         #     #Only run calcs, if not already in temp
                         # runcalculation(sd['pdb'],peptide_chain)
                         data_results = runcalculation_2022(sd['pdb'], peptide_chain)
+                        if 'NAG' in data_results:
+                            del data_results['NAG']
                         self.parsecalculation(sd['pdb'], data_results, False)
                         end = time.time()
                         diff = round(end - current,1)

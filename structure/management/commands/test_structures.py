@@ -15,7 +15,7 @@ class Command(BaseCommand):
         if not options['signprot']:
             sbc.check_structures()
             structs = Structure.objects.all().exclude(structure_type__slug__startswith='af-')
-            sbc.check_duplicate_residues()
+            sbc.check_duplicate_residues(structs)
             for s in structs:
                 sbc.check_segment_ends(s)
             print("Missing segments: ", len(sbc.missing_seg))
@@ -36,3 +36,13 @@ class Command(BaseCommand):
         else:
             for sc in SignprotComplex.objects.all():
                 sbc.check_signprot_struct_residues(sc)
+            scs = SignprotComplex.objects.all().exclude(structure__structure_type__slug__startswith='af-')
+            for i in sbc.missing_seg:
+                print("Error: Missing segment {} {} has {} residue objects.".format(i[0],i[1],i[2]))
+            sbc.check_duplicate_residues(scs)
+            for i, j in sbc.duplicate_residue_error.items():
+                print("Error: {} has duplicate residue for {}".format(i,j))
+            sbc.duplicate_residue_error = {}
+            sbc.check_duplicate_residues(scs, 'display_generic_number__label')
+            for i, j in sbc.duplicate_residue_error.items():
+                print("Error: {} has duplicate GN for {} {}".format(i,j, [k.display_generic_number for k in j]))

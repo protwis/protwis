@@ -100,7 +100,7 @@ class Command(BaseBuild):
                 sep.note = vals['arrestin']['note']
                 sep.chain = vals['arrestin']['chain']
                 sep.category = 'Arrestin'
-                sep.display_name = arrestin_dict[vals['arrestin']['protein']]
+                sep.display_name = arrestin_dict[vals['arrestin']['protein'].split('_')[0]]
                 struct_resis_len = len([i for i in PDBParser(PERMISSIVE=True, QUIET=True).get_structure('struct', StringIO(sep.structure.pdb_data.pdb))[0][sep.chain]])
                 if pdb in ['4ZWJ', '5DGY']:
                     struct_resis_len = 347
@@ -126,7 +126,7 @@ class Command(BaseBuild):
                     sep.display_name = g_prot_dict[vals['prot']]
                 elif vals['category']=='Arrestin':
                     wt_protein = Protein.objects.get(entry_name=vals['prot'].lower())
-                    sep.display_name = arrestin_dict[vals['prot']]
+                    sep.display_name = arrestin_dict[vals['prot'].split('_')[0]]
                 elif vals['category']=='Antibody':
                     wt_protein = None
                     sep.display_name = 'Antibody'
