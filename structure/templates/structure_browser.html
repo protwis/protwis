@@ -35,9 +35,6 @@
           border-width: 1px;
           padding: 3px;
       }
-      .highlight_1 {
-          background-color: cyan;
-      }
     </style>
 {% endblock %}
 
@@ -90,35 +87,10 @@
 </script>
 
 <script>
-  window.addEventListener("hashchange", updateButtonConfiguration, false);
-
-  function updateButtonConfiguration() {
-      const button = document.getElementById("superpose_template_btn");
-
-      switch (window.location.hash) {
-          case "#keepselectionreference":
-              // Update the button for #keepselectionreference
-              button.innerText = "Add reference to superposition";
-              button.id = "superpose_template_btn";
-              button.classList.add("highlight_1");
-              break;
-          case "#keepselectiontargets":
-              // Update the button for #keepselectiontargets
-              button.innerText = "Add targets to superposition";
-              button.id = "superpose_template_btn";
-              button.classList.add("highlight_1");
-              break;
-          default:
-              // Default configuration (if no recognized hash)
-              button.innerText = "Superposition";
-              button.id = "superpose_btn";
-              button.classList.remove("highlight");
-              break;
-      }
-  }
+  window.addEventListener("hashchange", updateSuperpositionButtonConfiguration, false);
 
   // Call this function on page load to set the initial configuration
-  document.addEventListener("DOMContentLoaded", updateButtonConfiguration);
+  document.addEventListener("DOMContentLoaded", updateSuperpositionButtonConfiguration);
 
 </script>
 {% endblock %}
@@ -432,8 +404,8 @@
   <!-- Modal content -->
     <div class="modal-content">
         <button id="close_superposition_modal" style="float:right;display:inline;" aria-hidden="true" aria-label="Close" class="close" data-dismiss="superposition-modal">&times;</button>
-        <h3>Pick template from selection</h3>
-        <p>Superpositions structures selected in the browser to the template checked in this table</p>
+        <h3>Pick reference from selection</h3>
+        <p>Superpositions structures selected in the browser to the reference checked in this table</p>
         <br>
         <table id="superposition_modal_table" class="display compact" width="100%">
             <thead>

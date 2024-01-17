@@ -86,5 +86,5 @@ urlpatterns = excluded_apis + [
     url(r'^plot/helixbox/(?P<entry_name>[^/].+)/$', views.HelixBoxView.as_view(), name='helixbox'),
     url(r'^plot/snake/(?P<entry_name>[^/].+)/$', views.SnakePlotView.as_view(), name='snakeplot'),
     url(r'^structure/(?P<id>[^/]+)/complexinteraction/$', views.ComplexInteractions.as_view(), name='complex-interaction'),
-
+    url(r'^structure/peptideinteraction/ca_distances/(?P<interaction_id>[^/]+)/$', views.PeptideInteractionCADistances.as_view(), name='peptide-ca-distances'),
 ]

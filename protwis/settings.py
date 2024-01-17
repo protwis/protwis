@@ -73,6 +73,9 @@ ROOT_URLCONF = 'protwis.urls'
 
 # WSGI_APPLICATION = 'protwis.wsgi.application'
 
+# Max size file upload
+FILE_UPLOAD_MAX_MEMORY_SIZE = 26214400
+
 # Internationalization
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'Europe/Copenhagen'

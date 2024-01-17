@@ -1045,8 +1045,7 @@ class AbsSegmentSelection(TemplateView):
     description = 'Select sequence segments in the middle column. You can expand helices and select individual' \
         + ' residues by clicking on the down arrows next to each helix.\n\nSelected segments will appear in the' \
         + ' right column, where you can edit the list.\n\nOnce you have selected all your segments, click the green' \
-        + ' button. \n\n' \
-        + ' <b>G Protein superposition is perfomed on the GPCR receptor. \nFull implementation will be added in a few days.</b>'
+        + ' button. \n\n'
     documentation_url = settings.DOCUMENTATION_URL
     docs = False
     segment_list = True
@@ -1235,19 +1234,18 @@ def AddToSelection(request):
                 o.append(Structure.objects.get(pdb_code__index=pdb_code.upper()))
 
         elif selection_subtype == 'signprot_many':
-            selection_subtype = 'signprot'
+            selection_subtype = 'structure'
             for pdb_code in selection_id.split(","):
                 try:
                     o.append(SignprotStructure.objects.get(pdb_code__index=pdb_code.upper()))
                 except SignprotStructure.DoesNotExist:
-                    selection_subtype = 'structure'
                     o.append(Structure.objects.get(pdb_code__index=pdb_code.upper()))
 
         elif selection_subtype == 'signprot':
+            selection_subtype = 'structure'
             try:
                 o.append(SignprotStructure.objects.get(pdb_code__index=selection_id.upper()))
             except SignprotStructure.DoesNotExist:
-                selection_subtype = 'structure'
                 o.append(Structure.objects.get(pdb_code__index=selection_id.upper()))
 
         elif selection_subtype == 'structure_complex_receptor':
@@ -1270,7 +1268,7 @@ def AddToSelection(request):
                 sm = StructureModel.objects.get(protein__parent__entry_name=entry_name.lower(), state__name=state)
             o.append(sm)
 
-        elif selection_subtype == 'structure_models_many':
+        elif selection_subtype == 'structure_model_many':
             selection_subtype = 'structure_model'
             for model in selection_id.split(","):
                 state = model.split('_')[-1]
