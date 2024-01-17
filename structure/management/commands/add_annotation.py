@@ -167,10 +167,15 @@ class Command(BaseCommand):
                         seq = seq[:-2]
                     elif s=='3ZEV':
                         seq = seq[:-5]
+                    elif s in ['8JD1','8JD2','8JD3','8JD4','8JD5']:
+                        seq = seq[:-1]
+
+                    if self.debug:
+                        print(seq)
 
                     dssp = self.dssp(s, structure[0][data['preferred_chain']], structure)
 
-                    if fusion_present or s in ['7V68','7V69','7V6A','7W6P','7W7E','8E9W','8E9X','8E9Y','8E9Z','8EA0','7T8X','7T90','7T94','7T96','7TRK','7TRP','7TRQ','7TRS']:
+                    if fusion_present or s in ['7V68','7V69','7V6A','7W6P','7W7E','8E9W','8E9X','8E9Y','8E9Z','8EA0','7T8X','7T90','7T94','7T96','7TRK','7TRP','7TRQ','7TRS','8IRU']:
                         pw2 = Bio.pairwise2.align.localms(parent_seq, seq, 3, -3, -3.5, -1)
                     else:
                         pw2 = Bio.pairwise2.align.localms(parent_seq, seq, 3, -4, -5, -2)
@@ -250,7 +255,7 @@ class Command(BaseCommand):
                         non_helical, remove_list = self.get_non_helicals(start_range, res_dict)
 
                         if len(non_helical)==0:
-                            while parent_start in res_dict and res_dict[parent_start][1][2]=='H' and res_dict[parent_start][0].get_id()[1]-res_dict[parent_start-1][0].get_id()[1]==1:
+                            while parent_start in res_dict and res_dict[parent_start][1][2]=='H' and parent_start-1 in res_dict and res_dict[parent_start][0].get_id()[1]-res_dict[parent_start-1][0].get_id()[1]==1:
                                 parent_start-=1
                             start_range = range(parent_x50, parent_start-1, -1)
                             non_helical, remove_list = self.get_non_helicals(start_range, res_dict)
@@ -304,6 +309,9 @@ class Command(BaseCommand):
                         if s=='7VVJ' and i==6:
                             start = 402
                             end = 425
+                        elif s=='8JD4' and i==3:
+                            start = 628
+                            end = 655
 
                         segends[s][str(i)+'b'] = start
                         segends[s][str(i)+'e'] = end
@@ -319,10 +327,13 @@ class Command(BaseCommand):
                                     if self.check_H_bond(res_dict, nh, 'start'):
                                         has_i1 = True
                                         break
-                            elif len(struct_i1)!=i1_range:
+                            elif len(struct_i1)!=len(i1_range):
                                 pass
                             else:
-                                has_i1 = True
+                                for nh in non_helical:
+                                    if self.check_H_bond(res_dict, nh, 'start'):
+                                        has_i1 = True
+                                        break
                             if has_i1:
                                 segends[s]['i1b'] = wt_pdb_lookup[int(parent_segends['i1b'])]
                                 segends[s]['i1e'] = wt_pdb_lookup[int(parent_segends['i1e'])]
@@ -411,7 +422,7 @@ class Command(BaseCommand):
     def get_non_helicals(res_range, residues):
         non_helical, remove_list = [], []
         for j in res_range:
-            print(j)
+            # print(j)
             if j not in residues:
                 remove_list.append(j)
                 continue

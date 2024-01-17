@@ -1778,7 +1778,7 @@ def InteractionMatrix(request, database='gprotein'):
         if database=='gprotein':
             r['gprot'] = definitions.G_PROTEIN_DISPLAY_NAME[s.signprot_complex.protein.entry_name.split('_')[0].upper()]#s.get_stab_agents_gproteins()
         elif database=='arrestin':
-            r['gprot'] = definitions.ARRESTIN_DISPLAY_NAME[s.signprot_complex.protein.entry_name]
+            r['gprot'] = definitions.ARRESTIN_DISPLAY_NAME[s.signprot_complex.protein.entry_name.split('_')[0]]
         try:
             r['gprot_class'] = s.signprot_complex.protein.family.parent.name#s.get_signprot_gprot_family()
         except Exception:
