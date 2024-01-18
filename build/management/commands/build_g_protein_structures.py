@@ -86,6 +86,7 @@ class Command(BaseBuild):
             ### Build SignprotStructure objects from non-complex signprots
             g_prot_alphas = Protein.objects.filter(family__slug__startswith="100_001", accession__isnull=False)#.filter(entry_name="gnai1_human")
             complex_structures = SignprotComplex.objects.filter(protein__family__slug__startswith="100_001").values_list("structure__pdb_code__index", flat=True)
+            latest = complex_structures.order_by('-structure__publication_date').values_list('structure__publication_date',flat=True)[0]
             for a in g_prot_alphas:
                 pdb_list = get_pdb_ids(a.accession)
                 for pdb in pdb_list:
@@ -93,10 +94,11 @@ class Command(BaseBuild):
                         try:
                             data = fetch_signprot_data(pdb, a, os.listdir(self.local_uniprot_beta_dir), os.listdir(self.local_uniprot_gamma_dir))
                             if data:
+                                ### Only add entries that aren't newer than the latest annotated complex structure to avoid non-annotated complexes
                                 if 'release_date' in data:
-                                    print(pdb, data['release_date'])
-                                ss = build_signprot_struct(a, pdb, data)
-                                self.build_gprot_extra_proteins(a, ss, data)
+                                    if datetime.date.fromisoformat(data['release_date'])<=latest:
+                                        ss = build_signprot_struct(a, pdb, data)
+                                        self.build_gprot_extra_proteins(a, ss, data)
                         except Exception as msg:
                             self.logger.error("SignprotStructure of {} {} failed\n{}: {}".format(a.entry_name, pdb, type(msg), msg))
             test_model_updates(self.all_models, self.tracker, check=True)
