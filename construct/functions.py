@@ -34,7 +34,7 @@ starttime = datetime.now()
 # def look_for_value(d,k):
 #     ### look for a value in dict if found, give back, otherwise None
 
-def fetch_pdb_info(pdbname, protein ,new_xtal=False, ignore_gasper_annotation=False, model=False):
+def fetch_pdb_info(pdbname, protein ,new_xtal=False, ignore_gasper_annotation=False, model=False, preferred_chain=None):
     # ignore_gaspar_annotation skips PDB_RANGE edits that mark missing residues as deleted, which messes up constructs.
     if not protein:
         if pdbname in ['6ORV','6YVR','6Z4Q','6Z4S','6Z4V','6Z66','6Z8N','6ZA8','6ZIN','7B6W'] or model==True:
@@ -736,17 +736,19 @@ def fetch_pdb_info(pdbname, protein ,new_xtal=False, ignore_gasper_annotation=Fa
                     if pos:
                         prev_pos = int(pos)
                     if receptor:
-                            if not uniprot_pos:
-                                uniprot_pos = pos
-                            # print(chain,pos,uniprot_pos)
-                            if pdbname in ['7EPE','7EPF'] and pos>1000:
-                                continue
-                            if pdbname in ['7F4D','7F4F','7F4H','7F4I','8HS2','8HSC','7XZ5','7XZ6','8IW4','8IW9','8ITF'] and chain!='R':
-                                continue
-                            if pdbname in ['8HJ5'] and chain!='F':
-                                continue
-                            wt_aa = d['wt_seq'][uniprot_pos-1]
-                            prev_receptor = True
+                        if preferred_chain and chain!=preferred_chain:
+                            continue
+                        if not uniprot_pos:
+                            uniprot_pos = pos
+                        # print(chain,pos,uniprot_pos)
+                        if pdbname in ['7EPE','7EPF'] and pos>1000:
+                            continue
+                        if pdbname in ['7F4D','7F4F','7F4H','7F4I','8HS2','8HSC','7XZ5','7XZ6','8IW4','8IW9','8ITF',''] and chain!='R':
+                            continue
+                        if pdbname in ['8HJ5'] and chain!='F':
+                            continue
+                        wt_aa = d['wt_seq'][uniprot_pos-1]
+                        prev_receptor = True
                             # if pos==250 or uniprot_pos==250:
                             #     print(pos,uniprot_pos,pdb_aa,d['wt_seq'][uniprot_pos-1],d['wt_seq'][pos-1])
                     # if receptor and uniprot_pos==None :
@@ -1791,8 +1793,15 @@ def construct_structure_annotation_override(pdb_code, removed, deletions):
                 deletions.remove(i)
     elif pdb_code in ['8HJ5']:
         removed = list(range(1,26))
+    elif pdb_code in ['8JRU','8JRV']:
+        removed = list(range(1356,1368))
+    elif pdb_code in ['8JWY','8JWZ']:
+        removed = list(range(207,365))
+        deletions = []
+    elif pdb_code=='8JD6':
+        removed = [1002]
     ### make deletions and removed empty
-    elif pdb_code in ['7SF7','7SF8','7EB2','7X1T','7X1U','7SRS','7UL2','7UL3','7UL5','7XBX','7XWO','8G2Y','7XJJ']:
+    elif pdb_code in ['7SF7','7SF8','7EB2','7X1T','7X1U','7SRS','7UL2','7UL3','7UL5','7XBX','7XWO','8G2Y','7XJJ','7YM8','8IY5','8IRU']:
         deletions, removed = [], []
     elif pdb_code in ['7ZLY']:
         deletions = []

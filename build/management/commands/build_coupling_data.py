@@ -119,7 +119,7 @@ class Command(BaseCommand):
                                                                   web_link__web_resource__slug='pubmed')
                                 except Publication.DoesNotExist as e:
                                     pub = Publication()
-                                    pub.get_or_create_from_pmid(pmid)
+                                    pub.update_from_pubmed_data(index=pmid)
                                     pub.save()
                                 gpair.references.add(pub)
                                 gpair.save()
@@ -149,7 +149,7 @@ class Command(BaseCommand):
                                                                   web_link__web_resource__slug='pubmed')
                                 except Publication.DoesNotExist as e:
                                     pub = Publication()
-                                    pub.get_or_create_from_pmid(pmid)
+                                    pub.update_from_pubmed_data(index=pmid)
                                     pub.save()
                                 gpair.references.add(pub)
                                 gpair.save()

@@ -102,9 +102,9 @@ class Command(BuildHumanProteins):
             ###GP - class D addition - just temporary - FIXME
             construct_entry_names = construct_entry_names+['a0a0w0dd93_cangb', 'q8wzm9_sorma', 'b1gvb8_pench', 'mam2_schpo', 'q4wyu8_aspfu', 'q8nir1_neucs', 'ste2_lackl', 'q6fly8_canga', 'g2ye05_botf4', 's6exb4_zygb2', 'c5dx97_zygrc']
             # added seq with no human ortholog
-            construct_entry_names = construct_entry_names+['5ht5b_mouse', '5ht5b_rat', 'taar4_mouse', 'taar4_rat']+['f1nu85_chick','b3xzf5_chick','a0a8j0qrx8_xentr','h2u5s9_takru', 'e7fee5_danre', 'a0a0n9n9h8_danre','q5sbp8_pladu','q868g4_brabe','q764p5_letca','r9r6d2_oryla','a0a1e1g6x5_takru','a0a1e1g6y2_danre','q8ji05_takru','q1l4c8_utast','q95p33_cioin','a0a0k0ybe3_pladu','r9r6c6_oryla','w5n9z3_lepoc','a0a1e1g6y8_oncmy','w5j8f8_anoda']
+            construct_entry_names = construct_entry_names+['5ht5b_mouse', '5ht5b_rat', 'taar4_mouse', 'taar4_rat', 'taa7f_mouse', 'q9ert2_mouse']+['f1nu85_chick','b3xzf5_chick','a0a8j0qrx8_xentr','h2u5s9_takru', 'e7fee5_danre', 'a0a0n9n9h8_danre','q5sbp8_pladu','q868g4_brabe','q764p5_letca','r9r6d2_oryla','a0a1e1g6x5_takru','a0a1e1g6y2_danre','q8ji05_takru','q1l4c8_utast','q95p33_cioin','a0a0k0ybe3_pladu','r9r6c6_oryla','w5n9z3_lepoc','a0a1e1g6y8_oncmy','w5j8f8_anoda']
             # custom family mapping for these entries
-            non_human_family_entries = ['5ht5b_mouse', '5ht5b_rat', 'taar4_mouse', 'taar4_rat']+['h2u5s9_takru', 'e7fee5_danre', 'a0a0n9n9h8_danre','q5sbp8_pladu','q868g4_brabe','q764p5_letca','r9r6d2_oryla','a0a1e1g6x5_takru','a0a1e1g6y2_danre','q8ji05_takru','q1l4c8_utast','q95p33_cioin','a0a0k0ybe3_pladu','r9r6c6_oryla','w5n9z3_lepoc','a0a1e1g6y8_oncmy','w5j8f8_anoda','f1nu85_chick']
+            non_human_family_entries = ['5ht5b_mouse', '5ht5b_rat', 'taar4_mouse', 'taar4_rat', 'taa7f_mouse', 'q9ert2_mouse']+['h2u5s9_takru', 'e7fee5_danre', 'a0a0n9n9h8_danre','q5sbp8_pladu','q868g4_brabe','q764p5_letca','r9r6d2_oryla','a0a1e1g6x5_takru','a0a1e1g6y2_danre','q8ji05_takru','q1l4c8_utast','q95p33_cioin','a0a0k0ybe3_pladu','r9r6c6_oryla','w5n9z3_lepoc','a0a1e1g6y8_oncmy','w5j8f8_anoda','f1nu85_chick']
 
             # Keep track of first or second iteration
             reviewed = ['SWISSPROT','TREMBL'][iteration-1]
@@ -263,6 +263,14 @@ class Command(BuildHumanProteins):
                         fam_name =  '<i>TAAR4P</i>'
                         gene = 'TAAR4'
                         parent_fam = ProteinFamily.objects.get(name='Class A orphans')
+                    elif 'Taar7f' in up['genes']:
+                        fam_name = '<i>TAAR7F</i>'
+                        gene = 'TAAR7F'
+                        parent_fam = ProteinFamily.objects.get(name='Class A orphans')
+                    elif 'Trhr2' in up['genes']:
+                        fam_name = 'TRH<sub>2</sub> receptor'
+                        gene = 'TRHR2'
+                        parent_fam = ProteinFamily.objects.get(name='Thyrotropin-releasing hormone receptors')
                     elif up['entry_name'] in non_human_dict:
                         fam_name = non_human_dict[up['entry_name']]['fam_name']
                         if 'gene' in non_human_dict[up['entry_name']]:
