@@ -1636,7 +1636,6 @@ def SelectAlignableResidues(request):
 
         if simple_selection and simple_selection.targets:
             for t in simple_selection.targets:
-                print(t.type)
                 if t.type == 'family':
                     proteins = Protein.objects.filter(family__slug__startswith=t.item.slug)
                     t_prot = proteins[0]
@@ -1821,14 +1820,12 @@ def SelectionSpeciesPredefined(request):
     selection = Selection()
     if simple_selection:
         selection.importer(simple_selection)
-    print(simple_selection)
     all_sps = Species.objects.all()
     sps = False
     if species == 'All':
         sps = []
     if species != 'All' and species:
         sps = Species.objects.filter(common_name=species)
-    print('sps', sps)
     if sps != False:
         # reset the species selection
         selection.clear('species')
@@ -1856,10 +1853,9 @@ def SelectionSpeciesToggle(request):
 
     all_sps = Species.objects.all()
     sps = Species.objects.filter(pk=species_id)
-    print(sps)
     # get simple selection from session
     simple_selection = request.session.get('selection', False)
-    print('species get simple selection', simple_selection)
+
     # create full selection and import simple selection (if it exists)
     selection = Selection()
     if simple_selection:
@@ -1881,7 +1877,6 @@ def SelectionSpeciesToggle(request):
     # add all species objects to context (for comparison to selected species)
     context = selection.dict('species')
     context['sps'] = Species.objects.all()
-    print('species toggle',simple_selection)
 
     return render(request, 'common/selection_filters_species_selector.html', context)
 
@@ -2510,12 +2505,10 @@ def ReadTargetInput(request):
 
     if request.POST == {}:
         return render(request, 'common/selection_lists.html', '')
-    print(selection_type, selection_subtype)
 
     # Process input names
     up_names = request.POST['input-targets'].split('\r')
     for up_name in up_names:
-        print(up_name)
         up_name = up_name.strip()
         obj = None
         if "_" in up_name: # Maybe entry name
@@ -2531,6 +2524,14 @@ def ReadTargetInput(request):
             except:
                 obj = None
 
+        # Try id
+        if obj == None and (up_name.isnumeric()):
+            selection_subtype = 'protein'
+            try:
+                obj = up_name
+            except:
+                obj = None
+
         # Try slugs
         if obj == None and (up_name.isnumeric() or "_" in up_name):
             selection_subtype = 'family'
@@ -2539,18 +2540,10 @@ def ReadTargetInput(request):
             except:
                 obj = None
 
-        # # Try id
-        if obj == None and (up_name.isnumeric()):
-            selection_subtype = 'protein'
-            try:
-                obj = up_name
-            except:
-                obj = None
-
         if obj != None:
             selection_object = SelectionItem(selection_subtype, obj)
             selection.add(selection_type, selection_subtype, selection_object)
-    print(obj)
+
     # export simple selection that can be serialized
     simple_selection = selection.exporter()
     # add simple selection to session
