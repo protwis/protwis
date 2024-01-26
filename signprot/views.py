@@ -9,7 +9,7 @@ from django.utils.text import slugify
 from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView
-
+from protwis.context_processors import current_site
 from common import definitions
 from common.diagrams_gpcr import DrawSnakePlot
 from common.diagrams_gprotein import DrawGproteinPlot
@@ -129,6 +129,14 @@ class TargetSelection(AbsTargetSelection):
             'color': 'success',
         },
     }
+
+def CouplingHandler(request):
+    domain = current_site(request)
+    origin = domain['current_site']
+    if origin == 'gprotein':
+        return CouplingBrowser.as_view()(request).render()
+    elif origin == 'arrestin':
+        return CouplingBrowser_deprecated.as_view(subunit_filter = "200_000_001", families = ["Beta"], page='arrestin')(request).render()
 
 
 class CouplingBrowser(TemplateView):
@@ -1094,17 +1102,22 @@ def CouplingProfiles(request, render_part="both", signalling_data="empty"):
                   context
     )
 
-def GProteinTree(request):
-    return CouplingProfiles(request, "tree", "gprot")
+def TreeHandler(request):
+    domain = current_site(request)
+    origin = domain['current_site']
+    print(origin)
+    if origin == 'gprotein':
+        return CouplingProfiles(request, "tree", "gprot")
+    elif origin == 'arrestin':
+        return CouplingProfiles(request, "tree", "arrestin")
 
-def GProteinVenn(request):
-    return CouplingProfiles(request, "venn", "gprot")
-
-def ArrestinTree(request):
-    return CouplingProfiles(request, "tree", "arrestin")
-
-def ArrestinVenn(request):
-    return CouplingProfiles(request, "venn", "arrestin")
+def VennHandler(request):
+    domain = current_site(request)
+    origin = domain['current_site']
+    if origin == 'gprotein':
+        return CouplingProfiles(request, "venn", "gprot")
+    elif origin == 'arrestin':
+        return CouplingProfiles(request, "venn", "arrestin")
 
 #@cache_page(60*60*24*7)
 def familyDetail(request, slug):
