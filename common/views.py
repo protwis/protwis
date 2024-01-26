@@ -2588,19 +2588,19 @@ def ReadReferenceInput(request):
             except:
                 obj = None
 
-        # Try slugs
-        if obj == None and (up_name.isnumeric() or "_" in up_name):
-            selection_subtype = 'family'
-            try:
-                obj = ProteinFamily.objects.get(slug=up_name)
-            except:
-                obj = None
-
         # # Try id
         if obj == None and (up_name.isnumeric()):
             selection_subtype = 'protein'
             try:
                 obj = up_name
+            except:
+                obj = None
+
+        # Try slugs
+        if obj == None and (up_name.isnumeric() or "_" in up_name):
+            selection_subtype = 'family'
+            try:
+                obj = ProteinFamily.objects.get(slug=up_name)
             except:
                 obj = None
 
