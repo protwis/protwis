@@ -1516,39 +1516,39 @@ class StructureStatistics(TemplateView):
         for f in families:
             lookup[f.slug] = f.name
 
-        #GENERIC
-        all_structs = Structure.objects.all().exclude(structure_type__slug__startswith='af-').prefetch_related('protein_conformation__protein__family')
-        all_complexes = all_structs.exclude(ligands=None)
-        unique_structs = Structure.objects.exclude(structure_type__slug__startswith='af-').order_by('protein_conformation__protein__family__name', 'state',
-            'publication_date', 'resolution').distinct('protein_conformation__protein__family__name').prefetch_related('protein_conformation__protein__family')
-        unique_complexes = StructureLigandInteraction.objects.filter(annotated=True).exclude(structure__structure_type__slug__startswith='af-').distinct('ligand', 'structure__protein_conformation__protein__family').prefetch_related('structure', 'structure__protein_conformation', 'structure__protein_conformation__protein', 'structure__protein_conformation__protein__family')
-        all_active = all_structs.filter(protein_conformation__state__slug = 'active')
-        years = self.get_years_range(list(set([x.publication_date.year for x in all_structs])))
-        unique_active = unique_structs.filter(protein_conformation__state__slug = 'active')
-        #Stats
-        # struct_count = Structure.objects.all().annotate(Count('id'))
-        struct_lig_count = Structure.objects.exclude(ligands=None).exclude(structure_type__slug__startswith='af-')
-        context['all_structures'] = len(all_structs)
-        context['all_structures_by_class'] = self.count_by_class(all_structs, lookup)
-        context['all_complexes'] = len(all_complexes)
-        context['all_complexes_by_class'] = self.count_by_class(all_complexes, lookup)
-        context['all_active'] = len(all_active)
-        context['all_active_by_class'] = self.count_by_class(all_active, lookup)
-        context['unique_structures'] = len(unique_structs)
-        context['unique_structures_by_class'] = self.count_by_class(unique_structs, lookup)
-        context['unique_complexes'] = len(unique_complexes)
-        context['unique_complexes_by_class'] = self.count_by_class([x.structure for x in unique_complexes], lookup)
-        context['unique_active'] = len(unique_active)
-        context['unique_active_by_class'] = self.count_by_class(unique_active, lookup)
-        context['release_notes'] = ReleaseNotes.objects.all()[0]
-        context['latest_structure'] = Structure.objects.exclude(structure_type__slug__startswith='af-').latest('publication_date').publication_date
-        context['chartdata'] = self.get_per_family_cumulative_data_series(years, unique_structs, lookup)
-        context['chartdata_y'] = self.get_per_family_data_series(years, unique_structs, lookup)
-        context['chartdata_all'] = self.get_per_family_cumulative_data_series(years, all_structs, lookup)
-        context['chartdata_reso'] = self.get_resolution_coverage_data_series(all_structs)
-        context['chartdata_class'] = self.get_per_class_cumulative_data_series(years, unique_structs, lookup)
-        context['chartdata_class_y'] = self.get_per_class_data_series(years, unique_structs, lookup)
-        context['chartdata_class_all'] = self.get_per_class_cumulative_data_series(years, all_structs, lookup)
+            #GENERIC
+            all_structs = Structure.objects.all().exclude(structure_type__slug__startswith='af-').prefetch_related('protein_conformation__protein__family')
+            all_complexes = all_structs.exclude(ligands=None)
+            unique_structs = Structure.objects.exclude(structure_type__slug__startswith='af-').order_by('protein_conformation__protein__family__name', 'state',
+                'publication_date', 'resolution').distinct('protein_conformation__protein__family__name').prefetch_related('protein_conformation__protein__family')
+            unique_complexes = StructureLigandInteraction.objects.filter(annotated=True).exclude(structure__structure_type__slug__startswith='af-').distinct('ligand', 'structure__protein_conformation__protein__family').prefetch_related('structure', 'structure__protein_conformation', 'structure__protein_conformation__protein', 'structure__protein_conformation__protein__family')
+            all_active = all_structs.filter(protein_conformation__state__slug = 'active')
+            years = self.get_years_range(list(set([x.publication_date.year for x in all_structs])))
+            unique_active = unique_structs.filter(protein_conformation__state__slug = 'active')
+            #Stats
+            # struct_count = Structure.objects.all().annotate(Count('id'))
+            struct_lig_count = Structure.objects.exclude(ligands=None).exclude(structure_type__slug__startswith='af-')
+            context['all_structures'] = len(all_structs)
+            context['all_structures_by_class'] = self.count_by_class(all_structs, lookup)
+            context['all_complexes'] = len(all_complexes)
+            context['all_complexes_by_class'] = self.count_by_class(all_complexes, lookup)
+            context['all_active'] = len(all_active)
+            context['all_active_by_class'] = self.count_by_class(all_active, lookup)
+            context['unique_structures'] = len(unique_structs)
+            context['unique_structures_by_class'] = self.count_by_class(unique_structs, lookup)
+            context['unique_complexes'] = len(unique_complexes)
+            context['unique_complexes_by_class'] = self.count_by_class([x.structure for x in unique_complexes], lookup)
+            context['unique_active'] = len(unique_active)
+            context['unique_active_by_class'] = self.count_by_class(unique_active, lookup)
+            context['release_notes'] = ReleaseNotes.objects.all()[0]
+            context['latest_structure'] = Structure.objects.exclude(structure_type__slug__startswith='af-').latest('publication_date').publication_date
+            context['chartdata'] = self.get_per_family_cumulative_data_series(years, unique_structs, lookup)
+            context['chartdata_y'] = self.get_per_family_data_series(years, unique_structs, lookup)
+            context['chartdata_all'] = self.get_per_family_cumulative_data_series(years, all_structs, lookup)
+            context['chartdata_reso'] = self.get_resolution_coverage_data_series(all_structs)
+            context['chartdata_class'] = self.get_per_class_cumulative_data_series(years, unique_structs, lookup)
+            context['chartdata_class_y'] = self.get_per_class_data_series(years, unique_structs, lookup)
+            context['chartdata_class_all'] = self.get_per_class_cumulative_data_series(years, all_structs, lookup)
 
         # GPROT Complex information
         all_gprots = StructureExtraProteins.objects.filter(category='G alpha').exclude(structure__structure_type__slug__startswith='af-').prefetch_related("wt_protein","wt_protein__family", "wt_protein__family__parent", "structure__protein_conformation__protein__family")
