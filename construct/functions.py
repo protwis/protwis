@@ -740,7 +740,7 @@ def fetch_pdb_info(pdbname, protein ,new_xtal=False, ignore_gasper_annotation=Fa
                             continue
                         if not uniprot_pos:
                             uniprot_pos = pos
-                        # print(chain,pos,uniprot_pos)
+                        #print('pref_chain',preferred_chain, chain,pos,uniprot_pos)
                         if pdbname in ['7EPE','7EPF'] and pos>1000:
                             continue
                         if pdbname in ['7F4D','7F4F','7F4H','7F4I','8HS2','8HSC','7XZ5','7XZ6','8IW4','8IW9','8ITF',''] and chain!='R':
