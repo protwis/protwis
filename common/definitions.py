@@ -2281,4 +2281,5 @@ ARRESTIN_DISPLAY_NAME = {'arrc_human': 'Arrestin-C',
                          'arrs_mouse':'S-arrestin',
                          'arrs_bovin':'S-arrestin',
                          'arrb1_human':'Beta-arrestin-1',
-                         'arrb1_rat':'Beta-arrestin-1'}
+                         'arrb1_rat':'Beta-arrestin-1',
+                         'arrb2_human':'Beta-arrestin-2'}

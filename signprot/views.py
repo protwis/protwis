@@ -9,6 +9,8 @@ from django.utils.text import slugify
 from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView
+from django.utils.safestring import mark_safe
+from django.db.models import Q
 
 from common import definitions
 from common.diagrams_gpcr import DrawSnakePlot
@@ -30,10 +32,13 @@ from structure.models import Structure
 
 import json
 import time
+from itertools import combinations, chain
+import re
 
 from collections import Counter, OrderedDict
 from copy import deepcopy
 from statistics import mean
+import pandas as pd  #### ERASE
 
 
 class BrowseSelection(AbsTargetSelection):
@@ -129,6 +134,565 @@ class TargetSelection(AbsTargetSelection):
             'color': 'success',
         },
     }
+
+# class PhosphorylationBrowser(TemplateView):
+
+#     template_name = 'signprot/phosphorylation_sites.html'
+
+#     patterns = {
+#     #              P    x    P    P
+#     'PxPP': r'((?:S|T)[^ST](?:S|T)(?:S|T))',
+#     #       P    x    P    x     x  P/E/D
+#     'PxPxxPED':r'((?:S|T)[^ST](?:S|T)[^ST][^ST](?:S|T|E|D))',
+#     #       P    x    x    P    x    x    P/E/D
+#     'PxxPxxPED':r'((?:S|T)[^ST][^ST](?:S|T)[^ST][^ST](?:S|T|E|D))',
+#     #
+#     'longest':r'((?:(?:S|T|E|D)[^STED]{1,2})+(?:S|T|E|D))',
+
+#     }
+
+#     def get_context_data(self, **kwargs):
+#         context = super().get_context_data(**kwargs)
+#         headers_with_col_len = self._headers()
+#         df = self.analyse()
+#         df_dict = df.to_dict(orient='records')
+#         print(df_dict[0])
+#         context['headers'] = headers_with_col_len[:-1]
+#         context['col_len'] = headers_with_col_len[-1]
+#         context['sites'] = df.to_dict(orient='records')
+#         return context
+
+
+#     def _headers(self):
+#         segments = ["icl2", "icl3", "C-term"]
+#         sub_headers = [
+#             # "Res", 
+#             "Seq", 
+#             "S/T", 
+#             "D/E", 
+#             "S/T/D/E", 
+#             "PxPP", 
+#             "PxPxxP/D/E", 
+#             "PxxPxxP/D/E", 
+#             "All", 
+#             mark_safe("Longest (no. AAs)<br>stretch of S/T/D/E<br>separated by<br> max two x:es<br>(non-S/T/D/E)."),
+#             mark_safe("Where of<br>S/T/D/E")
+#             ]
+        
+#         # Generate all combinations of segments
+#         all_combinations = [' & '.join(combo) for r in range(1, len(segments) + 1) for combo in combinations(segments, r)]
+
+#         # Combine main headers with sub-headers
+#         headers = []
+#         for header in all_combinations:
+#             headers.append((header, sub_headers))
+
+#         col_len = len(sub_headers) * len(all_combinations)
+#         headers.append(col_len)
+        
+#         return headers
+    
+#     def segments(self):
+
+#         prots = Protein.objects.filter(
+#                         accession__isnull=False, 
+#                         species__latin_name='Homo sapiens'
+#                     ).exclude(
+#                         Q(family__slug__startswith='100') |
+#                         Q(family__slug__startswith='200')
+#                     ).prefetch_related(
+#                         'proteinconformation_set__residue_set__protein_segment'
+#                     )
+
+#         sequences = {
+#             'gpcr': [], 
+#             'gtodb':[],
+#             'family':[],
+#             'class':[],
+#             'icl2': [], 
+#             'icl3': [], 
+#             'c-term': []
+#             }
+
+#         for protein in prots:
+#             sequences['gpcr'].append(str(protein.entry_name).split('_')[0].upper())
+#             sequences['gtodb'].append(str(protein.name).replace('receptor', ''))
+#             sequences['family'].append(str(protein.family.parent.parent.parent.name).split(' ')[1])
+#             sequences['class'].append(str(protein.family.parent.parent.name).split(' ')[0])
+#             segment_sequences = {'ICL2': '', 'ICL3': '', 'C-term': ''}
+
+#             # Iterate through each protein conformation
+#             for conf in protein.proteinconformation_set.all():
+#                 # Build sequences for each segment
+#                 for seg in conf.residue_set.all():
+#                     slug = seg.protein_segment.slug
+#                     if slug in segment_sequences:
+#                         segment_sequences[slug] += seg.amino_acid
+
+#             # Append the complete sequence for each segment
+#             for segment, seq in segment_sequences.items():
+#                 sequences[segment.lower()].append(seq)
+
+#         return pd.DataFrame(sequences)
+    
+#     def analyze_sequences(self, df, column, patterns):
+
+#         df[f'{column}_seq'] = df[column]
+
+#         df[f'{column}_ST'] = df[column].str.count('S') + df[column].str.count('T') #df[f'{column}_S'] + df[f'{column}_T']
+#         df[f'{column}_DE'] = df[column].str.count('D') + df[column].str.count('E') #df[f'{column}_D'] + df[f'{column}_E']
+#         df[f'{column}_STDE'] = df[f'{column}_ST'] + df[f'{column}_DE']
+
+#         sum_prev = 0
+#         for key, val in patterns.items():
+#             if key != 'longest':
+#                 df[f'{column}_{key}'] = df[column].str.count(val)
+#                 sum_prev += df[column].str.count(val)
+#             else:
+#                 continue
+#         df[f'{column}_All'] = df[[f'{column}_{col}' for col in patterns.keys() if col != 'longest' ]].sum(axis=1)
+#         df[f'{column}_sites'] = df[column].str.findall(patterns['longest'])
+#         df[f'{column}_longest'] = df[f'{column}_sites'].apply(lambda row: max([len(x) for x in row]) if row else 0)
+#         df[f'{column}_long_STDE'] = df[f'{column}_sites'].apply(lambda row: max(self.count_specific_letters_(row)))
+
+#     def count_specific_letters_(self, strings, letters=["S", "T", "D", "E"]):
+
+#         if strings:
+#             # Find the length of the largest string(s)
+#             max_length = max(len(s) for s in strings)
+
+#             # Filter strings that are of maximum length
+#             largest_strings = [s for s in strings if len(s) == max_length]
+
+#             # Count occurrences of specified letters in each of the largest strings
+#             counts = [sum(s.count(letter) for letter in letters) for s in largest_strings]
+
+#         else:
+#             counts = [0]
+
+#         return counts
+    
+#     def combinations(self, df,  elements=['icl2', 'icl3', 'c-term']):
+
+#         elements = elements
+#         all_combinations = list(chain.from_iterable(combinations(elements, r) for r in range(2, len(elements)+1)))
+
+#         # Convert tuples to strings
+#         sums = ['_'.join(comb) for comb in all_combinations]
+
+#         cols = ["ST", "DE", "STDE"] + [col for col in self.patterns.keys() if col != 'longest'] + ['All', 'longest', 'long_STDE']
+
+#         for sum_comb in sums:
+#             sections_to_sum = sum_comb.split('_')
+
+#             for col_suffix in cols:
+#                 columns_to_sum = [f"{section}_{col_suffix}" for section in sections_to_sum]
+
+#                 if col_suffix in ['longest', 'long_STDE']:
+#                     # Use max for 'longest' and 'long_STDE'
+#                     df[f"{sum_comb}_{col_suffix}"] = df[columns_to_sum].max(axis=1)
+#                 else:
+#                     # Use sum for other columns
+#                     df[f"{sum_comb}_{col_suffix}"] = df[columns_to_sum].sum(axis=1)
+
+#     def count_specific_letters_(self, strings, letters=["S", "T", "D", "E"]):
+
+#         if strings:
+#             # Find the length of the largest string(s)
+#             max_length = max(len(s) for s in strings)
+
+#             # Filter strings that are of maximum length
+#             largest_strings = [s for s in strings if len(s) == max_length]
+
+#             # Count occurrences of specified letters in each of the largest strings
+#             counts = [sum(s.count(letter) for letter in letters) for s in largest_strings]
+
+#         else:
+#             counts = [0]
+
+#         return counts
+
+#     def analyse(self, cols=['icl2', 'icl3', 'c-term']):
+#         df = self.segments()
+#         print('analyse') # ERASE
+#         for col in cols:
+#             self.analyze_sequences(df, col, self.patterns)
+#             print('iterating') # ERASE
+
+#         self.combinations(df)
+        
+#         return df
+        
+        
+# class PhosphorylationBrowser(TemplateView):
+
+#     template_name = 'signprot/phosphorylation_sites.html'
+
+#     patterns = {
+#     #              P    x    P    P
+#     'PxPP': r'((?:S|T)[^ST](?:S|T)(?:S|T))',
+#     #       P    x    P    x     x  P/E/D
+#     'PxPxxPED':r'((?:S|T)[^ST](?:S|T)[^ST][^ST](?:S|T|E|D))',
+#     #       P    x    x    P    x    x    P/E/D
+#     'PxxPxxPED':r'((?:S|T)[^ST][^ST](?:S|T)[^ST][^ST](?:S|T|E|D))',
+#     #
+#     'longest':r'((?:(?:S|T|E|D)[^STED]{1,2})+(?:S|T|E|D))',
+
+#     }
+
+#     def get_context_data(self, **kwargs):
+#         context = super().get_context_data(**kwargs)
+#         headers_with_col_len = self._headers()
+#         data = self.analyse()
+#         # print(df['icl2_ST'])
+#         context['headers'] = headers_with_col_len[:-1]
+#         context['col_len'] = headers_with_col_len[-1]
+#         context['sites'] = data
+#         return context
+
+
+#     def _headers(self):
+#         segments = ["icl2", "icl3", "C-term"]
+#         sub_headers = [
+#             # "Res", 
+#             "Seq", 
+#             "S/T", 
+#             "D/E", 
+#             "S/T/D/E", 
+#             "PxPP", 
+#             "PxPxxP/D/E", 
+#             "PxxPxxP/D/E", 
+#             "All", 
+#             mark_safe("Longest (no. AAs)<br>stretch of S/T/D/E<br>separated by<br> max two x:es<br>(non-S/T/D/E)."),
+#             mark_safe("Where of<br>S/T/D/E")
+#             ]
+        
+#         # Generate all combinations of segments
+#         all_combinations = [' & '.join(combo) for r in range(1, len(segments) + 1) for combo in combinations(segments, r)]
+
+#         # Combine main headers with sub-headers
+#         headers = []
+#         for header in all_combinations:
+#             headers.append((header, sub_headers))
+
+#         col_len = len(sub_headers) * len(all_combinations)
+#         headers.append(col_len)
+        
+#         return headers
+    
+#     def segments(self):
+
+#         prots = Protein.objects.filter(
+#                         accession__isnull=False, 
+#                         species__latin_name='Homo sapiens'
+#                     ).exclude(
+#                         Q(family__slug__startswith='100') |
+#                         Q(family__slug__startswith='200')
+#                     ).prefetch_related(
+#                         'proteinconformation_set__residue_set__protein_segment'
+#                     )
+
+#         sequences = {
+#             'gpcr': [], 
+#             'gtodb':[],
+#             'family':[],
+#             'class':[],
+#             'icl2': [], 
+#             'icl3': [], 
+#             'c-term': []
+#             }
+
+#         for protein in prots:
+#             sequences['gpcr'].append(str(protein.entry_name).split('_')[0].upper())
+#             sequences['gtodb'].append(str(protein.name).replace('receptor', ''))
+#             sequences['family'].append(str(protein.family.parent.parent.parent.name).split(' ')[1])
+#             sequences['class'].append(str(protein.family.parent.parent.name).split(' ')[0])
+#             segment_sequences = {'ICL2': '', 'ICL3': '', 'C-term': ''}
+
+#             # Iterate through each protein conformation
+#             for conf in protein.proteinconformation_set.all():
+#                 # Build sequences for each segment
+#                 for seg in conf.residue_set.all():
+#                     slug = seg.protein_segment.slug
+#                     if slug in segment_sequences:
+#                         segment_sequences[slug] += seg.amino_acid
+
+#             # Append the complete sequence for each segment
+#             for segment, seq in segment_sequences.items():
+#                 sequences[segment.lower()].append(seq)
+
+#         return sequences
+    
+#     def analyze_sequences(self, data, column, patterns):
+
+#         data[f'{column}_seq'] = data[column]
+#         data[f'{column}_ST'] = [seq.count('S') + seq.count('T') for seq in data[column]]
+#         data[f'{column}_DE'] = [seq.count('D') + seq.count('E') for seq in data[column]]
+#         # print(f' column: {column}\n{data[f"{column}"]}\n{data[f"{column}_ST"]}')
+#         data[f'{column}_STDE'] = data[f'{column}_ST'] + data[f'{column}_DE']
+
+
+#         for key, val in patterns.items():
+#             if key != 'longest':
+#                 # data[f'{column}_{key}'] = data[column].count(val)
+#                 data[f'{column}_{key}'] = [len(re.findall(val, seq)) for seq in data[column]]
+
+#             else:
+#                 continue
+#         keys_to_sum = [f'{column}_{key}' for key in patterns.keys() if key != 'longest']
+#         data[f'{column}_All'] = [sum(data[key][i] for key in keys_to_sum) for i in range(len(data[keys_to_sum[0]]))]
+
+#         data[f'{column}_sites'] = [re.findall(patterns['longest'], strs) for strs in data[column]] 
+#         data[f'{column}_longest'] = [max(len(x) for x in site_list) if site_list else 0 for site_list in data[f'{column}_sites']]
+#         data[f'{column}_long_STDE'] = [self.count_specific_letters_(row) for row in data[f'{column}_sites']]
+
+#     def count_specific_letters_(self, strings, letters=["S", "T", "D", "E"]):
+
+#         if strings:
+#             # Find the length of the largest string(s)
+#             max_length = max(len(s) for s in strings)
+
+#             # Filter strings that are of maximum length
+#             largest_strings = [s for s in strings if len(s) == max_length]
+
+#             # Count occurrences of specified letters in each of the largest strings
+#             counts = [sum(s.count(letter) for letter in letters) for s in largest_strings]
+
+#         else:
+#             counts = [0]
+
+#         return counts
+    
+#     def combinations(self, data,  elements=['icl2', 'icl3', 'c-term']):
+
+#         elements = elements
+#         all_combinations = list(chain.from_iterable(combinations(elements, r) for r in range(2, len(elements)+1)))
+
+#         # Convert tuples to strings
+#         sums = ['_'.join(comb) for comb in all_combinations]
+
+#         cols = ["ST", "DE", "STDE"] + [col for col in self.patterns.keys() if col != 'longest'] + ['All', 'longest', 'long_STDE']
+
+#         for sum_comb in sums:
+#             sections_to_sum = sum_comb.split('_')
+
+#             for col_suffix in cols:
+#                 columns_to_sum = [f"{section}_{col_suffix}" for section in sections_to_sum]
+
+#                 if col_suffix in ['longest', 'long_STDE']:
+#                     # Use max for 'longest' and 'long_STDE'
+#                     data[f"{sum_comb}_{col_suffix}"] = [max(data[key][i] for key in columns_to_sum) for i in range(len(data[columns_to_sum[0]]))]
+#                     # data[f"{sum_comb}_{col_suffix}"] = data[columns_to_sum].max(axis=1)
+#                 else:
+#                     # Use sum for other columns
+#                     # print(f'type cols_to_sum {columns_to_sum}: {type(columns_to_sum)}  type col_suffix: {type(col_suffix)}')
+#                     # data[f'{sum_comb}_{col_suffix}'] = [data[col_content] for col_content in columns_to_sum]
+#                     data[f'{sum_comb}_{col_suffix}'] = [sum(data[col_content][i] for col_content in columns_to_sum) for i in range(len(data[columns_to_sum[0]]))]
+#                     # data[f"{sum_comb}_{col_suffix}"] = data[columns_to_sum].sum(axis=1)
+
+#     def count_specific_letters_(self, strings, letters=["S", "T", "D", "E"]):
+
+#         if strings:
+#             # Find the length of the largest string(s)
+#             max_length = max(len(s) for s in strings)
+
+#             # Filter strings that are of maximum length
+#             largest_strings = [s for s in strings if len(s) == max_length]
+
+#             # Count occurrences of specified letters in each of the largest strings
+#             counts = [sum(s.count(letter) for letter in letters) for s in largest_strings]
+
+#         else:
+#             counts = [0]
+
+#         return counts
+
+#     def analyse(self, cols=['icl2', 'icl3', 'c-term']):
+#         data = self.segments()
+#         print('analyse') # ERASE
+#         for col in cols:
+#             self.analyze_sequences(data, col, self.patterns)
+#             print('iterating') # ERASE
+
+#         self.combinations(data)
+        
+#         return data
+        
+
+class PhosphorylationBrowser(TemplateView):
+
+    template_name = 'signprot/phosphorylation_sites.html'
+
+    patterns = {
+    #              P    x    P    P
+    'PxPP': r'((?:S|T)[^ST](?:S|T)(?:S|T))',
+    #       P    x    P    x     x  P/E/D
+    'PxPxxPED':r'((?:S|T)[^ST](?:S|T)[^ST][^ST](?:S|T|E|D))',
+    #       P    x    x    P    x    x    P/E/D
+    'PxxPxxPED':r'((?:S|T)[^ST][^ST](?:S|T)[^ST][^ST](?:S|T|E|D))',
+    #
+    'longest':r'((?:(?:S|T|E|D)[^STED]{1,2})+(?:S|T|E|D))',
+
+    }
+
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        headers_with_col_len = self._headers()
+        headers = headers_with_col_len[:-1]
+        col_len = headers_with_col_len[-1]
+        data = self.calculating()
+        print(headers)
+        context['fixed_rows'] = ['gpcr', 'gtodb', 'family', 'class']
+        context['headers'] = headers
+        context['col_len'] = col_len
+        context['sites'] = data
+        context['range'] = range(10)
+        context['filter_range'] = range(col_len + 8)
+        return context
+
+    def _headers(self):
+        segments = ["icl2", "icl3", "C-term"]
+        # segments = ["icl2"]
+        all_sub_headers = [
+            # "Res", 
+            "Seq", 
+            "S/T", 
+            "D/E", 
+            "S/T/D/E", 
+            "PxPP", 
+            "PxPxxP/D/E", 
+            "PxxPxxP/D/E", 
+            "All", 
+            mark_safe("Longest (no. AAs)<br>stretch of S/T/D/E<br>separated by<br> max two x:es<br>(non-S/T/D/E)."),
+            mark_safe("Where of<br>S/T/D/E")
+        ]
+
+        # Generate all combinations of segments with its class assignment 
+        all_combinations = [(' & '.join(combo), '_'.join(combo))  for r in range(1, len(segments) + 1) for combo in combinations(segments, r)]
+
+        # Combine main headers with sub-headers
+        headers = [(header, all_sub_headers if '&' not in header[0] else [h for h in all_sub_headers if h != "Seq"]) for header in all_combinations]
+        col_len = sum(len(header[1]) for header in headers)
+        print(f'This is the col len: {col_len}')
+        headers.append(col_len)
+
+        return headers
+
+    def segments(self):
+
+        prots = Protein.objects.filter(
+            accession__isnull=False, 
+            species__latin_name='Homo sapiens'
+        ).exclude(
+            Q(family__slug__startswith='100') |
+            Q(family__slug__startswith='200')
+        ).prefetch_related(
+            'proteinconformation_set__residue_set__protein_segment',
+            'proteincouplings_set'
+        ).only(
+            'entry_name', 'name', 'family',  # Fields from Protein
+        )
+
+        protein_data = []
+
+        for protein in prots:
+            sequences = {}
+            sequences['gpcr'] = [(protein.entry_name.split('_')[0].upper()), '']
+            sequences['gtodb'] = [(protein.name.replace('receptor', '')), '']
+            sequences['family'] = [(protein.family.parent.name.replace('receptors','').replace('Class', '')), '']
+            sequences['class'] = [(protein.family.parent.parent.parent.name.split(' ')[1]), '']
+            segment_sequences = {'ICL2': '', 'ICL3': '', 'C-term': ''}
+
+            # Iterate through each protein conformation
+            for conf in protein.proteinconformation_set.all():
+                # Build sequences for each segment
+                for seg in conf.residue_set.all():
+                    slug = seg.protein_segment.slug
+                    if slug in segment_sequences:
+                        segment_sequences[slug] += seg.amino_acid
+
+            # sequences = {segment.lower(): seq for segment, seq in segment_sequences.items()}
+
+            for segment, seq in segment_sequences.items():
+                sequences[segment.lower()] = seq
+
+            protein_data.append(sequences)
+
+        return protein_data
+    
+    def analyze_sequences(self, data, column, patterns):
+
+        data[f'{column}_seq'] = [data[column], column]
+        data[f'{column}_ST'] = [data[column].count('S') + data[column].count('T'), column ]
+        data[f'{column}_DE'] = [data[column].count('D') + data[column].count('E'), column ]
+        data[f'{column}_STDE'] = [data[f'{column}_ST'][0] + data[f'{column}_DE'][0], column]
+
+
+        for key, val in patterns.items():
+            if key != 'longest':
+                data[f'{column}_{key}'] = [data[column].count(val), column]
+            else:
+                continue
+        
+        keys_to_sum = [key for key in patterns.keys() if key != 'longest']
+        data[f'{column}_All'] = [sum(data[f'{column}_{key}'][0] for key in keys_to_sum), column]
+        data[f'{column}_sites'] = [re.findall(patterns['longest'], data[column]), column]
+        data[f'{column}_longest'] = [max((len(x) for x in data[f'{column}_sites'][0] if x), default=0), column]
+        data[f'{column}_long_STDE'] = [max(self.count_specific_letters_(data[f'{column}_sites'][0])), column]
+
+        del data[column]
+        del data[f'{column}_sites']
+
+    def combinations(self, data,  segments):
+
+        segments = segments
+        all_combinations = list(chain.from_iterable(combinations(segments, r) for r in range(2, len(segments)+1)))
+
+        # Convert tuples to strings
+        sums = ['_'.join(comb) for comb in all_combinations]
+
+        cols = ["ST", "DE", "STDE"] + [col for col in self.patterns.keys() if col != 'longest'] + ['All', 'longest', 'long_STDE']
+
+        for sum_comb in sums:
+            sections_to_sum = sum_comb.split('_')
+
+            for col_suffix in cols:
+                columns_to_sum = [f"{section}_{col_suffix}" for section in sections_to_sum]
+
+                if col_suffix in ['longest', 'long_STDE']:
+                    # Use max for 'longest' and 'long_STDE'
+                    data[f"{sum_comb}_{col_suffix}"] = [max(data[col][0] for col in columns_to_sum), sum_comb]
+                else:
+                    # Use sum for other columns
+                        data[f"{sum_comb}_{col_suffix}"] = [sum(data[col][0] for col in columns_to_sum), sum_comb]
+
+    def count_specific_letters_(self, strings, letters=["S", "T", "D", "E"]):
+
+        if strings:
+            # Find the length of the largest string(s)
+            max_length = max(len(s) for s in strings)
+
+            # Filter strings that are of maximum length
+            largest_strings = [s for s in strings if len(s) == max_length]
+
+            # Count occurrences of specified letters in each of the largest strings
+            counts = [sum(s.count(letter) for letter in letters) for s in largest_strings]
+
+        else:
+            counts = [0]
+
+        return counts
+
+    def calculating(self, cols=['icl2', 'icl3', 'c-term']):
+
+        data = self.segments()
+        [[self.analyze_sequences(dic, segment, self.patterns) for dic in data] for segment in cols]
+        [self.combinations(dic, cols) for dic in data]
+        
+        return data
+         
+
 
 
 class CouplingBrowser(TemplateView):
@@ -497,8 +1061,8 @@ class CouplingBrowser_deprecated(TemplateView):
 
     @method_decorator(csrf_exempt)
     def get_context_data(self, **kwargs):
+        print('CouplingBrowser_deprecated get_context_data called')
         context = super().get_context_data(**kwargs)
-
         tab_fields, header = self.tab_fields(self.subunit_filter, self.families)
 
         context['tabfields'] = tab_fields
@@ -506,7 +1070,6 @@ class CouplingBrowser_deprecated(TemplateView):
         flat_list = [item for sublist in header.values() for item in sublist]
         context['subunitheader'] = flat_list
         context['page'] = self.page
-
         return context
 
     @staticmethod
@@ -1447,6 +2010,7 @@ def StructureInfo(request, pdbname):
 # @cache_page(60*60*24*2)
 def signprotdetail(request, slug):
     # get protein
+    print("CALLEEEED")
 
     slug = slug.lower()
     p = Protein.objects.prefetch_related('web_links__web_resource').get(entry_name=slug, sequence_type__slug='wt')

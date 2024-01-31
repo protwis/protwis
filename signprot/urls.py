@@ -18,6 +18,7 @@ urlpatterns = [
     path('arrestin_tree',  views.ArrestinTree, name='gprotein'),
     #path('statistics',  views.GProtein, name='gprotein'),
     path('statistics',  views.CouplingProfiles, name='coupling_profiles'),
+    path('phosphorylation_sites', views.PhosphorylationBrowser.as_view(), name='phosphorylation_sites'), #####
     path('coupling_datasets', views.CouplingDatasets, name='coupling_datasets'),
     path('coupling_biosensors', views.CouplingBiosensors, name='coupling_biosensors'),
     path('couplings', cache_page(60*60*24*7)(CouplingBrowser.as_view()), name='coupling_browser'),
