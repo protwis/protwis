@@ -1087,8 +1087,9 @@ class Command(BaseCommand):
         for c_pdb in missing:
             d = cache.get(c_pdb+"_auto_d")
             if not d:
+                c = Structure.objects.get(pdb_code__index=c_pdb)
                 protein = Protein.objects.filter(entry_name=c_pdb.lower()).get()
-                d = fetch_pdb_info(c_pdb,protein,ignore_gasper_annotation=True,preferred_chain=c.structure.preferred_chain)
+                d = fetch_pdb_info(c_pdb,protein,ignore_gasper_annotation=True,preferred_chain=c.preferred_chain)
                 cache.set(c_pdb+"_auto_d",d,60*60*24)
             if len(d['mutations']):
                 missing2.append(c_pdb)

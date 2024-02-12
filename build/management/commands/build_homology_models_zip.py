@@ -286,12 +286,16 @@ class Command(BaseBuild):
                             if self.revise_xtal:
                                 m_s.refined = False
                                 m_s.save()
-                            if sm.pdb_data:
+                            if sm.pdb_data and sm.pdb_data.id:
                                 sm.pdb_data.delete()
-                            if sm.stats_text:
+                            if sm.stats_text and sm.stats_text.id:
                                 sm.stats_text.delete()
-                            sm.delete()
-                StructureModelpLDDT.objects.bulk_create(resis)
+                            if sm.id:
+                                sm.delete()
+                                deleted = True
+                if not deleted:
+                    StructureModelpLDDT.objects.bulk_create(resis)
         if self.revise_xtal:
             m_s.refined = True
             m_s.save()
+
