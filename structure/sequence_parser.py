@@ -337,11 +337,10 @@ class SequenceParser(object):
             self.wt = None
         for alignment in alignments:
             chimera_key = alignment[0]
+            entry_name = alignment[0]
             if alignment[1].hit_def=='No definition line':
                 if '|' in alignment[0]:
                     entry_name = alignment[0].split('|')[-1].lower()+'_a'
-                else:
-                    entry_name = alignment[0]
                 hit_def = Protein.objects.get(entry_name=entry_name)
                 identifier = hit_def.id
             else:
