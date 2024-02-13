@@ -19,7 +19,9 @@ class Protein(models.Model):
     entry_name = models.SlugField(max_length=100, unique=True)
     accession = models.CharField(max_length=100, db_index=True, null=True)
     name = models.CharField(max_length=200)
+    cancer = models.ManyToManyField('CancerExpression')
     sequence = models.TextField()
+
 
     def entry_short(self):
         return self.entry_name.split("_")[0].upper()
@@ -78,63 +80,55 @@ class Protein(models.Model):
             tmp = tmp.parent
         return tmp.name
 
-class CancerPrognostics(models.Model):
-    protein = models.ForeignKey('Protein', on_delete=models.CASCADE)
-    cancer_type = models.CharField(max_length=100)
+class CancerType(models.Model):
+    slug = models.SlugField(max_length=100, unique=True)
+    name = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.name
+
+    class Meta():
+        db_table = 'cancer'
+
+class ExpressionValue(models.Model):
     max_expression = models.CharField(max_length=30)
 
+    def __str__(self):
+        return self.name
+
+    class Meta():
+        db_table = 'expression'
+
+class CancerExpression(models.Model):
+    cancer = models.ForeignKey('CancerType', on_delete=models.CASCADE)
+    expression = models.ForeignKey('ExpressionValue', on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.name
+
+    class Meta():
+        db_table = 'cancer_expression'
+
+class Tissues(models.Model):
+    slug = models.SlugField(max_length=100, unique=True)
+    name = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.name
+
+    class Meta():
+        db_table = 'tissues'
+
 class TissueExpression(models.Model):
-    protein = models.ForeignKey('Protein', on_delete=models.CASCADE)
-    adipose_tissue = models.FloatField(null=True, blank=True)
-    adrenal_gland = models.FloatField(null=True, blank=True)
-    amygdala = models.FloatField(null=True, blank=True)
-    appendix = models.FloatField(null=True, blank=True)
-    basal_ganglia = models.FloatField(null=True, blank=True)
-    bone_marrow = models.FloatField(null=True, blank=True)
-    breast = models.FloatField(null=True, blank=True)
-    cerebellum = models.FloatField(null=True, blank=True)
-    cerebral_cortex = models.FloatField(null=True, blank=True)
-    cervix = models.FloatField(null=True, blank=True)
-    choroid_plexus = models.FloatField(null=True, blank=True)
-    colon = models.FloatField(null=True, blank=True)
-    duodenum = models.FloatField(null=True, blank=True)
-    endometrium = models.FloatField(null=True, blank=True)
-    epididymis = models.FloatField(null=True, blank=True)
-    esophagus = models.FloatField(null=True, blank=True)
-    fallopian_tube = models.FloatField(null=True, blank=True)
-    gallbladder = models.FloatField(null=True, blank=True)
-    heart_muscle = models.FloatField(null=True, blank=True)
-    hippocampal_formation = models.FloatField(null=True, blank=True)
-    hypothalamus = models.FloatField(null=True, blank=True)
-    kidney = models.FloatField(null=True, blank=True)
-    liver = models.FloatField(null=True, blank=True)
-    lung = models.FloatField(null=True, blank=True)
-    lymph_node = models.FloatField(null=True, blank=True)
-    midbrain = models.FloatField(null=True, blank=True)
-    ovary = models.FloatField(null=True, blank=True)
-    pancreas = models.FloatField(null=True, blank=True)
-    parathyroid_gland = models.FloatField(null=True, blank=True)
-    pituitary_gland = models.FloatField(null=True, blank=True)
-    placenta = models.FloatField(null=True, blank=True)
-    prostate = models.FloatField(null=True, blank=True)
-    rectum = models.FloatField(null=True, blank=True)
-    retina = models.FloatField(null=True, blank=True)
-    salivary_gland = models.FloatField(null=True, blank=True)
-    seminal_vesicle = models.FloatField(null=True, blank=True)
-    skeletal_muscle = models.FloatField(null=True, blank=True)
-    skin = models.FloatField(null=True, blank=True)
-    small_intestine = models.FloatField(null=True, blank=True)
-    smooth_muscle = models.FloatField(null=True, blank=True)
-    spinal_cord = models.FloatField(null=True, blank=True)
-    spleen = models.FloatField(null=True, blank=True)
-    stomach = models.FloatField(null=True, blank=True)
-    testis = models.FloatField(null=True, blank=True)
-    thymus = models.FloatField(null=True, blank=True)
-    thyroid_gland = models.FloatField(null=True, blank=True)
-    tongue = models.FloatField(null=True, blank=True)
-    tonsil = models.FloatField(null=True, blank=True)
-    urinary_bladder = models.FloatField(null=True, blank=True)
-    vagina = models.FloatField(null=True, blank=True)
+    protein = models.ForeignKey('Protein', null=True, on_delete=models.CASCADE)
+    tissue = models.ForeignKey('Tissues', null=True, on_delete=models.CASCADE)
+    value = models.FloatField(null=True, blank=True)
+
+    def __str__(self):
+        return self.slug
+
+    class Meta():
+        db_table = "tissueexpression"
 
 class ProteinConformation(models.Model):
     protein = models.ForeignKey('Protein', on_delete=models.CASCADE)

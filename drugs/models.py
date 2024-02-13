@@ -34,7 +34,8 @@ class Drugs2024(models.Model):
     drug_status = models.CharField(max_length=15)
     approval_year = models.IntegerField(max_length=4)
     indication_max_phase = models.IntegerField(max_length=1)
-    moa = models.CharField(max_length=30, null=True)
+    moa = models.ForeignKey('ligand.LigandRole', on_delete=models.CASCADE, null=True)
+    genetic_association = models.CharField(max_length=30, null=True)
     affected_pathway = models.CharField(max_length=30)
     somatic_mutation = models.CharField(max_length=30)
     similarity_to_model = models.FloatField(max_length=4)
@@ -48,8 +49,8 @@ class Drugs2024(models.Model):
         db_table = 'drugs_new'
 
 class Indication(models.Model):
-    name =  models.CharField(max_length=55)
-    code =  models.CharField(max_length=10)
+    name =  models.CharField(max_length=70)
+    code =  models.ForeignKey('common.WebLink', on_delete=models.CASCADE, null=True)
 
     def __str__(self):
         return self.name
