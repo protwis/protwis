@@ -778,7 +778,7 @@ def coverage(request):
 
 
     if 1==1:
-        class_interactions = ResidueFragmentInteraction.objects.filter(structure_ligand_pair__annotated=True).prefetch_related(
+        class_interactions = ResidueFragmentInteraction.objects.filter(structure_ligand_pair__annotated=True).exclude(structure_ligand_pair__structure__structure_type__slug__startswith='af-').prefetch_related(
             'rotamer__residue__display_generic_number','interaction_type',
             'structure_ligand_pair__structure__protein_conformation__protein__parent__family',
             'structure_ligand_pair__ligand',
