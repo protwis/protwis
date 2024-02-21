@@ -21,7 +21,7 @@ class Command(BaseCommand):
     publication_cache = {}
 
     def add_arguments(self, parser):
-        parser.add_argument('--filename'], action='store'], dest='filename'],
+        parser.add_argument('--filename', action='store', dest='filename',
                             help='Filename to import. Can be used multiple times')
 
     logger = logging.getLogger(__name__)
@@ -37,9 +37,9 @@ class Command(BaseCommand):
                             action="store_true",
                             help="Skip this during a test run",
                             default=False)
-        parser.add_argument('-u'], '--purge'],
-                            action='store_true'],
-                            dest='purge'],
+        parser.add_argument('-u', '--purge',
+                            action='store_true',
+                            dest='purge',
                             default=False,
                             help='Purge existing ligand records')
 
@@ -119,7 +119,7 @@ class Command(BaseCommand):
         drug_data = pd.merge(all_data, shaved_data, on=['entry_name', 'IndicationID'], how='inner')
         #Drop the duplicates
         drug_data = drug_data.drop_duplicates()
-        return indication_data, tissues_data, cancer_data, merged_df
+        return indication_data, tissues_data, cancer_data, drug_data
 
     @staticmethod
     def transform_column_name(col_name):
@@ -133,7 +133,7 @@ class Command(BaseCommand):
 
     def generate_tissue_expression(tissues_data):
         #process the column headers
-        tissues_data.columns = [transform_column_name(col) for col in tissues_data.columns]
+        tissues_data.columns = [Command.transform_column_name(col) for col in tissues_data.columns]
         tissues = list(tissues_data.columns)[1:]
         for i, row in tissues_data.iterrows():
             protein = Command.fetch_protein(row['entry_name'])
