@@ -1,8 +1,5 @@
 {% extends "home/base.html" %}
 {% load static %}
-{% load structure_extras %}
-{% load coupling_extras %}
-
 
 {% block addon_css %}
     <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css"/>
@@ -32,123 +29,132 @@
 <div class="container mt-3">
     <ul class="nav nav-tabs">
         {% for header, subs in headers %}
-        <li class="nav-item {% if forloop.first %}active{% endif %}" data-column="{{  header.1|lower }}">
-            <a class="nav-link" data-toggle="tab" href="" onclick="event.preventDefault(); showColumn('{{ header.1|lower }}')">{{ header.0|upper }}</a>
-        </li>
+            <li class="nav-item {% if forloop.first %}active{% endif %}" data-column="{{  header.1|lower }}">
+                <a class="nav-link" data-toggle="tab" href="" onclick="event.preventDefault(); showColumn('{{ header.1|lower }}')">{{ header.0|upper }}</a>
+            </li>
         {%  endfor %}
     </ul>
 
     <!-- Data Table -->
-    <table class="table" id="table">
-        <thead>
-            <tr>
-                <!-- checkbox -->
-                <th colspan="1"></th> 
-                <!-- Receptor -->
-                <th colspan=4 style='height:35px; text-align:left;' class="rightborder">
-                Receptor
-                </th>
-                <!-- Phosphorylation sites -->
-                <th class="main" colspan="{{ col_len }}" style='height:35px; text-align:left;' class="rightborder main">
-                Phosphorylation sites
-                </th>
-                <!-- logMax -->
-                <th colspan=13 style='height:35px; text-align:left;' class="rightborder">
-                Log(Emax/EC50)
-                </th>
-            </tr>
-
-            <tr class="header-center">
-                <!-- checkbox holder -->
-                <th></th>
-                <!-- Receptor -->
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-
-                <!-- Phosphorylations -->
-                {% for header, subs in headers %}
-                <th class="{{ header.1|lower }}" colspan="{{ subs|length }}" style="border-right: 1px solid; text-align: center;">{{ header.0 }}</th>
-                {% endfor %}
-                <!-- logmax -->
-                <th>arrb1</th>
-                <th>arrb2</th>
-                <th>arrs</th>
-                <th>arrc</th>
-            </tr>
-
-            <tr>
-                <!-- checkbox -->
-                <th class='no-sort checkbox_tr'><input class="select-all" type="checkbox" onclick="select_all(this)"></th>
-                <!-- Receptor -->
-                <th style="vertical-align: middle">Uniprot</th>
-                <th style="vertical-align: middle">GtoPdb</th>
-                <th style="vertical-align: middle">Family</th>
-                <th style="vertical-align: middle">Class</th>
-                <!-- Phosphorylations -->
-                {% for header, subs in headers %}
-                    {% for sub in subs %}
-                    <th style="text-align: center; vertical-align: middle" class="{{ header.1|lower }}">
-                        {{ sub }}
+    <div style='padding-top: 0px; white-space: nowrap; width:100%; overflow-y:hidden; display:inline-block;'>
+        <table class="table compact row-border" id="table" style="display:none; float:left;">
+            <thead>
+                <tr>
+                    <!-- checkbox -->
+                    <th colspan="1"></th> 
+                    <!-- Receptor -->
+                    <th colspan=4 style='height:35px; text-align:left;' class="rightborder">
+                    Receptor
                     </th>
+                    <!-- Phosphorylation sites -->
+                    <th class="rightborder main" colspan="{{ col_len }}" style='height:35px; text-align:left;'>
+                    Phosphorylation sites
+                    </th>
+                    <!-- logemax -->
+                    <th colspan=3 style='height:35px; text-align:left;' class="rightborder">
+                    Log(Emax/EC50)
+                    </th>
+                </tr>
+
+                <tr class="header-center">
+                    <!-- checkbox holder -->
+                    <th></th>
+                    <!-- Receptor -->
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+
+                    <!-- Phosphorylations -->
+                    {% for header, subs in headers %}
+                    <th class="{{ header.1|lower }}" colspan="{{ subs|length }}" style="border-right: 1px solid; text-align: center;">{{ header.0 }}</th>
                     {% endfor %}
-                {% endfor %}
-                <!-- logmax -->
-                <th style="vertical-align: middle">arrb1</th>
-                <th style="vertical-align: middle">arrb2</th>
-                <th style="vertical-align: middle">arrs</th>
-                <th style="vertical-align: middle">arrc</th>
-            </tr>
-            <tr>
-                <th></th> <!-- checkbox -->
-                <!-- Receptors -->
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
+                    <!-- logmax -->
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                </tr>
 
-                <!-- Phosphorylation -->
-                {% for header, subs in headers %}
-                    {% for sub in subs%}
-                <th class="{{ header.1|lower }}"></th><!-- Yadcf filter -->
+                <tr>
+                    <!-- checkbox -->
+                    <!-- <th class='no-sort checkbox_tr'><input class="select-all" type="checkbox" style="vertical-align: middle !important" onclick="select_all(this)"></th> -->
+                    <th></th>
+                    <!-- Receptor -->
+                    <th style="vertical-align: middle; text-align: center;">Uniprot</th>
+                    <th style="vertical-align: middle; text-align: center;">GtoPdb</th>
+                    <th style="vertical-align: middle; text-align: center;">Family</th>
+                    <th style="vertical-align: middle; text-align: center;">Class</th>
+                    <!-- Phosphorylations -->
+                    {% for header, subs in headers %}
+                        {% for sub in subs %}
+                        <th style="text-align: center; vertical-align: middle" class="{{ header.1|lower }}">
+                            {{ sub }}
+                        </th>
+                        {% endfor %}
                     {% endfor %}
+
+                    <!-- logmax -->
+                    {% for labels in coupling_labels %}
+                        {% if labels.1 == 'Regular' %}
+                            <th class="{{ labels.0 }}" style="vertical-align: middle; text-align: center;">{{ labels.0 }}</th>
+                        {% else %}
+                            <th class="{{ labels.0 }} {{ labels.1 }}" style="vertical-align: middle; text-align: center;">{{ labels.0 }}<br><span style="color: red">{{ labels.1 }}</span></th>   
+                        {% endif %}
+                    {% endfor %}
+                    
+                    <!-- <th style="vertical-align: middle">ARRB1<br><span style="color: red;">+ GRK</span></th>
+                    <th style="vertical-align: middle">ARRB1</th>
+                    <th style="vertical-align: middle">ARRB2<br><span style="color: red;">+ GRK</span></th> -->
+
+                </tr>
+
+                <!-- Yadcf-->
+                <tr>
+                    <th></th> <!-- checkbox -->
+                    <!-- Receptors -->
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+
+                    <!-- Phosphorylation -->
+                    {% for header, subs in headers %}
+                        {% for sub in subs%}
+                    <th class="{{ header.1|lower }}" style="max-width: 2rem;"></th><!-- Yadcf filter -->
+                        {% endfor %}
+                    {% endfor %}
+
+                    <!-- Couplings -->
+                    {% for labels in coupling_labels%}
+                        <th style="text-align: center;"></th>
+                    {% endfor %}
+
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in sites %}
+                <tr>
+                    <td class="text-center"><input class="alt" type="checkbox"></td>
+
+                    {% for key, val in row.items %}
+
+                        {% if key != 'logemaxec50' %}
+                            {% if key == 'icl2_seq' or key == 'icl3_seq' or key == 'c-term_seq' %}
+                                <td class="truncate {{ val.1 }}" style="text-align: center;"> {{ val.0 }} </td>
+                            {% else %}
+                                <td class="{{ val.1 }}" style="text-align: center;">{{ val.0|safe }}</td>
+                            {% endif %}
+                        {% endif %}
+                    {% endfor %}
+
+                    {% for val1, val2, val3 in row.logemaxec50 %}
+                    <td style="text-align: center;">{{ val2|safe }}</td>
+                    {% endfor %}
+                </tr>
                 {% endfor %}
-
-                <!-- Couplings -->
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-
-            </tr>
-        </thead>
-        <tbody>
-            {% for row in sites %}
-            <tr>
-                <td class="text-center"><input class="alt" type="checkbox"></td>
-
-                <!-- {% for el in range1 %}
-                <td> {{ el }} </td>
-                {% endfor %} -->
-
-                {% for key, val in row.items %}
-                    {% if key == 'icl2_seq' or key == 'icl3_seq' or key == 'c-term_seq' %}
-                    <td class="truncate {{ val.1 }}"> {{ val.0 }} </td>
-                    {% else %}
-                    <td class="{{ val.1 }}">{{ val.0|safe }}</td>
-                    {% endif %}
-                {% endfor %}
-
-                <td>ar</td>
-                <td>ar</td>
-                <td>ar</td>
-                <td>ar</td>
-
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+            </tbody>
+        </table>
+    </div>
 
 </div>
 
@@ -161,10 +167,6 @@
     <script src="{% static 'home/js/phosphorylation_sites.js' %}"></script>
     <script src="{% static 'home/js/signprot-multitabtable.js' %}"></script>
     <script src="{% static 'home/js/xlsx.full.min.js' %}"></script>  
-    <!-- {% if page == 'gprot' %}
-      <script src="{% static 'home/js/gprotein_coupling_families.js' %}"></script>
-    {% else %}
-      <script src="{% static 'home/js/arrestin_coupling.js' %}"></script> -->
-      <!-- JavaScript for Tab Functionality -->
-    {% endif %}
+    <script src="{% static 'home/js/gpcrdb.js' %}"></script>
+
 {% endblock %}

@@ -592,7 +592,31 @@ def ComplexModelDetails(request, header, refined=False):
         scores = StructureAFScores.objects.get(structure=model)
         #Need to build the plDDT colors
         model_plddt = StructureModelpLDDT.objects.filter(structure=model).order_by('residue__protein_conformation__protein__id').prefetch_related('residue','residue__protein_conformation__protein','residue__protein_segment')
-        avg_plddt = model_plddt.aggregate(Avg('pLDDT'))
+        chain_scores = model_plddt.values('residue__protein_conformation__protein__name').annotate(average_score=Avg('pLDDT'))
+    for score in chain_scores:
+        original_name = score['residue__protein_conformation__protein__name']
+
+        # Regular expressions for matching "alpha", "beta", or "gamma" and capturing the following part
+        patterns = {
+            r'.*([a-zA-Z])\s*alpha[-\s]*(\d+).*': 'Gα\\1\\2',
+            # r'.*alpha[-\s]*(\d+).*': 'Gα\\1',
+            r'.*beta[-\s]*(\d+).*': 'Gβ\\1',
+            r'.*gamma[-\s]*(\d+).*': 'Gγ\\1',
+        }
+
+        # Initialize modified_name with the original name in case no patterns match
+        modified_name = original_name.replace('receptor', '').replace('-adrenoceptor', "").strip()
+
+        # Attempt to find and replace based on the defined patterns
+        for pattern, replacement in patterns.items():
+            if re.search(pattern, original_name, re.IGNORECASE):
+                modified_name = re.sub(pattern, replacement, original_name, flags=re.IGNORECASE)
+                break  # Stop after the first match to avoid multiple replacements
+
+        # Update the score dictionary with the modified name
+        score['chain'] = modified_name
+
+        # avg_plddt = model_plddt.aggregate(Avg('pLDDT'))
         residues_plddt = {}
         for item in model_plddt:
             if item.residue.protein_conformation.protein not in residues_plddt:
@@ -693,7 +717,8 @@ def ComplexModelDetails(request, header, refined=False):
                                                              'residues_browser': residues_browser,
                                                              'structure_type': model.structure_type,
                                                              'signalling_protein': model.structure_type.slug,
-                                                             'plddt_avg': avg_plddt['pLDDT__avg'],
+                                                             'plddt_avg': chain_scores,
+                                                            #  'plddt_avg': avg_plddt['pLDDT__avg'],
                                                              'interactions_metadata': interactions_metadata,
                                                              'gprot': gprot_order,
                                                              'receptor': receptor_order,
