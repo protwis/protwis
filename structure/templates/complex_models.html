@@ -544,7 +544,7 @@
                     <th colspan=1 class="over_header"></th>
                     <th colspan=1 class="over_header">   MODEL   </th>
                     <th colspan=5 class="over_header">RECEPTOR</th>
-                    {% if signalling_protein == 'gprot' %}
+                    {% if signalling_protein == 'af-signprot' %}
                     <th colspan=3 class="over_header">G PROTEIN</th>
                     {% else %}
                     <th colspan=3 class="over_header">ARRESTIN</th>
@@ -594,7 +594,7 @@
             {% for model in structure_complex_model %}
                 <tr model_id='{{model.pk}}'>
                     <td class="text-center"><input class="alt" type="checkbox" id="{{ model.pk }}"></td>
-                    {% if signalling_protein == 'gprot' %}
+                    {% if signalling_protein == 'af-signprot' %}
                     <td style="text-align:center;"><a target="_blank" href="complex_models/{{ model.pdb_code__index }}"><img width="14px" height="20px" class="model-link" src="{% static 'home/images/model-surface.png' %}"></a></div></td>
                     {% else %}
                     <td style="text-align:center;"><a target="_blank" href="complex_models/{{ model.pdb_code__index }}"><img width="14px" height="20px" class="model-link" src="{% static 'home/images/arrestin-surface.png' %}"></a></div></td>
@@ -604,7 +604,7 @@
                     <td><span>{{ model.protein_conformation__protein__name|receptor_short|safe }}</span></td>
                     <td>{{ model.protein_conformation__protein__family__parent__name }}</td>
                     <td>{{ model.protein_conformation__protein__family__parent__parent__parent__name|cut_classname }}</td>
-                    {% if signalling_protein == 'gprot' %}
+                    {% if signalling_protein == 'af-signprot' %}
                     <td><a href="/signprot/{{ model.signprot__complex_protein__entry_name }}">{{ model.signprot_complex__protein__family__name|gprot_short }}</a></td>
                     {% else %}
                     <td><a href="/signprot/{{ model.signprot_complex__protein__entry_name }}">{{ model.signprot_complex__protein__entry_name|arr_short }}</a></td>

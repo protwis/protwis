@@ -100,6 +100,7 @@ class Command(BaseBuild):
         # Non-complex arrestin structures
         arrestin_proteins = Protein.objects.filter(family__slug__startswith="200", accession__isnull=False)
         complex_structures = self.scs.values_list("structure__pdb_code__index", flat=True)
+        latest = self.scs.order_by('-structure__publication_date').values_list('structure__publication_date',flat=True)[0]
         for a in arrestin_proteins:
             pdb_list = get_pdb_ids(a.accession)
             for pdb in pdb_list:
@@ -107,7 +108,10 @@ class Command(BaseBuild):
                     try:
                         data = fetch_signprot_data(pdb, a)
                         if data:
-                            build_signprot_struct(a, pdb, data)
+                            ### Only add entries that aren't newer than the latest annotated complex structure to avoid non-annotated complexes
+                            if 'release_date' in data:
+                                if datetime.date.fromisoformat(data['release_date'])<=latest:
+                                    build_signprot_struct(a, pdb, data)
                     except Exception as msg:
                         self.logger.error("SignprotStructure of {} {} failed\n{}: {}".format(a.entry_name, pdb, type(msg), msg))
         if options["debug"]:

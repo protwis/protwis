@@ -86,6 +86,7 @@ class Command(BaseBuild):
             ### Build SignprotStructure objects from non-complex signprots
             g_prot_alphas = Protein.objects.filter(family__slug__startswith="100_001", accession__isnull=False)#.filter(entry_name="gnai1_human")
             complex_structures = SignprotComplex.objects.filter(protein__family__slug__startswith="100_001").values_list("structure__pdb_code__index", flat=True)
+            latest = complex_structures.order_by('-structure__publication_date').values_list('structure__publication_date',flat=True)[0]
             for a in g_prot_alphas:
                 pdb_list = get_pdb_ids(a.accession)
                 for pdb in pdb_list:
@@ -93,8 +94,11 @@ class Command(BaseBuild):
                         try:
                             data = fetch_signprot_data(pdb, a, os.listdir(self.local_uniprot_beta_dir), os.listdir(self.local_uniprot_gamma_dir))
                             if data:
-                                ss = build_signprot_struct(a, pdb, data)
-                                self.build_gprot_extra_proteins(a, ss, data)
+                                ### Only add entries that aren't newer than the latest annotated complex structure to avoid non-annotated complexes
+                                if 'release_date' in data:
+                                    if datetime.date.fromisoformat(data['release_date'])<=latest:
+                                        ss = build_signprot_struct(a, pdb, data)
+                                        self.build_gprot_extra_proteins(a, ss, data)
                         except Exception as msg:
                             self.logger.error("SignprotStructure of {} {} failed\n{}: {}".format(a.entry_name, pdb, type(msg), msg))
             test_model_updates(self.all_models, self.tracker, check=True)
@@ -140,6 +144,9 @@ class Command(BaseBuild):
                     alpha_protconf.protein = alpha_protein
                     alpha_protconf.state = ProteinState.objects.get(slug="active")
                     alpha_protconf.save()
+
+                ### Delete existing residues
+                Residue.objects.filter(protein_conformation=alpha_protconf).delete()
 
                 pdbp = PDBParser(PERMISSIVE=True, QUIET=True)
                 s = pdbp.get_structure("struct", StringIO(sc.structure.pdb_data.pdb))
@@ -289,8 +296,16 @@ class Command(BaseBuild):
                         elif sc.structure.pdb_code.index in ['7KH0']:
                             no_seqnum_shift.append(sc.structure.pdb_code.index)
 
-                # Mismatches remained possibly to seqnumber shift, making pairwise alignment to try and fix alignment
-                if len(remaining_mismatches)>0 and sc.structure.pdb_code.index not in no_seqnum_shift:
+                ### G.H5 check
+                H5_resis = []
+                for num, mapping in pdb_num_dict.items():
+                    if mapping[1].protein_segment.slug=='G.H5':
+                        H5_resis.append(mapping[1])
+                if len(H5_resis)<10:
+                    print("Warning: {} has only {} residues in G.H5".format(sc.structure, len(H5_resis)))
+
+                if (len(remaining_mismatches)>0 and sc.structure.pdb_code.index not in no_seqnum_shift) or len(H5_resis)<10:
+                    # Mismatches remained possibly to seqnumber shift, making pairwise alignment to try and fix alignment
                     ppb = PPBuilder()
                     seq = ""
                     for pp in ppb.build_peptides(chain, aa_only=False):
@@ -405,36 +420,6 @@ class Command(BaseBuild):
                             pdb_num_dict[256][1] = Residue.objects.get(protein_conformation__protein=sc.protein, sequence_number=271)
                         elif sc.structure.pdb_code.index in ['7F9Y','7F9Z','7MBY']:
                             pdb_num_dict[289][1] = Residue.objects.get(protein_conformation__protein=sc.protein, sequence_number=271)
-
-                ### Custom alignment fix for 6WHA, 7MBY mini-Gq/Gi/Gs chimera
-                elif sc.structure.pdb_code.index in ['6WHA']:
-                    if sc.structure.pdb_code.index=='6WHA':
-                        ref_seq  = "MTLESIMACCLSEEAKEARRINDEIERQLRRDKRDARRELKLLLLGTGESGKSTFIKQMRIIHGSGYSDEDKRGFTKLVYQNIFTAMQAMIRAMDTLKIPYKYEHNKAHAQLVREVDVEKVSAFENPYVDAIKSLWNDPGIQECYDRRREYQLSDSTKYYLNDLDRVADPAYLPTQQDVLRVRVPTTGIIEYPFDLQSVIFRMVDVGGQRSERRKWIHCFENVTSIMFLVALSEYDQVLVESDNENRMEESKALFRTIITYPWFQNSSVILFLNKKDLLEEKIM--YSHLVDYFPEYDGP----QRDAQAAREFILKMFVDL---NPDSDKIIYSHFTCATDTENIRFVFAAVKDTILQLNLKEYNLV"
-                        temp_seq = "----------VSAEDKAAAERSKMIDKNLREDGEKARRTLRLLLLGADNSGKSTIVK----------------------------------------------------------------------------------------------------------------------------------GIFETKFQVDKVNFHMFDVG-----RRKWIQCFNDVTAIIFVVDSSDYNR----------LQEALNDFKSIWNNRWLRTISVILFLNKQDLLAEKVLAGKSKIEDYFPEFARYTTPDPRVTRAKY-FIRKEFVDISTASGDGRHICYPHFTC-VDTENARRIFNDCKDIILQMNLREYNLV"
-
-
-
-                    pdb_num_dict = OrderedDict()
-                    temp_resis = [res for res in chain]
-                    temp_i = 0
-                    mapped_cgns = []
-                    for i, aa in enumerate(temp_seq):
-                        if aa!="-":
-                            ref_split_on_gaps = ref_seq[:i+1].split("-")
-                            ref_seqnum = i-(len(ref_split_on_gaps)-1)+1
-                            res = resis.get(sequence_number=ref_seqnum)
-                            if res.display_generic_number.label in mapped_cgns:
-                                next_presumed_cgn = self.get_next_presumed_cgn(res)
-                                if next_presumed_cgn:
-                                    res = next_presumed_cgn
-                                    while res and res.display_generic_number.label in mapped_cgns:
-                                        res = self.get_next_presumed_cgn(res)
-                                else:
-                                    print("Warning: {} CGN does not exist. Incorrect mapping of {} in {}".format(next_presumed_cgn, chain[nums[temp_i]], sc.structure))
-                            if res:
-                                mapped_cgns.append(res.display_generic_number.label)
-                            pdb_num_dict[nums[temp_i]] = [chain[nums[temp_i]], res]
-                            temp_i+=1
 
                 bulked_rotamers = []
                 for key, val in pdb_num_dict.items():

@@ -12,6 +12,7 @@ from django.views.generic import TemplateView
 from django.utils.safestring import mark_safe
 from django.db.models import Q
 
+from protwis.context_processors import current_site
 from common import definitions
 from common.diagrams_gpcr import DrawSnakePlot
 from common.diagrams_gprotein import DrawGproteinPlot
@@ -372,6 +373,15 @@ class LazyDataLoader:
 
     def __len__(self):
         return len(self._load_data())
+    
+def CouplingHandler(request):
+    domain = current_site(request)
+    origin = domain['current_site']
+    if origin == 'gprotein':
+        return CouplingBrowser.as_view()(request).render()
+    elif origin == 'arrestin':
+        return CouplingBrowser_deprecated.as_view(subunit_filter = "200_000_001", families = ["Beta"], page='arrestin')(request).render()
+
 
 class CouplingBrowser(TemplateView):
     """Class based generic view which serves family specific coupling data between Receptors and G-proteins.
@@ -1176,7 +1186,7 @@ def CouplingProfiles(request, render_part="both", signalling_data="empty"):
         slug_translate = {'001': "ClassA", '002': "ClassB1", '003': "ClassB2", '004': "ClassC", '006': "ClassF", '007': "ClassT"}
         key_translate ={'Gs':"G<sub>s</sub>", 'Gi/o':"G<sub>i/o</sub>",
                         'Gq/11':"G<sub>q/11</sub>", 'G12/13':"G<sub>12/13</sub>",
-                        'Beta-arrestin-1':"&beta;-Arrestin<sub>1</sub>", 'Beta-arrestin-2':"&beta;-Arrestin<sub>2</sub>"}
+                        'Beta-arrestin-1':"&beta;-Arrestin 1", 'Beta-arrestin-2':"&beta;-Arrestin 2"}
         selectivitydata_gtp_plus = {}
         receptor_dictionary = []
         if signalling_data == "gprot":
@@ -1335,17 +1345,22 @@ def CouplingProfiles(request, render_part="both", signalling_data="empty"):
                   context
     )
 
-def GProteinTree(request):
-    return CouplingProfiles(request, "tree", "gprot")
+def TreeHandler(request):
+    domain = current_site(request)
+    origin = domain['current_site']
+    print(origin)
+    if origin == 'gprotein':
+        return CouplingProfiles(request, "tree", "gprot")
+    elif origin == 'arrestin':
+        return CouplingProfiles(request, "tree", "arrestin")
 
-def GProteinVenn(request):
-    return CouplingProfiles(request, "venn", "gprot")
-
-def ArrestinTree(request):
-    return CouplingProfiles(request, "tree", "arrestin")
-
-def ArrestinVenn(request):
-    return CouplingProfiles(request, "venn", "arrestin")
+def VennHandler(request):
+    domain = current_site(request)
+    origin = domain['current_site']
+    if origin == 'gprotein':
+        return CouplingProfiles(request, "venn", "gprot")
+    elif origin == 'arrestin':
+        return CouplingProfiles(request, "venn", "arrestin")
 
 #@cache_page(60*60*24*7)
 def familyDetail(request, slug):
@@ -2019,7 +2034,7 @@ def InteractionMatrix(request, database='gprotein'):
         if database=='gprotein':
             r['gprot'] = definitions.G_PROTEIN_DISPLAY_NAME[s.signprot_complex.protein.entry_name.split('_')[0].upper()]#s.get_stab_agents_gproteins()
         elif database=='arrestin':
-            r['gprot'] = definitions.ARRESTIN_DISPLAY_NAME[s.signprot_complex.protein.entry_name]
+            r['gprot'] = definitions.ARRESTIN_DISPLAY_NAME[s.signprot_complex.protein.entry_name.split('_')[0]]
         try:
             r['gprot_class'] = s.signprot_complex.protein.family.parent.name#s.get_signprot_gprot_family()
         except Exception:
