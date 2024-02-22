@@ -293,10 +293,10 @@ class Command(BaseCommand):
         for key, values in mapper.items():
             for code in values:
                 try:
-                    check = LigandID.objects.get(index=mapper[code], ligand_id=ligand.id, web_resource__slug=code)
+                    check = LigandID.objects.get(index=code, ligand_id=ligand.id, web_resource__slug=key)
                 except LigandID.DoesNotExist:
-                    wr = WebResource.objects.get(slug=code)
-                    LigandID(index=mapper[code], web_resource=wr, ligand_id=ligand.id).save()
+                    wr = WebResource.objects.get(slug=key)
+                    LigandID(index=code, web_resource=wr, ligand_id=ligand.id).save()
 
     @staticmethod
     def fetch_role(action):
@@ -351,8 +351,8 @@ class Command(BaseCommand):
             return None
 
     @staticmethod
-    def read_csv_data(self, filename):
-        filepath = os.sep.join([self.data_dir, filename])
+    def read_csv_data(filename):
+        filepath = os.sep.join([Command.data_dir, filename])
         data = pd.read_csv(filepath, low_memory=False)
         return data
 
