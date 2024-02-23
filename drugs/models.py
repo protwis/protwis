@@ -43,7 +43,7 @@ class Drugs2024(models.Model):
     reference = models.ManyToManyField('common.Publication')
 
     def __str__(self):
-        return self.name
+        return self.ligand.name
 
     class Meta():
         db_table = 'drugs_new'

@@ -94,7 +94,7 @@ class ExpressionValue(models.Model):
     max_expression = models.CharField(max_length=30)
 
     def __str__(self):
-        return self.name
+        return self.max_expression
 
     class Meta():
         db_table = 'expression'
@@ -104,7 +104,7 @@ class CancerExpression(models.Model):
     expression = models.ForeignKey('ExpressionValue', on_delete=models.CASCADE)
 
     def __str__(self):
-        return self.name
+        return self.cancer.slug
 
     class Meta():
         db_table = 'cancer_expression'
