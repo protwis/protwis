@@ -93,7 +93,22 @@
 </div>
 <br>
 
+{% block popup %}
+<div class="modal" id="references">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+          <b><h4 class="modal-title">Refs:</h4></b>
+      </div>
+      <div class="modal-body">
+        <p></p>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}
+
 {% block addon_js %}
 <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
 <script src="{% static 'home/js/dataTables.tableTools.min.js' %}"> </script>

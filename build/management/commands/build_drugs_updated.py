@@ -73,25 +73,25 @@ class Command(BaseCommand):
         print("\n\nWelcome to the Drugs2024 build process. Build steps will be printed.")
         print("##### STEP 0 START #####")
         print("\n\nStarted parsing data and setting up different dataframes")
-        indication_df, tissue_df, cancer_df, drug_df = self.setup_data()
+        indication_df, tissue_df, cancer_df, drug_df = Command.setup_data()
         print("##### STEP 1 START #####")
         print("\n\nStarted parsing Indication data and building Indication Model")
-        self.generate_indications(indication_df)    #DONE
+        Command.generate_indications(indication_df)    #DONE
         print("\n\nIndication Model built. Performing checks")
         test_model_updates(self.all_models, self.tracker, check=True)
         print("##### STEP 2 START #####")
         print("\n\nStarted parsing Tissue Expression data and building TissueExpression Model")
-        self.generate_tissue_expression(tissue_df)  #DONE
+        Command.generate_tissue_expression(tissue_df)  #DONE
         print("\n\TissueExpression Model built. Performing checks")
         test_model_updates(self.all_models, self.tracker, check=True)
         print("##### STEP 3 START #####")
         print("\n\nStarted parsing Cancer Prognostics data and building CancerPrognostics Model")
-        self.generate_cancer_prog(cancer_df)        #DONE
+        Command.generate_cancer_prog(cancer_df)        #DONE
         print("\n\CancerPrognostics Model built. Performing checks")
         test_model_updates(self.all_models, self.tracker, check=True)
         print("##### STEP 4 START #####")
         print("\n\nStarted parsing Drug data and building Drug2024 Model")
-        self.create_drug_data(drug_df)
+        Command.create_drug_data(drug_df)
         print("\n\Drug Model built. Performing checks")
         test_model_updates(self.all_models, self.tracker, check=True)
 

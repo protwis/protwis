@@ -5,8 +5,8 @@ from django.db.models import Count, Max
 from django.core.cache import cache
 from django.views.decorators.cache import cache_page
 
-from drugs.models import Drugs
-from protein.models import Protein, ProteinFamily
+from drugs.models import Drugs,Drugs2024
+from protein.models import Protein, ProteinFamily, TissueExpression
 from mutational_landscape.models import NHSPrescribings
 
 import re
@@ -275,6 +275,176 @@ def drugbrowser(request):
 
     return render(request, 'drugbrowser.html', {'drugdata': context})
 
+class NewDrugsBrowser(TemplateView):
+    template_name = 'NewDrugsBrowser.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        Drug_browser_data = Drugs2024.objects.all().prefetch_related('target','indication,','ligand')
+        TissueExp = TissueExpression.objects.all().prefetch_related('protein','tissue')
+
+        #proteins = list(TissueExpression.objects.all().values_list('protein__entry_name').distinct())
+        #drugs = Drugs.objects.all().prefetch_related('target', 'target__family__parent__parent__parent', 'publication', 'publication__web_link', 'publication__web_link__web_resource', 'publication__journal')
+        #drugs_NHS_names = list(NHSPrescribings.objects.values_list('drugname__name', flat=True).distinct())
+        context_data_browser = list()
+        context_data_tissue = list()
+        
+        Drugs_browser_dict = {}
+        for entry in TissueExp:
+            ## For the drug browser table ##
+            if entry.protein.entry_name not in Drugs_browser_dict:
+                Drugs_browser_dict[entry.protein.entry_name] = {}
+                Drugs_browser_dict[entry.protein.entry_name]['accession'] = entry.protein.accession
+                Drugs_browser_dict[entry.protein.entry_name]['name'] = entry.protein.name
+        for key in Drugs_browser_dict:
+            jsondata_browser = {
+                    'ProteinID': key,
+                    'ProteinAccession': Drugs_browser_dict[key]['accession'],
+                    'ProteinName': Drugs_browser_dict[key]['name']
+                }
+            context_data_browser.append(jsondata_browser)
+            context['protein_data'] = context_data_browser
+        
+        Tissue_expression_dict = {}
+        for entry in TissueExp:
+            protein_id = entry.protein.entry_name
+            value = entry.value
+            Tissue_id = entry.tissue
+            if protein_id not in Tissue_expression_dict:
+                Tissue_expression_dict[str(protein_id)] = {}
+                Tissue_expression_dict[str(protein_id)][str(Tissue_id)] = float(value)
+            else:
+                Tissue_expression_dict[str(protein_id)][str(Tissue_id)] = float(value)
+        for key in Tissue_expression_dict:
+            jsondata_tissue = {
+                    'ProteinID': key,
+                    'adipose_tissue': Tissue_expression_dict[key]['adipose_tissue'],
+                    'adrenal_gland': Tissue_expression_dict[key]['adrenal_gland'],
+                    'amygdala': Tissue_expression_dict[key]['amygdala'],
+                    'appendix': Tissue_expression_dict[key]['appendix'],
+                    'basal_ganglia': Tissue_expression_dict[key]['basal_ganglia'],
+                    'bone_marrow': Tissue_expression_dict[key]['bone_marrow'],
+                    'breast': Tissue_expression_dict[key]['breast'],
+                    'cerebellum': Tissue_expression_dict[key]['cerebellum'],
+                    'cerebral_cortex': Tissue_expression_dict[key]['cerebral_cortex'],
+                    'cervix': Tissue_expression_dict[key]['cervix'],
+                    'choroid_plexus': Tissue_expression_dict[key]['choroid_plexus'],
+                    'colon': Tissue_expression_dict[key]['colon'],
+                    'duodenum': Tissue_expression_dict[key]['duodenum'],
+                    'endometrium': Tissue_expression_dict[key]['endometrium_1'], #Should be updated
+                    'epididymis': Tissue_expression_dict[key]['epididymis'],
+                    'esophagus': Tissue_expression_dict[key]['esophagus'],
+                    'fallopian_tube': Tissue_expression_dict[key]['fallopian_tube'],
+                    'gallbladder': Tissue_expression_dict[key]['gallbladder'],
+                    'heart_muscle': Tissue_expression_dict[key]['heart_muscle'],
+                    'hippocampal_formation': Tissue_expression_dict[key]['hippocampal_formation'],
+                    'hypothalamus': Tissue_expression_dict[key]['hypothalamus'],
+                    'kidney': Tissue_expression_dict[key]['kidney'],
+                    'liver': Tissue_expression_dict[key]['liver'],
+                    'lung': Tissue_expression_dict[key]['lung'],
+                    'lymph_node': Tissue_expression_dict[key]['lymph_node'],
+                    'midbrain': Tissue_expression_dict[key]['midbrain'],
+                    'ovary': Tissue_expression_dict[key]['ovary'],
+                    'pancreas': Tissue_expression_dict[key]['pancreas'],
+                    'parathyroid_gland': Tissue_expression_dict[key]['parathyroid_gland'],
+                    'pituitary_gland': Tissue_expression_dict[key]['pituitary_gland'],
+                    'placenta': Tissue_expression_dict[key]['placenta'],
+                    'prostate': Tissue_expression_dict[key]['prostate'],
+                    'rectum': Tissue_expression_dict[key]['rectum'],
+                    'retina': Tissue_expression_dict[key]['retina'],
+                    'salivary_gland': Tissue_expression_dict[key]['salivary_gland'],
+                    'seminal_vesicle': Tissue_expression_dict[key]['seminal_vesicle'],
+                    'skeletal_muscle': Tissue_expression_dict[key]['skeletal_muscle'],
+                    'skin': Tissue_expression_dict[key]['skin_1'],
+                    'small_intestine': Tissue_expression_dict[key]['small_intestine'],
+                    'smooth_muscle': Tissue_expression_dict[key]['smooth_muscle'],
+                    'spinal_cord': Tissue_expression_dict[key]['spinal_cord'],
+                    'spleen': Tissue_expression_dict[key]['spleen'],
+                    'stomach': Tissue_expression_dict[key]['stomach_1'],
+                    'testis': Tissue_expression_dict[key]['testis'],
+                    'thymus': Tissue_expression_dict[key]['thymus'],
+                    'thyroid_gland': Tissue_expression_dict[key]['thyroid_gland'],
+                    'tongue': Tissue_expression_dict[key]['tongue'],
+                    'tonsil': Tissue_expression_dict[key]['tonsil'],
+                    'urinary_bladder': Tissue_expression_dict[key]['urinary_bladder'],
+                    'vagina': Tissue_expression_dict[key]['vagina']
+                }
+            context_data_tissue.append(jsondata_tissue)
+            context['Tissue_data'] = context_data_tissue
+        
+        """
+        
+        for i in range(0,len(TissueExp)):
+            ## For the drug browser table ##
+            protein_id = TissueExp[i].protein.entry_name
+            protein_accession = TissueExp[i].protein.accession
+            protein_name = TissueExp[i].protein.name
+            jsondata_browser = {
+                    'ProteinID': protein_id,
+                    'ProteinAccession': protein_accession,
+                    'ProteinName': protein_name
+                }
+            context_data_browser.append(jsondata_browser)
+            context['protein_data'] = context_data_browser
+            #some_dict to return = json.dumps(python_dict)
+
+            ## For the Tissue expression table ##
+            jsondata_tissue = {
+                    'ProteinID': protein_id,
+                    'adipose_tissue': TissueExp[i].adipose_tissue,
+                    'adrenal_gland': TissueExp[i].adrenal_gland,
+                    'amygdala': TissueExp[i].amygdala,
+                    'appendix': TissueExp[i].appendix,
+                    'basal_ganglia': TissueExp[i].basal_ganglia,
+                    'bone_marrow': TissueExp[i].bone_marrow,
+                    'breast': TissueExp[i].breast,
+                    'cerebellum': TissueExp[i].cerebellum,
+                    'cerebral_cortex': TissueExp[i].cerebral_cortex,
+                    'cervix': TissueExp[i].cervix,
+                    'choroid_plexus': TissueExp[i].choroid_plexus,
+                    'colon': TissueExp[i].colon,
+                    'duodenum': TissueExp[i].duodenum,
+                    'endometrium': TissueExp[i].endometrium,
+                    'epididymis': TissueExp[i].epididymis,
+                    'esophagus': TissueExp[i].esophagus,
+                    'fallopian_tube': TissueExp[i].fallopian_tube,
+                    'gallbladder': TissueExp[i].gallbladder,
+                    'heart_muscle': TissueExp[i].heart_muscle,
+                    'hippocampal_formation': TissueExp[i].hippocampal_formation,
+                    'hypothalamus': TissueExp[i].hypothalamus,
+                    'kidney': TissueExp[i].kidney,
+                    'liver': TissueExp[i].liver,
+                    'lung': TissueExp[i].lung,
+                    'lymph_node': TissueExp[i].lymph_node,
+                    'midbrain': TissueExp[i].midbrain,
+                    'ovary': TissueExp[i].ovary,
+                    'pancreas': TissueExp[i].pancreas,
+                    'parathyroid_gland': TissueExp[i].parathyroid_gland,
+                    'pituitary_gland': TissueExp[i].pituitary_gland,
+                    'placenta': TissueExp[i].placenta,
+                    'prostate': TissueExp[i].prostate,
+                    'rectum': TissueExp[i].rectum,
+                    'retina': TissueExp[i].retina,
+                    'salivary_gland': TissueExp[i].salivary_gland,
+                    'seminal_vesicle': TissueExp[i].seminal_vesicle,
+                    'skeletal_muscle': TissueExp[i].skeletal_muscle,
+                    'skin': TissueExp[i].skin,
+                    'small_intestine': TissueExp[i].small_intestine,
+                    'smooth_muscle': TissueExp[i].smooth_muscle,
+                    'spinal_cord': TissueExp[i].spinal_cord,
+                    'spleen': TissueExp[i].spleen,
+                    'stomach': TissueExp[i].stomach,
+                    'testis': TissueExp[i].testis,
+                    'thymus': TissueExp[i].thymus,
+                    'thyroid_gland': TissueExp[i].thyroid_gland,
+                    'tongue': TissueExp[i].tongue,
+                    'tonsil': TissueExp[i].tonsil,
+                    'urinary_bladder': TissueExp[i].urinary_bladder,
+                    'vagina': TissueExp[i].vagina
+                }
+            """
+        return context
+    
 @cache_page(60 * 60 * 24 * 28)
 def drugmapping(request):
     context = dict()

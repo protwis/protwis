@@ -128,7 +128,7 @@ class TissueExpression(models.Model):
         return self.tissue.slug
 
     class Meta():
-        db_table = "tissueexpression"
+        db_table = "tissue_expression"
 
 class ProteinConformation(models.Model):
     protein = models.ForeignKey('Protein', on_delete=models.CASCADE)
