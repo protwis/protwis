@@ -5,8 +5,8 @@ from django.db.models import Count, Max
 from django.core.cache import cache
 from django.views.decorators.cache import cache_page
 
-from drugs.models import Drugs,Drugs2024
-from protein.models import Protein, ProteinFamily, TissueExpression
+from drugs.models import Drugs, Drugs2024, Indication
+from protein.models import Protein, ProteinFamily, Tissues, TissueExpression
 from mutational_landscape.models import NHSPrescribings
 
 import re
@@ -608,6 +608,85 @@ def nhs_drug(request, slug):
         data.append({'values': data_dic[nhs_name], 'query_key':str(query_translate[nhs_name]), 'key':nhs_name})
 
     return render(request, 'nhs.html', {'data':data, 'drug':slug, 'section':list(set(sections))})
+
+# @cache_page(60 * 60 * 24 * 28)
+def indication_detail(request, code):
+
+    code = code.upper()
+    context = dict()
+    #code = 'EFO_0003843'
+    indication_data = Drugs2024.objects.filter(indication__code__index=code).prefetch_related('ligand',
+                                                                                              'target',
+                                                                                              'indication',
+                                                                                              'indication__code')
+
+    indication_name = Indication.objects.filter(code__index=code).values_list('name', flat=True).distinct()[0]
+
+    sankey = {"nodes": [],
+              "links": []}
+    caches = {'indication':[],
+              'ligands': [],
+              'targets': [],
+              'entries': []}
+
+    node_counter = 0
+    for record in indication_data:
+        #assess the values for indication/ligand/protein
+        indication_code = record.indication.name.capitalize()
+        ligand_name = record.ligand.name.capitalize()
+        ligand_id = record.ligand.id
+        protein_name = record.target.name
+        target_name = record.target.entry_name
+        #check for each value if it exists and retrieve the source node value
+        if indication_code not in caches['indication']:
+            sankey['nodes'].append({"node": node_counter, "name": indication_code, "url":'https://www.ebi.ac.uk/ols4/ontologies/efo/classes?short_form='+code})
+            node_counter += 1
+            caches['indication'].append(indication_code)
+        indi_node = next((item['node'] for item in sankey['nodes'] if item['name'] == indication_code), None)
+        if [ligand_name, ligand_id] not in caches['ligands']:
+            sankey['nodes'].append({"node": node_counter, "name": ligand_name, "url":'/ligand/'+str(ligand_id)+'/info'})
+            node_counter += 1
+            caches['ligands'].append([ligand_name, ligand_id])
+        lig_node = next((item['node'] for item in sankey['nodes'] if item['name'] == ligand_name), None)
+        if protein_name not in caches['targets']:
+            sankey['nodes'].append({"node": node_counter, "name": protein_name, "url":'/protein/'+str(target_name)})
+            node_counter += 1
+            caches['targets'].append(protein_name)
+            caches['entries'].append(target_name)
+        prot_node = next((item['node'] for item in sankey['nodes'] if item['name'] == protein_name), None)
+        #append connection between indication and ligand
+        sankey['links'].append({"source":indi_node, "target":lig_node, "value":1, "ligtrace": ligand_name, "prottrace": None})
+        #append connection between ligand and target
+        sankey['links'].append({"source":lig_node, "target":prot_node, "value":1, "ligtrace": ligand_name, "prottrace": protein_name})
+
+    #Fixing redundancy in sankey['links']
+    unique_combinations = {}
+
+    for d in sankey['links']:
+        # Create a key based on source and target for identifying unique combinations
+        key = (d['source'], d['target'])
+
+        if key in unique_combinations:
+            # If the combination exists, add the value to the existing entry
+            unique_combinations[key]['value'] += d['value']
+        else:
+            # If it's a new combination, add it to the dictionary
+            unique_combinations[key] = d
+
+    # Convert the unique_combinations back to a list of dictionaries
+    sankey['links'] = list(unique_combinations.values())
+    total_points = len(caches['targets']) + len(caches['targets']) + 1;
+    if len(caches['ligands']) > len(caches['targets']):
+        context['nodes_nr'] = len(caches['ligands'])
+    else:
+        context['nodes_nr'] = len(caches['targets'])
+    context['indication_code'] = code
+    context['indication'] = indication_name.capitalize()
+    context['sankey'] = json.dumps(sankey)
+    context['points'] = total_points
+    context['targets'] = list(caches['entries'])
+    context['ligands'] = list(caches['ligands'])
+    return render(request, 'indication_detail.html', context)
 
 @cache_page(60 * 60 * 24 * 28)
 def nhs_section(request, slug):
