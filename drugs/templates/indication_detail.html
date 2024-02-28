@@ -181,20 +181,23 @@
         .style("fill", function(d, i) {
            return color(i); // Apply color based on index
          })
-        .on("click", function(d) {
+        .on("click", function(d,i) {
            var isActive = d3v4.select(this).classed("active");
+           var currentFillColor = d3v4.select(this).style("fill");
            // Reset all paths to default opacity
            paths.style("stroke-opacity", 0.1);
            paths.style("stroke", '#969696');
            if (!isActive) {
+               paths.style("stroke-opacity", 0);
                // Highlight the paths with the same name
                paths.filter(function() {
                    var ligPathName = d3v4.select(this).attr("lig");
                    var protPathName = d3v4.select(this).attr("prot");
                    return ligPathName === d.name || protPathName === d.name;
                })
-               .style("stroke-opacity", 0.3)
-               .style("stroke", 'green');
+               .style("stroke-opacity", 0.5)
+               // .style("stroke", currentFillColor);
+               .style("stroke", "rgb(214, 230, 244)");
            }
            // Toggle the 'active' class on the clicked node
            d3v4.select(this).classed("active", !isActive);
