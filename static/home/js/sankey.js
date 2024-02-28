@@ -323,7 +323,7 @@ function SankeyPlot(sankey_data, location, top_nodes, totalPoints){
   // Set the sankey diagram properties
   var sankey = d3v4.sankey()
       .nodeWidth(25)
-      .nodePadding(5)
+      .nodePadding(10)
       .size([width, height]);
 
   // Constructs a new Sankey generator with the default settings.

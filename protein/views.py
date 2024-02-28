@@ -6,7 +6,7 @@ from django.core.cache import cache
 from django.views.decorators.cache import cache_page
 from django.urls import reverse
 
-from protein.models import Protein, ProteinConformation, ProteinAlias, ProteinFamily, Gene, ProteinSegment
+from protein.models import Protein, ProteinConformation, ProteinAlias, ProteinFamily, Gene, ProteinSegment, Tissues, TissueExpression
 from residue.models import Residue
 from structure.models import Structure, StructureModel, StructureExtraProteins
 # from structure.views import StructureBrowser
@@ -15,6 +15,7 @@ from mutation.models import MutationExperiment
 from common.selection import Selection
 from common.views import AbsBrowseSelection
 from ligand.models import Ligand, LigandID
+from drugs.models import Drugs, Drugs2024, Indication
 
 import json
 from copy import deepcopy
@@ -135,8 +136,80 @@ def detail(request, slug):
 
     homology_models = StructureModel.objects.filter(protein=p)
 
-    context = {'p': p, 'families': families, 'r_chunks': r_chunks, 'chunk_size': chunk_size, 'aliases': aliases,
-               'gene': gene, 'alt_genes': alt_genes, 'structures': structures, 'mutations': mutations, 'protein_links': protein_links,'homology_models': homology_models}
+    #ADDING SECTION FOR SANKEY
+
+    #slug = '5ht1a_human'
+    indication_data = Drugs2024.objects.filter(target__entry_name=slug).prefetch_related('ligand',
+                                                                                         'target',
+                                                                                         'indication',
+                                                                                         'indication__code')
+
+    sankey = {"nodes": [],
+              "links": []}
+    caches = {'indication':[],
+              'ligands': [],
+              'targets': [],
+              'entries': []}
+
+    node_counter = 0
+    for record in indication_data:
+        #assess the values for indication/ligand/protein
+        indication_name = record.indication.name.capitalize()
+        indication_code = record.indication.code.index
+        ligand_name = record.ligand.name.capitalize()
+        ligand_id = record.ligand.id
+        protein_name = record.target.name
+        target_name = record.target.entry_name
+        #check for each value if it exists and retrieve the source node value
+        if indication_name not in caches['indication']:
+            sankey['nodes'].append({"node": node_counter, "name": indication_name, "url": '/drugs/indication/'+indication_code})
+            node_counter += 1
+            caches['indication'].append(indication_name)
+        indi_node = next((item['node'] for item in sankey['nodes'] if item['name'] == indication_name), None)
+        if [ligand_name, ligand_id] not in caches['ligands']:
+            sankey['nodes'].append({"node": node_counter, "name": ligand_name, "url": '/ligand/'+str(ligand_id)+'/info'})
+            node_counter += 1
+            caches['ligands'].append([ligand_name, ligand_id])
+        lig_node = next((item['node'] for item in sankey['nodes'] if item['name'] == ligand_name), None)
+        if protein_name not in caches['targets']:
+            sankey['nodes'].append({"node": node_counter, "name": protein_name, "url": '/protein/'+str(target_name)})
+            node_counter += 1
+            caches['targets'].append(protein_name)
+            caches['entries'].append(target_name)
+        prot_node = next((item['node'] for item in sankey['nodes'] if item['name'] == protein_name), None)
+        #append connection between indication and ligand
+        sankey['links'].append({"source":prot_node, "target":lig_node, "value":1, "ligtrace": ligand_name, "prottrace": None})
+        #append connection between ligand and target
+        sankey['links'].append({"source":lig_node, "target":indi_node, "value":1, "ligtrace": ligand_name, "prottrace": indication_name})
+
+    #Fixing redundancy in sankey['links']
+    unique_combinations = {}
+
+    for d in sankey['links']:
+        # Create a key based on source and target for identifying unique combinations
+        key = (d['source'], d['target'])
+
+        if key in unique_combinations:
+            # If the combination exists, add the value to the existing entry
+            unique_combinations[key]['value'] += d['value']
+        else:
+            # If it's a new combination, add it to the dictionary
+            unique_combinations[key] = d
+
+    # Convert the unique_combinations back to a list of dictionaries
+    sankey['links'] = list(unique_combinations.values())
+    total_points = len(caches['targets']) + len(caches['targets']) + 1;
+    if len(caches['ligands']) > len(caches['targets']):
+        nodes_nr = len(caches['ligands'])
+    else:
+        nodes_nr = len(caches['targets'])
+
+    ###########
+
+    context = {'p': p, 'families': families, 'r_chunks': r_chunks, 'chunk_size': chunk_size,
+               'aliases': aliases, 'gene': gene, 'alt_genes': alt_genes, 'structures': structures,
+               'mutations': mutations, 'protein_links': protein_links,'homology_models': homology_models,
+               'sankey': json.dumps(sankey), 'points': total_points, 'nodes_nr': nodes_nr}
 
     # sb = StructureBrowser()
     # sb_context = sb.get_context_data(protein=p)

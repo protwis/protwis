@@ -112,7 +112,7 @@
     <script src="{% static 'home/js/sankey.js' %}"></script>
     <script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
 
-    <script>
+    <script type="text/javascript">
     var sankey_data = JSON.parse('{{ sankey|safe }}');
     var top_nodes = '{{ nodes_nr|safe }}';
     var totalPoints = '{{ points }}';
