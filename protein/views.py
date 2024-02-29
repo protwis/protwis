@@ -198,11 +198,11 @@ def detail(request, slug):
 
     # Convert the unique_combinations back to a list of dictionaries
     sankey['links'] = list(unique_combinations.values())
-    total_points = len(caches['targets']) + len(caches['targets']) + 1;
-    if len(caches['ligands']) > len(caches['targets']):
+    total_points = len(caches['indication']) + len(caches['ligands']) + 1;
+    if len(caches['ligands']) > len(caches['indication']):
         nodes_nr = len(caches['ligands'])
     else:
-        nodes_nr = len(caches['targets'])
+        nodes_nr = len(caches['indication'])
 
     ###########
 

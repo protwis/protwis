@@ -3,7 +3,16 @@
 
 {% block content %}
 {% autoescape off %}
-
+<style>
+.link {
+  fill: none;
+  stroke: #969696;
+  stroke-opacity: .1;
+}
+.link:hover {
+  stroke-opacity: .3;
+}
+</style>
 <div class="container body-content">
 	<div class="row align-items-start justify-content-center">
 		<div class="col-md-4 ml-auto">
@@ -112,6 +121,31 @@
 			</table>
 		</div>
 	</div>
+	<hr>
+	<h3>Sankey plot</h3>
+	{% if plot_existence == 'yes' %}
+		<div id="sankey_plot"></div>
+		<p>
+			<div class="btn-group">
+				<button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+				aria-haspopup="true" aria-expanded="false">
+				<span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+				</button>
+				<ul class="dropdown-menu">
+				<li>
+						<a href="javascript:saveSvgAsPng(document.getElementById('sankey'), 'sankey_{{indication}}.png');">PNG</a>
+				</li>
+				<li>
+						<a href="javascript:saveSvgAsJpg(document.getElementById('sankey'), 'sankey_{{indication}}.jpg');">JPG</a>
+				</li>
+				<li>
+						<a href="javascript:saveSvgAsTiff(document.getElementById('sankey'), 'sankey_{{indication}}.tiff');">TIFF</a>
+				</li>
+				</ul>
+			</div></p>
+	{% else %}
+	<h4>Compound is not listed as a drug.</h4>
+	{% endif %}
 	<hr>
 	<h3>Bioactivities</h3>
 	<ul class="nav nav-tabs">
@@ -232,7 +266,18 @@
 <script src="{% static 'home/js/select2.js' %}"> </script>
 <script src="{% static 'home/js/selection.js' %}"> </script>
 <script src="{% static 'home/js/gpcrdb.js' %}"></script>
+<script src="{% static 'home/js/d3.v4.min.js' %}"></script>
+<script src="{% static 'home/js/sankey.js' %}"></script>
 
+<script>
+var sankey_data = JSON.parse('{{ sankey|safe }}');
+var top_nodes = '{{ nodes_nr|safe }}';
+var totalPoints = '{{ points }}';
+
+// set the dimensions and margins of the graph
+// set height iteratively based on highest number of nodes
+SankeyPlot(sankey_data, 'sankey_plot', top_nodes, totalPoints);
+</script>
 
 <script type="text/javascript">
 	function openPopup(url, title, win, w, h) {
