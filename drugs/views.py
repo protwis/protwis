@@ -1,10 +1,14 @@
 from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect
 from django.conf import settings
+from django.db.models import Count, Max, Q, F, Value, CharField, Case, When, IntegerField
 from django.db.models import Count, Max
 from django.core.cache import cache
 from django.views.decorators.cache import cache_page
 
+from drugs.models import Drugs,Drugs2024
+from protein.models import Protein, ProteinFamily, TissueExpression
+from structure.models import Structure
 from drugs.models import Drugs, Drugs2024, Indication
 from protein.models import Protein, ProteinFamily, Tissues, TissueExpression
 from mutational_landscape.models import NHSPrescribings
@@ -14,6 +18,8 @@ import json
 import numpy as np
 from collections import OrderedDict
 from copy import deepcopy
+
+
 
 def get_spaced_colors(n):
     max_value = 16581375 #255**3
@@ -276,47 +282,190 @@ def drugbrowser(request):
     return render(request, 'drugbrowser.html', {'drugdata': context})
 
 class NewDrugsBrowser(TemplateView):
+    # Template using this class #
     template_name = 'NewDrugsBrowser.html'
-
+    # Get context for hmtl usage #
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        Drug_browser_data = Drugs2024.objects.all().prefetch_related('target','indication,','ligand')
-        TissueExp = TissueExpression.objects.all().prefetch_related('protein','tissue')
+        
+        # Get data - server side - Queries #
+        Drug_browser_data = Drugs2024.objects.all().prefetch_related('target','target__family__parent__parent','target__family__parent__parent__parent','indication','indication__code','ligand','ligand__ligand_type','moa')
+        # Possible addons: 'target__family__parent','target__family__parent__parent','target__family__parent__parent__parent','indication','ligand','moa'
+        # initialize context list for pushing data to html #
+        context_data_browser = list()
 
         #proteins = list(TissueExpression.objects.all().values_list('protein__entry_name').distinct())
         #drugs = Drugs.objects.all().prefetch_related('target', 'target__family__parent__parent__parent', 'publication', 'publication__web_link', 'publication__web_link__web_resource', 'publication__journal')
         #drugs_NHS_names = list(NHSPrescribings.objects.values_list('drugname__name', flat=True).distinct())
-        context_data_browser = list()
-        context_data_tissue = list()
-        
-        Drugs_browser_dict = {}
-        for entry in TissueExp:
+        for entry in Drug_browser_data:
             ## For the drug browser table ##
-            if entry.protein.entry_name not in Drugs_browser_dict:
-                Drugs_browser_dict[entry.protein.entry_name] = {}
-                Drugs_browser_dict[entry.protein.entry_name]['accession'] = entry.protein.accession
-                Drugs_browser_dict[entry.protein.entry_name]['name'] = entry.protein.name
-        for key in Drugs_browser_dict:
+            # Protein id, uniprot, and receptor name
+            Protein_id = str(entry.target.id)
+            Protein_uniprot = str(entry.target.accession)
+            Protein_name = str(entry.target.entry_name).split("_")[0].upper()
+            Protein_receptor_name = str(entry.target.name)
+            Protein_family = str(entry.target.family.parent)
+            Protein_class = str(entry.target.family.parent.parent.parent)
+            Drug_name = str(entry.ligand.name)
+            Indication = str(entry.indication.name)
+            Indication_ID = str(entry.indication.code.index)
+            Clinical_drug_status = str(entry.drug_status)
+            Clinical_max_phase = str(entry.indication_max_phase)
+            Clinical_approval_year = str(entry.approval_year)
+            Clinical_drug_type = str(entry.ligand.ligand_type.name)
+            #Clinical_drug_type = "bob"
+            Clinical_moa = str(entry.moa.name)
+            ### Columns that needs to be included ###
+            
+            #One row with target indication pair
+            #Novelty score
+            #IDG
             jsondata_browser = {
-                    'ProteinID': key,
-                    'ProteinAccession': Drugs_browser_dict[key]['accession'],
-                    'ProteinName': Drugs_browser_dict[key]['name']
-                }
+                'Index_number': Protein_id,
+                'Drug': Drug_name,
+                'Indication': Indication,
+                'Indication_ID': Indication_ID,
+                'Protein_uniprot': Protein_uniprot,
+                'Protein_name': Protein_name,
+                'Protein_receptor': Protein_receptor_name,
+                'Protein_class': Protein_class,
+                'Protein_family': Protein_family,
+                'Drug_status': Clinical_drug_status,
+                'Indication_max_phase': Clinical_max_phase,
+                'Approval_year': Clinical_approval_year,
+                'Drug_type': Clinical_drug_type,
+                'Moa': Clinical_moa
+            }
             context_data_browser.append(jsondata_browser)
-            context['protein_data'] = context_data_browser
-        
+        context['drug_data'] = context_data_browser
+        return context
+
+class TargetSelectionTool(TemplateView):
+    # Template using this class #
+    template_name = 'TargetSelectionTool.html'
+    # Get context for hmtl usage #
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Get data - server side - Queries #
+        TissueExp = TissueExpression.objects.all().prefetch_related('protein','tissue')
+        Target_drug_data = Drugs2024.objects.all().prefetch_related('target','ligand','indication','indication__code')
+        target_ids = [drug.target.id for drug in Target_drug_data if drug.target]
+        #Structures_data = Structure.objects.all().prefetch_related('state', 'protein_conformation__protein')
+        Structure_data = Structure.objects.values('protein_conformation_id', 'state_id').annotate(state_count=Count('state_id')).order_by('protein_conformation_id')
+        filtered_structures = Structure.objects.annotate(target_id=Case(When(protein_conformation_id__protein_id__accession__isnull=False,
+                                                                        then=F('protein_conformation_id__protein_id__id')),
+                                                                        When(protein_conformation_id__protein_id__parent__accession__isnull=False,
+                                                                        then=F('protein_conformation_id__protein_id__parent__id')),
+                                                                        default=Value(None, output_field=IntegerField()),
+                                                                        output_field=IntegerField())).filter(
+                                                                            target_id__in=target_ids).values(
+                                                                                'target_id').annotate(
+                                                                                    active_count=Count(Case(When(state_id=1, then=1), output_field=IntegerField())),
+                                                                                    inactive_count=Count(Case(When(state_id=2, then=1), output_field=IntegerField())),
+                                                                                    intermediate_count=Count(Case(When(state_id=3, then=1), output_field=IntegerField())),
+                                                                                    other_count=Count(Case(When(~Q(state_id__in=[1, 2, 3]), then=1), output_field=IntegerField())))
+        #'target__family__parent__parent','target__family__parent__parent__parent','indication','indication__code','ligand','moa'
+        # Context lists for pushing data #
+        context_target_selection = list()
+        context_data_tissue = list()
+        # Dicts to modulate the data from the server side #
+        structure_dict = {}
+        target_selection_dict = {}
+        target_indication_dict = {}
         Tissue_expression_dict = {}
+        index_dict = {}
+        # Create dict for structure total and state (active, inactive and intermediate)
+        for entry in filtered_structures:
+            id = entry['protein_conformation_id']
+            
+            if id not in structure_dict:
+                structure_dict[id] = {}
+                structure_dict[id]['Active']
+                structure_dict[id]['Active']
+                structure_dict[id]['Active']
+            
+        # Create Target selection browser #
+        for entry in Target_drug_data:
+            # Ids and keys
+            Protein_id = str(entry.target.id)
+            Indication_id = str(entry.indication.code.index)
+            Target_indication_pair = "{}___{}".format(Protein_id,Indication_id)
+            # Static values #
+            Protein_uniprot = str(entry.target.accession)
+            Protein_name = str(entry.target.entry_name).split("_")[0].upper()
+            Indication = str(entry.indication.name)
+            Drug_name  = str(entry.ligand.name)
+            Drug_status = str(entry.drug_status)
+            Novelty_score = float(entry.novelty_score)
+            # Dicts #
+            if Target_indication_pair not in target_indication_dict:
+                target_indication_dict[Target_indication_pair] = {}
+                target_indication_dict[Target_indication_pair]['information'] = [Protein_id,Indication_id,Indication]
+                target_indication_dict[Target_indication_pair]['Novelty_score'] = Novelty_score
+                #target_indication_dict[Target_indication_pair]['Drugs_total'] = 1
+                target_indication_dict[Target_indication_pair]['Drugs'] = []
+                target_indication_dict[Target_indication_pair]['Drugs'].append(Drug_name)
+                # Handle drugs
+                target_indication_dict[Target_indication_pair]['Drug__status'] = {}
+                target_indication_dict[Target_indication_pair]['Drug__status']['Active'] = 0
+                target_indication_dict[Target_indication_pair]['Drug__status']['Approved'] = 0
+                target_indication_dict[Target_indication_pair]['Drug__status']['Discontinued'] = 0
+                target_indication_dict[Target_indication_pair]['Drug__status'][Drug_status] += 1
+                # Handle structures #
+                target_indication_dict[Target_indication_pair]['Structures'] = {}
+                target_indication_dict[Target_indication_pair]['Structures']['Total'] = structure_dict[Protein_id]['Total']
+                target_indication_dict[Target_indication_pair]['Structures']['Active'] = structure_dict[Protein_id]['Active']
+                target_indication_dict[Target_indication_pair]['Structures']['Inactive'] = structure_dict[Protein_id]['Inactive']
+                target_indication_dict[Target_indication_pair]['Structures']['Intermediate'] = structure_dict[Protein_id]['Intermediate']
+            else:
+                # Drugs #
+                target_indication_dict[Target_indication_pair]['Drugs'].append(Drug_name)
+                target_indication_dict[Target_indication_pair]['Drug__status'][Drug_status] += 1
+
+            if Protein_id not in target_selection_dict:
+                target_selection_dict[Protein_id] = [Protein_uniprot,Protein_name]
+        for key in target_indication_dict:
+            key_id = str(target_indication_dict[key]['information'][0])
+            jsondata_TargetSelectionTool = {
+                    'Index_number': key_id,
+                    'Target_name': target_selection_dict[key_id][1],
+                    'Target_uniprot': target_selection_dict[key_id][0],
+                    'Indication_name': target_indication_dict[key]['information'][2],
+                    'Indication_id': target_indication_dict[key]['information'][1],
+                    'Novelty_score': target_indication_dict[key]['Novelty_score'],
+                    'IDG': "Coming soon",
+                    'Drugs_approved_names': target_indication_dict[key]['Drugs'],
+                    'Drugs_total': int(len(target_indication_dict[key]['Drugs'])),
+                    'Drugs_approved': int(target_indication_dict[key]['Drug__status']['Approved']),
+                    'Drugs_in_trial': int(target_indication_dict[key]['Drug__status']['Active']),
+                    'Drugs_discontinued': int(target_indication_dict[key]['Drug__status']['Discontinued']),
+                    'Structure_total': int(structure_dict[key_id]['Total']),
+                    'Structure_active': int(target_indication_dict[key]['Structures']['Active']),
+                    'Structure_inactive': int(target_indication_dict[key]['Structures']['Inactive']),
+                    'Structure_intermediate': int(target_indication_dict[key]['Structures']['Intermediate'])
+            }
+            context_target_selection.append(jsondata_TargetSelectionTool)
+        context['Target_data'] = context_target_selection
+        # Go through server side data and modulate into a dict #
         for entry in TissueExp:
+            # string values for Tissue expression table #
             protein_id = entry.protein.entry_name
             value = entry.value
-            Tissue_id = entry.tissue
+            Tissue_id = entry.tissue.name
+            # Index key #
+            index_key = entry.protein.id
+            if protein_id not in index_dict:
+                index_dict[str(protein_id)] = index_key
+            # Expression value linked to protein / target #
             if protein_id not in Tissue_expression_dict:
                 Tissue_expression_dict[str(protein_id)] = {}
                 Tissue_expression_dict[str(protein_id)][str(Tissue_id)] = float(value)
             else:
                 Tissue_expression_dict[str(protein_id)][str(Tissue_id)] = float(value)
+        # Run through dict and assign the correct values into the context data #
         for key in Tissue_expression_dict:
             jsondata_tissue = {
+                    'Index_number': index_dict[key],
                     'ProteinID': key,
                     'adipose_tissue': Tissue_expression_dict[key]['adipose_tissue'],
                     'adrenal_gland': Tissue_expression_dict[key]['adrenal_gland'],
@@ -369,82 +518,14 @@ class NewDrugsBrowser(TemplateView):
                     'urinary_bladder': Tissue_expression_dict[key]['urinary_bladder'],
                     'vagina': Tissue_expression_dict[key]['vagina']
                 }
+            # Append context data into list #
             context_data_tissue.append(jsondata_tissue)
-            context['Tissue_data'] = context_data_tissue
-        
-        """
-        
-        for i in range(0,len(TissueExp)):
-            ## For the drug browser table ##
-            protein_id = TissueExp[i].protein.entry_name
-            protein_accession = TissueExp[i].protein.accession
-            protein_name = TissueExp[i].protein.name
-            jsondata_browser = {
-                    'ProteinID': protein_id,
-                    'ProteinAccession': protein_accession,
-                    'ProteinName': protein_name
-                }
-            context_data_browser.append(jsondata_browser)
-            context['protein_data'] = context_data_browser
-            #some_dict to return = json.dumps(python_dict)
-
-            ## For the Tissue expression table ##
-            jsondata_tissue = {
-                    'ProteinID': protein_id,
-                    'adipose_tissue': TissueExp[i].adipose_tissue,
-                    'adrenal_gland': TissueExp[i].adrenal_gland,
-                    'amygdala': TissueExp[i].amygdala,
-                    'appendix': TissueExp[i].appendix,
-                    'basal_ganglia': TissueExp[i].basal_ganglia,
-                    'bone_marrow': TissueExp[i].bone_marrow,
-                    'breast': TissueExp[i].breast,
-                    'cerebellum': TissueExp[i].cerebellum,
-                    'cerebral_cortex': TissueExp[i].cerebral_cortex,
-                    'cervix': TissueExp[i].cervix,
-                    'choroid_plexus': TissueExp[i].choroid_plexus,
-                    'colon': TissueExp[i].colon,
-                    'duodenum': TissueExp[i].duodenum,
-                    'endometrium': TissueExp[i].endometrium,
-                    'epididymis': TissueExp[i].epididymis,
-                    'esophagus': TissueExp[i].esophagus,
-                    'fallopian_tube': TissueExp[i].fallopian_tube,
-                    'gallbladder': TissueExp[i].gallbladder,
-                    'heart_muscle': TissueExp[i].heart_muscle,
-                    'hippocampal_formation': TissueExp[i].hippocampal_formation,
-                    'hypothalamus': TissueExp[i].hypothalamus,
-                    'kidney': TissueExp[i].kidney,
-                    'liver': TissueExp[i].liver,
-                    'lung': TissueExp[i].lung,
-                    'lymph_node': TissueExp[i].lymph_node,
-                    'midbrain': TissueExp[i].midbrain,
-                    'ovary': TissueExp[i].ovary,
-                    'pancreas': TissueExp[i].pancreas,
-                    'parathyroid_gland': TissueExp[i].parathyroid_gland,
-                    'pituitary_gland': TissueExp[i].pituitary_gland,
-                    'placenta': TissueExp[i].placenta,
-                    'prostate': TissueExp[i].prostate,
-                    'rectum': TissueExp[i].rectum,
-                    'retina': TissueExp[i].retina,
-                    'salivary_gland': TissueExp[i].salivary_gland,
-                    'seminal_vesicle': TissueExp[i].seminal_vesicle,
-                    'skeletal_muscle': TissueExp[i].skeletal_muscle,
-                    'skin': TissueExp[i].skin,
-                    'small_intestine': TissueExp[i].small_intestine,
-                    'smooth_muscle': TissueExp[i].smooth_muscle,
-                    'spinal_cord': TissueExp[i].spinal_cord,
-                    'spleen': TissueExp[i].spleen,
-                    'stomach': TissueExp[i].stomach,
-                    'testis': TissueExp[i].testis,
-                    'thymus': TissueExp[i].thymus,
-                    'thyroid_gland': TissueExp[i].thyroid_gland,
-                    'tongue': TissueExp[i].tongue,
-                    'tonsil': TissueExp[i].tonsil,
-                    'urinary_bladder': TissueExp[i].urinary_bladder,
-                    'vagina': TissueExp[i].vagina
-                }
-            """
+        # Create context data for tissue expression data # 
+        context['Tissue_data'] = context_data_tissue
+        # Lastly return context for html usage #
         return context
-    
+
+
 @cache_page(60 * 60 * 24 * 28)
 def drugmapping(request):
     context = dict()

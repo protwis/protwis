@@ -1,18 +1,14 @@
 {% extends "home/base.html" %}
 {% load static %}
-{% block addon_css %}
+{%block addon_css%}
 <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
 <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.yadcf.css' %}" type="text/css">
 <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css">
 <link rel="stylesheet" href="{% static 'home/css/modal.css' %}" type="text/css">
 <link rel="stylesheet" href="{% static 'home/css/structure_browser.css' %}" type="text/css">
-
-<!-- Specific css for this browser -->
-<link rel="stylesheet" href="{% static 'home/css/dataTables.dataTables.css' %}" type="text/css">
-<link rel="stylesheet" href="{% static 'home/css/responsive.dataTables.css' %}" type="text/css">
-<link rel="stylesheet" href="{% static 'home/css/buttons.dataTables.css' %}" type="text/css">
-
+<link rel="stylesheet" href="{% static 'home/css/signprot-multitabtable.css' %}" type="text/css"/>
 <style type="text/css">
+
   input.yadcf-filter, .select2-container-multi .select2-choices  {
     height: 30px;
     border-radius: 3px;
@@ -28,247 +24,115 @@
     margin-bottom: 2px;
     width: 100%;
   }
- 
+
   tr.no-border-bottom th {
     text-align: center;
     border-left: 1px solid black;
     border-bottom: none !important;
   }
-
-	table.dataTable thead th,
-	table.dataTable tbody td {
+  table.dataTable thead th,
+  table.dataTable tbody td {
     max-width: 1px;
-		word-break: break-word;
-		overflow: hidden;
-		white-space: nowrap;
-	}
-
+    word-break: break-word;
+    overflow: hidden;
+    white-space: nowrap;
+  }
 </style>
-{% endblock %}
+{%endblock%}
+{%block content%}
+<button onclick="tableToExcel()" type="button" class="btn btn-primary" style="margin-top:10px;margin-top:3px"> Export to Excel </button>
+<div class="row">
+    <div class="col-md-12 text-center">
+        {% if drug_data %}
+        <div style="padding-top: 10px; font-size: 11px; white-space: nowrap;">
+            <table width="100%" class="display compact" id="drugdata">
+                <thead >
+                  <tr>
+                    <th colspan="2" style="text-align:center; border-left: 1px solid #000000; border-top: 1px solid #000000; ">Drugs</th>
+                    <th colspan="4" style="text-align:center; border-left: 1px solid #000000; border-top: 1px solid #000000; ">Receptor</th>
+                    <th colspan="5" style="text-align:center; border-left: 1px solid #000000; border-right: 1px solid #000000; border-top: 1px solid #000000; ">Clinical information</th>
+                    <!-- <th colspan="5">RECEPTOR</th>
+                    <th colspan="7">CLINICAL INFORMATION</th>   -->
+                  </tr>
 
-
-
-{% block content %}
-
-<!-- ### Top page ### -->
-<!-- ## Reset buttons ## -->
-
-<div style="padding:10px">
-  <input type="button" id="Reset_all_filters" value="Reset All Filters" class="btn btn-primary">
-</div>
-
-<!-- ### Create the panel tabs ### -->
-
-
-
-<!-- <button onclick="Debugger_log()">Debugger</button> -->
-
-<ul class="nav nav-tabs">
-  <li class="active"><a href="#tab1" data-toggle="tab" >Drugs Browser</a></li>
-  <li><a href="#tab2" data-toggle="tab" >Tissue Expression</a></li>
-</ul>
-
-
-<!-- ## Tab content ## -->
-<div class="tab-content">
-  <!-- ## Tab 1 - Drug Browser ## -->
-  <div id="tab1" class="tab-pane fade in active">
-      <div style="padding-top: 10px; font-size: 11px; white-space: nowrap;">
-        <table width="100%" class="display compact" id="Drug_browser_table">
-            <thead>
-              <!-- <tr class="no-border-bottom">
-                <th colspan="3" style="border-left: none;">Drug browser</th>
-              </tr> -->
-              <tr>
-                <!-- Index column -->
-                <th style="text-align:center; border-left: none;">INDEX<br/></th>
-                <!-- Data columns -->
-                <th style="text-align:center; border-left: none;">ID<br/></th>
-                <th style="text-align:center; border-left: none;">ACCESSION<br/></th>
-                <th style="text-align:center; border-left: none;">NAME<br/></th>
+                  <!-- yadcf filter rows -->
+                  <tr class="no-border-bottom">
+                    <!-- Drug section -->
+                    <th style="text-align:center; border-left: 1px solid #000000;">Name<br/></th>
+                    <th style="text-align:center;">Indication<br/></th>
+                    <!-- Receptor section -->
+                    <th style="text-align:center; border-left: 1px solid #000000;">Uniprot<br/></th>
+                    <th style="text-align:center;">GPCRdb<br/></th>
+                    <th style="text-align:center;">Class<br/></th>
+                    <th style="text-align:center;">Family<br/></th>
+                    <!-- Clinical information -->
+                    <th style="text-align:center; border-left: 1px solid #000000;">Drug status<br/></th>
+                    <th style="text-align:center;">Phase<br/></th>
+                    <th style="text-align:center;">Year of<br/>Approval<br/></th>
+                    <th style="text-align:center;">Drug type<br/></th>
+                    <th style="text-align:center; border-right: 1px solid #000000;">Mechanism<br/>of action<br/></th>
+                  </tr>
+                </thead>
+                <tbody>
                 
-              </tr>
-            </thead>
-            <tbody>
-              {% if protein_data %}
-                {% for row in protein_data %}
+                {% for row in drug_data %}
                 <tr>
-                  <!-- Index column -->
-                  <td style="text-align:center">{{row.ProteinID|safe}}</td> 
-                  <!-- Data columns -->
-                  <td style="text-align:center">{{row.ProteinID|safe}}</td>
-                  <td style="text-align:center">{{row.ProteinAccession|safe}}</td>
-                  <td style="text-align:center">{{row.ProteinName|safe}}</td>
+                  <!-- Drug section -->
+                  <td style="text-align:left">{{ row.Drug|safe }}</td>
+                  <td style="text-align:left">
+                    <a href="https://www.ebi.ac.uk/ols4/ontologies/efo/classes?short_form={{ row.Indication_ID }}" target="_blank">{{ row.Indication|safe }}</a>
+                  </td>
+                  <!--  -->
+                  <!-- Receptor section -->
+                  <td class="uniprot1 text-left">
+                      <a href="https://www.uniprot.org/uniprot/{{ row.Protein_uniprot }}" target="_blank">{{ row.Protein_name|safe }}</a>
+                  </td>
+                  <td style="text-align:left"> 
+                    <a href="/protein/{{ row.Protein_uniprot }}" target="_blank"><img width="12px" height="12px" class="gpcrdb-link" src="{% static 'home/logo/gpcr/main.png' %}">  {{ row.Protein_receptor|safe }}</a>
+                  </td>
+                  <td style="text-align:left">{{ row.Protein_class|safe }}</td>
+                  <td style="text-align:left">{{ row.Protein_family|safe }}</td>
+                  <!-- Clinical information -->
+                  <td style="text-align:left">{{ row.Drug_status|safe }}</td>
+                  <td style="text-align:left">{{ row.Indication_max_phase|safe }}</td>
+                  <td style="text-align:left">{{ row.Approval_year|safe }}</td>
+                  <td style="text-align:left">{{ row.Drug_type|safe }}</td>
+                  <td style="text-align:left">{{ row.Moa|safe }}</td>
                 </tr>
                 {% endfor %}
-              {% else %}
-                <p> Data not found... test1 </p>
-              {% endif %}
-            </tbody>
-        </table>
-      </div>
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p> Ooops! There is no data to show here yet. </p>
+    {% endif %}
   </div>
-  <!-- ## Tab 2 - Tissue Browser ## -->
-  <div id="tab2" class="tab-pane fade">
-    <div style="padding-top: 10px; font-size: 11px; white-space: nowrap;">
-      <table width="100%" class="display compact" id="Tissue_browser_table">
-          <thead>
-            <!-- <tr class="no-border-bottom">
-              <th colspan="4" style="border-left: none;">Tissue Expression</th>
-            </tr> -->
-            <tr>
-              <!-- Index column -->
-              <th style="text-align:center; border-left: none;">INDEX<br/></th> 
-              <!-- Data columns -->
-              <th style="text-align:center; border-left: none;">ID<br/></th>
-              <th style="text-align:center; border-left: none;">Adipose tissue<br/></th>
-              <th style="text-align:center; border-left: none;">Adrenal gland<br/></th>
-              <th style="text-align:center; border-left: none;">Amygdala<br/></th>
-              <th style="text-align:center; border-left: none;">Appendix<br/></th>
-              <th style="text-align:center; border-left: none;">Basal_ganglia<br/></th>
-              <th style="text-align:center; border-left: none;">Bone_marrow<br/></th>
-              <th style="text-align:center; border-left: none;">Breast<br/></th>
-              <th style="text-align:center; border-left: none;">Cerebellum<br/></th>
-              <th style="text-align:center; border-left: none;">Cerebral_cortex<br/></th>
-              <!-- 10 colums -->
-              <th style="text-align:center; border-left: none;">Cervix<br/></th>
-              <th style="text-align:center; border-left: none;">Choroid_plexus<br/></th>
-              <th style="text-align:center; border-left: none;">Colon<br/></th>
-              <th style="text-align:center; border-left: none;">Duodenum<br/></th>
-              <th style="text-align:center; border-left: none;">Endometrium<br/></th>
-              <th style="text-align:center; border-left: none;">Epididymis<br/></th>
-              <th style="text-align:center; border-left: none;">Esophagus<br/></th>
-              <th style="text-align:center; border-left: none;">Fallopian_tube<br/></th>
-              <th style="text-align:center; border-left: none;">Gallbladder<br/></th>
-              <th style="text-align:center; border-left: none;">Heart_muscle<br/></th>
-              <!-- 20 colums -->
-              <th style="text-align:center; border-left: none;">Hippocampal_formation<br/></th>
-              <th style="text-align:center; border-left: none;">Hypothalamus<br/></th>
-              <th style="text-align:center; border-left: none;">Kidney<br/></th>
-              <th style="text-align:center; border-left: none;">Liver<br/></th>
-              <th style="text-align:center; border-left: none;">Lung<br/></th>
-              <th style="text-align:center; border-left: none;">Lymph_node<br/></th>
-              <th style="text-align:center; border-left: none;">Midbrain<br/></th>
-              <th style="text-align:center; border-left: none;">Ovary<br/></th>
-              <th style="text-align:center; border-left: none;">Pancreas<br/></th>
-              <th style="text-align:center; border-left: none;">Parathyroid_gland<br/></th>
-              <!-- 30 colums -->
-              <th style="text-align:center; border-left: none;">Pituitary_gland<br/></th>
-              <th style="text-align:center; border-left: none;">Placenta<br/></th>
-              <th style="text-align:center; border-left: none;">Prostate<br/></th>
-              <th style="text-align:center; border-left: none;">Rectum<br/></th>
-              <th style="text-align:center; border-left: none;">Retina<br/></th>
-              <th style="text-align:center; border-left: none;">Salivary_gland<br/></th>
-              <th style="text-align:center; border-left: none;">Seminal_vesicle<br/></th>
-              <th style="text-align:center; border-left: none;">Skeletal_muscle<br/></th>
-              <th style="text-align:center; border-left: none;">Skin<br/></th>
-              <th style="text-align:center; border-left: none;">Small_intestin<br/></th>
-              <!-- 40 colums -->
-              <th style="text-align:center; border-left: none;">Smooth_muscle<br/></th>
-              <th style="text-align:center; border-left: none;">Spinal_cord<br/></th>
-              <th style="text-align:center; border-left: none;">Spleen<br/></th>
-              <th style="text-align:center; border-left: none;">Stomach<br/></th>
-              <th style="text-align:center; border-left: none;">Testis<br/></th>
-              <th style="text-align:center; border-left: none;">Thymus<br/></th>
-              <th style="text-align:center; border-left: none;">Thyroid_gland<br/></th>
-              <th style="text-align:center; border-left: none;">Tongue<br/></th>
-              <th style="text-align:center; border-left: none;">Tonsil<br/></th>
-              <th style="text-align:center; border-left: none;">Urinary_bladder<br/></th>
-              <!-- 50 colums -->
-              <th style="text-align:center; border-left: none;">Vagina<br/></th>
-              <!-- 51 colums -->
-            </tr>
-          </thead>
-          <tbody>
-            {% if Tissue_data %}
-              {% for row in Tissue_data %}
-              <tr>
-                <!-- Index column -->
-                <td style="text-align:center">{{row.ProteinID|safe}}</td> 
-                <!-- Data columns -->
-                <td style="text-align:center">{{row.ProteinID|safe}}</td>
-                <td style="text-align:center">{{row.adipose_tissue|safe}}</td>
-                <td style="text-align:center">{{row.adrenal_gland|safe}}</td>
-                <td style="text-align:center">{{row.amygdala|safe}}</td>
-                <td style="text-align:center">{{row.appendix|safe}}</td>
-                <td style="text-align:center">{{row.basal_ganglia|safe}}</td>
-                <td style="text-align:center">{{row.bone_marrow|safe}}</td>
-                <td style="text-align:center">{{row.breast|safe}}</td>
-                <td style="text-align:center">{{row.cerebellum|safe}}</td>
-                <td style="text-align:center">{{row.cerebral_cortex|safe}}</td>
-                <!-- 10 colums -->
-                <td style="text-align:center">{{row.cervix|safe}}</td>
-                <td style="text-align:center">{{row.choroid_plexus|safe}}</td>
-                <td style="text-align:center">{{row.colon|safe}}</td>
-                <td style="text-align:center">{{row.duodenum|safe}}</td>
-                <td style="text-align:center">{{row.endometrium|safe}}</td>
-                <td style="text-align:center">{{row.epididymis|safe}}</td>
-                <td style="text-align:center">{{row.esophagus|safe}}</td>
-                <td style="text-align:center">{{row.fallopian_tube|safe}}</td>
-                <td style="text-align:center">{{row.gallbladder|safe}}</td>
-                <td style="text-align:center">{{row.heart_muscle|safe}}</td>
-                <!-- 20 colums -->
-                <td style="text-align:center">{{row.hippocampal_formation|safe}}</td>
-                <td style="text-align:center">{{row.hypothalamus|safe}}</td>
-                <td style="text-align:center">{{row.kidney|safe}}</td>
-                <td style="text-align:center">{{row.liver|safe}}</td>
-                <td style="text-align:center">{{row.lung|safe}}</td>
-                <td style="text-align:center">{{row.lymph_node|safe}}</td>
-                <td style="text-align:center">{{row.midbrain|safe}}</td>
-                <td style="text-align:center">{{row.ovary|safe}}</td>
-                <td style="text-align:center">{{row.pancreas|safe}}</td>
-                <td style="text-align:center">{{row.parathyroid_gland|safe}}</td>
-                <!-- 30 colums -->
-                <td style="text-align:center">{{row.pituitary_gland|safe}}</td>
-                <td style="text-align:center">{{row.placenta|safe}}</td>
-                <td style="text-align:center">{{row.prostate|safe}}</td>
-                <td style="text-align:center">{{row.rectum|safe}}</td>
-                <td style="text-align:center">{{row.retina|safe}}</td>
-                <td style="text-align:center">{{row.salivary_gland|safe}}</td>
-                <td style="text-align:center">{{row.seminal_vesicle|safe}}</td>
-                <td style="text-align:center">{{row.skeletal_muscle|safe}}</td>
-                <td style="text-align:center">{{row.skin|safe}}</td>
-                <td style="text-align:center">{{row.small_intestine|safe}}</td>
-                <!-- 40 colums -->
-                <td style="text-align:center">{{row.smooth_muscle|safe}}</td>
-                <td style="text-align:center">{{row.spinal_cord|safe}}</td>
-                <td style="text-align:center">{{row.spleen|safe}}</td>
-                <td style="text-align:center">{{row.stomach|safe}}</td>
-                <td style="text-align:center">{{row.testis|safe}}</td>
-                <td style="text-align:center">{{row.thymus|safe}}</td>
-                <td style="text-align:center">{{row.thyroid_gland|safe}}</td>
-                <td style="text-align:center">{{row.tongue|safe}}</td>
-                <td style="text-align:center">{{row.tonsil|safe}}</td>
-                <td style="text-align:center">{{row.urinary_bladder|safe}}</td>
-                <!-- 50 colums -->
-                <td style="text-align:center">{{row.vagina|safe}}</td>
-                <!-- 51 colums -->
-              </tr>
-              {% endfor %}
-            {% else %}
-              <p> Data not found... test1 </p>
-            {% endif %}
-          </tbody>
-      </table>
-    </div>
 </div>
+<br>
+{%endblock%}
+<!-- {%block popup%}
+<div class="modal" id="references">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+          <b><h4 class="modal-title">Refs:</h4></b>
+      </div>
+      <div class="modal-body">
+        <p></p>
+      </div>
+    </div>
+  </div>
+</div>
+{%endblock%} -->
 
-
-{% endblock %}
-<!-- ### Java scripts ### -->
-
-{% block addon_js %}
-<!-- ## Libraries ## -->
+{%block addon_js%}
 <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
 <script src="{% static 'home/js/gpcrdb.js' %}"></script>
 <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"></script>
 <script src="{% static 'home/js/select2.js' %}"></script>
 <script src="{% static 'home/js/bootstrap2-toggle.min.js' %}"></script>
 <script src="{% static 'home/js/gpcrdb.js' %}"></script>
-
-<!-- For the visiable columns function -->
-<!-- NEEDS JQUERY UPDATE! -->
-<!-- <script src="{% static 'home\js\jquery-3.7.1.js' %}"></script> -->
 <!-- <script src="{% static 'home\js\dataTables.js' %}"></script>
 <script src="{% static 'home\js\dataTables.responsive.js' %}"></script>
 <script src="{% static 'home\js\responsive.dataTables.js' %}"></script>
@@ -276,199 +140,90 @@
 <script src="{% static 'home/js/buttons.dataTables.js' %}"></script>
 <script src="{% static 'home/js/buttons.colVis.min.js' %}"></script> -->
 
+<!-- <script>
+  //triggered when modal is about to be shown
+$('#references').on('show.bs.modal', function(e) {
 
-<!-- ## Java scripts ## -->
+    //get data-id attribute of the clicked element
+    var bookId = $(e.relatedTarget).data('book-id');
+    $("#references .modal-body p").html(bookId);
+    //populate the textbox
+    // $(e.currentTarget).find('.modal-body p').val(bookId);
+});
+</script> -->
 <script type="text/javascript" charset="utf-8">
-  // ## when another jquery is loaded on top of the /home.html --> this line fixes the two jquery acting up ##
-  // var $jq = jQuery.noConflict(true);
-  // # Initialize global variable to control table input #
+
   $(document).ready(
     function() {
-      // # Set index visable true/false #
-      var index_visable = false
-
-      // ### Reset filter functions for drugs browser and tissue expression ###
-      $("#Reset_all_filters").click(function() {
-        yadcf.exResetAllFilters(table1);
-        yadcf.exResetAllFilters(table2);
-        });
-      // ### Init Drugbrowser table ###
-      var table1 = $('#Drug_browser_table').DataTable(
+      var table = $('#drugdata').DataTable(
         {
           autoWidth: false,
-          // buttons: ['colvis'], for when the jquery packages are updated !!! FIXME WITH UPDATE JQUERY VERSION
-          scrollY: "65vh",
+          'order': [[0, "asc"]],
+          scrollY: "50vh",
           scrollX: true,
           scrollCollapse: true,
           scroller: true,
-          paging: false,
+          paging: true,
+          bSortCellsTop: false,
           columnDefs: [
-            { targets: 0, 
-              visible: index_visable,
-              searchable: true }
+            { targets: [], width: '100px' }
           ]
         }
-      );
-      // Selector column for drugs browser
-      let column_filters1 = [];
-      // Arg list: createYADCFfilters(start_column, num_cols, filter_type, select_type*, filter_default_label*, filter_reset_button_text*, filter_match_mode*, column_data_type*, width*)
-      column_filters1 = column_filters1.concat(createYADCFfilters(0, 4, "multi_select", "select2", "Select", false, "exact", null, "50px"));
-      // create filter type array to handle filters applied
-      filter_1_array = []
-      for (const [key, value] of Object.entries(column_filters1)) {
-          filter_1_array.push(value.filter_type);
-      }
+      ); 
+      let column_filters = [];
+      // ## DRUGS ##
+      // # Name #
+      column_filters = column_filters.concat(createYADCFfilters(0, 1,"multi_select", "select2", "Select", false, null, null, '75px'));
+      // # Indication #
+      column_filters = column_filters.concat(createYADCFfilters(1, 1,"multi_select", "select2", "Select", false, null, null, '75px'));
+      // ## Recepters ##
+      // # Uniprot #
+      column_filters = column_filters.concat(createYADCFfilters(2, 1,"multi_select", "select2", "Select", false, 'exact', "html", '75px'));
+      // # GPCRdb #
+      column_filters = column_filters.concat(createYADCFfilters(3, 1,"multi_select", "select2", "Select", false, null, null, '75px'));
+      // # Class #
+      column_filters = column_filters.concat(createYADCFfilters(4, 1,"multi_select", "select2", "Select", false, null, null, '75px'));
+      // # Family #
+      column_filters = column_filters.concat(createYADCFfilters(5, 1,"multi_select", "select2", "Select", false, null, null, '75px'));
+      // ## Clinical information ##
+      // # Drug status #
+      column_filters = column_filters.concat(createYADCFfilters(6, 1,"multi_select", "select2", "Select", false, null, null, '75px'));
+      // # Phase #
+      column_filters = column_filters.concat(createYADCFfilters(7, 1,"multi_select", "select2", "Select", false, null, null, '75px'));
+      // # Year of Approval #
+      column_filters = column_filters.concat(createYADCFfilters(8, 1,"multi_select", "select2", "Select", false, null, null, '75px'));
+      // # Drug type #
+      column_filters = column_filters.concat(createYADCFfilters(9, 1,"multi_select", "select2", "Select", false, null, null, '75px'));
+      // # Mechanism of action #
+      column_filters = column_filters.concat(createYADCFfilters(10, 1,"multi_select", "select2", "Select", false, null, null, '75px'));;
+      // possible width: 'data-filter'
+      // column_filters = column_filters.concat(createYADCFfilters(3, 10,"multi_select", select_type="select2", filter_default_label="Select"));
+      // column_filters[12]["data"] = ["yes", "no"];
       // YADCF filter 
       yadcf.init(
-        table1, column_filters1,{
-            cumulative_filtering: true //Added so you can only select visiable values in the table.
-        }
+        table, column_filters
       );
-
-      // ### Init Tissue expression table ###
-      var table2 = $('#Tissue_browser_table').DataTable(
-        {
-          autoWidth: false,
-          scrollY: "65vh",
-          scrollX: true,
-          scrollCollapse: true,
-          scroller: true,
-          paging: false,
-          // ## sScrollX & sScrollXInner was added to fix horizontal scrolling, which with the tab "hidden - display" didnt work without ##
-          "sScrollX": "100%", 
-          "sScrollXInner": "450%",
-          columnDefs: [
-            { targets: 0, 
-              visible: index_visable,
-              searchable: true }
-          ]
-        }
-        
-      );
-      
-
-      // Selector column for tissue expression table
-      let column_filters2 = [];
-      // Arg list: createYADCFfilters(start_column, num_cols, filter_type, select_type*, filter_default_label*, filter_reset_button_text*, filter_match_mode*, column_data_type*, width*)
-      column_filters2 = column_filters2.concat(createYADCFfilters(0,2, "multi_select", "select2", "Select", false, "exact", null, "50px"));
-      column_filters2 = column_filters2.concat(createYADCFfilters(2,50, "range_number", null, ["Min", "Max"], false, null, null, "0px"));
-      // create filter type array to handle filters applied
-      filter_2_array = []
-      for (const [key, value] of Object.entries(column_filters2)) {
-          filter_2_array.push(value.filter_type);
-      }
-      // YADCF filter 
-      yadcf.init(
-        table2, column_filters2,{
-            cumulative_filtering: true //Added so you can only select visiable values in the table.
-        }
-      );
-      // ### Adjust tab2 (tissue expression) so headers dont collapse (initalization problem with datatables and tabs) ###
-      $(document).on('shown.bs.tab', 'a[data-toggle="tab"]', function (e) {
-          $.fn.dataTable.tables({ visible: true, api: true}).columns.adjust();
-      });  
-      // ######################################################
-      // ### Table update handle - switching between tables ###
-      // ######################################################
-
-      // #########################################
-      // ## Drugs browser --> Tissue expression ##
-      // #########################################
-
-      $('[href="#tab2"]').on('shown.bs.tab', function (e) {
-        // # reset table index if no filters are applied in drugs browser #
-        // Function for checking filter status
-        let filter_state_function = arr => arr.every(v => v === 'true');
-        // Initialize filter status variables
-        var table1_filter_state = [];
-        var searchbar_table1 = table1.search();
-        table1.columns().every( function (index) {
-          // skip index column
-          if (index == 0) {} else {
-            // check which kind of filtering is applied
-            if (filter_1_array[index] == 'multi_select') {
-              // if no filter is applied return true
-              if (yadcf.exGetColumnFilterVal(table1, index).length !== 0) {
-                table1_filter_state.push('false')
-              } else {
-                table1_filter_state.push('true')
-              }
-            // # If the filter is range type # 
-            } else if (filter_1_array[index] == 'range_number') {
-              // if no filter is applied return true 
-              if (yadcf.exGetColumnFilterVal(table1, index).from !== '' && yadcf.exGetColumnFilterVal(table1, index).to !== '') {
-                table1_filter_state.push('false')
-              } else {
-                table1_filter_state.push('true')
-              }
-            // # If the filter type is not included in if/else statement #   
-            } else {
-              console.log("No handle for this filter type - please rewrite code appropriately")
-            }
-          }
-        });
-        console.log(table1_filter_state)
-        // ## If no filter is applied --> reset index column on tissue expression table ##
-        if (filter_state_function(table1_filter_state) == true && searchbar_table1 == '') {
-            // yadcf.exResetAllFilters(table2, [[0]]);
-            yadcf.exFilterColumn(table2, [ [0, "" ] ]);
-          // ## If there is a filter update tissue table to match the filtered drugs browser ##
-          } else {
-            var Drugs_browser_indexValues = table1.column(0,{ filter :'applied' }).data();
-            yadcf.exFilterColumn(table2, [ [0, Drugs_browser_indexValues ] ]);
-          }
-      });
-
-      // #########################################
-      // ## Tissue expression --> Drugs browser ##
-      // #########################################
-      
-      $('[href="#tab1"]').on('shown.bs.tab', function (e) {
-        // # reset table index if no filters are applied in drugs browser #
-        // Function for checking filter status
-        let filter_state_function = arr => arr.every(v => v === 'true');
-        // Initialize filter status variables
-        var table2_filter_state = [];
-        var searchbar_table2 = table2.search();
-        table2.columns().every( function (index) {
-          // skip index column
-          if (index == 0) {} else {
-            // check which kind of filtering is applied
-            if (filter_2_array[index] == 'multi_select') {
-              // if no filter is applied return true
-              if (yadcf.exGetColumnFilterVal(table2, index).length !== 0) {
-                table2_filter_state.push('false')
-              } else {
-                table2_filter_state.push('true')
-              }
-            // # If the filter is range type # 
-            } else if (filter_2_array[index] == 'range_number') {
-              // if no filter is applied return true
-              console.log(yadcf.exGetColumnFilterVal(table2, index).from);
-              console.log(yadcf.exGetColumnFilterVal(table2, index).to);
-              if (yadcf.exGetColumnFilterVal(table2, index).from !== '' || yadcf.exGetColumnFilterVal(table2, index).to !== '') {
-                table2_filter_state.push('false')
-              } else {
-                table2_filter_state.push('true')
-              }
-            // # If the filter type is not included in if/else statement #   
-            } else {
-              console.log("No handle for this filter type - please rewrite code appropriately")
-            }
-          }
-        });
-        console.log(table2_filter_state)
-        // ## If no filter is applied --> reset index column on tissue expression table ##
-        if (filter_state_function(table2_filter_state) == true && searchbar_table2 == '') {
-            // yadcf.exResetAllFilters(table2, [[0]]);
-            yadcf.exFilterColumn(table1, [ [0, "" ] ]);
-          // ## If there is a filter update tissue table to match the filtered drugs browser ##
-          } else {
-            var Tissue_expression_indexValues = table2.column(0,{ filter :'applied' }).data();
-            yadcf.exFilterColumn(table1, [ [0, Tissue_expression_indexValues ] ]);
-          }
-      });
+      //Adding 'expand' class to long text cells - on hover, the cell expands and text is readable
+      $("tr td:nth-child(2)").addClass("expand");
+      $("tr td:nth-child(6)").addClass("expand");
     }
   );
-</script>
-{% endblock %}
+  </script>
+  <script>
+    var tableToExcel = (function () {
+      var encabezado = '<html><head><meta http-equiv="content-type" content="text/plain; charset=UTF-8"/><style> table, td {border:thin solid black} table {border-collapse:collapse}</style></head><body><table>';
+      var dataTable = document.getElementById('drugdata').innerHTML;
+      var piePagina = "</table></body></html>";
+      var tabla = encabezado + dataTable + piePagina;
+      var myBlob =  new Blob( [tabla] , {type:'text/html'});
+      var url = window.URL.createObjectURL(myBlob);
+      var a = document.createElement("a");
+      document.body.appendChild(a);
+      a.href = url;
+      a.download = "DrugBrowserData.xls";
+      a.click();
+
+      setTimeout(function() {window.URL.revokeObjectURL(url);},0);
+    });
+  </script>
+{%endblock%}

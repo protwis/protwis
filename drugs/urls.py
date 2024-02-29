@@ -11,4 +11,5 @@ urlpatterns = [
     url(r'^indication/(?P<code>[\w|\W]+)/$',  views.indication_detail, name='indication'),
 
     url(r'^NewDrugsBrowser', views.NewDrugsBrowser.as_view(), name='NewDrugsBrowser'),
+    url(r'^TargetSelectionTool', views.TargetSelectionTool.as_view(), name='TargetSelectionTool')
 ]
