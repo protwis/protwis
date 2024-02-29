@@ -1901,9 +1901,9 @@ class LigandInformationView(TemplateView):
                     caches['entries'].append(target_name)
                 prot_node = next((item['node'] for item in sankey['nodes'] if item['name'] == protein_name), None)
                 #append connection between indication and ligand
-                sankey['links'].append({"source":lig_node, "target":indi_node, "value":1, "ligtrace": None, "prottrace": indication_name})
+                sankey['links'].append({"source":lig_node, "target":indi_node, "value":1, "ligtrace": protein_name, "prottrace": indication_name})
                 #append connection between ligand and target
-                sankey['links'].append({"source":prot_node, "target":lig_node, "value":1, "ligtrace": None, "prottrace": protein_name})
+                sankey['links'].append({"source":prot_node, "target":lig_node, "value":1, "ligtrace": protein_name, "prottrace": indication_name})
 
             #Fixing redundancy in sankey['links']
             unique_combinations = {}
