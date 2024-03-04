@@ -286,7 +286,7 @@ def TargetDetails(mode, request, **kwargs):
 
             ligand_data_affinity = []
             ligand_data_potency = []
-            assay_conversion = {'A': 'ADMET', 'B': 'Binding', 'F': 'Functional', 'U': 'N/A'}
+            assay_conversion = {'A': 'ADMET', 'B': 'Binding', 'F': 'Functional', 'U': 'N/A', 'T': 'Toxicity'}
             for lig, records in d.items():
                 # links = lig.ids.all()
                 # chembl_id = [x for x in links if x.web_resource.slug == 'chembl_ligand'][0].index
