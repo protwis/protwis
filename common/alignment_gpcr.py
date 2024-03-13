@@ -59,11 +59,7 @@ class Alignment(GenericAlignment):
         #     seq_class = 'ali-td-generic-num-normal'
         #     formatted_gn += '<span class="{:s}">{:s}<br /></span>'.format(seq_class, generic_number)
         # ECD format
-        elif generic_number.split('x')[0] in self.ECD_segments:
-            formatted_gn = '<br />'
-            seq_class = 'ali-td-generic-num-normal'
-            formatted_gn += '<span class="{:s}">{:s}<br /></span>'.format(seq_class, generic_number)
-        elif generic_number.startswith('B.GPS'):
+        elif generic_number.split('x')[0] in self.ECD_segments or generic_number.startswith('B.GPS'):
             formatted_gn = '<br />'
             seq_class = 'ali-td-generic-num-normal'
             formatted_gn += '<span class="{:s}">{:s}<br /></span>'.format(seq_class, generic_number)
