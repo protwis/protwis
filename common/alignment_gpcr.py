@@ -63,6 +63,10 @@ class Alignment(GenericAlignment):
             formatted_gn = '<br />'
             seq_class = 'ali-td-generic-num-normal'
             formatted_gn += '<span class="{:s}">{:s}<br /></span>'.format(seq_class, generic_number)
+        elif generic_number.startswith('B.GPS'):
+            formatted_gn = '<br />'
+            seq_class = 'ali-td-generic-num-normal'
+            formatted_gn += '<span class="{:s}">{:s}<br /></span>'.format(seq_class, generic_number)
         else:
             split_gn = generic_number.split("x")
             split_gn_helix = split_gn[0].split('.')

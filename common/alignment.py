@@ -529,8 +529,19 @@ class Alignment:
                 else:
                     # self.segments[segment].sort()
                     sorted_segment = []
-                    for gn in sorted(self.segments[segment], key=lambda x: x.split('x')):
-                        sorted_segment.append(gn)
+                    if segment=='B.GPS':
+                        if 'B.GPS-2' in self.segments[segment]:
+                            sorted_segment.append('B.GPS-2')
+                        if 'B.GPS-1' in self.segments[segment]:
+                            sorted_segment.append('B.GPS-1')
+                        for gn in sorted(self.segments[segment]):
+                            if not gn.endswith('-2') and not gn.endswith('-1') and not gn.endswith('+1'):
+                                sorted_segment.append(gn)
+                        if 'B.GPS+1' in self.segments[segment]:
+                            sorted_segment.append('B.GPS+1')
+                    else:
+                        for gn in sorted(self.segments[segment], key=lambda x: x.split('x')):
+                            sorted_segment.append(gn)
                     self.segments[segment] = sorted_segment
 
             self.unique_proteins = list(set(self.proteins))
@@ -777,8 +788,19 @@ class Alignment:
                     del self.generic_numbers[ns][segment]
                 else:
                     ordered_generic_numbers = OrderedDict()
-                    for gn in sorted(self.generic_numbers[ns][segment], key=lambda x: x.split('x')):
-                        ordered_generic_numbers[gn] = self.generic_numbers[ns][segment][gn]
+                    if segment=='B.GPS':
+                        if 'B.GPS-2' in self.generic_numbers[ns][segment]:
+                            ordered_generic_numbers['B.GPS-2'] = self.generic_numbers[ns][segment]['B.GPS-2']
+                        if 'B.GPS-1' in self.generic_numbers[ns][segment]:
+                            ordered_generic_numbers['B.GPS-1'] = self.generic_numbers[ns][segment]['B.GPS-1']
+                        for gn in sorted(self.generic_numbers[ns][segment]):
+                            if not gn.endswith('-2') and not gn.endswith('-1') and not gn.endswith('+1'):
+                                ordered_generic_numbers[gn] = self.generic_numbers[ns][segment][gn]
+                        if 'B.GPS+1' in self.segments[segment]:
+                            ordered_generic_numbers['B.GPS+1'] = self.generic_numbers[ns][segment]['B.GPS+1']
+                    else:
+                        for gn in sorted(self.generic_numbers[ns][segment], key=lambda x: x.split('x')):
+                            ordered_generic_numbers[gn] = self.generic_numbers[ns][segment][gn]
                     self.generic_numbers[ns][segment] = ordered_generic_numbers
 
     def format_generic_number(self, generic_number):
