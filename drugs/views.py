@@ -6,7 +6,7 @@ from django.db.models import Count, Max
 from django.core.cache import cache
 from django.views.decorators.cache import cache_page
 
-from drugs.models import Drugs,Drugs2024
+from drugs.models import Drugs, Drugs2024, Indication
 from protein.models import Protein, ProteinFamily, TissueExpression
 from structure.models import Structure
 from drugs.models import Drugs, Drugs2024, Indication
@@ -281,6 +281,17 @@ def drugbrowser(request):
 
     return render(request, 'drugbrowser.html', {'drugdata': context})
 
+
+
+
+
+
+
+
+
+
+
+
 class NewDrugsBrowser(TemplateView):
     # Template using this class #
     template_name = 'NewDrugsBrowser.html'
@@ -290,14 +301,20 @@ class NewDrugsBrowser(TemplateView):
         
         # Get data - server side - Queries #
         Drug_browser_data = Drugs2024.objects.all().prefetch_related('target','target__family__parent__parent','target__family__parent__parent__parent','indication','indication__code','ligand','ligand__ligand_type','moa')
+        # GtoPdb = 
         # Possible addons: 'target__family__parent','target__family__parent__parent','target__family__parent__parent__parent','indication','ligand','moa'
         # initialize context list for pushing data to html #
         context_data_browser = list()
-
+        i_breaker = 0
         #proteins = list(TissueExpression.objects.all().values_list('protein__entry_name').distinct())
         #drugs = Drugs.objects.all().prefetch_related('target', 'target__family__parent__parent__parent', 'publication', 'publication__web_link', 'publication__web_link__web_resource', 'publication__journal')
         #drugs_NHS_names = list(NHSPrescribings.objects.values_list('drugname__name', flat=True).distinct())
         for entry in Drug_browser_data:
+            # i_breaker += 1
+            # if i_breaker >= 10:
+            #     break
+            # else:
+            #     pass
             ## For the drug browser table ##
             # Protein id, uniprot, and receptor name
             Protein_id = str(entry.target.id)
@@ -310,16 +327,12 @@ class NewDrugsBrowser(TemplateView):
             Indication = str(entry.indication.name)
             Indication_ID = str(entry.indication.code.index)
             Clinical_drug_status = str(entry.drug_status)
-            Clinical_max_phase = str(entry.indication_max_phase)
+            Clinical_max_phase = int(entry.indication_max_phase)
             Clinical_approval_year = str(entry.approval_year)
             Clinical_drug_type = str(entry.ligand.ligand_type.name)
-            #Clinical_drug_type = "bob"
             Clinical_moa = str(entry.moa.name)
-            ### Columns that needs to be included ###
-            
-            #One row with target indication pair
-            #Novelty score
-            #IDG
+
+            # create and append to context data
             jsondata_browser = {
                 'Index_number': Protein_id,
                 'Drug': Drug_name,
@@ -340,6 +353,15 @@ class NewDrugsBrowser(TemplateView):
         context['drug_data'] = context_data_browser
         return context
 
+
+
+
+
+
+
+
+
+
 class TargetSelectionTool(TemplateView):
     # Template using this class #
     template_name = 'TargetSelectionTool.html'
@@ -351,19 +373,14 @@ class TargetSelectionTool(TemplateView):
         Target_drug_data = Drugs2024.objects.all().prefetch_related('target','ligand','indication','indication__code')
         target_ids = [drug.target.id for drug in Target_drug_data if drug.target]
         #Structures_data = Structure.objects.all().prefetch_related('state', 'protein_conformation__protein')
-        Structure_data = Structure.objects.values('protein_conformation_id', 'state_id').annotate(state_count=Count('state_id')).order_by('protein_conformation_id')
-        filtered_structures = Structure.objects.annotate(target_id=Case(When(protein_conformation_id__protein_id__accession__isnull=False,
-                                                                        then=F('protein_conformation_id__protein_id__id')),
-                                                                        When(protein_conformation_id__protein_id__parent__accession__isnull=False,
-                                                                        then=F('protein_conformation_id__protein_id__parent__id')),
-                                                                        default=Value(None, output_field=IntegerField()),
-                                                                        output_field=IntegerField())).filter(
-                                                                            target_id__in=target_ids).values(
-                                                                                'target_id').annotate(
-                                                                                    active_count=Count(Case(When(state_id=1, then=1), output_field=IntegerField())),
-                                                                                    inactive_count=Count(Case(When(state_id=2, then=1), output_field=IntegerField())),
-                                                                                    intermediate_count=Count(Case(When(state_id=3, then=1), output_field=IntegerField())),
-                                                                                    other_count=Count(Case(When(~Q(state_id__in=[1, 2, 3]), then=1), output_field=IntegerField())))
+        Structure_data = Structure.objects.all().exclude(structure_type__slug__startswith='af-').values('protein_conformation__protein__parent__id').annotate(
+                    Inactive=Count(Case(When(state_id=1, then=1), output_field=IntegerField())),
+                    Active=Count(Case(When(state_id=2, then=1), output_field=IntegerField())),
+                    Intermediate=Count(Case(When(state_id=3, then=1), output_field=IntegerField())),
+                    Other=Count(Case(When(state_id=4, then=1), output_field=IntegerField())),
+                ).order_by('protein_conformation__protein__parent__id') # Fetches only human structures --> make sure we dont want other species 
+        
+        
         #'target__family__parent__parent','target__family__parent__parent__parent','indication','indication__code','ligand','moa'
         # Context lists for pushing data #
         context_target_selection = list()
@@ -375,15 +392,24 @@ class TargetSelectionTool(TemplateView):
         Tissue_expression_dict = {}
         index_dict = {}
         # Create dict for structure total and state (active, inactive and intermediate)
-        for entry in filtered_structures:
-            id = entry['protein_conformation_id']
-            
-            if id not in structure_dict:
-                structure_dict[id] = {}
-                structure_dict[id]['Active']
-                structure_dict[id]['Active']
-                structure_dict[id]['Active']
-            
+        for entry in Structure_data:
+            protein_id = str(entry['protein_conformation__protein__parent__id'])
+            if protein_id in target_ids:
+                if protein_id not in structure_dict:
+                    structure_dict[protein_id] = {}
+                    structure_dict[protein_id]['Active'] = entry['Active']
+                    structure_dict[protein_id]['Inactive'] = entry['Inactive']
+                    structure_dict[protein_id]['Intermediate'] = entry['Intermediate']
+                    structure_dict[protein_id]['Total'] = int(entry['Active'])+entry['Inactive']+entry['Intermediate']
+                else:
+                    print("Something should be terribly wrong if there is two identical ids")
+                    break
+            else:
+                structure_dict[protein_id] = {}
+                structure_dict[protein_id]['Active'] = 0
+                structure_dict[protein_id]['Inactive'] = 0
+                structure_dict[protein_id]['Intermediate'] = 0
+                structure_dict[protein_id]['Total'] = 0
         # Create Target selection browser #
         for entry in Target_drug_data:
             # Ids and keys
@@ -412,11 +438,19 @@ class TargetSelectionTool(TemplateView):
                 target_indication_dict[Target_indication_pair]['Drug__status']['Discontinued'] = 0
                 target_indication_dict[Target_indication_pair]['Drug__status'][Drug_status] += 1
                 # Handle structures #
-                target_indication_dict[Target_indication_pair]['Structures'] = {}
-                target_indication_dict[Target_indication_pair]['Structures']['Total'] = structure_dict[Protein_id]['Total']
-                target_indication_dict[Target_indication_pair]['Structures']['Active'] = structure_dict[Protein_id]['Active']
-                target_indication_dict[Target_indication_pair]['Structures']['Inactive'] = structure_dict[Protein_id]['Inactive']
-                target_indication_dict[Target_indication_pair]['Structures']['Intermediate'] = structure_dict[Protein_id]['Intermediate']
+                if Protein_id in structure_dict:
+                    target_indication_dict[Target_indication_pair]['Structures'] = {}
+                    target_indication_dict[Target_indication_pair]['Structures']['Total'] = structure_dict[Protein_id]['Total']
+                    target_indication_dict[Target_indication_pair]['Structures']['Active'] = structure_dict[Protein_id]['Active']
+                    target_indication_dict[Target_indication_pair]['Structures']['Inactive'] = structure_dict[Protein_id]['Inactive']
+                    target_indication_dict[Target_indication_pair]['Structures']['Intermediate'] = structure_dict[Protein_id]['Intermediate']
+                else:
+                    print("Something fishy")
+                    target_indication_dict[Target_indication_pair]['Structures'] = {}
+                    target_indication_dict[Target_indication_pair]['Structures']['Total'] = 0
+                    target_indication_dict[Target_indication_pair]['Structures']['Active'] = 0
+                    target_indication_dict[Target_indication_pair]['Structures']['Inactive'] = 0
+                    target_indication_dict[Target_indication_pair]['Structures']['Intermediate'] = 0
             else:
                 # Drugs #
                 target_indication_dict[Target_indication_pair]['Drugs'].append(Drug_name)
@@ -439,10 +473,10 @@ class TargetSelectionTool(TemplateView):
                     'Drugs_approved': int(target_indication_dict[key]['Drug__status']['Approved']),
                     'Drugs_in_trial': int(target_indication_dict[key]['Drug__status']['Active']),
                     'Drugs_discontinued': int(target_indication_dict[key]['Drug__status']['Discontinued']),
-                    'Structure_total': int(structure_dict[key_id]['Total']),
-                    'Structure_active': int(target_indication_dict[key]['Structures']['Active']),
-                    'Structure_inactive': int(target_indication_dict[key]['Structures']['Inactive']),
-                    'Structure_intermediate': int(target_indication_dict[key]['Structures']['Intermediate'])
+                    'Structures_total': int(target_indication_dict[key]['Structures']['Total']),
+                    'Structures_active' : int(target_indication_dict[key]['Structures']['Active']),
+                    'Structures_inactive' : int(target_indication_dict[key]['Structures']['Inactive']),
+                    'Structures_intermediate' : int(target_indication_dict[key]['Structures']['Intermediate'])
             }
             context_target_selection.append(jsondata_TargetSelectionTool)
         context['Target_data'] = context_target_selection

@@ -88,7 +88,7 @@
                 <th colspan="2" style="text-align:center;border-left: none;">Target-Indication</th>
                 <th colspan="2" style="text-align:center;border-left: none;">Info</th>
                 <th colspan="4" style="text-align:center;border-left: none;">Drugs</th>
-                <th colspan="4" style="text-align:center;border-left: none;">Structures</th>
+                <!-- <th colspan="4" style="text-align:center;border-left: none;">Structures</th> -->
               </tr>
               <tr>
                 <!-- Index column -->
@@ -102,10 +102,10 @@
                 <th style="text-align:center; border-left: none;">Approved<br/></th>
                 <th style="text-align:center; border-left: none;">In trial<br/></th>
                 <th style="text-align:center; border-left: none;">Discontinued<br/></th>
-                <th style="text-align:center; border-left: none;">Total<br/></th>
+                <!-- <th style="text-align:center; border-left: none;">Total<br/></th>
                 <th style="text-align:center; border-left: none;">Active<br/></th>
                 <th style="text-align:center; border-left: none;">Inactive<br/></th>
-                <th style="text-align:center; border-left: none;">Intermediate<br/></th>
+                <th style="text-align:center; border-left: none;">Intermediate<br/></th> -->
                 <!-- <th style="text-align:center; border-left: none;">IDG<br/></th> -->
                 <!-- <th style="text-align:center; border-left: none;">Class<br/></th>
                 <th style="text-align:center; border-left: none;">Ligand type<br/></th>
@@ -138,10 +138,10 @@
                   <td style="text-align:center">{{row.Drugs_in_trial|safe}}</td>
                   <td style="text-align:center">{{row.Drugs_discontinued|safe}}</td>
                   <!-- Structures -->
-                  <td style="text-align:center">{{row.Structure_total|safe}}</td>
+                  <!-- <td style="text-align:center">{{row.Structure_total|safe}}</td>
                   <td style="text-align:center">{{row.Structure_active|safe}}</td>
                   <td style="text-align:center">{{row.Structure_inactive|safe}}</td>
-                  <td style="text-align:center">{{row.Structure_intermediate|safe}}</td>
+                  <td style="text-align:center">{{row.Structure_intermediate|safe}}</td> -->
                   <!-- <td style="text-align:center">{{row.class_name|safe}}</td> -->
                   <!-- <td style="text-align:center">{{row.Ligand_type|safe}}</td>
                   <td style="text-align:center">{{row.Family|safe}}</td>
@@ -384,7 +384,7 @@
       column_filters1 = column_filters1.concat(createYADCFfilters(4, 1, "multi_select", "select2", "Select", false, "exact", null, "50px"));
       // ## Drugs ##
       // # Total #
-      column_filters1 = column_filters1.concat(createYADCFfilters(5, 1, "multi_select", "select2", "Select", false, "exact", null, "50px"));
+      column_filters1 = column_filters1.concat(createYADCFfilters(5, 1, "range_number", null, ["Min", "Max"], false, null, null, "0px"));
       // # Approved drugs #
       column_filters1 = column_filters1.concat(createYADCFfilters(6, 1, "multi_select", "select2", "Select", false, "exact", null, "50px"));
       // # Agents in trial #
@@ -395,7 +395,7 @@
       // ????
       // ## Structures ##
       // # Total #
-      column_filters1 = column_filters1.concat(createYADCFfilters(9, 1, "multi_select", "select2", "Select", false, "exact", null, "50px"));
+      column_filters1 = column_filters1.concat(createYADCFfilters(9, 1,"range_number", null, ["Min", "Max"], false, null, null, "0px"));
       // # Active #
       column_filters1 = column_filters1.concat(createYADCFfilters(10, 1, "multi_select", "select2", "Select", false, "exact", null, "50px"));
       // # Inactive #

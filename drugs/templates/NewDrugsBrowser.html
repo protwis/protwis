@@ -1,35 +1,17 @@
 {% extends "home/base.html" %}
 {% load static %}
 {%block addon_css%}
-<link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
-<link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.yadcf.css' %}" type="text/css">
-<link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css">
-<link rel="stylesheet" href="{% static 'home/css/modal.css' %}" type="text/css">
+<!-- <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" /> -->
+<!-- <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.yadcf.css' %}" type="text/css"> -->
+<!-- <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css"> -->
+<!-- <link rel="stylesheet" href="{% static 'home/css/modal.css' %}" type="text/css"> -->
 <link rel="stylesheet" href="{% static 'home/css/structure_browser.css' %}" type="text/css">
-<link rel="stylesheet" href="{% static 'home/css/signprot-multitabtable.css' %}" type="text/css"/>
+<link rel="stylesheet" href="{% static 'home/css/NewDrugsBrowser_datatables.min.css' %}" type="text/css"/>
+<!-- <link rel="stylesheet" href="{% static 'home/css/NEW_jquery.dataTables.yadcf.css' %}" type="text/css"> -->
+<!-- <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css"> -->
+<link rel="stylesheet" href="{% static 'home/css/select2_4.1.0-rc.0._full.css' %}" type="text/css">
+
 <style type="text/css">
-
-  input.yadcf-filter, .select2-container-multi .select2-choices  {
-    height: 30px;
-    border-radius: 3px;
-    border: 1px solid #c4c4c4;
-    padding: 2px;
-    font-family: sans-serif;
-    font-weight: bold;
-    width: 100%;
-  }
-
-  .yadcf-filter-wrapper {
-    margin-top: 5px;
-    margin-bottom: 2px;
-    width: 100%;
-  }
-
-  tr.no-border-bottom th {
-    text-align: center;
-    border-left: 1px solid black;
-    border-bottom: none !important;
-  }
   table.dataTable thead th,
   table.dataTable tbody td {
     max-width: 1px;
@@ -37,193 +19,392 @@
     overflow: hidden;
     white-space: nowrap;
   }
+  .dataTables_length {
+    position: relative;
+    white-space:pre-wrap; 
+    /* float: none !important; */
+    /* text-align: center; */
+  }
+
+.select2-search__field::placeholder{
+    text-align:center;
+    /* line-height: auto !important; */
+    /* margin-bottom:auto; */
+}
+
+
+.select2-container--default .select2-selection--multiple{
+    overflow: hidden !important;
+    /* height: 1px; */
+    /* max-height: 2rem; */
+    /* overflow: auto; */
+}
+/* .select2-selection__arrow {
+    height: 34px !important;
+} */
+/* .select2-search__field:-ms-input-placeholder {
+    color: #f00;
+}
+.select2-search__field::-ms-input-placeholder {
+    color: #cecfd0;
+} */
 </style>
 {%endblock%}
 {%block content%}
-<button onclick="tableToExcel()" type="button" class="btn btn-primary" style="margin-top:10px;margin-top:3px"> Export to Excel </button>
-<div class="row">
-    <div class="col-md-12 text-center">
-        {% if drug_data %}
-        <div style="padding-top: 10px; font-size: 11px; white-space: nowrap;">
-            <table width="100%" class="display compact" id="drugdata">
-                <thead >
-                  <tr>
-                    <th colspan="2" style="text-align:center; border-left: 1px solid #000000; border-top: 1px solid #000000; ">Drugs</th>
-                    <th colspan="4" style="text-align:center; border-left: 1px solid #000000; border-top: 1px solid #000000; ">Receptor</th>
-                    <th colspan="5" style="text-align:center; border-left: 1px solid #000000; border-right: 1px solid #000000; border-top: 1px solid #000000; ">Clinical information</th>
-                    <!-- <th colspan="5">RECEPTOR</th>
-                    <th colspan="7">CLINICAL INFORMATION</th>   -->
-                  </tr>
+<!-- <div style="padding-top: 10px; font-size: 14px; white-space: nowrap;">
+  <button onclick="reset_all()">Reset</button>
+</div> -->
 
-                  <!-- yadcf filter rows -->
-                  <tr class="no-border-bottom">
-                    <!-- Drug section -->
-                    <th style="text-align:center; border-left: 1px solid #000000;">Name<br/></th>
-                    <th style="text-align:center;">Indication<br/></th>
-                    <!-- Receptor section -->
-                    <th style="text-align:center; border-left: 1px solid #000000;">Uniprot<br/></th>
-                    <th style="text-align:center;">GPCRdb<br/></th>
-                    <th style="text-align:center;">Class<br/></th>
-                    <th style="text-align:center;">Family<br/></th>
-                    <!-- Clinical information -->
-                    <th style="text-align:center; border-left: 1px solid #000000;">Drug status<br/></th>
-                    <th style="text-align:center;">Phase<br/></th>
-                    <th style="text-align:center;">Year of<br/>Approval<br/></th>
-                    <th style="text-align:center;">Drug type<br/></th>
-                    <th style="text-align:center; border-right: 1px solid #000000;">Mechanism<br/>of action<br/></th>
-                  </tr>
-                </thead>
-                <tbody>
-                
-                {% for row in drug_data %}
-                <tr>
-                  <!-- Drug section -->
-                  <td style="text-align:left">{{ row.Drug|safe }}</td>
-                  <td style="text-align:left">
-                    <a href="https://www.ebi.ac.uk/ols4/ontologies/efo/classes?short_form={{ row.Indication_ID }}" target="_blank">{{ row.Indication|safe }}</a>
-                  </td>
-                  <!--  -->
-                  <!-- Receptor section -->
-                  <td class="uniprot1 text-left">
-                      <a href="https://www.uniprot.org/uniprot/{{ row.Protein_uniprot }}" target="_blank">{{ row.Protein_name|safe }}</a>
-                  </td>
-                  <td style="text-align:left"> 
-                    <a href="/protein/{{ row.Protein_uniprot }}" target="_blank"><img width="12px" height="12px" class="gpcrdb-link" src="{% static 'home/logo/gpcr/main.png' %}">  {{ row.Protein_receptor|safe }}</a>
-                  </td>
-                  <td style="text-align:left">{{ row.Protein_class|safe }}</td>
-                  <td style="text-align:left">{{ row.Protein_family|safe }}</td>
-                  <!-- Clinical information -->
-                  <td style="text-align:left">{{ row.Drug_status|safe }}</td>
-                  <td style="text-align:left">{{ row.Indication_max_phase|safe }}</td>
-                  <td style="text-align:left">{{ row.Approval_year|safe }}</td>
-                  <td style="text-align:left">{{ row.Drug_type|safe }}</td>
-                  <td style="text-align:left">{{ row.Moa|safe }}</td>
-                </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    {% else %}
-        <p> Ooops! There is no data to show here yet. </p>
-    {% endif %}
-  </div>
+<div style="padding-top: 10px; font-size: 11px; white-space: nowrap;">
+  <table width="100%" class="display compact" id="Table_example">
+  <!-- <table width="100%" class="display" id="Table_example"> -->
+    <thead>
+      <!-- !!! Stupid work around !!! Fixed headers and resposive tables havent work out the issue of complex headers yet, 
+        so inserting a "dummy header row" this allows the table to correspond correctly. 
+        Should have been fixed by patch 2.1.0 responsive, but still not working..." -->
+      <tr> 
+        <td style="text-align: center" data-dt-order="disable"></td>
+        <td style="text-align: center" data-dt-order="disable"></td>
+        <td style="text-align: center" data-dt-order="disable"></td>
+        <td style="text-align: center" data-dt-order="disable"></td>
+        <td style="text-align: center" data-dt-order="disable"></td>
+        <td style="text-align: center" data-dt-order="disable"></td>
+        <td style="text-align: center" data-dt-order="disable"></td>
+        <td style="text-align: center" data-dt-order="disable"></td>
+        <td style="text-align: center" data-dt-order="disable"></td>
+        <td style="text-align: center" data-dt-order="disable"></td>
+        <td style="text-align: center" data-dt-order="disable"></td>
+      </tr>
+      <!-- ## Super header row ## -->
+      <tr style="padding-top: 10px; font-size: 14px; white-space: nowrap;">
+        <th colspan="3" id="Complex_header_1" style="text-align: center;" data-dt-order="disable">Drugs, Indications, Targets</th>
+        <th colspan="3" id="Complex_header_2" style="text-align: center;" data-dt-order="disable">Target information</th>
+        <th colspan="5" id="Complex_header_3" style="text-align: center;" data-dt-order="disable">Clinical information</th>
+      </tr>
+      <!-- ## header row ## -->
+      <tr>
+        <th style="text-align: center;">Drugs</th>
+        <th style="text-align: center;">Indication</th>
+        <th style="text-align: center;">GPCRdb</th>
+        <th style="text-align: center;">Name</th>
+        <th style="text-align: center;">Class</th>
+        <th style="text-align: center;">Family</th>
+        <th style="text-align: center;">Drug status</th>
+        <th style="text-align: center;">Phase</th>
+        <th style="text-align: center;">Year of<br/>Approval</th>
+        <th style="text-align: center;">Drug type</th>
+        <th style="text-align: center;">Mechanism<br/>of action</th>
+      </tr>
+      <!-- ## Filter row ## -->
+      <tr>
+        <td style="text-align: center" data-dt-order="disable"></td>
+        <td style="text-align: center" data-dt-order="disable"></td>
+        <td style="text-align: center" data-dt-order="disable"></td>
+        <td style="text-align: center" data-dt-order="disable"></td>
+        <td style="text-align: center" data-dt-order="disable"></td>
+        <td style="text-align: center" data-dt-order="disable"></td>
+        <td style="text-align: center" data-dt-order="disable"></td>
+        <td style="text-align: center" data-dt-order="disable"></td>
+        <td style="text-align: center" data-dt-order="disable"></td>
+        <td style="text-align: center" data-dt-order="disable"></td>
+        <td style="text-align: center" data-dt-order="disable"></td>
+      </tr>
+    </thead>
+    <tbody>
+    </tbody>
+  </table>
 </div>
-<br>
 {%endblock%}
-<!-- {%block popup%}
-<div class="modal" id="references">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content">
-      <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
-          <b><h4 class="modal-title">Refs:</h4></b>
-      </div>
-      <div class="modal-body">
-        <p></p>
-      </div>
-    </div>
-  </div>
-</div>
-{%endblock%} -->
 
 {%block addon_js%}
-<script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
-<script src="{% static 'home/js/gpcrdb.js' %}"></script>
-<script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"></script>
-<script src="{% static 'home/js/select2.js' %}"></script>
+
+<script src="{% static 'home/js/Test1.js' %}"></script>
+<script src="{% static 'home/js/Test2.js' %}"></script>
+<script src="{% static 'home/js/Test3.js' %}"></script>
+<script src="{% static 'home/js/Test6.js' %}"></script>
+<!-- <script src="{% static 'home/js/select2.js' %}"></script> -->
 <script src="{% static 'home/js/bootstrap2-toggle.min.js' %}"></script>
-<script src="{% static 'home/js/gpcrdb.js' %}"></script>
-<!-- <script src="{% static 'home\js\dataTables.js' %}"></script>
-<script src="{% static 'home\js\dataTables.responsive.js' %}"></script>
-<script src="{% static 'home\js\responsive.dataTables.js' %}"></script>
-<script src="{% static 'home\js\dataTables.buttons.min_drugs_browser.js' %}"></script>
-<script src="{% static 'home/js/buttons.dataTables.js' %}"></script>
-<script src="{% static 'home/js/buttons.colVis.min.js' %}"></script> -->
+<script src="{% static 'home/js/select2_4.1.0-rc.0_full.js' %}"></script>
+<script src="{% static 'home/js/dataTables.absolute.js' %}"></script>
+<script src="{% static 'home/js/NorgesDTFilterBuilder.js' %}"></script>
+<script>
 
-<!-- <script>
-  //triggered when modal is about to be shown
-$('#references').on('show.bs.modal', function(e) {
+// ##########################################################################################################
+// ##                                 Load the data as a js variable                                       ##
+// ## only outside the document ready function for debugging purposes (doesnt like the django code format) ##
+// ##########################################################################################################
 
-    //get data-id attribute of the clicked element
-    var bookId = $(e.relatedTarget).data('book-id');
-    $("#references .modal-body p").html(bookId);
-    //populate the textbox
-    // $(e.currentTarget).find('.modal-body p').val(bookId);
-});
-</script> -->
-<script type="text/javascript" charset="utf-8">
+var drugs_data = {{drug_data|safe}};
+var table1;
+ 
+// ######################
+// ## Ordering schemes ##
+// ######################
 
-  $(document).ready(
-    function() {
-      var table = $('#drugdata').DataTable(
+var numbersType = $.fn.dataTable.absoluteOrderNumber( [
+    { value: 'None', position: 'bottom' }
+  ] );
+  var namesType = $.fn.dataTable.absoluteOrder( [
+    { value: 'unknown', position: 'bottom' }
+  ] );
+
+// ###############################
+// ### Document ready function ###
+// ###############################
+
+  $(document).ready(function() {
+    
+  // #############################
+  // ### Create the Datatable  ###
+  // #############################
+
+  
+  var table1 = $('#Table_example').DataTable({
+    // ####################
+    // ## Table settings ##
+    // ####################
+    
+    // ## Layout positions ##
+    dom: 
+    "<'row'<'col-sm-12 dt-btn'B>>" +
+     "<'row'<'col-sm-6'l><'col-sm-3'><'col-sm-3'f>>" +
+     "<'row'<'col-sm-12'tr>>" + "<'row'<'col-sm-12'ip>>",
+
+    // ##  Common settings ##
+    order: [2,"asc"],
+    pageLength: 20,
+    lengthMenu: [10, 20, 50, 75, 100,{ label: 'All', value: -1 }],
+    language : {
+     sLengthMenu: "_MENU_"
+    },
+    scrollY: "50vh",
+    scrollX: true,
+    scrollCollapse: true,
+    scroller: true,
+    paging: true,
+    responsive: true,
+    // fixedColumns: true,
+    // fixedHeader: true,
+    "sScrollX": "200%", 
+    "sScrollXInner": "200%",
+    
+    // ###################
+    // ## Load the data ##
+    // ###################
+    
+    data: drugs_data,
+
+    // ###################
+    // ##  Column data  ##
+    // ###################
+
+    columns:[
+    
+    // #####################
+    // #  Column 1 - Drugs #
+    // #####################
+
+    {data: "Drug",
+      name: "Drug",
+      width:'8%'},
+
+    // ##########################
+    // #  Column 2 - Indication #
+    // ##########################
+
+    {data: "Indication",
+      name: "Indication",
+      width:'10%'},
+    
+    // #####################################
+    // #  Column 3 - Target Name (Uniprot) #
+    // #####################################
+    
+    {data: "Protein_name",
+      render: function (data, type, row, meta) { // To put links into the table data use the render function.
+        data = '<a href="https://www.uniprot.org/uniprot/' + row.Protein_uniprot + '" target="_blank">' + data + '</a>';
+        return data},
+      width:'8%'}, 
+    
+    // ######################################
+    // #  Column 4 - Receptor Name (GPCRdb) #
+    // ######################################
+
+    {"data": "Protein_receptor",
+      "name":"Protein_receptor",
+      render: function(data,type,row,meta){
+        //data = '<a href="https://www.uniprot.org/uniprot/' + row.Protein_uniprot + '" target="_blank">' + data + '</a>';
+        data = '<a href="/protein/'+ row.Protein_uniprot +'" target="_blank" data-toggle="popover" title="something...." data-content="interesting info" data-trigger="hover"><img width="12px" height="12px" class="gpcrdb-link" src="{% static "home/logo/gpcr/main.png" %}"> '+data+'</a>'
+        return data // "data-toggle="popover" title="something...." data-content="interesting info" data-trigger="hover" is the hover over toggle tag
+      },
+      width: '10%'},
+    
+    // #############################
+    // #  Column 5 - Target Class  #
+    // #############################
+
+    {data: "Protein_class", 
+      name:"Protein_class",
+      width: '10%'},
+
+    // #############################
+    // # Column 6 - Target Family  #
+    // #############################
+
+    {data: "Protein_family", 
+      name:"Protein_family",
+      width: '10%'},
+    
+    // ###########################
+    // # Column 7 - Drug Status  #
+    // ###########################
+
+    {data: "Drug_status", 
+      name:"Drug_status",
+      width: '10%'},
+    
+    // #####################
+    // # Column 8 - Phase  #
+    // #####################
+
+    {data: "Indication_max_phase", 
+      name:"Indication_max_phase",
+      width: '8%'},
+    
+    // ################################
+    // # Column 9 - Year of approval  #
+    // ################################
+
+    {data: "Approval_year", 
+      name:"Approval_year",
+      width: '8%'},
+
+    // ##########################  
+    // # Column 10 - Drug type  #
+    // ##########################
+
+    {"data": "Drug_type",
+      name:"Drug_type",
+      width: '8%'},
+    
+    // ####################################
+    // # Column 11 - Mechanism of action  #
+    // ####################################
+
+    {data: "Moa",
+      name: "Moa",
+      width: '10%'}
+    ],
+
+    // ###################################################
+    // ## Define ordering - Handles special case values ##
+    // ###################################################
+
+    columnDefs: [
+      { type: numbersType, targets: 8 },
+      { type: namesType, targets: 10 },
+      {className: "dt-center expand", "targets": "_all"}
+      ],
+    
+    // ###########################################
+    // ## Needed for the popover toggle of data ##
+    // ###########################################
+
+    fnDrawCallback: function() {
+      $('[data-toggle="popover"]').popover();
+    },
+    
+    // ############################
+    // ### Table control button ###
+    // ############################
+
+    buttons: [
+      { 
+        text: 'Table control',
+        extend: 'collection',
+        buttons: [{ 
+          text: 'Toggle Receptor Info',
+          action: function ( e, dt, node, config ) {
+            dt.column( 3 ).visible( ! dt.column( 3 ).visible() );  
+            dt.column( 4 ).visible( ! dt.column( 4 ).visible() );
+            dt.column( 5 ).visible( ! dt.column( 5 ).visible() );
+            // dt.column( 6 ).visible( ! dt.column( 6 ).visible() );
+            this.active(!this.active());
+          }
+        },
+        { 
+          text: 'Toggle Clinical Info',
+          action: function ( e, dt, node, config ) {
+              dt.column( 6 ).visible( ! dt.column( 6 ).visible() );
+              dt.column( 7 ).visible( ! dt.column( 7 ).visible() );
+              dt.column( 8 ).visible( ! dt.column( 8 ).visible() );
+              dt.column( 9 ).visible( ! dt.column( 9 ).visible() );
+              dt.column( 10 ).visible( ! dt.column( 10 ).visible() );
+              // dt.column( 11 ).visible( ! dt.column( 11 ).visible() );
+              this.active(!this.active());
+          }
+        },
+
+        // #################
+        // # Colvis button #
+        // #################
+
         {
-          autoWidth: false,
-          'order': [[0, "asc"]],
-          scrollY: "50vh",
-          scrollX: true,
-          scrollCollapse: true,
-          scroller: true,
-          paging: true,
-          bSortCellsTop: false,
-          columnDefs: [
-            { targets: [], width: '100px' }
-          ]
+          popoverTitle: 'Individual columns',
+          extend: 'colvis',
+          columns: 'th:nth-child(n+4)',
+          collectionLayout: ['fixed three-column'],
+          popoverTitle: 'Column visibility control',
+          postfixButtons: ['colvisRestore'],
+          // columnText: function(dt, i, title) {
+          //   console.log($(dt.column(i).header()).text()) <--- "FIX !"
+          //   return $(dt.column(i).header()).text();
+          // }
         }
-      ); 
-      let column_filters = [];
-      // ## DRUGS ##
-      // # Name #
-      column_filters = column_filters.concat(createYADCFfilters(0, 1,"multi_select", "select2", "Select", false, null, null, '75px'));
-      // # Indication #
-      column_filters = column_filters.concat(createYADCFfilters(1, 1,"multi_select", "select2", "Select", false, null, null, '75px'));
-      // ## Recepters ##
-      // # Uniprot #
-      column_filters = column_filters.concat(createYADCFfilters(2, 1,"multi_select", "select2", "Select", false, 'exact', "html", '75px'));
-      // # GPCRdb #
-      column_filters = column_filters.concat(createYADCFfilters(3, 1,"multi_select", "select2", "Select", false, null, null, '75px'));
-      // # Class #
-      column_filters = column_filters.concat(createYADCFfilters(4, 1,"multi_select", "select2", "Select", false, null, null, '75px'));
-      // # Family #
-      column_filters = column_filters.concat(createYADCFfilters(5, 1,"multi_select", "select2", "Select", false, null, null, '75px'));
-      // ## Clinical information ##
-      // # Drug status #
-      column_filters = column_filters.concat(createYADCFfilters(6, 1,"multi_select", "select2", "Select", false, null, null, '75px'));
-      // # Phase #
-      column_filters = column_filters.concat(createYADCFfilters(7, 1,"multi_select", "select2", "Select", false, null, null, '75px'));
-      // # Year of Approval #
-      column_filters = column_filters.concat(createYADCFfilters(8, 1,"multi_select", "select2", "Select", false, null, null, '75px'));
-      // # Drug type #
-      column_filters = column_filters.concat(createYADCFfilters(9, 1,"multi_select", "select2", "Select", false, null, null, '75px'));
-      // # Mechanism of action #
-      column_filters = column_filters.concat(createYADCFfilters(10, 1,"multi_select", "select2", "Select", false, null, null, '75px'));;
-      // possible width: 'data-filter'
-      // column_filters = column_filters.concat(createYADCFfilters(3, 10,"multi_select", select_type="select2", filter_default_label="Select"));
-      // column_filters[12]["data"] = ["yes", "no"];
-      // YADCF filter 
-      yadcf.init(
-        table, column_filters
-      );
-      //Adding 'expand' class to long text cells - on hover, the cell expands and text is readable
-      $("tr td:nth-child(2)").addClass("expand");
-      $("tr td:nth-child(6)").addClass("expand");
-    }
-  );
-  </script>
-  <script>
-    var tableToExcel = (function () {
-      var encabezado = '<html><head><meta http-equiv="content-type" content="text/plain; charset=UTF-8"/><style> table, td {border:thin solid black} table {border-collapse:collapse}</style></head><body><table>';
-      var dataTable = document.getElementById('drugdata').innerHTML;
-      var piePagina = "</table></body></html>";
-      var tabla = encabezado + dataTable + piePagina;
-      var myBlob =  new Blob( [tabla] , {type:'text/html'});
-      var url = window.URL.createObjectURL(myBlob);
-      var a = document.createElement("a");
-      document.body.appendChild(a);
-      a.href = url;
-      a.download = "DrugBrowserData.xls";
-      a.click();
+        ]},
+        {
+          text: 'Reset filters',
+          action: function (e, dt, node, config) {
+            reset_all();
+          }
+                }], // End of buttons
+          
+        //   initComplete: function() {
+           
+        //   // $.fn.dataTable.tables({ visible: true, api: true}).columns.adjust(); // maybe useful for column adjustment.
+        // }
+        }); // End of DataTables
+        
+        // #############################
+        // ###    Create Filters     ###
+        // #############################
 
-      setTimeout(function() {window.URL.revokeObjectURL(url);},0);
-    });
-  </script>
+        var column_filters = [];
+        // CreateColumnFilters --> CreateColumnFilters(datatable_selector,column_number, column_range, header_row, filter_type)
+        column_filters = column_filters.concat(CreateColumnFilters(table1,0,7,3,"Multi-select"));
+        column_filters = column_filters.concat(CreateColumnFilters(table1,7,1,3,"Range_filter_float"));
+        column_filters = column_filters.concat(CreateColumnFilters(table1,8,1,3,"Range_filter_year"));
+        column_filters = column_filters.concat(CreateColumnFilters(table1,9,1,3,"Multi-select"));
+        column_filters = column_filters.concat(CreateColumnFilters(table1,10,1,3,"Multi-select"));
+        // #############################
+        // ###   Initialize filters  ###
+        // #############################
+        
+        createDropdownFilters(table1,column_filters);
+        //console.log(column_filters); 
+
+}); // End document ready function
+
+
+
+// #############################
+// ### Reset button function ###
+// #############################
+
+function reset_all() {
+  $('.select2').val(null).trigger('change');
+}
+</script>
 {%endblock%}
+
+
