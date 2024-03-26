@@ -275,7 +275,7 @@ def prepare_coupling_data_container():
 
         source = record.source
         transduction = record.transduction
-        emax_val = record.logmaxec50
+        emax_val = record.logemaxec50
         g_protein_family = record.g_protein.name
         g_protein_family = g_protein_family.replace(" family", "")
         # Adding the information about subunit

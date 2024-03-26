@@ -88,7 +88,7 @@ def detail(request, slug):
 
     # get structures of this family
     structures = Structure.objects.filter(protein_conformation__protein__parent__family__slug__startswith=slug
-        ).order_by('-representative', 'resolution').prefetch_related('pdb_code__web_resource')
+        ).exclude(structure_type__slug__startswith='af-').order_by('-representative', 'resolution').prefetch_related('pdb_code__web_resource')
 
     mutations = MutationExperiment.objects.filter(protein__in=proteins).prefetch_related('residue__generic_number',
                                 'exp_qual', 'ligand')

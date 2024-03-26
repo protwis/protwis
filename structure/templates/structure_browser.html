@@ -47,6 +47,7 @@
     <script src="{% static 'home/js/browser_functions.js' %}"> </script>
     <script src="{% static 'home/js/structure_browser.js' %}"> </script> <!-- Structure browser -->
     <script src="{% static 'home/js/jquery.powertip.js' %}"></script>
+    <script src="{% static 'home/js/xlsx.full.min.js' %}"></script>  
 
 <script type="text/javascript" charset="utf-8">
   this.compoundPreview = function () {
@@ -85,6 +86,13 @@
     });
 </script>
 
+<script>
+  window.addEventListener("hashchange", updateSuperpositionButtonConfiguration, false);
+
+  // Call this function on page load to set the initial configuration
+  document.addEventListener("DOMContentLoaded", updateSuperpositionButtonConfiguration);
+
+</script>
 {% endblock %}
 
 
@@ -105,7 +113,7 @@
             <label class="btn btn-default btn-s" id="download_btn" href="javascript:void(0)">
                 Download PDBs
             </label>
-            <label class="btn btn-default btn-s" id="superpose_btn" href="javascript:void(0)">
+            <label class="btn btn-default btn-s" id="superpose_template_btn" href="javascript:void(0)">
                 Superposition
             </label>
             <input class="btn btn-default btn-s" type="button" onclick="GlobalTableToExcel('structures_scrollable', 'Structure data', 'GPCRdb_structures.xls')" value="Export Excel"></input>
@@ -396,8 +404,8 @@
   <!-- Modal content -->
     <div class="modal-content">
         <button id="close_superposition_modal" style="float:right;display:inline;" aria-hidden="true" aria-label="Close" class="close" data-dismiss="superposition-modal">&times;</button>
-        <h3>Pick template from selection</h3>
-        <p>Superpositions structures selected in the browser to the template checked in this table</p>
+        <h3>Pick reference from selection</h3>
+        <p>Superpositions structures selected in the browser to the reference checked in this table</p>
         <br>
         <table id="superposition_modal_table" class="display compact" width="100%">
             <thead>

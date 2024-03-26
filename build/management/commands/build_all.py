@@ -66,10 +66,11 @@ class Command(BaseCommand):
             ['build_coupling_data'],
             ['build_consensus_sequences', {'proc': options['proc'], 'signprot': 'Arrestin'}],
             ['build_signprot_complex'],
-            ['build_g_protein_structures'],
+            ['build_g_protein_structures', {'proc': options['proc']}],
             ['build_arrestin_structures'],
             ['build_structure_extra_proteins'],
             ['build_structure_model_rmsd'],
+            ['build_af_models', {'proc': safe_proc_num}],
             ['build_blast_database']
         ]
         phase2 = [
@@ -78,7 +79,6 @@ class Command(BaseCommand):
             ['update_construct_mutations'],
             ['build_protein_sets'],
             ['build_drugs'],
-            ['build_nhs'],
             ['build_mutational_landscape'],
             ['build_residue_sets'],
             ['build_dynamine_annotation', {'proc': options['proc']}],

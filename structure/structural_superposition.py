@@ -6,18 +6,107 @@ import numpy as np
 import Bio.PDB.Polypeptide as polypeptide
 from Bio.PDB import *
 from Bio.Seq import Seq
+from copy import deepcopy
 from structure.functions import *
+from structure.sequence_parser import *
 from structure.assign_generic_numbers_gpcr import GenericNumbering
 from protein.models import Protein
 from structure.models import Structure
 from interaction.models import ResidueFragmentInteraction
 
 logger = logging.getLogger("protwis")
-#==============================================================================  
+
+#==============================================================================
+class ConvertSuperpose(object):
+
+    def __init__ (self, ref_file, alt_files, simple_selection):
+        self.selection = SelectionParser(simple_selection, True)
+        self.ref_struct = PDBParser(PERMISSIVE=True).get_structure('ref', deepcopy(ref_file))[0]
+        assert self.ref_struct, self.logger.error("Can't parse the ref file %s".format(ref_file))
+        if self.selection.generic_numbers != [] or self.selection.helices != [] or self.selection.substructures:
+            blastdb=os.sep.join([settings.STATICFILES_DIRS[0], 'blast', 'g_protein_chimeras'])
+            gn_assigner = GenericNumbering(pdb_file=deepcopy(ref_file), structure=self.ref_struct, sequence_parser=True, blastdb=blastdb)
+            self.check_mapping(gn_assigner)
+            assert len(list(gn_assigner.mapping.keys()))==1, 'Could not map reference sequence correctly'
+            self.ref_struct = gn_assigner.assign_cgn_with_sequence_parser(list(gn_assigner.mapping.keys())[0])
+            self.ref_selector = gn_assigner.filtering_cgn(self.ref_struct, self.selection)
+
+        self.alt_structs = []
+        self.alt_selector = []
+        self.og_alt_structs = []
+
+        for alt_id, alt_file in enumerate(alt_files):
+            tmp_struct = PDBParser(PERMISSIVE=True).get_structure(alt_id, deepcopy(alt_file))[0]
+            if self.selection.generic_numbers != [] or self.selection.helices != []:
+                gn_assigner = GenericNumbering(pdb_file=deepcopy(alt_file), structure=tmp_struct, sequence_parser=True, blastdb=blastdb)
+                self.check_mapping(gn_assigner)
+                assert len(list(gn_assigner.mapping.keys()))==1, 'Could not map target {} sequence correctly'.format(alt_id)
+                tmp_alt_cgn = gn_assigner.assign_cgn_with_sequence_parser(list(gn_assigner.mapping.keys())[0])
+                self.og_alt_structs.append(tmp_struct)
+                self.og_alt_structs[-1].id = alt_id
+                self.alt_structs.append(tmp_alt_cgn)
+                self.alt_structs[-1].id = alt_id
+                self.alt_selector.append(gn_assigner.filtering_cgn(tmp_alt_cgn, self.selection))
+                self.alt_selector[-1].id = alt_id
+
+        assert len(self.ref_selector)>0, 'No selected residues found in reference'
+
+        for alt in self.alt_selector:
+            assert len(alt)>0, 'No selected residues found for {} index structure'.format(alt.id)
+
+    @staticmethod
+    def check_mapping(gn_assigner):
+        '''Check mapping on BLAST E-value if other chains are present and remove them
+        '''
+        if len(list(gn_assigner.mapping.keys()))>1:
+            sorted_expects = sorted(gn_assigner.expects.items(), key=lambda x: x[1])
+            for i, chain in enumerate(sorted_expects[1:]):
+                if chain[0] in gn_assigner.mapping:
+                    del gn_assigner.mapping[chain[0]]
+
+    def get_consensus_atom_sets(self, alt):
+        tmp_ref, tmp_alt = [], []
+        ref_atoms = {}
+        for segment, residues in self.ref_selector.items():
+            for gn, atoms in residues.items():
+                ref_atoms[gn] = {}
+                for atom in atoms:
+                    if atom.name in ['CA','C','N']:
+                        ref_atoms[gn][atom.name] = atom
+
+        for segment, residues in self.alt_selector[alt].items():
+            for gn, atoms in residues.items():
+                if gn in ref_atoms:
+                    for atom in atoms:
+                        if atom.name in ['CA','C','N'] and atom.name in ref_atoms[gn]:
+                            tmp_ref.append(ref_atoms[gn][atom.name])
+                            tmp_alt.append(atom)
+
+        return (tmp_ref, tmp_alt)
+
+    def run (self):
+
+        if self.alt_structs == []:
+            logger.error("No structures to align!")
+            return []
+
+        super_imposer = Superimposer()
+        for alt_struct in self.alt_structs:
+            try:
+                ref, alt = self.get_consensus_atom_sets(alt_struct.id)
+                super_imposer.set_atoms(ref, alt)
+                super_imposer.apply(self.og_alt_structs[alt_struct.id])
+                logger.info("RMS(reference, model {!s}) = {:f}".format(alt_struct, super_imposer.rms))
+            except Exception as msg:
+                logger.error("Failed to superpose structures {} and {}\n{}".format(self.ref_struct, alt_struct, msg))
+
+        return self.og_alt_structs
+
+#==============================================================================
 class ProteinSuperpose(object):
 
     def __init__ (self, ref_file, alt_files, simple_selection):
-    
+
         self.selection = SelectionParser(simple_selection)
         self.ref_struct = PDBParser(PERMISSIVE=True).get_structure('ref', ref_file)[0]
         assert self.ref_struct, self.logger.error("Can't parse the ref file %s".format(ref_file))
@@ -37,6 +126,7 @@ class ProteinSuperpose(object):
                         self.alt_structs[-1].id = alt_id
                     else:
                         self.alt_structs.append(tmp_struct)
+                        self.alt_structs[-1].id = alt_id
             except Exception as e:
                 logger.warning("Can't parse the file {!s}\n{!s}".format(alt_id, e))
         self.selector = CASelector(self.selection, self.ref_struct, self.alt_structs)
@@ -59,13 +149,13 @@ class ProteinSuperpose(object):
 
         return self.alt_structs
 
-#==============================================================================  
+#==============================================================================
 class FragmentSuperpose(object):
 
     logger = logging.getLogger("structure")
 
     def __init__(self, pdb_file=None, pdb_filename=None):
-        
+
         #pdb_file can be either a name/path or a handle to an open file
         self.pdb_file = pdb_file
         self.pdb_filename = pdb_filename
@@ -95,7 +185,7 @@ class FragmentSuperpose(object):
         #extracting sequence and preparing dictionary of residues
         #bio.pdb reads pdb in the following cascade: model->chain->residue->atom
         for chain in pdb_struct:
-            self.pdb_seq[chain.id] = Seq('')            
+            self.pdb_seq[chain.id] = Seq('')
             for res in chain:
             #in bio.pdb the residue's id is a tuple of (hetatm flag, residue number, insertion code)
                 if res.resname == "HID":
@@ -111,7 +201,7 @@ class FragmentSuperpose(object):
     def identify_receptor(self):
 
         try:
-            return self.blast.run(Seq(''.join([str(self.pdb_seq[x]) for x in sorted(self.pdb_seq.keys())])))[0][0]        
+            return self.blast.run(Seq(''.join([str(self.pdb_seq[x]) for x in sorted(self.pdb_seq.keys())])))[0][0]
         except Exception as msg:
             logger.error('Failed to identify protein for input file {!s}\nMessage: {!s}'.format(self.pdb_filename, msg))
             return None
@@ -151,9 +241,9 @@ class FragmentSuperpose(object):
 
         return list(ResidueFragmentInteraction.objects.exclude(structure_ligand_pair__structure__protein_conformation__protein__parent=self.target).exclude(interaction_type__slug__in=['acc', 'hyd']).prefetch_related('rotamer__residue__display_generic_number', 'rotamer__residue', 'interaction_type'))
 
-#==============================================================================  
+#==============================================================================
 class RotamerSuperpose(object):
-    ''' Class to superimpose Atom objects on one-another. 
+    ''' Class to superimpose Atom objects on one-another.
 
         @param reference_atoms: list of Atom objects of rotamers to be superposed on \n
         @param template_atoms: list of Atom objects of rotamers to be superposed
@@ -166,7 +256,7 @@ class RotamerSuperpose(object):
         self.num_atoms_used_for_superposition = 0
 
     def run(self):
-        ''' Run the superpositioning. 
+        ''' Run the superpositioning.
         '''
         super_imposer = Superimposer()
         try:
@@ -195,11 +285,11 @@ class RotamerSuperpose(object):
             if self.reference_atoms!='x':
                 print("Failed rotamer superimposition:\n{}".format(msg))
 
-#==============================================================================  
+#==============================================================================
 class BulgeConstrictionSuperpose(object):
     ''' Class to superimpose bulge and constriction site.
 
-        @param reference_dict: OrderedDict, dictionary of atoms to be superposed on, where keys are generic numbers 
+        @param reference_dict: OrderedDict, dictionary of atoms to be superposed on, where keys are generic numbers
         and values are lists of atoms. \n
         @param template_dict: OrderedDict, dictionary of atoms to be superposed. Same format as reference_dict.
     '''
@@ -215,11 +305,11 @@ class BulgeConstrictionSuperpose(object):
         ''' Run the superpositioning.
         '''
         super_imposer = Superimposer()
-        ref_backbone_atoms = [atom for atom in self.reference_dict[self.reference_gns[0]] if atom.get_name() in 
-                                ['N','CA','C']] + [atom for atom in self.reference_dict[self.reference_gns[-1]] if 
+        ref_backbone_atoms = [atom for atom in self.reference_dict[self.reference_gns[0]] if atom.get_name() in
+                                ['N','CA','C']] + [atom for atom in self.reference_dict[self.reference_gns[-1]] if
                                 atom.get_name() in ['N','CA','C']]
-        temp_backbone_atoms= [atom for atom in self.template_dict[self.template_gns[0]] if atom.get_name() in 
-                                ['N','CA','C']] + [atom for atom in self.template_dict[self.template_gns[-1]] if 
+        temp_backbone_atoms= [atom for atom in self.template_dict[self.template_gns[0]] if atom.get_name() in
+                                ['N','CA','C']] + [atom for atom in self.template_dict[self.template_gns[-1]] if
                                 atom.get_name() in ['N','CA','C']]
         all_template_atoms = []
         for gn, atoms in self.template_dict.items():
@@ -246,7 +336,7 @@ class BulgeConstrictionSuperpose(object):
             gn_count+=1
             self.template_dict[gn] = temp_dict[gn_count]
         return self.template_dict
-        
+
     def calc_backbone_RMSD(self, ref_backbone_atoms, temp_backbone_atoms):
         ''' Calculate backbone RMSD.
         '''
@@ -257,15 +347,15 @@ class BulgeConstrictionSuperpose(object):
         diff = array1[1:]-array2[1:]
         return np.sqrt(sum(sum(diff**2))/array1[1:].shape[0])
 
-#==============================================================================  
+#==============================================================================
 class LoopSuperpose(BulgeConstrictionSuperpose):
     ''' Class to superpose loop regions on helix endings.
-    '''    
+    '''
     def __init__(self, reference_dict, template_dict, ECL2=False, part=None):
         super(LoopSuperpose, self).__init__(reference_dict=reference_dict, template_dict=template_dict)
         self.ECL2 = ECL2
         self.part = part
-        
+
     def run(self):
         ''' Run the superpositioning.
         '''
@@ -295,8 +385,8 @@ class LoopSuperpose(BulgeConstrictionSuperpose):
         super_imposer.apply(all_template_atoms)
         self.backbone_rmsd = self.calc_backbone_RMSD(sorted(ref_backbone_atoms), sorted(temp_backbone_atoms))
         return self.rebuild_dictionary(all_template_atoms)
-        
-#============================================================================== 
+
+#==============================================================================
 class OneSidedSuperpose(BulgeConstrictionSuperpose):
     ''' Class for one sided superposition. Used for helix ends and N- and C-terminus.
     '''
@@ -304,7 +394,7 @@ class OneSidedSuperpose(BulgeConstrictionSuperpose):
         super(OneSidedSuperpose, self).__init__(reference_dict=reference_dict, template_dict=template_dict)
         self.num_frame = num_frame
         self.which_end = which_end
-        
+
     def run(self):
         ''' Run the superpositioning.
         '''
@@ -320,7 +410,7 @@ class OneSidedSuperpose(BulgeConstrictionSuperpose):
             end = start+self.num_frame
         elif self.which_end==1:
             start = 0
-            end = self.num_frame-1        
+            end = self.num_frame-1
         for gn, atoms in self.template_dict.items():
             for atom in atoms:
                 if start<=res_count<=end and atom.get_name() in ['N','CA','C']:
@@ -331,8 +421,8 @@ class OneSidedSuperpose(BulgeConstrictionSuperpose):
         super_imposer.apply(all_template_atoms)
         self.backbone_rmsd = self.calc_backbone_RMSD(ref_backbone_atoms, temp_backbone_atoms)
         return self.rebuild_dictionary(all_template_atoms)
-        
-#============================================================================== 
+
+#==============================================================================
 class ECL2MidSuperpose(BulgeConstrictionSuperpose):
     ''' Class to superimpose 45x50-52 in ECL2 based on last residue of TM4, first residue of TM5 and 3x25 in TM3.
     '''
@@ -355,5 +445,5 @@ class ECL2MidSuperpose(BulgeConstrictionSuperpose):
                 all_template_atoms.append(atom)
         self.backbone_rmsd = self.calc_backbone_RMSD(ref_backbone_atoms, temp_backbone_atoms)
         super_imposer.set_atoms(ref_backbone_atoms, temp_backbone_atoms)
-        super_imposer.apply(all_template_atoms)        
+        super_imposer.apply(all_template_atoms)
         return self.rebuild_dictionary(all_template_atoms)

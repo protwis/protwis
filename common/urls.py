@@ -5,6 +5,7 @@ from common import views
 
 urlpatterns = [
     url(r'^addtoselection', views.AddToSelection, name='addtoselection'),
+    url(r'^checkselection', views.CheckSelection, name='checkselection'),
     url(r'^removefromselection', views.RemoveFromSelection, name='removefromselection'),
     url(r'^clearselection', views.ClearSelection, name='clearselection'),
     url(r'^importtargetselection', views.ImportTargetSelection, name='importtargetselection'),

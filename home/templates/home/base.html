@@ -8,6 +8,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ site_title }}</title>
 
+    <!-- Favicon -->
+    {% if debug %}
+        <link rel="shortcut icon" type="image/png" href="{% static 'home/images/favicon_dev.ico' %}"/>
+    {% else %}
+        {% if site_title == "GPCRdb" %}
+        <link rel="shortcut icon" type="image/png" href="{% static 'home/images/favicon.ico' %}"/>
+        {% elif site_title == "GproteinDb" %}
+        <link rel="shortcut icon" type="image/png" href="{% static 'home/images/favicon_gproteindb.ico' %}"/>
+        {% elif site_title == "ArrestinDb" %}
+        <link rel="shortcut icon" type="image/png" href="{% static 'home/logo/arrestin/main.png' %}"/>
+        {% elif site_title == "Biased Signaling Atlas" %}
+        <link rel="shortcut icon" type="image/png" href="{% static 'home/logo/biasedsignalingatlas/main.png' %}"/>
+        {% endif %}
+    {% endif %}
+
     <!-- SEO for multiple domains -->
     <link rel="canonical" href="{{ canonical_tag }}" />
     <!-- Bootstrap -->
@@ -28,7 +43,7 @@
     {% block addon_css %}{% endblock %}
 
     {% if google_analytics %}
-      {% with 'home/ga_'|add:current_site|add:'.html' as ga_template %}
+      {% with 'home/ga4.html' as ga_template %}
         {% include ga_template %}
       {% endwith %}
     {% endif %}

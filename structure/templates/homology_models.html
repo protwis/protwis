@@ -104,6 +104,13 @@
    <asp scriptErrorSentToBrowser="true"/>
 </system.webServer>
 
+<script>
+  window.addEventListener("hashchange", updateSuperpositionButtonConfiguration, false);
+
+  // Call this function on page load to set the initial configuration
+  document.addEventListener("DOMContentLoaded", updateSuperpositionButtonConfiguration);
+
+</script>
     <script type="text/javascript" charset="utf-8">
         $(document).ready(function () {
 
@@ -288,6 +295,29 @@
                 }
                 window.location.href = '/structure/selection_convert_model';
             });
+
+            $('#superpose_template_btn').click(function () {
+                var checked_data = oTable.rows('.alt_selected').data();
+                var value = CheckSelection('reference');
+                var destination;
+                if (value != 0){
+                  destination = 'targets';
+                } else {
+                  destination = 'reference';
+                }
+                if (checked_data.length == 1) {
+                    AddToSelection(destination, 'structure_model', checked_data[0][12]+"_"+checked_data[0][3]);
+                } else {
+                  for (i = 0; i < checked_data.length; i++) {
+                      AddToSelection('targets', 'structure_model', checked_data[i][12]+"_"+checked_data[i][3]);
+                  }
+                }
+                window.location.href = '/structure/superposition_workflow_index#keepselection';
+            });
+
+            $("#superpose_btn").click(function() {
+                superposition(oTable, [5,6,7,8,9,2,3,4,10,11,12], "homology_model_browser", 'gpcr', 12, [12]);
+            });
         });
 
         function ClearSelection(selection_type) {
@@ -302,6 +332,28 @@
                     $("#selection-" + selection_type).html(data);
                 }
             });
+        }
+
+        function CheckSelection(selection_type) {
+            var result = null;
+
+            $.ajax({
+                'url': '/common/checkselection',
+                'data': {
+                    selection_type: selection_type
+                },
+                'type': 'GET',
+                'dataType': 'json',  // Expecting JSON response from the server
+                'async': false,
+                'success': function(response) {
+                    result = response.total;
+                },
+                'error': function(error) {
+                    console.error("An error occurred:", error);
+                }
+            });
+
+            return result;
         }
 
         function AddToSelection(selection_type, selection_subtype, selection_id) {
@@ -339,14 +391,16 @@
             }
           });
         }
+
     </script>
+
 {% endblock %}
 
 {% block content %}
 <div class="btn-group">
     <label class="btn btn-default btn-s" id="align_btn" href="javascript:void(0)">Align</label>
     <label class="btn btn-default btn-s" id="download_btn" href="javascript:void(0)">Download</label>
-    <!-- <label class="btn btn-default btn-s" id="superpose_btn" href="javascript:void(0)">Superposition</label> -->
+    <label class="btn btn-default btn-s" id="superpose_template_btn" href="javascript:void(0)">Superposition</label>
 </div>
 
 <div class="btn-group" style="float: right">
@@ -464,33 +518,33 @@
         </table>
     </div>
 </div>
-<div id="myModal" class="modal">
+<div id="superposition-modal" class="modal">
   <!-- Modal content -->
-  <div class="modal-content">
-    <span class="close">&times;</span>
-    <h3>Pick reference from selection</h3>
-    <br>
-    <table id="modal_table" class="display compact" width="100%">
-        <thead>
-            <tr>
-                <th></th>
-                <th style="display:none;"></th>
-                <th>UniProt</th>
-                <th>IUPHAR</th>
-                <th>Rec. family</th>
-                <th>Class</th>
-                <th>Species</th>
-                <th>Date</th>
-                <th>State</th>
-                <th>Refined</th>
-                <th>Main template receptor</th>
-                <th>Main template PDB</th>
-            </tr>
-        </thead>
-        <tbody>
-            <!-- Javascript populates the table from selected rows -->
-        </tbody>
-    </table>
+    <div class="modal-content">
+        <button id="close_superposition_modal" style="float:right;display:inline;" aria-hidden="true" aria-label="Close" class="close" data-dismiss="superposition-modal">&times;</button>
+        <h3>Pick template from selection</h3>
+        <p>Superpositions structures selected in the browser to the template checked in this table</p>
+        <br>
+        <table id="superposition_modal_table" class="display compact" width="100%">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>UniProt</th>
+                    <th>IUPHAR</th>
+                    <th>Rec. family</th>
+                    <th>Class</th>
+                    <th>Species</th>
+                    <th>Date</th>
+                    <th>State</th>
+                    <th>Refined</th>
+                    <th>Main template receptor</th>
+                    <th>Main template PDB</th>
+                  </tr>
+              </thead>
+              <tbody>
+                  <!-- Javascript populates the table from selected rows -->
+              </tbody>
+          </table>
+      </div>
   </div>
-</div>
 {% endblock %}

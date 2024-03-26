@@ -134,7 +134,7 @@ def get_angles(request):
             query = Q()
             for classStart in classes:
                     query = query | Q(protein_conformation__protein__family__slug__startswith=classStart)
-            set2 = Structure.objects.filter(protein_conformation__state__slug__in=states).filter(query).values_list('pdb_code__index')
+            set2 = Structure.objects.filter(protein_conformation__state__slug__in=states).exclude(structure_type__slug__startswith='af-').filter(query).values_list('pdb_code__index')
 
             pdbs2 = [ x[0] for x in set2 ]
 

@@ -135,7 +135,7 @@
                             <h3>Welcome</h3>
                             A new database has been born. ArrestinDb is dedicated to arrestin proteins,
                             which like G proteins, are major GPCR transducers but also have their own highly active research
-                            community. The publication is planned for end of 2022 or early 2023.
+                            community. The publication is planned for end of 2023 or early 2024.
                             Meanwhile, try it out and let us know what you think.
                         </div>
                     </div>
@@ -286,4 +286,12 @@
     {#        </div>#}
     {#    </div>#}
 
+{% endblock %}
+
+{% block addon_js %}
+<script>
+    $(".release-notes").find("li").addClass("hidden");
+    $(".arrestindb").removeClass("hidden");
+    $(".all").removeClass("hidden")
+</script>
 {% endblock %}

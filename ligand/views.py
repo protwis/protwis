@@ -287,7 +287,7 @@ def TargetDetails(mode, request, **kwargs):
 
             ligand_data_affinity = []
             ligand_data_potency = []
-            assay_conversion = {'A': 'ADMET', 'B': 'Binding', 'F': 'Functional', 'U': 'N/A'}
+            assay_conversion = {'A': 'ADMET', 'B': 'Binding', 'F': 'Functional', 'U': 'N/A', 'T': 'Toxicity'}
             for lig, records in d.items():
                 # links = lig.ids.all()
                 # chembl_id = [x for x in links if x.web_resource.slug == 'chembl_ligand'][0].index
@@ -1940,7 +1940,7 @@ class LigandInformationView(TemplateView):
     def get_structure(ligand):
         return_list = list()
         structures = list(
-            StructureLigandInteraction.objects.filter(ligand=ligand))
+            StructureLigandInteraction.objects.filter(ligand=ligand).exclude(structure__structure_type__slug__startswith='af-'))
         for i in structures:
             structure_dict = dict()
             structure_dict['structure_pdb'] = i.structure.pdb_code.index

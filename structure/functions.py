@@ -18,9 +18,11 @@ from residue.functions import dgn
 from residue.models import Residue, ResidueGenericNumberEquivalent
 from structure.models import Structure, Rotamer, PdbData, StructureStabilizingAgent, StructureType
 from signprot.models import SignprotStructure
+from ligand.models import Endogenous_GTP
 
 from subprocess import Popen, PIPE
 from io import StringIO
+import pandas as pd
 import os
 import sys
 import tempfile
@@ -29,11 +31,13 @@ import math
 import urllib
 from collections import OrderedDict
 import Bio.PDB as PDB
+from Bio import SeqIO
 import csv
 import numpy
 import json
 import yaml
 from urllib.request import urlopen, Request
+import re
 
 
 logger = logging.getLogger("protwis")
@@ -170,7 +174,7 @@ class MappedResidue(object):
 #turns selection into actual residues
 class SelectionParser(object):
 
-    def __init__ (self, selection):
+    def __init__ (self, selection, full_helix_name=False):
 
         self.generic_numbers = []
         self.helices = []
@@ -179,7 +183,13 @@ class SelectionParser(object):
         for segment in selection.segments:
             logger.debug('Segments in selection: {}'.format(segment))
             if segment.type == 'helix':
-                self.helices.append(int(segment.item.slug[-1]))
+                if full_helix_name:
+                    self.helices.append(segment.item.slug)
+                else:
+                    try:
+                        self.helices.append(int(segment.item.slug[-1]))
+                    except ValueError:
+                        self.helices.append(segment.item.slug)
             elif segment.type == 'residue':
                 self.generic_numbers.append(segment.item.label.replace('x','.'))
             else:
@@ -282,7 +292,7 @@ class CASelector(object):
                     continue
 
         if atom_list == []:
-            logger.warning("No atoms with given generic numbers {} for  {!s}".format(self.selection.generic_numbers, structure.id))
+            logger.warning("No atoms with given generic numbers {} for {!s}".format(self.selection.generic_numbers, structure.id))
         return atom_list
 
 
@@ -476,9 +486,9 @@ def get_segment_template (protein, segments=['TM1', 'TM2', 'TM3', 'TM4','TM5','T
     a.load_reference_protein(protein)
     #You are so gonna love it...
     if state:
-        a.load_proteins([x.protein_conformation.protein.parent for x in list(Structure.objects.order_by('protein_conformation__protein__parent','resolution').exclude(protein_conformation__protein=protein.id, protein_conformation__state=state))])
+        a.load_proteins([x.protein_conformation.protein.parent for x in list(Structure.objects.order_by('protein_conformation__protein__parent','resolution').exclude(protein_conformation__protein=protein.id, protein_conformation__state=state, structure_type__slug__startswith='af-'))])
     else:
-        a.load_proteins([x.protein_conformation.protein.parent for x in list(Structure.objects.order_by('protein_conformation__protein__parent','resolution').exclude(protein_conformation__protein=protein.id))])
+        a.load_proteins([x.protein_conformation.protein.parent for x in list(Structure.objects.order_by('protein_conformation__protein__parent','resolution').exclude(protein_conformation__protein=protein.id, structure_type__slug__startswith='af-'))])
     a.load_segments(ProteinSegment.objects.filter(slug__in=segments))
     a.build_alignment()
     a.calculate_similarity()
@@ -489,7 +499,7 @@ def get_segment_template (protein, segments=['TM1', 'TM2', 'TM3', 'TM4','TM5','T
 #==============================================================================
 def fetch_template_structure (template_protein):
 
-    return Structure.objects.get(protein_conformation__protein__parent=template_protein.entry_name)
+    return Structure.objects.get(protein_conformation__protein__parent=template_protein.entry_name).exclude(structure_type__slug__startswith='af-')
 
 
 #==============================================================================
@@ -809,7 +819,7 @@ class PossibleKnots():
         self.receptor = Protein.objects.get(entry_name=receptor)
         self.signprot = Protein.objects.get(entry_name=signprot)
         self.possible_knots = {'ICL3-H4':[['R','A'],['G.H4.11','G.H4.14','G.H4.15','G.h4s6.01']],
-                               'h1ha-hehf':[['A','A'],['H.HE.08', 'H.hdhe.05']]}
+                               'G.h1ha-H.hehf':[['A','A'],['H.HE.08', 'H.hdhe.05']]}
         self.output = []
 
     def get_resnums(self):
@@ -823,7 +833,7 @@ class PossibleKnots():
                     region1 = list(Residue.objects.filter(protein_conformation__protein=self.signprot, protein_segment__slug=knot_label.split('-')[0]).values_list('sequence_number', flat=True))
                 if len(region1)==0:
                     raise AssertionError('Protein segment slug error for loop knot: No residues found for {} in {} - {}'.format(knot_label.split('-')[0], self.receptor, self.signprot))
-                if knot_label=='h1ha-hehf':
+                if knot_label=='G.h1ha-H.hehf':
                     for i in range(0,3):
                         region1.append(region1[-1]+1)
                 for r in values[1]:
@@ -1116,6 +1126,74 @@ class StructureSeqNumOverwrite():
                 r.sequence_number = int(target_dict[r.sequence_number])
                 r.save()
 
+class ParseAFModelsCSV():
+    def __init__(self):
+        self.complexes = []
+        self.structures = {}
+        with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'AF_Models.csv']), newline='') as csvfile:
+            structs = csv.reader(csvfile, delimiter=',')
+            next(structs, None)
+            for s in structs:
+                #0:complex 1:finished 2:receptor 3:ligand 4:outside_found
+                #5:chosen_rank 6:score 7:relaxed 8:closer_pep_term 9:has_x
+                protein = s[0].split('_')[0]
+                ligand = s[3]
+                organism = s[0].split('-')[0].split('_')[1]
+                # TODO: THIS IS HARDCODED BUT NEED TO BE CHANGED
+                rankedpdbname = s[0] + '-rank' + s[5] + '.pdb'
+                location = os.sep.join([settings.DATA_DIR, 'structure_data', 'af_peptide', rankedpdbname]) #'/protwis/data/protwis/gpcr/structure_data/af_peptide/'+s[0]+'-rank'+s[5]+'.pdb'
+                cmpx = s[0] #protein+'_'+ligand
+                self.complexes.append(cmpx)
+                self.structures[cmpx]= {'protein':s[0].split('-')[0], 'name':protein.lower(), 'state':'Not defined', 'peptide_id': ligand, 'preferred_chain':'A', 'model':'af-peptide', 'location':location, 'organism':organism}
+
+    def parse_ligands(self):
+        endogenous_peptides = pd.read_csv(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'Peptides_GPRCdb_dump.csv']))
+        for complex in self.structures.keys():
+            receptor, pep_id = complex.split('_')[0], complex.split('-')[1]
+            self.structures[complex]['ligand'] = []
+            try:
+                role = endogenous_peptides.loc[(endogenous_peptides['Receptor'].str.match(receptor)) & (endogenous_peptides['GtP ID'] == int(pep_id)), 'Role'].values[0]
+                name = endogenous_peptides.loc[(endogenous_peptides['Receptor'].str.match(receptor)) & (endogenous_peptides['GtP ID'] == int(pep_id)), 'Ligand Name'].values[0]
+                type = endogenous_peptides.loc[(endogenous_peptides['Receptor'].str.match(receptor)) & (endogenous_peptides['GtP ID'] == int(pep_id)), 'Type'].values[0]
+                gpcrdb_id = endogenous_peptides.loc[(endogenous_peptides['Receptor'].str.match(receptor)) & (endogenous_peptides['GtP ID'] == int(pep_id)), 'GPCRdb ID'].values[0]
+                self.structures[complex]['ligand'].append(
+                                {'chain':'B',
+                                 'name':pep_id,
+                                 'role':role,
+                                 'title':name,
+                                 'type':type,
+                                 'gpcrdb id': gpcrdb_id,
+                                 'in_structure': True})
+            except IndexError:
+                print('Cannot find information for complex {}'.format(complex))
+
+
+class ParseAFComplexModels():
+    def __init__(self):
+        self.data_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'AlphaFold_multimer'])
+        self.filedirs = os.listdir(self.data_dir)
+        self.complexes = {}
+        for f in self.filedirs:
+            if '-' not in f:
+                continue
+
+            receptor, signprot = f.split('-')
+            metrics_file = os.sep.join([self.data_dir, f, f+'_metrics.csv'])
+            metrics = [row for row in csv.DictReader(open(metrics_file, 'r'))][0]
+            location = os.sep.join([self.data_dir, f, f+'.pdb'])
+            ### Grab model date/version from pdb file
+            with open(location, 'r') as model_file:
+                line = model_file.readlines()[0]
+                date_re = re.search('HEADER[A-Z\S\D]+(\d{4}-\d{2}-\d{2})', line)
+                model_date = date_re.group(1)
+            ### Check if model has full heterotrimer
+            if 'gbb1_human' in f:
+                signprot = signprot.split('_')[0]+'_human'
+                beta_gamma = True
+            else:
+                beta_gamma = False
+            self.complexes[receptor+'-'+signprot] = {'receptor':receptor, 'signprot':signprot, 'beta_gamma':beta_gamma, 'publication_date':model_date, 'location':location, 'model':'af-signprot', 'preferred_chain':'A', 'PTM':metrics['ptm'], 'iPTM':metrics['iptm'], 'PAE_mean':metrics['pae_mean']}
+
 
 class ParseStructureCSV():
     def __init__(self):
@@ -1127,7 +1205,10 @@ class ParseStructureCSV():
             next(structures, None)
             for s in structures:
                 self.pdb_ids.append(s[0])
-                self.structures[s[0]]= {'protein':s[1], 'name':s[0].lower(), 'state':s[4], 'preferred_chain':s[5], 'resolution':s[3]}
+                # Chain ID format check - remove .0 from number type chain ID e.g. 8JCU
+                if '.' in s[5]:
+                    s[5] = s[5][0]
+                self.structures[s[0]]= {'protein':s[1], 'name':s[0].lower(), 'state':s[4], 'preferred_chain':s[5], 'resolution':s[3], 'date_from_file':s[7], 'method_from_file':s[2]}
         self.fusion_proteins = []
 
     def __str__(self):
@@ -1196,6 +1277,7 @@ class ParseStructureCSV():
 class StructureBuildCheck():
     local_annotation_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation'])
     local_wt_pdb_lookup_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'wt_pdb_lookup'])
+    local_g_protein_chimeras_gapped = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'g_protein_chimeras_gapped.fasta'])
 
     def __init__(self):
         with open(self.local_annotation_dir+'/mod_xtal_segends.yaml', 'r') as f:
@@ -1205,7 +1287,13 @@ class StructureBuildCheck():
         self.missing_seg = []
         self.start_error = []
         self.end_error = []
+        self.helix_length_error = []
         self.duplicate_residue_error = {}
+        self.g_protein_chimeras = SeqIO.to_dict(SeqIO.parse(open(self.local_g_protein_chimeras_gapped), "fasta"))
+        self.g_prot_test_exceptions = {}
+        for i, j in self.g_protein_chimeras.items():
+            if '|' not in i and '-' in j.seq:
+                self.g_prot_test_exceptions[i] = j.seq.count('-')
 
     def check_structures(self):
         for pdb in self.pdbs:
@@ -1214,13 +1302,29 @@ class StructureBuildCheck():
             except Structure.DoesNotExist:
                 print('Error: {} Structure object has not been built'.format(pdb))
 
-    def check_duplicate_residues(self):
-        for s in Structure.objects.all():
-            resis = Residue.objects.filter(protein_conformation=s.protein_conformation)
-            if len(resis)!=len(resis.values_list('sequence_number').distinct()):
+    def check_duplicate_residues(self, structs, check_on='sequence_number'):
+        for s in structs:
+            if hasattr(s, 'protein_conformation'):
+                resis = Residue.objects.filter(protein_conformation=s.protein_conformation)
+            else:
+                if s.protein.family.slug.startswith('100'):
+                    tag = '_a'
+                elif s.protein.family.slug.startswith('200'):
+                    tag = '_arrestin'
+                resis = Residue.objects.filter(protein_conformation__protein__entry_name=s.structure.pdb_code.index.lower()+tag)
+            if len(resis)!=len(resis.values_list(check_on).distinct()):
                 for r in resis:
                     try:
-                        Residue.objects.get(protein_conformation=s.protein_conformation, sequence_number=r.sequence_number)
+                        if hasattr(s, 'protein_conformation'):
+                            if check_on=='sequence_number':
+                                Residue.objects.get(protein_conformation=s.protein_conformation, sequence_number=r.sequence_number)
+                            elif check_on=='display_generic_number':
+                                Residue.objects.get(protein_conformation=s.protein_conformation, display_generic_number=r.display_generic_number)
+                        else:
+                            if check_on=='sequence_number':
+                                re = Residue.objects.get(protein_conformation__protein__entry_name=s.structure.pdb_code.index.lower()+tag, sequence_number=r.sequence_number)
+                            elif check_on=='display_generic_number':
+                                re = Residue.objects.get(protein_conformation__protein__entry_name=s.structure.pdb_code.index.lower()+tag, display_generic_number=r.display_generic_number)
                     except Residue.MultipleObjectsReturned:
                         if s in self.duplicate_residue_error:
                             self.duplicate_residue_error[s].append(r)
@@ -1248,6 +1352,8 @@ class StructureBuildCheck():
                     if len(seg_resis)==0:
                         self.missing_seg.append([structure, seg, anno_b, anno_e])
                         continue
+                    if i<8 and len(seg_resis)<5:
+                        self.helix_length_error.append([structure, seg, len(seg_resis)])
                     if seg_resis[0].sequence_number!=anno_b:
                         if parent_seg_resis[0].sequence_number!=seg_resis[0].sequence_number:
                             if structure.pdb_code.index in self.wt_pdb_lookup_files:
@@ -1291,9 +1397,20 @@ class StructureBuildCheck():
         pdb = PDBParser(PERMISSIVE=True, QUIET=True).get_structure('struct', StringIO(str(signprot_complex.structure.pdb_data.pdb)))[0]
         if signprot_complex.protein.family.slug.startswith('100'):
             resis = Residue.objects.filter(protein_conformation=ProteinConformation.objects.get(protein__entry_name=signprot_complex.structure.pdb_code.index.lower()+'_a'))
+            H5 = resis.filter(protein_segment__slug='G.H5')
+            if len(H5)<10:
+                self.missing_seg.append(['G.H5', signprot_complex.structure, len(H5)])
         elif signprot_complex.protein.family.slug.startswith('200'):
             resis = Residue.objects.filter(protein_conformation=ProteinConformation.objects.get(protein__entry_name=signprot_complex.structure.pdb_code.index.lower()+'_arrestin'))
-        if len(pdb[signprot_complex.alpha])!=len(resis):
+        ppb = PDB.PPBuilder()
+        seq = ""
+        for pp in ppb.build_peptides(pdb[signprot_complex.alpha], aa_only=False):
+            seq += str(pp.get_sequence())
+        ### Skip if difference in length comes from unmappable residues from structure chimera
+        if signprot_complex.protein.entry_name in self.g_prot_test_exceptions and len(seq)-len(resis)<=self.g_prot_test_exceptions[signprot_complex.protein.entry_name]:
+            return 0
+        ### Print structures where residues were not built
+        if len(seq)!=len(resis):
             print(signprot_complex.structure, len(pdb[signprot_complex.alpha]), len(resis))
 
 
@@ -1358,11 +1475,9 @@ def get_pdb_ids(uniprot_id):
                     "value":[ uniprot_id ]
                 }
             },
-            "request_options": {
-                "paginate": {
-                    "start": 0,
-                    "rows": 99999
-            }},
+            "request_options":{
+                "return_all_hits": True
+            },
             "return_type": "entry" }
     url = 'https://search.rcsb.org/rcsbsearch/v2/query'
     req = Request(url)

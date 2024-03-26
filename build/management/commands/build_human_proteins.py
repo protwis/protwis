@@ -223,6 +223,7 @@ class Command(BaseBuild):
             self.logger.info('Created protein {}'.format(p.entry_name))
         except Exception as e:
             self.logger.error('Failed creating protein {} {}'.format(p.entry_name, str(e)))
+            print('WARNING:', p.family, p.species, p.source, p.residue_numbering_scheme, p.sequence_type, p.accession, p.entry_name, p.name, p.sequence, e)
 
         # protein conformations
         try:

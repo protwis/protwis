@@ -15,6 +15,21 @@
 <link href="{% static 'home/css/flareplot-contactbrowser.css' %}" rel="stylesheet">
 <link href="{% static 'home/css/flareplot-selectors.css' %}" rel="stylesheet">
 <link href="{% static 'home/css/flareplot-rangeslider.css' %}" rel="stylesheet">
+<style type="text/css">
+    .gpcrdb-link {
+        filter: grayscale(100%);
+    }
+    .gpcrdb-link:hover {
+        filter: grayscale(0%);
+    }
+    .shorten {
+      max-width: 100px;
+      text-overflow: ellipsis;
+      word-break: normal;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -142,6 +157,7 @@
                 <div class="col-md-12">
                     <span id="single-crystal-group-pdbs-modal-text">0 structure(s) selected</span>
                     <button type="button" onclick="resetselection();" class="btn btn-xs btn-primary reset-selection">Reset selection</button>
+                    <p style="display:inline;">Filtering and selection might take up a few seconds.</p>
                     <div class="tableview"></div>
                 </div>
             </div>
@@ -192,7 +208,7 @@
                 <a href="javascript:saveSvgAsTiff(document.getElementsByClassName('interaction')[0], 'GPCR-GProtein_interface_matrix.tiff');">TIFF</a>
             </li>
             <li>
-                <a href="javascript:saveSvg(document.getElementsByClassName('interaction')[0], 'GPCR-GProtein_interface_matrix'.svg');">SVG</a>
+                <a href="javascript:saveSvg(document.getElementsByClassName('interaction')[0], 'GPCR-GProtein_interface_matrix.svg');">SVG</a>
             </li>
         </ul>
     </div>
@@ -309,7 +325,7 @@ const interactions_metadata = {{ interactions_metadata | safe}};
 const gprot = {{ gprot | safe}};
 const receptor = {{ receptor | safe}};
 const csrf_token = "{{ csrf_token }}"
-
+const adjust = {{ adjust | safe}};
 </script>
 <script src="{% static 'home/js/d3.v5.min.js' %}"></script>
 <script src="{% static 'home/js/d3.tip.v4comp.js' %}"></script>
@@ -332,5 +348,4 @@ const csrf_token = "{{ csrf_token }}"
 <script src="{% static 'home/js/signprotmat.js' %}"></script>
 <script src="{% static 'home/js/fixed_columns.js' %}"></script>
 <script type="text/javascript" src="{% static 'home/js/contactbrowser_functions.js' %}"> </script>
-
 {% endblock %}

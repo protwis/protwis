@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
-from django.db import connection 
+from django.db import connection
 
 from build.management.commands.base_build import Command as BaseBuild
 from protein.models import (Protein, ProteinConformation, ProteinSequenceType, ProteinSegment,
@@ -32,7 +32,7 @@ class Command(BaseBuild):
 
     # fetch representative (inactive) structures FIXME add active structure??
     structures = Structure.objects.filter(representative=True,
-        protein_conformation__state__slug=settings.DEFAULT_PROTEIN_STATE).prefetch_related(
+        protein_conformation__state__slug=settings.DEFAULT_PROTEIN_STATE).exclude(structure_type__slug__startswith='af-').prefetch_related(
         'protein_conformation__protein__parent__family')
 
     # fetch all protein conformations

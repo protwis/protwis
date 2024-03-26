@@ -281,10 +281,18 @@ var signprotmat = {
           var a_match = a_patt.exec(a);
           var b_match = b_patt.exec(b);
           var a_obj = _.findIndex(receptor, function (d) {
-            return d === a_match[1];
+            if (a_match){
+              return d === a_match[1];
+            } else if (a === '-'){
+              return d === a;
+            }
           });
           var b_obj = _.findIndex(receptor, function (d) {
-            return d === b_match[1];
+            if (b_match){
+              return d === b_match[1];
+            } else if (b === '-'){
+              return d === b;
+            }
           });
           // console.log(a_obj);
           return d3.ascending(a_obj, b_obj);
@@ -306,8 +314,16 @@ var signprotmat = {
         .keys()
         // .sort(d3.descending);
         .sort(function (a, b) {
-          var a_patt = /\.(\S*)\./g;
-          var b_patt = /\.(\S*)\./g;
+          // TEMP FIX for Arrestins - when N. and C. tag is added to segment name, this should be removed
+          if (a.startsWith('N.') || a.startsWith('C.')) {
+            var a_patt = /\.(\S*)\./g;
+            var b_patt = /\.(\S*)\./g;
+          }
+          else {
+            var a_patt = /(\S*)\./g;
+            var b_patt = /(\S*)\./g;
+          }
+
           var a_match = a_patt.exec(a);
           var b_match = b_patt.exec(b);
           var a_obj = _.find(gprot, function (d) {
@@ -396,7 +412,7 @@ var signprotmat = {
         "van-der-waals": "#d9d9d9",
         // "edge-to-face": "#969696",
         // "water-mediated": "#7DB144",
-        hydrophobic: "#93d050",
+        hydrophobic: "#A6E15F", //"#93d050",
         // "polar-sidechain-sidechain": "#EAA91F",
         // "polar-sidechain-backbone": "#C38E1A",
         // "polar-backbone-sidechain": "#C3A563",
@@ -404,9 +420,9 @@ var signprotmat = {
         // "h-bond acceptor-donor": "#B24DFF",
         // "cation-pi": "#0070c0",
         // "pi-cation": "#005693",
-        ionic: "#00B9BF",
-        aromatic: "#005693",
-        polar: "#C38E1A",
+        ionic: "#005693",
+        aromatic: "#689235", //"#7DB144",
+        polar: "#7030a0",
       };
       var colScale = d3
         .scaleOrdinal()
@@ -434,59 +450,60 @@ var signprotmat = {
 
     resScaleColor(f) {
       var scale = {
-        A: { bg_color: "#E6E600", font_color: "#000000" },
-        C: { bg_color: "#B2B548", font_color: "#000000" },
-        D: { bg_color: "#E60A0A", font_color: "#FDFF7B" },
-        E: { bg_color: "#E60A0A", font_color: "#FDFF7B" },
-        F: { bg_color: "#18FF0B", font_color: "#000000" },
-        G: { bg_color: "#FF00F2", font_color: "#000000" },
-        H: { bg_color: "#0093DD", font_color: "#000000" },
-        I: { bg_color: "#E6E600", font_color: "#000000" },
-        K: { bg_color: "#145AFF", font_color: "#FDFF7B" },
-        L: { bg_color: "#E6E600", font_color: "#000000" },
-        M: { bg_color: "#E6E600", font_color: "#000000" },
-        N: { bg_color: "#A70CC6", font_color: "#FDFF7B" },
-        P: { bg_color: "#CC0099", font_color: "#FDFF7B" },
-        Q: { bg_color: "#A70CC6", font_color: "#FDFF7B" },
-        R: { bg_color: "#145AFF", font_color: "#FDFF7B" },
-        S: { bg_color: "#A70CC6", font_color: "#FDFF7B" },
-        T: { bg_color: "#A70CC6", font_color: "#FDFF7B" },
-        V: { bg_color: "#E6E600", font_color: "#000000" },
-        W: { bg_color: "#0BCF00", font_color: "#000000" },
-        Y: { bg_color: "#18FF0B", font_color: "#000000" },
-        "-": { bg_color: "#FFFFFF", font_color: "#000000" },
-        _: { bg_color: "#EDEDED", font_color: "#000000" },
-        "+": { bg_color: "#FFFFFF", font_color: "#000000" },
+        A: {bg_color: "#B3B300", font_color: "#000000"},
+        C: {bg_color: "#7B7D3A", font_color: "#000000"},
+        D: {bg_color: "#A50707", font_color: "#FDFF7B"},
+        E: {bg_color: "#A50707", font_color: "#FDFF7B"},
+        F: {bg_color: "#11B90A", font_color: "#000000"},
+        G: {bg_color: "#FF00C8", font_color: "#000000"},
+        H: {bg_color: "#0075A5", font_color: "#000000"},
+        I: {bg_color: "#B3B300", font_color: "#000000"},
+        K: {bg_color: "#0B3E9E", font_color: "#FDFF7B"},
+        L: {bg_color: "#B3B300", font_color: "#000000"},
+        M: {bg_color: "#B3B300", font_color: "#000000"},
+        N: {bg_color: "#880896", font_color: "#FDFF7B"},
+        P: {bg_color: "#990066", font_color: "#FDFF7B"},
+        Q: {bg_color: "#880896", font_color: "#FDFF7B"},
+        R: {bg_color: "#0B3E9E", font_color: "#FDFF7B"},
+        S: {bg_color: "#880896", font_color: "#FDFF7B"},
+        T: {bg_color: "#880896", font_color: "#FDFF7B"},
+        V: {bg_color: "#B3B300", font_color: "#000000"},
+        W: {bg_color: "#0B7C00", font_color: "#000000"},
+        Y: {bg_color: "#11B90A", font_color: "#000000"},
+        "-": {bg_color: "#FFFFFF", font_color: "#000000"},
+        _: {bg_color: "#EDEDED", font_color: "#000000"},
+        "+": {bg_color: "#FFFFFF", font_color: "#000000"},
       };
+
       return scale[f];
     },
 
     print_resScaleColor_legend() {
       var colScale = signprotmat.d3.colScale();
       var scale = {
-        A: { bg_color: "#E6E600", font_color: "#000000" },
-        C: { bg_color: "#B2B548", font_color: "#000000" },
-        D: { bg_color: "#E60A0A", font_color: "#FDFF7B" },
-        E: { bg_color: "#E60A0A", font_color: "#FDFF7B" },
-        F: { bg_color: "#18FF0B", font_color: "#000000" },
-        G: { bg_color: "#FF00F2", font_color: "#000000" },
-        H: { bg_color: "#0093DD", font_color: "#000000" },
-        I: { bg_color: "#E6E600", font_color: "#000000" },
-        K: { bg_color: "#145AFF", font_color: "#FDFF7B" },
-        L: { bg_color: "#E6E600", font_color: "#000000" },
-        M: { bg_color: "#E6E600", font_color: "#000000" },
-        N: { bg_color: "#A70CC6", font_color: "#FDFF7B" },
-        P: { bg_color: "#CC0099", font_color: "#FDFF7B" },
-        Q: { bg_color: "#A70CC6", font_color: "#FDFF7B" },
-        R: { bg_color: "#145AFF", font_color: "#FDFF7B" },
-        S: { bg_color: "#A70CC6", font_color: "#FDFF7B" },
-        T: { bg_color: "#A70CC6", font_color: "#FDFF7B" },
-        V: { bg_color: "#E6E600", font_color: "#000000" },
-        W: { bg_color: "#0BCF00", font_color: "#000000" },
-        Y: { bg_color: "#18FF0B", font_color: "#000000" },
-        "-": { bg_color: "#FFFFFF", font_color: "#000000" },
-        _: { bg_color: "#EDEDED", font_color: "#000000" },
-        "+": { bg_color: "#FFFFFF", font_color: "#000000" },
+        A: {bg_color: "#B3B300", font_color: "#000000"},
+        C: {bg_color: "#7B7D3A", font_color: "#000000"},
+        D: {bg_color: "#A50707", font_color: "#FDFF7B"},
+        E: {bg_color: "#A50707", font_color: "#FDFF7B"},
+        F: {bg_color: "#11B90A", font_color: "#000000"},
+        G: {bg_color: "#FF00C8", font_color: "#000000"},
+        H: {bg_color: "#0075A5", font_color: "#000000"},
+        I: {bg_color: "#B3B300", font_color: "#000000"},
+        K: {bg_color: "#0B3E9E", font_color: "#FDFF7B"},
+        L: {bg_color: "#B3B300", font_color: "#000000"},
+        M: {bg_color: "#B3B300", font_color: "#000000"},
+        N: {bg_color: "#880896", font_color: "#FDFF7B"},
+        P: {bg_color: "#990066", font_color: "#FDFF7B"},
+        Q: {bg_color: "#880896", font_color: "#FDFF7B"},
+        R: {bg_color: "#0B3E9E", font_color: "#FDFF7B"},
+        S: {bg_color: "#880896", font_color: "#FDFF7B"},
+        T: {bg_color: "#880896", font_color: "#FDFF7B"},
+        V: {bg_color: "#B3B300", font_color: "#000000"},
+        W: {bg_color: "#0B7C00", font_color: "#000000"},
+        Y: {bg_color: "#11B90A", font_color: "#000000"},
+        "-": {bg_color: "#FFFFFF", font_color: "#000000"},
+        _: {bg_color: "#EDEDED", font_color: "#000000"},
+        "+": {bg_color: "#FFFFFF", font_color: "#000000"},
       };
 
       function responsivefy(svg) {
@@ -950,7 +967,11 @@ var signprotmat = {
           const num_pairs = d.pairs.length;
           const max_count = get_max_interface_count();
           const ratio = (num_pairs / max_count) * 100;
-          return _.round(ratio, 0);
+          if (ratio > 100){
+            return "";
+          } else {
+            return _.round(ratio, 0);
+          }
         });
 
       // * DRAWING AXES
@@ -1181,6 +1202,11 @@ var signprotmat = {
         })
         .attr("text-anchor", "middle")
         .attr("dy", 75)
+        .style("fill", function (d) {
+          return typeof d.int_ty !== "undefined"
+            ? non_int_col
+            : "black";
+        })
         .text(function (d) {
           return d.rec_aa;
         });
@@ -1245,6 +1271,7 @@ var signprotmat = {
         });
       each_res
         .append("rect")
+        .attr("class", "res_rect_vertical")
         .style("fill", function (d) {
           return colScale(d.int_ty[0]);
         })
@@ -1259,6 +1286,7 @@ var signprotmat = {
       each_res
         .append("text")
         .attr("class", "res_label")
+        .style("fill", "white")
         .attr("x", function (d) {
           return sigScale(d.pdb_id);
         })

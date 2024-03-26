@@ -1,5 +1,8 @@
 {% extends "home/base.html" %}
 {% load static %}
+{% load structure_extras %}
+{% load coupling_extras %}
+
 
 {% block addon_css %}
     <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css"/>
@@ -10,684 +13,506 @@
 
 {% block content %}
 
-    {% if page == 'gprot' %}
-    <div style="display:block;">
-        <div style="display:inline; float:left;">
-            <h2 style="width:auto; display:inline;">G Protein Couplings</h2>
+    <div style='width:100%; display:inline;'>
+        <div class="btn-group" style="padding-left:10px;">
+            
+            <input class="btn btn-default btn-s" type="button" onclick="reset_tab(oTable1);" value="Remove filters">
         </div>
+
+        <div class="btn-group" style="padding-left:10px;">
+            <input class="btn btn-default btn-s" type="button"
+                   onclick="GlobalTableToExcel('familiestabletab', 'Families data', 'GproteinDb_families_coupling.xls')"
+                   value="Excel (selection)">
+            <a id="dlink" style="display:none;"></a>
+            <div id="excel_table" style="display:none;"></div>
+            <a href="https://files.gpcrdb.org/GPCR-G_protein_couplings.xlsx" class="btn btn-default btn-s" type="button">Excel (underlying datasets)</a>
+        </div>
+
+        <div class="btn-group" style="padding-left:10px;">
+                <input class="btn btn-default btn-s" type="button" onclick="resetHiddenColumns(oTable1)" id="toggle"
+                       value="Show hidden (&times;) columns" style="color:darkorchid;border-color:darkorchid;">
+        </div>
+        <div style="display:inline;">See the <a href="/signprot/coupling_datasets" target="_blank">Datasets</a> and <a href='/signprot/coupling_biosensors'>Biosensors</a> pages for more information about the underlying data.</div>
     </div>
-    <br><br>
 
-    <ul class="nav nav-tabs" id="couplingtabs" role="tablist">
-        <li class="nav-item active">
-            <a class="nav-link" id="table1-tab" data-toggle="tab" href="#table_1" role="tab"
-               aria-controls="table_1" aria-selected="true">Families</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" id="table2-tab" data-toggle="tab" href="#table_2" role="tab"
-               aria-controls="table_2" aria-selected="false" onclick="initCouplingTable2()">Subtypes</a>
-        </li>
-    </ul>
+    <div style='padding-top: 0px; white-space: nowrap; width:100%; overflow-y:hidden; display:inline-block;'>
+        <table class="compact row-border" id="familiestabletab" style="display:none; float:left;">
+            <thead>
 
-    <div class="tab-content" id="couplingtabsContent">
-
-        {# ====================================================================== #}
-        {# FAMILIES TAB STARTS HERE id='familiestabletab' connects to js #}
-        {# ====================================================================== #}
-        <div class="tab-pane active" id="table_1" role="tabpanel" aria-labelledby="table1-tab">
-            <div style='width:100%; display:inline;'>
-                <br>
-
-                <!-- Dropdown button -->
-                <div class="btn-group">
-                    <button type="button" class="btn btn-primary btn-sm">Supporting datasets</button>
-                    <button type="button" class="btn btn-primary btn-sm dropdown-toggle" data-toggle="dropdown"
-                            aria-haspopup="true" aria-expanded="false">
-                        <span class="caret"></span>
-                        <span class="sr-only">Toggle Dropdown</span>
+            <tr>
+                <th colspan=1></th>
+                <th colspan=6 style='height:35px; text-align:center;' class="rightborder">
+                    Receptor
+                </th>
+                <th colspan=5 style='height:35px; text-align:center;' class="rightborder">
+                    Source
+                </th>
+                <th colspan=2 style='height:35px; text-align:center;' class="rightborder">
+                    Ligand
+                    <button type="button" class="close hide_columns1 purple-border" columns="12,13"
+                            style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
                     </button>
-                    <ul class="dropdown-menu">
-                        <li><a href="#" onclick="yadcf.exFilterColumn(oTable1, [[29, 1]]);">1</a></li>
-                        <li><a href="#" onclick="yadcf.exFilterColumn(oTable1, [[29, 2]]);">2 (default)</a></li>
-                        <li><a href="#" onclick="yadcf.exFilterColumn(oTable1, [[29, 3]]);">3</a></li>
-                        <li><a href="#" onclick="yadcf.exFilterColumn(oTable1, [[29, 4]]);">4</a></li>
-                    </ul>
-                </div>
+                </th>
 
-                <div class="btn-group" style="padding-left:10px;">
-                    <a id="dlink" style="display:none;"></a>
-                    <div id="excel_table" style2="display:none;"></div>
-                    <!--<input class="btn btn-primary btn-sm" type="button" id="toggle_fixed_btn1" value="Disable fixed columns"
-                           href="javascript:void(0)" data-toggle="buttons">-->
-                    <input class="btn btn-primary btn-sm" type="button" onclick="resetHiddenColumns(oTable1)" id="toggle"
-                           value="Show hidden columns">
-                </div>
+                <th colspan=4 style='height:35px; text-align:center;' class="rightborder">
+                    No. supporting datasets
+                    <button type="button" class="close hide_columns1 purple-border" columns="14,15,16,17"
+                            style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
+                    </button>
+                </th>
+                <!-- <th colspan=5 style='height:35px; text-align:center;' class="rightborder">
+                    Guide to Pharmacology
+                    <button type="button" class="close hide_columns1 purple-border" columns="18,19,20,21,22"
+                            style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
+                    </button>
+                </th> -->
+                <th colspan=2 style='height:35px; text-align:center;' class="rightborder">
+                    Selectivity
+                    <button type="button" class="close hide_columns1 purple-border" columns="18,19"
+                            style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
+                    </button>
+                </th>
+                <th colspan=4 style='height:35px; text-align:center;' class="rightborder">
+                    Family rank orders
+                    <button type="button" class="close hide_columns1 purple-border" columns="20,21,22,23"
+                            style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
+                    </button>
+                </th>
+                <th colspan=4 style='height:35px; text-align:center;' class="rightborder">
+                    % of 1' G protein family
+                    <button type="button" class="close hide_columns1 purple-border" columns="24,25,26,27"
+                            style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
+                    </button>
+                </th>
+                <th colspan=5 style='height:35px; text-align:center;' class="rightborder">
+                    Quantitative values <i class="glyphicon glyphicon-info-sign" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="bottom" data-container="body" data-content="Each G protein family is assigned the maximum value among all its tested member subtypes."></i>
+                    <button type="button" class="close hide_columns1 purple-border" columns="28,29,30,31,32"
+                            style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
+                    </button>
+                </th>
+                <th colspan=1 style='height:35px; text-align:center;' class="rightborder">
+                    <button type="button" class="close hide_columns1 purple-border" columns="33"
+                            style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
+                    </button>
+                </th>
+                <th colspan=16 style='height:35px; text-align:center;' class="rightborder">
+                    % of 1' G protein subtype
+                    <button type="button" class="close hide_columns1 purple-border" columns="34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49"
+                            style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
+                    </button>
+                </th>
+                <th colspan=17 style='height:35px; text-align:center;' class="rightborder">
+                    Quantitative values
+                    <button type="button" class="close hide_columns1 purple-border" columns="50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66"
+                            style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
+                    </button>
+                </th>
+            </tr>
 
-                <div class="btn-group" style="padding-left:10px;">
-                    <input class="btn btn-primary btn-sm" type="button"
-                           onclick="GlobalTableToExcel('familiestabletab', 'Families data', 'families_coupling.xls')"
-                           value="Excel">
-                    <input class="btn btn-primary btn-sm" type="button" onclick="reset_tab(oTable1);" value="Reset All">
-                </div>
-            </div>
+            <tr class="header-center">
+                <th></th> {# select box #}
+                <th>
+                    <div>
+                        <div>Uniprot</div>
+                        <div><button class='icon-button' type='button' data-toggle="tooltip" data-placement="top" title="Export UniProt IDs"><i id='uniprot_copy1' class="glyphicon glyphicon-export"></i></button></div>
+                    </div>
+                </th>
+                <th>GtoPdb<br>(IUPHAR)</th>
+                <th>GPCRdb</th>
+                <th>Rec. family</th>
+                <th>Cl</th>
+                <th class="rightborder">Other<br>protein</th>
+                <th style="text-align:left;">Lab</th>
+                <th style="text-align:left;">Biosensor</th>
+                <th>Down-<br>stream<br>steps</th>
+                <th>#Gprots<br>tested</th>
+                <th class="rightborder">Ref</th>
+                <th style="text-align:left;">Name</th>
+                <th class="rightborder">Phys. /<br>Surr.</th>
 
-            <table class="compact display" id="familiestabletab" style="display:none;">
-                <thead>
-
-                <tr>
-                    <th colspan=1></th>
-                    <th colspan=2 style='height:35px; text-align:left;'>
-                        Source
-                    </th>
-                    <th colspan=4 style='height:35px; text-align:left;'>
-                        Receptor
-                    </th>
-                    <th colspan=2 style='height:35px; text-align:left;'>
-                        Ligand
-                    </th>
-                    <th colspan=4 style='height:35px; text-align:left;'>
-                        Guide to Pharmacology
-                        <button type="button" class="close hide_columns1" columns="9,10,11,12"
-                                style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
-                        </button>
-                    </th>
-                    <th colspan=4 style='height:35px; text-align:left;'>
-                        Log(Emax/EC50)
-{#                        <span data-toggle="tooltip" data-placement="rigth" class="glyphicon glyphicon-info-sign"#}
-{#                              title="Mean of G protein family members">#}
-{#                        </span>#}
-                        <span data-toggle="popover" data-placement="bottom" class="glyphicon glyphicon-info-sign"
-                              title="Info" data-content="Mean of G protein family members">
-                        </span>
-                        <button type="button" class="close hide_columns1" columns="13,14,15,16"
-                                style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
-                        </button>
-                    </th>
-                    <th colspan=4 style='height:35px; text-align:left;'>
-                        pEC50
-                        <span data-toggle="popover" data-placement="bottom" class="glyphicon glyphicon-info-sign"
-                              title="Info" data-content="Mean of G protein family members">
-                        </span>
-                        <button type="button" class="close hide_columns1" columns="17,18,19,20"
-                                style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
-                        </button>
-                    </th>
-                    <th colspan=4 style='height:35px; text-align:left;'>
-                        Emax
-                        <span data-toggle="popover" data-placement="bottom" class="glyphicon glyphicon-info-sign"
-                              title="Info" data-content="Mean of G protein family members">
-                        </span>
-                        <button type="button" class="close hide_columns1" columns="21,22,23,24"
-                                style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
-                        </button>
-                    </th>
-                    <th colspan=5 style='height:35px; text-align:left;'>
-                        Standard Deviation
-                        <span data-toggle="popover" data-placement="bottom" class="glyphicon glyphicon-info-sign"
-                              title="Info" data-content="Standand deviation of G protein family members">
-                        </span>
-                        <button type="button" class="close hide_columns1" columns="25,26,27,28"
-                                style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
-                        </button>
-                    </th>
-                </tr>
-
-                <tr>
-                    <th></th> {# select box #}
-                    <th>Group</th>
-                    <th>Biosensor</th>
-                    <th>Cl</th>
-                    <th>Receptor fam.</th>
-                    <th>
-                        <div>
-                            <div>Uniprot</div>
-                            <div><button class='icon-button' type='button' data-toggle="tooltip" data-placement="top" title="Export UniProt IDs"><i id='uniprot_copy1' class="glyphicon glyphicon-export"></i></button></div>
-                        </div>
-                    </th>
-                    <th>IUPHAR</th>
-                    <th>Ligand name</th>
-                    <th>Phys. / Surr.</th>
-
-                    {% for n in "x"|rjust:"5" %}
-                        {% for p, subval in header.items  %}
-                            <th>{{ p|safe }}</th>
-                        {% endfor %}
-                    {% endfor %}
-                </tr>
-
-                <tr>
-                    <th class='no-sort checkbox_tr'><input class="select-all" type="checkbox" onclick="select_all(this)"></th>
-                    {% for n in "x"|rjust:"12" %}
-                        <th></th>
-                    {% endfor %}
-
-                    {% for n in "x"|rjust:"16" %}
-                    <th>
-                      <input  placeholder="Min" id="ranked_range_min1_{{ forloop.counter|add:"12" }}"
-                       class="yadcf-filter-range-number yadcf-filter-range ranked_range_min1">
-                      <span class="yadcf-filter-range-number-seperator"></span><br>
-                      <input  placeholder="Max" id="ranked_range_max1_{{ forloop.counter|add:"12" }}"
-                       class="yadcf-filter-range-number yadcf-filter-range ranked_range_max1">
-                      <span class="yadcf-filter-range-number-seperator"></span><br>
-                      <input  placeholder="Rank" id="ranked_range_rank1_{{ forloop.counter|add:"12" }}"
-                      class="yadcf-filter-range-number yadcf-filter-range ranked_range_rank1">
-                    </th>
-                    {% endfor %}
-                    <th></th>
-                </tr>
-
-                </thead>
-
-                <tbody>
-                {% for p, pvals in tabfields.items %}
-                    {% for c, cvals in pvals.couplingmax.items %}
-                        <tr data-source="{{ c }}"> {# And then use the data to apply the javascript filters.#}
-                            <td class="text-center"><input class="alt" type="checkbox"></td>
-{#                            <td><span data-toggle="tooltip" data-html="true" data-placement="bottom" title="{{ c}}"#}
-{#                                      data-search="{{ c }}">{{ c }}</span></td>#}
-                            {% if c|length == 1 %}
-                                <td><span style="font-weight:bold">GPCRdb</span></td>
-                            {% else %}
-                                <td><span style="font-weight:normal">{{ c }}</span></td>
-                            {% endif %}
-
-                            {% if c|length == 1 %}
-                                <td>Mean</td>
-                            {% elif c == "Bouvier" %}
-                                <td>GEMTA</td>
-                            {% else %}
-                                <td>TGF</td>
-                            {% endif %}
-
-                            <td>{{ pvals.protein.class }}</td>
-                            <td>{{ pvals.protein.family }}</td>
-                            <td class="uniprot1">
-{#                                <a href="{{ pvals.protein.uniprot_link }}" target="_blank">{{ pvals.protein.uniprot|safe }}</a>#}
-                                <a href="https://www.uniprot.org/uniprot/{{ pvals.protein.accession }}" target="_blank">{{ pvals.protein.uniprot|safe }}</a>
-                            </td>
-                            <td class="text-left">
-                                <a href="{{ pvals.protein.gtp_link }}" target="_blank">{{ pvals.protein.iuphar|safe }}</a>
-{#                                <a href="/protein/{{ pvals.protein.entryname }}" target="_blank">{{ pvals.protein.iuphar|safe }}</a>#}
-                            </td>
-                            <td class="text-left">
-                              {% if cvals.ligand_name != "-" %}
-                                <a href="/ligand/{{ cvals.ligand_id }}/info" target="_blank">{{ cvals.ligand_name|safe }}</a>
-                              {% endif %}
-                            </td>
-                            <td>{{ cvals.ligand_physiological }}</td>
-                            <td>{{ pvals.protein.gs }}</td>
-                            <td>{{ pvals.protein.gio }}</td>
-                            <td>{{ pvals.protein.gq11 }}</td>
-                            <td>{{ pvals.protein.g1213 }}</td>
-
-                            {% for q, logval in cvals.logemaxec50.items %}
-                                <td><span>{{ logval }}</span></td>
-                            {% endfor %}
-
-                            {% for q, pecval in cvals.pec50.items %}
-                                <td><span>{{ pecval }}</span></td>
-                            {% endfor %}
-
-                            {% for q, maxval in cvals.emax.items %}
-                                <td><span>{{ maxval }}</span></td>
-                            {% endfor %}
-
-                            {% for q, std in cvals.std.items %}
-                                <td><span>{{ std }}</span></td>
-                            {% endfor %}
-
-                            <td>{{ c }}</td>
-
-                        </tr>
+                {% for n in "x"|rjust:"1" %}
+                    {% for p, subval in header.items  %}
+                        <th class="{{ p|replace:"/" }}">{{ p|safe }}</th>
                     {% endfor %}
                 {% endfor %}
-
-                </tbody>
-
-
-            </table>
-            <div id="hide_filter1"></div>
-            {% for n in "x"|rjust:"16" %}
-                <div id="hide_rankfam{{ forloop.counter|add:"12" }}" style="display: none;"></div>
-            {% endfor %}
-
-        </div>
-
-        {# ====================================================================== #}
-        {# SUBTYPES TAB STARTS HERE id='subtypestabletab' connects to js #}
-        {# ====================================================================== #}
-        <div class="tab-pane fade" id="table_2" role="tabpanel" aria-labelledby="table2-tab">
-            <br>
-
-            <!-- Dropdown button -->
-            <div class="btn-group">
-                <button type="button" class="btn btn-primary btn-sm">Supporting datasets</button>
-                <button type="button" class="btn btn-primary btn-sm dropdown-toggle" data-toggle="dropdown"
-                        aria-haspopup="true" aria-expanded="false">
-                    <span class="caret"></span>
-                    <span class="sr-only">Toggle Dropdown</span>
-                </button>
-                <ul class="dropdown-menu">
-                    <li><a href="#" onclick="yadcf.exFilterColumn(oTable2, [[69, 1]]);">1</a></li>
-                    <li><a href="#" onclick="yadcf.exFilterColumn(oTable2, [[69, 2]]);">2 (default)</a></li>
-                    <li><a href="#" onclick="yadcf.exFilterColumn(oTable2, [[69, 3]]);">3</a></li>
-                    <li><a href="#" onclick="yadcf.exFilterColumn(oTable2, [[69, 4]]);">4</a></li>
-                </ul>
-            </div>
-
-            <div style="width:100%; display:inline;">
-                <div class="btn-group" style="padding-left:10px;">
-                    <a id="dlink" style="display:none;"></a>
-                    <div id="excel_table" style2="display:none;"></div>
-                    <!--<input class="btn btn-primary btn-sm" type="button" id="toggle_fixed_btn2" value="Disable fixed columns"
-                           href="javascript:void(0)" data-toggle="buttons">-->
-                    <input class="btn btn-primary btn-sm" type="button" onclick="resetHiddenColumns(oTable2)" id="toggle"
-                           value="Show hidden columns">
-                </div>
-
-                <div class="btn-group" style="padding-left:10px;">
-                    <input class="btn btn-primary btn-sm" type="button"
-                           onclick="GlobalTableToExcel('subtypestabletab', 'Subtypes data', 'subtypes_coupling.xls')"
-                           value="Excel">
-                    <input class="btn btn-primary btn-sm" type="button" onclick="reset_tab(oTable2);" value="Reset All">
-                </div>
-            </div>
-
-
-            <table class="compact display" id="subtypestabletab" style="display:none;">
-                <thead>
-                <tr>
-                    <th colspan=1></th>
-                    <th colspan=2 style='height:35px; text-align:left;'>
-                        Source
-                    </th>
-                    <th colspan=4 style='height:35px; text-align:left;'>
-                        Receptor
-                    </th>
-                    <th colspan=2 style='height:35px; text-align:left;'>
-                        Ligand
-                    </th>
-                    <th colspan=4 style='height:35px; text-align:left;'>
-                        Guide to Pharmacology
-                        <button type="button" class="close hide_columns2" columns="9,10,11,12"
-                                style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
-                        </button>
-                    </th>
-                    <th colspan=14 style='height:35px; text-align:left;'>
-                        log(Emax/EC50)
-                        <button type="button" class="close hide_columns2" columns="13,14,15,16,17,18,19,20,21,22,23,24,25,26"
-                                style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
-                        </button>
-                    </th>
-                    <th colspan=14 style='height:35px; text-align:left;'>
-                        pEC50
-                        <button type="button" class="close hide_columns2" columns="27,28,29,30,31,32,33,34,35,36,37,38,39,40"
-                                style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
-                        </button>
-                    </th>
-                    <th colspan=14 style='height:35px; text-align:left;'>
-                        Emax
-                        <button type="button" class="close hide_columns2" columns="41,42,43,44,45,46,47,48,49,50,51,52,53,54"
-                                style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
-                        </button>
-                    </th>
-                    <th colspan=15 style='height:35px; text-align:left;'>
-                        Standard Deviation
-                        <button type="button" class="close hide_columns2" columns="55,56,57,58,59,60,61,62,63,64,65,66,67,68"
-                                style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
-                        </button>
-                    </th>
-                </tr>
-
-                <tr>
-                    <th></th>
-                    <th>Group</th>
-                    <th>Biosensor</th>
-                    <th>Cl</th>
-                    <th>Receptor fam.</th>
-                    <th>
-                        <div>
-                            <div>Uniprot</div>
-                            <div><button class='icon-button' type='button' data-toggle="tooltip" data-placement="bottom" title="Export UniProt IDs"><i id='uniprot_copy2' class="glyphicon glyphicon-export"></i></button></div>
-                        </div>
-                    </th>
-                    <th>IUPHAR</th>
-                    <th>Ligand name</th>
-                    <th>Phys. / Surr.</th>
-
+                
+                <th>Primary<br>family</th>
+                <th class="rightborder">#Fam</th>
+                {% for n in "x"|rjust:"2" %}
                     {% for p, subval in header.items  %}
-                        <th>{{ p }}</th>
+                        <th class="{{ p|replace:"/" }}">{{ p|safe }}</th>
                     {% endfor %}
-
-                    {% for n in "x"|rjust:"4" %}
-                        {% for p, subval in header.items  %}
-                            <th colspan={{ subval|length }}>{{ p }}</th>
-                        {% endfor %}
-                    {% endfor %}
-
-                    <th></th>
-                </tr>
-
-                <tr class="under_header">
-                    {% for n in "x"|rjust:"9" %}
-                        <th></th>
-                    {% endfor %}
-                    {% for p, subval in header.items  %}
-                        <th></th>
-                    {% endfor %}
-                    {% for n in "x"|rjust:"4" %}
-                        {% for subval in subunitheader %}
-                            <th>
-                                {{ subval|safe }}
-                            </th>
-                        {% endfor %}
-                    {% endfor %}
-                    <th></th>
-                </tr>
-
-
-
-                <tr>
-                    <th class='no-sort checkbox_tr'><input class="select-all" type="checkbox" onclick="select_all(this)"></th>
-                    {% for n in "x"|rjust:"8" %}
-                        <th></th>
-                    {% endfor %}
-
-                    {% for p, subval in header.items  %}
-                        <th></th>
-                    {% endfor %}
-
-                    {% for n in "x"|rjust:"56" %}
-                    <th>
-                      <input  placeholder="Min" id="ranked_range_min2_{{ forloop.counter|add:"12" }}"
-                       class="yadcf-filter-range-number yadcf-filter-range ranked_range_min2">
-                      <span class="yadcf-filter-range-number-seperator"></span><br>
-                      <input  placeholder="Max" id="ranked_range_max2_{{ forloop.counter|add:"12" }}"
-                       class="yadcf-filter-range-number yadcf-filter-range ranked_range_max2">
-                      <span class="yadcf-filter-range-number-seperator"></span><br>
-                      <input  placeholder="Rank" id="ranked_range_rank2_{{ forloop.counter|add:"12" }}"
-                      class="yadcf-filter-range-number yadcf-filter-range ranked_range_rank2">
-                    </th>
-                    {% endfor %}
-
-                    <th></th>
-                </tr>
-                </thead>
-
-
-                <tbody>
-                {% for p, pvals in tabfields.items %}
-                    {% for c, cvals in pvals.coupling.items %}
-                        <tr data-source="{{ c }}"> {# And then use the data to apply the javascript filters.#}
-                            <td class="text-center"><input class="alt" type="checkbox"></td>
-                            {% if c|length == 1 %}
-                                <td><span style="font-weight:bold">GPCRdb</span></td>
-                            {% else %}
-                                <td><span style="font-weight:normal">{{ c }}</span></td>
-                            {% endif %}
-
-                            {% if c|length == 1 %}
-                                <td>Mean</td>
-                            {% elif c == "Bouvier" %}
-                                <td>GEMTA</td>
-                            {% else %}
-                                <td>TGF</td>
-                            {% endif %}
-
-
-
-                            <td>{{ pvals.protein.class }}</td>
-                            <td>{{ pvals.protein.family }}</td>
-                            <td class="uniprot2">
-                                <a href="https://www.uniprot.org/uniprot/{{ pvals.protein.accession }}" target="_blank">{{ pvals.protein.uniprot|safe }}</a>
-                            </td>
-                            <td class="text-left">
-                                <a href="{{ pvals.protein.gtp_link }}" target="_blank">{{ pvals.protein.iuphar|safe }}</a>
-{#                                <a href="/protein/{{ pvals.protein.entryname }}" target="_blank">{{ pvals.protein.iuphar|safe }}</a>#}
-                            </td>
-                            <td class="text-left">
-                              {% if cvals.ligand_name != "-" %}
-                                <a href="/ligand/{{ cvals.ligand_id }}/info" target="_blank">{{ cvals.ligand_name|safe }}</a>
-                              {% endif %}
-                            </td>
-                            <td>{{ cvals.ligand_physiological }}</td>
-                            <td>{{ pvals.protein.gs }}</td>
-                            <td>{{ pvals.protein.gio }}</td>
-                            <td>{{ pvals.protein.gq11 }}</td>
-                            <td>{{ pvals.protein.g1213 }}</td>
-
-                            {% for q, logval in cvals.logemaxec50.items %}
-                                <td><span>{{ logval }}</span></td>
-                            {% endfor %}
-
-                            {% for q, pecval in cvals.pec50.items %}
-                                <td><span>{{ pecval }}</span></td>
-                            {% endfor %}
-
-                            {% for q, maxval in cvals.emax.items %}
-                                <td><span>{{ maxval }}</span></td>
-                            {% endfor %}
-
-                            {% for q, std in cvals.std.items %}
-                                <td><span>{{ std }}</span></td>
-                            {% endfor %}
-                            <td>{{ c }}</td>
-
-                        </tr>
-                    {% endfor %}
-
                 {% endfor %}
-                </tbody>
+                <th>Parameter</th>
+                {% for p, subval in header.items  %}
+                    <th class="{{ p|replace:"/" }}">{{ p|safe }}</th>
+                {% endfor %}
+                <th class="rightborder">Primary<br>subtype</th>
+                {% for subval in subunitkeys %}
+                    <th class="{{ subval }}">
+                        {{ subval|safe }}
+                    </th>
+                {% endfor %}
+                <th>Parameter</th>
+                {% for subval in subunitkeys %}
+                    <th class="{{ subval }}">
+                        {{ subval|safe }}
+                    </th>
+                {% endfor %}
+            </tr>
 
-            </table>
-            <div id="hide_filter2"></div>
-            {% for n in "x"|rjust:"56" %}
-                <div id="hide_ranksub{{ forloop.counter|add:"12" }}" style="display: none;"></div>
+            <tr>
+                <th class='no-sort checkbox_tr'><input class="select-all" type="checkbox" onclick="select_all(this)"></th>
+                {% for n in "x"|rjust:"2" %}
+                    <th></th>
+                {% endfor %}
+                <th class='no-sort'></th>
+                <th></th>
+                <th></th>
+                <th class="rightborder"></th>
+                {% for n in "x"|rjust:"4" %}
+                    <th></th>
+                {% endfor %}
+                <th class='no-sort rightborder'></th>
+                <th></th>
+                <th class="rightborder"></th>
+                {% for n in "x"|rjust:"3" %}
+                    <th></th>
+                {% endfor %}
+                <th class="rightborder"></th>
+                
+                <th></th>
+                <th class="rightborder"></th>
+                {% for n in "x"|rjust:"3" %}
+                    <th></th>
+                {% endfor %}
+                <th class="rightborder"></th>
+                {% for n in "x"|rjust:"3" %}
+                    <th></th>
+                {% endfor %}
+                <th class="rightborder"></th>
+                {% for n in "x"|rjust:"4" %}
+                    <th></th>
+                {% endfor %}
+                <th class="rightborder"></th>
+                <th class="rightborder"></th>
+                {% for n in "x"|rjust:"15" %}
+                    <th></th>
+                {% endfor %}
+                <th class="rightborder"></th>
+                {% for n in "x"|rjust:"16" %}
+                    <th></th>
+                {% endfor %}
+                <th class="rightborder"></th>
+
+            </tr>
+
+            </thead>
+
+            <tbody>
+            {% for p, pvals in tabfields.items %}
+                {% for c, cvals in pvals.sets.items %}
+                    {% if cvals.lab == "GproteinDb" %}
+                    <tr data-source="{{ c }}" class="gproteindb-row">
+                    {% else %}
+                    <tr data-source="{{ c }}">
+                    {% endif %}
+                        <td class="text-center"><input class="alt" type="checkbox"></td>
+                        <td class="uniprot1 text-left">
+                            <a href="https://www.uniprot.org/uniprot/{{ pvals.protein.accession }}" target="_blank">{{ pvals.protein.uniprot|safe }}</a>
+                        </td>
+                        <td class="text-left">
+                            <a href="{{ pvals.protein.gtp_link }}" target="_blank">{{ pvals.protein.iuphar|receptor_short|safe }}</a>
+                        </td>
+                        {% if p.entry_name %}
+                            <td class="text-center"><a target="_blank" href="/protein/{{ p.entry_name }}"><img width="12px" height="12px" class="gpcrdb-link" src="{% static 'home/logo/gpcr/main.png' %}"></a></td>
+                        {% else %}
+                            <td class="text-center"><a target="_blank" href="/protein/{{ p.0.entry_name }}"><img width="12px" height="12px" class="gpcrdb-link" src="{% static 'home/logo/gpcr/main.png' %}"></a></td>
+                        {% endif %}
+                        <td class="expand text-left">{{ pvals.protein.family }}</td>
+                        {% if pvals.protein.class == "Other GPCRs" %}
+                            <td class="text-center"><span class="simple-popover" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="below" data-content="Other GPCRs">O</span></td>
+                        {% else %}
+                            <td class="text-center"><span>{{ pvals.protein.class }}</span></td>
+                        {% endif %}
+                        {% if p.entry_name %}
+                            <td class="text-center">-</td>
+                        {% else %}
+                            <td class="text-center">{{ p|split:"-,1" }}</td>
+                        {% endif %}
+                        {% if cvals.lab == "GproteinDb" %}
+                            <td class="text-left bold-text">{{ cvals.lab }}</td>
+                        {% else %}
+                            <td class="text-left">{{ cvals.lab }}</td>
+                        {% endif %}
+                        <td class="text-left expand">{{ cvals.biosensor_name }}</td>
+                        {% if cvals.biosensor != None %}
+                            <td>{{ cvals.biosensor.downstream_steps }}</td>
+                            <td>{{ gprots_tested|dict_check:c|length }}</td>
+                        {% else %}
+                            <td>-</td>
+                            <td>-</td>
+                        {% endif %}
+                        
+                        {% if cvals.doi|length == 0 or cvals.doi.0.web_link.index == "Unpublished" %}
+                            <td class="text-center">-</td>
+                        {% else %}
+                            <td class="text-center">
+                                <a><i class="glyphicon glyphicon-file simple-popover gpcrdb-link" data-html="true" data-container="body" data-toggle="popover" data-trigger="click hover" data-placement="below" data-content="{% for doi in cvals.doi %}<a href={% if doi.web_link.web_resource.slug == 'pubmed' %}'https://pubmed.ncbi.nlm.nih.gov/{% else %}'https://doi.org/{% endif %}{{ doi.web_link.index }}' target='_blank'>{{doi|pub_out}}</a><br>{% endfor %}"></i></a>
+                            </td>
+                        {% endif %}
+                        <td class="text-left expand">
+                            {% if cvals.ligand_name != None and cvals.lab != "GtoPdb" %}
+                            <a href="/ligand/{{ cvals.ligand_id }}/info" target="_blank"><span>{{ cvals.ligand_name|safe }}</span></a>
+                            {% elif cvals.lab == "GtoPdb" or cvals.lab == "GproteinDb" %}
+                            <span>-</span>
+                            {% else %}
+                            <span>None (constitutive activity)</span>
+                            {% endif %}
+                        </td>
+                        {% if cvals.ligand_physiological != None %}
+                            <td class="text-center">{{ cvals.ligand_physiological }}</td>
+                        {% else %}
+                            <td class="text-center">-</td>
+                        {% endif %}
+
+                        {% if pvals.supp_sets.gs %}
+                            <td><span class="simple-popover" data-container="body"  data-html="true" data-toggle="popover" data-trigger="hover" data-placement="below" data-content="{{ pvals.supp_sets.gs|join_list|guidetopharma_reword }}">{{ pvals.supp_sets.gs|length }}</span></td>
+                        {% else %}
+                            <td>-</td>
+                        {% endif %}
+                        {% if pvals.supp_sets.gio %}
+                            <td><span class="simple-popover" data-container="body"  data-html="true" data-toggle="popover" data-trigger="hover" data-placement="below" data-content="{{ pvals.supp_sets.gio|join_list|guidetopharma_reword }}">{{ pvals.supp_sets.gio|length }}</span></td>
+                        {% else %}
+                            <td>-</td>
+                        {% endif %}
+                        {% if pvals.supp_sets.gq11 %}
+                            <td><span class="simple-popover" data-container="body"  data-html="true" data-toggle="popover" data-trigger="hover" data-placement="below" data-content="{{ pvals.supp_sets.gq11|join_list|guidetopharma_reword }}">{{ pvals.supp_sets.gq11|length }}</span></td>
+                        {% else %}
+                            <td>-</td>
+                        {% endif %}
+                        {% if pvals.supp_sets.g1213 %}
+                            <td><span class="simple-popover" data-container="body"  data-html="true" data-toggle="popover" data-trigger="hover" data-placement="below" data-content="{{ pvals.supp_sets.g1213|join_list|guidetopharma_reword }}">{{ pvals.supp_sets.g1213|length }}</span></td>
+                        {% else %}
+                            <td>-</td>
+                        {% endif %}
+                        
+                        
+
+                        {% if cvals.prim_fam != None %}
+                            <td class="text-center">{{ cvals.prim_fam }}</td>
+                        {% else %}
+                            <td class="text-center">-</td>
+                        {% endif %}
+                        <td>{{ cvals.supp_fam|length }}</td>
+
+                        {% if cvals.gs and cvals.gs.family_rank != None %}
+                            {% if cvals.gs.family_rank == 1 %}
+                                <td class="bold-text">{{ cvals.gs.family_rank }}'</td>
+                            {% elif cvals.gs.family_rank == 0 %}
+                                <td class="grey"><span class="simple-popover" data-container="body"  data-html="true" data-toggle="popover" data-trigger="hover" data-placement="below" data-content="no coupling">nc</span></td>
+                            {% else %}
+                                <td>{{ cvals.gs.family_rank }}'</td>
+                            {% endif %}
+                        {% else %}
+                            <td>-</td>
+                        {% endif %}
+                        {% if cvals.gio and cvals.gio.family_rank != None %}
+                            {% if cvals.gio.family_rank == 1 %}
+                                <td class="bold-text">{{ cvals.gio.family_rank }}'</td>
+                            {% elif cvals.gio.family_rank == 0 %}
+                                <td class="grey"><span class="simple-popover" data-container="body" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="below" data-content="no coupling">nc</span></td>
+                            {% else %}
+                                <td>{{ cvals.gio.family_rank }}'</td>
+                            {% endif %}
+                        {% else %}
+                            <td>-</td>
+                        {% endif %}
+                        {% if cvals.gq11 and cvals.gq11.family_rank != None %}
+                            {% if cvals.gq11.family_rank == 1 %}
+                                <td class="bold-text">{{ cvals.gq11.family_rank }}'</td>
+                            {% elif cvals.gq11.family_rank == 0 %}
+                                <td class="grey"><span class="simple-popover" data-container="body"  data-html="true" data-toggle="popover" data-trigger="hover" data-placement="below" data-content="no coupling">nc</span></td>
+                            {% else %}
+                                <td>{{ cvals.gq11.family_rank }}'</td>
+                            {% endif %}
+                        {% else %}
+                            <td>-</td>
+                        {% endif %}
+                        {% if cvals.g1213 and cvals.g1213.family_rank != None %}
+                            {% if cvals.g1213.family_rank == 1 %}
+                                <td class="bold-text">{{ cvals.g1213.family_rank }}'</td>
+                            {% elif cvals.g1213.family_rank == 0 %}
+                                <td class="grey"><span class="simple-popover" data-container="body"  data-html="true" data-toggle="popover" data-trigger="hover" data-placement="below" data-content="no coupling">nc</span></td>
+                            {% else %}
+                                <td>{{ cvals.g1213.family_rank }}'</td>
+                            {% endif %}
+                        {% else %}
+                            <td>-</td>
+                        {% endif %}
+
+                        {% if cvals.gs and cvals.gs.percent_of_primary_family != None %}
+                            {% if cvals.gs.percent_of_primary_family == 100 %}
+                                <td class="bold-text">{{ cvals.gs.percent_of_primary_family }}</td>
+                            {% else %}
+                                <td>{{ cvals.gs.percent_of_primary_family }}</td>
+                            {% endif %}
+                        {% else %}
+                            <td>-</td>
+                        {% endif %}
+                        {% if cvals.gio and cvals.gio.percent_of_primary_family != None %}
+                            {% if cvals.gio.percent_of_primary_family == 100 %}
+                                <td class="bold-text">{{ cvals.gio.percent_of_primary_family }}</td>
+                            {% else %}
+                                <td>{{ cvals.gio.percent_of_primary_family }}</td>
+                            {% endif %}
+                        {% else %}
+                            <td>-</td>
+                        {% endif %}
+                        {% if cvals.gq11 and cvals.gq11.percent_of_primary_family != None %}
+                            {% if cvals.gq11.percent_of_primary_family == 100 %}
+                                <td class="bold-text">{{ cvals.gq11.percent_of_primary_family }}</td>
+                            {% else %}
+                                <td>{{ cvals.gq11.percent_of_primary_family }}</td>
+                            {% endif %}
+                        {% else %}
+                            <td>-</td>
+                        {% endif %}
+                        {% if cvals.g1213 and cvals.g1213.percent_of_primary_family != None %}
+                            {% if cvals.g1213.percent_of_primary_family == 100 %}
+                                <td class="bold-text">{{ cvals.g1213.percent_of_primary_family }}</td>
+                            {% else %}
+                                <td>{{ cvals.g1213.percent_of_primary_family }}</td>
+                            {% endif %}
+                        {% else %}
+                            <td>-</td>
+                        {% endif %}
+
+                        {% if cvals.biosensor != None and cvals.biosensor.parameter == "Activation rate (s-1)" %}
+                            <td class="text-center"><span>Activation rate (s<sup>-1</sup>)</span></td>
+                        {% elif cvals.biosensor != None %}
+                            <td class="text-center"><span>{{ cvals.biosensor.parameter }}</span></td>
+                        {% else %}
+                            <td class="text-center"><span>-</span></td>
+                        {% endif %}
+
+                        {% if cvals.biosensor == None %}
+                            <td>-</td>
+                            <td>-</td>
+                            <td>-</td>
+                            <td>-</td>
+                        {% elif cvals.biosensor.parameter == "log(Emax/EC50)" %}
+                            {% if cvals.gs and cvals.gs.logemaxec50_family != None %}
+                                <td>{{ cvals.gs.logemaxec50_family }}</td>
+                            {% else %}
+                                <td>-</td>
+                            {% endif %}
+                            {% if cvals.gio and cvals.gio.logemaxec50_family != None %}
+                                <td>{{ cvals.gio.logemaxec50_family }}</td>
+                            {% else %}
+                                <td>-</td>
+                            {% endif %}
+                            {% if cvals.gq11 and cvals.gq11.logemaxec50_family != None %}
+                                <td>{{ cvals.gq11.logemaxec50_family }}</td>
+                            {% else %}
+                                <td>-</td>
+                            {% endif %}
+                            {% if cvals.g1213 and cvals.g1213.logemaxec50_family != None %}
+                                <td>{{ cvals.g1213.logemaxec50_family }}</td>
+                            {% else %}
+                                <td>-</td>
+                            {% endif %}
+                        {% elif cvals.biosensor.parameter == "Activation rate (s-1)" %}
+                            {% if cvals.gs and cvals.gs.kon_mean_family != None %}
+                                <td>{{ cvals.gs.kon_mean_family }}</td>
+                            {% else %}
+                                <td>-</td>
+                            {% endif %}
+                            {% if cvals.gio and cvals.gio.kon_mean_family != None %}
+                                <td>{{ cvals.gio.kon_mean_family }}</td>
+                            {% else %}
+                                <td>-</td>
+                            {% endif %}
+                            {% if cvals.gq11 and cvals.gq11.kon_mean_family != None %}
+                                <td>{{ cvals.gq11.kon_mean_family }}</td>
+                            {% else %}
+                                <td>-</td>
+                            {% endif %}
+                            {% if cvals.g1213 and cvals.g1213.kon_mean_family != None %}
+                                <td>{{ cvals.g1213.kon_mean_family }}</td>
+                            {% else %}
+                                <td>-</td>
+                            {% endif %}
+                        {% elif cvals.biosensor.parameter == "Efficacy" or cvals.biosensor.parameter == "Econstitutive" %}
+                            {% if cvals.gs and cvals.gs.deltaGDP_conc_family != None %}
+                                <td>{{ cvals.gs.deltaGDP_conc_family }}</td>
+                            {% else %}
+                                <td>-</td>
+                            {% endif %}
+                            {% if cvals.gio and cvals.gio.deltaGDP_conc_family != None %}
+                                <td>{{ cvals.gio.deltaGDP_conc_family }}</td>
+                            {% else %}
+                                <td>-</td>
+                            {% endif %}
+                            {% if cvals.gq11 and cvals.gq11.deltaGDP_conc_family != None %}
+                                <td>{{ cvals.gq11.deltaGDP_conc_family }}</td>
+                            {% else %}
+                                <td>-</td>
+                            {% endif %}
+                            {% if cvals.g1213 and cvals.g1213.deltaGDP_conc_family != None %}
+                                <td>{{ cvals.g1213.deltaGDP_conc_family }}</td>
+                            {% else %}
+                                <td>-</td>
+                            {% endif %}
+
+                        {% endif %}
+
+                        <td class="text-center">{{ cvals.prim_subtype }}</td>
+
+                        {% for subval in subunitkeys %}
+                            {% if cvals.biosensor != None and cvals|dict_check:subval %}
+                                <td>{{ cvals|dict_check:subval|dict_check:"percent_of_primary_subtype" }}</td>
+                            {% elif cvals.lab == "GproteinDb" and cvals|dict_check:subval %}
+                                <td>{{ cvals|dict_check:subval|dict_check:"percent_of_primary_subtype" }}</td>
+                            {% else %}
+                                <td>-</td>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if cvals.biosensor != None and cvals.biosensor.parameter == "Activation rate (s-1)" %}
+                            <td class="text-center"><span>Activation rate (s<sup>-1</sup>)</span></td>
+                        {% elif cvals.biosensor != None %}
+                            <td class="text-center"><span>{{ cvals.biosensor.parameter }}</span></td>
+                        {% else %}
+                            <td class="text-center"><span>-</span></td>
+                        {% endif %}
+                        {% for subval in subunitkeys %}
+                            {% if cvals.biosensor == None %}
+                                <td>-</td>
+                            {% elif cvals.biosensor.parameter == "log(Emax/EC50)" and cvals|dict_check:subval %}
+                                <td>{{ cvals|dict_check:subval|dict_check:"logemaxec50" }}</td>
+                            {% elif cvals.biosensor.parameter == "Activation rate (s-1)" and cvals|dict_check:subval %}
+                                <td>{{ cvals|dict_check:subval|dict_check:"kon_mean" }}</td>
+                            {% elif cvals.biosensor.parameter == "Efficacy" or cvals.biosensor.parameter == "Econstitutive" %} 
+                                {% if cvals|dict_check:subval %}
+                                    <td>{{ cvals|dict_check:subval|dict_check:"deltaGDP_conc" }}</td>
+                                {% else %}
+                                    <td>-</td>
+                                {% endif %}
+                            {% else %}
+                                <td>-</td>
+                            {% endif %}
+                        {% endfor %}
+            
+                    </tr>
+                {% endfor %}
             {% endfor %}
 
+            </tbody>
 
-        </div>
+
+        </table>
     </div>
-
-  {% elif page == 'arrestin' %}
-
-    <div style="display:block;">
-        <div style="display:inline; float:left;">
-            <h2 style="width:auto; display:inline;">Arrestin Couplings</h2>
-        </div>
-    </div>
-    <br><br>
-
-      <div style='width:100%; display:inline;'>
-          <!-- Dropdown button -->
-          <!--<div class="btn-group">
-              <button type="button" class="btn btn-primary btn-sm">Supporting datasets</button>
-              <button type="button" class="btn btn-primary btn-sm dropdown-toggle" data-toggle="dropdown"
-                      aria-haspopup="true" aria-expanded="false">
-                  <span class="caret"></span>
-                  <span class="sr-only">Toggle Dropdown</span>
-              </button>
-              <ul class="dropdown-menu">
-                  <li><a href="#" onclick="yadcf.exFilterColumn(oTable3, [[22, 1]]);">1</a></li>
-                  <li><a href="#" onclick="yadcf.exFilterColumn(oTable3, [[22, 2]]);">2 (default)</a></li>
-                  <li><a href="#" onclick="yadcf.exFilterColumn(oTable3, [[22, 3]]);">3</a></li>
-                  <li><a href="#" onclick="yadcf.exFilterColumn(oTable3, [[22, 4]]);">4</a></li>
-              </ul>
-          </div>-->
-
-          <div class="btn-group" style="padding-left:10px;">
-              <a id="dlink" style="display:none;"></a>
-              <div id="excel_table" style="display:none;"></div>
-              <!--<input class="btn btn-primary btn-sm" type="button" id="toggle_fixed_btn3" value="Disable fixed columns"
-                     href="javascript:void(0)" data-toggle="buttons">-->
-              <input class="btn btn-primary btn-sm" type="button" onclick="resetHiddenColumns(oTable1)" id="toggle"
-                     value="Show hidden columns">
-          </div>
-
-          <div class="btn-group" style="padding-left:10px;">
-              <input class="btn btn-primary btn-sm" type="button"
-                     onclick="GlobalTableToExcel('arrestintable', 'Arrestin coupling data', 'arrestin_coupling.xls')"
-                     value="Export Excel">
-              <input class="btn btn-primary btn-sm" type="button" onclick="reset_tab(oTable1);" value="Reset All">
-          </div>
-      </div>
-
-
-      <table class="compact display" id="arrestintable" style="display:none;">
-          <thead>
-          <tr>
-              <th colspan=1></th>
-              <th colspan=2 style='height:35px; text-align:left;'>
-                  Source
-              </th>
-              <th colspan=4 style='height:35px; text-align:left;'>
-                  Receptor
-              </th>
-              <th colspan=2 style='height:35px; text-align:left;'>
-                  Ligand
-              </th>
-              <th colspan=3 style='height:35px; text-align:left;'>
-                  log(Emax/EC50)
-                  <button type="button" class="close hide_columns3" columns="9,10,11"
-                          style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
-                  </button>
-              </th>
-              <th colspan=3 style='height:35px; text-align:left;'>
-                  pEC50
-                  <button type="button" class="close hide_columns3" columns="12,13,14"
-                          style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
-                  </button>
-              </th>
-              <th colspan=3 style='height:35px; text-align:left;'>
-                  Emax
-                  <button type="button" class="close hide_columns3" columns="15,16,17"
-                          style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
-                  </button>
-              </th>
-              <th colspan=4 style='height:35px; text-align:left;'>
-                  Standard Deviation
-                  <button type="button" class="close hide_columns3" columns="18,19,20"
-                          style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span>
-                  </button>
-              </th>
-          </tr>
-
-          <tr>
-              <th></th>
-              <th>Group</th>
-              <th>Biosensor</th>
-              <th>Cl</th>
-              <th>Receptor fam.</th>
-              <th>
-                  <div>
-                      <div>Uniprot</div>
-                      <div><button class='icon-button' type='button' data-toggle="tooltip" data-placement="bottom" title="Export UniProt IDs"><i id='uniprot_copy1' class="glyphicon glyphicon-export"></i></button></div>
-                  </div>
-              </th>
-              <th>IUPHAR</th>
-              <th>Ligand name</th>
-              <th>Phys. / Surr.</th>
-
-              {% for n in "x"|rjust:"4" %}
-                  {% for subval in subunitheader %}
-                      <th>
-                          {{ subval|safe }}
-                      </th>
-                  {% endfor %}
-              {% endfor %}
-
-              <th></th>
-          </tr>
-          <tr>
-              <th class='no-sort checkbox_tr'>
-                  <input class="select-all" type="checkbox" onclick="select_all(this)">
-              </th>
-              {% for n in "x"|rjust:"8" %}
-                  <th></th>
-              {% endfor %}
-
-              {% for n in "x"|rjust:"12" %}
-              <th>
-                <input  placeholder="Min" id="ranked_range_min3_{{ forloop.counter|add:"8" }}"
-                 class="yadcf-filter-range-number yadcf-filter-range ranked_range_min3">
-                <span class="yadcf-filter-range-number-seperator"></span><br>
-                <input  placeholder="Max" id="ranked_range_max3_{{ forloop.counter|add:"8" }}"
-                 class="yadcf-filter-range-number yadcf-filter-range ranked_range_max3">
-                <span class="yadcf-filter-range-number-seperator"></span><br>
-                <!--<input  placeholder="Rank" id="ranked_range_rank3_{{ forloop.counter|add:"8" }}"
-                class="yadcf-filter-range-number yadcf-filter-range ranked_range_rank3">-->
-              </th>
-              {% endfor %}
-
-              <th></th>
-          </tr>
-          </thead>
-
-          <tbody>
-          {% for p, pvals in tabfields.items %}
-              {% for c, cvals in pvals.coupling.items %}
-                {% if c|length > 1 %}
-                  <tr data-source="{{ c }}"> {# And then use the data to apply the javascript filters.#}
-                      <td class="text-center"><input class="alt" type="checkbox"></td>
-                      {% if c|length == 1 %}
-                          <td><span style="font-weight:bold">GPCRdb</span></td>
-                      {% else %}
-                          <td><span style="font-weight:normal">{{ c }}</span></td>
-                      {% endif %}
-
-                      {% if c|length == 1 %}
-                          <td>Mean</td>
-                      {% elif c == "Bouvier" %}
-                          <td>GEMTA</td>
-                      {% else %}
-                          <td>TGF</td>
-                      {% endif %}
-
-                      <td>{{ pvals.protein.class }}</td>
-                      <td>{{ pvals.protein.family }}</td>
-                      <td class="uniprot1">
-                          <a href="https://www.uniprot.org/uniprot/{{ pvals.protein.accession }}" target="_blank">{{ pvals.protein.uniprot|safe }}</a>
-                      </td>
-                      <td class="text-left">
-                          <a href="{{ pvals.protein.gtp_link }}" target="_blank">{{ pvals.protein.iuphar|safe }}</a>
-                      </td>
-                      <td class="text-left">
-                          {% if cvals.ligand_name != "-" %}
-                            <a href="/ligand/{{ cvals.ligand_id }}/info" target="_blank">{{ cvals.ligand_name|safe }}</a>
-                          {% endif %}
-                      </td>
-                      <td class="text-left">{{ cvals.ligand_physiological }}</td>
-
-                      {% for q, logval in cvals.logemaxec50.items %}
-                          <td><span>{{ logval }}</span></td>
-                      {% endfor %}
-
-                      {% for q, pecval in cvals.pec50.items %}
-                          <td><span>{{ pecval }}</span></td>
-                      {% endfor %}
-
-                      {% for q, maxval in cvals.emax.items %}
-                          <td><span>{{ maxval }}</span></td>
-                      {% endfor %}
-
-                      {% for q, std in cvals.std.items %}
-                          <td><span>{{ std }}</span></td>
-                      {% endfor %}
-                      <td>{{ c }}</td>
-
-                  </tr>
-                {% endif %}
-              {% endfor %}
-
-          {% endfor %}
-          </tbody>
-
-      </table>
-      <div id="hide_filter3"></div>
-      {% for n in "x"|rjust:"12" %}
-          <div id="hide_ranksub{{ forloop.counter|add:"8" }}" style="display: none;"></div>
-      {% endfor %}
-    {% endif %}
 
 {% endblock %}
 
@@ -697,8 +522,9 @@
     <script src="{% static 'home/js/select2.js' %}"></script>
     <script src="{% static 'home/js/gpcrdb.js' %}"></script>
     <script src="{% static 'home/js/signprot-multitabtable.js' %}"></script>
+    <script src="{% static 'home/js/xlsx.full.min.js' %}"></script>  
     {% if page == 'gprot' %}
-      <script src="{% static 'home/js/gprotein_coupling.js' %}"></script>
+      <script src="{% static 'home/js/gprotein_coupling_families.js' %}"></script>
     {% else %}
       <script src="{% static 'home/js/arrestin_coupling.js' %}"></script>
     {% endif %}

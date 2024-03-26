@@ -27,7 +27,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
-        structures = Structure.objects.all()
+        structures = Structure.objects.all().exclude(structure_type__slug__startswith='af-')
         self.fusions = {}
         self.fusions_mutations = {}
         self.fusions_starts = {}

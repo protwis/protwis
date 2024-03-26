@@ -19,6 +19,9 @@ class InteractingResiduePair(models.Model):
         with connection.cursor() as cursor:
             cursor.execute('TRUNCATE TABLE "{0}" RESTART IDENTITY CASCADE'.format(cls._meta.db_table))
 
+    def __str__(self):
+        return '<{}-{}-{}>'.format(self.res1, self.res2, self.referenced_structure)
+
     class Meta():
         db_table = 'interacting_residue_pair'
 

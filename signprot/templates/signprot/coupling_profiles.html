@@ -460,6 +460,20 @@ function copyToClipboard(txt) {
     color: forestgreen;
   }
 
+  .gprot_aquamarine {
+    color: aquamarine;
+  }
+
+  .gprot_cornflower {
+    color: #6495ED;
+  }
+
+  .graydiv {
+      height: 20px;
+      width: 350px;
+      background: linear-gradient(to right, white 0%, black 100%)
+  }
+
   textarea {
     resize: none;
     overflow: hidden;
@@ -693,45 +707,47 @@ $(window).on("load",function() {
     maxLeafNodeLenght = 46;
     var env = "{{ signalling_data|safe }}";
     if(env === "gprot"){
-      conversion = {"Gs":"blue", "Gi/o":"red", "Gq/11":"black", "G12/13":"green"};
+      // conversion = {"Gs":"blue", "Gi/o":"red", "Gq/11":"black", "G12/13":"green"};
+      conversion = {"Gs":"#0000FF", "Gi/o":"#FF0000", "Gq/11":"#000000", "G12/13":"#008000", "GPa1 family":"#FFC0CB"};
     } else {
-      conversion = {"Beta-arrestin-1":"orange", "Beta-arrestin-2":"purple"};
+      conversion = {"Beta-arrestin-1":"#FFA500", "Beta-arrestin-2":"#800080"};
     };
     $("#UniProtNames").click(function(){
         $("#UniProtNames").addClass("active");
         $("#IUPHARNames").removeClass("active");
         changeLeavesLabels("tree_class_a","UniProt", whole_dict);
-        DrawCircles('tree_class_a',selectivitydata_gtp_plus,maxLeafNodeLenght,conversion);
+        // DrawCircles(location, data, starter, dict, fancy=false, clean=true, fixed_total=false, gradient=true)
+        DrawCircles('tree_class_a',selectivitydata_gtp_plus, maxLeafNodeLenght, conversion, true, true, 7);
         changeLeavesLabels("tree_class_b1","UniProt", whole_dict);
-        DrawCircles('tree_class_b1',selectivitydata_gtp_plus,maxLeafNodeLenght,conversion);
+        DrawCircles('tree_class_b1',selectivitydata_gtp_plus,maxLeafNodeLenght,conversion, true, true, 7);
         changeLeavesLabels("tree_class_b2","UniProt", whole_dict);
-        DrawCircles('tree_class_b2',selectivitydata_gtp_plus,maxLeafNodeLenght,conversion);
+        DrawCircles('tree_class_b2',selectivitydata_gtp_plus,maxLeafNodeLenght,conversion, true, true, 7);
         changeLeavesLabels("tree_class_c","UniProt", whole_dict);
-        DrawCircles('tree_class_c',selectivitydata_gtp_plus,maxLeafNodeLenght,conversion);
+        DrawCircles('tree_class_c',selectivitydata_gtp_plus,maxLeafNodeLenght,conversion, true, true, 7);
         changeLeavesLabels("tree_class_f","UniProt", whole_dict);
-        DrawCircles('tree_class_f',selectivitydata_gtp_plus,maxLeafNodeLenght,conversion);
+        DrawCircles('tree_class_f',selectivitydata_gtp_plus,maxLeafNodeLenght,conversion, true, true, 7);
         changeLeavesLabels("tree_class_t2","UniProt", whole_dict);
-        DrawCircles('tree_class_t2',selectivitydata_gtp_plus,maxLeafNodeLenght,conversion);
+        DrawCircles('tree_class_t2',selectivitydata_gtp_plus,maxLeafNodeLenght,conversion, true, true, 7);
         changeLeavesLabels("tree_orphan","UniProt", whole_dict);
-        DrawCircles('tree_orphan',selectivitydata_gtp_plus,maxLeafNodeLenght,conversion);
+        DrawCircles('tree_orphan',selectivitydata_gtp_plus,maxLeafNodeLenght,conversion, true, true, 7);
       });
     $("#IUPHARNames").click(function() {
         $("#UniProtNames").removeClass("active");
         $("#IUPHARNames").addClass("active");
         changeLeavesLabels("tree_class_a","IUPHAR", whole_dict);
-        DrawCircles('tree_class_a',selectivitydata_gtp_plus, maxLeafNodeLenght,conversion);
+        DrawCircles('tree_class_a',selectivitydata_gtp_plus, maxLeafNodeLenght,conversion, true, true, 7);
         changeLeavesLabels("tree_class_b1","IUPHAR", whole_dict);
-        DrawCircles('tree_class_b1',selectivitydata_gtp_plus, maxLeafNodeLenght,conversion);
+        DrawCircles('tree_class_b1',selectivitydata_gtp_plus, maxLeafNodeLenght,conversion, true, true, 7);
         changeLeavesLabels("tree_class_b2","IUPHAR", whole_dict);
-        DrawCircles('tree_class_b2',selectivitydata_gtp_plus, maxLeafNodeLenght,conversion);
+        DrawCircles('tree_class_b2',selectivitydata_gtp_plus, maxLeafNodeLenght,conversion, true, true, 7);
         changeLeavesLabels("tree_class_c","IUPHAR", whole_dict);
-        DrawCircles('tree_class_c',selectivitydata_gtp_plus, maxLeafNodeLenght,conversion);
+        DrawCircles('tree_class_c',selectivitydata_gtp_plus, maxLeafNodeLenght,conversion, true, true, 7);
         changeLeavesLabels("tree_class_f","IUPHAR", whole_dict);
-        DrawCircles('tree_class_f',selectivitydata_gtp_plus, maxLeafNodeLenght,conversion);
+        DrawCircles('tree_class_f',selectivitydata_gtp_plus, maxLeafNodeLenght,conversion, true, true, 7);
         changeLeavesLabels("tree_class_t2","IUPHAR", whole_dict);
-        DrawCircles('tree_class_t2',selectivitydata_gtp_plus, maxLeafNodeLenght,conversion);
+        DrawCircles('tree_class_t2',selectivitydata_gtp_plus, maxLeafNodeLenght,conversion, true, true, 7);
         changeLeavesLabels("tree_orphan","IUPHAR", whole_dict);
-        DrawCircles('tree_orphan',selectivitydata_gtp_plus, maxLeafNodeLenght,conversion);
+        DrawCircles('tree_orphan',selectivitydata_gtp_plus, maxLeafNodeLenght,conversion, true, true, 7);
     });
     draw_tree(tree_class_a, tree_class_a_options); //, "IUPHAR", receptor_dictionary);
     draw_tree(tree_class_b1, tree_class_b1_options);
@@ -740,13 +756,14 @@ $(window).on("load",function() {
     draw_tree(tree_class_f, tree_class_f_options);
     draw_tree(tree_class_t2, tree_class_t2_options);
     draw_tree(tree_orphan_a, tree_orphan_options);
-    DrawCircles('tree_class_a',selectivitydata_gtp_plus, maxLeafNodeLenght,conversion);
-    DrawCircles('tree_class_b1',selectivitydata_gtp_plus, maxLeafNodeLenght,conversion);
-    DrawCircles('tree_class_b2',selectivitydata_gtp_plus, maxLeafNodeLenght,conversion);
-    DrawCircles('tree_class_c',selectivitydata_gtp_plus, maxLeafNodeLenght,conversion);
-    DrawCircles('tree_class_f',selectivitydata_gtp_plus, maxLeafNodeLenght,conversion);
-    DrawCircles('tree_class_t2',selectivitydata_gtp_plus, maxLeafNodeLenght,conversion);
-    DrawCircles('tree_orphan',selectivitydata_gtp_plus, maxLeafNodeLenght,conversion);
+    console.log('Drawing Circles');
+    DrawCircles('tree_class_a',selectivitydata_gtp_plus, maxLeafNodeLenght,conversion, true, true, 7);
+    DrawCircles('tree_class_b1',selectivitydata_gtp_plus, maxLeafNodeLenght,conversion, true, true, 7);
+    DrawCircles('tree_class_b2',selectivitydata_gtp_plus, maxLeafNodeLenght,conversion, true, true, 7);
+    DrawCircles('tree_class_c',selectivitydata_gtp_plus, maxLeafNodeLenght,conversion, true, true, 7);
+    DrawCircles('tree_class_f',selectivitydata_gtp_plus, maxLeafNodeLenght,conversion, true, true, 7);
+    DrawCircles('tree_class_t2',selectivitydata_gtp_plus, maxLeafNodeLenght,conversion, true, true, 7);
+    DrawCircles('tree_orphan',selectivitydata_gtp_plus, maxLeafNodeLenght,conversion, true, true, 7);
     $("#tree_class_a svg g").first().attr('transform', 'translate(555,555) scale(0.9,0.9) ');
     $("#tree_class_a_svg").attr('height', 1210);
     $("#tree_class_b1 svg g").first().attr('transform', 'translate(190,220) scale(0.80,0.80) ');
@@ -766,9 +783,10 @@ $(window).on("load",function() {
       <div class="panel-body">
         <div>
           {% if signalling_data == "gprot" %}
-          <p><h4><strong>GPCR selectivity tree.</strong> The four dots depict both primary and secondary G protein coupling.</h4></p>
+          <!-- <p><h4><strong>GPCR selectivity tree</strong> </h4></p> -->
+          <p>The four circles depict G protein coupling from GtoPdb and any ranked coupling supported by at least two quantitative datasets.</p>
           {% else %}
-          <p><h4><strong>GPCR selectivity tree.</strong> The four dots depict both primary and secondary Arrestin coupling.</h4></p>
+          <p>The four dots depict Arrestin coupling.</p>
           {% endif %}
         </div>
         <br />
@@ -782,19 +800,39 @@ $(window).on("load",function() {
       </div>
     </div>
   </div>
-{% if signalling_data == "gprot" %}
-  <div class="row text-center">
-      <span class="gprot_blue">&#11044; G&alpha;<sub>s</sub></span>
-      <span class="gprot_red">&#11044; G&alpha;<sub>i/o</sub></span>
-      <span class="gprot_black">&#11044; G&alpha;<sub>q/11</sub></span>
-      <span class="gprot_green">&#11044; G&alpha;<sub>12/13</sub></span>
+  {% if signalling_data == 'gprot' %}
+  <br />
+  <div class="row">
+    <div style="float: right; position: relative" class="text-center">
+      <b>No. of supporting datasets (from low to high)</b>
+      <div class="graydiv"></div>
+    </div>
+    <div style="float: left; position: relative; padding" class="text-center">
+      <b>G Protein complexes</b> <br />
+              <span class="gprot_blue">&#9675; <b>G&alpha;<sub>s</sub></b></span>
+              <span class="gprot_red">&#9675; <b>G&alpha;<sub>i/o</sub></b></span>
+              <span class="gprot_black">&#9675; <b>G&alpha;<sub>q/11</sub></b></span>
+              <span class="gprot_green">&#9675; <b>G&alpha;<sub>12/13</sub></b></span>
+              <!-- <span class="gprot_pink">&#9675; <b>GPa1</b></span> -->
+    </div>
   </div>
-{% else %}
-  <div class="row text-center">
-      <span class="gprot_orange">&#11044; &beta;-Arrestin<sub>1</sub></span>
-      <span class="gprot_purple">&#11044; &beta;-Arrestin<sub>2</sub></span>
+  {% elif signalling_data == 'arrestin' %}
+  <br />
+  <div class="row">
+    <!-- <div style="float: right; position: relative" class="text-center">
+      <b>No. of supporting datasets (from low to high)</b>
+      <div class="graydiv"></div>
+    </div> -->
+    <div style="float: left; position: relative" class="text-center">
+      <b>Arrestin complexes</b> <br />
+          <span class="gprot_orange">&#11044; &beta;-Arrestin<sub>1</sub></span>
+          <span class="gprot_purple">&#11044; &beta;-Arrestin<sub>2</sub></span>
+          <span class="gprot_aquamarine">&#11044; Arrestin-C</span>
+          <span class="gprot_cornflower">&#11044; S-Arrestin</span>
+    </div>
   </div>
-{% endif %}
+  {% endif %}
+
   <br />
 
 <div id="tree_class_a" class="text-center">

@@ -1019,7 +1019,7 @@ class Command(BaseBuild):
         vendor_links_data = pd.read_csv(vendor_links_url, dtype=str)
         links = []
         for _, row in vendor_links_data.iterrows():
-            if len(row["SourceRecordURL"]) < 300:
+            if len(row["SourceRecordURL"])<=400 and len(row["RegistryID"])<=500:
                 links.append(LigandVendorLink(
                     vendor_id=vendor_dict[row["SourceName"]], ligand_id=lig_dict[row["chembl_id"]], url=row["SourceRecordURL"], external_id=row["RegistryID"]))
 
@@ -1038,21 +1038,13 @@ class Command(BaseBuild):
                          'Rat Y861': 'rattus_norvegicus', 'Zebra Finch': 'taeniopygia_guttata', 'Chicken': 'gallus_gallus',
                          'MICE': 'mus_musculus', 'Rhesus Monkey': 'macaca_mulatta', 'Zebrafish': 'danio_rerio'}
         if organism in organism_dict.keys():
-            query = 'gene_exact:{0} AND organism:{1}'.format(
-                protein.lower(), organism_dict[organism])
+            query = 'gene_exact:{0}+AND+organism_name:{1}'.format(
+                urllib.parse.quote(protein.lower()), organism_dict[organism])
         else:
-            query = 'gene_exact:{}'.format(protein.lower())
-
+            query = 'gene_exact:{}'.format(urllib.parse.quote(protein.lower()))
         if query not in Command.mapper_cache.keys():
-            url = 'https://legacy.uniprot.org/uniprot/'
-            params = {
-                'query': query,
-                'format': 'tab',
-                'columns': 'entry_name'
-            }
-            data = urllib.parse.urlencode(params)
-            data = data.encode('utf-8')
-            req = urllib.request.Request(url, data)
+            url = 'https://rest.uniprot.org/uniprotkb/search?query={}&fields=id&format=tsv'.format(query)
+            req = urllib.request.Request(url)
             try:
                 converted = urllib.request.urlopen(
                     req).read().decode('utf-8').split('\n')[1].lower()
@@ -1364,21 +1356,17 @@ class Command(BaseBuild):
         elif database == 'PDSP':
             try:
                 test = None
-                if Protein.objects.filter(entry_name=target):
-                    protein = Protein.objects.filter(entry_name=target)
-                    test = protein.get()
-                elif Protein.objects.filter(web_links__index=target, web_links__web_resource__slug='uniprot'):
-                    protein1 = Protein.objects.filter(
-                        web_links__index=target, web_links__web_resource__slug='uniprot')
-                    test = protein1[0]
+                if len(Protein.objects.filter(entry_name=target))>0:
+                    test = Protein.objects.get(entry_name=target)
+                elif len(Protein.objects.filter(web_links__index=target, web_links__web_resource__slug='uniprot'))>0:
+                    test = Protein.objects.get(web_links__index=target, web_links__web_resource__slug='uniprot')
                 return test
             except:
                 return None
         elif database == 'DrugCentral':
             try:
-                protein = Protein.objects.filter(accession=target)
-                test = protein.get()
-                return test
+                protein = Protein.objects.get(accession=target)
+                return protein
             except:
                 return None
 

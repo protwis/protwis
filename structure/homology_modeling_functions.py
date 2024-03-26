@@ -135,6 +135,10 @@ class GPCRDBParsingPDB(object):
             first_seg = segment_labels[segment_labels.index(section[0][0])-1]
             for fi in range(first_index-1, -1, -1):
                 minus_offset.append([section[0][0], list(reference_dict[section[0][0]])[fi]])
+            if len(reference_dict[first_seg])<4:
+                for fi in range(len(reference_dict[first_seg])-1, -1, -1):
+                    minus_offset.append([first_seg, list(reference_dict[first_seg])[fi]])
+                first_seg = segment_labels[segment_labels.index(first_seg)-1]
             first_index = len(reference_dict[first_seg])
         first_index_orig = first_index
         minus_gns = []
@@ -170,6 +174,10 @@ class GPCRDBParsingPDB(object):
             last_seg = segment_labels[segment_labels.index(section[-1][0])+1]
             for li in range(last_index+1, len(reference_dict[section[-1][0]])):
                 plus_offset.append([section[-1][0], list(reference_dict[section[-1][0]])[li]])
+            if len(reference_dict[last_seg])<4:
+                for li in range(0, len(reference_dict[last_seg])+1, 1):
+                    plus_offset.append([last_seg, list(reference_dict[last_seg])[li]])
+                last_seg = segment_labels[segment_labels.index(last_seg)+1]
             last_index = 0
         if last_seg!=last_seg_orig:
             r = range(0,4)
@@ -446,7 +454,10 @@ class ImportHomologyModel():
         self.receptor = receptor
         self.sign_prot = sign_prot
         self.zip_path = zip_path
-        self.receptor_segments = [i.slug for i in ProteinSegment.objects.filter(proteinfamily='GPCR')]
+        if sign_prot:
+            self.segments = [i.slug for i in ProteinSegment.objects.filter(proteinfamily=sign_prot)]
+        else:
+            self.segments = [i.slug for i in ProteinSegment.objects.filter(proteinfamily='GPCR')]
         self.path_to_pdb = ''
 
     def find_files(self):
@@ -502,7 +513,7 @@ class ImportHomologyModel():
         ''' Parses model file.
         '''
         reference_dict, main_pdb_array = OrderedDict(), OrderedDict()
-        for i in self.receptor_segments:
+        for i in self.segments:
             reference_dict[i] = OrderedDict()
             main_pdb_array[i] = OrderedDict()
         resis = Residue.objects.filter(protein_conformation__protein__entry_name=self.receptor)
@@ -510,16 +521,22 @@ class ImportHomologyModel():
             seqnum = res.get_id()[1]
             this_res = resis.get(sequence_number=seqnum)
             try:
-                reference_dict[this_res.protein_segment.slug][ggn(this_res.display_generic_number.label)] = this_res.amino_acid
-            except:
+                if self.sign_prot=='Alpha':
+                    reference_dict[this_res.protein_segment.slug][this_res.display_generic_number.label] = this_res.amino_acid
+                else:
+                    reference_dict[this_res.protein_segment.slug][ggn(this_res.display_generic_number.label)] = this_res.amino_acid
+            except AttributeError:
                 reference_dict[this_res.protein_segment.slug][str(this_res.sequence_number)] = this_res.amino_acid
             atoms_list = []
             for atom in res:
                 if atom.element!='H':
                     atoms_list.append(atom)
             try:
-                main_pdb_array[this_res.protein_segment.slug][ggn(this_res.display_generic_number.label).replace('x','.')] = atoms_list
-            except:
+                if self.sign_prot=='Alpha':
+                    main_pdb_array[this_res.protein_segment.slug][this_res.display_generic_number.label] = atoms_list
+                else:
+                    main_pdb_array[this_res.protein_segment.slug][ggn(this_res.display_generic_number.label).replace('x','.')] = atoms_list
+            except AttributeError:
                 main_pdb_array[this_res.protein_segment.slug][str(this_res.sequence_number)] = atoms_list
 
         return reference_dict, reference_dict, reference_dict, main_pdb_array
@@ -529,7 +546,7 @@ class ImportHomologyModel():
         '''
         structure_dict = {}
         template_source = OrderedDict()
-        for i in self.receptor_segments:
+        for i in self.segments:
             template_source[i] = OrderedDict()
         for line in source_file[1:]:
             split_line = line.split(',')
