@@ -141,6 +141,29 @@ function CreateColumnFilters(datatable_selector,column_number, column_range, hea
     }
 }
 
+var prefixSorter = function(results) {
+    if (!results || results.length == 0)
+      return results
+  
+    // Find the open select2 search field and get its value
+    var term = document.querySelector('.select2-search__field').value.toLowerCase()
+    if (term.length == 0)
+      return results
+  
+    return results.sort(function(a, b) {
+        const key = term.toLowerCase();
+        const isGoodMatchA = a.toLowerCase().startsWith(key);
+        const isGoodMatchB = b.toLowerCase().startsWith(key);
+    
+        if (isGoodMatchA ^ isGoodMatchB) { // XOR
+            return isGoodMatchA ? -1 : 1;
+        }
+    
+        return a.localeCompare(b);
+    });
+  }
+
+
 // ##############################################################
 // ####    Norges Datatables Filter Builder - Lets go!       ####
 // ##############################################################
@@ -213,18 +236,18 @@ function createDropdownFilters(api,column_filters) {
                     // Only create if not there or blank
                     var selected = $('thead tr:eq('+header_row+') td:eq(' + col + ') select').val();
                     if (selected === undefined || selected === '') {
-                        // Create the `select` element
-                        $('thead tr:eq('+header_row+') td')
-                            .eq(col)
-                            .empty();
+                        // // Create the `select` element
+                        // $('thead tr:eq('+header_row+') td')
+                        //     .eq(col)
+                        //     .empty();
                         var select = $('<select id="bob'+col+'" class="select2" style="width: 80%;"></select>')
                             .appendTo($('thead tr:eq('+header_row+') td').eq(col))
                             .on('change', function() {
                             //Get the "text" property from each selected data 
                             //regex escape the value and store in array
                             var data = $.map( $(this).select2('data'), function( value, key ) {
-                                return value.text ? '^' + $.fn.dataTable.util.escapeRegex(value.text) + '$' : null; // exact match
-                                // return value.text ? $.fn.dataTable.util.escapeRegex(value.text) + '$': null; // not exact match --> string in string
+                                // return value.text ? '^' + $.fn.dataTable.util.escapeRegex(value.text) + '$' : null; // exact match
+                                return value.text ? $.fn.dataTable.util.escapeRegex(value.text): null; // not exact match --> string in string
                             });
                 
                             //if no data selected use ""
@@ -240,33 +263,29 @@ function createDropdownFilters(api,column_filters) {
                         } );
                         
                 
-                                    
+                        select.append('<option>'+''+'</option>'); // <-- this is added to be selected as the first option, so it doesnt select a value.      
                         api.cells(null, col, {
                             search: 'applied'
-                        }).data().sort().unique().each(function(d) {
+                        }).data().unique().sort().each(function(d) {
                             select.append($('<option>' + d + '</option>'));
                         });
+
+                        // Remove the empty string value from the selection options -- This is the workaround to get fast loading without selection of the first item.
+                        $('#bob'+col).attr('multiple', 'multiple');
+                        $('#bob'+col + " option")[0].remove();
+                        
+
                         var select2 = $('#bob'+col).select2({
+                            // theme: 'bootstrap-4',
                             multiple: true,
                             closeOnSelect: true,
                             placeholder: {text: "Filter"},
                             dropdownAutoWidth : true,
                             tags: true, // allows for selection of undefined values --> Needs the not exact match to function well.
-                            width: 'resolve',
-                            // sorter: function(data) { // FIX: Need different sorting algoritms
-                            //     return data.sort(function (a, b) {
-                            //         if (a.text.toLowerCase() === b.text.toLowerCase()) {
-                            //             return -1; // exact match, prioritize a
-                            //         } else if (a.text > b.text) {
-                            //             return 1; // b should come before a alphabetically
-                            //         } else {
-                            //             return -1; // a should come before b alphabetically
-                            //         }
-                            //     });
-                            // }
+                            // sorter: data => data.sort((a, b) => a.text.length < b.text.length ? -1 : a.text.length > b.text.length ? 1 : 0)
                     });
                     //initially clear select otherwise first option is selected
-                    $('.select2').val(null).trigger('change');
+                    // $('.select2').val(null).trigger('change');
                         }
                 }
             }); // End of muli-selct filter
@@ -388,311 +407,68 @@ function createDropdownFilters(api,column_filters) {
                                         }
                                 );
                             that.draw();
-                        }); // select_max variable end 
-                    api
-                                .cells(null, col, {
-                                    search: 'applied'
-                                })
-                                .data()
-                                .sort()
-                                .unique()
-                                .each(function(d) {
-                                    select_min.append($('<option>' + d + '</option>'));
-                                });
-                    api
-                                .cells(null, col, {
-                                    search: 'applied'
-                                })
-                                .data()
-                                .sort()
-                                .unique()
-                                .each(function(d) {
-                                    select_max.append($('<option>' + d + '</option>'));
-                                });
+                        }); // select_max variable end
+                    select_min.append('<option>'+''+'</option>'); // <-- this is added to be selected as the first option, so it doesnt select a value.
+                    select_max.append('<option>'+''+'</option>'); // <-- this is added to be selected as the first option, so it doesnt select a value.
+                    api.cells(null, col, {
+                        search: 'applied'
+                    }).data().unique().sort().each(function(d) {
+                        select_min.append($('<option>' + d + '</option>'));
+                        select_max.append($('<option>' + d + '</option>'));
+                    });
+
+                    // // Remove the empty string value from the selection options -- This is the workaround to get fast loading without selection of the first item.
+                    // $('#bob'+col+'max').attr('multiple', 'multiple');
+                    // $('#bob'+col+'max' + " option")[0].remove();
+                    // $('#bob'+col+'min').attr('multiple', 'multiple');
+                    // $('#bob'+col+'min' + " option")[0].remove();
+
                     var select2_min = $('#bob'+col+'min').select2({
                             multiple: false,
                             closeOnSelect: true,
                             dropdownAutoWidth : true,
                             placeholder: {text: "min"}
                             // width: 'resolve'
-                        });
-                        var select2_max = $('#bob'+col+'max').select2({
-                            multiple: false,
-                            closeOnSelect: true,
-                            dropdownAutoWidth : true,
-                            placeholder: {text: "max"}
-                            // width: 'resolve'
-                        });
+                    });
+                    var select2_max = $('#bob'+col+'max').select2({
+                        multiple: false,
+                        closeOnSelect: true,
+                        dropdownAutoWidth : true,
+                        placeholder: {text: "max"}
+                        // width: 'resolve'
+                    });
                     //initially clear select otherwise first option is selected
-                    $('.select2').val(null).trigger('change');
+                    // $('.select2').val(null).trigger('change');
                 }
                 }
             }); // End of Range filter year
-            }
-
         }
-
+        if (column_number == 0) {
+            const time = Date.now();
+            const time_now = time-timerStart;
+            var time_s = (time_now*0.001).toFixed(2);
+            console.log("col "+column_number+": "+time_s+"s")
+        } else {
+            const current_time = time_s
+            const time = Date.now();
+            const time_now = time-timerStart;
+            var time_s = time_now*0.001;
+            interval_time = (time_s-current_time).toFixed(2);
+            console.log("col "+column_number+": "+interval_time+"s");
+        }
     }
-    // //const isMetaAllTrue = nestedArray.every(subArray => subArray[subArray.length - 1] === true);
-    // for (const column_filter of column_filters) {
-    //     // # Initialize variables #
-    //     const column_number = column_filter[0];
-    //     const column_range = column_filter[1];
-    //     const column_number_max = api.columns().nodes().length;
-    //     let array_check = [false,false,false,false];
-    //     // # Check if column_number is an integer in the range of the Datatable # 
-    //     if (Number.isInteger(column_filter[0])) {
-    //         if (column_number >= 0 && column_number <= column_number_max) {
-    //             array_check[0] = true;
-    //             // # Value is an integer within the range 0 to column_number_max
-    //             // Do something here if it meets your criteria
-    //             // console.log(`For column_filter_index: ${column_filter_index} - column_number: ${column_number} is an integer within the range 0 to ${column_number_max}.`);
-    //         } else {
-    //             // Value is an integer but not within the range 0 to 10
-    //             // Handle this case here
-    //             console.log(`For column_filter_index: ${column_filter_index} - column_number: (${column_number}) is an integer but not within the range of 0 to max_column number ${column_number_max} of the datatable.`);
-    //             break;
-    //         }
-    //     } else {
-    //         // Value is not an integer
-    //         // Handle this case here
-    //         console.log(`For column_filter_index: ${column_filter_index} - column_number ${column_number} is not an integer.`);
-    //         break;
-    //     }
-        
-    //     column_filter_index++; // increment index of column filters
-    //     array_check[2] = true;
-    //     array_check[3] = true;
-    //     console.log(array_check)
-    //     if (array_check.every(Boolean)) {
-    //         console.log("Every elements are correct!")
-    //     } else {
-    //         console.log("NOT! Every elements are correct!")
-    //     }
-    // }
+}
+// $('.select2').val(null).trigger('change');
 }
 
-// api.columns([0,1,2,3,4,5,6,9,10]).every(function() {
-//         if (this.searchable()) {
-//             var that = this;
-//             var col = this.index();
-    
-//     if (selected === undefined || selected === '') {
-        
-//                 // Create the `select` element
-//                 $('thead tr:eq(3) td')
-//                     .eq(col)
-//                     .empty();
-//                 var select = $('<select id="bob'+col+'" class="select2" style="width: 80%;"></select>')
-//                     .appendTo($('thead tr:eq(3) td').eq(col))
-//                     .on('change', function() {
-//                     //Get the "text" property from each selected data 
-//         //regex escape the value and store in array
-//         var data = $.map( $(this).select2('data'), function( value, key ) {
-//             return value.text ? '^' + $.fn.dataTable.util.escapeRegex(value.text) + '$' : null; // exact match
-//             // return value.text ? $.fn.dataTable.util.escapeRegex(value.text) + '$': null; // not exact match --> string in string
-//                     });
-//         // console.log(value.text)
-//         //if no data selected use ""
-//         if (data.length === 0) {
-//             data = [""];
-//         }
-        
-//         //join array into string with regex or (|)
-//         var val = data.join('|');
 
-//         //search for the option(s) selected
-//         that
-//                 .search(val ? val : '', true, false )
-//                 .draw();
-//         // createDropdowns(api);
-//         } );
-//         // that.search($(this).val()).draw();
-//         // ? val : '', true, false 
-                            
-//                 api
-//                     .cells(null, col, {
-//                         search: 'applied'
-//                     })
-//                     .data()
-//                     .sort()
-//                     .unique()
-//                     .each(function(d) {
-//                         select.append($('<option>' + d + '</option>'));
-//                     });
-//         var select2 = $('#bob'+col).select2({
-//                 multiple: true,
-//                 closeOnSelect: true,
-//                 placeholder: {text: "Filter"},
-//                 dropdownAutoWidth : true,
-//                 tags: true, // allows for selection of undefined values --> Needs the not exact match to function well.
-//                 width: 'resolve',
-//                 sorter: data => data.sort((a, b) => a.text.length - b.text.length || a.text.localeCompare(b.text))
-//             });
-//         //initially clear select otherwise first option is selected
-//         $('.select2').val(null).trigger('change');
-//             }
-//         }
-//     }); // End of column 1,2,3,4,5,6 api.columns
-
-// // ############################
-// // ## Interval using <input> ##
-// // ############################
-
-// api.columns([7]).every(function() {
-//     if (this.searchable()) {
-//     var that = this;
-//     var col = this.index();
-//     // Only create if not there or blank
-//             var selected = $('thead tr:eq(3) td:eq(' + col + ') select').val();
-//     if (selected === undefined || selected === '') {
-//                 // Create the `select` element
-//                 $('thead tr:eq(3) td')
-//                     .eq(col)
-//                     .empty();
-//         var select_min = $('<input id="bob'+col+'min" class="pull-left select2" placeholder="min" style="width: 45%;text-align:center;"></input>')
-//                     .appendTo($('thead tr:eq(3) td').eq(col)).on('keyup', function() {
-//             // Custom filtering function which will search data in column four between two values
-//             $.fn.dataTable.ext.search.push(
-//                 function( settings, data, dataIndex ) {
-//                     var min = parseInt( $('#bob'+col+'min').val(), 10 );
-//                     var max = parseInt( $('#bob'+col+'max').val(), 10 );
-//                     var age = parseFloat( data[col] ) || 0; // use data for the age column
-            
-//                     if ( ( isNaN( min ) && isNaN( max ) ) ||
-//                         ( isNaN( min ) && age <= max ) ||
-//                         ( min <= age   && isNaN( max ) ) ||
-//                         ( min <= age   && age <= max ) )
-//                     {
-//                         return true;
-//                     }
-//                     return false;
-//                 }
-            
-//             );
-//         that.draw();
-//         });
-//         var select_max = $('<input id="bob'+col+'max" class="pull-right select2" placeholder="max" style="width: 45%;text-align:center;"></input>')
-//         .appendTo($('thead tr:eq(3) td').eq(col)).on('keyup', function() {
-//         $.fn.dataTable.ext.search.push(
-//                 function( settings, data, dataIndex ) {
-//                     var min = parseInt( $('#bob'+col+'min').val(), 10 );
-//                     var max = parseInt( $('#bob'+col+'max').val(), 10 );
-//                     var age = parseFloat( data[col] ) || 0; // use data for the age column
-            
-//                     if ( ( isNaN( min ) && isNaN( max ) ) ||
-//                         ( isNaN( min ) && age <= max ) ||
-//                         ( min <= age   && isNaN( max ) ) ||
-//                         ( min <= age   && age <= max ) )
-//                     {
-//                         return true;
-//                     }
-//                     return false;
-//                 }
-            
-//             );
-//         that.draw();
-//         });
+// return data.sort(function (a, b) {
+//     if (a.text.toLowerCase() === b.text.toLowerCase()) {
+//         return -1; // exact match, prioritize a
+//     } else if (a.text > b.text) {
+//         return 1; // b should come before a alphabetically
+//     } else {
+//         return -1; // a should come before b alphabetically
 //     }
-//     }
-// }); // End of column 7 api.columns
-
-// // ##############################
-// // ## Interval using <select2> ##
-// // ##############################
-
-// api.columns([8]).every(function() {
-//     if (this.searchable()) {
-//     var that = this;
-//     var col = this.index();
-//     // Only create if not there or blank
-//             var selected = $('thead tr:eq(3) td:eq(' + col + ') select').val();
-//     if (selected === undefined || selected === '') {
-//                 // Create the `select` element
-//                 $('thead tr:eq(3) td')
-//                     .eq(col)
-//                     .empty();
-//         var select_min = $('<select id="bob'+col+'min" class="pull-left select2" style="width: 45%"></select>')
-//                     .appendTo($('thead tr:eq(3) td').eq(col)).on('change', function() {
-//             // Custom filtering function which will search data in column four between two values
-//             $.fn.dataTable.ext.search.push(
-//                 function( settings, data, dataIndex ) {
-//                     var min = parseInt( $('#bob'+col+'min').val(), 10 );
-//                     var max = parseInt( $('#bob'+col+'max').val(), 10 );
-//                     var age = parseFloat( data[col] ) || 0; // use data for the age column
-            
-//                     if ( ( isNaN( min ) && isNaN( max ) ) ||
-//                         ( isNaN( min ) && age <= max ) ||
-//                         ( min <= age   && isNaN( max ) ) ||
-//                         ( min <= age   && age <= max ) )
-//                     {
-//                         return true;
-//                     }
-//                     return false;
-//                 }
-            
-//             );
-//         that.draw();
-//         }); // select_min variable end
-//         var select_max = $('<select id="bob'+col+'max" class="pull-right select2" style="width: 45%;"></select>')
-//         .appendTo($('thead tr:eq(3) td').eq(col)).on('change', function() {
-//         $.fn.dataTable.ext.search.push(
-//                 function( settings, data, dataIndex ) {
-//                     var min = parseInt( $('#bob'+col+'min').val(), 10 );
-//                     var max = parseInt( $('#bob'+col+'max').val(), 10 );
-//                     var age = parseFloat( data[col] ) || 0; // use data for the age column
-            
-//                     if ( ( isNaN( min ) && isNaN( max ) ) ||
-//                         ( isNaN( min ) && age <= max ) ||
-//                         ( min <= age   && isNaN( max ) ) ||
-//                         ( min <= age   && age <= max ) )
-//                     {
-//                         return true;
-//                     }
-//                     return false;
-//                 }
-            
-//             );
-//         that.draw();
-//         }); // select_max variable end 
-//         api
-//                     .cells(null, col, {
-//                         search: 'applied'
-//                     })
-//                     .data()
-//                     .sort()
-//                     .unique()
-//                     .each(function(d) {
-//                         select_min.append($('<option>' + d + '</option>'));
-//                     });
-//         api
-//                     .cells(null, col, {
-//                         search: 'applied'
-//                     })
-//                     .data()
-//                     .sort()
-//                     .unique()
-//                     .each(function(d) {
-//                         select_max.append($('<option>' + d + '</option>'));
-//                     });
-//         var select2_min = $('#bob'+col+'min').select2({
-//                 multiple: false,
-//                 closeOnSelect: true,
-//                 dropdownAutoWidth : true,
-//                 placeholder: {text: "min"}
-//                 // width: 'resolve'
-//             });
-//             var select2_max = $('#bob'+col+'max').select2({
-//                 multiple: false,
-//                 closeOnSelect: true,
-//                 dropdownAutoWidth : true,
-//                 placeholder: {text: "max"}
-//                 // width: 'resolve'
-//             });
-//         //initially clear select otherwise first option is selected
-//         $('.select2').val(null).trigger('change');
-//     }
-//     }
-// }); // End of column 8 api.column
-// } // End of createDropdowns(api)
-
+// });
+// }

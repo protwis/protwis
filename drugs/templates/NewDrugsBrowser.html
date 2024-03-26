@@ -39,6 +39,23 @@
     /* max-height: 2rem; */
     /* overflow: auto; */
 }
+
+#containerexample {display: none}
+#loadercontainer{
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+/* .select2-selection__clear{
+   position: relative;
+   top: 0;
+   right: -133px;
+   border: 1px solid #ccc;
+   border-left: 0;
+   height: 100%;
+   padding: 0 12px;
+} */
 /* .select2-selection__arrow {
     height: 34px !important;
 } */
@@ -54,14 +71,16 @@
 <!-- <div style="padding-top: 10px; font-size: 14px; white-space: nowrap;">
   <button onclick="reset_all()">Reset</button>
 </div> -->
-
-<div style="padding-top: 10px; font-size: 11px; white-space: nowrap;">
+<div id="containerexample" style="padding-top: 10px; font-size: 11px; white-space: nowrap;">
   <table width="100%" class="display compact" id="Table_example">
   <!-- <table width="100%" class="display" id="Table_example"> -->
     <thead>
       <!-- !!! Stupid work around !!! Fixed headers and resposive tables havent work out the issue of complex headers yet, 
         so inserting a "dummy header row" this allows the table to correspond correctly. 
         Should have been fixed by patch 2.1.0 responsive, but still not working..." -->
+      <script type="text/javascript">
+          var timerStart = Date.now();
+      </script>
       <tr> 
         <td style="text-align: center" data-dt-order="disable"></td>
         <td style="text-align: center" data-dt-order="disable"></td>
@@ -111,9 +130,17 @@
       </tr>
     </thead>
     <tbody>
+      
     </tbody>
   </table>
 </div>
+<div id="loadercontainer">
+  <div class="d-flex justify-content-center text-secondary" id="loader">
+        <div class="spinner-border" role="status">
+            <span class="sr-only">Loading...</span>
+        </div>
+    </div>
+  </div>
 {%endblock%}
 
 {%block addon_js%}
@@ -159,7 +186,9 @@ var numbersType = $.fn.dataTable.absoluteOrderNumber( [
   // #############################
 
   
-  var table1 = $('#Table_example').DataTable({
+  var table1 = $('#Table_example').on( 'draw.dt', function () {
+    $("#containerexample").attr("id", "container"); $("#loadercontainer").css("display","none");
+  } ).DataTable({
     // ####################
     // ## Table settings ##
     // ####################
@@ -174,8 +203,14 @@ var numbersType = $.fn.dataTable.absoluteOrderNumber( [
     order: [2,"asc"],
     pageLength: 20,
     lengthMenu: [10, 20, 50, 75, 100,{ label: 'All', value: -1 }],
+    processing: true,
+    serverSide: false,
+    deferLoading: 57,
+    deferRender: true,
+    // serverSide: true,
     language : {
-     sLengthMenu: "_MENU_"
+     sLengthMenu: "_MENU_",
+     //processing: 'DataTables is currently busy'
     },
     scrollY: "50vh",
     scrollX: true,
@@ -368,11 +403,6 @@ var numbersType = $.fn.dataTable.absoluteOrderNumber( [
             reset_all();
           }
                 }], // End of buttons
-          
-        //   initComplete: function() {
-           
-        //   // $.fn.dataTable.tables({ visible: true, api: true}).columns.adjust(); // maybe useful for column adjustment.
-        // }
         }); // End of DataTables
         
         // #############################
@@ -391,8 +421,13 @@ var numbersType = $.fn.dataTable.absoluteOrderNumber( [
         // #############################
         
         createDropdownFilters(table1,column_filters);
-        //console.log(column_filters); 
-
+        
+        
+        // ## run time printer ##
+        const time = Date.now();
+        const time_now = time-timerStart;
+        const time_s = (time_now*0.001).toFixed(2);
+        console.log("all done in: "+time_s+'s'); 
 }); // End document ready function
 
 
