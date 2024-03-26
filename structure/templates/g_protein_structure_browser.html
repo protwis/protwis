@@ -23,6 +23,8 @@
     <script src="{% static 'home/js/browser_functions.js' %}"> </script>
     <script src="{% static 'home/js/g_protein_structure_browser.js' %}"> </script> <!-- Structure browser -->
     <script src="{% static 'home/js/jquery.powertip.js' %}"></script>
+    <script src="{% static 'home/js/xlsx.full.min.js' %}"></script>  <!-- REMOVE -->
+
 
 <script type="text/javascript" charset="utf-8">
     $(document).ready(function() {
@@ -30,7 +32,14 @@
         gproteinstructurebrowser(effector);
     });
 </script>
+<script>
+  window.addEventListener("hashchange", updateSuperpositionButtonConfiguration, false);
 
+  // Call this function on page load to set the initial configuration
+  document.addEventListener("DOMContentLoaded", updateSuperpositionButtonConfiguration);
+
+
+</script>
 {% endblock %}
 
 
@@ -46,6 +55,9 @@
         <div class="btn-group" style='padding-left:10px;'>
             <label class="btn btn-default btn-s" id="align_btn_g_prot" href="javascript:void(0)">
                 Align seqs
+            </label>
+            <label class="btn btn-default btn-s" id="superpose_template_btn" href="javascript:void(0)">
+                Superposition
             </label>
             <!-- <label class="btn btn-default btn-s" id="download_btn" href="javascript:void(0)">
                 Download PDBs
@@ -548,25 +560,26 @@
     </div>
     <!-- </div> -->
 </div>
-<div id="myModal" class="modal">
+<div id="superposition-modal" class="modal">
   <!-- Modal content -->
     <div class="modal-content">
-        <button style="float:right;display:inline;" aria-hidden="true" aria-label="Close" class="close close_modal" href="javascript:void(0)">&times;</button>
-        <h3>Pick template from selection</h3>
-        <p>Superpositions structures selected in the browser to the template checked in this table</p>
+        <button id="close_superposition_modal" style="float:right;display:inline;" aria-hidden="true" aria-label="Close" class="close" data-dismiss="superposition-modal">&times;</button>
+        <h3>Pick reference from selection</h3>
+        <p>Superpositions structures selected in the browser to the reference checked in this table</p>
         <br>
-        <table id="modal_table" class="display compact" width="100%">
+        <table id="superposition_modal_table" class="display compact" width="100%">
             <thead>
                 <tr>
-                    <th></th>
-                    <th>PDB</th>
-                    <th>UniProt</th>
-                    <th>IUPHAR</th>
-                    <th>Rec. family</th>
-                    <th>Class</th>
-                    <th>Species</th>
-                    <th>State</th>
-                    <th>PDB Date</th>
+                  <th></th>
+                  <th>G protein family</th>
+                  <th>Subtype</th>
+                  <th>PDB</th>
+                  <th>UniProt</th>
+                  <th>IUPHAR</th>
+                  <th>Rec. family</th>
+                  <th>Class</th>
+                  <th>Species</th>
+                  <th>PDB Date</th>
                 </tr>
             </thead>
             <tbody>
@@ -575,4 +588,5 @@
         </table>
     </div>
 </div>
+
 {% endblock %}

@@ -106,10 +106,7 @@ class ProteinConformation(models.Model):
         return False
 
     def sodium_pocket(self):
-        try:
-            site = Site.objects.get(slug='sodium_pocket')
-        except:
-            site = Site.objects.create(slug='sodium_pocket', name='Sodium ion pocket')
+        site = Site.objects.get(slug='sodium_pocket', name='Sodium ion pocket')
         try:
             ex_site = IdentifiedSites.objects.get(protein_conformation=self)
 
@@ -242,7 +239,7 @@ class ProteinFamily(models.Model):
 
     def shorter(self):
         import re
-        return re.sub(r'\(.*\)', ' ', self.name).replace("Class ","").replace(" receptors","").replace(" receptor family","")
+        return re.sub(r'\(.*\)', ' ', self.name).replace("Class ","").replace(" receptors","").replace(" receptor family","").strip()
 
     def __str__(self):
         return self.name
@@ -311,6 +308,7 @@ class ProteinAnomalyRule(models.Model):
     class Meta():
         db_table = 'protein_anomaly_rule'
 
+
 class ProteinConformationTemplateStructure(models.Model):
     protein_conformation = models.ForeignKey('ProteinConformation', on_delete=models.CASCADE)
     protein_segment = models.ForeignKey('ProteinSegment', on_delete=models.CASCADE)
@@ -323,29 +321,52 @@ class ProteinConformationTemplateStructure(models.Model):
     class Meta():
         db_table = 'protein_conformation_template_structure'
 
+
 class ProteinCouplings(models.Model):
     protein = models.ForeignKey('Protein', on_delete=models.CASCADE)
     g_protein = models.ForeignKey('ProteinFamily', on_delete=models.CASCADE)
     ligand = models.ForeignKey('ligand.Ligand', on_delete=models.CASCADE, null=True)
     variant = models.TextField(null=True, blank=True)
-    transduction = models.TextField(null=True)
-    source = models.TextField(null=True) # GuideToPharma, Inoue, Bouvier, Roth
-    emax = models.FloatField(null=True, blank=True)  # Value from David Gloriam
-    pec50 = models.FloatField(null=True, blank=True)  # Value from David Gloriam
-    logmaxec50 = models.FloatField(null=True, blank=True) # Value from David Gloriam
-    stand_dev = models.FloatField(null=True, blank=True) # Value from David Gloriam
-    physiological_ligand = models.BooleanField(default=False)
+    source = models.TextField(null=True) # GtoPdb, Inoue, Bouvier, Roth, Martemyanov
+    physiological_ligand = models.BooleanField(default=False, null=True)
     g_protein_subunit = models.ForeignKey('Protein', on_delete=models.CASCADE, related_name='gprotein', null=True)
     references = models.ManyToManyField('common.Publication')
+    other_protein = models.TextField(null=True)
+    biosensor = models.ForeignKey('Biosensor', on_delete=models.CASCADE, null=True)
+    ### Family based values
+    transduction = models.TextField(null=True) # GtoPdb
+    family_rank = models.SmallIntegerField(null=True)
+    percent_of_primary_family = models.IntegerField(null=True)
+    logemaxec50_family = models.DecimalField(max_digits=4, decimal_places=1, null=True)
+    kon_mean_family = models.DecimalField(max_digits=4, decimal_places=1, null=True)
+    deltaGDP_conc_family = models.DecimalField(max_digits=4, decimal_places=2, null=True)
+    ### Subtype based values
+    logemaxec50 = models.FloatField(null=True, blank=True)
+    percent_of_primary_subtype = models.IntegerField(null=True)
+    kon_mean = models.DecimalField(max_digits=4, decimal_places=1, null=True)
+    deltaGDP_conc = models.DecimalField(max_digits=4, decimal_places=2, null=True)
 
     def __str__(self):
         # NOTE: The following return breaks when there's no data for transduction since a null
         # can't be concatenated with strings.
         # return self.protein.entry_name + ", " + self.g_protein.name + ", " + self.transduction
-        return "{} {} {}".format(self.protein.entry_name,  self.g_protein.name, self.transduction)
+        return "{} {} {}".format(self.protein.entry_name,  self.g_protein.name, self.source)
 
     class Meta():
         db_table = 'protein_couplings'
+
+
+class Biosensor(models.Model):
+    name = models.TextField()
+    downstream_steps = models.IntegerField()
+    parameter = models.TextField()
+
+    def __str__(self):
+        return self.name
+
+    class Meta():
+        db_table = 'protein_couplings_biosensor'
+
 
 def dgn(gn, protein_conformation):
     """Convert generic number to display generic number."""

@@ -86,7 +86,7 @@
         </div>
     </div>
 
-    <div class="row">
+    <!-- <div class="row">
       <div class="col-md-12">
 
           <div class="panel panel-primary">
@@ -94,14 +94,14 @@
                   <h2 style='text-align: center'>Published!</h2>
                   <p style='text-align: center'>
                     <b>The main article <a href='https://doi.org/10.1038/s41589-023-01292-8' target="_blank">A community Biased signaling Atlas</a>
-                    has been publisehd on <a href='https://www.nature.com/nchembio/' target="_blank">Nature Chemical Biology</a>. <br />
+                    has been published on <a href='https://www.nature.com/nchembio/' target="_blank">Nature Chemical Biology</a>. <br />
                     We invite you all to read the article to have a deeper insight of this new resource.</b>
                   </p>
               </div>
           </div>
 
       </div>
-    </div>
+    </div> -->
 
 
     <div class="row">
@@ -246,6 +246,15 @@
                 </div>
             </div>
 
+            <div class="panel panel-primary">
+                <div class="panel-body" style='max-height: 530px; overflow-y: scroll;'>
+                    <h3>Publications</h3>
+                    <p><a href='https://doi.org/10.1038/s41589-023-01292-8' target='_blank'>A community Biased Signaling Atlas.</a><br />
+                    Caroli J, Mamyrbekov A, Harpsøe K, Gardizi S, Dörries L, Ghosh E, Hauser AS, Kooistra AJ & Gloriam DE <br />
+                    <i>Nature Chemical Biology</i>, 2023<br /></p>
+                </div>
+            </div>
+
         </div>
 
 
@@ -290,4 +299,12 @@
     {#        </div>#}
     {#    </div>#}
 
+{% endblock %}
+
+{% block addon_js %}
+<script>
+    $(".release-notes").find("li").addClass("hidden");
+    $(".biasedsignalingatlas").removeClass("hidden");
+    $(".all").removeClass("hidden")
+</script>
 {% endblock %}

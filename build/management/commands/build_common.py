@@ -3,7 +3,7 @@ from django.conf import settings
 from common.models import WebResource, WebLink, PublicationJournal, Publication
 from common.tools import test_model_updates
 from protein.models import (ProteinSegment, ProteinAnomaly, ProteinAnomalyType, ProteinAnomalyRuleSet,
-    ProteinAnomalyRule)
+    ProteinAnomalyRule, Site)
 from ligand.models import Ligand, LigandType, LigandRole
 from residue.models import ResidueGenericNumber, ResidueNumberingScheme
 from news.models import News
@@ -44,6 +44,11 @@ class Command(BaseCommand):
             except Exception as msg:
                 print(msg)
                 self.logger.error(msg)
+
+    def create_protein_sites(self):
+        self.logger.info('CREATING PROTEIN SITES')
+        Site.objects.get_or_create(slug='sodium_pocket', name='Sodium ion pocket')
+        self.logger.info('COMPLETED PROTEIN SITES')
 
     def create_resources(self):
         self.logger.info('CREATING RESOURCES')

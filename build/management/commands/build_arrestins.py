@@ -310,7 +310,7 @@ class Command(BaseCommand):
         #         self.logger.info('Created structure ' + structure.PDB_code + ' for protein ' + p.name)
 
     def signprot_struct_ids(self):
-        structs = Structure.objects.count()
+        structs = Structure.objects.exclude(structure_type__slug__startswith='af-').count()
         s_structs = SignprotStructure.objects.count()
         offset = 1000
         if s_structs == None:

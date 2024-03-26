@@ -8,7 +8,7 @@ from Bio.Blast import NCBIXML, NCBIWWW
 import subprocess, shlex, os
 
 
-class Command(BaseBuild):  
+class Command(BaseBuild):
 	help = 'Blastp search custom dbs'
 
 	def add_arguments(self, parser):
@@ -19,11 +19,11 @@ class Command(BaseBuild):
 																													  2. all - all GPCRs
 																													  3. fasta text input
 																				 Multiple arguments: specific protein entry names''', default=False, type=str, nargs='+')
-	
+
 	def handle(self, *args, **options):
 		blastdb = None
 		if options['d']:
-			blastdb = options['d'] ### FIXME import/parse blast db 
+			blastdb = options['d'] ### FIXME import/parse blast db
 		else:
 			blastdb = 'blastp_out.fasta'
 			if options['make_db']:
@@ -35,7 +35,7 @@ class Command(BaseBuild):
 					fasta = ''
 					### xtal preset
 					if options['make_db']==['xtal']:
-						structs = Structure.objects.all()
+						structs = Structure.objects.all().exclude(structure_type__slug__startswith='af-')
 						for i in structs:
 							if i.protein_conformation.protein.parent not in prots:
 								prots.append(i.protein_conformation.protein.parent)
@@ -72,4 +72,15 @@ class Command(BaseBuild):
 		# 	for f in files:
 		# 		if 'blastp_out.fasta' in f:
 		# 			os.remove(f)
+
+class CustomBlast():
+	help = 'Run query on blastdb'
+
+	def __init__(self, fasta_file):
+		self.blastdb = fasta_file
+		self.blast_search = BlastSearch(blastdb=self.blastdb, top_results=1)
+
+	def run(self, query):
+		out = self.blast_search.run(query)
+		return out[0][0]
 

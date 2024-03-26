@@ -1,5 +1,5 @@
 /*eslint complexity: ["error", 8]*/
-/*global ClearSelection, AddToSelection, superposition, copyToClipboard, showAlert*/
+/*global ClearSelection, CheckSelection, AddToSelection, superposition, copyToClipboard, showAlert*/
 
 function structurebrowser() {
 
@@ -57,8 +57,13 @@ function structurebrowser() {
     $(".alt").prop("checked",false);
     $(".select-all").prop("checked",false);
 
-    ClearSelection("targets");
-    ClearSelection("reference");
+    const validPrefixes = ["#keepselection"];
+
+    if (validPrefixes.some(prefix => window.location.hash.startsWith(prefix))) {}
+    else {
+      ClearSelection('targets');
+      ClearSelection('reference');
+    }
 
     $("#loading_div").hide();
 
@@ -497,7 +502,11 @@ function structurebrowser() {
     });
 
     $("#superpose_btn").click(function() {
-        superposition(oTable2, [7,1,2,3,4,5,11,29], "structure_browser");
+        superposition(oTable2, [7,1,2,3,4,5,11,29], "structure_browser", "gpcr", 7);
+    });
+
+    $('#superpose_template_btn').click(function () {
+        direct_superposition(oTable2, "gpcr", 7, "structure");
     });
 
     $("#download_btn").click(function () {

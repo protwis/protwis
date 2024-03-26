@@ -1504,7 +1504,8 @@ def stabilisation_browser(request):
     class_interactions_list = {}
     for c in gpcr_class:
         class_interactions = ResidueFragmentInteraction.objects.filter(
-            structure_ligand_pair__structure__protein_conformation__protein__family__slug__startswith=c, structure_ligand_pair__annotated=True).exclude(interaction_type__slug='acc').prefetch_related(
+            structure_ligand_pair__structure__protein_conformation__protein__family__slug__startswith=c, structure_ligand_pair__annotated=True).exclude(
+            structure_ligand_pair__structure__structure_type__slug__startswith='af-').exclude(interaction_type__slug='acc').prefetch_related(
             'rotamer__residue__generic_number','interaction_type',
             'rotamer__residue__protein_conformation__protein__parent__family')
 
@@ -2248,7 +2249,8 @@ class ExperimentBrowser(TemplateView):
                 "crystallization__chemical_lists", "crystallization__chemical_lists__chemicals__chemical__chemical_type",
                 "protein__species","structure__pdb_code","structure__publication__web_link", "contributor",
                 Prefetch("structure__ligands", queryset=StructureLigandInteraction.objects.filter(
-                annotated=True).prefetch_related('ligand__ligand_type', 'ligand_role','ligand__ids__web_resource'))).annotate(pur_count = Count('purification__steps')).annotate(sub_count = Count('solubilization__chemical_list__chemicals'))
+                annotated=True).exclude(structure__structure_type__slug__startswith='af-').prefetch_related('ligand__ligand_type', 'ligand_role','ligand__ids__web_resource'))
+                ).annotate(pur_count = Count('purification__steps')).annotate(sub_count = Count('solubilization__chemical_list__chemicals'))
             #context['constructs'] = cache.get('construct_browser')
             #if context['constructs']==None:
             context['constructs'] = []

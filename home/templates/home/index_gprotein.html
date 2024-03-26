@@ -23,6 +23,16 @@
      padding: 0px;
   }
 </style>
+
+    <!-- Overview modal -->
+    <div id="overview-modal" class="modal" style="text-align:center;">
+        <div class="modal-content" style='height: 90%; width: 60%; vertical-align:middle;'>
+            <img id="overview-modal-image" src="{% static 'home/images/GproteinDb_overview.png' %}" style='height: 90%;'>
+            <button id="close-overview-modal"  style="position:absolute;" aria-hidden="false" aria-label="Close" class="close" data-dismiss="overview-modal">&times;</button>
+            <p style="padding-top:3%;">Adapted from <a href="https://doi.org/10.1093/nar/gkad1089", target="_blank">Pándy-Szekeres et al., <i>Nucleic Acids Research</i>, 2023</a></p>
+        </div>
+    </div>
+
     <!-- Carousel -->
     <div class="row">
 
@@ -39,7 +49,32 @@
 
                 <!-- Wrapper for carousel slides -->
                 <div class="carousel-inner" role="listbox">
+
                     <div class="item active">
+                        <img src="{% static 'home/carousel/gprot_couplings.png' %}">
+                        <div class="carousel-caption">
+                            <h3>New G protein couplings</h3>
+                            <p>Unified coupling atlas and G protein selectivity profiles.</p>
+                        </div>
+                    </div>
+
+                    <div class="item">
+                        <img src="{% static 'home/carousel/carousel_g_protein_interface.png' %}">
+                        <div class="carousel-caption">
+                            <h3>GPCR - G protein structure interface</h3>
+                            <p>Structure based coupling interface interactions for structures and models.</p>
+                        </div>
+                    </div>
+
+                    <div class="item">
+                        <img src="{% static 'home/carousel/gprot_models.png' %}">
+                        <div class="carousel-caption">
+                            <h3>Structure models</a></h3>
+                            <p>New GPCR-G protein structure models with AlphaFold2-Multimer.</p>
+                        </div>
+                    </div>
+
+                    <div class="item">
                         <img src="{% static 'home/carousel/gprot_seqalign.png' %}">
                         <div class="carousel-caption">
                             <h3>Sequence alignments</h3>
@@ -48,34 +83,10 @@
                     </div>
 
                     <div class="item">
-                        <img src="{% static 'home/carousel/gprot_couplings.png' %}">
-                        <div class="carousel-caption">
-                            <h3>G protein couplings</h3>
-                            <p>Unified coupling atlas and G protein selectivity profiles.</p>
-                        </div>
-                    </div>
-
-                    <div class="item">
                         <img src="{% static 'home/carousel/gprot_structures.png' %}">
                         <div class="carousel-caption">
                             <h3>Structures</h3>
                             <p>G protein structure statistics and browser with unique annotation.</p>
-                        </div>
-                    </div>
-
-                    <div class="item">
-                        <img src="{% static 'home/carousel/gprot_models.png' %}">
-                        <div class="carousel-caption">
-                            <h3>Structure models</a></h3>
-                            <p>GPCR-G protein structure models.</p>
-                        </div>
-                    </div>
-
-                    <div class="item">
-                        <img src="{% static 'home/carousel/gprot_interface.png' %}">
-                        <div class="carousel-caption">
-                            <h3>G protein structure interface</h3>
-                            <p>Structure based coupling interface interactions.</p>
                         </div>
                     </div>
 
@@ -164,6 +175,17 @@
                     </div>
                 </div>
 
+                <!-- Overview -->
+                <div class="col-md-4">
+                    <div class="panel panel-primary">
+                        <div class="panel-body">
+                            <h3>Overview</h3>
+                            <br />
+                            <img role="button" id="overview-image" src="{% static 'home/images/GproteinDb_overview.png' %}" style='height: 100%; width: 100%; object-fit: contain'>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Release Notes -->
                 <div class="col-md-4">
                     <div class="panel panel-primary">
@@ -173,15 +195,6 @@
                             {{ release_notes.html|safe }}
                             <br />
                             <strong><a href="/pages/releasenotes">All releases</a></strong>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Publications -->
-                <div class="col-md-4">
-                    <div class="panel panel-primary">
-                        <div class="panel-body">
-                            <a href="https://www.youtube.com/watch?v=X8j_xpryZ4U&start=778&end=3732;" target="_blank"><img style="width: 100%;" src="{% static '/home/images/gprot_resource.png' %}". ></img></a>
                         </div>
                     </div>
                 </div>
@@ -203,10 +216,19 @@
             <div class="panel panel-primary">
                 <div class="panel-body" style='max-height: 530px; overflow-y: scroll;'>
                     <h3>Publications</h3>
-                    The G protein database, GproteinDb.<br />
-                    Pandy-Szekeres G, Esguerra M, Hauser AS, Caroli J, Munk C, Pilger S, Keseru GM, Kooistra AJ, Gloriam DE<br />
-                    <a href='https://doi.org/10.1093/NAR/GKAB852' target='_blank'><i>Nucleic acids research</i>, 2022, 50:D518-D525</a><br />
-                    <br />
+                    <p><a href="https://doi.org/10.1093/nar/gkad1089" target="_blank">GproteinDb in 2024: New G protein-GPCR couplings, AlphaFold2-Multimer models and interface interactions.</a><br />
+                    Pándy-Szekeres G, Taracena Herrera LP, Caroli J, Kermani AA, Kulkarni Y, Keserű GM, Gloriam DE
+                    <i>Nucleic Acids Research</i>, 2023<br /></p>
+                    <p><a href='https://doi.org/10.1093/NAR/GKAB852' target='_blank'>The G protein database, GproteinDb.</a><br />
+                    Pándy-Szekeres G, Esguerra M, Hauser AS, Caroli J, Munk C, Pilger S, Keserű GM, Kooistra AJ, Gloriam DE<br />
+                    <i>Nucleic Acids Research</i>, 2021<br /></p>
+                </div>
+            </div>
+
+            <!-- Youtube link -->
+            <div class="panel panel-primary">
+                <div class="panel-body">
+                    <a href="https://www.youtube.com/watch?v=X8j_xpryZ4U&start=778&end=3732;" target="_blank"><img style="width: 100%;" src="{% static '/home/images/gprot_resource.png' %}". ></img></a>
                 </div>
             </div>
 
@@ -287,4 +309,27 @@
     {#        </div>#}
     {#    </div>#}
 
+{% endblock %}
+
+{% block addon_js %}
+<script>
+    $(".release-notes").find("li").addClass("hidden");
+    $(".gproteindb").removeClass("hidden");
+    $(".all").removeClass("hidden")
+
+    $("#overview-image").click(function() {
+        // $("#overview-modal-image").attr("src", $("#overview-image").attr("src"));
+        $("#overview-modal").css("display","block");
+    })
+    var modal = document.getElementById("overview-modal");
+    var span = document.getElementById("close-overview-modal");
+    span.onclick = function() {
+        modal.style.display = "none";
+    }
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            modal.style.display = "none";
+        }
+    }
+</script>
 {% endblock %}

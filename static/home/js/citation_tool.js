@@ -111,12 +111,12 @@ function citation_tool(url, cite_id) {
 				data[i][10] = "";
 			}
 			else if (filter_for==="biasedsignalingatlas" && data[i][11]==="Biased Signaling Atlas") {
-				data[i][5] = "An Online Biased Signaling Atlas";
+				data[i][5] = "A community Biased Signaling Atlas";
 				data[i][6] = "Jimmy Caroli, Alibek Mamyrbekov, Kasper Harpsøe, Sahar Gardizi, Linda Dörries, Eshan Ghosh, Alexander S. Hauser, Albert J. Kooistra, and David E. Gloriam";
-				data[i][7] = 2022;
-				data[i][8] = "";
-				data[i][9] = "Preprint";
-				data[i][10] = "https://doi.org/10.21203/rs.3.rs-2155951/v1";
+				data[i][7] = 2023;
+				data[i][8] = "19, 531–535";
+				data[i][9] = "Nature Chemical Biology";
+				data[i][10] = "https://doi.org/10.1038/s41589-023-01292-8";
 			}
 			var site = parse_url_long(data[i][0]);
 			tags.push(site);

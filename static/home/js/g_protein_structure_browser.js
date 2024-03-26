@@ -10,9 +10,18 @@ function gproteinstructurebrowser(effector) {
     $(".alt_selected").prop("checked",false);
     $(".alt").prop("checked",false);
     $(".select-all").prop("checked",false);
-    //
-    ClearSelection("targets");
-    ClearSelection("reference");
+
+    switch (window.location.hash) {
+        case "#keepselectionreference":
+            ClearSelection("reference");
+            break;
+        case "#keepselectiontargets":
+            break;
+        default:
+            ClearSelection("targets");
+            ClearSelection("reference");
+            break;
+    }
 
     $("#loading_div").hide();
 
@@ -178,324 +187,6 @@ function gproteinstructurebrowser(effector) {
       cumulative_filtering: false
     });
 
-    // yadcf.init(oTable2,
-    //     [
-    //         {
-    //             column_number : 1,
-    //             filter_type: "multi_select",
-    //             select_type: "select2",
-    //             filter_default_label: "Fam.",
-    //             filter_match_mode : "exact",
-    //             filter_reset_button_text: false,
-    //             select_type_options: {
-    //                 width: "50px",
-    //             }
-    //         },
-    //         {
-    //             column_number : 2,
-    //             filter_type: "multi_select",
-    //             select_type: "select2",
-    //             column_data_type: "html",
-    //             filter_default_label: "&alpha;",
-    //             filter_match_mode : "exact",
-    //             filter_reset_button_text: false,
-    //             select_type_options: {
-    //                 width: "40px",
-    //             }
-    //         },
-    //         {
-    //             column_number: 3,
-    //             filter_type: "multi_select",
-    //             select_type: "select2",
-    //             filter_default_label: "Species",
-    //             filter_reset_button_text: false,
-    //             select_type_options: {
-    //                 width: "55px",
-    //             }
-    //         },
-    //         {
-    //             column_number : 4,
-    //             filter_type: "text",
-    //             select_type: "select2",
-    //             filter_default_label: "Note",
-    //             filter_match_mode : "exact",
-    //             filter_reset_button_text: false,
-    //             select_type_options: {
-    //                 width: "80px",
-    //             }
-    //         },
-    //         {
-    //             column_number : 5,
-    //             filter_type: "range_number",
-    //             filter_reset_button_text: false,
-    //             filter_default_label: ["Min", "Max"],
-    //             select_type_options: {
-    //                 width: "30px",
-    //             }
-    //         },
-    //         {
-    //             column_number : 6,
-    //             filter_type: "multi_select",
-    //             select_type: "select2",
-    //             filter_default_label: "&beta;",
-    //             html_data_type: "text",
-    //             filter_match_mode : "exact",
-    //             filter_reset_button_text: false,
-    //             select_type_options: {
-    //                 width: "40px",
-    //             }
-    //         },
-    //         {
-    //             column_number: 7,
-    //             filter_type: "multi_select",
-    //             select_type: "select2",
-    //             filter_default_label: "Species",
-    //             html_data_type: "text",
-    //             filter_reset_button_text: false,
-    //             select_type_options: {
-    //                 width: "55px",
-    //             }
-    //         },
-    //         {
-    //             column_number : 8,
-    //             filter_type: "multi_select",
-    //             select_type: "select2",
-    //             filter_default_label: "&gamma;",
-    //             filter_match_mode : "exact",
-    //             filter_reset_button_text: false,
-    //             select_type_options: {
-    //                 width: "40px",
-    //             }
-    //         },
-    //         {
-    //             column_number: 9,
-    //             filter_type: "multi_select",
-    //             select_type: "select2",
-    //             filter_default_label: "Species",
-    //             filter_reset_button_text: false,
-    //             select_type_options: {
-    //                 width: "55px",
-    //             }
-    //         },
-    //         {
-    //             column_number : 10,
-    //             filter_type: "multi_select",
-    //             select_type: "select2",
-    //             filter_default_label: "Method",
-    //             filter_reset_button_text: false,
-    //             select_type_options: {
-    //                 width: "60px",
-    //             }
-    //         },
-    //         {
-    //             column_number : 11,
-    //             filter_type: "multi_select",
-    //             select_type: "select2",
-    //             column_data_type: "html",
-    //             filter_default_label: "Select",
-    //             filter_reset_button_text: false,
-    //             select_type_options: {
-    //                 width: "50px",
-    //             }
-    //         },
-    //         {
-    //             column_number : 12,
-    //             filter_type: "multi_select",
-    //             select_type: "select2",
-    //             filter_default_label: "Select",
-    //             column_data_type: "html",
-    //             filter_reset_button_text: false,
-    //             select_type_options: {
-    //                 width: "50px",
-    //             }
-    //         },
-    //         {
-    //             column_number : 13,
-    //             filter_type: "range_number",
-    //             filter_reset_button_text: false,
-    //             filter_default_label: ["Min", "Max"],
-    //         },
-    //         {
-    //             column_number : 14,
-    //             filter_type: "multi_select",
-    //             select_type: "select2",
-    //             column_data_type: "html",
-    //             html_data_type: "text",
-    //             filter_default_label: "UniProt",
-    //             filter_match_mode : "exact",
-    //             filter_reset_button_text: false,
-    //             select_type_options: {
-    //                 width: "60px",
-    //             }
-    //         },
-    //         {
-    //             column_number : 15,
-    //             filter_type: "multi_select",
-    //             select_type: "select2",
-    //             column_data_type: "html",
-    //             html_data_type: "text",
-    //             filter_default_label: "IUPHAR",
-    //             filter_match_mode : "exact",
-    //             filter_reset_button_text: false,
-    //             select_type_options: {
-    //                 width: "60px",
-    //             }
-    //         },
-    //         {
-    //             column_number : 16,
-    //             filter_type: "multi_select",
-    //             select_type: "select2",
-    //             column_data_type: "html",
-    //             html_data_type: "text",
-    //             filter_default_label: "Receptor family",
-    //             filter_match_mode : "exact",
-    //             filter_reset_button_text: false,
-    //             select_type_options: {
-    //                 width: "120px",
-    //             }
-    //         },
-    //         {
-    //             column_number: 17,
-    //             filter_type: "multi_select",
-    //             select_type: "select2",
-    //             column_data_type: "html",
-    //             html_data_type: "text",
-    //             filter_default_label: "Class",
-    //             filter_reset_button_text: false,
-    //             select_type_options: {
-    //                 width: "80px",
-    //             }
-    //         },
-    //         {
-    //             column_number: 18,
-    //             filter_type: "multi_select",
-    //             select_type: "select2",
-    //             filter_default_label: "Species",
-    //             filter_reset_button_text: false,
-    //             select_type_options: {
-    //                 width: "55px",
-    //             }
-    //         },
-    //         {
-    //             column_number : 19,
-    //             filter_type: "text",
-    //             select_type: "select2",
-    //             filter_default_label: "Receptor fusion",
-    //             filter_reset_button_text: false,
-    //             select_type_options: {
-    //                 width: "100px",
-    //             }
-    //         },
-    //         {
-    //             column_number : 20,
-    //             filter_type: "text",
-    //             select_type: "select2",
-    //             filter_default_label: "Antibodies",
-    //             filter_reset_button_text: false,
-    //             select_type_options: {
-    //                 width: "100px",
-    //             }
-    //         },
-    //         {
-    //             column_number : 21,
-    //             filter_type: "text",
-    //             select_type: "select2",
-    //             filter_default_label: "Other",
-    //             filter_reset_button_text: false,
-    //             select_type_options: {
-    //                 width: "100px",
-    //             }
-    //         },
-    //         {
-    //             column_number : 22,
-    //             filter_type: "text",
-    //             select_type: "select2",
-    //             html_data_type: "text",
-    //             filter_default_label: "Ligand name",
-    //             filter_reset_button_text: false,
-    //             select_type_options: {
-    //                 width: "100px",
-    //             }
-    //         },
-    //         {
-    //             column_number : 23,
-    //             filter_type: "multi_select",
-    //             select_type: "select2",
-    //             html_data_type: "text",
-    //             filter_default_label: "Ligand type",
-    //             filter_reset_button_text: false,
-    //             text_data_delimiter: "<br>",
-    //             select_type_options: {
-    //                 width: "100px",
-    //             }
-    //         },
-    //         {
-    //             column_number : 24,
-    //             filter_type: "multi_select",
-    //             select_type: "select2",
-    //             filter_default_label: "Modality",
-    //             filter_match_mode : "exact",
-    //             filter_reset_button_text: false,
-    //             text_data_delimiter: "<br>",
-    //             select_type_options: {
-    //                 width: "100px",
-    //             }
-    //         },
-    //         {
-    //             column_number : 25,
-    //             filter_type: "text",
-    //             select_type: "select2",
-    //             filter_default_label: "Ligand name",
-    //             filter_reset_button_text: false,
-    //             select_type_options: {
-    //                 width: "100px",
-    //             }
-    //         },
-    //         {
-    //             column_number : 26,
-    //             filter_type: "multi_select",
-    //             select_type: "select2",
-    //             filter_default_label: "Ligand type",
-    //             filter_reset_button_text: false,
-    //             select_type_options: {
-    //                 width: "80px",
-    //             }
-    //         },
-    //         {
-    //             column_number : 27,
-    //             filter_type: "multi_select",
-    //             select_type: "select2",
-    //             filter_default_label: "Last author",
-    //             filter_reset_button_text: false,
-    //             select_type_options: {
-    //                 width: "100px",
-    //             }
-    //         },
-    //         {
-    //             column_number : 28,
-    //             filter_type: "multi_select",
-    //             select_type: "select2",
-    //             filter_default_label: "Reference",
-    //             filter_reset_button_text: false,
-    //             select_type_options: {
-    //                 width: "140px",
-    //             }
-    //         },
-    //         {
-    //             column_number : 29,
-    //             filter_type: "range_date",
-    //             filter_reset_button_text: false,
-    //             date_format: "yyyy-mm-dd",
-    //             select_type: "select2",
-    //             filter_default_label: ["Min", "Max"],
-    //             // filter_reset_button_text: false,
-    //         },
-    //     ],
-    //     {
-    //         cumulative_filtering: false
-    //     }
-    // );
-
     //yadcf.exResetAllFilters(oTable2);
     oTable2.columns.adjust();
 
@@ -613,7 +304,11 @@ function gproteinstructurebrowser(effector) {
     });
 
     $("#superpose_btn").click(function() {
-        superposition(oTable2, [7,1,2,3,4,5,11,28], "structure_browser");
+        superposition(oTable2, [1,2,11,14,15,16,17,18,29], "g_protein_structure_browser", "gprot", 11);
+    });
+
+    $('#superpose_template_btn').click(function () {
+        direct_superposition(oTable2, "gprot", 11, "signprot");
     });
 
     $("#download_btn").click(function () {
@@ -621,7 +316,7 @@ function gproteinstructurebrowser(effector) {
         var checked_data = oTable2.rows(".alt_selected").data();
         for (i = 0; i < checked_data.length; i++) {
             var div = document.createElement("div");
-            div.innerHTML = checked_data[i][7];
+            div.innerHTML = checked_data[i][2];
             if (typeof div.innerText !== "undefined") {
                 AddToSelection("targets", "structure",  div.innerText.replace(/\s+/g, "") );
             } else {
@@ -653,11 +348,6 @@ function gproteinstructurebrowser(effector) {
 
     $("#reset_filters_btn").click(function () {
         window.location.href = "/structure/";
-    });
-
-    $(".close_modal").click(function () {
-        var modal = document.getElementById("myModal");
-        modal.style.display = "none";
     });
 
     $(".dataTables_scrollBody").append("<div id=overlay><table id=\"overlay_table\" class=\"row-border text-center compact dataTable no-footer text-nowrap\"><tbody></tbody></table></div>");
@@ -701,6 +391,42 @@ function gproteinstructurebrowser(effector) {
     // $("#yadcf-filter--structures_scrollable-from-12").width(10);
     // console.log($("#yadcf-filter--structures_scrollable-from-12").width());
 
+}
+
+function CheckSelection(selection_type) {
+    var result = null;
+
+    $.ajax({
+        'url': '/common/checkselection',
+        'data': {
+            selection_type: selection_type
+        },
+        'type': 'GET',
+        'dataType': 'json',  // Expecting JSON response from the server
+        'async': false,
+        'success': function(response) {
+            result = response.total;
+        },
+        'error': function(error) {
+            console.error("An error occurred:", error);
+        }
+    });
+
+    return result;
+}
+
+function ClearSelection(selection_type) {
+    $.ajax({
+        'url': '/common/clearselection',
+        'data': {
+            selection_type: selection_type
+        },
+        'type': 'GET',
+        'async': false,
+        'success': function (data) {
+            $("#selection-" + selection_type).html(data);
+        }
+    });
 }
 
 function copyDropdown() {

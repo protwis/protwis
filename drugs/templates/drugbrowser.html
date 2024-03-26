@@ -2,85 +2,108 @@
 {% load static %}
 {% block addon_css %}
 <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
-<style media="screen">
+<link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.yadcf.css' %}" type="text/css">
+<link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css">
+<link rel="stylesheet" href="{% static 'home/css/modal.css' %}" type="text/css">
+<link rel="stylesheet" href="{% static 'home/css/structure_browser.css' %}" type="text/css">
+
+
+<style type="text/css">
+  input.yadcf-filter, .select2-container-multi .select2-choices  {
+    height: 30px;
+    border-radius: 3px;
+    border: 1px solid #c4c4c4;
+    padding: 2px;
+    font-family: sans-serif;
+    font-weight: bold;
+    width: 100%;
+  }
+
+  .yadcf-filter-wrapper {
+    margin-top: 5px;
+    margin-bottom: 2px;
+    width: 100%;
+  }
+ 
+  tr.no-border-bottom th {
+    text-align: center;
+    border-left: 1px solid black;
+    border-bottom: none !important;
+  }
+
+	table.dataTable thead th,
+	table.dataTable tbody td {
+    max-width: 1px;
+		word-break: break-word;
+		overflow: hidden;
+		white-space: nowrap;
+	}
 </style>
 {% endblock %}
+
 {% block content %}
-<h2>Drug Browser</h2>
 <button onclick="tableToExcel()" type="button" class="btn btn-primary" style="margin-top:10px;margin-top:3px"> Export to Excel </button>
 <div class="row">
     <div class="col-md-12 text-center">
         {% if drugdata %}
         <div style="padding-top: 10px; font-size: 11px; white-space: nowrap;">
-            <table width="100%" class="display table" id="drugdata">
-
+            <table width="100%" class="display compact" id="drugdata">
                 <thead>
-                    <tr>
-                        <th style="background-color:#98df8a;text-align:center">Drug Name</th>
-                        <th style="background-color:#98df8a;text-align:center">Indication</th>
-                        <th style="background-color:#aec7e8;text-align:center">Target</th>
-                        <th style="background-color:#aec7e8;text-align:center">Target Level</th>
-                        <th style="background-color:#aec7e8;text-align:center">Class</th>
-                        <th style="background-color:#aec7e8;text-align:center">Family</th>
-                        <th style="background-color:#ffbb78;text-align:center">Status</th>
-                        <th style="background-color:#ffbb78;text-align:center">Phase</th>
-                        <th style="background-color:#ffbb78;text-align:center">Clinical Status</th>
-                        <th style="background-color:#ffbb78;text-align:center">Year of Approval</th>
-                        <th style="background-color:#ffbb78;text-align:center">Drug Type</th>
-                        <th style="background-color:#ffbb78;text-align:center">Mechanism of Action</th>
-                        <th style="background-color:#ffbb78;text-align:;word-wrap: break-word">References</th>
-                        <th style="background-color:#ffbb78;text-align:center">NHS</th>
-                    </tr>
-                    <tr>
-                        <th style="text-align:center"> </th>
-                        <th style="text-align:center"> </th>
-                        <th style="text-align:center"> </th>
-                        <th style="text-align:center"> </th>
-                        <th style="text-align:center"> </th>
-                        <th style="text-align:center"> </th>
-                        <th style="text-align:center"> </th>
-                        <th style="text-align:center"> </th>
-                        <th style="text-align:center"> </th>
-                        <th style="text-align:center"> </th>
-                        <th style="text-align:center"> </th>
-                        <th style="text-align:center"> </th>
-                        <th style="text-align:center"> </th>
-                        <th style="text-align:center"> </th>
-                    </tr>
+                  <tr class="no-border-bottom">
+                    <th colspan="2" style="border-left: none;">DRUGS</th>
+                    <th colspan="5">RECEPTOR</th>
+                    <th colspan="7">CLINICAL INFORMATION</th>  
+                  </tr>
+
+                  <!-- yadcf filter rows -->
+                  <tr>
+                    <!-- Drug section -->
+                    <th style="text-align:center; border-left: none;">NAME<br/></th>
+                    <th style="text-align:center; border-left: none;">INDICATION<br/></th>
+                    <!-- Receptor section -->
+                    <th style="text-align:center; border-left: 1px solid black;">TARGET<br/></th>
+                    <th style="text-align:center; border-left: none">TARGET LEVEL<br/></th>
+                    <th style="text-align:center; border-left: none">CLASS<br/></th>
+                    <th style="text-align:center; border-left: none">FAMILY<br/></th>
+                    <th style="text-align:center; border-left: none;">STATUS<br/></th>
+                    <!-- Clinical information section -->
+                    <th style="text-align:center; border-left: 1px solid black;">PHASE<br/></th>
+                    <th style="text-align:center; border-left: none; ">CLINICAL STATUS<br/></th>
+                    <th style="text-align:center; border-left: none;">YEAR OF <br/>APPROVAL<br/></th>
+                    <th style="text-align:center; border-left: none">DRUG TYPE<br/></th>
+                    <th style="text-align:center; border-left: none;">MECHANISM OF <br/>ACTION<br/></th>
+                    <th style="text-align:center; border-left: none;">NHS<br/></th>
+                    <th style="text-align:center; border-left: none">REFERENCES</th>
+                  </tr>
                 </thead>
                 <tbody>
                 {% for row in drugdata %}
                 <tr>
                 {% if row.NHS == 'yes' %}
-                  <td style="text-align:center"><a href='/drugs/nhs/{{row.name|safe}} ' target="_blank"> {{row.name|safe}}</a></td>
+                  <td data-filter="{{ row.name }}" style="text-align:left;"><a href='/drugs/nhs/{{row.name|safe}} ' target="_blank"> {{row.name|safe}}</a></td>
                 {% else %}
-                  <td style="text-align:center">{{row.name|safe}}</a></td>
+                  <td data-filter="{{ row.name }}" style="text-align:left">{{row.name|safe}}</td>
                 {% endif %}
-                <td style="text-align:center">{{row.indication|safe}}</td>
-                <td style="text-align:center"> <a href='/protein/{{row.target|safe}} '> {{row.target|safe}} </a></td>
-                <td style="text-align:center">{{row.targetlevel|safe}}</td>
-                <td style="text-align:center">{{row.class|safe}}</td>
-                <td style="text-align:center">{{row.family|safe}}</td>
-                <td style="text-align:center">{{row.status|safe}}</td>
-                <td style="text-align:center">{{row.phase|safe}}</td>
-                <td style="text-align:center">{{row.clinicalstatus|safe}}</td>
-                <td style="text-align:center">{{row.approval|safe}}</td>
-                <td style="text-align:center">{{row.drugtype|safe}}</td>
-                <td style="text-align:center">{{row.moa|safe}}</td>
-                <td style="text-align:center">
-                  {% for pmid in row.references %}
-                    {% if pmid != "nan" %}
-                      <a href='https://www.ncbi.nlm.nih.gov/pubmed/{{pmid}}' target="_blank">{{pmid}}</a>
-                    {% else %}
-                      -
-                    {% endif %}
-                    {% if not forloop.last %} | {% endif %}
-                  {% endfor %}
-                </td>
+                <td style="text-align:left">{{row.indication|safe}}</td>
+                <td data-filter="{{row.target}}"  style="text-align:left"> <a href='/protein/{{row.target|safe}} ' target="_blank"> {{row.target|safe}} </a></td>
+                <td style="text-align:left">{{row.targetlevel|safe}}</td>
+                <td style="text-align:left">{{row.class|safe}}</td>
+                <td style="text-align:left">{{row.family|safe}}</td>
+                <td style="text-align:left">{{row.status|safe}}</td>
+                <td style="text-align:left">{{row.phase|safe}}</td>
+                <td style="text-align:left">{{row.clinicalstatus|safe}}</td>
+                <td style="text-align:left">{{row.approval|safe}}</td>
+                <td style="text-align:left">{{row.drugtype|safe}}</td>
+                <td style="text-align:left">{{row.moa|safe}}</td>
                   {% if row.NHS == 'yes' %}
-                    <td style="text-align:center"><a href='/drugs/nhs/{{row.name|safe}} '> {{row.NHS|safe}}</a></td>
+                    <td style="text-align:left"><a href='/drugs/nhs/{{row.name|safe}} ' target="_blank"> {{row.NHS|safe}}</a></td>
                   {% else %}
-                    <td style="text-align:center">{{row.NHS|safe}}</a></td>
+                    <td style="text-align:left">{{row.NHS|safe}}</td>
+                  {% endif %}
+                  {% if row.publications %}
+                    <td class="name" style="text-align:center;"> <a href="#references" data-toggle="modal" data-book-id="{{ row.publications|safe }}">Refs</a> </td>
+                  {% else %}
+                    <td class="name" style="text-align:center;"> </td>
                   {% endif %}
                 {% endfor %}
                 </tbody>
@@ -89,74 +112,81 @@
     {% else %}
         <p> Ooops! There is no data to show here yet. </p>
     {% endif %}
-    </div>
+  </div>
 </div>
 <br>
+
+{% block popup %}
+<div class="modal" id="references">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+          <b><h4 class="modal-title">Refs:</h4></b>
+      </div>
+      <div class="modal-body">
+        <p></p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
 
 {% endblock %}
 {% block addon_js %}
 <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
-<script src="{% static 'home/js/dataTables.tableTools.min.js' %}"> </script>
-<script src="{% static 'home/js/jquery.dataTables.columnFilter.js' %}"> </script>
+<script src="{% static 'home/js/gpcrdb.js' %}"></script>
+<script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"></script>
+<script src="{% static 'home/js/select2.js' %}"></script>
+<script src="{% static 'home/js/bootstrap2-toggle.min.js' %}"></script>
+<script src="{% static 'home/js/gpcrdb.js' %}"></script>
+
+<script>
+  //triggered when modal is about to be shown
+$('#references').on('show.bs.modal', function(e) {
+
+    //get data-id attribute of the clicked element
+    var bookId = $(e.relatedTarget).data('book-id');
+    $("#references .modal-body p").html(bookId);
+    //populate the textbox
+    // $(e.currentTarget).find('.modal-body p').val(bookId);
+});
+</script>
 
 <script type="text/javascript" charset="utf-8">
-        $(document).ready(function() {
-            var table = $('#drugdata').DataTable({
-                "scrollX": true,
-                // 'scrollY': $(window).height()-300,
-                'bScrollCollapse': true,
-                'paging': true,
-                "lengthMenu": [[25, 50, 100, -1], [25, 50, 100, "All"]],
-                'orderCellsTop': true,
-                'autoWidth': true,
-                'buttons' : ['excel'],
-                'dom': 'T<"clear">lfrtip',
-                'order': [[6, "desc"]], // order by date
-                "aoColumns": [
-                        {"sClass": "center"},
-                        {"sClass": "center"},
-                        {"sClass": "center"},
-                        {"sClass": "center"},
-                        {"sClass": "center"},
-                        {"sClass": "center"},
-                        {"sClass": "center"},
-                        {"sClass": "center"},
-                        {"sClass": "center"},
-                        {"sClass": "center"},
-                        {"sClass": "center"},
-                        {"sClass": "center"},
-                        {"sClass": "center"},
-                        {"sClass": "center"}],
-                'tableTools': {
-                    "sRowSelect": "multi",
-                    "aButtons": []
-                },
-                initComplete: function () {
-                    $('#drugdata').dataTable().columnFilter({
-                        'sPlaceHolder': "head:after",
-                        'aoColumns': [
-                            { type: "text" },
-                            { type: "text" },
-                            { type: "text" },
-                            { type: "select" },
-                            { type: "select" }, // Family
-                            { type: "select" },
-                            { type: "select" },
-                            { type: "select" },
-                            { type: "select" },
-                            { type: "select" },
-                            { type: "select" },
-                            { type: "select" },
-                            { type: "select" },
-                            { type: "text" },
-                            { type: "text" },
-                        ]
-                    });
-                }
+  $(document).ready(
+    function() {
+      var table = $('#drugdata').DataTable(
+        {
+          autoWidth: false,
+          'order': [[0, "asc"]],
+          scrollY: "65vh",
+          scrollX: true,
+          scrollCollapse: true,
+          scroller: true,
+          paging: false,
+          bSortCellsTop: false,
+          columnDefs: [
+            { targets: '_all', width: '100px' }
+          ]
+        }
+      ); 
+      let column_filters = [];
+      column_filters = column_filters.concat(createYADCFfilters(0, 3,"multi_select", "select2", "Select", false, null, null, null, 'data-filter'));
+      column_filters = column_filters.concat(createYADCFfilters(3, 10,"multi_select", select_type="select2", filter_default_label="Select"));
+      column_filters[12]["data"] = ["yes", "no"];
+      // YADCF filter 
+      yadcf.init(
+        table, column_filters
+      );
 
-            });
-        });
-    </script>
+      //Adding 'expand' class to long text cells - on hover, the cell expands and text is readable
+      $("tr td:nth-child(2)").addClass("expand");
+      $("tr td:nth-child(6)").addClass("expand");
+    }
+  );
+</script>
     <script>
       var tableToExcel = (function () {
         var encabezado = '<html><head><meta http-equiv="content-type" content="text/plain; charset=UTF-8"/><style> table, td {border:thin solid black} table {border-collapse:collapse}</style></head><body><table>';

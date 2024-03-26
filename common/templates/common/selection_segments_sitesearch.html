@@ -3,7 +3,7 @@
     {% for s in ss %}
         {% if s.category == ss_cat.0 %}
         <div class="btn-group" role="group">
-            <a class="btn btn-primary btn-sm">
+            <a class="btn btn-primary btn-sm button-disable">
                 {{ s.slug }}
             </a>
             {% if s.generic_numbers.all %}
@@ -20,3 +20,11 @@
 <div id='segment-generic-numbers'>
 </div>
 </p>
+
+{% block addon_js %}
+<script type="text/javascript" charset="utf-8">
+    $(document).ready(function() {
+        $(".button-disable").attr("disabled",true);
+    })
+</script>
+{% endblock %}

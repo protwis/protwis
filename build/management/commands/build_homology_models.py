@@ -174,7 +174,7 @@ class Command(BaseBuild):
             self.custom_selection = True
         # Only refined structures
         elif options['x']:
-            structs = Structure.objects.filter(annotated=True).order_by('pdb_code__index')
+            structs = Structure.objects.filter(annotated=True).exclude(structure_type__slug__startswith='af-').order_by('pdb_code__index')
             all_receptors = [i.protein_conformation.protein for i in structs]
         # Build all
         elif options['c']==False:
@@ -186,7 +186,7 @@ class Command(BaseBuild):
                                                                                                                                       Q(family__slug__istartswith='005') |
                                                                                                                                       Q(family__slug__istartswith='006') |
                                                                                                                                       Q(family__slug__istartswith='007')).order_by('entry_name')
-            structs = Structure.objects.filter(annotated=True).order_by('pdb_code__index')
+            structs = Structure.objects.filter(annotated=True).exclude(structure_type__slug__startswith='af-').order_by('pdb_code__index')
             all_receptors = list(all_receptors)+[i.protein_conformation.protein for i in structs]
         elif options['c'].upper() not in GPCR_class_codes:
             raise AssertionError('Error: Incorrect class name given. Use argument -c with class name A, B1, B2, D1, C, F or T')
@@ -309,15 +309,15 @@ class Command(BaseBuild):
         rec_class = ProteinFamily.objects.get(name=receptor.get_protein_class())
         if rec_class.name=='Class B2 (Adhesion)':
             rec_class = ProteinFamily.objects.filter(name__in=['Class B1 (Secretin)', 'Class B2 (Adhesion)'])
-            structs_in_class = Structure.objects.filter(annotated=True).filter(Q(protein_conformation__protein__parent__family__slug__startswith=rec_class[0].slug) |
+            structs_in_class = Structure.objects.filter(annotated=True).exclude(structure_type__slug__startswith='af-').filter(Q(protein_conformation__protein__parent__family__slug__startswith=rec_class[0].slug) |
                                                                                Q(protein_conformation__protein__parent__family__slug__startswith=rec_class[1].slug))
         else:
-            structs_in_class = Structure.objects.filter(protein_conformation__protein__parent__family__slug__startswith=rec_class.slug, annotated=True)
+            structs_in_class = Structure.objects.filter(protein_conformation__protein__parent__family__slug__startswith=rec_class.slug, annotated=True).exclude(structure_type__slug__startswith='af-')
         possible_states = structs_in_class.exclude(protein_conformation__protein__parent=receptor).exclude(state__name='Other').values_list('state__name', flat=True).distinct()
         if len(possible_states)==0:
             if rec_class.name=='Class T (Taste 2)':
                 rec_class = ProteinFamily.objects.get(name='Class A (Rhodopsin)')
-                structs_in_class = Structure.objects.filter(protein_conformation__protein__parent__family__slug__startswith=rec_class.slug, annotated=True)
+                structs_in_class = Structure.objects.filter(protein_conformation__protein__parent__family__slug__startswith=rec_class.slug, annotated=True).exclude(structure_type__slug__startswith='af-')
             possible_states = structs_in_class.exclude(protein_conformation__protein__parent=receptor).exclude(state__name='Other').values_list('state__name', flat=True).distinct()
         structs = structs_in_class.filter(protein_conformation__protein__parent=receptor)
         li1 = list(possible_states)
@@ -345,6 +345,7 @@ class CallHomologyModeling():
         self.alphafold = alphafold
         self.alphafold_data_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'AlphaFold'])
         self.alphafold_refined_data_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'AlphaFold_refined'])
+        self.alphafold_multimer_data_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'AlphaFold_multimer'])
         self.exclude_structures = exclude_structures
 
 
@@ -359,11 +360,6 @@ class CallHomologyModeling():
 
             Homology_model = HomologyModeling(self.receptor, self.state, [self.state], iterations=self.modeller_iterations, complex_model=self.complex, signprot=self.signprot, debug=self.debug,
                                               force_main_temp=self.force_main_temp, fast_refinement=fast_refinement, keep_hetatoms=self.keep_hetatoms, mutations=self.mutations, alphafold=self.alphafold)
-
-            ### TEMP FIX for complex models not to run on AlphaFold
-            if Homology_model.complex and self.alphafold:
-                return 0 
-            ###
 
             if import_receptor:
                 ihm = ImportHomologyModel(self.receptor, self.signprot)
@@ -406,7 +402,7 @@ class CallHomologyModeling():
                     for l in lines:
                         s = l.split('\t')
                         rotamer_cluster_numbers[s[0]] = int(s[1])
-                 
+
                 delete_list = []
                 homologs = OrderedDict()
                 protconfs = {}
@@ -418,7 +414,7 @@ class CallHomologyModeling():
                     sli = StructureLigandInteraction.objects.filter(structure=i)
                     protconfs[i] = ProteinConformation.objects.get(protein=i.protein_conformation.protein.parent)
                     for s in sli:
-                        if s.ligand_role.name not in modality[Homology_model.state]: 
+                        if s.ligand_role.name not in modality[Homology_model.state]:
                             if len(sli)==1:
                                 delete_list.append(i)
                             elif list(sli).index(s)==len(sli)-1 and i not in delete_list:
@@ -493,7 +489,7 @@ class CallHomologyModeling():
                 struct_per_gn = OrderedDict()
                 for seg,j in interacting_residues.items():
                     for gn in j:
-                        struct_per_gn[gn] = [] 
+                        struct_per_gn[gn] = []
                         for struct, sim in Homology_model.similarity_table.items():
                             if struct not in coverage:
                                 coverage[struct] = [sim, 0]
@@ -508,7 +504,7 @@ class CallHomologyModeling():
                                         struct_per_gn[gn].append(struct)
                             except Residue.DoesNotExist:
                                 continue
-                
+
                 bd = Bioactivity()
                 bioactivity_data = bd.handle()
                 bioactivity_structures = []
@@ -559,7 +555,7 @@ class CallHomologyModeling():
                 for p in pocket_alignment.proteins[1:]:
                     s = Structure.objects.get(protein_conformation__protein=p.protein)
                     Homology_model.similarity_table[s] = int(p.identity)
-                
+
                 resorted_keys = sorted(Homology_model.similarity_table.items(), key=lambda x: (-x[1],x[0].resolution))
                 new_dict = OrderedDict()
                 for r in resorted_keys:
@@ -571,7 +567,7 @@ class CallHomologyModeling():
                         if s in structs:
                             alt_templates[gn] = [res.amino_acid, res.sequence_number, s]
                             break
-                
+
                 ### Clustering
                 # for gn, structs in struct_per_gn.items():
                 #     fix_st = False
@@ -602,7 +598,7 @@ class CallHomologyModeling():
                 #                 continue
                 #             rot = PDB.PDBParser().get_structure('rot', StringIO(rot_obj.pdbdata.pdb))
                 #             rot.atom_to_internal_coordinates()
-                            
+
                 #             for res in rot.get_residues():
                 #                 for i in range(1,6):
                 #                     chi = res.internal_coord.get_angle('chi{}'.format(i))
@@ -706,13 +702,13 @@ class CallHomologyModeling():
                 #                 if rec not in clusters_by_receptor[l]:
                 #                     clusters_by_receptor[l].append(rec)
                 #         print(clusters_by_receptor)
-                        
+
                 #         ### If largest cluster only has 1 receptor, skip
                 #         largest_cluster_label = max(clusters_by_receptor, key=lambda k: len(clusters_by_receptor[k]))
                 #         if len(clusters_by_receptor[largest_cluster_label])==1:
                 #             if not fix_st:
                 #                 continue
-                        
+
                 #         largest_clusters = [largest_cluster_label]
                 #         for l, r in clusters_by_receptor.items():
                 #             if l!=largest_cluster_label and len(clusters_by_receptor[l])==len(clusters_by_receptor[largest_cluster_label]):
@@ -809,27 +805,59 @@ class CallHomologyModeling():
                 #         c+=1
                 # print('Number of positions to change: ',c)
                 # Homology_model.statistics.info_dict['pdb_db_inconsistencies'] = []
-                
+
                 # h = Homology_model.run_non_conserved_switcher(Homology_model.main_pdb_array, Homology_model.alignment.reference_dict, Homology_model.alignment.template_dict, Homology_model.alignment.alignment_dict)
                 if self.debug:
                     pprint.pprint(Homology_model.statistics)
             ### Refined alphafold structure model
             elif self.alphafold and Homology_model.revise_xtal:
                 ### structure
-                target_residues = Residue.objects.filter(protein_conformation__protein=Homology_model.reference_protein.parent)
-                template_residues = Residue.objects.filter(protein_conformation__protein=Homology_model.reference_protein, protein_segment__isnull=False)
+                Homology_model.main_structure = Structure.objects.get(protein_conformation__protein=Homology_model.reference_protein)
+                if Homology_model.complex:
+                    target_residues = Residue.objects.filter(protein_conformation__protein__entry_name__in=[Homology_model.reference_protein.parent.entry_name, Homology_model.signprot]).order_by('protein_conformation__protein__family__slug', 'sequence_number')
+                    alpha_protobj = Protein.objects.get(entry_name=Homology_model.reference_protein.entry_name+'_a')
+                    Homology_model.target_signprot = alpha_protobj.parent
+                    Homology_model.signprot_protconf = ProteinConformation.objects.get(protein=Homology_model.target_signprot)
+                    Homology_model.signprot_complex = SignprotComplex.objects.get(structure=Homology_model.main_structure)
+                    template_residues = Residue.objects.filter(protein_conformation__protein__in=[Homology_model.reference_protein, alpha_protobj], protein_segment__isnull=False).order_by('protein_conformation__protein__family__slug', 'sequence_number')
+                else:
+                    target_residues = Residue.objects.filter(protein_conformation__protein=Homology_model.reference_protein.parent)
+                    template_residues = Residue.objects.filter(protein_conformation__protein=Homology_model.reference_protein, protein_segment__isnull=False)
+
                 wt_lookup_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'wt_pdb_lookup', Homology_model.reference_entry_name+'.json'])
                 wt_lookup_needed = False
                 Homology_model.main_structure = Structure.objects.get(pdb_code__index=Homology_model.reference_entry_name.upper())
                 Homology_model.main_template_preferred_chain = Homology_model.main_structure.preferred_chain
                 alignment = AlignedReferenceTemplate()
                 ### AF
-                af_path = os.sep.join([self.alphafold_refined_data_dir, Homology_model.main_structure.pdb_code.index+'_refined.pdb'])
+                if Homology_model.complex:
+                    complex_name = Homology_model.reference_protein.parent.entry_name+'-'+Homology_model.signprot
+                    af_path =  os.sep.join([self.alphafold_multimer_data_dir, complex_name, complex_name+'.pdb'])
+                    if not os.path.exists(af_path):
+                        af_path = os.sep.join([self.alphafold_multimer_data_dir, complex_name+'_gbb1_human_gbg2_human', complex_name+'_gbb1_human_gbg2_human.pdb'])
+                        if not os.path.exists(af_path):
+                            return 0
+                else:
+                    af_path = os.sep.join([self.alphafold_refined_data_dir, Homology_model.main_structure.pdb_code.index+'_refined.pdb'])
+                
                 ihm = ImportHomologyModel(Homology_model.reference_protein.parent)
                 ihm.path_to_pdb = af_path
                 p = PDB.PDBParser()
-                model = p.get_structure('receptor', af_path)[0]['A']
-                af_reference_dict, af_template_dict, af_alignment_dict, af_main_pdb_array = deepcopy(ihm.parse_model(model))
+                model_receptor = p.get_structure('receptor', af_path)[0]['A']
+                af_reference_dict, af_template_dict, af_alignment_dict, af_main_pdb_array = deepcopy(ihm.parse_model(model_receptor))
+
+                if Homology_model.complex:
+                    signprot = Protein.objects.get(entry_name=Homology_model.signprot)
+                    model_signprot = p.get_structure('signprot',  af_path)[0]['B']
+                    ihm2 = ImportHomologyModel(signprot, 'Alpha')
+                    spaf_reference_dict, spaf_template_dict, spaf_alignment_dict, spaf_main_pdb_array = deepcopy(ihm2.parse_model(model_signprot))
+                    
+                    for i, j, k, l in zip(spaf_reference_dict, spaf_template_dict, spaf_alignment_dict, spaf_main_pdb_array):
+                        af_reference_dict[i] = spaf_reference_dict[i]
+                        af_template_dict[j] = spaf_template_dict[j]
+                        af_alignment_dict[k] = spaf_alignment_dict[k]
+                        af_main_pdb_array[l] = spaf_main_pdb_array[l]
+
                 print('pLDDT')
                 for seg, resis in af_main_pdb_array.items():
                     for gn, atoms in resis.items():
@@ -849,7 +877,10 @@ class CallHomologyModeling():
                     if r.protein_segment.slug not in reference_dict:
                         reference_dict[r.protein_segment.slug] = OrderedDict()
                     if r.display_generic_number:
-                        reference_dict[r.protein_segment.slug][ggn(r.display_generic_number.label)] = r
+                        if r.protein_segment.proteinfamily=='GPCR':
+                            reference_dict[r.protein_segment.slug][ggn(r.display_generic_number.label)] = r
+                        else:
+                            reference_dict[r.protein_segment.slug][r.display_generic_number.label] = r
                     else:
                         reference_dict[r.protein_segment.slug][str(r.sequence_number)] = r
 
@@ -863,17 +894,22 @@ class CallHomologyModeling():
                     distorted_residues[seglab] = []
                     for gn, res in seg.items():
                         gn = str(gn)
-                        if wt_lookup_needed:
+                        if wt_lookup_needed and res.protein_segment.proteinfamily=='GPCR':
                             if res.sequence_number in ssno.wt_pdb_table:
                                 seqnum = ssno.wt_pdb_table[res.sequence_number]
                             elif res.sequence_number in ssno.pdb_wt_table:
                                 seqnum = 0
                             else:
                                 seqnum = res.sequence_number
+                        elif Homology_model.complex and res.protein_segment.proteinfamily=='Alpha':
+                            try:
+                                seqnum = template_residues.get(display_generic_number=res.display_generic_number).sequence_number
+                            except Residue.DoesNotExist:
+                                seqnum = 0
                         else:
                             seqnum = res.sequence_number
                         try:
-                            temp_res = template_residues.get(sequence_number=seqnum)
+                            temp_res = template_residues.get(sequence_number=seqnum, protein_segment__proteinfamily=res.protein_segment.proteinfamily)
                             ### Checking annotation
                             if res.display_generic_number and not temp_res.display_generic_number:
                                 distorted_residues[res.protein_segment.slug].append(ggn(res.display_generic_number.label))
@@ -943,7 +979,10 @@ class CallHomologyModeling():
                 missing_sections = []
                 new_start, new_end = None, None
                 section = []
+                prev_seg = None
                 for seg, resis in template_source.items():
+                    if seg=='G.HN':
+                        break
                     for gn, res in resis.items():
                         if res[0]!=Homology_model.main_structure:
                             if not new_start:
@@ -960,12 +999,92 @@ class CallHomologyModeling():
                 if section not in missing_sections:
                     missing_sections.append(section)
 
+                if Homology_model.complex:
+                    new_start, new_end = None, None
+                    section = []
+                    prev_seg = None
+                    for seg, resis in template_source.items():
+                        if '.' not in seg:
+                            continue
+                        for gn, res in resis.items():
+                            if res[0]!=Homology_model.main_structure:
+                                if not new_start:
+                                    new_start = [seg, gn]
+                                    new_end = [seg, gn]
+                                    section = [[seg, gn]]
+                                else:
+                                    new_end = [seg, gn]
+                                    section.append([seg, gn])
+                            else:
+                                new_start = None
+                                if section not in missing_sections:
+                                    missing_sections.append(section)
+                    if section not in missing_sections:
+                        missing_sections.append(section)
+
+                    ### Chimera check
+                    for section in missing_sections:
+                        H5_resis = [s[0] for s in section if s[0]=='G.H5']
+                        if len(H5_resis)>20:
+                            if self.debug:
+                                print('ERROR: incorrect chimera mapping for {}'.format(Homology_model.reference_protein))
+                                print(H5_resis, len(H5_resis))
+                            logger.error('Incorrect chimera mapping for {}'.format(Homology_model.reference_protein))
+                            raise AssertionError
+
+                    ### Shorten ICL3
+                    for i in reference_dict:
+                        if i.startswith('ICL3'):
+                            label = i
+                            break
+
+                    if len(reference_dict[label])>14:
+                        delete_ts, delete_r, delete_t, delete_a, delete_m = set(),set(),set(),set(),set()
+                        chain_break = False
+                        icl3_c = 0
+                        keys = list(template_source['ICL3'].keys())
+                        length = len(template_dict[label])
+                        ref_prot = Homology_model.reference_protein
+                        for r_s,t_s,a_s,ar_s in zip(reference_dict[label],template_dict[label],
+                                                    alignment_dict[label],main_pdb_array[label]):
+                            icl3_c+=1
+                            if 7<icl3_c<length-6:
+                                if chain_break==False:
+                                    reference_dict[label][r_s] = '/'
+                                    template_dict[label][t_s] = '/'
+                                    alignment_dict[label][a_s] = '/'
+                                    main_pdb_array[label][ar_s] = '/'
+                                    delete_ts.add(('ICL3',keys[icl3_c-1]))
+                                    chain_break = True
+                                else:
+                                    delete_r.add((label,r_s))
+                                    delete_t.add((label,t_s))
+                                    delete_a.add((label,a_s))
+                                    delete_m.add((label,ar_s))
+                                    delete_ts.add(('ICL3',keys[icl3_c-1]))
+                        Homology_model.icl3_delete['A'] = []
+                        for i,ii in delete_ts:
+                            Homology_model.icl3_delete['A'].append(int(ii))
+                            del template_source[i][ii]
+                        for i,ii in delete_r:
+                            del reference_dict[i][ii]
+                        for i,ii in delete_t:
+                            del template_dict[i][ii]
+                        for i,ii in delete_a:
+                            del alignment_dict[i][ii]
+                        for i,ii in delete_m:
+                            del main_pdb_array[i][ii]
+
+                if self.debug:
+                    print('Missing sections')
+                    pprint.pprint(missing_sections)
+
                 ### Swap sections
                 seg_dict = {}
                 for i in missing_sections:
                     if len(i)==0:
                         continue
-                    if (i[0][0]=='N-term' and i[0][1]=='1') or ('N-term' not in reference_dict and i[0][0]=='TM1' and int(i[0][1].split('x')[1])<45):
+                    if (i[0][0]=='N-term' and i[0][1]=='1') or ('N-term' not in reference_dict and i[0][0]=='TM1' and int(i[0][1].split('x')[1])<45) or (i[0][0]=='G.HN' and i[0][1]=='G.HN.01'):
                         i, plus_gns, last_seg = parse.find_after_4_gns(i, reference_dict, distorted_residues, segment_labels)
                         orig_residues = parse.fetch_residues_from_array(main_pdb_array[last_seg], plus_gns)
                         alt_residues_end = parse.fetch_residues_from_array(af_main_pdb_array[last_seg], plus_gns)
@@ -978,7 +1097,7 @@ class CallHomologyModeling():
                                 swapped_dict[seg].append(pos)
                             template_source[seg][pos] = [None, None]
                             seg_dict[pos] = seg
-                        
+
                         alt_residues = OrderedDict()
                         for seg, posis in swapped_dict.items():
                             alt_mid = parse.fetch_residues_from_array(af_main_pdb_array[seg], posis)
@@ -992,7 +1111,7 @@ class CallHomologyModeling():
                         Homology_model.trimmed_residues.append(key_list[-1])
                         Homology_model.trimmed_residues.append(list(new_residues.keys())[-4])
 
-                    elif i[-1][0]=='C-term' and i[-1][1]==list(template_source[list(template_source.keys())[-1]].keys())[-1]:
+                    elif (i[-1][0]=='C-term' and i[-1][1]==list(template_source['C-term'].keys())[-1]) or (i[-1][0]=='G.H5' and i[-1][1]==list(template_source['G.H5'].keys())[-1]):
                         i, minus_gns, first_seg = parse.find_before_4_gns(i, reference_dict, distorted_residues, segment_labels)
                         orig_residues = parse.fetch_residues_from_array(main_pdb_array[first_seg], minus_gns)
                         alt_residues_start = parse.fetch_residues_from_array(af_main_pdb_array[first_seg], minus_gns)
@@ -1004,7 +1123,7 @@ class CallHomologyModeling():
                             else:
                                 swapped_dict[seg].append(pos)
                             seg_dict[pos] = seg
-                        
+
                         alt_residues = OrderedDict()
                         for seg, posis in swapped_dict.items():
                             alt_mid = parse.fetch_residues_from_array(af_main_pdb_array[seg], posis)
@@ -1022,7 +1141,18 @@ class CallHomologyModeling():
                         ### find right before and after 4 gns
                         i, minus_gns, first_seg = parse.find_before_4_gns(i, reference_dict, distorted_residues, segment_labels)
                         i, plus_gns, last_seg = parse.find_after_4_gns(i, reference_dict, distorted_residues, segment_labels)
-                        
+
+                        ### Adjusting swappable section for truncated ICL3
+                        if len(Homology_model.icl3_delete)>0:
+                            icl3_positions = []
+                            for e, pos in enumerate(i):
+                                if pos[0]=='ICL3':
+                                    icl3_positions.append(e)
+                            if len(icl3_positions)>0:
+                                start = icl3_positions[7]
+                                end = icl3_positions[-7]
+                                i = i[:start]+i[end:]
+
                         orig_residues1 = parse.fetch_residues_from_array(main_pdb_array[first_seg], minus_gns)
                         orig_residues2 = parse.fetch_residues_from_array(main_pdb_array[last_seg], plus_gns)
                         orig_residues = parse.add_two_ordereddict(orig_residues1, orig_residues2)
@@ -1053,9 +1183,14 @@ class CallHomologyModeling():
                         Homology_model.trimmed_residues.append(list(new_residues.keys())[-4])
 
                     for key in key_list:
-                        main_pdb_array[seg_dict[key.replace('.','x')]][key] = new_residues[key]
-                        template_dict[seg_dict[key.replace('.','x')]][key.replace('.','x')] = PDB.Polypeptide.three_to_one(new_residues[key][0].get_parent().get_resname())
-                        alignment_dict[seg_dict[key.replace('.','x')]][key.replace('.','x')] = PDB.Polypeptide.three_to_one(new_residues[key][0].get_parent().get_resname())
+                        if len(key.split('.'))>2:
+                            main_pdb_array[seg_dict[key]][key] = new_residues[key]
+                            template_dict[seg_dict[key]][key] = PDB.Polypeptide.three_to_one(new_residues[key][0].get_parent().get_resname())
+                            alignment_dict[seg_dict[key]][key] = PDB.Polypeptide.three_to_one(new_residues[key][0].get_parent().get_resname())
+                        else:
+                            main_pdb_array[seg_dict[key.replace('.','x')]][key] = new_residues[key]
+                            template_dict[seg_dict[key.replace('.','x')]][key.replace('.','x')] = PDB.Polypeptide.three_to_one(new_residues[key][0].get_parent().get_resname())
+                            alignment_dict[seg_dict[key.replace('.','x')]][key.replace('.','x')] = PDB.Polypeptide.three_to_one(new_residues[key][0].get_parent().get_resname())
 
                 ### Rotamer swap (missing atoms and non-wt)
                 for seglab, seg in alignment_dict.items():
@@ -1071,6 +1206,56 @@ class CallHomologyModeling():
                             template_dict[seglab][gn] = new_aa
                             alignment_dict[seglab][gn] = new_aa
                             template_source[seglab][gn][1] = None
+
+                if Homology_model.complex:
+                    # Add Beta and Gamma chains
+                    p = PDB.PDBParser(QUIET=True).get_structure('structure', StringIO(Homology_model.main_structure.pdb_data.pdb))[0]
+                    beta = p[Homology_model.signprot_complex.beta_chain]
+                    gamma = p[Homology_model.signprot_complex.gamma_chain]
+                    reference_dict['Beta'] = OrderedDict()
+                    template_dict['Beta'] = OrderedDict()
+                    alignment_dict['Beta'] = OrderedDict()
+                    main_pdb_array['Beta'] = OrderedDict()
+                    template_source['Beta'] = OrderedDict()
+                    reference_dict['Gamma'] = OrderedDict()
+                    template_dict['Gamma'] = OrderedDict()
+                    alignment_dict['Gamma'] = OrderedDict()
+                    main_pdb_array['Gamma'] = OrderedDict()
+                    template_source['Gamma'] = OrderedDict()
+                    for b_res in beta:
+                        key = str(b_res.get_id()[1])
+                        # remove waters
+                        if b_res.get_resname()=='HOH':
+                            continue
+                        reference_dict['Beta'][key] = PDB.Polypeptide.three_to_one(b_res.get_resname())
+                        template_dict['Beta'][key] = PDB.Polypeptide.three_to_one(b_res.get_resname())
+                        alignment_dict['Beta'][key] = PDB.Polypeptide.three_to_one(b_res.get_resname())
+                        atoms = [atom for atom in b_res]
+                        main_pdb_array['Beta'][key] = atoms
+                        template_source['Beta'][key] = [Homology_model.main_structure, Homology_model.main_structure]
+                    for g_res in gamma:
+                        key = str(g_res.get_id()[1])
+                        # remove waters
+                        if g_res.get_resname()=='HOH':
+                            continue
+                        reference_dict['Gamma'][key] = PDB.Polypeptide.three_to_one(g_res.get_resname())
+                        template_dict['Gamma'][key] = PDB.Polypeptide.three_to_one(g_res.get_resname())
+                        alignment_dict['Gamma'][key] = PDB.Polypeptide.three_to_one(g_res.get_resname())
+                        atoms = [atom for atom in g_res]
+                        main_pdb_array['Gamma'][key] = atoms
+                        template_source['Gamma'][key] = [Homology_model.main_structure, Homology_model.main_structure]
+
+                # C-term truncation
+                if 'C-term' in reference_dict and len(reference_dict['C-term'])>10:
+                    keys = list(reference_dict['C-term'].keys())[::-1]
+                    for i, key in enumerate(keys):
+                        del reference_dict['C-term'][key]
+                        del template_dict['C-term'][key]
+                        del alignment_dict['C-term'][key]
+                        del main_pdb_array['C-term'][key]
+                        del template_source['C-term'][key]
+                        if i==len(keys)-11:
+                            break
 
                 Homology_model.alignment.reference_dict = reference_dict
                 Homology_model.alignment.template_dict = template_dict
@@ -1448,26 +1633,30 @@ class HomologyModeling(object):
                             if i<sp_first_indeces[0]:
                                 atom_num_offset.append(int(pos_list[i])) ### only add OXT induced atom num offset from Receptor, not from sign proteins
                     if self.complex:
+                        if self.revise_xtal:
+                            gpcr_chain, alpha_chain, beta_chain, gamma_chain = self.signprot_complex.structure.preferred_chain, self.signprot_complex.alpha, self.signprot_complex.beta_chain, self.signprot_complex.gamma_chain
+                        else:
+                            gpcr_chain, alpha_chain, beta_chain, gamma_chain = 'R','A','B','G'
                         if i<sp_first_indeces[0]:
                             if len(whitespace)==2:
-                                whitespace = whitespace[0]+'R'
+                                whitespace = whitespace[0]+gpcr_chain
                             else:
-                                whitespace = whitespace[0]+'R'+whitespace[2:]
+                                whitespace = whitespace[0]+gpcr_chain+whitespace[2:]
                         elif sp_first_indeces[0]<=i<sp_first_indeces[1]:
                             if len(whitespace)==2:
-                                whitespace = whitespace[0]+'A'
+                                whitespace = whitespace[0]+alpha_chain
                             else:
-                                whitespace = whitespace[0]+'A'+whitespace[2:]
+                                whitespace = whitespace[0]+alpha_chain+whitespace[2:]
                         elif sp_first_indeces[1]<=i<sp_first_indeces[2]:
                             if len(whitespace)==2:
-                                whitespace = whitespace[0]+'B'
+                                whitespace = whitespace[0]+beta_chain
                             else:
-                                whitespace = whitespace[0]+'B'+whitespace[2:]
+                                whitespace = whitespace[0]+beta_chain+whitespace[2:]
                         elif sp_first_indeces[2]<=i:
                             if len(whitespace)==2:
-                                whitespace = whitespace[0]+'G'
+                                whitespace = whitespace[0]+gamma_chain
                             else:
-                                whitespace = whitespace[0]+'G'+whitespace[2:]
+                                whitespace = whitespace[0]+gamma_chain+whitespace[2:]
                     out_line = group1+whitespace+pos_list[i]+pdb_re.group(4)
                     ### Needed when complex remodel is run
                     if out_line[-1]!='\n':
@@ -1717,7 +1906,7 @@ class HomologyModeling(object):
             self.statistics.add_info("main_template", self.main_structure)
             self.statistics.add_info("preferred_chain", self.main_template_preferred_chain)
 
-            
+
             main_pdb_array = parse.pdb_array_creator(structure=self.main_structure)
 
             ### main_pdb_array sanity check
@@ -2799,7 +2988,7 @@ class HomologyModeling(object):
             post_file = '{}{}_{}_post.pdb'.format(path, self.reference_entry_name, self.target_signprot)
         else:
             post_file = path+self.reference_entry_name+'_'+self.state+"_post.pdb"
-        
+
         ## NMUR2
         # for i in ['ECL2|2','ECL2|3','ECL2|4','ECL2|5','ECL2|6','ECL2|7','ECL2|8','ECL2|9','ECL2|10','ECL2|11','ECL2|12','ECL2|13','ECL2|14','ECL2|15','ECL2|16','ECL2|17','ECL2|23','ECL2|24','ECL2|25']:
         #     self.trimmed_residues.remove(i)
@@ -2822,15 +3011,10 @@ class HomologyModeling(object):
             ref_prot = self.reference_protein
         if (self.revise_xtal and ref_prot==self.main_structure.protein_conformation.protein.parent) or self.keep_hetatoms:
             pdb = PDB.PDBList()
-            pdb.retrieve_pdb_file(str(self.main_structure), pdir='./', file_format='pdb')
             self.alternate_water_positions = OrderedDict()
             last_seqnum = list(Residue.objects.filter(protein_conformation__protein=self.reference_protein.parent))[-1].sequence_number
-            try:
-                with open('./pdb{}.ent'.format(str(self.main_structure).lower()),'r') as f:
-                    lines = f.readlines()
-            except:
-                with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'pdbs', str(self.main_structure)+'.pdb']), 'r') as f:
-                    lines = f.readlines()
+            with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'pdbs', str(self.main_structure)+'.pdb']), 'r') as f:
+                lines = f.readlines()
             with open(post_file, 'a') as model:
                 hetatm = 1
                 for line in lines:
@@ -2870,6 +3054,9 @@ class HomologyModeling(object):
                     ligand_pep_structs = LigandPeptideStructure.objects.filter(structure=self.main_structure)
                     for l in ligand_pep_structs:
                         model.write('TER\n')
+                        ### Skip peptide ligands that are not present in structure
+                        if l.chain==' ':
+                            continue
                         if self.debug:
                             print(l)
                         pdbdata = ''
@@ -2891,7 +3078,7 @@ class HomologyModeling(object):
                         if len(pep_seq)!=len(pep_resnums):
                             pep_seq = ''
                             for r in pep[l.chain]:
-                                try:  
+                                try:
                                     pep_seq+=PDB.Polypeptide.three_to_one(r.get_resname())
                                 except KeyError:
                                     pep_seq+='X'
@@ -3371,7 +3558,7 @@ class HomologyModeling(object):
                                 continue
                         except:
                             pass
-                    if seg_id=='HN':
+                    if seg_id=='G.HN':
                         if complex_start==None:
                             complex_start = counter_num
                     if seg_id=='Beta':
@@ -3472,7 +3659,7 @@ ATOM{atom_num}  {atom}{res} {chain}{res_num}{coord1}{coord2}{coord3}{occupancy}{
                     except:
                         pass
         for ref_seg, temp_seg in zip(reference_dict, template_dict):
-            if ref_seg in ['HN','Beta','Gamma']:
+            if ref_seg in ['G.HN','Beta','Gamma']:
                 ref_sequence+='/'
                 temp_sequence+='/'
             for ref_res, temp_res in zip(reference_dict[ref_seg], template_dict[temp_seg]):
@@ -3646,7 +3833,6 @@ class HomologyMODELLER(automodel):
                     return 'D'
             elif len(self.chains)==5+i:
                 # Long ICL3 complex model with two receptor chains and 3 g protein subunits
-                print(seq_num, self.complex_start, self.beta_start, self.gamma_start, self.icl3_mid)
                 if seq_num<self.icl3_mid:
                     return 'A'
                 elif self.icl3_mid<=seq_num<self.complex_start:
@@ -3701,6 +3887,7 @@ class HomologyMODELLER(automodel):
         for seg_id, segment in self.atom_dict.items():
             for gn, atom in segment.items():
                 chain = self.identify_chain(atom)
+                print(seg_id, gn, atom, chain)
                 selection_out.append(self.residues[str(atom)+':{}'.format(chain)])
         return selection(selection_out)
 

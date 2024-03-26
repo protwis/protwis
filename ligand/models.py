@@ -323,6 +323,8 @@ class LigandPeptideStructure(models.Model):
         'structure.Structure', on_delete=models.CASCADE, null=True)
     ligand = models.ForeignKey('ligand.Ligand', on_delete=models.CASCADE)
     chain = models.CharField(max_length=20)
+    model = models.ForeignKey(
+        'structure.StructureModel', on_delete=models.CASCADE, null=True)
 
     def __str__(self):
         return '<PeptideLigand: {} {} {}>'.format(self.structure, self.ligand, self.chain)
@@ -370,7 +372,7 @@ class LigandVendorLink(models.Model):
     vendor = models.ForeignKey('LigandVendors', on_delete=models.CASCADE)
     ligand = models.ForeignKey('Ligand', null=True, related_name='vendors', on_delete=models.CASCADE)
     url = models.CharField(max_length=400)  # SourceRecordURL
-    external_id = models.CharField(max_length=300, null=True)  # RegistryID => often does not match vendor ID
+    external_id = models.CharField(max_length=500, null=True)  # RegistryID => often does not match vendor ID
 
 
 class Endogenous_GTP(models.Model):

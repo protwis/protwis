@@ -124,13 +124,13 @@ class Command(BaseBuild):
 
     parsed_pdb = None
 
-    construct_errors, rotamer_errors, contactnetwork_errors, interaction_errors = [],[],[],[]
-
     with open(os.sep.join([settings.DATA_DIR, 'residue_data', 'unnatural_amino_acids.yaml']), 'r') as f_yaml:
         raw_uaa = yaml.safe_load(f_yaml)
         unnatural_amino_acids = {}
         for i, j in raw_uaa.items():
             unnatural_amino_acids[i] = j
+
+    exp_method_dict = {'X-ray': 'X-ray diffraction', 'cryo-EM': 'Electron microscopy', 'Electron crystallography': 'Electron crystallography'}
 
 
     def handle(self, *args, **options):
@@ -148,6 +148,8 @@ class Command(BaseBuild):
             self.run_contactnetwork=False
         else:
             self.run_contactnetwork=True
+
+        self.construct_errors, self.rotamer_errors, self.contactnetwork_errors, self.interaction_errors = [],[],[],[]
 
         self.parsed_structures = ParseStructureCSV()
         self.parsed_structures.parse_ligands()
@@ -169,9 +171,9 @@ class Command(BaseBuild):
         try:
             self.logger.info('CREATING STRUCTURES')
             # run the function twice (once for representative structures, once for non-representative)
-            iterations = 1
-            for i in range(1,iterations+1):
-                self.prepare_input(options['proc'], self.parsed_structures.pdb_ids, i)
+            # iterations = 1
+            # for i in range(1,iterations+1):
+            self.prepare_input(options['proc'], self.parsed_structures.pdb_ids)
             test_model_updates(self.all_models, self.tracker, check=True)
             self.logger.info('COMPLETED CREATING STRUCTURES')
         except Exception as msg:
@@ -405,10 +407,12 @@ class Command(BaseBuild):
             seq = seq[:265]
         elif structure.pdb_code.index in ['1GZM', '3C9L']:
             seq = seq[:-3]
-        if structure.pdb_code.index in ['6NBI','6NBF','6NBH','6U1N','6M1H','6PWC','7JVR','7SHF','7EJ0','7EJ8','7EJA','7EJK','7VVJ','7TS0','7W6P','7W7E']:
+        if structure.pdb_code.index in ['6NBI','6NBF','6NBH','6U1N','6M1H','6PWC','7JVR','7SHF','7EJ0','7EJ8','7EJA','7EJK','7VVJ','7TS0','7W6P','7W7E','8IRS','8FLQ','8FLR','8FLS','8FLU','8FU6','8IRU','7Y35','7Y36']:
             pw2 = pairwise2.align.localms(parent_seq, seq, 3, -4, -3, -1)
-        elif structure.pdb_code.index in ['6KUX', '6KUY', '6KUW','7SRS']:
+        elif structure.pdb_code.index in ['6KUX','6KUY','6KUW','7SRS']:
             pw2 = pairwise2.align.localms(parent_seq, seq, 3, -4, -4, -1.5)
+        elif structure.pdb_code.index in ['7YMJ']:
+            pw2 = pairwise2.align.localms(parent_seq, seq, 3, -5, -4, -4)
         else:
             pw2 = pairwise2.align.localms(parent_seq, seq, 3, -4, -5, -2)
 
@@ -589,7 +593,40 @@ class Command(BaseBuild):
             temp_seq = temp_seq[:4]+temp_seq[53:78]+temp_seq[4:53]+temp_seq[78:]
         elif structure.pdb_code.index=='8HAO':
             temp_seq = temp_seq[:4]+temp_seq[57:78]+temp_seq[4:57]+temp_seq[78:]
-
+        elif structure.pdb_code.index=='7T8X':
+            temp_seq = temp_seq[:214]+'K'+temp_seq[214:237]+temp_seq[238:]
+        elif structure.pdb_code.index in ['7ZBE','8A6C']:
+            temp_seq = temp_seq[:228]+'T'+temp_seq[228:242]+temp_seq[243:]
+        elif structure.pdb_code.index=='8FMZ':
+            temp_seq = temp_seq[:172]+'A-'+temp_seq[174:]
+        elif structure.pdb_code.index=='8ID4':
+            temp_seq = temp_seq[:72]+'A--'+temp_seq[75:]
+        elif structure.pdb_code.index=='7XJJ':
+            temp_seq = temp_seq[:140]+'R'+temp_seq[140:146]+temp_seq[147:]
+        elif structure.pdb_code.index=='8DZS':
+            temp_seq = temp_seq[:247]+'S----'+temp_seq[252:]
+        elif structure.pdb_code.index=='8G94':
+            temp_seq = temp_seq[:36]+'I'+temp_seq[36:44]+temp_seq[45:]
+        elif structure.pdb_code.index=='8IW1':
+            temp_seq = temp_seq[:170]+'G'+temp_seq[170:188]+temp_seq[189:]
+        elif structure.pdb_code.index in ['8IW4','8IWE']:
+            temp_seq = temp_seq[:180]+'V-'+temp_seq[182:]
+        elif structure.pdb_code.index in ['8JWY','8JWZ']:
+            ref_seq = ref_seq[:221]+ref_seq[222:]
+            temp_seq = temp_seq[:217]+temp_seq[218:]
+        elif structure.pdb_code.index in ['7Y35','7Y36']:
+            temp_seq = temp_seq[:31]+'R'+temp_seq[31:77]+temp_seq[78:]
+        elif structure.pdb_code.index=='7YMJ':
+            ref_seq = ref_seq[:215]+ref_seq[216:]
+            temp_seq = temp_seq[:212]+temp_seq[214:217]+40*'-'+temp_seq[218:222]+temp_seq[223:227]+'D'+temp_seq[232:236]+'RITRLVL'+temp_seq[276:]
+        elif structure.pdb_code.index=='8H0P':
+            temp_seq = temp_seq[:244]+'N'+temp_seq[244:250]+temp_seq[251:]
+        elif structure.pdb_code.index in ['8JCV','8JCX']:
+            temp_seq = temp_seq[:641]+'I'+temp_seq[641:655]+temp_seq[656:]
+        elif structure.pdb_code.index in ['8JD1']:
+            temp_seq = temp_seq[:642]+'F'+temp_seq[642:654]+temp_seq[655:]
+        elif structure.pdb_code.index in ['8JRV']:
+            temp_seq = temp_seq[79:100]+temp_seq[:79]+temp_seq[100:]
 
 
         for i, r in enumerate(ref_seq, 1): #loop over alignment to create lookups (track pos)
@@ -667,7 +704,7 @@ class Command(BaseBuild):
                     else: #if this is a new residue
                         #print(pdb.splitlines()[i+1][22:26].strip(),check)
                         temp += line + "\n"
-                        if structure.pdb_code.index=='7E9H' and line[17:20]=='SEP':
+                        if structure.pdb_code.index in ['7E9H','8JD6'] and line[17:20]=='SEP':
                             continue
                         #(int(check.strip())<2000 or structure.pdb_code.index=="4PHU") and
                         if int(check.strip()) not in removed:
@@ -676,7 +713,6 @@ class Command(BaseBuild):
                             residue.sequence_number = int(check.strip())
                             residue.amino_acid = AA[residue_name.upper()]
                             residue.protein_conformation = protein_conformation
-
                             try:
                                 seq_num_pos = pdbseq[chain][residue.sequence_number][0]
                             except:
@@ -718,9 +754,9 @@ class Command(BaseBuild):
                                     elif residue.sequence_number!=wt_r.sequence_number:
                                         # print('WT pos not same pos, mismatch',residue.sequence_number,residue.amino_acid,wt_r.sequence_number,wt_r.amino_acid)
                                         wt_pdb_lookup.append(OrderedDict([('WT_POS',wt_r.sequence_number), ('PDB_POS',residue.sequence_number), ('AA',wt_r.amino_acid)]))
-                                        if structure.pdb_code.index not in ['4GBR','6C1R','6C1Q','7XBX']:
+                                        if structure.pdb_code.index not in ['4GBR','6C1R','6C1Q','7XBX','7F1Q','7ZLY','8JWY','8JWZ']:
                                             if residue.sequence_number in unmapped_ref:
-                                                #print('residue.sequence_number',residue.sequence_number,'not mapped though')
+                                                # print('residue.sequence_number',residue.sequence_number,'not mapped though')
                                                 if residue.amino_acid == wt_lookup[residue.sequence_number].amino_acid:
                                                     #print('they are same amino acid!')
                                                     wt_r = wt_lookup[residue.sequence_number]
@@ -1074,7 +1110,6 @@ class Command(BaseBuild):
                         prev_gn = None
                         prev_display = None
                     prev_segment = res.protein_segment
-
         bulked_res = Residue.objects.bulk_create(residues_bulk)
         #bulked_rot = PdbData.objects.bulk_create(rotamer_data_bulk)
         bulked_rot = rotamer_data_bulk
@@ -1105,10 +1140,11 @@ class Command(BaseBuild):
         return None
 
 
-    def build_contact_network(self,s,pdb_code):
+    def build_contact_network(self, pdb_code):
         try:
             # interacting_pairs, distances  = compute_interactions(pdb_code, save_to_db=True)
-            compute_interactions(pdb_code, do_interactions=True, do_peptide_ligand=True, save_to_db=True)
+            compute_interactions(pdb_code, protein=None, lig=None, do_interactions=True, do_complexes=False, do_peptide_ligand=True, save_to_db=True, file_input=False)
+            # compute_interactions(pdb_code, do_interactions=True, do_peptide_ligand=True, save_to_db=True)
         except:
             self.logger.error('Error with computing interactions (%s)' % (pdb_code))
             return
@@ -1151,7 +1187,6 @@ class Command(BaseBuild):
                     ligand = struct_lig_interactions.ligand
                 except Exception as msg:
                     print('error with duplication structureligand',lig_key,msg)
-                    quit() #not sure about this quit
             elif StructureLigandInteraction.objects.filter(pdb_reference=lig_key, structure=structure).exists():
                 try:
                     struct_lig_interactions = StructureLigandInteraction.objects.filter(pdb_reference=lig_key, structure=structure).get()
@@ -1169,8 +1204,10 @@ class Command(BaseBuild):
 
             for interaction in data[lig_key]['interactions']:
                 aa = interaction[0]
-                aa, pos, _ = regexaa(aa)
-                residue = check_residue(protein, pos, aa)
+                if aa[-1] != structure.preferred_chain:
+                    continue
+                aa_single, pos, _ = regexaa(aa)
+                residue = check_residue(protein, pos, aa_single)
                 f = interaction[1]
                 fragment, rotamer = extract_fragment_rotamer(f, residue, structure, ligand)
                 if fragment is not None:
@@ -1189,7 +1226,7 @@ class Command(BaseBuild):
 
         return data
 
-    def main_func(self, positions, iteration, count, lock):
+    def main_func(self, positions, iterations, count, lock):
         # setting up processes
         # if not positions[1]:
         #     pdbs = self.parsed_structures[positions[0]:]
@@ -1240,7 +1277,11 @@ class Command(BaseBuild):
                     s = s.delete()
                     s = Structure()
                 else:
-                    continue
+                    if not s.build_check:
+                        s = s.delete()
+                        s = Structure()
+                    else:
+                        continue
 
             except Structure.DoesNotExist:
                 s = Structure()
@@ -1335,6 +1376,9 @@ class Command(BaseBuild):
 
             # structure type
             if 'structure_method' in sd and sd['structure_method']:
+                if sd['structure_method']=='unknown':
+                    sd['structure_method'] = self.exp_method_dict[sd['method_from_file']]
+
                 structure_type = sd['structure_method'].capitalize()
                 structure_type_slug = slugify(sd['structure_method'])
                 if sd['pdb']=='6ORV':
@@ -1384,27 +1428,24 @@ class Command(BaseBuild):
 
             # insert into plain text fields
             if 'preferred_chain' in sd:
-                s.preferred_chain = sd['preferred_chain']
+                if '.' in sd['preferred_chain']:
+                    pref_c = sd['preferred_chain'].split('.')[0]
+                else:
+                    pref_c = sd['preferred_chain']
+                s.preferred_chain = pref_c
             else:
                 self.logger.warning('Preferred chain not specified for structure {}'.format(sd['pdb']))
             if 'resolution' in sd:
                 s.resolution = float(sd['resolution'])
             else:
                 self.logger.warning('Resolution not specified for structure {}'.format(sd['pdb']))
-            if sd['pdb']=='6ORV':
-                sd['publication_date'] = '2020-01-08'
-            elif sd['pdb'] in ['6YVR','6Z4Q','6Z4S','6Z4V','6Z66','6Z8N','6ZA8','6ZIN']:
-                sd['publication_date'] = '2021-02-10'
-            elif sd['pdb']=='7B6W':
-                sd['publication_date'] = '2022-01-12'
-            elif sd['pdb']=='7XBX':
-                sd['publication_date'] = '2022-07-13'
-            elif sd['pdb']=='7F1T':
-                sd['publication_date'] = '2021-07-14'
-            elif sd['pdb']=='7PP1':
-                sd['publication_date'] = '2022-11-02'
+
+            ### Publication date - if pdb file is incorrect, fetch from structures.csv
             if 'publication_date' in sd:
                 s.publication_date = sd['publication_date']
+                if int(s.publication_date[:4])<1990:
+                    s.publication_date = sd['date_from_file']
+                    print('WARNING: publication date for {} is incorrect ({}), switched to ({}) from structures.csv'.format(s, sd['publication_date'], sd['date_from_file']))
             else:
                 self.logger.warning('Publication date not specified for structure {}'.format(sd['pdb']))
 
@@ -1445,7 +1486,7 @@ class Command(BaseBuild):
                         peptide_chain = ligand['chain']
                         # ligand['name'] = 'pep'
                     if ligand['name'] and ligand['name'] != 'None': # some inserted as none.
-                        ligand['type'] = ligand['type'].lower()
+                        ligand['type'] = ligand['type'].lower().strip()
                         # use annoted ligand type or default type
                         if ligand['type']:
                             lt, created = LigandType.objects.get_or_create(slug=slugify(ligand['type']),
@@ -1511,7 +1552,6 @@ class Command(BaseBuild):
 
                         with lock:
                             l = get_or_create_ligand(ligand_title, ids, ligand['type'])
-
                         # Create LigandPeptideStructure object to store chain ID for peptide ligands - supposed to b TEMP
                         if ligand['type'] in ['peptide','protein']:
                             lps, created = LigandPeptideStructure.objects.get_or_create(structure=s, ligand=l, chain=peptide_chain)
@@ -1654,7 +1694,7 @@ class Command(BaseBuild):
             try:
                 current = time.time()
                 #protein = Protein.objects.filter(entry_name=s.protein_conformation).get()
-                d = fetch_pdb_info(sd['pdb'],con)
+                d = fetch_pdb_info(sd['pdb'],con, preferred_chain=s.preferred_chain)
                 #delete before adding new
                 #Construct.objects.filter(name=d['construct_crystal']['pdb_name']).delete()
                 # add_construct(d)
@@ -1694,7 +1734,7 @@ class Command(BaseBuild):
             if self.run_contactnetwork:
                 try:
                     current = time.time()
-                    self.build_contact_network(s, sd['pdb'])
+                    self.build_contact_network(sd['pdb'])
                     end = time.time()
                     diff = round(end - current,1)
                     self.logger.info('Create contactnetwork done for {}. {} seconds.'.format(s.protein_conformation.protein.entry_name, diff))
@@ -1717,9 +1757,13 @@ class Command(BaseBuild):
                         #     #Only run calcs, if not already in temp
                         # runcalculation(sd['pdb'],peptide_chain)
                         data_results = runcalculation_2022(sd['pdb'], peptide_chain)
+                        if 'NAG' in data_results:
+                            del data_results['NAG']
                         self.parsecalculation(sd['pdb'], data_results, False)
                         end = time.time()
                         diff = round(end - current,1)
+                        print('Interaction calculations done for {}. {} seconds.'.format(
+                                    s.protein_conformation.protein.entry_name, diff))
                         self.logger.info('Interaction calculations done for {}. {} seconds.'.format(
                                     s.protein_conformation.protein.entry_name, diff))
                     except Exception as msg:
@@ -1731,3 +1775,6 @@ class Command(BaseBuild):
                         self.interaction_errors.append(s)
 
                         # print('{} done'.format(sd['pdb']))
+
+            s.build_check = True
+            s.save()

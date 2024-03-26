@@ -285,13 +285,13 @@ class Command(BaseCommand):
         if incremental_update:
             done_structures = Angle.objects.values('structure_id').distinct()
             # TODO add filter here for non-processed structures
-            self.references = Structure.objects.all().exclude(id__in=done_structures).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
+            self.references = Structure.objects.all().exclude(structure_type__slug__startswith='af-').exclude(id__in=done_structures).prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
         else:
             Angle.objects.all().delete()
             Distance.objects.all().delete()
             StructureVectors.objects.all().delete()
             print("All Angle, Distance, and StructureVector data cleaned")
-            self.references = Structure.objects.all().prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
+            self.references = Structure.objects.all().exclude(structure_type__slug__startswith='af-').prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
 
         # DEBUG for a specific PDB
         # self.references = Structure.objects.filter(pdb_code__index="2RH1").prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')

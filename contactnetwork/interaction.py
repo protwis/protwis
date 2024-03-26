@@ -21,6 +21,9 @@ class InteractingPair:
         self.interactions = []
         self.compute_interactions()
 
+    def __repr__(self):
+        return '<InteractingPair: {}-{}-{}>'.format(self.dbres1, self.dbres2, self.structure)
+
     def add_interactions(self, interaction):
         self.interactions.append(interaction)
 

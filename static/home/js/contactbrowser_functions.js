@@ -1986,7 +1986,7 @@ function updateInteractionSettings() {
     $(function () { $('div#interaction_settings span.glyphicon.glyphicon-info-sign').popover() })
 
     var strict_toggles = ["Polar", "Aromatic", "Hydrophobic", "van der Waals"];
-    var strict_tooltips = ["<b>Enabled:</b><br/> donor-acceptor dist. ≤3.5Å + donor angle ≥120°<br/><b>Disabled:</b><br/> donor-acceptor dist. ≤4Å", "<b>Enabled:</b><br/>Face-to-face:<br/>dist. ≤4.4Å + angle ≤30°<br/>Face-to-edge:<br/> dist. ≤5.5Å + angle >30°<br/>Cation-π:<br/>dist. to cat. ≤6.6Å + angle ≤30°<br/><b>Disabled:</b><br/> dist. ≤5.5Å OR Cation-π<br/></br>Calculated from ring center", "<b>Enabled:</b><br/> min. 3 atom pairs<br/><b>Disabled:</b><br/> min. 1 atom pair", "<b>Enabled:</b><br/> min. 3 atom pairs<br/><b>Disabled:</b><br/> min. 1 atom pair"]
+    var strict_tooltips = ["<b>Enabled:</b><br/> donor-acceptor dist. ≤3.5Å + donor angle ≥120°<br/><b>Disabled:</b><br/> donor-acceptor dist. ≤4Å", "<b>Enabled:</b><br/>Face-to-face:<br/>dist. ≤4.4Å + angle ≤30°<br/>Face-to-edge:<br/> dist. ≤5.5Å + angle >30°<br/>Cation-π:<br/>dist. to cat. ≤6.6Å + angle ≤30°<br/><b>Disabled:</b><br/> dist. ≤5.5Å OR Cation-π<br/></br>Calculated from ring center", "<b>Enabled:</b><br/> ≥3 atom pairs<br/><b>Disabled:</b><br/> ≥1 atom pair", "<b>Enabled:</b><br/> ≥3 atom pairs<br/><b>Disabled:</b><br/> ≥1 atom pair"]
     var strict_content = '<ul class="list-group">'
     for (var i = 0; i < strict_toggles.length; i++) {
         var checked = currentSettings[currentTab]["strict"].indexOf(strict_toggles[i].replace(/\s+/g, '-')) >= 0 ? "checked" : "";
