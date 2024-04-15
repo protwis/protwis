@@ -2439,8 +2439,7 @@ class EndogenousBrowser(TemplateView):
                             "publication__reference",                         #18 Pub Reference
                             "publication__web_link__index",                   #19 DOI/PMID
                             "receptor",                                       #20 Receptor ID
-                            "receptor__accession").distinct()                 #21 Accession (UniProt link)
-                            
+                            "receptor__accession").distinct()                 #21 Accession (UniProt link)                       
 
 
         gtpidlinks = dict(list(LigandID.objects.filter(web_resource__slug='gtoplig').values_list(
