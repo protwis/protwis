@@ -190,7 +190,7 @@
             <thead id="headers">
                 <tr class="header-spans">
                     <th style="text-align:left" colspan="5">RECEPTOR</th>
-                    <th style="border-left: 1px solid black; text-align:left; padding-left:5px;" colspan="4" style="">ENDOGENOUS LIGANDS</th>
+                    <th style="border-left: 1px solid black; text-align:left; padding-left:5px;" colspan="6" style="">ENDOGENOUS LIGANDS</th>
                     <th style="border-left: 1px solid black; text-align:left; padding-left:5px;" colspan="3">pEC50</th>
                     <th style="border-left: 1px solid black; text-align:left; padding-left:5px;" colspan="3">pKi</th>
                     <th style="border-left: 1px solid black; text-align:left; padding-left:5px;" colspan="1">REFERENCES</th>
@@ -207,6 +207,8 @@
                     <th class="pathways">GtP<br />Classification</th>
                     <th class="pathways">Potency<br />Ranking</th>
                     <th class="pathways">Type</th>
+                    <th class="pathways">Smiles</th>
+                    <th class="pathways">Inchikey</th>
                     <!-- pEC50 block  -->
                     <th class="color-column">Min</th>
                     <th class="color-column">Mid</th>
@@ -225,30 +227,32 @@
                         <!-- Receptor block -->
                         <td style="text-align:right">{{value.0}}</td>
                         <td style="text-align:right">{{value.1}}</td>
-                        <td style="text-align:right"><a target='_blank' href="http://www.uniprot.org/uniprot/{{value.18}}">{{value.2}}</a></td> <!-- UniProt -->
-                        <td style="text-align:right"><a target='_blank' href="/protein/{{value.19}}">{{value.3}}</a></td> <!-- IUPHAR -->
+                        <td style="text-align:right"><a target='_blank' href="http://www.uniprot.org/uniprot/{{value.20}}">{{value.2}}</a></td> <!-- UniProt -->
+                        <td style="text-align:right"><a target='_blank' href="/protein/{{value.21}}">{{value.3}}</a></td> <!-- IUPHAR -->
                         <td style="text-align:right">{{value.4}}</td>
 
                         <!-- ligand block -->
-                        <td style="text-align:left"><a href='/ligand/{{value.17}}/info' target='_blank'>{{value.5|title}}</a></td>
+                        <td style="text-align:left"><a href='/ligand/{{value.19}}/info' target='_blank'>{{value.5|title}}</a></td>
                         <td style="text-align:left">{{value.7|title}}</td>
                         <td style="text-align:left" class="pathway">{{value.8|floatformat:0}}</td>
                         <td style="text-align:left" class="pathway ">{{value.9}}</td>
+                        <td style="text-align:left" class="pathway ">{{value.10}}</td>
+                        <td style="text-align:left" class="pathway ">{{value.11}}</td>
 
                         <!-- pEC50 block  -->
-                        <td style="text-align:right" class="color-column" id="lbf_p2_p1">{{value.10|floatformat:1}}</td>
-                        <td style="text-align:right" class="color-column" id="lbf_p3_p1">{{value.11|floatformat:1}}</td>
-                        <td style="text-align:right" class="color-column" id="lbf_p4_p1">{{value.12|floatformat:1}}</td>
+                        <td style="text-align:right" class="color-column" id="lbf_p2_p1">{{value.12|floatformat:1}}</td>
+                        <td style="text-align:right" class="color-column" id="lbf_p3_p1">{{value.13|floatformat:1}}</td>
+                        <td style="text-align:right" class="color-column" id="lbf_p4_p1">{{value.14|floatformat:1}}</td>
 
                         <!-- pKi block -->
-                        <td style="text-align:right" class="color-column" id="dee_p2_p1">{{value.13|floatformat:1}}</td>
-                        <td style="text-align:right" class="color-column" id="dee_p3_p1">{{value.14|floatformat:1}}</td>
-                        <td style="text-align:right" class="color-column" id="dee_p4_p1">{{value.15|floatformat:1}}</td>
+                        <td style="text-align:right" class="color-column" id="dee_p2_p1">{{value.15|floatformat:1}}</td>
+                        <td style="text-align:right" class="color-column" id="dee_p3_p1">{{value.16|floatformat:1}}</td>
+                        <td style="text-align:right" class="color-column" id="dee_p4_p1">{{value.17|floatformat:1}}</td>
 
                         <!-- Reference -->
-                        <!-- <td class="name"><a href='#' onClick="javascript:reference_list('{{value.16|safe}}');">References</a></td> -->
-                        {% if value.16|safe != 'empty' %}
-                            <td class="name" style="text-align:center"><a href="#references" data-toggle="modal" data-book-id="{{value.16|safe}}"> Refs</a></td>
+                        <!-- <td class="name"><a href='#' onClick="javascript:reference_list('{{value.16}}');">References</a></td> -->
+                        {% if value.18 != 'empty' %}
+                            <td class="name" style="text-align:center"><a href="#references" data-toggle="modal" data-book-id="{{value.18}}"> Refs</a></td>
                         {% else %}
                             <td class="name" style="text-align:center"></td>
                         {% endif %}
@@ -286,6 +290,7 @@
 <script src="{% static 'home/js/grayscale.js' %}"></script>
 <script src="{% static 'home/js/gpcrdb.js' %}"></script>
 <script src="{% static 'home/js/signprot-multitabtable.js' %}"></script>
+<script src="{% static 'home/js/xlsx.full.min.js' %}"></script>  
 
 <script>
   //triggered when modal is about to be shown
@@ -300,7 +305,6 @@ $('#references').on('show.bs.modal', function(e) {
 </script>
 <script>
     $(document).ready(function() {
-
       $("#endo_scrollable").show();
       oTable1 = $("#endo_scrollable").DataTable({
         deferRender: true,
@@ -321,15 +325,26 @@ $('#references').on('show.bs.modal', function(e) {
         // Class
         column_filters = column_filters.concat(createYADCFfilters(0, 1, "multi_select", "select2", "Class", false, null, null, "80px"));
         // Receptor section (4)
-        column_filters = column_filters.concat(createYADCFfilters(1, 4, "multi_select", "select2", "Select", false, null, null, "80px"));
+        column_filters = column_filters.concat(createYADCFfilters(1, 1, "multi_select", "select2", "Select", false, null, null, "80px"));
+        column_filters = column_filters.concat(createYADCFfilters(2, 1, "multi_select", "select2", "Select", false, null, null, "80px"));
+        column_filters = column_filters.concat(createYADCFfilters(3, 1, "multi_select", "select2", "Select", false, null, null, "80px"));
+        column_filters = column_filters.concat(createYADCFfilters(4, 1, "multi_select", "select2", "Select", false, null, null, "80px"));
         // Ligand column
         column_filters = column_filters.concat(createYADCFfilters(5, 1, "multi_select", "select2", "Select", false, null, "html", "80px"));
-    column_filters = column_filters.concat(createYADCFfilters(6, 1, "multi_select", "select2", "Select", false, null, null, "80px"));
-        // Vendors/Articles/Labs (3)
-        column_filters = column_filters.concat(createYADCFfilters(7, 2, "multi_select", "select2", "Select", false, null, null, "80px"));
+        column_filters = column_filters.concat(createYADCFfilters(6, 1, "multi_select", "select2", "Select", false, null, null, "80px"));
+        column_filters = column_filters.concat(createYADCFfilters(7, 1, "multi_select", "select2", "Select", false, null, null, "80px"));
+        column_filters = column_filters.concat(createYADCFfilters(8, 1, "multi_select", "select2", "Select", false, null, null, "80px"));
+
+        column_filters = column_filters.concat(createYADCFfilters(9, 1, "multi_select", "select2", "Select", false, null, null, "80px"));
+        column_filters = column_filters.concat(createYADCFfilters(10, 1, "multi_select", "select2", "Select", false, null, null, "80px"));
         // Pathway Preference block (5)
-    column_filters = column_filters.concat(createYADCFfilters(9, 6, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
-    // Authors
+        column_filters = column_filters.concat(createYADCFfilters(11, 1, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
+        column_filters = column_filters.concat(createYADCFfilters(12, 1, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
+        column_filters = column_filters.concat(createYADCFfilters(13, 1, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
+        column_filters = column_filters.concat(createYADCFfilters(14, 1, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
+        column_filters = column_filters.concat(createYADCFfilters(15, 1, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
+        column_filters = column_filters.concat(createYADCFfilters(16, 1, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
+        // Authors
         // column_filters = column_filters.concat(createYADCFfilters(15, 1, "multi_select", "select2", "Authors", false, null, null, "80px"));
         // DOI
         // column_filters = column_filters.concat(createYADCFfilters(16, 1, "multi_select", "select2", "DOI", false, null, "html", "80px"));
@@ -337,7 +352,7 @@ $('#references').on('show.bs.modal', function(e) {
         yadcf.init(oTable1.draw(), column_filters, {
             cumulative_filtering: false
         });
-    yadcf.exFilterColumn(oTable1, [[4, ["Human"]]], true);
+        yadcf.exFilterColumn(oTable1, [[4, ["Human"]]], true);
 
         gray_scale_table($("#endo_scrollable"));
 
