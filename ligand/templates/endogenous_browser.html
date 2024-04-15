@@ -326,15 +326,14 @@ $('#references').on('show.bs.modal', function(e) {
         column_filters = column_filters.concat(createYADCFfilters(0, 1, "multi_select", "select2", "Class", false, null, null, "80px"));
         // Receptor section (4)
         column_filters = column_filters.concat(createYADCFfilters(1, 1, "multi_select", "select2", "Select", false, null, null, "80px"));
-        column_filters = column_filters.concat(createYADCFfilters(2, 1, "multi_select", "select2", "Select", false, null, null, "80px"));
-        column_filters = column_filters.concat(createYADCFfilters(3, 1, "multi_select", "select2", "Select", false, null, null, "80px"));
+        column_filters = column_filters.concat(createYADCFfilters(2, 1, "multi_select", "select2", "Select", false, null, "html", "80px"));
+        column_filters = column_filters.concat(createYADCFfilters(3, 1, "multi_select", "select2", "Select", false, null, "html", "80px"));
         column_filters = column_filters.concat(createYADCFfilters(4, 1, "multi_select", "select2", "Select", false, null, null, "80px"));
         // Ligand column
         column_filters = column_filters.concat(createYADCFfilters(5, 1, "multi_select", "select2", "Select", false, null, "html", "80px"));
         column_filters = column_filters.concat(createYADCFfilters(6, 1, "multi_select", "select2", "Select", false, null, null, "80px"));
         column_filters = column_filters.concat(createYADCFfilters(7, 1, "multi_select", "select2", "Select", false, null, null, "80px"));
         column_filters = column_filters.concat(createYADCFfilters(8, 1, "multi_select", "select2", "Select", false, null, null, "80px"));
-
         column_filters = column_filters.concat(createYADCFfilters(9, 1, "multi_select", "select2", "Select", false, null, null, "80px"));
         column_filters = column_filters.concat(createYADCFfilters(10, 1, "multi_select", "select2", "Select", false, null, null, "80px"));
         // Pathway Preference block (5)
@@ -344,6 +343,7 @@ $('#references').on('show.bs.modal', function(e) {
         column_filters = column_filters.concat(createYADCFfilters(14, 1, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
         column_filters = column_filters.concat(createYADCFfilters(15, 1, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
         column_filters = column_filters.concat(createYADCFfilters(16, 1, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
+
         // Authors
         // column_filters = column_filters.concat(createYADCFfilters(15, 1, "multi_select", "select2", "Authors", false, null, null, "80px"));
         // DOI
