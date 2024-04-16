@@ -39,6 +39,7 @@ urlpatterns = [
     path('arrestin_venn',  views.VennHandler, name='gprotein'),
     path('arrestin_tree',  views.TreeHandler, name='gprotein'),
     path('couplings', cache_page(60*60*24*7)(CouplingBrowser.as_view()), name='coupling_browser'),
-    path('arrestincouplings', cache_page(60*60*24*7)(CouplingBrowser_deprecated.as_view(subunit_filter = "200_000_001", families = ["Beta"], page='arrestin')), name='arrestin_coupling'),
+    # path('arrestincouplings', cache_page(60*60*24*7)(CouplingBrowser_deprecated.as_view(subunit_filter = "200_000_001", families = ["Beta"], page='arrestin')), name='arrestin_coupling'),
+    path('arrestincouplings', CouplingBrowser_deprecated.as_view(subunit_filter = "200_000_001", families = ["Beta"], page='arrestin'), name='arrestin_coupling'),
     ####################
 ]
