@@ -316,9 +316,11 @@ function gproteinstructurebrowser(effector) {
     $("#download_btn").click(function () {
         ClearSelection("targets");
         var checked_data = oTable2.rows(".alt_selected").data();
+        console.log("CHECKED DATA:", checked_data[0][1])
         for (i = 0; i < checked_data.length; i++) {
             var div = document.createElement("div");
-            div.innerHTML = checked_data[i][2];
+            div.innerHTML = checked_data[i][1];
+
             if (typeof div.innerText !== "undefined") {
                 AddToSelection("targets", "structure",  div.innerText.replace(/\s+/g, "") );
             } else {
