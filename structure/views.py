@@ -630,7 +630,8 @@ def ComplexModelDetails(request, header, refined=False):
 
         # Regular expressions for matching "alpha", "beta", or "gamma" and capturing the following part
         patterns = {
-            r'.*([a-zA-Z])\s*alpha[-\s]*(\d+).*': 'Gα\\1\\2',
+            # r'.*([a-zA-Z])\s*alpha[-\s]*(\d*).*': 'Gα\\1\\2',
+            r'.*\(([a-zA-Z]+)\).*alpha[-\s]*(\d*).*': 'Gα\\1\\2',
             # r'.*alpha[-\s]*(\d+).*': 'Gα\\1',
             r'.*beta[-\s]*(\d+).*': 'Gβ\\1',
             r'.*gamma[-\s]*(\d+).*': 'Gγ\\1',

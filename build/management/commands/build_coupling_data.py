@@ -37,6 +37,7 @@ class Command(BaseCommand):
         self.create_iuphar_couplings()
         test_model_updates(self.all_models, self.tracker, check=True)
         self.logger.info('PASS: create_iuphar_couplings')
+        print('PASS: create_iuphar_couplings')
         self.create_data_couplings()
         test_model_updates(self.all_models, self.tracker, check=True)
         self.logger.info('PASS: create_data_couplings')
@@ -44,9 +45,11 @@ class Command(BaseCommand):
     def purge_coupling_data(self):
         """DROP data from the protein_gprotein_pair table."""
         try:
+            print('PURGING')
             ProteinCouplings.objects.all().delete()
         except Exception as msg:
             self.logger.warning('Existing protein couplings cannot be deleted' + str(msg))
+            print(f'Existing protein couplings cannot be deleted {str(msg)}')
 
     def create_iuphar_couplings(self, filenames=False):
         """
@@ -54,6 +57,7 @@ class Command(BaseCommand):
 
         The function reads a iupharcoupling_file, which comes from parsing the Guide_to_Pharmacology.
         """
+        print('create_iuphar_couplings')
         self.logger.info('CREATING: IUPHAR couplings')
         # print("PROCESSING: IUPHAR couplings")
 
@@ -321,6 +325,7 @@ class Command(BaseCommand):
     def read_new_coupling(self, filepath):
         pe = ParseExcel()
         data_raw = pe.parse_excel(filepath, True)
+        print(f'Data Raw: {data_raw}')
 
         ligands = self.assess_ligand_id(pe.workbook)
 
@@ -341,7 +346,9 @@ class Command(BaseCommand):
         data = {}
         for source, source_metadata in data_raw['Metadata'].items():
             data[source] = {'metadata':source_metadata}
+            print(f'source_metadata: {source_metadata}')
             for receptor, row in data_raw[source].items():
+                print(f' RECEPTOR row: {row}')
                 if 'Receptor (UniProt)' in row:
                     receptor = row['Receptor (UniProt)']
                 elif 'UniProt' in row:
@@ -356,6 +363,8 @@ class Command(BaseCommand):
                 for sp_key, sp in signprot_dict.items():
                     ### Skip is G prot subtype not in this source
                     if sp_key not in row:
+                        print(f' Not in Row: {sp_key}')
+                        print(f'Row Info: {row}')
                         continue
                     data[source][receptor][sp_key] = {}
                     ### Family data
@@ -366,6 +375,40 @@ class Command(BaseCommand):
                     ###### Family values
                     if '{}-fam'.format(sp.family.parent.name) in row and source_metadata['Parameter']=='log(Emax/EC50)':
                         data[source][receptor][sp_key]['fam_logemaxec50'] = round(row['{}-fam'.format(sp.family.parent.name)],1)
+
+                        # try:
+                        #     data[source][receptor][sp_key]['fam_emax'] = round(float(row[f'Emax {sp_key.replace(" ", "")}']), 1)
+                        # except:
+                        #     new_a = row[f'Emax {sp_key.replace(" ", "")}']
+                        #     print(f'ERROR new_a: {new_a}, {sp.family.parent.name}, sp_key: {sp_key}')
+                        #     data[source][receptor][sp_key]['fam_emax'] = 0
+                        # try:
+                        #     data[source][receptor][sp_key]['fam_pec50'] = round(float(row[f'pEC50 {sp_key.replace(" ","")}']), 1)
+                        # except:
+                        #     new_b = row[f'pEC50 {sp_key.replace(" ", "")}']
+                        #     print(f'ERROR new_b: {new_b}, {sp.family.parent.name}, spkey: {sp_key}')
+                        #     data[source][receptor][sp_key]['fam_pec50'] = 0
+                        # a = row[f'Emax {sp_key.replace(" ", "")}']
+                        # print(f'Emax_score: {sp_key}')
+
+                    # if sp_key in ['β1/ GRK2', 'β2', 'β2/ GRK2'] and sp_key in row:
+
+                    #     try:
+                    #         data[source][receptor][sp_key]['fam_emax'] = round(float(row[f'Emax {sp_key.replace(" ", "")}']), 1)
+                    #     except:
+                    #         new_a = row[f'Emax {sp_key.replace(" ", "")}']
+                    #         print(f'ERROR new_a: {new_a}, {sp.family.parent.name}, sp_key: {sp_key}')
+                    #         data[source][receptor][sp_key]['fam_emax'] = 0
+                    #     try:
+                    #         data[source][receptor][sp_key]['fam_pec50'] = round(float(row[f'pEC50 {sp_key.replace(" ","")}']), 1)
+                    #     except:
+                    #         new_b = row[f'pEC50 {sp_key.replace(" ", "")}']
+                    #         print(f'ERROR new_b: {new_b}, {sp.family.parent.name}, spkey: {sp_key}')
+                    #         data[source][receptor][sp_key]['fam_pec50'] = 0
+                    #     a = row[f'Emax {sp_key.replace(" ", "")}']
+                    #     print(f'Emax_score: {sp_key}')
+
+                        # data[source][receptor][sp_key]['fam_emax'] = round(row[f'Emax {sp.family.parent.name}'])
                     if '{}-fam'.format(sp.family.parent.name) in row and source_metadata['Parameter']=='Activation rate (s-1)':
                         data[source][receptor][sp_key]['fam_kon_mean'] = round(row['{}-fam'.format(sp.family.parent.name)],1)
                     if '{}-fam'.format(sp.family.parent.name) in row and source_metadata['Parameter'] in ['Efficacy','Econstitutive']:
@@ -379,6 +422,21 @@ class Command(BaseCommand):
                     ###### Subtype values
                     if sp_key in row and source_metadata['Parameter']=='log(Emax/EC50)':
                         data[source][receptor][sp_key]['logemaxec50'] = round(row[sp_key],1)
+
+                        try:
+                            data[source][receptor][sp_key]['fam_emax'] = round(float(row[f'Emax {sp_key.replace(" ", "")}']), 1)
+                        except:
+                            new_a = row[f'Emax {sp_key.replace(" ", "")}']
+                            print(f'ERROR new_a: {new_a}, {sp.family.parent.name}, sp_key: {sp_key}')
+                            data[source][receptor][sp_key]['fam_emax'] = 0
+                        try:
+                            data[source][receptor][sp_key]['fam_pec50'] = round(float(row[f'pEC50 {sp_key.replace(" ","")}']), 1)
+                        except:
+                            new_b = row[f'pEC50 {sp_key.replace(" ", "")}']
+                            print(f'ERROR new_b: {new_b}, {sp.family.parent.name}, spkey: {sp_key}')
+                            data[source][receptor][sp_key]['fam_pec50'] = 0
+                        a = row[f'Emax {sp_key.replace(" ", "")}']
+                        print(f'Emax_score: {sp_key}')
 
                     if sp_key in row and source_metadata['Parameter']=='Activation rate (s-1)':
                         data[source][receptor][sp_key]['kon_mean'] = round(row[sp_key],1)
@@ -433,7 +491,7 @@ class Command(BaseCommand):
     def create_data_couplings(self):
         """This function adds all coupling data coming from the master Excel file."""
         self.logger.info('CREATE data couplings')
-
+        print('CREATE data couplings')
         # read source files
         filepath = self.master_file
         self.logger.info('Reading file ' + filepath)
@@ -528,10 +586,12 @@ class Command(BaseCommand):
                     if couplings[header]:
                         ### None is set to fields where there are no values in the data
                         ###### Needs updating if new fields are addedK
-                        vals = {k: None for k in ['variant','logemaxec50','subtype_percent','kon_mean','deltaGDP_conc','fam_rank','fam_percent','fam_logemaxec50','fam_kon_mean','fam_deltaGDP_conc']}
+                        vals = {k: None for k in ['variant','fam_emax', 'fam_pec50','logemaxec50','subtype_percent','kon_mean','deltaGDP_conc','fam_rank','fam_percent','fam_logemaxec50','fam_kon_mean','fam_deltaGDP_conc']}
                         for key in vals:
                             if key in couplings[header]:
                                 vals[key] = couplings[header][key]
+                                print(f'HEADERS: {couplings[header]}')
+                                print(f'Couplings: {key}: {couplings[header][key]}')
                         # print(p,g,gp,l,source,vals)
                         gpair = ProteinCouplings(protein=p, g_protein=g, g_protein_subunit=gp, ligand=l, source=source, physiological_ligand=lig_phys_surr,
                                                  variant=vals['variant'],
@@ -542,6 +602,8 @@ class Command(BaseCommand):
                                                  family_rank=vals['fam_rank'],
                                                  percent_of_primary_family=vals['fam_percent'],
                                                  logemaxec50_family=vals['fam_logemaxec50'],
+                                                 pec50=vals['fam_pec50'],
+                                                 emax=vals['fam_emax'],
                                                  kon_mean_family=vals['fam_kon_mean'],
                                                  deltaGDP_conc_family=vals['fam_deltaGDP_conc'],
                                                  other_protein=other_protein,
@@ -661,8 +723,8 @@ class Command(BaseCommand):
                                                    variant=couplings[header]['variant'],
                                                    source=source,
                                                    logemaxec50=couplings[header]['logemaxec50'],
-                                                   pec50=couplings[header]['pec50deg'],
-                                                   emax=couplings[header]['emaxdeg'],
+                                                   pec50=couplings[header]['pec50'],
+                                                   emax=couplings[header]['emax'],
                                                    stand_dev=couplings[header]['stddeg'],
                                                    physiological_ligand=couplings['ligand_physiological'],
                                                    g_protein_subunit=gp)

@@ -859,7 +859,7 @@ class CouplingBrowser_deprecated(TemplateView):
         # First create and populate the dictionary for all receptors
         dictotemplate = {}
         sourcenames = set()
-        readouts = ["logemaxec50"]#, "pec50", "emax"]
+        readouts = ["logemaxec50", 'pec50', 'emax']#, "pec50", "emax"]
         for protein in proteins:
             dictotemplate[protein.pk] = {}
             dictotemplate[protein.pk]['protein'] = protein_data[protein.pk]
@@ -900,11 +900,18 @@ class CouplingBrowser_deprecated(TemplateView):
             family = coupling_reverse_header_names[subunit]
 
             # Combine values
-            exp_values = {
-                "logemaxec50": round(pair.logemaxec50, 1)
-                # "pec50": round(pair.pec50, 1),
-                # "emax": round(pair.emax)
-                }
+            try:
+                exp_values = {
+                    "logemaxec50": round(pair.logemaxec50, 1),
+                    "pec50": round(pair.pec50, 1),
+                    "emax": round(pair.emax)
+                    }
+            except Exception as e:
+                exp_values = {
+                    "logemaxec50": 0,
+                    "pec50": 0,
+                    "emax": 0
+                    }
 
             for readout in readouts:
                 dictotemplate[pair.protein_id]['coupling'][pair.source][readout][subunit] = exp_values[readout]

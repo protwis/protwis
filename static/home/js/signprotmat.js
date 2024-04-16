@@ -1178,10 +1178,19 @@ var signprotmat = {
       each_res
         .append("rect")
         .attr("class", "res_rect")
+        // COLORED RESIDUE INTERACTION
+        // .style("fill", function (d) {
+        //   return typeof d.int_ty !== "undefined"
+        //     ? colScale(d.int_ty[0])
+        //     : non_int_col;
+        // })
         .style("fill", function (d) {
-          return typeof d.int_ty !== "undefined"
-            ? colScale(d.int_ty[0])
-            : non_int_col;
+          var col = signprotmat.d3.resScaleColor(d.rec_aa); // Assuming d.rec_aa is the residue data for receptor
+          if (typeof col !== "undefined") {
+            return col.bg_color;
+          } else {
+            return null; // Or a default color if undefined
+          }
         })
         .attr("x", function (d) {
           return xScale(d.rec_gn) - xScale.step() / 2;
@@ -1272,8 +1281,17 @@ var signprotmat = {
       each_res
         .append("rect")
         .attr("class", "res_rect_vertical")
+        // COLORED RESIDUE INTERACTION NOT
+        // .style("fill", function (d) {
+        //   return colScale(d.int_ty[0]);
+        // })
         .style("fill", function (d) {
-          return colScale(d.int_ty[0]);
+          var col = signprotmat.d3.resScaleColor(d.sig_aa); // Assuming d.rec_aa is the residue data for receptor
+          if (typeof col !== "undefined") {
+            return col.bg_color;
+          } else {
+            return null; // Or a default color if undefined
+          }
         })
         .attr("x", function (d) {
           return sigScale(d.pdb_id) - sigScale.step() / 2;
