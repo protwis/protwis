@@ -227,8 +227,8 @@
                         <!-- Receptor block -->
                         <td style="text-align:right">{{value.0}}</td>
                         <td style="text-align:right" class="expand">{{value.1}}</td>
-                        <td style="text-align:right" class="expand"><a target='_blank' href="http://www.uniprot.org/uniprot/{{value.20|safe}}">{{value.2|safe}}</a></td> <!-- UniProt -->
-                        <td style="text-align:right" class="expand"><a target='_blank' href="/protein/{{value.21|safe}}">{{value.3|safe}}</a></td> <!-- IUPHAR -->
+                        <td style="text-align:right"><a target='_blank' href="http://www.uniprot.org/uniprot/{{value.20|safe}}">{{value.2|safe}}</a></td> <!-- UniProt -->
+                        <td style="text-align:right"><a target='_blank' href="/protein/{{value.21|safe}}">{{value.3|safe}}</a></td> <!-- IUPHAR -->
                         <td style="text-align:right">{{value.4}}</td>
 
                         <!-- ligand block -->
@@ -327,7 +327,7 @@ $('#references').on('show.bs.modal', function(e) {
         // Receptor section (4)
         column_filters = column_filters.concat(createYADCFfilters(1, 1, "multi_select", "select2", "Select", false, null, null, "80px"));
         column_filters = column_filters.concat(createYADCFfilters(2, 1, "multi_select", "select2", "Select", false, null, "html", "80px"));
-        column_filters = column_filters.concat(createYADCFfilters(3, 1, "multi_select", "select2", "Select", false, null, "html", "80px"));
+        column_filters = column_filters.concat(createYADCFfilters(3, 1, "multi_select", "select2", "Select", false, "exact", "html", "80px", null, null, "text"));
         column_filters = column_filters.concat(createYADCFfilters(4, 1, "multi_select", "select2", "Select", false, null, null, "80px"));
         // Ligand column
         column_filters = column_filters.concat(createYADCFfilters(5, 1, "multi_select", "select2", "Select", false, null, "html", "80px"));

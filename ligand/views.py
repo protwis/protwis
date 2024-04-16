@@ -2485,7 +2485,7 @@ class EndogenousBrowser(TemplateView):
                 data_subset['Class'] = data[0].replace('Class ', '')                        #0
                 data_subset['Receptor family'] = data[1].strip('receptors')                 #1
                 data_subset['UniProt'] = data[2].split('_')[0].upper()                      #2
-                data_subset['IUPHAR'] = data[3].strip('receptor')                           #3
+                data_subset['IUPHAR'] = data[3].replace(" receptor","").replace("-adrenoceptor","")                          #3
                 data_subset['Species'] = data[4]                                            #4
                 data_subset['Ligand name'] = data[5]                                        #5
                 data_subset['GtP link'] =  gtplink.format(gtpidlinks[data[6]])              #6
