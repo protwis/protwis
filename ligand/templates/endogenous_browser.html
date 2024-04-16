@@ -226,18 +226,18 @@
                     <tr>
                         <!-- Receptor block -->
                         <td style="text-align:right">{{value.0}}</td>
-                        <td style="text-align:right">{{value.1}}</td>
-                        <td style="text-align:right"><a target='_blank' href="http://www.uniprot.org/uniprot/{{value.20}}">{{value.2}}</a></td> <!-- UniProt -->
-                        <td style="text-align:right"><a target='_blank' href="/protein/{{value.21}}">{{value.3}}</a></td> <!-- IUPHAR -->
+                        <td style="text-align:right" class="expand">{{value.1}}</td>
+                        <td style="text-align:right" class="expand"><a target='_blank' href="http://www.uniprot.org/uniprot/{{value.20|safe}}">{{value.2|safe}}</a></td> <!-- UniProt -->
+                        <td style="text-align:right" class="expand"><a target='_blank' href="/protein/{{value.21|safe}}">{{value.3|safe}}</a></td> <!-- IUPHAR -->
                         <td style="text-align:right">{{value.4}}</td>
 
                         <!-- ligand block -->
-                        <td style="text-align:left"><a href='/ligand/{{value.19}}/info' target='_blank'>{{value.5|title}}</a></td>
+                        <td style="text-align:left" class="expand"><a href='/ligand/{{value.19}}/info' target='_blank'>{{value.5|title}}</a></td>
                         <td style="text-align:left">{{value.7|title}}</td>
                         <td style="text-align:left" class="pathway">{{value.8|floatformat:0}}</td>
-                        <td style="text-align:left" class="pathway ">{{value.9}}</td>
-                        <td style="text-align:left" class="pathway ">{{value.10}}</td>
-                        <td style="text-align:left" class="pathway ">{{value.11}}</td>
+                        <td style="text-align:left" class="pathway">{{value.9}}</td>
+                        <td style="text-align:left" class="pathway expand">{{value.10|safe}}</td>
+                        <td style="text-align:left" class="pathway expand">{{value.11|safe}}</td>
 
                         <!-- pEC50 block  -->
                         <td style="text-align:right" class="color-column" id="lbf_p2_p1">{{value.12|floatformat:1}}</td>
@@ -251,8 +251,8 @@
 
                         <!-- Reference -->
                         <!-- <td class="name"><a href='#' onClick="javascript:reference_list('{{value.16}}');">References</a></td> -->
-                        {% if value.18 != 'empty' %}
-                            <td class="name" style="text-align:center"><a href="#references" data-toggle="modal" data-book-id="{{value.18}}"> Refs</a></td>
+                        {% if value.18|safe != 'empty' %}
+                            <td class="name" style="text-align:center"><a href="#references" data-toggle="modal" data-book-id="{{value.18|safe}}"> Refs</a></td>
                         {% else %}
                             <td class="name" style="text-align:center"></td>
                         {% endif %}
@@ -334,8 +334,8 @@ $('#references').on('show.bs.modal', function(e) {
         column_filters = column_filters.concat(createYADCFfilters(6, 1, "multi_select", "select2", "Select", false, null, null, "80px"));
         column_filters = column_filters.concat(createYADCFfilters(7, 1, "multi_select", "select2", "Select", false, null, null, "80px"));
         column_filters = column_filters.concat(createYADCFfilters(8, 1, "multi_select", "select2", "Select", false, null, null, "80px"));
-        column_filters = column_filters.concat(createYADCFfilters(9, 1, "multi_select", "select2", "Select", false, null, null, "80px"));
-        column_filters = column_filters.concat(createYADCFfilters(10, 1, "multi_select", "select2", "Select", false, null, null, "80px"));
+        column_filters = column_filters.concat(createYADCFfilters(9, 1, "multi_select", "select2", "Select", false, "exact", null, "80px"));
+        column_filters = column_filters.concat(createYADCFfilters(10, 1, "multi_select", "select2", "Select", false, "exact", null, "80px"));
         // Pathway Preference block (5)
         column_filters = column_filters.concat(createYADCFfilters(11, 1, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
         column_filters = column_filters.concat(createYADCFfilters(12, 1, "range_number", null, ["Min", "Max"], false, null, null, "30px"))

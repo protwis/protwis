@@ -2449,7 +2449,7 @@ class EndogenousBrowser(TemplateView):
         matches = []
         publications = {}
         gtplink = 'https://www.guidetopharmacology.org/GRAC/LigandDisplayForward?ligandId={}'
-        pub_ref = "<b>{0}. ({1})</b><br />{2}.<br /><i>{3}</i>, <b>{4}</b> [PMID: <a href='{5}'>{6}</a>]<br /><br />"
+        pub_ref = "<b>{0}. ({1})</b><br />{2}.<br /><i>{3}</i>, <b>{4}</b> [PMID: <a target='_blank' href='{5}'>{6}</a>]<br /><br />"
         for data in endogenous_data:
             pub_link = ''
             ligand_receptor = str(data[6]) + '_' + str(data[20])
@@ -2492,8 +2492,8 @@ class EndogenousBrowser(TemplateView):
                 data_subset['GtP Classification'] = data[7] if data[7] else ""              #7
                 data_subset['Potency Ranking'] = str(data[8]) if data[8] else ""            #8
                 data_subset['Type'] = data[9].replace('-',' ').capitalize()                 #9
-                data_subset['smiles'] = data[10]                                            #10
-                data_subset['inchikey'] = data[11]                                          #11
+                data_subset['smiles'] = str(data[10]) if data[10] else "-"                  #10
+                data_subset['inchikey'] = str(data[11]) if data[11] else "-"                #11
                 data_subset['pEC50 - min'] = data[12].split(' | ')[0]                       #12
                 data_subset['pEC50 - mid'] = data[12].split(' | ')[1]                       #13
                 data_subset['pEC50 - max'] = data[12].split(' | ')[2]                       #14
