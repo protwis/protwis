@@ -2411,7 +2411,7 @@ class EndogenousBrowser(TemplateView):
         context = super().get_context_data(**kwargs)
 
         browser_columns = ['Class', 'Receptor family', 'UniProt', 'IUPHAR', 'Species',
-                           'Ligand name', 'GtP link', 'GtP Classification', 'Potency Ranking', 'Type',
+                           'Ligand name', 'GtP link', 'GtP Classification', 'Potency Ranking', 'Type','smiles','inchikey',
                            'pEC50 - min', 'pEC50 - mid', 'pEC50 - max',
                            'pKi - min', 'pKi - mid', 'pKi - max', 'Reference', 'ID']
 
@@ -2428,16 +2428,18 @@ class EndogenousBrowser(TemplateView):
                             "endogenous_status",                              #7 Principal/Secondary
                             "potency_ranking",                                #8 Potency Ranking
                             "ligand__ligand_type__name",                      #9 Type
-                            "pec50",                                          #10 pEC50 - min - med - max
-                            "pKi",                                            #11 pKi - min - med - max
-                            "publication__authors",                           #12 Pub Authors
-                            "publication__year",                              #13 Pub Year
-                            "publication__title",                             #14 Pub Title
-                            "publication__journal__name",                     #15 Pub Journal
-                            "publication__reference",                         #16 Pub Reference
-                            "publication__web_link__index",                   #17 DOI/PMID
-                            "receptor",                                       #18 Receptor ID
-                            "receptor__accession").distinct()                 #19 Accession (UniProt link)
+                            "ligand__smiles",                                 #10 Smiles
+                            "ligand__inchikey",                               #11 inchikey
+                            "pec50",                                          #12 pEC50 - min - med - max
+                            "pKi",                                            #13 pKi - min - med - max
+                            "publication__authors",                           #14 Pub Authors
+                            "publication__year",                              #15 Pub Year
+                            "publication__title",                             #16 Pub Title
+                            "publication__journal__name",                     #17 Pub Journal
+                            "publication__reference",                         #18 Pub Reference
+                            "publication__web_link__index",                   #19 DOI/PMID
+                            "receptor",                                       #20 Receptor ID
+                            "receptor__accession").distinct()                 #21 Accession (UniProt link)                       
 
 
         gtpidlinks = dict(list(LigandID.objects.filter(web_resource__slug='gtoplig').values_list(
@@ -2447,23 +2449,23 @@ class EndogenousBrowser(TemplateView):
         matches = []
         publications = {}
         gtplink = 'https://www.guidetopharmacology.org/GRAC/LigandDisplayForward?ligandId={}'
-        pub_ref = "<b>{0}. ({1})</b><br />{2}.<br /><i>{3}</i>, <b>{4}</b> [PMID: <a href='{5}'>{6}</a>]<br /><br />"
+        pub_ref = "<b>{0}. ({1})</b><br />{2}.<br /><i>{3}</i>, <b>{4}</b> [PMID: <a target='_blank' href='{5}'>{6}</a>]<br /><br />"
         for data in endogenous_data:
             pub_link = ''
-            ligand_receptor = str(data[6]) + '_' + str(data[18])
+            ligand_receptor = str(data[6]) + '_' + str(data[20])
             if data[6] not in gtpidlinks.keys():
                 continue
             if ligand_receptor not in publications.keys():
                 publications[ligand_receptor] = {}
-            if data[17]:
-                pub_link = "https://pubmed.ncbi.nlm.nih.gov/" + data[17] if data[17].isdigit() else "https://dx.doi.org/" + data[17]
+            if data[19]:
+                pub_link = "https://pubmed.ncbi.nlm.nih.gov/" + data[19] if data[19].isdigit() else "https://dx.doi.org/" + data[17]
                 #skipping publications without info (probably bug in the database)
-                if data[13] == None:
+                if data[15] == None:
                     continue
                 #splicing for years so we can then merge later
-                if data[13] not in publications[ligand_receptor].keys():
-                    publications[ligand_receptor][data[13]] = ''
-                publications[ligand_receptor][data[13]] = publications[ligand_receptor][data[13]] + pub_ref.format(data[12],data[13],data[14],data[15],data[16], pub_link, data[17])
+                if data[15] not in publications[ligand_receptor].keys():
+                    publications[ligand_receptor][data[15]] = ''
+                publications[ligand_receptor][data[15]] = publications[ligand_receptor][data[15]] + pub_ref.format(data[14],data[15],data[16],data[17],data[18], pub_link, data[19])
         #Cycling through the years to make a single reference string
         for key in publications:
             years = sorted(publications[key].keys())
@@ -2476,33 +2478,35 @@ class EndogenousBrowser(TemplateView):
         for data in endogenous_data:
             if data[6] not in gtpidlinks.keys():
                 continue
-            pair = str(data[6]) + '_' + str(data[18])
+            pair = str(data[6]) + '_' + str(data[20])
             if pair not in matches:
                 matches.append(pair)
                 data_subset = {}
                 data_subset['Class'] = data[0].replace('Class ', '')                        #0
                 data_subset['Receptor family'] = data[1].strip('receptors')                 #1
                 data_subset['UniProt'] = data[2].split('_')[0].upper()                      #2
-                data_subset['IUPHAR'] = data[3].strip('receptor')                           #3
+                data_subset['IUPHAR'] = data[3].replace(" receptor","").replace("-adrenoceptor","")                          #3
                 data_subset['Species'] = data[4]                                            #4
                 data_subset['Ligand name'] = data[5]                                        #5
                 data_subset['GtP link'] =  gtplink.format(gtpidlinks[data[6]])              #6
                 data_subset['GtP Classification'] = data[7] if data[7] else ""              #7
                 data_subset['Potency Ranking'] = str(data[8]) if data[8] else ""            #8
                 data_subset['Type'] = data[9].replace('-',' ').capitalize()                 #9
-                data_subset['pEC50 - min'] = data[10].split(' | ')[0]                       #10
-                data_subset['pEC50 - mid'] = data[10].split(' | ')[1]                       #11
-                data_subset['pEC50 - max'] = data[10].split(' | ')[2]                       #12
-                data_subset['pKi - min'] = data[11].split(' | ')[0]                         #13
-                data_subset['pKi - mid'] = data[11].split(' | ')[1]                         #14
-                data_subset['pKi - max'] = data[11].split(' | ')[2]                         #15
+                data_subset['smiles'] = str(data[10]) if data[10] else "-"                  #10
+                data_subset['inchikey'] = str(data[11]) if data[11] else "-"                #11
+                data_subset['pEC50 - min'] = data[12].split(' | ')[0]                       #12
+                data_subset['pEC50 - mid'] = data[12].split(' | ')[1]                       #13
+                data_subset['pEC50 - max'] = data[12].split(' | ')[2]                       #14
+                data_subset['pKi - min'] = data[13].split(' | ')[0]                         #15
+                data_subset['pKi - mid'] = data[13].split(' | ')[1]                         #16
+                data_subset['pKi - max'] = data[13].split(' | ')[2]                         #17
                 if len(publications[pair]) != 0:
-                    data_subset['Reference'] = publications[pair]                           #16
+                    data_subset['Reference'] = publications[pair]                           #18
                 else:
                     data_subset['Reference'] = 'empty'
-                data_subset['ID'] = data[6]                                                 #17
-                data_subset['Entry Name'] = data[2]                                         #18
-                data_subset['Accession'] = data[19]                                         #19
+                data_subset['ID'] = data[6]                                                 #19
+                data_subset['Entry Name'] = data[2]                                         #20
+                data_subset['Accession'] = data[21]                                         #21
                 table = table.append(data_subset, ignore_index=True)
 
         table.fillna('', inplace=True)
