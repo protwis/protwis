@@ -7,6 +7,12 @@ from django.views.generic import TemplateView
 from django.views.decorators.cache import cache_page
 
 urlpatterns = [
+    url(r'^$', cache_page(60*60*24)(StructureBrowser.as_view()), name='structure_browser'),
+    # url(r'^$', StructureBrowser.as_view(), name='structure_browser'),
+    url(r'^g_protein_structure_browser$', cache_page(60*60*24)(EffectorStructureBrowser.as_view(effector='gprot')), name='g_protein_structure_browser'),
+    # url(r'^g_protein_structure_browser$', EffectorStructureBrowser.as_view(effector='gprot'), name='g_protein_structure_browser'),
+    url(r'^arrestin_structure_browser$', cache_page(60*60*24)(EffectorStructureBrowser.as_view(effector='arrestin')), name='arrestin_structure_browser'),
+    url(r'^sign_complex_pdb$', SignComplexPdb, name="sign_complex_pdb"),
     ### LEGACY LINKS ###
     url(r'^gprot_statistics$', StructureStatistics.as_view(), name='structure_statistics'),
     url(r'^arrestin_statistics$', StructureStatistics.as_view(), name='structure_statistics'),

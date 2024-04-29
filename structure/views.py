@@ -10,7 +10,7 @@ from django.core.cache import cache
 from protwis.context_processors import current_site
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from protein.models import ProteinSegment
-from structure.models import Structure, StructureModel, StructureComplexModel, StructureExtraProteins, StructureVectors, StructureModelRMSD, StructureModelpLDDT, StructureAFScores
+from structure.models import Structure, StructureModel, StructureComplexModel, StructureExtraProteins, StructureVectors, StructureModelRMSD, StructureModelpLDDT, StructureAFScores, PdbData
 from structure.functions import CASelector, SelectionParser, GenericNumbersSelector, SubstructureSelector, ModelRotamer
 from structure.assign_generic_numbers_gpcr import GenericNumbering, GenericNumberingFromDB
 from structure.structural_superposition import ProteinSuperpose, FragmentSuperpose, ConvertSuperpose
@@ -3901,3 +3901,36 @@ def RenderTrees(request):
 #   response['Content-Disposition'] = 'attachment; filename="{}"'.format(file)
 #   response.write(out_stream)
 #   return response
+
+def SignComplexPdb(request):
+    pdbs = request.GET.getlist('p_ids[]')
+    structures = Structure.objects.filter(pdb_code__index__in=pdbs
+                                          ).prefetch_related(
+                                            #   Prefetch(
+                                            #       'signprot_complex__protein__signprotstructure_set',
+                                            #       queryset=SignprotStructure.objects.select_related('pdb_data').only('pdb_data__pdb', 'resolution'),
+                                            #       to_attr='signprot'
+                                            #   ),
+                                              Prefetch(
+                                                  'pdb_data',
+                                                  queryset=PdbData.objects.only('pdb')
+                                                  
+                                              )
+                                          )
+    
+    in_memory = BytesIO()
+    with zipfile.ZipFile(in_memory, 'w', zipfile.ZIP_DEFLATED) as zf:
+        for structure in structures:
+            # Use the pdb index as the filename within the ZIP
+            filename = f"{structure.pdb_code.index}.pdb"
+            data = structure.pdb_data.pdb
+            # Add the file to the zip archive
+            zf.writestr(filename, data)
+
+    in_memory.seek(0)
+
+    # Construct response with the ZIP file
+    response = HttpResponse(in_memory, content_type='application/zip')
+    response['Content-Disposition'] = 'attachment; filename="pdb_structures.zip"'
+    
+    return response

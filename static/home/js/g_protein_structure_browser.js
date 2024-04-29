@@ -330,9 +330,44 @@ function gproteinstructurebrowser(effector) {
         window.location.href = "/structure/pdb_download";
     });
 
-    // $(".glyphicon-export").mouseover(function() {
-    //     window.alert($(this));
-    // })
+    /////////////////////////////////////// PDB button
+
+    // Event handler for button click on the 'pdbs_btn' button.
+    $("#sign_complex_pdb_btn").click(function () {
+        // Retrieve the current URL path to determine the context of the operation.
+        let path = window.location.pathname;
+
+        // Variable to hold the index of the 'PDB' column in the data table.
+        let pdb_index;
+
+        // Determine the PDB index based on the ending of the URL path.
+        // This ensures that the function behaves differently based on the page it is on.
+        if (path.endsWith("/g_protein_structure_browser")) {
+            pdb_index = 11;  // Set for 'g_protein_structure_browser' context
+        } else if (path.endsWith("/arrestin_structure_browser")) {
+            pdb_index = 7;   // Set for 'arrestin_structure_browser' context
+        }
+
+        // Retrieve the data from rows that are selected by the user.
+        let checked_data = oTable2.rows('.alt_selected').data();
+
+        // Array to store PDB IDs extracted from the selected rows.
+        let p_ids = [];
+        for (let i = 0; i < checked_data.length; i++) {
+            // Extract the PDB ID from the specified column index and add to the array.
+            p_ids.push($(checked_data[i][pdb_index]).text());
+        };
+
+        // Check if any PDB IDs have been selected.
+        if (p_ids.length > 0) {
+            // Redirect to a new URL with the PDB IDs as query parameters for download.
+            window.location.href = "sign_complex_pdb?" + $.param({"p_ids[]": p_ids});
+        } else {
+            // Alert the user if no PDB IDs are selected for download.
+            alert('No PDBs selected for download');
+        }
+    });
+
     $(".uniprot-export").data("powertipjq", $([
         "<p>Export UniProt IDs</p>"
         ].join("\n")));
@@ -420,6 +455,7 @@ function CheckSelection(selection_type) {
 }
 
 function ClearSelection(selection_type) {
+    console.log("Selection type:", selection_type)
     $.ajax({
         'url': '/common/clearselection',
         'data': {
@@ -428,6 +464,7 @@ function ClearSelection(selection_type) {
         'type': 'GET',
         'async': false,
         'success': function (data) {
+            console.log('successsssss:', data)
             $("#selection-" + selection_type).html(data);
         }
     });
