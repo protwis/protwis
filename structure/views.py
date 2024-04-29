@@ -3903,14 +3903,14 @@ def RenderTrees(request):
 #   return response
 
 def SignComplexPdb(request):
+    """
+    Handles the download of PDB files for selected structures. 
+    It fetches PDB IDs from the GET request, retrieves corresponding structure data,
+    and packages it into a ZIP file for download.
+    """
     pdbs = request.GET.getlist('p_ids[]')
     structures = Structure.objects.filter(pdb_code__index__in=pdbs
                                           ).prefetch_related(
-                                            #   Prefetch(
-                                            #       'signprot_complex__protein__signprotstructure_set',
-                                            #       queryset=SignprotStructure.objects.select_related('pdb_data').only('pdb_data__pdb', 'resolution'),
-                                            #       to_attr='signprot'
-                                            #   ),
                                               Prefetch(
                                                   'pdb_data',
                                                   queryset=PdbData.objects.only('pdb')
