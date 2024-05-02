@@ -1,0 +1,19 @@
+{% extends "home/base.html" %}
+{% load static %}
+{% load humanize %}
+{% block addon_css %}
+<link rel="stylesheet" href="{% static 'home/css/nv.d3.min.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/nvd3-update.css' %}" type="text/css" />
+<link href="{% static 'home/css/bootstrap-responsive.css' %}" rel="stylesheet" media="screen">
+{% endblock %}
+
+{% block content %}
+
+
+<div class='col-md-12'>
+    <br />
+    <h4 style='text-align:center;'>Welcome to Data Mapper!</h4>
+    <br \>
+</div>
+
+{% endblock %}
