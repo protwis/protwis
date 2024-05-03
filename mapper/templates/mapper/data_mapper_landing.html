@@ -15,5 +15,16 @@
     <h4 style='text-align:center;'>Welcome to Data Mapper!</h4>
     <br \>
 </div>
+<div class='col-md-3 panel panel-primary'>
+    <div class="panel-body">
+            <h3>Upload your data</h3>
+            <form id="upload-file" name="upload-file" enctype="multipart/form-data" method="post" action=""> 
+                {% csrf_token %}
+                <input id="file" name="file" type="file"/>
+                <div id="sucess">{{ message_success }}</div>
+                <button style="margin-top: 10px;" class="btn btn-primary btn-xl" id="upload" type="submit">Upload</button>
+            </form>
+    </div>
+</div>
 
 {% endblock %}

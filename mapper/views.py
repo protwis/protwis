@@ -30,6 +30,15 @@ class LandingPage(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         return context
+        
 #
 # def LandingPage(request):
 #     return render(request, 'mapper/data_mapper_landing.html')
+
+def UploadFile(request):
+    context = {
+        'url' : 'mapper/data_mapper_landing.html',
+        # 'view_name': request.resolver_match.view_name,
+        'message_success' : 'File uploaded successfully'
+    }
+    return render(request, 'mapper/data_mapper_landing.html', context)
