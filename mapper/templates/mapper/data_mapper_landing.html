@@ -5,6 +5,48 @@
 <link rel="stylesheet" href="{% static 'home/css/nv.d3.min.css' %}" type="text/css" />
 <link rel="stylesheet" href="{% static 'home/css/nvd3-update.css' %}" type="text/css" />
 <link href="{% static 'home/css/bootstrap-responsive.css' %}" rel="stylesheet" media="screen">
+<style>
+  .col-md-12 img {
+    transition: transform 0.3s ease, opacity 0.3s ease; /* Smooth transformation for scaling and opacity */
+    opacity: 1; /* Full opacity by default */
+  }
+
+  .col-md-12 img:hover {
+    transform: scale(1.1); /* Scales the image up on hover */
+    opacity: 1; /* Full opacity on hover */
+  }
+
+  .col-md-12:hover img {
+    opacity: 0.5; /* Reduces opacity of all images when any part of the div is hovered over */
+  }
+
+  .col-md-12 img:last-child {
+    margin-left: 5px; /* Adds 5px margin to the left of the last image */
+  }
+
+  .col-md-12 img:hover {
+    opacity: 1 !important; /* Ensures the hovered image stays fully opaque */
+  }
+
+  .img-container .tooltip {
+    position: absolute;
+    background-color: black;
+    color: white;
+    padding: 5px 10px;
+    white-space: nowrap;
+    visibility: hidden;
+    bottom: 100%; /* Adjust if the tooltip appears too high or low */
+    left: 50%;
+    transform: translateX(-50%) translateY(-10px); /* Adjust to ensure tooltip does not overlap the image */
+    z-index: 100; /* Higher value to ensure it's on top of other elements */
+  }
+
+  .img-container:hover .tooltip {
+    visibility: visible;
+    opacity: 1; /* Ensure it's fully opaque */
+    transition: visibility 0s, opacity 0.5s linear; /* Immediate visibility change with smooth opacity transition */
+  }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -27,4 +69,53 @@
     </div>
 </div>
 
+<div class='col-md-12'>
+    <br />
+    <h1 style='text-align:center;'>Good stuff goes here!</h1>
+    <br \>
+</div>
+
+
+<div class='col-md-12' style="display: flex; justify-content: center; align-items: center;">
+  <div class="img-container">
+    <img src="{% static 'home/images/phylo_example.png' %}" width="140" height="140">
+    <br>
+    <h6 style='text-align:center;'>Phylogenetic Tree</h6>
+    <!-- <span class="tooltip">Phylogenetic Tree</span> -->
+  </div>
+  <div class="img-container">
+    <img src="{% static 'home/images/cluster_example.png' %}" width="140" height="140" style='margin-left: 5px'>
+    <br>
+    <h6 style='text-align:center;'>Cluster Analysis</h6>
+    <!-- <span class="tooltip">Cluster Analysis</span> -->
+  </div>
+  <div class="img-container">
+    <img src="{% static 'home/images/list_example.png' %}" width="140" height="140" style='margin-left: 5px'>
+    <br>
+    <h6 style='text-align:center;'>List Plot</h6>
+    <!-- <span class="tooltip">List Plot</span> -->
+  </div>
+  <div class="img-container">
+    <img src="{% static 'home/images/heatmap_example.png' %}" width="140" height="140" style='margin-left: 5px'>
+    <br>
+    <h6 style='text-align:center;'>Heatmap</h6>
+    <!-- <span class="tooltip">Heatmap</span> -->
+  </div>
+</div>
+{% endblock %}
+
+
+{% block addon_js %}
+<script>
+document.querySelectorAll('.img-container img').forEach(img => {
+  img.addEventListener('mouseover', function() {
+    console.log('hover happened');
+    this.nextElementSibling.style.visibility = 'visible';
+  });
+  img.addEventListener('mouseout', function() {
+    console.log('hover happened again');
+    this.nextElementSibling.style.visibility = 'hidden';
+  });
+});
+</script>
 {% endblock %}
