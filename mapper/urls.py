@@ -6,6 +6,5 @@ from . import views
 
 
 urlpatterns = [
-    url(r'^$', views.LandingPage.as_view(), name='landing_page'),
-    url(r'^UploadFile$', views.UploadFile, name='UploadFile'),
+    url(r'^$', views.LandingPage.as_view(), name='landing_page')
 ]

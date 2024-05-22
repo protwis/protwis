@@ -46,6 +46,14 @@
     opacity: 1; /* Ensure it's fully opaque */
     transition: visibility 0s, opacity 0.5s linear; /* Immediate visibility change with smooth opacity transition */
   }
+
+  .expandable {
+    cursor: pointer;
+}
+
+.hidden {
+    display: none;
+}
 </style>
 {% endblock %}
 
@@ -54,31 +62,59 @@
 
 <div class='col-md-12'>
     <br />
-    <h4 style='text-align:center;'>Welcome to Data Mapper!</h4>
+    <h1 style='text-align:center;'>Welcome to Data Mapper!</h1>
     <br \>
 </div>
-<div class='col-md-3 panel panel-primary'>
-    <div class="panel-body">
-            <h3>Upload your data</h3>
-            <form id="upload-file" name="upload-file" enctype="multipart/form-data" method="post" action=""> 
-                {% csrf_token %}
-                <input id="file" name="file" type="file"/>
-                <div id="sucess">{{ message_success }}</div>
-                <button style="margin-top: 10px;" class="btn btn-primary btn-xl" id="upload" type="submit">Upload</button>
-            </form>
-    </div>
+
+
+<!-- ##################################### -->
+<!-- #### Download // Upload // Report ### -->
+<!-- ##################################### -->
+
+<div class='col-md-12' style="margin-top: 50px;">
+  <!-- ################# -->
+  <!-- #### Download ### -->
+  <!-- ################# -->
+  <div class="col-md-3" style="text-align:center;">
+  </div>
+  <div class="col-md-3 img-container" style="text-align:center;">
+    <a href="{% static 'Files/Upload_test.xlsx' %}" download="Upload_test.xlsx">
+      <img src="{% static 'home/images/Mapper_Download.png' %}" width="140" height="140">
+    </a>
+    <br>
+    <h4 style='text-align:center;margin-top: 10px;'>Download Template.xlsx</h4>
+    
+  </div>
+  <!-- ################# -->
+  <!-- ####  Upload  ### -->
+  <!-- ################# -->
+  <div class="col-md-3 img-container" style="text-align:center;">
+    <form id="upload-file" name="upload-file" enctype="multipart/form-data" method="POST" action="{% url 'landing_page' %}"> 
+      {% csrf_token %}
+      <!-- Hidden file input -->
+      <input id="file-input" type="file" name="file" style="display:none;" accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+      <!-- Image selector -- Upload  -->
+      <img id="file-trigger" src="{% if upload_status == 'Success' %}{% static 'home/images/Mapper_Upload_Success.png' %}
+      {% elif upload_status == 'Failed' %}{% static 'home/images/Mapper_Upload_Failed.png' %}
+      {% else %}
+      {% static 'home/images/Mapper_Upload.png' %}
+      {% endif %}" alt="file" width="140" height="140" style="cursor:pointer;">
+      <br>
+      <h4 style='text-align:center;margin-top: 10px;'>Upload Data</h4>
+    </form>
+  </div>
 </div>
 
-<div class='col-md-12'>
+<div class='col-md-12' style="margin-top: 50px;">
     <br />
-    <h1 style='text-align:center;'>Good stuff goes here!</h1>
+    <h3 style='text-align:center;'>Analyses</h3>
     <br \>
 </div>
 
 
 <div class='col-md-12' style="display: flex; justify-content: center; align-items: center;">
   <div class="img-container">
-    <img src="{% static 'home/images/phylo_example.png' %}" width="140" height="140">
+    <img id="phyloTreeImage" src="{% static 'home/images/phylo_example.png' %}" width="140" height="140">
     <br>
     <h6 style='text-align:center;'>Phylogenetic Tree</h6>
     <!-- <span class="tooltip">Phylogenetic Tree</span> -->
@@ -102,20 +138,162 @@
     <!-- <span class="tooltip">Heatmap</span> -->
   </div>
 </div>
+
+<!-- ######################## -->
+<!-- ###### MODALS ! ######## -->
+<!-- ######################## -->
+
+<!-- ################################### -->
+<!-- ## Failed to submit correct file ## -->
+<!-- ################################### -->
+
+<div class="modal fade" id="uploadFailedModal" tabindex="-1" role="dialog" aria-labelledby="uploadFailedModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+      <div class="modal-content">
+          <div class="modal-header">
+              <h5 class="modal-title" id="uploadFailedModalLabel">Upload Failed</h5>
+              <!-- <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+              </button> -->
+          </div>
+          <div class="modal-body">
+              The file upload has failed. Please try again.
+          </div>
+          <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          </div>
+      </div>
+  </div>
+</div>
+
+
+<!-- ############################# -->
+<!-- ## Totally failed report ! ## -->
+<!-- ############################# -->
+
+<div class="modal fade" id="Report_modal_failed" tabindex="-1" role="dialog" aria-labelledby="NoReport-modal-label" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+      <div class="modal-content">
+          <div class="modal-header">
+              <h5 class="modal-title" id="NoReport-modal-label">Report: Failed</h5>
+              <!-- <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+              </button> -->
+          </div>
+          <div class="modal-body">
+              
+              <h4 class="expandable">Phylogenetic Tree</h4>
+              {% if incorrect_values %}
+                  <ul id="sortable" class="hidden">
+                    {% for key, value in incorrect_values.items %}
+                        <li>{{ value }}</li>
+                    {% endfor %}
+                  </ul>
+              {% else %}
+                  <p>The value is False.</p>
+              {% endif %}
+          </div>
+          <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          </div>
+      </div>
+  </div>
+</div>
+
+<!-- ############# -->
+<!-- ## Report! ## -->
+<!-- ############# -->
+
+<div class="modal fade" id="Report_modal_success" tabindex="-1" role="dialog" aria-labelledby="Report-modal-label" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+      <div class="modal-content">
+          <div class="modal-header">
+              <h5 class="modal-title" id="Report-modal-label">Report: Successful</h5>
+              <!-- <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+              </button> -->
+          </div>
+          <div class="modal-body">
+              Here is your report! Good job!
+              All values for the phylo tree are good and ready to something.
+          </div>
+          <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+              <button type="button" class="btn btn-primary" onclick="window.location.href=window.location.href;">Continue</button>
+          </div>
+      </div>
+  </div>
+</div>
+
+<!-- Phylogenetic Tree Modal -->
+<div class="modal fade" id="phyloTreeModal" tabindex="-1" role="dialog" aria-labelledby="phyloTreeModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="phyloTreeModalLabel">Phylogenetic Tree</h5>
+      </div>
+      <div class="modal-body">
+        This is the Phylogenetic Tree modal content.
+        <div class="img-container">
+          <img src="{% static 'home/images/Modal_tree_example.png' %}" width="300" height="300" style='margin-left: 5px'>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 {% endblock %}
 
 
 {% block addon_js %}
+<!-- <script src="{% static 'home/js/jquery-3.1.1.min.js' %}"> </script> -->
+<!-- <script src="{% static 'home/js/jquery-ui.min.js' %}"> </script> -->
+
 <script>
-document.querySelectorAll('.img-container img').forEach(img => {
-  img.addEventListener('mouseover', function() {
-    console.log('hover happened');
-    this.nextElementSibling.style.visibility = 'visible';
-  });
-  img.addEventListener('mouseout', function() {
-    console.log('hover happened again');
-    this.nextElementSibling.style.visibility = 'hidden';
-  });
+
+$(document).ready(function() {
+    $(".expandable").click(function() {
+      $("#sortable").toggleClass("hidden");
+    });
 });
+
+// Function to handle file selection
+function handleFileSelect(event) {
+        var fileInput = document.getElementById('file-input');
+        // Attach change event listener to handle selected file
+        fileInput.addEventListener('change', function(event) {
+            // Submit the form with selection of a file
+            document.getElementById('upload-file').submit();
+        });
+        // Trigger the file input
+        fileInput.click();
+    }
+// Add click event listener to the image to trigger file selection
+document.getElementById('file-trigger').addEventListener('click', handleFileSelect);
+// Add click event listener to the Phylogenetic Tree image
+document.getElementById('phyloTreeImage').addEventListener('click', function() {
+    $('#phyloTreeModal').modal('show');
+  });
+
+
+// Check upload status after form submission
+document.addEventListener('DOMContentLoaded', function() {
+    // Check if upload was successful
+    if ("{{ upload_status }}" === "Success") {
+      // Check if report generation was successful
+      if ("{{ report_status }}" === "Success") {
+        $('#Report_modal_success').modal('show');
+      } else if ("{{ report_status }}" === "Failed") {
+        $('#Report_modal_failed').modal('show');
+      }
+    } else if ("{{ upload_status }}" === "Failed") {
+      // Show the upload failed modal
+      $('#uploadFailedModal').modal('show');
+    }
+  });
 </script>
+
 {% endblock %}
