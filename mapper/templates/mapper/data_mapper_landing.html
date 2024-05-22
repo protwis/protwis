@@ -6,6 +6,142 @@
 <link rel="stylesheet" href="{% static 'home/css/nvd3-update.css' %}" type="text/css" />
 <link href="{% static 'home/css/bootstrap-responsive.css' %}" rel="stylesheet" media="screen">
 <style>
+        .node circle {
+            /*fill: #fff;*/
+            /*stroke: DarkGreen;*/
+            /*fill: DarkGreen;*/
+            stroke: #000000;
+            stroke-width: .3px;
+        }
+
+        .node {
+            font: 8px sans-serif;
+        }
+
+        .link {
+            fill: none;
+            stroke: #eee;
+            stroke-width: 1px;
+        }
+
+        .node text {
+            font: 8px sans-serif;
+        }
+
+        .links {
+            fill: none;
+            stroke: #000;
+        }
+
+        .link-extensions {
+            fill: none;
+            stroke: #000;
+            stroke-opacity: .25;
+        }
+
+        body {
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            margin: 0;
+        }
+
+        .links {
+            fill: none;
+            stroke: #000;
+        }
+
+        .link-extensions {
+            fill: none;
+            stroke: #000;
+            stroke-opacity: .25;
+        }
+
+        .labels {
+            font: 14px Palatino;
+            font-weight: bold;
+        }
+
+        .link--active {
+            stroke: #000 !important;
+            stroke-width: 3.5px;
+        }
+
+        .link-extension--active {
+            stroke-opacity: .6;
+        }
+
+        .label--active {
+            font-weight: bold;
+        }
+    #circle_lightgray {
+        width: 10px;
+        height: 10px;
+        -webkit-border-radius: 5px;
+        -moz-border-radius: 5px;
+        border-radius: 5px;
+        background: LightGray;
+    }
+    #circle_darkgray {
+        width: 10px;
+        height: 10px;
+        -webkit-border-radius: 5px;
+        -moz-border-radius: 5px;
+        border-radius: 5px;
+        background: DarkGray;
+    }
+    #circle_gray {
+        width: 10px;
+        height: 10px;
+        -webkit-border-radius: 5px;
+        -moz-border-radius: 5px;
+        border-radius: 5px;
+        background: Gray;
+    }
+    #circle_black {
+        width: 10px;
+        height: 10px;
+        -webkit-border-radius: 5px;
+        -moz-border-radius: 5px;
+        border-radius: 5px;
+        background: Black;
+    }
+    .gprot_orange {
+      color: orange;
+    }
+
+    .gprot_blue {
+      color: blue;
+    }
+
+    .gprot_red {
+      color: red;
+    }
+
+    .gprot_black {
+      color: black;
+    }
+
+    .gprot_green {
+      color: forestgreen;
+    }
+    .graydiv {
+        height: 20px;
+        width: 350px;
+        background: linear-gradient(to right, white 0%, black 100%)
+    }
+    .alignleft {
+      float: left;
+      width: 175px;
+      text-align: left;
+      font-weight: bold;
+    }
+    .alignright {
+        float: right;
+        width: 175px;
+        text-align: right;
+        font-weight: bold;
+    }
+</style>
+<style>
   .col-md-12 img {
     transition: transform 0.3s ease, opacity 0.3s ease; /* Smooth transformation for scaling and opacity */
     opacity: 1; /* Full opacity by default */
@@ -47,64 +183,149 @@
     transition: visibility 0s, opacity 0.5s linear; /* Immediate visibility change with smooth opacity transition */
   }
 </style>
+<style>
+    .root { fill: red; }
+    .sub { fill: black; }
+    text { font-family: sans-serif; }
+</style>
 {% endblock %}
 
 {% block content %}
 
-
-<div class='col-md-12'>
-    <br />
-    <h4 style='text-align:center;'>Welcome to Data Mapper!</h4>
-    <br \>
+<div class="row-fluid">
+  <div class="span12">
+      <br />
+      <h4 style='text-align:center;'>Welcome to Data Mapper!</h4>
+      <br \>
+  </div>
 </div>
 
-<div class='col-md-12'>
-    <br />
-    <h1 style='text-align:center;'>Good stuff goes here!</h1>
-    <br \>
+<!-- <div class="row-fluid">
+    <div class='col-md-12'>
+        <svg id="svg-container" width="800" height="600"></svg>
+    </div>
+</div> -->
+
+<!-- <div>
+  Receptor names:
+    <div class="btn-group" role="group" id="gtp_plus">
+        <button id="UniProtNames" class="btn btn-info active">UniProt</button>
+        <button id="IUPHARNames" class="btn btn-info">IUPHAR</button>
+    </div>
+</div> -->
+
+<div id="plotContainer" class="text-center">
+  <h4>Cluster Plot</h4>
 </div>
 
+<!-- <div id="tree_plot" class="text-center">
+  <h4>Tree Plot</h4>
+</div> -->
 
-<div class='col-md-12' style="display: flex; justify-content: center; align-items: center;">
-  <div class="img-container">
-    <img src="{% static 'home/images/phylo_example.png' %}" width="140" height="140">
-    <br>
-    <h6 style='text-align:center;'>Phylogenetic Tree</h6>
-    <!-- <span class="tooltip">Phylogenetic Tree</span> -->
-  </div>
-  <div class="img-container">
-    <img src="{% static 'home/images/cluster_example.png' %}" width="140" height="140" style='margin-left: 5px'>
-    <br>
-    <h6 style='text-align:center;'>Cluster Analysis</h6>
-    <!-- <span class="tooltip">Cluster Analysis</span> -->
-  </div>
-  <div class="img-container">
-    <img src="{% static 'home/images/list_example.png' %}" width="140" height="140" style='margin-left: 5px'>
-    <br>
-    <h6 style='text-align:center;'>List Plot</h6>
-    <!-- <span class="tooltip">List Plot</span> -->
-  </div>
-  <div class="img-container">
-    <img src="{% static 'home/images/heatmap_example.png' %}" width="140" height="140" style='margin-left: 5px'>
-    <br>
-    <h6 style='text-align:center;'>Heatmap</h6>
-    <!-- <span class="tooltip">Heatmap</span> -->
+<!-- <div id="heatmap_location" class="text-center">
+  <h4>Heatmap</h4>
+</div> -->
+
+<div class="row-fluid">
+  <div class="col-md-12" style="display: flex; justify-content: center; align-items: center;">
+    <div class="img-container">
+      <!-- <a download="{% static 'home/images/phylo_example.png' %}" href="{% static 'home/images/phylo_example.png' %}" title="Hello">
+        <img alt="Hello" src="{% static 'home/images/phylo_example.png' %}" width="140" height="140">
+      </a> -->
+      <img src="{% static 'home/images/phylo_example.png' %}" width="140" height="140">
+      <br>
+      <h6 style='text-align:center;'>Phylogenetic Tree</h6>
+      <!-- <span class="tooltip">Phylogenetic Tree</span> -->
+    </div>
+    <div class="img-container">
+      <img src="{% static 'home/images/cluster_example.png' %}" width="140" height="140" style='margin-left: 5px'>
+      <br>
+      <h6 style='text-align:center;'>Cluster Analysis</h6>
+      <!-- <span class="tooltip">Cluster Analysis</span> -->
+    </div>
+    <div class="img-container">
+      <img src="{% static 'home/images/list_example.png' %}" width="140" height="140" style='margin-left: 5px'>
+      <br>
+      <h6 style='text-align:center;'>List Plot</h6>
+      <!-- <span class="tooltip">List Plot</span> -->
+    </div>
+    <div class="img-container">
+      <img src="{% static 'home/images/heatmap_example.png' %}" width="140" height="140" style='margin-left: 5px'>
+      <br>
+      <h6 style='text-align:center;'>Heatmap</h6>
+      <!-- <span class="tooltip">Heatmap</span> -->
+    </div>
   </div>
 </div>
 {% endblock %}
 
 
 {% block addon_js %}
+<script src="{% static 'home/js/d3.min.js' %}"></script>
+<script src="{% static 'home/js/nv.d3.min.js' %}"></script>
+<script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
+<script src="{% static 'home/js/saveSvg.js' %}"></script>
+<script src="{% static 'home/js/phylo_tree.js' %}"></script>
+<script src="{% static 'home/js/datamapper.js' %}"></script>
 <script>
 document.querySelectorAll('.img-container img').forEach(img => {
   img.addEventListener('mouseover', function() {
-    console.log('hover happened');
     this.nextElementSibling.style.visibility = 'visible';
   });
   img.addEventListener('mouseout', function() {
-    console.log('hover happened again');
     this.nextElementSibling.style.visibility = 'hidden';
   });
 });
 </script>
+
+
+  <script type="text/javascript" charset="utf-8">
+      tree_data = {{ tree_dict | safe }};
+      tree_options = {{ tree_options | safe }};
+      maxLeafNodeLenght = 46;
+      conversion = {"Outer1":"#0000FF",
+                    "Outer2":"#FF0000",
+                    "Outer3":"#000000",
+                    "Outer4":"#008000",
+                    "Outer5":"#FFA500"};
+
+      $("#UniProtNames").click(function(){
+          $("#UniProtNames").addClass("active");
+          $("#IUPHARNames").removeClass("active");
+          changeLeavesLabels("tree_plot", "UniProt", whole_dict);
+          DrawCircles('tree_plot', circles, maxLeafNodeLenght, conversion, true, false);
+      });
+      $("#IUPHARNames").click(function() {
+        $("#UniProtNames_bal").removeClass("active");
+        $("#IUPHARNames_bal").addClass("active");
+        changeLeavesLabels("tree_plot","IUPHAR", whole_dict);
+        // DrawCircles('tree_plot',circles, maxLeafNodeLenght,conversion,true,false);
+      });
+      draw_tree(tree_data, tree_options);
+      // DrawCircles('tree_plot', circles, maxLeafNodeLenght, conversion, true, false);
+      $("#tree_plot svg g").first().attr('transform', 'translate(620,650) scale(0.9,0.9) ');
+      $("#tree_plot").attr('height', 1210);
+      $("#tree_plot").attr('width', 1110);
+  </script>
+
+
+  <script>
+
+    var heatmap_data = {'5ht1a': {'value1': 10, 'value2': 5, 'value3': 1, 'value4': 3, 'value5': 20},
+                        '5ht2a': {'value1': 12, 'value2': 9, 'value3': 6, 'value4': 30, 'value5': 21},
+                        '5ht1d': {'value1': 7, 'value2': 8, 'value3': 16, 'value4': 3, 'value5': 1},
+                        '5ht1e': {'value1': 5, 'value2': 11, 'value3': 20, 'value4': 23, 'value5': 11},
+                        '5ht2b': {'value1': 18, 'value2': 2, 'value3': 9, 'value4': 13, 'value5': 4}
+                        };
+
+    var list_data = {{ list_data|safe }};
+
+    var cluster_data = {{ cluster_data|safe }};
+    console.log(cluster_data);
+    var cluster_plot = "{{ plot_type }}";
+
+    // renderDataVisualization(list_data);
+    // simple_heatmap(heatmap_data, 'heatmap_location', 'heatmap_svg', 'Legend Label');
+    renderClusterPlot(cluster_data, "#plotContainer", cluster_plot);
+  </script>
 {% endblock %}
