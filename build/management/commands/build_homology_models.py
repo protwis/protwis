@@ -1022,7 +1022,7 @@ class CallHomologyModeling():
                     if section not in missing_sections:
                         missing_sections.append(section)
 
-                    ### Chimera check
+                    ### Check incorrect chimera mapping
                     for section in missing_sections:
                         H5_resis = [s[0] for s in section if s[0]=='G.H5']
                         if len(H5_resis)>20:
@@ -1032,6 +1032,39 @@ class CallHomologyModeling():
                             logger.error('Incorrect chimera mapping for {}'.format(Homology_model.reference_protein))
                             raise AssertionError
 
+                    ### Check chain breaks in chimera (Gq-Gs)
+                    alpha_structure = PDB.PDBParser().get_structure('full_structure', StringIO(Homology_model.main_structure.pdb_data.pdb))[0][Homology_model.signprot_complex.alpha]
+                    alpha_resis = Residue.objects.filter(protein_conformation__protein__entry_name=Homology_model.main_structure.pdb_code.index.lower()+'_a')
+                    alpha_resis_list = alpha_resis.values_list('sequence_number', flat=True)
+                    for r in alpha_structure:
+                        seqid = r.get_id()[1]
+                        try:
+                            alpha_resis.get(sequence_number=seqid)
+                        except Residue.DoesNotExist:
+                            this_seqid = seqid
+                            while seqid not in alpha_resis_list:
+                                seqid-=1
+                            while this_seqid not in alpha_resis_list:
+                                this_seqid+=1
+                            before_res = alpha_resis.get(sequence_number=seqid).display_generic_number.label
+                            after_res = alpha_resis.get(sequence_number=this_seqid).display_generic_number.label
+                            if before_res not in Homology_model.trimmed_residues:
+                                Homology_model.trimmed_residues.append(before_res)
+                            if after_res not in Homology_model.trimmed_residues:
+                                Homology_model.trimmed_residues.append(after_res)
+
+                    ### Swap in hgh4 if there are removed residues in H4 (common in Gq-Gs chimeras)
+                    h4_mod = [i for i in Homology_model.trimmed_residues if i.startswith('G.H4')]
+                    if len(h4_mod)>0:
+                        missing_h4 = []
+                        for i in main_pdb_array['G.hgh4']:
+                            main_pdb_array['G.hgh4'][i] = 'x'
+                            template_dict['G.hgh4'][i] = '-'
+                            alignment_dict['G.hgh4'][i] = '-'
+                            template_source['G.hgh4'][i] = [None, None]
+                            missing_h4.append(['G.hgh4', i])
+                        missing_sections.append(missing_h4)
+                        
                     ### Shorten ICL3
                     for i in reference_dict:
                         if i.startswith('ICL3'):
@@ -3015,7 +3048,17 @@ class HomologyModeling(object):
             last_seqnum = list(Residue.objects.filter(protein_conformation__protein=self.reference_protein.parent))[-1].sequence_number
             with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'pdbs', str(self.main_structure)+'.pdb']), 'r') as f:
                 lines = f.readlines()
+            with open(post_file, 'r') as model_read:
+                model_lines = model_read.readlines()
             with open(post_file, 'a') as model:
+                pref_chain = str(self.main_structure.preferred_chain)
+                if len(pref_chain)>1:
+                    pref_chain = pref_chain[0]
+                i = -1
+                while not model_lines[i].startswith('ATOM'):
+                    i-=1
+                pdb_re_model = re.search('(ATOM[0-9\sA-Z{apo}]{{13}})([A-Z0-9\s]{{3}})\s({pref})([0-9\s]{{4}})'.format(apo="'",pref=pref_chain), model_lines[i])
+                last_seqnum = int(pdb_re_model.group(4))
                 hetatm = 1
                 for line in lines:
                     if line.startswith('HETATM'):
@@ -3023,33 +3066,36 @@ class HomologyModeling(object):
                             continue
                         if self.main_structure.pdb_code.index=='4BUO' and 'GLY' in line:
                             continue
-                        pref_chain = str(self.main_structure.preferred_chain)
-                        if len(pref_chain)>1:
-                            pref_chain = pref_chain[0]
                         pdb_re = re.search('(HETATM[0-9\sA-Z{apo}]{{11}})([A-Z0-9\s]{{3}})\s({pref})([0-9\s]{{4}})'.format(apo="'",pref=pref_chain), line)
                         if not pdb_re:
                             continue
+
                         if pdb_re.group(2)!='HOH':
                             if hetatm!=pdb_re.group(4):
                                 hetatm_count+=1
                                 hetatm = pdb_re.group(4)
-                                ### Hetatm seqnums are too low, same as normal residues - FIXME
-                                # print("HETATM STUFF")
-                                # print(int(hetatm), last_seqnum)
-                                # if int(hetatm)<=last_seqnum:
-                                #     num_hetatm = last_seqnum+hetatm_count
-                                #     if len(hetatm)>len(str(num_hetatm)):
-                                #         num_hetatm = ' '*(len(hetatm)-len(str(num_hetatm)))+str(num_hetatm)
-                                #     line.replace(hetatm, num_hetatm)
-                                #     print(num_hetatm)
-                                #     print(line)
-                        else:
+
+                        ### Hetatm seqnums are too low, same as normal residues - adjusting numbers
+                        if int(hetatm)<=last_seqnum:
+                            num_hetatm = str(last_seqnum+hetatm_count)
+                            if len(hetatm)>len(num_hetatm):
+                                num_hetatm = ' '*(len(hetatm)-len(num_hetatm))+num_hetatm
+                            line = line.replace(hetatm, num_hetatm, 1)
+
+                        if pdb_re.group(2)=='HOH':
+                            ### Skip H atoms in water
+                            if 'H1' in pdb_re.group(1) or 'H2' in pdb_re.group(1):
+                                continue
                             if pdb_re.group(1)[-1]==' ' or pdb_re.group(1)[-1]==pref_chain:
                                 water_count+=1
                             elif pdb_re.group(1)[-1] in ['B','C','D']:
                                 self.alternate_water_positions[water_count] = line
                         if pdb_re!=None:
                             model.write(line)
+                if self.debug:
+                    print('HETATM count: ',hetatm_count)
+                    print('water count: ',water_count)
+
                 try:
                     ligand_pep_structs = LigandPeptideStructure.objects.filter(structure=self.main_structure)
                     for l in ligand_pep_structs:

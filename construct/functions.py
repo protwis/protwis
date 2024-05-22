@@ -1801,7 +1801,8 @@ def construct_structure_annotation_override(pdb_code, removed, deletions):
     elif pdb_code=='8JD6':
         removed = [1002]
     ### make deletions and removed empty
-    elif pdb_code in ['7SF7','7SF8','7EB2','7X1T','7X1U','7SRS','7UL2','7UL3','7UL5','7XBX','7XWO','8G2Y','7XJJ','7YM8','8IY5','8IRU']:
+    elif pdb_code in ['7SF7','7SF8','7EB2','7X1T','7X1U','7SRS','7UL2','7UL3','7UL5','7XBX','7XWO','8G2Y','7XJJ','7YM8','8IY5','8IRU',
+                      '8JJ8','8JJL','8JJO','8JMT','8PWN','8W8Q','8W8R','8W8S']:
         deletions, removed = [], []
     elif pdb_code in ['7ZLY']:
         deletions = []
