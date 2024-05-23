@@ -25,13 +25,14 @@ from common.phylogenetic_tree import PhylogeneticTreeGenerator
 import json
 from copy import deepcopy
 from collections import OrderedDict
-import random
+import umap
+import numpy as np
 import pandas as pd
 import random
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
-import umap
-import numpy as np
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import StandardScaler
 
 import openpyxl
 import os
@@ -214,51 +215,45 @@ class LandingPage(TemplateView):
         nested_dict = {}
         # Generate the nested dictionary (should represent the xls data)
         for i in range(1, 21):
-            main_key = f'key{i}'
+            main_key = f'GPCR{i}'
             nested_dict[main_key] = {}
             for j in range(1, 41):
-                nested_key = f'nestedkey{j}'
-                nested_dict[main_key][nested_key] = round(random.uniform(0, 10), 2)
+                nested_key = f'Variable{j}'
+                nested_dict[main_key][nested_key] = round(random.uniform(0, 100), 2)
 
         # Convert the nested dictionary to a DataFrame
         data = pd.DataFrame(nested_dict).T
 
-        # Dimensionality reduction functions
-        def apply_pca(data, n_components=2):
-            pca = PCA(n_components=n_components)
-            reduced_data = pca.fit_transform(data)
-            return reduced_data
-
-        def apply_tsne(data, n_components=2):
-            tsne = TSNE(n_components=n_components)
-            reduced_data = tsne.fit_transform(data)
-            return reduced_data
-
-        def apply_umap(data, n_components=2):
-            umap_model = umap.UMAP(n_components=n_components)
-            reduced_data = umap_model.fit_transform(data)
-            return reduced_data
-
-        # Main function to select and apply dimensionality reduction
-        def reduce_dimensions(data, method='pca', n_components=2):
-            if method == 'pca':
-                return apply_pca(data, n_components)
+        def reduce_and_cluster(data, method='umap', n_components=2, n_clusters=5):
+            if method == 'umap':
+                reducer = umap.UMAP(n_components=n_components, random_state=42)
             elif method == 'tsne':
-                return apply_tsne(data, n_components)
-            elif method == 'umap':
-                return apply_umap(data, n_components)
+                reducer = TSNE(n_components=n_components, random_state=42)
+            elif method == 'pca':
+                reducer = PCA(n_components=n_components, random_state=42)
             else:
-                raise ValueError("Method not recognized. Choose 'pca', 'tsne', or 'umap'.")
+                raise ValueError("Method should be either 'umap' or 'tsne'")
+
+            reduced_data = reducer.fit_transform(data)
+
+            # Clustering the reduced data
+            kmeans = KMeans(n_clusters=n_clusters, random_state=42)
+            clusters = kmeans.fit_predict(reduced_data)
+
+            # Prepare the data for D3.js
+            df = pd.DataFrame(reduced_data, columns=['x', 'y'])
+            df['cluster'] = clusters
+            df['label'] = data.index
+
+            return df
 
         # Example usage
-        reduced_data = reduce_dimensions(data, method)
+        reduced_df = reduce_and_cluster(data, method=method)
 
         # Prepare the data for visualization
-        visualization_data = pd.DataFrame(reduced_data, columns=['x', 'y'])
-        visualization_data['label'] = data.index
-        json_data = visualization_data.to_json(orient='records')
+        data_json = reduced_df.to_json(orient='records')
 
-        return json_data
+        return data_json
 
 
     @staticmethod

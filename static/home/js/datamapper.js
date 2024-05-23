@@ -243,10 +243,9 @@ function renderDataVisualization(data, svgSelector='svg') {
 }
 
 function renderClusterPlot(data, selector, method) {
-
     const width = 800;
     const height = 600;
-    const margin = { top: 50, right: 50, bottom: 50, left: 50 };
+    const margin = { top: 80, right: 50, bottom: 50, left: 50 };
 
     // Clear the previous plot
     d3.select(selector).html("");
@@ -266,14 +265,16 @@ function renderClusterPlot(data, selector, method) {
         .domain(d3.extent(data, d => +d.y))
         .range([height - margin.top - margin.bottom, 0]);
 
-    svg.append("g")
-        .attr("class", "x axis")
-        .attr("transform", "translate(0," + (height - margin.top - margin.bottom) + ")")
-        .call(d3.svg.axis().scale(x).orient("bottom"));
+    // svg.append("g")
+    //     .attr("class", "x axis")
+    //     .attr("transform", "translate(0," + (height - margin.top - margin.bottom) + ")")
+    //     .call(d3.svg.axis().scale(x).orient("bottom"));
 
-    svg.append("g")
-        .attr("class", "y axis")
-        .call(d3.svg.axis().scale(y).orient("left"));
+    // svg.append("g")
+    //     .attr("class", "y axis")
+    //     .call(d3.svg.axis().scale(y).orient("left"));
+
+    const color = d3.scale.category10();
 
     svg.selectAll(".dot")
         .data(data)
@@ -282,7 +283,7 @@ function renderClusterPlot(data, selector, method) {
         .attr("cx", d => x(+d.x))
         .attr("cy", d => y(+d.y))
         .attr("r", 5)
-        .style("fill", "steelblue");
+        .style("fill", d => color(d.cluster));
 
     svg.selectAll(".text")
         .data(data)
@@ -291,13 +292,13 @@ function renderClusterPlot(data, selector, method) {
         .attr("y", d => y(+d.y))
         .attr("dy", -10)
         .text(d => d.label)
-        .style("font-size", "10px")
+        .style("font-size", "11px")  // Increased font size by 1 pixel
         .style("text-anchor", "middle");
 
-    // Add title based on the method
+    // Add title based on the method with more spacing
     svg.append("text")
         .attr("x", (width - margin.left - margin.right) / 2)
-        .attr("y", -20)
+        .attr("y", -50)  // Increased spacing
         .attr("text-anchor", "middle")
         .style("font-size", "20px")
         .text("Cluster Plot (" + method.toUpperCase() + ")");

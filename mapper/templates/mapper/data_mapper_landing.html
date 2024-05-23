@@ -252,10 +252,6 @@
     <br \>
 </div>
 
-<!-- <div id="tree_plot" class="text-center">
-  <h4>Tree Plot</h4>
-</div> -->
-
 <div class='col-md-12' style="display: flex; justify-content: center; align-items: center;">
   <div class="img-container">
     <img id="phyloTreeImage" src="{% static 'home/images/phylo_example.png' %}" width="140" height="140">
@@ -283,6 +279,14 @@
   </div>
 </div>
 
+
+<!-- <div id="plotContainer" class="text-center">
+  <br />
+  <br />
+  <h4>Cluster Plot</h4>
+  <br />
+  <br />
+</div> -->
 <!-- ######################## -->
 <!-- ###### MODALS ! ######## -->
 <!-- ######################## -->
@@ -406,101 +410,98 @@ document.querySelectorAll('.img-container img').forEach(img => {
   });
   img.addEventListener('mouseout', function() {
     this.nextElementSibling.style.visibility = 'hidden';
-<!-- <script src="{% static 'home/js/jquery-3.1.1.min.js' %}"> </script> -->
-<!-- <script src="{% static 'home/js/jquery-ui.min.js' %}"> </script> -->
+</script>
+<script src="{% static 'home/js/jquery-3.1.1.min.js' %}"> </script>
 
 <script>
-
-$(document).ready(function() {
-    $(".expandable").click(function() {
-      $("#sortable").toggleClass("hidden");
-    });
-});
-
-// Function to handle file selection
-function handleFileSelect(event) {
-        var fileInput = document.getElementById('file-input');
-        // Attach change event listener to handle selected file
-        fileInput.addEventListener('change', function(event) {
-            // Submit the form with selection of a file
-            document.getElementById('upload-file').submit();
-        });
-        // Trigger the file input
-        fileInput.click();
-    }
-// Add click event listener to the image to trigger file selection
-document.getElementById('file-trigger').addEventListener('click', handleFileSelect);
-// Add click event listener to the Phylogenetic Tree image
-document.getElementById('phyloTreeImage').addEventListener('click', function() {
-    $('#phyloTreeModal').modal('show');
+  $(document).ready(function() {
+      $(".expandable").click(function() {
+        $("#sortable").toggleClass("hidden");
+      });
   });
 
-
-// Check upload status after form submission
-document.addEventListener('DOMContentLoaded', function() {
-    // Check if upload was successful
-    if ("{{ upload_status }}" === "Success") {
-      // Check if report generation was successful
-      if ("{{ report_status }}" === "Success") {
-        $('#Report_modal_success').modal('show');
-      } else if ("{{ report_status }}" === "Failed") {
-        $('#Report_modal_failed').modal('show');
+  // Function to handle file selection
+  function handleFileSelect(event) {
+          var fileInput = document.getElementById('file-input');
+          // Attach change event listener to handle selected file
+          fileInput.addEventListener('change', function(event) {
+              // Submit the form with selection of a file
+              document.getElementById('upload-file').submit();
+          });
+          // Trigger the file input
+          fileInput.click();
       }
-    } else if ("{{ upload_status }}" === "Failed") {
-      // Show the upload failed modal
-      $('#uploadFailedModal').modal('show');
-    }
-  });
+  // Add click event listener to the image to trigger file selection
+  document.getElementById('file-trigger').addEventListener('click', handleFileSelect);
+  // Add click event listener to the Phylogenetic Tree image
+  document.getElementById('phyloTreeImage').addEventListener('click', function() {
+      $('#phyloTreeModal').modal('show');
+    });
+
+
+  // Check upload status after form submission
+  document.addEventListener('DOMContentLoaded', function() {
+      // Check if upload was successful
+      if ("{{ upload_status }}" === "Success") {
+        // Check if report generation was successful
+        if ("{{ report_status }}" === "Success") {
+          $('#Report_modal_success').modal('show');
+        } else if ("{{ report_status }}" === "Failed") {
+          $('#Report_modal_failed').modal('show');
+        }
+      } else if ("{{ upload_status }}" === "Failed") {
+        // Show the upload failed modal
+        $('#uploadFailedModal').modal('show');
+      }
+    });
 </script>
 
 
-  <script type="text/javascript" charset="utf-8">
-      tree_data = {{ tree_dict | safe }};
-      tree_options = {{ tree_options | safe }};
-      maxLeafNodeLenght = 46;
-      conversion = {"Outer1":"#0000FF",
-                    "Outer2":"#FF0000",
-                    "Outer3":"#000000",
-                    "Outer4":"#008000",
-                    "Outer5":"#FFA500"};
+<script type="text/javascript" charset="utf-8">
+    tree_data = {{ tree_dict | safe }};
+    tree_options = {{ tree_options | safe }};
+    maxLeafNodeLenght = 46;
+    conversion = {"Outer1":"#0000FF",
+                  "Outer2":"#FF0000",
+                  "Outer3":"#000000",
+                  "Outer4":"#008000",
+                  "Outer5":"#FFA500"};
 
-      $("#UniProtNames").click(function(){
-          $("#UniProtNames").addClass("active");
-          $("#IUPHARNames").removeClass("active");
-          changeLeavesLabels("tree_plot", "UniProt", whole_dict);
-          DrawCircles('tree_plot', circles, maxLeafNodeLenght, conversion, true, false);
-      });
-      $("#IUPHARNames").click(function() {
-        $("#UniProtNames_bal").removeClass("active");
-        $("#IUPHARNames_bal").addClass("active");
-        changeLeavesLabels("tree_plot","IUPHAR", whole_dict);
-        // DrawCircles('tree_plot',circles, maxLeafNodeLenght,conversion,true,false);
-      });
-      draw_tree(tree_data, tree_options);
-      // DrawCircles('tree_plot', circles, maxLeafNodeLenght, conversion, true, false);
-      $("#tree_plot svg g").first().attr('transform', 'translate(620,650) scale(0.9,0.9) ');
-      $("#tree_plot").attr('height', 1210);
-      $("#tree_plot").attr('width', 1110);
-  </script>
+    $("#UniProtNames").click(function(){
+        $("#UniProtNames").addClass("active");
+        $("#IUPHARNames").removeClass("active");
+        changeLeavesLabels("tree_plot", "UniProt", whole_dict);
+        DrawCircles('tree_plot', circles, maxLeafNodeLenght, conversion, true, false);
+    });
+    $("#IUPHARNames").click(function() {
+      $("#UniProtNames_bal").removeClass("active");
+      $("#IUPHARNames_bal").addClass("active");
+      changeLeavesLabels("tree_plot","IUPHAR", whole_dict);
+      // DrawCircles('tree_plot',circles, maxLeafNodeLenght,conversion,true,false);
+    });
+    draw_tree(tree_data, tree_options);
+    // DrawCircles('tree_plot', circles, maxLeafNodeLenght, conversion, true, false);
+    $("#tree_plot svg g").first().attr('transform', 'translate(620,650) scale(0.9,0.9) ');
+    $("#tree_plot").attr('height', 1210);
+    $("#tree_plot").attr('width', 1110);
+</script>
 
 
-  <script>
+<script>
+  var heatmap_data = {'5ht1a': {'value1': 10, 'value2': 5, 'value3': 1, 'value4': 3, 'value5': 20},
+                      '5ht2a': {'value1': 12, 'value2': 9, 'value3': 6, 'value4': 30, 'value5': 21},
+                      '5ht1d': {'value1': 7, 'value2': 8, 'value3': 16, 'value4': 3, 'value5': 1},
+                      '5ht1e': {'value1': 5, 'value2': 11, 'value3': 20, 'value4': 23, 'value5': 11},
+                      '5ht2b': {'value1': 18, 'value2': 2, 'value3': 9, 'value4': 13, 'value5': 4}
+                      };
 
-    var heatmap_data = {'5ht1a': {'value1': 10, 'value2': 5, 'value3': 1, 'value4': 3, 'value5': 20},
-                        '5ht2a': {'value1': 12, 'value2': 9, 'value3': 6, 'value4': 30, 'value5': 21},
-                        '5ht1d': {'value1': 7, 'value2': 8, 'value3': 16, 'value4': 3, 'value5': 1},
-                        '5ht1e': {'value1': 5, 'value2': 11, 'value3': 20, 'value4': 23, 'value5': 11},
-                        '5ht2b': {'value1': 18, 'value2': 2, 'value3': 9, 'value4': 13, 'value5': 4}
-                        };
+  var list_data = {{ list_data|safe }};
 
-    var list_data = {{ list_data|safe }};
+  var cluster_data = {{ cluster_data|safe }};
+  var cluster_plot = "{{ plot_type }}";
 
-    var cluster_data = {{ cluster_data|safe }};
-    console.log(cluster_data);
-    var cluster_plot = "{{ plot_type }}";
-
-    // renderDataVisualization(list_data);
-    // simple_heatmap(heatmap_data, 'heatmap_location', 'heatmap_svg', 'Legend Label');
-    renderClusterPlot(cluster_data, "#plotContainer", cluster_plot);
-  </script>
+  // renderDataVisualization(list_data);
+  // simple_heatmap(heatmap_data, 'heatmap_location', 'heatmap_svg', 'Legend Label');
+  renderClusterPlot(cluster_data, "#plotContainer", cluster_plot);
+</script>
 {% endblock %}
