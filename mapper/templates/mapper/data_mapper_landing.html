@@ -55,10 +55,6 @@
             stroke-opacity: .25;
         }
 
-        .labels {
-            font: 14px Palatino;
-            font-weight: bold;
-        }
 
         .link--active {
             stroke: #000 !important;
@@ -69,9 +65,6 @@
             stroke-opacity: .6;
         }
 
-        .label--active {
-            font-weight: bold;
-        }
     #circle_lightgray {
         width: 10px;
         height: 10px;
@@ -280,6 +273,15 @@
 </div>
 
 
+<!-- <div style="padding-top: 5px;">
+  Plot label:
+    <div class="btn-group" role="group" id="gtp_plus">
+        <button id="show" class="btn btn-info active">Show</button>
+        <button id="hide" class="btn btn-info">Hide</button>
+    </div>
+</div> -->
+
+
 <!-- <div id="plotContainer" class="text-center">
   <br />
   <br />
@@ -287,6 +289,8 @@
   <br />
   <br />
 </div> -->
+
+
 <!-- ######################## -->
 <!-- ###### MODALS ! ######## -->
 <!-- ######################## -->
@@ -410,8 +414,9 @@ document.querySelectorAll('.img-container img').forEach(img => {
   });
   img.addEventListener('mouseout', function() {
     this.nextElementSibling.style.visibility = 'hidden';
+  });
+});
 </script>
-<script src="{% static 'home/js/jquery-3.1.1.min.js' %}"> </script>
 
 <script>
   $(document).ready(function() {
@@ -503,5 +508,17 @@ document.querySelectorAll('.img-container img').forEach(img => {
   // renderDataVisualization(list_data);
   // simple_heatmap(heatmap_data, 'heatmap_location', 'heatmap_svg', 'Legend Label');
   renderClusterPlot(cluster_data, "#plotContainer", cluster_plot);
+
+  $("#show").click(function() {
+      $("#show").addClass("active");
+      $("#hide").removeClass("active");
+      d3.selectAll(".label").style("opacity", 1);
+  });
+
+  $("#hide").click(function() {
+      $("#show").removeClass("active");
+      $("#hide").addClass("active");
+      d3.selectAll(".label").style("opacity", 0);
+  });
 </script>
 {% endblock %}
