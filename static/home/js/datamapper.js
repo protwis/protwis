@@ -245,7 +245,7 @@ function renderDataVisualization(data, svgSelector='svg') {
 function renderClusterPlot(data, selector, method) {
     const width = 800;
     const height = 600;
-    const margin = { top: 80, right: 50, bottom: 50, left: 50 };
+    const margin = { top: 80, right: 150, bottom: 50, left: 50 }; // Adjusted right margin for legend space
 
     // Clear the previous plot
     d3.select(selector).html("");
@@ -265,41 +265,259 @@ function renderClusterPlot(data, selector, method) {
         .domain(d3.extent(data, d => +d.y))
         .range([height - margin.top - margin.bottom, 0]);
 
-    // svg.append("g")
-    //     .attr("class", "x axis")
-    //     .attr("transform", "translate(0," + (height - margin.top - margin.bottom) + ")")
-    //     .call(d3.svg.axis().scale(x).orient("bottom"));
-
-    // svg.append("g")
-    //     .attr("class", "y axis")
-    //     .call(d3.svg.axis().scale(y).orient("left"));
-
     const color = d3.scale.category10();
 
-    svg.selectAll(".dot")
+    let selectedCluster = null;
+
+    const circles = svg.selectAll(".dot")
         .data(data)
         .enter().append("circle")
         .attr("class", "dot")
         .attr("cx", d => x(+d.x))
         .attr("cy", d => y(+d.y))
         .attr("r", 5)
-        .style("fill", d => color(d.cluster));
+        .attr("cluster", d => d.cluster)
+        .style("fill", d => color(d.cluster))
+        .attr("id", d => "circle" + d.label.replace(/\[|\]|\(|\)|\s|\,|\'/g,""))
+        .on("click", handleClick);
 
-    svg.selectAll(".text")
+    const labels = svg.selectAll(".text")
         .data(data)
         .enter().append("text")
         .attr("x", d => x(+d.x))
         .attr("y", d => y(+d.y))
         .attr("dy", -10)
+        .attr("class", "label")
+        .attr("cluster", d => d.cluster)
         .text(d => d.label)
-        .style("font-size", "11px")  // Increased font size by 1 pixel
-        .style("text-anchor", "middle");
+        .style("font-size", "11px")
+        .style("text-anchor", "middle")
+        .on("click", function(d, i) {
+            d3.event.stopPropagation();
+            handleClick.call(circles[0][i], d);
+        });
+
+    // Function to check for label collisions and adjust positions
+    function avoidCollisions() {
+        const padding = 2; // Padding between labels
+        let iterations = 0;
+        let moved = true;
+
+        while (moved && iterations < 100) {
+            moved = false;
+            iterations++;
+
+            labels.each(function (d, i) {
+                const labelA = d3.select(this);
+                const bboxA = this.getBBox();
+
+                labels.each(function (d2, j) {
+                    if (i === j) return; // Skip comparing the label with itself
+
+                    const labelB = d3.select(this);
+                    const bboxB = this.getBBox();
+
+                    // Check for collision
+                    if (!(bboxA.x + bboxA.width < bboxB.x - padding ||
+                          bboxA.x - padding > bboxB.x + bboxB.width ||
+                          bboxA.y + bboxA.height < bboxB.y - padding ||
+                          bboxA.y - padding > bboxB.y + bboxB.height)) {
+
+                        // Calculate overlap
+                        const dx = bboxA.x + bboxA.width / 2 - (bboxB.x + bboxB.width / 2);
+                        const dy = bboxA.y + bboxA.height / 2 - (bboxB.y + bboxB.height / 2);
+
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        const moveX = (dx / distance) * padding;
+                        const moveY = (dy / distance) * padding;
+
+                        labelA.attr("x", +labelA.attr("x") + moveX)
+                              .attr("y", +labelA.attr("y") + moveY);
+
+                        moved = true;
+                    }
+                });
+            });
+        }
+    }
+
+    // Call avoidCollisions to reposition labels
+    avoidCollisions();
 
     // Add title based on the method with more spacing
     svg.append("text")
         .attr("x", (width - margin.left - margin.right) / 2)
-        .attr("y", -50)  // Increased spacing
+        .attr("y", -50)
         .attr("text-anchor", "middle")
         .style("font-size", "20px")
         .text("Cluster Plot (" + method.toUpperCase() + ")");
+
+    // Function to handle click event
+    function handleClick(d) {
+        d3.event.stopPropagation();
+        const cluster = d.cluster;
+
+        if (selectedCluster === cluster) {
+            selectedCluster = null;
+            resetOpacity();
+        } else {
+            resetOpacity();
+            selectedCluster = cluster;
+            circles.style("opacity", 0.2);
+            labels.style("opacity", 0.2);
+
+            circles.filter(c => c.cluster === cluster)
+                .style("opacity", 1)
+                .style("stroke", "black")
+                .style("stroke-width", 2);
+
+            labels.filter(c => c.cluster === cluster)
+                .style("opacity", 1);
+            //     .style("font-weight", "bold");
+        }
+    }
+
+    // Function to reset the opacity when clicking outside circles
+    function resetOpacity() {
+        circles.style("opacity", 1).style("stroke", "none").style("stroke-width", 0);
+        labels.style("opacity", 1).style("font-weight", "normal");
+    }
+
+    // Add an overlay to capture clicks outside circles
+    svg.append("rect")
+        .attr("width", width - margin.left - margin.right)
+        .attr("height", height - margin.top - margin.bottom)
+        .style("fill", "none")
+        .style("pointer-events", "all")
+        .on("click", resetOpacity);
+
+    // Create a legend based on clusters
+    const uniqueClusters = [...new Set(data.map(d => d.cluster))].sort((a, b) => a - b);
+
+    const legend = svg.selectAll(".legend")
+        .data(uniqueClusters)
+        .enter().append("g")
+        .attr("class", "legend")
+        .attr("transform", (d, i) => `translate(${width - margin.right + 10},${i * 20})`)
+        .on("click", function(d) {
+            // resetOpacity();
+            selectedCluster = d;
+            circles.style("opacity", 0.2);
+            // labels.style("opacity", 0.2);
+
+            circles.filter(c => c.cluster === d)
+                .style("opacity", 1)
+                .style("stroke", "black")
+                .style("stroke-width", 2);
+
+            // labels.filter(c => c.cluster === d)
+            //     .style("opacity", 1);
+            //     .style("font-weight", "bold");
+
+            d3.event.stopPropagation();
+        });
+
+    legend.append("circle")
+        .attr("cx", 10)
+        .attr("cy", 9)
+        .attr("r", 5)
+        .style("fill", d => color(d));
+
+    legend.append("text")
+        .attr("x", 20)
+        .attr("y", 14)
+        .text(d => `Cluster ${d}`)
+        .style("font-size", "12px");
 }
+
+
+// function renderClusterPlot(data, selector, method) {
+//     const width = 800;
+//     const height = 600;
+//     const margin = { top: 80, right: 50, bottom: 50, left: 50 };
+//
+//     // Clear the previous plot
+//     d3.select(selector).html("");
+//
+//     const svg = d3.select(selector)
+//         .append("svg")
+//         .attr("width", width)
+//         .attr("height", height)
+//         .append("g")
+//         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+//
+//     const x = d3.scale.linear()
+//         .domain(d3.extent(data, d => +d.x))
+//         .range([0, width - margin.left - margin.right]);
+//
+//     const y = d3.scale.linear()
+//         .domain(d3.extent(data, d => +d.y))
+//         .range([height - margin.top - margin.bottom, 0]);
+//
+//     const color = d3.scale.category10();
+//
+//     const circles = svg.selectAll(".dot")
+//         .data(data)
+//         .enter().append("circle")
+//         .attr("class", "dot")
+//         .attr("cx", d => x(+d.x))
+//         .attr("cy", d => y(+d.y))
+//         .attr("r", 5)
+//         .attr("cluster", d => d.cluster)
+//         .style("fill", d => color(d.cluster))
+//         .attr("id", d => "circle" + d.label.replace(/\[|\]|\(|\)|\s|\,|\'/g,""))
+//         .on("click", handleClick);
+//
+//     const labels = svg.selectAll(".text")
+//         .data(data)
+//         .enter().append("text")
+//         .attr("x", d => x(+d.x))
+//         .attr("y", d => y(+d.y))
+//         .attr("dy", -10)
+//         .attr("cluster", d => d.cluster)
+//         .text(d => d.label)
+//         .style("font-size", "11px")
+//         .style("text-anchor", "middle");
+//         // .on("click", function(d, i) {
+//         //     d3.event.stopPropagation();
+//         //     handleClick.call(circles[0][i], d);
+//         // });
+//
+//     // Add title based on the method with more spacing
+//     svg.append("text")
+//         .attr("x", (width - margin.left - margin.right) / 2)
+//         .attr("y", -50)
+//         .attr("text-anchor", "middle")
+//         .style("font-size", "20px")
+//         .text("Cluster Plot (" + method.toUpperCase() + ")");
+//
+//     // Function to handle click event
+//     function handleClick(d) {
+//         const cluster = d.cluster;
+//         circles.style("opacity", 0.2);
+//         labels.style("opacity", 0.2);
+//
+//         circles.filter(c => c.cluster === cluster)
+//             .style("opacity", 1)
+//             .style("stroke", "black")
+//             .style("stroke-width", 2);
+//
+//         labels.filter(c => c.cluster === cluster)
+//             .style("opacity", 1)
+//             .style("font-weight", "bold");
+//     }
+//
+//     // Function to reset the opacity when clicking outside circles
+//     function resetOpacity() {
+//         circles.style("opacity", 1).style("stroke", "none").style("stroke-width", 0);
+//         labels.style("opacity", 1).style("font-weight", "normal");
+//     }
+//
+//     // Add an overlay to capture clicks outside circles
+//     // svg.append("rect")
+//     //     .attr("width", width - margin.left - margin.right)
+//     //     .attr("height", height - margin.top - margin.bottom)
+//     //     .style("fill", "none")
+//     //     .style("pointer-events", "all")
+//     //     .on("click", resetOpacity);
+// }

@@ -44,7 +44,7 @@ class LandingPage(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         # input_dict = LandingPage.parse_data_from_xls()
-        method = 'umap' #will be defined by user input
+        method = 'tsne' #will be defined by user input
         list_plot = LandingPage.generate_list_plot()
         tree_plot, tree_options = LandingPage.generate_tree_plot()
         cluster_plot = LandingPage.generate_cluster(method)
@@ -213,18 +213,19 @@ class LandingPage(TemplateView):
     def generate_cluster(method):
         # Initialize the test dictionary (should represent the xls data)
         nested_dict = {}
+        proteins = list(Protein.objects.filter(species_id=1, accession__isnull=False).values_list('entry_name', flat=True).distinct())
         # Generate the nested dictionary (should represent the xls data)
-        for i in range(1, 21):
-            main_key = f'GPCR{i}'
+        for i in proteins:
+            main_key = i.split('_human')[0]
             nested_dict[main_key] = {}
-            for j in range(1, 41):
+            for j in range(1, 81):
                 nested_key = f'Variable{j}'
                 nested_dict[main_key][nested_key] = round(random.uniform(0, 100), 2)
 
         # Convert the nested dictionary to a DataFrame
         data = pd.DataFrame(nested_dict).T
 
-        def reduce_and_cluster(data, method='umap', n_components=2, n_clusters=5):
+        def reduce_and_cluster(data, method='umap', n_components=2, n_clusters=10):
             if method == 'umap':
                 reducer = umap.UMAP(n_components=n_components, random_state=42)
             elif method == 'tsne':
