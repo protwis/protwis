@@ -309,7 +309,7 @@
               </button> -->
           </div>
           <div class="modal-body">
-              The file upload has failed. Please try again.
+              {{Error_message}}
           </div>
           <div class="modal-footer">
               <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
@@ -338,7 +338,7 @@
               {% if incorrect_values %}
                   <ul id="sortable" class="hidden">
                     {% for key, value in incorrect_values.items %}
-                        <li>{{ value }}</li>
+                        <li>Col {{key}}: {{ value }}</li>
                     {% endfor %}
                   </ul>
               {% else %}
@@ -370,8 +370,19 @@
               All values for the phylo tree are good and ready to something.
           </div>
           <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-              <button type="button" class="btn btn-primary" onclick="window.location.href=window.location.href;">Continue</button>
+              <!-- <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button> -->
+              <button type="button" class="btn btn-primary" onclick="window.location.href=window.location.href;">Back</button>
+              {% if sample_data_json %}
+                  <p>There is data!</p>
+              {% else %}
+                  <p>The value is False.</p>
+              {% endif %}
+              <form method="POST" action="{% url 'data_mapper_plotrender' %}">
+                {% csrf_token %}
+                <input type="hidden" name="sample_data" value="{{ sample_data_json }}">
+                <input type="hidden" name="Phylogenetic_data" value="{{ Data_Phylogenetic_Tree }}">
+                <button type="submit" class="btn btn-primary">Continue</button>
+            </form>
           </div>
       </div>
   </div>
@@ -419,6 +430,16 @@ document.querySelectorAll('.img-container img').forEach(img => {
 </script>
 
 <script>
+
+// document.querySelectorAll('.img-container img').forEach(img => {
+//   img.addEventListener('mouseover', function() {
+//     this.nextElementSibling.style.visibility = 'visible';
+//       });
+//       img.addEventListener('mouseout', function() {
+//         this.nextElementSibling.style.visibility = 'hidden';
+//       });
+//     });
+
   $(document).ready(function() {
       $(".expandable").click(function() {
         $("#sortable").toggleClass("hidden");
@@ -449,6 +470,12 @@ document.querySelectorAll('.img-container img').forEach(img => {
       // Check if upload was successful
       if ("{{ upload_status }}" === "Success") {
         // Check if report generation was successful
+        var Data_Phylogenetic_Tree = JSON.parse('{{ Data_Phylogenetic_Tree|escapejs }}');
+        console.log(Data_Phylogenetic_Tree);
+        if (typeof Data_Incorrect_Phylogenetic_Tree !== 'undefined') {
+          var Data_Incorrect_Phylogenetic_Tree = JSON.parse('{{ Data_Incorrect_Phylogenetic_Tree|escapejs }}');
+          console.log(Data_Incorrect_Phylogenetic_Tree);
+        }
         if ("{{ report_status }}" === "Success") {
           $('#Report_modal_success').modal('show');
         } else if ("{{ report_status }}" === "Failed") {
@@ -462,7 +489,7 @@ document.querySelectorAll('.img-container img').forEach(img => {
 </script>
 
 
-<script type="text/javascript" charset="utf-8">
+<!-- <script type="text/javascript" charset="utf-8">
     tree_data = {{ tree_dict | safe }};
     tree_options = {{ tree_options | safe }};
     maxLeafNodeLenght = 46;
@@ -489,10 +516,10 @@ document.querySelectorAll('.img-container img').forEach(img => {
     $("#tree_plot svg g").first().attr('transform', 'translate(620,650) scale(0.9,0.9) ');
     $("#tree_plot").attr('height', 1210);
     $("#tree_plot").attr('width', 1110);
-</script>
+</script> -->
 
 
-<script>
+<!-- <script>
   var heatmap_data = {'5ht1a': {'value1': 10, 'value2': 5, 'value3': 1, 'value4': 3, 'value5': 20},
                       '5ht2a': {'value1': 12, 'value2': 9, 'value3': 6, 'value4': 30, 'value5': 21},
                       '5ht1d': {'value1': 7, 'value2': 8, 'value3': 16, 'value4': 3, 'value5': 1},
@@ -521,4 +548,6 @@ document.querySelectorAll('.img-container img').forEach(img => {
       d3.selectAll(".label").style("opacity", 0);
   });
 </script>
+  // renderClusterPlot(cluster_data, "#plotContainer", cluster_plot);
+</script> -->
 {% endblock %}
