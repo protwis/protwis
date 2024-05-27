@@ -25,7 +25,7 @@ from common.phylogenetic_tree import PhylogeneticTreeGenerator
 import json
 from copy import deepcopy
 from collections import OrderedDict
-import umap
+import umap.umap_ as umap
 import numpy as np
 import pandas as pd
 import random
@@ -44,16 +44,19 @@ class LandingPage(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         # input_dict = LandingPage.parse_data_from_xls()
-        method = 'umap' #will be defined by user input
-        list_plot = LandingPage.generate_list_plot()
-        tree_plot, tree_options = LandingPage.generate_tree_plot()
-        cluster_plot = LandingPage.generate_cluster(method)
+        ################################
+        # Will be implemented later !! #
+        ################################
+        # method = 'umap' #will be defined by user input
+        # list_plot = LandingPage.generate_list_plot()
+        # tree_plot, tree_options = LandingPage.generate_tree_plot()
+        # cluster_plot = LandingPage.generate_cluster(method)
 
-        context['list_data'] = json.dumps(list_plot)
-        context['tree_dict'] = json.dumps(tree_plot)
-        context['tree_options'] = tree_options
-        context['cluster_data'] = cluster_plot
-        context['plot_type'] = method
+        # context['list_data'] = json.dumps(list_plot)
+        # context['tree_dict'] = json.dumps(tree_plot)
+        # context['tree_options'] = tree_options
+        # context['cluster_data'] = cluster_plot
+        # context['plot_type'] = method
         # context['HeatMapData'] = json.dumps(HeatMapData)
         return context
 
@@ -210,19 +213,21 @@ class LandingPage(TemplateView):
         # def generate_heatmap():
 
     @staticmethod
-    def generate_cluster(method):
-        # Initialize the test dictionary (should represent the xls data)
-        nested_dict = {}
-        # Generate the nested dictionary (should represent the xls data)
-        for i in range(1, 21):
-            main_key = f'GPCR{i}'
-            nested_dict[main_key] = {}
-            for j in range(1, 41):
-                nested_key = f'Variable{j}'
-                nested_dict[main_key][nested_key] = round(random.uniform(0, 100), 2)
+    def generate_cluster(method,input):
+        
+
+        # # Initialize the test dictionary (should represent the xls data)
+        # nested_dict = {}
+        # # Generate the nested dictionary (should represent the xls data)
+        # for i in range(1, 21):
+        #     main_key = f'GPCR{i}'
+        #     nested_dict[main_key] = {}
+        #     for j in range(1, 41):
+        #         nested_key = f'Variable{j}'
+        #         nested_dict[main_key][nested_key] = round(random.uniform(0, 100), 2)
 
         # Convert the nested dictionary to a DataFrame
-        data = pd.DataFrame(nested_dict).T
+        data = pd.DataFrame(input).T
 
         def reduce_and_cluster(data, method='umap', n_components=2, n_clusters=5):
             if method == 'umap':
@@ -296,166 +301,202 @@ class LandingPage(TemplateView):
                 ##########################
 
                 if not file.name.endswith('.xlsx'):
-                    return render(request, self.template_name, {'upload_status': 'Failed'})
+                    return render(request, self.template_name, {'upload_status': 'Failed','Error_message': "The uploaded file is not an .xlsx file."})
                 else:
-
-                    ##################################################
-                    # Load excel file (workbook) and get sheet names #
-                    ##################################################
-
                     try:
                         workbook = openpyxl.load_workbook(filename=file,read_only=False)
+                    except:
+                        return render(request, self.template_name, {'upload_status': 'Failed','Error_message': "Unable to load excel file, might be corrupted or not inline with the template file."})
+
+                    if workbook:
+                        ######################
+                        # Fetch protein data #
+                        ######################
+
+                        protein_data = Protein.objects.filter(entry_name__endswith='_human').prefetch_related('family__parent__parent', 'family__parent__parent__parent').distinct('entry_name')
+
+                        ######################################
+                        # Initialize sets for unique entries #
+                        ######################################
+
+                        unique_entry_names = set()
+                        unique_protein_families = set()
+                        unique_protein_classes = set()
+
+                        ##################################
+                        # for each entry add to sets of  #
+                        # proteins, families and classes #
+                        ##################################
+
+                        for entry in protein_data:
+
+                            ########################
+                            # Initiate the entries #
+                            ########################
+
+                            protein = str(entry)
+                            protein_family = str(entry.family.parent.parent.name)
+                            protein_class = str(entry.family.parent.parent.parent.name)
+
+                            ##########################
+                            # Populate the set-lists #
+                            ##########################
+
+                            unique_entry_names.add(protein)
+                            unique_protein_families.add(protein_family)
+                            unique_protein_classes.add(protein_class)
+
+                        #########################
+                        # convert sets to lists #
+                        #########################
+
+                        list_unique_entry_names = list(unique_entry_names)
+
+                        ##################################################
+                        # Load excel file (workbook) and get sheet names #
+                        ##################################################
 
                         sheet_names = workbook.sheetnames
+                        
+                        ######################
+                        # Sheets and headers #
+                        ######################
 
-                        ##################################
-                        # For each sheet in the workbook #
-                        ##################################
+                        Phylogenetic_Tree_Header = ['Receptor (Uniprot)', '1. Feature (Inner cicle)', '2. Order (Outer cicle 1)', '3. Order (Outer cicle 2)', '4. Order (Outer cicle 3)', '5. Order (Outer cicle 4)', '6. Order (Outer cicle 5)']
+                        Cluster_Analysis_Header = ['Receptor (Uniprot)','Feature 1','Feature 2','Feature 3','Feature 4']
+                        List_Plot_Header = ['Receptor (Uniprot)','Feature 1','Feature 2','Feature 3']
+                        Heatmap_Header = ['Receptor (Uniprot)','Feature 1','Feature 2','Feature 3','Feature 4','Feature 5']
+                        Sheet_Header_pass_check = [False,False,False,False,False]
+                        
+                        # Check all sheet names, headers and subheaders (needs to be implemented) #
 
                         for sheet_name in sheet_names:
+                            worksheet = workbook[sheet_name]
+                            header_list = [cell.value for cell in worksheet[1]]
+                            if sheet_name == 'Info':
+                                Sheet_Header_pass_check[0] = True
+                            elif sheet_name == 'Phylogenetic Tree' and header_list == Phylogenetic_Tree_Header:
+                                Sheet_Header_pass_check[1] = True
+                            elif sheet_name == 'Cluster Analysis' and header_list == Cluster_Analysis_Header:
+                                Sheet_Header_pass_check[2] = True
+                            elif sheet_name == 'List Plot' and header_list == List_Plot_Header:
+                                Sheet_Header_pass_check[3] = True
+                            elif sheet_name == 'Heatmap' and header_list == Heatmap_Header:
+                                Sheet_Header_pass_check[4] = True
+                            else:
+                                pass
+                        
+                        if not all(Sheet_Header_pass_check):
+                            return render(request, self.template_name, {'upload_status': 'Failed','Error_message': "The excel file is not structured as the template file. There are incorrect headers and subheaders."})
+                        else:
+                            
+                            # Init incorrect values #
+                            
+                            Incorrect_values = {}
+                            Incorrect_values['Phylogenetic Tree'] = {}
+                            Incorrect_values['Cluster Analysis'] = {}
+                            Incorrect_values['List Plot'] = {}
+                            Incorrect_values['Heatmap'] = {}
 
-                            ########################
-                            # Initialize worksheet #
-                            ########################
+                            Plot_parser = ['Failed','Failed','Failed','Failed']
 
-                            worksheet = workbook.get_sheet_by_name(sheet_name)
+                            ##################################
+                            # For each sheet in the workbook #
+                            ##################################
 
-                            ###############################
-                            # check if headers is correct #
-                            ###############################
+                            for sheet_name in sheet_names:
 
-                            header_list = [worksheet['A1'].value, worksheet['B1'].value, worksheet['C1'].value]
+                                ########################
+                                # Initialize worksheet #
+                                ########################
 
-                            ###################################################
-                            # If first sheet is receptor with correct headers #
-                            ###################################################
+                                worksheet = workbook[sheet_name]
+                                
+                                try:
+                                    header_list = [cell.value for cell in worksheet[1]]
+                                except:
+                                    return render(request, self.template_name, {'upload_status': 'Failed','Error_message': "Corrupted excel, headers not inline with the template file."})
+                                
+                                
+                                ###################################################
+                                # If first sheet is receptor with correct headers #
+                                ###################################################
 
-                            if sheet_name == 'Phylogenetic Tree' and header_list == ['Receptor (Uniprot)', '1. Feature (Inner cicle)', '2. Order (Outer cicle 1)']:
+                                if sheet_name == 'Phylogenetic Tree':
 
-                                print("success!")
+                                    data_types = [cell.value for cell in worksheet[2]]
+                                    Phylogenetic_Tree_data = {}
+                                    for col_idx in range(len(header_list)):
+                                        Incorrect_values['Phylogenetic Tree'][col_idx] = {}
 
-                                #########################################
-                                ## if everything is good in do a query ##
-                                ##  Fetch: Protein, family and class   ##
-                                #########################################
+                                    #######################################
+                                    # Run through Phylogenetic tree sheet #
+                                    #######################################
 
-                                protein_data = Protein.objects.filter(entry_name__endswith='_human').prefetch_related('family__parent__parent', 'family__parent__parent__parent').distinct('entry_name')
-
-                                ######################################
-                                # Initialize sets for unique entries #
-                                ######################################
-
-                                unique_entry_names = set()
-                                unique_protein_families = set()
-                                unique_protein_classes = set()
-
-                                ##################################
-                                # for each entry add to sets of  #
-                                # proteins, families and classes #
-                                ##################################
-
-                                for entry in protein_data:
-
-                                    ########################
-                                    # Initiate the entries #
-                                    ########################
-
-                                    protein = str(entry)
-                                    protein_family = str(entry.family.parent.parent.name)
-                                    protein_class = str(entry.family.parent.parent.parent.name)
-
-                                    ##########################
-                                    # Populate the set-lists #
-                                    ##########################
-
-                                    unique_entry_names.add(protein)
-                                    unique_protein_families.add(protein_family)
-                                    unique_protein_classes.add(protein_class)
-
-                                #########################
-                                # convert sets to lists #
-                                #########################
-
-                                list_unique_entry_names = list(unique_entry_names)
-
-                                ###################################
-                                ## Retrieve all cell values from ##
-                                ## columns A, B, and C as lists  ##
-                                ###################################
-
-                                ############################
-                                # Initiate lists and dicts #
-                                ############################
-
-                                headers = [cell.value for cell in worksheet[1]]
-                                data_types = [cell.value for cell in worksheet[2]]
-
-                                Correct_values = {}
-                                Incorrect_values = {}
-                                missing_data_columns = {}
-
-                                ##########################
-                                # Run through excel file #
-                                ##########################
-
-                                # Identify completely empty columns and skip them
-                                empty_columns = set()
-                                for col_idx in range(len(headers)):
-                                    if all(cell is None for cell in worksheet.iter_cols(min_col=col_idx + 1, max_col=col_idx + 1, min_row=3, values_only=True)):
-                                        empty_columns.add(col_idx)
-                                print(empty_columns)
-                                # Iterate through rows starting from the third row
-                                for index, row in enumerate(worksheet.iter_rows(min_row=3, values_only=True), start=3):
-                                    # Check the "Receptor (Uniprot)" column for correct values
-                                    if row[0] in list_unique_entry_names:
-                                        Correct_values[index] = 'Entry correct'
-                                    else:
-                                        Incorrect_values[index] = 'Wrong entry'
-
-                                    # Check each column for data points, boolean values, and float values
-                                    for col_idx, value in enumerate(row):
-                                        if col_idx == 0 or col_idx in empty_columns:
-                                            continue  # Skip the "Receptor (Uniprot)" column and completely empty columns
-
-                                        if value is not None:
-                                            if col_idx not in missing_data_columns:
-                                                missing_data_columns[col_idx] = True  # Column has data points
-                                            if data_types[col_idx] == 'Boolean' and str(value).lower() not in ['yes', 'no', '1', '0']:
-                                                if col_idx not in Incorrect_values:
-                                                    Incorrect_values[col_idx] = 'Non-boolean value found'
-                                            elif data_types[col_idx] == 'Float':
-                                                try:
-                                                    float(value)
-                                                except ValueError:
-                                                    if col_idx not in Incorrect_values:
-                                                        Incorrect_values[col_idx] = 'Non-float value found'
+                                    # Iterate through rows starting from the third row
+                                    for index, row in enumerate(worksheet.iter_rows(min_row=3, values_only=True), start=3):
+                                        # Check the "Receptor (Uniprot)" column for correct values
+                                        if row[0] not in list_unique_entry_names:
+                                            Incorrect_values['Phylogenetic Tree'][0][index] = 'Wrong entry'
                                         else:
-                                            if col_idx not in missing_data_columns:
-                                                missing_data_columns[col_idx] = False  # Column has missing data points
-                                            elif missing_data_columns[col_idx] is True:
-                                                missing_data_columns[col_idx] = False  # Column has mixed data points
+                                            if row[0] not in Phylogenetic_Tree_data:
+                                                Phylogenetic_Tree_data[row[0]] = {}
+                                            
+                                            # Check each column for data points, boolean values, and float values
+                                            for col_idx, value in enumerate(row):
+                                                if col_idx == 0:
+                                                    continue  # Skip the "Receptor (Uniprot)" column and completely empty columns
+                                                if value is not None:
+                                                    if data_types[col_idx] == 'Boolean' and str(value).lower() not in ['yes', 'no', '1', '0']:
+                                                        Incorrect_values['Phylogenetic Tree'][col_idx][index] = 'Non-boolean value'
+                                                    elif data_types[col_idx] == 'Float':
+                                                        try:
+                                                            float_value = float(value)
+                                                            Phylogenetic_Tree_data[row[0]]['Value{}'.format(col_idx)] = float_value
+                                                        except ValueError:
+                                                            Incorrect_values['Phylogenetic Tree'][col_idx][index] = 'Non-float value'
+                                                    else:
+                                                        Phylogenetic_Tree_data[row[0]]['Value{}'.format(col_idx)] = value
+                                                else:
+                                                    pass
+                                    # Check if any values are incorrect #
+                                    status = 'success'
 
-                                # Prepare the final output
-                                for col_idx, has_data in missing_data_columns.items():
-                                    if not has_data:
-                                        if col_idx not in Incorrect_values:
-                                            Incorrect_values[col_idx] = 'Missing data points found'
+                                    if Phylogenetic_Tree_data:
+                                        Data_Phylogenetic_Tree = json.dumps(Phylogenetic_Tree_data,indent=4, sort_keys=True)
+                                        for col_idx in Incorrect_values['Phylogenetic Tree']:
+                                            # Check if there are any assigned index values for this col_idx
+                                            if any(Incorrect_values['Phylogenetic Tree'][col_idx].values()):
+                                                # If any index is assigned, set status to 'Partially_success' and break out of the loop
+                                                status = 'Partially_success'
+                                                break
+                                    else:
+                                        status = 'Failed'
 
-                                print("Correct Values: ", Correct_values)
-                                print("Incorrect Values: ", Incorrect_values)
-
-                                if Incorrect_values:
-                                    print("Incorrect values found")
-                                    return render(request, self.template_name,{'upload_status': 'Success', 'report_status': 'Failed', 'incorrect_values': Incorrect_values})
-                                else:
-                                    print("All values are correct")
-                                    return render(request, self.template_name,{'upload_status': 'Success', 'report_status': 'Success'})
-                    except:
-                        return render(request, self.template_name, {'upload_status': 'Failed'})
+                                    if status == 'success':
+                                        # Needs to send a response if everything is handled #
+                                        print('success')
+                                        Plot_parser[0] = status
+                                        sample_data_json = json.dumps([True,True,False,False])
+                                        return render(request, self.template_name, {'upload_status': 'Success','report_status':'Success','Data_Phylogenetic_Tree': Data_Phylogenetic_Tree,'sample_data_json':sample_data_json})
+                                    elif status == 'Partially_success':
+                                        Plot_parser[0] = status
+                                        print('Partially_success')
+                                        Data_Incorrect_Phylogenetic_Tree = json.dumps(Incorrect_values['Phylogenetic Tree'],indent=4, sort_keys=True)
+                                        return render(request, self.template_name, {'upload_status': 'Success','report_status':'Partially_success','Data_Phylogenetic_Tree': Data_Phylogenetic_Tree,'Data_Incorrect_Phylogenetic_Tree':Data_Incorrect_Phylogenetic_Tree})
+                                    elif status == 'Failed':
+                                        Plot_parser[0] = status
+                                        return render(request, self.template_name, {'upload_status': 'Success','report_status':'Failed'})
+                                
+                                elif sheet_name == 'Cluster Analysis':
+                                    print("Cluster!")
+                    # Needs to send a response if everything is handled #
+                    return render(request, self.template_name, {'upload_status': 'Success'})
+                                
             else:
                 # Return a 405 Method Not Allowed response if not a POST request
                 #return HttpResponseNotAllowed(['POST'])
-                return render(request, self.template_name, {'upload_status': 'Failed'})
+                return render(request, self.template_name, {'upload_status': 'Failed','Error_message': "Not a valid excel file. Please try and use the template excel file."})
 
 # def LandingPage(request):
 #     return render(request, 'mapper/data_mapper_landing.html')
@@ -466,3 +507,30 @@ class LandingPage(TemplateView):
 
 class ExcelUploadForm(forms.Form):
     file = forms.FileField()
+
+class plotrender(TemplateView):
+    template_name = 'mapper/data_mapper_plotrender.html'
+
+    def post(self, request, *args, **kwargs):
+        # Retrieve the sample data from the POST request
+        sample_data_json = request.POST.get('sample_data')
+        Phylogenetic_data_json = request.POST.get('Phylogenetic_data')
+        # If sample_data_json is not None, parse it as JSON
+        if sample_data_json and Phylogenetic_data_json:
+            try:
+                sample_data = json.loads(sample_data_json)
+                Phylogenetic_data = json.loads(Phylogenetic_data_json)
+            except json.JSONDecodeError:
+                # Handle the case when the JSON data is invalid
+                return HttpResponse("Invalid JSON data")
+
+            # Add the sample data to the context
+            output = LandingPage.generate_cluster('umap',Phylogenetic_data)
+            context = {'sample_data_json': sample_data,'Phylogenetic_data': output}
+
+            # Return the context dictionary
+            return self.render_to_response(context)
+        else:
+            # Handle the case when sample_data_json is None
+            # This could happen if the form was submitted without the JSON data
+            return HttpResponse("Missing sample data")
