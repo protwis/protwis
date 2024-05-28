@@ -17,6 +17,7 @@ from collections import OrderedDict
 import pprint
 from datetime import datetime
 from urllib.request import urlopen
+import json
 
 
 starttime = datetime.now()
@@ -31,6 +32,10 @@ class Command(BaseCommand):
 
     xtal_seg_end_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'mod_xtal_segends.yaml'])
     pdb_data_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'pdbs'])
+
+    sequence_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'sequences.yaml'])
+    with open(sequence_file, 'r') as f:
+        gpcr_sequences = yaml.load(f, Loader=yaml.FullLoader)
 
     def add_arguments(self, parser):
         parser.add_argument('--debug',
@@ -96,6 +101,21 @@ class Command(BaseCommand):
                                   '3b':'-','3e':'-','i2b':'-','i2e':'-','4b':'-','4e':'-','e2b':'-','e2e':'-',
                                   '5b':'-','5e':'-','6b':'-','6e':'-','7b':'-','7e':'-','8b':'-','8e':'-'}
                     self.download_pdb(s)
+
+                    if data['protein'] not in self.gpcr_sequences:
+                        url = 'https://rest.uniprot.org/uniprotkb/{}.fasta'.format(data['protein'])
+                        uniprot_data = urlopen(url).read().decode('utf-8').split('\n')
+                        accession = uniprot_data[0].split('|')[1]
+                        sequence = ''.join(uniprot_data[1:])
+                        print(accession)
+                        print(sequence)
+                        dic = {'Sequence':sequence, 'UniProt':data['protein'], 'Xtalised':'Xtal'}
+                        self.gpcr_sequences[data['protein'].lower()] = dic
+                        ### Adding canonical sequence from UniProt to sequences.yaml
+                        if self.save_annotation:
+                            with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'sequences.yaml']), 'w') as f:
+                                yaml.dump(self.gpcr_sequences, f)
+                        
                     structure = Bio.PDB.PDBParser(QUIET=True).get_structure(s, self.pdb_path)
                     parent_protein = Protein.objects.get(entry_name=data['protein'])
                     parent_residues = Residue.objects.filter(protein_conformation__protein=parent_protein)
