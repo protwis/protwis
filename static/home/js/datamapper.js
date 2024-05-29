@@ -342,7 +342,7 @@ function renderClusterPlot(data, selector, method) {
     }
 
     // Call avoidCollisions to reposition labels
-    avoidCollisions();
+    // avoidCollisions();
 
     // Add title based on the method with more spacing
     svg.append("text")

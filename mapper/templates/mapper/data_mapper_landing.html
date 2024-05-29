@@ -279,10 +279,10 @@
         <button id="show" class="btn btn-info active">Show</button>
         <button id="hide" class="btn btn-info">Hide</button>
     </div>
-</div> -->
+</div>
 
 
-<!-- <div id="plotContainer" class="text-center">
+<div id="plotContainer" class="text-center">
   <br />
   <br />
   <h4>Cluster Plot</h4>
@@ -527,7 +527,7 @@ document.querySelectorAll('.img-container img').forEach(img => {
                       '5ht2b': {'value1': 18, 'value2': 2, 'value3': 9, 'value4': 13, 'value5': 4}
                       };
 
-  var list_data = {{ list_data|safe }};
+  // var list_data = {{ list_data|safe }};
 
   var cluster_data = {{ cluster_data|safe }};
   var cluster_plot = "{{ plot_type }}";
@@ -547,7 +547,5 @@ document.querySelectorAll('.img-container img').forEach(img => {
       $("#hide").addClass("active");
       d3.selectAll(".label").style("opacity", 0);
   });
-</script>
-  // renderClusterPlot(cluster_data, "#plotContainer", cluster_plot);
 </script> -->
 {% endblock %}

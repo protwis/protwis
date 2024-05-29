@@ -50,8 +50,7 @@ class LandingPage(TemplateView):
         # method = 'umap' #will be defined by user input
         # list_plot = LandingPage.generate_list_plot()
         # tree_plot, tree_options = LandingPage.generate_tree_plot()
-        # cluster_plot = LandingPage.generate_cluster(method)
-
+        # cluster_plot = LandingPage.generate_test_cluster(method)
         # context['list_data'] = json.dumps(list_plot)
         # context['tree_dict'] = json.dumps(tree_plot)
         # context['tree_options'] = tree_options
@@ -62,29 +61,33 @@ class LandingPage(TemplateView):
 
     @staticmethod
     def keep_by_names(data, names_to_keep):
-        if isinstance(data, list):
+        data_copy = deepcopy(data)
+        if isinstance(data_copy, list):
             # Process each item in the list
-            kept_items = [keep_by_names(item, names_to_keep) for item in data]
+            kept_items = [LandingPage.keep_by_names(item, names_to_keep) for item in data_copy]
             # Return only non-None items
             return [item for item in kept_items if item is not None]
-        elif isinstance(data, OrderedDict):
-            if data.get('name') not in names_to_keep:
-                if 'children' in data:
+        elif isinstance(data_copy, OrderedDict):
+            name = data_copy.get('name')
+            if name not in names_to_keep.keys():
+                if 'children' in data_copy:
                     # Recursively process children
-                    data['children'] = LandingPage.keep_by_names(data['children'], names_to_keep)
+                    data_copy['children'] = LandingPage.keep_by_names(data_copy['children'], names_to_keep)
                     # Remove the 'children' key if it's empty after processing
-                    if not data['children']:
+                    if not data_copy['children']:
                         return None
                 else:
                     return None
             else:
-                # If the name is in the keep list, process children if present
-                if 'children' in data:
-                    data['children'] = LandingPage.keep_by_names(data['children'], names_to_keep)
-                    if not data['children']:
-                        del data['children']
-            return data
-        return data
+                # If the name is in the keep list, update the 'value' field
+                data_copy['value'] = names_to_keep[name]['Inner']
+                # Process children if present
+                if 'children' in data_copy:
+                    data_copy['children'] = LandingPage.keep_by_names(data_copy['children'], names_to_keep)
+                    if not data_copy['children']:
+                        del data_copy['children']
+            return data_copy
+        return data_copy
 
     @staticmethod
     def convert_keys(datatree, conversion):
@@ -124,7 +127,7 @@ class LandingPage(TemplateView):
         return datatree2
 
     @staticmethod
-    def generate_tree_plot(): #ADD AN INPUT FILTER DICTIONARY
+    def generate_tree_plot(input_data): #ADD AN INPUT FILTER DICTIONARY
         ### TREE SECTION
         tree = PhylogeneticTreeGenerator()
         class_a_data = tree.get_tree_data(ProteinFamily.objects.get(name='Class A (Rhodopsin)'))
@@ -192,114 +195,103 @@ class LandingPage(TemplateView):
         master_dict['children'].append(class_f_dict)
         master_dict['children'].append(class_t2_dict)
 
-        # master_dict = LandingPage.keep_by_names(filter_dict)
-
-        return master_dict, general_options
-
-    @staticmethod
-    def generate_circles_data():
-        gpcrs = Protein.objects.filter(species_id=1).values_list('entry_name', flat=True)
-        circles = {}
-        for gpcr in gpcrs:
-            circles[gpcr] = {'Inner': 0,
-                             'Outer1': 0,
-                             'Outer2': 0,
-                             'Outer3': 0,
-                             'Outer4': 0,
-                             'Outer5': 0}
-        return circles
-
-        # @staticmethod
-        # def generate_heatmap():
-
-    @staticmethod
-    def generate_cluster(method,input):
-
-
-        # # Initialize the test dictionary (should represent the xls data)
-        # nested_dict = {}
-        # # Generate the nested dictionary (should represent the xls data)
-        # for i in range(1, 21):
-        #     main_key = f'GPCR{i}'
-        #     nested_dict[main_key] = {}
-        #     for j in range(1, 41):
-        #         nested_key = f'Variable{j}'
-        #         nested_dict[main_key][nested_key] = round(random.uniform(0, 100), 2)
-
-        # Convert the nested dictionary to a DataFrame
-        data = pd.DataFrame(input).T
-
-        def reduce_and_cluster(data, method='umap', n_components=2, n_clusters=10):
-            if method == 'umap':
-                reducer = umap.UMAP(n_components=n_components, random_state=42)
-            elif method == 'tsne':
-                reducer = TSNE(n_components=n_components, random_state=42)
-            elif method == 'pca':
-                reducer = PCA(n_components=n_components, random_state=42)
+        updated_data = {key.replace('_human', ''): value for key, value in input_data.items()}
+        circles = {key.replace('_human', '').upper(): {k: v for k, v in value.items() if k != 'Inner'} for key, value in input_data.items()}
+        master_dict = LandingPage.keep_by_names(master_dict, updated_data)
+        whole_receptors = Protein.objects.prefetch_related("family", "family__parent__parent__parent")
+        whole_rec_dict = {}
+        for rec in whole_receptors:
+            rec_uniprot = rec.entry_short()
+            rec_iuphar = rec.family.name.replace("receptor", '').replace("<i>", "").replace("</i>", "").strip()
+            if (rec_iuphar[0].isupper()) or (rec_iuphar[0].isdigit()):
+                whole_rec_dict[rec_uniprot] = [rec_iuphar]
             else:
-                raise ValueError("Method should be either 'umap' or 'tsne'")
+                whole_rec_dict[rec_uniprot] = [rec_iuphar.capitalize()]
 
-            reduced_data = reducer.fit_transform(data)
+        return master_dict, general_options, circles, whole_rec_dict
 
-            # Clustering the reduced data
-            kmeans = KMeans(n_clusters=n_clusters, random_state=42)
-            clusters = kmeans.fit_predict(reduced_data)
+    @staticmethod
+    def reduce_and_cluster(data, method='umap', n_components=2, n_clusters=10):
+        if method == 'umap':
+            reducer = umap.UMAP(n_components=n_components, random_state=42)
+        elif method == 'tsne':
+            reducer = TSNE(n_components=n_components, random_state=42)
+        elif method == 'pca':
+            reducer = PCA(n_components=n_components, random_state=42)
+        else:
+            raise ValueError("Method should be either 'umap' or 'tsne'")
 
-            # Prepare the data for D3.js
-            df = pd.DataFrame(reduced_data, columns=['x', 'y'])
-            df['cluster'] = clusters
-            df['label'] = data.index
+        reduced_data = reducer.fit_transform(data)
 
-            return df
+        # Clustering the reduced data
+        kmeans = KMeans(n_clusters=n_clusters, random_state=42)
+        clusters = kmeans.fit_predict(reduced_data)
 
+        # Prepare the data for D3.js
+        df = pd.DataFrame(reduced_data, columns=['x', 'y'])
+        df['cluster'] = clusters
+        df['label'] = data.index
+
+        return df
+
+    @staticmethod
+    def generate_cluster(method, input):
+        # Convert the nested dictionary to a DataFrame
+        input = {key.replace('_human', '').upper(): value for key, value in input.items()}
+        data = pd.DataFrame(input).T
         # Example usage
-        reduced_df = reduce_and_cluster(data, method=method)
-
+        reduced_df = LandingPage.reduce_and_cluster(data, method=method)
         # Prepare the data for visualization
         data_json = reduced_df.to_json(orient='records')
 
         return data_json
 
+    # @staticmethod
+    # def generate_test_cluster(method):
+    #     # Initialize the test dictionary (should represent the xls data)
+    #     nested_dict = {}
+    #     # Generate the nested dictionary (should represent the xls data)
+    #     proteins = list(Protein.objects.filter(entry_name__endswith='_human').values_list('entry_name', flat=True).distinct())
+    #     for i in proteins:
+    #         main_key = i.split('_')[0].upper()
+    #         nested_dict[main_key] = {}
+    #         for j in range(1, 81):
+    #             nested_key = f'Variable{j}'
+    #             nested_dict[main_key][nested_key] = round(random.uniform(0, 100), 2)
+    #     # Convert the nested dictionary to a DataFrame
+    #     data = pd.DataFrame(nested_dict).T
+    #     # Example usage
+    #     reduced_df = LandingPage.reduce_and_cluster(data, method=method)
+    #     # Prepare the data for visualization
+    #     data_json = reduced_df.to_json(orient='records')
+    #     return data_json
 
     @staticmethod
-    def parse_data_from_xls():
-        data = {}
-        #CODE
-        #CODE
-        #CODE
-        #CODE
-        return data
+    def map_to_quartile(value, quartiles):
+        if value <= quartiles[0.25]:
+            return 10
+        elif value <= quartiles[0.5]:
+            return 20
+        elif value <= quartiles[0.75]:
+            return 30
+        else:
+            return 40
 
     def post(self, request, *args, **kwargs):
-
-        #############################################################
         ### This method handles POST requests for form submission ###
-        #############################################################
 
         if request.method == 'POST':
 
-            #################################
             # Utilize ExcelUploadForm class #
-            #################################
-
             form = ExcelUploadForm(request.POST,request.FILES)
 
-            ####################
             # If form is valid #
-            ####################
-
             if form.is_valid():
 
-                ####################
                 # Get cleaned data #
-                ####################
-
                 file = form.cleaned_data['file']
 
-                ##########################
                 # Check if file is .xlsx #
-                ##########################
-
                 if not file.name.endswith('.xlsx'):
                     return render(request, self.template_name, {'upload_status': 'Failed','Error_message': "The uploaded file is not an .xlsx file."})
                 else:
@@ -309,67 +301,43 @@ class LandingPage(TemplateView):
                         return render(request, self.template_name, {'upload_status': 'Failed','Error_message': "Unable to load excel file, might be corrupted or not inline with the template file."})
 
                     if workbook:
-                        ######################
-                        # Fetch protein data #
-                        ######################
 
+                        # Fetch protein data #
                         protein_data = Protein.objects.filter(entry_name__endswith='_human').prefetch_related('family__parent__parent', 'family__parent__parent__parent').distinct('entry_name')
 
-                        ######################################
                         # Initialize sets for unique entries #
-                        ######################################
-
                         unique_entry_names = set()
                         unique_protein_families = set()
                         unique_protein_classes = set()
 
-                        ##################################
                         # for each entry add to sets of  #
                         # proteins, families and classes #
-                        ##################################
-
                         for entry in protein_data:
 
-                            ########################
                             # Initiate the entries #
-                            ########################
-
                             protein = str(entry)
                             protein_family = str(entry.family.parent.parent.name)
                             protein_class = str(entry.family.parent.parent.parent.name)
 
-                            ##########################
                             # Populate the set-lists #
-                            ##########################
-
                             unique_entry_names.add(protein)
                             unique_protein_families.add(protein_family)
                             unique_protein_classes.add(protein_class)
 
-                        #########################
                         # convert sets to lists #
-                        #########################
-
                         list_unique_entry_names = list(unique_entry_names)
 
-                        ##################################################
                         # Load excel file (workbook) and get sheet names #
-                        ##################################################
-
                         sheet_names = workbook.sheetnames
 
-                        ######################
                         # Sheets and headers #
-                        ######################
-
-                        Phylogenetic_Tree_Header = ['Receptor (Uniprot)', '1. Feature (Inner cicle)', '2. Order (Outer cicle 1)', '3. Order (Outer cicle 2)', '4. Order (Outer cicle 3)', '5. Order (Outer cicle 4)', '6. Order (Outer cicle 5)']
+                        Phylogenetic_Tree_Header = ['Receptor (Uniprot)', 'Inner', 'Outer 1', 'Outer 2', 'Outer 3', 'Outer 4', 'Outer 5']
                         Cluster_Analysis_Header = ['Receptor (Uniprot)','Feature 1','Feature 2','Feature 3','Feature 4']
                         List_Plot_Header = ['Receptor (Uniprot)','Feature 1','Feature 2','Feature 3']
                         Heatmap_Header = ['Receptor (Uniprot)','Feature 1','Feature 2','Feature 3','Feature 4','Feature 5']
                         Sheet_Header_pass_check = [False,False,False,False,False]
 
                         # Check all sheet names, headers and subheaders (needs to be implemented) #
-
                         for sheet_name in sheet_names:
                             worksheet = workbook[sheet_name]
                             header_list = [cell.value for cell in worksheet[1]]
@@ -391,7 +359,6 @@ class LandingPage(TemplateView):
                         else:
 
                             # Init incorrect values #
-
                             Incorrect_values = {}
                             Incorrect_values['Phylogenetic Tree'] = {}
                             Incorrect_values['Cluster Analysis'] = {}
@@ -400,16 +367,10 @@ class LandingPage(TemplateView):
 
                             Plot_parser = ['Failed','Failed','Failed','Failed']
 
-                            ##################################
                             # For each sheet in the workbook #
-                            ##################################
-
                             for sheet_name in sheet_names:
 
-                                ########################
                                 # Initialize worksheet #
-                                ########################
-
                                 worksheet = workbook[sheet_name]
 
                                 try:
@@ -417,22 +378,37 @@ class LandingPage(TemplateView):
                                 except:
                                     return render(request, self.template_name, {'upload_status': 'Failed','Error_message': "Corrupted excel, headers not inline with the template file."})
 
-
-                                ###################################################
                                 # If first sheet is receptor with correct headers #
-                                ###################################################
-
                                 if sheet_name == 'Phylogenetic Tree':
+
+                                    # Locate the column index for the "Inner" header
+                                    header = next(worksheet.iter_rows(min_row=1, max_row=1, values_only=True))
+                                    inner_col_idx = header.index('Inner') + 1  # openpyxl uses 1-based indexing
+                                    # Check the first value under the "Inner" header
+                                    first_value = worksheet.cell(row=2, column=inner_col_idx).value
+                                    if first_value != "Boolean":
+                                        # Extract all values from the "Inner" column, skipping the header
+                                        inner_values = []
+                                        for row in worksheet.iter_rows(min_row=3, min_col=inner_col_idx, max_col=inner_col_idx, values_only=True):
+                                            if row[0] is not None:
+                                                inner_values.append(row[0])
+
+                                        inner_series = pd.Series(inner_values)
+                                        # Calculate the quartiles
+                                        quartiles = inner_series.quantile([0.25, 0.5, 0.75])
+                                        # Apply the function to the series, passing quartiles as an argument
+                                        mapped_values = inner_series.apply(lambda x: self.map_to_quartile(x, quartiles))
+
+                                        # If you need to update the worksheet with these values
+                                        for i, value in enumerate(mapped_values, start=3):  # start=3 to skip the header row
+                                            worksheet.cell(row=i, column=inner_col_idx).value = value
 
                                     data_types = [cell.value for cell in worksheet[2]]
                                     Phylogenetic_Tree_data = {}
                                     for col_idx in range(len(header_list)):
                                         Incorrect_values['Phylogenetic Tree'][col_idx] = {}
 
-                                    #######################################
                                     # Run through Phylogenetic tree sheet #
-                                    #######################################
-
                                     # Iterate through rows starting from the third row
                                     for index, row in enumerate(worksheet.iter_rows(min_row=3, values_only=True), start=3):
                                         # Check the "Receptor (Uniprot)" column for correct values
@@ -447,23 +423,35 @@ class LandingPage(TemplateView):
                                                 if col_idx == 0:
                                                     continue  # Skip the "Receptor (Uniprot)" column and completely empty columns
                                                 if value is not None:
-                                                    if data_types[col_idx] == 'Boolean' and str(value).lower() not in ['yes', 'no', '1', '0']:
-                                                        Incorrect_values['Phylogenetic Tree'][col_idx][index] = 'Non-boolean value'
+                                                    if data_types[col_idx] == 'Boolean':
+                                                        if str(value).lower() not in ['yes', 'no', '1', '0', 'Yes', 'No', 'X']:
+                                                            Incorrect_values['Phylogenetic Tree'][col_idx][index] = 'Non-boolean value'
+                                                        else:
+                                                            #Formatting it to 2000/0 (red/white)
+                                                            if value in ['yes', '1', 'Yes', 'X']:
+                                                                value = 1
+                                                            else:
+                                                                value = 0
+                                                            if col_idx == 1:
+                                                                Phylogenetic_Tree_data[row[0]]['Inner'] = value
+                                                            else:
+                                                                Phylogenetic_Tree_data[row[0]]['Outer{}'.format(col_idx-1)] = value
                                                     elif data_types[col_idx] == 'Float':
                                                         try:
                                                             float_value = float(value)
-                                                            Phylogenetic_Tree_data[row[0]]['Value{}'.format(col_idx)] = float_value
+                                                            if col_idx == 1:
+                                                                Phylogenetic_Tree_data[row[0]]['Inner'] = value
+                                                            else:
+                                                                Phylogenetic_Tree_data[row[0]]['Outer{}'.format(col_idx-1)] = float_value
                                                         except ValueError:
                                                             Incorrect_values['Phylogenetic Tree'][col_idx][index] = 'Non-float value'
-                                                    else:
-                                                        Phylogenetic_Tree_data[row[0]]['Value{}'.format(col_idx)] = value
                                                 else:
                                                     pass
                                     # Check if any values are incorrect #
                                     status = 'success'
 
                                     if Phylogenetic_Tree_data:
-                                        Data_Phylogenetic_Tree = json.dumps(Phylogenetic_Tree_data,indent=4, sort_keys=True)
+                                        Data_Phylogenetic_Tree = json.dumps(Phylogenetic_Tree_data, indent=4, sort_keys=True)
                                         for col_idx in Incorrect_values['Phylogenetic Tree']:
                                             # Check if there are any assigned index values for this col_idx
                                             if any(Incorrect_values['Phylogenetic Tree'][col_idx].values()):
@@ -523,10 +511,14 @@ class plotrender(TemplateView):
             except json.JSONDecodeError:
                 # Handle the case when the JSON data is invalid
                 return HttpResponse("Invalid JSON data")
-
             # Add the sample data to the context
-            output = LandingPage.generate_cluster('umap',Phylogenetic_data)
+            tree, tree_options, circles, receptors = LandingPage.generate_tree_plot(Phylogenetic_data)
+            output = LandingPage.generate_cluster('umap', Phylogenetic_data)
             context = {'sample_data_json': sample_data,'Phylogenetic_data': output}
+            context['tree'] = json.dumps(tree)
+            context['tree_options'] = tree_options
+            context['circles'] = json.dumps(circles)
+            context['whole_dict'] = json.dumps(receptors)
 
             # Return the context dictionary
             return self.render_to_response(context)
