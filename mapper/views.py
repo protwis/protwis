@@ -11,6 +11,7 @@ from django.views.decorators.cache import cache_page
 from django.views.generic import TemplateView
 from django.http import HttpResponseNotAllowed
 from django import forms
+from django import template
 
 
 from protein.models import Protein, ProteinConformation, ProteinAlias, ProteinFamily, Gene, ProteinSegment
@@ -302,30 +303,7 @@ class LandingPage(TemplateView):
 
                     if workbook:
 
-                        # Fetch protein data #
-                        protein_data = Protein.objects.filter(entry_name__endswith='_human').prefetch_related('family__parent__parent', 'family__parent__parent__parent').distinct('entry_name')
-
-                        # Initialize sets for unique entries #
-                        unique_entry_names = set()
-                        unique_protein_families = set()
-                        unique_protein_classes = set()
-
-                        # for each entry add to sets of  #
-                        # proteins, families and classes #
-                        for entry in protein_data:
-
-                            # Initiate the entries #
-                            protein = str(entry)
-                            protein_family = str(entry.family.parent.parent.name)
-                            protein_class = str(entry.family.parent.parent.parent.name)
-
-                            # Populate the set-lists #
-                            unique_entry_names.add(protein)
-                            unique_protein_families.add(protein_family)
-                            unique_protein_classes.add(protein_class)
-
-                        # convert sets to lists #
-                        list_unique_entry_names = list(unique_entry_names)
+                        protein_data = list(Protein.objects.filter(species=1).values_list('entry_name', flat=True).distinct())
 
                         # Load excel file (workbook) and get sheet names #
                         sheet_names = workbook.sheetnames
@@ -333,7 +311,7 @@ class LandingPage(TemplateView):
                         # Sheets and headers #
                         Phylogenetic_Tree_Header = ['Receptor (Uniprot)', 'Inner', 'Outer 1', 'Outer 2', 'Outer 3', 'Outer 4', 'Outer 5']
                         Cluster_Analysis_Header = ['Receptor (Uniprot)','Feature 1','Feature 2','Feature 3','Feature 4']
-                        List_Plot_Header = ['Receptor (Uniprot)','Feature 1','Feature 2','Feature 3']
+                        List_Plot_Header = ['Receptor (Uniprot)','Feature 1','Feature 2']
                         Heatmap_Header = ['Receptor (Uniprot)','Feature 1','Feature 2','Feature 3','Feature 4','Feature 5']
                         Sheet_Header_pass_check = [False,False,False,False,False]
 
@@ -345,7 +323,7 @@ class LandingPage(TemplateView):
                                 Sheet_Header_pass_check[0] = True
                             elif sheet_name == 'Phylogenetic Tree' and header_list == Phylogenetic_Tree_Header:
                                 Sheet_Header_pass_check[1] = True
-                            elif sheet_name == 'Cluster Analysis' and header_list == Cluster_Analysis_Header:
+                            elif sheet_name == 'Cluster Analysis' and header_list[:5] == Cluster_Analysis_Header:
                                 Sheet_Header_pass_check[2] = True
                             elif sheet_name == 'List Plot' and header_list == List_Plot_Header:
                                 Sheet_Header_pass_check[3] = True
@@ -355,15 +333,19 @@ class LandingPage(TemplateView):
                                 pass
 
                         if not all(Sheet_Header_pass_check):
+                            # Add addition for the different sheets.
                             return render(request, self.template_name, {'upload_status': 'Failed','Error_message': "The excel file is not structured as the template file. There are incorrect headers and subheaders."})
                         else:
 
                             # Init incorrect values #
+
+                            plot_names = ['Phylogenetic Tree', 'Cluster Analysis', 'List Plot', 'Heatmap']
+                            Data = {}
                             Incorrect_values = {}
-                            Incorrect_values['Phylogenetic Tree'] = {}
-                            Incorrect_values['Cluster Analysis'] = {}
-                            Incorrect_values['List Plot'] = {}
-                            Incorrect_values['Heatmap'] = {}
+
+                            for key in plot_names:
+                                Data[key] = {}
+                                Incorrect_values[key] = {}
 
                             Plot_parser = ['Failed','Failed','Failed','Failed']
 
@@ -404,82 +386,377 @@ class LandingPage(TemplateView):
                                             worksheet.cell(row=i, column=inner_col_idx).value = value
 
                                     data_types = [cell.value for cell in worksheet[2]]
-                                    Phylogenetic_Tree_data = {}
-                                    for col_idx in range(len(header_list)):
-                                        Incorrect_values['Phylogenetic Tree'][col_idx] = {}
+                                    for key in header_list:
+                                        Incorrect_values[sheet_name][key] = {}
+                                    try:
 
-                                    # Run through Phylogenetic tree sheet #
-                                    # Iterate through rows starting from the third row
-                                    for index, row in enumerate(worksheet.iter_rows(min_row=3, values_only=True), start=3):
-                                        # Check the "Receptor (Uniprot)" column for correct values
-                                        if row[0] not in list_unique_entry_names:
-                                            Incorrect_values['Phylogenetic Tree'][0][index] = 'Wrong entry'
-                                        else:
-                                            if row[0] not in Phylogenetic_Tree_data:
-                                                Phylogenetic_Tree_data[row[0]] = {}
-
-                                            # Check each column for data points, boolean values, and float values
-                                            for col_idx, value in enumerate(row):
-                                                if col_idx == 0:
-                                                    continue  # Skip the "Receptor (Uniprot)" column and completely empty columns
-                                                if value is not None:
-                                                    if data_types[col_idx] == 'Boolean':
-                                                        if str(value).lower() not in ['yes', 'no', '1', '0', 'Yes', 'No', 'X']:
-                                                            Incorrect_values['Phylogenetic Tree'][col_idx][index] = 'Non-boolean value'
-                                                        else:
-                                                            #Formatting it to 2000/0 (red/white)
-                                                            if value in ['yes', '1', 'Yes', 'X']:
-                                                                value = 1
-                                                            else:
-                                                                value = 0
-                                                            if col_idx == 1:
-                                                                Phylogenetic_Tree_data[row[0]]['Inner'] = value
-                                                            else:
-                                                                Phylogenetic_Tree_data[row[0]]['Outer{}'.format(col_idx-1)] = value
-                                                    elif data_types[col_idx] == 'Float':
-                                                        try:
-                                                            float_value = float(value)
-                                                            if col_idx == 1:
-                                                                Phylogenetic_Tree_data[row[0]]['Inner'] = value
-                                                            else:
-                                                                Phylogenetic_Tree_data[row[0]]['Outer{}'.format(col_idx-1)] = float_value
-                                                        except ValueError:
-                                                            Incorrect_values['Phylogenetic Tree'][col_idx][index] = 'Non-float value'
-                                                else:
-                                                    pass
-                                    # Check if any values are incorrect #
-                                    status = 'success'
-
-                                    if Phylogenetic_Tree_data:
-                                        Data_Phylogenetic_Tree = json.dumps(Phylogenetic_Tree_data, indent=4, sort_keys=True)
-                                        for col_idx in Incorrect_values['Phylogenetic Tree']:
-                                            # Check if there are any assigned index values for this col_idx
-                                            if any(Incorrect_values['Phylogenetic Tree'][col_idx].values()):
-                                                # If any index is assigned, set status to 'Partially_success' and break out of the loop
-                                                status = 'Partially_success'
+                                        empty_sheet = True  # Initialize the flag
+                                                                                # Iterate over rows starting from the second row (excluding the header row)
+                                        for row in worksheet.iter_rows(min_row=3, values_only=True):
+                                            # Check only the columns that have headers, skipping the first column
+                                            if any(row[i] is not None for i, header in enumerate(header_list[1:], start=1) if header):
+                                                empty_sheet = False
                                                 break
-                                    else:
-                                        status = 'Failed'
 
-                                    if status == 'success':
-                                        # Needs to send a response if everything is handled #
-                                        print('success')
-                                        Plot_parser[0] = status
-                                        sample_data_json = json.dumps([True,True,False,False])
-                                        return render(request, self.template_name, {'upload_status': 'Success','report_status':'Success','Data_Phylogenetic_Tree': Data_Phylogenetic_Tree,'sample_data_json':sample_data_json})
-                                    elif status == 'Partially_success':
-                                        Plot_parser[0] = status
-                                        print('Partially_success')
-                                        Data_Incorrect_Phylogenetic_Tree = json.dumps(Incorrect_values['Phylogenetic Tree'],indent=4, sort_keys=True)
-                                        return render(request, self.template_name, {'upload_status': 'Success','report_status':'Partially_success','Data_Phylogenetic_Tree': Data_Phylogenetic_Tree,'Data_Incorrect_Phylogenetic_Tree':Data_Incorrect_Phylogenetic_Tree})
-                                    elif status == 'Failed':
-                                        Plot_parser[0] = status
-                                        return render(request, self.template_name, {'upload_status': 'Success','report_status':'Failed'})
+                                        if empty_sheet:
+                                            pass
+                                        else:
+                                            # Run through Phylogenetic tree sheet #
+                                            # Iterate through rows starting from the third row
+                                            for index, row in enumerate(worksheet.iter_rows(min_row=3, values_only=True), start=3):
+                                                # Check the "Receptor (Uniprot)" column for correct values
+                                                if row[0] not in list_unique_entry_names:
+                                                    Incorrect_values['Phylogenetic Tree'][0][index] = 'Wrong entry'
+                                                else:
+                                                    if row[0] not in Phylogenetic_Tree_data:
+                                                        Phylogenetic_Tree_data[row[0]] = {}
 
+                                                    # Check each column for data points, boolean values, and float values
+                                                    for col_idx, value in enumerate(row):
+                                                        if col_idx == 0:
+                                                            continue  # Skip the "Receptor (Uniprot)" column and completely empty columns
+                                                        if value is not None:
+                                                            if data_types[col_idx] == 'Boolean':
+                                                                if str(value).lower() not in ['yes', 'no', '1', '0', 'Yes', 'No', 'X']:
+                                                                    Incorrect_values['Phylogenetic Tree'][col_idx][index] = 'Non-boolean value'
+                                                                else:
+                                                                    if value is not None:
+                                                                        if data_types[col_idx] == 'Boolean':
+                                                                            if str(value).lower() not in ['yes', 'no', '1', '0', 'X']:
+                                                                                Incorrect_values[sheet_name][header_list[col_idx]][index] = 'Non-Boolean Value'
+                                                                            else:
+                                                                                #Formatting it to 2000/0 (red/white)
+                                                                                if value in ['yes', '1', 'Yes', 'X']:
+                                                                                    value = 1
+                                                                                else:
+                                                                                    value = 0
+                                                                                if col_idx == 1:
+                                                                                    Data[row[0]]['Inner'] = value
+                                                                                else:
+                                                                                    Data[row[0]]['Outer{}'.format(col_idx-1)] = value
+                                                                        elif data_types[col_idx] == 'Number':
+                                                                            try:
+                                                                                float_value = float(value)
+                                                                                if col_idx == 1:
+                                                                                    Data[row[0]]['Inner'] = value
+                                                                                else:
+                                                                                    Data[row[0]]['Outer{}'.format(col_idx-1)] = float_value
+                                                                                Data[sheet_name][row[0]]['Value{}'.format(col_idx)] = float_value
+                                                                            except ValueError:
+                                                                                Incorrect_values[sheet_name][header_list[col_idx]][index] = 'Non-Number Value'
+                                                                        else:
+                                                                            pass
+                                                                    else:
+                                                                        pass
+
+                                            # Check if any values are incorrect #
+                                            status = 'success'
+
+                                            if Phylogenetic_Tree_data:
+                                                Data_Phylogenetic_Tree = json.dumps(Phylogenetic_Tree_data, indent=4, sort_keys=True)
+                                                for col_idx in Incorrect_values['Phylogenetic Tree']:
+                                                    # Check if there are any assigned index values for this col_idx
+                                                    if any(Incorrect_values['Phylogenetic Tree'][col_idx].values()):
+                                                        # If any index is assigned, set status to 'Partially_success' and break out of the loop
+                                                        status = 'Partially_success'
+                                                        break
+
+                                        # Check if any values are incorrect #
+                                        status = 'Success'
+
+                                        if empty_sheet:
+                                            status = 'Empty sheet'
+                                        elif Data[sheet_name]:
+                                            # print(Data[sheet_name])
+                                            for col_idx in Incorrect_values[sheet_name]:
+                                                # Check if there are any assigned index values for this col_idx
+                                                if any(Incorrect_values[sheet_name][col_idx].values()):
+                                                    # If any index is assigned, set status to 'Partially_success' and break out of the loop
+                                                    status = 'Failed'
+                                                    break
+                                        else:
+                                            status = 'Failed'
+
+                                        ## Update Plot parser ##
+                                        Plot_parser[0] = status
+                                    except:
+                                        print("phylo failed")
+
+                                ### Cluster Analysis ###
                                 elif sheet_name == 'Cluster Analysis':
-                                    print("Cluster!")
+
+                                    # Initialize dictionaries
+                                    data_types = [cell.value for cell in worksheet[2]]
+                                    for key in header_list:
+                                        Incorrect_values[sheet_name][key] = {}
+                                    try:
+
+                                        empty_sheet = True  # Initialize the flag
+
+                                        # Iterate over rows starting from the second row (excluding the header row)
+                                        for row in worksheet.iter_rows(min_row=3, values_only=True):
+                                            # Check only the columns that have headers, skipping the first column
+                                            if any(row[i] is not None for i, header in enumerate(header_list[1:], start=1) if header):
+                                                empty_sheet = False
+                                                break
+
+                                        if empty_sheet:
+                                            pass
+                                        else:
+
+                                            # Iterate through rows starting from the second row
+                                            for index, row in enumerate(worksheet.iter_rows(min_row=3, values_only=True), start=3):
+                                                # Check the "Receptor (Uniprot)" column for correct values
+                                                if row[0] not in protein_data:
+                                                    Incorrect_values[sheet_name][header_list[0]][index] = '"{}" is a invalid entry'.format(row[0])
+                                                else:
+                                                    if row[0] not in Data[sheet_name]:
+                                                        Data[sheet_name][row[0]] = {}
+
+                                                    # Check each column for data points, boolean values, and float values #
+                                                    for col_idx, value in enumerate(row):
+                                                        if col_idx == 0:
+                                                            continue  # Skip the "Receptor (Uniprot)" column and completely empty columns #
+                                                        elif data_types[col_idx] not in ['Boolean','Number','Text']:
+                                                            Incorrect_values[sheet_name][header_list[col_idx]] = 'Incorrect datatype'
+                                                        else:
+                                                            if value is not None:
+                                                                # Handle the 3 different types of input for Cluster analysis (Boolean, Number, and Text) #
+                                                                if data_types[col_idx] == 'Boolean':
+                                                                    if str(value).lower() not in ['yes', 'no', '1', '0']:
+                                                                        Incorrect_values[sheet_name][header_list[col_idx]][index] = 'Non-Boolean Value'
+                                                                    else:
+                                                                        Data[sheet_name][row[0]]['Value{}'.format(col_idx)] = value
+                                                                elif data_types[col_idx] == 'Number':
+                                                                    try:
+                                                                        float_value = float(value)
+                                                                        Data[sheet_name][row[0]]['Value{}'.format(col_idx)] = float_value
+                                                                    except ValueError:
+                                                                        Incorrect_values[sheet_name][header_list[col_idx]][index] = 'Non-Number Value'
+                                                                elif data_types[col_idx] == 'Text':
+                                                                    if isinstance(value, str):
+                                                                        Data[sheet_name][row[0]]['Value{}'.format(col_idx)] = value
+                                                                    else:
+                                                                        Incorrect_values[sheet_name][header_list[col_idx]][index] = 'Non-Text Value'
+                                                                else:
+                                                                    pass
+                                                            else:
+                                                                pass
+
+                                        # Check if any values are incorrect #
+                                        status = 'Success'
+
+                                        if empty_sheet:
+                                            status = 'Empty sheet'
+                                        elif Data[sheet_name]:
+                                            for col_idx in Incorrect_values[sheet_name]:
+                                                # Check if there are any assigned index values for this col_idx
+                                                if any(Incorrect_values[sheet_name][col_idx].values()):
+                                                    # If any index is assigned, set status to 'Partially_success' and break out of the loop
+                                                    status = 'Failed'
+                                                    break
+                                        else:
+                                            status = 'Failed'
+
+                                        ## Update Plot_parser for Cluster Analysis
+                                        Plot_parser[1] = status
+                                    except:
+                                        print("Cluster failed")
+
+                                ### List Plot ###
+                                elif sheet_name == 'List Plot':
+
+                                    # Initialize dictionaries
+                                    data_types = [cell.value for cell in worksheet[2]]
+                                    for key in header_list:
+                                        Incorrect_values[sheet_name][key] = {}
+                                    try:
+                                        empty_sheet = True  # Initialize the flag
+
+                                        # Iterate over rows starting from the second row (excluding the header row)
+                                        for row in worksheet.iter_rows(min_row=3, values_only=True):
+                                            # Check only the columns that have headers, skipping the first column
+                                            if any(row[i] is not None for i, header in enumerate(header_list[1:], start=1) if header):
+                                                empty_sheet = False
+                                                break
+
+                                        if empty_sheet:
+                                            pass
+                                        else:
+                                            # Iterate through rows starting from the second row
+                                            for index, row in enumerate(worksheet.iter_rows(min_row=3, values_only=True), start=3):
+                                                # Check the "Receptor (Uniprot)" column for correct values
+                                                if row[0] not in protein_data:
+                                                    Incorrect_values[sheet_name][header_list[0]][index] = '"{}" is a invalid entry'.format(row[0])
+                                                else:
+                                                    if row[0] not in Data[sheet_name]:
+                                                        Data[sheet_name][row[0]] = {}
+
+                                                    # Check each column for data points, boolean values, and float values #
+                                                    for col_idx, value in enumerate(row):
+                                                        if col_idx == 0:
+                                                            continue  # Skip the "Receptor (Uniprot)" column and completely empty columns #
+                                                        elif data_types[col_idx] not in ['Boolean','Number']:
+                                                            Incorrect_values[sheet_name][header_list[col_idx]] = 'Incorrect datatype'
+                                                        else:
+                                                            if value is not None:
+                                                                # Handle the 2 different types of input for Cluster analysis (Boolean or Number) #
+                                                                if data_types[col_idx] == 'Boolean':
+                                                                    if str(value).lower() not in ['yes', 'no', '1', '0']:
+                                                                        Incorrect_values[sheet_name][header_list[col_idx]][index] = 'Non-Boolean Value'
+                                                                    else:
+                                                                        Data[sheet_name][row[0]]['Value{}'.format(col_idx)] = value
+                                                                elif data_types[col_idx] == 'Number':
+                                                                    try:
+                                                                        float_value = float(value)
+                                                                        Data[sheet_name][row[0]]['Value{}'.format(col_idx)] = float_value
+                                                                    except ValueError:
+                                                                        Incorrect_values[sheet_name][header_list[col_idx]][index] = 'Non-Number Value'
+                                                                else:
+                                                                    pass
+                                                            else:
+                                                                pass
+
+                                        # Check if any values are incorrect #
+                                        status = 'Success'
+
+                                        if empty_sheet:
+                                            status = 'Empty sheet'
+                                        elif Data[sheet_name]:
+                                            for col_idx in Incorrect_values[sheet_name]:
+                                                # Check if there are any assigned index values for this col_idx
+                                                if any(Incorrect_values[sheet_name][col_idx].values()):
+                                                    # If any index is assigned, set status to 'Partially_success' and break out of the loop
+                                                    status = 'Failed'
+                                                    break
+                                        else:
+                                            status = 'Failed'
+
+                                        ## Update Plot_parser for Cluster Analysis
+                                        Plot_parser[2] = status
+                                    except:
+                                        print("List plot failed")
+
+                                ### Heatmap ###
+                                elif sheet_name == 'Heatmap':
+
+                                    # Initialize dictionaries
+                                    data_types = [cell.value for cell in worksheet[2]]
+                                    for key in header_list:
+                                        Incorrect_values[sheet_name][key] = {}
+                                    try:
+
+                                        empty_sheet = True  # Initialize the flag
+
+                                        # Iterate over rows starting from the second row (excluding the header row)
+                                        for row in worksheet.iter_rows(min_row=3, values_only=True):
+                                            # Check only the columns that have headers, skipping the first column
+                                            if any(row[i] is not None for i, header in enumerate(header_list[1:], start=1) if header):
+                                                empty_sheet = False
+                                                break
+
+                                        if empty_sheet:
+                                            pass
+                                        else:
+
+                                            # Iterate through rows starting from the second row
+                                            for index, row in enumerate(worksheet.iter_rows(min_row=3, values_only=True), start=3):
+                                                # Check the "Receptor (Uniprot)" column for correct values
+                                                if row[0] not in protein_data:
+                                                    Incorrect_values[sheet_name][header_list[0]][index] = '"{}" is a invalid entry'.format(row[0])
+                                                else:
+                                                    if row[0] not in Data[sheet_name]:
+                                                        Data[sheet_name][row[0]] = {}
+
+                                                    # Check each column for data points, boolean values, and float values #
+                                                    for col_idx, value in enumerate(row):
+                                                        if col_idx == 0:
+                                                            continue  # Skip the "Receptor (Uniprot)" column and completely empty columns #
+                                                        elif data_types[col_idx] not in ['Number']:
+                                                            Incorrect_values[sheet_name][header_list[col_idx]] = 'Incorrect datatype'
+                                                        else:
+                                                            if value is not None:
+                                                                # Handle the 1 different types of input for Heatmap (Number) #
+                                                                if data_types[col_idx] == 'Number':
+                                                                    try:
+                                                                        float_value = float(value)
+                                                                        Data[sheet_name][row[0]]['Value{}'.format(col_idx)] = float_value
+                                                                    except ValueError:
+                                                                        Incorrect_values[sheet_name][header_list[col_idx]][index] = 'Non-Number Value'
+                                                                else:
+                                                                    pass
+                                                            else:
+                                                                pass
+
+                                        # Check if any values are incorrect #
+                                        status = 'Success'
+
+                                        if empty_sheet:
+                                            status = 'Empty sheet'
+                                        elif Data[sheet_name]:
+                                            for col_idx in Incorrect_values[sheet_name]:
+                                                # Check if there are any assigned index values for this col_idx
+                                                if any(Incorrect_values[sheet_name][col_idx].values()):
+                                                    # If any index is assigned, set status to 'Partially_success' and break out of the loop
+                                                    status = 'Failed'
+                                                    break
+                                        else:
+                                            status = 'Failed'
+
+                                        ## Update Plot_parser for Cluster Analysis
+                                        Plot_parser[3] = status
+                                    except:
+                                        print("Heatmap Failed")
+                            ## Return all values for plotparser and correctly (or partially) succesful plots ##
+
+                            plot_names = ['Phylogenetic Tree', 'Cluster Analysis', 'List Plot', 'Heatmap']
+                            plot_data = {}
+                            plot_incorrect_data = {}
+
+                            for plot_name, plot_status in zip(plot_names, Plot_parser):
+                                if plot_status == 'Success':
+                                    plot_data[plot_name] = Data[plot_name]
+                                elif plot_status == 'Failed':
+                                    plot_incorrect_data[plot_name] = Incorrect_values[plot_name]
+
+                            plot_data_json = json.dumps(plot_data, indent=4, sort_keys=True) if plot_data else None
+                            plot_incorrect_data_json = json.dumps(plot_incorrect_data, indent=4, sort_keys=True) if plot_incorrect_data else None
+
+                            Plot_parser_json = json.dumps([status == 'Success' for status in Plot_parser])
+
+                            plots_status = [{'status': status, 'plot_name': plot_name} for status, plot_name in zip(Plot_parser, plot_names)]
+
+                            context = {'upload_status': 'Success',
+                                       'report_status': 'Failed',
+                                       'Plot_parser':Plot_parser,
+                                       'Plot_parser_json':Plot_parser_json,
+                                       'plot_names':plot_names,
+                                       'plots_status':plots_status}
+                            print(Plot_parser)
+                            if plot_data:
+                                if 'Success' in Plot_parser and not all(status == 'Success' for status in Plot_parser):
+                                    print("partially")
+                                    context['report_status'] = 'Partially_success'
+                                    context['Data'] = plot_data_json
+                                elif all(status == 'Success' for status in Plot_parser):
+                                    print("success")
+                                    context['report_status'] = 'Success'
+                                    context['Data'] = plot_data_json
+                            else:
+                                context['Data'] = "No Data"
+
+                            if plot_incorrect_data:
+                                context['Incorrect_data_json'] = plot_incorrect_data
+                            else:
+                                print("No incorrect data")
+                                context['Incorrect_data_json'] = "No incorrect data"
+                            return render(request, self.template_name, context)
+
+
+                    else:
+                        return render(request, self.template_name, {'upload_status': 'Failed','Error_message': "Unable to load excel file, might be corrupted or not inline with the template file."})
                     # Needs to send a response if everything is handled #
-                    return render(request, self.template_name, {'upload_status': 'Success'})
+                    #return render(request, self.template_name, {'upload_status': 'Success'})
 
             else:
                 # Return a 405 Method Not Allowed response if not a POST request
@@ -501,28 +778,30 @@ class plotrender(TemplateView):
 
     def post(self, request, *args, **kwargs):
         # Retrieve the sample data from the POST request
-        sample_data_json = request.POST.get('sample_data')
-        Phylogenetic_data_json = request.POST.get('Phylogenetic_data')
-        # If sample_data_json is not None, parse it as JSON
-        if sample_data_json and Phylogenetic_data_json:
+        Plot_evaluation_json = request.POST.get('Plot_evaluation')
+        Data_json = request.POST.get('Data')
+        # If Plot_evaluation_json is not None, parse it as JSON
+        if Plot_evaluation_json and Data_json:
             try:
-                sample_data = json.loads(sample_data_json)
-                Phylogenetic_data = json.loads(Phylogenetic_data_json)
+                Plot_evaluation = json.loads(Plot_evaluation_json)
+                Data = json.loads(Data_json)
             except json.JSONDecodeError:
                 # Handle the case when the JSON data is invalid
                 return HttpResponse("Invalid JSON data")
             # Add the sample data to the context
-            tree, tree_options, circles, receptors = LandingPage.generate_tree_plot(Phylogenetic_data)
-            output = LandingPage.generate_cluster('umap', Phylogenetic_data)
-            context = {'sample_data_json': sample_data,'Phylogenetic_data': output}
-            context['tree'] = json.dumps(tree)
-            context['tree_options'] = tree_options
-            context['circles'] = json.dumps(circles)
-            context['whole_dict'] = json.dumps(receptors)
+            # tree, tree_options, circles, receptors = LandingPage.generate_tree_plot(Phylogenetic_data)
+            # output = LandingPage.generate_cluster('umap', Phylogenetic_data)
+            # context = {'sample_data_json': sample_data,'Phylogenetic_data': output}
+            # context['tree'] = json.dumps(tree)
+            # context['tree_options'] = tree_options
+            # context['circles'] = json.dumps(circles)
+            # context['whole_dict'] = json.dumps(receptors)
+            #output = LandingPage.generate_cluster('umap',Data)
+            context = {'Plot_evaluation_json': Plot_evaluation,'Data': Data}
 
             # Return the context dictionary
             return self.render_to_response(context)
         else:
-            # Handle the case when sample_data_json is None
+            # Handle the case when Plot_evaluation_json is None
             # This could happen if the form was submitted without the JSON data
             return HttpResponse("Missing sample data")

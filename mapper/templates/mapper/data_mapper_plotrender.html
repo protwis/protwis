@@ -79,9 +79,9 @@
   <br \>
 </div>
 
-{% if sample_data_json %}
+{% if Plot_evaluation_json %}
 <ul>
-  {% for value in sample_data_json %}
+  {% for value in Plot_evaluation_json %}
   <li>{{ value }}</li>
   {% endfor %}
 </ul>
@@ -89,7 +89,7 @@
 <p>No data</p>
 {% endif %}
 
-{% if Phylogenetic_data %}
+{% if Data %}
   <p>There is data</p>
   {% else %}
   <p>There is no data</p>
@@ -98,16 +98,16 @@
 
 <!-- ### Create the panel tabs ### -->
 <ul class="nav nav-tabs">
-  {% if sample_data_json.0 %}
+  {% if Plot_evaluation_json.0 %}
     <li class="active"><a href="#tab1" data-toggle="tab">Phylogenetic Tree</a></li>
   {% endif %}
-  {% if sample_data_json.1 %}
+  {% if Plot_evaluation_json.1 %}
     <li><a href="#tab2" data-toggle="tab">Cluster Analysis</a></li>
   {% endif %}
-  {% if sample_data_json.2 %}
+  {% if Plot_evaluation_json.2 %}
     <li><a href="#tab3" data-toggle="tab">List Plot</a></li>
   {% endif %}
-  {% if sample_data_json.3 %}
+  {% if Plot_evaluation_json.3 %}
     <li><a href="#tab4" data-toggle="tab">Heatmap</a></li>
   {% endif %}
 </ul>
@@ -115,7 +115,7 @@
 <!-- ## Tab content ## -->
 <div class="tab-content">
   <!-- ## Tab 1 - Phylogenetic Tree ## -->
-  {% if sample_data_json.0 %}
+  {% if Plot_evaluation_json.0 %}
   <div id="tab1" class="tab-pane fade in active">
     <div style="padding-top: 10px; font-size: 11px; white-space: nowrap;">
       <div>
@@ -165,7 +165,7 @@
   </div>
   {% endif %}
   <!-- ## Tab 2 - Cluster Analysis ## -->
-  {% if sample_data_json.1 %}
+  {% if Plot_evaluation_json.1 %}
     <div id="tab2" class="tab-pane fade">
       <div style="padding-top: 10px; font-size: 11px; white-space: nowrap;">
       <div style="padding-top: 5px;">
@@ -181,18 +181,18 @@
             <h4>Cluster Plot</h4>
           <br />
         <br />
-      </div>
+      </div> -->
       </div>
     </div>
   {% endif %}
   <!-- ## Tab 3 - List Plot ## -->
-  {% if sample_data_json.2 %}
+  {% if Plot_evaluation_json.2 %}
     <div id="tab3" class="tab-pane fade">
       <div style="padding-top: 10px; font-size: 11px; white-space: nowrap;"></div>
     </div>
   {% endif %}
   <!-- ## Tab 4 - Heatmap ## -->
-  {% if sample_data_json.3 %}
+  {% if Plot_evaluation_json.3 %}
     <div id="tab4" class="tab-pane fade">
       <div style="padding-top: 10px; font-size: 11px; white-space: nowrap;"></div>
     </div>
@@ -211,7 +211,7 @@
 
 <script type="text/javascript" charset="utf-8">
 
-  var cluster_data = {{ Phylogenetic_data|safe }};
+  var cluster_data = {{ Data|safe }};
   var cluster_plot = "umap";
   renderClusterPlot(cluster_data, "#plotContainer", cluster_plot);
 
