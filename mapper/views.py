@@ -721,13 +721,11 @@ class LandingPage(TemplateView):
                                        'plots_status':plots_status}
                             print(Plot_parser)
                             if plot_data:
-                                if 'Success' in Plot_parser and not all(status == 'Success' for status in Plot_parser):
-                                    print("partially")
-                                    context['report_status'] = 'Partially_success'
-                                    context['Data'] = plot_data_json
-                                elif all(status == 'Success' for status in Plot_parser):
-                                    print("success")
+                                if all(status == 'Success' for status in Plot_parser):
                                     context['report_status'] = 'Success'
+                                    context['Data'] = plot_data_json
+                                elif 'Success' in Plot_parser and all(status in ['Success', 'Empty sheet'] for status in Plot_parser):
+                                    context['report_status'] = 'Partially_success'
                                     context['Data'] = plot_data_json
                             else:
                                 context['Data'] = "No Data"
@@ -735,7 +733,6 @@ class LandingPage(TemplateView):
                             if plot_incorrect_data:
                                 context['Incorrect_data_json'] = plot_incorrect_data
                             else:
-                                print("No incorrect data")
                                 context['Incorrect_data_json'] = "No incorrect data"
                             return render(request, self.template_name, context)
 
