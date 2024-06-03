@@ -9,133 +9,157 @@
 <link href="{% static 'home/css/bootstrap-responsive.css' %}" rel="stylesheet" media="screen">
 
 <style>
-        .node circle {
-            /*fill: #fff;*/
-            /*stroke: DarkGreen;*/
-            /*fill: DarkGreen;*/
-            stroke: #000000;
-            stroke-width: .3px;
-        }
+  .node circle {
+      /*fill: #fff;*/
+      /*stroke: DarkGreen;*/
+      /*fill: DarkGreen;*/
+      stroke: #000000;
+      stroke-width: .3px;
+  }
 
-        .node {
-            font: 8px sans-serif;
-        }
+  .node {
+      font: 8px sans-serif;
+  }
 
-        .link {
-            fill: none;
-            stroke: #eee;
-            stroke-width: 1px;
-        }
+  .link {
+      fill: none;
+      stroke: #eee;
+      stroke-width: 1px;
+  }
 
-        .node text {
-            font: 8px sans-serif;
-        }
+  .node text {
+      font: 8px sans-serif;
+  }
 
-        .links {
-            fill: none;
-            stroke: #000;
-        }
+  .links {
+      fill: none;
+      stroke: #000;
+  }
 
-        .link-extensions {
-            fill: none;
-            stroke: #000;
-            stroke-opacity: .25;
-        }
+  .link-extensions {
+      fill: none;
+      stroke: #000;
+      stroke-opacity: .25;
+  }
 
-        body {
-            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-            margin: 0;
-        }
+  body {
+      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+      margin: 0;
+  }
 
-        .links {
-            fill: none;
-            stroke: #000;
-        }
+  .links {
+      fill: none;
+      stroke: #000;
+  }
 
-        .link-extensions {
-            fill: none;
-            stroke: #000;
-            stroke-opacity: .25;
-        }
+  .link-extensions {
+      fill: none;
+      stroke: #000;
+      stroke-opacity: .25;
+  }
 
-
-        .link--active {
-            stroke: #000 !important;
-            stroke-width: 3.5px;
-        }
-
-        .link-extension--active {
-            stroke-opacity: .6;
-        }
-
-    #circle_lightgray {
-        width: 10px;
-        height: 10px;
-        -webkit-border-radius: 5px;
-        -moz-border-radius: 5px;
-        border-radius: 5px;
-        background: LightGray;
-    }
-    #circle_darkgray {
-        width: 10px;
-        height: 10px;
-        -webkit-border-radius: 5px;
-        -moz-border-radius: 5px;
-        border-radius: 5px;
-        background: DarkGray;
-    }
-    #circle_gray {
-        width: 10px;
-        height: 10px;
-        -webkit-border-radius: 5px;
-        -moz-border-radius: 5px;
-        border-radius: 5px;
-        background: Gray;
-    }
-    #circle_black {
-        width: 10px;
-        height: 10px;
-        -webkit-border-radius: 5px;
-        -moz-border-radius: 5px;
-        border-radius: 5px;
-        background: Black;
-    }
-    .gprot_orange {
-      color: orange;
-    }
-
-    .gprot_blue {
-      color: blue;
-    }
-
-    .gprot_red {
-      color: red;
-    }
-
-    .gprot_black {
-      color: black;
-    }
-
-    .gprot_green {
-      color: forestgreen;
-    }
-    .graydiv {
-        height: 20px;
-        width: 350px;
-        background: linear-gradient(to right, white 0%, black 100%)
-    }
-    .alignleft {
-      float: left;
-      width: 175px;
-      text-align: left;
+  .labels {
+      font: 14px Palatino;
       font-weight: bold;
-    }
-    .alignright {
-        float: right;
-        width: 175px;
-        text-align: right;
-        font-weight: bold;
-    }
+  }
+
+  .link--active {
+      stroke: #000 !important;
+      stroke-width: 3.5px;
+  }
+
+  .link-extension--active {
+      stroke-opacity: .6;
+  }
+
+  .label--active {
+      font-weight: bold;
+  }
+  #circle_lightgray {
+      width: 10px;
+      height: 10px;
+      -webkit-border-radius: 5px;
+      -moz-border-radius: 5px;
+      border-radius: 5px;
+      background: LightGray;
+  }
+  #circle_darkgray {
+      width: 10px;
+      height: 10px;
+      -webkit-border-radius: 5px;
+      -moz-border-radius: 5px;
+      border-radius: 5px;
+      background: DarkGray;
+  }
+  #circle_gray {
+      width: 10px;
+      height: 10px;
+      -webkit-border-radius: 5px;
+      -moz-border-radius: 5px;
+      border-radius: 5px;
+      background: Gray;
+  }
+  #circle_black {
+      width: 10px;
+      height: 10px;
+      -webkit-border-radius: 5px;
+      -moz-border-radius: 5px;
+      border-radius: 5px;
+      background: Black;
+  }
+  .gprot_orange {
+    color: orange;
+  }
+
+  .gprot_blue {
+    color: blue;
+  }
+
+  .gprot_red {
+    color: red;
+  }
+
+  .gprot_black {
+    color: black;
+  }
+
+  .gprot_green {
+    color: forestgreen;
+  }
+  .graydiv {
+      height: 20px;
+      width: 350px;
+      background: linear-gradient(to right, white 0%, black 100%)
+  }
+  .alignleft {
+    float: left;
+    width: 175px;
+    text-align: left;
+    font-weight: bold;
+  }
+  .alignright {
+      float: right;
+      width: 175px;
+      text-align: right;
+      font-weight: bold;
+  }
+  .wide-modal {
+    max-width: 80% !important; /* Adjust as necessary */
+    width: 60% !important; /* Add explicit width */
+  }
+
+    .plot-item {
+      display: flex;
+      align-items: center;
+  }
+
+  .plot-status {
+      margin-left: auto;
+  }
+  .right-content {
+    margin-left: auto;
+}
+
 </style>
 <style>
   .col-md-12 img {
@@ -341,33 +365,29 @@
   <div class="modal-dialog" role="document">
       <div class="modal-content">
           <div class="modal-header">
-              <h5 class="modal-title" id="Report-modal-label">Report: Successful</h5>
-              <!-- <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                  <span aria-hidden="true">&times;</span>
-              </button> -->
+              <h3 class="modal-title" id="Report-modal-label">Report: Successful</h3>
           </div>
           <div class="modal-body">
-              <h4 class="expandable">
-                <img src="{% static 'home/images/Mapper_success.png' %}" width="22" height="22" style="vertical-align: middle; margin-right: 0px;">
-                Phylogenetic Tree
-              </h4>
-              Here is your report! Good job!
-              All values for the phylo tree are good and ready to something.
+            {% if plots_status %}
+              {% for plot in plots_status %}
+                {% if plot.status == 'Success' %}
+                  <h4 class="plot-item">
+                    <img src="{% static 'home/images/Mapper_Success.png' %}" width="20" height="20" style="vertical-align: middle; margin-right: 5px;">
+                    {{ plot.plot_name }}
+                    <span class="plot-status">Plot available for rendering</span>
+                  </h4>
+                {% endif %}
+              {% endfor %}
+            {% endif %}
           </div>
-          <div class="modal-footer">
-              <!-- <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button> -->
+          <div class="modal-footer" style="display: flex; justify-content: space-between;">
               <button type="button" class="btn btn-primary" onclick="window.location.href=window.location.href;">Back</button>
-              {% if Plot_evaluation_json %}
-                  <p>There is data!</p>
-              {% else %}
-                  <p>The value is False.</p>
-              {% endif %}
               <form method="POST" action="{% url 'data_mapper_plotrender' %}">
-                {% csrf_token %}
-                <input type="hidden" name="Plot_evaluation" value="{{ Plot_parser_json }}">
-                <input type="hidden" name="Data" value="{{ Data }}">
-                <button type="submit" class="btn btn-primary">Continue</button>
-            </form>
+                  {% csrf_token %}
+                  <input type="hidden" name="Plot_evaluation" value="{{ Plot_parser_json }}">
+                  <input type="hidden" name="Data" value="{{ Data }}">
+                  <button type="submit" class="btn btn-primary">Continue</button>
+              </form>
           </div>
       </div>
   </div>
@@ -386,7 +406,7 @@
   <div class="modal-dialog" role="document">
       <div class="modal-content">
           <div class="modal-header">
-              <h5 class="modal-title" id="NoReport-modal-label">Report: Partially successful</h5>
+              <h3 class="modal-title" id="NoReport-modal-label">Report: Partially successful</h3>
               <!-- <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                   <span aria-hidden="true">&times;</span>
               </button> -->
@@ -395,24 +415,31 @@
             {% if plots_status %}
               {% for plot in plots_status %}
                 {% if plot.status == 'Success' %}
-                  <h4>
-                    <img src="{% static 'home/images/Mapper_Success.png' %}" width="22" height="22" style="vertical-align: middle; margin-right: 0px;">
+                  <h4 class="plot-item">
+                    <img src="{% static 'home/images/Mapper_Success.png' %}" width="20" height="20" style="vertical-align: middle; margin-right: 5px;">
                     {{ plot.plot_name }}
+                    <span class="plot-status">Plot available for rendering</span>
                   </h4>
                 {% elif plot.status == 'Empty sheet' %}
-                  <h4 class="expandable_partially_success" data-target="sortable-{{ forloop.counter }}">
-                    <img src="{% static 'home/images/Mapper_Partially_success.png' %}" width="22" height="22" style="vertical-align: middle; margin-right: 0px;">
+                  <h4 class="expandable_partially_success plot-item" data-target="sortable-{{ forloop.counter }}">
+                    <img src="{% static 'home/images/Mapper_NoData.png' %}" width="22" height="22" style="vertical-align: middle; margin-right: 5px;">
                     {{ plot.plot_name }}
                     <i class="fas fa-chevron-right dropdown-icon" style="margin-left: 10px;"></i>
+                    <div class="right-content">
+                        <span class="float-right">Plot unavailable (Click for info)</span>
+                    </div>
                   </h4>
                   <ul id="sortable-{{ forloop.counter }}" class="hidden">
                    <p>Data is empty, and will not be processed for plot rendering.</p>
                   </ul>
                 {% elif plot.status == "Failed" %}
                   <h4 class="expandable_partially_success" data-target="sortable-{{ forloop.counter }}" >
-                    <img src="{% static 'home/images/Mapper_Failed.png' %}" width="22" height="22" style="vertical-align: middle; margin-right: 0px;">
+                    <img src="{% static 'home/images/Mapper_Failed.png' %}" width="22" height="22" style="vertical-align: middle; margin-right: 5px;">
                     {{ plot.plot_name }}
                     <i class="fas fa-chevron-right dropdown-icon" style="margin-left: 10px;"></i>
+                    <div class="right-content">
+                      <span class="float-right">Plot unavailable (Click for info)</span>
+                    </div>
                   </h4>
                   </h4>
                   {% for name, plot_data in Incorrect_data_json.items %}
@@ -445,8 +472,14 @@
               {% endfor %}
             {% endif %}
           </div>
-          <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          <div class="modal-footer" style="display: flex; justify-content: space-between;">
+            <button type="button" class="btn btn-primary" onclick="window.location.href=window.location.href;">Back</button>
+            <form method="POST" action="{% url 'data_mapper_plotrender' %}">
+                {% csrf_token %}
+                <input type="hidden" name="Plot_evaluation" value="{{ Plot_parser_json }}">
+                <input type="hidden" name="Data" value="{{ Data }}">
+                <button type="submit" class="btn btn-primary">Continue (anyway)</button>
+            </form>
           </div>
       </div>
   </div>
@@ -460,59 +493,74 @@
   <div class="modal-dialog" role="document">
       <div class="modal-content">
           <div class="modal-header">
-              <h5 class="modal-title" id="NoReport-modal-label">Report: Failed</h5>
+              <h3 class="modal-title" id="NoReport-modal-label">Report: Failed</h3>
               <!-- <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                   <span aria-hidden="true">&times;</span>
               </button> -->
           </div>
           <div class="modal-body">
-            {% if Incorrect_data_json %}
-              {% for plot_name, plot_data in Incorrect_data_json.items %}
-                <h4 class="expandable_failed" data-target="sortable_failed-{{ forloop.counter }}">
-                  <img src="{% static 'home/images/Mapper_Failed.png' %}" width="22" height="22" style="vertical-align: middle; margin-right: 0px;">
-                  {{ plot_name }}
-                </h4>
-                {% if plot_data %}
-                  <ul id="sortable_failed-{{ forloop.counter }}"  class="hidden">
-                    {% for primary_key, nested_dict in plot_data.items %}
-                        {% if nested_dict %}
-                          {% if nested_dict.items %}
-                                <li>{{ primary_key }}</li>
+            {% if plots_status %}
+              {% for plot in plots_status %}
+                {% if plot.status == 'Success' %}
+                  <h4 class="plot-item">
+                    <img src="{% static 'home/images/Mapper_Success.png' %}" width="20" height="20" style="vertical-align: middle; margin-right: 5px;">
+                    {{ plot.plot_name }}
+                    <span class="plot-status">Plot available for rendering</span>
+                  </h4>
+                {% elif plot.status == 'Empty sheet' %}
+                  <h4 class="expandable_failed" data-target="sortable_failed-{{ forloop.counter }}">
+                    <img src="{% static 'home/images/Mapper_NoData.png' %}" width="22" height="22" style="vertical-align: middle; margin-right: 5px;">
+                    {{ plot.plot_name }}
+                    <i class="fas fa-chevron-right dropdown-icon" style="margin-left: 10px;"></i>
+                    <div class="right-content">
+                      <span class="float-right">Plot unavailable (Click for info)</span>
+                    </div>
+                  </h4>
+                  <ul id="sortable_failed-{{ forloop.counter }}" class="hidden">
+                   <p>Data is empty, and will not be processed for plot rendering.</p>
+                  </ul>
+                {% elif plot.status == "Failed" %}
+                  <h4 class="expandable_failed plot-item" data-target="sortable_failed-{{ forloop.counter }}">
+                    <img src="{% static 'home/images/Mapper_Failed.png' %}" width="22" height="22" style="vertical-align: middle; margin-right: 5px;">
+                    {{ plot.plot_name }}
+                    <i class="fas fa-chevron-right dropdown-icon" style="margin-left: 10px;"></i>
+                    <div class="right-content">
+                        <span class="float-right">Plot unavailable (Click for info)</span>
+                    </div>
+                  </h4>
+                  {% for name, plot_data in Incorrect_data_json.items %}
+                    {% if name == plot.plot_name %}
+                      {% if plot_data %}
+                        <ul id="sortable_failed-{{ forloop.parentloop.counter }}" class="hidden">
+                          {% for primary_key, nested_dict in plot_data.items %}
+                            {% if nested_dict %}
+                              {% if nested_dict.items %}
                                 <ul>
+                                  <li>{{ primary_key }}</li>
+                                  <ul>
                                     {% for key, value in nested_dict.items %}
-                                        {% if value %}
-                                            <li>Row {{ key }}: {{ value }}</li>
-                                        {% endif %}
+                                      {% if value %}
+                                        <li>Row {{ key }}: {{ value }}</li>
+                                      {% endif %}
                                     {% endfor %}
+                                  </ul>
                                 </ul>
-                          {% else %}
-                            <li>{{ primary_key }}: {{ nested_dict }}</li>
-                          {% endif %}
-                        {% endif %}
-                    {% endfor %}
-                </ul>
-                {% else %}
-                  <p>No plot_data for {{ plot_name }}</p>
+                              {% else %}
+                                <li>{{ primary_key }}: {{ nested_dict }}</li>
+                              {% endif %}
+                            {% endif %}
+                          {% endfor %}
+                        </ul>
+                      {% endif %}
+                    {% endif %}
+                  {% endfor %}
                 {% endif %}
               {% endfor %}
-            {% else %}
-              <p>No Incorrect_data</p>
             {% endif %}
           </div>
-          <div class="modal-footer">
-              <!-- <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button> -->
-              <button type="button" class="btn btn-primary" onclick="window.location.href=window.location.href;">Back</button>
-              {% if sample_data_json %}
-                  <p>There is data!</p>
-              {% else %}
-                  <p>The value is False.</p>
-              {% endif %}
-              <form method="POST" action="{% url 'data_mapper_plotrender' %}">
-                {% csrf_token %}
-                <input type="hidden" name="sample_data" value="{{ sample_data_json }}">
-                <input type="hidden" name="Phylogenetic_data" value="{{ Data_Phylogenetic_Tree }}">
-                <button type="submit" class="btn btn-primary">Continue</button>
-            </form>
+          <div class="modal-footer" style="display: flex; justify-content: space-between;">
+              <button type="button" class="btn btn-primary" onclick="window.location.href=window.location.href;">Go back and fix</button>
+              <!-- <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button> -->
           </div>
       </div>
   </div>
@@ -521,15 +569,15 @@
 
 <!-- Phylogenetic Tree Modal -->
 <div class="modal fade" id="phyloTreeModal" tabindex="-1" role="dialog" aria-labelledby="phyloTreeModalLabel" aria-hidden="true">
-  <div class="modal-dialog" role="document">
+  <div class="modal-dialog wide-modal" role="document">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="phyloTreeModalLabel">Phylogenetic Tree</h5>
       </div>
       <div class="modal-body">
-        This is the Phylogenetic Tree modal content.
+        This is the Phylogenetic Tree modal content.<br>
         <div class="img-container">
-          <img src="{% static 'home/images/Modal_tree_example.png' %}" width="300" height="300" style='margin-left: 5px'>
+          <img src="{% static 'home/images/PhylogeneticsTree_Modal_Example.png' %}" width="800" height="400" style='margin-left: 5px'>
         </div>
       </div>
       <div class="modal-footer">
