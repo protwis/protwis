@@ -212,7 +212,7 @@ class LandingPage(TemplateView):
         return master_dict, general_options, circles, whole_rec_dict
 
     @staticmethod
-    def reduce_and_cluster(data, method='umap', n_components=2, n_clusters=10):
+    def reduce_and_cluster(data, method='umap', n_components=2, n_clusters=5):
         if method == 'umap':
             reducer = umap.UMAP(n_components=n_components, random_state=42)
         elif method == 'tsne':
@@ -690,6 +690,8 @@ class LandingPage(TemplateView):
                             Plot_parser_json = json.dumps([status == 'Success' for status in Plot_parser])
 
                             plots_status = [{'status': status, 'plot_name': plot_name} for status, plot_name in zip(Plot_parser, plot_names)]
+                            # Rearrange plots in the report #
+                            plots_status.sort(key=lambda plot: {'Success': 0, 'Empty sheet': 1, 'Failed': 2}[plot['status']])
 
                             context = {'upload_status': 'Success',
                                        'report_status': 'Failed',
@@ -750,17 +752,51 @@ class plotrender(TemplateView):
             except json.JSONDecodeError:
                 # Handle the case when the JSON data is invalid
                 return HttpResponse("Invalid JSON data")
-            # Add the sample data to the context
-            tree, tree_options, circles, receptors = LandingPage.generate_tree_plot(Data['Phylogenetic Tree'])
-            output = LandingPage.generate_cluster('umap', Data['Cluster Analysis'])
-            context = {'Plot_evaluation_json': Plot_evaluation,'Data': Data, 'cluster_data': output}
-            context['tree'] = json.dumps(tree)
-            context['tree_options'] = tree_options
-            context['circles'] = json.dumps(circles)
-            context['plot_type'] = 'umap'
-            context['whole_dict'] = json.dumps(receptors)
-            context['heatmap_data'] = json.dumps(Data['Heatmap'])
-            context['listplot_data'] = json.dumps(Data['List Plot'])
+            # Contruct context
+            context = {'Plot_evaluation_json': Plot_evaluation,'Data_tree_test':Data['Phylogenetic Tree']}
+            context['tree'] = {}
+            context['tree_options'] = {}
+            context['circles'] = {}
+            context['whole_dict'] = {}
+            context['cluster_data'] = {}
+            context['plot_type'] = {}
+            context['heatmap_data'] = {}
+            context['listplot_data'] = {}
+            if Plot_evaluation:
+                # Phylogenetic tree #
+                if Plot_evaluation[0]:
+                    print("Tree analysis")
+                    tree, tree_options, circles, receptors = LandingPage.generate_tree_plot(Data['Phylogenetic Tree'])
+                    context['tree'] = json.dumps(tree)
+                    context['tree_options'] = tree_options
+                    context['circles'] = json.dumps(circles)
+                    context['whole_dict'] = json.dumps(receptors)
+
+                # Cluster analysis #
+                if Plot_evaluation[1]:
+                    print("Cluster analysis")
+                    output = LandingPage.generate_cluster('umap', Data['Cluster Analysis'])
+                    context['cluster_data'] = output
+                    context['plot_type'] = 'UMAP'
+
+                # List plot #
+                if Plot_evaluation[2]:
+                    print("List plot analysis")
+                    context['listplot_data'] = json.dumps(Data['List Plot'])
+                # Heatmap #
+                if Plot_evaluation[3]:
+                    print("Heatmap analysis")
+                    context['heatmap_data'] = json.dumps(Data['Heatmap'])
+                # Handles and determines first active tab #
+                first_active_tab = None
+                tab_names = ['#tab1', '#tab2', '#tab3', '#tab4']
+
+                for i, is_active in enumerate(Plot_evaluation):
+                    if is_active:
+                        first_active_tab = tab_names[i]
+                        break
+                context['first_active_tab'] = first_active_tab
+
             # Return the context dictionary
             return self.render_to_response(context)
         else:

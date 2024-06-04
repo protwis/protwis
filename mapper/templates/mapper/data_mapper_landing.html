@@ -9,140 +9,7 @@
 <link href="{% static 'home/css/bootstrap-responsive.css' %}" rel="stylesheet" media="screen">
 
 <style>
-  .node circle {
-      /*fill: #fff;*/
-      /*stroke: DarkGreen;*/
-      /*fill: DarkGreen;*/
-      stroke: #000000;
-      stroke-width: .3px;
-  }
-
-  .node {
-      font: 8px sans-serif;
-  }
-
-  .link {
-      fill: none;
-      stroke: #eee;
-      stroke-width: 1px;
-  }
-
-  .node text {
-      font: 8px sans-serif;
-  }
-
-  .links {
-      fill: none;
-      stroke: #000;
-  }
-
-  .link-extensions {
-      fill: none;
-      stroke: #000;
-      stroke-opacity: .25;
-  }
-
-  body {
-      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-      margin: 0;
-  }
-
-  .links {
-      fill: none;
-      stroke: #000;
-  }
-
-  .link-extensions {
-      fill: none;
-      stroke: #000;
-      stroke-opacity: .25;
-  }
-
-  .labels {
-      font: 14px Palatino;
-      font-weight: bold;
-  }
-
-  .link--active {
-      stroke: #000 !important;
-      stroke-width: 3.5px;
-  }
-
-  .link-extension--active {
-      stroke-opacity: .6;
-  }
-
-  .label--active {
-      font-weight: bold;
-  }
-  #circle_lightgray {
-      width: 10px;
-      height: 10px;
-      -webkit-border-radius: 5px;
-      -moz-border-radius: 5px;
-      border-radius: 5px;
-      background: LightGray;
-  }
-  #circle_darkgray {
-      width: 10px;
-      height: 10px;
-      -webkit-border-radius: 5px;
-      -moz-border-radius: 5px;
-      border-radius: 5px;
-      background: DarkGray;
-  }
-  #circle_gray {
-      width: 10px;
-      height: 10px;
-      -webkit-border-radius: 5px;
-      -moz-border-radius: 5px;
-      border-radius: 5px;
-      background: Gray;
-  }
-  #circle_black {
-      width: 10px;
-      height: 10px;
-      -webkit-border-radius: 5px;
-      -moz-border-radius: 5px;
-      border-radius: 5px;
-      background: Black;
-  }
-  .gprot_orange {
-    color: orange;
-  }
-
-  .gprot_blue {
-    color: blue;
-  }
-
-  .gprot_red {
-    color: red;
-  }
-
-  .gprot_black {
-    color: black;
-  }
-
-  .gprot_green {
-    color: forestgreen;
-  }
-  .graydiv {
-      height: 20px;
-      width: 350px;
-      background: linear-gradient(to right, white 0%, black 100%)
-  }
-  .alignleft {
-    float: left;
-    width: 175px;
-    text-align: left;
-    font-weight: bold;
-  }
-  .alignright {
-      float: right;
-      width: 175px;
-      text-align: right;
-      font-weight: bold;
-  }
+  /* added by soren - start*/
   .wide-modal {
     max-width: 80% !important; /* Adjust as necessary */
     width: 60% !important; /* Add explicit width */
@@ -159,7 +26,7 @@
   .right-content {
     margin-left: auto;
 }
-
+  /* added by soren - End */
 </style>
 <style>
   .col-md-12 img {
@@ -203,6 +70,7 @@
     transition: visibility 0s, opacity 0.5s linear; /* Immediate visibility change with smooth opacity transition */
   }
 
+  /* added by soren - start */
   .expandable_partially_success, .expandable_failed {
     cursor: pointer;
 }
@@ -218,7 +86,7 @@
 .dropdown-icon.expanded {
     transform: rotate(90deg);
 }
-
+  /* added by soren - end */
 </style>
 <style>
     .root { fill: red; }
@@ -232,22 +100,20 @@
 
 
 <div class='col-md-12'>
-    <br />
-    <h1 style='text-align:center;'>Welcome to Data Mapper!</h1>
-    <br \>
+    <h1 style='text-align:center;margin-top: 30px;'>Welcome to Data Mapper!</h1>
 </div>
 
 
 <!-- ##################################### -->
-<!-- #### Download // Upload // Report ### -->
+<!-- ####    Download   //   Upload    ### -->
 <!-- ##################################### -->
 
 <div class='col-md-12' style="margin-top: 50px;">
   <!-- ################# -->
   <!-- #### Download ### -->
   <!-- ################# -->
-  <div class="col-md-3" style="text-align:center;">
-  </div>
+  <div class="col-md-3" style="text-align:center;"></div>
+  
   <div class="col-md-3 img-container" style="text-align:center;">
     <a href="{% static 'Files/Upload_test.xlsx' %}" download="Upload_test.xlsx">
       <img src="{% static 'home/images/Mapper_Download.png' %}" width="140" height="140">
@@ -274,59 +140,43 @@
       <h4 style='text-align:center;margin-top: 10px;'>Upload Data</h4>
     </form>
   </div>
+
+  <div class="col-md-3" style="text-align:center;"></div>
 </div>
 
-<div class='col-md-12' style="margin-top: 50px;">
-    <br />
-    <h3 style='text-align:center;'>Analyses</h3>
-    <br \>
+<!-- ##################################### -->
+<!-- ####          PLOT OPTIONS        ### -->
+<!-- ##################################### -->
+<div class='col-md-12' style="margin-top: 50px;margin-bottom: 40px;">
+    <h3 style='text-align:center;'>Plot Options And Details</h3>
 </div>
 
 <div class='col-md-12' style="display: flex; justify-content: center; align-items: center;">
   <div class="img-container">
-    <img id="phyloTreeImage" src="{% static 'home/images/phylo_example.png' %}" width="140" height="140">
+    <img id="phyloTreeImage" src="{% static 'home/images/phylo_example.png' %}" width="140" height="140" style="cursor:pointer;">
     <br>
     <h6 style='text-align:center;'>Phylogenetic Tree</h6>
     <!-- <span class="tooltip">Phylogenetic Tree</span> -->
   </div>
   <div class="img-container">
-    <img src="{% static 'home/images/cluster_example.png' %}" width="140" height="140" style='margin-left: 5px'>
+    <img id="ClusterImage" src="{% static 'home/images/cluster_example.png' %}" width="140" height="140" style='margin-left: 40px;cursor:pointer;'>
     <br>
-    <h6 style='text-align:center;'>Cluster Analysis</h6>
+    <h6 style='text-align:center;margin-left: 40px;'>Cluster Analysis</h6>
     <!-- <span class="tooltip">Cluster Analysis</span> -->
   </div>
   <div class="img-container">
-    <img src="{% static 'home/images/list_example.png' %}" width="140" height="140" style='margin-left: 5px'>
+    <img id="ListImage" src="{% static 'home/images/list_example.png' %}" width="140" height="140" style='margin-left: 40px;cursor:pointer;'>
     <br>
-    <h6 style='text-align:center;'>List Plot</h6>
+    <h6 style='text-align:center;margin-left: 40px;'>List Plot</h6>
     <!-- <span class="tooltip">List Plot</span> -->
   </div>
   <div class="img-container">
-    <img src="{% static 'home/images/heatmap_example.png' %}" width="140" height="140" style='margin-left: 5px'>
+    <img id="HeatmapImage" src="{% static 'home/images/heatmap_example.png' %}" width="140" height="140" style='margin-left: 40px;cursor:pointer;'>
     <br>
-    <h6 style='text-align:center;'>Heatmap</h6>
+    <h6 style='text-align:center;margin-left: 40px;'>Heatmap</h6>
     <!-- <span class="tooltip">Heatmap</span> -->
   </div>
 </div>
-
-
-<!-- <div style="padding-top: 5px;">
-  Plot label:
-    <div class="btn-group" role="group" id="gtp_plus">
-        <button id="show" class="btn btn-info active">Show</button>
-        <button id="hide" class="btn btn-info">Hide</button>
-    </div>
-</div>
-
-
-<div id="plotContainer" class="text-center">
-  <br />
-  <br />
-  <h4>Cluster Plot</h4>
-  <br />
-  <br />
-</div> -->
-
 
 <!-- ######################## -->
 <!-- ###### MODALS ! ######## -->
@@ -567,6 +417,10 @@
 </div>
 
 
+<!-- ######################## -->
+<!-- # Plot options section # -->
+<!-- ######################## -->
+
 <!-- Phylogenetic Tree Modal -->
 <div class="modal fade" id="phyloTreeModal" tabindex="-1" role="dialog" aria-labelledby="phyloTreeModalLabel" aria-hidden="true">
   <div class="modal-dialog wide-modal" role="document">
@@ -575,9 +429,21 @@
         <h5 class="modal-title" id="phyloTreeModalLabel">Phylogenetic Tree</h5>
       </div>
       <div class="modal-body">
-        This is the Phylogenetic Tree modal content.<br>
         <div class="img-container">
-          <img src="{% static 'home/images/PhylogeneticsTree_Modal_Example.png' %}" width="800" height="400" style='margin-left: 5px'>
+          <img src="{% static 'home/images/PhylogeneticsTree_Modal_Example.png' %}" width="100%" height="400" style='margin-top: 10px'>
+        </div>
+        <div style="margin-top: 20px;font-size: 15px;">
+          <span>The Phylogenetic tree analysis requires a list of receptors placed in the first column, <b>Receptor (Uniprot)</b>, to the left (Illustrated with purple arrow).
+            The analysis will then form the branches connected into families and classes. 
+            There is 6 feature columns. First column, <b>1. Feature (Inner cicle)</b>, is the inner circles which is placed inbetween the receptor name and the branches (Illustrated with blue arrow). 
+            The 5 other columns are the circles in the outer layer efter the receptor names (Illustrated with Green arrow). <br>
+            The different features can either be <b><u>Boolean</u></b> or <b><u>Number</u></b> values. <br>
+            <ul>
+            <li><b><u>Boolean</u></b>: This value is a Yes/No input type. It can be "Yes", "1", and "X" as present values and "No", "0", and "None" / "empty cell" as absent values.</li>
+            <li><b><u>Number</u></b>: This input can be any number.</li>
+            </ul>
+            The boolean will be a white or a colored circle. The Number will be a gradient, divided into 4 quartiles (shown in the upper left corner of the plotrender.)
+          </span>
         </div>
       </div>
       <div class="modal-footer">
@@ -586,6 +452,79 @@
     </div>
   </div>
 </div>
+
+<!-- Cluster analysis Modal -->
+<div class="modal fade" id="ClusterModal" tabindex="-1" role="dialog" aria-labelledby="ClusterModalLabel" aria-hidden="true">
+  <div class="modal-dialog wide-modal" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title" id="ClusterModalLabel">Cluster Analysis</h3>
+      </div>
+      <div class="modal-body">
+        <div class="img-container">
+          <img src="{% static 'home/images/DataMapper_ModalExample_ClusterAnalysis.png' %}" width="100%" height="40%" style='margin-top: 10px'>
+        </div>
+        <div style="margin-top: 10px;font-size: 15px;">
+          <span>The Cluster analysis needs a list of receptors placed in the first column, <b>Receptor (Uniprot)</b>, to the left.
+            The analysis furthermore needs atleast 4 features and can handle (in principle) unlimited amount of features. <br>
+            The different features can be <b><u>Boolean</u></b>, <b><u>Text</u></b> or <b><u>Number</u></b>. <br>
+            <ul>
+            <li><b><u>Boolean</u></b>: This value is a Yes/No input type. It can be "Yes", "1", and "X" as present values and "No", "0", and "None" / "empty cell" as absent values.</li>
+            <li><b><u>Text</u></b>: This input can be any text and will be clustered based on ?? similiarity ??.</li>
+            <li><b><u>Number</u></b>: This input can be any number.</li>
+            </ul>
+            The Clusters can be rendered as UMAP, t-SNE or PCA. The different plots will be availiable on the rendering page. <br>
+            The Clustering scheme will also be modifiable when the data have been rendered, if another number of clusters wanted to be obtained.
+          </span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- List plot Modal -->
+<div class="modal fade" id="ListModal" tabindex="-1" role="dialog" aria-labelledby="ListModalLabel" aria-hidden="true">
+  <div class="modal-dialog wide-modal" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="ListModalLabel">List plot</h5>
+      </div>
+      <div class="modal-body">
+        This is the List plot modal content.<br>
+        <!-- <div class="img-container">
+          <img src="{% static 'home/images/PhylogeneticsTree_Modal_Example.png' %}" width="800" height="400" style='margin-left: 5px'>
+        </div> -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Heatmap Modal -->
+<div class="modal fade" id="HeatmapModal" tabindex="-1" role="dialog" aria-labelledby="HeatmapModalLabel" aria-hidden="true">
+  <div class="modal-dialog wide-modal" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="HeatmapModalLabel">Heatmap</h5>
+      </div>
+      <div class="modal-body">
+        This is the Heatmap modal content.<br>
+        <!-- <div class="img-container">
+          <img src="{% static 'home/images/PhylogeneticsTree_Modal_Example.png' %}" width="800" height="400" style='margin-left: 5px'>
+        </div> -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 
 {% endblock %}
 
@@ -597,28 +536,8 @@
 <script src="{% static 'home/js/saveSvg.js' %}"></script>
 <script src="{% static 'home/js/phylo_tree.js' %}"></script>
 <script src="{% static 'home/js/datamapper.js' %}"></script>
-<script>
-document.querySelectorAll('.img-container img').forEach(img => {
-  img.addEventListener('mouseover', function() {
-    this.nextElementSibling.style.visibility = 'visible';
-  });
-  img.addEventListener('mouseout', function() {
-    this.nextElementSibling.style.visibility = 'hidden';
-  });
-});
-</script>
 
 <script>
-
-// document.querySelectorAll('.img-container img').forEach(img => {
-//   img.addEventListener('mouseover', function() {
-//     this.nextElementSibling.style.visibility = 'visible';
-//       });
-//       img.addEventListener('mouseout', function() {
-//         this.nextElementSibling.style.visibility = 'hidden';
-//       });
-//     });
-
 $(document).ready(function() {
     $(".expandable_partially_success").click(function() {
         var targetId = $(this).data("target");
@@ -654,6 +573,15 @@ $(document).ready(function() {
   document.getElementById('phyloTreeImage').addEventListener('click', function() {
       $('#phyloTreeModal').modal('show');
     });
+  document.getElementById('ClusterImage').addEventListener('click', function() {
+      $('#ClusterModal').modal('show');
+    });
+    document.getElementById('ListImage').addEventListener('click', function() {
+      $('#ListModal').modal('show');
+    });
+    document.getElementById('HeatmapImage').addEventListener('click', function() {
+      $('#HeatmapModal').modal('show');
+    });
 
 
   // Check upload status after form submission
@@ -661,7 +589,6 @@ $(document).ready(function() {
       // Check if upload was successful
       if ("{{ upload_status }}" === "Success") {
         // Check if report generation was successful
-        // console.log(Object.keys(Data_Phylogenetic_Tree).length);
         if ("{{ report_status }}" === "Success") {
           console.log("did this!");
           $('#Report_modal_success').modal('show');
@@ -679,64 +606,4 @@ $(document).ready(function() {
   });
 </script>
 
-
-<!-- <script type="text/javascript" charset="utf-8">
-    tree_data = {{ tree_dict | safe }};
-    tree_options = {{ tree_options | safe }};
-    maxLeafNodeLenght = 46;
-    conversion = {"Outer1":"#0000FF",
-                  "Outer2":"#FF0000",
-                  "Outer3":"#000000",
-                  "Outer4":"#008000",
-                  "Outer5":"#FFA500"};
-
-    $("#UniProtNames").click(function(){
-        $("#UniProtNames").addClass("active");
-        $("#IUPHARNames").removeClass("active");
-        changeLeavesLabels("tree_plot", "UniProt", whole_dict);
-        DrawCircles('tree_plot', circles, maxLeafNodeLenght, conversion, true, false);
-    });
-    $("#IUPHARNames").click(function() {
-      $("#UniProtNames_bal").removeClass("active");
-      $("#IUPHARNames_bal").addClass("active");
-      changeLeavesLabels("tree_plot","IUPHAR", whole_dict);
-      // DrawCircles('tree_plot',circles, maxLeafNodeLenght,conversion,true,false);
-    });
-    draw_tree(tree_data, tree_options);
-    // DrawCircles('tree_plot', circles, maxLeafNodeLenght, conversion, true, false);
-    $("#tree_plot svg g").first().attr('transform', 'translate(620,650) scale(0.9,0.9) ');
-    $("#tree_plot").attr('height', 1210);
-    $("#tree_plot").attr('width', 1110);
-</script> -->
-
-
-<!-- <script>
-  var heatmap_data = {'5ht1a': {'value1': 10, 'value2': 5, 'value3': 1, 'value4': 3, 'value5': 20},
-                      '5ht2a': {'value1': 12, 'value2': 9, 'value3': 6, 'value4': 30, 'value5': 21},
-                      '5ht1d': {'value1': 7, 'value2': 8, 'value3': 16, 'value4': 3, 'value5': 1},
-                      '5ht1e': {'value1': 5, 'value2': 11, 'value3': 20, 'value4': 23, 'value5': 11},
-                      '5ht2b': {'value1': 18, 'value2': 2, 'value3': 9, 'value4': 13, 'value5': 4}
-                      };
-
-  // var list_data = {{ list_data|safe }};
-
-  var cluster_data = {{ cluster_data|safe }};
-  var cluster_plot = "{{ plot_type }}";
-
-  // renderDataVisualization(list_data);
-  // simple_heatmap(heatmap_data, 'heatmap_location', 'heatmap_svg', 'Legend Label');
-  renderClusterPlot(cluster_data, "#plotContainer", cluster_plot);
-
-  $("#show").click(function() {
-      $("#show").addClass("active");
-      $("#hide").removeClass("active");
-      d3.selectAll(".label").style("opacity", 1);
-  });
-
-  $("#hide").click(function() {
-      $("#show").removeClass("active");
-      $("#hide").addClass("active");
-      d3.selectAll(".label").style("opacity", 0);
-  });
-</script> -->
 {% endblock %}
