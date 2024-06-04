@@ -91,6 +91,20 @@ class LandingPage(TemplateView):
         return data_copy
 
     @staticmethod
+    def filter_dict(d, elements):
+        filtered_dict = {}
+        for key, value in d.items():
+            if isinstance(value, dict):
+                filtered_sub_dict = LandingPage.filter_dict(value, elements)
+                if filtered_sub_dict:
+                    filtered_dict[key] = filtered_sub_dict
+            elif isinstance(value, list):
+                filtered_values = [v for v in value if v in elements]
+                if filtered_values:
+                    filtered_dict[key] = filtered_values
+        return filtered_dict
+
+    @staticmethod
     def convert_keys(datatree, conversion):
         new_tree = {}
         for key, value in datatree.items():
@@ -105,8 +119,10 @@ class LandingPage(TemplateView):
         return new_tree
 
     @staticmethod
-    def generate_list_plot(): #ADD AN INPUT FILTER DICTIONARY
+    def generate_list_plot(listplot): #ADD AN INPUT FILTER DICTIONARY
         # Generate the master dict of protein families
+        data = list(listplot.keys())
+        names = list(Protein.objects.filter(entry_name__in=data).values_list('name', flat=True))
         families = ProteinFamily.objects.all()
         datatree = {}
         conversion = {}
@@ -125,7 +141,8 @@ class LandingPage(TemplateView):
 
         datatree2 = LandingPage.convert_keys(datatree, conversion)
         datatree2.pop('Parent family', None)
-        return datatree2
+        datatree3 = LandingPage.filter_dict(datatree2, names)
+        return datatree3
 
     @staticmethod
     def generate_tree_plot(input_data): #ADD AN INPUT FILTER DICTIONARY
@@ -782,7 +799,9 @@ class plotrender(TemplateView):
                 # List plot #
                 if Plot_evaluation[2]:
                     print("List plot analysis")
-                    context['listplot_data'] = json.dumps(Data['List Plot'])
+                    listplot_data = LandingPage.generate_list_plot(Data['List Plot'])
+                    print(listplot_data)
+                    context['listplot_data'] = json.dumps(listplot_data)
                 # Heatmap #
                 if Plot_evaluation[3]:
                     print("Heatmap analysis")

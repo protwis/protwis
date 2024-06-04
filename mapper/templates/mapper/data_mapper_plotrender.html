@@ -273,18 +273,19 @@ $(document).ready(function() {
 {% endif %}
 
 {% if Plot_evaluation_json.2 %}
+<script>
+  var listdata = {{ listplot_data|safe }};
+  console.log(listdata);
+  renderDataVisualization(listdata, 'ListPlot');
+</script>
+{% endif %}
 
+{% if Plot_evaluation_json.3 %}
 <script>
   var heatmap = {{ heatmap_data|safe }};
   var element_id = "heatmap1"; // Unique ID for the SVG element
   var legend_label = "Value Intensity"; // Label for the legend
   simple_heatmap(heatmap, 'heatmapPlot', element_id, legend_label);
-</script>
-{% endif %}
-{% if Plot_evaluation_json.3 %}
-<script>
-  var listdata = {{ listplot_data|safe }};
-  renderDataVisualization(listdata, 'listPlot');
 </script>
 {% endif %}
 

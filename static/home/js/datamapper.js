@@ -174,63 +174,53 @@ function simple_heatmap(data, location, element_id, legend_label) {
 
 // LIST REPRESENTATION
 
-function renderDataVisualization(data, svgSelector) {
-    const svg = d3.select(svgSelector);
-    let yOffset = 30;
+function renderDataVisualization(data, location) {
+    // Define width, height, and margins for the SVG
+    const width = 800; // Adjust as needed
+    const height = 600; // Adjust as needed
+    const margin = { top: 20, right: 20, bottom: 20, left: 20 }; // Adjust as needed
 
+    // Append SVG to the specified location
+    const svg_home = d3.select("#" + location)
+        .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .attr("id", "visualization");
+
+    // Initialize yOffset
+    let yOffset = margin.top;
+
+    // Define drawItems function
     function drawItems(items, xOffset) {
         items.forEach(item => {
             if (typeof item === 'object' && item.url && item.text) {
                 // Draw linkable item
-                const link = svg.append('a')
-                                .attr('xlink:href', item.url)
-                                .attr('target', '_blank');
+                const link = svg_home.append('a')
+                    .attr('xlink:href', item.url)
+                    .attr('target', '_blank');
                 link.append('text')
                     .attr('x', xOffset)
                     .attr('y', yOffset)
                     .text(`- ${item.text}`);
             } else {
                 // Draw regular item
-                svg.append('text')
-                   .attr('x', xOffset)
-                   .attr('y', yOffset)
-                   .text(`- ${item}`);
+                svg_home.append('text')
+                    .attr('x', xOffset)
+                    .attr('y', yOffset)
+                    .text(`- ${item}`);
             }
             yOffset += 20; // Increase Y offset for next item
         });
     }
 
+    // Define processNode function
     function processNode(node, xOffset, depth = 0) {
         Object.entries(node).forEach(([key, value]) => {
             // Append text for the node
-            svg.append('text')
-               .attr('x', xOffset + 20)
-               .attr('y', yOffset)
-               .text(key);
-
-            // Append visual markers based on depth
-            if (depth === 0) {
-                // Red circle for root nodes
-                svg.append('circle')
-                   .attr('cx', xOffset + 10)
-                   .attr('cy', yOffset - 4)
-                   .attr('r', 4)
-                   .attr('fill', 'red');
-            } else if (depth === 1) {
-                // Blue square for first nested level
-                svg.append('circle')
-                   .attr('cx', xOffset + 10)
-                   .attr('cy', yOffset - 4)
-                   .attr('r', 4)
-                   .attr('fill', 'blue');
-            } else if (depth === 2) {
-                // Black square for second nested level
-                svg.append('circle')
-                   .attr('cx', xOffset + 10)
-                   .attr('cy', yOffset - 4)
-                   .attr('r', 4)
-                   .attr('fill', 'black');
-            }
+            svg_home.append('text')
+                .attr('x', xOffset + 20)
+                .attr('y', yOffset)
+                .text(key);
 
             // Increment Y offset after title
             yOffset += 30;
@@ -244,9 +234,14 @@ function renderDataVisualization(data, svgSelector) {
             }
         });
     }
+
     // Start processing from the root
-    processNode(data, 10);
+    processNode(data, margin.left);
+
+    // Return the SVG element
+    return svg_home;
 }
+
 
 function renderClusterPlot(data, selector, method) {
     const width = 800;
