@@ -175,19 +175,22 @@ def check_pdb(projectdir, pdb, file_input):  #CAN WE HAVE THE PDB AS A VAR AND N
         os.makedirs(projectdir + 'pdbs/')
     if not file_input:
         if not os.path.isfile(projectdir + 'pdbs/' + pdb + '.pdb'):
-            url = 'https://www.rcsb.org/pdb/files/%s.pdb' % pdb
-            # pdbfile = urllib.request.urlopen(url).read()
-            pdbfile = requests.get(url)
-            if ("404 Not Found" in pdbfile.text or pdb in ['7F1T', '7XBX']) and pdb+'.pdb' in os.listdir(pdb_dir):
-                with open(os.sep.join([pdb_dir, pdb+'.pdb']), 'r') as f:
-                    pdbfile = f.read()
+            if os.path.isfile(os.sep.join([settings.DATA_DIR, 'structure_data', 'pdbs', pdb+'.pdb'])):
+                shutil.copyfile(os.sep.join([settings.DATA_DIR, 'structure_data', 'pdbs', pdb+'.pdb']), projectdir + 'pdbs/' + pdb + '.pdb')
             else:
-                pdbfile = pdbfile.text
+                url = 'https://www.rcsb.org/pdb/files/%s.pdb' % pdb
+                # pdbfile = urllib.request.urlopen(url).read()
+                pdbfile = requests.get(url)
+                if ("404 Not Found" in pdbfile.text or pdb in ['7F1T', '7XBX']) and pdb+'.pdb' in os.listdir(pdb_dir):
+                    with open(os.sep.join([pdb_dir, pdb+'.pdb']), 'r') as f:
+                        pdbfile = f.read()
+                else:
+                    pdbfile = pdbfile.text
 
-            # output_pdb = pdbfile.decode('utf-8').split('\n')
-            temp_path = projectdir + 'pdbs/' + pdb + '.pdb'
-            with open(temp_path, "w") as f:
-                f.write(pdbfile)
+                # output_pdb = pdbfile.decode('utf-8').split('\n')
+                temp_path = projectdir + 'pdbs/' + pdb + '.pdb'
+                with open(temp_path, "w") as f:
+                    f.write(pdbfile)
         else:
             with open(projectdir + 'pdbs/' + pdb + '.pdb', 'r') as f:
                 pdbfile = f.read()
