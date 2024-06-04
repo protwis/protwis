@@ -247,26 +247,6 @@ class LandingPage(TemplateView):
 
         return data_json
 
-    # @staticmethod
-    # def generate_test_cluster(method):
-    #     # Initialize the test dictionary (should represent the xls data)
-    #     nested_dict = {}
-    #     # Generate the nested dictionary (should represent the xls data)
-    #     proteins = list(Protein.objects.filter(entry_name__endswith='_human').values_list('entry_name', flat=True).distinct())
-    #     for i in proteins:
-    #         main_key = i.split('_')[0].upper()
-    #         nested_dict[main_key] = {}
-    #         for j in range(1, 81):
-    #             nested_key = f'Variable{j}'
-    #             nested_dict[main_key][nested_key] = round(random.uniform(0, 100), 2)
-    #     # Convert the nested dictionary to a DataFrame
-    #     data = pd.DataFrame(nested_dict).T
-    #     # Example usage
-    #     reduced_df = LandingPage.reduce_and_cluster(data, method=method)
-    #     # Prepare the data for visualization
-    #     data_json = reduced_df.to_json(orient='records')
-    #     return data_json
-
     @staticmethod
     def map_to_quartile(value, quartiles):
         if value <= quartiles[0.25]:
@@ -362,6 +342,27 @@ class LandingPage(TemplateView):
                                 # If first sheet is receptor with correct headers #
                                 if sheet_name == 'Phylogenetic Tree':
 
+                                    header = next(worksheet.iter_rows(min_row=1, max_row=1, values_only=True))
+                                    inner_col_idx = header.index('1. Feature (Inner cicle)') + 1  # openpyxl uses 1-based indexing
+                                    # Check the first value under the "Inner" header
+                                    first_value = worksheet.cell(row=2, column=inner_col_idx).value
+                                    if first_value != "Boolean":
+                                        # Extract all values from the "Inner" column, skipping the header
+                                        inner_values = []
+                                        for row in worksheet.iter_rows(min_row=3, min_col=inner_col_idx, max_col=inner_col_idx, values_only=True):
+                                            if row[0] is not None:
+                                                inner_values.append(row[0])
+
+                                        inner_series = pd.Series(inner_values)
+                                        # Calculate the quartiles
+                                        quartiles = inner_series.quantile([0.25, 0.5, 0.75])
+                                        # Apply the function to the series, passing quartiles as an argument
+                                        mapped_values = inner_series.apply(lambda x: self.map_to_quartile(x, quartiles))
+
+                                        # If you need to update the worksheet with these values
+                                        for i, value in enumerate(mapped_values, start=3):  # start=3 to skip the header row
+                                            worksheet.cell(row=i, column=inner_col_idx).value = value
+
                                     # Initialize dictionaries
                                     data_types = [cell.value for cell in worksheet[2]]
                                     for key in header_list:
@@ -402,13 +403,13 @@ class LandingPage(TemplateView):
                                                         else:
                                                             if value is not None:
                                                                 if data_types[col_idx] == 'Boolean':
-                                                                    if str(value).lower() not in ['yes', 'no', '1', '0']:
+                                                                    if str(value).lower() not in ['yes', 'no', '1', '0', 'x']:
                                                                         Incorrect_values[sheet_name][header_list[col_idx]][index] = 'Non-Boolean Value'
                                                                     else:
                                                                         if col_idx == 1:
-                                                                            Data[sheet_name][row[0]]['Inner'] = value
+                                                                            Data[sheet_name][row[0]]['Inner'] = 2000 if value in ['yes', 'Yes', '1', 'X'] else 0
                                                                         else:
-                                                                            Data[sheet_name][row[0]]['Outer{}'.format(col_idx)] = value
+                                                                            Data[sheet_name][row[0]]['Outer{}'.format(col_idx)] = 1 if value in ['yes', 'Yes', '1', 'X'] else 0
                                                                 elif data_types[col_idx] == 'Number':
                                                                     try:
                                                                         float_value = float(value)
@@ -421,7 +422,9 @@ class LandingPage(TemplateView):
                                                                 else:
                                                                     pass
                                                             else:
-                                                                pass
+                                                                if data_types[col_idx] == 'Boolean' and col_idx == 1:
+                                                                    Data[sheet_name][row[0]]['Inner'] = 0
+
 
                                         # Check if any values are incorrect #
                                         status = 'Success'
@@ -694,7 +697,7 @@ class LandingPage(TemplateView):
                                        'Plot_parser_json':Plot_parser_json,
                                        'plot_names':plot_names,
                                        'plots_status':plots_status}
-                            print(Plot_parser)
+                            # print(Plot_parser)
                             if plot_data:
                                 if all(status == 'Success' for status in Plot_parser):
                                     context['report_status'] = 'Success'
@@ -754,8 +757,10 @@ class plotrender(TemplateView):
             context['tree'] = json.dumps(tree)
             context['tree_options'] = tree_options
             context['circles'] = json.dumps(circles)
+            context['plot_type'] = 'umap'
             context['whole_dict'] = json.dumps(receptors)
-
+            context['heatmap_data'] = json.dumps(Data['Heatmap'])
+            context['listplot_data'] = json.dumps(Data['List Plot'])
             # Return the context dictionary
             return self.render_to_response(context)
         else:

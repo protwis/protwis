@@ -2,11 +2,16 @@
 
 function simple_heatmap(data, location, element_id, legend_label) {
   // Set the dimensions and margins of the graph
-  var margin = {top: 30, right: 30, bottom: 30, left: 30};
+  var margin = { top: 30, right: 30, bottom: 30, left: 60 }; // Increased left margin to accommodate row labels
 
   // Extract rows and columns from the new data format
   var rows = Object.keys(data);
   var cols = Object.keys(data[rows[0]]);
+
+  // Calculate the width required for row labels
+  var rowLabelWidth = d3.max(rows, function(d) {
+    return d.length * 7; // Adjust the multiplier as needed
+  });
 
   // Prepare chart data
   var chartData = [];
@@ -21,7 +26,7 @@ function simple_heatmap(data, location, element_id, legend_label) {
     }
   }
 
-  var width = (35 * cols.length);
+  var width = (45 * cols.length) + rowLabelWidth; // Adjust the multiplier as needed
   var height = (20 * rows.length);
 
   // Append the SVG object to the body of the page
@@ -110,7 +115,8 @@ function simple_heatmap(data, location, element_id, legend_label) {
     .style("text-anchor", "end")
     .attr("transform", "rotate(-45)")
     .attr("dx", "-0.8em")
-    .attr("dy", "0.15em");
+    .attr("dy", "0.15em")
+    .attr("class", "column-label"); // Add a class for styling
 
   // Build Y scales and axis
   var y = d3.scale.ordinal()
@@ -168,7 +174,7 @@ function simple_heatmap(data, location, element_id, legend_label) {
 
 // LIST REPRESENTATION
 
-function renderDataVisualization(data, svgSelector='svg') {
+function renderDataVisualization(data, svgSelector) {
     const svg = d3.select(svgSelector);
     let yOffset = 30;
 

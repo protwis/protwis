@@ -181,7 +181,7 @@
             <h4>Cluster Plot</h4>
           <br />
         <br />
-      </div> -->
+      </div>
       </div>
     </div>
   {% endif %}
@@ -189,12 +189,27 @@
   {% if Plot_evaluation_json.2 %}
     <div id="tab3" class="tab-pane fade">
       <div style="padding-top: 10px; font-size: 11px; white-space: nowrap;"></div>
+      <div id="ListPlot" class="text-center">
+        <br />
+          <br />
+            <h4>List Plot</h4>
+          <br />
+        <br />
+      </div>
     </div>
   {% endif %}
   <!-- ## Tab 4 - Heatmap ## -->
   {% if Plot_evaluation_json.3 %}
     <div id="tab4" class="tab-pane fade">
       <div style="padding-top: 10px; font-size: 11px; white-space: nowrap;"></div>
+      <div id="heatmapPlot" class="text-center">
+        <br />
+          <br />
+            <h4>Heatmap</h4>
+          <br />
+        <br />
+      </div>
+      </div>
     </div>
   {% endif %}
 </div>
@@ -266,5 +281,14 @@
         $("#hide").addClass("active");
         d3.selectAll(".label").style("opacity", 0);
     });
+</script>
+
+<script>
+  var heatmap = {{ heatmap_data|safe }};
+  var listdata = {{ listplot_data|safe }};
+  var element_id = "heatmap1"; // Unique ID for the SVG element
+  var legend_label = "Value Intensity"; // Label for the legend
+  simple_heatmap(heatmap, 'heatmapPlot', element_id, legend_label);
+  renderDataVisualization(listdata, 'listPlot');
 </script>
 {% endblock %}
