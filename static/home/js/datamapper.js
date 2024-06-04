@@ -2,7 +2,7 @@
 
 function simple_heatmap(data, location, element_id, legend_label) {
   // Set the dimensions and margins of the graph
-  var margin = { top: 30, right: 30, bottom: 30, left: 60 }; // Increased left margin to accommodate row labels
+  var margin = { top: 30, right: 100, bottom: 30, left: 60 }; // Increased left margin to accommodate row labels
 
   // Extract rows and columns from the new data format
   var rows = Object.keys(data);
@@ -10,7 +10,7 @@ function simple_heatmap(data, location, element_id, legend_label) {
 
   // Calculate the width required for row labels
   var rowLabelWidth = d3.max(rows, function(d) {
-    return d.length * 7; // Adjust the multiplier as needed
+    return d.length * 25; // Adjust the multiplier as needed
   });
 
   // Prepare chart data
@@ -58,7 +58,7 @@ function simple_heatmap(data, location, element_id, legend_label) {
 
 
   var legend_svg = svg_home.append("g")
-    .attr("transform", "translate(0," + (height + 100) + ")");
+    .attr("transform", "translate(30," + (height + 100) + ")");
 
   var color_svg = svg_home.append("g")
     .attr("transform", "translate(" + (margin.left * 1.5) + ",0)");
@@ -68,6 +68,7 @@ function simple_heatmap(data, location, element_id, legend_label) {
 
   legend_svg.append("text")
     .attr('y', 10)
+    .attr('x', -50)
     .style("font", "14px sans-serif")
     .style("font-weight", "bold")
     .text(legend_label);
@@ -82,12 +83,12 @@ function simple_heatmap(data, location, element_id, legend_label) {
   legend_svg.append('rect')
     .attr('x', 40)
     .attr('y', 15)
-    .attr('width', (width * 0.9) + margin.left + margin.right)
+    .attr('width', (width * 0.7) + margin.left + margin.right)
     .attr('height', 20)
     .style('fill', 'url(#grad_' + element_id + ')');
 
   legend_svg.append("text")
-    .attr('x', width + margin.left + (margin.right * 1.75))
+    .attr('x', width + margin.left)
     .attr('y', 30)
     .style("font", "14px sans-serif")
     .style("font-weight", "bold")
@@ -100,7 +101,7 @@ function simple_heatmap(data, location, element_id, legend_label) {
   });
 
   legend_svg.select("text")
-    .attr("x", (width + margin.left + margin.right - legendLabel) / 2 + margin.left);
+    .attr("x", (width + margin.left + margin.right - legendLabel) / 2 + margin.left - 120);
 
   // Build X scales and axis
   var x = d3.scale.ordinal()
@@ -164,10 +165,12 @@ function simple_heatmap(data, location, element_id, legend_label) {
     var text = d3.select(this).select('text');
     var textSize = Math.floor(text.node().getBBox().width * 1.05 + 0.5 * 10);
     text.attr("transform", null);
-    text.attr("x", "-" + textSize / 2 + "px");
-    if (value === "even") {
-      text.attr("y", "30");
-    }
+    // text.attr("x", "-" + textSize / 2 + "px");
+    text.attr("x","42")
+    text.attr("y","15")
+    // if (value === "even") {
+    //   text.attr("y", "0");
+    // }
     count = count + 1;
   });
 }

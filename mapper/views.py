@@ -770,7 +770,7 @@ class plotrender(TemplateView):
                 # Handle the case when the JSON data is invalid
                 return HttpResponse("Invalid JSON data")
             # Contruct context
-            context = {'Plot_evaluation_json': Plot_evaluation,'Data_tree_test':Data['Phylogenetic Tree']}
+            context = {'Plot_evaluation_json': Plot_evaluation}
             context['tree'] = {}
             context['tree_options'] = {}
             context['circles'] = {}
