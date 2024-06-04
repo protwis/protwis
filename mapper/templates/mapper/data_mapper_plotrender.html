@@ -79,36 +79,27 @@
   <br \>
 </div>
 
-{% if Plot_evaluation_json %}
-<ul>
-  {% for value in Plot_evaluation_json %}
-  <li>{{ value }}</li>
-  {% endfor %}
-</ul>
-{% else %}
-<p>No data</p>
-{% endif %}
-
-{% if Data %}
-  <p>There is data</p>
-  {% else %}
-  <p>There is no data</p>
-  {% endif %}
-
-
 <!-- ### Create the panel tabs ### -->
 <ul class="nav nav-tabs">
   {% if Plot_evaluation_json.0 %}
-    <li class="active"><a href="#tab1" data-toggle="tab">Phylogenetic Tree</a></li>
+    <li class="{% if first_active_tab == '#tab1' %}active{% endif %}">
+      <a href="#tab1" data-toggle="tab">Phylogenetic Tree</a>
+    </li>
   {% endif %}
   {% if Plot_evaluation_json.1 %}
-    <li><a href="#tab2" data-toggle="tab">Cluster Analysis</a></li>
+    <li class="{% if first_active_tab == '#tab2' %}active{% endif %}">
+      <a href="#tab2" data-toggle="tab">Cluster Analysis</a>
+    </li>
   {% endif %}
   {% if Plot_evaluation_json.2 %}
-    <li><a href="#tab3" data-toggle="tab">List Plot</a></li>
+    <li class="{% if first_active_tab == '#tab3' %}active{% endif %}">
+      <a href="#tab3" data-toggle="tab">List Plot</a>
+    </li>
   {% endif %}
   {% if Plot_evaluation_json.3 %}
-    <li><a href="#tab4" data-toggle="tab">Heatmap</a></li>
+    <li class="{% if first_active_tab == '#tab4' %}active{% endif %}">
+      <a href="#tab4" data-toggle="tab">Heatmap</a>
+    </li>
   {% endif %}
 </ul>
 
@@ -116,7 +107,7 @@
 <div class="tab-content">
   <!-- ## Tab 1 - Phylogenetic Tree ## -->
   {% if Plot_evaluation_json.0 %}
-  <div id="tab1" class="tab-pane fade in active">
+  <div id="tab1" class="tab-pane fade {% if first_active_tab == '#tab1' %}in active{% endif %}">
     <div style="padding-top: 10px; font-size: 11px; white-space: nowrap;">
       <div>
         <div style="padding-top: 5px;">
@@ -166,34 +157,28 @@
   {% endif %}
   <!-- ## Tab 2 - Cluster Analysis ## -->
   {% if Plot_evaluation_json.1 %}
-    <div id="tab2" class="tab-pane fade">
+    <div id="tab2" class="tab-pane fade {% if first_active_tab == '#tab2' %}in active{% endif %}">
       <div style="padding-top: 10px; font-size: 11px; white-space: nowrap;">
-      <div style="padding-top: 5px;">
-        Plot label:
-          <div class="btn-group" role="group" id="gtp_plus">
-              <button id="show" class="btn btn-info active">Show</button>
-              <button id="hide" class="btn btn-info">Hide</button>
-          </div>
-      </div>
-      <div id="plotContainer" class="text-center">
-        <br />
-          <br />
-            <h4>Cluster Plot</h4>
-          <br />
-        <br />
-      </div> -->
+        <div style="padding-top: 5px;">
+          Plot label:
+            <div class="btn-group" role="group" id="gtp_plus">
+                <button id="show" class="btn btn-info active">Show</button>
+                <button id="hide" class="btn btn-info">Hide</button>
+            </div>
+        </div>
+        <div id="plotContainer" class="text-center"></div>
       </div>
     </div>
   {% endif %}
   <!-- ## Tab 3 - List Plot ## -->
   {% if Plot_evaluation_json.2 %}
-    <div id="tab3" class="tab-pane fade">
+    <div id="tab3" class="tab-pane fade {% if first_active_tab == '#tab3' %}in active{% endif %}">
       <div style="padding-top: 10px; font-size: 11px; white-space: nowrap;"></div>
     </div>
   {% endif %}
   <!-- ## Tab 4 - Heatmap ## -->
   {% if Plot_evaluation_json.3 %}
-    <div id="tab4" class="tab-pane fade">
+    <div id="tab4" class="tab-pane fade {% if first_active_tab == '#tab4' %}in active{% endif %}">
       <div style="padding-top: 10px; font-size: 11px; white-space: nowrap;"></div>
     </div>
   {% endif %}
@@ -209,50 +194,46 @@
 <script src="{% static 'home/js/phylo_tree.js' %}"></script>
 <script src="{% static 'home/js/datamapper.js' %}"></script>
 
-<script type="text/javascript" charset="utf-8">
+{% if Plot_evaluation_json.0 %}
+  <script type="text/javascript" charset="utf-8">
+      tree_data = {{ tree | safe }};
+      tree_options = {{ tree_options | safe }};
+      circles = {{ circles|safe }};
+      whole_dict = {{ whole_dict|safe }};
+      maxLeafNodeLenght = 55;
+      conversion = {"Outer1":"#0000FF",
+                    "Outer2":"#FF0000",
+                    "Outer3":"#000000",
+                    "Outer4":"#008000",
+                    "Outer5":"#FFA500"};
 
-  var cluster_data = {{ Data|safe }};
-  var cluster_plot = "umap";
-  renderClusterPlot(cluster_data, "#plotContainer", cluster_plot);
+      $("#UniProtNames").click(function(){
+          $("#UniProtNames").addClass("active");
+          $("#IUPHARNames").removeClass("active");
+          changeLeavesLabels("tree_plot", "UniProt", whole_dict);
+          DrawCircles('tree_plot', circles, maxLeafNodeLenght, conversion, true, false);
+      });
+      $("#IUPHARNames").click(function() {
+        $("#UniProtNames_bal").removeClass("active");
+        $("#IUPHARNames_bal").addClass("active");
+        changeLeavesLabels("tree_plot","IUPHAR", whole_dict);
+        // DrawCircles('tree_plot',circles, maxLeafNodeLenght,conversion,true,false);
+      });
+      draw_tree(tree_data, tree_options);
+      DrawCircles('tree_plot', circles, maxLeafNodeLenght, conversion, true, false);
+      $("#tree_plot svg g").first().attr('transform', 'translate(620,650) scale(0.8,0.8) ');
+      $("#tree_plot").attr('height', 110);
+      $("#tree_plot").attr('width', 1110);
 
-</script>
-<script type="text/javascript" charset="utf-8">
-    tree_data = {{ tree | safe }};
-    tree_options = {{ tree_options | safe }};
-    circles = {{ circles|safe }};
-    whole_dict = {{ whole_dict|safe }};
-    maxLeafNodeLenght = 55;
-    conversion = {"Outer1":"#0000FF",
-                  "Outer2":"#FF0000",
-                  "Outer3":"#000000",
-                  "Outer4":"#008000",
-                  "Outer5":"#FFA500"};
+  </script>
+{% endif %}
 
-    $("#UniProtNames").click(function(){
-        $("#UniProtNames").addClass("active");
-        $("#IUPHARNames").removeClass("active");
-        changeLeavesLabels("tree_plot", "UniProt", whole_dict);
-        DrawCircles('tree_plot', circles, maxLeafNodeLenght, conversion, true, false);
-    });
-    $("#IUPHARNames").click(function() {
-      $("#UniProtNames_bal").removeClass("active");
-      $("#IUPHARNames_bal").addClass("active");
-      changeLeavesLabels("tree_plot","IUPHAR", whole_dict);
-      // DrawCircles('tree_plot',circles, maxLeafNodeLenght,conversion,true,false);
-    });
-    draw_tree(tree_data, tree_options);
-    DrawCircles('tree_plot', circles, maxLeafNodeLenght, conversion, true, false);
-    $("#tree_plot svg g").first().attr('transform', 'translate(620,650) scale(0.8,0.8) ');
-    $("#tree_plot").attr('height', 110);
-    $("#tree_plot").attr('width', 1110);
-
-</script>
-
-
+{% if Plot_evaluation_json.1 %}
 <script>
+$(document).ready(function() {
     var cluster_data = {{ cluster_data|safe }};
     var cluster_plot = "{{ plot_type }}";
-
+    // console.log(cluster_data);
     renderClusterPlot(cluster_data, "#plotContainer", cluster_plot);
 
     $("#show").click(function() {
@@ -266,5 +247,8 @@
         $("#hide").addClass("active");
         d3.selectAll(".label").style("opacity", 0);
     });
+});
 </script>
+{% endif %}
+
 {% endblock %}
