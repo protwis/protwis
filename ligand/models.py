@@ -1,6 +1,10 @@
 from django.db import models
 from django.utils.text import slugify
 from django.db import IntegrityError
+from django.db import connection
+
+from django_rdkit import models as rdkit_models
+from django.contrib.postgres.indexes import GistIndex
 
 from common.models import WebResource
 from common.models import WebLink, Publication
@@ -39,6 +43,43 @@ class Ligand(models.Model):
 
     class Meta():
         db_table = 'ligand'
+
+class CustomLigandMolManager(models.Manager):
+    def truncate_table(self):
+        cursor = connection.cursor()
+        table_name = self.model._meta.db_table
+        sql = 'TRUNCATE TABLE "{0}" CASCADE'.format(table_name)
+        cursor.execute(sql)
+
+
+class LigandMol(models.Model):
+    ligand = models.OneToOneField('Ligand', null=False, on_delete=models.CASCADE)
+    molecule = rdkit_models.MolField()
+
+    objects = models.Manager()  # The default manager.
+    custom_objects = CustomLigandMolManager()  # The custom manager.
+    class Meta:
+        indexes = [
+            GistIndex(fields=['molecule']),
+        ]
+
+class CustomLigandFingerprintManager(models.Manager):
+    def truncate_table(self):
+        cursor = connection.cursor()
+        table_name = self.model._meta.db_table
+        sql = 'TRUNCATE TABLE "{0}" CASCADE'.format(table_name)
+        cursor.execute(sql)
+
+class LigandFingerprint(models.Model):
+    ligand = models.OneToOneField('Ligand', null=False, on_delete=models.CASCADE)
+    mfp2 = rdkit_models.BfpField(null=True) #Morgan fingerprints
+
+    objects = models.Manager()  # The default manager.
+    custom_objects = CustomLigandFingerprintManager()  # The custom manager.
+
+
+
+
 
     # def load_by_gtop_id(self, ligand_name, gtop_id, ligand_type):
     #     logger = logging.getLogger('build')
