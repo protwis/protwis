@@ -6,19 +6,30 @@ import time
 import math
 import pandas as pd
 import urllib
+from psycopg2.errors import DataException
+
+from django.conf import settings
+if settings.PYTHON_SMILES_VALIDATION:
+    from rdkit.Chem.rdmolfiles import MolFromSmarts, MolFromSmiles
 
 from random import SystemRandom
 from copy import deepcopy
 from collections import defaultdict, OrderedDict
 
+
+from django.middleware.csrf import get_token
 from django.shortcuts import render, redirect
-from django.http import HttpResponse
-from django.views.generic import TemplateView, DetailView
-from django.http import HttpResponseRedirect
+
+from django.http import HttpResponse, HttpResponseServerError, JsonResponse
+from django.views.generic import TemplateView, DetailView, View
+from django.db import connection
+
 
 from django.db.models import Count, Subquery, OuterRef
 from django.db.models.functions import Coalesce
 from django.views.decorators.csrf import csrf_exempt
+from django.core.exceptions import ValidationError
+from django_rdkit.models import *
 
 from django.core.cache import cache
 
@@ -27,12 +38,32 @@ from common.models import ReleaseNotes, WebResource, Publication
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from common.selection import Selection, SelectionItem
 from mapper.views import LandingPage
-from ligand.models import Ligand, LigandVendorLink, BiasedPathways, AssayExperiment, BiasedData, Endogenous_GTP, LigandID, LigandPeptideStructure
+from ligand.models import Ligand, LigandVendorLink, BiasedPathways, AssayExperiment, BiasedData, Endogenous_GTP, LigandID, LigandPeptideStructure, LigandMol, LigandFingerprint
 from ligand.functions import OnTheFly, AddPathwayData
 from protein.models import Protein, ProteinFamily
 from interaction.models import StructureLigandInteraction
 from mutation.models import MutationExperiment
 
+
+def getLigandStructuralSearchParameters(request):
+    param_dict = {}
+    default_smiles = ''
+    param_dict['search_type'] = request.session.get('ligand_structural_search_search_type', 'similarity')
+    if param_dict['search_type'] == 'similarity':
+        default_smiles = "O=C1OC2C3([C@H]1OCc1ccccc1)C([C@@H](C1C43[C@@](O2)(C(=O)O1)[C@@]1([C@H](C4O)OC(=O)C1C)O)F)C(C)(C)C"
+    else:
+        default_smiles = 'cccccc'
+    param_dict['smiles'] = request.session.get('ligand_structural_search_smiles', default_smiles)
+    param_dict['similarity_threshold'] = float(request.session.get('ligand_structural_search_similarity_threshold', 0.5))
+    # param_dict['search_limit'] = request.session.get('ligand_structural_search_limit ', 100)
+
+    param_dict['stereochemistry'] = request.session.get('ligand_structural_search_stereochemistry',False)
+    return param_dict
+
+def setLigandStructuralSearchParameters(request, search_params_data):
+    for key,value in search_params_data.items():
+        request.session["ligand_structural_search_"+key] = value 
+    request.session.modified = True
 
 class LigandNameSelection(AbsTargetSelection):
     # Left panel
@@ -50,20 +81,198 @@ class LigandNameSelection(AbsTargetSelection):
     description = 'Search by ligand name, database ID (GPCRdb, GtP, ChEMBL) or structure (inchiKey, smiles).'
 
     buttons = {
+        
         'continue' : {
-            'label' : 'Show ligand information',
-            'url' : '',
+            'label' : 'Structural search',
+            'onclick' : "submitLigandStructuralSearch('/ligand/ligand_structural_search')",
             'color' : 'success',
-            }
+            
+            },
+        'no_box' : True,
         }
+
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['ligand_structural_search_parameters'] = getLigandStructuralSearchParameters(self.request)
+        context['ligand_structural_search_parameters']['similarity_threshold'] = '%.2f' % context['ligand_structural_search_parameters']['similarity_threshold']
+        msg = self.request.session.pop('ligand_structural_search_error_msg',None)
+        if msg is not None:
+            context['ligand_structural_search_error_msg'] = msg
+        return context
+
+class ReadInputLigandStructuralSearch(View):
+    min_similarity = None
+    OK_request_dict = {'status':'OK',
+                    'status_code':200,
+                    'reason_phrase':'OK',
+                    'msg':'OK'}
+    bad_request_dict = {'status':'error',
+                    'status_code':400,
+                    'reason_phrase':'Bad Request',
+                    'msg':''}
+    search_params_data_keys = ['search_type','smiles','similarity_threshold','stereochemistry']
+    def validate_SMARTS(self,smarts,smiles_only=False):
+        error = False
+        msg = ''
+        if smiles_only:
+            msg_part = ''
+        else:
+            msg_part = ' or SMARTS'
+        if len(smarts) > settings.SMILES_MAX_LENGTH:
+            msg = 'SMILES '+msg_part +'too long (max. lenth %d)' % settings.SMILES_MAX_LENGTH
+            error = True
+            return (error, msg)
+        if len(smarts) == 0:
+            msg = 'SMILES '+msg_part +' are empty.' % settings.SMILES_MAX_LENGTH
+            error = True
+            return (error, msg)
+        invalid_smarts_msg = 'Invalid SMILES'+msg_part+'.'
+        if settings.PYTHON_SMILES_VALIDATION:
+            if smiles_only:
+                mol = MolFromSmiles(smarts)
+            else:
+                mol = MolFromSmarts(smarts)
+            if mol is None:
+                error = True
+                return (error, msg)
+        else:
+            with connection.cursor() as cursor:
+                try:
+                    if smiles_only:
+                        cursor.execute('SELECT mol_from_smiles(%s);', [smarts])
+                    else:
+                        cursor.execute('SELECT qmol(%s);', [smarts])
+                except DataException:
+                    msg = invalid_smarts_msg
+                    error = True
+                    return (error, msg)
+                r = cursor.fetchall()
+                if len(r) < 1:
+                    msg = invalid_smarts_msg
+                    error = True
+                    return (error, msg)
+                if r[0] is None:
+                    msg = invalid_smarts_msg
+                    error = True
+                    return (error, msg)
+                
+        return (error, msg)  
+    def get(self, request, *args, **kwargs):
+        OK_request_dict = self.OK_request_dict.copy()
+        bad_request_dict = self.bad_request_dict.copy()
+        OK_request_dict['csrf_token'] = get_token(request)
+        return JsonResponse(OK_request_dict)
+
+    def post(self, request, *args, **kwargs):
+        OK_request_dict = self.OK_request_dict.copy()
+        bad_request_dict = self.bad_request_dict.copy()
+        search_params_data = {}
+        for key in self.search_params_data_keys:
+            search_params_data[key] = request.POST.get(key,None)
+            
+        search_type = search_params_data['search_type']
+        if search_type == 'similarity':
+            search_type_similarity = True
+        elif search_type == 'substructure':
+            search_type_similarity = False
+        else:
+            raise ValidationError('Unknown ligand structural search parameter: search_type="%s"' % str(search_type))
+        stereochemistry = search_params_data['stereochemistry']
+        try:
+            stereochemistry_lower =  stereochemistry.lower()
+            if stereochemistry_lower in {'false','no'}:
+                stereochemistry = False
+            elif stereochemistry_lower in {'null','none'}:
+                stereochemistry = None
+        except:
+            pass
+        if stereochemistry is None and search_type != 'substructure':
+            del search_params_data['stereochemistry']
+        else:
+            search_params_data['stereochemistry'] = bool(stereochemistry)
+        
+        error, msg = self.validate_SMARTS(search_params_data['smiles'],smiles_only=search_type_similarity)
+        if error:
+            request.session['ligand_structural_search_error_msg'] = msg
+            request.session.modified = True
+            bad_request_dict['msg'] = msg
+            return JsonResponse(bad_request_dict,status=400,reason='Bad Request')
+        similarity_threshold_error = False
+        try:
+            search_params_data['similarity_threshold'] = float(search_params_data['similarity_threshold'])
+        except:
+            msg = 'Similarity threshold must be a number between 0 and 1.'
+            request.session['ligand_structural_search_error_msg'] = msg
+            similarity_threshold_error = True
+        if not similarity_threshold_error:
+            if search_params_data['similarity_threshold'] > 1:
+                msg = 'Similarity threshold must be a number between 0 and 1.'
+                request.session['ligand_structural_search_error_msg'] = msg
+                similarity_threshold_error = True
+            elif search_params_data['similarity_threshold'] < 0:
+                msg = 'Similarity threshold must be a number between 0 and 1.'
+                # msg = 'Similarity threshold must be a number larger than 0.'
+                request.session['ligand_structural_search_error_msg'] = msg
+                similarity_threshold_error = True
+                 
+        if similarity_threshold_error:
+            if search_type_similarity:
+                bad_request_dict['msg'] = msg
+                return JsonResponse(bad_request_dict,status=400,reason='Bad Request')
+            else:
+                del search_params_data['similarity_threshold']
+
+        setLigandStructuralSearchParameters(request,search_params_data)
+        return JsonResponse(OK_request_dict)
+
+
+
+class LigandStructuralSearch(TemplateView):
+
+    template_name = 'ligand_structural_search.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        param_dict = getLigandStructuralSearchParameters(self.request)
+        search_type = param_dict['search_type']
+        smiles = param_dict['smiles']
+        with connection.cursor() as cursor:
+            if search_type == 'similarity':
+                value = MORGANBV_FP(Value('^textoreplacebysmiles#'))
+                q = LigandFingerprint.objects.filter(mfp2__tanimoto=value)
+                q = q.annotate(sml=TANIMOTO_SML('mfp2', value))
+                q = q.order_by(TANIMOTO_DIST('mfp2', value))
+                q = q.values_list('ligand', 'sml')
+                # sql_query = str(q.query).replace('%','%%').replace('^textoreplacebysmiles#','%s')
+                sql_query = str(q.query).replace('%','%%').replace('^textoreplacebysmiles#','%s')
+                similarity_threshold = param_dict['similarity_threshold']
+                # cursor.execute('SET rdkit.tanimoto_threshold = %s; ' + sql_query, [similarity_threshold,smiles,smiles])
+                cursor.execute('SET rdkit.tanimoto_threshold = %s; ' + sql_query, [similarity_threshold,smiles,smiles,smiles])
+                context['search_results']=cursor.fetchall()
+
+            elif search_type == 'substructure':
+                q = LigandMol.objects.filter(molecule__hassubstruct=QMOL(Value('^textoreplacebysmiles#'))).values('ligand')
+                sql_query = str(q.query).replace('^textoreplacebysmiles#','%s')
+                if param_dict['stereochemistry']:
+                    stereochemistry = 'true'
+                else:
+                    stereochemistry = 'false'
+                cursor.execute('SET rdkit.do_chiral_sss=%s; '+sql_query, [stereochemistry,smiles])
+                context['search_results']=cursor.fetchall()
+            else:
+                raise ValidationError('Unknown ligand structural search parameter: search_type="%s"' % str(search_type))
+            pass
+
+        return context
 
 class LigandStructureSelection(TemplateView):
 
     template_name = 'ligand_structure_selection.html'
 
     def get_context_data(self, **kwargs):
-
         context = super().get_context_data(**kwargs)
+
         return context
 
 class LigandTargetSelection(AbsReferenceSelectionTable):
