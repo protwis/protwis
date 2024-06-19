@@ -134,6 +134,7 @@ class ReadInputLigandStructuralSearch(View):
             else:
                 mol = MolFromSmarts(smarts)
             if mol is None:
+                msg = invalid_smarts_msg
                 error = True
                 return (error, msg)
         else:
@@ -219,6 +220,7 @@ class ReadInputLigandStructuralSearch(View):
         if similarity_threshold_error:
             if search_type_similarity:
                 bad_request_dict['msg'] = msg
+                request.session.modified = True
                 return JsonResponse(bad_request_dict,status=400,reason='Bad Request')
             else:
                 del search_params_data['similarity_threshold']
@@ -231,40 +233,90 @@ class ReadInputLigandStructuralSearch(View):
 class LigandStructuralSearch(TemplateView):
 
     template_name = 'ligand_structural_search.html'
+    template_name = 'target_details.html'
 
     def get_context_data(self, **kwargs):
+        cache_key = False
+        mode = 'compact'
         context = super().get_context_data(**kwargs)
         param_dict = getLigandStructuralSearchParameters(self.request)
         search_type = param_dict['search_type']
         smiles = param_dict['smiles']
         with connection.cursor() as cursor:
             if search_type == 'similarity':
-                value = MORGANBV_FP(Value('^textoreplacebysmiles#'))
-                q = LigandFingerprint.objects.filter(mfp2__tanimoto=value)
-                q = q.annotate(sml=TANIMOTO_SML('mfp2', value))
-                q = q.order_by(TANIMOTO_DIST('mfp2', value))
-                q = q.values_list('ligand', 'sml')
-                # sql_query = str(q.query).replace('%','%%').replace('^textoreplacebysmiles#','%s')
-                sql_query = str(q.query).replace('%','%%').replace('^textoreplacebysmiles#','%s')
                 similarity_threshold = param_dict['similarity_threshold']
-                # cursor.execute('SET rdkit.tanimoto_threshold = %s; ' + sql_query, [similarity_threshold,smiles,smiles])
-                cursor.execute('SET rdkit.tanimoto_threshold = %s; ' + sql_query, [similarity_threshold,smiles,smiles,smiles])
-                context['search_results']=cursor.fetchall()
+                cache_key = "ligand_structural_search_" + ",".join([search_type,smiles,str(similarity_threshold),mode])
+                if not(cache_key != False and cache.has_key(cache_key)):
+                    value = MORGANBV_FP(Value('^textoreplacebysmiles#'))
+                    q = LigandFingerprint.objects.filter(mfp2__tanimoto=value)
+                    q = q.annotate(sml=TANIMOTO_SML('mfp2', value))
+                    q = q.order_by(TANIMOTO_DIST('mfp2', value))
+                    q = q.values_list('ligand', 'sml')
+                    # sql_query = str(q.query).replace('%','%%').replace('^textoreplacebysmiles#','%s')
+                    sql_query = str(q.query).replace('%','%%').replace('^textoreplacebysmiles#','%s')
+
+                    # cursor.execute('SET rdkit.tanimoto_threshold = %s; ' + sql_query, [similarity_threshold,smiles,smiles])
+                    cursor.execute('SET rdkit.tanimoto_threshold = %s; ' + sql_query, [similarity_threshold,smiles,smiles,smiles])
+                    # context['search_results']=cursor.fetchall()
+                    cursor_results = cursor.fetchall()
 
             elif search_type == 'substructure':
-                q = LigandMol.objects.filter(molecule__hassubstruct=QMOL(Value('^textoreplacebysmiles#'))).values('ligand')
-                sql_query = str(q.query).replace('^textoreplacebysmiles#','%s')
                 if param_dict['stereochemistry']:
                     stereochemistry = 'true'
                 else:
                     stereochemistry = 'false'
-                cursor.execute('SET rdkit.do_chiral_sss=%s; '+sql_query, [stereochemistry,smiles])
-                context['search_results']=cursor.fetchall()
+                cache_key = "ligand_structural_search_" + ",".join([search_type,smiles,str(stereochemistry),mode])
+                if not(cache_key != False and cache.has_key(cache_key)):
+                    q = LigandMol.objects.filter(molecule__hassubstruct=QMOL(Value('^textoreplacebysmiles#'))).values('ligand')
+                    sql_query = str(q.query).replace('^textoreplacebysmiles#','%s')
+                    cursor.execute('SET rdkit.do_chiral_sss=%s; '+sql_query, [stereochemistry,smiles])
+                    # context['search_results']=cursor.fetchall()
+                    cursor_results = cursor.fetchall()
             else:
                 raise ValidationError('Unknown ligand structural search parameter: search_type="%s"' % str(search_type))
             pass
+        # cache.delete(cache_key)
 
+        if mode == 'compact':
+            if not(cache_key != False and cache.has_key(cache_key)):
+                no_results_msg = 'No results found.'
+                if cursor_results != []:
+                    ligand_id = [x[0] for x in cursor_results]
+                    print(ligand_id)
+                    ps = AssayExperiment.objects.filter(ligand__in=ligand_id).prefetch_related('protein', 'ligand', 'ligand__ligand_type')
+                else:
+                    context = "redirect"
+                    self.request.session['ligand_structural_search_error_msg'] = no_results_msg
+                    self.request.session.modified = True
+                    return context
+                    # return redirect("ligand_selection")                                                                            # 'ligand__ids__web_resource',                                                                      # 'ligand')
+                    # if queryset is empty redirect to ligand browser
+                if not ps:
+                    context = "redirect"
+                    self.request.session['ligand_structural_search_error_msg'] = no_results_msg
+                    self.request.session.modified = True
+                    return context
+                    # return redirect("ligand_selection")
+
+            if cache_key != False and cache.has_key(cache_key):
+                result = cache.get(cache_key)
+                ligand_data_affinity = result['affinity_data']
+                ligand_data_potency = result['potency_data']
+            else:
+                ligand_data_affinity,ligand_data_potency = LigandListDetails(mode, ps)
+            context = {}
+            context['potency_data'] = ligand_data_potency
+            context['affinity_data'] = ligand_data_affinity
+            cache.set(cache_key, context, 60*60*24*7)
+            print(cache)
+        context['mode'] = mode
         return context
+    
+    def get(self, request, *args, **kwargs):
+        context = self.get_context_data(**kwargs)
+        if context == "redirect":
+            return redirect("ligand_selection")
+        return self.render_to_response(context)
 
 class LigandStructureSelection(TemplateView):
 
@@ -383,6 +435,165 @@ def CachedTargetDetailsCompact(request, **kwargs):
 def CachedTargetDetailsExtended(request, **kwargs):
     return TargetDetails("extended", request, **kwargs)
 
+def LigandListDetails(mode, ps):
+    if mode == 'extended':
+        ligand_data_affinity = []
+        ligand_data_potency = []
+        ps = ps.values('value_type',
+                        'standard_relation',
+                        'standard_activity_value',
+                        'assay_description',
+                        'assay_type',
+                        'p_activity_value',
+                        'p_activity_ranges',
+                        'source',
+                        'ligand__id',
+                        'ligand__ids__index',
+                        'protein__species__common_name',
+                        'protein__entry_name',
+                        'protein__name',
+                        'ligand__mw',
+                        'ligand__logp',
+                        'ligand__rotatable_bonds',
+                        'ligand__smiles',
+                        'ligand__hdon',
+                        'ligand__hacc',
+                        'protein',
+                        'publication__web_link__index',
+                        'publication__web_link__web_resource__url',
+                        'affinity',
+                        'potency',
+                        'count_affinity_test',
+                        'count_potency_test',
+                        'reference_ligand'
+                        ).annotate(num_targets=Count('protein__id', distinct=True))
+
+        lig_ids = set([record['ligand__id'] for record in ps])
+        vendor_output = list(LigandVendorLink.objects.filter(ligand_id__in=lig_ids).values_list("ligand_id").annotate(Count('vendor_id', distinct=True)))
+        vendors_dict = {entry[0]:entry[1] for entry in vendor_output}
+
+        for record in ps:
+            record['assay_type'] = record['assay_type'] if record['assay_type'] != 'U' else 'N/A'
+            record['purchasability'] = vendors_dict[record['ligand__id']] if record['ligand__id'] in vendors_dict.keys() else 0
+            record['protein__entry_name'] = record['protein__entry_name'].split('_')[0].upper()
+            record['link'] = record['publication__web_link__web_resource__url'].replace('$index',record['publication__web_link__index']) if record['publication__web_link__web_resource__url'] != None else '#'
+            if record['assay_type'] == 'B':
+                ligand_data_affinity.append(record)
+            elif record['assay_type'] == 'F':
+                ligand_data_potency.append(record)
+
+    elif mode == 'compact':
+
+        result = {}
+        img_setup_smiles = "https://cactus.nci.nih.gov/chemical/structure/{}/image"
+        d = {}
+
+        for p in ps:
+            if p.ligand not in d:
+                d[p.ligand] = []
+            d[p.ligand].append(p)
+
+        lig_ids = set([record.ligand_id for record in ps])
+        vendor_output = list(LigandVendorLink.objects.filter(ligand_id__in=lig_ids).values_list("ligand_id").annotate(Count('vendor_id', distinct=True)))
+        vendors_dict = {entry[0]:entry[1] for entry in vendor_output}
+
+        ligand_data_affinity = []
+        ligand_data_potency = []
+        assay_conversion = {'A': 'ADMET', 'B': 'Binding', 'F': 'Functional', 'U': 'N/A', 'T': 'Toxicity'}
+        for lig, records in d.items():
+            # links = lig.ids.all()
+            # chembl_id = [x for x in links if x.web_resource.slug == 'chembl_ligand'][0].index
+            if lig.smiles is not None and (lig.mw is None or lig.mw < 800):
+                picture = img_setup_smiles.format(urllib.parse.quote(lig.smiles))
+            else:
+                # "No image available" SVG (source: https://commons.wikimedia.org/wiki/File:No_image_available.svg)
+                picture = "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/No_image_available.svg/600px-No_image_available.svg.png?20190827162820"
+
+            purchasability = vendors_dict[lig.id] if lig.id in vendors_dict.keys() else 0
+
+            data_parsed = {}
+            for record in records:
+                assay = assay_conversion[record.assay_type]
+                if record.source not in data_parsed.keys():
+                    data_parsed[record.source] = {}
+                if assay not in data_parsed[record.source].keys():
+                    data_parsed[record.source][assay] = {}
+                if record.value_type not in data_parsed[record.source][assay].keys():
+                    if record.source == 'Guide to Pharmacology':
+                        data_parsed[record.source][assay][record.value_type] = [x for x in record.p_activity_ranges.split('|')]
+                    else:
+                        data_parsed[record.source][assay][record.value_type] = [record.p_activity_value]
+                else:
+                    if record.source == 'Guide to Pharmacology':
+                        data = [x for x in record.p_activity_ranges.split('|')]
+                        data_parsed[record.source][assay][record.value_type] += data
+                    else:
+                        data_parsed[record.source][assay][record.value_type].append(record.p_activity_value)
+
+            for source in data_parsed.keys():
+                for assay_type in data_parsed[source].keys():
+                    for value_type in data_parsed[source][assay_type].keys():
+                        values = [float(x) for x in data_parsed[source][assay_type][value_type] if x != 'None']
+                        low_value, average_value, high_value = '-','-','-'
+                        if len(values) > 0:
+                            low_value = min(values)
+                            average_value = round(sum(values) / len(values),1)
+                            high_value = max(values)
+                        print(assay_type)
+                        if assay_type == 'Binding': #Affinity
+                            ligand_data_affinity.append({
+                                'lig_id': lig.id,
+                                'ligand_name': lig.name,
+                                'picture': picture,
+                                'affinity': record.affinity,
+                                'affinity_tested': record.count_affinity_test,
+                                'species': record.protein.species.common_name,
+                                'record_count': len(records),
+                                'assay_type': assay_type,
+                                'purchasability': purchasability,
+                                'low_value': low_value,
+                                'average_value': average_value,
+                                'high_value': high_value,
+                                'value_type': value_type,
+                                'ligand_type': lig.ligand_type.name.replace('-',' ').capitalize(),
+                                'source': source,
+                                'smiles': lig.smiles,
+                                'mw': lig.mw,
+                                'rotatable_bonds': lig.rotatable_bonds,
+                                'hdon': lig.hdon,
+                                'hacc': lig.hacc,
+                                'logp': lig.logp,
+                                'reference': record.reference_ligand,
+                            })
+                        elif assay_type == 'Functional': #Potency
+                            ligand_data_potency.append({
+                                'lig_id': lig.id,
+                                'ligand_name': lig.name,
+                                'picture': picture,
+                                'potency': record.potency,
+                                'potency_tested': record.count_potency_test,
+                                'species': record.protein.species.common_name,
+                                'record_count': len(records),
+                                'assay_type': assay_type,
+                                'purchasability': purchasability,
+                                'low_value': low_value,
+                                'average_value': average_value,
+                                'high_value': high_value,
+                                'value_type': value_type,
+                                'ligand_type': lig.ligand_type.name.replace('-',' ').capitalize(),
+                                'source': source,
+                                'smiles': lig.smiles,
+                                'mw': lig.mw,
+                                'rotatable_bonds': lig.rotatable_bonds,
+                                'hdon': lig.hdon,
+                                'hacc': lig.hacc,
+                                'logp': lig.logp,
+                                'reference': record.reference_ligand,
+                            })
+
+
+
+    return(ligand_data_affinity,ligand_data_potency)
 
 def TargetDetails(mode, request, **kwargs):
     cache_key = False
@@ -418,50 +629,7 @@ def TargetDetails(mode, request, **kwargs):
             ligand_data_affinity = result['affinity_data']
             ligand_data_potency = result['potency_data']
         else:
-            ligand_data_affinity = []
-            ligand_data_potency = []
-            ps = ps.values('value_type',
-                           'standard_relation',
-                           'standard_activity_value',
-                           'assay_description',
-                           'assay_type',
-                           'p_activity_value',
-                           'p_activity_ranges',
-                           'source',
-                           'ligand__id',
-                           'ligand__ids__index',
-                           'protein__species__common_name',
-                           'protein__entry_name',
-                           'protein__name',
-                           'ligand__mw',
-                           'ligand__logp',
-                           'ligand__rotatable_bonds',
-                           'ligand__smiles',
-                           'ligand__hdon',
-                           'ligand__hacc',
-                           'protein',
-                           'publication__web_link__index',
-                           'publication__web_link__web_resource__url',
-                           'affinity',
-                           'potency',
-                           'count_affinity_test',
-                           'count_potency_test',
-                           'reference_ligand'
-                           ).annotate(num_targets=Count('protein__id', distinct=True))
-
-            lig_ids = set([record['ligand__id'] for record in ps])
-            vendor_output = list(LigandVendorLink.objects.filter(ligand_id__in=lig_ids).values_list("ligand_id").annotate(Count('vendor_id', distinct=True)))
-            vendors_dict = {entry[0]:entry[1] for entry in vendor_output}
-
-            for record in ps:
-                record['assay_type'] = record['assay_type'] if record['assay_type'] != 'U' else 'N/A'
-                record['purchasability'] = vendors_dict[record['ligand__id']] if record['ligand__id'] in vendors_dict.keys() else 0
-                record['protein__entry_name'] = record['protein__entry_name'].split('_')[0].upper()
-                record['link'] = record['publication__web_link__web_resource__url'].replace('$index',record['publication__web_link__index']) if record['publication__web_link__web_resource__url'] != None else '#'
-                if record['assay_type'] == 'B':
-                    ligand_data_affinity.append(record)
-                elif record['assay_type'] == 'F':
-                    ligand_data_potency.append(record)
+            ligand_data_affinity,ligand_data_potency = LigandListDetails(mode, ps)
         context = {}
         context['affinity_data'] = ligand_data_affinity
         context['potency_data'] = ligand_data_potency
@@ -483,112 +651,7 @@ def TargetDetails(mode, request, **kwargs):
             ligand_data_affinity = result['affinity_data']
             ligand_data_potency = result['potency_data']
         else:
-            result = {}
-            img_setup_smiles = "https://cactus.nci.nih.gov/chemical/structure/{}/image"
-            d = {}
-
-            for p in ps:
-                if p.ligand not in d:
-                    d[p.ligand] = []
-                d[p.ligand].append(p)
-
-            lig_ids = set([record.ligand_id for record in ps])
-            vendor_output = list(LigandVendorLink.objects.filter(ligand_id__in=lig_ids).values_list("ligand_id").annotate(Count('vendor_id', distinct=True)))
-            vendors_dict = {entry[0]:entry[1] for entry in vendor_output}
-
-            ligand_data_affinity = []
-            ligand_data_potency = []
-            assay_conversion = {'A': 'ADMET', 'B': 'Binding', 'F': 'Functional', 'U': 'N/A', 'T': 'Toxicity'}
-            for lig, records in d.items():
-                # links = lig.ids.all()
-                # chembl_id = [x for x in links if x.web_resource.slug == 'chembl_ligand'][0].index
-                if lig.smiles is not None and (lig.mw is None or lig.mw < 800):
-                    picture = img_setup_smiles.format(urllib.parse.quote(lig.smiles))
-                else:
-                    # "No image available" SVG (source: https://commons.wikimedia.org/wiki/File:No_image_available.svg)
-                    picture = "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/No_image_available.svg/600px-No_image_available.svg.png?20190827162820"
-
-                purchasability = vendors_dict[lig.id] if lig.id in vendors_dict.keys() else 0
-
-                data_parsed = {}
-                for record in records:
-                    assay = assay_conversion[record.assay_type]
-                    if record.source not in data_parsed.keys():
-                        data_parsed[record.source] = {}
-                    if assay not in data_parsed[record.source].keys():
-                        data_parsed[record.source][assay] = {}
-                    if record.value_type not in data_parsed[record.source][assay].keys():
-                        if record.source == 'Guide to Pharmacology':
-                            data_parsed[record.source][assay][record.value_type] = [x for x in record.p_activity_ranges.split('|')]
-                        else:
-                            data_parsed[record.source][assay][record.value_type] = [record.p_activity_value]
-                    else:
-                        if record.source == 'Guide to Pharmacology':
-                            data = [x for x in record.p_activity_ranges.split('|')]
-                            data_parsed[record.source][assay][record.value_type] += data
-                        else:
-                            data_parsed[record.source][assay][record.value_type].append(record.p_activity_value)
-
-                for source in data_parsed.keys():
-                    for assay_type in data_parsed[source].keys():
-                        for value_type in data_parsed[source][assay_type].keys():
-                            values = [float(x) for x in data_parsed[source][assay_type][value_type] if x != 'None']
-                            low_value, average_value, high_value = '-','-','-'
-                            if len(values) > 0:
-                                low_value = min(values)
-                                average_value = round(sum(values) / len(values),1)
-                                high_value = max(values)
-                            print(assay_type)
-                            if assay_type == 'Binding': #Affinity
-                                ligand_data_affinity.append({
-                                    'lig_id': lig.id,
-                                    'ligand_name': lig.name,
-                                    'picture': picture,
-                                    'affinity': record.affinity,
-                                    'affinity_tested': record.count_affinity_test,
-                                    'species': record.protein.species.common_name,
-                                    'record_count': len(records),
-                                    'assay_type': assay_type,
-                                    'purchasability': purchasability,
-                                    'low_value': low_value,
-                                    'average_value': average_value,
-                                    'high_value': high_value,
-                                    'value_type': value_type,
-                                    'ligand_type': lig.ligand_type.name.replace('-',' ').capitalize(),
-                                    'source': source,
-                                    'smiles': lig.smiles,
-                                    'mw': lig.mw,
-                                    'rotatable_bonds': lig.rotatable_bonds,
-                                    'hdon': lig.hdon,
-                                    'hacc': lig.hacc,
-                                    'logp': lig.logp,
-                                    'reference': record.reference_ligand,
-                                })
-                            elif assay_type == 'Functional': #Potency
-                                ligand_data_potency.append({
-                                    'lig_id': lig.id,
-                                    'ligand_name': lig.name,
-                                    'picture': picture,
-                                    'potency': record.potency,
-                                    'potency_tested': record.count_potency_test,
-                                    'species': record.protein.species.common_name,
-                                    'record_count': len(records),
-                                    'assay_type': assay_type,
-                                    'purchasability': purchasability,
-                                    'low_value': low_value,
-                                    'average_value': average_value,
-                                    'high_value': high_value,
-                                    'value_type': value_type,
-                                    'ligand_type': lig.ligand_type.name.replace('-',' ').capitalize(),
-                                    'source': source,
-                                    'smiles': lig.smiles,
-                                    'mw': lig.mw,
-                                    'rotatable_bonds': lig.rotatable_bonds,
-                                    'hdon': lig.hdon,
-                                    'hacc': lig.hacc,
-                                    'logp': lig.logp,
-                                    'reference': record.reference_ligand,
-                                })
+            ligand_data_affinity,ligand_data_potency = LigandListDetails(mode, ps)
         context = {}
         context['potency_data'] = ligand_data_potency
         context['affinity_data'] = ligand_data_affinity
