@@ -278,7 +278,6 @@ class LigandStructuralSearch(TemplateView):
                 no_results_msg = 'No results found.'
                 if cursor_results != []:
                     ligand_id = [x[0] for x in cursor_results]
-                    print(ligand_id)
                     ps = AssayExperiment.objects.filter(ligand__in=ligand_id).prefetch_related('protein', 'ligand', 'ligand__ligand_type')
                 else:
                     context = "redirect"
