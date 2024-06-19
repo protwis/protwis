@@ -71,7 +71,7 @@
                       </div> 
                       {% endcomment %}
                       <div class="form-group">
-                      <p style="color: red;">{{ ligand_structural_search_error_msg }}</p>
+                      <p style="{% if ligand_structural_search_error_msg != 'No results found.'%}color: red; {% endif %}">{{ ligand_structural_search_error_msg }}</p>
                       </div>
                       </form>
                     </div>
