@@ -175,74 +175,800 @@ function simple_heatmap(data, location, element_id, legend_label) {
   });
 }
 
-// LIST REPRESENTATION
 
-function renderDataVisualization(data, location) {
-    // Define width, height, and margins for the SVG
-    const width = 800; // Adjust as needed
-    const height = 600; // Adjust as needed
-    const margin = { top: 20, right: 20, bottom: 20, left: 20 }; // Adjust as needed
+// ####################
+// ### LIST PLOT ######
+// ####################
 
-    // Append SVG to the specified location
-    const svg_home = d3.select("#" + location)
+// Initialization of global functions
+
+function initializeDataStyling(list_data_wow, data_types) {
+    
+    // Function to check if any of the specified keys are present in a given object
+    function checkKeysPresent(obj, keys) {
+        return keys.some(k => k in obj);
+    }
+
+    // Define the keys to check for each column
+    var col1Keys = ["Value1", "Value2"];
+    var col2Keys = ["Value3", "Value4"];
+    var col3Keys = ["Value5", "Value6"];
+    var col4Keys = ["Value7", "Value8"];
+    
+    
+    var Data_styling = {
+        Col1: {Data: "No",Datatype: 'None',Data_min: Infinity,Data_max: -Infinity, Data_coloring: 'All', Data_color1: '#000000', Data_color2: '#000000', data_color_complexity: 'One'},
+        Col2: {Data: "No",Datatype: 'None',Data_min: Infinity,Data_max: -Infinity, Data_coloring: 'All', Data_color1: '#000000', Data_color2: '#000000', data_color_complexity: 'One'},
+        Col3: {Data: "No",Datatype: 'None',Data_min: Infinity,Data_max: -Infinity, Data_coloring: 'All', Data_color1: '#000000', Data_color2: '#000000', data_color_complexity: 'One'},
+        Col4: {Data: "No",Datatype: 'None',Data_min: Infinity,Data_max: -Infinity, Data_coloring: 'All', Data_color1: '#000000', Data_color2: '#000000', data_color_complexity: 'One'}
+        };
+    
+    // Iterate through initialData and update Data_styling accordingly
+    Object.keys(list_data_wow).forEach(function(key) {
+        var currentObj = list_data_wow[key];
+
+        // Check for Col1 if not already set to "Yes"
+        if (Data_styling.Col1.Data !== "Yes" && checkKeysPresent(currentObj, col1Keys)) {
+            Data_styling.Col1.Data = "Yes";
+        }
+
+        // Check for Col2 if not already set to "Yes"
+        if (Data_styling.Col2.Data !== "Yes" && checkKeysPresent(currentObj, col2Keys)) {
+            Data_styling.Col2.Data = "Yes";
+        }
+
+        // Check for Col3 if not already set to "Yes"
+        if (Data_styling.Col3.Data !== "Yes" && checkKeysPresent(currentObj, col3Keys)) {
+            Data_styling.Col3.Data = "Yes";
+        }
+
+        // Check for Col4 if not already set to "Yes"
+        if (Data_styling.Col4.Data !== "Yes" && checkKeysPresent(currentObj, col4Keys)) {
+            Data_styling.Col4.Data = "Yes";
+        }
+
+        // If both Col1 and Col2 are "Yes", no need to continue iterating
+        if (Data_styling.Col1.Data === "Yes" && Data_styling.Col2.Data === "Yes" && Data_styling.Col3.Data === "Yes" && Data_styling.Col4.Data === "Yes") {
+            return; // Exit forEach loop early
+        }
+    });
+
+
+    // Check for Col1 has data
+    // Update Datatype for each column based on data_types
+    ['Col1', 'Col2', 'Col3', 'Col4'].forEach(col => {
+        if (Data_styling[col].Data === "Yes") {
+            if (data_types['Listplot'][col] === 'Discrete') {
+                Data_styling[col].Datatype = 'Discrete';
+            } else if (data_types['Listplot'][col] === 'Continuous') {
+                Data_styling[col].Datatype = 'Continuous';
+            }
+        }
+    });
+
+
+    // Run through data and set min and max values 
+
+    function updateDataMinMax(column, key, currentObj) {
+        if (Data_styling[column].Data === "Yes" && Data_styling[column].Datatype === 'Continuous' && currentObj.hasOwnProperty(key)) {
+            if (currentObj[key] > Data_styling[column].Data_max) {
+                Data_styling[column].Data_max = currentObj[key];
+            }
+            if (currentObj[key] < Data_styling[column].Data_min) {
+                Data_styling[column].Data_min = currentObj[key];
+            }
+        }
+    }
+
+    Object.keys(list_data_wow).forEach(function(key) {
+        var currentObj = list_data_wow[key];
+    
+        updateDataMinMax('Col1', 'Value2', currentObj);
+        updateDataMinMax('Col2', 'Value4', currentObj);
+        updateDataMinMax('Col3', 'Value6', currentObj);
+        updateDataMinMax('Col4', 'Value8', currentObj);
+    });
+
+    return Data_styling;
+}
+
+
+// ##############################
+// ### Visualization Function ###
+// ##############################
+function renderDataVisualization(data, location,styling_option,Layout_dict,data_styling,label_conversion_dict,label_names) {
+    
+    // ######################
+    // ## Initializzation  ##
+    // ###################### 
+    
+    // ## Global Variables ##
+
+    let columns = Layout_dict.columns;
+    let col_breaker = Layout_dict.col_breaker;
+    let col_spacing = Layout_dict.col_spacing;
+    
+    // Calculate total count
+    const total_count = calculateTotalCount(data);
+    const width = 420*columns;
+    const height = 200;
+    const margin = { top: 40, right: 20, bottom: 20, left: 20 };
+
+    // X & Y coordinates 
+    let yOffset = margin.top+5;
+    let yOffset_max = 0
+    let xOffset = 0;
+    
+    // Create svg element
+    const svg = d3.select("#" + location)
         .append("svg")
         .attr("width", width + margin.left + margin.right)
         .attr("height", height + margin.top + margin.bottom)
-        .attr("id", "visualization");
+        .attr("id", "ListPlot_visualization");
 
-    // Initialize yOffset
-    let yOffset = margin.top;
+    
+    // ###############
+    // ## Functions ##
+    // ###############
 
-    // Define drawItems function
-    function drawItems(items, xOffset) {
-        items.forEach(item => {
-            if (typeof item === 'object' && item.url && item.text) {
-                // Draw linkable item
-                const link = svg_home.append('a')
-                    .attr('xlink:href', item.url)
-                    .attr('target', '_blank');
-                link.append('text')
-                    .attr('x', xOffset)
-                    .attr('y', yOffset)
-                    .text(`- ${item.text}`);
-            } else {
-                // Draw regular item
-                svg_home.append('text')
-                    .attr('x', xOffset)
-                    .attr('y', yOffset)
-                    .text(`- ${item}`);
+
+    // ## Function to calculate the total count of keys and values ##
+    function calculateTotalCount(obj) {
+        let totalCount = 0;
+        
+        // Recursive function to traverse the nested object
+        function traverse(obj) {
+            for (const key in obj) {
+                // Increment count for each key
+                totalCount++;
+                if (typeof obj[key] === 'object') {
+                    // Recursively traverse nested objects
+                    traverse(obj[key]);
+                } else if (Array.isArray(obj[key])) {
+                    // Increment count for each array item
+                    totalCount += obj[key].length;
+                }
             }
-            yOffset += 20; // Increase Y offset for next item
-        });
+        }
+    
+        traverse(obj);
+        return totalCount;
     }
 
-    // Define processNode function
-    function processNode(node, xOffset, depth = 0) {
-        Object.entries(node).forEach(([key, value]) => {
-            // Append text for the node
-            svg_home.append('text')
-                .attr('x', xOffset + 20)
-                .attr('y', yOffset)
-                .text(key);
-
-            // Increment Y offset after title
-            yOffset += 30;
-
-            if (Array.isArray(value)) {
-                // Leaf node, draw items
-                drawItems(value, xOffset + 40);
-            } else {
-                // Non-leaf node, recursive process
-                processNode(value, xOffset + 20, depth + 1);
-            }
-        });
+    // ## Shape Funciton ##
+    // Function to add different shapes
+    function addShape(shapeType, x, y, size, fillColor) {
+        switch (shapeType) {
+            case 'circle':
+                svg.append('circle')
+                    .attr('cx', x)
+                    .attr('cy', y)
+                    .attr('r', size)
+                    .style('stroke', 'black')
+                    .style('stroke-width', 1)
+                    .style('fill', fillColor);
+                break;
+            case 'rect':
+                svg.append('rect')
+                    .attr('x', x - size)
+                    .attr('y', y - size)
+                    .attr('width', size * 2)
+                    .attr('height', size * 2)
+                    .style('stroke', 'black')
+                    .style('stroke-width', 1)
+                    .style('fill', fillColor);
+                break;
+            case 'triangle':
+                svg.append('path')
+                    .attr('d', `M ${x} ${y - size} L ${x - size} ${y + size} L ${x + size} ${y + size} Z`)
+                    .style('stroke', 'black')
+                    .style('stroke-width', 1)
+                    .style('fill', fillColor);
+                break;
+            case 'diamond':
+                svg.append('path')
+                    .attr('d', `M ${x} ${y - size} L ${x - size} ${y} L ${x} ${y + size} L ${x + size} ${y} Z`)
+                    .style('stroke', 'black')
+                    .style('stroke-width', 1)
+                    .style('fill', fillColor);
+                break;
+            case 'star':
+                const points = 5;
+                const outerRadius = size;
+                const innerRadius = size / 2.5;
+                let starPath = '';
+                for (let i = 0; i < points * 2; i++) {
+                    const angle = (Math.PI / points) * i;
+                    const radius = i % 2 === 0 ? outerRadius : innerRadius;
+                    const xPoint = x + Math.cos(angle) * radius;
+                    const yPoint = y + Math.sin(angle) * radius;
+                    starPath += i === 0 ? `M ${xPoint} ${yPoint}` : `L ${xPoint} ${yPoint}`;
+                }
+                starPath += 'Z';
+                svg.append('path')
+                    .attr('d', starPath)
+                    .style('stroke', 'black')
+                    .style('stroke-width', 1)
+                    .style('fill', fillColor);
+                break;
+            default:
+                console.log('Unknown shape type');
+        }
     }
 
-    // Start processing from the root
-    processNode(data, margin.left);
+    // ## Column breaker function ##
+    function ColumnsBreakerFunc (columns,label_counter,Col_break_number,state) {
+        if (columns == 2 && label_counter > Col_break_number && state.current_col == 1){
+            state.current_col = 2;
+            xOffset = col_spacing;
+            if (yOffset > yOffset_max) {yOffset_max = yOffset;}
+            yOffset = margin.top+5;
+        }
+        if (columns == 3 && label_counter > Col_break_number && state.current_col == 1){
+            state.current_col = 2;
+            xOffset = col_spacing;
+            if (yOffset > yOffset_max) {yOffset_max = yOffset;}
+            yOffset = margin.top+5;
+        } else if (columns == 3 && label_counter > Col_break_number*2 && state.current_col == 2){
+            state.current_col = 3;
+            xOffset = col_spacing*2;
+            if (yOffset > yOffset_max) {yOffset_max = yOffset;}
+            yOffset = margin.top+5;
+        }
+        if (columns == 4 && label_counter > Col_break_number && state.current_col == 1){
+            state.current_col = 2;
+            xOffset = col_spacing;
+            if (yOffset > yOffset_max) {yOffset_max = yOffset;}
+            yOffset = margin.top+5;
+        } else if (columns == 4 && label_counter > Col_break_number*2 && state.current_col == 2){
+            state.current_col = 3;
+            xOffset = col_spacing*2;
+            if (yOffset > yOffset_max) {yOffset_max = yOffset;}
+            yOffset = margin.top+5;
+        } else if (columns == 4 && label_counter > Col_break_number*3 && state.current_col == 3){
+            state.current_col = 4;
+            xOffset = col_spacing*3;
+            if (yOffset > yOffset_max) {yOffset_max = yOffset;}
+            yOffset = margin.top+5;
+        }
+    }
 
-    // Return the SVG element
-    return svg_home;
+    // #####################
+    // ## List processing ##
+    // #####################
+    
+    function processList(list) {
+        // Check the visibility of each layer
+        const Layer1_isChecked = d3.select(`#toggle-layer-1`).property('checked');
+        const Layer2_isChecked = d3.select(`#toggle-layer-2`).property('checked');
+        const Layer3_isChecked = d3.select(`#toggle-layer-3`).property('checked');
+        const Layer4_isChecked = d3.select(`#toggle-layer-4`).property('checked');
+
+        let Checklist = [Layer1_isChecked, Layer2_isChecked, Layer3_isChecked, Layer4_isChecked];
+
+        
+        let col_max_label = Layout_dict.col_max_label;
+        var Col_break_number = 20;
+        
+        if (col_max_label == "Auto") {
+            Col_break_number = Math.ceil(total_count / columns);
+        } else if (col_max_label == "Custom") {
+            Col_break_number = Layout_dict.Col_break_number
+        }
+
+        var state = { current_col: 1 };
+        // Setup amount of cols
+        let label_counter = 1;
+
+        // Set color gradient based on input 
+
+        // Define Color_dict to store color scales for each column and shape
+        var Color_dict = {};
+
+        // # Setup color styling if "All" is chosen # 
+        Object.keys(data_styling).forEach(function(col) {
+            Color_dict[col] = {};
+            if (data_styling[col].data_color_complexity == 'One') {
+                Color_dict[col]['All'] = d3.scale.linear().domain([data_styling[col].Data_min,data_styling[col].Data_max]).range(["#FFFFFF", data_styling[col].Data_color1]);
+            } else if (data_styling[col].data_color_complexity == 'Two') {
+                Color_dict[col]['All'] = d3.scale.linear()
+                .domain([data_styling[col].Data_min, (data_styling[col].Data_min + data_styling[col].Data_max) / 2, data_styling[col].Data_max])
+                .range([data_styling[col].Data_color1, "#FFFFFF", data_styling[col].Data_color2]);
+            }
+        });
+
+        // ##############################
+        // ## Handle all list elements ##
+        // ##############################
+
+        Object.entries(list).forEach(([key, value]) => {
+            // Text input function 
+            function add_text(label, yOffset, layer, bold = false, italic = false, underline = false, fontSize = '16px', color = 'black') {
+                
+                label_key = label;
+
+                // # Different types of label handling #
+                if (label_names == 'IUPHAR') {
+                    
+                    const htmlEntities = {
+                        '&alpha;': 'α',
+                        '&beta;': 'β',
+                        '&gamma;': 'γ',
+                        '&delta;': 'δ',
+                        '&epsilon;': 'ε',
+                        '&zeta;': 'ζ',
+                        '&eta;': 'η',
+                        '&theta;': 'θ',
+                        '&iota;': 'ι',
+                        '&kappa;': 'κ',
+                        '&lambda;': 'λ',
+                        '&mu;': 'μ',
+                        '&nu;': 'ν',
+                        '&xi;': 'ξ',
+                        '&omicron;': 'ο',
+                        '&pi;': 'π',
+                        '&rho;': 'ρ',
+                        '&sigma;': 'σ',
+                        '&tau;': 'τ',
+                        '&upsilon;': 'υ',
+                        '&phi;': 'φ',
+                        '&chi;': 'χ',
+                        '&psi;': 'ψ',
+                        '&omega;': 'ω'
+                    };
+                
+                    // Replace HTML entities with corresponding Unicode characters
+                    for (const [entity, char] of Object.entries(htmlEntities)) {
+                        label = label.replace(new RegExp(entity, 'g'), char);
+                    }
+                
+                    const textElement = svg.append('text')
+                        .attr('x', margin.left + xOffset + 80)
+                        .attr('y', yOffset)
+                        .attr('class', layer)
+                        .style('dominant-baseline', 'middle') // Set vertical alignment
+                        .style('font-weight', bold ? 'bold' : 'normal')
+                        .style('font-style', italic ? 'italic' : 'normal')
+                        .style('text-decoration', underline ? 'underline' : 'none')
+                        .style('font-size', fontSize)
+                        .style('fill', color); // Set text color
+                    
+                    // Calculate the subscript font size (e.g., 75% of the main font size)
+                    const mainFontSize = parseFloat(fontSize);
+                    const subFontSize = mainFontSize * 0.75 + 'px';
+                    
+                    // Remove <i> and </i> tags from the label
+                    label = label.replace(/<\/?i>/g, '');
+                    if (layer == 'Layer-4') {
+                        label = label.replace("-adrenoceptor", '').replace(" receptor", '');
+                    }
+                    const parts = label.split(/(<sub>|<\/sub>)/); // Split label into parts including <sub> tags
+                    let inSub = false; // Flag to track if we are inside a subscript
+                    
+                    // Handle subscripts
+                    parts.forEach(part => {
+                        if (part === '<sub>') {
+                            inSub = true;
+                        } else if (part === '</sub>') {
+                            inSub = false;
+                        } else {
+                            const tspan = textElement.append('tspan')
+                                .text(part);
+                
+                            if (inSub) {
+                                tspan.attr('dy', '0.3em') // Subscript positioning
+                                    .attr('font-size', subFontSize);
+                            } else {
+                                tspan.attr('dy', '-0.3em') // Reset positioning
+                                    .attr('font-size', fontSize);
+                            }
+                        }
+                    });
+
+                } else if (label_names == 'UniProt') {
+
+                    // # If UniProt, handle receptor names but keep classes etc. #
+                    if (layer == 'Layer-4') { 
+                    label = label_conversion_dict[label_key];
+                    label = label.replace(/_human/g, '').toUpperCase();
+                    } else {
+                        label = label_key
+                    }
+
+                    // # Add label element #
+
+                    const textElement = svg.append('text')
+                        .attr('x', margin.left + xOffset + 80)
+                        .attr('y', yOffset)
+                        .attr('class', layer)
+                        .attr('dy', '-0.3em') // Adjust this value to move the text higher
+                        .style('dominant-baseline', 'middle') // Set vertical alignment
+                        .style('font-weight', bold ? 'bold' : 'normal')
+                        .style('font-style', italic ? 'italic' : 'normal')
+                        .style('text-decoration', underline ? 'underline' : 'none')
+                        .style('font-size', fontSize)
+                        .style('fill', color)
+                        .text(label);  
+
+
+                }
+
+                // #############################
+                // ### Implement data points ###
+                // ############################# 
+                
+                if (layer == 'Layer-4') {
+                    if (list_data_wow.hasOwnProperty(label_key)) {
+                       
+                        // Initialize all variables for better overview 
+
+                        // Col data checker
+                        var Col1_data_checker = data_styling.Col1.Data == "Yes";
+                        var Col2_data_checker = data_styling.Col2.Data == "Yes";
+                        var Col3_data_checker = data_styling.Col3.Data == "Yes";
+                        var Col4_data_checker = data_styling.Col4.Data == "Yes";
+                        
+                        // Col lebels
+                        var Col1_shape = list_data_wow[label_key].hasOwnProperty('Value1') ? list_data_wow[label_key].Value1.toLowerCase() : false;
+                        var Col2_shape = list_data_wow[label_key].hasOwnProperty('Value3') ? list_data_wow[label_key].Value3.toLowerCase() : false;
+                        var Col3_shape = list_data_wow[label_key].hasOwnProperty('Value5') ? list_data_wow[label_key].Value5.toLowerCase() : false;
+                        var Col4_shape = list_data_wow[label_key].hasOwnProperty('Value7') ? list_data_wow[label_key].Value7.toLowerCase() : false;
+
+                        // Col data shapes checker
+                        var Col1_data = list_data_wow[label_key].hasOwnProperty('Value2') ? list_data_wow[label_key].Value2 : false;
+                        var Col2_data = list_data_wow[label_key].hasOwnProperty('Value4') ? list_data_wow[label_key].Value4 : false;
+                        var Col3_data = list_data_wow[label_key].hasOwnProperty('Value6') ? list_data_wow[label_key].Value6 : false;
+                        var Col4_data = list_data_wow[label_key].hasOwnProperty('Value8') ? list_data_wow[label_key].Value8 : false;
+
+                        // Col Datatype
+                        var Col1_datatype = data_styling.Col1.Datatype;
+                        var Col2_datatype = data_styling.Col2.Datatype;
+                        var Col3_datatype = data_styling.Col3.Datatype;
+                        var Col4_datatype = data_styling.Col4.Datatype;
+
+                        // Col data coloring scheme
+
+                        const Col1_coloring = data_styling.Col1.Data_coloring;
+                        const Col2_coloring = data_styling.Col2.Data_coloring;
+                        const Col3_coloring = data_styling.Col3.Data_coloring;
+                        const Col4_coloring = data_styling.Col4.Data_coloring;
+                        
+                        const Color_list = ['black', 'red', 'blue', 'green'];
+                        const Shape_list = ['circle','rect','triangle','star','diamond']
+
+                        const col1_XoffSet = 0
+                        const col2_XoffSet = 20
+                        const col3_XoffSet = 40
+                        const col4_XoffSet = 60
+
+                        // ## Col 1 ##
+                        if (Col1_data_checker && (Col1_shape || Col1_data)) {
+                            if (Col1_shape) {
+                                if (Col1_data && Col1_datatype == 'Discrete') {
+                                    shape_color = Color_list.includes(Col1_data.toLowerCase()) ? Col1_data : 'black';
+                                } else if (Col1_data && Col1_datatype == 'Continuous') {
+                                    if (Col1_coloring == 'All') {
+                                        shape_color = Color_dict.Col1.All(Col1_data);
+                                    } else if (Col1_coloring == 'Shapes') {
+                                        shape_color = Color_dict['Col1'][Col1_shape](Col1_data);
+                                    }
+                                } else {
+                                    shape_color = 'black';
+                                }
+                                shape_value = Col1_shape === "square" ? 'rect' : Col1_shape;
+                                addShape(Shape_list.includes(shape_value) ? shape_value : 'circle', margin.left + xOffset + col1_XoffSet, yOffset - (parseFloat(fontSize) * 0.50), 6, shape_color);
+                            } else {
+                                if (Col1_data && Col1_datatype == 'Discrete') {
+                                    shape_color = Color_list.includes(Col1_data.toLowerCase()) ? Col1_data : 'black';
+                                    addShape('circle', margin.left + xOffset + col1_XoffSet, yOffset - (parseFloat(fontSize) * 0.50), 6, shape_color);
+                                } else if (Col1_data && Col1_datatype == 'Continuous') {
+                                    shape_color = Color_dict.Col1.All(Col1_data);
+                                    addShape('circle', margin.left + xOffset + col1_XoffSet, yOffset - (parseFloat(fontSize) * 0.50), 6, shape_color);
+                                }
+                            }
+                        }
+
+                        // ## Col 2 ##
+                        if (Col2_data_checker && (Col2_shape || Col2_data)) {
+                            if (Col2_shape) {
+
+                                
+                                if (Col2_data && Col2_datatype == 'Discrete') {
+                                    shape_color = Color_list.includes(Col2_data.toLowerCase()) ? Col2_data : 'black';
+                                } else if (Col2_data && Col2_datatype == 'Continuous') {
+
+                                    if (Col2_coloring == 'All') {
+                                        shape_color = Color_dict.Col2.All(Col2_data);
+                                    } else if (Col2_coloring == 'Shapes') {
+                                        shape_color = Color_dict['Col2'][Col2_shape](Col2_data);
+                                    }
+                                } else {
+                                    shape_color = 'black';
+                                }
+                                shape_value = Col2_shape === "square" ? 'rect' : Col2_shape;
+                                addShape(Shape_list.includes(shape_value) ? shape_value : 'circle', margin.left + xOffset + col2_XoffSet, yOffset - (parseFloat(fontSize) * 0.50), 6, shape_color);
+                            } else {
+                                if (Col2_data && Col2_datatype == 'Discrete') {
+                                    shape_color = Color_list.includes(Col2_data.toLowerCase()) ? Col2_data : 'black';
+                                    addShape('circle', margin.left + xOffset + col2_XoffSet, yOffset - (parseFloat(fontSize) * 0.50), 6, shape_color);
+                                } else if (Col2_data && Col2_datatype == 'Continuous') {
+                                    shape_color = Color_dict.Col2.All(Col2_data);
+                                    addShape('circle', margin.left + xOffset + col2_XoffSet, yOffset - (parseFloat(fontSize) * 0.50), 6, shape_color);
+                                }
+                            }
+                        }
+
+                        // ## Col 3 ##
+                        if (Col3_data_checker && (Col3_shape || Col3_data)) {
+                            if (Col3_shape) {
+                                if (Col3_data && Col3_datatype == 'Discrete') {
+                                    shape_color = Color_list.includes(Col3_data.toLowerCase()) ? Col3_data : 'black';
+                                } else if (Col3_data && Col3_datatype == 'Continuous') {
+                                    if (Col3_coloring == 'All') {
+                                        shape_color = Color_dict.Col3.All(Col3_data);
+                                    } else if (Col3_coloring == 'Shapes') {
+                                        shape_color = Color_dict['Col3'][Col3_shape](Col3_data);
+                                    }
+                                } else {
+                                    shape_color = 'black';
+                                }
+                                shape_value = Col3_shape === "square" ? 'rect' : Col3_shape;
+                                addShape(Shape_list.includes(shape_value) ? shape_value : 'circle', margin.left + xOffset + col3_XoffSet, yOffset - (parseFloat(fontSize) * 0.50), 6, shape_color);
+                            } else {
+                                if (Col3_data && Col3_datatype == 'Discrete') {
+                                    shape_color = Color_list.includes(Col3_data.toLowerCase()) ? Col3_data : 'black';
+                                    addShape('circle', margin.left + xOffset + col3_XoffSet, yOffset - (parseFloat(fontSize) * 0.50), 6, shape_color);
+                                } else if (Col3_data && Col3_datatype == 'Continuous') {
+                                    shape_color = Color_dict.Col3.All(Col3_data);
+                                    addShape('circle', margin.left + xOffset + col3_XoffSet, yOffset - (parseFloat(fontSize) * 0.50), 6, shape_color);
+                                }
+                            }
+                        }
+
+                        // ## Col 4 ##
+                        if (Col4_data_checker && (Col4_shape || Col4_data)) {
+                            if (Col4_shape) {
+                                if (Col4_data && Col4_datatype == 'Discrete') {
+                                    shape_color = Color_list.includes(Col4_data.toLowerCase()) ? Col4_data : 'black';
+                                } else if (Col4_data && Col4_datatype == 'Continuous') {
+                                    if (Col4_coloring == 'All') {
+                                        shape_color = Color_dict.Col4.All(Col4_data);
+                                    } else if (Col4_coloring == 'Shapes') {
+                                        shape_color = Color_dict['Col4'][Col4_shape](Col4_data);
+                                    }
+                                } else {
+                                    shape_color = 'black';
+                                }
+                                shape_value = Col4_shape === "square" ? 'rect' : Col4_shape;
+                                addShape(Shape_list.includes(shape_value) ? shape_value : 'circle', margin.left + xOffset + col4_XoffSet, yOffset - (parseFloat(fontSize) * 0.50), 6, shape_color);
+                            } else {
+                                if (Col4_data && Col4_datatype == 'Discrete') {
+                                    shape_color = Color_list.includes(Col4_data.toLowerCase()) ? Col4_data : 'black';
+                                    addShape('circle', margin.left + xOffset + col4_XoffSet, yOffset - (parseFloat(fontSize) * 0.50), 6, shape_color);
+                                } else if (Col4_data && Col4_datatype == 'Continuous') {
+                                    shape_color = Color_dict.Col4.All(Col4_data);
+                                    addShape('circle', margin.left + xOffset + col4_XoffSet, yOffset - (parseFloat(fontSize) * 0.50), 6, shape_color);
+                                }
+                            }
+                        }
+                    } else {
+                        console.log(label_key);
+                    }
+                }
+            }
+
+            // # Check and append text for Layer 1 breaker if it's visible #
+
+            if (Checklist[0]) {
+                if (col_breaker == "Layer1" || col_breaker == "Custom") {
+                    ColumnsBreakerFunc(columns,label_counter,Col_break_number,state);
+                } 
+                add_text(key, yOffset, "Layer-1",styling_option.Layer1.Bold,styling_option.Layer1.Italic,styling_option.Layer1.Underline,styling_option.Layer1.Fontsize,styling_option.Layer1.Color);
+                yOffset += 30;
+                label_counter++;
+                
+                // Check and append text for Layer 2 if it's visible and has sublayers
+                if (Checklist[1] && typeof value === 'object') {
+                    Object.entries(value).forEach(([subKey, subValue]) => {
+                        if (col_breaker == "Layer2" || col_breaker == "Custom") {
+                            ColumnsBreakerFunc(columns,label_counter,Col_break_number,state);
+                        } 
+                        add_text(subKey, yOffset, "Layer-2",styling_option.Layer2.Bold,styling_option.Layer2.Italic,styling_option.Layer2.Underline,styling_option.Layer2.Fontsize,styling_option.Layer2.Color);
+                        yOffset += 30;
+                        label_counter++;
+                        
+                        // Check and append text for Layer 3 if it's visible and has sublayers
+                        if (Checklist[2] && typeof subValue === 'object') {
+                            Object.entries(subValue).forEach(([subSubKey, subSubValue]) => {
+                                if (col_breaker == "Layer3" || col_breaker == "Custom") {
+                                    ColumnsBreakerFunc(columns,label_counter,Col_break_number,state);
+                                } 
+                                add_text(subSubKey, yOffset, "Layer-3",styling_option.Layer3.Bold,styling_option.Layer3.Italic,styling_option.Layer3.Underline,styling_option.Layer3.Fontsize,styling_option.Layer3.Color);
+                                yOffset += 30;
+                                label_counter++;
+                                
+                                // Check and append text for Layer 4 if it's visible and is an array
+                                if (Checklist[3] && Array.isArray(subSubValue)) {
+                                    subSubValue.forEach(item => {
+                                        if (col_breaker == "Layer4" || col_breaker == "Custom") {
+                                            ColumnsBreakerFunc(columns,label_counter,Col_break_number,state);
+                                        } 
+                                        add_text(item, yOffset, "Layer-4",styling_option.Layer4.Bold,styling_option.Layer4.Italic,styling_option.Layer4.Underline,styling_option.Layer4.Fontsize,styling_option.Layer4.Color);
+                                        
+                                        yOffset += 30;
+                                        label_counter++;
+                                        
+                                    });
+                                }
+                            });
+                        } else {
+                            Object.entries(subValue).forEach(([subSubKey, subSubValue]) => {
+                                // Check and append text for Layer 4 if it's visible and is an array
+                                if (Checklist[3] && Array.isArray(subSubValue)) {
+                                    subSubValue.forEach(item => {
+                                        if (col_breaker == "Layer4" || col_breaker == "Custom") {
+                                            ColumnsBreakerFunc(columns,label_counter,Col_break_number,state);
+                                        } 
+                                        add_text(item, yOffset, "Layer-4",styling_option.Layer4.Bold,styling_option.Layer4.Italic,styling_option.Layer4.Underline,styling_option.Layer4.Fontsize,styling_option.Layer4.Color);
+                                        yOffset += 30;
+                                        label_counter++;
+                                        
+                                    });
+                                }
+                            });
+                        }
+                    });
+                } else {
+                    Object.entries(value).forEach(([subKey, subValue]) => {
+                        // Check and append text for Layer 3 if it's visible and has sublayers
+                        if (Checklist[2] && typeof subValue === 'object') {
+                            Object.entries(subValue).forEach(([subSubKey, subSubValue]) => {
+                                if (col_breaker == "Layer3" || col_breaker == "Custom") {
+                                    ColumnsBreakerFunc(columns,label_counter,Col_break_number,state);
+                                } 
+                                add_text(subSubKey, yOffset, "Layer-3",styling_option.Layer3.Bold,styling_option.Layer3.Italic,styling_option.Layer3.Underline,styling_option.Layer3.Fontsize,styling_option.Layer3.Color);
+                                yOffset += 30;
+                                label_counter++;
+                               
+                                // Check and append text for Layer 4 if it's visible and is an array
+                                if (Checklist[3] && Array.isArray(subSubValue)) {
+                                    subSubValue.forEach(item => {
+                                        if (col_breaker == "Layer4" || col_breaker == "Custom") {
+                                            ColumnsBreakerFunc(columns,label_counter,Col_break_number,state);
+                                        } 
+                                        add_text(item, yOffset, "Layer-4",styling_option.Layer4.Bold,styling_option.Layer4.Italic,styling_option.Layer4.Underline,styling_option.Layer4.Fontsize,styling_option.Layer4.Color);
+                                        yOffset += 30;
+                                        label_counter++;
+                                        
+                                    });
+                                }
+                            });
+                        } else {
+                            Object.entries(subValue).forEach(([subSubKey, subSubValue]) => {
+                                // Check and append text for Layer 4 if it's visible and is an array
+                                if (Checklist[3] && Array.isArray(subSubValue)) {
+                                    subSubValue.forEach(item => {
+                                        if (col_breaker == "Layer4" || col_breaker == "Custom") {
+                                            ColumnsBreakerFunc(columns,label_counter,Col_break_number,state);
+                                        } 
+                                        add_text(item, yOffset, "Layer-4",styling_option.Layer4.Bold,styling_option.Layer4.Italic,styling_option.Layer4.Underline,styling_option.Layer4.Fontsize,styling_option.Layer4.Color);
+                                        yOffset += 30;
+                                        label_counter++;
+                                       
+                                    });
+                                }
+                            });
+                        }
+                    });
+                }
+            } else if (!Checklist[0] && Checklist[1]) {
+                // Check and append text for Layer 2 if it's visible and has sublayers
+                if (Checklist[1] && typeof value === 'object') {
+                    Object.entries(value).forEach(([subKey, subValue]) => {
+                        if (col_breaker == "Layer2" || col_breaker == "Custom") {
+                            ColumnsBreakerFunc(columns,label_counter,Col_break_number,state);
+                        } 
+                        add_text(subKey, yOffset, "Layer-2",styling_option.Layer2.Bold,styling_option.Layer2.Italic,styling_option.Layer2.Underline,styling_option.Layer2.Fontsize,styling_option.Layer2.Color);
+                        yOffset += 30;
+                        label_counter++;
+                        
+                        // Check and append text for Layer 3 if it's visible and has sublayers
+                        if (Checklist[2] && typeof subValue === 'object') {
+                            Object.entries(subValue).forEach(([subSubKey, subSubValue]) => {
+                                if (col_breaker == "Layer3" || col_breaker == "Custom") {
+                                    ColumnsBreakerFunc(columns,label_counter,Col_break_number,state);
+                                } 
+                                add_text(subSubKey, yOffset, "Layer-3",styling_option.Layer3.Bold,styling_option.Layer3.Italic,styling_option.Layer3.Underline,styling_option.Layer3.Fontsize,styling_option.Layer3.Color);
+                                yOffset += 30;
+                                label_counter++;
+                                
+                                // Check and append text for Layer 4 if it's visible and is an array
+                                if (Checklist[3] && Array.isArray(subSubValue)) {
+                                    subSubValue.forEach(item => {
+                                        if (col_breaker == "Layer4" || col_breaker == "Custom") {
+                                            ColumnsBreakerFunc(columns,label_counter,Col_break_number,state);
+                                        } 
+                                        add_text(item, yOffset, "Layer-4",styling_option.Layer4.Bold,styling_option.Layer4.Italic,styling_option.Layer4.Underline,styling_option.Layer4.Fontsize,styling_option.Layer4.Color);
+                                        yOffset += 30;
+                                        label_counter++;
+                                       
+                                    });
+                                }
+                            });
+                        } else {
+                            Object.entries(subValue).forEach(([subSubKey, subSubValue]) => {
+                                // Check and append text for Layer 4 if it's visible and is an array
+                                if (Checklist[3] && Array.isArray(subSubValue)) {
+                                    subSubValue.forEach(item => {
+                                        if (col_breaker == "Layer4" || col_breaker == "Custom") {
+                                            ColumnsBreakerFunc(columns,label_counter,Col_break_number,state);
+                                        }
+                                        add_text(item, yOffset, "Layer-4",styling_option.Layer4.Bold,styling_option.Layer4.Italic,styling_option.Layer4.Underline,styling_option.Layer4.Fontsize,styling_option.Layer4.Color);
+                                        yOffset += 30;
+                                        label_counter++;
+                                         
+                                    });
+                                }
+                            });
+                        }
+                    });
+                }
+            } else if (!Checklist[0] && !Checklist[1] && Checklist[2]) {
+                Object.entries(value).forEach(([subKey, subValue]) => {
+                    if (Checklist[2] && typeof subValue === 'object') {
+                        Object.entries(subValue).forEach(([subSubKey, subSubValue]) => {
+                            if (col_breaker == "Layer3" || col_breaker == "Custom") {
+                                ColumnsBreakerFunc(columns,label_counter,Col_break_number,state);
+                            } 
+                            add_text(subSubKey, yOffset, "Layer-3",styling_option.Layer3.Bold,styling_option.Layer3.Italic,styling_option.Layer3.Underline,styling_option.Layer3.Fontsize,styling_option.Layer3.Color);
+                            yOffset += 30;
+                            label_counter++;
+                            
+                            // Check and append text for Layer 4 if it's visible and is an array
+                            if (Checklist[3] && Array.isArray(subSubValue)) {
+                                subSubValue.forEach(item => {
+                                    if (col_breaker == "Layer4" || col_breaker == "Custom") {
+                                        ColumnsBreakerFunc(columns,label_counter,Col_break_number,state);
+                                    } 
+                                    add_text(item, yOffset, "Layer-4",styling_option.Layer4.Bold,styling_option.Layer4.Italic,styling_option.Layer4.Underline,styling_option.Layer4.Fontsize,styling_option.Layer4.Color);
+                                    yOffset += 30;
+                                    label_counter++;
+                                    
+                                });
+                            }
+                        });
+                    }
+                });
+            } else if (!Checklist[0] && !Checklist[1] && !Checklist[2] && Checklist[3]) {
+                Object.entries(value).forEach(([subKey, subValue]) => {
+                    Object.entries(subValue).forEach(([subSubKey, subSubValue]) => {
+                        if (Checklist[3] && Array.isArray(subSubValue)) {
+                            subSubValue.forEach(item => {
+                                if (col_breaker == "Layer4" || col_breaker == "Custom") {
+                                    ColumnsBreakerFunc(columns,label_counter,Col_break_number,state);
+                                } 
+                                add_text(item, yOffset, "Layer-4",styling_option.Layer4.Bold,styling_option.Layer4.Italic,styling_option.Layer4.Underline,styling_option.Layer4.Fontsize,styling_option.Layer4.Color);
+                                yOffset += 30;
+                                label_counter++;
+                                
+                            });
+                        }
+                    });
+                });
+            }
+        });
+
+    // # check if y-off-set is more than max, if so expand canvas # 
+    if (yOffset_max < yOffset) {
+        yOffset_max = yOffset;
+    }
+
+    // Rerender height of plot as the last thing
+    svg.attr("height",yOffset_max + margin.top + margin.bottom)
+}
+    // # Run list process and return svg #
+    processList(data,styling_option);
+    return svg;
 }
 
 

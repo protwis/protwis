@@ -358,12 +358,12 @@
                     <span class="plot-status">Plot available for rendering</span>
                   </h4>
                 {% elif plot.status == 'Empty sheet' %}
-                  <h4 class="expandable_failed" data-target="sortable_failed-{{ forloop.counter }}">
+                  <h4 class="expandable_failed plot-item" data-target="sortable_failed-{{ forloop.counter }}">
                     <img src="{% static 'home/images/Mapper_NoData.png' %}" width="22" height="22" style="vertical-align: middle; margin-right: 5px;">
                     {{ plot.plot_name }}
                     <i class="fas fa-chevron-right dropdown-icon" style="margin-left: 10px;"></i>
                     <div class="right-content">
-                      <span class="float-right">Plot unavailable (Click for info)</span>
+                        <span class="float-right">Plot unavailable (Click for info)</span>
                     </div>
                   </h4>
                   <ul id="sortable_failed-{{ forloop.counter }}" class="hidden">
