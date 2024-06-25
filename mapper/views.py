@@ -91,20 +91,6 @@ class LandingPage(TemplateView):
         return data_copy
 
     @staticmethod
-    def filter_dict(d, elements):
-        filtered_dict = {}
-        for key, value in d.items():
-            if isinstance(value, dict):
-                filtered_sub_dict = LandingPage.filter_dict(value, elements)
-                if filtered_sub_dict:
-                    filtered_dict[key] = filtered_sub_dict
-            elif isinstance(value, list):
-                filtered_values = [v for v in value if v in elements]
-                if filtered_values:
-                    filtered_dict[key] = filtered_values
-        return filtered_dict
-
-    @staticmethod
     def convert_keys(datatree, conversion):
         new_tree = {}
         for key, value in datatree.items():
@@ -119,10 +105,62 @@ class LandingPage(TemplateView):
         return new_tree
 
     @staticmethod
+    def reassign_keys(original_dict, key_mappings):
+         # Create a new dictionary to store the reassigned keys
+         new_dict = {}
+         # Iterate over the list of tuples (new_key, old_key)
+         for new_key, old_key in key_mappings:
+             # Check if the old_key exists in the original dictionary
+             if old_key in original_dict:
+                 # Assign the value from the original dictionary to the new key
+                 new_dict[new_key] = original_dict[old_key]
+
+         return new_dict
+
+    @staticmethod
+    def filter_and_extend_dict(big_dict, small_dict):
+        def filter_dict(d, keys_set):
+            filtered_dict = {}
+            for key, value in d.items():
+                if isinstance(value, dict):
+                    filtered_sub_dict = filter_dict(value, keys_set)
+                    if filtered_sub_dict:
+                        filtered_dict[key] = filtered_sub_dict
+                elif isinstance(value, list):
+                    filtered_values = [v for v in value if v in keys_set]
+                    if filtered_values:
+                        filtered_dict[key] = filtered_values
+            return filtered_dict
+
+        def extend_dict(d, additional_values):
+            for key, value in d.items():
+                if isinstance(value, dict):
+                    extend_dict(value, additional_values)
+                elif isinstance(value, list):
+                    extended_list = []
+                    for item in value:
+                        if item in additional_values:
+                            # Wrap values into a list and add an extra dictionary layer
+                            extended_list.append({item: [additional_values[item]['Value1'], additional_values[item]['Value2']]})
+                        else:
+                            extended_list.append(item)
+                    d[key] = extended_list
+
+        # Step 1: Filter the big dictionary
+        filtered_dict = filter_dict(big_dict, set(small_dict.keys()))
+
+        # Step 2: Extend the filtered dictionary
+        extend_dict(filtered_dict, small_dict)
+
+        return filtered_dict
+
+    @staticmethod
     def generate_list_plot(listplot): #ADD AN INPUT FILTER DICTIONARY
         # Generate the master dict of protein families
+
         data = list(listplot.keys())
-        names = list(Protein.objects.filter(entry_name__in=data).values_list('name', flat=True))
+        pairing = list(Protein.objects.filter(entry_name__in=data).values_list('name', 'entry_name'))
+        names = LandingPage.reassign_keys(listplot, pairing)
         families = ProteinFamily.objects.all()
         datatree = {}
         conversion = {}
@@ -141,7 +179,8 @@ class LandingPage(TemplateView):
 
         datatree2 = LandingPage.convert_keys(datatree, conversion)
         datatree2.pop('Parent family', None)
-        datatree3 = LandingPage.filter_dict(datatree2, names)
+        datatree3 = LandingPage.filter_and_extend_dict(datatree2, names)
+        # output = LandingPage.extend_nested_dict(datatree3)
         return datatree3
 
     @staticmethod
@@ -265,6 +304,92 @@ class LandingPage(TemplateView):
         return data_json
 
     @staticmethod
+    def clustering_test(method, data):
+        # Convert the nested dictionary to a DataFrame
+        data = {key.replace('_human', ''): value for key, value in data.items()}
+        data_df = pd.DataFrame(data).T
+        if 'Value1' in data_df.columns:
+            # Example usage
+            reduced_df = LandingPage.reduce_and_cluster(data_df, method=method)
+            # Prepare the data for visualization
+            data_json = reduced_df.to_json(orient='records')
+        else:
+            # Get the info of the plot
+            full_matrix = LandingPage.generate_full_matrix(method)
+            # Filter the original fill matrix based on what we use provided
+            reduced_input = full_matrix[full_matrix['label'].isin(list(data.keys()))]
+            data_df = pd.DataFrame(data).T
+            # Merge the dataframes
+            df_merged = pd.merge(reduced_input, data_df['Value2'], left_on='label', right_index=True, how='left')
+            df_merged.rename(columns={'Value2': 'fill'}, inplace=True)
+            # Prepare the data for visualization
+            data_json = df_merged.to_json(orient='records')
+
+        return data_json
+
+    @staticmethod
+    def generate_similarity(method):
+        similarity_matrix_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'GPCRdb_similaritymatrix.csv'])
+        # Convert the nested dictionary to a DataFrame
+        data = pd.read_csv(similarity_matrix_file)
+        data = data.drop(columns=['Unnamed: 424'])
+        cols = data['Unnamed: 0'].to_list()
+        cols.insert(0, 'receptor')
+        data.columns =  cols
+        data.set_index('receptor', inplace=True)
+        # data.index = data.index.str.replace('_human', '', regex=False)
+        data = data.replace('-', 0).astype(int)
+        data = data.fillna(0)
+        # data = data.fillna(0)
+        # Example usage
+        reduced_df = LandingPage.reduce_and_cluster(data, method=method, n_clusters=6)
+        reduced_df['label'] = reduced_df['label'].apply(lambda x: x.split('[Human] ')[1] if '[Human] ' in x else x)
+        # Prepare the data for visualization
+        data_json = reduced_df.to_json(orient='records')
+
+        return data_json
+
+    @staticmethod
+    def generate_full_matrix(method):
+        similarity_matrix_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'GPCRdb_similaritymatrix.csv'])
+        # Convert the nested dictionary to a DataFrame
+        data = pd.read_csv(similarity_matrix_file)
+        data = data.drop(columns=['Unnamed: 424'])
+        cols = data['Unnamed: 0'].to_list()
+        cols.insert(0, 'receptor')
+        data.columns =  cols
+        data.set_index('receptor', inplace=True)
+        # data.index = data.index.str.replace('_human', '', regex=False)
+        data = data.replace('-', 0).astype(int)
+        data = data.fillna(0)
+        # data = data.fillna(0)
+        # Example usage
+        reduced_df = LandingPage.reduce_and_cluster(data, method=method, n_clusters=6)
+        reduced_df['label'] = reduced_df['label'].apply(lambda x: x.split('[Human] ')[1] if '[Human] ' in x else x)
+        receptor_names = dict(Protein.objects.filter(species_id=1).values_list('name','entry_name').distinct())
+        reduced_df['label'] = reduced_df['label'].map(receptor_names)
+        reduced_df['label'] = reduced_df['label'].apply(lambda x: x.split('_human')[0] if '_human' in x else x)
+
+        return reduced_df
+
+    @staticmethod
+    def generate_identity(method):
+        identity_matrix_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'identity_matrix_full.csv'])
+        # Convert the nested dictionary to a DataFrame
+        data = pd.read_csv(identity_matrix_file)
+        data.columns = data.columns.str.replace('_human', '', regex=False)
+        data.set_index('receptor1_entry_name', inplace=True)
+        data.index = data.index.str.replace('_human', '', regex=False)
+        data = data.fillna(0)
+        # data = data.fillna(0)
+        # Example usage
+        reduced_df = LandingPage.reduce_and_cluster(data, method=method, n_clusters=6)
+        # Prepare the data for visualization
+        data_json = reduced_df.to_json(orient='records')
+
+        return data_json
+
+    @staticmethod
     def map_to_quartile(value, quartiles):
         if value <= quartiles[0.25]:
             return 10
@@ -320,7 +445,7 @@ class LandingPage(TemplateView):
                                 Sheet_Header_pass_check[0] = True
                             elif sheet_name == 'Phylogenetic Tree' and header_list == Phylogenetic_Tree_Header:
                                 Sheet_Header_pass_check[1] = True
-                            elif sheet_name == 'Cluster Analysis' and header_list[:5] == Cluster_Analysis_Header:
+                            elif sheet_name == 'Cluster Analysis': # and header_list[:1] == Cluster_Analysis_Header:
                                 Sheet_Header_pass_check[2] = True
                             elif sheet_name == 'List Plot' and header_list == List_Plot_Header:
                                 Sheet_Header_pass_check[3] = True
@@ -468,7 +593,7 @@ class LandingPage(TemplateView):
                                 elif sheet_name == 'Cluster Analysis':
 
                                     # Initialize dictionaries
-                                    data_types = [cell.value for cell in worksheet[2]]
+                                    data_types = [cell.value for cell in worksheet[3]]
                                     for key in header_list:
                                         Incorrect_values[sheet_name][key] = {}
                                     try:
@@ -476,7 +601,7 @@ class LandingPage(TemplateView):
                                         empty_sheet = True  # Initialize the flag
 
                                         # Iterate over rows starting from the second row (excluding the header row)
-                                        for row in worksheet.iter_rows(min_row=3, values_only=True):
+                                        for row in worksheet.iter_rows(min_row=4, values_only=True):
                                             # Check only the columns that have headers, skipping the first column
                                             if any(row[i] is not None for i, header in enumerate(header_list[1:], start=1) if header):
                                                 empty_sheet = False
@@ -487,7 +612,7 @@ class LandingPage(TemplateView):
                                         else:
 
                                             # Iterate through rows starting from the second row
-                                            for index, row in enumerate(worksheet.iter_rows(min_row=3, values_only=True), start=3):
+                                            for index, row in enumerate(worksheet.iter_rows(min_row=4, values_only=True), start=4):
                                                 # Check the "Receptor (Uniprot)" column for correct values
                                                 if row[0] not in protein_data:
                                                     Incorrect_values[sheet_name][header_list[0]][index] = '"{}" is a invalid entry'.format(row[0])
@@ -499,7 +624,7 @@ class LandingPage(TemplateView):
                                                     for col_idx, value in enumerate(row):
                                                         if col_idx == 0:
                                                             continue  # Skip the "Receptor (Uniprot)" column and completely empty columns #
-                                                        elif data_types[col_idx] not in ['Boolean','Number','Text']:
+                                                        elif data_types[col_idx] not in ['Boolean', 'Continuous', 'Text', 'Number', 'Discrete']:
                                                             Incorrect_values[sheet_name][header_list[col_idx]] = 'Incorrect datatype'
                                                         else:
                                                             if value is not None:
@@ -509,13 +634,13 @@ class LandingPage(TemplateView):
                                                                         Incorrect_values[sheet_name][header_list[col_idx]][index] = 'Non-Boolean Value'
                                                                     else:
                                                                         Data[sheet_name][row[0]]['Value{}'.format(col_idx)] = value
-                                                                elif data_types[col_idx] == 'Number':
+                                                                elif data_types[col_idx] in ['Number', 'Continuous']:
                                                                     try:
                                                                         float_value = float(value)
                                                                         Data[sheet_name][row[0]]['Value{}'.format(col_idx)] = float_value
                                                                     except ValueError:
                                                                         Incorrect_values[sheet_name][header_list[col_idx]][index] = 'Non-Number Value'
-                                                                elif data_types[col_idx] == 'Text':
+                                                                elif data_types[col_idx] in ['Text', 'Discrete']:
                                                                     if isinstance(value, str):
                                                                         Data[sheet_name][row[0]]['Value{}'.format(col_idx)] = value
                                                                     else:
@@ -792,8 +917,22 @@ class plotrender(TemplateView):
                 # Cluster analysis #
                 if Plot_evaluation[1]:
                     print("Cluster analysis")
-                    output = LandingPage.generate_cluster('umap', Data['Cluster Analysis'])
+                    output = LandingPage.clustering_test('umap', Data['Cluster Analysis'])
+                    print(output)
+                    similarity_umap = LandingPage.generate_similarity('umap')
+                    # similarity_tsne = LandingPage.generate_similarity('tsne')
+                    # similarity_pca = LandingPage.generate_similarity('pca')
+                    # identity_umap = LandingPage.generate_identity('umap')
+                    # identity_tsne = LandingPage.generate_identity('tsne')
+                    # identity_pca = LandingPage.generate_identity('pca')
+                    print(output)
                     context['cluster_data'] = output
+                    context['similarity_umap'] = similarity_umap
+                    # context['similarity_tsne'] = similarity_tsne
+                    # context['similarity_pca'] = similarity_pca
+                    # context['identity_umap'] = identity_umap
+                    # context['identity_tsne'] = identity_tsne
+                    # context['identity_pca'] = identity_pca
                     context['plot_type'] = 'UMAP'
 
                 # List plot #

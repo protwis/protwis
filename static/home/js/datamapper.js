@@ -196,22 +196,55 @@ function renderDataVisualization(data, location) {
     // Define drawItems function
     function drawItems(items, xOffset) {
         items.forEach(item => {
-            if (typeof item === 'object' && item.url && item.text) {
-                // Draw linkable item
-                const link = svg_home.append('a')
-                    .attr('xlink:href', item.url)
-                    .attr('target', '_blank');
-                link.append('text')
-                    .attr('x', xOffset)
-                    .attr('y', yOffset)
-                    .text(`- ${item.text}`);
-            } else {
-                // Draw regular item
-                svg_home.append('text')
-                    .attr('x', xOffset)
-                    .attr('y', yOffset)
-                    .text(`- ${item}`);
-            }
+            const key = Object.keys(item)[0];
+            const values = item[key];
+
+            // Draw item key
+            const textElement = svg_home.append('text')
+                .attr('x', xOffset)
+                .attr('y', yOffset)
+                .text(`- ${key}`);
+
+            // Get the width of the text element to adjust the xOffset for values
+            const keyWidth = textElement.node().getBBox().width;
+            let valueXOffset = xOffset + keyWidth + 10;
+
+            values.forEach(value => {
+                if (typeof value === 'string') {
+                    // Try to convert string to number
+                    const numericValue = parseFloat(value);
+                    if (!isNaN(numericValue)) {
+                        value = numericValue;
+                    }
+                }
+
+                if (typeof value === 'number') {
+                    // Numeric value
+                    svg_home.append('text')
+                        .attr('x', valueXOffset * 2.75)
+                        .attr('y', yOffset)
+                        .style('font-weight', 'bold')
+                        .text(`${value}`);
+                    valueXOffset += 5;
+                } else if (value === 'yes') {
+                    // Boolean yes
+                    svg_home.append('text')
+                        .attr('x', valueXOffset * 2.75)
+                        .attr('y', yOffset)
+                        .style('fill', 'green')
+                        .text(' ✓');
+                    valueXOffset += 5;
+                } else if (value === 'no') {
+                    // Boolean no
+                    svg_home.append('text')
+                        .attr('x', valueXOffset * 2.75)
+                        .attr('y', yOffset)
+                        .style('fill', 'red')
+                        .text(' ✗');
+                    valueXOffset += 5;
+                }
+            });
+
             yOffset += 20; // Increase Y offset for next item
         });
     }
@@ -245,11 +278,12 @@ function renderDataVisualization(data, location) {
     return svg_home;
 }
 
+// RENDER THE CLUSTER
 
 function renderClusterPlot(data, selector, method) {
     const width = 800;
     const height = 600;
-    const margin = { top: 80, right: 150, bottom: 50, left: 50 }; // Adjusted right margin for legend space
+    const margin = { top: 80, right: 150, bottom: 50, left: 50 };
 
     // Clear the previous plot
     d3.select(selector).html("");
@@ -285,13 +319,13 @@ function renderClusterPlot(data, selector, method) {
         .attr("id", d => "circle" + d.label.replace(/\[|\]|\(|\)|\s|\,|\'/g,""))
         .on("click", handleClick);
 
-    const labels = svg.selectAll(".text")
+    const labels = svg.selectAll(".label")
         .data(data)
         .enter().append("text")
+        .attr("class", "label")
         .attr("x", d => x(+d.x))
         .attr("y", d => y(+d.y))
         .attr("dy", -10)
-        .attr("class", "label")
         .attr("cluster", d => d.cluster)
         .text(d => d.label)
         .style("font-size", "11px")
@@ -301,52 +335,13 @@ function renderClusterPlot(data, selector, method) {
             handleClick.call(circles[0][i], d);
         });
 
-    // Function to check for label collisions and adjust positions
-    function avoidCollisions() {
-        const padding = 2; // Padding between labels
-        let iterations = 0;
-        let moved = true;
-
-        while (moved && iterations < 100) {
-            moved = false;
-            iterations++;
-
-            labels.each(function (d, i) {
-                const labelA = d3.select(this);
-                const bboxA = this.getBBox();
-
-                labels.each(function (d2, j) {
-                    if (i === j) return; // Skip comparing the label with itself
-
-                    const labelB = d3.select(this);
-                    const bboxB = this.getBBox();
-
-                    // Check for collision
-                    if (!(bboxA.x + bboxA.width < bboxB.x - padding ||
-                          bboxA.x - padding > bboxB.x + bboxB.width ||
-                          bboxA.y + bboxA.height < bboxB.y - padding ||
-                          bboxA.y - padding > bboxB.y + bboxB.height)) {
-
-                        // Calculate overlap
-                        const dx = bboxA.x + bboxA.width / 2 - (bboxB.x + bboxB.width / 2);
-                        const dy = bboxA.y + bboxA.height / 2 - (bboxB.y + bboxB.height / 2);
-
-                        const distance = Math.sqrt(dx * dx + dy * dy);
-                        const moveX = (dx / distance) * padding;
-                        const moveY = (dy / distance) * padding;
-
-                        labelA.attr("x", +labelA.attr("x") + moveX)
-                              .attr("y", +labelA.attr("y") + moveY);
-
-                        moved = true;
-                    }
-                });
-            });
-        }
-    }
-
-    // Call avoidCollisions to reposition labels
-    // avoidCollisions();
+    // Add leader lines from circles to labels
+    const lines = svg.selectAll(".line")
+        .data(data)
+        .enter().append("line")
+        .attr("class", "line")
+        .style("stroke", "black")
+        .style("stroke-width", 1);
 
     // Add title based on the method with more spacing
     svg.append("text")
@@ -355,6 +350,29 @@ function renderClusterPlot(data, selector, method) {
         .attr("text-anchor", "middle")
         .style("font-size", "20px")
         .text("Cluster Plot (" + method.toUpperCase() + ")");
+
+    // Add force simulation to spread out circles
+    const simulation = d3v4.forceSimulation(data)
+        .force("x", d3v4.forceX(d => x(d.x)).strength(1))
+        .force("y", d3v4.forceY(d => y(d.y)).strength(1))
+        .force("collide", d3.forceCollide(10)) // Set to twice the circle radius for spacing
+        .on("tick", ticked);
+
+    function ticked() {
+        circles
+            .attr("cx", d => d.x = Math.max(5, Math.min(width - 5, d.x))) // Prevent circles from going outside SVG
+            .attr("cy", d => d.y = Math.max(5, Math.min(height - 5, d.y))); // Prevent circles from going outside SVG
+
+        labels
+            .attr("x", d => d.x)
+            .attr("y", d => d.y - 10);
+
+        lines
+            .attr("x1", d => x(d.x))
+            .attr("y1", d => y(d.y))
+            .attr("x2", d => d.x)
+            .attr("y2", d => d.y - 10);
+    }
 
     // Function to handle click event
     function handleClick(d) {
@@ -369,6 +387,7 @@ function renderClusterPlot(data, selector, method) {
             selectedCluster = cluster;
             circles.style("opacity", 0.2);
             labels.style("opacity", 0.2);
+            lines.style("opacity", 0.2);
 
             circles.filter(c => c.cluster === cluster)
                 .style("opacity", 1)
@@ -377,7 +396,9 @@ function renderClusterPlot(data, selector, method) {
 
             labels.filter(c => c.cluster === cluster)
                 .style("opacity", 1);
-            //     .style("font-weight", "bold");
+
+            lines.filter(c => c.cluster === cluster)
+                .style("opacity", 1);
         }
     }
 
@@ -385,6 +406,7 @@ function renderClusterPlot(data, selector, method) {
     function resetOpacity() {
         circles.style("opacity", 1).style("stroke", "none").style("stroke-width", 0);
         labels.style("opacity", 1).style("font-weight", "normal");
+        lines.style("opacity", 1);
     }
 
     // Add an overlay to capture clicks outside circles
@@ -404,19 +426,13 @@ function renderClusterPlot(data, selector, method) {
         .attr("class", "legend")
         .attr("transform", (d, i) => `translate(${width - margin.right + 10},${i * 20})`)
         .on("click", function(d) {
-            // resetOpacity();
             selectedCluster = d;
             circles.style("opacity", 0.2);
-            // labels.style("opacity", 0.2);
 
             circles.filter(c => c.cluster === d)
                 .style("opacity", 1)
                 .style("stroke", "black")
                 .style("stroke-width", 2);
-
-            // labels.filter(c => c.cluster === d)
-            //     .style("opacity", 1);
-            //     .style("font-weight", "bold");
 
             d3.event.stopPropagation();
         });
@@ -432,6 +448,58 @@ function renderClusterPlot(data, selector, method) {
         .attr("y", 14)
         .text(d => `Cluster ${d}`)
         .style("font-size", "12px");
+
+    // Adjust label positions to prevent overlap
+    adjustLabelPositions(labels);
+}
+
+// Function to adjust label positions to prevent overlap
+function adjustLabelPositions(labels) {
+    const labelPadding = 2; // Padding between labels to avoid overlap
+    let iterations = 10; // Maximum iterations to adjust labels
+
+    while (iterations-- > 0) {
+        let overlaps = false;
+
+        labels.each(function() {
+            const label = d3.select(this);
+            const bbox = label.node().getBBox();
+
+            labels.each(function() {
+                const otherLabel = d3.select(this);
+                if (label.node() !== otherLabel.node()) {
+                    const otherBBox = otherLabel.node().getBBox();
+                    if (intersect(bbox, otherBBox)) {
+                        overlaps = true;
+                        const dx = (bbox.x + bbox.width / 2) - (otherBBox.x + otherBBox.width / 2);
+                        const dy = (bbox.y + bbox.height / 2) - (otherBBox.y + otherBBox.height / 2);
+
+                        const offset = labelPadding / Math.sqrt(dx * dx + dy * dy);
+                        const moveX = dx * offset;
+                        const moveY = dy * offset;
+
+                        label.attr("x", parseFloat(label.attr("x")) + moveX)
+                            .attr("y", parseFloat(label.attr("y")) + moveY);
+                        otherLabel.attr("x", parseFloat(otherLabel.attr("x")) - moveX)
+                            .attr("y", parseFloat(otherLabel.attr("y")) - moveY);
+
+                        bbox.x += moveX;
+                        bbox.y += moveY;
+                    }
+                }
+            });
+        });
+
+        if (!overlaps) break; // Stop if no overlaps found
+    }
+}
+
+// Function to check if two bounding boxes intersect
+function intersect(bbox1, bbox2) {
+    return !(bbox2.x > bbox1.x + bbox1.width ||
+             bbox2.x + bbox2.width < bbox1.x ||
+             bbox2.y > bbox1.y + bbox1.height ||
+             bbox2.y + bbox2.height < bbox1.y);
 }
 
 

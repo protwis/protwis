@@ -72,6 +72,11 @@
       align-items: center;
     }
 
+    #plotContainer_umap {
+        width: 800px; /* Set width */
+        height: 600px; /* Set height */
+        margin: auto; /* Center the plot */
+    }
 </style>
 <div class='col-md-12'>
   <br />
@@ -159,17 +164,38 @@
   {% if Plot_evaluation_json.1 %}
     <div id="tab2" class="tab-pane fade {% if first_active_tab == '#tab2' %}in active{% endif %}">
       <div style="padding-top: 10px; font-size: 11px; white-space: nowrap;">
-      <div style="padding-top: 5px;">
-        Plot label:
-          <div class="btn-group" role="group" id="gtp_plus">
-              <button id="show" class="btn btn-info active">Show</button>
-              <button id="hide" class="btn btn-info">Hide</button>
-          </div>
-      </div>
-      <div id="plotContainer" class="text-center">
+        <div style="padding-top: 5px;">
+          Color by:
+            <div class="btn-group" role="group" id="gtp_plus">
+              <button id="colorByCluster" class="btn btn-info active">Cluster</button>
+              <button id="colorByGradient" class="btn btn-info">Gradient</button>
+            </div>
+        </div>
+        <div style="padding-top: 5px;">
+          Plot labels:
+            <div class="btn-group" role="group" id="gtp_plus">
+                <button id="show" class="btn btn-info active">Show</button>
+                <button id="hide" class="btn btn-info">Hide</button>
+            </div>
+        </div>
+
+      <!-- Container for the Plotly Plot -->
+      <div id="plotContainer_umap" style="width: 800px; height: 600px;"></div>
+
         <br />
           <br />
-            <h4>Cluster Plot</h4>
+          <br />
+        <br />
+      </div>
+      <div id="plotContainer_tsne" class="text-center">
+        <br />
+          <br />
+          <br />
+        <br />
+      </div>
+      <div id="plotContainer_pca" class="text-center">
+        <br />
+          <br />
           <br />
         <br />
       </div>
@@ -210,10 +236,12 @@
 {% block addon_js %}
 <script src="{% static 'home/js/d3.min.js' %}"></script>
 <script src="{% static 'home/js/nv.d3.min.js' %}"></script>
+<!-- <script src="{% static 'home/js/d3v4.min.js' %}"></script> -->
 <script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
 <script src="{% static 'home/js/saveSvg.js' %}"></script>
 <script src="{% static 'home/js/phylo_tree.js' %}"></script>
 <script src="{% static 'home/js/datamapper.js' %}"></script>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 
 {% if Plot_evaluation_json.0 %}
   <script type="text/javascript" charset="utf-8">
@@ -253,21 +281,226 @@
 <script>
 $(document).ready(function() {
     var cluster_data = {{ cluster_data|safe }};
+    var similarity_umap = {{ similarity_umap|safe }};
+    // var similarity_tsne = {{ similarity_tsne|safe }};
+    // var similarity_pca = {{ similarity_pca|safe }};
+    // var identity_umap = {{ identity_umap|safe }};
+    // var identity_tsne = {{ identity_tsne|safe }};
+    // var identity_pca = {{ identity_pca|safe }};
     var cluster_plot = "{{ plot_type }}";
-    // console.log(cluster_data);
-    renderClusterPlot(cluster_data, "#plotContainer", cluster_plot);
+    // renderClusterPlot(similarity_umap, "#plotContainer_umap", 'UMAP');
+    // renderClusterPlot(similarity_umap, "#plotContainer_tsne", 'Similarity UMAP');
+    // renderClusterPlot(identity_umap, "#plotContainer_pca", 'Identity UMAP');
+    // renderClusterPlot(cluster_data, "#plotContainer_umap", 'UMAP');
 
-    $("#show").click(function() {
-        $("#show").addClass("active");
-        $("#hide").removeClass("active");
-        d3.selectAll(".label").style("opacity", 1);
+    // Predefined color palette
+    const colorPalette = [
+        '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd',
+        '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'
+    ];
+
+    // Assign colors to clusters based on a modulo operation
+    const uniqueClusters = [...new Set(cluster_data.map(d => d.cluster))];
+    const clusterColorMap = Object.fromEntries(uniqueClusters.map((cluster, i) => [cluster, colorPalette[i % colorPalette.length]]));
+
+    const colorByCluster = cluster_data.map(d => clusterColorMap[d.cluster]);
+    const colorByGradient = cluster_data.map(d => d.fill); // Assuming 'value' is the field for gradient
+
+    const textPositions = ['middle left', 'top left', 'bottom left', 'top right', 'bottom right', 'middle right'];
+
+    // Function to create traces based on coloring option and label visibility
+    function createTraces(colorOption, showLabels) {
+        if (colorOption === colorByCluster) {
+            // Create a separate trace for each cluster
+            return uniqueClusters.flatMap(cluster => {
+                const clusterData = cluster_data.filter(d => d.cluster === cluster);
+                const markerTrace = {
+                    x: clusterData.map(d => d.x),
+                    y: clusterData.map(d => d.y),
+                    mode: 'markers',
+                    type: 'scatter',
+                    hoverinfo: 'none', // No hover info for legend markers
+                    marker: {
+                        size: 10,
+                        symbol: 'circle',
+                        color: clusterColorMap[cluster]
+                    },
+                    name: "Cluster " + cluster // Use cluster name for legend
+                };
+
+                const textTrace = showLabels ? {
+                    x: clusterData.map(d => d.x),
+                    y: clusterData.map(d => d.y),
+                    mode: 'text',
+                    type: 'scatter',
+                    text: clusterData.map(d => d.label),
+                    textposition: clusterData.map((_, i) => textPositions[i % textPositions.length]),
+                    textfont: {
+                        size: 12,
+                        color: 'black'
+                    },
+                    hoverinfo: 'none', // No hover info for text
+                    showlegend: false // Hide text trace from legend
+                } : [];
+
+                return showLabels ? [markerTrace, textTrace] : [markerTrace];
+            });
+        } else {
+            // Create a single trace for gradient coloring
+            const markerTrace = {
+                x: cluster_data.map(d => d.x),
+                y: cluster_data.map(d => d.y),
+                mode: 'markers',
+                type: 'scatter',
+                marker: {
+                    size: 10,
+                    symbol: 'circle',
+                    color: cluster_data.map(d => d.fill), // Assuming 'fill' is the gradient value
+                    coloraxis: 'coloraxis'
+                },
+                hoverinfo: 'none', // No hover info for legend markers
+                showlegend: false // Hide marker trace from legend, as we'll use a color bar
+            };
+
+            const textTrace = showLabels ? {
+                x: cluster_data.map(d => d.x),
+                y: cluster_data.map(d => d.y),
+                mode: 'text',
+                type: 'scatter',
+                text: cluster_data.map(d => d.label),
+                textposition: cluster_data.map((_, i) => textPositions[i % textPositions.length]),
+                textfont: {
+                    size: 12,
+                    color: 'black'
+                },
+                hoverinfo: 'none', // No hover info for text
+                showlegend: false // Hide text trace from legend
+            } : [];
+
+            // Determine the range of 'd.fill'
+            const fillValues = cluster_data.map(d => d.fill);
+            const minFill = Math.min(...fillValues);
+            const maxFill = Math.max(...fillValues);
+            const tickStep = (maxFill - minFill) / 3;
+            const ticks = Array.from({ length: 4 }, (_, i) => minFill + i * tickStep);
+
+            const colorBarTrace = {
+                x: [null], // Dummy data for the legend entry
+                y: [null], // Dummy data for the legend entry
+                mode: 'markers',
+                type: 'scatter',
+                marker: {
+                    size: 0, // No marker visible
+                    colorbar: {
+                        titleside: 'right',
+                        thickness: 20,
+                        len: 0.5, // Adjust length as needed
+                        tickvals: ticks, // Calculated tick values
+                        ticktext: ticks.map(t => t.toFixed(1)), // Tick labels
+                    },
+                    colorscale: 'RdBu', // Red to Blue through White color scale
+                    showscale: true // Show the color scale
+                },
+                showlegend: false // Hide this trace itself from legend
+            };
+
+            return showLabels ? [markerTrace, textTrace, colorBarTrace] : [markerTrace, colorBarTrace];
+        }
+    }
+
+
+    // Function to update plot based on active buttons
+    function updatePlot() {
+        // Determine active color option
+        const colorOption = document.getElementById('colorByCluster').classList.contains('active') ? colorByCluster : colorByGradient;
+
+        // Determine label visibility
+        const showLabels = document.getElementById('show').classList.contains('active');
+
+        // Create traces with current settings
+        const traces = createTraces(colorOption, showLabels);
+
+        // Update the layout ticks for the color axis
+        if (colorOption !== colorByCluster) {
+            const fillValues = cluster_data.map(d => d.fill);
+            const minFill = Math.min(...fillValues);
+            const maxFill = Math.max(...fillValues);
+            const tickStep = (maxFill - minFill) / 3;
+            const ticks = Array.from({ length: 4 }, (_, i) => minFill + i * tickStep);
+
+            layout.coloraxis.colorbar.tickvals = ticks;
+            layout.coloraxis.colorbar.ticktext = ticks.map(t => t.toFixed(1));
+        }
+
+        // Update the plot
+        Plotly.react('plotContainer_umap', traces, layout);
+    }
+
+    // Initial trace and layout
+    const initialTraces = createTraces(colorByCluster, true);
+
+    const layout = {
+        title: 'Cluster Plot with Adjusted Labels',
+        xaxis: {
+            visible: false,
+            showgrid: false,
+        },
+        yaxis: {
+            visible: false,
+            showgrid: false,
+        },
+        hovermode: 'closest',
+        showlegend: true,
+        plot_bgcolor: '#FFFFFF',
+        autosize: false,
+        width: 800,
+        height: 600,
+        coloraxis: {
+            colorscale: 'RdBu', // Ensure consistent color scale
+            colorbar: {
+                thickness: 20,
+                len: 0.5,
+                title: {
+                    text: 'Gradient',
+                    side: 'right'
+                },
+                tickvals: [0, 10, 20, 30], // Example values; these will be dynamically set by createTraces
+                ticktext: ['0', '10', '20', '30'] // Example text; adjust as per your data
+            }
+        }
+    };
+
+
+
+    // Plotly plotting
+    Plotly.newPlot('plotContainer_umap', initialTraces, layout);
+
+    // Event listeners to switch between coloring options
+    document.getElementById("colorByCluster").addEventListener("click", function() {
+        document.getElementById("colorByCluster").classList.add("active");
+        document.getElementById("colorByGradient").classList.remove("active");
+        updatePlot();
     });
 
-    $("#hide").click(function() {
-        $("#show").removeClass("active");
-        $("#hide").addClass("active");
-        d3.selectAll(".label").style("opacity", 0);
+    document.getElementById("colorByGradient").addEventListener("click", function() {
+        document.getElementById("colorByCluster").classList.remove("active");
+        document.getElementById("colorByGradient").classList.add("active");
+        updatePlot();
     });
+
+    // Event listeners to show/hide labels
+    document.getElementById("show").addEventListener("click", function() {
+        document.getElementById("show").classList.add("active");
+        document.getElementById("hide").classList.remove("active");
+        updatePlot();
+    });
+
+    document.getElementById("hide").addEventListener("click", function() {
+        document.getElementById("show").classList.remove("active");
+        document.getElementById("hide").classList.add("active");
+        updatePlot();
+    });
+
 });
 </script>
 {% endif %}
@@ -275,8 +508,71 @@ $(document).ready(function() {
 {% if Plot_evaluation_json.2 %}
 <script>
   var listdata = {{ listplot_data|safe }};
-  console.log(listdata);
-  renderDataVisualization(listdata, 'ListPlot');
+  const data = {
+      'Class A (Rhodopsin)': {
+          'Aminergic receptors': {
+              '5-Hydroxytryptamine receptors': [
+                  { '5-HT<sub>1A</sub> receptor': ['Yes', 1.0] },
+                  { '5-HT<sub>1B</sub> receptor': ['no', 2.0] },
+                  { '5-HT<sub>1D</sub> receptor': ['no', 3.0] }
+              ]
+          },
+          'Peptide receptors': {
+              'Formylpeptide receptors': [
+                  { 'FPR2/ALX': ['yes', 4.0] }
+              ]
+          },
+          'Protein receptors': {
+              'Chemokine receptors': [
+                  { 'CXCR5': ['yes', 4.0] },
+                  { 'ACKR3': ['yes', 4.0] }
+              ],
+              'Glycoprotein hormone receptors': [
+                  { 'FSH receptor': ['yes', 4.0] }
+              ]
+          },
+          'Lipid receptors': {
+              'Lysophospholipid (LPA) receptors': [
+                  { 'LPA<sub>5</sub> receptor': ['yes', 4.0] }
+              ]
+          },
+          'Steroid receptors': {
+              'Bile acid receptors': [
+                  { 'GPBA receptor': ['yes', 4.0] }
+              ]
+          },
+          'Olfactory receptors': {
+              'Olfactory': [
+                  { 'Olfactory receptor 51L1': ['yes', 4.0] }
+              ]
+          },
+          'Orphan receptors': {
+              'Class A orphans': [
+                  { '<i>GPR15</i>': ['yes', 4.0] }
+              ]
+          }
+      },
+      'Class B1 (Secretin)': {
+          'Peptide receptors': {
+              'Glucagon receptor family': [
+                  { 'glucagon receptor': ['yes', 4.0] }
+              ]
+          }
+      },
+      'Class B2 (Adhesion)': {
+          'Adhesion receptors': [
+              { 'ADGRG5': ['yes', 4.0] }
+          ]
+      },
+      'Class T (Taste 2)': {
+          'Sensory receptors': {
+              'Taste 2 receptors': [
+                  { '<i>TAS2R60</i>': ['yes', 4.0] }
+              ]
+          }
+      }
+  };
+  renderDataVisualization(data, 'ListPlot');
 </script>
 {% endif %}
 
