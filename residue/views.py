@@ -151,6 +151,9 @@ class ResidueTablesDisplay(TemplateView):
 
         # check rendering
         context = self.get_context_data(**kwargs)
+        if not context:
+            ### FIXME redirect to start page with error message stored in session
+            return HttpResponse('Error: we could not find receptors with the current Species and Source setttings. Please retry with adjusting those settings.')
         return render(request, self.template_name, context)
 
     def get_context_data(self, **kwargs):
@@ -197,6 +200,9 @@ class ResidueTablesDisplay(TemplateView):
                         signalling_data = self.checkOrigin(fp)
                         origin_checked = True
 
+                if len(family_proteins)!=0:
+                    origin_checked = True
+
             longest_name = 0
             species_list = {}
             for protein in proteins:
@@ -213,6 +219,9 @@ class ResidueTablesDisplay(TemplateView):
 
                 if len(re.sub('<[^>]*>', '', protein.name)+" "+name)>longest_name:
                     longest_name = len(re.sub('<[^>]*>', '', protein.name)+" "+name)
+
+        if not origin_checked:
+            return False
 
         # get the selection from session
         selection = Selection()
