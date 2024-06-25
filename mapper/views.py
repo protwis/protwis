@@ -159,8 +159,12 @@ class LandingPage(TemplateView):
         # Generate the master dict of protein families
 
         data = list(listplot.keys())
-        pairing = list(Protein.objects.filter(entry_name__in=data).values_list('name', 'entry_name'))
-        names = LandingPage.reassign_keys(listplot, pairing)
+        names = list(Protein.objects.filter(entry_name__in=data).values_list('name', flat=True))
+        # Names conversion dict
+        names_dict = Protein.objects.filter(entry_name__in=data).values('entry_name', 'name').order_by('entry_name')
+        names_conversion_dict = {item['entry_name']: item['name'] for item in names_dict}
+        IUPHAR_to_uniprot_dict = {item['name']: item['entry_name'] for item in names_dict}
+
         families = ProteinFamily.objects.all()
         datatree = {}
         conversion = {}
@@ -177,11 +181,13 @@ class LandingPage(TemplateView):
             if len(item.slug) == 15 and item.slug not in datatree[item.slug[:3]][item.slug[:7]][item.slug[:11]]:
                 datatree[item.slug[:3]][item.slug[:7]][item.slug[:11]].append(item.name)
 
+
         datatree2 = LandingPage.convert_keys(datatree, conversion)
         datatree2.pop('Parent family', None)
-        datatree3 = LandingPage.filter_and_extend_dict(datatree2, names)
-        # output = LandingPage.extend_nested_dict(datatree3)
-        return datatree3
+        datatree3 = LandingPage.filter_dict(datatree2, names)
+        data_converted = {names_conversion_dict[key]: value for key, value in listplot.items()}
+        Data_full = {"NameList": datatree3, "DataPoints": data_converted, "LabelConversionDict":IUPHAR_to_uniprot_dict}
+        return Data_full
 
     @staticmethod
     def generate_tree_plot(input_data): #ADD AN INPUT FILTER DICTIONARY
@@ -433,7 +439,7 @@ class LandingPage(TemplateView):
                         # Sheets and headers #
                         Phylogenetic_Tree_Header = ['Receptor (Uniprot)', '1. Feature (Inner cicle)', '2. Order (Outer cicle 1)',	'3. Order (Outer cicle 2)',	'4. Order (Outer cicle 3)', '5. Order (Outer cicle 4)',	'6. Order (Outer cicle 5)']
                         Cluster_Analysis_Header = ['Receptor (Uniprot)','Feature 1','Feature 2','Feature 3','Feature 4']
-                        List_Plot_Header = ['Receptor (Uniprot)','Feature 1','Feature 2']
+                        List_Plot_Header = ['Receptor (Uniprot)']
                         Heatmap_Header = ['Receptor (Uniprot)','Feature 1','Feature 2','Feature 3','Feature 4','Feature 5']
                         Sheet_Header_pass_check = [False,False,False,False,False]
 
@@ -443,13 +449,13 @@ class LandingPage(TemplateView):
                             header_list = [cell.value for cell in worksheet[1]]
                             if sheet_name == 'Info':
                                 Sheet_Header_pass_check[0] = True
-                            elif sheet_name == 'Phylogenetic Tree' and header_list == Phylogenetic_Tree_Header:
+                            elif sheet_name == 'Phylogenetic Tree':
                                 Sheet_Header_pass_check[1] = True
-                            elif sheet_name == 'Cluster Analysis': # and header_list[:1] == Cluster_Analysis_Header:
+                            elif sheet_name == 'Cluster Analysis':
                                 Sheet_Header_pass_check[2] = True
-                            elif sheet_name == 'List Plot' and header_list == List_Plot_Header:
+                            elif sheet_name == 'List Plot':
                                 Sheet_Header_pass_check[3] = True
-                            elif sheet_name == 'Heatmap' and header_list == Heatmap_Header:
+                            elif sheet_name == 'Heatmap':
                                 Sheet_Header_pass_check[4] = True
                             else:
                                 pass
@@ -675,6 +681,12 @@ class LandingPage(TemplateView):
 
                                     # Initialize dictionaries
                                     data_types = [cell.value for cell in worksheet[2]]
+                                    Data['Datatypes'] = {}
+                                    Data['Datatypes']['Listplot'] = {}
+                                    Data['Datatypes']['Listplot']['Col1'] = data_types[2]
+                                    Data['Datatypes']['Listplot']['Col2'] = data_types[4]
+                                    Data['Datatypes']['Listplot']['Col3'] = data_types[6]
+                                    Data['Datatypes']['Listplot']['Col4'] = data_types[8]
                                     for key in header_list:
                                         Incorrect_values[sheet_name][key] = {}
                                     try:
@@ -693,7 +705,9 @@ class LandingPage(TemplateView):
                                             # Iterate through rows starting from the second row
                                             for index, row in enumerate(worksheet.iter_rows(min_row=3, values_only=True), start=3):
                                                 # Check the "Receptor (Uniprot)" column for correct values
-                                                if row[0] not in protein_data:
+                                                if row[0] is None:
+                                                    continue
+                                                elif row[0] not in protein_data:
                                                     Incorrect_values[sheet_name][header_list[0]][index] = '"{}" is a invalid entry'.format(row[0])
                                                 else:
                                                     if row[0] not in Data[sheet_name]:
@@ -703,7 +717,7 @@ class LandingPage(TemplateView):
                                                     for col_idx, value in enumerate(row):
                                                         if col_idx == 0:
                                                             continue  # Skip the "Receptor (Uniprot)" column and completely empty columns #
-                                                        elif data_types[col_idx] not in ['Boolean','Number']:
+                                                        elif data_types[col_idx] not in ['Boolean','Number','Discrete','Continuous','Text']:
                                                             Incorrect_values[sheet_name][header_list[col_idx]] = 'Incorrect datatype'
                                                         else:
                                                             if value is not None:
@@ -713,12 +727,14 @@ class LandingPage(TemplateView):
                                                                         Incorrect_values[sheet_name][header_list[col_idx]][index] = 'Non-Boolean Value'
                                                                     else:
                                                                         Data[sheet_name][row[0]]['Value{}'.format(col_idx)] = value
-                                                                elif data_types[col_idx] == 'Number':
+                                                                elif data_types[col_idx] == 'Number' or data_types[col_idx] == 'Continuous':
                                                                     try:
                                                                         float_value = float(value)
                                                                         Data[sheet_name][row[0]]['Value{}'.format(col_idx)] = float_value
                                                                     except ValueError:
                                                                         Incorrect_values[sheet_name][header_list[col_idx]][index] = 'Non-Number Value'
+                                                                elif data_types[col_idx] == 'Discrete' or data_types[col_idx] == 'Text':
+                                                                    Data[sheet_name][row[0]]['Value{}'.format(col_idx)] = value
                                                                 else:
                                                                     pass
                                                             else:
@@ -825,6 +841,8 @@ class LandingPage(TemplateView):
                                     plot_data[plot_name] = Data[plot_name]
                                 elif plot_status == 'Failed':
                                     plot_incorrect_data[plot_name] = Incorrect_values[plot_name]
+
+                            plot_data['Datatypes'] = Data['Datatypes']
 
                             plot_data_json = json.dumps(plot_data, indent=4, sort_keys=True) if plot_data else None
                             plot_incorrect_data_json = json.dumps(plot_incorrect_data, indent=4, sort_keys=True) if plot_incorrect_data else None
@@ -939,8 +957,10 @@ class plotrender(TemplateView):
                 if Plot_evaluation[2]:
                     print("List plot analysis")
                     listplot_data = LandingPage.generate_list_plot(Data['List Plot'])
-                    print(listplot_data)
-                    context['listplot_data'] = json.dumps(listplot_data)
+                    context['listplot_data'] = json.dumps(listplot_data["NameList"])
+                    context['listplot_data_variables'] = json.dumps(listplot_data['DataPoints'])
+                    context['Label_Conversion'] = json.dumps(listplot_data['LabelConversionDict'])
+                    context['listplot_datatypes'] = json.dumps(Data['Datatypes'])
                 # Heatmap #
                 if Plot_evaluation[3]:
                     print("Heatmap analysis")

@@ -5,6 +5,8 @@
 <link rel="stylesheet" href="{% static 'home/css/nv.d3.min.css' %}" type="text/css" />
 <link rel="stylesheet" href="{% static 'home/css/nvd3-update.css' %}" type="text/css" />
 <link href="{% static 'home/css/bootstrap-responsive.css' %}" rel="stylesheet" media="screen">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/spectrum/1.8.1/spectrum.min.css" />
+
 
 {% endblock %}
 
@@ -77,6 +79,42 @@
         height: 600px; /* Set height */
         margin: auto; /* Center the plot */
     }
+    .hidden {
+        display: none;
+    }
+
+    .color-picker {
+      display: flex;
+      align-items: center;
+    }
+    .color-box {
+      width: 20px;
+      height: 20px;
+      margin-right: 10px;
+      border: 1px solid #000;
+    }
+
+  /* Style adjustments for better visibility */
+  .custom-control-label {
+      cursor: pointer;
+    }
+    .dropdown-menu-listplot {
+      background-color: rgba(255, 255, 255, 1); /* Slightly transparent white background */
+      max-height: 300px; /* Maximum height of the dropdown menu */
+      overflow-y: auto; /* Enable vertical scrolling if needed */
+      left: 25%; /* Ensures the dropdown opens to the right */
+      top: 50%; /* Adjust this value to align the dropdown vertically in the middle */
+      transform: translateY(-50%); /* Center align vertically */
+      margin-left: 10px; /* Add some space between the button and the dropdown */
+    }
+    .dropdown-menu-right-middle {
+      left: 75%;
+      top: 50%;
+      transform: translateY(-50%);
+      margin-left: 10px; /* Add some space between the button and the dropdown */
+      width: 100px !important;
+    }
+
 </style>
 <div class='col-md-12'>
   <br />
@@ -187,18 +225,8 @@
           <br />
         <br />
       </div>
-      <div id="plotContainer_tsne" class="text-center">
-        <br />
-          <br />
-          <br />
-        <br />
-      </div>
-      <div id="plotContainer_pca" class="text-center">
-        <br />
-          <br />
-          <br />
-        <br />
-      </div>
+      <div id="plotContainer" class="text-center"></div>
+
       </div>
     </div>
   {% endif %}
@@ -206,14 +234,245 @@
   {% if Plot_evaluation_json.2 %}
     <div id="tab3" class="tab-pane fade {% if first_active_tab == '#tab3' %}in active{% endif %}">
       <div style="padding-top: 10px; font-size: 11px; white-space: nowrap;"></div>
-      <div id="ListPlot" class="text-center">
-        <br />
-          <br />
-            <h4>List Plot</h4>
-          <br />
-        <br />
+      <!-- ############ -->
+      <!-- ## Layout ## -->
+      <!-- ############ -->
+      <div class="col-md-8" style="margin-top: 30px;">
+        <div class="col-md-2" style="margin-left: 10px;margin-right: -40px;">
+          <div class="dropdown">
+            <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              Layout
+            </button>
+            <div class="dropdown-menu dropdown-menu-listplot" style="margin-left: 50px;" aria-labelledby="dropdownMenuButton">
+              <div class="col-md-12" style="width:400px;margin-top: 20px;margin-bottom: 20px;text-align: center;">
+                <div class="col-md-6" style="padding-left:0;padding-right:0;">
+                  <select id="Layout_Column_Selector" class="form-select" style="height: 30px;width: 180px;font-size: 14px;" aria-label="Default select example">
+                  <option value="1" selected>1 column</option>
+                  <option value="2">2 columns</option>
+                  <option value="3">3 columns</option>
+                  <option value="4">4 columns</option>
+                </select>
+                </div>
+                <div class="col-md-6" style="padding-left:0;padding-right:0;">
+                    <select id="Layout_Column_Breaker" class="form-select" style="height: 30px;width: 160px;font-size: 14px;" aria-label="Default select example">
+                    <option value="Layer1">Layer 1</option>
+                    <option value="Layer2">Layer 2</option>
+                    <option value="Layer3">Layer 3</option>
+                    <option value="Layer4">Layer 4</option>
+                    <option value="Custom" selected>Custom</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col-md-12" style="text-align: center;">
+                <label>Max label number per columns</label>
+              </div>
+              <div class="col-md-12" style="margin-bottom: 20px;text-align: center;">
+                <select id="Layout_Max_Label" class="form-select" style="height: 30px;width: 180px;font-size: 14px;" aria-label="Default select example">
+                  <option selected>Auto</option>
+                  <option value="Custom">Custom</option>
+                </select>
+              <input type="number" id="Layout_Max_Label_input" name="Layout_Max_Label_input" step="1" min="1" style="height: 30px;width: 60px;font-size: 14px;">
+              </div>
+              <!-- Render Plot Button -->
+              <div class="text-center"  style="margin-bottom: 20px;margin-top: 30px;">
+                <button id="RenderLayoutButton_Layout" type="button" class="btn btn-primary" style="font-size: 18px;">Render List</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- ################## -->
+        <!-- ## Levels Button ## -->
+         <!-- ################## -->
+        <div class="col-md-2" style="margin-left: 10px;margin-right: -40px;">
+          <div class="dropdown" style="width: 100px !important;">
+            <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              Levels
+            </button>
+            <div class="dropdown-menu dropdown-menu-listplot" style="left: 60%"  aria-labelledby="dropdownMenuButton">
+              <div class="col-md-12" style="text-align: left;font-size: 16px;">Set visible levels
+                <div class="col-md-12" style="padding-top: 10px;">
+                  <div class="custom-checkbox">
+                    <input type="checkbox" class="custom-control-input" id="toggle-layer-1" checked>
+                    <label class="custom-control-label" for="toggle-layer-1" style="margin-left: 5px;font-size: 16px;">Display Class</label>
+                  </div>
+                </div>
+                <div class="col-md-12"  style="padding-top: 10px;">
+                  <div class="custom-checkbox">
+                    <input type="checkbox" class="custom-control-input" id="toggle-layer-2" checked>
+                    <label class="custom-control-label" for="toggle-layer-2">Display ligand type</label>
+                  </div>
+                </div>
+                <div class="col-md-12"  style="padding-top: 10px;">
+                  <div class="custom-checkbox">
+                    <input type="checkbox" class="custom-control-input" id="toggle-layer-3" checked>
+                    <label class="custom-control-label" for="toggle-layer-3">Display receptor family</label>
+                  </div>
+                </div>
+                <div class="col-md-12"  style="padding-top: 10px;">
+                  <div class="custom-checkbox">
+                    <input type="checkbox" class="custom-control-input" id="toggle-layer-4" checked>
+                    <label class="custom-control-label" for="toggle-layer-4">Display receptor</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ############### -->
+        <!-- ### Label Styling ###  -->
+         <!-- ############### -->
+        <div class="col-md-2" style="margin-left: 10px;margin-right: -10px;">
+          <div class="dropdown" style="width: 400px !important;">
+            <button class="btn btn-primary dropdown-toggle" type="button" id="Styling_Menu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              Label Styling
+            </button>
+            <div class="dropdown-menu dropdown-menu-listplot" aria-labelledby="Styling_Menu">
+              <!-- Layer Selector Dropdown -->
+              <div class="col-md-12" style="width:300px;margin-top: 20px;margin-bottom: 20px;">
+                <div class="col-md-6" style="padding-left:0;padding-right:0;">
+                  <select id="Styling_layerSelector" class="form-select" style="height: 30px;width: 120px;font-size: 14px;" aria-label="Default select example" onchange="updateMax()">
+                    <option value="Layer1" selected>Class</option>
+                    <option value="Layer2">Ligand type</option>
+                    <option value="Layer3">Receptor family</option>
+                    <option value="Layer4">Receptor</option>
+                  </select>
+                </div>
+
+                <!-- Color Selector Dropdown -->
+                <div class="col-md-6">
+                  <div class="color-picker">
+                    <input type="text" id="colorPicker_LabelStyling"/>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-12" style="width:300px;margin-top: 20px;margin-bottom: 20px;">
+                <!-- Bold Checkbox -->
+                <div class="form-check col-md-4" style="padding-left:0;padding-right:0;">
+                  <input class="form-check-input" type="checkbox" value="" id="boldCheckbox">
+                  <label class="form-check-label" for="boldCheckbox">
+                    Bold
+                  </label>
+                </div>
+
+                <!-- Italic Checkbox -->
+                <div class="form-check col-md-4" style="padding-left:0;padding-right:0;">
+                  <input class="form-check-input" type="checkbox" value="" id="italicCheckbox">
+                  <label class="form-check-label" for="italicCheckbox">
+                    Italic
+                  </label>
+                </div>
+
+                <!-- Underline Checkbox -->
+                <div class="form-check col-md-4" style="padding-left:0;padding-right:0;">
+                  <input class="form-check-input" type="checkbox" value="" id="underlineCheckbox">
+                  <label class="form-check-label" for="underlineCheckbox">
+                    Underline
+                  </label>
+                </div>
+              </div>
+              <!-- Font Size Slider -->
+              <div class="col-md-12" style="text-align: center;">
+                <label for="fontSizeSliderValue" id="fontSizeSliderLabel" class="form-label">Font Size: 16px</label>
+              </div>
+              <div class="col-md-12" style="margin-bottom: 30px;">
+                <input type="range" class="form-range" min="8" max="32" id="fontSizeSlider">
+              </div>
+              <!-- Render Plot Button -->
+              <div class="text-center" style="margin-bottom: 20px;">
+                <button id="renderPlotButton" type="button" class="btn btn-primary" style="font-size: 18px;">Render List</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- ##################### -->
+        <!-- ##  Data styling   ## -->
+        <!-- ##################### -->
+        <div class="col-md-2" style="margin-left: 20px;margin-right: -20px;">
+          <div class="dropdown" style="width: 450px !important;">
+            <button class="btn btn-primary dropdown-toggle" type="button" id="Data_Styling_Menu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              Data Styling
+            </button>
+            <div class="dropdown-menu dropdown-menu-listplot" style="margin-left: -8px;" aria-labelledby="Data_Styling_Menu">
+              <!-- Data Selector Dropdown -->
+              <div class="col-md-12" style="width:400px;margin-top: 20px;margin-bottom: 10px;">
+                <div class="col-md-6" style="padding-left:0;padding-right:0;">
+                  <select id="Data_Styling_Selector" class="form-select" style="height: 35px;width: 130px;font-size: 14px;" onchange="updateColorComplexityDropdown()">
+                    <option value="Select Data" selected>Select Data</option>
+                  </select>
+                </div>
+                <div class="col-md-6" style="padding-left:0;padding-right:0;margin-left: -20px;">
+                </div>
+              </div>
+              <div class="col-md-12" style="width:400px;margin-top: 10px;margin-bottom: 10px;">
+                <div class="col-md-6" style="padding-left:0;padding-right:0;">
+                  <select id="ColorComplexityDropdown" style="display: none;height: 35px;width: 130px;font-size: 14px;" onchange="updateColorDropdowns()">
+                    <option value="One" selected>One Color</option>
+                    <option value="Two">Two Colors</option>
+                  </select>
+                </div>
+                <div class="col-md-6" style="padding-left:0;padding-right:0;margin-left: -20px;">
+                  <div class="color-picker" id="OneColor_DataStyling_container" style="display: none;height: 35px;width: 130px;font-size: 14px;">
+                    <input type="text" id="OneColor_DataStyling"/>
+                  </div>
+                </div>
+                <div class="col-md-6" style="padding-left:0;padding-right:0;">
+                  <div class="col-md-3" style="padding-left:0;padding-right:0px;margin-left: -20px;margin-right: 20px;">
+                    <div class="color-picker" id="TwoColor_DataStyling_One_container" style="display: none;height: 35px;width: 130px;font-size: 14px;">
+                      <input type="text" id="TwoColor_DataStyling_one"/>
+                    </div>
+                  </div>
+                  <div class="col-md-3" style="padding-left:0;padding-right:0;margin-left: 20px;">
+                    <div class="color-picker" id="TwoColor_DataStyling_Two_container" style="display: none;height: 35px;width: 130px;font-size: 14px;">
+                      <input type="text" id="TwoColor_DataStyling_two"/>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-12" style="width:400px;margin-top: 15px;margin-bottom: 15px;">
+                <!-- Render Plot Button -->
+                <div class="text-center" style="margin-bottom: 15px;">
+                  <button id="DataStyling_renderPlotButton" type="button" class="btn btn-primary" style="font-size: 18px;" disabled>Render List</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ##################### -->
+        <!-- ## Download button ## -->
+        <!-- ##################### -->
+        </div>
+        <div class="col-md-1" style="margin-top: 30px;"></div>
+        <div class="col-md-3" style="margin-top: 30px;">
+        <div class="col-md-3">
+          <div class="text-center">
+            <div class="dropdown">
+              <button type="button" class="btn btn-primary dropdown-toggle" style="font-size: 14px;" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <span class="glyphicon glyphicon-download" style="vertical-align: top;line-height: 1.3"></span> Download <span class="caret"></span>
+              </button>
+              <div class="dropdown-menu dropdown-menu-right-middle">
+                <li><a class="dropdown-item" href="javascript:saveSvg(document.getElementById('ListPlot_visualization'), 'DataVisualization.svg');">SVG</a></li>
+                <li><a class="dropdown-item" href="javascript:saveSvgAsPng(document.getElementById('ListPlot_visualization'), 'DataVisualization.png');">PNG</a></li>
+                <li><a class="dropdown-item" href="javascript:saveSvgAsJpg(document.getElementById('ListPlot_visualization'), 'DataVisualization.jpg');">JPG</a></li>
+                <li><a class="dropdown-item" href="javascript:saveSvgAsTiff(document.getElementById('ListPlot_visualization'), 'DataVisualization.tiff');">TIFF</a></li>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
+      <div class="col-md-12" style="margin-top: 20px;">
+        <div>
+          Receptor names:
+            <div class="btn-group" role="group" id="gtp_plus">
+                <button id="UniProtNames" class="btn btn-info">UniProt</button>
+                <button id="IUPHARNames" class="btn btn-info active">IUPHAR</button>
+            </div>
+        </div>
+      </div>
+      <div id="ListPlot" class="text-left" style="margin-top: 120px;"></div>
     </div>
+
   {% endif %}
   <!-- ## Tab 4 - Heatmap ## -->
   {% if Plot_evaluation_json.3 %}
@@ -242,6 +501,8 @@
 <script src="{% static 'home/js/phylo_tree.js' %}"></script>
 <script src="{% static 'home/js/datamapper.js' %}"></script>
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+
 
 {% if Plot_evaluation_json.0 %}
   <script type="text/javascript" charset="utf-8">
@@ -505,74 +766,411 @@ $(document).ready(function() {
 </script>
 {% endif %}
 
+<!-- ################## -->
+<!-- ###    List    ### -->
+<!-- ################## -->
+
 {% if Plot_evaluation_json.2 %}
-<script>
-  var listdata = {{ listplot_data|safe }};
-  const data = {
-      'Class A (Rhodopsin)': {
-          'Aminergic receptors': {
-              '5-Hydroxytryptamine receptors': [
-                  { '5-HT<sub>1A</sub> receptor': ['Yes', 1.0] },
-                  { '5-HT<sub>1B</sub> receptor': ['no', 2.0] },
-                  { '5-HT<sub>1D</sub> receptor': ['no', 3.0] }
-              ]
-          },
-          'Peptide receptors': {
-              'Formylpeptide receptors': [
-                  { 'FPR2/ALX': ['yes', 4.0] }
-              ]
-          },
-          'Protein receptors': {
-              'Chemokine receptors': [
-                  { 'CXCR5': ['yes', 4.0] },
-                  { 'ACKR3': ['yes', 4.0] }
-              ],
-              'Glycoprotein hormone receptors': [
-                  { 'FSH receptor': ['yes', 4.0] }
-              ]
-          },
-          'Lipid receptors': {
-              'Lysophospholipid (LPA) receptors': [
-                  { 'LPA<sub>5</sub> receptor': ['yes', 4.0] }
-              ]
-          },
-          'Steroid receptors': {
-              'Bile acid receptors': [
-                  { 'GPBA receptor': ['yes', 4.0] }
-              ]
-          },
-          'Olfactory receptors': {
-              'Olfactory': [
-                  { 'Olfactory receptor 51L1': ['yes', 4.0] }
-              ]
-          },
-          'Orphan receptors': {
-              'Class A orphans': [
-                  { '<i>GPR15</i>': ['yes', 4.0] }
-              ]
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/spectrum/1.8.1/spectrum.min.js"></script>
+  <script>
+    $(document).ready(function() {
+      // Function to initialize Spectrum color picker
+      function initializeColorPicker(elementId) {
+        $("#" + elementId).spectrum({
+          color: "#000",
+          showPalette: true,
+          palette: [
+            ["#000", "#FF0000", "#00FF00", "#0000FF", "#FFFF00"],
+            ["#FF00FF", "#00FFFF", "#FFFFFF", "#C0C0C0", "#808080"],
+            ["#800000", "#808000", "#008000", "#800080", "#008080"],
+            ["#000080"]
+          ],
+          change: function(color) {
+            var selectedColor = color.toHexString();
+            console.log("Selected color from " + elementId + ": " + selectedColor);
           }
-      },
-      'Class B1 (Secretin)': {
-          'Peptide receptors': {
-              'Glucagon receptor family': [
-                  { 'glucagon receptor': ['yes', 4.0] }
-              ]
-          }
-      },
-      'Class B2 (Adhesion)': {
-          'Adhesion receptors': [
-              { 'ADGRG5': ['yes', 4.0] }
-          ]
-      },
-      'Class T (Taste 2)': {
-          'Sensory receptors': {
-              'Taste 2 receptors': [
-                  { '<i>TAS2R60</i>': ['yes', 4.0] }
-              ]
-          }
+        });
       }
-  };
-  renderDataVisualization(data, 'ListPlot');
+      // Initialize all color pickers
+      initializeColorPicker("colorPicker_LabelStyling");
+      initializeColorPicker("OneColor_DataStyling");
+      initializeColorPicker("TwoColor_DataStyling_one");
+      initializeColorPicker("TwoColor_DataStyling_two");
+    });
+  </script>
+
+<script>
+
+// #####################
+// # Load view context #
+// #####################
+
+var listdata = {{ listplot_data|safe }};
+var list_data_wow = {{ listplot_data_variables|safe }};
+var data_types = {{listplot_datatypes|safe}};
+var Label_conversion_dict = {{Label_Conversion|safe}};
+
+// #################################
+// ## Initialize global variables ##
+// #################################
+
+
+// # Initialize layout #
+var Layout_dict = {columns: 2, col_spacing: 400, col_breaker: 'Custom', col_max_label: 'Auto', Col_break_number: 20};
+
+//  Initialize styling
+var Styling_Option_dict = {
+    Layer1: {Bold: true, Italic: true, Underline: true, Fontsize: "20px", Color: "#000"},
+    Layer2: {Bold: true, Italic: true, Underline: false, Fontsize: "18px", Color: "#0000FF"},
+    Layer3: {Bold: true, Italic: false, Underline: false, Fontsize: "16px", Color: "#FF0000"},
+    Layer4: {Bold: false, Italic: true, Underline: false, Fontsize: "14px", Color: "#000"}};
+
+// # Initialize label switcher #
+var Label_names = 'IUPHAR';
+
+// # Initialize data styling #
+var Data_styling = initializeDataStyling(list_data_wow, data_types);
+
+
+// #################################
+// # Initialize data visualization #
+// #################################
+
+document.addEventListener("DOMContentLoaded", function() {
+
+
+  renderDataVisualization(listdata, 'ListPlot',Styling_Option_dict,Layout_dict,Data_styling,Label_conversion_dict,Label_names);
+
+  // Data styling render button functionality *** Add for the other buttons! ***
+  const renderPlotButton_dataStyling = document.querySelector('#DataStyling_renderPlotButton');
+  const dataStylingSelector = document.querySelector('#Data_Styling_Selector');
+
+  // Add event listeners to the dropdowns to check their values
+  dataStylingSelector.addEventListener('change', checkDropdownValues);
+
+  function checkDropdownValues() {
+    const dataStylingValue = dataStylingSelector.value;
+    const dataTypeValue = ColorComplexityDropdown.value;
+
+    // Enable the button if both dropdowns have valid values
+    if (dataStylingValue !== 'Select Data') {
+      renderPlotButton_dataStyling.disabled = false;
+    } else {
+      renderPlotButton_dataStyling.disabled = true;
+    }
+  }
+});
+
+// Function to update the visualization
+function updateVisualization() {
+      // Clear existing SVG content
+      d3.select("#ListPlot_visualization").remove();
+      // Re-render the visualization
+      renderDataVisualization(listdata, "ListPlot",Styling_Option_dict,Layout_dict,Data_styling,Label_conversion_dict,Label_names);
+    }
+
+// Add event listeners to checkboxes
+d3.selectAll('input[type="checkbox"]').on("change", updateVisualization);
+
+$('.dropdown-menu').on('click', function(event){
+    event.stopPropagation();
+  });
+
+// Update the font size label based on slider value
+const fontSizeSlider = document.getElementById('fontSizeSlider');
+const fontSizeLabel = document.getElementById('fontSizeSliderLabel');
+fontSizeSlider.addEventListener('input', () => {
+  fontSizeLabel.textContent = `Font Size: ${fontSizeSlider.value}px`;
+});
+
+// #####################
+// ## Layout options  ##
+// #####################
+
+// Select the Render Plot button
+const renderPlotButton_Layout = document.querySelector('#RenderLayoutButton_Layout');
+
+// Add click event listener to the button
+renderPlotButton_Layout.addEventListener('click', function() {
+
+  // Select the layer selector dropdown
+  const layerSelector_layout = document.querySelector('#Layout_Column_Selector');
+  const layerBreaker_layout = document.querySelector('#Layout_Column_Breaker');
+
+  // Get the selected layer value
+  const Layout_selectedLayer = layerSelector_layout.value;
+  const Layout_selectedLayerBreaker = layerBreaker_layout.value;
+
+  // Update function
+  function UpdateLayout() {
+      // Get values
+
+      const Cols = parseInt(document.querySelector("#Layout_Column_Selector").value);
+      const LayerBreak = document.querySelector("#Layout_Column_Breaker").value;
+      const Max_label_selector = document.querySelector("#Layout_Max_Label").value;
+      const Max_label_number = parseInt(document.querySelector("#Layout_Max_Label_input").value);
+
+      // Handle Max label number
+      if (Max_label_selector == 'Auto') {
+        Layout_dict.col_max_label = 'Auto';
+      } else if (Max_label_selector == 'Custom'){
+        Layout_dict.col_max_label = 'Custom';
+        Layout_dict.Col_break_number = Max_label_number;
+      }
+
+      // update values
+      Layout_dict.columns = Cols;
+      Layout_dict.col_breaker = LayerBreak;
+      // Update plot
+      updateVisualization();
+  }
+
+  // Check if the selected layer is "Select Layer"
+  if (Layout_selectedLayer === "Select Column Number" || Layout_selectedLayerBreaker === "Select Layer Beaker") {
+    if (Layout_selectedLayer === "Select Column Number" && Layout_selectedLayerBreaker === "Select Layer Beaker") {
+      alert("You need to select both a number of columns and select a layer that breaks the columns.");
+      return;
+    } else if (Layout_selectedLayer === "Select Column Number") {
+      alert("You need to select a number of columns.");
+      return;
+    }  else if (Layout_selectedLayerBreaker === "Select Layer Beaker") {
+      alert("You need to select a layer that breaks the columns.");
+      return;
+    }
+  } else {
+    UpdateLayout()
+  }
+});
+
+
+// #####################
+// ## Styling options ##
+// #####################
+
+// Select the Render Plot button
+const renderPlotButton = document.querySelector('#renderPlotButton');
+
+// Add click event listener to the button
+renderPlotButton.addEventListener('click', function() {
+  // Select the layer selector dropdown
+  const layerSelector = document.querySelector('#Styling_layerSelector');
+
+  // Get the selected layer value
+  const selectedLayer = layerSelector.value;
+
+  // Update function
+  function UpdateLayer(selectedLayer) {
+      // Get values
+      const boldCheckbox = document.getElementById("boldCheckbox").checked
+      const italicCheckbox = document.getElementById("italicCheckbox").checked
+      const underlineCheckbox = document.getElementById("underlineCheckbox").checked
+      const fontsizeslider = `${document.getElementById("fontSizeSlider").value}px`
+      // const color = document.querySelector("#Styling_colors").value;
+      const colorPicker_LabelStyling = document.getElementById("colorPicker_LabelStyling");
+
+      // update values
+      Styling_Option_dict[selectedLayer].Bold = boldCheckbox;
+      Styling_Option_dict[selectedLayer].Italic = italicCheckbox;
+      Styling_Option_dict[selectedLayer].Underline = underlineCheckbox;
+      Styling_Option_dict[selectedLayer].Fontsize = fontsizeslider;
+
+      // Get the selected color from the Spectrum color picker
+      const One_Color_value = $(colorPicker_LabelStyling).spectrum("get").toHexString();
+
+      Styling_Option_dict[selectedLayer].Color = One_Color_value;
+
+      // Update plot
+      updateVisualization();
+  }
+  // Check if the selected layer is "Select Layer"
+  if (selectedLayer === "Select Layer") {
+    alert("No Layer has been selected");
+    return;
+  } else {
+    if (selectedLayer === "Layer1" || selectedLayer === "Layer2" || selectedLayer === "Layer3" || selectedLayer === "Layer4") {
+      UpdateLayer(selectedLayer);
+    }
+  }
+});
+
+function updateMax() {
+    var layerSelector = document.getElementById("Styling_layerSelector");
+    var fontSizeSlider = document.getElementById("fontSizeSlider");
+
+    if (layerSelector.value === "Layer3") {
+        fontSizeSlider.max = 16;
+    } else if ((layerSelector.value === "Layer2")) {
+      fontSizeSlider.max = 24;
+    } else if ((layerSelector.value === "Layer4")) {
+      fontSizeSlider.max = 23;
+    } else {
+        // Reset to default max value
+        fontSizeSlider.max = 28;
+    }
+  }
+
+// ####################
+// ## Update styling ##
+// ####################
+
+// Get the layer selector dropdown element
+const layerSelector = document.getElementById("Styling_layerSelector");
+
+// Add event listener to the layer selector dropdown
+layerSelector.addEventListener("change", function() {
+    // Get the selected layer value
+    const selectedLayer = layerSelector.value;
+
+    // Get the styling options for the selected layer from the styling dictionary
+    const selectedLayerStyling = Styling_Option_dict[selectedLayer];
+
+    // Update the UI elements based on the selected layer's styling options
+    document.getElementById("boldCheckbox").checked = selectedLayerStyling.Bold;
+    document.getElementById("italicCheckbox").checked = selectedLayerStyling.Italic;
+    document.getElementById("underlineCheckbox").checked = selectedLayerStyling.Underline;
+    document.getElementById("fontSizeSlider").value = parseInt(selectedLayerStyling.Fontsize);
+
+    // Update the label for font size slider
+    document.getElementById("fontSizeSliderLabel").textContent = "Font Size: " + selectedLayerStyling.Fontsize;
+
+    // Set the selected color in the Spectrum color picker
+    const colorPicker_LabelStyling = document.getElementById("colorPicker_LabelStyling");
+    $(colorPicker_LabelStyling).spectrum("set", selectedLayerStyling.Color);
+  });
+
+// ###################
+// ## Data styling ##
+// ###################
+
+// Function to populate select options based on Data_styling
+function populateSelectOptions() {
+  var select = document.getElementById("Data_Styling_Selector");
+
+  // Clear existing options
+  select.innerHTML = '<option selected>Select Data</option>';
+
+  // Loop through Data_styling and add options for columns with Data: "Yes"
+  Object.keys(Data_styling).forEach(function(column) {
+    if (Data_styling[column].Data === "Yes" && Data_styling[column].Datatype == 'Continuous') {
+      var option = document.createElement("option");
+      option.value = column;
+      option.textContent = "Data Column " + column.substr(3); // Extract number from column name
+      select.appendChild(option);
+    }
+  });
+}
+
+// Call the function to populate options initially
+populateSelectOptions();
+
+
+// Function to update the Datatypes dropdown based on selected data column
+function updateColorComplexityDropdown() {
+  var dataColumn = document.getElementById("Data_Styling_Selector");
+  // var DataColoringDropdown = document.getElementById("DataColoringDropdown")
+  var ColorComplexityDropdown = document.getElementById("ColorComplexityDropdown");
+  var OneColor_DataStyling = document.getElementById("OneColor_DataStyling_container");
+  var TwoColor_DataStyling_One = document.getElementById("TwoColor_DataStyling_One_container");
+  var TwoColor_DataStyling_two = document.getElementById("TwoColor_DataStyling_Two_container");
+
+  const dataColumn_value = dataColumn.value;
+  const ColorComplexity_value = ColorComplexityDropdown.value;
+
+  if (dataColumn_value === 'Select Data') {
+    // Show the dropdown
+    ColorComplexityDropdown.style.display = "None";
+    // DataColoringDropdown.style.display = "None"
+    OneColor_DataStyling.style.display = 'None';
+    TwoColor_DataStyling_One.style.display = 'None';
+    TwoColor_DataStyling_two.style.display = 'None';
+  } else {
+    // Hide the dropdown if no Datatypes or if Data.Data !== Yes
+    ColorComplexityDropdown.style.display = "Block";
+    // DataColoringDropdown.style.display = "Block"
+    if (ColorComplexity_value == 'One') {
+      OneColor_DataStyling.style.display = 'Block';
+    } else {
+      TwoColor_DataStyling_One.style.display = 'Block';
+      TwoColor_DataStyling_two.style.display = 'Block';
+    }
+  }
+}
+
+function updateColorDropdowns() {
+  var ColorComplexityDropdown = document.getElementById("ColorComplexityDropdown");
+  var OneColor_DataStyling = document.getElementById("OneColor_DataStyling_container");
+  var TwoColor_DataStyling_One = document.getElementById("TwoColor_DataStyling_One_container");
+  var TwoColor_DataStyling_two = document.getElementById("TwoColor_DataStyling_Two_container");
+
+  const ColorComplexity_value = ColorComplexityDropdown.value;
+
+  if (ColorComplexity_value == 'One') {
+    OneColor_DataStyling.style.display = 'Block';
+    TwoColor_DataStyling_One.style.display = 'None';
+    TwoColor_DataStyling_two.style.display = 'None';
+  } else {
+    OneColor_DataStyling.style.display = 'None';
+    TwoColor_DataStyling_One.style.display = 'Block';
+    TwoColor_DataStyling_two.style.display = 'Block';
+  }
+}
+
+// Select the Render Plot button
+const renderPlotButton_dataStyling = document.querySelector('#DataStyling_renderPlotButton');
+// Add click event listener to the button
+renderPlotButton_dataStyling.addEventListener('click', function() {
+
+  // Select the layer selector dropdown
+  const Selector_DataStyling = document.querySelector('#Data_Styling_Selector');
+  // const DataColoringDropdown = document.getElementById("DataColoringDropdown")
+  const ColorComplexityDropdown = document.getElementById("ColorComplexityDropdown");
+  const OneColor_DataStyling = document.getElementById("OneColor_DataStyling");
+  const TwoColor_DataStyling_One = document.getElementById("TwoColor_DataStyling_one");
+  const TwoColor_DataStyling_two = document.getElementById("TwoColor_DataStyling_two");
+
+  const colorPicker_LabelStyling = document.getElementById("colorPicker_LabelStyling");
+  // Get the selected layer value
+  const Selector_DataStyling_value = Selector_DataStyling.value;
+  // const Data_coloring_value = DataColoringDropdown.value;
+  const Color_complexity_value = ColorComplexityDropdown.value;
+
+
+  if (Color_complexity_value == 'One') {
+    const One_Color_value = $(OneColor_DataStyling).spectrum("get").toHexString();
+    Data_styling[Selector_DataStyling_value].Data_color1 = One_Color_value;
+    Data_styling[Selector_DataStyling_value].data_color_complexity = Color_complexity_value;
+  } else if (Color_complexity_value == 'Two') {
+    const Two_Color_value_one = $(TwoColor_DataStyling_One).spectrum("get").toHexString();
+    const Two_Color_value_two = $(TwoColor_DataStyling_two).spectrum("get").toHexString();
+    Data_styling[Selector_DataStyling_value].Data_color1 = Two_Color_value_one;
+    Data_styling[Selector_DataStyling_value].Data_color2 = Two_Color_value_two;
+    Data_styling[Selector_DataStyling_value].data_color_complexity = Color_complexity_value;
+  }
+
+  // Update plot
+  updateVisualization();
+
+});
+
+// ###################
+// ## Label switch ###
+// ###################
+
+$("#UniProtNames").click(function() {
+    $("#UniProtNames").addClass("active");
+    $("#IUPHARNames").removeClass("active");
+    Label_names = 'UniProt';
+    updateVisualization();
+});
+
+$("#IUPHARNames").click(function() {
+      $("#UniProtNames").removeClass("active");
+      $("#IUPHARNames").addClass("active");
+      Label_names = 'IUPHAR';
+      updateVisualization();
+  });
+
 </script>
 {% endif %}
 
