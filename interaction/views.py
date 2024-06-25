@@ -134,6 +134,14 @@ def calculate_interactions(pdb, session=None, peptide=None, file_input=False):
                                                     scroller, projectdir, pdb, peptide,
                                                     hetlist, ligandcenter, radius, summary_results,
                                                     new_results, results, hydrophob_radius, ligand_rings, ligand_charged, pdb_location)
+        ### If no interactions found, increase ligand center size (e.g. TMA in 8WC5)
+        if len(summary_results)==0:
+            for l in ligandcenter:
+                ligandcenter[l][1] = ligandcenter[l][1]*1.6
+            summary_results, new_results, results = find_interactions(
+                                                    scroller, projectdir, pdb, peptide,
+                                                    hetlist, ligandcenter, radius, summary_results,
+                                                    new_results, results, hydrophob_radius, ligand_rings, ligand_charged, pdb_location)
         # print('Analyzing interactions')
         summary_results, new_results, sortedresults = analyze_interactions(
                                                         projectdir, pdb, results, ligand_donors,

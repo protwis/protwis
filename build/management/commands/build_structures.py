@@ -630,6 +630,9 @@ class Command(BaseBuild):
             temp_seq = temp_seq[79:100]+temp_seq[:79]+temp_seq[100:]
         elif structure.pdb_code.index in ['8GTG','8GTM']:
             temp_seq = temp_seq[:117]+'T---'+temp_seq[121:]
+        elif structure.pdb_code.index in ['8HTI','8J46','8W77']:
+            ref_seq = ref_seq[:114]+ref_seq[115:145]+'IL'+ref_seq[149:160]+ref_seq[161:170]+ref_seq[171:215]+ref_seq[216:]
+            temp_seq = temp_seq[:118]+temp_seq[119:150]+temp_seq[152:156]+temp_seq[157:168]+temp_seq[169:209]+temp_seq[210:]
 
 
         for i, r in enumerate(ref_seq, 1): #loop over alignment to create lookups (track pos)
