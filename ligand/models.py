@@ -76,7 +76,10 @@ class LigandFingerprint(models.Model):
 
     objects = models.Manager()  # The default manager.
     custom_objects = CustomLigandFingerprintManager()  # The custom manager.
-
+    class Meta:
+        indexes = [
+            GistIndex(fields=['mfp2']),
+        ]
 
 
 
