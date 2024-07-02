@@ -336,30 +336,62 @@ class Command(BaseBuild):
                         alignment_fragments = [i for i in str(pw2[0][1]).split('-') if i!='' and len(i)<10]
 
                     ### Chimera mapping to wt ###
+                    chimera_search = False
                     if len(alignment_fragments)>0:
+                        chimera_search = True
+                        chimeras = SeqIO.to_dict(SeqIO.parse(open(os.sep.join([settings.DATA_DIR, 'g_protein_data', 'g_protein_chimeras.fasta'])), "fasta"))
+
                         # blast chimeras to find best chimera match
                         cb = CustomBlast(os.sep.join([settings.STATICFILES_DIRS[0], 'blast', 'g_protein_chimeras']))
-                        matched_chimera_key = cb.run(temp_seq)
+                        blast_output = cb.run(temp_seq)
+                        chimera_lengths = {}
+                        # Entry is not in the blast db, the top 5 hits are checked. WT protein has to be the same, then the longest is picked
+                        for i, b in enumerate(blast_output):
+                            if i==0:
+                                gprot_key, pdb_id = b[0].split('|')
+                                chimera_lengths[b[0]] = len(chimeras[b[0]])
+                                if pdb_id==sc.structure.pdb_code.index:
+                                    break
+                            elif b[0].startswith(gprot_key):
+                                chimera_lengths[b[0]] = len(chimeras[b[0]])
 
-                        # parsing gapped chimera fasta
-                        chimeras = SeqIO.to_dict(SeqIO.parse(open(os.sep.join([settings.DATA_DIR, 'g_protein_data', 'g_protein_chimeras_gapped.fasta'])), "fasta"))
-                        if self.options['debug']:
-                            print('matched chimera', matched_chimera_key, chimeras[matched_chimera_key].seq)
+                        matched_chimeras = sorted(chimera_lengths.items(), key=lambda x: (-x[1]))
+                        for m in matched_chimeras:
+                            matched_chimera_key = m[0]
+                            # parsing gapped chimera fasta
+                            chimeras_gapped = SeqIO.to_dict(SeqIO.parse(open(os.sep.join([settings.DATA_DIR, 'g_protein_data', 'g_protein_chimeras_gapped.fasta'])), "fasta"))
+                            if self.options['debug']:
+                                print('matched chimera', matched_chimera_key, chimeras_gapped[matched_chimera_key].seq)
 
-                        # pairwise alignment to best match
-                        chimera_pw2 = pairwise2.align.localms(chimeras[matched_chimera_key].seq, seq, 3, -4, -3, -.5)
-                        ref_seq_chim, temp_seq_chim = str(chimera_pw2[0][0]), str(chimera_pw2[0][1])
-                        if self.options['debug']:
-                            print('chimera pw')
-                            for i,j in zip(ref_seq_chim, temp_seq_chim):
-                                print(i,j)
-                            print('==========')
-                        chimera_wt_key = matched_chimera_key.split('|')[0]
+                            # pairwise alignment to best match
+                            chimera_pw2 = pairwise2.align.localms(chimeras_gapped[matched_chimera_key].seq, seq, 3, -4, -3, -.5)
+                            ref_seq_chim, temp_seq_chim = str(chimera_pw2[0][0]), str(chimera_pw2[0][1])
 
-                        # reassign wt best match as ref
-                        ref_seq = chimeras[chimera_wt_key].seq
-                        temp_seq = temp_seq_chim
+                            if self.options['debug']:
+                                print('chimera pw')
+                                print(len(ref_seq_chim), len(temp_seq_chim))
+                                for i,j in zip(ref_seq_chim, temp_seq_chim):
+                                    print(i,j)
+                                print(len(ref_seq_chim), len(temp_seq_chim))
+                                print('==========')
+                            chimera_wt_key = matched_chimera_key.split('|')[0]
+
+                            # reassign wt best match as ref
+                            ref_seq = chimeras_gapped[chimera_wt_key].seq
+                            temp_seq = temp_seq_chim
+
+                            # Check on seq length: if there are no gaps introduced during chimera pairwise, seq could be mapped to wt
+                            if len(ref_seq)==len(temp_seq):
+                                break
                     ##############################
+
+                    # Raise exception if G alpha is misannotated
+                    if chimera_search and matched_chimera_key.split('|')[0]!=sc.protein.entry_name:
+                        raise Exception('ERROR: G alpha annotated as {} but chimera search found {}'.format(sc.protein.entry_name, matched_chimera_key))
+
+                    # Raise exception if there is no good chimera alignment:
+                    if len(ref_seq)!=len(temp_seq):
+                        raise Exception('ERROR: Seq length mismatch')
 
                     wt_pdb_dict = OrderedDict()
                     pdb_wt_dict = OrderedDict()
