@@ -51,10 +51,6 @@ def getLigandBulkSearchParameters(request):
     param_dict = {}
     default_search_text = ''
     param_dict['search_type'] = request.session.get('selection_ligand_bulk_search_search_type', 'smiles')
-    # if param_dict['search_type'] == 'similarity':
-    #     default_smiles = "O=C1OC2C3([C@H]1OCc1ccccc1)C([C@@H](C1C43[C@@](O2)(C(=O)O1)[C@@]1([C@H](C4O)OC(=O)C1C)O)F)C(C)(C)C"
-    # else:
-    #     default_smiles = 'cccccc'
     param_dict['search_text'] = request.session.get('selection_ligand_bulk_search_search_text', default_search_text)
     param_dict['search_entries'] = request.session.get('selection_ligand_bulk_search_search_entries', [])
     param_dict['stereochemistry'] = request.session.get('selection_ligand_bulk_search_stereochemistry',False)
