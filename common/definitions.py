@@ -2286,3 +2286,5 @@ ARRESTIN_DISPLAY_NAME = {'arrc_human': 'Arrestin-C',
                          'arrb1':'Beta-arrestin-1',
                          'arrb2':'Beta-arrestin-2',
                          'arrc':'Arrestin-C'}
+
+CLASSLESS_PARENT_GPCR_SLUGS = set({'008'}) # name = Other GPCRs

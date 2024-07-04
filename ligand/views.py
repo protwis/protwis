@@ -44,25 +44,25 @@ from protein.models import Protein, ProteinFamily
 from interaction.models import StructureLigandInteraction
 from mutation.models import MutationExperiment
 
+re_whitespaces = re.compile('\s+')
+re_leading_whitespaces = re.compile('^\s+')
 
-def getLigandStructuralSearchParameters(request):
+def getLigandBulkSearchParameters(request):
     param_dict = {}
-    default_smiles = ''
-    param_dict['search_type'] = request.session.get('ligand_structural_search_search_type', 'similarity')
-    if param_dict['search_type'] == 'similarity':
-        default_smiles = "O=C1OC2C3([C@H]1OCc1ccccc1)C([C@@H](C1C43[C@@](O2)(C(=O)O1)[C@@]1([C@H](C4O)OC(=O)C1C)O)F)C(C)(C)C"
-    else:
-        default_smiles = 'cccccc'
-    param_dict['smiles'] = request.session.get('ligand_structural_search_smiles', default_smiles)
-    param_dict['similarity_threshold'] = float(request.session.get('ligand_structural_search_similarity_threshold', 0.5))
-    # param_dict['search_limit'] = request.session.get('ligand_structural_search_limit ', 100)
-
-    param_dict['stereochemistry'] = request.session.get('ligand_structural_search_stereochemistry',False)
+    default_search_text = ''
+    param_dict['search_type'] = request.session.get('selection_ligand_bulk_search_search_type', 'smiles')
+    # if param_dict['search_type'] == 'similarity':
+    #     default_smiles = "O=C1OC2C3([C@H]1OCc1ccccc1)C([C@@H](C1C43[C@@](O2)(C(=O)O1)[C@@]1([C@H](C4O)OC(=O)C1C)O)F)C(C)(C)C"
+    # else:
+    #     default_smiles = 'cccccc'
+    param_dict['search_text'] = request.session.get('selection_ligand_bulk_search_search_text', default_search_text)
+    param_dict['search_entries'] = request.session.get('selection_ligand_bulk_search_search_entries', [])
+    param_dict['stereochemistry'] = request.session.get('selection_ligand_bulk_search_stereochemistry',False)
     return param_dict
 
-def setLigandStructuralSearchParameters(request, search_params_data):
+def setLigandBulkSearchParameters(request, search_params_data):
     for key,value in search_params_data.items():
-        request.session["ligand_structural_search_"+key] = value 
+        request.session["selection_ligand_bulk_search_"+key] = value 
     request.session.modified = True
 
 class LigandNameSelection(AbsTargetSelection):
@@ -78,7 +78,300 @@ class LigandNameSelection(AbsTargetSelection):
     type_of_selection = 'ligands'
     selection_only_receptors = False
     title = "Ligand search"
-    description = 'Search by ligand name, database ID (GPCRdb, GtP, ChEMBL) or structure (inchiKey, smiles).'
+    description = 'Search for a ligand or several ligands by name, database ID (GPCRdb, GtP, ChEMBL) or structure (inchiKey, smiles).'
+
+    buttons = {
+        
+        'continue' : {
+            'label' : 'Bulk search',
+            'onclick' : "submitSelectionLigandBulkSearch('/ligand/ligand_bulk_search')",
+            'color' : 'success',
+            
+            },
+        'no_box' : True,
+        }
+    def get_context_data(self, **kwargs):
+        """get context from parent class
+
+        (really only relevant for children of this class, as TemplateView does
+        not have any context variables)
+        """
+        context = super().get_context_data(**kwargs)
+        cache_key = 'LigandNameSelection'
+        if not(cache.has_key(cache_key)):
+            q = LigandID.objects.distinct('web_resource_id').values('web_resource_id','web_resource__slug','web_resource__name')
+            ligandids = []
+            for lid in q:
+                name = lid['web_resource__name']
+                slug = lid['web_resource__slug']
+                lid_dict = {
+                    'id': lid['web_resource_id'],
+                    'slug': slug,
+                    }
+                
+                if slug == 'chembl_ligand':
+                    name = 'ChEMBL compound'
+
+                lid_dict['name'] = name
+                ligandids.append(lid_dict)
+            ligandids.sort(key=lambda x : x['name'])
+            ligandids_tmp = [lid for lid in ligandids if lid['slug'] in {'chembl_ligand','gtoplig'}]
+            ligandids_tmp2 = [lid for lid in ligandids if lid['slug'] not in {'chembl_ligand','gtoplig'}]
+            ligandids = ligandids_tmp + ligandids_tmp2
+            cache.set(cache_key, ligandids, 60*60*24*7)
+        else:
+            ligandids = cache.get(cache_key)
+
+        context['ligandids'] = ligandids
+
+        context['selection_ligand_bulk_search_parameters'] = getLigandBulkSearchParameters(self.request)
+        msg = self.request.session.pop('ligand_bulk_search_error_msg',None)
+        if msg is not None:
+            context['ligand_bulk_search_error_msg'] = msg
+
+        return context
+
+def validate_SMARTS(smarts,smiles_only=False):
+    error = False
+    msg = ''
+    if smiles_only:
+        msg_part = ''
+    else:
+        msg_part = ' or SMARTS'
+    if len(smarts) > settings.SMILES_MAX_LENGTH:
+        msg = 'SMILES '+msg_part +'too long (max. lenth %d)' % settings.SMILES_MAX_LENGTH
+        error = True
+        return (error, msg)
+    if len(smarts) == 0:
+        msg = 'SMILES '+msg_part +' are empty.' % settings.SMILES_MAX_LENGTH
+        error = True
+        return (error, msg)
+    invalid_smarts_msg = 'Invalid SMILES'+msg_part+'.'
+    if settings.PYTHON_SMILES_VALIDATION:
+        if smiles_only:
+            mol = MolFromSmiles(smarts)
+        else:
+            mol = MolFromSmarts(smarts)
+        if mol is None:
+            msg = invalid_smarts_msg
+            error = True
+        return (error, msg)
+    else:
+        with connection.cursor() as cursor:
+            try:
+                if smiles_only:
+                    cursor.execute('SELECT mol_from_smiles(%s);', [smarts])
+                    
+                else:
+                    cursor.execute('SELECT qmol(%s);', [smarts])
+                    
+            except DataException:
+                msg = invalid_smarts_msg
+                error = True
+                return (error, msg)
+            r = cursor.fetchall()
+            
+            if len(r) < 1:
+                msg = invalid_smarts_msg
+                error = True
+                return (error, msg)
+            if r[0] is None:
+                msg = invalid_smarts_msg
+                error = True
+                return (error, msg)
+                
+        return (error, msg)
+    
+class ReadInputLigandBulkSearch(View):
+    min_similarity = None
+    OK_request_dict = {'status':'OK',
+                    'status_code':200,
+                    'reason_phrase':'OK',
+                    'msg':'OK'}
+    bad_request_dict = {'status':'error',
+                    'status_code':400,
+                    'reason_phrase':'Bad Request',
+                    'msg':''}
+    search_params_data_keys = ['search_type','search_text','stereochemistry']
+
+    def validate_SMARTS(self,smarts,smiles_only=False):
+        return validate_SMARTS(smarts,smiles_only=smiles_only)
+  
+    def get(self, request, *args, **kwargs):
+        OK_request_dict = self.OK_request_dict.copy()
+        bad_request_dict = self.bad_request_dict.copy()
+        OK_request_dict['csrf_token'] = get_token(request)
+        return JsonResponse(OK_request_dict)
+
+    def post(self, request, *args, **kwargs):
+        OK_request_dict = self.OK_request_dict.copy()
+        bad_request_dict = self.bad_request_dict.copy()
+        search_params_data = {}
+        error = False
+        for key in self.search_params_data_keys:
+            if key == 'search_text':
+                entries = [re_whitespaces.split(re_leading_whitespaces.sub('',l))[0] for l in request.POST.get(key,None).splitlines()]
+                search_params_data[key] = ''
+                if len(entries) == 0:
+                    msg = 'Empty search text with no entries.'
+                    request.session['ligand_bulk_search_error_msg'] = msg
+                    request.session.modified = True
+                    bad_request_dict['msg'] = msg
+                    return JsonResponse(bad_request_dict,status=400,reason='Bad Request')
+            else:
+                search_params_data[key] = request.POST.get(key,None)
+        search_type = search_params_data['search_type']
+        if search_type == 'smiles':
+            for i,smiles in enumerate(entries):
+                error, msg = self.validate_SMARTS(smiles,smiles_only=True) # do not accept SMARTS by the moment
+            if error:
+                request.session['ligand_bulk_search_error_msg'] = msg
+                request.session.modified = True
+                bad_request_dict['msg'] = msg + 'Line #: ' + str(i+1)+'.'
+                return JsonResponse(bad_request_dict,status=400,reason='Bad Request')
+        elif search_type == 'inchikey':
+            #InChIKeys are not validated
+            pass
+        else:
+            raise ValidationError('Unknown ligand structural search parameter: search_type="%s"' % str(search_type))
+        search_params_data['search_entries'] = entries
+        
+        stereochemistry = search_params_data['stereochemistry']
+        try:
+            stereochemistry_lower =  stereochemistry.lower()
+            if stereochemistry_lower in {'false','no'}:
+                stereochemistry = False
+            elif stereochemistry_lower in {'null','none'}:
+                stereochemistry = None
+        except:
+            pass
+        if stereochemistry is None and search_type != 'smiles':
+            del search_params_data['stereochemistry']
+        else:
+            search_params_data['stereochemistry'] = bool(stereochemistry)
+
+        setLigandBulkSearchParameters(request,search_params_data)
+        return JsonResponse(OK_request_dict)
+
+class LigandBulkSearch(TemplateView):
+
+    template_name = 'target_details.html'
+
+    def get_context_data(self, **kwargs):
+        cache_key = False
+        mode = 'compact'
+        context = super().get_context_data(**kwargs)
+        param_dict = getLigandBulkSearchParameters(self.request)
+        self.request.session["selection_ligand_bulk_search_search_entries"] = []
+        self.request.session.modified = True
+        entries = param_dict['search_entries']
+        search_type = param_dict['search_type']
+        if search_type == 'smiles':
+            with connection.cursor() as cursor:
+                if param_dict['stereochemistry']:
+                    stereochemistry = 'true'
+                else:
+                    stereochemistry = 'false'
+                if len(entries) <= 1:
+                    if len(entries) == 0:
+                        smiles = ''
+                    else:
+                        smiles = entries[0]
+                    cache_key = "ligand_bulk_search_" + ",".join([search_type,smiles,str(stereochemistry),mode])
+                if not(cache_key != False and cache.has_key(cache_key)):
+                    q = Q(molecule__exact=MOL(Value('^textoreplacebysmiles#')))
+                    for smiles in entries[1:]:
+                        q = q | Q(molecule__exact=MOL(Value('^textoreplacebysmiles#')))
+                    qs = LigandMol.objects.filter(q).values('ligand')
+                    sql_query = str(qs.query).replace('^textoreplacebysmiles#',"%s")
+                    sql_final_query = 'SET SESSION rdkit.do_chiral_sss=%s; '+sql_query
+                    cursor.execute(sql_final_query,[str(stereochemistry)]+entries)
+                    # context['search_results']=cursor.fetchall()
+                    cursor_results = cursor.fetchall()
+                    
+        elif search_type == 'inchikey':
+            pass
+        else:
+            raise ValidationError('Unknown ligand structural search parameter: search_type="%s"' % str(search_type))
+        pass
+        # cache.delete(cache_key)
+
+        if mode == 'compact':
+            if not(cache_key != False and cache.has_key(cache_key)):
+                if search_type == 'smiles':
+                    no_results_msg = 'No results found.'
+                    if cursor_results != []:
+                        ligand_id = [x[0] for x in cursor_results]
+                        ps = AssayExperiment.objects.filter(ligand__in=ligand_id).prefetch_related('protein', 'ligand', 'ligand__ligand_type','protein__family')
+                    else:
+                        context = "redirect"
+                        self.request.session['ligand_bulk_search_error_msg'] = no_results_msg
+                        self.request.session.modified = True
+                        return context
+                        # return redirect("ligand_selection")                                                                            # 'ligand__ids__web_resource',                                                                      # 'ligand')
+                        # if queryset is empty redirect to ligand browser
+                    if not ps:
+                        context = "redirect"
+                        self.request.session['ligand_bulk_search_error_msg'] = no_results_msg
+                        self.request.session.modified = True
+                        return context
+                        # return redirect("ligand_selection")
+                elif search_type == 'inchikey':
+                    ps = AssayExperiment.objects.filter(ligand__inchikey__in=entries).prefetch_related('protein', 'ligand', 'ligand__ligand_type','protein__family')
+            if cache_key != False and cache.has_key(cache_key):
+                result = cache.get(cache_key)
+                ligand_data_affinity = result['affinity_data']
+                ligand_data_potency = result['potency_data']
+            else:
+                ligand_data_affinity,ligand_data_potency = LigandListDetails(mode, ps,ligand_search=True)
+            context = {}
+            context['ligand_structural_search'] = True
+            context['potency_data'] = ligand_data_potency
+            context['affinity_data'] = ligand_data_affinity
+            cache.set(cache_key, context, 60*60*24*7)
+        context['mode'] = mode
+        return context
+    
+    def get(self, request, *args, **kwargs):
+        context = self.get_context_data(**kwargs)
+        if context == "redirect":
+            return redirect("ligand_selection")
+        return self.render_to_response(context)
+    
+def getLigandStructuralSearchParameters(request):
+    param_dict = {}
+    default_smiles = ''
+    param_dict['search_type'] = request.session.get('ligand_structural_search_search_type', 'similarity')
+    # if param_dict['search_type'] == 'similarity':
+    #     default_smiles = "O=C1OC2C3([C@H]1OCc1ccccc1)C([C@@H](C1C43[C@@](O2)(C(=O)O1)[C@@]1([C@H](C4O)OC(=O)C1C)O)F)C(C)(C)C"
+    # else:
+    #     default_smiles = 'cccccc'
+    param_dict['smiles'] = request.session.get('ligand_structural_search_smiles', default_smiles)
+    param_dict['similarity_threshold'] = float(request.session.get('ligand_structural_search_similarity_threshold', 0.5))
+    # param_dict['search_limit'] = request.session.get('ligand_structural_search_limit ', 100)
+
+    param_dict['stereochemistry'] = request.session.get('ligand_structural_search_stereochemistry',False)
+    return param_dict
+
+def setLigandStructuralSearchParameters(request, search_params_data):
+    for key,value in search_params_data.items():
+        request.session["ligand_structural_search_"+key] = value 
+    request.session.modified = True
+
+class LigandStructuralSelection(AbsTargetSelection):
+    # Left panel
+    step = 1
+    number_of_steps = 1
+    template_name = 'ligand_structural_selection.html'
+    filters = False
+    import_export_box = False
+    target_input = False
+    psets = False
+    family_tree = False
+    type_of_selection = 'ligands'
+    selection_only_receptors = False
+    title = "Ligand search"
+    description = 'Search by similarity or substructure.'
 
     buttons = {
         
@@ -112,53 +405,10 @@ class ReadInputLigandStructuralSearch(View):
                     'reason_phrase':'Bad Request',
                     'msg':''}
     search_params_data_keys = ['search_type','smiles','similarity_threshold','stereochemistry']
+
     def validate_SMARTS(self,smarts,smiles_only=False):
-        error = False
-        msg = ''
-        if smiles_only:
-            msg_part = ''
-        else:
-            msg_part = ' or SMARTS'
-        if len(smarts) > settings.SMILES_MAX_LENGTH:
-            msg = 'SMILES '+msg_part +'too long (max. lenth %d)' % settings.SMILES_MAX_LENGTH
-            error = True
-            return (error, msg)
-        if len(smarts) == 0:
-            msg = 'SMILES '+msg_part +' are empty.' % settings.SMILES_MAX_LENGTH
-            error = True
-            return (error, msg)
-        invalid_smarts_msg = 'Invalid SMILES'+msg_part+'.'
-        if settings.PYTHON_SMILES_VALIDATION:
-            if smiles_only:
-                mol = MolFromSmiles(smarts)
-            else:
-                mol = MolFromSmarts(smarts)
-            if mol is None:
-                msg = invalid_smarts_msg
-                error = True
-                return (error, msg)
-        else:
-            with connection.cursor() as cursor:
-                try:
-                    if smiles_only:
-                        cursor.execute('SELECT mol_from_smiles(%s);', [smarts])
-                    else:
-                        cursor.execute('SELECT qmol(%s);', [smarts])
-                except DataException:
-                    msg = invalid_smarts_msg
-                    error = True
-                    return (error, msg)
-                r = cursor.fetchall()
-                if len(r) < 1:
-                    msg = invalid_smarts_msg
-                    error = True
-                    return (error, msg)
-                if r[0] is None:
-                    msg = invalid_smarts_msg
-                    error = True
-                    return (error, msg)
-                
-        return (error, msg)  
+        return validate_SMARTS(smarts,smiles_only=smiles_only)
+    
     def get(self, request, *args, **kwargs):
         OK_request_dict = self.OK_request_dict.copy()
         bad_request_dict = self.bad_request_dict.copy()
@@ -255,10 +505,11 @@ class LigandStructuralSearch(TemplateView):
                     # sql_query = str(q.query).replace('%','%%').replace('^textoreplacebysmiles#','%s')
                     sql_query = str(q.query).replace('%','%%').replace('^textoreplacebysmiles#','%s')
 
-                    # cursor.execute('SET rdkit.tanimoto_threshold = %s; ' + sql_query, [similarity_threshold,smiles,smiles])
-                    cursor.execute('SET rdkit.tanimoto_threshold = %s; ' + sql_query, [similarity_threshold,smiles,smiles,smiles])
+                    # cursor.execute('SET SESSION rdkit.tanimoto_threshold = %s; ' + sql_query, [similarity_threshold,smiles,smiles])
+                    cursor.execute('SET SESSION rdkit.tanimoto_threshold = %s; ' + sql_query, [similarity_threshold,smiles,smiles,smiles])
                     # context['search_results']=cursor.fetchall()
                     cursor_results = cursor.fetchall()
+                    
 
             elif search_type == 'substructure':
                 if param_dict['stereochemistry']:
@@ -269,9 +520,10 @@ class LigandStructuralSearch(TemplateView):
                 if not(cache_key != False and cache.has_key(cache_key)):
                     q = LigandMol.objects.filter(molecule__hassubstruct=QMOL(Value('^textoreplacebysmiles#'))).values('ligand')
                     sql_query = str(q.query).replace('^textoreplacebysmiles#','%s')
-                    cursor.execute('SET rdkit.do_chiral_sss=%s; '+sql_query, [stereochemistry,smiles])
+                    cursor.execute('SET SESSION rdkit.do_chiral_sss=%s; '+sql_query, [stereochemistry,smiles])
                     # context['search_results']=cursor.fetchall()
                     cursor_results = cursor.fetchall()
+                    
             else:
                 raise ValidationError('Unknown ligand structural search parameter: search_type="%s"' % str(search_type))
             pass
@@ -282,7 +534,7 @@ class LigandStructuralSearch(TemplateView):
                 no_results_msg = 'No results found.'
                 if cursor_results != []:
                     ligand_id = [x[0] for x in cursor_results]
-                    ps = AssayExperiment.objects.filter(ligand__in=ligand_id).prefetch_related('protein', 'ligand', 'ligand__ligand_type')
+                    ps = AssayExperiment.objects.filter(ligand__in=ligand_id).prefetch_related('protein', 'ligand', 'ligand__ligand_type','protein__family')
                 else:
                     context = "redirect"
                     self.request.session['ligand_structural_search_error_msg'] = no_results_msg
@@ -302,12 +554,12 @@ class LigandStructuralSearch(TemplateView):
                 ligand_data_affinity = result['affinity_data']
                 ligand_data_potency = result['potency_data']
             else:
-                ligand_data_affinity,ligand_data_potency = LigandListDetails(mode, ps)
+                ligand_data_affinity,ligand_data_potency = LigandListDetails(mode, ps,ligand_search=True)
             context = {}
+            context['ligand_structural_search'] = True
             context['potency_data'] = ligand_data_potency
             context['affinity_data'] = ligand_data_affinity
             cache.set(cache_key, context, 60*60*24*7)
-            print(cache)
         context['mode'] = mode
         return context
     
@@ -325,6 +577,11 @@ class LigandStructureSelection(TemplateView):
         context = super().get_context_data(**kwargs)
 
         return context
+
+class LigandTargetSelectionQueryResult:
+    def __init__(self, dictionary):
+        for k, v in dictionary.items():
+             setattr(self, k, v)
 
 class LigandTargetSelection(AbsReferenceSelectionTable):
         step = 1
@@ -434,7 +691,7 @@ def CachedTargetDetailsCompact(request, **kwargs):
 def CachedTargetDetailsExtended(request, **kwargs):
     return TargetDetails("extended", request, **kwargs)
 
-def LigandListDetails(mode, ps):
+def LigandListDetails(mode, ps,ligand_search=False):
     if mode == 'extended':
         ligand_data_affinity = []
         ligand_data_potency = []
@@ -511,84 +768,107 @@ def LigandListDetails(mode, ps):
             purchasability = vendors_dict[lig.id] if lig.id in vendors_dict.keys() else 0
 
             data_parsed = {}
+            protein_records_dict = {}
             for record in records:
+                protein = ''
+                if ligand_search:
+                    protein = record.protein
+                if protein not in protein_records_dict:
+                    protein_records_dict[protein] = []
+                protein_records_dict[protein].append(record)
                 assay = assay_conversion[record.assay_type]
-                if record.source not in data_parsed.keys():
-                    data_parsed[record.source] = {}
-                if assay not in data_parsed[record.source].keys():
-                    data_parsed[record.source][assay] = {}
-                if record.value_type not in data_parsed[record.source][assay].keys():
+                if protein not in data_parsed.keys():
+                    data_parsed[protein] = {}
+                if record.source not in data_parsed[protein].keys():    
+                    data_parsed[protein][record.source] = {}
+                if assay not in data_parsed[protein][record.source].keys():
+                    data_parsed[protein][record.source][assay] = {}
+                if record.value_type not in data_parsed[protein][record.source][assay].keys():
                     if record.source == 'Guide to Pharmacology':
-                        data_parsed[record.source][assay][record.value_type] = [x for x in record.p_activity_ranges.split('|')]
+                        data_parsed[protein][record.source][assay][record.value_type] = [x for x in record.p_activity_ranges.split('|')]
                     else:
-                        data_parsed[record.source][assay][record.value_type] = [record.p_activity_value]
+                        data_parsed[protein][record.source][assay][record.value_type] = [record.p_activity_value]
                 else:
                     if record.source == 'Guide to Pharmacology':
                         data = [x for x in record.p_activity_ranges.split('|')]
-                        data_parsed[record.source][assay][record.value_type] += data
+                        data_parsed[protein][record.source][assay][record.value_type] += data
                     else:
-                        data_parsed[record.source][assay][record.value_type].append(record.p_activity_value)
-
-            for source in data_parsed.keys():
-                for assay_type in data_parsed[source].keys():
-                    for value_type in data_parsed[source][assay_type].keys():
-                        values = [float(x) for x in data_parsed[source][assay_type][value_type] if x != 'None']
-                        low_value, average_value, high_value = '-','-','-'
-                        if len(values) > 0:
-                            low_value = min(values)
-                            average_value = round(sum(values) / len(values),1)
-                            high_value = max(values)
-                        print(assay_type)
-                        if assay_type == 'Binding': #Affinity
-                            ligand_data_affinity.append({
-                                'lig_id': lig.id,
-                                'ligand_name': lig.name,
-                                'picture': picture,
-                                'affinity': record.affinity,
-                                'affinity_tested': record.count_affinity_test,
-                                'species': record.protein.species.common_name,
-                                'record_count': len(records),
-                                'assay_type': assay_type,
-                                'purchasability': purchasability,
-                                'low_value': low_value,
-                                'average_value': average_value,
-                                'high_value': high_value,
-                                'value_type': value_type,
-                                'ligand_type': lig.ligand_type.name.replace('-',' ').capitalize(),
-                                'source': source,
-                                'smiles': lig.smiles,
-                                'mw': lig.mw,
-                                'rotatable_bonds': lig.rotatable_bonds,
-                                'hdon': lig.hdon,
-                                'hacc': lig.hacc,
-                                'logp': lig.logp,
-                                'reference': record.reference_ligand,
-                            })
-                        elif assay_type == 'Functional': #Potency
-                            ligand_data_potency.append({
-                                'lig_id': lig.id,
-                                'ligand_name': lig.name,
-                                'picture': picture,
-                                'potency': record.potency,
-                                'potency_tested': record.count_potency_test,
-                                'species': record.protein.species.common_name,
-                                'record_count': len(records),
-                                'assay_type': assay_type,
-                                'purchasability': purchasability,
-                                'low_value': low_value,
-                                'average_value': average_value,
-                                'high_value': high_value,
-                                'value_type': value_type,
-                                'ligand_type': lig.ligand_type.name.replace('-',' ').capitalize(),
-                                'source': source,
-                                'smiles': lig.smiles,
-                                'mw': lig.mw,
-                                'rotatable_bonds': lig.rotatable_bonds,
-                                'hdon': lig.hdon,
-                                'hacc': lig.hacc,
-                                'logp': lig.logp,
-                                'reference': record.reference_ligand,
-                            })
+                        data_parsed[protein][record.source][assay][record.value_type].append(record.p_activity_value)
+            
+            for protein in data_parsed.keys():
+                records = protein_records_dict[protein]
+                record = records[-1]
+                for source in data_parsed[protein].keys():
+                    for assay_type in data_parsed[protein][source].keys():
+                        for value_type in data_parsed[protein][source][assay_type].keys():
+                            values = [float(x) for x in data_parsed[protein][source][assay_type][value_type] if x != 'None']
+                            low_value, average_value, high_value = '-','-','-'
+                            if len(values) > 0:
+                                low_value = min(values)
+                                average_value = round(sum(values) / len(values),1)
+                                high_value = max(values)
+                            if assay_type == 'Binding': #Affinity
+                                binding_dict = {
+                                    'lig_id': lig.id,
+                                    'ligand_name': lig.name,
+                                    'picture': picture,
+                                    'affinity': record.affinity,
+                                    'affinity_tested': record.count_affinity_test,
+                                    'species': record.protein.species.common_name,
+                                    'record_count': len(records),
+                                    'assay_type': assay_type,
+                                    'purchasability': purchasability,
+                                    'low_value': low_value,
+                                    'average_value': average_value,
+                                    'high_value': high_value,
+                                    'value_type': value_type,
+                                    'ligand_type': lig.ligand_type.name.replace('-',' ').capitalize(),
+                                    'source': source,
+                                    'smiles': lig.smiles,
+                                    'mw': lig.mw,
+                                    'rotatable_bonds': lig.rotatable_bonds,
+                                    'hdon': lig.hdon,
+                                    'hacc': lig.hacc,
+                                    'logp': lig.logp,
+                                    'reference': record.reference_ligand,
+                                }
+                                if ligand_search:
+                                    binding_dict['name'] = Protein(name=protein.name).short()
+                                    binding_dict['entry_name'] = protein.entry_name
+                                    binding_dict['class'] = protein.get_protein_class_from_slug(short=True)
+                                    binding_dict['family'] = protein.get_protein_family_from_slug(short=True)
+                                ligand_data_affinity.append(binding_dict)
+                            elif assay_type == 'Functional': #Potency
+                                functional_dict = {
+                                    'lig_id': lig.id,
+                                    'ligand_name': lig.name,
+                                    'picture': picture,
+                                    'potency': record.potency,
+                                    'potency_tested': record.count_potency_test,
+                                    'species': record.protein.species.common_name,
+                                    'record_count': len(records),
+                                    'assay_type': assay_type,
+                                    'purchasability': purchasability,
+                                    'low_value': low_value,
+                                    'average_value': average_value,
+                                    'high_value': high_value,
+                                    'value_type': value_type,
+                                    'ligand_type': lig.ligand_type.name.replace('-',' ').capitalize(),
+                                    'source': source,
+                                    'smiles': lig.smiles,
+                                    'mw': lig.mw,
+                                    'rotatable_bonds': lig.rotatable_bonds,
+                                    'hdon': lig.hdon,
+                                    'hacc': lig.hacc,
+                                    'logp': lig.logp,
+                                    'reference': record.reference_ligand,
+                                }
+                                if ligand_search:
+                                    functional_dict['name'] = Protein(name=protein.name).short()
+                                    functional_dict['entry_name'] = protein.entry_name
+                                    functional_dict['class'] = protein.get_protein_class_from_slug(short=True)
+                                    functional_dict['family'] = protein.get_protein_family_from_slug(short=True)
+                                ligand_data_potency.append(functional_dict)
 
 
 
@@ -655,7 +935,6 @@ def TargetDetails(mode, request, **kwargs):
         context['potency_data'] = ligand_data_potency
         context['affinity_data'] = ligand_data_affinity
         cache.set(cache_key, context, 60*60*24*7)
-        print(cache)
     context['mode'] = mode
     return render(request, 'target_details.html', context)
 
