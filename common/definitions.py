@@ -2276,3 +2276,5 @@ G_PROTEIN_DISPLAY_NAME = { # Alpha
                            'subunit gamma':'G&gamma;'}
 
 ARRESTIN_DISPLAY_NAME = {'arrs':'S-arrestin', 'arrb1':'Beta-arrestin-1'}
+
+CLASSLESS_PARENT_GPCR_SLUGS = set({'008'}) # name = Other GPCRs

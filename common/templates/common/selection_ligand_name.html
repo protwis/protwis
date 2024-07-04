@@ -4,6 +4,7 @@
 {% block addon_css %}
 <link rel="stylesheet" href="{% static 'home/css/button_spinner.css' %}" type="text/css" />
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.13.14/dist/css/bootstrap-select.min.css">
 {% endblock %}
 
 
@@ -32,54 +33,59 @@
           <div class="col-md-12 panel panel-primary">
               <div class="panel-body">
                   <h4>Search</h4>
+                  Search a ligand
                   <div>
                       <input id="selection-autocomplete" class="form-control" size="25">
+                      <br>
+                      <br>
+                      by:
+                      <br>
+                      <select id="selection_ligand_fields" class="form-select" multiple aria-label="multiple select" style='height:120px'>
+                        <option value="all">All</option>
+                        <option value="name">Name</option>
+                        <option value="inchikey">InChIKey</option>
+                        <option value="gpcrdb_id">GPCRdb ID</option>
+                        {% for lid in ligandids %}
+                        <option value="{{lid.slug}}">{{ lid.name }} ID</option>
+                        {% endfor %}
+                      </select>
+                      
                   </div>
-              </div>
+              </div>    
           </div>
       {% endif %}
     </div>
-  </div>  <div class="row">
+  </div>  
+  <div class="row">
     <div class="col-md-8">
       <!-- target search -->
       {% if search %}
-          <div class="col-md-12 panel panel-primary">
-              <div class="panel-body">
-                  <h4>Structural search</h4>
-                  <div>
-                      <form>
-                      <div class="form-group">
-                        <label for="ligand_structural_search_smiles">SMILES:<label>
-                        <input id="ligand_structural_search_smiles" class="form-control" size="30" maxlength="200" value="{{ ligand_structural_search_parameters.smiles }}">
-                        <select id="ligand_structural_search_search_type" class="form-select">
-                            <option {% if ligand_structural_search_parameters.search_type == 'similarity' %}selected {% endif %}value="similarity">Search by similarity</option>
-                            <option {% if ligand_structural_search_parameters.search_type == 'substructure' %}selected {% endif %}value="substructure">Search substructure</option>
-                          </select>
-                      </div>
-                      <div style="{% if ligand_structural_search_parameters.search_type != 'similarity' %}display:none;{% endif %}height:44px" id="ligand_structural_search_similarity_div" class="form-group">
-                        <label for="ligand_structural_search_similarity_threshold">Similarity threshold:<label>
-                        <input style="width:75px" id="ligand_structural_search_similarity_threshold" class="form-control" maxlength="4" size="4" value="{{ ligand_structural_search_parameters.similarity_threshold }}">
-                      </div>
-                      <div style="{% if ligand_structural_search_parameters.search_type != 'substructure' %}display:none;{% endif %}height:44px" id="ligand_structural_search_stereo_div" class="form-group">
-                          <input type="checkbox" {% if ligand_structural_search_parameters.stereochemistry %}checked {% endif %}id="ligand_structural_search_stereochemistry" value="True">
-                        <label for="ligand_structural_search_stereochemistry">Stereochemistry<label>
-                      </div>
-                      {% comment %} 
-                      <div class="form-group">
-                        <label for="ligand_structural_search_limit">Limit:<label>
-                        <input type="number" style="width:75px" id="ligand_structural_search_limit" class="form-control" maxlength="3" size="3" min="1" max="100" value="{{ ligand_structural_search_parameters.limit }}">
-                      </div> 
-                      {% endcomment %}
-                      <div class="form-group">
-                      <p style="{% if ligand_structural_search_error_msg != 'No results found.'%}color: red; {% endif %}">{{ ligand_structural_search_error_msg }}</p>
-                      </div>
-                      </form>
-                    </div>
-                  <div id="selection-buttons">
-                    {% include 'common/selection_buttons.html' %}
-                  </div>
-              </div>
+      <div class="col-md-12 panel panel-primary">
+        <div class="panel-body">
+          <h4>Batch search</h4>
+          Search ligands by multiple SMILES exact match or by InChIKeys (one line per ligand).
+          <br>
+          <div class="form-group">
+            <select id="selection_ligand_bulk_search_search_type" class="form-select" aria-label="select">
+              <option {% if selection_ligand_bulk_search_parameters.search_type == 'smiles' %}selected {% endif %}value="smiles">Search by SMILES</option>
+              <option {% if selection_ligand_bulk_search_parameters.search_type == 'inchikey' %}selected {% endif %}value="inchikey">Search by InChIKeys</option>
+            </select>          
           </div>
+          <div style="{% if selection_ligand_bulk_search_parameters.search_type != 'smiles' %}display:none;{% endif %}height:44px" id="selection_ligand_bulk_search_stereo_div" class="form-group">
+            <input type="checkbox" {% if selection_ligand_bulk_search_parameters.stereochemistry %}checked {% endif %}id="selection_ligand_bulk_search_stereochemistry" value="True">
+          <label for="selection_ligand_bulk_search_stereochemistry">Stereochemistry<label>
+          </div>
+          <div class="form-group">
+            <textarea class="form-control" id="selection_ligand_bulk_search_textarea" placeholder="Type or paste your SMILES or InChIKeys here.">{{ selection_ligand_bulk_search_parameters.search_text }}</textarea>
+          </div>
+          <div class="form-group">
+            <p style="{% if ligand_bulk_search_error_msg != 'No results found.'%}color: red; {% endif %}">{{ ligand_bulk_search_error_msg }}</p>
+          </div>
+          <div id="selection-buttons">
+            {% include 'common/selection_buttons.html' %}
+          </div>
+        </div>
+      </div>
       {% endif %}
     </div>
   </div>
@@ -91,6 +97,30 @@
 {% block addon_js %}
     <meta name="csrf-token" content="{{ csrf_token }}">
     <script type="text/javascript">
+        var selection_ligand_fields = '';
+        var selection_ligand_fields_min_length_1 = false; // set $("#selection-autocomplete").catcomplete(minLength:1)
+        $(document).ready(function() {
+          $('#selection_ligand_fields').change(function () {
+            var selection_ligand_fields_list = []
+            $('#selection_ligand_fields option:selected').each(function( index ) {
+              selection_ligand_fields_list.push($( this ).val());
+            });
+            if (selection_ligand_fields_list.length > 0) {
+              if (selection_ligand_fields_list.indexOf('all') > -1 || selection_ligand_fields_list.indexOf('name') > -1 || selection_ligand_fields_list.indexOf('inchikey') > -1) {
+                selection_ligand_fields_min_length_1 = false;
+              } else {
+                selection_ligand_fields_min_length_1 = true;
+              }
+            } else {
+              selection_ligand_fields_min_length_1 = false;
+            }
+
+            selection_ligand_fields = selection_ligand_fields_list.join(',');
+            $("#selection-autocomplete").catcomplete('destroy');
+            selectionAutocompleteCreateCatComplete();
+            console.log(selection_ligand_fields);
+          });
+        });
         var type_of_selection = '{{ type_of_selection }}';
         var selection_only_receptors = '{{ selection_only_receptors }}';
         var redirect_url = '{{ buttons.continue.url }}'
@@ -130,15 +160,12 @@
         });
         {% endif %}
         $(document).ready(function() {
-            $('#ligand_structural_search_search_type').on('change',function (e) {
-              if (this.value === 'similarity') {
-                    
-                    $('#ligand_structural_search_stereo_div').hide();
-                    $('#ligand_structural_search_similarity_div').show();
-                } else if (this.value === 'substructure') {
-                    $('#ligand_structural_search_stereo_div').show();
-                    $('#ligand_structural_search_similarity_div').hide();
-                }
+            $('#selection_ligand_bulk_search_search_type').on('change',function (e) {
+              if (this.value === 'inchikey') {
+                    $('#selection_ligand_bulk_search_stereo_div').hide();
+              } else if (this.value === 'smiles') {
+                    $('#selection_ligand_bulk_search_stereo_div').show();
+              }
                   
             });
         });

@@ -149,6 +149,15 @@ def SelectionAutocomplete(request):
         q = request.GET.get('term').strip()
         type_of_selection = request.GET.get('type_of_selection')
         selection_only_receptors = request.GET.get('selection_only_receptors')
+
+        fields = request.GET.get('fields')
+        if fields == '':
+            fields = None
+        if fields is not None:
+            field_list = fields.split(',')
+            if 'all' in field_list:
+                fields = None
+            
         referer = request.META.get('HTTP_REFERER')
 
         if 'gproteinselection' in str(referer) or 'signprot' in str(referer) and not 'ginterface' in str(referer):
@@ -179,30 +188,73 @@ def SelectionAutocomplete(request):
             ps = Protein.objects.filter(Q(name__icontains=q) | Q(entry_name__icontains=q),
                                         species__in=(species_list),
                                         source__in=(protein_source_list)).exclude(family__slug__startswith=exclusion_slug).exclude(sequence_type__slug='consensus')[:10]
-        elif type_of_selection == 'ligands':
-            ps = Ligand.objects.filter(Q(name__icontains=q) | Q(id__icontains=q) | Q(inchikey__contains=q) | Q(smiles__icontains=q))[:10]
+        elif type_of_selection == 'ligands' and fields is None:
+            ps = Ligand.objects.filter(Q(name__icontains=q) | Q(id__icontains=q) | Q(inchikey__contains=q))[:10]
             indexes = LigandID.objects.filter(index=q).values_list('ligand_id','ligand_id__name','web_resource_id__name')
+        elif type_of_selection == 'ligands' and fields is not None:
+
+            cache_key = 'SelectionAutocompleteLigandsFields'
+            if not(cache.has_key(cache_key)):
+                q = LigandID.objects.distinct('web_resource_id').values('web_resource_id','web_resource__slug','web_resource__name')
+                web_resource_slug_2_id = {}
+                for lid in q:
+                    web_resource_slug_2_id[lid['web_resource__slug']] = lid['web_resource_id']
+                cache.set(cache_key, web_resource_slug_2_id, 60*60*24*7)
+            else:
+                web_resource_slug_2_id = cache.get(cache_key)
+            print(web_resource_slug_2_id)
+            qsl = None
+            qslid = None
+            for field in field_list:
+                if field == 'name':
+                    if qsl is None:
+                        qsl = Q(name__icontains=q)
+                    else:
+                        qsl = qsl | Q(name__icontains=q)
+                elif field == 'gpcrdb_id':
+                    if qsl is None:
+                        qsl = Q(id=q)
+                    else:
+                        qsl = qsl | Q(id__contains=q)        
+                elif field == 'inchikey':
+                    if qsl is None:
+                        qsl = Q(inchikey__contains=q)
+                    else:
+                        qsl = qsl | Q(inchikey__contains=q)
+                else:
+                    if qslid is None:
+                        qslid = Q(index=q) & Q(web_resource_id=web_resource_slug_2_id[field])
+                    else:
+                        qslid = qslid | Q(index=q) & Q(web_resource_id=web_resource_slug_2_id[field])
+            if qsl is not None:      
+                ps = Ligand.objects.filter(qsl)[:10]
+            else:
+                ps = []
+            if qslid is not None:
+                indexes = LigandID.objects.filter(qslid).values_list('ligand_id','ligand_id__name','web_resource_id__name')
+            else:
+                indexes = []  
         else:
             ps = Protein.objects.filter(Q(name__icontains=q) | Q(entry_name__icontains=q) | Q(family__name__icontains=q) | Q(accession=q),
                                         species__common_name='Human', source__name='SWISSPROT').exclude(entry_name__endswith='_a').exclude(sequence_type__slug='consensus')[:10]
-
+        if type_of_selection != 'ligands':
         # Try matching protein name after stripping html tags
-        if ps.count() == 0 and type_of_selection != 'ligands':
-            ps = Protein.objects.annotate(filtered=Func(F('name'), Value('<[^>]+>'), Value(''), Value('gi'), function='regexp_replace')) \
-                .filter(Q(filtered__icontains=q), species__common_name='Human', source__name='SWISSPROT')
-
-            # If count still 0 try searching for the full thing
             if ps.count() == 0:
-                ps = Protein.objects.filter(Q(name__icontains=q) | Q(entry_name__icontains=q) | Q(family__name__icontains=q) | Q(accession=q),
-                                            source__name='SWISSPROT').exclude(family__slug__startswith=exclusion_slug).exclude(sequence_type__slug='consensus')[:10]
+                ps = Protein.objects.annotate(filtered=Func(F('name'), Value('<[^>]+>'), Value(''), Value('gi'), function='regexp_replace')) \
+                    .filter(Q(filtered__icontains=q), species__common_name='Human', source__name='SWISSPROT')
 
-                # If count still 0 try searching outside of Swissprot
-                if ps.count() == 0 and type_of_selection == 'navbar':
-                    ps = Protein.objects.filter(Q(name__icontains=q) | Q(entry_name__icontains=q) | Q(family__name__icontains=q) | Q(accession=q)) \
-                        .exclude(entry_name__endswith='_a').exclude(sequence_type__slug='consensus')[:10]
-                elif ps.count() == 0:
-                    ps = Protein.objects.filter(Q(name__icontains=q) | Q(entry_name__icontains=q) | Q(family__name__icontains=q) | Q(accession=q), source__name='TREMBL') \
-                        .exclude(family__slug__startswith=exclusion_slug).exclude(sequence_type__slug='consensus')[:10]
+                # If count still 0 try searching for the full thing
+                if ps.count() == 0:
+                    ps = Protein.objects.filter(Q(name__icontains=q) | Q(entry_name__icontains=q) | Q(family__name__icontains=q) | Q(accession=q),
+                                                source__name='SWISSPROT').exclude(family__slug__startswith=exclusion_slug).exclude(sequence_type__slug='consensus')[:10]
+
+                    # If count still 0 try searching outside of Swissprot
+                    if ps.count() == 0 and type_of_selection == 'navbar':
+                        ps = Protein.objects.filter(Q(name__icontains=q) | Q(entry_name__icontains=q) | Q(family__name__icontains=q) | Q(accession=q)) \
+                            .exclude(entry_name__endswith='_a').exclude(sequence_type__slug='consensus')[:10]
+                    elif ps.count() == 0:
+                        ps = Protein.objects.filter(Q(name__icontains=q) | Q(entry_name__icontains=q) | Q(family__name__icontains=q) | Q(accession=q), source__name='TREMBL') \
+                            .exclude(family__slug__startswith=exclusion_slug).exclude(sequence_type__slug='consensus')[:10]
 
 
         if type_of_selection != 'ligands':
