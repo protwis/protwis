@@ -1,179 +1,387 @@
 // HEATMAP REPRESENTATION
 
-function simple_heatmap(data, location, element_id, legend_label) {
-  // Set the dimensions and margins of the graph
-  var margin = { top: 30, right: 100, bottom: 30, left: 60 }; // Increased left margin to accommodate row labels
 
-  // Extract rows and columns from the new data format
-  var rows = Object.keys(data);
-  var cols = Object.keys(data[rows[0]]);
+function heatmap_DataStyling() {
+    var heatmap_DataStyling = {Number_of_colors: "Three",
+        min_color: "#1a80bb",
+        middle_color: "#FFFFFF",
+        max_color: "#a00000",
+        rotation: 90,
+        label_position: 'Bottom',
+        label_fontsize: 12,
+        receptor_fontsize: 12,
+        datalabels: true,
+        data_border: true,
+        data_fontsize: 12,
+        legend_label: "Value intensity",
+        LabelType: 'UniProt'
 
-  // Calculate the width required for row labels
-  var rowLabelWidth = d3.max(rows, function(d) {
-    return d.length * 25; // Adjust the multiplier as needed
-  });
-
-  // Prepare chart data
-  var chartData = [];
-  var highest_value = 0;
-
-  for (var row in data) {
-    for (var col in data[row]) {
-      chartData.push({ row: row, col: col, value: data[row][col] });
-      if (data[row][col] > highest_value) {
-        highest_value = data[row][col];
-      }
     }
-  }
-
-  var width = (45 * cols.length) + rowLabelWidth; // Adjust the multiplier as needed
-  var height = (20 * rows.length);
-
-  // Append the SVG object to the body of the page
-  var svg_home = d3.select("#" + location)
-    .append("svg")
-    .attr("width", width + margin.left + margin.right)
-    .attr("height", height + (margin.top * 5))
-    .attr("transform", "translate(0,-" + margin.bottom + ")")
-    .attr("id", element_id);
-
-  var redscale = ['#ffcccc', '#ff0000']; // Changed from greyscale
-
-  var legend = svg_home.append('defs')
-    .append('linearGradient')
-    .attr('id', 'grad_' + element_id)
-    .attr('x1', '0%')
-    .attr('x2', '100%')
-    .attr('y1', '0%')
-    .attr('y2', '0%');
-
-  legend.selectAll('stop')
-    .data(redscale) // Changed from greyscale
-    .enter()
-    .append('stop')
-    .style('stop-color', function(d) { return d; })
-    .attr('offset', function(d, i) {
-      return 100 * (i / (redscale.length - 1)) + '%'; // Changed from greyscale
-    });
-
-
-  var legend_svg = svg_home.append("g")
-    .attr("transform", "translate(30," + (height + 100) + ")");
-
-  var color_svg = svg_home.append("g")
-    .attr("transform", "translate(" + (margin.left * 1.5) + ",0)");
-
-  var svg = svg_home.append("g")
-    .attr("transform", "translate(" + (margin.left * 2) + ",0)");
-
-  legend_svg.append("text")
-    .attr('y', 10)
-    .attr('x', -50)
-    .style("font", "14px sans-serif")
-    .style("font-weight", "bold")
-    .text(legend_label);
-
-  legend_svg.append("text")
-    .attr('x', 30)
-    .attr('y', 30)
-    .style("font", "14px sans-serif")
-    .style("font-weight", "bold")
-    .text('0');
-
-  legend_svg.append('rect')
-    .attr('x', 40)
-    .attr('y', 15)
-    .attr('width', (width * 0.7) + margin.left + margin.right)
-    .attr('height', 20)
-    .style('fill', 'url(#grad_' + element_id + ')');
-
-  legend_svg.append("text")
-    .attr('x', width + margin.left)
-    .attr('y', 30)
-    .style("font", "14px sans-serif")
-    .style("font-weight", "bold")
-    .text(highest_value);
-
-  // Using each to ensure the text element is fully created
-  var legendLabel;
-  legend_svg.selectAll("text").each(function() {
-    legendLabel = this.getBBox().width * 1.05 + 0.5 * 10;
-  });
-
-  legend_svg.select("text")
-    .attr("x", (width + margin.left + margin.right - legendLabel) / 2 + margin.left - 120);
-
-  // Build X scales and axis
-  var x = d3.scale.ordinal()
-    .rangeBands([0, width], 0.01)
-    .domain(cols);
-
-  svg.append("g")
-    .attr("transform", "translate(0," + height + ")")
-    .attr('id', 'Xaxis')
-    .call(d3.svg.axis().scale(x).orient("bottom").tickSize(0))
-    .selectAll("text")
-    .style("text-anchor", "end")
-    .attr("transform", "rotate(-45)")
-    .attr("dx", "-0.8em")
-    .attr("dy", "0.15em")
-    .attr("class", "column-label"); // Add a class for styling
-
-  // Build Y scales and axis
-  var y = d3.scale.ordinal()
-    .rangeBands([height, 0], 0.01)
-    .domain(rows);
-
-  svg.append("g")
-    .attr('id', 'Yaxis')
-    .call(d3.svg.axis().scale(y).orient("left").tickSize(0));
-
-
-  // Build color scale
-  var myColor = d3.scale.linear()
-    .range(["#ffcccc", "#ff0000"]) // Changed from ["white", "black"]
-    .domain([1, highest_value]);
-
-  // Read the data
-  svg.selectAll("rect")
-    .data(chartData, function(d) { return d.row + ':' + d.col; })
-    .enter()
-    .append("rect")
-    .attr("x", function(d) { return x(d.col); })
-    .attr("y", function(d) { return y(d.row); })
-    .attr("width", x.rangeBand())
-    .attr("height", y.rangeBand())
-    .style("fill", function(d) { return myColor(d.value); });
-
-  svg.select('#Xaxis')
-    .attr('text-anchor', 'start');
-
-  d3.selectAll("#Yaxis>.tick>text")
-    .each(function(d, i) {
-      d3.select(this).style("font-size", "1.3em");
-    });
-
-  d3.selectAll("#Xaxis>.tick>text")
-    .each(function(d, i) {
-      d3.select(this).style("font-size", "1.3em");
-    });
-
-  var count = 1;
-  var ticks = svg.select('#Xaxis').selectAll('.tick');
-  ticks.each(function(d) {
-    var value = (count & 1) ? "odd" : "even";
-    var text = d3.select(this).select('text');
-    var textSize = Math.floor(text.node().getBBox().width * 1.05 + 0.5 * 10);
-    text.attr("transform", null);
-    // text.attr("x", "-" + textSize / 2 + "px");
-    text.attr("x","42")
-    text.attr("y","15")
-    // if (value === "even") {
-    //   text.attr("y", "0");
-    // }
-    count = count + 1;
-  });
+    return heatmap_DataStyling
 }
+
+// Function to handle row labels based on label type
+function handleRowLabels(textElement, label, labelType, fontSize) {
+    const htmlEntities = {
+        '&alpha;': 'α',
+        '&beta;': 'β',
+        '&gamma;': 'γ',
+        '&delta;': 'δ',
+        '&epsilon;': 'ε',
+        '&zeta;': 'ζ',
+        '&eta;': 'η',
+        '&theta;': 'θ',
+        '&iota;': 'ι',
+        '&kappa;': 'κ',
+        '&lambda;': 'λ',
+        '&mu;': 'μ',
+        '&nu;': 'ν',
+        '&xi;': 'ξ',
+        '&omicron;': 'ο',
+        '&pi;': 'π',
+        '&rho;': 'ρ',
+        '&sigma;': 'σ',
+        '&tau;': 'τ',
+        '&upsilon;': 'υ',
+        '&phi;': 'φ',
+        '&chi;': 'χ',
+        '&psi;': 'ψ',
+        '&omega;': 'ω'
+    };
+
+    // Handle label transformations based on labelType
+    let transformedLabel = label; // Initialize transformedLabel with the original label
+
+    if (labelType === 'UniProt') {
+        transformedLabel = label.replace(/_human/g, '').toUpperCase();
+        textElement.text(transformedLabel);
+    } else if (labelType === 'IUPHAR') {
+
+        // Retrieve the IUPHAR label from your converter object
+        transformedLabel = label_converter.UniProt_to_IUPHAR_converter[label];
+        // Replace HTML entities with corresponding Unicode characters
+        for (const [entity, char] of Object.entries(htmlEntities)) {
+            transformedLabel = transformedLabel.replace(new RegExp(entity, 'g'), char);
+        }
+        // Remove <i> and </i> tags from the label
+        transformedLabel = transformedLabel.replace(/<\/?i>/g, '');
+        // remove receptor and adrenoceptor
+        transformedLabel = transformedLabel.replace("-adrenoceptor", '').replace(" receptor", '');
+        // Clear existing content in textElement if needed
+        textElement.text('');
+        // textElement.text(transformedLabel);
+
+        // Additional transformations specific to IUPHAR labels
+        const parts = transformedLabel.split(/(<sub>|<\/sub>)/); // Split label into parts including <sub> tags
+        let inSub = false; // Flag to track if we are inside a subscript
+
+        // Calculate the subscript font size (e.g., 75% of the main font size)
+        const mainFontSize = parseFloat(fontSize);
+        const subFontSize = parseInt(mainFontSize * 0.75);
+
+        // Handle each part of the label
+        parts.forEach(part => {
+            if (part === '<sub>') {
+                inSub = true;
+            } else if (part === '</sub>') {
+                inSub = false;
+            } else {
+                const tspan = textElement.append('tspan').text(part).style("font-family", "sans-serif");
+                    
+                // Adjust font size and positioning for subscripts
+                // tspan.attr('font-size', inSub ? subFontSize : fontSize);
+                // Adjust dy based on subscript flag
+                if (inSub) {
+                    tspan.attr('dy', '0.5em').attr('font-size', subFontSize); // Adjust dy for subscript
+                } else {
+                    tspan.attr('dy', '0.1em').attr('font-size', mainFontSize); // Default dy for regular text
+                }
+            }
+        });
+    }
+}
+
+function Heatmap(data, location, heatmap_DataStyling,label_x_converter) {
+    
+    const margin = { top: 30, right: 100, bottom: 30, left: 60 }; // Adjusted margin for row labels
+    const rows = Object.keys(data);
+    const cols = Object.keys(data[rows[0]]);
+    const col_labels = cols.map(col => label_x_converter[col]);
+    
+    const rotation = heatmap_DataStyling.rotation;
+    const data_labels = heatmap_DataStyling.datalabels;
+    const labelType = heatmap_DataStyling.LabelType;
+    const label_position = heatmap_DataStyling.label_position;
+    const label_fontsize = heatmap_DataStyling.label_fontsize;
+    const receptor_fontsize = heatmap_DataStyling.receptor_fontsize;
+    const data_fontsize = heatmap_DataStyling.data_fontsize;
+    let legend_y_position = 30;
+
+    let rowLabelWidth;
+    if (rotation === 90 || rotation === 45) {
+        // Adjust rowLabelWidth to be slightly wider than the font size height of x-axis labels
+        rowLabelWidth = 20; // Adjust this value based on your font size and label requirements
+    } else {
+        rowLabelWidth = d3.max(col_labels, d => d.length* 40 * (label_fontsize/14)); // Default width calculation
+    }
+
+    // Calculate the longest column label length
+    const longestLabel = d3.max(col_labels, d => d.length);
+    if (label_position === 'Top') {
+        // Calculate the longest column label length from the data
+        const fontSize = label_fontsize; // Assuming a font size of 14px
+        // Adjust margin calculation with a scaling factor
+        margin.top = longestLabel * (fontSize * 0.6); // Adding extra space for padding
+        legend_y_position = 0;
+    } else if (label_position === 'Bottom') {
+        if (rotation === 90) {
+             // Calculate the longest column label length from the data
+            const fontSize = label_fontsize; // Assuming a font size of 14px
+            legend_y_position = longestLabel * (fontSize * 0.55)
+        }
+    }
+
+    const chartData = [];
+    let highest_value = -Infinity;
+    let lowest_value = Infinity;
+  
+    rows.forEach(row => {
+      cols.forEach(col => {
+        const value = data[row][col];
+        chartData.push({ row, col, value });
+        if (value > highest_value) {
+          highest_value = value;
+        }
+        if (value < lowest_value) {
+            lowest_value = value;
+        }
+      });
+    });
+    
+    const width = (20 * cols.length) + rowLabelWidth;
+    const height = (20 * rows.length);
+    const svg_home = d3.select("#" + location)
+      .append("svg")
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + (label_position === "Bottom" ? (margin.top * longestLabel/2) : (margin.top*1.5))) // Needs to account for label length or something like it.
+      .attr("id", "Heatmap_plot");
+    
+    //  x / y scale transformers 
+    const x = d3.scale.ordinal()
+        .rangeBands([0, width])
+        .domain(cols);
+
+    const y = d3.scale.ordinal()
+      .rangeBands([height, 0])
+      .domain(rows.reverse());
+    
+    if (heatmap_DataStyling.Number_of_colors === 'Three') {
+        var myColor = d3.scale.linear()
+        .range([heatmap_DataStyling.min_color, heatmap_DataStyling.middle_color, heatmap_DataStyling.max_color]) // Adjust colors here
+        .domain([lowest_value, (highest_value + lowest_value) / 2, highest_value]); // Adjust domain based on your data
+    } else if (heatmap_DataStyling.Number_of_colors === 'One' || heatmap_DataStyling.Number_of_colors === 'Two') {
+        var myColor = d3.scale.linear()
+        .range([heatmap_DataStyling.min_color, heatmap_DataStyling.max_color]) // Adjust colors here
+        .domain([lowest_value, highest_value]); // Adjust domain based on your data
+    }
+    
+    const svg = svg_home.append("g")
+        .attr("transform", `translate(${margin.left * 2}, ${margin.top})`);
+    
+    let xAxis;
+    if (label_position === 'Bottom') {
+    xAxis = svg.append("g")
+        .attr("transform", `translate(0, ${height})`)
+        .attr('id', 'Xaxis')
+        .call(d3.svg.axis().scale(x).orient("bottom").tickSize(0));
+    } else if (label_position === 'Top') {
+    xAxis = svg.append("g")
+        .attr("transform", `translate(0, -30)`)
+        .attr('id', 'Xaxis')
+        .call(d3.svg.axis().scale(x).orient("top").tickSize(0));
+    }
+
+    xAxis.selectAll("text")
+    .attr("class", "column-label")
+    .style("font-size", `${label_fontsize}px`)
+    .style("font-family", "sans-serif")
+    .each(function(d, i) {
+        const col = cols[i]; // Assuming cols is defined somewhere in your code
+        const text = d3.select(this);
+
+        // Set text content based on label_x_converter
+        text.text(label_x_converter[col]);
+
+        if (rotation === 0) {
+            text.style("text-anchor", "middle")
+                .attr("transform", "rotate(0)")
+                .attr("dx", `0`)
+                .attr("dy", `${label_fontsize * 1.5}px`); // Adjust dy based on font size
+        } else if (rotation === 45) {
+            text.style("text-anchor", label_position === 'Bottom' ? "end" : "start")
+                .attr("transform", "rotate(-45)")
+                .attr("dx", label_position === 'Bottom' ? `${-0.5 * label_fontsize}px` : `${-1.1 * label_fontsize}px`)
+                .attr("dy", label_position === 'Bottom' ? `${0.5 * label_fontsize}px` : `${1.1 * label_fontsize}px`);
+        } else if (rotation === 90) {
+            text.style("text-anchor", label_position === 'Bottom' ? "end" : "start")
+                .attr("transform", "rotate(-90)")
+                .attr("dx", label_position === 'Bottom' ? `${-0.3 * label_fontsize}px` : `${-1.3 * label_fontsize}px`)
+                .attr("dy", label_position === 'Bottom' ? `0px` : `${0.6 * label_fontsize}px`);
+        }
+    });
+    
+    // Y labels 
+    const yAxis = svg.append("g")
+        .attr('id', 'Yaxis')
+        .call(d3.svg.axis().scale(y).orient("left").tickSize(0))
+        .selectAll("text")
+        .style("font-size", `${receptor_fontsize}px`)
+        .style("font-family", "sans-serif");
+
+    yAxis.each(function(d) {
+        const textElement = d3.select(this);
+  
+        // Call function to handle row labels based on label type
+        handleRowLabels(textElement, d, labelType,receptor_fontsize);
+    });
+  
+    // Heatmap data boxes 
+
+    const rects = svg.selectAll("rect")
+      .data(chartData, d => `${d.row}:${d.col}`)
+      .enter()
+      .append("rect")
+      .attr("x", d => x(d.col))
+      .attr("y", d => y(d.row))
+      .attr("width", x.rangeBand())
+      .attr("height", y.rangeBand())
+      .style("fill", d => myColor(d.value))
+      .each(function(d) {
+        if (heatmap_DataStyling.data_border) {
+            d3.select(this)
+                .style('stroke', 'black')
+                .style('stroke-width', 0.5);
+        }
+    });
+
+    
+    if (data_labels) {
+      rects.each(function(d) {
+        const rect = d3.select(this);
+        const textColor = getContrastColor(myColor(d.value));
+        
+        svg.append("text")
+          .attr("x", +rect.attr("x") + rect.attr("width") / 2)
+          .attr("y", +rect.attr("y") + rect.attr("height") / 2)
+          .attr("dy", ".35em")
+          .attr("text-anchor", "middle")
+          .style("font-size", `${data_fontsize}px`)
+          .style("font-family", "sans-serif")
+          .style("fill", textColor)
+          .text(d.value);
+      });
+    }
+  
+    function getContrastColor(hexColor) {
+      const rgb = d3.rgb(hexColor);
+      const brightness = (rgb.r * 0.299 + rgb.g * 0.587 + rgb.b * 0.114);
+      return brightness > 128 ? "black" : "white";
+    }
+
+    // ##########
+    // # Legend #
+    // ##########
+
+    // Adjust for the width of the legend to center it
+    let legendX;
+    if (cols.length % 2 === 0) {
+        // Even number of columns
+        const leftMiddleColIndex = (cols.length / 2) - 1;
+        const rightMiddleColIndex = cols.length / 2;
+        const leftMiddleX = x(cols[leftMiddleColIndex]) + x.rangeBand() / 2;
+        const rightMiddleX = x(cols[rightMiddleColIndex]) + x.rangeBand() / 2;
+        legendX = (leftMiddleX + rightMiddleX) / 2;
+    } else {
+        // Odd number of columns
+        const middleColIndex = Math.floor(cols.length / 2);
+        legendX = x(cols[middleColIndex]) + x.rangeBand() / 2; // Center of the middle column
+    }
+
+    // Adjust for the width of the legend to center it
+    const legendWidth = width;
+    const adjustedLegendX = legendX - (legendWidth / 2);
+
+    // Position the legend using the adjustedLegendX
+    const legend_svg = svg.append("g")
+        .attr("transform", `translate(${adjustedLegendX}, ${height + legend_y_position})`);
+  
+    const gradientId = "Heatmap_gradient";
+    const defs = svg_home.append('defs');
+  
+    // Gradient definition
+    const gradient = defs.append('linearGradient')
+      .attr('id', gradientId)
+      .attr('x1', '0%')
+      .attr('x2', '100%')
+      .attr('y1', '0%')
+      .attr('y2', '0%');
+  
+    gradient.append('stop')
+      .attr('offset', '0%')
+      .attr('stop-color', heatmap_DataStyling.min_color); // Start with red at 0%
+    
+    if (heatmap_DataStyling.Number_of_colors === 'Three') {
+        gradient.append('stop')
+        .attr('offset', '50%')
+        .attr('stop-color', heatmap_DataStyling.middle_color); // Middle point is white
+    }
+    gradient.append('stop')
+      .attr('offset', '100%')
+      .attr('stop-color', heatmap_DataStyling.max_color); // End with green at 100%
+  
+    const gradientRect = legend_svg.append('rect')
+      .attr('x', 1) // Adjust for border
+      .attr('y', 16) // Adjust for border
+      .attr('width', legendWidth - 2) // Adjust for border
+      .attr('height', 14) // Adjust for border
+      .style('fill', `url(#${gradientId})`);
+    
+    if (heatmap_DataStyling.data_border) {
+      const borderRect = legend_svg.append('rect')
+      .attr('x', 0)
+      .attr('y', 15)
+      .attr('width', legendWidth)
+      .attr('height', 15)
+      .style('fill', 'none')
+      .style('stroke', 'black')
+      .style('stroke-width', 1);
+    }
+    legend_svg.append("text")
+      .attr('x', 0)
+      .attr('y', 50)
+      .style("font-size", `${data_fontsize}px`)
+      .style("font-family", "sans-serif")
+      .text(lowest_value);
+    
+    if (heatmap_DataStyling.Number_of_colors === 'Three') {
+        legend_svg.append("text")
+        .attr('x', legendWidth / 2)
+        .attr('y', 50)
+        .style("font-size", `${data_fontsize}px`)
+        .style("font-family", "sans-serif")
+        .style("text-anchor", "middle")
+        .text((highest_value + lowest_value) / 2); // Middle value
+    }
+    
+    legend_svg.append("text")
+      .attr('x', legendWidth)
+      .attr('y', 50)
+      .style("font-size", `${data_fontsize}px`)
+      .style("font-family", "sans-serif")
+      .style("text-anchor", "end")
+      .text(highest_value);
+    
+  }
 
 
 // ####################
@@ -280,25 +488,66 @@ function renderDataVisualization(data, location,styling_option,Layout_dict,data_
     
     // ######################
     // ## Initializzation  ##
-    // ###################### 
+    // ######################
     
-    // ## Global Variables ##
+    // Check the visibility of each layer
+    const Layer1_isChecked = d3.select(`#toggle-layer-1`).property('checked');
+    const Layer2_isChecked = d3.select(`#toggle-layer-2`).property('checked');
+    const Layer3_isChecked = d3.select(`#toggle-layer-3`).property('checked');
 
+    let Checklist = [Layer1_isChecked, Layer2_isChecked, Layer3_isChecked];
+    
+    // Indentation
+
+    const Indentation_toggle = d3.select(`#toggle-indentation`).property('checked');
+    
+
+    // ## Global Variables ##
     let columns = Layout_dict.columns;
     let col_breaker = Layout_dict.col_breaker;
-    let col_spacing = Layout_dict.col_spacing;
+    let col_max_label = Layout_dict.col_max_label;
     
+
     // Calculate total count
-    const total_count = calculateTotalCount(data);
-    const width = 420*columns;
+    const total_count = calculateTotalCount(data,Checklist);
+
+    // set col breaker number 
+    var Col_break_number;
+        
+    if (col_max_label == "Auto") {
+        Col_break_number = Math.ceil(total_count / columns);
+    } else if (col_max_label == "Custom") {
+        Col_break_number = Layout_dict.Col_break_number
+    }
+
+    // Dimensions
+    let width = 0;
     const height = 200;
     const margin = { top: 40, right: 20, bottom: 20, left: 20 };
+
+    // ## Calculate all spacing and dimensions ##
+    let spacing_dict = Calculate_dimension(data,Checklist,Col_break_number,columns,label_conversion_dict,label_names,styling_option,margin);
+
+    // update spacing_dict
+    spacing_dict.Col1 = spacing_dict.Col1 === -Infinity ? spacing_dict.Col1 : spacing_dict.Col1 + 80; // 80 is the xoffset of the labels due to datapoints (this might change)
+    spacing_dict.Col2 = spacing_dict.Col2 === -Infinity ? spacing_dict.Col2 : spacing_dict.Col2 + 80;
+    spacing_dict.Col3 = spacing_dict.Col3 === -Infinity ? spacing_dict.Col3 : spacing_dict.Col3 + 80;
+    spacing_dict.Col4 = spacing_dict.Col4 === -Infinity ? spacing_dict.Col4 : spacing_dict.Col4 + 80;
+
+    
+    // Update width
+
+    col_list = ['Col1','Col2','Col3','Col4'];
+    for (let i = 0; i < columns; i++) {
+        width = width+spacing_dict[col_list[i]];
+    }
 
     // X & Y coordinates 
     let yOffset = margin.top+5;
     let yOffset_max = 0
     let xOffset = 0;
     
+
     // Create svg element
     const svg = d3.select("#" + location)
         .append("svg")
@@ -313,27 +562,24 @@ function renderDataVisualization(data, location,styling_option,Layout_dict,data_
 
 
     // ## Function to calculate the total count of keys and values ##
-    function calculateTotalCount(obj) {
+    function calculateTotalCount(obj,checklist) {
         let totalCount = 0;
-        
         // Recursive function to traverse the nested object
-        function traverse(obj) {
-            for (const key in obj) {
-                // Increment count for each key
-                totalCount++;
-                if (typeof obj[key] === 'object') {
-                    // Recursively traverse nested objects
-                    traverse(obj[key]);
-                } else if (Array.isArray(obj[key])) {
-                    // Increment count for each array item
-                    totalCount += obj[key].length;
+        for (const key in obj) {
+            // Increment count for each key
+            checklist[0] ? totalCount++ : totalCount;
+            for (const subkey1 in obj[key]) {
+                checklist[1] ? totalCount++ : totalCount;
+                for (const subkey2 in obj[key][subkey1]) {
+                    checklist[2] ? totalCount++ : totalCount;
+                    for (const item in obj[key][subkey1][subkey2]) {
+                        totalCount++;
+                    }
                 }
             }
-        }
-    
-        traverse(obj);
-        return totalCount;
-    }
+        } return totalCount;
+        } 
+        
 
     // ## Shape Funciton ##
     // Function to add different shapes
@@ -395,39 +641,281 @@ function renderDataVisualization(data, location,styling_option,Layout_dict,data_
                 console.log('Unknown shape type');
         }
     }
+    
+    function Calculate_dimension(data,Checklist,Col_break_number,columns,label_conversion_dict,label_names,styling_option,margin) {
+        
+        temp_col_state = 1;
+
+        label_max_dict = {col1_label_max: {'level1':-Infinity,'level2':-Infinity,'level3':-Infinity,'level4':-Infinity},
+                            col2_label_max: {'level1':-Infinity,'level2':-Infinity,'level3':-Infinity,'level4':-Infinity},
+                            col3_label_max: {'level1':-Infinity,'level2':-Infinity,'level3':-Infinity,'level4':-Infinity},
+                            col4_label_max: {'level1':-Infinity,'level2':-Infinity,'level3':-Infinity,'level4':-Infinity}};
+
+        Col_spacing_dict = {'Col1': -Infinity,'Col2': -Infinity,'Col3': -Infinity,'Col4': -Infinity};
+
+        const label_dict_keys = Object.keys(label_max_dict);
+
+        const htmlEntities = [
+            '&alpha;', '&beta;', '&gamma;', '&delta;', '&epsilon;',
+            '&zeta;', '&eta;', '&theta;', '&iota;', '&kappa;',
+            '&lambda;', '&mu;', '&nu;', '&xi;', '&omicron;',
+            '&pi;', '&rho;', '&sigma;', '&tau;', '&upsilon;',
+            '&phi;', '&chi;', '&psi;', '&omega;'
+        ];
+        function replaceHtmlEntities(str) {
+            // Create a regular expression to match any of the HTML entities as keys
+            const entityRegex = new RegExp(htmlEntities.join('|'), 'gi');
+        
+            // Replace occurrences of HTML entities with a placeholder character (e.g., 'a')
+            return str.replace(entityRegex, 'a');
+        }
+        
+        // initialize variables for length calculation
+        let label_dim_counter = 0;
+        let label_length = 0;
+
+        // Functions for length updates
+        // Function to update column state and label max length
+        function updateLabelMaxLength(key,level) {
+            label_dim_counter++;
+            
+            // Update current column state
+            if (label_dim_counter > Col_break_number && temp_col_state < columns) {
+                label_dim_counter = 1;
+                temp_col_state++;
+            }
+
+            // Dynamic key for the current column
+            const colKey = `col${temp_col_state}_label_max`;
+            label_length = key.length;
+
+            // Update the max length for the current column
+            if (label_max_dict[colKey][level] < label_length) {
+                label_max_dict[colKey][level] = label_length;
+            }
+        }
+
+        // Function to update label max length for array items with specific conversions
+        function updateLabelMaxLengthForItems(item) {
+            label_dim_counter++;
+            
+            // Update current column state
+            if (label_dim_counter > Col_break_number && temp_col_state < columns) {
+                label_dim_counter = 1;
+                temp_col_state++;
+            }
+
+            // Dynamic key for the current column
+            const colKey = `col${temp_col_state}_label_max`;
+            let label = item;
+
+            if (label_names == 'UniProt') {
+                label = label_conversion_dict[item];
+                // label = label.replace(/_human/g, '');
+            } else if (label_names == 'IUPHAR') {
+                label = item;
+                label = replaceHtmlEntities(label)
+                label = label.replace(/<\/?i>|(-adrenoceptor| receptor)|<\/?sub>/g, '');
+            }
+
+            label_length = label.length;
+            // console.log(label);
+            // Update the max length for the current column
+            if (label_max_dict[colKey]['level4'] < label_length) {
+                label_max_dict[colKey]['level4'] = label_length;
+            }
+        }
+        Object.entries(data).forEach(([key, value]) => {
+            // If Class is there
+            if (Checklist[0]) {
+                updateLabelMaxLength(key,'level1');
+                // transverse next level 2
+                if (Checklist[1] && typeof value === 'object') {
+                    Object.entries(value).forEach(([subKey1, subValue1]) => {
+                        updateLabelMaxLength(subKey1,'level2');
+                        // transverse next level 3
+                        if (Checklist[2] && typeof subValue1 === 'object') {
+                            Object.entries(subValue1).forEach(([subKey2, subValue2]) => {
+                                updateLabelMaxLength(subKey2,'level3');
+                                // transverse final level 4
+                                if (Array.isArray(subValue2)) {
+                                    subValue2.forEach(item => {
+                                        updateLabelMaxLengthForItems(item)
+                                    });
+                                }
+                            }); 
+                        } else if (!Checklist[2]) {
+                            Object.entries(subValue1).forEach(([subKey2, subValue2]) => {
+                                if (Array.isArray(subValue2)) {
+                                    subValue2.forEach(item => {
+                                        updateLabelMaxLengthForItems(item)
+                                    });
+                                }
+                            });
+                        }
+                    });
+                } else if (!Checklist[1] && Checklist[2]) {
+                    // transverse final level 2
+                    Object.entries(value).forEach(([subKey1, subValue1]) => {
+                        if (Checklist[2] && typeof subValue1 === 'object') {
+                            // transverse final level 3
+                            Object.entries(subValue1).forEach(([subKey2, subValue2]) => {
+                                updateLabelMaxLength(subKey2,'level3');
+                                console.log("Hep");
+                                // transverse final level 4
+                                if (Array.isArray(subValue2)) {
+                                    subValue2.forEach(item => {
+                                        updateLabelMaxLengthForItems(item)
+                                    });
+                                }
+                            });
+                        }
+                    });
+                } else if (!Checklist[1] && !Checklist[2]) {
+                    // transverse final level 2
+                    Object.entries(value).forEach(([subKey1, subValue1]) => {
+                        // transverse final level 3
+                        Object.entries(subValue1).forEach(([subKey2, subValue2]) => {
+                            // transverse final level 4
+                            if (Array.isArray(subValue2)) {
+                                subValue2.forEach(item => {
+                                    updateLabelMaxLengthForItems(item)
+                                });
+                            }
+                        });
+                    });
+                }
+            } else if (!Checklist[0] && Checklist[1]) {
+                // transverse final level 2
+                Object.entries(value).forEach(([subKey1, subValue1]) => {
+                    updateLabelMaxLength(subKey1,'level2');
+                    if (Checklist[2] && typeof subValue1 === 'object') {
+                        // transverse final level 3
+                        Object.entries(subValue1).forEach(([subKey2, subValue2]) => {
+                            updateLabelMaxLength(subKey2,'level3');
+                            // transverse final level 4
+                            if (Array.isArray(subValue2)) {
+                                subValue2.forEach(item => {
+                                    updateLabelMaxLengthForItems(item)
+                                });
+                            }
+                        });
+                    } else if (!Checklist[2]) {
+                        // transverse final level 3
+                        Object.entries(subValue1).forEach(([subKey2, subValue2]) => {
+                            // transverse final level 4
+                            if (Array.isArray(subValue2)) {
+                                subValue2.forEach(item => {
+                                    updateLabelMaxLengthForItems(item)
+                                });
+                            }
+                        });
+                    }
+                });
+            } else if (!Checklist[0] && !Checklist[1] && Checklist[2]) {
+                // transverse final level 2
+                Object.entries(value).forEach(([subKey1, subValue1]) => {
+                    // transverse final level 3
+                    Object.entries(subValue1).forEach(([subKey2, subValue2]) => {
+                        updateLabelMaxLength(subKey2,'level3');
+                        // transverse final level 4
+                        if (Array.isArray(subValue2)) {
+                            subValue2.forEach(item => {
+                                updateLabelMaxLengthForItems(item)
+                            });
+                        }
+                    });
+                });
+            } else if (!Checklist[0] && !Checklist[1] && !Checklist[2]){
+                // transverse final level 2
+                Object.entries(value).forEach(([subKey1, subValue1]) => {
+                    // transverse final level 3
+                    Object.entries(subValue1).forEach(([subKey2, subValue2]) => {
+                        // transverse final level 4
+                        if (Array.isArray(subValue2)) {
+                            subValue2.forEach(item => {
+                                updateLabelMaxLengthForItems(item)
+                            });
+                        }
+                    });
+                });
+            }
+        });
+
+        // calculate the longest entry for each column
+        const levels = ['level1', 'level2', 'level3', 'level4'];
+        const laters = ['Layer1', 'Layer2', 'Layer3', 'Layer4'];
+        const cols = ['Col1', 'Col2', 'Col3', 'Col4'];
+
+        for (let i = 0; i < columns; i++) {
+            const key = label_dict_keys[i];
+            const max_label_values = label_max_dict[key];
+
+            for (let j = 0; j < levels.length; j++) {
+                const levelKey = levels[j];
+                const layerKey = laters[j];
+                const columnKey = cols[i];
+
+                if (max_label_values[levelKey] !== -Infinity) {
+                    // Create a dummy text element to measure its size
+                    const dummyText = d3.select("body")
+                                    .append("svg")
+                                    .attr("class", "dummy-text")
+                                    .append("text")
+                                    .attr("font-size", styling_option[layerKey].Fontsize)
+                                    .attr("font-weight", styling_option[layerKey].Bold ? "bold" : "normal")
+                                    .text("X".repeat(max_label_values[levelKey]));
+
+                    // Measure the bounding box of the dummy text
+                    const bbox = dummyText.node().getBBox();
+                    const estimatedLength = bbox.width*0.8+margin.left;
+
+                    // Remove the dummy text element
+                    d3.select(".dummy-text").remove();
+
+                    // Update Col_spacing_dict if the estimated length is greater
+                    if (estimatedLength > Col_spacing_dict[columnKey]) {
+                        Col_spacing_dict[columnKey] = estimatedLength;
+                    }
+                }
+            }
+        }
+        console.log(Col_spacing_dict);
+        return Col_spacing_dict
+    } 
 
     // ## Column breaker function ##
     function ColumnsBreakerFunc (columns,label_counter,Col_break_number,state) {
         if (columns == 2 && label_counter > Col_break_number && state.current_col == 1){
             state.current_col = 2;
-            xOffset = col_spacing;
+            xOffset = spacing_dict.Col1;
             if (yOffset > yOffset_max) {yOffset_max = yOffset;}
             yOffset = margin.top+5;
         }
         if (columns == 3 && label_counter > Col_break_number && state.current_col == 1){
             state.current_col = 2;
-            xOffset = col_spacing;
+            xOffset = spacing_dict.Col1;
             if (yOffset > yOffset_max) {yOffset_max = yOffset;}
             yOffset = margin.top+5;
         } else if (columns == 3 && label_counter > Col_break_number*2 && state.current_col == 2){
             state.current_col = 3;
-            xOffset = col_spacing*2;
+            xOffset =  spacing_dict.Col1+spacing_dict.Col2;
             if (yOffset > yOffset_max) {yOffset_max = yOffset;}
             yOffset = margin.top+5;
         }
         if (columns == 4 && label_counter > Col_break_number && state.current_col == 1){
             state.current_col = 2;
-            xOffset = col_spacing;
+            xOffset = spacing_dict.Col1;
             if (yOffset > yOffset_max) {yOffset_max = yOffset;}
             yOffset = margin.top+5;
         } else if (columns == 4 && label_counter > Col_break_number*2 && state.current_col == 2){
             state.current_col = 3;
-            xOffset = col_spacing*2;
+            xOffset = spacing_dict.Col1+spacing_dict.Col2;
             if (yOffset > yOffset_max) {yOffset_max = yOffset;}
             yOffset = margin.top+5;
         } else if (columns == 4 && label_counter > Col_break_number*3 && state.current_col == 3){
             state.current_col = 4;
-            xOffset = col_spacing*3;
+            xOffset = spacing_dict.Col1+spacing_dict.Col2+spacing_dict.Col3;
             if (yOffset > yOffset_max) {yOffset_max = yOffset;}
             yOffset = margin.top+5;
         }
@@ -442,9 +930,8 @@ function renderDataVisualization(data, location,styling_option,Layout_dict,data_
         const Layer1_isChecked = d3.select(`#toggle-layer-1`).property('checked');
         const Layer2_isChecked = d3.select(`#toggle-layer-2`).property('checked');
         const Layer3_isChecked = d3.select(`#toggle-layer-3`).property('checked');
-        const Layer4_isChecked = d3.select(`#toggle-layer-4`).property('checked');
 
-        let Checklist = [Layer1_isChecked, Layer2_isChecked, Layer3_isChecked, Layer4_isChecked];
+        let Checklist = [Layer1_isChecked, Layer2_isChecked, Layer3_isChecked];
 
         
         let col_max_label = Layout_dict.col_max_label;
@@ -485,6 +972,33 @@ function renderDataVisualization(data, location,styling_option,Layout_dict,data_
             // Text input function 
             function add_text(label, yOffset, layer, bold = false, italic = false, underline = false, fontSize = '16px', color = 'black') {
                 
+                // Function to break label into multiple lines based on length
+                function breakLabel(label) {
+                    const maxLength = 15;
+                    let result = '';
+                    let start = 0;
+
+                    while (start < label.length) {
+                        if (label.length - start <= maxLength) {
+                            result += label.slice(start);
+                            break;
+                        }
+
+                        let breakPosition = label.lastIndexOf(' ', start + maxLength);
+                        if (breakPosition === -1 || breakPosition < start) {
+                            breakPosition = label.indexOf('/', start);
+                            if (breakPosition === -1 || breakPosition > start + maxLength) {
+                                breakPosition = start + maxLength; // Default break position if no space or '/' found
+                            }
+                        }
+
+                        result += label.slice(start, breakPosition) + '\n';
+                        start = breakPosition + 1;
+                    }
+
+                    return result;
+                }
+
                 label_key = label;
 
                 // # Different types of label handling #
@@ -538,9 +1052,9 @@ function renderDataVisualization(data, location,styling_option,Layout_dict,data_
                     const subFontSize = mainFontSize * 0.75 + 'px';
                     
                     // Remove <i> and </i> tags from the label
-                    label = label.replace(/<\/?i>/g, '');
+                    // label = label.replace(/<\/?i>/g, '');
                     if (layer == 'Layer-4') {
-                        label = label.replace("-adrenoceptor", '').replace(" receptor", '');
+                        label = label.replace(/<\/?i>|(-adrenoceptor| receptor)/g, '');
                     }
                     const parts = label.split(/(<sub>|<\/sub>)/); // Split label into parts including <sub> tags
                     let inSub = false; // Flag to track if we are inside a subscript
@@ -788,7 +1302,7 @@ function renderDataVisualization(data, location,styling_option,Layout_dict,data_
                                 label_counter++;
                                 
                                 // Check and append text for Layer 4 if it's visible and is an array
-                                if (Checklist[3] && Array.isArray(subSubValue)) {
+                                if (Array.isArray(subSubValue)) {
                                     subSubValue.forEach(item => {
                                         if (col_breaker == "Layer4" || col_breaker == "Custom") {
                                             ColumnsBreakerFunc(columns,label_counter,Col_break_number,state);
@@ -804,7 +1318,7 @@ function renderDataVisualization(data, location,styling_option,Layout_dict,data_
                         } else {
                             Object.entries(subValue).forEach(([subSubKey, subSubValue]) => {
                                 // Check and append text for Layer 4 if it's visible and is an array
-                                if (Checklist[3] && Array.isArray(subSubValue)) {
+                                if (Array.isArray(subSubValue)) {
                                     subSubValue.forEach(item => {
                                         if (col_breaker == "Layer4" || col_breaker == "Custom") {
                                             ColumnsBreakerFunc(columns,label_counter,Col_break_number,state);
@@ -831,7 +1345,7 @@ function renderDataVisualization(data, location,styling_option,Layout_dict,data_
                                 label_counter++;
                                
                                 // Check and append text for Layer 4 if it's visible and is an array
-                                if (Checklist[3] && Array.isArray(subSubValue)) {
+                                if (Array.isArray(subSubValue)) {
                                     subSubValue.forEach(item => {
                                         if (col_breaker == "Layer4" || col_breaker == "Custom") {
                                             ColumnsBreakerFunc(columns,label_counter,Col_break_number,state);
@@ -846,7 +1360,7 @@ function renderDataVisualization(data, location,styling_option,Layout_dict,data_
                         } else {
                             Object.entries(subValue).forEach(([subSubKey, subSubValue]) => {
                                 // Check and append text for Layer 4 if it's visible and is an array
-                                if (Checklist[3] && Array.isArray(subSubValue)) {
+                                if (Array.isArray(subSubValue)) {
                                     subSubValue.forEach(item => {
                                         if (col_breaker == "Layer4" || col_breaker == "Custom") {
                                             ColumnsBreakerFunc(columns,label_counter,Col_break_number,state);
@@ -883,7 +1397,7 @@ function renderDataVisualization(data, location,styling_option,Layout_dict,data_
                                 label_counter++;
                                 
                                 // Check and append text for Layer 4 if it's visible and is an array
-                                if (Checklist[3] && Array.isArray(subSubValue)) {
+                                if (Array.isArray(subSubValue)) {
                                     subSubValue.forEach(item => {
                                         if (col_breaker == "Layer4" || col_breaker == "Custom") {
                                             ColumnsBreakerFunc(columns,label_counter,Col_break_number,state);
@@ -898,7 +1412,7 @@ function renderDataVisualization(data, location,styling_option,Layout_dict,data_
                         } else {
                             Object.entries(subValue).forEach(([subSubKey, subSubValue]) => {
                                 // Check and append text for Layer 4 if it's visible and is an array
-                                if (Checklist[3] && Array.isArray(subSubValue)) {
+                                if (Array.isArray(subSubValue)) {
                                     subSubValue.forEach(item => {
                                         if (col_breaker == "Layer4" || col_breaker == "Custom") {
                                             ColumnsBreakerFunc(columns,label_counter,Col_break_number,state);
@@ -925,7 +1439,7 @@ function renderDataVisualization(data, location,styling_option,Layout_dict,data_
                             label_counter++;
                             
                             // Check and append text for Layer 4 if it's visible and is an array
-                            if (Checklist[3] && Array.isArray(subSubValue)) {
+                            if (Array.isArray(subSubValue)) {
                                 subSubValue.forEach(item => {
                                     if (col_breaker == "Layer4" || col_breaker == "Custom") {
                                         ColumnsBreakerFunc(columns,label_counter,Col_break_number,state);
@@ -939,10 +1453,10 @@ function renderDataVisualization(data, location,styling_option,Layout_dict,data_
                         });
                     }
                 });
-            } else if (!Checklist[0] && !Checklist[1] && !Checklist[2] && Checklist[3]) {
+            } else if (!Checklist[0] && !Checklist[1] && !Checklist[2]) {
                 Object.entries(value).forEach(([subKey, subValue]) => {
                     Object.entries(subValue).forEach(([subSubKey, subSubValue]) => {
-                        if (Checklist[3] && Array.isArray(subSubValue)) {
+                        if (Array.isArray(subSubValue)) {
                             subSubValue.forEach(item => {
                                 if (col_breaker == "Layer4" || col_breaker == "Custom") {
                                     ColumnsBreakerFunc(columns,label_counter,Col_break_number,state);

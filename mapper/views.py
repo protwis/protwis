@@ -282,6 +282,17 @@ class LandingPage(TemplateView):
             return 30
         else:
             return 40
+    
+    @staticmethod
+    def Label_conversion_info(data):
+        # Get list of keys
+        Name_list = list(data.keys())
+        # Names conversion dict
+        names_dict = Protein.objects.filter(entry_name__in=Name_list).values('entry_name', 'name').order_by('entry_name')
+        UniProt_to_IUPHAR_converter = {item['entry_name']: item['name'] for item in names_dict}
+        IUPHAR_to_UniProt_converter = {item['name']: item['entry_name'] for item in names_dict}
+        Label_converter = {'UniProt_to_IUPHAR_converter':UniProt_to_IUPHAR_converter,'IUPHAR_to_UniProt_converter':IUPHAR_to_UniProt_converter}
+        return Label_converter
 
     def post(self, request, *args, **kwargs):
         ### This method handles POST requests for form submission ###
@@ -346,6 +357,7 @@ class LandingPage(TemplateView):
                             plot_names = ['Phylogenetic Tree', 'Cluster Analysis', 'List Plot', 'Heatmap']
                             Data = {}
                             Incorrect_values = {}
+                            Heatmap_Label_dict = {}
 
                             for key in plot_names:
                                 Data[key] = {}
@@ -637,7 +649,9 @@ class LandingPage(TemplateView):
                                     except:
                                         print("List plot failed")
 
+                                ###############
                                 ### Heatmap ###
+                                ###############
                                 elif sheet_name == 'Heatmap':
 
                                     # Initialize dictionaries
@@ -658,7 +672,11 @@ class LandingPage(TemplateView):
                                         if empty_sheet:
                                             pass
                                         else:
-
+                                            # create label variables
+                                            i = 0
+                                            for key in header_list[1:]:
+                                                i += 1
+                                                Heatmap_Label_dict['Value{}'.format(i)] = key
                                             # Iterate through rows starting from the second row
                                             for index, row in enumerate(worksheet.iter_rows(min_row=3, values_only=True), start=3):
                                                 # Check the "Receptor (Uniprot)" column for correct values
@@ -720,6 +738,8 @@ class LandingPage(TemplateView):
                                     plot_incorrect_data[plot_name] = Incorrect_values[plot_name]
 
                             plot_data['Datatypes'] = Data['Datatypes']
+                            if 'Heatmap_Label_dict' not in plot_data and Heatmap_Label_dict:
+                                plot_data['Heatmap_Label_dict'] = Heatmap_Label_dict
 
                             plot_data_json = json.dumps(plot_data, indent=4, sort_keys=True) if plot_data else None
                             plot_incorrect_data_json = json.dumps(plot_incorrect_data, indent=4, sort_keys=True) if plot_incorrect_data else None
@@ -736,6 +756,7 @@ class LandingPage(TemplateView):
                                        'Plot_parser_json':Plot_parser_json,
                                        'plot_names':plot_names,
                                        'plots_status':plots_status}
+                            
                             # print(Plot_parser)
                             if plot_data:
                                 if all(status == 'Success' for status in Plot_parser):
@@ -827,7 +848,10 @@ class plotrender(TemplateView):
                 # Heatmap #
                 if Plot_evaluation[3]:
                     print("Heatmap analysis")
+                    label_converter = LandingPage.Label_conversion_info(Data['Heatmap'])
+                    context['Label_converter'] = json.dumps(label_converter)
                     context['heatmap_data'] = json.dumps(Data['Heatmap'])
+                    context['Heatmap_Label_dict'] = json.dumps(Data['Heatmap_Label_dict'])
                 # Handles and determines first active tab #
                 first_active_tab = None
                 tab_names = ['#tab1', '#tab2', '#tab3', '#tab4']
