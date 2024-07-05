@@ -230,7 +230,9 @@
       </div>
     </div>
   {% endif %}
+  <!-- ####################### -->
   <!-- ## Tab 3 - List Plot ## -->
+  <!-- ####################### -->
   {% if Plot_evaluation_json.2 %}
     <div id="tab3" class="tab-pane fade {% if first_active_tab == '#tab3' %}in active{% endif %}">
       <div style="padding-top: 10px; font-size: 11px; white-space: nowrap;"></div>
@@ -273,6 +275,12 @@
                 </select>
               <input type="number" id="Layout_Max_Label_input" name="Layout_Max_Label_input" step="1" min="1" style="height: 30px;width: 60px;font-size: 14px;">
               </div>
+              <div class="col-md-12"  style="padding-top: 10px;text-align: center;font-size: 14px;margin-bottom: 20px;">
+                <div class="custom-checkbox">
+                  <input type="checkbox" class="custom-control-input" id="toggle-indentation">
+                  <label class="custom-control-label" for="toggle-indentation">Level indentation</label>
+                </div>
+              </div>
               <!-- Render Plot Button -->
               <div class="text-center"  style="margin-bottom: 20px;margin-top: 30px;">
                 <button id="RenderLayoutButton_Layout" type="button" class="btn btn-primary" style="font-size: 18px;">Render List</button>
@@ -308,12 +316,12 @@
                     <label class="custom-control-label" for="toggle-layer-3">Display receptor family</label>
                   </div>
                 </div>
-                <div class="col-md-12"  style="padding-top: 10px;">
+                <!-- <div class="col-md-12"  style="padding-top: 10px;">
                   <div class="custom-checkbox">
                     <input type="checkbox" class="custom-control-input" id="toggle-layer-4" checked>
                     <label class="custom-control-label" for="toggle-layer-4">Display receptor</label>
                   </div>
-                </div>
+                </div> -->
               </div>
             </div>
           </div>
@@ -461,12 +469,13 @@
           </div>
         </div>
       </div>
+      <!-- Receptor label switch -->
       <div class="col-md-12" style="margin-top: 20px;">
         <div>
           Receptor names:
             <div class="btn-group" role="group" id="gtp_plus">
-                <button id="UniProtNames" class="btn btn-info">UniProt</button>
-                <button id="IUPHARNames" class="btn btn-info active">IUPHAR</button>
+                <button id="List_UniProtNames" class="btn btn-info">UniProt</button>
+                <button id="List_IUPHARNames" class="btn btn-info active">IUPHAR</button>
             </div>
         </div>
       </div>
@@ -474,18 +483,175 @@
     </div>
 
   {% endif %}
+  <!-- ##################### -->
   <!-- ## Tab 4 - Heatmap ## -->
+  <!-- ##################### -->
   {% if Plot_evaluation_json.3 %}
     <div id="tab4" class="tab-pane fade {% if first_active_tab == '#tab4' %}in active{% endif %}">
       <div style="padding-top: 10px; font-size: 11px; white-space: nowrap;"></div>
-      <div id="heatmapPlot" class="text-center">
-        <br />
-          <br />
-            <h4>Heatmap</h4>
-          <br />
-        <br />
+      <!-- Receptor label switch -->
+      <div class="col-md-12" style="margin-top: 20px;">
+        <div>
+          Receptor names:
+            <div class="btn-group" role="group" id="gtp_plus">
+                <button id="Heatmap_UniProtNames" class="btn btn-info active">UniProt</button>
+                <button id="Heatmap_IUPHARNames" class="btn btn-info">IUPHAR</button>
+            </div>
+        </div>
+      </div>
+      <div class="col-md-12" style="margin-top: 20px;margin-bottom: 30px;">
+        <div class="col-md-2">
+        <div class="dropdown" style="width: 500px !important;">
+          <button class="btn btn-primary dropdown-toggle" type="button" id="Styling_Menu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            Color styling
+          </button>
+          <div class="dropdown-menu dropdown-menu-listplot" aria-labelledby="Styling_Menu">
+            <!-- Color complexity Dropdown -->
+            <div class="col-md-12" style="width:400px;margin-top: 20px;margin-bottom: 20px;">
+              <div class="col-md-6" style="width:150px;margin-right: 20px;">
+                <select id="Heatmap_color_styling" class="form-select" style="height: 30px;width: 150px;font-size: 14px;" aria-label="Default select example" onchange="UpdateColorPickers()">
+                  <option value="One" selected>One color</option>
+                  <option value="Two">Two colors</option>
+                  <option value="Three">Three colors</option>
+                </select>
+              </div>
+        
+              <!-- Color Selector Dropdown -->
+              <div class="col-md-6" style="height: 15px;width: 200px;">
+                  <div class="col-md-3" id="Heatmap_Color_min_container" style="display: none;width: 80px;margin-left: 0px;margin-right: 0px;">
+                    <input type="text" id="Heatmap_colorPicker_min" />
+                  </div>
+                <!-- Color Selector Dropdown -->
+                  <div class="col-md-3" id="Heatmap_Color_max_container" style="width: 80px;margin-left: 0px;margin-right: 0px;">
+                    <input type="text" id="Heatmap_colorPicker_max"/>
+                  </div>
+              </div>
+            </div>
+            <!-- Set Colors Buttons -->
+            <div class="text-center" style="margin-bottom: 15px;">
+              <div class="col-md-12" style="margin-bottom: 5px;">
+                <div class="col-md-6"><button id="GrayScale" type="button" class="btn btn-primary" style="width:150px;font-size: 14px;">Grey scale</button></div>
+                <div class="col-md-6"><button id="GrayBlueScale" type="button" class="btn btn-primary" style="width:150px;font-size: 14px;">Grey-Blue scale</button></div>
+              </div>
+              <div class="col-md-12">
+                <div class="col-md-6"><button id="RedBlueScale" type="button" class="btn btn-primary" style="width:150px;font-size: 14px; margin-right: 10px;">Red-Blue Scale</button></div>
+                <div class="col-md-6"><button id="TealMagentaScale" type="button" class="btn btn-primary" style="width:150px;font-size: 14px; margin-right: 10px;">Teal-Magenta Scale</button></div>
+              </div>
+            </div>
+            <!-- Render button -->
+            <div class="col-md-12" style="width:400px;margin-top: 15px;margin-bottom: 15px;text-align: center;">
+              <!-- Render Plot Button -->
+              <div class="text-center" style="margin-bottom: 15px;">
+                <button id="RenderHeatmap_colering" type="button" class="btn btn-primary" style="font-size: 18px;">Render Heatmap</button>
+              </div>
+            </div>    
+          </div>
+        </div>
+      </div>
+      <div class="col-md-2">
+      <div class="dropdown" style="width: 400px !important;">
+        <button class="btn btn-primary dropdown-toggle" type="button" id="Styling_Menu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          Label styling
+        </button>
+        <div class="dropdown-menu dropdown-menu-listplot" aria-labelledby="Styling_Menu">
+          <!-- label styling Dropdown -->
+          <div class="col-md-12" style="width:300px;margin-top: 20px;margin-bottom: 20px;">
+            <div class="col-md-6" style="padding-left:0;padding-right:0;">Label orientation
+              <select id="Heatmap_xlabel_styling" class="form-select" style="height: 30px;width: 120px;font-size: 14px;" aria-label="Default select example">
+                <option value="0" selected>Horizontal</option>
+                <!-- <option value="45">45 degrees</option> -->
+                <option value="90">Vertical</option>
+              </select>
+            </div>
+            <div class="col-md-6" style="padding-left:0;padding-right:0;">Label Position
+              <select id="Heatmap_xlabel_position" class="form-select" style="height: 30px;width: 120px;font-size: 14px;" aria-label="Default select example">
+                <option value="Bottom" selected>Bottom</option>
+                <option value="Top">Top</option>
+              </select>
+            </div>
+          </div>
+           <!-- Label Font Size Slider -->
+           <div class="col-md-12" style="text-align: center;">
+            <label for="Heatmap_fontSizeSliderValue" id="Heatmap_fontSizeSliderLabel" class="form-label">Label Font Size: 14px</label>
+          </div>
+          <div class="col-md-12" style="margin-bottom: 30px;">  
+            <input type="range" class="form-range" min="10" max="16" id="Heatmap_fontSizeSlider" value="14">
+          </div>
+
+          <!-- Receptor Font Size Slider -->
+          <div class="col-md-12" style="text-align: center;">
+            <label for="Heatmap_receptor_fontSizeSliderValue" id="Heatmap_receptor_fontSizeSliderLabel" class="form-label">Receptor Font Size: 14px</label>
+          </div>
+          <div class="col-md-12" style="margin-bottom: 30px;">  
+            <input type="range" class="form-range" min="8" max="15" id="Heatmap_receptor_fontSizeSlider" value="14">
+          </div>
+
+          <!-- Render button -->
+          <div class="col-md-12" style="width:300px;margin-top: 15px;margin-bottom: 15px;">
+            <!-- Render Plot Button -->
+            <div class="text-center" style="margin-bottom: 15px;">
+              <button id="RenderHeatmap_labels" type="button" class="btn btn-primary" style="font-size: 18px;">Render Heatmap</button>
+            </div>
+          </div>    
+        </div>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div>
+          <button id="Heatmap_data_labels" class="btn btn-success dropdown-toggle active">Data Labels</button>
       </div>
       </div>
+      <div class="col-md-2">
+        <div class="dropdown" style="width: 400px !important;">
+          <button class="btn btn-primary dropdown-toggle" type="button" id="Heatmap_DataStyling_Menu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            Data styling
+          </button>
+          <div class="dropdown-menu dropdown-menu-listplot" aria-labelledby="Heatmap_DataStyling_Menu">
+            <!-- Layer Selector Dropdown -->
+            <div class="col-md-12" style="width:300px;margin-top: 20px;margin-bottom: 20px;">
+              <div class="col-md-6" style="padding-left:0;padding-right:0;">Data border
+                <select id="Heatmap_Border_Styling" class="form-select" style="height: 30px;width: 120px;font-size: 14px;" aria-label="Default select example">
+                  <option value="Yes" selected>Yes</option>
+                  <option value="No" >No</option>
+                </select>
+              </div>
+            </div>
+            <!-- Data Font Size Slider -->
+            <div class="col-md-12" style="text-align: center;">
+              <label for="Heatmap_data_fontSizeSliderValue" id="Heatmap_data_fontSizeSliderLabel" class="form-label">Data Label Font Size: 12px</label>
+            </div>
+            <div class="col-md-12" style="margin-bottom: 30px;">  
+              <input type="range" class="form-range" min="8" max="16" id="Heatmap_data_fontSizeSlider" value="12">
+            </div>
+            <!-- Render button -->
+            <div class="col-md-12" style="width:300px;margin-top: 15px;margin-bottom: 15px;">
+              <!-- Render Plot Button -->
+              <div class="text-center" style="margin-bottom: 15px;">
+                <button id="RenderHeatmap_DataStyling" type="button" class="btn btn-primary" style="font-size: 18px;">Render Heatmap</button>
+              </div>
+            </div>    
+          </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="text-center">
+            <div class="dropdown">
+              <button type="button" class="btn btn-primary dropdown-toggle" style="font-size: 14px;" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <span class="glyphicon glyphicon-download" style="vertical-align: top;line-height: 1.3"></span> Download <span class="caret"></span>
+              </button>
+              <div class="dropdown-menu dropdown-menu-right-middle">
+                <li><a class="dropdown-item" href="javascript:saveSvg(document.getElementById('Heatmap_plot'), 'Heatmap.svg');">SVG</a></li>
+                <li><a class="dropdown-item" href="javascript:saveSvgAsPng(document.getElementById('Heatmap_plot'), 'Heatmap.png');">PNG</a></li>
+                <li><a class="dropdown-item" href="javascript:saveSvgAsJpg(document.getElementById('Heatmap_plot'), 'Heatmap.jpg');">JPG</a></li>
+                <li><a class="dropdown-item" href="javascript:saveSvgAsTiff(document.getElementById('Heatmap_plot'), 'Heatmap.tiff');">TIFF</a></li>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="heatmapPlot" class="text-center" style="margin-left: -150px;"></div>
+      </div>
+    </div>
     </div>
   {% endif %}
 </div>
@@ -502,8 +668,11 @@
 <script src="{% static 'home/js/datamapper.js' %}"></script>
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/spectrum/1.8.1/spectrum.min.js"></script>
 
-
+<!-- ################## -->
+<!-- ###    Tree    ### -->
+<!-- ################## -->
 {% if Plot_evaluation_json.0 %}
   <script type="text/javascript" charset="utf-8">
       tree_data = {{ tree | safe }};
@@ -538,6 +707,9 @@
   </script>
 {% endif %}
 
+<!-- ################## -->
+<!-- ###  Cluster   ### -->
+<!-- ################## -->
 {% if Plot_evaluation_json.1 %}
 <script>
 $(document).ready(function() {
@@ -763,6 +935,7 @@ $(document).ready(function() {
     });
 
 });
+
 </script>
 {% endif %}
 
@@ -772,7 +945,6 @@ $(document).ready(function() {
 
 {% if Plot_evaluation_json.2 %}
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/spectrum/1.8.1/spectrum.min.js"></script>
   <script>
     $(document).ready(function() {
       // Function to initialize Spectrum color picker
@@ -780,6 +952,8 @@ $(document).ready(function() {
         $("#" + elementId).spectrum({
           color: "#000",
           showPalette: true,
+          showInput: true,
+          preferredFormat: "hex",
           palette: [
             ["#000", "#FF0000", "#00FF00", "#0000FF", "#FFFF00"],
             ["#FF00FF", "#00FFFF", "#FFFFFF", "#C0C0C0", "#808080"],
@@ -788,7 +962,6 @@ $(document).ready(function() {
           ],
           change: function(color) {
             var selectedColor = color.toHexString();
-            console.log("Selected color from " + elementId + ": " + selectedColor);
           }
         });
       }
@@ -817,7 +990,7 @@ var Label_conversion_dict = {{Label_Conversion|safe}};
 
 
 // # Initialize layout #
-var Layout_dict = {columns: 2, col_spacing: 400, col_breaker: 'Custom', col_max_label: 'Auto', Col_break_number: 20};
+var Layout_dict = {columns: 2, col_breaker: 'Custom', col_max_label: 'Auto'};
 
 //  Initialize styling
 var Styling_Option_dict = {
@@ -1157,16 +1330,16 @@ renderPlotButton_dataStyling.addEventListener('click', function() {
 // ## Label switch ###
 // ###################
 
-$("#UniProtNames").click(function() {
-    $("#UniProtNames").addClass("active");
-    $("#IUPHARNames").removeClass("active");
+$("#List_UniProtNames").click(function() {
+    $("#List_UniProtNames").addClass("active");
+    $("#List_IUPHARNames").removeClass("active");
     Label_names = 'UniProt';
     updateVisualization();
 });
 
-$("#IUPHARNames").click(function() {
-      $("#UniProtNames").removeClass("active");
-      $("#IUPHARNames").addClass("active");
+$("#List_IUPHARNames").click(function() {
+      $("#List_UniProtNames").removeClass("active");
+      $("#List_IUPHARNames").addClass("active");
       Label_names = 'IUPHAR';
       updateVisualization();
   });
@@ -1174,12 +1347,301 @@ $("#IUPHARNames").click(function() {
 </script>
 {% endif %}
 
+<!-- ############# -->
+<!-- ## Heatmap ## -->
+<!-- ############# -->
 {% if Plot_evaluation_json.3 %}
+
+
 <script>
-  var heatmap = {{ heatmap_data|safe }};
-  var element_id = "heatmap1"; // Unique ID for the SVG element
-  var legend_label = "Value Intensity"; // Label for the legend
-  simple_heatmap(heatmap, 'heatmapPlot', element_id, legend_label);
+  $(document).ready(function() {
+    // Function to initialize Spectrum color picker
+    function initializeColorPicker(elementId,start_color) {
+      $("#" + elementId).spectrum({
+        color: start_color,
+        showPalette: true,
+        showInput: true,
+        preferredFormat: "hex",
+        palette: [
+          ["#000", "#FF0000", "#00FF00", "#0000FF", "#FFFF00"],
+          ["#FF00FF", "#00FFFF", "#FFFFFF", "#C0C0C0", "#808080"],
+          ["#800000", "#808000", "#008000", "#800080", "#008080"],
+          ["#000080"]
+        ],
+        change: function(color) {
+          var selectedColor = color.toHexString();
+        }
+      });
+    }
+    // Initialize all color pickers
+    initializeColorPicker("Heatmap_colorPicker_min","#1a80bb");
+    initializeColorPicker("Heatmap_colorPicker_max","#a00000");
+  });
+</script>
+
+<script>
+
+var heatmap = {{ heatmap_data|safe }};
+var label_converter = {{ Label_converter|safe }};
+var label_x_converter = {{Heatmap_Label_dict|safe}};
+
+var heatmap_DataStyling = heatmap_DataStyling();
+
+
+document.addEventListener("DOMContentLoaded", function() {
+  // Initialize heatmap 
+  Heatmap(heatmap, 'heatmapPlot', heatmap_DataStyling, label_x_converter);
+});
+
+// Function to update the visualization
+function Heatmap_updateVisualization() {
+      // Clear existing SVG content
+      d3.select("#heatmapPlot svg").remove();
+      // Re-render the visualization
+      Heatmap(heatmap, 'heatmapPlot', heatmap_DataStyling, label_x_converter);
+    }
+
+$('.dropdown-menu').on('click', function(event){
+  event.stopPropagation();
+});
+
+
+// ###################
+// ## Color styling ##
+// ###################
+
+function UpdateColorPickers() {
+  // Color complexity
+  const Color_styling = document.querySelector('#Heatmap_color_styling');
+
+  // Color picker containers 
+  const Heatmap_Color_min_container = document.getElementById("Heatmap_Color_min_container");
+  // const Heatmap_Color_max_container = document.getElementById("Heatmap_Color_max_container");
+  const Color_min = document.getElementById("Heatmap_colorPicker_min");
+  const Color_max = document.getElementById("Heatmap_colorPicker_max");
+
+  // Get the selected layer value
+  const Color_styling_value = Color_styling.value;
+
+  if (Color_styling_value == 'One') {
+    Heatmap_Color_min_container.style.display = 'None';
+  } else if (Color_styling_value == 'Two'){
+    Heatmap_Color_min_container.style.display = 'Block';
+  } else if (Color_styling_value == 'Three') {
+    Heatmap_Color_min_container.style.display = 'Block';
+  }
+
+  // Set color to current color 
+  $(Color_min).spectrum("set", heatmap_DataStyling.min_color);
+  $(Color_max).spectrum("set", heatmap_DataStyling.max_color);
+  
+}
+
+// Function to set color pickers to predefined colors
+function setColors(colorMin, colorMax, optionValue) {
+    $("#Heatmap_colorPicker_min").spectrum("set", colorMin);
+    $("#Heatmap_colorPicker_max").spectrum("set", colorMax);
+    $("#Heatmap_color_styling").val(optionValue).trigger("change");
+  }
+
+// Event listener for "Set Gray scale" button
+$("#GrayScale").click(function() {
+  heatmap_DataStyling.min_color = "#b8b8b8";
+  heatmap_DataStyling.max_color = "#707070";
+  setColors(heatmap_DataStyling.min_color, heatmap_DataStyling.max_color, "Two");
+});
+
+// Event listener for "Set Gray-Blue" button
+$("#GrayBlueScale").click(function() {
+  heatmap_DataStyling.min_color = "#97a6c4";
+  heatmap_DataStyling.max_color = "#384860";
+  setColors(heatmap_DataStyling.min_color, heatmap_DataStyling.max_color, "Two");
+});
+
+
+// Event listener for "Set Red-Blue" button
+$("#RedBlueScale").click(function() {
+    heatmap_DataStyling.min_color = "#1a80bb";
+    heatmap_DataStyling.max_color = "#a00000";
+    setColors(heatmap_DataStyling.min_color, heatmap_DataStyling.max_color, "Three");
+  });
+
+// Event listener for "Set teal-Magenta" button
+$("#TealMagentaScale").click(function() {
+    heatmap_DataStyling.min_color = "#298c8c";
+    heatmap_DataStyling.max_color = "#800074";
+    setColors(heatmap_DataStyling.min_color, heatmap_DataStyling.max_color, "Three");
+  });
+
+
+
+// Select the Render Plot button
+const RenderHeatmap_ColorButton = document.querySelector('#RenderHeatmap_colering');
+// Add click event listener to the button
+RenderHeatmap_ColorButton.addEventListener('click', function() {
+
+  // Color complexity
+  const Color_styling = document.querySelector('#Heatmap_color_styling');
+  // Color pickers 
+  const Color_min = document.getElementById("Heatmap_colorPicker_min");
+  const Color_max = document.getElementById("Heatmap_colorPicker_max");
+  
+
+  // Get color complexity value 
+  const Color_styling_value = Color_styling.value;
+
+  if (Color_styling_value == 'One') {
+    const One_Color_value = $(Color_max).spectrum("get").toHexString();
+    heatmap_DataStyling.min_color = '#FFFFFF';
+    heatmap_DataStyling.max_color = One_Color_value;
+    heatmap_DataStyling.Number_of_colors = 'One';
+  } else if (Color_styling_value == 'Two') {
+    const Two_Color_value_min = $(Color_min).spectrum("get").toHexString();
+    const Two_Color_value_max = $(Color_max).spectrum("get").toHexString();
+    heatmap_DataStyling.min_color = Two_Color_value_min;
+    heatmap_DataStyling.max_color = Two_Color_value_max;
+    heatmap_DataStyling.Number_of_colors = 'Two';
+  } else if (Color_styling_value == 'Three') {
+    const Two_Color_value_min = $(Color_min).spectrum("get").toHexString();
+    const Two_Color_value_max = $(Color_max).spectrum("get").toHexString();
+    heatmap_DataStyling.min_color = Two_Color_value_min;
+    heatmap_DataStyling.max_color = Two_Color_value_max;
+    heatmap_DataStyling.Number_of_colors = 'Three';
+  }
+    
+  // Update plot
+  Heatmap_updateVisualization();
+
+});
+
+// ###################
+// ## label styling ##
+// ###################
+
+// Select the Render Plot button
+const RenderHeatmap_LabelButton = document.querySelector('#RenderHeatmap_labels');
+// Add click event listener to the button
+RenderHeatmap_LabelButton.addEventListener('click', function() {
+
+  // xLabel oritation & position
+  const xLabel_styling_dropdown = document.querySelector('#Heatmap_xlabel_styling');
+  const xLabel_position_dropdown = document.querySelector('#Heatmap_xlabel_position');
+  const xLabel_fontSizeSlider = document.getElementById('Heatmap_fontSizeSlider');
+  const yLabel_fontSizeSlider = document.getElementById('Heatmap_receptor_fontSizeSlider');
+  
+  // xlabel orientation & position value 
+  const xlabel_orientation = parseInt(xLabel_styling_dropdown.value);
+  const xlabel_position = xLabel_position_dropdown.value;
+  const xlabel_fontsize = xLabel_fontSizeSlider.value;
+  const ylabel_fontsize = yLabel_fontSizeSlider.value;
+
+  heatmap_DataStyling.rotation = xlabel_orientation;
+  heatmap_DataStyling.label_position = xlabel_position;
+  heatmap_DataStyling.label_fontsize = xlabel_fontsize;
+  heatmap_DataStyling.receptor_fontsize = ylabel_fontsize;
+  
+  // Update plot
+  Heatmap_updateVisualization();
+
+});
+
+// Update the font size label based on slider value
+const Heatmap_fontSizeSlider = document.getElementById('Heatmap_fontSizeSlider');
+const Heatmap_fontSizeLabel = document.getElementById('Heatmap_fontSizeSliderLabel');
+Heatmap_fontSizeSlider.addEventListener('input', () => {
+  Heatmap_fontSizeLabel.textContent = `Label Font Size: ${Heatmap_fontSizeSlider.value}px`;
+});
+
+// Update the font size label based on slider value
+const Heatmap_receptor_fontSizeSlider = document.getElementById('Heatmap_receptor_fontSizeSlider');
+const Heatmap_receptor_fontSizeLabel = document.getElementById('Heatmap_receptor_fontSizeSliderLabel');
+Heatmap_receptor_fontSizeSlider.addEventListener('input', () => {
+  Heatmap_receptor_fontSizeLabel.textContent = `Receptor Font Size: ${Heatmap_receptor_fontSizeSlider.value}px`;
+});
+
+
+// ###################
+// ## Data styling ##
+// ###################
+
+// Select the Render Plot button
+const RenderHeatmap_DataButton = document.querySelector('#RenderHeatmap_DataStyling');
+// Add click event listener to the button
+RenderHeatmap_DataButton.addEventListener('click', function() {
+
+  // Border choice
+  const Border_styling = document.querySelector('#Heatmap_Border_Styling');
+  const data_label_fontsizeSlider = document.getElementById('Heatmap_data_fontSizeSlider');
+  // Get color complexity value 
+  const Border_styling_value = Border_styling.value;
+  const data_fontsize = data_label_fontsizeSlider.value;
+
+  if (Border_styling_value === 'No') {
+    heatmap_DataStyling.data_border = false;
+  } else if (Border_styling_value === 'Yes') {
+    heatmap_DataStyling.data_border = true;
+  }
+
+  heatmap_DataStyling.data_fontsize = data_fontsize;
+  // Update plot
+  Heatmap_updateVisualization();
+
+});
+
+
+// Update the font size label based on slider value
+const Heatmap_data_fontSizeSlider = document.getElementById('Heatmap_data_fontSizeSlider');
+const Heatmap_data_fontSizeLabel = document.getElementById('Heatmap_data_fontSizeSliderLabel');
+Heatmap_data_fontSizeSlider.addEventListener('input', () => {
+  Heatmap_data_fontSizeLabel.textContent = `Data Label Font Size: ${Heatmap_data_fontSizeSlider.value}px`;
+});
+
+// ########################
+// ## Toggle data labels ##
+// ########################
+
+document.addEventListener('DOMContentLoaded', (event) => {
+    
+
+    const toggleButton = document.getElementById('Heatmap_data_labels');
+
+    toggleButton.addEventListener('click', () => {
+      heatmap_DataStyling.datalabels = !heatmap_DataStyling.datalabels; // Toggle the state
+
+        // Update the button appearance
+        if (heatmap_DataStyling.datalabels) {
+            toggleButton.classList.add('active');
+            toggleButton.classList.remove('btn-primary');
+            toggleButton.classList.add('btn-success');
+        } else {
+            toggleButton.classList.remove('active');
+            toggleButton.classList.remove('btn-success');
+            toggleButton.classList.add('btn-primary');
+        }
+        // Rerender heatmap
+        Heatmap_updateVisualization();
+    });
+});
+
+
+// ###################
+// ## Label switch ###
+// ###################
+
+$("#Heatmap_UniProtNames").click(function() {
+    $("#Heatmap_UniProtNames").addClass("active");
+    $("#Heatmap_IUPHARNames").removeClass("active");
+    heatmap_DataStyling.LabelType = 'UniProt';
+    Heatmap_updateVisualization();
+});
+
+$("#Heatmap_IUPHARNames").click(function() {
+      $("#Heatmap_UniProtNames").removeClass("active");
+      $("#Heatmap_IUPHARNames").addClass("active");
+      heatmap_DataStyling.LabelType = 'IUPHAR';
+      Heatmap_updateVisualization();
+  });
+
 </script>
 {% endif %}
 
