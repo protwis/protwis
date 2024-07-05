@@ -155,8 +155,8 @@ def SelectionAutocomplete(request):
             fields = None
         if fields is not None:
             field_list = fields.split(',')
-            if 'all' in field_list:
-                fields = None
+            # if 'all' in field_list:
+            #     fields = None
             
         referer = request.META.get('HTTP_REFERER')
 
@@ -188,10 +188,10 @@ def SelectionAutocomplete(request):
             ps = Protein.objects.filter(Q(name__icontains=q) | Q(entry_name__icontains=q),
                                         species__in=(species_list),
                                         source__in=(protein_source_list)).exclude(family__slug__startswith=exclusion_slug).exclude(sequence_type__slug='consensus')[:10]
-        elif type_of_selection == 'ligands' and fields is None:
+        elif type_of_selection == 'ligands' and (fields is None or 'all' in field_list):
             ps = Ligand.objects.filter(Q(name__icontains=q) | Q(id__icontains=q) | Q(inchikey__contains=q))[:10]
             indexes = LigandID.objects.filter(index=q).values_list('ligand_id','ligand_id__name','web_resource_id__name')
-        elif type_of_selection == 'ligands' and fields is not None:
+        elif type_of_selection == 'ligands' and not (fields is None or 'all' in field_list):
 
             cache_key = 'SelectionAutocompleteLigandsFields'
             if not(cache.has_key(cache_key)):
@@ -267,16 +267,16 @@ def SelectionAutocomplete(request):
                 p_json['category'] = 'Receptors'
                 results.append(p_json)
         else:
-            if len(indexes) != 0:
-                print(indexes)
-                for p in indexes:
-                    p_json = {}
-                    p_json['id'] = p[0]
-                    p_json['label'] = p[1]
-                    p_json['type'] = 'Ligand'
-                    p_json['category'] = p[2].split('_')[0]
-                    results.append(p_json)
-            else:
+            
+
+            for p in indexes:
+                p_json = {}
+                p_json['id'] = p[0]
+                p_json['label'] = p[1]
+                p_json['type'] = 'Ligand'
+                p_json['category'] = p[2].split('_')[0]
+                results.append(p_json)
+            if len(indexes) == 0 or (fields is None or 'all' in field_list):
                 for p in ps:
                     p_json = {}
                     p_json['id'] = p.id
