@@ -155,6 +155,20 @@ class LandingPage(TemplateView):
         return filtered_dict
 
     @staticmethod
+    def filter_dict(d, elements):
+        filtered_dict = {}
+        for key, value in d.items():
+            if isinstance(value, dict):
+                filtered_sub_dict = LandingPage.filter_dict(value, elements)
+                if filtered_sub_dict:
+                    filtered_dict[key] = filtered_sub_dict
+            elif isinstance(value, list):
+                filtered_values = [v for v in value if v in elements]
+                if filtered_values:
+                    filtered_dict[key] = filtered_values
+        return filtered_dict
+
+    @staticmethod
     def generate_list_plot(listplot): #ADD AN INPUT FILTER DICTIONARY
         # Generate the master dict of protein families
 
@@ -287,6 +301,7 @@ class LandingPage(TemplateView):
         reduced_data = reducer.fit_transform(data)
 
         # Clustering the reduced data
+        print(n_clusters)
         kmeans = KMeans(n_clusters=n_clusters, random_state=42)
         clusters = kmeans.fit_predict(reduced_data)
 
@@ -335,20 +350,17 @@ class LandingPage(TemplateView):
 
     @staticmethod
     def generate_similarity(method):
-        similarity_matrix_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'GPCRdb_similaritymatrix.csv'])
+        similarity_matrix_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'human_gpcr_similarity_data.csv'])
         # Convert the nested dictionary to a DataFrame
         data = pd.read_csv(similarity_matrix_file)
-        data = data.drop(columns=['Unnamed: 424'])
-        cols = data['Unnamed: 0'].to_list()
-        cols.insert(0, 'receptor')
-        data.columns =  cols
-        data.set_index('receptor', inplace=True)
-        # data.index = data.index.str.replace('_human', '', regex=False)
-        data = data.replace('-', 0).astype(int)
-        data = data.fillna(0)
+        data = data[['receptor1_entry_name', 'receptor2_entry_name', 'similarity']]
+        matrix = data.pivot(index='receptor1_entry_name', columns='receptor2_entry_name', values='similarity')
+        matrix.index = matrix.index.str.replace('_human', '', regex=False)
+        matrix.columns = matrix.columns.str.replace('_human', '', regex=False)
+        matrix = matrix.fillna(0)
         # data = data.fillna(0)
         # Example usage
-        reduced_df = LandingPage.reduce_and_cluster(data, method=method, n_clusters=6)
+        reduced_df = LandingPage.reduce_and_cluster(matrix, method=method, n_clusters=12)
         reduced_df['label'] = reduced_df['label'].apply(lambda x: x.split('[Human] ')[1] if '[Human] ' in x else x)
         # Prepare the data for visualization
         data_json = reduced_df.to_json(orient='records')
@@ -357,23 +369,20 @@ class LandingPage(TemplateView):
 
     @staticmethod
     def generate_full_matrix(method):
-        similarity_matrix_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'GPCRdb_similaritymatrix.csv'])
+        similarity_matrix_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'human_gpcr_similarity_data.csv'])
         # Convert the nested dictionary to a DataFrame
         data = pd.read_csv(similarity_matrix_file)
-        data = data.drop(columns=['Unnamed: 424'])
-        cols = data['Unnamed: 0'].to_list()
-        cols.insert(0, 'receptor')
-        data.columns =  cols
-        data.set_index('receptor', inplace=True)
-        # data.index = data.index.str.replace('_human', '', regex=False)
-        data = data.replace('-', 0).astype(int)
-        data = data.fillna(0)
+        data = data[['receptor1_entry_name', 'receptor2_entry_name', 'similarity']]
+        matrix = data.pivot(index='receptor1_entry_name', columns='receptor2_entry_name', values='similarity')
+        matrix.index = matrix.index.str.replace('_human', '', regex=False)
+        matrix.columns = matrix.columns.str.replace('_human', '', regex=False)
+        matrix = matrix.fillna(0)
         # data = data.fillna(0)
         # Example usage
-        reduced_df = LandingPage.reduce_and_cluster(data, method=method, n_clusters=6)
+        reduced_df = LandingPage.reduce_and_cluster(matrix, method=method, n_clusters=12)
         reduced_df['label'] = reduced_df['label'].apply(lambda x: x.split('[Human] ')[1] if '[Human] ' in x else x)
-        receptor_names = dict(Protein.objects.filter(species_id=1).values_list('name','entry_name').distinct())
-        reduced_df['label'] = reduced_df['label'].map(receptor_names)
+        # receptor_names = dict(Protein.objects.filter(species_id=1).values_list('name','entry_name').distinct())
+        # reduced_df['label'] = reduced_df['label'].map(receptor_names)
         reduced_df['label'] = reduced_df['label'].apply(lambda x: x.split('_human')[0] if '_human' in x else x)
 
         return reduced_df
@@ -936,14 +945,12 @@ class plotrender(TemplateView):
                 if Plot_evaluation[1]:
                     print("Cluster analysis")
                     output = LandingPage.clustering_test('umap', Data['Cluster Analysis'])
-                    print(output)
                     similarity_umap = LandingPage.generate_similarity('umap')
                     # similarity_tsne = LandingPage.generate_similarity('tsne')
                     # similarity_pca = LandingPage.generate_similarity('pca')
                     # identity_umap = LandingPage.generate_identity('umap')
                     # identity_tsne = LandingPage.generate_identity('tsne')
                     # identity_pca = LandingPage.generate_identity('pca')
-                    print(output)
                     context['cluster_data'] = output
                     context['similarity_umap'] = similarity_umap
                     # context['similarity_tsne'] = similarity_tsne
