@@ -332,8 +332,10 @@ class LandingPage(TemplateView):
         if 'Value1' in data_df.columns:
             # Example usage
             reduced_df = LandingPage.reduce_and_cluster(data_df, method=method)
+            df_merged = pd.merge(reduced_df, data_df['Value2'], left_on='label', right_index=True, how='left')
+            df_merged.rename(columns={'Value2': 'fill'}, inplace=True)
             # Prepare the data for visualization
-            data_json = reduced_df.to_json(orient='records')
+            data_json = df_merged.to_json(orient='records')
         else:
             # Get the info of the plot
             full_matrix = LandingPage.generate_full_matrix(method)
