@@ -26,7 +26,15 @@ from common.phylogenetic_tree import PhylogeneticTreeGenerator
 import json
 from copy import deepcopy
 from collections import OrderedDict
+import sys
+
+try:
+    import importlib.metadata
+except ImportError:
+    sys.modules['importlib.metadata'] = __import__('importlib_metadata')
+
 import umap.umap_ as umap
+
 import numpy as np
 import pandas as pd
 import random
@@ -416,7 +424,7 @@ class LandingPage(TemplateView):
             return 30
         else:
             return 40
-    
+
     @staticmethod
     def Label_conversion_info(data):
         # Get list of keys
@@ -890,7 +898,7 @@ class LandingPage(TemplateView):
                                        'Plot_parser_json':Plot_parser_json,
                                        'plot_names':plot_names,
                                        'plots_status':plots_status}
-                            
+
                             # print(Plot_parser)
                             if plot_data:
                                 if all(status == 'Success' for status in Plot_parser):
