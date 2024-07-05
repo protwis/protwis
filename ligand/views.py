@@ -366,13 +366,13 @@ class LigandStructuralSelection(AbsTargetSelection):
     family_tree = False
     type_of_selection = 'ligands'
     selection_only_receptors = False
-    title = "Ligand search"
-    description = 'Search by similarity or substructure.'
+    title = "Ligand similarity or substructure search"
+    description = 'Search ligands by similarity or substructure.'
 
     buttons = {
         
         'continue' : {
-            'label' : 'Structural search',
+            'label' : 'SMILES search',
             'onclick' : "submitLigandStructuralSearch('/ligand/ligand_structural_search')",
             'color' : 'success',
             
