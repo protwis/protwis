@@ -602,7 +602,7 @@ class LigandStructuralSearch(TemplateView):
     def get(self, request, *args, **kwargs):
         context = self.get_context_data(**kwargs)
         if context == "redirect":
-            return redirect("ligand_selection")
+            return redirect("ligand_structural_selection")
         return self.render_to_response(context)
 
 class LigandStructureSelection(TemplateView):
