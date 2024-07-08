@@ -204,6 +204,7 @@ class ReadInputLigandBulkSearch(View):
             if key == 'search_text':
                 entries = [re_whitespaces.split(re_leading_whitespaces.sub('',l))[0] for l in request.POST.get(key,None).splitlines()]
                 search_params_data[key] = ''
+                entries = [ e for e in entries if e != '']
                 if len(entries) == 0:
                     msg = 'Empty search text with no entries.'
                     request.session['ligand_bulk_search_error_msg'] = msg
@@ -213,9 +214,9 @@ class ReadInputLigandBulkSearch(View):
             else:
                 search_params_data[key] = request.POST.get(key,None)
         search_type = search_params_data['search_type']
-        if search_type == 'smiles':
+        if search_type == 'smiles' or search_type == 'smarts':
             for i,smiles in enumerate(entries):
-                error, msg = self.validate_SMARTS(smiles,smiles_only=True) # do not accept SMARTS by the moment
+                error, msg = self.validate_SMARTS(smiles,smiles_only = search_type == 'smiles')
             if error:
                 request.session['ligand_bulk_search_error_msg'] = msg
                 request.session.modified = True
@@ -258,43 +259,62 @@ class LigandBulkSearch(TemplateView):
         self.request.session.modified = True
         entries = param_dict['search_entries']
         search_type = param_dict['search_type']
-        if search_type == 'smiles':
+
+        if len(entries) == 0:
+            self.request.session['ligand_bulk_search_error_msg'] = 'Empty search input.'
+            self.request.session.modified = True
+            return context
+
+
+        if search_type == 'smiles' or search_type == 'smarts':
             with connection.cursor() as cursor:
                 if param_dict['stereochemistry']:
                     stereochemistry = 'true'
                 else:
                     stereochemistry = 'false'
                 if len(entries) <= 1:
-                    if len(entries) == 0:
-                        smiles = ''
-                    else:
-                        smiles = entries[0]
+                    smiles = entries[0]
                     cache_key = "ligand_bulk_search_" + ",".join([search_type,smiles,str(stereochemistry),mode])
-                if not(cache_key != False and cache.has_key(cache_key)):
-                    q = Q(molecule__exact=MOL(Value('^textoreplacebysmiles#')))
+                if not(cache_key != False and cache.has_key(cache_key)) and len(entries) > 0:
+                    sql_string_placeholder = '^textoreplacebysmiles#'
+                    v = Value(sql_string_placeholder)
+                    if search_type == 'smiles':
+                        q = Q(molecule__exact=MOL(v))
+                        string_to_replace_by = '%s'
+                    else:
+                        q = Q(molecule__hassubstruct=(v))
+                        string_to_replace_by = 'mol_adjust_query_properties(qmol(%s),\'{"adjustDegree":true,"adjustDegreeFlags":"IGNORENONE"}\')'
                     for smiles in entries[1:]:
-                        q = q | Q(molecule__exact=MOL(Value('^textoreplacebysmiles#')))
+                        q = q | q                     
                     qs = LigandMol.objects.filter(q).values('ligand')
-                    sql_query = str(qs.query).replace('^textoreplacebysmiles#',"%s")
+                    sql_query = str(qs.query).replace('('+sql_string_placeholder+')',string_to_replace_by)
                     sql_final_query = 'SET SESSION rdkit.do_chiral_sss=%s; '+sql_query
                     cursor.execute(sql_final_query,[str(stereochemistry)]+entries)
-                    # context['search_results']=cursor.fetchall()
                     cursor_results = cursor.fetchall()
                     
         elif search_type == 'inchikey':
-            pass
+            if len(entries) <= 1:
+                inchikey = entries[0]
+                cache_key = "ligand_bulk_search_" + ",".join([search_type,inchikey,mode])
         else:
             raise ValidationError('Unknown ligand structural search parameter: search_type="%s"' % str(search_type))
-        pass
+
         # cache.delete(cache_key)
 
+        no_results_msg = 'No results found.'
         if mode == 'compact':
             if not(cache_key != False and cache.has_key(cache_key)):
                 if search_type == 'smiles':
-                    no_results_msg = 'No results found.'
+                    
                     if cursor_results != []:
                         ligand_id = [x[0] for x in cursor_results]
-                        ps = AssayExperiment.objects.filter(ligand__in=ligand_id).prefetch_related('protein', 'ligand', 'ligand__ligand_type','protein__family')
+                        if len(entries) == 1 and len(ligand_id) == 1:
+                            context = {}
+                            context['redirect_to'] = '{:d}/info'.format(ligand_id[0])
+                            cache.set(cache_key, context, 60*60*24*7)
+                            return context
+                        else:
+                            ps = AssayExperiment.objects.filter(ligand__in=ligand_id).prefetch_related('protein', 'ligand', 'ligand__ligand_type','protein__family')
                     else:
                         context = "redirect"
                         self.request.session['ligand_bulk_search_error_msg'] = no_results_msg
@@ -302,16 +322,30 @@ class LigandBulkSearch(TemplateView):
                         return context
                         # return redirect("ligand_selection")                                                                            # 'ligand__ids__web_resource',                                                                      # 'ligand')
                         # if queryset is empty redirect to ligand browser
-                    if not ps:
-                        context = "redirect"
-                        self.request.session['ligand_bulk_search_error_msg'] = no_results_msg
-                        self.request.session.modified = True
-                        return context
                         # return redirect("ligand_selection")
                 elif search_type == 'inchikey':
-                    ps = AssayExperiment.objects.filter(ligand__inchikey__in=entries).prefetch_related('protein', 'ligand', 'ligand__ligand_type','protein__family')
+                    if len(entries) == 1:
+                        ps = Ligand.objects.filter(inchikey=inchikey).values('id')
+                        if len(ps) == 1:
+                            context = {}
+                            context['redirect_to'] = '{:d}/info'.format(ps[0]['id'])
+                            cache.set(cache_key, context, 60*60*24*7)
+                            return context
+                    else:
+                        ps = AssayExperiment.objects.filter(ligand__inchikey__in=entries).prefetch_related('protein', 'ligand', 'ligand__ligand_type','protein__family')
+            
+            
+                if not ps:
+                    context = "redirect"
+                    self.request.session['ligand_bulk_search_error_msg'] = no_results_msg
+                    self.request.session.modified = True
+                    return context
+            
+            
             if cache_key != False and cache.has_key(cache_key):
                 result = cache.get(cache_key)
+                if 'redirect_to' in result:
+                    return result
                 ligand_data_affinity = result['affinity_data']
                 ligand_data_potency = result['potency_data']
             else:
@@ -328,6 +362,8 @@ class LigandBulkSearch(TemplateView):
         context = self.get_context_data(**kwargs)
         if context == "redirect":
             return redirect("ligand_selection")
+        elif 'redirect_to' in context:
+            return redirect(context['redirect_to'])
         return self.render_to_response(context)
     
 def getLigandStructuralSearchParameters(request):
@@ -339,6 +375,7 @@ def getLigandStructuralSearchParameters(request):
     # else:
     #     default_smiles = 'cccccc'
     param_dict['smiles'] = request.session.get('ligand_structural_search_smiles', default_smiles)
+    param_dict['smarts_enabled'] = request.session.get('ligand_structural_search_smarts_enabled', False)
     param_dict['similarity_threshold'] = float(request.session.get('ligand_structural_search_similarity_threshold', 0.5))
     # param_dict['search_limit'] = request.session.get('ligand_structural_search_limit ', 100)
 
@@ -396,7 +433,7 @@ class ReadInputLigandStructuralSearch(View):
                     'status_code':400,
                     'reason_phrase':'Bad Request',
                     'msg':''}
-    search_params_data_keys = ['search_type','smiles','similarity_threshold','stereochemistry']
+    search_params_data_keys = ['search_type','smiles','similarity_threshold','stereochemistry', 'smarts_enabled']
 
     def validate_SMARTS(self,smarts,smiles_only=False):
         return validate_SMARTS(smarts,smiles_only=smiles_only)
@@ -413,10 +450,15 @@ class ReadInputLigandStructuralSearch(View):
         search_params_data = {}
         for key in self.search_params_data_keys:
             search_params_data[key] = request.POST.get(key,None)
+        smarts_enabled = search_params_data['smarts_enabled']
+        if smarts_enabled is None:
+            search_params_data['smarts_enabled'] = False
+            smarts_enabled = False
             
         search_type = search_params_data['search_type']
         if search_type == 'similarity':
             search_type_similarity = True
+            smarts_enabled = False
         elif search_type == 'substructure':
             search_type_similarity = False
         else:
@@ -434,8 +476,8 @@ class ReadInputLigandStructuralSearch(View):
             del search_params_data['stereochemistry']
         else:
             search_params_data['stereochemistry'] = bool(stereochemistry)
-        
-        error, msg = self.validate_SMARTS(search_params_data['smiles'],smiles_only=search_type_similarity)
+
+        error, msg = self.validate_SMARTS(search_params_data['smiles'],smiles_only = not smarts_enabled)
         if error:
             request.session['ligand_structural_search_error_msg'] = msg
             request.session.modified = True
@@ -489,17 +531,14 @@ class LigandStructuralSearch(TemplateView):
                 similarity_threshold = param_dict['similarity_threshold']
                 cache_key = "ligand_structural_search_" + ",".join([search_type,smiles,str(similarity_threshold),mode])
                 if not(cache_key != False and cache.has_key(cache_key)):
-                    value = MORGANBV_FP(Value('^textoreplacebysmiles#'))
+                    string_to_replace_by = '^textoreplacebysmiles#'
+                    value = MORGANBV_FP(Value(string_to_replace_by))
                     q = LigandFingerprint.objects.filter(mfp2__tanimoto=value)
                     q = q.annotate(sml=TANIMOTO_SML('mfp2', value))
                     q = q.order_by(TANIMOTO_DIST('mfp2', value))
                     q = q.values_list('ligand', 'sml')
-                    # sql_query = str(q.query).replace('%','%%').replace('^textoreplacebysmiles#','%s')
-                    sql_query = str(q.query).replace('%','%%').replace('^textoreplacebysmiles#','%s')
-
-                    # cursor.execute('SET SESSION rdkit.tanimoto_threshold = %s; ' + sql_query, [similarity_threshold,smiles,smiles])
+                    sql_query = str(q.query).replace('%','%%').replace(string_to_replace_by,'%s')
                     cursor.execute('SET SESSION rdkit.tanimoto_threshold = %s; ' + sql_query, [similarity_threshold,smiles,smiles,smiles])
-                    # context['search_results']=cursor.fetchall()
                     cursor_results = cursor.fetchall()
                     
 
@@ -510,10 +549,15 @@ class LigandStructuralSearch(TemplateView):
                     stereochemistry = 'false'
                 cache_key = "ligand_structural_search_" + ",".join([search_type,smiles,str(stereochemistry),mode])
                 if not(cache_key != False and cache.has_key(cache_key)):
-                    q = LigandMol.objects.filter(molecule__hassubstruct=QMOL(Value('^textoreplacebysmiles#'))).values('ligand')
-                    sql_query = str(q.query).replace('^textoreplacebysmiles#','%s')
+                    sql_string_placeholder = '^textoreplacebysmiles#'
+                    v = Value(sql_string_placeholder)
+                    if param_dict['smarts_enabled']:
+                        m = QMOL(v)
+                    else:
+                        m = MOL(v)
+                    q = LigandMol.objects.filter(molecule__hassubstruct=m).values('ligand')
+                    sql_query = str(q.query).replace(sql_string_placeholder,'%s')
                     cursor.execute('SET SESSION rdkit.do_chiral_sss=%s; '+sql_query, [stereochemistry,smiles])
-                    # context['search_results']=cursor.fetchall()
                     cursor_results = cursor.fetchall()
                     
             else:
