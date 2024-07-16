@@ -1,6 +1,5 @@
 from django.core.management.base import BaseCommand, CommandError
 from django.db import connection
-from django.conf import settings
 from django.db import IntegrityError
 
 from ligand.models import Ligand, LigandFingerprint, LigandMol
@@ -8,6 +7,9 @@ from ligand.models import Ligand, LigandFingerprint, LigandMol
 import os
 import django.apps
 import logging
+
+# CHECK POSTGRESQL LOG FILES FOR BUILDING ERRORS!!!
+# e.g WARNING:  could not create molecule from SMILES '[N-]=[N]=N[C@H]1C(C(C)(C)C)C23C45C1OC(=O)[C@@]5(OC2OC(=O)[C@@H]3O)[C@@]1([C@H](C4O)OC(=O)C1C)O'
 
 class Command(BaseCommand):
     help = 'Build cheminformatics molecule data and molecule fingerprints for database search. '
@@ -21,7 +23,6 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):    
         with connection.cursor() as cursor:
-            # db_name = connection.settings_dict['NAME']
             if options['verbose']: print('Truncating LigandMol...')
             LigandMol.custom_objects.truncate_table()
             self.logger.info('Truncated LigandMol.')
