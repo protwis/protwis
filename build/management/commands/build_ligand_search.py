@@ -47,7 +47,7 @@ class Command(BaseCommand):
             txt = 'Building molecule fingerprints...'
             self.logger.info(txt)
             if options['verbose']: print(txt)
-            cursor.execute('INSERT INTO "%s" ("%s","%s") SELECT * FROM (SELECT "%s",morganbv_fp("%s") AS mol FROM "%s");' % 
+            cursor.execute('INSERT INTO "%s" ("%s","%s") SELECT * FROM (SELECT "%s",morganbv_fp("%s") AS mol FROM "%s") AS tmp;' % 
                 (LigandFingerprint.objects.model._meta.db_table,ligand_column2_dbname,mfp2_field_dbname,
                 ligand_column1_dbname,mol_column_dbname,LigandMol.objects.model._meta.db_table))
             txt = 'COMPLETED building molecule fingerprints'
