@@ -8,7 +8,7 @@ function joinus(type) {
 			break;
 		case "development":
 			title += "Database development";
-			message = "The GPCRdb team is constantly looking for talented programmers either for remote collaboration, to fill an open position or to apply together for a scientific project.  Please contact our lead developer lead developer Gáspár Pándy-Szekeres  (<a href='mailto:gaspar@sund.ku.dk'>gaspar@sund.ku.dk</a>) if you would like to know more.";
+			message = "The GPCRdb team is constantly looking for talented programmers either for remote collaboration, to fill an open position or to apply together for a scientific project.  Please contact our lead developer Gáspár Pándy-Szekeres  (<a href='mailto:gaspar@sund.ku.dk'>gaspar@sund.ku.dk</a>) if you would like to know more.";
 			break;
 		case "collaboration":
 			title += "Scientific collaboration";
