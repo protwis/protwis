@@ -32,30 +32,72 @@
       {% if search %}
           <div class="col-md-12 panel panel-primary">
               <div class="panel-body">
-                  <h4>Search</h4>
-                  Search a ligand
-                  <div>
-                      <input id="selection-autocomplete" class="form-control" size="25">
-                      <br>
-                      <br>
-                      by:
-                      <br>
-                      <select id="selection_ligand_fields" class="form-select" multiple aria-label="multiple select" style='height:120px'>
-                        <option value="all">All</option>
-                        <option value="name">Name</option>
-                        <option value="inchikey">InChIKey</option>
-                        <option value="gpcrdb_id">GPCRdb ID</option>
-                        {% for lid in ligandids %}
-                        <option value="{{lid.slug}}">{{ lid.name }} ID</option>
-                        {% endfor %}
-                      </select>
-                      
-                  </div>
+                  <h4>Search by name</h4>
+                  Search ligands by name
+                      <div class="panel-body">
+                        <div class="row">
+                          <input class="col-md-6 form-control" id="selection-autocomplete-ligand-by-name" size="25" value="{{ selection_ligand_bulk_search_parameters.search_text_by_name }}">
+                          <div id="selection-buttons-ligand-by-name" class="col-md-4">
+                              <div class="" id="selection-search-ligand-by-name">
+                                    <a id='selection-button-ligand-by-name' class="btn btn-success btn-lg btn-block has-spinner" onclick="submitSelectionLigandBulkSearchByName('/ligand/ligand_bulk_search')">
+                                        <span class="spinner"><i class="fa fa-spinner fa-spin"></i></span> Search
+                                    </a>
+                              </div>
+                          </div>
+                        </div>
+                        <div class="row">
+                          <div class="form-group">
+                            <p style="{% if ligand_bulk_search_by_name_error_msg != 'No results found.'%}color: red; {% endif %}">{{ ligand_bulk_search_by_name_error_msg }}</p>
+                          </div>
+                        </div>
+                      </div>
+
               </div>    
           </div>
       {% endif %}
     </div>
-  </div>  
+  </div>
+
+  <div class="row">
+    <div class="col-md-8">
+      <!-- target search -->
+      {% if search %}
+      <div class="col-md-12 panel panel-primary">
+        <div class="panel-body">
+          <h4>Batch search by ID</h4>
+          Search ligands (separated by whitespace) by:
+          <br>
+          <br>
+          <select id="selection_ligand_by_id_fields" class="form-select" aria-label="multiple select" style="{% comment %}FOR SELECT MULTIPLE{% endcomment %}{% comment %};height:120px{% endcomment %}"> 
+            <option {% if selection_ligand_bulk_search_parameters.fields == 'gpcrdb_id' %}selected {% endif %}value="gpcrdb_id">GPCRdb ID</option>
+            {% for lid in ligandids %}
+            <option {% if selection_ligand_bulk_search_parameters.fields == lid.slug %}selected {% endif %}value="{{lid.slug}}">{{ lid.name }} ID</option>
+            {% endfor %}
+          </select>
+
+          <div class="form-group">
+            <br>
+            <textarea class="form-control" id="selection_ligand_bulk_search_by_id_textarea" placeholder="Type or paste IDs here.">{{ selection_ligand_bulk_search_parameters.search_text_by_id }}</textarea>
+          </div>
+          <div class="form-group">
+            <p style="{% if ligand_bulk_search_error_msg != 'No results found.'%}color: red; {% endif %}">{{ ligand_bulk_search_by_id_error_msg }}</p>
+          </div>
+
+            <div id="selection-buttons-ligand-by-id" class="">
+              <div class="" id="selection-search-ligand-by-id">
+                    <a id='selection-button-ligand-by-id' class="btn btn-success btn-lg btn-block has-spinner" onclick="submitSelectionLigandBulkSearchById('/ligand/ligand_bulk_search')">
+                        <span class="spinner"><i class="fa fa-spinner fa-spin"></i></span> Bulk search
+                    </a>
+              </div>
+          </div>
+
+
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
   <div class="row">
     <div class="col-md-8">
       <!-- target search -->
@@ -67,21 +109,21 @@
           <br>
           <div class="form-group">
             <select id="selection_ligand_bulk_search_search_type" class="form-select" aria-label="select">
-              <option {% if selection_ligand_bulk_search_parameters.search_type == 'smiles' %}selected {% endif %}value="smiles">Search by SMILES</option>
-              <option {% if selection_ligand_bulk_search_parameters.search_type == 'inchikey' %}selected {% endif %}value="inchikey">Search by InChIKeys</option>
+              <option {% if selection_ligand_bulk_search_parameters.search_type_selection == 'smiles' %}selected {% endif %}value="smiles">Search by SMILES</option>
+              <option {% if selection_ligand_bulk_search_parameters.search_type_selection == 'inchikey' %}selected {% endif %}value="inchikey">Search by InChIKeys</option>
             </select>          
           </div>
-          <div style="{% if selection_ligand_bulk_search_parameters.search_type != 'smiles' %}display:none;{% endif %}height:44px" id="selection_ligand_bulk_search_stereo_div" class="form-group">
+          <div style="{% if selection_ligand_bulk_search_parameters.search_type_selection != 'smiles' %}display:none;{% endif %}height:44px" id="selection_ligand_bulk_search_stereo_div" class="form-group">
             <input type="checkbox" {% if selection_ligand_bulk_search_parameters.stereochemistry %}checked {% endif %}id="selection_ligand_bulk_search_stereochemistry" value="True">
-          <label for="selection_ligand_bulk_search_stereochemistry">Stereochemistry<label>
+          <label for="selection_ligand_bulk_search_stereochemistry">Stereochemistry<label><span class="glyphicon glyphicon-info-sign" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="bottom" data-content="<b>Stereochemistry</b><br>Toggles whether or not stereochemistry is used in substructure matching. If checked, stereochemistry is taken into account." data-original-title="" title="">
           </div>
           <div class="form-group">
-            <textarea class="form-control" id="selection_ligand_bulk_search_textarea" placeholder="Type or paste your SMILES or InChIKeys here.">{{ selection_ligand_bulk_search_parameters.search_text }}</textarea>
+            <textarea class="form-control" id="selection_ligand_bulk_search_textarea" placeholder="Type or paste your {% if selection_ligand_bulk_search_parameters.search_type_selection == 'smiles' %}SMILES strings{% endif %}{% if selection_ligand_bulk_search_parameters.search_type_selection == 'inchikey' %}InChIKeys{% endif %} here.">{{ selection_ligand_bulk_search_parameters.search_text_by_other }}</textarea>
           </div>
           <div class="form-group">
             <p style="{% if ligand_bulk_search_error_msg != 'No results found.'%}color: red; {% endif %}">{{ ligand_bulk_search_error_msg }}</p>
           </div>
-          <div id="selection-buttons">
+          <div id="">
             {% include 'common/selection_buttons.html' %}
           </div>
         </div>
@@ -99,11 +141,28 @@
     <script type="text/javascript">
         var selection_ligand_fields = '';
         var selection_ligand_fields_min_length_1 = false; // set $("#selection-autocomplete").catcomplete(minLength:1)
+        var no_selectionAutocompleteCreateCatComplet_on_load = true
+
         $(document).ready(function() {
-          $('#selection_ligand_fields').change(function () {
-            var selection_ligand_fields_list = []
-            $('#selection_ligand_fields option:selected').each(function( index ) {
-              selection_ligand_fields_list.push($( this ).val());
+          selection_autocomplete_id_suffix = '-ligand-by-name';
+          var selection_ligand_by_name_fields_list = ['name']
+          var selection_ligand_by_name_fields = selection_ligand_by_name_fields_list.join(',');
+          //$("#selection-autocomplete").catcomplete('destroy');
+          //$("#selection-autocomplete"+selection_autocomplete_id_suffix).catcomplete('destroy');
+          selectionAutocompleteCreateCatComplete(selection_ligand_by_name_fields);
+
+
+
+          var selection_ligand_by_id_fields_list = []
+          $('#selection_ligand_by_id_fields option:selected').each(function( index ) {
+            selection_ligand_by_id_fields_list.push($( this ).val());
+          });
+          selection_ligand_by_id_fields = selection_ligand_by_id_fields_list.join(',');
+
+          /*$('#selection_ligand_by_id_fields').change(function () {
+            selection_ligand_fields_by_id_list = []
+            $('#selection_ligand_by_id_fields option:selected').each(function( index ) {
+              selection_ligand_fields_by_id_list.push($( this ).val());
             });
             if (selection_ligand_fields_list.length > 0) {
               if (selection_ligand_fields_list.indexOf('all') > -1 || selection_ligand_fields_list.indexOf('name') > -1 || selection_ligand_fields_list.indexOf('inchikey') > -1) {
@@ -115,11 +174,19 @@
               selection_ligand_fields_min_length_1 = false;
             }
 
-            selection_ligand_fields = selection_ligand_fields_list.join(',');
-            $("#selection-autocomplete").catcomplete('destroy');
-            selectionAutocompleteCreateCatComplete();
-            console.log(selection_ligand_fields);
+            selection_ligand_by_id_fields = selection_ligand_fields_by_id_list.join(',');
+          });*/
+
+          $('#selection_ligand_bulk_search_search_type').change(function () {
+            var search_type = $("#selection_ligand_bulk_search_search_type").val();
+            if (search_type == 'smiles') {
+              $('#selection_ligand_bulk_search_textarea').attr('placeholder','Type or paste your SMILES strings here.');
+            } else if (search_type == 'inchikey') {
+              $('#selection_ligand_bulk_search_textarea').attr('placeholder','Type or paste your InChIKeys here.');
+            }
+ 
           });
+
         });
         var type_of_selection = '{{ type_of_selection }}';
         var selection_only_receptors = '{{ selection_only_receptors }}';
@@ -160,6 +227,7 @@
         });
         {% endif %}
         $(document).ready(function() {
+            $('[data-toggle="popover"]').popover();
             $('#selection_ligand_bulk_search_search_type').on('change',function (e) {
               if (this.value === 'inchikey') {
                     $('#selection_ligand_bulk_search_stereo_div').hide();
