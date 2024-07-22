@@ -43,12 +43,12 @@
                           </select>
                       </div>
                       <div style="{% if ligand_structural_search_parameters.search_type != 'similarity' %}display:none;{% endif %}height:44px" id="ligand_structural_search_similarity_div" class="form-group">
-                        <label for="ligand_structural_search_similarity_threshold">Similarity threshold:<label>
+                        <label for="ligand_structural_search_similarity_threshold">Similarity threshold <span class="glyphicon glyphicon-info-sign" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="bottom" data-content="<b>Similarity threshold</b><br>Minimum Tanimoto similarity coefficient between the Morgan-2 fingerprints of the query molecule and the ones in GPCRdb. Only values between 0.5 and 1 are allowed." data-original-title="" title=""></span>:<label>
                         <input style="width:75px" id="ligand_structural_search_similarity_threshold" class="form-control" maxlength="4" size="4" value="{{ ligand_structural_search_parameters.similarity_threshold }}">
                       </div>
                       <div style="{% if ligand_structural_search_parameters.search_type != 'substructure' %}display:none;{% endif %}height:44px" id="ligand_structural_search_stereo_div" class="form-group">
                           <input type="checkbox" {% if ligand_structural_search_parameters.stereochemistry %}checked {% endif %}id="ligand_structural_search_stereochemistry" value="True">
-                        <label for="ligand_structural_search_stereochemistry">Stereochemistry<label>
+                        <label for="ligand_structural_search_stereochemistry">Stereochemistry<label><span class="glyphicon glyphicon-info-sign" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="bottom" data-content="<b>Stereochemistry</b><br>Toggles whether or not stereochemistry is used in substructure matching. If checked, stereochemistry is taken into account." data-original-title="" title="">
                       </div>
                       {% comment %} 
                       <div class="form-group">
@@ -82,7 +82,7 @@
         var redirect_url = '{{ buttons.continue.url }}'
         var redirect_on_select = '{{ redirect_on_select }}'
     </script>
-    <script src="{% static 'home/js/selection-autocomplete.js' %}"></script>
+    {% comment %} <script src="{% static 'home/js/selection-autocomplete.js' %}"></script> {% endcomment %}
     <script src="{% static 'home/js/selection-filters.js' %}"></script>
     <script src="{% static 'home/js/selection.js' %}"></script>
 
@@ -116,6 +116,7 @@
         });
         {% endif %}
         $(document).ready(function() {
+          $('[data-toggle="popover"]').popover();
             $('#ligand_structural_search_search_type').on('change',function (e) {
               if (this.value === 'similarity') {
                     

@@ -153,6 +153,7 @@ def SelectionAutocomplete(request):
         fields = request.GET.get('fields')
         if fields == '':
             fields = None
+            field_list = []
         if fields is not None:
             field_list = fields.split(',')
             # if 'all' in field_list:
@@ -202,7 +203,6 @@ def SelectionAutocomplete(request):
                 cache.set(cache_key, web_resource_slug_2_id, 60*60*24*7)
             else:
                 web_resource_slug_2_id = cache.get(cache_key)
-            print(web_resource_slug_2_id)
             qsl = None
             qslid = None
             for field in field_list:
@@ -267,8 +267,6 @@ def SelectionAutocomplete(request):
                 p_json['category'] = 'Receptors'
                 results.append(p_json)
         else:
-            
-
             for p in indexes:
                 p_json = {}
                 p_json['id'] = p[0]
@@ -276,14 +274,21 @@ def SelectionAutocomplete(request):
                 p_json['type'] = 'Ligand'
                 p_json['category'] = p[2].split('_')[0]
                 results.append(p_json)
-            if len(indexes) == 0 or (fields is None or 'all' in field_list):
-                for p in ps:
-                    p_json = {}
-                    p_json['id'] = p.id
-                    p_json['label'] = p.name
-                    p_json['type'] = 'ligand'
-                    p_json['category'] = 'GPCRdb data'
-                    results.append(p_json)
+
+            gpcrdb_category_name = 'GPCRdb data'
+            if fields is not None:
+                if len(field_list) == 1:
+                    if field_list[0] != 'gpcrdb_id':
+                        gpcrdb_category_name = ''
+
+
+            for p in ps:
+                p_json = {}
+                p_json['id'] = p.id
+                p_json['label'] = p.name
+                p_json['type'] = 'ligand'
+                p_json['category'] = gpcrdb_category_name
+                results.append(p_json)
 
         if (type_of_selection not in ['navbar', 'ligands']) or (type_of_selection=='navbar' and ps.count() == 0):
             # find protein aliases
