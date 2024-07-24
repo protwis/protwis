@@ -35,7 +35,7 @@
                   <div>
                       <form>
                       <div class="form-group">
-                        <label for="ligand_structural_search_smiles">SMILES:<label>
+                        <label for="ligand_structural_search_smiles">SMILES:</label>
                         <input id="ligand_structural_search_smiles" class="form-control" size="30" maxlength="200" value="{{ ligand_structural_search_parameters.smiles }}">
                         <select id="ligand_structural_search_search_type" class="form-select">
                             <option {% if ligand_structural_search_parameters.search_type == 'similarity' %}selected {% endif %}value="similarity">Search by similarity</option>
@@ -43,7 +43,7 @@
                           </select>
                       </div>
                       <div style="{% if ligand_structural_search_parameters.search_type != 'similarity' %}display:none;{% endif %}height:44px" id="ligand_structural_search_similarity_div" class="form-group">
-                        <label for="ligand_structural_search_similarity_threshold">Similarity threshold <span class="glyphicon glyphicon-info-sign" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="bottom" data-content="<b>Similarity threshold</b><br>Minimum Tanimoto similarity coefficient between the Morgan-2 fingerprints of the query molecule and the ones in GPCRdb. Only values between 0.5 and 1 are allowed." data-original-title="" title=""></span>:<label>
+                        <label for="ligand_structural_search_similarity_threshold">Similarity threshold <span class="glyphicon glyphicon-info-sign" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="bottom" data-content="<b>Similarity threshold</b><br>Minimum Tanimoto similarity coefficient between the Morgan-2 fingerprints of the query molecule and the ones in GPCRdb. Only values between 0.5 and 1 are allowed." data-original-title="" title=""></span>:</label>
                         <input style="width:75px" id="ligand_structural_search_similarity_threshold" class="form-control" maxlength="4" size="4" value="{{ ligand_structural_search_parameters.similarity_threshold }}">
                       </div>
                       <div style="{% if ligand_structural_search_parameters.search_type != 'substructure' %}display:none;{% endif %}height:44px" id="ligand_structural_search_stereo_div" class="form-group">
@@ -52,7 +52,7 @@
                       </div>
                       {% comment %} 
                       <div class="form-group">
-                        <label for="ligand_structural_search_limit">Limit:<label>
+                        <label for="ligand_structural_search_limit">Limit:</label>
                         <input type="number" style="width:75px" id="ligand_structural_search_limit" class="form-control" maxlength="3" size="3" min="1" max="100" value="{{ ligand_structural_search_parameters.limit }}">
                       </div> 
                       {% endcomment %}
@@ -117,17 +117,17 @@
         {% endif %}
         $(document).ready(function() {
           $('[data-toggle="popover"]').popover();
-            $('#ligand_structural_search_search_type').on('change',function (e) {
-              if (this.value === 'similarity') {
-                    
-                    $('#ligand_structural_search_stereo_div').hide();
-                    $('#ligand_structural_search_similarity_div').show();
-                } else if (this.value === 'substructure') {
-                    $('#ligand_structural_search_stereo_div').show();
-                    $('#ligand_structural_search_similarity_div').hide();
-                }
+          $('#ligand_structural_search_search_type').on('change',function (e) {
+            if (this.value === 'similarity') {
                   
-            });
+                  $('#ligand_structural_search_stereo_div').hide();
+                  $('#ligand_structural_search_similarity_div').show();
+              } else if (this.value === 'substructure') {
+                  $('#ligand_structural_search_stereo_div').show();
+                  $('#ligand_structural_search_similarity_div').hide();
+              }
+                
+          });
         });
 
     </script>

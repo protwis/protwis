@@ -33,7 +33,7 @@
           <div class="col-md-12 panel panel-primary">
               <div class="panel-body">
                   <h4>Search by name</h4>
-                  Search ligands by name
+                  Search ligands by name.
                       <div class="panel-body">
                         <div class="row">
                           <input class="col-md-6 form-control" id="selection-autocomplete-ligand-by-name" size="25" value="{{ selection_ligand_bulk_search_parameters.search_text_by_name }}">
@@ -47,7 +47,7 @@
                         </div>
                         <div class="row">
                           <div class="form-group">
-                            <p style="{% if ligand_bulk_search_by_name_error_msg != 'No results found.'%}color: red; {% endif %}">{{ ligand_bulk_search_by_name_error_msg }}</p>
+                            <p class="error-msg-p" style="{% if ligand_bulk_search_by_name_error_msg != 'No results found.'%}color: red; {% endif %}">{{ ligand_bulk_search_by_name_error_msg }}</p>
                           </div>
                         </div>
                       </div>
@@ -80,11 +80,11 @@
             <textarea class="form-control" id="selection_ligand_bulk_search_by_id_textarea" placeholder="Type or paste IDs here.">{{ selection_ligand_bulk_search_parameters.search_text_by_id }}</textarea>
           </div>
           <div class="form-group">
-            <p style="{% if ligand_bulk_search_error_msg != 'No results found.'%}color: red; {% endif %}">{{ ligand_bulk_search_by_id_error_msg }}</p>
+            <p class="error-msg-p" style="{% if ligand_bulk_search_error_msg != 'No results found.'%}color: red; {% endif %}">{{ ligand_bulk_search_by_id_error_msg }}</p>
           </div>
 
-            <div id="selection-buttons-ligand-by-id" class="">
-              <div class="" id="selection-search-ligand-by-id">
+          <div id="selection-buttons-ligand-by-id" class="">
+              <div class="panel-body" id="selection-search-ligand-by-id">
                     <a id='selection-button-ligand-by-id' class="btn btn-success btn-lg btn-block has-spinner" onclick="submitSelectionLigandBulkSearchById('/ligand/ligand_bulk_search')">
                         <span class="spinner"><i class="fa fa-spinner fa-spin"></i></span> Bulk search
                     </a>
@@ -105,29 +105,86 @@
       <div class="col-md-12 panel panel-primary">
         <div class="panel-body">
           <h4>Batch exact match search</h4>
-          Search ligands by multiple SMILES exact match or by InChIKeys (one line per ligand).
+          Search ligands by multiple SMILES or SMARTS exact match, or by Standard InChIKeys (one line per ligand).
+          <br>
           <br>
           <div class="form-group">
             <select id="selection_ligand_bulk_search_search_type" class="form-select" aria-label="select">
               <option {% if selection_ligand_bulk_search_parameters.search_type_selection == 'smiles' %}selected {% endif %}value="smiles">Search by SMILES</option>
-              <option {% if selection_ligand_bulk_search_parameters.search_type_selection == 'inchikey' %}selected {% endif %}value="inchikey">Search by InChIKeys</option>
+              <option {% if selection_ligand_bulk_search_parameters.search_type_selection == 'smarts' %}selected {% endif %}value="smarts">Search by SMARTS</option>
+              <option {% if selection_ligand_bulk_search_parameters.search_type_selection == 'inchikey' %}selected {% endif %}value="inchikey">Search by Standard InChIKeys</option>
             </select>          
           </div>
-          <div style="{% if selection_ligand_bulk_search_parameters.search_type_selection != 'smiles' %}display:none;{% endif %}height:44px" id="selection_ligand_bulk_search_stereo_div" class="form-group">
+          <div style="{% if selection_ligand_bulk_search_parameters.search_type_selection != 'smiles' and selection_ligand_bulk_search_parameters.search_type_selection != 'smarts'  %}display:none;{% endif %}height:44px" id="selection_ligand_bulk_search_stereo_div" class="form-group">
             <input type="checkbox" {% if selection_ligand_bulk_search_parameters.stereochemistry %}checked {% endif %}id="selection_ligand_bulk_search_stereochemistry" value="True">
-          <label for="selection_ligand_bulk_search_stereochemistry">Stereochemistry<label><span class="glyphicon glyphicon-info-sign" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="bottom" data-content="<b>Stereochemistry</b><br>Toggles whether or not stereochemistry is used in substructure matching. If checked, stereochemistry is taken into account." data-original-title="" title="">
+          <label for="selection_ligand_bulk_search_stereochemistry">Stereochemistry</label><span class="glyphicon glyphicon-info-sign" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="bottom" data-content="<b>Stereochemistry</b><br>Toggles whether or not stereochemistry is used in substructure matching. If checked, stereochemistry is taken into account." data-original-title="" title="">
           </div>
           <div class="form-group">
             <textarea class="form-control" id="selection_ligand_bulk_search_textarea" placeholder="Type or paste your {% if selection_ligand_bulk_search_parameters.search_type_selection == 'smiles' %}SMILES strings{% endif %}{% if selection_ligand_bulk_search_parameters.search_type_selection == 'inchikey' %}InChIKeys{% endif %} here.">{{ selection_ligand_bulk_search_parameters.search_text_by_other }}</textarea>
           </div>
           <div class="form-group">
-            <p style="{% if ligand_bulk_search_error_msg != 'No results found.'%}color: red; {% endif %}">{{ ligand_bulk_search_error_msg }}</p>
+            <p class="error-msg-p" style="{% if ligand_bulk_search_error_msg != 'No results found.'%}color: red; {% endif %}">{{ ligand_bulk_search_error_msg }}</p>
           </div>
           <div id="">
             {% include 'common/selection_buttons.html' %}
           </div>
         </div>
       </div>
+      {% endif %}
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-8">
+      <!-- target search -->
+      {% if search %}
+          <div class="col-md-12 panel panel-primary">
+              <div class="panel-body">
+                  <h4>Ligand similarity and substructure search</h4>
+                  Search ligands by similarity or substructure.
+                  <br>
+                  <br>
+                  <div>
+                      <form>
+                      <div class="form-group">
+                        <label class="" id="ligand_structural_search_smiles_label" style="{% if ligand_structural_search_parameters.search_type != 'similarity' %}display:none;{% endif %}width:100px" >SMILES:</label>
+                        <select class="form-select" style="{% if ligand_structural_search_parameters.search_type != 'substructure' %}display:none;{% endif %}width:100px" id="ligand_structural_search_input_type" >
+                          <option {% if ligand_structural_search_parameters.input_type == 'smiles' %}selected {% endif %}value="smiles">SMILES:</option>
+                          <option {% if ligand_structural_search_parameters.input_type == 'smarts' %}selected {% endif %}value="smarts">SMARTS:</option>
+                        </select>
+                        <input id="ligand_structural_search_smiles" class="form-control" size="30" maxlength="200" value="{{ ligand_structural_search_parameters.smiles }}">
+                        <select id="ligand_structural_search_search_type" class="form-select">
+                            <option {% if ligand_structural_search_parameters.search_type == 'similarity' %}selected {% endif %}value="similarity">Search by similarity</option>
+                            <option {% if ligand_structural_search_parameters.search_type == 'substructure' %}selected {% endif %}value="substructure">Search substructure</option>
+                          </select>
+                      </div>
+                      <div style="{% if ligand_structural_search_parameters.search_type != 'similarity' %}display:none;{% endif %}height:44px" id="ligand_structural_search_similarity_div" class="form-group">
+                        <label for="ligand_structural_search_similarity_threshold">Similarity threshold <span class="glyphicon glyphicon-info-sign" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="bottom" data-content="<b>Similarity threshold</b><br>Minimum Tanimoto similarity coefficient between the Morgan-2 fingerprints of the query molecule and the ones in GPCRdb. Only values between 0.5 and 1 are allowed." data-original-title="" title=""></span>:</label>
+                        <input style="width:75px" id="ligand_structural_search_similarity_threshold" class="form-control" maxlength="4" size="4" value="{{ ligand_structural_search_parameters.similarity_threshold }}">
+                      </div>
+                      <div style="{% if ligand_structural_search_parameters.search_type != 'substructure' %}display:none;{% endif %}height:44px" id="ligand_structural_search_stereo_div" class="form-group">
+                          <input type="checkbox" {% if ligand_structural_search_parameters.stereochemistry %}checked {% endif %}id="ligand_structural_search_stereochemistry" value="True">
+                        <label for="ligand_structural_search_stereochemistry">Stereochemistry<label><span class="glyphicon glyphicon-info-sign" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="bottom" data-content="<b>Stereochemistry</b><br>Toggles whether or not stereochemistry is used in substructure matching. If checked, stereochemistry is taken into account." data-original-title="" title="">
+                      </div>
+                      {% comment %} 
+                      <div class="form-group">
+                        <label for="ligand_structural_search_limit">Limit:</label>
+                        <input type="number" style="width:75px" id="ligand_structural_search_limit" class="form-control" maxlength="3" size="3" min="1" max="100" value="{{ ligand_structural_search_parameters.limit }}">
+                      </div> 
+                      {% endcomment %}
+                      <div class="form-group">
+                      <p class="error-msg-p" class="error-msg-p" style="{% if ligand_structural_search_error_msg != 'No results found.'%}color: red; {% endif %}">{{ ligand_structural_search_error_msg }}</p>
+                      </div>
+                      </form>
+                    </div>
+                    <div id="selection-buttons-smiles-search" class="">
+                      <div class="panel-body" id="selection-smiles-search">
+                            <a id='selection-button-smiles-search' class="btn btn-success btn-lg btn-block has-spinner" onclick="submitLigandStructuralSearch('/ligand/ligand_structural_search')">
+                                <span class="spinner"><i class="fa fa-spinner fa-spin"></i></span> Search
+                            </a>
+                      </div>
+                    </div>
+              </div>
+          </div>
       {% endif %}
     </div>
   </div>
@@ -194,15 +251,15 @@
         var redirect_on_select = '{{ redirect_on_select }}'
     </script>
     <script src="{% static 'home/js/selection-autocomplete.js' %}"></script>
-    <script src="{% static 'home/js/selection-filters.js' %}"></script>
+ {% comment %}    <script src="{% static 'home/js/selection-filters.js' %}"></script>
     <script src="{% static 'home/js/selection.js' %}"></script>
 
     <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
     <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
-    <script src="{% static 'home/js/select2.js' %}"> </script>
+    <script src="{% static 'home/js/select2.js' %}"> </script> {% endcomment %}
 
     <!-- Target select modal table -->
-    <script type="text/javascript" src="{% static 'home/js/targetselect_functions.js' %}"> </script>
+    {% comment %} <script type="text/javascript" src="{% static 'home/js/targetselect_functions.js' %}"> </script> {% endcomment %}
 
     <script type="text/javascript" src="{% static 'home/js/ligand_structural_search.js' %}"> </script>
 
@@ -212,7 +269,7 @@
   
 
 
-        {% if filter_tableselect %}
+{% comment %}         {% if filter_tableselect %}
         $(document).ready(function() {
             // Get Receptor Targets for table build
             initializeTargetChooserTables();
@@ -224,18 +281,40 @@
 
             $('#targetselect-modal-table').on('hidden.bs.modal', AddMultipleTargets);
 
-        });
+        }); 
         {% endif %}
+        {% endcomment %}
         $(document).ready(function() {
             $('[data-toggle="popover"]').popover();
+
+            $('[id^=selection-button]').click(function () {
+              $(".error-msg-p").text('');
+            });
+
             $('#selection_ligand_bulk_search_search_type').on('change',function (e) {
               if (this.value === 'inchikey') {
                     $('#selection_ligand_bulk_search_stereo_div').hide();
-              } else if (this.value === 'smiles') {
+              } else if (this.value === 'smiles' || this.value === 'smarts') {
                     $('#selection_ligand_bulk_search_stereo_div').show();
               }
                   
             });
+            $('#ligand_structural_search_search_type').on('change',function (e) {
+              if (this.value === 'similarity') {
+                
+                    $('#ligand_structural_search_smiles_label').show();
+                    $('#ligand_structural_search_input_type').hide();
+                    $('#ligand_structural_search_stereo_div').hide();
+                    $('#ligand_structural_search_similarity_div').show();
+                } else if (this.value === 'substructure') {
+                    $('#ligand_structural_search_smiles_label').hide();
+                    $('#ligand_structural_search_input_type').show();
+                    $('#ligand_structural_search_stereo_div').show();
+                    $('#ligand_structural_search_similarity_div').hide();
+                }
+                  
+            });
+
         });
 
     </script>
