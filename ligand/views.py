@@ -96,7 +96,7 @@ class LigandNameSelection(AbsTargetSelection):
     type_of_selection = 'ligands'
     selection_only_receptors = False
     title = "Ligand search"
-    description = 'Search for a ligand or several ligands by name, database ID (GPCRdb, GtP, ChEMBL) or structure (InChIKey, SMILES).'
+    description = 'Search for a ligand or several ligands by name, database ID (GPCRdb, GtP, ChEMBL) or structure (Standard InChIKey, SMILES or SMARTS).'
 
     buttons = {
         
@@ -152,6 +152,12 @@ class LigandNameSelection(AbsTargetSelection):
         msg = self.request.session.pop('ligand_bulk_search_by_id_error_msg',None)
         if msg is not None:
             context['ligand_bulk_search_by_id_error_msg'] = msg
+        
+        context['ligand_structural_search_parameters'] = getLigandStructuralSearchParameters(self.request)
+        context['ligand_structural_search_parameters']['similarity_threshold'] = '%.2f' % context['ligand_structural_search_parameters']['similarity_threshold']
+        msg = self.request.session.pop('ligand_structural_search_error_msg',None)
+        if msg is not None:
+            context['ligand_structural_search_error_msg'] = msg
 
         return context
 
@@ -349,7 +355,7 @@ class LigandBulkSearch(TemplateView):
                         q = Q(molecule__exact=MOL(v))
                         q1 = Q(molecule__exact=MOL(v))
                         string_to_replace_by = '%s'
-                    else:
+                    elif search_type == 'smarts':
                         q = Q(molecule__hassubstruct=(v))
                         q1 = Q(molecule__hassubstruct=(v))
                         string_to_replace_by = 'mol_adjust_query_properties(qmol(%s),\'{"adjustDegree":true,"adjustDegreeFlags":"IGNORENONE"}\')'
@@ -380,7 +386,7 @@ class LigandBulkSearch(TemplateView):
         no_results_msg = 'No results found.'
         if mode == 'compact':
             if not(cache_key != False and cache.has_key(cache_key)):
-                if search_type == 'smiles':
+                if search_type == 'smiles' or search_type == 'smarts':
                     
                     if cursor_results != []:
                         ligand_id = [x[0] for x in cursor_results]
@@ -498,8 +504,8 @@ def getLigandStructuralSearchParameters(request):
     #     default_smiles = "O=C1OC2C3([C@H]1OCc1ccccc1)C([C@@H](C1C43[C@@](O2)(C(=O)O1)[C@@]1([C@H](C4O)OC(=O)C1C)O)F)C(C)(C)C"
     # else:
     #     default_smiles = 'cccccc'
+    param_dict['input_type'] = request.session.get('ligand_structural_search_input_type', 'smiles')
     param_dict['smiles'] = request.session.get('ligand_structural_search_smiles', default_smiles)
-    param_dict['smarts_enabled'] = request.session.get('ligand_structural_search_smarts_enabled', False)
     param_dict['similarity_threshold'] = float(request.session.get('ligand_structural_search_similarity_threshold', 0.5))
     # param_dict['search_limit'] = request.session.get('ligand_structural_search_limit ', 100)
 
@@ -557,7 +563,7 @@ class ReadInputLigandStructuralSearch(View):
                     'status_code':400,
                     'reason_phrase':'Bad Request',
                     'msg':''}
-    search_params_data_keys = ['search_type','smiles','similarity_threshold','stereochemistry', 'smarts_enabled']
+    search_params_data_keys = ['search_type','input_type','smiles','similarity_threshold','stereochemistry']
 
     def validate_SMARTS(self,smarts,smiles_only=False):
         return validate_SMARTS(smarts,smiles_only=smiles_only)
@@ -574,17 +580,15 @@ class ReadInputLigandStructuralSearch(View):
         search_params_data = {}
         for key in self.search_params_data_keys:
             search_params_data[key] = request.POST.get(key,None)
-        smarts_enabled = search_params_data['smarts_enabled']
-        if smarts_enabled is None:
-            search_params_data['smarts_enabled'] = False
-            smarts_enabled = False
             
         search_type = search_params_data['search_type']
+        smarts_enabled = False
         if search_type == 'similarity':
             search_type_similarity = True
-            smarts_enabled = False
         elif search_type == 'substructure':
             search_type_similarity = False
+            if search_params_data['input_type'] == 'smarts':
+                smarts_enabled = True
         else:
             raise ValidationError('Unknown ligand structural search parameter: search_type="%s"' % str(search_type))
         stereochemistry = search_params_data['stereochemistry']
@@ -650,10 +654,11 @@ class LigandStructuralSearch(TemplateView):
         param_dict = getLigandStructuralSearchParameters(self.request)
         search_type = param_dict['search_type']
         smiles = param_dict['smiles']
+        input_type = param_dict['input_type']
         with connection.cursor() as cursor:
             if search_type == 'similarity':
                 similarity_threshold = param_dict['similarity_threshold']
-                cache_key = "ligand_structural_search_" + ",".join([search_type,smiles,str(similarity_threshold),mode])
+                cache_key = "ligand_structural_search_" + ",".join([search_type,input_type,smiles,str(similarity_threshold),mode])
                 if not(cache_key != False and cache.has_key(cache_key)):
                     string_to_replace_by = '^textoreplacebysmiles#'
                     value = MORGANBV_FP(Value(string_to_replace_by))
@@ -675,7 +680,7 @@ class LigandStructuralSearch(TemplateView):
                 if not(cache_key != False and cache.has_key(cache_key)):
                     sql_string_placeholder = '^textoreplacebysmiles#'
                     v = Value(sql_string_placeholder)
-                    if param_dict['smarts_enabled']:
+                    if input_type == 'smarts':
                         m = QMOL(v)
                     else:
                         m = MOL(v)
