@@ -1,6 +1,46 @@
 function toggleButtonClass(button_id) {
   $('#'+button_id).toggleClass('active')
 }
+$(document).ready(function() {
+  $(".error-msg-p").each(function (i,e) {
+    if ($(e).text() != '') {
+      var hash = '#';
+      switch ($(e).attr('id')) {
+        case 'ligand_bulk_search_by_name_error_msg':
+          hash = "#by-name";
+          break;
+        case 'ligand_bulk_search_by_id_error_msg':
+          hash = "#by-id";
+          break;
+        case 'ligand_bulk_search_error_msg':
+          hash = "#bulk-search";
+          break;
+        case 'ligand_structural_search_error_msg':
+          hash = "#sim-sub-search";
+          break;      
+        default:
+          break;
+      }
+
+      setTimeout(() => {
+        location.hash = hash;
+      }, 100);
+    }
+  })
+
+  $("#selection-autocomplete-ligand-by-name")
+  .on('change',function (e) {$("#ligand_bulk_search_by_name_error_msg").text('');});
+
+  $("#selection_ligand_bulk_search_by_id_textarea, #selection_ligand_by_id_fields")
+  .on('change',function (e) {$("#ligand_bulk_search_by_id_error_msg").text('');});
+
+  $("#selection_ligand_bulk_search_textarea, #selection_ligand_bulk_search_search_type, #selection_ligand_bulk_search_stereochemistry")
+  .on('change',function (e) {$("#ligand_bulk_search_error_msg").text('');});
+
+  $("#ligand_structural_search_smiles,#ligand_structural_search_search_type,#ligand_structural_search_input_type,#ligand_structural_search_similarity_threshold,#ligand_structural_search_stereochemistry")
+  .on('change',function (e) {$("#ligand_structural_search_error_msg").text('');});
+
+});
 
 function submitSelectionLigandBulkSearchByName(url) {
 
@@ -33,6 +73,7 @@ function submitSelectionLigandBulkSearchByName(url) {
         if (jqXHR.responseJSON.hasOwnProperty('status_code')) {
           if (jqXHR.responseJSON.status_code === 400) {
             if (jqXHR.responseJSON.hasOwnProperty('msg')) {
+              location.hash = '#';
               location.reload();
               return;
             }
@@ -67,6 +108,7 @@ function submitSelectionLigandBulkSearchById(url) {
   $.post("/ligand/read_input_ligand_bulk_search", search_params_data,  function (data) {
     setTimeout(function(){
       toggleButtonClass('selection-button-ligand-by-id');
+      location.hash = '#';
       window.location.href = url;
     }, 500);
 
@@ -77,6 +119,7 @@ function submitSelectionLigandBulkSearchById(url) {
         if (jqXHR.responseJSON.hasOwnProperty('status_code')) {
           if (jqXHR.responseJSON.status_code === 400) {
             if (jqXHR.responseJSON.hasOwnProperty('msg')) {
+              location.hash = '#';
               location.reload();
               return;
             }
@@ -125,6 +168,7 @@ function submitSelectionLigandBulkSearch(url) {
         if (jqXHR.responseJSON.hasOwnProperty('status_code')) {
           if (jqXHR.responseJSON.status_code === 400) {
             if (jqXHR.responseJSON.hasOwnProperty('msg')) {
+              location.hash = '#';
               location.reload();
               return;
             }
@@ -169,6 +213,7 @@ function submitLigandStructuralSearch(url) {
           if (jqXHR.responseJSON.hasOwnProperty('status_code')) {
             if (jqXHR.responseJSON.status_code === 400) {
               if (jqXHR.responseJSON.hasOwnProperty('msg')) {
+                location.hash = '#';
                 location.reload();
                 return;
               }

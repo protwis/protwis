@@ -32,6 +32,7 @@
       {% if search %}
           <div class="col-md-12 panel panel-primary">
               <div class="panel-body">
+                  <a name="by-name"></a>
                   <h4>Search by name</h4>
                   Search ligands by name.
                       <div class="panel-body">
@@ -47,7 +48,7 @@
                         </div>
                         <div class="row">
                           <div class="form-group">
-                            <p class="error-msg-p" style="{% if ligand_bulk_search_by_name_error_msg != 'No results found.'%}color: red; {% endif %}">{{ ligand_bulk_search_by_name_error_msg }}</p>
+                            <p id="ligand_bulk_search_by_name_error_msg" class="error-msg-p" style="{% if ligand_bulk_search_by_name_error_msg != 'No results found.'%}color: red; {% endif %}">{{ ligand_bulk_search_by_name_error_msg }}</p>
                           </div>
                         </div>
                       </div>
@@ -64,6 +65,7 @@
       {% if search %}
       <div class="col-md-12 panel panel-primary">
         <div class="panel-body">
+          <a name="by-id"></a>
           <h4>Batch search by ID</h4>
           Search ligands (separated by whitespace) by:
           <br>
@@ -80,7 +82,7 @@
             <textarea class="form-control" id="selection_ligand_bulk_search_by_id_textarea" placeholder="Type or paste IDs here.">{{ selection_ligand_bulk_search_parameters.search_text_by_id }}</textarea>
           </div>
           <div class="form-group">
-            <p class="error-msg-p" style="{% if ligand_bulk_search_error_msg != 'No results found.'%}color: red; {% endif %}">{{ ligand_bulk_search_by_id_error_msg }}</p>
+            <p id="ligand_bulk_search_by_id_error_msg" class="error-msg-p" style="{% if ligand_bulk_search_by_id_error_msg != 'No results found.'%}color: red; {% endif %}">{{ ligand_bulk_search_by_id_error_msg }}</p>
           </div>
 
           <div id="selection-buttons-ligand-by-id" class="">
@@ -104,6 +106,7 @@
       {% if search %}
       <div class="col-md-12 panel panel-primary">
         <div class="panel-body">
+          <a name="bulk-search"></a>
           <h4>Batch exact match search</h4>
           Search ligands by multiple SMILES or SMARTS exact match, or by Standard InChIKeys (one line per ligand).
           <br>
@@ -120,10 +123,10 @@
           <label for="selection_ligand_bulk_search_stereochemistry">Stereochemistry</label><span class="glyphicon glyphicon-info-sign" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="bottom" data-content="<b>Stereochemistry</b><br>Toggles whether or not stereochemistry is used in substructure matching. If checked, stereochemistry is taken into account." data-original-title="" title="">
           </div>
           <div class="form-group">
-            <textarea class="form-control" id="selection_ligand_bulk_search_textarea" placeholder="Type or paste your {% if selection_ligand_bulk_search_parameters.search_type_selection == 'smiles' %}SMILES strings{% endif %}{% if selection_ligand_bulk_search_parameters.search_type_selection == 'inchikey' %}InChIKeys{% endif %} here.">{{ selection_ligand_bulk_search_parameters.search_text_by_other }}</textarea>
+            <textarea class="form-control" id="selection_ligand_bulk_search_textarea" placeholder="Type or paste your {% if selection_ligand_bulk_search_parameters.search_type_selection == 'smiles' %}SMILES strings{% endif %}{% if selection_ligand_bulk_search_parameters.search_type_selection == 'smarts' %}SMARTS strings{% endif %}{% if selection_ligand_bulk_search_parameters.search_type_selection == 'inchikey' %}InChIKeys{% endif %} here.">{{ selection_ligand_bulk_search_parameters.search_text_by_other }}</textarea>
           </div>
           <div class="form-group">
-            <p class="error-msg-p" style="{% if ligand_bulk_search_error_msg != 'No results found.'%}color: red; {% endif %}">{{ ligand_bulk_search_error_msg }}</p>
+            <p id="ligand_bulk_search_error_msg" class="error-msg-p" style="{% if ligand_bulk_search_error_msg != 'No results found.'%}color: red; {% endif %}">{{ ligand_bulk_search_error_msg }}</p>
           </div>
           <div id="">
             {% include 'common/selection_buttons.html' %}
@@ -139,6 +142,7 @@
       {% if search %}
           <div class="col-md-12 panel panel-primary">
               <div class="panel-body">
+                  <a name="sim-sub-search"></a>
                   <h4>Ligand similarity and substructure search</h4>
                   Search ligands by similarity or substructure.
                   <br>
@@ -172,7 +176,7 @@
                       </div> 
                       {% endcomment %}
                       <div class="form-group">
-                      <p class="error-msg-p" class="error-msg-p" style="{% if ligand_structural_search_error_msg != 'No results found.'%}color: red; {% endif %}">{{ ligand_structural_search_error_msg }}</p>
+                      <p id="ligand_structural_search_error_msg" class="error-msg-p" class="error-msg-p" style="{% if ligand_structural_search_error_msg != 'No results found.'%}color: red; {% endif %}">{{ ligand_structural_search_error_msg }}</p>
                       </div>
                       </form>
                     </div>
@@ -240,6 +244,8 @@
               $('#selection_ligand_bulk_search_textarea').attr('placeholder','Type or paste your SMILES strings here.');
             } else if (search_type == 'inchikey') {
               $('#selection_ligand_bulk_search_textarea').attr('placeholder','Type or paste your InChIKeys here.');
+            } else if (search_type == 'smarts') {
+              $('#selection_ligand_bulk_search_textarea').attr('placeholder','Type or paste your SMARTS strings here.');
             }
  
           });
