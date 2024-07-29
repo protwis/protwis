@@ -160,6 +160,12 @@ class LigandNameSelection(AbsTargetSelection):
             context['ligand_structural_search_error_msg'] = msg
 
         return context
+    def get(self, request, *args, **kwargs):
+        context = self.get_context_data(**kwargs)
+        response = self.render_to_response(context)
+        response['Cache-Control'] = 'no-store, no-cache, max-age=0, must-revalidate'
+        return response
+
 
 def validate_SMARTS(smarts,smiles_only=False):
     error = False
