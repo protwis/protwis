@@ -360,7 +360,7 @@ class LandingPage(TemplateView):
 
     @staticmethod
     def generate_similarity(method):
-        similarity_matrix_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'human_gpcr_similarity_data.csv'])
+        similarity_matrix_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'human_gpcr_similarity_data_all_segments.csv'])
         # Convert the nested dictionary to a DataFrame
         data = pd.read_csv(similarity_matrix_file)
         data = data[['receptor1_entry_name', 'receptor2_entry_name', 'similarity']]
@@ -379,7 +379,7 @@ class LandingPage(TemplateView):
 
     @staticmethod
     def generate_full_matrix(method):
-        similarity_matrix_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'human_gpcr_similarity_data.csv'])
+        similarity_matrix_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'human_gpcr_similarity_data_all_segments.csv'])
         # Convert the nested dictionary to a DataFrame
         data = pd.read_csv(similarity_matrix_file)
         data = data[['receptor1_entry_name', 'receptor2_entry_name', 'similarity']]

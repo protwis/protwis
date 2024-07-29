@@ -220,15 +220,16 @@
       <!-- Container for the Plotly Plot -->
       <div id="plotContainer_umap" style="width: 1600px; height: 1200px;"></div>
 
-        <br />
+        <!-- <br />
           <br />
           <br />
         <br />
       </div>
       <div id="plotContainer" class="text-center"></div>
 
-      </div>
+      </div> -->
     </div>
+  </div>
   {% endif %}
   <!-- ####################### -->
   <!-- ## Tab 3 - List Plot ## -->
@@ -712,9 +713,11 @@
 <!-- ################## -->
 {% if Plot_evaluation_json.1 %}
 <script>
+
+var cluster_data = {{ cluster_data|safe }};
+var similarity_umap = {{ similarity_umap|safe }};
 $(document).ready(function() {
-    var cluster_data = {{ cluster_data|safe }};
-    var similarity_umap = {{ similarity_umap|safe }};
+    
     // var similarity_tsne = {{ similarity_tsne|safe }};
     // var similarity_pca = {{ similarity_pca|safe }};
     // var identity_umap = {{ identity_umap|safe }};
@@ -935,7 +938,6 @@ $(document).ready(function() {
     });
 
 });
-
 </script>
 {% endif %}
 

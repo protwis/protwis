@@ -761,7 +761,6 @@ function renderDataVisualization(data, location,styling_option,Layout_dict,data_
                             // transverse final level 3
                             Object.entries(subValue1).forEach(([subKey2, subValue2]) => {
                                 updateLabelMaxLength(subKey2,'level3');
-                                console.log("Hep");
                                 // transverse final level 4
                                 if (Array.isArray(subValue2)) {
                                     subValue2.forEach(item => {
@@ -880,7 +879,6 @@ function renderDataVisualization(data, location,styling_option,Layout_dict,data_
                 }
             }
         }
-        console.log(Col_spacing_dict);
         return Col_spacing_dict
     }
 
