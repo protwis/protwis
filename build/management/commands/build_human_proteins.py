@@ -318,9 +318,12 @@ class Command(BaseBuild):
             'level_family_counter': level_family_counter,
         }
 
-    def parse_uniprot_file(self, accession):
+    def parse_uniprot_file(self, accession, path_to_file=False):
         filename = accession + '.txt'
-        local_file_path = os.sep.join([self.local_uniprot_dir, filename])
+        if not path_to_file:
+            local_file_path = os.sep.join([self.local_uniprot_dir, filename])
+        else:
+            local_file_path = path_to_file
         remote_file_path = self.remote_uniprot_dir + filename
 
         up = {}

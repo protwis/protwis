@@ -1,0 +1,178 @@
+{% extends "home/base.html" %}
+{% load static %}
+
+{% block addon_css %}
+<link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/construct_browser.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/structure_browser.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/construct_alignment.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/sequenceviewer.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/modal.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/jquery.powertip.css' %}" />
+<link rel="stylesheet" href="{% static 'home/css/structure_blast.css' %}">
+{% endblock %}
+
+{% block content %}
+<title>Structure similarity search</title>
+
+<h1>Structure similarity search uses Foldseek 
+    <a href="https://www.nature.com/articles/s41587-023-01773-0#citeas"> (Ref) </a> 
+    to query a pdb file to get a list 
+    <a href="structure">structures</a>/<a href="structure/homology_models">models</a> 
+    with the highest structural similarity. 
+    <br> GPCRdb provides  <a href="structure">structures</a> and <a href="structure/homology_models">models</a>  
+</h1>
+
+<form method="post" enctype="multipart/form-data" id="structure-blast-form">
+    {% csrf_token %}
+    <div class="flex-container">
+        <div class="file-upload-section" style="width: 25%;">
+            <label for="input_pdb">Upload a pdb file (query):
+                <input type="file" id="input_pdb" name="input_file" required>
+            </label>
+            <button type="submit">Submit</button>
+            <!-- <div>
+                <input type="hidden" name="tm7_h8" value="False">
+                <input type="checkbox" id="tm7_h8" name="tm7_h8" value="True">
+                <label for="tm7_h8">By 7TM and H8</label>
+            </div> -->
+        </div>
+
+        <div class="section">
+            <label>Select a method:</label>
+            <div class="row">
+                <input type="radio" id="3d_align" name="alignment_method" value="3Di-align" required>
+                <label for="3d_align">3Di-align (fastest)
+                    <div class="tooltip-wrapper">
+                        <span class="glyphicon glyphicon-info-sign tooltip-trigger"></span>
+                        <div class="tooltiptext">Fastest (seconds), high accuracy. Structure alignment.</div>
+                    </div>
+                </label>
+            </div>
+            <div class="row">
+                <input type="radio" id="3d_plus_align" name="alignment_method" value="3Di+-align" required checked>
+                <label for="3d_plus_align">3Di+AA-align (fast)
+                    <div class="tooltip-wrapper">
+                        <span class="glyphicon glyphicon-info-sign tooltip-trigger"></span>
+                        <div class="tooltiptext">Fast (seconds), high accuracy. Structure plus amino acid alignment.</div>
+                    </div>
+                </label>
+            </div>
+            <div class="row">
+                <input type="radio" id="tm_align" name="alignment_method" value="TM-align" required>
+                <label for="tm_align">TM-align (slow)
+                    <div class="tooltip-wrapper">
+                        <span class="glyphicon glyphicon-info-sign tooltip-trigger"></span>
+                        <div class="tooltiptext">High accuracy with moderate speed; good for detailed global alignments.</div>
+                    </div>
+                </label>
+            </div>
+        </div>
+
+        <div class="section">
+            <label>Choose database(s):</label>
+            <div class="row">
+                <input type="checkbox" name="structure_type" id="alphafold" value="alphafold">
+                <label for="alphafold">Alphafold models</label>
+            </div>
+            <div class="row">
+                <input type="checkbox" name="structure_type" id="refined" value="refined">
+                <label for="refined">Refined experimental structures</label>
+            </div>
+            <div class="row">
+                <input type="checkbox" name="structure_type" id="experimental" value="experimental" checked>
+                <label for="experimental">Raw experimental structures</label>
+            </div>
+        </div>
+    </div>
+
+
+</form>
+
+<!-- LOADER SECTION -->
+<div id="loading-spinner" style="display: none;">
+    <div class="spinner"></div>
+    <p>Processing your request, please wait...</p>
+</div>
+
+<div id="results">
+    {% if data %}
+    <table id="results_table" class="display">
+        <thead>
+            <tr>
+                <th></th>  <!--For Icon 0 -->
+                <th>TM  <br> score</th>
+                <th>LDDT  <br> score</th>
+                <th>E-value</th>
+                <th>PDB <br> ID</th>
+                <th>Structure/model</th>
+                <th>State</th>
+                <th>Gene <br> name</th> <!--1 -->
+                <th>Protein <br>name</th>
+                <!-- <th>Target <br> chain</th>
+                <th>Input  <br> chain</th> -->
+                <th>Class</th>
+                <th>Family</th>
+                <th>Species</th>
+
+
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in data %}
+            <tr>
+
+                <td> 
+                    <a href="{{ row.link }}" target="_blank">
+                        <img width="14px" height="20px" class="model-link" src="/static/home/images/gpcr_structure_logo.png">
+                    </a>
+                </td>
+                <td>{{ row.TM_score }}</td>
+                <td>{{ row.lddt }}</td>
+                <td>{{ row.E_value }}</td>
+
+                
+                <td style="text-align: center;">{{ row.pdb_id }} </td>
+                 <!-- <td></td> -->
+
+
+
+                <td>{{ row.type }}</td>
+                <td>{{ row.state | title}}</td>
+                <!-- <td>
+                    <a href="http://www.uniprot.org/uniprot/{{ row.accession }}" target="_blank">{{ row.gene }}</a>
+                </td> -->
+                <td>{{ row.gene }} </td>
+                <td>
+                    <a href="/protein/{{ row.entry_name }}" target="_blank">{{ row.gtopdb|safe }}</a>
+                </td>
+                <!-- <td>{{ row.chain }}</td>
+                <td>{{ row.input_chain }}</td> -->
+                <td>{{ row.clas }}</td>
+                <td>{{ row.rec_fam|safe }}</td>
+                <td>{{ row.species }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% elif error_message %}
+    <p>{{ error_message }}</p>
+    {% endif %}
+</div>
+
+{% endblock %}
+
+{% block addon_js %}
+<script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
+<script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
+<script src="{% static 'home/js/select2.js' %}"> </script>
+<script src="{% static 'home/js/gpcrdb.js' %}"></script>
+<script src="{% static 'home/js/alignment.js' %}"> </script>
+<script src="{% static 'home/js/browser_functions.js' %}"></script>
+<script src="{% static 'home/js/structure_browser.js' %}"></script> <!-- Structure browser -->
+<script src="{% static 'home/js/jquery.powertip.js' %}"></script>
+<script src="{% static 'home/js/xlsx.full.min.js' %}"></script>  
+<script src="{% static 'home/js/structure-blast.js' %}"></script>
+{% endblock %}

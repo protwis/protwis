@@ -8,6 +8,7 @@ try:
     from Bio.PDB.vectors import rotaxis
 except:
     from Bio.PDB import rotaxis
+from Bio.Align import PairwiseAligner
 
 from django.conf import settings
 from common.alignment import Alignment
@@ -1168,17 +1169,144 @@ class ParseAFModelsCSV():
                 print('Cannot find information for complex {}'.format(complex))
 
 
+# class ParseAFComplexModels():
+#     def __init__(self):
+#         self.data_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'AlphaFold_multimer'])
+#         self.filedirs = os.listdir(self.data_dir)
+#         self.complexes = {}
+#         for f in self.filedirs:
+
+#             parts = f.split('-', 1)
+#             receptor = parts[0]
+
+#             if len(parts) == 3:  # Case with peptide
+#                 peptide_id = parts[1]
+#                 ligand_id = re.sub(r'.*\[(.*?)\].*', r'\1', peptide_id)
+#                 peptide = "-" + re.sub(r'\[.*?\]', '', peptide_id).strip()
+
+#                 print('PEPTIDE')
+#                 print(ligand_id)
+#                 print(peptide)
+#                 print(peptide_id)
+
+#                 signprot = parts[2]
+#                 model = 'af-signprot-peptide'
+#             else:  # Case without peptide
+#                 peptide = None
+#                 signprot = parts[1]
+#                 model = 'af-signprot'
+
+#             # receptor, signprot = f.split('-')
+#             metrics_file = os.sep.join([self.data_dir, f, f+'_metrics.csv'])
+#             metrics = [row for row in csv.DictReader(open(metrics_file, 'r'))][0]
+#             location = os.sep.join([self.data_dir, f, f+'.pdb'])
+#             ### Grab model date/version from pdb file
+#             with open(location, 'r') as model_file:
+#                 line = model_file.readlines()[0]
+#                 date_re = re.search('HEADER[A-Z\S\D]+(\d{4}-\d{2}-\d{2})', line)
+#                 model_date = date_re.group(1)
+#             ### Check if model has full heterotrimer
+#             if 'gbb1_human' in f:
+#                 signprot = signprot.split('_')[0]+'_human'
+#                 beta_gamma = True
+#             else:
+#                 beta_gamma = False
+            
+#             self.complexes[f'{receptor}{peptide}-{signprot}'] = {'receptor':receptor, 'peptide': peptide, 'signprot':signprot, 'beta_gamma':beta_gamma, 'publication_date':model_date, 'location':location, 'model': model, 'preferred_chain':'A', 'PTM':metrics['ptm'], 'iPTM':metrics['iptm'], 'PAE_mean':metrics['pae_mean'], 'ligand_id':ligand_id}
+
+
 class ParseAFComplexModels():
+
+    residue_to_one_letter = {
+        'ALA': 'A', 'CYS': 'C', 'ASP': 'D', 'GLU': 'E', 'PHE': 'F',
+        'GLY': 'G', 'HIS': 'H', 'ILE': 'I', 'LYS': 'K', 'LEU': 'L',
+        'MET': 'M', 'ASN': 'N', 'PRO': 'P', 'GLN': 'Q', 'ARG': 'R',
+        'SER': 'S', 'THR': 'T', 'VAL': 'V', 'TRP': 'W', 'TYR': 'Y'
+    }
+
     def __init__(self):
         self.data_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'AlphaFold_multimer'])
         self.filedirs = os.listdir(self.data_dir)
         self.complexes = {}
         for f in self.filedirs:
-            if '-' not in f:
-                continue
 
-            receptor, signprot = f.split('-')
             metrics_file = os.sep.join([self.data_dir, f, f+'_metrics.csv'])
+            metrics = [row for row in csv.DictReader(open(metrics_file, 'r'))][0]
+            location = os.sep.join([self.data_dir, f, f+'.pdb'])
+
+            parts = f.split('-')
+            print(parts)
+            receptor = parts[0]
+            if len(parts) == 3:  # Case with peptide
+                peptide_id = parts[1]
+                peptide = "-" + re.sub(r'\[.*?\]', '', peptide_id).strip()
+                signprot = parts[2]
+                model = 'af-signprot-peptide'
+                chain_e_sequence = self.get_ligand_sequence(location, 'E')
+
+            else:  # Case without peptide
+                peptide = None
+                signprot = parts[1]
+                model = 'af-signprot'
+
+            # Grab model date/version from pdb file
+            with open(location, 'r') as model_file:
+                line = model_file.readlines()[0]
+                date_re = re.search('HEADER[A-Z\S\D]+(\d{4}-\d{2}-\d{2})', line)
+                model_date = date_re.group(1)
+            
+            # Check if model has full heterotrimer
+            if 'gbb1_human' in f:
+                signprot = signprot.split('_')[0]+'_human'
+                beta_gamma = True
+            else:
+                beta_gamma = False
+            
+            self.complexes[f'{receptor}{peptide}-{signprot}'] = {
+                'receptor': receptor,
+                'peptide': peptide,
+                'signprot': signprot,
+                'beta_gamma': beta_gamma,
+                'publication_date': model_date,
+                'location': location,
+                'model': model,
+                'preferred_chain': 'A',
+                'PTM': metrics['ptm'],
+                'iPTM': metrics['iptm'],
+                'PAE_mean': metrics['pae_mean'],
+                'chain_e_sequence': chain_e_sequence
+            }
+
+
+    def get_ligand_sequence(self, pdb_file, chain_id):
+        sequence = ""
+        with open(pdb_file, 'r') as file:
+            for line in file:
+                if line.startswith("ATOM") and line[21] == chain_id:
+                    residue = line[17:20]
+                    res_seq = int(line[22:26])
+                    if len(sequence) < res_seq:
+                        sequence += self.residue_to_one_letter.get(residue, 'X')
+        return sequence
+
+
+class ParseRFAAModels():
+    def __init__(self):
+        self.data_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'RFAA'])
+        self.filedirs = os.listdir(self.data_dir)
+        self.complexes = {}
+        for f in self.filedirs:
+
+
+            parts = f.split('-', 1)
+            receptor = parts[0]
+            ligand_secs = parts[1].split('[')
+            ligand = ligand_secs[0]
+            inchikey = ligand_secs[1].replace(']', '')
+            model = 'rfaa-sm'
+
+            # receptor, signprot = f.split('-')
+            metrics_file = os.sep.join([self.data_dir, f, receptor + '-' + ligand +'_metrics.csv'])
             metrics = [row for row in csv.DictReader(open(metrics_file, 'r'))][0]
             location = os.sep.join([self.data_dir, f, f+'.pdb'])
             ### Grab model date/version from pdb file
@@ -1186,13 +1314,17 @@ class ParseAFComplexModels():
                 line = model_file.readlines()[0]
                 date_re = re.search('HEADER[A-Z\S\D]+(\d{4}-\d{2}-\d{2})', line)
                 model_date = date_re.group(1)
-            ### Check if model has full heterotrimer
-            if 'gbb1_human' in f:
-                signprot = signprot.split('_')[0]+'_human'
-                beta_gamma = True
-            else:
-                beta_gamma = False
-            self.complexes[receptor+'-'+signprot] = {'receptor':receptor, 'signprot':signprot, 'beta_gamma':beta_gamma, 'publication_date':model_date, 'location':location, 'model':'af-signprot', 'preferred_chain':'A', 'PTM':metrics['ptm'], 'iPTM':metrics['iptm'], 'PAE_mean':metrics['pae_mean']}
+            
+            self.complexes[f'{receptor}-{inchikey}'] = {
+                'receptor':receptor, 
+                'ligand_id':inchikey,
+                'publication_date':model_date, 
+                'location':location, 
+                'model': model, 
+                'preferred_chain':'A', 
+                'pae_7tm':metrics['pae_7tm'], 
+                'plddt_mean':metrics['plddt_sm_mean'], 
+                }
 
 
 class ParseStructureCSV():
@@ -1418,6 +1550,75 @@ class ModelRotamer(object):
     def __init__(self):
         self.backbone_template = None
         self.rotamer_template = None
+
+
+class X50Finder():
+    '''Find corresponding x50 positions based on best BLAST hit in db
+    '''
+    def __init__(self, uniprot_file):
+        self.uniprot_file = uniprot_file
+        p = PDBParser()
+        self.biopdb = p.get_structure('structure', self.uniprot_file)
+        self.top_hit = None
+
+    def get_sequence_from_structure(self):
+        structure_seq = {}
+        for chain in self.biopdb[0]:
+            chain_id = chain.get_id()
+            structure_seq[chain_id] = ''
+            for res in chain:
+                if "CA" in res and res.id[0]==" ":
+                    structure_seq[chain_id]+=polypeptide.three_to_one(res.get_resname())
+        return structure_seq
+
+    def run(self):
+        structure_seq = self.get_sequence_from_structure()
+        self.blast_search = BlastSearch(top_results=25)
+        out_x50 = {}
+        for chain, seq in structure_seq.items():
+            out_x50[chain] = {}
+            blast_output = self.blast_search.run(seq)
+            found_good_match = False
+            for b in blast_output:
+                ref = Protein.objects.get(id=int(b[0]))
+                aligner = PairwiseAligner()
+                aligner.open_gap_score = -2
+                aligner.extend_gap_score = -1
+                aligner.mode = 'global'
+                pw2 = aligner.align(ref.sequence, seq)
+
+                alignment_fragments = [i for i in str(pw2[0][1]).split('-') if i!='' and len(i)<10]
+                if len(alignment_fragments)<4:
+                    found_good_match = True
+                    break
+            self.top_hit = ref
+
+            if not found_good_match:
+                print('ERROR: no good pairwise alignment for {}'.format(self.uniprot_file.split('/')[-1]))
+
+            ref_seq, temp_seq = str(pw2[0][0]), str(pw2[0][1])
+
+            x50s = Residue.objects.filter(protein_conformation__protein=ref, display_generic_number__label__endswith='x50')
+            indeces = {}
+            for x in x50s:
+                c, i = 1, 0
+                for r in ref_seq:
+                    if r!='-':
+                        c+=1
+                    i+=1
+                    if c==x.sequence_number:
+                        break
+                indeces[x.display_generic_number.label] = i
+
+            for gn, i in indeces.items():
+                before = len(temp_seq[:i+1].replace('-',''))
+                after = len(temp_seq[i:].replace('-',''))
+                if after==0 or (temp_seq[i]=='-' and temp_seq[i+1]=='-' and temp_seq[i+2]=='-'):
+                    out_x50[chain][gn] = '-'
+                else:
+                    out_x50[chain][gn] = before
+
+        return out_x50
 
 
 def update_template_source(template_source, keys, struct, segment, just_rot=False):

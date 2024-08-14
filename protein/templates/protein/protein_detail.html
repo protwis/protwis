@@ -108,14 +108,14 @@
 
 <div class="row">
     <div class="col-md-2 text-right text-info">
-        <h4>ENDOGENOUS LIGANDS</h4>
+        <h4>PHYSIOLOGICAL LIGANDS</h4>
     </div>
     <div class="col-md-10">
         <p style="display: inline;">
           {% if p.endogenous_gtp_set.all.count > 0 %}
             {{ p.endogenous_gtp_set.all | endo_format | safe }}
           {% else %}
-            No endogenous ligands available
+            No physiological ligands available
           {% endif %}
         </p>
     </div>

@@ -8,7 +8,7 @@ from residue.models import Residue
 from common.models import WebLink, WebResource, Publication
 from common.tools import test_model_updates
 from common.definitions import G_PROTEIN_DISPLAY_NAME as g_prot_dict
-from structure.models import Structure, StructureType, PdbData, Rotamer, Fragment, StructureExtraProteins, StructureAFScores, StructureModelpLDDT
+from structure.models import Structure, StructureType, PdbData, Rotamer, Fragment, StructureExtraProteins, StructureRFAAScores, StructureModelpLDDT
 from construct.functions import *
 
 from contactnetwork.models import *
@@ -17,7 +17,7 @@ from contactnetwork.cube import compute_interactions
 from Bio.PDB import PDBParser, PPBuilder, PDBIO
 from Bio import pairwise2
 
-from structure.functions import ParseAFComplexModels
+from structure.functions import ParseRFAAModels
 from ligand.models import Ligand, LigandPeptideStructure
 from interaction.models import *
 from interaction.views import regexaa, check_residue, extract_fragment_rotamer
@@ -141,7 +141,7 @@ class Command(BaseBuild):
         else:
             self.run_contactnetwork=True
 
-        self.parsed_structures = ParseAFComplexModels()
+        self.parsed_structures = ParseRFAAModels()
 
         if options['structure']:
             filtered_set = {}
@@ -764,7 +764,7 @@ class Command(BaseBuild):
 
             sd = self.parsed_structures.complexes[cmpx]
             # print('Building structure {0} with peptide {1}'.format(sd['protein'], sd['peptide_id']))
-            self.logger.info('Building structure object of complex model {} with {}'.format(sd['receptor'], sd['signprot']))
+            self.logger.info('Building structure object of complex model {} with {}'.format(sd['receptor'], sd['ligand_id']))
 
             representative = False
             # does the construct exist?
@@ -776,13 +776,10 @@ class Command(BaseBuild):
                 continue
 
             # get the PDB file and save to DB
-            if 'peptide' in sd['model']:
-                sd['pdb'] = f'AFM_{sd["receptor"].upper()}_{sd["peptide"].replace("-","").upper()}_{sd["signprot"].upper()}'
-            else:
-                sd['pdb'] = 'AFM_' + sd['receptor'].upper() + '_' + sd['signprot'].upper()
+            sd['pdb'] = f'RFAA_{sd["receptor"].upper()}_{sd["ligand_id"].upper()}'
+
 
             # create a structure record
-            # check if there is a ligand
             try:
                 struct = Structure.objects.get(protein_conformation__protein=con, pdb_code__index=sd['pdb'], structure_type__slug=sd['model'])
             except Structure.DoesNotExist:
@@ -863,7 +860,7 @@ class Command(BaseBuild):
             # structure type
             sd['structure_method'] = sd['model']
             if 'structure_method' in sd and sd['structure_method']:
-                structure_type = 'Model (AF2)'
+                structure_type = 'Model (RFAA)'
                 structure_type_slug = slugify(sd['structure_method'])
                 try:
                     st, created = StructureType.objects.get_or_create(slug=structure_type_slug, defaults={'name': structure_type})
@@ -905,57 +902,27 @@ class Command(BaseBuild):
             print('BEFORE CREATING LIGAND')
 
             # Create LigandPeptideStructure object
-            # if 'peptide' in sd['model']:
-            #     try:
-            #         # Get the existing Ligand object
-            #         ligand = Ligand.objects.get(id=sd['ligand_id'])
-                    
-            #         # Try to get existing LigandPeptideStructure or create a new one
-            #         ligand_peptide_structure, created = LigandPeptideStructure.objects.get_or_create(
-            #             structure=struct,
-            #             ligand=ligand,
-            #             chain='E',
-            #             defaults={'model': None}  # Set model to None
-            #         )
-                    
-            #         if created:
-            #             print(f"Created new LigandPeptideStructure for structure {struct.pdb_code.index} and ligand {ligand.name}")
-            #         else:
-            #             print(f"Found existing LigandPeptideStructure for structure {struct.pdb_code.index} and ligand {ligand.name}")
+            try:
+                # Get the existing Ligand object
+                ligand = Ligand.objects.get(inchikey=sd['ligand_id'])
                 
-            #     except Ligand.DoesNotExist:
-            #         print(f"Error: Ligand with id {sd['ligand_id']} does not exist in the database.")
-            #     except Exception as e:
-            #         print(f"Error creating LigandPeptideStructure: {str(e)}")
-
-
-################################ Ligand
-
-            if 'peptide' in sd['model']:
-                try:
-
-                    # Get the Ligand object based on the chain E sequence
-                    ligand = Ligand.objects.get(sequence=sd['chain_e_sequence'])
-
-                    print(ligand)
-
-                    # Try to get existing LigandPeptideStructure or create a new one
-                    ligand_peptide_structure, created = LigandPeptideStructure.objects.get_or_create(
-                        structure=struct,
-                        ligand=ligand,
-                        chain='E',
-                        defaults={'model': None}  # Set model to None
-                    )
-                    
-                    if created:
-                        print(f"Created new LigandPeptideStructure for structure {struct.pdb_code.index} and ligand {ligand.name}")
-                    else:
-                        print(f"Found existing LigandPeptideStructure for structure {struct.pdb_code.index} and ligand {ligand.name}")
+                # Try to get existing LigandPeptideStructure or create a new one
+                ligand_peptide_structure, created = LigandPeptideStructure.objects.get_or_create(
+                    structure=struct,
+                    ligand=ligand,
+                    chain='B',
+                    defaults={'model': None}  # Set model to None
+                )
                 
-                except Exception as e:
-                    print(f"Error creating LigandPeptideStructure: {str(e)}")
-
-
+                if created:
+                    print(f"Created new LigandPeptideStructure for structure {struct.pdb_code.index} and ligand {ligand.name}")
+                else:
+                    print(f"Found existing LigandPeptideStructure for structure {struct.pdb_code.index} and ligand {ligand.name}")
+            
+            except Ligand.DoesNotExist:
+                print(f"Error: Ligand with id {sd['ligand_id']} does not exist in the database.")
+            except Exception as e:
+                print(f"Error creating LigandPeptideStructure: {str(e)}")
 
 ####################################################
             Rotamer.objects.filter(structure=struct, pdbdata=pdbdata).delete()
@@ -985,56 +952,48 @@ class Command(BaseBuild):
                 pass
 
             ##### SIGNPROT
-            beta_gamma = sd['beta_gamma']
-            signprot = Protein.objects.get(entry_name=sd['signprot'])
-            signprot_conf = ProteinConformation.objects.get(protein=signprot)
-            if beta_gamma:
-                beta_protconf = ProteinConformation.objects.get(protein__entry_name='gbb1_human')
-                gamma_protconf = ProteinConformation.objects.get(protein__entry_name='gbg2_human')
-                sc = SignprotComplex.objects.get_or_create(alpha='B', protein=signprot, structure=struct,
-                                                           beta_chain='C', gamma_chain='D', beta_protein=beta_protconf.protein, gamma_protein=gamma_protconf.protein)
-            else:
-                sc = SignprotComplex.objects.get_or_create(alpha='B', protein=signprot, structure=struct,
-                                                           beta_chain=None, gamma_chain=None, beta_protein=None, gamma_protein=None)
-            struct.signprot_complex = sc[0]
-            struct.save()
+            # beta_gamma = sd['beta_gamma']
+            # signprot = Protein.objects.get(entry_name=sd['signprot'])
+            # signprot_conf = ProteinConformation.objects.get(protein=signprot)
+            # if beta_gamma:
+            #     beta_protconf = ProteinConformation.objects.get(protein__entry_name='gbb1_human')
+            #     gamma_protconf = ProteinConformation.objects.get(protein__entry_name='gbg2_human')
+            #     sc = SignprotComplex.objects.get_or_create(alpha='B', protein=signprot, structure=struct,
+            #                                                beta_chain='C', gamma_chain='D', beta_protein=beta_protconf.protein, gamma_protein=gamma_protconf.protein)
+            # else:
+            #     sc = SignprotComplex.objects.get_or_create(alpha='B', protein=signprot, structure=struct,
+            #                                                beta_chain=None, gamma_chain=None, beta_protein=None, gamma_protein=None)
+            # struct.signprot_complex = sc[0]
+            # struct.save()
 
-            #### Adding metrics to StructureAFScores
+            #### Adding metrics to StructureRFAAScores
 
             try:
-                metrics = StructureAFScores.objects.get(structure=struct)
-            except StructureAFScores.DoesNotExist:
-                metrics = StructureAFScores()
+                metrics = StructureRFAAScores.objects.get(structure=struct)
+            except StructureRFAAScores.DoesNotExist:
+                metrics = StructureRFAAScores()
 
             metrics.structure = struct
-            metrics.ptm = sd['PTM']
-            metrics.iptm = sd['iPTM']
-            metrics.pae_mean = sd['PAE_mean']
+            metrics.pae_7tm = sd['pae_7tm']
+            metrics.plddt_mean = sd['plddt_mean']
             metrics.save()
-
-            ##### StructureExtraProteins
-            g_prot_dict[signprot.entry_name.split('_')[0].upper()]
-            sep = StructureExtraProteins.objects.get_or_create(display_name=g_prot_dict[signprot.entry_name.split('_')[0].upper()], note=None, chain='B', category='G alpha', wt_coverage=100, protein_conformation=signprot_conf, structure=struct, wt_protein=signprot)
-            if beta_gamma:
-                sep_beta = StructureExtraProteins.objects.get_or_create(display_name='G&beta;1', note=None, chain='C', category='G beta', wt_coverage=100, protein_conformation=beta_protconf, structure=struct, wt_protein=beta_protconf.protein)
-                sep_beta = StructureExtraProteins.objects.get_or_create(display_name='G&gamma;2', note=None, chain='D', category='G gamma', wt_coverage=100, protein_conformation=gamma_protconf, structure=struct, wt_protein=gamma_protconf.protein)
-            # g beta - TO BE ADDED
-            # g gamma - TO BE ADDED
 
             #Adding plDDT for rendering
             resis = []
             for chain in self.parsed_pdb:
                 for res in chain:
+                    if 'LG1' in res.id[0]:  # Residue name of Ligand in PDB
+                        continue
                     plddt = res['C'].get_bfactor()
                     try:
                         if chain.get_id()=='A':
                             res_obj = Residue.objects.get(protein_conformation__protein=con, sequence_number=res.get_id()[1])
-                        elif chain.get_id()=='B':
-                            res_obj = Residue.objects.get(protein_conformation__protein=signprot, sequence_number=res.get_id()[1])
-                        elif chain.get_id()=='C':
-                            res_obj = Residue.objects.get(protein_conformation__protein=beta_protconf.protein, sequence_number=res.get_id()[1])
-                        elif chain.get_id()=='D':
-                            res_obj = Residue.objects.get(protein_conformation__protein=gamma_protconf.protein, sequence_number=res.get_id()[1])
+                        # elif chain.get_id()=='B':
+                        #     res_obj = Residue.objects.get(protein_conformation__protein=signprot, sequence_number=res.get_id()[1])
+                        # elif chain.get_id()=='C':
+                        #     res_obj = Residue.objects.get(protein_conformation__protein=beta_protconf.protein, sequence_number=res.get_id()[1])
+                        # elif chain.get_id()=='D':
+                        #     res_obj = Residue.objects.get(protein_conformation__protein=gamma_protconf.protein, sequence_number=res.get_id()[1])
                         r = StructureModelpLDDT(structure=struct, residue=res_obj, pLDDT=plddt)
                         resis.append(r)
                     except Residue.DoesNotExist:
@@ -1044,10 +1003,10 @@ class Command(BaseBuild):
             # try:
             current = time.time()
             # compute_interactions(sd['location'], protein=struct, lig=l, do_peptide_ligand=True, save_to_db=True, file_input=True)
-            self.build_contact_network(sd['location'], receptor=struct, signprot=signprot)
+            # self.build_contact_network(sd['location'], receptor=struct, signprot=signprot)
             end = time.time()
             diff = round(end - current,1)
-            print('Create contactnetwork done for {}.'.format(struct.protein_conformation.protein.entry_name))
+            # print('Create contactnetwork done for {}.'.format(struct.protein_conformation.protein.entry_name))
             # except Exception as msg:
             #     print(msg)
             #     print('ERROR WITH CONTACTNETWORK {}'.format(sd['pdb']))
