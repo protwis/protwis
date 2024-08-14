@@ -1,4 +1,5 @@
 from django.conf.urls import url
+from django.urls import path
 from structure.views import *
 from structure import views
 from django.conf import settings
@@ -11,7 +12,7 @@ urlpatterns = [
     url(r'^g_protein_structure_browser$', cache_page(60*60*24)(EffectorStructureBrowser.as_view(effector='gprot')), name='g_protein_structure_browser'),
     # url(r'^g_protein_structure_browser$', EffectorStructureBrowser.as_view(effector='gprot'), name='g_protein_structure_browser'),
     url(r'^arrestin_structure_browser$', cache_page(60*60*24)(EffectorStructureBrowser.as_view(effector='arrestin')), name='arrestin_structure_browser'),
-
+    path('structure_similarity_search', StructureBlastView.as_view(), name='structure-similarity-search'),
     url(r'^browser$', RedirectBrowser, name='redirect_browser'),
     url(r'^selection_convert$', ConvertStructuresToProteins, name='convert'),
     url(r'^selection_convert_model$', ConvertStructureModelsToProteins, name='convert_mod'),
@@ -25,6 +26,11 @@ urlpatterns = [
     url(r'^arrestin_statistics$', cache_page(60*60*24)(StructureStatistics.as_view(origin='arrestin')), name='structure_statistics'),
     url(r'^statistics$', cache_page(60*60*24)(StructureStatistics.as_view()), name='structure_statistics'),
     url(r'^homology_models$', cache_page(60*60*24)(ServeHomologyModels.as_view()), name='homology_models'),
+    path('ligand_complex_models', LigandComplexModels.as_view(), name='ligand_complex_models'),
+    url(r'^ligand_complex_models/(?P<header>[^/]+)$', LigandComplexDetails, name='ligand_complex_details'),
+    url(r'^ligand_complex_models/view/(?P<modelname>[^/]+)$', ServeComplexModDiagram, name='complexmod_serve_view'),
+    path('lig_complexmod_download', LigComplexmodDownload, name='lig_complexmod_download'),
+    url(r'^ligand_complex_models/(?P<modelname>\w+)/download_lig_complex_pdb$', SingleLigComplexModelDownload, name='single_complex_model_download'),
     # url(r'^homology_models$', ServeHomologyModels.as_view(), name='homology_models'),
     url(r'^complex_models$', cache_page(60*60*24)(ServeComplexModels.as_view()), name='complex_models'),
     # url(r'^complex_models$', ServeComplexModels.as_view(), name='complex_models'),
