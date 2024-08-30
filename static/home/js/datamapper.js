@@ -2542,7 +2542,7 @@ function Draw_Targets(layout_data, fill_data, location,Target_styling) {
         const label_offset = 7; // Increased offset to push labels outward
         
 
-        const Target_radius = Math.min(width, height) / 2 - 55 - (70 * level); // Radius for each Target
+        const Target_radius = Math.min(width, height) / 2 - 60 - (70 * level); // Radius for each Target
 
         let values = [];
         if (Spacing && Object.keys(label_data).length > 1) {
@@ -2560,19 +2560,24 @@ function Draw_Targets(layout_data, fill_data, location,Target_styling) {
         // Add in Class
 
         if (level == 0) {
-            values.unshift("Class A");
+            values.unshift("CLASS A");
         } else if (level == 1) {
-            values.unshift("A Orphans");
+            values.unshift("A ORPHANS");
         } else if (level == 2) {
-            values.unshift("Class B1");
+            if (Spacing) {
+                values.splice(19, 0, "CLASS B2"); 
+            } else {
+                values.splice(15, 0, "CLASS B2");
+            }
+            values.unshift("CLASS B1");
         } else if (level == 3) {
-            values.unshift("Class C");
+            values.unshift("CLASS C");
         } else if (level == 4) {
-            values.unshift("Class F");
+            values.unshift("CLASS F");
         } else if (level == 5) {
-            values.unshift("Class T");
+            values.unshift("CLASS T");
         } else if (level == 6) {
-            values.unshift("Unclassified");
+            values.unshift("CLASSLESS");
         }
 
         function calculatePositionAndAngle(index, total) {
@@ -2580,8 +2585,8 @@ function Draw_Targets(layout_data, fill_data, location,Target_styling) {
             const angle = -((index / total) * 2 * Math.PI) + (Math.PI / 2);
         
             // Position on the Target's border with or without label offset
-            const x = width / 2 + Math.cos(angle) * (index === 0 ? Target_radius : (Target_radius + label_offset));
-            const y = height / 2 - Math.sin(angle) * (index === 0 ? Target_radius : (Target_radius + label_offset));
+            const x = width / 2 + Math.cos(angle) * (index === 0 ? (Target_radius-3) : (Target_radius + label_offset));
+            const y = height / 2 - Math.sin(angle) * (index === 0 ? (Target_radius-3) : (Target_radius + label_offset));
         
             // Rotation angle so that the text faces outward
             const rotation = -(angle * 180 / Math.PI);
@@ -2608,7 +2613,7 @@ function Draw_Targets(layout_data, fill_data, location,Target_styling) {
             svg.append("circle")
             .attr("cx", width / 2)  // X position (center of the Target)
             .attr("cy", height / 2) // Y position (center of the Target)
-            .attr("r", Target_radius+55)  // Outer radius of the band
+            .attr("r", Target_radius+60)  // Outer radius of the band
             .style("fill", "lightgray")  // Light gray fill color
             .style("opacity", 0.5)       // 50% transparency
             .style("stroke", "none");    // No stroke for the outer circle
@@ -2652,8 +2657,9 @@ function Draw_Targets(layout_data, fill_data, location,Target_styling) {
             return `rotate(${pos.rotation + rotation}, ${pos.x}, ${pos.y})`;
         })
         .html(d => formatTextWithHTML(d))
-        .style("font-size", (d, i) => i === 0 ? "12px" : "9px")  // Larger font size for the first element
+        .style("font-size", (d, i) => i === 0 ? "10px" : "9px")  // Larger font size for the first element
         .style("font-family", "Palatino")
+        .attr("font-weight", (d, i) => i === 0 ? "bold" : "normal")
         .style("fill", "black");
 
          // Add data Targets

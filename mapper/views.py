@@ -352,7 +352,7 @@ class LandingPage(TemplateView):
             if data_type == 'seq':
                 # Get the info of the plot
                 full_matrix = LandingPage.generate_full_matrix(method)
-                full_matrix_structure = LandingPage.generate_full_matrix_structure(method)
+                # full_matrix_structure = LandingPage.generate_full_matrix_structure(method)
                 
                 # Filter the original fill matrix based on what we use provided
                 reduced_input = full_matrix[full_matrix['label'].isin(list(data.keys()))]
@@ -432,66 +432,66 @@ class LandingPage(TemplateView):
         return merged_df
 
     # Generate full similarity matrix for cluster or load existing #
-    def generate_full_matrix_structure(method):
-        state = 'inactive'
-        output_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'HumanGPCRSimilarityStructure_{}_umap'.format(state)])
-        # Check if the file exists
-        if os.path.exists(output_file):
-        # if bob_test == 2:
-            # Load the data from the existing file
-            merged_df_structure = pd.read_csv(output_file, index_col=0)
-        else:
-            similarity_matrix_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'Structure_similarity_matrix_{}.xlsx'.format(state)])
+    # def generate_full_matrix_structure(method):
+    #     state = 'inactive'
+    #     output_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'HumanGPCRSimilarityStructure_{}_umap'.format(state)])
+    #     # Check if the file exists
+    #     if os.path.exists(output_file):
+    #     # if bob_test == 2:
+    #         # Load the data from the existing file
+    #         merged_df_structure = pd.read_csv(output_file, index_col=0)
+    #     else:
+    #         similarity_matrix_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'Structure_similarity_matrix_{}.xlsx'.format(state)])
 
-            # Load the similarity matrix from the Excel file
-            data = pd.read_excel(similarity_matrix_file, index_col=0)  # Assuming the first column is the index
+    #         # Load the similarity matrix from the Excel file
+    #         data = pd.read_excel(similarity_matrix_file, index_col=0)  # Assuming the first column is the index
 
-            # Rename the index and columns if needed
-            data.index.name = 'receptor1_entry_name'
-            data.columns.name = 'receptor2_entry_name'
+    #         # Rename the index and columns if needed
+    #         data.index.name = 'receptor1_entry_name'
+    #         data.columns.name = 'receptor2_entry_name'
 
-            # Replace '_human' suffix in index and columns if needed
-            data.index = data.index.str.replace('_human', '', regex=False)
-            data.columns = data.columns.str.replace('_human', '', regex=False)
+    #         # Replace '_human' suffix in index and columns if needed
+    #         data.index = data.index.str.replace('_human', '', regex=False)
+    #         data.columns = data.columns.str.replace('_human', '', regex=False)
 
-            # Fill missing values with 0
-            data = data.fillna(0)
+    #         # Fill missing values with 0
+    #         data = data.fillna(0)
 
-            # Perform reduction and clustering
-            reduced_df = LandingPage.reduce_and_cluster(data, method=method, n_clusters=12)
+    #         # Perform reduction and clustering
+    #         reduced_df = LandingPage.reduce_and_cluster(data, method=method, n_clusters=12)
             
-            reduced_df['label'] = reduced_df['label'].apply(lambda x: x.split('[Human] ')[1] if '[Human] ' in x else x)
-            reduced_df['label'] = reduced_df['label'].apply(lambda x: x.split('_human')[0] if '_human' in x else x)
+    #         reduced_df['label'] = reduced_df['label'].apply(lambda x: x.split('[Human] ')[1] if '[Human] ' in x else x)
+    #         reduced_df['label'] = reduced_df['label'].apply(lambda x: x.split('_human')[0] if '_human' in x else x)
 
-            # add class/ligand_type/receptor_family clusters
+    #         # add class/ligand_type/receptor_family clusters
 
-            # Step 1: Fetch data
-            proteins = Protein.objects.filter(
-                parent_id__isnull=True, species_id=1
-            ).values_list(
-                'entry_name', 
-                "family__parent__parent__parent__name",  # To be renamed as 'Class'
-                'family__parent__parent__name',  # To be renamed as 'Ligand type'
-                'family__parent__name'  # To be renamed as 'Receptor family'
-            )
+    #         # Step 1: Fetch data
+    #         proteins = Protein.objects.filter(
+    #             parent_id__isnull=True, species_id=1
+    #         ).values_list(
+    #             'entry_name', 
+    #             "family__parent__parent__parent__name",  # To be renamed as 'Class'
+    #             'family__parent__parent__name',  # To be renamed as 'Ligand type'
+    #             'family__parent__name'  # To be renamed as 'Receptor family'
+    #         )
             
-            # Step 2: Convert to a DataFrame
-            proteins_df = pd.DataFrame(list(proteins), columns=['entry_name', 'Class', 'Ligand type', 'Receptor family'])
-            proteins_df.to_excel(os.sep.join([settings.DATA_DIR, 'structure_data', 'All_GPCRs_ligandType_Families.xlsx']),index=False)
+    #         # Step 2: Convert to a DataFrame
+    #         proteins_df = pd.DataFrame(list(proteins), columns=['entry_name', 'Class', 'Ligand type', 'Receptor family'])
+    #         proteins_df.to_excel(os.sep.join([settings.DATA_DIR, 'structure_data', 'All_GPCRs_ligandType_Families.xlsx']),index=False)
 
-            # Step 3: Remove '_human' suffix from 'entry_name'
-            proteins_df['entry_name'] = proteins_df['entry_name'].str.replace('_human', '')
+    #         # Step 3: Remove '_human' suffix from 'entry_name'
+    #         proteins_df['entry_name'] = proteins_df['entry_name'].str.replace('_human', '')
 
-            # Step 4: Rename 'entry_name' to 'label'
-            proteins_df = proteins_df.rename(columns={'entry_name': 'label'})
+    #         # Step 4: Rename 'entry_name' to 'label'
+    #         proteins_df = proteins_df.rename(columns={'entry_name': 'label'})
 
-            # Step 5: Merge with reduced_df on 'label'
-            merged_df_structure = pd.merge(reduced_df, proteins_df, on='label', how='left')
+    #         # Step 5: Merge with reduced_df on 'label'
+    #         merged_df_structure = pd.merge(reduced_df, proteins_df, on='label', how='left')
 
-            # Save the reduced DataFrame to a CSV file
-            merged_df_structure.to_csv(output_file)
+    #         # Save the reduced DataFrame to a CSV file
+    #         merged_df_structure.to_csv(output_file)
 
-        return merged_df_structure
+    #     return merged_df_structure
 
     @staticmethod
     def reduce_and_cluster(data, method='umap', n_components=2, n_clusters=5):
@@ -1223,9 +1223,9 @@ class plotrender(TemplateView):
                 if Plot_evaluation[1]:
                     print("Cluster success")
                     output_seq = LandingPage.clustering_test('umap', Data['Cluster'],'seq')
-                    output_structure = LandingPage.clustering_test('umap', Data['Cluster'],'structure')
+                    # output_structure = LandingPage.clustering_test('umap', Data['Cluster'],'structure')
                     context['cluster_data_seq'] = output_seq
-                    context['cluster_data_structure'] = output_structure
+                    # context['cluster_data_structure'] = output_structure
                     context['plot_type'] = 'UMAP'
 
                 # List plot #
