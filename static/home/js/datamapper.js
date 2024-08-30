@@ -2542,7 +2542,7 @@ function Draw_Targets(layout_data, fill_data, location,Target_styling) {
         const label_offset = 7; // Increased offset to push labels outward
         
 
-        const Target_radius = Math.min(width, height) / 2 - 50 - (70 * level); // Radius for each Target
+        const Target_radius = Math.min(width, height) / 2 - 55 - (70 * level); // Radius for each Target
 
         let values = [];
         if (Spacing && Object.keys(label_data).length > 1) {
@@ -2557,13 +2557,31 @@ function Draw_Targets(layout_data, fill_data, location,Target_styling) {
             values = Object.values(label_data).flat(); // Flatten the data without placeholders
         }
 
+        // Add in Class
+
+        if (level == 0) {
+            values.unshift("Class A");
+        } else if (level == 1) {
+            values.unshift("A Orphans");
+        } else if (level == 2) {
+            values.unshift("Class B1");
+        } else if (level == 3) {
+            values.unshift("Class C");
+        } else if (level == 4) {
+            values.unshift("Class F");
+        } else if (level == 5) {
+            values.unshift("Class T");
+        } else if (level == 6) {
+            values.unshift("Unclassified");
+        }
+
         function calculatePositionAndAngle(index, total) {
             // Offset the angle calculation by -90 degrees (or -π/2 radians) to start at 12 o'clock
             const angle = -((index / total) * 2 * Math.PI) + (Math.PI / 2);
         
-            // Position on the Target's border with label offset
-            const x = width / 2 + Math.cos(angle) * (Target_radius + label_offset);
-            const y = height / 2 - Math.sin(angle) * (Target_radius + label_offset);
+            // Position on the Target's border with or without label offset
+            const x = width / 2 + Math.cos(angle) * (index === 0 ? Target_radius : (Target_radius + label_offset));
+            const y = height / 2 - Math.sin(angle) * (index === 0 ? Target_radius : (Target_radius + label_offset));
         
             // Rotation angle so that the text faces outward
             const rotation = -(angle * 180 / Math.PI);
@@ -2581,50 +2599,62 @@ function Draw_Targets(layout_data, fill_data, location,Target_styling) {
             const y = height / 2 - Math.sin(angle) * (Target_radius);
 
             // Rotation angle so that the text faces outward
-            const rotation = (angle * 180 / Math.PI);
+            const rotation = -(angle * 180 / Math.PI);
 
             return { x, y, rotation };
         }
+        if (level % 2 === 0) {  // Check if it's every other circle (i.e., even index)
+            // Append the outer circle (larger radius)
+            svg.append("circle")
+            .attr("cx", width / 2)  // X position (center of the Target)
+            .attr("cy", height / 2) // Y position (center of the Target)
+            .attr("r", Target_radius+55)  // Outer radius of the band
+            .style("fill", "lightgray")  // Light gray fill color
+            .style("opacity", 0.5)       // 50% transparency
+            .style("stroke", "none");    // No stroke for the outer circle
 
-        // svg.append("Target")
-        //     .attr("cx", width / 2)  // X position (center of the Target)
-        //     .attr("cy", height / 2) // Y position (center of the Target)
-        //     .attr("r", Target_radius-7)          // Radius of the Target
-        //     .style("fill", "none")  // No fill color
-        //     .style("stroke", "black") // Black stroke color
-        //     .style("stroke-width", 1); // Stroke width of 1
-
+            // Append the inner circle (smaller radius) with the same fill to cover the inner part
+            svg.append("circle")
+            .attr("cx", width / 2)  // X position (center of the Target)
+            .attr("cy", height / 2) // Y position (center of the Target)
+            .attr("r", Target_radius-10)  // Inner radius of the band
+            .style("fill", "white")      // White fill to cover the inner area
+            .style("opacity", 1)         // No transparency for the inner circle
+            .style("stroke", "none");    // No stroke for the inner circle
+        }
         // console.log(calculatePositionAndAngle(61, values.length),values.length);
 
         // Bind data and append text elements for the specific Target
         svg.selectAll(`.Target-text-${level}`)  // Unique selection class for each level
-            .data(values)
-            .enter()
-            .append("text")
-            .attr("class", `Target-text-${level}`)  // Unique class to each text element
-            .attr("x", (d, i) => {
-                const pos = calculatePositionAndAngle(i, values.length);
-                return pos.x;
-            })
-            .attr("y", (d, i) => {
-                const pos = calculatePositionAndAngle(i, values.length);
-                return pos.y;
-            })
-            .attr("text-anchor", (d, i) => {
-                const angle = (i / values.length) * 360 - 90;
-                return (angle >= -90 && angle < 90) ? "start" : "end";
-            })
-            .attr("dominant-baseline", "middle")
-            .attr("transform", (d, i) => {
-                const pos = calculatePositionAndAngle(i, values.length);
-                const angle = (i / values.length) * 360 - 90;
-                const rotation = angle >= -90 && angle < 90  ? 0 : 180;
-                return `rotate(${pos.rotation + rotation}, ${pos.x}, ${pos.y})`;
-            })
-            .html(d => formatTextWithHTML(d))
-            .style("font-size", "9px")
-            .style("font-family", "Palatino")
-            .style("fill", "black");
+        .data(values)
+        .enter()
+        .append("text")
+        .attr("class", (d, i) => 
+            i === 0 ? `Target-text-${level} Target-text-${level}-first` : `Target-text-${level}`
+        )  // Assign an additional class to the first element
+        .attr("x", (d, i) => {
+            const pos = calculatePositionAndAngle(i, values.length);
+            return pos.x;
+        })
+        .attr("y", (d, i) => {
+            const pos = calculatePositionAndAngle(i, values.length);
+            return pos.y;
+        })
+        .attr("text-anchor", (d, i) => {
+            const angle = (i / values.length) * 360 - 90;
+            return (angle >= -90 && angle < 90) ? "start" : "end";
+        })
+        .attr("dominant-baseline", "middle")
+        .attr("transform", (d, i) => {
+            const pos = calculatePositionAndAngle(i, values.length);
+            const angle = (i / values.length) * 360 - 90;
+            const rotation = angle >= -90 && angle < 90  ? 0 : 180;
+            return `rotate(${pos.rotation + rotation}, ${pos.x}, ${pos.y})`;
+        })
+        .html(d => formatTextWithHTML(d))
+        .style("font-size", (d, i) => i === 0 ? "12px" : "9px")  // Larger font size for the first element
+        .style("font-family", "Palatino")
+        .style("fill", "black");
 
          // Add data Targets
         svg.selectAll(`.data-Target-${level}`) // Unique selection class for each level
