@@ -17,18 +17,25 @@ from collections import OrderedDict
 import pprint
 from datetime import datetime
 from urllib.request import urlopen
+import json
 
 
 starttime = datetime.now()
 
 
 class Command(BaseCommand):
-    help = 'Basic functions for build scrips'
+    help = '''Adds segment end annotations for new structures from structure related csv files into the yaml files. 
+              Run it on a complete db after parse_excel_annotations.py was run and the csv files got updated with the 
+              updated GPCRdb_structure_info.xlsx'''
 
     logger = logging.getLogger(__name__)
 
     xtal_seg_end_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'mod_xtal_segends.yaml'])
     pdb_data_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'pdbs'])
+
+    sequence_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'sequences.yaml'])
+    with open(sequence_file, 'r') as f:
+        gpcr_sequences = yaml.load(f, Loader=yaml.FullLoader)
 
     def add_arguments(self, parser):
         parser.add_argument('--debug',
@@ -73,8 +80,8 @@ class Command(BaseCommand):
 
         errors = {}
 
-        try:
-            for s, data in self.parsed_structures.structures.items():
+        for s, data in self.parsed_structures.structures.items():
+            try:
                 ### New structures
                 if len(self.structures_to_annotate)>0 and s not in self.structures_to_annotate:
                     continue
@@ -94,6 +101,21 @@ class Command(BaseCommand):
                                   '3b':'-','3e':'-','i2b':'-','i2e':'-','4b':'-','4e':'-','e2b':'-','e2e':'-',
                                   '5b':'-','5e':'-','6b':'-','6e':'-','7b':'-','7e':'-','8b':'-','8e':'-'}
                     self.download_pdb(s)
+
+                    if data['protein'] not in self.gpcr_sequences:
+                        url = 'https://rest.uniprot.org/uniprotkb/{}.fasta'.format(data['protein'])
+                        uniprot_data = urlopen(url).read().decode('utf-8').split('\n')
+                        accession = uniprot_data[0].split('|')[1]
+                        sequence = ''.join(uniprot_data[1:])
+                        print(accession)
+                        print(sequence)
+                        dic = {'Sequence':sequence, 'UniProt':data['protein'], 'Xtalised':'Xtal'}
+                        self.gpcr_sequences[data['protein'].lower()] = dic
+                        ### Adding canonical sequence from UniProt to sequences.yaml
+                        if self.save_annotation:
+                            with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'sequences.yaml']), 'w') as f:
+                                yaml.dump(self.gpcr_sequences, f)
+                        
                     structure = Bio.PDB.PDBParser(QUIET=True).get_structure(s, self.pdb_path)
                     parent_protein = Protein.objects.get(entry_name=data['protein'])
                     parent_residues = Residue.objects.filter(protein_conformation__protein=parent_protein)
@@ -167,7 +189,7 @@ class Command(BaseCommand):
                         seq = seq[:-2]
                     elif s=='3ZEV':
                         seq = seq[:-5]
-                    elif s in ['8JD1','8JD2','8JD3','8JD4','8JD5']:
+                    elif s in ['8JD1','8JD2','8JD3','8JD4','8JD5','8IZB','8WPG','8WPU','8WRB']:
                         seq = seq[:-1]
 
                     if self.debug:
@@ -175,7 +197,8 @@ class Command(BaseCommand):
 
                     dssp = self.dssp(s, structure[0][data['preferred_chain']], structure)
 
-                    if fusion_present or s in ['7V68','7V69','7V6A','7W6P','7W7E','8E9W','8E9X','8E9Y','8E9Z','8EA0','7T8X','7T90','7T94','7T96','7TRK','7TRP','7TRQ','7TRS','8IRU']:
+                    if fusion_present or s in ['7V68','7V69','7V6A','7W6P','7W7E','8E9W','8E9X','8E9Y','8E9Z','8EA0','7T8X','7T90','7T94','7T96',
+                                               '7TRK','7TRP','7TRQ','7TRS','8IRU','8FX5','8W8R','8W8S','7V9L']:
                         pw2 = Bio.pairwise2.align.localms(parent_seq, seq, 3, -3, -3.5, -1)
                     else:
                         pw2 = Bio.pairwise2.align.localms(parent_seq, seq, 3, -4, -5, -2)
@@ -297,7 +320,7 @@ class Command(BaseCommand):
                             end = '-'
                         if i<8 and (start=='-' or end=='-'):
                             print('WARNING: helix {} for {} {} has missing annotation'.format(i, s, parent_protein))
-                        if i==8 and end==segends[s]['7e']:
+                        if i==8 and end==segends[s]['7e'] and end!='-':
                             segends[s]['7e']-=1
                         if needs_lookup:
                             if start in wt_pdb_lookup:
@@ -312,6 +335,12 @@ class Command(BaseCommand):
                         elif s=='8JD4' and i==3:
                             start = 628
                             end = 655
+                        elif s=='8K4N' and i==7:
+                            start = 298
+                            end = 326
+                        elif s=='8WPG' and i==3:
+                            start = 673
+                            end = 699
 
                         segends[s][str(i)+'b'] = start
                         segends[s][str(i)+'e'] = end
@@ -404,8 +433,8 @@ class Command(BaseCommand):
                     if self.save_annotation:
                         with open(self.xtal_seg_end_file, 'w') as f1:
                             yaml.dump(self.xtal_seg_ends, f1, default_flow_style=False)
-        except Exception as msg:
-            errors[s] = msg
+            except Exception as msg:
+                errors[s] = msg
         
         print('Missing ligand info:')
         print(missing_ligand_info)

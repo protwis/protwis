@@ -1808,7 +1808,7 @@ class LigandGtoPInfoView(TemplateView):
         ligand_conversion = LigandID.objects.filter(index=ligand_id, web_resource_id__slug="gtoplig").values_list('ligand_id')[0][0]
         ligand_data = Ligand.objects.get(id=ligand_conversion)
         endogenous_ligands =  Endogenous_GTP.objects.all().values_list("ligand_id", flat=True)
-        assay_data = list(AssayExperiment.objects.filter(ligand=ligand_id).prefetch_related(
+        assay_data = list(AssayExperiment.objects.filter(ligand=ligand_conversion).prefetch_related(
             'ligand', 'protein', 'protein__family',
             'protein__family__parent', 'protein__family__parent__parent__parent',
             'protein__family__parent__parent', 'protein__family', 'protein__species'))

@@ -6,7 +6,7 @@ function superposition(oTable, columns, site, source='gpcr', structure_column_in
     // columns: Column indeces of oTable to be extracted to build table for reference selection. First column has to be structure/model string used for superposition workflow
     // site: Structure browser or Homology model browser (add new logic when expanding to new sites)
     // source: Through which db is the call launced: gpcr, gprot
-    // structure_column_index: column index of the object identifier, int
+    // structure_column_index: column index(es) of the object identifier. If input is Array the _ will be the delimiter, int or Array
     // hidden_columns: array of indexes from the columns parameter that should be hidden in the modal 
 
     ClearSelection('targets');
@@ -42,20 +42,10 @@ function superposition(oTable, columns, site, source='gpcr', structure_column_in
             var div = document.createElement("div");
             div.innerHTML = checked_data[i][structure_column_index];
             var state = checked_data[i][3];
-            if (checked_data[i][4]==='Yes') {
-                div.innerHTML = checked_data[i][structure_column_index];
-                if (typeof div.innerText !== "undefined") {
-                    selected_ids.push(div.innerText.replace(/\s+/g, '')+"_refined");
-                } else {
-                    selected_ids.push(div.textContent.replace(/\s+/g, '')+"_refined");
-                }
-            }
-            else {
-                if (typeof div.innerText !== "undefined") {
-                    selected_ids.push(div.innerText.replace(/\s+/g, '')+"_"+state);
-                } else {
-                    selected_ids.push(div.textContent.replace(/\s+/g, '')+"_"+state);
-                }
+            if (typeof div.innerText !== "undefined") {
+                selected_ids.push(div.innerText.replace(/\s+/g, '')+"_"+state);
+            } else {
+                selected_ids.push(div.textContent.replace(/\s+/g, '')+"_"+state);
             }
         }
         selection_type = 'structure_model_many';
@@ -130,15 +120,10 @@ function superposition(oTable, columns, site, source='gpcr', structure_column_in
         }
 
         else if (site==='homology_model_browser') {
-            if ($(this).children().eq(8).text()==='Yes') {
-                ref_id = $(this).children().eq(11).text()+"_refined";
-                AddToSelection('reference', 'structure', ref_id);
-            }
-            else {
-                var state = $(this).children().eq(7).text();
-                ref_id = $(this).children().eq(columns.indexOf(structure_column_index)+1).text()+"_"+state;
-                AddToSelection('reference', 'structure_model', ref_id);
-            }
+            var state = $(this).children().eq(7).text();
+            ref_id = $(this).children().eq(columns.indexOf(structure_column_index)+1).text()+"_"+state;
+
+            AddToSelection('reference', 'structure_model', ref_id);
         }
 
         else if (site==='complex_models') {
@@ -179,7 +164,11 @@ function direct_superposition(oTable, source="gpcr", structure_column_index, sel
             return 0;
         }
         var div = document.createElement("div");
-        div.innerHTML = checked_data[0][structure_column_index];
+        if (structure_column_index.constructor === Array) {
+            div.innerHTML = checked_data[0][structure_column_index[0]]+'_'+checked_data[0][structure_column_index[1]]
+        } else {
+            div.innerHTML = checked_data[0][structure_column_index];
+        }
         if (typeof div.innerText !== "undefined") {
             AddToSelection('reference', selection_type, div.innerText.replace(/\s+/g, ''));
         } else {
@@ -193,7 +182,11 @@ function direct_superposition(oTable, source="gpcr", structure_column_index, sel
         }
         for (i = 0; i < checked_data.length; i++) {
             var div = document.createElement("div");
-            div.innerHTML = checked_data[i][structure_column_index];
+            if (structure_column_index.constructor === Array) {
+                div.innerHTML = checked_data[i][structure_column_index[0]]+'_'+checked_data[i][structure_column_index[1]]
+            } else {
+                div.innerHTML = checked_data[i][structure_column_index];
+            }
             selected_ids.push(div.textContent.replace(/\s+/g, ''));
         }
         AddToSelection('targets', selection_type+"_many", selected_ids.join(","));
