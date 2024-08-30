@@ -243,7 +243,13 @@ class LandingPage(TemplateView):
                            'branch_trunc': 0,
                            'leaf_offset': 30,
                            'anchor': "tree_plot",
-                           'label_free': []}
+                           'label_free': [],
+                           'fontSize': {
+                                'class': "15px",
+                                'ligandtype': "14px",
+                                'receptorfamily': "13px",
+                                'receptor': "12px"
+                            }}
         master_dict = OrderedDict([('name', ''),
                                    ('value', 3000),
                                    ('color', ''),
@@ -283,6 +289,16 @@ class LandingPage(TemplateView):
         updated_data = {key.replace('_human', ''): value for key, value in input_data.items()}
         circles = {key.replace('_human', '').upper(): {k: v for k, v in value.items() if k != 'Inner'} for key, value in input_data.items()}
         master_dict = LandingPage.keep_by_names(master_dict, updated_data)
+        
+        if len(master_dict['children']) == 1:
+            master_dict = master_dict['children'][0]
+            general_options['depth'] = 3
+            general_options['branch_length'] = {1: 'Alicarboxylic acid',
+                                             2: 'Gonadotrophin-releasing hormone',
+                                             3: ''}
+        else:
+            pass
+
         whole_receptors = Protein.objects.prefetch_related("family", "family__parent__parent__parent")
         whole_rec_dict = {}
         for rec in whole_receptors:
@@ -294,6 +310,188 @@ class LandingPage(TemplateView):
                 whole_rec_dict[rec_uniprot] = [rec_iuphar.capitalize()]
 
         return master_dict, general_options, circles, whole_rec_dict
+
+
+    @staticmethod
+    def clustering_test(method, data, data_type):
+        # Convert the nested dictionary to a DataFrame
+        data = {key.replace('_human', ''): value for key, value in data.items()}
+        data_df = pd.DataFrame(data).T
+        if 'Value1' in data_df.columns:
+            # Example usage
+            reduced_df = LandingPage.reduce_and_cluster(data_df, method=method)
+            df_merged = pd.merge(reduced_df, data_df['Value2'], left_on='label', right_index=True, how='left')
+            df_merged.rename(columns={'Value2': 'fill'}, inplace=True)
+            
+            ## add class/ligand_type/receptor_family clusters ##
+
+            # Step 1: Fetch data
+            proteins = Protein.objects.filter(
+                parent_id__isnull=True, species_id=1
+            ).values_list(
+                'entry_name', 
+                "family__parent__parent__parent__name",  # To be renamed as 'Class'
+                'family__parent__parent__name',  # To be renamed as 'Ligand type'
+                'family__parent__name'  # To be renamed as 'Receptor family'
+            )
+            
+            # Step 2: Convert to a DataFrame
+            proteins_df = pd.DataFrame(list(proteins), columns=['entry_name', 'Class', 'Ligand type', 'Receptor family'])
+
+            # Step 3: Remove '_human' suffix from 'entry_name'
+            proteins_df['entry_name'] = proteins_df['entry_name'].str.replace('_human', '')
+
+            # Step 4: Rename 'entry_name' to 'label'
+            proteins_df = proteins_df.rename(columns={'entry_name': 'label'})
+
+            # Step 5: Merge with reduced_df on 'label'
+            merged_df = pd.merge(df_merged, proteins_df, on='label', how='left')
+            # Prepare the data for visualization
+            data_json = merged_df.to_json(orient='records')
+        else:
+            if data_type == 'seq':
+                # Get the info of the plot
+                full_matrix = LandingPage.generate_full_matrix(method)
+                full_matrix_structure = LandingPage.generate_full_matrix_structure(method)
+                
+                # Filter the original fill matrix based on what we use provided
+                reduced_input = full_matrix[full_matrix['label'].isin(list(data.keys()))]
+                data_df = pd.DataFrame(data).T
+                # Merge the dataframes
+                df_merged = pd.merge(reduced_input, data_df['Value2'], left_on='label', right_index=True, how='left')
+                df_merged.rename(columns={'Value2': 'fill'}, inplace=True)
+                # Prepare the data for visualization
+                data_json = df_merged.to_json(orient='records')
+            elif data_type == 'structure':
+                # Get the info of the plot
+                full_matrix_structure = LandingPage.generate_full_matrix_structure(method)
+                
+                # Filter the original fill matrix based on what we use provided
+                reduced_input = full_matrix_structure[full_matrix_structure['label'].isin(list(data.keys()))]
+                data_df = pd.DataFrame(data).T
+                # Merge the dataframes
+                df_merged = pd.merge(reduced_input, data_df['Value2'], left_on='label', right_index=True, how='left')
+                df_merged.rename(columns={'Value2': 'fill'}, inplace=True)
+                # Prepare the data for visualization
+                data_json = df_merged.to_json(orient='records')
+
+        return data_json
+
+    # Generate full similarity matrix for cluster or load existing #
+    def generate_full_matrix(method):
+        output_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'HumanGPCRSimilarityAllData_{}.csv'.format(method)])
+        # Check if the file exists
+        if os.path.exists(output_file):
+        # if bob_test == 2:
+            # Load the data from the existing file
+            merged_df = pd.read_csv(output_file, index_col=0)
+        else:
+            # Original processing steps
+            similarity_matrix_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'human_gpcr_similarity_data_all_segments.csv'])
+            data = pd.read_csv(similarity_matrix_file)
+            data = data[['receptor1_entry_name', 'receptor2_entry_name', 'similarity']]
+            matrix = data.pivot(index='receptor1_entry_name', columns='receptor2_entry_name', values='similarity')
+            matrix.index = matrix.index.str.replace('_human', '', regex=False)
+            matrix.columns = matrix.columns.str.replace('_human', '', regex=False)
+            matrix = matrix.fillna(0)
+
+            # Perform reduction and clustering
+            reduced_df = LandingPage.reduce_and_cluster(matrix, method=method, n_clusters=12)
+            
+            reduced_df['label'] = reduced_df['label'].apply(lambda x: x.split('[Human] ')[1] if '[Human] ' in x else x)
+            reduced_df['label'] = reduced_df['label'].apply(lambda x: x.split('_human')[0] if '_human' in x else x)
+
+            # add class/ligand_type/receptor_family clusters
+
+            # Step 1: Fetch data
+            proteins = Protein.objects.filter(
+                parent_id__isnull=True, species_id=1
+            ).values_list(
+                'entry_name', 
+                "family__parent__parent__parent__name",  # To be renamed as 'Class'
+                'family__parent__parent__name',  # To be renamed as 'Ligand type'
+                'family__parent__name'  # To be renamed as 'Receptor family'
+            )
+            
+            # Step 2: Convert to a DataFrame
+            proteins_df = pd.DataFrame(list(proteins), columns=['entry_name', 'Class', 'Ligand type', 'Receptor family'])
+            proteins_df.to_excel(os.sep.join([settings.DATA_DIR, 'structure_data', 'All_GPCRs_ligandType_Families.xlsx']),index=False)
+
+            # Step 3: Remove '_human' suffix from 'entry_name'
+            proteins_df['entry_name'] = proteins_df['entry_name'].str.replace('_human', '')
+
+            # Step 4: Rename 'entry_name' to 'label'
+            proteins_df = proteins_df.rename(columns={'entry_name': 'label'})
+
+            # Step 5: Merge with reduced_df on 'label'
+            merged_df = pd.merge(reduced_df, proteins_df, on='label', how='left')
+
+            # Save the reduced DataFrame to a CSV file
+            merged_df.to_csv(output_file)
+
+        return merged_df
+
+    # Generate full similarity matrix for cluster or load existing #
+    def generate_full_matrix_structure(method):
+        state = 'inactive'
+        output_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'HumanGPCRSimilarityStructure_{}_umap'.format(state)])
+        # Check if the file exists
+        if os.path.exists(output_file):
+        # if bob_test == 2:
+            # Load the data from the existing file
+            merged_df_structure = pd.read_csv(output_file, index_col=0)
+        else:
+            similarity_matrix_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'Structure_similarity_matrix_{}.xlsx'.format(state)])
+
+            # Load the similarity matrix from the Excel file
+            data = pd.read_excel(similarity_matrix_file, index_col=0)  # Assuming the first column is the index
+
+            # Rename the index and columns if needed
+            data.index.name = 'receptor1_entry_name'
+            data.columns.name = 'receptor2_entry_name'
+
+            # Replace '_human' suffix in index and columns if needed
+            data.index = data.index.str.replace('_human', '', regex=False)
+            data.columns = data.columns.str.replace('_human', '', regex=False)
+
+            # Fill missing values with 0
+            data = data.fillna(0)
+
+            # Perform reduction and clustering
+            reduced_df = LandingPage.reduce_and_cluster(data, method=method, n_clusters=12)
+            
+            reduced_df['label'] = reduced_df['label'].apply(lambda x: x.split('[Human] ')[1] if '[Human] ' in x else x)
+            reduced_df['label'] = reduced_df['label'].apply(lambda x: x.split('_human')[0] if '_human' in x else x)
+
+            # add class/ligand_type/receptor_family clusters
+
+            # Step 1: Fetch data
+            proteins = Protein.objects.filter(
+                parent_id__isnull=True, species_id=1
+            ).values_list(
+                'entry_name', 
+                "family__parent__parent__parent__name",  # To be renamed as 'Class'
+                'family__parent__parent__name',  # To be renamed as 'Ligand type'
+                'family__parent__name'  # To be renamed as 'Receptor family'
+            )
+            
+            # Step 2: Convert to a DataFrame
+            proteins_df = pd.DataFrame(list(proteins), columns=['entry_name', 'Class', 'Ligand type', 'Receptor family'])
+            proteins_df.to_excel(os.sep.join([settings.DATA_DIR, 'structure_data', 'All_GPCRs_ligandType_Families.xlsx']),index=False)
+
+            # Step 3: Remove '_human' suffix from 'entry_name'
+            proteins_df['entry_name'] = proteins_df['entry_name'].str.replace('_human', '')
+
+            # Step 4: Rename 'entry_name' to 'label'
+            proteins_df = proteins_df.rename(columns={'entry_name': 'label'})
+
+            # Step 5: Merge with reduced_df on 'label'
+            merged_df_structure = pd.merge(reduced_df, proteins_df, on='label', how='left')
+
+            # Save the reduced DataFrame to a CSV file
+            merged_df_structure.to_csv(output_file)
+
+        return merged_df_structure
 
     @staticmethod
     def reduce_and_cluster(data, method='umap', n_components=2, n_clusters=5):
@@ -309,7 +507,6 @@ class LandingPage(TemplateView):
         reduced_data = reducer.fit_transform(data)
 
         # Clustering the reduced data
-        print(n_clusters)
         kmeans = KMeans(n_clusters=n_clusters, random_state=42)
         clusters = kmeans.fit_predict(reduced_data)
 
@@ -320,99 +517,76 @@ class LandingPage(TemplateView):
 
         return df
 
-    @staticmethod
-    def generate_cluster(method, input):
-        # Convert the nested dictionary to a DataFrame
-        input = {key.replace('_human', '').upper(): value for key, value in input.items()}
-        data = pd.DataFrame(input).T
-        # Example usage
-        reduced_df = LandingPage.reduce_and_cluster(data, method=method)
-        # Prepare the data for visualization
-        data_json = reduced_df.to_json(orient='records')
+    # @staticmethod
+    # def generate_cluster(method, input):
+    #     # Convert the nested dictionary to a DataFrame
+    #     input = {key.replace('_human', '').upper(): value for key, value in input.items()}
+    #     data = pd.DataFrame(input).T
+    #     # Example usage
+    #     reduced_df = LandingPage.reduce_and_cluster(data, method=method)
+    #     # Prepare the data for visualization
+    #     data_json = reduced_df.to_json(orient='records')
 
-        return data_json
+    #     return data_json
 
-    @staticmethod
-    def clustering_test(method, data):
-        # Convert the nested dictionary to a DataFrame
-        data = {key.replace('_human', ''): value for key, value in data.items()}
-        data_df = pd.DataFrame(data).T
-        if 'Value1' in data_df.columns:
-            # Example usage
-            reduced_df = LandingPage.reduce_and_cluster(data_df, method=method)
-            df_merged = pd.merge(reduced_df, data_df['Value2'], left_on='label', right_index=True, how='left')
-            df_merged.rename(columns={'Value2': 'fill'}, inplace=True)
-            # Prepare the data for visualization
-            data_json = df_merged.to_json(orient='records')
-        else:
-            # Get the info of the plot
-            full_matrix = LandingPage.generate_full_matrix(method)
-            # Filter the original fill matrix based on what we use provided
-            reduced_input = full_matrix[full_matrix['label'].isin(list(data.keys()))]
-            data_df = pd.DataFrame(data).T
-            # Merge the dataframes
-            df_merged = pd.merge(reduced_input, data_df['Value2'], left_on='label', right_index=True, how='left')
-            df_merged.rename(columns={'Value2': 'fill'}, inplace=True)
-            # Prepare the data for visualization
-            data_json = df_merged.to_json(orient='records')
+    
 
-        return data_json
+    # @staticmethod
+    # def generate_similarity(method):
+    #     similarity_matrix_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'human_gpcr_similarity_data_all_segments.csv'])
+    #     # Convert the nested dictionary to a DataFrame
+    #     data = pd.read_csv(similarity_matrix_file)
+    #     data = data[['receptor1_entry_name', 'receptor2_entry_name', 'similarity']]
+    #     matrix = data.pivot(index='receptor1_entry_name', columns='receptor2_entry_name', values='similarity')
+    #     matrix.index = matrix.index.str.replace('_human', '', regex=False)
+    #     matrix.columns = matrix.columns.str.replace('_human', '', regex=False)
+    #     matrix = matrix.fillna(0)
+    #     # data = data.fillna(0)
+    #     # Example usage
+    #     reduced_df = LandingPage.reduce_and_cluster(matrix, method=method, n_clusters=12)
+    #     reduced_df['label'] = reduced_df['label'].apply(lambda x: x.split('[Human] ')[1] if '[Human] ' in x else x)
+    #     # Prepare the data for visualization
+    #     data_json = reduced_df.to_json(orient='records')
 
-    @staticmethod
-    def generate_similarity(method):
-        similarity_matrix_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'human_gpcr_similarity_data_all_segments.csv'])
-        # Convert the nested dictionary to a DataFrame
-        data = pd.read_csv(similarity_matrix_file)
-        data = data[['receptor1_entry_name', 'receptor2_entry_name', 'similarity']]
-        matrix = data.pivot(index='receptor1_entry_name', columns='receptor2_entry_name', values='similarity')
-        matrix.index = matrix.index.str.replace('_human', '', regex=False)
-        matrix.columns = matrix.columns.str.replace('_human', '', regex=False)
-        matrix = matrix.fillna(0)
-        # data = data.fillna(0)
-        # Example usage
-        reduced_df = LandingPage.reduce_and_cluster(matrix, method=method, n_clusters=12)
-        reduced_df['label'] = reduced_df['label'].apply(lambda x: x.split('[Human] ')[1] if '[Human] ' in x else x)
-        # Prepare the data for visualization
-        data_json = reduced_df.to_json(orient='records')
+    #     return data_json
 
-        return data_json
+    # @staticmethod
+    # def generate_full_matrix(method):
+    #     ## create similarity matrix if it doesnt exist else load predefined ##
+    #     similarity_matrix_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'human_gpcr_similarity_data_all_segments.csv'])
+    #     # Convert the nested dictionary to a DataFrame
+    #     data = pd.read_csv(similarity_matrix_file)
+    #     data = data[['receptor1_entry_name', 'receptor2_entry_name', 'similarity']]
+    #     matrix = data.pivot(index='receptor1_entry_name', columns='receptor2_entry_name', values='similarity')
+    #     matrix.index = matrix.index.str.replace('_human', '', regex=False)
+    #     matrix.columns = matrix.columns.str.replace('_human', '', regex=False)
+    #     matrix = matrix.fillna(0)
+    #     # data = data.fillna(0)
+    #     # Example usage
+    #     reduced_df = LandingPage.reduce_and_cluster(matrix, method=method, n_clusters=12)
+    #     reduced_df['label'] = reduced_df['label'].apply(lambda x: x.split('[Human] ')[1] if '[Human] ' in x else x)
+    #     # receptor_names = dict(Protein.objects.filter(species_id=1).values_list('name','entry_name').distinct())
+    #     # reduced_df['label'] = reduced_df['label'].map(receptor_names)
+    #     reduced_df['label'] = reduced_df['label'].apply(lambda x: x.split('_human')[0] if '_human' in x else x)
 
-    @staticmethod
-    def generate_full_matrix(method):
-        similarity_matrix_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'human_gpcr_similarity_data_all_segments.csv'])
-        # Convert the nested dictionary to a DataFrame
-        data = pd.read_csv(similarity_matrix_file)
-        data = data[['receptor1_entry_name', 'receptor2_entry_name', 'similarity']]
-        matrix = data.pivot(index='receptor1_entry_name', columns='receptor2_entry_name', values='similarity')
-        matrix.index = matrix.index.str.replace('_human', '', regex=False)
-        matrix.columns = matrix.columns.str.replace('_human', '', regex=False)
-        matrix = matrix.fillna(0)
-        # data = data.fillna(0)
-        # Example usage
-        reduced_df = LandingPage.reduce_and_cluster(matrix, method=method, n_clusters=12)
-        reduced_df['label'] = reduced_df['label'].apply(lambda x: x.split('[Human] ')[1] if '[Human] ' in x else x)
-        # receptor_names = dict(Protein.objects.filter(species_id=1).values_list('name','entry_name').distinct())
-        # reduced_df['label'] = reduced_df['label'].map(receptor_names)
-        reduced_df['label'] = reduced_df['label'].apply(lambda x: x.split('_human')[0] if '_human' in x else x)
+    #     return reduced_df
 
-        return reduced_df
+    # @staticmethod
+    # def generate_identity(method):
+    #     identity_matrix_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'identity_matrix_full.csv'])
+    #     # Convert the nested dictionary to a DataFrame
+    #     data = pd.read_csv(identity_matrix_file)
+    #     data.columns = data.columns.str.replace('_human', '', regex=False)
+    #     data.set_index('receptor1_entry_name', inplace=True)
+    #     data.index = data.index.str.replace('_human', '', regex=False)
+    #     data = data.fillna(0)
+    #     # data = data.fillna(0)
+    #     # Example usage
+    #     reduced_df = LandingPage.reduce_and_cluster(data, method=method, n_clusters=6)
+    #     # Prepare the data for visualization
+    #     data_json = reduced_df.to_json(orient='records')
 
-    @staticmethod
-    def generate_identity(method):
-        identity_matrix_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'identity_matrix_full.csv'])
-        # Convert the nested dictionary to a DataFrame
-        data = pd.read_csv(identity_matrix_file)
-        data.columns = data.columns.str.replace('_human', '', regex=False)
-        data.set_index('receptor1_entry_name', inplace=True)
-        data.index = data.index.str.replace('_human', '', regex=False)
-        data = data.fillna(0)
-        # data = data.fillna(0)
-        # Example usage
-        reduced_df = LandingPage.reduce_and_cluster(data, method=method, n_clusters=6)
-        # Prepare the data for visualization
-        data_json = reduced_df.to_json(orient='records')
-
-        return data_json
+    #     return data_json
 
     @staticmethod
     def map_to_quartile(value, quartiles):
@@ -471,7 +645,7 @@ class LandingPage(TemplateView):
                         Cluster_Analysis_Header = ['Receptor (Uniprot)','Feature 1','Feature 2','Feature 3','Feature 4']
                         List_Plot_Header = ['Receptor (Uniprot)']
                         Heatmap_Header = ['Receptor (Uniprot)','Feature 1','Feature 2','Feature 3','Feature 4','Feature 5']
-                        Sheet_Header_pass_check = [False,False,False,False,False]
+                        Sheet_Header_pass_check = [False,False,False,False,False,False]
 
                         # Check all sheet names, headers and subheaders (needs to be implemented) #
                         for sheet_name in sheet_names:
@@ -479,14 +653,16 @@ class LandingPage(TemplateView):
                             header_list = [cell.value for cell in worksheet[1]]
                             if sheet_name == 'Info':
                                 Sheet_Header_pass_check[0] = True
-                            elif sheet_name == 'Phylogenetic Tree':
+                            elif sheet_name == 'Tree':
                                 Sheet_Header_pass_check[1] = True
-                            elif sheet_name == 'Cluster Analysis':
+                            elif sheet_name == 'Cluster':
                                 Sheet_Header_pass_check[2] = True
-                            elif sheet_name == 'List Plot':
+                            elif sheet_name == 'List':
                                 Sheet_Header_pass_check[3] = True
                             elif sheet_name == 'Heatmap':
                                 Sheet_Header_pass_check[4] = True
+                            elif sheet_name == 'Target':
+                                Sheet_Header_pass_check[5] = True
                             else:
                                 pass
 
@@ -496,8 +672,9 @@ class LandingPage(TemplateView):
                         else:
 
                             # Init incorrect values #
-                            plot_names = ['Phylogenetic Tree', 'Cluster Analysis', 'List Plot', 'Heatmap']
+                            plot_names = ['Tree', 'Cluster', 'List', 'Heatmap','Target']
                             Data = {}
+                            Data['Datatypes'] = {}
                             Incorrect_values = {}
                             Heatmap_Label_dict = {}
 
@@ -505,7 +682,7 @@ class LandingPage(TemplateView):
                                 Data[key] = {}
                                 Incorrect_values[key] = {}
 
-                            Plot_parser = ['Failed','Failed','Failed','Failed']
+                            Plot_parser = ['Failed','Failed','Failed','Failed','Failed']
 
                             # For each sheet in the workbook #
                             for sheet_name in sheet_names:
@@ -519,13 +696,15 @@ class LandingPage(TemplateView):
                                     return render(request, self.template_name, {'upload_status': 'Failed','Error_message': "Corrupted excel, headers not inline with the template file."})
 
                                 # If first sheet is receptor with correct headers #
-                                if sheet_name == 'Phylogenetic Tree':
+                                if sheet_name == 'Tree':
 
                                     header = next(worksheet.iter_rows(min_row=1, max_row=1, values_only=True))
+                                    # Labels = next(worksheet.iter_rows(min_row=2, max_row=1, values_only=True))
+                                    # print(Labels)
                                     inner_col_idx = header.index('1. Feature (Inner cicle)') + 1  # openpyxl uses 1-based indexing
                                     # Check the first value under the "Inner" header
-                                    first_value = worksheet.cell(row=2, column=inner_col_idx).value
-                                    if first_value != "Boolean":
+                                    first_value = worksheet.cell(row=3, column=inner_col_idx).value
+                                    if first_value != "Discrete":
                                         # Extract all values from the "Inner" column, skipping the header
                                         inner_values = []
                                         for row in worksheet.iter_rows(min_row=3, min_col=inner_col_idx, max_col=inner_col_idx, values_only=True):
@@ -543,19 +722,19 @@ class LandingPage(TemplateView):
                                             worksheet.cell(row=i, column=inner_col_idx).value = value
 
                                     # Initialize dictionaries
-                                    data_types = [cell.value for cell in worksheet[2]]
+                                    data_types = [cell.value for cell in worksheet[3]]
                                     for key in header_list:
                                         Incorrect_values[sheet_name][key] = {}
 
-                                    #######################################
-                                    # Run through Phylogenetic tree sheet #
-                                    #######################################
+                                    ##########################
+                                    # Run through tree sheet #
+                                    ##########################
                                     try:
 
                                         empty_sheet = True  # Initialize the flag
 
                                         # Iterate over rows starting from the second row (excluding the header row)
-                                        for row in worksheet.iter_rows(min_row=3, values_only=True):
+                                        for row in worksheet.iter_rows(min_row=4, values_only=True):
                                             # Check only the columns that have headers, skipping the first column
                                             if any(row[i] is not None for i, header in enumerate(header_list[1:], start=1) if header):
                                                 empty_sheet = False
@@ -565,7 +744,7 @@ class LandingPage(TemplateView):
                                             pass
                                         else:
                                             # Iterate through rows starting from the third row
-                                            for index, row in enumerate(worksheet.iter_rows(min_row=3, values_only=True), start=3):
+                                            for index, row in enumerate(worksheet.iter_rows(min_row=4, values_only=True), start=3):
                                                 # Check the "Receptor (Uniprot)" column for correct values
                                                 if row[0] not in protein_data:
                                                     Incorrect_values[sheet_name][header_list[0]][index] = '"{}" is a invalid entry'.format(row[0])
@@ -577,11 +756,11 @@ class LandingPage(TemplateView):
                                                     for col_idx, value in enumerate(row):
                                                         if col_idx == 0:
                                                             continue  # Skip the "Receptor (Uniprot)" column and completely empty columns
-                                                        elif data_types[col_idx] not in ['Boolean','Number','Text']:
+                                                        elif data_types[col_idx] not in ['Discrete','Continuous']:
                                                             Incorrect_values[sheet_name][header_list[col_idx]] = 'Incorrect datatype'
                                                         else:
                                                             if value is not None:
-                                                                if data_types[col_idx] == 'Boolean':
+                                                                if data_types[col_idx] == 'Discrete':
                                                                     if str(value).lower() not in ['yes', 'no', '1', '0', 'x']:
                                                                         Incorrect_values[sheet_name][header_list[col_idx]][index] = 'Non-Boolean Value'
                                                                     else:
@@ -589,7 +768,7 @@ class LandingPage(TemplateView):
                                                                             Data[sheet_name][row[0]]['Inner'] = 2000 if value in ['yes', 'Yes', '1', 'X'] else 0
                                                                         else:
                                                                             Data[sheet_name][row[0]]['Outer{}'.format(col_idx)] = 1 if value in ['yes', 'Yes', '1', 'X'] else 0
-                                                                elif data_types[col_idx] == 'Number':
+                                                                elif data_types[col_idx] == 'Continuous':
                                                                     try:
                                                                         float_value = float(value)
                                                                         if col_idx == 1:
@@ -597,11 +776,11 @@ class LandingPage(TemplateView):
                                                                         else:
                                                                             Data[sheet_name][row[0]]['Outer{}'.format(col_idx)] = float_value
                                                                     except ValueError:
-                                                                        Incorrect_values[sheet_name][header_list[col_idx]][index] = 'Non-Number Value'
+                                                                        Incorrect_values[sheet_name][header_list[col_idx]][index] = 'Non-Continuous Value'
                                                                 else:
                                                                     pass
                                                             else:
-                                                                if data_types[col_idx] == 'Boolean' and col_idx == 1:
+                                                                if data_types[col_idx] == 'Discrete' and col_idx == 1:
                                                                     Data[sheet_name][row[0]]['Inner'] = 0
 
 
@@ -624,10 +803,10 @@ class LandingPage(TemplateView):
                                         ## Update Plot parser ##
                                         Plot_parser[0] = status
                                     except:
-                                        print("phylo failed")
+                                        print("Tree failed")
 
-                                ### Cluster Analysis ###
-                                elif sheet_name == 'Cluster Analysis':
+                                ### Cluster ###
+                                elif sheet_name == 'Cluster':
 
                                     # Initialize dictionaries
                                     data_types = [cell.value for cell in worksheet[3]]
@@ -661,29 +840,17 @@ class LandingPage(TemplateView):
                                                     for col_idx, value in enumerate(row):
                                                         if col_idx == 0:
                                                             continue  # Skip the "Receptor (Uniprot)" column and completely empty columns #
-                                                        elif data_types[col_idx] not in ['Boolean', 'Continuous', 'Text', 'Number', 'Discrete']:
+                                                        elif data_types[col_idx] not in ['Continuous']:
                                                             Incorrect_values[sheet_name][header_list[col_idx]] = 'Incorrect datatype'
                                                         else:
                                                             if value is not None:
                                                                 # Handle the 3 different types of input for Cluster analysis (Boolean, Number, and Text) #
-                                                                if data_types[col_idx] == 'Boolean':
-                                                                    if str(value).lower() not in ['yes', 'no', '1', '0']:
-                                                                        Incorrect_values[sheet_name][header_list[col_idx]][index] = 'Non-Boolean Value'
-                                                                    else:
-                                                                        Data[sheet_name][row[0]]['Value{}'.format(col_idx)] = value
-                                                                elif data_types[col_idx] in ['Number', 'Continuous']:
+                                                                if data_types[col_idx] in ['Continuous']:
                                                                     try:
                                                                         float_value = float(value)
                                                                         Data[sheet_name][row[0]]['Value{}'.format(col_idx)] = float_value
                                                                     except ValueError:
-                                                                        Incorrect_values[sheet_name][header_list[col_idx]][index] = 'Non-Number Value'
-                                                                elif data_types[col_idx] in ['Text', 'Discrete']:
-                                                                    if isinstance(value, str):
-                                                                        Data[sheet_name][row[0]]['Value{}'.format(col_idx)] = value
-                                                                    else:
-                                                                        Incorrect_values[sheet_name][header_list[col_idx]][index] = 'Non-Text Value'
-                                                                else:
-                                                                    pass
+                                                                        Incorrect_values[sheet_name][header_list[col_idx]][index] = 'Non-Continuous Value'
                                                             else:
                                                                 pass
 
@@ -702,17 +869,17 @@ class LandingPage(TemplateView):
                                         else:
                                             status = 'Failed'
 
-                                        ## Update Plot_parser for Cluster Analysis
+                                        ## Update Plot_parser for Cluster
                                         Plot_parser[1] = status
                                     except:
                                         print("Cluster failed")
 
-                                ### List Plot ###
-                                elif sheet_name == 'List Plot':
+                                ### List ###
+                                elif sheet_name == 'List':
 
                                     # Initialize dictionaries
                                     data_types = [cell.value for cell in worksheet[2]]
-                                    Data['Datatypes'] = {}
+                                    
                                     Data['Datatypes']['Listplot'] = {}
                                     Data['Datatypes']['Listplot']['Col1'] = data_types[2]
                                     Data['Datatypes']['Listplot']['Col2'] = data_types[4]
@@ -786,10 +953,10 @@ class LandingPage(TemplateView):
                                         else:
                                             status = 'Failed'
 
-                                        ## Update Plot_parser for Cluster Analysis
+                                        ## Update Plot_parser for Cluster
                                         Plot_parser[2] = status
                                     except:
-                                        print("List plot failed")
+                                        print("List failed")
 
                                 ###############
                                 ### Heatmap ###
@@ -832,17 +999,17 @@ class LandingPage(TemplateView):
                                                     for col_idx, value in enumerate(row):
                                                         if col_idx == 0:
                                                             continue  # Skip the "Receptor (Uniprot)" column and completely empty columns #
-                                                        elif data_types[col_idx] not in ['Number']:
+                                                        elif data_types[col_idx] not in ['Continuous']:
                                                             Incorrect_values[sheet_name][header_list[col_idx]] = 'Incorrect datatype'
                                                         else:
                                                             if value is not None:
                                                                 # Handle the 1 different types of input for Heatmap (Number) #
-                                                                if data_types[col_idx] == 'Number':
+                                                                if data_types[col_idx] == 'Continuous':
                                                                     try:
                                                                         float_value = float(value)
                                                                         Data[sheet_name][row[0]]['Value{}'.format(col_idx)] = float_value
                                                                     except ValueError:
-                                                                        Incorrect_values[sheet_name][header_list[col_idx]][index] = 'Non-Number Value'
+                                                                        Incorrect_values[sheet_name][header_list[col_idx]][index] = 'Non-Continuous Value'
                                                                 else:
                                                                     pass
                                                             else:
@@ -863,13 +1030,92 @@ class LandingPage(TemplateView):
                                         else:
                                             status = 'Failed'
 
-                                        ## Update Plot_parser for Cluster Analysis
+                                        ## Update Plot_parser for Cluster
                                         Plot_parser[3] = status
                                     except:
                                         print("Heatmap Failed")
+                                
+                                ### Circle Plot ###
+                                elif sheet_name == 'Target':
+
+                                    # Initialize dictionaries
+                                    data_types_circle = [cell.value for cell in worksheet[2]]
+                                    # Data['Datatypes'] = {}
+                                    Data['Datatypes']['Target'] = {}
+                                    Data['Datatypes']['Target']['Col1'] = data_types_circle[1]
+                                    for key in header_list:
+                                        Incorrect_values[sheet_name][key] = {}
+                                    try:
+                                        empty_sheet = True  # Initialize the flag
+
+                                        # Iterate over rows starting from the second row (excluding the header row)
+                                        for row in worksheet.iter_rows(min_row=3, values_only=True):
+                                            # Check only the columns that have headers, skipping the first column
+                                            if any(row[i] is not None for i, header in enumerate(header_list[1:], start=1) if header):
+                                                empty_sheet = False
+                                                break
+
+                                        if empty_sheet:
+                                            pass
+                                        else:
+                                            # Iterate through rows starting from the second row
+                                            for index, row in enumerate(worksheet.iter_rows(min_row=3, values_only=True), start=3):
+                                                # Check the "Receptor (Uniprot)" column for correct values
+                                                if row[0] is None:
+                                                    continue
+                                                elif row[0] not in protein_data:
+                                                    Incorrect_values[sheet_name][header_list[0]][index] = '"{}" is a invalid entry'.format(row[0])
+                                                else:
+                                                    if row[0] not in Data[sheet_name]:
+                                                        Data[sheet_name][row[0]] = {}
+
+                                                    # Check each column for data points, boolean values, and float values #
+                                                    for col_idx, value in enumerate(row):
+                                                        if col_idx == 0:
+                                                            continue  # Skip the "Receptor (Uniprot)" column and completely empty columns #
+                                                        elif data_types_circle[col_idx] not in ['Discrete', 'Continuous']:
+                                                            Incorrect_values[sheet_name][header_list[col_idx]] = 'Incorrect datatype'
+                                                        else:
+                                                            if value is not None:
+                                                                # Handle the 2 different types of input for Cluster analysis (Boolean or Number) #
+                                                                if data_types_circle[col_idx] == 'Discrete':
+                                                                    if str(value).lower() not in ['yes', 'no', '1', '0']:
+                                                                        Incorrect_values[sheet_name][header_list[col_idx]][index] = 'Non-Discrete Value'
+                                                                    else:
+                                                                        Data[sheet_name][row[0]]['Value{}'.format(col_idx)] = value
+                                                                elif data_types_circle[col_idx] == 'Continuous':
+                                                                    try:
+                                                                        float_value = float(value)
+                                                                        Data[sheet_name][row[0]]['Value{}'.format(col_idx)] = float_value
+                                                                    except ValueError:
+                                                                        Incorrect_values[sheet_name][header_list[col_idx]][index] = 'Non-Number Value'
+                                                                else:
+                                                                    pass
+                                                            else:
+                                                                pass
+                                        
+                                        # Check if any values are incorrect #
+                                        status = 'Success'
+
+                                        if empty_sheet:
+                                            status = 'Empty sheet'
+                                        elif Data[sheet_name]:
+                                            for col_idx in Incorrect_values[sheet_name]:
+                                                # Check if there are any assigned index values for this col_idx
+                                                if any(Incorrect_values[sheet_name][col_idx].values()):
+                                                    # If any index is assigned, set status to 'Partially_success' and break out of the loop
+                                                    status = 'Failed'
+                                                    break
+                                        else:
+                                            status = 'Failed'
+                                        
+                                        ## Update Plot_parser for Cluster
+                                        Plot_parser[4] = status
+                                    except:
+                                        print("Target failed")
                             ## Return all values for plotparser and correctly (or partially) succesful plots ##
 
-                            plot_names = ['Phylogenetic Tree', 'Cluster Analysis', 'List Plot', 'Heatmap']
+                            plot_names = ['Tree', 'Cluster', 'List', 'Heatmap','Target']
                             plot_data = {}
                             plot_incorrect_data = {}
 
@@ -884,9 +1130,10 @@ class LandingPage(TemplateView):
                                 plot_data['Heatmap_Label_dict'] = Heatmap_Label_dict
 
                             plot_data_json = json.dumps(plot_data, indent=4, sort_keys=True) if plot_data else None
-                            plot_incorrect_data_json = json.dumps(plot_incorrect_data, indent=4, sort_keys=True) if plot_incorrect_data else None
+                            # plot_incorrect_data_json = json.dumps(plot_incorrect_data, indent=4, sort_keys=True) if plot_incorrect_data else None
 
                             Plot_parser_json = json.dumps([status == 'Success' for status in Plot_parser])
+                            # print(Plot_parser_json)
 
                             plots_status = [{'status': status, 'plot_name': plot_name} for status, plot_name in zip(Plot_parser, plot_names)]
                             # Rearrange plots in the report #
@@ -963,10 +1210,10 @@ class plotrender(TemplateView):
             context['heatmap_data'] = {}
             context['listplot_data'] = {}
             if Plot_evaluation:
-                # Phylogenetic tree #
+                # tree #
                 if Plot_evaluation[0]:
-                    print("Tree analysis")
-                    tree, tree_options, circles, receptors = LandingPage.generate_tree_plot(Data['Phylogenetic Tree'])
+                    print("Tree success")
+                    tree, tree_options, circles, receptors = LandingPage.generate_tree_plot(Data['Tree'])
                     context['tree'] = json.dumps(tree)
                     context['tree_options'] = tree_options
                     context['circles'] = json.dumps(circles)
@@ -974,41 +1221,39 @@ class plotrender(TemplateView):
 
                 # Cluster analysis #
                 if Plot_evaluation[1]:
-                    print("Cluster analysis")
-                    output = LandingPage.clustering_test('umap', Data['Cluster Analysis'])
-                    similarity_umap = LandingPage.generate_similarity('umap')
-                    # similarity_tsne = LandingPage.generate_similarity('tsne')
-                    # similarity_pca = LandingPage.generate_similarity('pca')
-                    # identity_umap = LandingPage.generate_identity('umap')
-                    # identity_tsne = LandingPage.generate_identity('tsne')
-                    # identity_pca = LandingPage.generate_identity('pca')
-                    context['cluster_data'] = output
-                    context['similarity_umap'] = similarity_umap
-                    # context['similarity_tsne'] = similarity_tsne
-                    # context['similarity_pca'] = similarity_pca
-                    # context['identity_umap'] = identity_umap
-                    # context['identity_tsne'] = identity_tsne
-                    # context['identity_pca'] = identity_pca
+                    print("Cluster success")
+                    output_seq = LandingPage.clustering_test('umap', Data['Cluster'],'seq')
+                    output_structure = LandingPage.clustering_test('umap', Data['Cluster'],'structure')
+                    context['cluster_data_seq'] = output_seq
+                    context['cluster_data_structure'] = output_structure
                     context['plot_type'] = 'UMAP'
 
                 # List plot #
                 if Plot_evaluation[2]:
-                    print("List plot analysis")
-                    listplot_data = LandingPage.generate_list_plot(Data['List Plot'])
+                    print("List success")
+                    listplot_data = LandingPage.generate_list_plot(Data['List'])
                     context['listplot_data'] = json.dumps(listplot_data["NameList"])
                     context['listplot_data_variables'] = json.dumps(listplot_data['DataPoints'])
                     context['Label_Conversion'] = json.dumps(listplot_data['LabelConversionDict'])
-                    context['listplot_datatypes'] = json.dumps(Data['Datatypes'])
+                    context['listplot_datatypes'] = json.dumps(Data['Datatypes']['Listplot'])
                 # Heatmap #
                 if Plot_evaluation[3]:
-                    print("Heatmap analysis")
+                    print("Heatmap success")
                     label_converter = LandingPage.Label_conversion_info(Data['Heatmap'])
                     context['Label_converter'] = json.dumps(label_converter)
                     context['heatmap_data'] = json.dumps(Data['Heatmap'])
                     context['Heatmap_Label_dict'] = json.dumps(Data['Heatmap_Label_dict'])
+                # Target #
+                if Plot_evaluation[4]:
+                    print("Target success")
+                    Target_data = LandingPage.generate_list_plot(Data['Target'])
+                    context['Target_data'] = json.dumps(Target_data["NameList"])
+                    context['Target_data_variables'] = json.dumps(Target_data['DataPoints'])
+                    context['Target_Label_Conversion'] = json.dumps(Target_data['LabelConversionDict'])
+                    context['Target_datatypes'] = json.dumps(Data['Datatypes'])
                 # Handles and determines first active tab #
                 first_active_tab = None
-                tab_names = ['#tab1', '#tab2', '#tab3', '#tab4']
+                tab_names = ['#tab1', '#tab2', '#tab3', '#tab4','#tab5']
 
                 for i, is_active in enumerate(Plot_evaluation):
                     if is_active:

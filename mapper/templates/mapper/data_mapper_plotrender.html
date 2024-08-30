@@ -12,38 +12,6 @@
 
 {% block content %}
 <style>
-    #circle_lightgray {
-        width: 10px;
-        height: 10px;
-        -webkit-border-radius: 5px;
-        -moz-border-radius: 5px;
-        border-radius: 5px;
-        background: LightGray;
-    }
-    #circle_darkgray {
-        width: 10px;
-        height: 10px;
-        -webkit-border-radius: 5px;
-        -moz-border-radius: 5px;
-        border-radius: 5px;
-        background: DarkGray;
-    }
-    #circle_gray {
-        width: 10px;
-        height: 10px;
-        -webkit-border-radius: 5px;
-        -moz-border-radius: 5px;
-        border-radius: 5px;
-        background: Gray;
-    }
-    #circle_black {
-        width: 10px;
-        height: 10px;
-        -webkit-border-radius: 5px;
-        -moz-border-radius: 5px;
-        border-radius: 5px;
-        background: Black;
-    }
     .gprot_orange {
       color: orange;
     }
@@ -114,6 +82,16 @@
       margin-left: 10px; /* Add some space between the button and the dropdown */
       width: 100px !important;
     }
+    .btn-custom-blue {
+        background-color: #5bc0de; /* Light blue color */
+        border-color: #5bc0de;
+        color: #fff; /* Darker text for better contrast */
+    }
+
+    .btn-custom-blue:hover {
+        background-color: #31b0d5; /* Lighter sky blue for hover effect */
+        border-color: #31b0d5;
+    }
 
 </style>
 <div class='col-md-12'>
@@ -126,17 +104,17 @@
 <ul class="nav nav-tabs">
   {% if Plot_evaluation_json.0 %}
     <li class="{% if first_active_tab == '#tab1' %}active{% endif %}">
-      <a href="#tab1" data-toggle="tab">Phylogenetic Tree</a>
+      <a href="#tab1" data-toggle="tab">Tree</a>
     </li>
   {% endif %}
   {% if Plot_evaluation_json.1 %}
     <li class="{% if first_active_tab == '#tab2' %}active{% endif %}">
-      <a href="#tab2" data-toggle="tab">Cluster Analysis</a>
+      <a href="#tab2" data-toggle="tab">Cluster</a>
     </li>
   {% endif %}
   {% if Plot_evaluation_json.2 %}
     <li class="{% if first_active_tab == '#tab3' %}active{% endif %}">
-      <a href="#tab3" data-toggle="tab">List Plot</a>
+      <a href="#tab3" data-toggle="tab">List</a>
     </li>
   {% endif %}
   {% if Plot_evaluation_json.3 %}
@@ -144,11 +122,18 @@
       <a href="#tab4" data-toggle="tab">Heatmap</a>
     </li>
   {% endif %}
+  {% if Plot_evaluation_json.4 %}
+  <li class="{% if first_active_tab == '#tab5' %}active{% endif %}">
+    <a href="#tab5" data-toggle="tab">Target</a>
+  </li>
+  {% endif %}
 </ul>
 
 <!-- ## Tab content ## -->
 <div class="tab-content">
-  <!-- ## Tab 1 - Phylogenetic Tree ## -->
+  <!-- ####################### -->
+  <!-- ##   Tab 1 - Tree    ## -->
+  <!-- ####################### -->
   {% if Plot_evaluation_json.0 %}
   <div id="tab1" class="tab-pane fade {% if first_active_tab == '#tab1' %}in active{% endif %}">
     <div style="padding-top: 10px; font-size: 11px; white-space: nowrap;">
@@ -160,79 +145,276 @@
                 <button id="IUPHARNames" class="btn btn-info">IUPHAR</button>
             </div>
         </div>
-        <br />
-        Inner circle colors (TBD):
-        <table style="width:30%">
-            <tr>
-                <td ><div id="circle_lightgray"></div></td>
-                <td> < XX </td>
-                <td ><div id="circle_darkgray"></div></td>
-                <td> < YY </td>
-                <td ><div id="circle_gray"></div></td>
-                <td> < ZZ </td>
-                <td ><div id="circle_black"></div></td>
-                <td> ZZ+</td>
-            </tr>
-        </table>
-        <br />
-        <div style="float: left; position: relative" class="text-center">
-          <b>Features</b> <br />
-            <span class="gprot_blue">Feature 1</span>
-            <span class="gprot_red">Feature 2</span>
-            <span class="gprot_black">Feature 3</span>
-            <span class="gprot_green">Feature 4</span>
-            <span class="gprot_orange">Feature 5</span>
+        <!-- ################### -->
+        <!-- # Styling buttons # -->
+        <!-- ################### -->
+        <div class="col-md-12" style="margin-top: 20px;margin-bottom: 30px;">
+          <div class="col-md-2">
+          <div class="dropdown" style="width: 500px !important;">
+            <button class="btn btn-primary dropdown-toggle" type="button" id="Styling_Menu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              Color styling
+            </button>
+            <div class="dropdown-menu dropdown-menu-listplot" aria-labelledby="Styling_Menu">
+              <!-- Color complexity Dropdown -->
+              <div class="col-md-12" style="width:400px;margin-top: 20px;margin-bottom: 20px;">
+                  <div class="col-md-6" style="width:180px">
+                    <select id="Tree_color_styling" class="form-select" style="height: 30px;width: 150px;font-size: 14px;" aria-label="Default select example" onchange="Tree_UpdateColorcomplexity()">
+                    </select>
+                  </div>
+                  <div class="col-md-6" style="width:180px">
+                    <select id="Tree_color_styling_complexity" class="form-select" style="height: 30px;width: 150px;font-size: 14px;" aria-label="Default select example" onchange="Tree_UpdateColorpickers()">
+                      <option value="One" selected>One color</option>
+                      <option value="Two">Two colors</option>
+                      <option value="Three">Three colors</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Color Selector Dropdown -->
+                <div class="col-md-12" style="height: 15px;width: 400px;margin-bottom: 30px;">
+                    <div class="col-md-6 text-center" id="Tree_Color_min_container" style="display:None;width: 180px">
+                      <input type="text" id="Tree_colorPicker_min" />
+                    </div>
+                  <!-- Color Selector Dropdown -->
+                    <div class="col-md-6 text-center" id="Tree_Color_max_container" style="width:180px">
+                      <input type="text" id="Tree_colorPicker_max"/>
+                    </div>
+                </div>
+                
+                <!-- Render button -->
+                <div class="col-md-12" style="width:400px;margin-top: 15px;margin-bottom: 15px;">
+                  <!-- Render Plot Button -->
+                  <div class="text-center" style="margin-bottom: 15px;">
+                    <button id="RenderTree_ColorStyling" type="button" class="btn btn-primary" style="font-size: 18px;">Render Heatmap</button>
+                  </div>
+                </div>   
+              </div>
+            </div>
         </div>
-        <div style="float: right;" class="text-center">
-          <b>Feature! (from low to high)</b>
-          <div class="graydiv"></div>
-        </div>
-        <div class="row-fluid">
-          <div class="span12">
-            <div id="tree_plot" class="text-center">
-              <h4>Tree Plot (Data Mapper)</h4>
+
+         <!-- ############### -->
+        <!-- ### Label Styling ###  -->
+         <!-- ############### -->
+         <div class="col-md-2" style="margin-left: 10px;margin-right: -10px;">
+          <div class="dropdown" style="width: 400px !important;">
+            <button class="btn btn-primary dropdown-toggle" type="button" id="Styling_Menu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              Label Styling
+            </button>
+            <div class="dropdown-menu dropdown-menu-listplot" aria-labelledby="Styling_Menu">
+              <!-- Layer Selector Dropdown -->
+              <div class="col-md-12" style="width:300px;margin-top: 20px;margin-bottom: 20px;">
+                <div class="col-md-6" style="padding-left:0;padding-right:0;">
+                  <select id="Tree_Styling_layerSelector" class="form-select" style="height: 30px;width: 120px;font-size: 14px;" aria-label="Default select example" onchange="Tree_updateLabelStyling()">
+                    <option value="class" selected>Class</option>
+                    <option value="ligandtype">Ligand type</option>
+                    <option value="receptorfamily">Receptor family</option>
+                    <option value="receptor">Receptor</option>
+                  </select>
+                </div>
+              </div>
+              <!-- Font Size Slider -->
+              <div class="col-md-12" style="text-align: center;">
+                <label for="fontSizeSliderValue" id="Tree_fontSizeSliderLabel" class="form-label">Font Size: 16px</label>
+              </div>
+              <div class="col-md-12" style="margin-bottom: 30px;">
+                <input type="range" class="form-range" min="8" max="20" value="16" id="Tree_fontSizeSlider">
+              </div>
+              <!-- Render Plot Button -->
+              <div class="col-md-12" style="text-align: center;">
+              <div class="text-center" style="margin-bottom: 20px;">
+                <button id="renderTreePlot_label" type="button" class="btn btn-primary" style="font-size: 18px;">Render Tree</button>
+              </div>
+            </div>
+            </div>
+          </div>
+         </div>
+        <!-- ################ -->
+        <!-- # Data styling # -->
+        <!-- ################ -->
+        
+        <div class="col-md-2" style="margin-left: 10px;margin-right: -10px;">
+          <div class="dropdown" style="width: 400px !important;">
+            <button class="btn btn-primary dropdown-toggle" type="button" id="Styling_Menu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              Data Styling
+            </button>
+            <div class="dropdown-menu dropdown-menu-listplot" aria-labelledby="Styling_Menu">
+              
+              <!-- Circle Size Slider -->
+              <div class="col-md-12" style="text-align: center;">
+                <label for="Tree_circleSizeSlider" id="Tree_circleSizeSliderLabel" class="form-label">Circle Size</label>
+              </div>
+              <div class="col-md-12" style="margin-bottom: 10px;">
+                <input type="range" class="form-range" min="1" max="6" value="1" id="Tree_circleSizeSlider">
+                <div style="text-align: center;">
+                  <span id="Tree_circleSizeValue">1</span>
+                </div>
+              </div>
+              
+              <!-- Space Size Slider -->
+              <div class="col-md-12" style="text-align: center;">
+                <label for="Tree_circleSpacerSlider" id="Tree_circleSpacerSliderLabel" class="form-label">Circle Spacer</label>
+              </div>
+              <div class="col-md-12" style="margin-bottom: 10px;">
+                <input type="range" class="form-range" min="0" max="2" value="0" id="Tree_circleSpacerSlider">
+                <div style="text-align: center;">
+                  <span id="Tree_circleSpacerValue">0</span>
+                </div>
+              </div>
+              
+              <!-- Render Plot Button -->
+              <div class="col-md-12" style="text-align: center;">
+                <div class="text-center" style="margin-bottom: 20px;">
+                  <button id="renderTreePlot_Circles" type="button" class="btn btn-primary" style="font-size: 18px;">Render Tree</button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
-  </div>
-  {% endif %}
-  <!-- ## Tab 2 - Cluster Analysis ## -->
-  {% if Plot_evaluation_json.1 %}
-    <div id="tab2" class="tab-pane fade {% if first_active_tab == '#tab2' %}in active{% endif %}">
-      <div style="padding-top: 10px; font-size: 11px; white-space: nowrap;">
-        <div style="padding-top: 5px;">
-          Color by:
-            <div class="btn-group" role="group" id="gtp_plus">
-              <button id="colorByCluster" class="btn btn-info active">Cluster</button>
-              <button id="colorByGradient" class="btn btn-info">Gradient</button>
+
+        <!-- # Download button # -->
+        <div class="col-md-3"></div>
+        <div class="col-md-3">
+          <div class="text-center">
+            <div class="dropdown">
+              <button type="button" class="btn btn-primary dropdown-toggle" style="font-size: 14px;" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <span class="glyphicon glyphicon-download" style="vertical-align: top;line-height: 1.3"></span> Download <span class="caret"></span>
+              </button>
+              <div class="dropdown-menu dropdown-menu-right-middle">
+                <li><a class="dropdown-item" href="javascript:saveSvg(document.getElementById('tree_plot_svg'), 'Tree.svg');">SVG</a></li>
+                <li><a class="dropdown-item" href="javascript:saveSvgAsPng(document.getElementById('tree_plot_svg'), 'Tree.png');">PNG</a></li>
+                <li><a class="dropdown-item" href="javascript:saveSvgAsJpg(document.getElementById('tree_plot_svg'), 'Tree.jpg');">JPG</a></li>
+                <li><a class="dropdown-item" href="javascript:saveSvgAsTiff(document.getElementById('tree_plot_svg'), 'Tree.tiff');">TIFF</a></li>
+              </div>
             </div>
-        </div>
-        <div style="padding-top: 5px;">
-          Plot labels:
-            <div class="btn-group" role="group" id="gtp_plus">
-                <button id="show" class="btn btn-info active">Show</button>
-                <button id="hide" class="btn btn-info">Hide</button>
-            </div>
+          </div>
         </div>
 
-      <!-- Container for the Plotly Plot -->
-      <div id="plotContainer_umap" style="width: 1600px; height: 1200px;"></div>
-
-        <!-- <br />
-          <br />
-          <br />
-        <br />
+        </div>
+        <!-- ############# -->
+        <!-- # TREE plot # -->
+        <!-- ############# -->
+        
+        
+         <!-- Legend bars -->
+        <div class="col-md-12" id="legend_bars">
+          <svg width="800" height="75"></svg>
+        </div>
+        <!-- Tree -->
+        <div class="col-md-12" style="margin-top: 0px;margin-bottom: 30px;">
+            <div id="tree_plot" class="text-center"></div>
+        </div>
+        
       </div>
-      <div id="plotContainer" class="text-center"></div>
-
-      </div> -->
     </div>
   </div>
   {% endif %}
   <!-- ####################### -->
-  <!-- ## Tab 3 - List Plot ## -->
+  <!-- ## Tab 2 - Cluster   ## -->
+  <!-- ####################### -->
+  {% if Plot_evaluation_json.1 %}
+    <div id="tab2" class="tab-pane fade {% if first_active_tab == '#tab2' %}in active{% endif %}">
+      <div style="padding-top: 10px; font-size: 14px; white-space: nowrap;">
+        <!-- <div class="col-md-12" style="padding-top: 20px;">
+          <div class="col-md-4">
+          Clustering by:
+            <div class="btn-group" role="group" id="gtp_plus">
+                <button id="datasetSeq" class="btn btn-info active">Sequence similiarity</button>
+                <button id="datasetStructure" class="btn btn-info">Structure similiarity</button>
+            </div>
+          </div>
+          <div class="col-md-6"></div>
+          <div class="col-md-2">
+            <div class="text-center">
+                <div class="dropdown">
+                    <button type="button" class="btn btn-primary dropdown-toggle" style="font-size: 14px;" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <span class="glyphicon glyphicon-download" style="vertical-align: top;line-height: 1.3"></span> Download <span class="caret"></span>
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-right-middle">
+                        <li><a class="dropdown-item" href="javascript:downloadPlot('svg');">SVG</a></li>
+                        <li><a class="dropdown-item" href="javascript:downloadPlot('png');">PNG</a></li>
+                        <li><a class="dropdown-item" href="javascript:downloadPlot('jpg');">JPG</a></li>
+                        <li><a class="dropdown-item" href="javascript:downloadPlot('tiff');">TIFF</a></li>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div> -->
+        <div class="col-md-12" style="padding-top: 20px;">
+          <div class="col-md-1">Color by:</div>
+            <div class="col-md-7">
+              <div class="btn-group" role="group" id="colorOptions">
+                <button id="colorByCluster" class="btn btn-info active">Cluster</button>
+                <button id="colorByGradient" class="btn btn-info">Gradient</button>
+                <button id="colorByClass" class="btn btn-info">Class</button>
+                <button id="colorByLigandType" class="btn btn-info">Ligand Type</button>
+                <button id="colorByReceptorFamily" class="btn btn-info">Receptor Family</button>
+              </div>
+            </div>
+            <div class="col-md-1"></div>
+            <div class="col-md-2">
+              <div class="text-center">
+                <div class="dropdown">
+                    <button type="button" class="btn btn-primary dropdown-toggle" style="font-size: 14px;" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <span class="glyphicon glyphicon-download" style="vertical-align: top;line-height: 1.3"></span> Download <span class="caret"></span>
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-right-middle">
+                        <li><a class="dropdown-item" href="javascript:downloadPlot('svg');">SVG</a></li>
+                        <li><a class="dropdown-item" href="javascript:downloadPlot('png');">PNG</a></li>
+                        <li><a class="dropdown-item" href="javascript:downloadPlot('jpg');">JPG</a></li>
+                        <li><a class="dropdown-item" href="javascript:downloadPlot('tiff');">TIFF</a></li>
+                    </div>
+                </div>
+            </div>
+            </div>
+        </div>
+        <div class="col-md-12" style="padding-top: 20px;">
+          <div class="col-md-1">Plot labels:</div>
+          <div class="col-md-5">
+            <div class="btn-group" role="group" id="gtp_plus">
+                <button id="show" class="btn btn-info">Show</button>
+                <button id="hide" class="btn btn-info active">Hide</button>
+                <button id="rerenderLabels" type="button" class="btn btn-custom-blue">Rerender Labels</button>
+            </div>
+          </div>
+          <div class="col-md-6"></div>
+        </div>
+        <div class="col-md-12" style="padding-top: 0x;padding-bottom: 20px">
+            <div class="col-md-1" style="margin-top: 36px;margin-right: 20px;text-align: left;margin-left: -15px">Styling options: </div>
+              <div class="col-md-2" style="margin-left: 10px; margin-right: -10px;margin-top: 30px;" >
+                  <div class="dropdown" style="width: 400px !important;">
+                      <button class="btn btn-primary dropdown-toggle" type="button" id="clusteringMenu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                          Clustering Options
+                      </button>
+                      <div class="dropdown-menu" aria-labelledby="clusteringMenu">
+                          <!-- Number of Clusters Slider -->
+                          <div class="col-md-12" style="text-align: center;">
+                              <label for="clusterSlider" id="clusterSliderLabel" class="form-label">Number of Clusters</label>
+                          </div>
+                          <div class="col-md-12" style="margin-bottom: 10px;">
+                              <input type="range" class="form-range" min="1" max="20" value="5" id="clusterSlider">
+                              <div style="text-align: center;">
+                                  <span id="clusterSliderValue">5</span>
+                              </div>
+                          </div>
+  
+                          <!-- Render Plot Button -->
+                          <div class="col-md-12" style="text-align: center;">
+                              <div class="text-center" style="margin-bottom: 20px;">
+                                  <button id="renderClusterPlot" type="button" class="btn btn-primary" style="font-size: 18px;">Render Clustering</button>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+      </div>
+
+      <!-- Container for the Plotly Plot -->
+      <div id="plotContainer_umap" style="width: 1600px; height: 1200px;"></div>
+    </div>
+  </div>
+  {% endif %}
+  <!-- ####################### -->
+  <!-- ##   Tab 3 - List    ## -->
   <!-- ####################### -->
   {% if Plot_evaluation_json.2 %}
     <div id="tab3" class="tab-pane fade {% if first_active_tab == '#tab3' %}in active{% endif %}">
@@ -250,18 +432,18 @@
               <div class="col-md-12" style="width:400px;margin-top: 20px;margin-bottom: 20px;text-align: center;">
                 <div class="col-md-6" style="padding-left:0;padding-right:0;">
                   <select id="Layout_Column_Selector" class="form-select" style="height: 30px;width: 180px;font-size: 14px;" aria-label="Default select example">
-                  <option value="1" selected>1 column</option>
-                  <option value="2">2 columns</option>
+                  <option value="1">1 column</option>
+                  <option value="2" selected>2 columns</option>
                   <option value="3">3 columns</option>
                   <option value="4">4 columns</option>
                 </select>
                 </div>
                 <div class="col-md-6" style="padding-left:0;padding-right:0;">
                     <select id="Layout_Column_Breaker" class="form-select" style="height: 30px;width: 160px;font-size: 14px;" aria-label="Default select example">
-                    <option value="Layer1">Layer 1</option>
-                    <option value="Layer2">Layer 2</option>
-                    <option value="Layer3">Layer 3</option>
-                    <option value="Layer4">Layer 4</option>
+                    <option value="Layer1">Class</option>
+                    <option value="Layer2">Ligand type</option>
+                    <option value="Layer3">receptor family</option>
+                    <option value="Layer4">receptor</option>
                     <option value="Custom" selected>Custom</option>
                   </select>
                 </div>
@@ -276,12 +458,12 @@
                 </select>
               <input type="number" id="Layout_Max_Label_input" name="Layout_Max_Label_input" step="1" min="1" style="height: 30px;width: 60px;font-size: 14px;">
               </div>
-              <div class="col-md-12"  style="padding-top: 10px;text-align: center;font-size: 14px;margin-bottom: 20px;">
+              <!-- <div class="col-md-12"  style="padding-top: 10px;text-align: center;font-size: 14px;margin-bottom: 20px;">
                 <div class="custom-checkbox">
                   <input type="checkbox" class="custom-control-input" id="toggle-indentation">
                   <label class="custom-control-label" for="toggle-indentation">Level indentation</label>
                 </div>
-              </div>
+              </div> -->
               <!-- Render Plot Button -->
               <div class="text-center"  style="margin-bottom: 20px;margin-top: 30px;">
                 <button id="RenderLayoutButton_Layout" type="button" class="btn btn-primary" style="font-size: 18px;">Render List</button>
@@ -302,7 +484,7 @@
                 <div class="col-md-12" style="padding-top: 10px;">
                   <div class="custom-checkbox">
                     <input type="checkbox" class="custom-control-input" id="toggle-layer-1" checked>
-                    <label class="custom-control-label" for="toggle-layer-1" style="margin-left: 5px;font-size: 16px;">Display Class</label>
+                    <label class="custom-control-label" for="toggle-layer-1" style="margin-left: 5px;font-size: 16px;">Display class</label>
                   </div>
                 </div>
                 <div class="col-md-12"  style="padding-top: 10px;">
@@ -559,9 +741,9 @@
           <div class="col-md-12" style="width:300px;margin-top: 20px;margin-bottom: 20px;">
             <div class="col-md-6" style="padding-left:0;padding-right:0;">Label orientation
               <select id="Heatmap_xlabel_styling" class="form-select" style="height: 30px;width: 120px;font-size: 14px;" aria-label="Default select example">
-                <option value="0" selected>Horizontal</option>
+                <option value="0" >Horizontal</option>
                 <!-- <option value="45">45 degrees</option> -->
-                <option value="90">Vertical</option>
+                <option value="90" selected>Vertical</option>
               </select>
             </div>
             <div class="col-md-6" style="padding-left:0;padding-right:0;">Label Position
@@ -652,7 +834,32 @@
       </div>
       <div id="heatmapPlot" class="text-center" style="margin-left: -150px;"></div>
       </div>
-    </div>
+  {% endif %}
+  <!-- ##################### -->
+  <!-- ##     Target     ## -->
+  <!-- ##################### -->
+  {% if Plot_evaluation_json.4 %}
+  <div id="tab5" class="tab-pane fade {% if first_active_tab == '#tab5' %}in active{% endif %}">
+    <div style="padding-top: 10px; font-size: 11px; white-space: nowrap;">
+      <div>
+        <div style="padding-top: 5px;">
+          Receptor names:
+            <div class="btn-group" role="group" id="gtp_plus">
+                <button id="Target_UniProtNames" class="btn btn-info ">UniProt</button>
+                <button id="Target_IUPHARNames" class="btn btn-info active">IUPHAR</button>
+            </div>
+        </div>
+        <div style="padding-top: 5px;">
+          Circle Spacing:
+          <button id="ToggleSpacing" class="btn btn-info active">On</button>
+        </div>
+      </div>
+      <!-- Target -->
+      <div class="col-md-12" style="margin-top: 0px;margin-bottom: 30px;">
+          <div id="Target_plot" class="text-center"></div>
+      </div>
+        
+      </div>
     </div>
   {% endif %}
 </div>
@@ -665,47 +872,361 @@
 <!-- <script src="{% static 'home/js/d3v4.min.js' %}"></script> -->
 <script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
 <script src="{% static 'home/js/saveSvg.js' %}"></script>
-<script src="{% static 'home/js/phylo_tree.js' %}"></script>
+<!-- <script src="{% static 'home/js/phylo_tree.js' %}"></script> -->
 <script src="{% static 'home/js/datamapper.js' %}"></script>
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/spectrum/1.8.1/spectrum.min.js"></script>
+<script src="https://www.lactame.com/lib/ml/6.0.0/ml.min.js"></script>
 
 <!-- ################## -->
 <!-- ###    Tree    ### -->
 <!-- ################## -->
 {% if Plot_evaluation_json.0 %}
-  <script type="text/javascript" charset="utf-8">
-      tree_data = {{ tree | safe }};
-      tree_options = {{ tree_options | safe }};
-      circles = {{ circles|safe }};
-      whole_dict = {{ whole_dict|safe }};
-      maxLeafNodeLenght = 55;
-      conversion = {"Outer1":"#0000FF",
-                    "Outer2":"#FF0000",
-                    "Outer3":"#000000",
-                    "Outer4":"#008000",
-                    "Outer5":"#FFA500"};
 
-      $("#UniProtNames").click(function(){
-          $("#UniProtNames").addClass("active");
-          $("#IUPHARNames").removeClass("active");
-          changeLeavesLabels("tree_plot", "UniProt", whole_dict);
-          DrawCircles('tree_plot', circles, maxLeafNodeLenght, conversion, true, false);
+<script>
+  $(document).ready(function() {
+    // Function to initialize Spectrum color picker
+    function initializeColorPicker(elementId,start_color) {
+      $("#" + elementId).spectrum({
+        color: start_color,
+        showPalette: true,
+        showInput: true,
+        preferredFormat: "hex",
+        palette: [
+          ["#000", "#FF0000", "#00FF00", "#0000FF", "#FFFF00"],
+          ["#FF00FF", "#00FFFF", "#FFFFFF", "#C0C0C0", "#808080"],
+          ["#800000", "#808000", "#008000", "#800080", "#008080"],
+          ["#000080"]
+        ],
+        change: function(color) {
+          var selectedColor = color.toHexString();
+        }
       });
-      $("#IUPHARNames").click(function() {
-        $("#UniProtNames_bal").removeClass("active");
-        $("#IUPHARNames_bal").addClass("active");
-        changeLeavesLabels("tree_plot","IUPHAR", whole_dict);
-        // DrawCircles('tree_plot',circles, maxLeafNodeLenght,conversion,true,false);
-      });
-      draw_tree(tree_data, tree_options);
-      DrawCircles('tree_plot', circles, maxLeafNodeLenght, conversion, true, false);
-      $("#tree_plot svg g").first().attr('transform', 'translate(620,650) scale(0.8,0.8) ');
-      $("#tree_plot").attr('height', 110);
-      $("#tree_plot").attr('width', 1110);
+    }
+    // Initialize all color pickers
+    initializeColorPicker("Tree_colorPicker_min","#FFFFFF");
+    initializeColorPicker("Tree_colorPicker_max","#0000FF");
+  });
+</script>
 
-  </script>
+
+<script type="text/javascript" charset="utf-8">
+
+  // Set dropdown to keep open
+  $('.dropdown-menu').on('click', function(event){
+      event.stopPropagation();
+    });
+
+    // # Initialize data #
+    tree_data = {{ tree | safe }};
+    tree_options = {{ tree_options | safe }};
+    Tree_circles = {{ circles|safe }};
+    label_dict = {{ whole_dict|safe }};
+    
+    if (tree_options.depth == 4) {
+      maxLeafNodeLenght = 4*parseInt(tree_options.fontSize.receptor);
+    } else if (tree_options.depth == 3) {
+      maxLeafNodeLenght = 4*parseInt(tree_options.fontSize.receptorfamily);
+    }
+    circle_size = 4;
+    circle_spacer = circle_size*2+1;
+
+    var Tree_circle_styling_dict = {
+      "Outer2":"One",
+      "Outer3":"Two",
+      "Outer4":"Two",
+      "Outer5":"Two",
+      "Outer6":"Three",
+    }
+
+    conversion = {"Outer2":["#FFFFFF","#0000FF"],
+                  "Outer3":["#FFFFFF","#FF0000"],
+                  "Outer4":["#FFFFFF","#22c7b1"],
+                  "Outer5":["#FFFFFF","#008000"],
+                  "Outer6":["#ad1cd9","#FFA500"]};
+    
+    // # Change leaves buttons #
+    $("#UniProtNames").click(function(){
+        $("#UniProtNames").addClass("active");
+        $("#IUPHARNames").removeClass("active");
+        changeLeavesLabels("tree_plot", "UniProt", label_dict);
+        DrawCircles('tree_plot', Tree_circles, maxLeafNodeLenght, conversion, true, true,Tree_circle_styling_dict,circle_spacer,circle_size);
+    });
+    $("#IUPHARNames").click(function() {
+      $("#UniProtNames_bal").removeClass("active");
+      $("#IUPHARNames_bal").addClass("active");
+      changeLeavesLabels("tree_plot","IUPHAR", label_dict);
+      DrawCircles('tree_plot', Tree_circles, maxLeafNodeLenght, conversion,true,true,Tree_circle_styling_dict,circle_spacer,circle_size);
+    });
+    // # Initialize tree plot #
+    document.addEventListener("DOMContentLoaded", function() {
+      draw_tree(tree_data, tree_options,circle_size);
+      DrawCircles('tree_plot', Tree_circles, maxLeafNodeLenght, conversion, true, true,Tree_circle_styling_dict,circle_spacer,circle_size);
+      createLegendBars('legend_bars', Tree_circles, conversion,Tree_circle_styling_dict);
+    });
+  
+  // ## DATA styling buttons ##
+
+  // # Color styling #
+  // Populate dropdown
+function populateKeyDropdown(circle_data) {
+  var dropdown = document.getElementById("Tree_color_styling");
+  // Clear existing options
+  dropdown.innerHTML = "";
+  // Initialize a set to track unique nested keys
+  var uniqueKeys = new Set();
+  // Collect unique nested keys from the data
+  Object.values(circle_data).forEach(item => {
+    Object.keys(item).forEach(key => {
+      uniqueKeys.add(key); // Add key to set (automatically handles duplicates)
+    });
+  });
+  // Add options to dropdown based on unique keys
+  uniqueKeys.forEach(key => {
+    var option = document.createElement("option");
+    option.value = key; // Set the value of the option to the key
+    option.textContent = key; // Display the key
+    dropdown.appendChild(option);
+  });
+  // Set initial values based on the first dropdown option
+  if (dropdown.options.length > 0) {
+    dropdown.selectedIndex = 0;
+    Tree_UpdateColorcomplexity();
+  }
+}
+document.addEventListener("DOMContentLoaded", function() {
+  populateKeyDropdown(Tree_circles);
+});
+
+
+function Tree_UpdateColorcomplexity() {
+  const Tree_Color_styling = document.getElementById("Tree_color_styling");
+  const Tree_Color_styling_complexity = document.getElementById("Tree_color_styling_complexity");
+  
+  // selected value
+  const selectedValue = Tree_Color_styling.value;
+
+  // Lookup the corresponding value in the dictionary
+  const complexityValue = Tree_circle_styling_dict[selectedValue];
+
+  // Update the second dropdown with the retrieved value
+  if (complexityValue) {
+          Tree_Color_styling_complexity.value = complexityValue;
+      }
+  Tree_UpdateColorpickers();
+
+}
+
+function Tree_UpdateColorpickers() {
+// Color complexity
+const Tree_Color_styling_complexity = document.querySelector('#Tree_color_styling_complexity');
+const Tree_Color_styling_Data = document.getElementById("Tree_color_styling");
+
+const Tree_Color_styling_complexity_value = Tree_Color_styling_complexity.value;
+const Tree_Color_styling_Data_value = Tree_Color_styling_Data.value;
+
+// Color picker location
+const Tree_color_min = document.getElementById("Tree_colorPicker_min");
+const Tree_Color_max = document.getElementById("Tree_colorPicker_max");
+
+// Color picker containers 
+const Tree_Color_min_container = document.getElementById("Tree_Color_min_container");
+// const Heatmap_Color_max_container = document.getElementById("Heatmap_Color_max_container");
+const Color_min = document.getElementById("Tree_colorPicker_min");
+const Color_max = document.getElementById("Tree_colorPicker_max");
+
+// // Get the selected layer value
+// const Color_styling_value = Color_styling.value;
+
+if (Tree_Color_styling_complexity_value == 'One') {
+  Tree_Color_min_container.style.display = 'None';
+} else if (Tree_Color_styling_complexity_value == 'Two'){
+  Tree_Color_min_container.style.display = 'Block';
+} else if (Tree_Color_styling_complexity_value == 'Three') {
+  Tree_Color_min_container.style.display = 'Block';
+}
+
+// Set color to current color
+$(Color_min).spectrum("set", conversion[Tree_Color_styling_Data_value][0]);
+$(Color_max).spectrum("set", conversion[Tree_Color_styling_Data_value][1]);
+
+}
+
+// Select the Render Plot button
+const RenderTree_ColorButton = document.querySelector('#RenderTree_ColorStyling');
+// Add click event listener to the button
+RenderTree_ColorButton.addEventListener('click', function() {
+
+// Color complexity
+const Tree_Color_styling_complexity = document.querySelector('#Tree_color_styling_complexity');
+const Tree_Color_styling_Data = document.getElementById("Tree_color_styling");
+
+const Tree_Color_styling_complexity_value = Tree_Color_styling_complexity.value;
+const Tree_Color_styling_Data_value = Tree_Color_styling_Data.value;
+
+// Color picker values 
+const Color_min = document.getElementById("Tree_colorPicker_min");
+const Color_max = document.getElementById("Tree_colorPicker_max");
+
+
+if (Tree_Color_styling_complexity_value == 'One') {
+  const One_Color_value = $(Color_max).spectrum("get").toHexString();
+  conversion[Tree_Color_styling_Data_value][0] = '#FFFFFF';
+  conversion[Tree_Color_styling_Data_value][1] = One_Color_value;
+  Tree_circle_styling_dict[Tree_Color_styling_Data_value] = 'Two';
+} else if (Tree_Color_styling_complexity_value == 'Two') {
+  const Two_Color_value_min = $(Color_min).spectrum("get").toHexString();
+  const Two_Color_value_max = $(Color_max).spectrum("get").toHexString();
+  conversion[Tree_Color_styling_Data_value][0] = Two_Color_value_min;
+  conversion[Tree_Color_styling_Data_value][1] = Two_Color_value_max;
+  Tree_circle_styling_dict[Tree_Color_styling_Data_value] = 'Two';
+} else if (Tree_Color_styling_complexity_value == 'Three') {
+  const Two_Color_value_min = $(Color_min).spectrum("get").toHexString();
+  const Two_Color_value_max = $(Color_max).spectrum("get").toHexString();
+  conversion[Tree_Color_styling_Data_value][0] = Two_Color_value_min;
+  conversion[Tree_Color_styling_Data_value][1] = Two_Color_value_max;
+  Tree_circle_styling_dict[Tree_Color_styling_Data_value] = 'Three';
+}
+
+DrawCircles('tree_plot', Tree_circles, maxLeafNodeLenght, conversion, true, true,Tree_circle_styling_dict,circle_spacer,circle_size);
+createLegendBars('legend_bars', Tree_circles, conversion,Tree_circle_styling_dict);
+});
+
+// #################
+// # Label styling #
+// #################
+
+// Function to update the option text based on depth
+function updateLabelOptions(depth) {
+      if (depth === 3) {
+          const selector = document.getElementById('Tree_Styling_layerSelector');
+          // Clear all existing options
+          selector.innerHTML = `
+              <option value="class">Ligand type</option>
+              <option value="ligandtype">Receptor family</option>
+              <option value="receptorfamily">Receptor</option>
+          `;
+      }
+      // No need to do anything if depth is 4, options remain as initialized
+  }
+
+  // Example: Assuming tree_options.depth is available as a global variable
+  // Call the function when the page loads or when depth changes
+  document.addEventListener('DOMContentLoaded', function() {
+      const depth = tree_options.depth;  // Get the depth value from your tree_options
+      updateLabelOptions(depth);
+  });
+
+function Tree_updateLabelStyling() {
+  var layerSelector = document.getElementById("Tree_Styling_layerSelector");
+  var fontSizeSlider = document.getElementById("Tree_fontSizeSlider");
+
+  if (layerSelector.value === "class") {
+      fontSizeSlider.max = 20;
+  } else if ((layerSelector.value === "ligandtype")) {
+    fontSizeSlider.max = 21;
+  } else if ((layerSelector.value === "receptorfamily")) {
+    fontSizeSlider.max = 22;
+  } else {
+      // Reset to default max value
+      fontSizeSlider.max = 23;
+  }
+}
+
+// Update the font size label based on slider value
+const Tree_fontSizeSlider = document.getElementById('Tree_fontSizeSlider');
+const Tree_fontSizeLabel = document.getElementById('Tree_fontSizeSliderLabel');
+Tree_fontSizeSlider.addEventListener('input', () => {
+Tree_fontSizeLabel.textContent = `Font Size: ${Tree_fontSizeSlider.value}px`;
+});
+
+// Get the layer selector dropdown element
+const Tree_label_selector = document.getElementById("Tree_Styling_layerSelector");
+
+// Add event listener to the layer selector dropdown
+Tree_label_selector.addEventListener("change", function() {
+  // Get the selected layer value
+  const Tree_label_selector_value = Tree_label_selector.value;
+
+  // Get the styling options for the selected layer from the styling dictionary
+  const selected_Label_Styling = tree_options['fontSize'][Tree_label_selector_value];
+  
+  // set fontsize to current value
+  // const Tree_fontsize_value = document.getElementById("Tree_fontSizeSlider")
+  document.getElementById("Tree_fontSizeSlider").value = parseInt(selected_Label_Styling);
+
+  // Update the label for font size slider
+  document.getElementById("Tree_fontSizeSliderLabel").textContent = "Font Size: " + selected_Label_Styling;
+
+});
+
+// Select the Render Plot button
+const RenderTree_LabelButton = document.querySelector('#renderTreePlot_label');
+// Add click event listener to the button
+RenderTree_LabelButton.addEventListener('click', function() {
+
+// Get selected value and input from slider 
+// Selected branch
+const Tree_label_selector = document.getElementById("Tree_Styling_layerSelector");
+const Tree_label_selector_value = Tree_label_selector.value;
+// slider value 
+const Tree_slider_value = document.getElementById("Tree_fontSizeSlider").value;
+
+tree_options['fontSize'][Tree_label_selector_value] = `${Tree_slider_value}px`;
+
+// recalculate maxn node length
+if (tree_options.depth == 4) {
+      maxLeafNodeLenght = 4*parseInt(tree_options.fontSize.receptor);
+    } else if (tree_options.depth == 3) {
+      maxLeafNodeLenght = 4*parseInt(tree_options.fontSize.receptorfamily);
+    }
+// maxLeafNodeLenght = 4*parseInt(tree_options.fontSize.receptor);
+
+// render tree
+draw_tree(tree_data, tree_options,circle_size);
+DrawCircles('tree_plot', Tree_circles, maxLeafNodeLenght, conversion, true, true,Tree_circle_styling_dict,circle_spacer,circle_size);
+
+});
+// ##################
+// ## Data styling ##
+// ##################
+
+// Update slider value
+document.getElementById('Tree_circleSizeSlider').addEventListener('input', function() {
+  document.getElementById('Tree_circleSizeValue').textContent = this.value;
+});
+
+document.getElementById('Tree_circleSpacerSlider').addEventListener('input', function() {
+  document.getElementById('Tree_circleSpacerValue').textContent = this.value;
+});
+
+// Circle size and spacer render
+// Select the Render Plot button
+const RenderTree_CircleButton = document.querySelector('#renderTreePlot_Circles');
+// Add click event listener to the button
+RenderTree_CircleButton.addEventListener('click', function() {
+
+// Get input from sliders 
+const Tree_Slider_circesize = document.getElementById("Tree_circleSizeSlider");
+const Tree_Slider_circesize_value = Tree_Slider_circesize.value;
+const Tree_Slider_circespacer = document.getElementById("Tree_circleSpacerSlider");
+const Tree_Slider_circespacer_value = Tree_Slider_circespacer.value;
+
+// recalculate circle size and spacer
+circle_size = 3+1*Tree_Slider_circesize_value;
+circle_spacer = circle_size*(2+0.5*Tree_Slider_circespacer_value)+1;
+
+// render tree
+draw_tree(tree_data, tree_options,circle_size);
+DrawCircles('tree_plot', Tree_circles, maxLeafNodeLenght, conversion, true, true,Tree_circle_styling_dict,circle_spacer,circle_size);
+
+
+});
+
+
+
+</script>
 {% endif %}
 
 <!-- ################## -->
@@ -714,230 +1235,552 @@
 {% if Plot_evaluation_json.1 %}
 <script>
 
-var cluster_data = {{ cluster_data|safe }};
-var similarity_umap = {{ similarity_umap|safe }};
+$('.dropdown-menu').on('click', function(event){
+    event.stopPropagation();
+});
+
+
+// Global variable to store the cluster data
+ // Global variables for cluster data
+ var cluster_data_seq = {{ cluster_data_seq|safe }};
+  // var cluster_data_structure = {{ cluster_data_structure|safe }};
+  var currentClusterData = cluster_data_seq; // Default to cluster_data_seq
+
+// Predefined color palette
+const colorPalette = [
+    '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd',
+    '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'
+];
+
+// Function to download the plot
+function downloadPlot(format) {
+    const plotElement = document.getElementById('plotContainer_umap');
+
+    Plotly.toImage(plotElement, {
+        format: format,
+        height: 1200,
+        width: 1600,
+        scale: 1
+    }).then(function (dataUrl) {
+        const link = document.createElement('a');
+        link.href = dataUrl;
+        link.download = `plot.${format}`;
+        link.click();
+    }).catch(function (error) {
+        console.error('Error exporting plot:', error);
+    });
+}
+
+// Document ready function
 $(document).ready(function() {
-    
-    // var similarity_tsne = {{ similarity_tsne|safe }};
-    // var similarity_pca = {{ similarity_pca|safe }};
-    // var identity_umap = {{ identity_umap|safe }};
-    // var identity_tsne = {{ identity_tsne|safe }};
-    // var identity_pca = {{ identity_pca|safe }};
-    var cluster_plot = "{{ plot_type }}";
-    // renderClusterPlot(similarity_umap, "#plotContainer_umap", 'UMAP');
-    // renderClusterPlot(similarity_umap, "#plotContainer_tsne", 'Similarity UMAP');
-    // renderClusterPlot(identity_umap, "#plotContainer_pca", 'Identity UMAP');
-    // renderClusterPlot(cluster_data, "#plotContainer_umap", 'UMAP');
 
-    // Predefined color palette
-    const colorPalette = [
-        '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd',
-        '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'
-    ];
+    // Attach click event handlers to switch between datasets
+    // $('#datasetSeq').click(function() {
+    //     currentClusterData = cluster_data_seq;
+    //     renderInitialPlot();
+    //     // const activeColorOption = getActiveColorOption();
+    //     // updatePlot(activeColorOption);
+    // });
 
-    // Assign colors to clusters based on a modulo operation
-    const uniqueClusters = [...new Set(cluster_data.map(d => d.cluster))];
-    const clusterColorMap = Object.fromEntries(uniqueClusters.map((cluster, i) => [cluster, colorPalette[i % colorPalette.length]]));
+    // $('#datasetStructure').click(function() {
+    //     currentClusterData = cluster_data_structure;
+    //     // const activeColorOption = getActiveColorOption();
+    //     // updatePlot(activeColorOption);
+    //     renderInitialPlot();
+    // });
 
-    const colorByCluster = cluster_data.map(d => clusterColorMap[d.cluster]);
-    const colorByGradient = cluster_data.map(d => d.fill); // Assuming 'value' is the field for gradient
-
-    const textPositions = ['middle left', 'top left', 'bottom left', 'top right', 'bottom right', 'middle right'];
-
-    // Function to create traces based on coloring option and label visibility
-    function createTraces(colorOption, showLabels) {
-        if (colorOption === colorByCluster) {
-            // Create a separate trace for each cluster
-            return uniqueClusters.flatMap(cluster => {
-                const clusterData = cluster_data.filter(d => d.cluster === cluster);
-                const markerTrace = {
-                    x: clusterData.map(d => d.x),
-                    y: clusterData.map(d => d.y),
-                    mode: 'markers',
-                    type: 'scatter',
-                    hoverinfo: 'none', // No hover info for legend markers
-                    marker: {
-                        size: 10,
-                        symbol: 'circle',
-                        color: clusterColorMap[cluster]
-                    },
-                    name: "Cluster " + cluster // Use cluster name for legend
-                };
-
-                const textTrace = showLabels ? {
-                    x: clusterData.map(d => d.x),
-                    y: clusterData.map(d => d.y),
-                    mode: 'text',
-                    type: 'scatter',
-                    text: clusterData.map(d => d.label),
-                    textposition: clusterData.map((_, i) => textPositions[i % textPositions.length]),
-                    textfont: {
-                        size: 12,
-                        color: 'black'
-                    },
-                    hoverinfo: 'none', // No hover info for text
-                    showlegend: false // Hide text trace from legend
-                } : [];
-
-                return showLabels ? [markerTrace, textTrace] : [markerTrace];
-            });
-        } else {
-            // Create a single trace for gradient coloring
-            const markerTrace = {
-                x: cluster_data.map(d => d.x),
-                y: cluster_data.map(d => d.y),
-                mode: 'markers',
-                type: 'scatter',
-                marker: {
-                    size: 10,
-                    symbol: 'circle',
-                    color: cluster_data.map(d => d.fill), // Assuming 'fill' is the gradient value
-                    coloraxis: 'coloraxis'
-                },
-                hoverinfo: 'none', // No hover info for legend markers
-                showlegend: false // Hide marker trace from legend, as we'll use a color bar
-            };
-
-            const textTrace = showLabels ? {
-                x: cluster_data.map(d => d.x),
-                y: cluster_data.map(d => d.y),
-                mode: 'text',
-                type: 'scatter',
-                text: cluster_data.map(d => d.label),
-                textposition: cluster_data.map((_, i) => textPositions[i % textPositions.length]),
-                textfont: {
-                    size: 12,
-                    color: 'black'
-                },
-                hoverinfo: 'none', // No hover info for text
-                showlegend: false // Hide text trace from legend
-            } : [];
-
-            // Determine the range of 'd.fill'
-            const fillValues = cluster_data.map(d => d.fill);
-            const minFill = Math.min(...fillValues);
-            const maxFill = Math.max(...fillValues);
-            const tickStep = (maxFill - minFill) / 3;
-            const ticks = Array.from({ length: 4 }, (_, i) => minFill + i * tickStep);
-
-            const colorBarTrace = {
-                x: [null], // Dummy data for the legend entry
-                y: [null], // Dummy data for the legend entry
-                mode: 'markers',
-                type: 'scatter',
-                marker: {
-                    size: 0, // No marker visible
-                    colorbar: {
-                        titleside: 'right',
-                        thickness: 20,
-                        len: 0.5, // Adjust length as needed
-                        tickvals: ticks, // Calculated tick values
-                        ticktext: ticks.map(t => t.toFixed(1)), // Tick labels
-                    },
-                    colorscale: 'RdBu', // Red to Blue through White color scale
-                    showscale: true // Show the color scale
-                },
-                showlegend: false // Hide this trace itself from legend
-            };
-
-            return showLabels ? [markerTrace, textTrace, colorBarTrace] : [markerTrace, colorBarTrace];
-        }
-    }
-
-
-    // Function to update plot based on active buttons
-    function updatePlot() {
-        // Determine active color option
-        const colorOption = document.getElementById('colorByCluster').classList.contains('active') ? colorByCluster : colorByGradient;
-
-        // Determine label visibility
-        const showLabels = document.getElementById('show').classList.contains('active');
-
-        // Create traces with current settings
-        const traces = createTraces(colorOption, showLabels);
-
-        // Update the layout ticks for the color axis
-        if (colorOption !== colorByCluster) {
-            const fillValues = cluster_data.map(d => d.fill);
-            const minFill = Math.min(...fillValues);
-            const maxFill = Math.max(...fillValues);
-            const tickStep = (maxFill - minFill) / 3;
-            const ticks = Array.from({ length: 4 }, (_, i) => minFill + i * tickStep);
-
-            layout.coloraxis.colorbar.tickvals = ticks;
-            layout.coloraxis.colorbar.ticktext = ticks.map(t => t.toFixed(1));
-        }
-
-        // Update the plot
-        Plotly.react('plotContainer_umap', traces, layout);
-    }
-
-    // Initial trace and layout
-    const initialTraces = createTraces(colorByCluster, true);
-
-    const layout = {
-        title: 'Cluster Plot with Adjusted Labels',
-        xaxis: {
-            visible: false,
-            showgrid: false,
-        },
-        yaxis: {
-            visible: false,
-            showgrid: false,
-        },
-        hovermode: 'closest',
-        showlegend: true,
-        plot_bgcolor: '#FFFFFF',
-        autosize: false,
-        width: 800,
-        height: 600,
-        coloraxis: {
-            colorscale: 'RdBu', // Ensure consistent color scale
-            colorbar: {
-                thickness: 20,
-                len: 0.5,
-                title: {
-                    text: 'Gradient',
-                    side: 'right'
-                },
-                tickvals: [0, 10, 20, 30], // Example values; these will be dynamically set by createTraces
-                ticktext: ['0', '10', '20', '30'] // Example text; adjust as per your data
-            }
-        }
-    };
-
-
-
-    // Plotly plotting
-    Plotly.newPlot('plotContainer_umap', initialTraces, layout);
-
-    // Event listeners to switch between coloring options
-    document.getElementById("colorByCluster").addEventListener("click", function() {
-        document.getElementById("colorByCluster").classList.add("active");
-        document.getElementById("colorByGradient").classList.remove("active");
-        updatePlot();
+    // Event listeners for color options
+    $("#colorByCluster").on("click", function() {
+        setActiveButton("colorByCluster");
+        updatePlot('cluster');
     });
 
-    document.getElementById("colorByGradient").addEventListener("click", function() {
-        document.getElementById("colorByCluster").classList.remove("active");
-        document.getElementById("colorByGradient").classList.add("active");
-        updatePlot();
+    $("#colorByGradient").on("click", function() {
+        setActiveButton("colorByGradient");
+        updatePlot('gradient');
     });
 
-    // Event listeners to show/hide labels
+    $("#colorByClass").on("click", function() {
+        setActiveButton("colorByClass");
+        updatePlot('Class');
+    });
+
+    $("#colorByLigandType").on("click", function() {
+        setActiveButton("colorByLigandType");
+        updatePlot('Ligand type');
+    });
+
+    $("#colorByReceptorFamily").on("click", function() {
+        setActiveButton("colorByReceptorFamily");
+        updatePlot('Receptor family');
+    });
+
+    // Show/hide labels
     document.getElementById("show").addEventListener("click", function() {
         document.getElementById("show").classList.add("active");
         document.getElementById("hide").classList.remove("active");
-        updatePlot();
+        const activeColorOption = getActiveColorOption();
+        updatePlot(activeColorOption);
     });
 
     document.getElementById("hide").addEventListener("click", function() {
         document.getElementById("show").classList.remove("active");
         document.getElementById("hide").classList.add("active");
-        updatePlot();
+        const activeColorOption = getActiveColorOption();
+        updatePlot(activeColorOption);
     });
 
+    // Clustering options
+    const clusterSlider = document.getElementById('clusterSlider');
+    const clusterSliderValue = document.getElementById('clusterSliderValue');
+    const renderClusterPlotButton = document.getElementById('renderClusterPlot');
+
+    clusterSlider.addEventListener('input', function() {
+        clusterSliderValue.textContent = clusterSlider.value;
+    });
+
+    renderClusterPlotButton.addEventListener('click', function() {
+        const numClusters = parseInt(clusterSlider.value, 10);
+        performClustering(numClusters);
+    });
+
+    // Initial plot rendering on page load
+    renderInitialPlot();
+
+    // Event listener for "Rerender Labels" button
+    document.getElementById("rerenderLabels").addEventListener("click", function() {
+      const activeColorOption = getActiveColorOption();
+      updatePlot(activeColorOption);
+    });
 });
+
+// Function to set the active button and deactivate others
+function setActiveButton(activeButtonId) {
+    const colorOptions = ["colorByCluster", "colorByGradient", "colorByClass", "colorByLigandType", "colorByReceptorFamily"];
+    
+    colorOptions.forEach(function(option) {
+        if (option === activeButtonId) {
+            $("#" + option).addClass("active");
+        } else {
+            $("#" + option).removeClass("active");
+        }
+    });
+}
+
+// Function to get the active color option
+function getActiveColorOption() {
+    if (document.getElementById('colorByCluster').classList.contains('active')) {
+        return 'cluster';
+    } else if (document.getElementById('colorByGradient').classList.contains('active')) {
+        return 'gradient';
+    } else if (document.getElementById('colorByClass').classList.contains('active')) {
+        return 'Class';
+    } else if (document.getElementById('colorByLigandType').classList.contains('active')) {
+        return 'Ligand type';
+    } else if (document.getElementById('colorByReceptorFamily').classList.contains('active')) {
+        return 'Receptor family';
+    }
+    return 'cluster'; // Default to 'cluster' if no option is active
+}
+
+// Function to create traces for the plot
+function createTraces(colorOption, showLabels) {
+    
+  let traces = [];
+  let colorMapping = {};
+  
+  if (['Class', 'Ligand type', 'Receptor family'].includes(colorOption)) {
+        const uniqueValues = Array.from(new Set(currentClusterData.map(d => d[colorOption])));
+        uniqueValues.forEach((value, index) => {
+            colorMapping[value] = colorPalette[index % colorPalette.length];
+        });
+    }
+  
+  const clusterSet = Array.from(new Set(currentClusterData.map(d => d.cluster))).sort((a, b) => a - b);
+
+  if (colorOption === 'cluster') {
+        clusterSet.forEach(cluster => {
+            const clusterData = currentClusterData.filter(d => d.cluster === cluster);
+
+            const markerTrace = {
+                x: clusterData.map(d => d.x),
+                y: clusterData.map(d => d.y),
+                mode: 'markers',
+                type: 'scatter',
+                hoverinfo: 'text',  // Show labels on hover
+                text: clusterData.map(d => d.label),  // Use labels as hover text
+                marker: {
+                    size: 10,
+                    symbol: 'circle',
+                    color: clusterData.map(d => colorPalette[d.cluster % colorPalette.length]),
+                },
+                name: `Cluster ${cluster}`
+            };
+
+            traces.push(markerTrace);
+        });
+      } else if (colorOption === 'gradient') {
+        const gradientTrace = {
+            x: currentClusterData.map(d => d.x),
+            y: currentClusterData.map(d => d.y),
+            mode: 'markers',
+            type: 'scatter',
+            hoverinfo: 'text',  // Show labels on hover
+            text: currentClusterData.map(d => `${d.label}: ${d.fill}`),  // Combine label and fill with a hyphen for hover text
+            marker: {
+                size: 10,
+                symbol: 'circle',
+                color: currentClusterData.map(d => d.fill),
+                coloraxis: 'coloraxis'
+            },
+            showlegend: false
+        };
+
+        traces.push(gradientTrace);
+          
+      } else if (['Class', 'Ligand type', 'Receptor family'].includes(colorOption)) {
+              const uniqueEntries = new Set();
+
+              currentClusterData.forEach(point => {
+                  const entry = point[colorOption];
+                  if (!uniqueEntries.has(entry)) {
+                      uniqueEntries.add(entry);
+
+                      const markerTrace = {
+                          x: currentClusterData.filter(d => d[colorOption] === point[colorOption]).map(d => d.x),
+                          y: currentClusterData.filter(d => d[colorOption] === point[colorOption]).map(d => d.y),
+                          mode: 'markers',
+                          type: 'scatter',
+                          hoverinfo: 'text',  // Show labels on hover
+                          text: currentClusterData.filter(d => d[colorOption] === point[colorOption]).map(d => d.label),  // Use labels as hover text
+                          marker: {
+                              size: 10,
+                              symbol: 'circle',
+                              color: colorMapping[point[colorOption]],
+                          },
+                          name: entry
+                      };
+
+                      traces.push(markerTrace);
+                  }
+              });
+        }
+        return traces;
+  }
+
+
+
+// Function to plot labels, avoiding overlap with markers and each other
+function plotLabels(showLabels, xRange = null, yRange = null) {
+    if (!showLabels) {
+        return null; // Return null if labels are not to be shown
+    }
+
+    // Ensure xRange and yRange are not null and have default values
+    xRange = xRange || [0, 1];
+    yRange = yRange || [0, 1];
+
+    const filteredData = currentClusterData.filter(d => {
+        const inXRange = (d.x >= xRange[0] && d.x <= xRange[1]);
+        const inYRange = (d.y >= yRange[0] && d.y <= yRange[1]);
+        return inXRange && inYRange;
+    });
+
+    // Basic strategy to position labels around markers
+    const labels = filteredData.map(d => ({
+        x: d.x,
+        y: d.y,
+        text: d.label,
+        position: getDefaultLabelPosition()
+    }));
+
+    // Adjust label positions based on zoom level and avoid overlap
+    const adjustedLabels = adjustAndAvoidOverlaps(labels, xRange, yRange);
+
+    return {
+        x: adjustedLabels.map(d => d.x),
+        y: adjustedLabels.map(d => d.y),
+        mode: 'text',
+        type: 'scatter',
+        text: adjustedLabels.map(d => d.text),
+        textfont: {
+            family: 'Arial',
+            size: 12,
+            color: '#000000'
+        },
+        hoverinfo: 'none',
+        showlegend: false
+    };
+}
+
+// Function to get default label position around the marker
+function getDefaultLabelPosition() {
+    const textPositions = ['middle left', 'top left', 'bottom left', 'top right', 'bottom right', 'middle right'];
+    return textPositions[Math.floor(Math.random() * textPositions.length)];
+}
+
+// Function to get offset based on label position
+function getLabelOffset(position, minDistance) {
+    switch (position) {
+        case 'middle left':
+            return { x: -1 * minDistance, y: 0 };
+        case 'top left':
+            return { x: -1 * minDistance, y: minDistance };
+        case 'bottom left':
+            return { x: -1 * minDistance, y: -1 * minDistance };
+        case 'top right':
+            return { x: minDistance, y: minDistance };
+        case 'bottom right':
+            return { x: minDistance, y: -1 * minDistance };
+        case 'middle right':
+            return { x: minDistance, y: 0 };
+        default:
+            return { x: 0, y: 0 };
+    }
+}
+
+// Combined function to adjust label positions and avoid overlaps
+function adjustAndAvoidOverlaps(labels, xRange, yRange) {
+    const rangeWidth = xRange ? (xRange[1] - xRange[0]) : 1;
+    const minDistance = rangeWidth * 0.05; // Scale factor for minimum distance
+    const offsetScale = rangeWidth * 0.03; // Scale factor for label offset
+
+    // Initial adjustment for label positions based on zoom level
+    let adjustedLabels = labels.map(label => {
+        const offset = getLabelOffset(label.position, offsetScale);
+        return {
+            x: label.x + offset.x,
+            y: label.y + offset.y,
+            text: label.text
+        };
+    });
+
+    // Adjust label positions to avoid overlap with each other
+    adjustedLabels = avoidLabelOverlaps(adjustedLabels, minDistance);
+
+    // Further adjust labels to ensure they are within plot bounds
+    adjustedLabels = adjustedLabels.map(label => ({
+        x: Math.min(Math.max(label.x, xRange[0]), xRange[1]),
+        y: Math.min(Math.max(label.y, yRange[0]), yRange[1]),
+        text: label.text
+    }));
+
+    return adjustedLabels;
+}
+
+// Function to avoid label overlaps with each other
+function avoidLabelOverlaps(labels, minDistance) {
+    const avoidOverlap = (labels) => {
+        for (let i = 0; i < labels.length; i++) {
+            for (let j = i + 1; j < labels.length; j++) {
+                const dx = labels[i].x - labels[j].x;
+                const dy = labels[i].y - labels[j].y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance < minDistance) {
+                    // If overlap, move label j away from label i
+                    const moveAmount = (minDistance - distance) * 0.5;
+                    labels[j].x += moveAmount * (dx / distance);
+                    labels[j].y += moveAmount * (dy / distance);
+                }
+            }
+        }
+    };
+
+    avoidOverlap(labels);
+    return labels;
+}
+
+
+
+// Function to render the initial plot
+function renderInitialPlot() {
+    const colorOption = getActiveColorOption(); // Get the initially selected color option
+    const showLabels = document.getElementById('show').classList.contains('active');
+
+    performClustering(5);
+
+    const traces = createTraces(colorOption, showLabels);
+
+    // Capture current layout to preserve zoom state
+    const plotElement = document.getElementById('plotContainer_umap');
+    const currentLayout = plotElement ? Plotly.d3.select('#plotContainer_umap').node().layout : {};
+
+    // Safely extract xaxis and yaxis ranges with default values
+    const xRange = (currentLayout && currentLayout.xaxis && currentLayout.xaxis.range) ? currentLayout.xaxis.range : null;
+    const yRange = (currentLayout && currentLayout.yaxis && currentLayout.yaxis.range) ? currentLayout.yaxis.range : null;
+
+    // Plot labels initially
+    const labelTrace = plotLabels(showLabels,xRange,yRange);
+    if (labelTrace) {
+        traces.push(labelTrace);
+    }
+
+    // Define new layout with fixed dimensions
+    const layout = {
+        xaxis: {
+            visible: false,
+            showgrid: false,
+            range: xRange,  // Restore x-axis range from current layout
+            scaleanchor: 'y'  // Ensure the aspect ratio is preserved
+        },
+        yaxis: {
+            visible: false,
+            showgrid: false,
+            range: yRange,  // Restore y-axis range from current layout
+        },
+        hovermode: 'closest',
+        showlegend: true,
+        legend: {
+            x: 1,
+            xanchor: 'left',
+            y: 0.5,
+            orientation: 'v'
+        },
+        plot_bgcolor: '#FFFFFF',
+        autosize: false,
+        width: 1024,  // Total plot width: 600px (plot area) + 324px (legend area) + margins
+        height: 700,  // Total height to accommodate the plot area and some extra space
+        margin: {
+            l: 50,   // Left margin
+            r: 374,  // Right margin (to accommodate legend and some spacing)
+            t: 50,   // Top margin
+            b: 50    // Bottom margin
+        },
+        coloraxis: colorOption === 'gradient' ? {
+            colorscale: 'RdBu',
+            colorbar: {
+                thickness: 20,
+                len: 0.5,
+                title: {
+                    text: 'Fill Gradient',
+                    side: 'right'
+                },
+            }
+        } : undefined
+    };
+
+    Plotly.newPlot('plotContainer_umap', traces, layout);
+
+    // // Add zoom event to the plot
+    plotElement.on('plotly_relayout', function(eventdata) {
+      const showLabels = document.getElementById('show').classList.contains('active');
+      // Capture current layout to preserve zoom state
+      const plotElement = document.getElementById('plotContainer_umap');
+      const currentLayout = plotElement ? Plotly.d3.select('#plotContainer_umap').node().layout : {};
+
+      // Safely extract xaxis and yaxis ranges with default values
+      const xRange = (currentLayout && currentLayout.xaxis && currentLayout.xaxis.range) ? currentLayout.xaxis.range : null;
+      const yRange = (currentLayout && currentLayout.yaxis && currentLayout.yaxis.range) ? currentLayout.yaxis.range : null;
+
+      // Plot labels initially
+      const labelTrace = plotLabels(showLabels,xRange,yRange);
+      if (labelTrace) {
+          traces.push(labelTrace);
+      }
+      const activeColorOption = getActiveColorOption();
+      updatePlot(activeColorOption);
+    });
+
+    // Auto-scale the axes after the plot is initially rendered
+    Plotly.relayout(plotElement, {
+        'xaxis.autorange': true,
+        'yaxis.autorange': true
+    });
+}
+
+// Function to update the plot based on color option
+function updatePlot(colorOption) {
+    const showLabels = document.getElementById('show').classList.contains('active');
+    const traces = createTraces(colorOption, showLabels);
+
+    // Capture current layout to preserve zoom state
+    const plotElement = document.getElementById('plotContainer_umap');
+    const currentLayout = plotElement ? Plotly.d3.select('#plotContainer_umap').node().layout : {};
+
+    // Safely extract xaxis and yaxis ranges with default values
+    const xRange = (currentLayout && currentLayout.xaxis && currentLayout.xaxis.range) ? currentLayout.xaxis.range : null;
+    const yRange = (currentLayout && currentLayout.yaxis && currentLayout.yaxis.range) ? currentLayout.yaxis.range : null;
+
+    const labelTrace = plotLabels(showLabels, xRange, yRange);
+    if (labelTrace) {
+        traces.push(labelTrace);
+    }
+
+    // Define new layout with fixed dimensions
+    const layout = {
+        xaxis: {
+            visible: false,
+            showgrid: false,
+            range: xRange,  // Restore x-axis range from current layout
+            scaleanchor: 'y'  // Ensure the aspect ratio is preserved
+        },
+        yaxis: {
+            visible: false,
+            showgrid: false,
+            range: yRange,  // Restore y-axis range from current layout
+        },
+        hovermode: 'closest',
+        showlegend: true,
+        legend: {
+            x: 1,
+            xanchor: 'left',
+            y: 0.5,
+            orientation: 'v'
+        },
+        plot_bgcolor: '#FFFFFF',
+        autosize: false,
+        width: 1024,  // Total plot width: 600px (plot area) + 324px (legend area) + margins
+        height: 700,  // Total height to accommodate the plot area and some extra space
+        margin: {
+            l: 50,   // Left margin
+            r: 374,  // Right margin (to accommodate legend and some spacing)
+            t: 50,   // Top margin
+            b: 50    // Bottom margin
+        },
+        coloraxis: colorOption === 'gradient' ? {
+            colorscale: 'RdBu',
+            colorbar: {
+                thickness: 20,
+                len: 0.5,
+                title: {
+                    text: 'Fill Gradient',
+                    side: 'right'
+                },
+            }
+        } : undefined
+    };
+
+    // Use Plotly.react to update the plot while preserving the zoom state
+    Plotly.react('plotContainer_umap', traces, layout);
+}
+
+// Function to perform clustering
+function performClustering(numClusters) {
+    const data = currentClusterData;
+    const coordinates = data.map(d => [d.x, d.y]);
+
+    if (typeof ML.KMeans === 'function') {
+        const options = {
+            maxIterations: 100,
+            tolerance: 1e-6,
+            initialization: 'kmeans++'
+        };
+
+        const result = ML.KMeans(coordinates, numClusters, options);
+
+        data.forEach((point, idx) => {
+            point.cluster = result.clusters[idx]; // Update only the cluster value
+        });
+        
+        currentClusterData = data; // Update cluster_data
+        setActiveButton("colorByCluster");
+        updatePlot('cluster');  // Pass 'cluster' as the color option
+    } else {
+        console.error('kmeans-js library not loaded correctly.');
+    }
+}
+
 </script>
 {% endif %}
 
@@ -947,33 +1790,33 @@ $(document).ready(function() {
 
 {% if Plot_evaluation_json.2 %}
 
-  <script>
-    $(document).ready(function() {
-      // Function to initialize Spectrum color picker
-      function initializeColorPicker(elementId) {
-        $("#" + elementId).spectrum({
-          color: "#000",
-          showPalette: true,
-          showInput: true,
-          preferredFormat: "hex",
-          palette: [
-            ["#000", "#FF0000", "#00FF00", "#0000FF", "#FFFF00"],
-            ["#FF00FF", "#00FFFF", "#FFFFFF", "#C0C0C0", "#808080"],
-            ["#800000", "#808000", "#008000", "#800080", "#008080"],
-            ["#000080"]
-          ],
-          change: function(color) {
-            var selectedColor = color.toHexString();
-          }
-        });
-      }
-      // Initialize all color pickers
-      initializeColorPicker("colorPicker_LabelStyling");
-      initializeColorPicker("OneColor_DataStyling");
-      initializeColorPicker("TwoColor_DataStyling_one");
-      initializeColorPicker("TwoColor_DataStyling_two");
-    });
-  </script>
+<script>
+  $(document).ready(function() {
+    // Function to initialize Spectrum color picker
+    function initializeColorPicker(elementId) {
+      $("#" + elementId).spectrum({
+        color: "#000",
+        showPalette: true,
+        showInput: true,
+        preferredFormat: "hex",
+        palette: [
+          ["#000", "#FF0000", "#00FF00", "#0000FF", "#FFFF00"],
+          ["#FF00FF", "#00FFFF", "#FFFFFF", "#C0C0C0", "#808080"],
+          ["#800000", "#808000", "#008000", "#800080", "#008080"],
+          ["#000080"]
+        ],
+        change: function(color) {
+          var selectedColor = color.toHexString();
+        }
+      });
+    }
+    // Initialize all color pickers
+    initializeColorPicker("colorPicker_LabelStyling");
+    initializeColorPicker("OneColor_DataStyling");
+    initializeColorPicker("TwoColor_DataStyling_one");
+    initializeColorPicker("TwoColor_DataStyling_two");
+  });
+</script>
 
 <script>
 
@@ -983,7 +1826,7 @@ $(document).ready(function() {
 
 var listdata = {{ listplot_data|safe }};
 var list_data_wow = {{ listplot_data_variables|safe }};
-var data_types = {{listplot_datatypes|safe}};
+var data_types_list = {{listplot_datatypes|safe}};
 var Label_conversion_dict = {{Label_Conversion|safe}};
 
 // #################################
@@ -992,20 +1835,20 @@ var Label_conversion_dict = {{Label_Conversion|safe}};
 
 
 // # Initialize layout #
-var Layout_dict = {columns: 2, col_breaker: 'Custom', col_max_label: 'Auto'};
+var Layout_dict = {columns: 2, col_breaker: 'Custom', col_max_label: 'Auto', indentation: 'Yes'};
 
 //  Initialize styling
 var Styling_Option_dict = {
-    Layer1: {Bold: true, Italic: true, Underline: true, Fontsize: "20px", Color: "#000"},
-    Layer2: {Bold: true, Italic: true, Underline: false, Fontsize: "18px", Color: "#0000FF"},
-    Layer3: {Bold: true, Italic: false, Underline: false, Fontsize: "16px", Color: "#FF0000"},
-    Layer4: {Bold: false, Italic: true, Underline: false, Fontsize: "14px", Color: "#000"}};
+    Layer1: {Bold: true, Italic: false, Underline: false, Fontsize: "20px", Color: "#000"},
+    Layer2: {Bold: true, Italic: false, Underline: false, Fontsize: "18px", Color: "#000"},
+    Layer3: {Bold: false, Italic: false, Underline: false, Fontsize: "16px", Color: "#000"},
+    Layer4: {Bold: false, Italic: false, Underline: false, Fontsize: "14px", Color: "#000"}};
 
 // # Initialize label switcher #
 var Label_names = 'IUPHAR';
 
 // # Initialize data styling #
-var Data_styling = initializeDataStyling(list_data_wow, data_types);
+var Data_styling = initializeDataStyling(list_data_wow, data_types_list);
 
 
 // #################################
@@ -1076,6 +1919,13 @@ renderPlotButton_Layout.addEventListener('click', function() {
   // Get the selected layer value
   const Layout_selectedLayer = layerSelector_layout.value;
   const Layout_selectedLayerBreaker = layerBreaker_layout.value;
+
+  // var checkbox = document.getElementById('toggle-indentation');
+  //   if (checkbox.checked) {
+  //       Layout_dict.indentation = 'Yes';
+  //   } else {
+  //       Layout_dict.indentation = 'No';
+  //   }
 
   // Update function
   function UpdateLayout() {
@@ -1643,6 +2493,148 @@ $("#Heatmap_IUPHARNames").click(function() {
       heatmap_DataStyling.LabelType = 'IUPHAR';
       Heatmap_updateVisualization();
   });
+
+</script>
+{% endif %}
+<!-- ############# -->
+<!-- ## Target ## -->
+<!-- ############# -->
+{% if Plot_evaluation_json.4 %}
+<script>
+
+$('.dropdown-menu').on('click', function(event){
+    event.stopPropagation();
+});
+
+
+var Target_categories_data = {{ Target_data|safe }};
+var fill_data = {{ Target_data_variables|safe }};
+var Target_data_types = {{Target_datatypes|safe}};
+var Target_Label_conversion_dict = {{Target_Label_Conversion|safe}};
+
+
+
+// Initialize the conversion dictionary
+Target_Label_conversion_dict = initializeTargetLabelConversionDict(Target_Label_conversion_dict);
+
+function initializeTargetLabelConversionDict(conversionDict) {
+    const updatedDict = {};
+
+    Object.keys(conversionDict).forEach(originalLabel => {
+        let uniProtLabel = conversionDict[originalLabel];
+        uniProtLabel = uniProtLabel.replace(/_human$/, "").toUpperCase(); // Remove "_human" and convert to uppercase
+        updatedDict[originalLabel] = uniProtLabel;
+    });
+
+    return updatedDict;
+}
+
+
+// # Initialize data styling #
+var layout_data = Target_initializeData(Target_categories_data);
+
+var Targets_styling = {
+  Spacing: true
+}
+
+// # initial draw
+let Target_location = "Target_plot";
+Draw_Targets(layout_data,fill_data,Target_location,Targets_styling);
+
+
+// Global variables for current label type
+let currentLabelType = "IUPHAR"; // Default
+
+// Event listeners for label type buttons
+document.getElementById("Target_UniProtNames").addEventListener("click", () => {
+    switchLabelType("UniProt");
+});
+
+document.getElementById("Target_IUPHARNames").addEventListener("click", () => {
+    switchLabelType("IUPHAR");
+});
+
+// Event listener for spacing toggle button
+document.getElementById("ToggleSpacing").addEventListener("click", () => {
+    // Toggle the spacing state
+    Targets_styling.Spacing = !Targets_styling.Spacing;
+    
+    // Update the button text and state
+    updateSpacingButtonState(Targets_styling.Spacing);
+
+    // Redraw Targets with updated spacing
+    updateTarget();
+});
+
+// Function to switch label types
+function switchLabelType(labelType) {
+    currentLabelType = labelType;
+    updateTarget();
+}
+
+// Function to update button active state for spacing
+function updateSpacingButtonState(isSpacing) {
+    const button = document.getElementById("ToggleSpacing");
+    button.textContent = isSpacing ? "On" : "Off";
+    button.classList.toggle("active", isSpacing);
+}
+
+// Function to update and redraw Targets
+function updateTarget() {
+    const updatedLayoutData = updateLayoutData(layout_data, Target_Label_conversion_dict, currentLabelType);
+    const updatedFillData = updateFillData(fill_data, Target_Label_conversion_dict, currentLabelType);
+
+    // Clear the existing SVG content
+    d3.select("#" + Target_location).select("svg").remove();
+
+    // Redraw the Targets with the updated data
+    Draw_Targets(updatedLayoutData, updatedFillData, Target_location, Targets_styling);
+
+    // Update button active states
+    // updateActiveButtonState(currentLabelType);
+}
+
+// Function to update layout data
+function updateLayoutData(layout_data, conversionDict, labelType) {
+    const updatedData = {};
+
+    Object.keys(layout_data).forEach(TargetKey => {
+        const Target = layout_data[TargetKey];
+        updatedData[TargetKey] = {};
+
+        Object.keys(Target).forEach(ligandType => {
+            const receptors = Target[ligandType];
+            updatedData[TargetKey][ligandType] = receptors.map(receptor => {
+                if (labelType === "UniProt") {
+                    return conversionDict[receptor] || receptor;
+                } else {
+                    return Object.keys(conversionDict).find(key => conversionDict[key] === receptor) || receptor;
+                }
+            });
+        });
+    });
+
+    return updatedData;
+}
+
+// Function to update fill data
+function updateFillData(fill_data, conversionDict, labelType) {
+    const updatedData = {};
+
+    Object.keys(fill_data).forEach(receptor => {
+        let updatedReceptor;
+        if (labelType === "UniProt") {
+            updatedReceptor = conversionDict[receptor] || receptor;
+        } else {
+            updatedReceptor = Object.keys(conversionDict).find(key => conversionDict[key] === receptor) || receptor;
+        }
+        updatedData[updatedReceptor] = fill_data[receptor];
+    });
+
+    return updatedData;
+}
+
+
 
 </script>
 {% endif %}

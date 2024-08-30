@@ -100,7 +100,7 @@
 
 
 <div class='col-md-12'>
-    <h1 style='text-align:center;margin-top: 30px;'>Welcome to Data Mapper!</h1>
+    <h1 style='text-align:center;margin-top: 30px;margin-bottom: 50px;'>Welcome to DataMapper!</h1>
 </div>
 
 
@@ -147,33 +147,33 @@
 <!-- ##################################### -->
 <!-- ####          PLOT OPTIONS        ### -->
 <!-- ##################################### -->
-<div class='col-md-12' style="margin-top: 50px;margin-bottom: 40px;">
-    <h3 style='text-align:center;'>Plot Options And Details</h3>
+<div class='col-md-12' style="margin-top: 100px;margin-bottom: 40px;">
+    <h3 style='text-align:center;'>Plot Options & Details</h3>
 </div>
 
 <div class='col-md-12' style="display: flex; justify-content: center; align-items: center;">
   <div class="img-container">
     <img id="phyloTreeImage" src="{% static 'home/images/phylo_example.png' %}" width="140" height="140" style="cursor:pointer;">
     <br>
-    <h6 style='text-align:center;'>Phylogenetic Tree</h6>
+    <h4 style='text-align:center;margin-top: 10px;'>Tree</h4>
     <!-- <span class="tooltip">Phylogenetic Tree</span> -->
   </div>
   <div class="img-container">
     <img id="ClusterImage" src="{% static 'home/images/cluster_example.png' %}" width="140" height="140" style='margin-left: 40px;cursor:pointer;'>
     <br>
-    <h6 style='text-align:center;margin-left: 40px;'>Cluster Analysis</h6>
+    <h4 style='text-align:center;margin-left: 40px;margin-top: 10px;'>Cluster</h4>
     <!-- <span class="tooltip">Cluster Analysis</span> -->
   </div>
   <div class="img-container">
     <img id="ListImage" src="{% static 'home/images/list_example.png' %}" width="140" height="140" style='margin-left: 40px;cursor:pointer;'>
     <br>
-    <h6 style='text-align:center;margin-left: 40px;'>List Plot</h6>
+    <h4 style='text-align:center;margin-left: 40px;margin-top: 10px;'>List</h4>
     <!-- <span class="tooltip">List Plot</span> -->
   </div>
   <div class="img-container">
     <img id="HeatmapImage" src="{% static 'home/images/heatmap_example.png' %}" width="140" height="140" style='margin-left: 40px;cursor:pointer;'>
     <br>
-    <h6 style='text-align:center;margin-left: 40px;'>Heatmap</h6>
+    <h4 style='text-align:center;margin-left: 40px;margin-top: 10px;'>Heatmap</h4>
     <!-- <span class="tooltip">Heatmap</span> -->
   </div>
 </div>
@@ -426,7 +426,7 @@
   <div class="modal-dialog wide-modal" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="phyloTreeModalLabel">Phylogenetic Tree</h5>
+        <h5 class="modal-title" id="phyloTreeModalLabel">Tree</h5>
       </div>
       <div class="modal-body">
         <div class="img-container">
@@ -458,7 +458,7 @@
   <div class="modal-dialog wide-modal" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h3 class="modal-title" id="ClusterModalLabel">Cluster Analysis</h3>
+        <h3 class="modal-title" id="ClusterModalLabel">Cluster</h3>
       </div>
       <div class="modal-body">
         <div class="img-container">
@@ -490,7 +490,7 @@
   <div class="modal-dialog wide-modal" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="ListModalLabel">List plot</h5>
+        <h5 class="modal-title" id="ListModalLabel">List</h5>
       </div>
       <div class="modal-body">
         This is the List plot modal content.<br>
@@ -590,13 +590,10 @@ $(document).ready(function() {
       if ("{{ upload_status }}" === "Success") {
         // Check if report generation was successful
         if ("{{ report_status }}" === "Success") {
-          console.log("did this!");
           $('#Report_modal_success').modal('show');
         } else if ("{{ report_status }}" === "Partially_success") {
-          console.log("did that!");
           $('#Report_modal_partially_success').modal('show');
         } else if ("{{ report_status }}" === "Failed") {
-          console.log("went here!");
           $('#Report_modal_failed').modal('show');
         }
       } else if ("{{ upload_status }}" === "Failed") {
