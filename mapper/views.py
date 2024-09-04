@@ -382,6 +382,7 @@ class LandingPage(TemplateView):
         output_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'HumanGPCRSimilarityAllData_{}.csv'.format(method)])
         # Check if the file exists
         if os.path.exists(output_file):
+        # bob_test = 1
         # if bob_test == 2:
             # Load the data from the existing file
             merged_df = pd.read_csv(output_file, index_col=0)
@@ -393,10 +394,18 @@ class LandingPage(TemplateView):
             matrix = data.pivot(index='receptor1_entry_name', columns='receptor2_entry_name', values='similarity')
             matrix.index = matrix.index.str.replace('_human', '', regex=False)
             matrix.columns = matrix.columns.str.replace('_human', '', regex=False)
-            matrix = matrix.fillna(0)
+            matrix = matrix.fillna(100)
+
+            # ---------------------------------------------
+            # Step 2: Normalize Similarity Values to [0, 1]
+            # ---------------------------------------------
+
+            normalized_matrix = matrix / 100.0
+
+            distance_matrix_df = 1.0 - normalized_matrix
 
             # Perform reduction and clustering
-            reduced_df = LandingPage.reduce_and_cluster(matrix, method=method, n_clusters=12)
+            reduced_df = LandingPage.reduce_and_cluster(distance_matrix_df, method='tsne')
             
             reduced_df['label'] = reduced_df['label'].apply(lambda x: x.split('[Human] ')[1] if '[Human] ' in x else x)
             reduced_df['label'] = reduced_df['label'].apply(lambda x: x.split('_human')[0] if '_human' in x else x)
@@ -661,7 +670,7 @@ class LandingPage(TemplateView):
                                 Sheet_Header_pass_check[3] = True
                             elif sheet_name == 'Heatmap':
                                 Sheet_Header_pass_check[4] = True
-                            elif sheet_name == 'Target':
+                            elif sheet_name == 'Dart':
                                 Sheet_Header_pass_check[5] = True
                             else:
                                 pass
@@ -672,7 +681,7 @@ class LandingPage(TemplateView):
                         else:
 
                             # Init incorrect values #
-                            plot_names = ['Tree', 'Cluster', 'List', 'Heatmap','Target']
+                            plot_names = ['Tree', 'Cluster', 'List', 'Heatmap','Dart']
                             Data = {}
                             Data['Datatypes'] = {}
                             Incorrect_values = {}
@@ -1035,14 +1044,14 @@ class LandingPage(TemplateView):
                                     except:
                                         print("Heatmap Failed")
                                 
-                                ### Circle Plot ###
-                                elif sheet_name == 'Target':
+                                ### Dart Plot ###
+                                elif sheet_name == 'Dart':
 
                                     # Initialize dictionaries
                                     data_types_circle = [cell.value for cell in worksheet[2]]
                                     # Data['Datatypes'] = {}
-                                    Data['Datatypes']['Target'] = {}
-                                    Data['Datatypes']['Target']['Col1'] = data_types_circle[1]
+                                    Data['Datatypes']['Dart'] = {}
+                                    Data['Datatypes']['Dart']['Col1'] = data_types_circle[1]
                                     for key in header_list:
                                         Incorrect_values[sheet_name][key] = {}
                                     try:
@@ -1112,10 +1121,10 @@ class LandingPage(TemplateView):
                                         ## Update Plot_parser for Cluster
                                         Plot_parser[4] = status
                                     except:
-                                        print("Target failed")
+                                        print("Dart failed")
                             ## Return all values for plotparser and correctly (or partially) succesful plots ##
 
-                            plot_names = ['Tree', 'Cluster', 'List', 'Heatmap','Target']
+                            plot_names = ['Tree', 'Cluster', 'List', 'Heatmap','Dart']
                             plot_data = {}
                             plot_incorrect_data = {}
 
@@ -1243,14 +1252,14 @@ class plotrender(TemplateView):
                     context['Label_converter'] = json.dumps(label_converter)
                     context['heatmap_data'] = json.dumps(Data['Heatmap'])
                     context['Heatmap_Label_dict'] = json.dumps(Data['Heatmap_Label_dict'])
-                # Target #
+                # Dart #
                 if Plot_evaluation[4]:
-                    print("Target success")
-                    Target_data = LandingPage.generate_list_plot(Data['Target'])
-                    context['Target_data'] = json.dumps(Target_data["NameList"])
-                    context['Target_data_variables'] = json.dumps(Target_data['DataPoints'])
-                    context['Target_Label_Conversion'] = json.dumps(Target_data['LabelConversionDict'])
-                    context['Target_datatypes'] = json.dumps(Data['Datatypes'])
+                    print("Dart success")
+                    Dart_data = LandingPage.generate_list_plot(Data['Dart'])
+                    context['Dart_data'] = json.dumps(Dart_data["NameList"])
+                    context['Dart_data_variables'] = json.dumps(Dart_data['DataPoints'])
+                    context['Dart_Label_Conversion'] = json.dumps(Dart_data['LabelConversionDict'])
+                    context['Dart_datatypes'] = json.dumps(Data['Datatypes'])
                 # Handles and determines first active tab #
                 first_active_tab = None
                 tab_names = ['#tab1', '#tab2', '#tab3', '#tab4','#tab5']

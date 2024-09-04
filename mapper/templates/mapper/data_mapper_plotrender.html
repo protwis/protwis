@@ -5,7 +5,7 @@
 <link rel="stylesheet" href="{% static 'home/css/nv.d3.min.css' %}" type="text/css" />
 <link rel="stylesheet" href="{% static 'home/css/nvd3-update.css' %}" type="text/css" />
 <link href="{% static 'home/css/bootstrap-responsive.css' %}" rel="stylesheet" media="screen">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/spectrum/1.8.1/spectrum.min.css" />
+<link rel="stylesheet" href="{% static 'home/css/Spectrum_1_8_1.css' %}" type="text/css" />
 
 
 {% endblock %}
@@ -124,7 +124,7 @@
   {% endif %}
   {% if Plot_evaluation_json.4 %}
   <li class="{% if first_active_tab == '#tab5' %}active{% endif %}">
-    <a href="#tab5" data-toggle="tab">Target</a>
+    <a href="#tab5" data-toggle="tab">Dart</a>
   </li>
   {% endif %}
 </ul>
@@ -141,8 +141,8 @@
         <div style="padding-top: 5px;">
           Receptor names:
             <div class="btn-group" role="group" id="gtp_plus">
-                <button id="UniProtNames" class="btn btn-info active">UniProt</button>
-                <button id="IUPHARNames" class="btn btn-info">IUPHAR</button>
+                <button id="UniProtNames" class="btn btn-info active">Gene</button>
+                <button id="IUPHARNames" class="btn btn-info">Protein</button>
             </div>
         </div>
         <!-- ################### -->
@@ -836,7 +836,7 @@
       </div>
   {% endif %}
   <!-- ##################### -->
-  <!-- ##     Target     ## -->
+  <!-- ##     Dart     ## -->
   <!-- ##################### -->
   {% if Plot_evaluation_json.4 %}
   <div id="tab5" class="tab-pane fade {% if first_active_tab == '#tab5' %}in active{% endif %}">
@@ -845,18 +845,22 @@
         <div style="padding-top: 5px;">
           Receptor names:
             <div class="btn-group" role="group" id="gtp_plus">
-                <button id="Target_UniProtNames" class="btn btn-info ">UniProt</button>
-                <button id="Target_IUPHARNames" class="btn btn-info active">IUPHAR</button>
+                <button id="Dart_UniProtNames" class="btn btn-info ">Gene</button>
+                <button id="Dart_IUPHARNames" class="btn btn-info active">Protein</button>
             </div>
         </div>
         <div style="padding-top: 5px;">
           Circle Spacing:
           <button id="ToggleSpacing" class="btn btn-info active">On</button>
         </div>
+        <div style="padding-top: 5px;">
+          Receptor family:
+          <button id="ToggleFamily" class="btn btn-info active">On</button>
+        </div>
       </div>
-      <!-- Target -->
+      <!-- Dart -->
       <div class="col-md-12" style="margin-top: 0px;margin-bottom: 30px;">
-          <div id="Target_plot" class="text-center"></div>
+          <div id="Dart_plot" class="text-center"></div>
       </div>
         
       </div>
@@ -867,17 +871,19 @@
 {% endblock %}
 
 {% block addon_js %}
-<script src="{% static 'home/js/d3.min.js' %}"></script>
+<script src="{% static 'home/js/d3.v5.min.js' %}"></script>
 <script src="{% static 'home/js/nv.d3.min.js' %}"></script>
 <!-- <script src="{% static 'home/js/d3v4.min.js' %}"></script> -->
 <script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
 <script src="{% static 'home/js/saveSvg.js' %}"></script>
 <!-- <script src="{% static 'home/js/phylo_tree.js' %}"></script> -->
 <script src="{% static 'home/js/datamapper.js' %}"></script>
-<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/spectrum/1.8.1/spectrum.min.js"></script>
-<script src="https://www.lactame.com/lib/ml/6.0.0/ml.min.js"></script>
+<script src="{% static 'home/js/plotly_v1_58_5.js' %}"></script>
+<script src="{% static 'home/js/popper.min.js' %}"></script>
+<script src="{% static 'home/js/popper.min.js' %}"></script>
+<script src="{% static 'home/js/spectrum_v1_8_1.js' %}"></script>
+<script src="{% static 'home/js/ml.js' %}"></script>
+
 
 <!-- ################## -->
 <!-- ###    Tree    ### -->
@@ -923,7 +929,10 @@
     tree_options = {{ tree_options | safe }};
     Tree_circles = {{ circles|safe }};
     label_dict = {{ whole_dict|safe }};
-    
+
+    tree_data = update_tree_data(tree_data,tree_options.depth);
+
+    console.log(tree_data);
     if (tree_options.depth == 4) {
       maxLeafNodeLenght = 4*parseInt(tree_options.fontSize.receptor);
     } else if (tree_options.depth == 3) {
@@ -2497,7 +2506,7 @@ $("#Heatmap_IUPHARNames").click(function() {
 </script>
 {% endif %}
 <!-- ############# -->
-<!-- ## Target ## -->
+<!-- ## Dart ## -->
 <!-- ############# -->
 {% if Plot_evaluation_json.4 %}
 <script>
@@ -2507,17 +2516,19 @@ $('.dropdown-menu').on('click', function(event){
 });
 
 
-var Target_categories_data = {{ Target_data|safe }};
-var fill_data = {{ Target_data_variables|safe }};
-var Target_data_types = {{Target_datatypes|safe}};
-var Target_Label_conversion_dict = {{Target_Label_Conversion|safe}};
+var Dart_categories_data = {{ Dart_data|safe }};
+var fill_data = {{ Dart_data_variables|safe }};
+var Dart_data_types = {{Dart_datatypes|safe}};
+var Dart_Label_conversion_dict = {{Dart_Label_Conversion|safe}};
 
 
+
+console.log(Dart_data_types)
 
 // Initialize the conversion dictionary
-Target_Label_conversion_dict = initializeTargetLabelConversionDict(Target_Label_conversion_dict);
+Dart_Label_conversion_dict = initializeDartLabelConversionDict(Dart_Label_conversion_dict);
 
-function initializeTargetLabelConversionDict(conversionDict) {
+function initializeDartLabelConversionDict(conversionDict) {
     const updatedDict = {};
 
     Object.keys(conversionDict).forEach(originalLabel => {
@@ -2531,45 +2542,95 @@ function initializeTargetLabelConversionDict(conversionDict) {
 
 
 // # Initialize data styling #
-var layout_data = Target_initializeData(Target_categories_data);
+var layout_data = Dart_initializeData(Dart_categories_data);
 
-var Targets_styling = {
-  Spacing: true
+const Dart_fill_data_values = Object.values(fill_data).map(receptor => receptor.Value1);
+
+const Dart_fill_minValue = Math.min(...Dart_fill_data_values);
+const Dart_fill_maxValue = Math.max(...Dart_fill_data_values);
+
+// Calculate median
+// Sort the values in ascending order
+Dart_fill_data_values.sort((a, b) => a - b);
+
+// Calculate the median
+let Dart_fill_medianValue;
+const middleIndex = Math.floor(Dart_fill_data_values.length / 2);
+
+if (Dart_fill_data_values.length % 2 === 0) {
+    // Even number of elements, median is the average of the two middle values
+    Dart_fill_medianValue = (Dart_fill_data_values[middleIndex - 1] + Dart_fill_data_values[middleIndex]) / 2;
+} else {
+    // Odd number of elements, median is the middle value
+    Dart_fill_medianValue = Dart_fill_data_values[middleIndex];
 }
 
+var Darts_styling = {
+  Spacing: true,
+  family: true,
+  datatype: Dart_data_types.Dart.Col1,
+  minValue: Dart_fill_minValue,
+  median_value: Dart_fill_medianValue,
+  maxValue: Dart_fill_maxValue,
+  colorStart: "#e64b35",
+  color_median: "#4dbbd5",
+  colorEnd: "#3c5488"
+}
+
+console.log(Darts_styling.minValue,Darts_styling.median_value,Darts_styling.maxValue);
+
 // # initial draw
-let Target_location = "Target_plot";
-Draw_Targets(layout_data,fill_data,Target_location,Targets_styling);
+let Dart_location = "Dart_plot";
+Draw_Darts(layout_data,fill_data,Dart_location,Darts_styling);
 
 
 // Global variables for current label type
 let currentLabelType = "IUPHAR"; // Default
 
 // Event listeners for label type buttons
-document.getElementById("Target_UniProtNames").addEventListener("click", () => {
+document.getElementById("Dart_UniProtNames").addEventListener("click", () => {
     switchLabelType("UniProt");
 });
 
-document.getElementById("Target_IUPHARNames").addEventListener("click", () => {
+document.getElementById("Dart_IUPHARNames").addEventListener("click", () => {
     switchLabelType("IUPHAR");
 });
 
 // Event listener for spacing toggle button
 document.getElementById("ToggleSpacing").addEventListener("click", () => {
     // Toggle the spacing state
-    Targets_styling.Spacing = !Targets_styling.Spacing;
+    Darts_styling.Spacing = !Darts_styling.Spacing;
     
     // Update the button text and state
-    updateSpacingButtonState(Targets_styling.Spacing);
+    updateSpacingButtonState(Darts_styling.Spacing);
 
-    // Redraw Targets with updated spacing
-    updateTarget();
+    // Redraw Darts with updated spacing
+    updateDart();
+});
+
+// Event listener for spacing toggle button
+document.getElementById("ToggleFamily").addEventListener("click", () => {
+    // Toggle the spacing state
+    Darts_styling.family = !Darts_styling.family;
+    
+    // Update the button text and state
+    updateSpacingButtonState(Darts_styling.family);
+
+    // Redraw Darts with updated spacing
+    updateDart();
 });
 
 // Function to switch label types
 function switchLabelType(labelType) {
     currentLabelType = labelType;
-    updateTarget();
+    updateDart();
+}
+
+// Function to update button active state for spacing
+function updateSpacingButtonState(isFamily) {
+    const button = document.getElementById("ToggleFamily");
+    button.textContent = isFamily ? "On" : "Off";
+    button.classList.toggle("active", isFamily);
 }
 
 // Function to update button active state for spacing
@@ -2579,16 +2640,16 @@ function updateSpacingButtonState(isSpacing) {
     button.classList.toggle("active", isSpacing);
 }
 
-// Function to update and redraw Targets
-function updateTarget() {
-    const updatedLayoutData = updateLayoutData(layout_data, Target_Label_conversion_dict, currentLabelType);
-    const updatedFillData = updateFillData(fill_data, Target_Label_conversion_dict, currentLabelType);
+// Function to update and redraw Darts
+function updateDart() {
+    const updatedLayoutData = updateLayoutData(layout_data, Dart_Label_conversion_dict, currentLabelType);
+    const updatedFillData = updateFillData(fill_data, Dart_Label_conversion_dict, currentLabelType);
 
     // Clear the existing SVG content
-    d3.select("#" + Target_location).select("svg").remove();
+    d3.select("#" + Dart_location).select("svg").remove();
 
-    // Redraw the Targets with the updated data
-    Draw_Targets(updatedLayoutData, updatedFillData, Target_location, Targets_styling);
+    // Redraw the Darts with the updated data
+    Draw_Darts(updatedLayoutData, updatedFillData, Dart_location, Darts_styling);
 
     // Update button active states
     // updateActiveButtonState(currentLabelType);
@@ -2598,13 +2659,13 @@ function updateTarget() {
 function updateLayoutData(layout_data, conversionDict, labelType) {
     const updatedData = {};
 
-    Object.keys(layout_data).forEach(TargetKey => {
-        const Target = layout_data[TargetKey];
-        updatedData[TargetKey] = {};
+    Object.keys(layout_data).forEach(DartKey => {
+        const Dart = layout_data[DartKey];
+        updatedData[DartKey] = {};
 
-        Object.keys(Target).forEach(ligandType => {
-            const receptors = Target[ligandType];
-            updatedData[TargetKey][ligandType] = receptors.map(receptor => {
+        Object.keys(Dart).forEach(ligandType => {
+            const receptors = Dart[ligandType];
+            updatedData[DartKey][ligandType] = receptors.map(receptor => {
                 if (labelType === "UniProt") {
                     return conversionDict[receptor] || receptor;
                 } else {

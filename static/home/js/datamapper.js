@@ -2,6 +2,37 @@
 // ###   TREE    ###
 // #################
 
+
+function update_tree_data(data,depth) {
+    if (depth === 4) {
+        // Iterate over each class and update name
+        data.children.forEach(Class_child => {
+            Class_child.name = Class_child.name.split(" (")[0];
+            // iterate over ligand type
+            Class_child.children.forEach(LigandType => {
+                // iterate over receptor family
+                LigandType.children.forEach(ReceptorFamily => {
+                    // Trimming receptor family
+                    ReceptorFamily.name = ReceptorFamily.name.replace(/( receptors|neuropeptide )/g, '');
+                    ReceptorFamily.name = ReceptorFamily.name.split(" (")[0];
+                });
+            });
+
+        });
+    } else if (depth === 3) {
+         // iterate over ligand type
+         data.children.forEach(LigandType => {
+            // iterate over receptor family
+            LigandType.children.forEach(ReceptorFamily => {
+                // Trimming receptor family
+                ReceptorFamily.name = ReceptorFamily.name.replace(/( receptors|neuropeptide )/g, '');
+                ReceptorFamily.name = ReceptorFamily.name.split(" (")[0];
+            });
+        });
+    }
+    return data
+}
+
 function draw_tree(data, options,circle_size) {
 
     // Remove existing SVG if present
@@ -245,6 +276,23 @@ function draw_tree(data, options,circle_size) {
         .attr('transform', `translate(${translateX},${translateY}) scale(${scaleFactor},${scaleFactor})`);
 }
 
+// replaces labels derived from view
+function formatTextWithHTML(text) {
+    // Apply all the replacements step by step
+    return text
+        .replace(" receptor", '')
+        .replace("-adrenoceptor", '')
+        .replace(" receptor-", '-')
+        .replace("<sub>", '</tspan><tspan baseline-shift="sub">')
+        .replace("</sub>", '</tspan><tspan>')
+        .replace("<i>", '</tspan><tspan font-style="italic">')
+        .replace("</i>", '</tspan><tspan>')
+        .replace("Long-wave-sensitive", 'LWS')
+        .replace("Medium-wave-sensitive", 'MWS')
+        .replace("Short-wave-sensitive", 'SWS')
+        .replace("Olfactory", 'OLF')
+        .replace("calcitonin-like receptor", 'CLR');
+}
 
 function changeLeavesLabels(location, value, dict){
     // Initialize leaf node length
@@ -255,18 +303,7 @@ function changeLeavesLabels(location, value, dict){
       if (d3.select(this).attr("id") !== null) {
         name = d3.select(this).attr("id").substring(1);
         labelName = dict[name][0];
-        // replaces labels derived from view
-        labelName = labelName.replace("-adrenoceptor", '');
-        labelName = labelName.replace(" receptor-", '-');
-        labelName = labelName.replace("<sub>", '</tspan><tspan baseline-shift = "sub">');
-        labelName = labelName.replace("</sub>", '</tspan><tspan>');
-        labelName = labelName.replace("<i>", '</tspan><tspan font-style = "italic">');
-        labelName = labelName.replace("</i>", '</tspan><tspan>');
-        labelName = labelName.replace("Long-wave-sensitive",'LWS');
-        labelName = labelName.replace("Medium-wave-sensitive",'MWS');
-        labelName = labelName.replace("Short-wave-sensitive",'SWS');
-        labelName = labelName.replace("Olfactory", 'OLF');
-        labelName = labelName.replace("Calcitonin -like", 'CLR');
+        labelName = formatTextWithHTML(labelName)
         node = d3.select('#'+location).select('#X'+name);
         if (node.size() !== 0){
           if (value === "IUPHAR"){
@@ -2386,36 +2423,36 @@ function Heatmap(data, location, heatmap_DataStyling,label_x_converter) {
   }
 
 // #################
-// ###  Target  ###
+// ###  Dart  ###
 // #################
 
-function Target_initializeData(data) {
-    // Initialize the Targets
-    let Targets = {
-        Target_1: {},
-        Target_2: {},
-        Target_3: {},
-        Target_4: {},
-        Target_5: {},
-        Target_6: {},
-        Target_7: {}
+function Dart_initializeData(data) {
+    // Initialize the Darts
+    let Darts = {
+        Dart_A: {},
+        Dart_AO: {},
+        Dart_B: {},
+        Dart_C: {},
+        Dart_F: {},
+        Dart_T: {},
+        Dart_CL: {}
     };
 
-    // Helper function to add items to the Target using receptor family as key
-    function addItemsToCircle(Target, items) {
+    // Helper function to add items to the Dart using receptor family as key
+    function addItemsToCircle(Dart, items) {
         Object.keys(items).forEach(ligandType => {
             const receptorFamilies = items[ligandType];
             
             // Ensure receptorFamilies is an object
             if (typeof receptorFamilies === 'object' && receptorFamilies !== null) {
                 Object.keys(receptorFamilies).forEach(family => {
-                    if (!Target[family]) {
-                        Target[family] = [];
+                    if (!Dart[family]) {
+                        Dart[family] = [];
                     }
 
                     const receptors = receptorFamilies[family];
                     if (Array.isArray(receptors)) {
-                        Target[family].push(...receptors);
+                        Dart[family].push(...receptors);
                     } else {
                         console.warn(`Unexpected data format for family ${family}`);
                     }
@@ -2440,64 +2477,67 @@ function Target_initializeData(data) {
         if (className === "Class A (Rhodopsin)") {
             Object.keys(classData).forEach(ligandType => {
                 if (ligandType !== "Orphan receptors" && ligandType !== "Olfactory receptors") {
-                    addItemsToCircle(Targets.Target_1, { [ligandType]: classData[ligandType] });
+                    addItemsToCircle(Darts.Dart_A, { [ligandType]: classData[ligandType] });
                 }
             });
         }
 
         // Circle 2: "Orphan receptors" from "Class A (Rhodopsin)" 
         if (className === "Class A (Rhodopsin)" && classData["Orphan receptors"]) {
-            addItemsToCircle(Targets.Target_2, { "Orphan receptors": classData["Orphan receptors"] });
+            addItemsToCircle(Darts.Dart_AO, { "Orphan receptors": classData["Orphan receptors"] });
         }
 
         // Circle 3: "Class B1 (Secretin)" or "Class B2 (Adhesion)"
         if (className === "Class B1 (Secretin)" || className === "Class B2 (Adhesion)") {
-            addItemsToCircle(Targets.Target_3, classData);
+            addItemsToCircle(Darts.Dart_B, classData);
         }
 
         // Circle 4: "Class C (Glutamate)"
         if (className === "Class C (Glutamate)") {
-            addItemsToCircle(Targets.Target_4, classData);
+            addItemsToCircle(Darts.Dart_C, classData);
         }
 
         // Circle 5: "Class F (Frizzled)"
         if (className === "Class F (Frizzled)") {
-            addItemsToCircle(Targets.Target_5, classData);
+            addItemsToCircle(Darts.Dart_F, classData);
         }
 
         // Circle 6: "Class T (Taste 2)"
         if (className === "Class T (Taste 2)") {
-            addItemsToCircle(Targets.Target_6, classData);
+            addItemsToCircle(Darts.Dart_T, classData);
         }
 
         // Circle 7: "Other GPCRs"
         if (className === "Other GPCRs") {
-            addItemsToCircle(Targets.Target_7, classData);
+            addItemsToCircle(Darts.Dart_CL, classData);
         }
     });
 
     // Convert the arrays to unique values
-    Object.keys(Targets).forEach(TargetKey => {
-        Object.keys(Targets[TargetKey]).forEach(familyKey => {
-            Targets[TargetKey][familyKey] = Array.from(new Set(Targets[TargetKey][familyKey]));
+    Object.keys(Darts).forEach(DartKey => {
+        Object.keys(Darts[DartKey]).forEach(familyKey => {
+            Darts[DartKey][familyKey] = Array.from(new Set(Darts[DartKey][familyKey]));
         });
     });
 
-    // Print out Target name and total number of values within each Target
-    // Object.keys(Targets).forEach(TargetKey => {
+    // Print out Dart name and total number of values within each Dart
+    // Object.keys(Darts).forEach(DartKey => {
     //     let totalValues = 0;
-    //     Object.keys(Targets[TargetKey]).forEach(familyKey => {
-    //         totalValues += Targets[TargetKey][familyKey].length;
+    //     Object.keys(Darts[DartKey]).forEach(familyKey => {
+    //         totalValues += Darts[DartKey][familyKey].length;
     //     });
-    //     console.log(`${TargetKey}: Total number of values = ${totalValues}`);
+    //     console.log(`${DartKey}: Total number of values = ${totalValues}`);
     // });
 
-    return Targets;
+    return Darts;
 }
 
-function formatTextWithHTML(text) {
+function formatTextWithHTML(text, Family_list, level) {
+    // Check if the text is in the Family_list
+    const isInFamilyList = Family_list.includes(text);
+
     // Apply all the replacements step by step
-    return text
+    let formattedText = text
         .replace(" receptor", '')
         .replace("-adrenoceptor", '')
         .replace(" receptor-", '-')
@@ -2510,14 +2550,35 @@ function formatTextWithHTML(text) {
         .replace("Short-wave-sensitive", 'SWS')
         .replace("Olfactory", 'OLF')
         .replace("calcitonin-like receptor", 'CLR');
+
+    // Apply additional formatting if the text is in the Family_list
+    if (isInFamilyList) {
+        formattedText = formattedText
+            .replace(/( receptors|neuropeptide )/g, '') // Remove specific substrings
+            .replace(/(-releasing)/g, '-rel.') // Remove specific substrings
+            .replace(/(-concentrating)/g, '-conc.') // Remove specific substrings
+            .split(" (")[0]; // Keep only the part before the first " ("
+
+        // Truncate if necessary
+        if (formattedText.length > 15 && level > 1) {
+            return formattedText.substring(0, 15) + "...";
+        }
+    }
+
+    return formattedText;
 }
 
 
-function Draw_Targets(layout_data, fill_data, location,Target_styling) {
+
+
+
+function Draw_Darts(layout_data, fill_data, location,Dart_styling) {
 
     dimensions = { height: 1000, width: 1000 };
 
-    const Spacing = Target_styling.Spacing;
+    const Spacing = Dart_styling.Spacing;
+    const datatype = Dart_styling.datatype;
+    const family = Dart_styling.family
 
     // Append SVG to the div with the provided id
     const svg = d3.select("#" + location)
@@ -2525,16 +2586,16 @@ function Draw_Targets(layout_data, fill_data, location,Target_styling) {
         .attr("width", dimensions.width)
         .attr("height", dimensions.height);
 
-    // Draw concentric Target for layout_data
-    Draw_a_Target(layout_data.Target_1, fill_data, 0, dimensions,Spacing);
-    Draw_a_Target(layout_data.Target_2, fill_data, 1, dimensions,Spacing);
-    Draw_a_Target(layout_data.Target_3, fill_data, 2, dimensions,Spacing);
-    Draw_a_Target(layout_data.Target_4, fill_data, 3, dimensions,Spacing);
-    Draw_a_Target(layout_data.Target_5, fill_data, 4, dimensions,Spacing);
-    Draw_a_Target(layout_data.Target_6, fill_data, 5, dimensions,Spacing);
-    Draw_a_Target(layout_data.Target_7, fill_data, 6, dimensions,Spacing);
+    // Draw concentric Dart for layout_data
+    Draw_a_Dart(layout_data.Dart_A, fill_data, 0, dimensions,Spacing);
+    Draw_a_Dart(layout_data.Dart_AO, fill_data, 1, dimensions,Spacing);
+    Draw_a_Dart(layout_data.Dart_B, fill_data, 2, dimensions,Spacing);
+    Draw_a_Dart(layout_data.Dart_C, fill_data, 3, dimensions,Spacing);
+    Draw_a_Dart(layout_data.Dart_T, fill_data, 4, dimensions,Spacing);
+    Draw_a_Dart(layout_data.Dart_F, fill_data, 5, dimensions,Spacing);
+    Draw_a_Dart(layout_data.Dart_CL, fill_data, 6, dimensions,Spacing);
 
-    function Draw_a_Target(label_data, fill_data, level, dimensions,Spacing) {
+    function Draw_a_Dart(label_data, fill_data, level, dimensions,Spacing) {
 
         // Define SVG dimensions
         const width = dimensions.width;
@@ -2542,30 +2603,51 @@ function Draw_Targets(layout_data, fill_data, location,Target_styling) {
         const label_offset = 7; // Increased offset to push labels outward
         
 
-        const Target_radius = Math.min(width, height) / 2 - 60 - (70 * level); // Radius for each Target
+        const Dart_radius = Math.min(width, height) / 2 - 60 - (70 * level); // Radius for each Dart
 
         let values = [];
-        if (Spacing && Object.keys(label_data).length > 1) {
-            // If Spacing is true and there are multiple keys
-            for (const key in label_data) {
-                if (label_data.hasOwnProperty(key)) {
-                    values = values.concat(label_data[key], ""); // Add an empty string as a placeholder
+        let Family_list  = []
+        if (family) {
+            if (Spacing && Object.keys(label_data).length > 1) {
+                // If Spacing is true and there are multiple keys
+                for (const key in label_data) {
+                    if (label_data.hasOwnProperty(key)) {
+                        // Add the key (family name) to the beginning of the values
+                        values.push(key);
+                        Family_list.push(key)
+                        // Add the associated values
+                        values = values.concat(label_data[key]);
+                    }
                 }
+            } else {
+                // If Spacing is false or there is only one key
+                values = Object.values(label_data).flat(); // Flatten the data without placeholders
             }
         } else {
-            // If Spacing is false or there is only one key
-            values = Object.values(label_data).flat(); // Flatten the data without placeholders
+            if (Spacing && Object.keys(label_data).length > 1) {
+                // If Spacing is true and there are multiple keys
+                for (const key in label_data) {
+                    if (label_data.hasOwnProperty(key)) {
+                        values = values.concat(label_data[key], ""); // Add an empty string as a placeholder
+                    }
+                }
+            } else {
+                // If Spacing is false or there is only one key
+                values = Object.values(label_data).flat(); // Flatten the data without placeholders
+            }
         }
 
         // Add in Class
 
         if (level == 0) {
+            values.unshift("");
             values.unshift("CLASS A");
+            values.push("");
         } else if (level == 1) {
             values.unshift("A ORPHANS");
         } else if (level == 2) {
             if (Spacing) {
-                values.splice(19, 0, "CLASS B2"); 
+                values.splice(20, 0, "CLASS B2"); 
             } else {
                 values.splice(15, 0, "CLASS B2");
             }
@@ -2573,122 +2655,130 @@ function Draw_Targets(layout_data, fill_data, location,Target_styling) {
         } else if (level == 3) {
             values.unshift("CLASS C");
         } else if (level == 4) {
-            values.unshift("CLASS F");
+            values.unshift("CLASS T2");
         } else if (level == 5) {
-            values.unshift("CLASS T");
+            values.unshift("CLASS F");
         } else if (level == 6) {
             values.unshift("CLASSLESS");
         }
 
-        function calculatePositionAndAngle(index, total) {
+        Header_list = ["CLASS A","A ORPHANS","CLASS B1","CLASS B2","CLASS C","CLASS F","CLASS T2","CLASSLESS"];
+
+        function calculatePositionAndAngle(index, total, values, Header_list, Family_list) {
+            // Get the text value at the current index
+            const text_value = values[index];
+            
+            // Check if the text value is in the Header_list
+            const isInHeaderList = Header_list.includes(text_value);
+            
+            // Check if the text value is in the Family_list
+            const isInFamilyList = Family_list.includes(text_value);
+            
             // Offset the angle calculation by -90 degrees (or -π/2 radians) to start at 12 o'clock
             const angle = -((index / total) * 2 * Math.PI) + (Math.PI / 2);
-        
-            // Position on the Target's border with or without label offset
-            const x = width / 2 + Math.cos(angle) * (index === 0 ? (Target_radius-3) : (Target_radius + label_offset));
-            const y = height / 2 - Math.sin(angle) * (index === 0 ? (Target_radius-3) : (Target_radius + label_offset));
-        
+            
+            // Position on the Dart's border with or without label offset
+            const x = width / 2 + Math.cos(angle) * (isInFamilyList ? (Dart_radius - 10) : (isInHeaderList ? (Dart_radius - 10) : (Dart_radius + label_offset)));
+            const y = height / 2 - Math.sin(angle) * (isInFamilyList ? (Dart_radius - 10) : (isInHeaderList ? (Dart_radius - 10) : (Dart_radius + label_offset)));
+            
             // Rotation angle so that the text faces outward
             const rotation = -(angle * 180 / Math.PI);
+            
+            return { x, y, rotation };
+        }
         
-            return { x, y, rotation };
-        }
-
-        function calculateDataPositionAndAngle(index, total) {
-            // Offset the angle calculation by -90 degrees (or -π/2 radians) to start at 12 o'clock ("-" its clockwise)
-            const angle = -((index / total) * 2 * Math.PI) + (Math.PI / 2);
 
 
-            // Position on the Target's border with label offset
-            const x = width / 2 + Math.cos(angle) * (Target_radius);
-            const y = height / 2 - Math.sin(angle) * (Target_radius);
+        // Bind data and append text elements for the specific Dart
+        svg.selectAll(`.Dart-text-${level}`)
+            .data(values)
+            .enter()
+            .append("text")
+            .attr("class", (d) => 
+                Header_list.includes(d) ? `Dart-text-${level} Dart-text-${level}-highlight` : `Dart-text-${level}`
+            )
+            .attr("x", (d, i) => {
+                const pos = calculatePositionAndAngle(i, values.length, values, Header_list,Family_list);
+                return pos.x;
+            })
+            .attr("y", (d, i) => {
+                const pos = calculatePositionAndAngle(i, values.length, values, Header_list,Family_list);
+                return pos.y;
+            })
+            .attr("text-anchor", (d, i) => {
+                const angle = (i / values.length) * 360 - 90;
+                return (angle >= -90 && angle < 90) ? "start" : "end";
+            })
+            .attr("dominant-baseline", "middle")
+            .attr("dy", (d) => Header_list.includes(d) ? "0.1em" : "0.05em")  // Adjust 'dy' as needed
+            .attr("transform", (d, i) => {
+                const pos = calculatePositionAndAngle(i, values.length, values, Header_list,Family_list);
+                const angle = (i / values.length) * 360 - 90;
+                const rotation = angle >= -90 && angle < 90  ? 0 : 180;
+                return `rotate(${pos.rotation + rotation}, ${pos.x}, ${pos.y})`;
+            })
+            .html(d => formatTextWithHTML(d, Family_list,level))
+            .style("font-size", d => Header_list.includes(d) ? "10px" : "8px")
+            .style("font-family", "Palatino")
+            .attr("font-weight", d => Header_list.includes(d) || Family_list.includes(d) ? "950" : "normal")
+            .style("fill", d => Header_list.includes(d) ? "Black" : "black")
+            // .style("background",'black')
+            // .style("text-decoration", d => Header_list.includes(d) ? "underline" : "none");
+        
+        // Define color scale for continuous data
+        const colorScale = d3.scaleLinear()
+        .domain([Darts_styling.minValue, Darts_styling.median_value, Darts_styling.maxValue])  // Input domain with median
+        .range([Darts_styling.colorStart, Darts_styling.color_median, Darts_styling.colorEnd]);  // Output range with median color
 
-            // Rotation angle so that the text faces outward
-            const rotation = -(angle * 180 / Math.PI);
+        // Add large hollow pie chart for the entire level
+        const arcGenerator = d3.arc()
+            .innerRadius(Dart_radius - 10)  // Adjust to control the hollow center size
+            .outerRadius(Dart_radius)  // Adjust to control the thickness of the pie
+            // .padAngle(level === 4 ? 0.3 : 0); // Apply padding only if level is 4
 
-            return { x, y, rotation };
-        }
-        if (level % 2 === 0) {  // Check if it's every other circle (i.e., even index)
-            // Append the outer circle (larger radius)
-            svg.append("circle")
-            .attr("cx", width / 2)  // X position (center of the Target)
-            .attr("cy", height / 2) // Y position (center of the Target)
-            .attr("r", Target_radius+60)  // Outer radius of the band
-            .style("fill", "lightgray")  // Light gray fill color
-            .style("opacity", 0.5)       // 50% transparency
-            .style("stroke", "none");    // No stroke for the outer circle
+        const pieGenerator = d3.pie()
+            .sort(null)
+            .value(1)  // Create equal slices for each value
+            .startAngle(-Math.PI / values.length)  // Offset to move the slices left by half their size
+            .endAngle(2 * Math.PI - Math.PI / values.length);  // Correct end angle for full circle
 
-            // Append the inner circle (smaller radius) with the same fill to cover the inner part
-            svg.append("circle")
-            .attr("cx", width / 2)  // X position (center of the Target)
-            .attr("cy", height / 2) // Y position (center of the Target)
-            .attr("r", Target_radius-10)  // Inner radius of the band
-            .style("fill", "white")      // White fill to cover the inner area
-            .style("opacity", 1)         // No transparency for the inner circle
-            .style("stroke", "none");    // No stroke for the inner circle
-        }
-        // console.log(calculatePositionAndAngle(61, values.length),values.length);
+        const pieData = pieGenerator(values);
 
-        // Bind data and append text elements for the specific Target
-        svg.selectAll(`.Target-text-${level}`)  // Unique selection class for each level
-        .data(values)
-        .enter()
-        .append("text")
-        .attr("class", (d, i) => 
-            i === 0 ? `Target-text-${level} Target-text-${level}-first` : `Target-text-${level}`
-        )  // Assign an additional class to the first element
-        .attr("x", (d, i) => {
-            const pos = calculatePositionAndAngle(i, values.length);
-            return pos.x;
-        })
-        .attr("y", (d, i) => {
-            const pos = calculatePositionAndAngle(i, values.length);
-            return pos.y;
-        })
-        .attr("text-anchor", (d, i) => {
-            const angle = (i / values.length) * 360 - 90;
-            return (angle >= -90 && angle < 90) ? "start" : "end";
-        })
-        .attr("dominant-baseline", "middle")
-        .attr("transform", (d, i) => {
-            const pos = calculatePositionAndAngle(i, values.length);
-            const angle = (i / values.length) * 360 - 90;
-            const rotation = angle >= -90 && angle < 90  ? 0 : 180;
-            return `rotate(${pos.rotation + rotation}, ${pos.x}, ${pos.y})`;
-        })
-        .html(d => formatTextWithHTML(d))
-        .style("font-size", (d, i) => i === 0 ? "10px" : "9px")  // Larger font size for the first element
-        .style("font-family", "Palatino")
-        .attr("font-weight", (d, i) => i === 0 ? "bold" : "normal")
-        .style("fill", "black");
+        svg.selectAll(`.large-hollow-pie-${level}`)
+            .data(pieData)
+            .enter()
+            .append("path")
+            .attr("class", `large-hollow-pie-${level}`)
+            .attr("d", arcGenerator)
+            .attr("transform", `translate(${width / 2}, ${height / 2})`)
+            .style("fill", (d) => {
+                const value = fill_data[d.data]?.Value1;
 
-         // Add data Targets
-        svg.selectAll(`.data-Target-${level}`) // Unique selection class for each level
-        .data(values) // Use values to ensure correct positions
-        .enter()
-        .append("circle")
-        .attr("class", `data-Target-${level}`)  // Unique class to each Target element
-        .attr("cx", (d, i) => {
-            const pos = calculateDataPositionAndAngle(i, values.length);
-            return pos.x;
-        })
-        .attr("cy", (d, i) => {
-            const pos = calculateDataPositionAndAngle(i, values.length);
-            return pos.y;
-        })
-        .attr("r", 3) // Adjust the radius of the Targets as needed
-        .style("fill", d => {
-            // Use the label to get the corresponding value in fill_data
-            const value = fill_data[d]?.Value1;
-            if (value === "Yes") return "black";
-            if (value === "No") return "none";
-            return "none"; // For empty values
-        })
-        .style("stroke", "black")
-        .style("stroke-width", d => {
-            const value = fill_data[d]?.Value1;
-            return value ? 1 : 0; // Set stroke-width to 0 if there's no value
-        });
+                if (datatype === "Continuous") {
+                    // Use color scale for continuous data
+                    const numericValue = parseFloat(value);
+                    
+                    if (numericValue === 0) {
+                        return "white";  // Return "white" if the value is 0
+                    }
+                    
+                    return !isNaN(numericValue) ? colorScale(numericValue) : "none";
+                } else {
+                    // Handle discrete data or default case
+                    if (value === "Yes") return "green";
+                    if (value === "No") return "red";
+                    return "none";  // Make the slice invisible if the value is ""
+                }
+            })
+            .style("stroke", (d) => {
+                const value = fill_data[d.data]?.Value1;
+                if (value === "Yes" || value === "No" || !isNaN(value)) return "black";
+                return "none";  // Remove the stroke if the value is ""
+            })
+            .style("stroke-width", (d) => {
+                const value = fill_data[d.data]?.Value1;
+                return value === "" ? 0 : 0.5;  // Set stroke-width to 0 if the value is an empty string
+            });
     }
 }
 
