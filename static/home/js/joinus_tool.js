@@ -16,7 +16,7 @@ function joinus(type) {
 			break;
 		case "media":
 			title += "Social media";
-			message = "To follow the latest updates and news from GPCRdb join our <a href='https://www.linkedin.com/groups/8104679/' target='_blank'>LinkedIn group</a> and follow us on Twitter (<a href='https://twitter.com/gpcrdb' target='_blank'>@gpcrdb</a>). The latest releases are also listed on the main page of GPCRdb.";
+			message = "To follow the latest updates and news from GPCRdb join our <a href='https://www.linkedin.com/groups/8104679/' target='_blank'>LinkedIn group</a> and follow us on X (<a href='https://x.com/gpcrdb' target='_blank'>@gpcrdb</a>). The latest releases are also listed on the main page of GPCRdb.";
 			break;
 		case "feedback":
 		default:
