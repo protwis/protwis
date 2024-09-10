@@ -8,6 +8,7 @@ try:
     from Bio.PDB.vectors import rotaxis
 except:
     from Bio.PDB import rotaxis
+from Bio.Align import PairwiseAligner
 
 from django.conf import settings
 from common.alignment import Alignment
@@ -1418,6 +1419,75 @@ class ModelRotamer(object):
     def __init__(self):
         self.backbone_template = None
         self.rotamer_template = None
+
+
+class X50Finder():
+    '''Find corresponding x50 positions based on best BLAST hit in db
+    '''
+    def __init__(self, uniprot_file):
+        self.uniprot_file = uniprot_file
+        p = PDBParser()
+        self.biopdb = p.get_structure('structure', self.uniprot_file)
+        self.top_hit = None
+
+    def get_sequence_from_structure(self):
+        structure_seq = {}
+        for chain in self.biopdb[0]:
+            chain_id = chain.get_id()
+            structure_seq[chain_id] = ''
+            for res in chain:
+                if "CA" in res and res.id[0]==" ":
+                    structure_seq[chain_id]+=polypeptide.three_to_one(res.get_resname())
+        return structure_seq
+
+    def run(self):
+        structure_seq = self.get_sequence_from_structure()
+        self.blast_search = BlastSearch(top_results=25)
+        out_x50 = {}
+        for chain, seq in structure_seq.items():
+            out_x50[chain] = {}
+            blast_output = self.blast_search.run(seq)
+            found_good_match = False
+            for b in blast_output:
+                ref = Protein.objects.get(id=int(b[0]))
+                aligner = PairwiseAligner()
+                aligner.open_gap_score = -2
+                aligner.extend_gap_score = -1
+                aligner.mode = 'global'
+                pw2 = aligner.align(ref.sequence, seq)
+
+                alignment_fragments = [i for i in str(pw2[0][1]).split('-') if i!='' and len(i)<10]
+                if len(alignment_fragments)<4:
+                    found_good_match = True
+                    break
+            self.top_hit = ref
+
+            if not found_good_match:
+                print('ERROR: no good pairwise alignment for {}'.format(self.uniprot_file.split('/')[-1]))
+
+            ref_seq, temp_seq = str(pw2[0][0]), str(pw2[0][1])
+
+            x50s = Residue.objects.filter(protein_conformation__protein=ref, display_generic_number__label__endswith='x50')
+            indeces = {}
+            for x in x50s:
+                c, i = 1, 0
+                for r in ref_seq:
+                    if r!='-':
+                        c+=1
+                    i+=1
+                    if c==x.sequence_number:
+                        break
+                indeces[x.display_generic_number.label] = i
+
+            for gn, i in indeces.items():
+                before = len(temp_seq[:i+1].replace('-',''))
+                after = len(temp_seq[i:].replace('-',''))
+                if after==0 or (temp_seq[i]=='-' and temp_seq[i+1]=='-' and temp_seq[i+2]=='-'):
+                    out_x50[chain][gn] = '-'
+                else:
+                    out_x50[chain][gn] = before
+
+        return out_x50
 
 
 def update_template_source(template_source, keys, struct, segment, just_rot=False):

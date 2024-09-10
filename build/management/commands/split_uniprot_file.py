@@ -20,10 +20,19 @@ class Command(BaseCommand):
             action='store',
             dest='filename',
             help='Path to Uniprot text file')
+        parser.add_argument('-d', '--destination',
+            action='store',
+            dest='destination',
+            default=False,
+            help='Path to file destination')
 
     local_uniprot_dir = os.sep.join([settings.DATA_DIR, 'protein_data', 'uniprot'])
 
     def handle(self, *args, **options):
+        if options['destination']:
+            self.output_destination = options['destination']
+        else:
+            self.output_destination = self.local_uniprot_dir
         if 'filename' in options and options['filename']:
             filename = options['filename']
             if os.path.isfile(filename):
@@ -42,7 +51,7 @@ class Command(BaseCommand):
                     # Only pick the first one
                     ac = acs[1]
                     output_filename = ac + '.txt'
-                    output_file_path = os.sep.join([self.local_uniprot_dir, output_filename])
+                    output_file_path = os.sep.join([self.output_destination, output_filename])
                     with open(output_file_path, "w") as output_file:
                         for bline in line_buffer:
                             output_file.write(bline)
