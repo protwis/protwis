@@ -107,11 +107,7 @@ class Command(BaseCommand):
                         if up['entry_name'] not in self.nonxtal_seg_ends:
                             x = X50Finder(os.sep.join([path_to_models, m]))
                             x50s_gn = x.run()
-                            p = PDBParser()
-                            print(x.top_hit, x.top_hit.accession)
-                            raise AssertionError()
-                            ref_struct = p.get_structure('ref_struct', )
-                            superposed = x.structure_align(, x.biopdb)
+
                             if self.debug:
                                 print('Top blast hit:', x.top_hit)
                             temp_anomalies = {}

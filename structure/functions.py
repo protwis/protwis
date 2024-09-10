@@ -8,7 +8,6 @@ try:
     from Bio.PDB.vectors import rotaxis
 except:
     from Bio.PDB import rotaxis
-from Bio import pairwise2
 from Bio.Align import PairwiseAligner
 
 from django.conf import settings
@@ -1444,7 +1443,6 @@ class X50Finder():
     def run(self):
         structure_seq = self.get_sequence_from_structure()
         self.blast_search = BlastSearch(top_results=25)
-        
         out_x50 = {}
         for chain, seq in structure_seq.items():
             out_x50[chain] = {}
