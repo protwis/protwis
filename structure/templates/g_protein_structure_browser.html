@@ -118,7 +118,7 @@
                             </div>
                         </th>
                         <th colspan=2 class="over_header flexible_over_header" id='endo_ligand_over_header'>
-                            <div class='overhead_text'>ENDOGENOUS LIGAND</div>
+                            <div class='overhead_text'>PHYSIOLOGICAL LIGAND</div>
                                 <div class='overhead_close'>
                                     <button type="button" class="close hide_columns" columns="25,26" style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                                 </div>
@@ -290,7 +290,7 @@
                         <td>
                             {{ structure.ligands.all|ligandrole|linebreaksbr }}
                         </td>
-                        <!-- Endogenous ligand -->
+                        <!-- Physiological ligand -->
                         <td class='expand'>
                             {% autoescape off %}
                               {{ structure.protein_conformation.protein.parent.endogenous_gtp_set.all | endo_format }}
@@ -364,7 +364,7 @@
                           </div>
                       </th>
                       <th colspan=2 class="over_header flexible_over_header" id='endo_ligand_over_header'>
-                          <div class='overhead_text'>ENDOGENOUS LIGAND</div>
+                          <div class='overhead_text'>PHYSIOLOGICAL LIGAND</div>
                               <div class='overhead_close'>
                                   <button type="button" class="close hide_columns" columns="25,26" style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                               </div>
@@ -522,7 +522,7 @@
                       <td>
                           {{ structure.ligands.all|ligandrole|linebreaksbr }}
                       </td>
-                      <!-- Endogenous ligand -->
+                      <!-- Physiological ligand -->
                       <td class='expand'>
                           {% autoescape off %}
                             {{ structure.protein_conformation.protein.parent.endogenous_gtp_set.all | endo_format }}
