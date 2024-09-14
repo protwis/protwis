@@ -331,7 +331,7 @@ function changeLeavesLabels(location, value, dict){
     });
   }
 
-  function DrawCircles(location, data, starter, dict, clean = true, gradient = true, circle_styling_dict,circle_spacer,circle_size) {
+  function DrawCircles(location, data, starter, dict, clean = true, gradient = true, circle_styling_dict, circle_spacer, circle_size) {
     var svg = d3.select('#' + location);
     var node = svg.selectAll(".node");
 
@@ -854,6 +854,38 @@ function initializeDataStyling(list_data_wow, data_types_list) {
 
     return Data_styling;
 }
+
+// Function to modify the data
+function modifyData(data) {
+    // 1. Change "Other GPCRs" to "Classless" (Layer1)
+    if (data["Other GPCRs"]) {
+      data["Classless"] = data["Other GPCRs"];
+      delete data["Other GPCRs"];
+    }
+  
+    // 2. Change "Other GPCR orphans" to "Classless orphans" (Layer3)
+    Object.keys(data).forEach(layer1Key => {
+      const layer2Data = data[layer1Key];
+      Object.keys(layer2Data).forEach(layer2Key => {
+        const layer3Data = layer2Data[layer2Key];
+        if (layer3Data["Other GPCR orphans"]) {
+          layer3Data["Classless orphans"] = layer3Data["Other GPCR orphans"];
+          delete layer3Data["Other GPCR orphans"];
+        }
+      });
+    });
+  
+    // 3. Remove "Olfactory receptors" from Layer2
+    Object.keys(data).forEach(layer1Key => {
+      const layer2Data = data[layer1Key];
+      if (layer2Data["Olfactory receptors"]) {
+        delete layer2Data["Olfactory receptors"];
+      }
+    });
+  
+    return data;  // Return the modified data
+  }
+
 // ### Visualization Function ###
 function renderDataVisualization(data, location,styling_option,Layout_dict,data_styling,label_conversion_dict,label_names) {
 
@@ -869,6 +901,110 @@ function renderDataVisualization(data, location,styling_option,Layout_dict,data_
     let Checklist = [Layer1_isChecked, Layer2_isChecked, Layer3_isChecked];
 
     // Indentation
+
+    // Data sorter depending on layers being shown:
+
+    // Function to merge Layer3 into Layer2 while preserving the Layer4 arrays.
+    // Function to merge Layer3 into Layer2 while preserving the Layer4 arrays.
+
+    // // Function for natural sorting of keys and values (Layer1, Layer2, Layer3, Layer4)
+    // function naturalSort(a, b) {
+    //     return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
+    // }
+
+
+
+    // // Function to merge Layer3 into Layer2 while preserving Layer4 arrays
+    // function mergeLayer3IntoLayer2(data, checklist) {
+    //     const [layer1IsChecked, layer2IsChecked, layer3IsChecked] = checklist;
+    //     const mergedData = {};
+
+    //     Object.entries(data).forEach(([layer1Key, layer1Value]) => {
+    //         if (layer1IsChecked) {
+    //             mergedData[layer1Key] = {};
+    //         }
+
+    //         Object.entries(layer1Value).forEach(([layer2Key, layer2Value]) => {
+    //             if (layer1IsChecked) {
+    //                 mergedData[layer1Key][layer2Key] = {};
+    //             } else {
+    //                 mergedData[layer2Key] = {};
+    //             }
+
+    //             if (layer2IsChecked && !layer3IsChecked) {
+    //                 // If Layer3 is unchecked, merge its contents into Layer2
+    //                 Object.entries(layer2Value).forEach(([layer3Key, layer3Value]) => {
+    //                     // Ensure Layer4 arrays are preserved and merged into Layer2
+    //                     if (!mergedData[layer1Key][layer2Key]) {
+    //                         mergedData[layer1Key][layer2Key] = [];
+    //                     }
+    //                     mergedData[layer1Key][layer2Key] = [
+    //                         ...mergedData[layer1Key][layer2Key],
+    //                         ...layer3Value
+    //                     ];
+    //                 });
+    //             } else if (layer3IsChecked) {
+    //                 // If Layer3 is checked, retain Layer3 structure
+    //                 if (layer1IsChecked) {
+    //                     mergedData[layer1Key][layer2Key] = layer2Value;
+    //                 } else {
+    //                     mergedData[layer2Key] = layer2Value;
+    //                 }
+    //             } else if (layer1IsChecked) {
+    //                 mergedData[layer1Key][layer2Key] = layer2Value;
+    //             }
+    //         });
+    //     });
+
+    //     return mergedData;
+    // }
+
+    // // Recursive function to sort the data based on active layers
+    // function sortDataBasedOnLayers(data, checklist) {
+    //     const activeLayers = checklist
+    //         .map((isChecked, index) => (isChecked ? index + 1 : null))
+    //         .filter(Boolean); // Array of active layers
+
+    //     function sortLayer(data, layerIndex = 0) {
+    //         if (Array.isArray(data)) {
+    //             // Sort Layer4 arrays naturally
+    //             return data.sort(naturalSort);
+    //         } else if (typeof data === 'object' && data !== null) {
+    //             const keys = Object.keys(data).sort(naturalSort);
+    //             const sortedData = {};
+
+    //             keys.forEach((key) => {
+    //                 if (activeLayers[layerIndex] !== undefined) {
+    //                     sortedData[key] = sortLayer(data[key], layerIndex + 1);
+    //                 } else {
+    //                     sortedData[key] = data[key]; // Stop sorting if no more layers
+    //                 }
+    //             });
+
+    //             return sortedData;
+    //         }
+    //         return data; // Return non-object values as is
+    //     }
+
+    //     return sortLayer(data);
+    // }
+
+    // // Sort the data based on the checklist and apply merging if necessary
+    // function processData(data_unsorted, checklist) {
+    //     let data;
+    //     const [layer1IsChecked, layer2IsChecked, layer3IsChecked] = checklist;
+
+    //     if (!layer1IsChecked || !layer3IsChecked) {
+    //         data = mergeLayer3IntoLayer2(data_unsorted, checklist);
+    //     } else {
+    //         data = data_unsorted;
+    //     }
+
+    //     // Sort the data after merging
+    //     return sortDataBasedOnLayers(data, checklist);
+    // }
+    //     // Sort and merge the data based on the checklist
+    //     const data = processData(data_unsorted, Checklist);
 
     // const Indentation_toggle = d3.select(`#toggle-indentation`).property('checked');
 
@@ -1362,8 +1498,12 @@ function renderDataVisualization(data, location,styling_option,Layout_dict,data_
         Object.keys(data_styling).forEach(function(col) {
             Color_dict[col] = {};
             if (data_styling[col].data_color_complexity == 'One') {
-                Color_dict[col]['All'] = d3.scale.linear().domain([data_styling[col].Data_min,data_styling[col].Data_max]).range(["#FFFFFF", data_styling[col].Data_color1]);
+                Color_dict[col]['All'] = d3.scale.linear().domain([data_styling[col].Data_min,data_styling[col].Data_max]).range(["#FFFFFF", data_styling[col].Data_color2]);
             } else if (data_styling[col].data_color_complexity == 'Two') {
+                Color_dict[col]['All'] = d3.scale.linear()
+                .domain([data_styling[col].Data_min, data_styling[col].Data_max])
+                .range([data_styling[col].Data_color1, data_styling[col].Data_color2]);
+            } else if (data_styling[col].data_color_complexity == 'Three') {
                 Color_dict[col]['All'] = d3.scale.linear()
                 .domain([data_styling[col].Data_min, (data_styling[col].Data_min + data_styling[col].Data_max) / 2, data_styling[col].Data_max])
                 .range([data_styling[col].Data_color1, "#FFFFFF", data_styling[col].Data_color2]);
@@ -1942,25 +2082,38 @@ function renderDataVisualization(data, location,styling_option,Layout_dict,data_
             .attr('y1', '0%')
             .attr('y2', '0%');
 
-            // Starting color stop
-            gradient.append('stop')
-            .attr('offset', '0%');
-
             // Adjust gradient stops based on color complexity
-            if (Data_styling[column].data_color_complexity !== 'One') {
-                gradient.select('stop')
-                    .attr('stop-color', Data_styling[column].Data_color1); // Start with color1 at 0%
+            if (Data_styling[column].data_color_complexity === 'One') {
+            // One color: white to Data_color1
+            gradient.append('stop')
+                .attr('offset', '0%')
+                .attr('stop-color', '#FFFFFF'); // Start with white
 
-                gradient.append('stop')
-                    .attr('offset', '100%')
-                    .attr('stop-color', Data_styling[column].Data_color2); // End with color2 at 100%
-            } else {
-                gradient.select('stop')
-                    .attr('stop-color', '#FFFFFF'); // Start with white at 0%
+            gradient.append('stop')
+                .attr('offset', '100%')
+                .attr('stop-color', Data_styling[column].Data_color2); // End with color1
+            } else if (Data_styling[column].data_color_complexity === 'Two') {
+            // Two colors: Data_color1 to Data_color2
+            gradient.append('stop')
+                .attr('offset', '0%')
+                .attr('stop-color', Data_styling[column].Data_color1); // Start with color1
 
-                gradient.append('stop')
-                    .attr('offset', '100%')
-                    .attr('stop-color', Data_styling[column].Data_color1); // End with color1 at 100%
+            gradient.append('stop')
+                .attr('offset', '100%')
+                .attr('stop-color', Data_styling[column].Data_color2); // End with color2
+            } else if (Data_styling[column].data_color_complexity === 'Three') {
+            // Three colors: Data_color1 to white in the middle, then to Data_color2
+            gradient.append('stop')
+                .attr('offset', '0%')
+                .attr('stop-color', Data_styling[column].Data_color1); // Start with color1
+
+            gradient.append('stop')
+                .attr('offset', '50%')
+                .attr('stop-color', '#FFFFFF'); // Middle with white
+
+            gradient.append('stop')
+                .attr('offset', '100%')
+                .attr('stop-color', Data_styling[column].Data_color2); // End with color2
             }
 
             // Border around the rectangle
@@ -2188,7 +2341,7 @@ function Heatmap(data, location, heatmap_DataStyling,label_x_converter) {
       .append("svg")
       .attr("width", width + margin.left + margin.right)
       .attr("height", height + (rotation === 90 ? (margin.top * longestLabel/3) : (margin.top*2))) // Needs to account for label length or something like it.
-      .attr("id", "Heatmap_plot");
+      .attr("id", "Heatmap_plot_svg");
 
     //  x / y scale transformers
     const x = d3.scale.ordinal()
@@ -2423,36 +2576,36 @@ function Heatmap(data, location, heatmap_DataStyling,label_x_converter) {
   }
 
 // #################
-// ###  Dart  ###
+// ###  GPCRome  ###
 // #################
 
-function Dart_initializeData(data) {
-    // Initialize the Darts
-    let Darts = {
-        Dart_A: {},
-        Dart_AO: {},
-        Dart_B: {},
-        Dart_C: {},
-        Dart_F: {},
-        Dart_T: {},
-        Dart_CL: {}
+function GPCRome_initializeData(data) {
+    // Initialize the GPCRomes
+    let GPCRomes = {
+        GPCRome_A: {},
+        GPCRome_AO: {},
+        GPCRome_B: {},
+        GPCRome_C: {},
+        GPCRome_F: {},
+        GPCRome_T: {},
+        GPCRome_CL: {}
     };
 
-    // Helper function to add items to the Dart using receptor family as key
-    function addItemsToCircle(Dart, items) {
+    // Helper function to add items to the GPCRome using receptor family as key
+    function addItemsToCircle(GPCRome, items) {
         Object.keys(items).forEach(ligandType => {
             const receptorFamilies = items[ligandType];
             
             // Ensure receptorFamilies is an object
             if (typeof receptorFamilies === 'object' && receptorFamilies !== null) {
                 Object.keys(receptorFamilies).forEach(family => {
-                    if (!Dart[family]) {
-                        Dart[family] = [];
+                    if (!GPCRome[family]) {
+                        GPCRome[family] = [];
                     }
 
                     const receptors = receptorFamilies[family];
                     if (Array.isArray(receptors)) {
-                        Dart[family].push(...receptors);
+                        GPCRome[family].push(...receptors);
                     } else {
                         console.warn(`Unexpected data format for family ${family}`);
                     }
@@ -2477,67 +2630,68 @@ function Dart_initializeData(data) {
         if (className === "Class A (Rhodopsin)") {
             Object.keys(classData).forEach(ligandType => {
                 if (ligandType !== "Orphan receptors" && ligandType !== "Olfactory receptors") {
-                    addItemsToCircle(Darts.Dart_A, { [ligandType]: classData[ligandType] });
+                    addItemsToCircle(GPCRomes.GPCRome_A, { [ligandType]: classData[ligandType] });
                 }
             });
         }
 
         // Circle 2: "Orphan receptors" from "Class A (Rhodopsin)" 
         if (className === "Class A (Rhodopsin)" && classData["Orphan receptors"]) {
-            addItemsToCircle(Darts.Dart_AO, { "Orphan receptors": classData["Orphan receptors"] });
+            addItemsToCircle(GPCRomes.GPCRome_AO, { "Orphan receptors": classData["Orphan receptors"] });
         }
 
         // Circle 3: "Class B1 (Secretin)" or "Class B2 (Adhesion)"
         if (className === "Class B1 (Secretin)" || className === "Class B2 (Adhesion)") {
-            addItemsToCircle(Darts.Dart_B, classData);
+            addItemsToCircle(GPCRomes.GPCRome_B, classData);
         }
 
         // Circle 4: "Class C (Glutamate)"
         if (className === "Class C (Glutamate)") {
-            addItemsToCircle(Darts.Dart_C, classData);
+            addItemsToCircle(GPCRomes.GPCRome_C, classData);
         }
 
         // Circle 5: "Class F (Frizzled)"
         if (className === "Class F (Frizzled)") {
-            addItemsToCircle(Darts.Dart_F, classData);
+            addItemsToCircle(GPCRomes.GPCRome_F, classData);
         }
 
         // Circle 6: "Class T (Taste 2)"
         if (className === "Class T (Taste 2)") {
-            addItemsToCircle(Darts.Dart_T, classData);
+            addItemsToCircle(GPCRomes.GPCRome_T, classData);
         }
 
         // Circle 7: "Other GPCRs"
         if (className === "Other GPCRs") {
-            addItemsToCircle(Darts.Dart_CL, classData);
+            addItemsToCircle(GPCRomes.GPCRome_CL, classData);
         }
     });
 
     // Convert the arrays to unique values
-    Object.keys(Darts).forEach(DartKey => {
-        Object.keys(Darts[DartKey]).forEach(familyKey => {
-            Darts[DartKey][familyKey] = Array.from(new Set(Darts[DartKey][familyKey]));
+    Object.keys(GPCRomes).forEach(GPCRomeKey => {
+        Object.keys(GPCRomes[GPCRomeKey]).forEach(familyKey => {
+            GPCRomes[GPCRomeKey][familyKey] = Array.from(new Set(GPCRomes[GPCRomeKey][familyKey]));
         });
     });
 
-    // Print out Dart name and total number of values within each Dart
-    // Object.keys(Darts).forEach(DartKey => {
+    // Print out GPCRome name and total number of values within each GPCRome
+    // Object.keys(GPCRomes).forEach(GPCRomeKey => {
     //     let totalValues = 0;
-    //     Object.keys(Darts[DartKey]).forEach(familyKey => {
-    //         totalValues += Darts[DartKey][familyKey].length;
+    //     Object.keys(GPCRomes[GPCRomeKey]).forEach(familyKey => {
+    //         totalValues += GPCRomes[GPCRomeKey][familyKey].length;
     //     });
-    //     console.log(`${DartKey}: Total number of values = ${totalValues}`);
+    //     console.log(`${GPCRomeKey}: Total number of values = ${totalValues}`);
     // });
 
-    return Darts;
+    return GPCRomes;
 }
 
-function formatTextWithHTML(text, Family_list, level) {
+function GPCRome_formatTextWithHTML(text, Family_list) {
     // Check if the text is in the Family_list
     const isInFamilyList = Family_list.includes(text);
 
     // Apply all the replacements step by step
     let formattedText = text
+        .replace(" receptors", '')
         .replace(" receptor", '')
         .replace("-adrenoceptor", '')
         .replace(" receptor-", '-')
@@ -2549,7 +2703,8 @@ function formatTextWithHTML(text, Family_list, level) {
         .replace("Medium-wave-sensitive", 'MWS')
         .replace("Short-wave-sensitive", 'SWS')
         .replace("Olfactory", 'OLF')
-        .replace("calcitonin-like receptor", 'CLR');
+        .replace("calcitonin-like receptor", 'CLR')
+        .replace("5-Hydroxytryptamine", '5-HT');
 
     // Apply additional formatting if the text is in the Family_list
     if (isInFamilyList) {
@@ -2557,45 +2712,132 @@ function formatTextWithHTML(text, Family_list, level) {
             .replace(/( receptors|neuropeptide )/g, '') // Remove specific substrings
             .replace(/(-releasing)/g, '-rel.') // Remove specific substrings
             .replace(/(-concentrating)/g, '-conc.') // Remove specific substrings
+            .replace(/( and )/g, ' & ') // Remove specific substrings
+            .replace(/(GPR18, GPR55 & GPR119)/g, 'GPR18, 55 & 119') // Remove specific substrings
+            .replace(/(Class C Orphans)/g, 'Orphans') // Remove specific substrings
+            .split("</tspan>")[0]
             .split(" (")[0]; // Keep only the part before the first " ("
+            
 
-        // Truncate if necessary
-        if (formattedText.length > 15 && level > 1) {
-            return formattedText.substring(0, 15) + "...";
-        }
+        // // Truncate if necessary
+        // if (formattedText.length > 15 && level > 1) {
+        //     return formattedText.substring(0, 15) + "...";
+        // }
     }
 
     return formattedText;
 }
 
 
-
-
-
-function Draw_Darts(layout_data, fill_data, location,Dart_styling) {
+function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling) {
 
     dimensions = { height: 1000, width: 1000 };
 
-    const Spacing = Dart_styling.Spacing;
-    const datatype = Dart_styling.datatype;
-    const family = Dart_styling.family
+    const Spacing = GPCRome_styling.Spacing;
+    const datatype = GPCRome_styling.datatype;
+    const family = GPCRome_styling.family
+    const showIcon = GPCRome_styling.showIcon;  // Get the icon visibility state
 
     // Append SVG to the div with the provided id
-    const svg = d3.select("#" + location)
+    const svg = d3v4.select("#" + location)
         .append("svg")
+        .attr("id", "GPCRome_plot_svg")  // Add the id here for download reference
         .attr("width", dimensions.width)
         .attr("height", dimensions.height);
 
-    // Draw concentric Dart for layout_data
-    Draw_a_Dart(layout_data.Dart_A, fill_data, 0, dimensions,Spacing);
-    Draw_a_Dart(layout_data.Dart_AO, fill_data, 1, dimensions,Spacing);
-    Draw_a_Dart(layout_data.Dart_B, fill_data, 2, dimensions,Spacing);
-    Draw_a_Dart(layout_data.Dart_C, fill_data, 3, dimensions,Spacing);
-    Draw_a_Dart(layout_data.Dart_T, fill_data, 4, dimensions,Spacing);
-    Draw_a_Dart(layout_data.Dart_F, fill_data, 5, dimensions,Spacing);
-    Draw_a_Dart(layout_data.Dart_CL, fill_data, 6, dimensions,Spacing);
 
-    function Draw_a_Dart(label_data, fill_data, level, dimensions,Spacing) {
+    // // Get the image URL from the data-attribute
+    const imageUrl = document.getElementById("image-container").getAttribute("data-image-url");
+    if (showIcon) {
+        // Use the imageUrl in D3 to append the image
+        svg.append("image")
+            .attr("xlink:href", imageUrl)  // Set the image URL from the data attribute
+            .attr("x", 5)  // Top-left corner
+            .attr("y", 5)  // Top-left corner
+            .attr("width", 230)  // Set width for the image
+            .attr("height", 230)  // Set height for the image
+            .attr("class", "toggle-image");  // Add a class to control visibility
+    }
+    // SORT the data
+
+    // Function to perform natural sorting
+    const naturalSort = (obj) => {
+        const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
+
+        // Get the keys of the object and sort them naturally
+        const sortedKeys = Object.keys(obj).sort(collator.compare);
+
+        // Create a new sorted object based on the sorted keys
+        const sortedObj = {};
+        sortedKeys.forEach(key => {
+            sortedObj[key] = obj[key];  // Maintain the original data under sorted keys
+        });
+
+        return sortedObj;
+    };
+
+    // Iterate over each GPCRome_X object and sort its receptor families (keys)
+    Object.keys(layout_data).forEach(dartKey => {
+        layout_data[dartKey] = naturalSort(layout_data[dartKey]);
+    });
+
+
+    // Number of last entries to transfer and remove
+    const N = 14;  // Change this value to 2, 3, or any number you want
+
+    // Get the keys of the GPCRome_A object
+    const dartAKeys = Object.keys(layout_data.GPCRome_A);
+
+    // Get the last N keys
+    const lastNKeys = dartAKeys.slice(-N);
+
+    // Create a copy of GPCRome_AO and add the new entries from GPCRome_A
+    const updatedGPCRome_AO = {
+        ...lastNKeys.reduce((acc, key) => {
+            acc[key] = layout_data.GPCRome_A[key]; // Add the last N entries from GPCRome_A
+            return acc;
+        }, {}),
+        ...layout_data.GPCRome_AO // Spread the original GPCRome_AO entries
+    };
+
+    // Create a new GPCRome_A object that excludes the last N entries
+    const updatedGPCRome_A = { 
+        ...layout_data.GPCRome_A 
+    };
+
+    // Remove the last N properties from GPCRome_A
+    lastNKeys.forEach(key => {
+        delete updatedGPCRome_A[key];
+    });
+
+
+    let three_classes = false;
+    // Now call Draw_a_GPCRome for both updated GPCRome_A and GPCRome_AO
+
+    // First Draw_a_GPCRome with GPCRome_A, now without the two receptors
+    
+    if (three_classes) {
+
+        Draw_a_GPCRome(updatedGPCRome_A, fill_data, 0, dimensions, Spacing);
+
+        // Second Draw_a_GPCRome with GPCRome_AO, now with the two receptors added
+        Draw_a_GPCRome(updatedGPCRome_AO, fill_data, 1, dimensions, Spacing);
+
+        Draw_a_GPCRome({...layout_data.GPCRome_B,...layout_data.GPCRome_C}, fill_data, 2, dimensions,Spacing);
+        Draw_a_GPCRome({...layout_data.GPCRome_F,...layout_data.GPCRome_T,...layout_data.GPCRome_CL}, fill_data, 3, dimensions,Spacing);
+
+    } else {
+    Draw_a_GPCRome(updatedGPCRome_A, fill_data, 0, dimensions, Spacing);
+
+    // Second Draw_a_GPCRome with GPCRome_AO, now with the two receptors added
+    Draw_a_GPCRome(updatedGPCRome_AO, fill_data, 1, dimensions, Spacing);
+
+    Draw_a_GPCRome(layout_data.GPCRome_B, fill_data, 2, dimensions,Spacing);
+    Draw_a_GPCRome({...layout_data.GPCRome_C, ...layout_data.GPCRome_F}, fill_data, 3, dimensions,Spacing);
+    Draw_a_GPCRome({...layout_data.GPCRome_T,...layout_data.GPCRome_CL}, fill_data, 4, dimensions,Spacing);
+
+    }
+    function Draw_a_GPCRome(label_data, fill_data, level, dimensions,Spacing) {
 
         // Define SVG dimensions
         const width = dimensions.width;
@@ -2603,20 +2845,28 @@ function Draw_Darts(layout_data, fill_data, location,Dart_styling) {
         const label_offset = 7; // Increased offset to push labels outward
         
 
-        const Dart_radius = Math.min(width, height) / 2 - 60 - (70 * level); // Radius for each Dart
+        const GPCRome_radius = Math.min(width, height) / 2 - 60 - ((level == 4) ? (90 * level) : (85 * level)); // Radius for each GPCRome
 
         let values = [];
         let Family_list  = []
+        let Family_exclude = ['Other GPCR orphans','Taste 2 receptors']
         if (family) {
             if (Spacing && Object.keys(label_data).length > 1) {
                 // If Spacing is true and there are multiple keys
                 for (const key in label_data) {
                     if (label_data.hasOwnProperty(key)) {
                         // Add the key (family name) to the beginning of the values
-                        values.push(key);
-                        Family_list.push(key)
-                        // Add the associated values
-                        values = values.concat(label_data[key]);
+                        if (Family_exclude.includes(key)) {
+                            values.push("");
+                            // Add the associated values
+                            values = values.concat(label_data[key]);
+                        } else {
+                            values.push("");
+                            values.push(key);
+                            Family_list.push(key)
+                            // Add the associated values
+                            values = values.concat(label_data[key]);
+                        }
                     }
                 }
             } else {
@@ -2638,38 +2888,83 @@ function Draw_Darts(layout_data, fill_data, location,Dart_styling) {
         }
 
         // Add in Class
+        if (three_classes) {
+            if (level == 0) {
+                values.unshift("");
+                values.unshift("A");
+                values.push("");
+            } else if (level == 1) {
+                values.unshift("A");
+                values.push("");
+            } else if (level == 2) {
+                values.unshift("B1");
+                values.splice(52, 0, "");
+                values.splice(52, 0, "");
+                values.splice(54, 0, "B2");
+                values.splice(55, 0, "");
+                values.splice(80, 0, "");
+                values.splice(81, 0, "C");
+                values.splice(82, 0, "");
+                values.push("");
+            }else if (level == 3) {
+                values.unshift("F");
+                values.splice(14, 0, "T2");
+                values.splice(14, 0, "");
+                values.splice(42, 0, "Classless");
+                values.splice(42, 0, "");
+                values.push("")
+            } 
+                
+        } else {
+            if (level == 0) {
+                values.unshift("");
+                values.unshift("A");
+                values.push("");
+            } else if (level == 1) {
+                // values.unshift("");
+                // values.unshift("");
+                // values.unshift("");
+                values.unshift("A");
+                values.push("");
+                // values.splice(62, 0, "A ORPHANS");
+                // values.splice(63, 0, "");
+            } else if (level == 2) {
+                if (Spacing) {
+                    values.splice(52, 0, "B2");
+                    // values.splice(52, 0, "");
+                    values.splice(53, 0, "");
+                    values.push("")
 
-        if (level == 0) {
-            values.unshift("");
-            values.unshift("CLASS A");
-            values.push("");
-        } else if (level == 1) {
-            values.unshift("A ORPHANS");
-        } else if (level == 2) {
-            if (Spacing) {
-                values.splice(20, 0, "CLASS B2"); 
-            } else {
-                values.splice(15, 0, "CLASS B2");
+                } else {
+                    values.splice(15, 0, "B2");
+                }
+                values.unshift("B1");
+            } else if (level == 3) {
+                values.unshift("C");
+                values.splice(33, 0, "F");
+                values.splice(33, 0, "");
+                values.push("")
+            } else if (level == 4) {
+                values.unshift("T2");
+                values.splice(28, 0, "Classless");
+                values.splice(28, 0, "");
+                values.splice(30, 0, "");
+                values.push("")
+            } else if (level == 5) {
+                values.unshift("CLASS F");
+            } else if (level == 6) {
+                values.unshift("CLASSLESS");
             }
-            values.unshift("CLASS B1");
-        } else if (level == 3) {
-            values.unshift("CLASS C");
-        } else if (level == 4) {
-            values.unshift("CLASS T2");
-        } else if (level == 5) {
-            values.unshift("CLASS F");
-        } else if (level == 6) {
-            values.unshift("CLASSLESS");
         }
+        // Header_list = ["CLASS A","A CONT.","A ORPHANS","CLASS B1","CLASS B2","CLASS C","CLASS F","CLASS T2","CLASSLESS"];
+        Header_list = ["A","A cont.","A ORPHANS","B1","B2","C","F","T2","Classless"];
 
-        Header_list = ["CLASS A","A ORPHANS","CLASS B1","CLASS B2","CLASS C","CLASS F","CLASS T2","CLASSLESS"];
-
-        function calculatePositionAndAngle(index, total, values, Header_list, Family_list) {
+        function calculatePositionAndAngle(index, total, values, Header_list, Family_list, isSplit) {
             // Get the text value at the current index
             const text_value = values[index];
             
             // Check if the text value is in the Header_list
-            const isInHeaderList = Header_list.includes(text_value);
+            const isInHeaderList = Header_list.includes(text_value)  && text_value !== "Classless";
             
             // Check if the text value is in the Family_list
             const isInFamilyList = Family_list.includes(text_value);
@@ -2677,66 +2972,239 @@ function Draw_Darts(layout_data, fill_data, location,Dart_styling) {
             // Offset the angle calculation by -90 degrees (or -π/2 radians) to start at 12 o'clock
             const angle = -((index / total) * 2 * Math.PI) + (Math.PI / 2);
             
-            // Position on the Dart's border with or without label offset
-            const x = width / 2 + Math.cos(angle) * (isInFamilyList ? (Dart_radius - 10) : (isInHeaderList ? (Dart_radius - 10) : (Dart_radius + label_offset)));
-            const y = height / 2 - Math.sin(angle) * (isInFamilyList ? (Dart_radius - 10) : (isInHeaderList ? (Dart_radius - 10) : (Dart_radius + label_offset)));
+            // If isSplit is true, treat it as a Family_list item (or handle it in a special way)
+            const adjustedRadius = isSplit ? (GPCRome_radius - 8) : text_value === "Classless" ? (GPCRome_radius - 10) : (isInFamilyList ? (GPCRome_radius - 20) : (isInHeaderList ? (GPCRome_radius + 18) : (GPCRome_radius + label_offset)));
+        
+            // Position on the GPCRome's border with or without label offset
+            const x = width / 2 + Math.cos(angle) * adjustedRadius;
+            const y = height / 2 - Math.sin(angle) * adjustedRadius;
             
-            // Rotation angle so that the text faces outward
-            const rotation = -(angle * 180 / Math.PI);
+            // If it's a header, set the rotation to 0, otherwise calculate the outward-facing rotation
+            let rotation;
+            if (isInHeaderList) {
+                rotation = 0;
+            } else if (text_value === "Classless") {
+                rotation = 0;
+            } else {
+                rotation = -(angle * 180 / Math.PI);
+            }
+            // const rotation = (isInHeaderList || "Classless") ? 0 : -(angle * 180 / Math.PI);
             
             return { x, y, rotation };
         }
         
+       // Bind data and append text elements for the specific GPCRome
+        svg.selectAll(`.GPCRome-text-${level}`)
+        .data(values)
+        .enter()
+        .append("text")
+        .attr("class", (d) => {
+            let baseClass = `GPCRome-text-${level}`;
+            // Add highlight class if the label is in the Header_list
+            if (Header_list.includes(d)) {
+                baseClass += ` GPCRome-text-${level}-highlight`;
+            }
+            // Add a family-specific class if the label is in the Family_list
+            if (Family_list.includes(d)) {
+                baseClass += " GPCRome-family-label";  // Add this class for family labels
+            }
+            return baseClass;
+        })
+        .attr("x", (d, i) => {
+            const pos = calculatePositionAndAngle(i, values.length, values, Header_list, Family_list, false);
+            return pos.x;
+        })
+        .attr("y", (d, i) => {
+            const pos = calculatePositionAndAngle(i, values.length, values, Header_list, Family_list, false);
+            return pos.y;
+        })
+        .attr("text-anchor", (d, i) => {
+            // Center the text for headers, and handle normal text alignment for others
+            if (Header_list.includes(d) && d !== "Classless" && d !== "A cont.") {
+                return "middle";  // Horizontally center the headers
+            }
+            const angle = (i / values.length) * 360 - 90;
+            return (angle >= -90 && angle < 90) ? "start" : "end";
+        })
+        .attr("dominant-baseline", "middle")
+        .attr("dy", (d) => Header_list.includes(d) ? "0.1em" : "0.05em")  // Adjust 'dy' as needed
+        .attr("transform", (d, i) => {
+            const pos = calculatePositionAndAngle(i, values.length, values, Header_list, Family_list, false);
+            
+            // Calculate the angle and determine the text's side (right or left)
+            const angle = (i / values.length) * 360 - 90;
+            
+            // Rotation logic
+            let rotation;
+            if (Header_list.includes(d)) {
+                // Headers have no rotation (0 degrees)
+                rotation = 0;
+            } else {
+                // For non-headers, flip the text on the left-hand side by 180 degrees
+                rotation = angle >= -90 && angle < 90 ? 0 : 180;
+            }
+            
+            // Apply the rotation and positioning
+            return `rotate(${pos.rotation + rotation}, ${pos.x}, ${pos.y})`;
+        })
+        .html(d => GPCRome_formatTextWithHTML(d, Family_list, level))
+        .style("font-size", d => Header_list.includes(d) ? "26px" : "9px")
+        .style("font-family", "Palatino")
+        .attr("font-weight", d => Header_list.includes(d) || Family_list.includes(d) ? "950" : "normal")
+        .style("fill", d => Header_list.includes(d) ? "Black" : "black");
 
-
-        // Bind data and append text elements for the specific Dart
-        svg.selectAll(`.Dart-text-${level}`)
-            .data(values)
-            .enter()
-            .append("text")
-            .attr("class", (d) => 
-                Header_list.includes(d) ? `Dart-text-${level} Dart-text-${level}-highlight` : `Dart-text-${level}`
-            )
-            .attr("x", (d, i) => {
-                const pos = calculatePositionAndAngle(i, values.length, values, Header_list,Family_list);
-                return pos.x;
-            })
-            .attr("y", (d, i) => {
-                const pos = calculatePositionAndAngle(i, values.length, values, Header_list,Family_list);
-                return pos.y;
-            })
-            .attr("text-anchor", (d, i) => {
-                const angle = (i / values.length) * 360 - 90;
-                return (angle >= -90 && angle < 90) ? "start" : "end";
-            })
-            .attr("dominant-baseline", "middle")
-            .attr("dy", (d) => Header_list.includes(d) ? "0.1em" : "0.05em")  // Adjust 'dy' as needed
-            .attr("transform", (d, i) => {
-                const pos = calculatePositionAndAngle(i, values.length, values, Header_list,Family_list);
-                const angle = (i / values.length) * 360 - 90;
-                const rotation = angle >= -90 && angle < 90  ? 0 : 180;
-                return `rotate(${pos.rotation + rotation}, ${pos.x}, ${pos.y})`;
-            })
-            .html(d => formatTextWithHTML(d, Family_list,level))
-            .style("font-size", d => Header_list.includes(d) ? "10px" : "8px")
-            .style("font-family", "Palatino")
-            .attr("font-weight", d => Header_list.includes(d) || Family_list.includes(d) ? "950" : "normal")
-            .style("fill", d => Header_list.includes(d) ? "Black" : "black")
             // .style("background",'black')
             // .style("text-decoration", d => Header_list.includes(d) ? "underline" : "none");
         
+        // After drawing all the elements, adjust the y-position for all family labels
+        // Adjust the y-position for all family labels based on the midpoint between current and previous positions
+        svg.selectAll(".GPCRome-family-label")
+            .each(function(d) {
+                const textElement = d3v4.select(this);
+
+                // Find the index of the family label within the full values array
+                const index = values.indexOf(d);  // This gets the actual index of the current family label in the `values` array
+                
+                if (index !== -1 && index > 0) {  // Ensure the index is valid and not the first item (since we need index - 1)
+
+                    const totalItems = values.length; // Total number of items in the current GPCRome
+
+                    // Determine if the text anchor should be "start" or "end"
+                    const angle = (index / totalItems) * 360 - 90;  // Calculate the angle based on the index
+                    const additionalRotation = angle >= -90 && angle < 90 ? 0 : 180;  // Conditional rotation adjustment
+
+                    // Format the text before checking the length
+                    const formattedText = GPCRome_formatTextWithHTML(d, Family_list);
+
+                    // Remove the existing text element before appending the split elements
+                    textElement.remove();
+
+                    // fontsize
+                    let family_fontsize = "9px";
+
+                    // Check if the formatted text is longer than 10 characters (or any desired length)
+                    if (formattedText.length > 18) {
+                        let splitIndex;
+                        if (formattedText.includes("-")) {
+                            // If the text contains a "-", split after the "-"
+                            splitIndex = formattedText.indexOf("-",3) + 1;
+                        } else {
+                            // Otherwise, split at the nearest space
+                            splitIndex = formattedText.lastIndexOf(" ", formattedText.length-1);
+                        }
+                        const firstPart = formattedText.substring(0, splitIndex);  // First part
+                        const secondPart = formattedText.substring(splitIndex);  // Second part
+
+                        // Get the current and previous positions using calculatePositionAndAngle with the isSplit flag
+                        const currentPos = calculatePositionAndAngle(index, totalItems, values, Header_list, Family_list, true);
+                        const prevPos = calculatePositionAndAngle(index - 1, totalItems, values, Header_list, Family_list, true);
+
+
+                        if (angle >= -90 && angle < 90) {
+                            // Right-hand side: use prevPos for the first part and currentPos for the second part
+
+                            // Append the first part of the text (using prevPos)
+                            svg.append("text")
+                                .attr("x", prevPos.x)
+                                .attr("y", prevPos.y)
+                                .attr("text-anchor", "start")
+                                .attr("dominant-baseline", "middle")
+                                .attr("transform", `rotate(${prevPos.rotation + additionalRotation}, ${prevPos.x}, ${prevPos.y})`)
+                                .attr("class", "GPCRome-family-label-split")
+                                .text(firstPart)
+                                .style("font-size",family_fontsize);
+
+                            // Append the second part of the text (using currentPos)
+                            svg.append("text")
+                                .attr("x", currentPos.x)
+                                .attr("y", currentPos.y)
+                                .attr("text-anchor", "start")
+                                .attr("dominant-baseline", "middle")
+                                .attr("transform", `rotate(${currentPos.rotation + additionalRotation}, ${currentPos.x}, ${currentPos.y})`)
+                                .attr("class", "GPCRome-family-label-split")
+                                .text(secondPart)
+                                .style("font-size", family_fontsize);
+
+                        } else {
+                            // Left-hand side: use currentPos for the first part and prevPos for the second part
+
+                            // Append the first part of the text (using currentPos)
+                            svg.append("text")
+                                .attr("x", currentPos.x)
+                                .attr("y", currentPos.y)
+                                .attr("text-anchor", "end")
+                                .attr("dominant-baseline", "middle")
+                                .attr("transform", `rotate(${currentPos.rotation + additionalRotation}, ${currentPos.x}, ${currentPos.y})`)
+                                .attr("class", "GPCRome-family-label-split")
+                                .text(firstPart)
+                                .style("font-size",family_fontsize);
+
+                            // Append the second part of the text (using prevPos)
+                            svg.append("text")
+                                .attr("x", prevPos.x)
+                                .attr("y", prevPos.y)
+                                .attr("text-anchor", "end")
+                                .attr("dominant-baseline", "middle")
+                                .attr("transform", `rotate(${prevPos.rotation + additionalRotation}, ${prevPos.x}, ${prevPos.y})`)
+                                .attr("class", "GPCRome-family-label-split")
+                                .text(secondPart)
+                                .style("font-size",family_fontsize);
+                        }
+
+                    } else {
+                        // If the formatted text is shorter than 10 characters, handle it normally
+
+                        // Get the current and previous positions without splitting (isSplit = false)
+                        const currentPos = calculatePositionAndAngle(index, totalItems, values, Header_list, Family_list, false);
+                        const prevPos = calculatePositionAndAngle(index - 1, totalItems, values, Header_list, Family_list, false);
+
+                        const midX = (currentPos.x + prevPos.x) / 2;
+                        const midY = (currentPos.y + prevPos.y) / 2;
+                        const midRotation = (currentPos.rotation + prevPos.rotation) / 2;
+
+                        // Append the formatted text in the middle position
+                        svg.append("text")
+                            .attr("x", midX)
+                            .attr("y", midY)
+                            .attr("dominant-baseline", "middle")
+                            .attr("text-anchor", (angle >= -90 && angle < 90) ? "start" : "end")
+                            .attr("transform", `rotate(${midRotation + additionalRotation}, ${midX}, ${midY})`)
+                            .attr("class", "GPCRome-family-label")
+                            .text(formattedText)
+                            .style("font-size",family_fontsize);
+                    }
+                }
+            });
+        
         // Define color scale for continuous data
-        const colorScale = d3.scaleLinear()
-        .domain([Darts_styling.minValue, Darts_styling.median_value, Darts_styling.maxValue])  // Input domain with median
-        .range([Darts_styling.colorStart, Darts_styling.color_median, Darts_styling.colorEnd]);  // Output range with median color
+        let colorScale;
+
+        if (GPCRomes_styling.data_color_complexity === 'One') {
+        // White to Max (One color)
+        colorScale = d3v4.scaleLinear()
+            .domain([GPCRomes_styling.minValue, GPCRomes_styling.maxValue])  // Only two points in the domain
+            .range(['#FFFFFF', GPCRomes_styling.colorEnd]);  // White to Max color
+
+        } else if (GPCRomes_styling.data_color_complexity === 'Two') {
+        // Min to Max (Two colors)
+        colorScale = d3v4.scaleLinear()
+            .domain([GPCRomes_styling.minValue, GPCRomes_styling.maxValue])  // Min to Max in the domain
+            .range([GPCRomes_styling.colorStart, GPCRomes_styling.colorEnd]);  // Min to Max color in range
+
+        } else if (GPCRomes_styling.data_color_complexity === 'Three') {
+        // Min to White to Max (Three colors)
+        colorScale = d3v4.scaleLinear()
+            .domain([GPCRomes_styling.minValue, GPCRomes_styling.avg_value, GPCRomes_styling.maxValue])  // Min, Avg, Max in the domain
+            .range([GPCRomes_styling.colorStart, '#FFFFFF', GPCRomes_styling.colorEnd]);  // Min to White to Max in range
+}
 
         // Add large hollow pie chart for the entire level
-        const arcGenerator = d3.arc()
-            .innerRadius(Dart_radius - 10)  // Adjust to control the hollow center size
-            .outerRadius(Dart_radius)  // Adjust to control the thickness of the pie
+        const arcGenerator = d3v4.arc()
+            .innerRadius(GPCRome_radius - 7)  // Adjust to control the hollow center size
+            .outerRadius(GPCRome_radius)  // Adjust to control the thickness of the pie
             // .padAngle(level === 4 ? 0.3 : 0); // Apply padding only if level is 4
 
-        const pieGenerator = d3.pie()
+        const pieGenerator = d3v4.pie()
             .sort(null)
             .value(1)  // Create equal slices for each value
             .startAngle(-Math.PI / values.length)  // Offset to move the slices left by half their size
@@ -2780,6 +3248,49 @@ function Draw_Darts(layout_data, fill_data, location,Dart_styling) {
                 return value === "" ? 0 : 0.5;  // Set stroke-width to 0 if the value is an empty string
             });
     }
+    // draw a clock
+
+    // const clock_center_X = dimensions.width/2;
+    // const clock_center_Y = dimensions.height/2;
+    // const clock_radius = 500;
+
+    // const romanNumerals = {
+    //     1: "I",
+    //     2: "II",
+    //     3: "III",
+    //     4: "IV",
+    //     5: "V",
+    //     6: "VI",
+    //     7: "VII",
+    //     8: "VIII",
+    //     9: "IX",
+    //     10: "X",
+    //     11: "XI",
+    //     12: "XII"
+    // };
+
+    // const numberOfNumerals = 12;
+
+    // // Iterate over each numeral (1 to 12)
+    // for (let i = 1; i <= numberOfNumerals; i++) {
+    //     // Calculate angle in radians for the current numeral
+    //     const angle = (i / numberOfNumerals) * 2 * Math.PI - Math.PI / 2; // Subtract Math.PI/2 to start at 12 o'clock
+        
+    //     // Calculate the x and y coordinates for the numeral
+    //     const x = clock_center_X + Math.cos(angle) * clock_radius;
+    //     const y = clock_center_Y + Math.sin(angle) * clock_radius;
+        
+    //     // Append the Roman numeral as text at the calculated (x, y) coordinates
+    //     svg.append("text")
+    //         .attr("x", x)
+    //         .attr("y", y)
+    //         .attr("text-anchor", "middle")
+    //         .attr("dominant-baseline", "middle")
+    //         .attr("font-size", "20px")
+    //         .attr("font-family", "Palatino")
+    //         .attr("fill", "gray")  // Set the fill color to light gray
+    //         .text(romanNumerals[i]);
+    // }
 }
 
 
@@ -2787,3 +3298,251 @@ function Draw_Darts(layout_data, fill_data, location,Dart_styling) {
 
 
 
+
+
+
+
+
+
+// // SPIRAL  - Maybe for later!! 
+
+// function formatTextWithHTML_spiral(text, receptorFamilies) {
+//     // List of receptor families that need special formatting
+//     const specialFormattingFamilies = new Set(receptorFamilies);
+
+//     // Apply initial replacements
+//     let formattedText = text
+//         .replace(" receptors", '')
+//         .replace(" receptor", '')
+//         .replace("-adrenoceptor", ' ')
+//         .replace(" receptor-", '-')
+//         .replace("<sub>", '</tspan><tspan baseline-shift="sub">')
+//         .replace("</sub>", '</tspan><tspan>')
+//         .replace("<i>", '</tspan><tspan font-style="italic">')
+//         .replace("</i>", '</tspan><tspan>')
+//         .replace("Long-wave-sensitive", 'LWS')
+//         .replace("Medium-wave-sensitive", 'MWS')
+//         .replace("Short-wave-sensitive", 'SWS')
+//         .replace("Olfactory", 'OLF')
+//         .replace("calcitonin-like receptor", 'CLR');
+
+//     // Apply additional formatting if the text is in the special formatting families
+//     if (specialFormattingFamilies.has(text)) {
+//         formattedText = formattedText
+//             .replace(/( receptors|neuropeptide )/g, '') // Remove specific substrings
+//             .replace(/(-releasing)/g, '-rel.') // Remove specific substrings
+//             .replace(/(-concentrating)/g, '-conc.') // Remove specific substrings
+//             .split(" (")[0]; // Keep only the part before the first " ("
+
+//         // Truncate if necessary
+//         if (formattedText.length > 15) {
+//             return formattedText.substring(0, 15) + "...";
+//         }
+//     }
+
+//     return formattedText;
+// }
+
+// function Draw_Spiral(layout_data, fill_data, location, spiral_styling) {
+//     // Data format
+
+//     const datatype = spiral_styling.datatype;
+//     const classMapping = [
+//         "CLASS A",
+//         "A ORPHANS",
+//         "CLASS B1",
+//         "CLASS B2",
+//         "CLASS C",
+//         "CLASS F",
+//         "CLASS T2",
+//         "CLASSLESS"
+//     ];
+
+//     spiral_data = Object.values(layout_data).flat();
+    
+//     const transformData = (dataObject, classMapping) => {
+//         const result = [];
+//         const familyList = new Set(); // Create a Set to hold receptor family names
+    
+//         // Iterate over each class in the data object
+//         Object.keys(dataObject).forEach(classIndex => {
+//             const className = classMapping[classIndex] || "UNKNOWN"; // Default to "UNKNOWN" if classMapping is missing
+//             result.push(className); // Add the class name
+    
+//             const receptorFamilies = dataObject[classIndex];
+//             Object.keys(receptorFamilies).forEach(familyName => {
+//                 familyList.add(familyName); // Add receptor family name to the Set
+//                 result.push(familyName); // Add the receptor family name
+    
+//                 const receptors = receptorFamilies[familyName];
+//                 result.push(...receptors); // Flatten the receptors into the result array
+//             });
+//         });
+    
+//         return { flattenedData: result, familyList: Array.from(familyList) }; // Convert Set to Array
+//     };
+    
+//     const { flattenedData, familyList } = transformData(spiral_data, classMapping);
+    
+//     // console.log(flattenedData);
+//     // Configuration
+//     const width = 1000;
+//     const height = 1000;
+//     const centerX = width / 2;
+//     const centerY = height / 2;
+//     const numPoints = flattenedData.length;
+//     const maxRadius = Math.min(centerX, centerY) - 80; // Maximum radius of the spiral
+//     console.log(numPoints);
+//     // Define color scale for continuous data
+//     const colorScale = d3.scaleLinear()
+//         .domain([spiral_styling.minValue, spiral_styling.median_value, spiral_styling.maxValue])  // Input domain with median
+//         .range([spiral_styling.colorStart, spiral_styling.color_median, spiral_styling.colorEnd]);  // Output range with median color
+
+//     // Create SVG container
+//     const svg = d3.select("#" + location);
+
+//     const numTurns = 15;  // Number of spiral turns
+//     const totalTheta = 2 * Math.PI * numTurns;  // Total angular range for the full spiral
+
+//     // Parameters for the flipped Archimedean spiral
+//     // const maxRadius = 500;  // Starting radius (the furthest point from the center)
+//     const b = 14;  // Controls how tight the spiral is
+//     const desiredArcLength = 14;  // Desired arc length (distance between points)
+
+//     // Generate spiral data, starting from the outermost point and moving inwards
+//     const data = [];
+//     let theta = 0 - (Math.PI / 2);  // Start at 0 degrees
+
+//     for (let i = 0; i < numPoints; i++) {
+//         // Flip the radius calculation: start from maxRadius and decrease as theta increases
+//         const radius = maxRadius - b * theta;
+
+//         // Calculate x and y positions based on the spiral formula
+//         const x = centerX + radius * Math.cos(theta);
+//         const y = centerY + radius * Math.sin(theta);
+
+//         // Add the current point to the data array
+//         data.push({
+//             x: x,
+//             y: y,
+//             theta: theta,  // Store theta for pie slice alignment
+//             theta_box: theta + (Math.PI / 2),
+//             radius: radius,  // Store radius for use in pie chart
+//             angularStep: desiredArcLength,  // This will get updated with the current angular step
+//             text: flattenedData[i]
+//         });
+
+//         // Calculate the next angular step to maintain constant arc length
+//         const angularStep = desiredArcLength / radius;  // Adjust based on current radius
+
+//         // Update the angle for the next point
+//         theta += angularStep;
+//     }
+
+
+//     // Append text elements to the SVG
+//     svg.selectAll("text")
+//         .data(data)
+//         .enter()
+//         .append("text")
+//         .attr("x", d => d.x)
+//         .attr("y", d => d.y)
+//         .attr("dominant-baseline", "middle")
+//         .attr("class", "text")
+//         .html(d => formatTextWithHTML_spiral(d.text, familyList)) // Use HTML formatting function
+//         .style("font-size", d => classMapping.includes(d.text) ? "12px" : "10px")
+//         .style("text-decoration", d => classMapping.includes(d.text) ? "underline" : "none")
+//         .style("font-family", "Palatino")
+//         .style("font-weight", d => classMapping.includes(d.text) || familyList.includes(d.text) ? "bold" : "normal")
+//         .attr("text-anchor", d => {
+//             // Calculate angle in radians
+//             const angle = Math.atan2(d.y - centerY, d.x - centerX);
+            
+//             // Determine text-anchor based on angle
+//             return (angle >= -Math.PI / 2 && angle < Math.PI / 2) ? "start" : "end";
+//         })
+//         .attr("transform", d => {
+//             // Calculate angle in radians
+//             const angle = Math.atan2(d.y - centerY, d.x - centerX);
+            
+//             // Calculate rotation for flipping text
+//             const rotation = angle >= -Math.PI / 2 && angle < Math.PI / 2 ? 0 : 180;
+            
+//             // Rotate text to follow spiral path and flip as needed
+//             return `rotate(${angle * 180 / Math.PI + rotation}, ${d.x}, ${d.y})`; // Adjust rotation angle
+//         });
+
+// // Function to generate spiral points
+// const generateSpiralPoint = (theta, radius) => {
+//     return {
+//         x: centerX + radius * Math.cos(theta),
+//         y: centerY + radius * Math.sin(theta)
+//     };
+// };
+
+// // Variables to store the last arc's end points for continuity
+// let lastEndPointOuter = null;
+// let lastEndPointInner = null;
+
+// const pieData = data.map((d, i) => {
+//     const halfStep = (desiredArcLength / d.radius) / 2;
+    
+//     // Start and end angles
+//     const startTheta = d.theta - halfStep;
+//     const endTheta = d.theta + halfStep;
+
+//     // If this is the first arc, calculate start points normally
+//     let startPointOuter = lastEndPointOuter || generateSpiralPoint(startTheta, d.radius - 5);
+//     let startPointInner = lastEndPointInner || generateSpiralPoint(startTheta, d.radius - 10);
+
+//     // Calculate the end points for the current arc
+//     const endPointOuter = generateSpiralPoint(endTheta, d.radius - 5);
+//     const endPointInner = generateSpiralPoint(endTheta, d.radius - 15);
+
+//     // Save the end points to use them for the next arc
+//     lastEndPointOuter = endPointOuter;
+//     lastEndPointInner = endPointInner;
+
+//     // Return the path commands for the custom arc
+//     return {
+//         path: `M ${startPointOuter.x},${startPointOuter.y} 
+//                A ${d.radius - 5},${d.radius - 5} 0 0,1 ${endPointOuter.x},${endPointOuter.y}
+//                L ${endPointInner.x},${endPointInner.y} 
+//                A ${d.radius - 10},${d.radius - 10} 0 0,0 ${startPointInner.x},${startPointInner.y}
+//                Z`,
+//         data: d.text
+//     };
+// });
+
+// // Draw the spiral-aligned custom arcs
+// svg.selectAll(`.hollow-pie`)
+//     .data(pieData)
+//     .enter()
+//     .append("path")
+//     .attr("class", `hollow-pie`)
+//     .attr("d", d => d.path)  // Use custom path data
+//     .style("fill", d => {
+//         const value = fill_data[d.data]?.Value1;
+//         if (datatype === "Continuous") {
+//             const numericValue = parseFloat(value);
+//             if (numericValue === 0) {
+//                 return "white";  // Return "white" if the value is 0
+//             }
+//             return !isNaN(numericValue) ? colorScale(numericValue) : "none";
+//         } else {
+//             if (value === "Yes") return "green";
+//             if (value === "No") return "red";
+//             return "none";  // Make the slice invisible if the value is ""
+//         }
+//     })
+//     .style("stroke", d => {
+//         const value = fill_data[d.data]?.Value1;
+//         if (value === "Yes" || value === "No" || !isNaN(value)) return "black";
+//         return "none";  // Remove stroke if no value
+//     })
+//     .style("stroke-width", d => {
+//         const value = fill_data[d.data]?.Value1;
+//         return value === "" ? 0 : 0.5;  // No stroke if empty
+//     });
+
+// }

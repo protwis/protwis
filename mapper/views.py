@@ -440,68 +440,6 @@ class LandingPage(TemplateView):
 
         return merged_df
 
-    # Generate full similarity matrix for cluster or load existing #
-    # def generate_full_matrix_structure(method):
-    #     state = 'inactive'
-    #     output_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'HumanGPCRSimilarityStructure_{}_umap'.format(state)])
-    #     # Check if the file exists
-    #     if os.path.exists(output_file):
-    #     # if bob_test == 2:
-    #         # Load the data from the existing file
-    #         merged_df_structure = pd.read_csv(output_file, index_col=0)
-    #     else:
-    #         similarity_matrix_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'Structure_similarity_matrix_{}.xlsx'.format(state)])
-
-    #         # Load the similarity matrix from the Excel file
-    #         data = pd.read_excel(similarity_matrix_file, index_col=0)  # Assuming the first column is the index
-
-    #         # Rename the index and columns if needed
-    #         data.index.name = 'receptor1_entry_name'
-    #         data.columns.name = 'receptor2_entry_name'
-
-    #         # Replace '_human' suffix in index and columns if needed
-    #         data.index = data.index.str.replace('_human', '', regex=False)
-    #         data.columns = data.columns.str.replace('_human', '', regex=False)
-
-    #         # Fill missing values with 0
-    #         data = data.fillna(0)
-
-    #         # Perform reduction and clustering
-    #         reduced_df = LandingPage.reduce_and_cluster(data, method=method, n_clusters=12)
-            
-    #         reduced_df['label'] = reduced_df['label'].apply(lambda x: x.split('[Human] ')[1] if '[Human] ' in x else x)
-    #         reduced_df['label'] = reduced_df['label'].apply(lambda x: x.split('_human')[0] if '_human' in x else x)
-
-    #         # add class/ligand_type/receptor_family clusters
-
-    #         # Step 1: Fetch data
-    #         proteins = Protein.objects.filter(
-    #             parent_id__isnull=True, species_id=1
-    #         ).values_list(
-    #             'entry_name', 
-    #             "family__parent__parent__parent__name",  # To be renamed as 'Class'
-    #             'family__parent__parent__name',  # To be renamed as 'Ligand type'
-    #             'family__parent__name'  # To be renamed as 'Receptor family'
-    #         )
-            
-    #         # Step 2: Convert to a DataFrame
-    #         proteins_df = pd.DataFrame(list(proteins), columns=['entry_name', 'Class', 'Ligand type', 'Receptor family'])
-    #         proteins_df.to_excel(os.sep.join([settings.DATA_DIR, 'structure_data', 'All_GPCRs_ligandType_Families.xlsx']),index=False)
-
-    #         # Step 3: Remove '_human' suffix from 'entry_name'
-    #         proteins_df['entry_name'] = proteins_df['entry_name'].str.replace('_human', '')
-
-    #         # Step 4: Rename 'entry_name' to 'label'
-    #         proteins_df = proteins_df.rename(columns={'entry_name': 'label'})
-
-    #         # Step 5: Merge with reduced_df on 'label'
-    #         merged_df_structure = pd.merge(reduced_df, proteins_df, on='label', how='left')
-
-    #         # Save the reduced DataFrame to a CSV file
-    #         merged_df_structure.to_csv(output_file)
-
-    #     return merged_df_structure
-
     @staticmethod
     def reduce_and_cluster(data, method='umap', n_components=2, n_clusters=5):
         if method == 'umap':
@@ -525,77 +463,6 @@ class LandingPage(TemplateView):
         df['label'] = data.index
 
         return df
-
-    # @staticmethod
-    # def generate_cluster(method, input):
-    #     # Convert the nested dictionary to a DataFrame
-    #     input = {key.replace('_human', '').upper(): value for key, value in input.items()}
-    #     data = pd.DataFrame(input).T
-    #     # Example usage
-    #     reduced_df = LandingPage.reduce_and_cluster(data, method=method)
-    #     # Prepare the data for visualization
-    #     data_json = reduced_df.to_json(orient='records')
-
-    #     return data_json
-
-    
-
-    # @staticmethod
-    # def generate_similarity(method):
-    #     similarity_matrix_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'human_gpcr_similarity_data_all_segments.csv'])
-    #     # Convert the nested dictionary to a DataFrame
-    #     data = pd.read_csv(similarity_matrix_file)
-    #     data = data[['receptor1_entry_name', 'receptor2_entry_name', 'similarity']]
-    #     matrix = data.pivot(index='receptor1_entry_name', columns='receptor2_entry_name', values='similarity')
-    #     matrix.index = matrix.index.str.replace('_human', '', regex=False)
-    #     matrix.columns = matrix.columns.str.replace('_human', '', regex=False)
-    #     matrix = matrix.fillna(0)
-    #     # data = data.fillna(0)
-    #     # Example usage
-    #     reduced_df = LandingPage.reduce_and_cluster(matrix, method=method, n_clusters=12)
-    #     reduced_df['label'] = reduced_df['label'].apply(lambda x: x.split('[Human] ')[1] if '[Human] ' in x else x)
-    #     # Prepare the data for visualization
-    #     data_json = reduced_df.to_json(orient='records')
-
-    #     return data_json
-
-    # @staticmethod
-    # def generate_full_matrix(method):
-    #     ## create similarity matrix if it doesnt exist else load predefined ##
-    #     similarity_matrix_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'human_gpcr_similarity_data_all_segments.csv'])
-    #     # Convert the nested dictionary to a DataFrame
-    #     data = pd.read_csv(similarity_matrix_file)
-    #     data = data[['receptor1_entry_name', 'receptor2_entry_name', 'similarity']]
-    #     matrix = data.pivot(index='receptor1_entry_name', columns='receptor2_entry_name', values='similarity')
-    #     matrix.index = matrix.index.str.replace('_human', '', regex=False)
-    #     matrix.columns = matrix.columns.str.replace('_human', '', regex=False)
-    #     matrix = matrix.fillna(0)
-    #     # data = data.fillna(0)
-    #     # Example usage
-    #     reduced_df = LandingPage.reduce_and_cluster(matrix, method=method, n_clusters=12)
-    #     reduced_df['label'] = reduced_df['label'].apply(lambda x: x.split('[Human] ')[1] if '[Human] ' in x else x)
-    #     # receptor_names = dict(Protein.objects.filter(species_id=1).values_list('name','entry_name').distinct())
-    #     # reduced_df['label'] = reduced_df['label'].map(receptor_names)
-    #     reduced_df['label'] = reduced_df['label'].apply(lambda x: x.split('_human')[0] if '_human' in x else x)
-
-    #     return reduced_df
-
-    # @staticmethod
-    # def generate_identity(method):
-    #     identity_matrix_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'identity_matrix_full.csv'])
-    #     # Convert the nested dictionary to a DataFrame
-    #     data = pd.read_csv(identity_matrix_file)
-    #     data.columns = data.columns.str.replace('_human', '', regex=False)
-    #     data.set_index('receptor1_entry_name', inplace=True)
-    #     data.index = data.index.str.replace('_human', '', regex=False)
-    #     data = data.fillna(0)
-    #     # data = data.fillna(0)
-    #     # Example usage
-    #     reduced_df = LandingPage.reduce_and_cluster(data, method=method, n_clusters=6)
-    #     # Prepare the data for visualization
-    #     data_json = reduced_df.to_json(orient='records')
-
-    #     return data_json
 
     @staticmethod
     def map_to_quartile(value, quartiles):
@@ -650,28 +517,26 @@ class LandingPage(TemplateView):
                         sheet_names = workbook.sheetnames
 
                         # Sheets and headers #
-                        Phylogenetic_Tree_Header = ['Receptor (Uniprot)', '1. Feature (Inner cicle)', '2. Order (Outer cicle 1)',	'3. Order (Outer cicle 2)',	'4. Order (Outer cicle 3)', '5. Order (Outer cicle 4)',	'6. Order (Outer cicle 5)']
-                        Cluster_Analysis_Header = ['Receptor (Uniprot)','Feature 1','Feature 2','Feature 3','Feature 4']
-                        List_Plot_Header = ['Receptor (Uniprot)']
-                        Heatmap_Header = ['Receptor (Uniprot)','Feature 1','Feature 2','Feature 3','Feature 4','Feature 5']
-                        Sheet_Header_pass_check = [False,False,False,False,False,False]
+                        # Phylogenetic_Tree_Header = ['Receptor (Uniprot)', '1. Feature (Inner cicle)', '2. Order (Outer cicle 1)',	'3. Order (Outer cicle 2)',	'4. Order (Outer cicle 3)', '5. Order (Outer cicle 4)',	'6. Order (Outer cicle 5)']
+                        # Cluster_Analysis_Header = ['Receptor (Uniprot)','Feature 1','Feature 2','Feature 3','Feature 4']
+                        # List_Plot_Header = ['Receptor (Uniprot)']
+                        # Heatmap_Header = ['Receptor (Uniprot)','Feature 1','Feature 2','Feature 3','Feature 4','Feature 5']
+                        Sheet_Header_pass_check = [False,False,False,False,False]
 
                         # Check all sheet names, headers and subheaders (needs to be implemented) #
                         for sheet_name in sheet_names:
                             worksheet = workbook[sheet_name]
                             header_list = [cell.value for cell in worksheet[1]]
-                            if sheet_name == 'Info':
+                            if sheet_name == 'Tree':
                                 Sheet_Header_pass_check[0] = True
-                            elif sheet_name == 'Tree':
-                                Sheet_Header_pass_check[1] = True
                             elif sheet_name == 'Cluster':
-                                Sheet_Header_pass_check[2] = True
+                                Sheet_Header_pass_check[1] = True
                             elif sheet_name == 'List':
-                                Sheet_Header_pass_check[3] = True
+                                Sheet_Header_pass_check[2] = True
                             elif sheet_name == 'Heatmap':
+                                Sheet_Header_pass_check[3] = True
+                            elif sheet_name == 'GPCRome':
                                 Sheet_Header_pass_check[4] = True
-                            elif sheet_name == 'Dart':
-                                Sheet_Header_pass_check[5] = True
                             else:
                                 pass
 
@@ -681,7 +546,7 @@ class LandingPage(TemplateView):
                         else:
 
                             # Init incorrect values #
-                            plot_names = ['Tree', 'Cluster', 'List', 'Heatmap','Dart']
+                            plot_names = ['Tree', 'Cluster', 'List', 'Heatmap','GPCRome']
                             Data = {}
                             Data['Datatypes'] = {}
                             Incorrect_values = {}
@@ -710,7 +575,7 @@ class LandingPage(TemplateView):
                                     header = next(worksheet.iter_rows(min_row=1, max_row=1, values_only=True))
                                     # Labels = next(worksheet.iter_rows(min_row=2, max_row=1, values_only=True))
                                     # print(Labels)
-                                    inner_col_idx = header.index('1. Feature (Inner cicle)') + 1  # openpyxl uses 1-based indexing
+                                    inner_col_idx = 2  # openpyxl uses 1-based indexing
                                     # Check the first value under the "Inner" header
                                     first_value = worksheet.cell(row=3, column=inner_col_idx).value
                                     if first_value != "Discrete":
@@ -776,14 +641,14 @@ class LandingPage(TemplateView):
                                                                         if col_idx == 1:
                                                                             Data[sheet_name][row[0]]['Inner'] = 2000 if value in ['yes', 'Yes', '1', 'X'] else 0
                                                                         else:
-                                                                            Data[sheet_name][row[0]]['Outer{}'.format(col_idx)] = 1 if value in ['yes', 'Yes', '1', 'X'] else 0
+                                                                            Data[sheet_name][row[0]]['Outer{}'.format(col_idx-1)] = 1 if value in ['yes', 'Yes', '1', 'X'] else 0
                                                                 elif data_types[col_idx] == 'Continuous':
                                                                     try:
                                                                         float_value = float(value)
                                                                         if col_idx == 1:
                                                                             Data[sheet_name][row[0]]['Inner'] = value
                                                                         else:
-                                                                            Data[sheet_name][row[0]]['Outer{}'.format(col_idx)] = float_value
+                                                                            Data[sheet_name][row[0]]['Outer{}'.format(col_idx-1)] = float_value
                                                                     except ValueError:
                                                                         Incorrect_values[sheet_name][header_list[col_idx]][index] = 'Non-Continuous Value'
                                                                 else:
@@ -806,6 +671,9 @@ class LandingPage(TemplateView):
                                                     # If any index is assigned, set status to 'Partially_success' and break out of the loop
                                                     status = 'Failed'
                                                     break
+                                            if len(Data[sheet_name]) > 200:
+                                                status = 'Failed'
+                                                Incorrect_values[sheet_name]['Col1'] = "More than 200 Receptors, please provide less than 200 receptors"
                                         else:
                                             status = 'Failed'
 
@@ -1044,14 +912,14 @@ class LandingPage(TemplateView):
                                     except:
                                         print("Heatmap Failed")
                                 
-                                ### Dart Plot ###
-                                elif sheet_name == 'Dart':
+                                ### GPCRome Plot ###
+                                elif sheet_name == 'GPCRome':
 
                                     # Initialize dictionaries
                                     data_types_circle = [cell.value for cell in worksheet[2]]
                                     # Data['Datatypes'] = {}
-                                    Data['Datatypes']['Dart'] = {}
-                                    Data['Datatypes']['Dart']['Col1'] = data_types_circle[1]
+                                    Data['Datatypes']['GPCRome'] = {}
+                                    Data['Datatypes']['GPCRome']['Col1'] = data_types_circle[1]
                                     for key in header_list:
                                         Incorrect_values[sheet_name][key] = {}
                                     try:
@@ -1121,10 +989,10 @@ class LandingPage(TemplateView):
                                         ## Update Plot_parser for Cluster
                                         Plot_parser[4] = status
                                     except:
-                                        print("Dart failed")
+                                        print("GPCRome failed")
                             ## Return all values for plotparser and correctly (or partially) succesful plots ##
 
-                            plot_names = ['Tree', 'Cluster', 'List', 'Heatmap','Dart']
+                            plot_names = ['Tree', 'Cluster', 'List', 'Heatmap','GPCRome']
                             plot_data = {}
                             plot_incorrect_data = {}
 
@@ -1252,14 +1120,14 @@ class plotrender(TemplateView):
                     context['Label_converter'] = json.dumps(label_converter)
                     context['heatmap_data'] = json.dumps(Data['Heatmap'])
                     context['Heatmap_Label_dict'] = json.dumps(Data['Heatmap_Label_dict'])
-                # Dart #
+                # GPCRome #
                 if Plot_evaluation[4]:
-                    print("Dart success")
-                    Dart_data = LandingPage.generate_list_plot(Data['Dart'])
-                    context['Dart_data'] = json.dumps(Dart_data["NameList"])
-                    context['Dart_data_variables'] = json.dumps(Dart_data['DataPoints'])
-                    context['Dart_Label_Conversion'] = json.dumps(Dart_data['LabelConversionDict'])
-                    context['Dart_datatypes'] = json.dumps(Data['Datatypes'])
+                    print("GPCRome success")
+                    GPCRome_data = LandingPage.generate_list_plot(Data['GPCRome'])
+                    context['GPCRome_data'] = json.dumps(GPCRome_data["NameList"])
+                    context['GPCRome_data_variables'] = json.dumps(GPCRome_data['DataPoints'])
+                    context['GPCRome_Label_Conversion'] = json.dumps(GPCRome_data['LabelConversionDict'])
+                    context['GPCRome_datatypes'] = json.dumps(Data['Datatypes'])
                 # Handles and determines first active tab #
                 first_active_tab = None
                 tab_names = ['#tab1', '#tab2', '#tab3', '#tab4','#tab5']
