@@ -69,7 +69,7 @@
             <td><b>Class<br />(Family)</b></td>
             {% for class in all_structures_by_class.items %}
             <td align="center"><b>
-              {% if class.0 == " T (Taste 2)" %}T2 (Taste&nbsp;2)
+              {% if class.0 == " T2 (Taste 2)" %}T2 (Taste&nbsp;2)
               {% elif class.0 == " D1 (Ste2-like fungal pheromone)" %}D1<br \>(Ste2-like fungal pheromone)
               {% else %}{{ class.0 }}
               {% endif %}
@@ -120,7 +120,7 @@
             <td><b>Class<br />(Family)</b></td>
             {% for class in unique_structures_by_class.items %}
             <td align="center"><b>
-              {% if class.0 == " T (Taste 2)" %}T2 (Taste&nbsp;2)
+              {% if class.0 == " T2 (Taste 2)" %}T2 (Taste&nbsp;2)
               {% elif class.0 == " D1 (Ste2-like fungal pheromone)" %}D1<br \>(Ste2-like fungal pheromone)
               {% else %}{{ class.0 }}
               {% endif %}
@@ -423,7 +423,7 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
         <text x="20" y="73" font-family="Verdana" font-size="10">The number of structures available.</text>
     </svg>
     <div id="unique" class="chart_container" style="display: none;">
-        <div id="unique_cryst_container"><svg id="unique_cryst" style="width:800px;height:600px;"></svg></div>
+        <div id="unique_cryst_container"><svg id="unique_cryst" style="width:900px;height:600px;"></svg></div>
         <script>
         data_unique_cryst_container = {{ chartdata|safe }};
         </script>
@@ -453,7 +453,7 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
         </div>
     </div>
     <div id="unique_y" class="chart_container" style="display: none;">
-        <div id="unique_cryst_year_container"><svg id="unique_cryst_year" style="width:800px;height:600px;"></svg></div>
+        <div id="unique_cryst_year_container"><svg id="unique_cryst_year" style="width:900px;height:600px;"></svg></div>
         <script>
             data_unique_cryst_year_container={{ chartdata_y|safe }};
         </script>
@@ -483,7 +483,7 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
         </div>
     </div>
     <div id="all" class="chart_container" style="display: none;">
-        <div id="cryst_year_container"><svg id="data_cryst_year" style="width:800px;height:600px;"></svg></div>
+        <div id="cryst_year_container"><svg id="data_cryst_year" style="width:900px;height:600px;"></svg></div>
         <script>
             data_cryst_year_container={{ chartdata_all|safe }};
         </script>
@@ -527,7 +527,7 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
         <text x="20" y="53" font-family="Verdana" font-size="10">The number of crystal structures available each year.</text>
     </svg> -->
     <div id="unique_class" class="chart_container" style="display: none;">
-        <div id="unique_cryst_class_container"><svg id="unique_class_cryst" style="width:800px;height:600px;"></svg></div>
+        <div id="unique_cryst_class_container"><svg id="unique_class_cryst" style="width:900px;height:600px;"></svg></div>
         <script>
         data_unique_class_cryst_container={{ chartdata_class|safe }};
         </script>
@@ -557,7 +557,7 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
         </div>
     </div>
     <div id="unique_class_y" class="chart_container" style="display: none;">
-        <div id="unique_class_cryst_year_container"><svg id="unique_class_cryst_year" style="width:800px;height:600px;"></svg></div>
+        <div id="unique_class_cryst_year_container"><svg id="unique_class_cryst_year" style="width:900px;height:600px;"></svg></div>
         <script>
             data_unique_class_cryst_year_container={{ chartdata_class_y|safe }};
         </script>
@@ -587,7 +587,7 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
         </div>
     </div>
     <div id="all_class" class="chart_container" style="display: none;">
-        <div id="cryst_class_year_container"><svg id="data_class_cryst_year" style="width:800px;height:600px;"></svg></div>
+        <div id="cryst_class_year_container"><svg id="data_class_cryst_year" style="width:900px;height:600px;"></svg></div>
         <script>
             data_cryst_class_year_container={{ chartdata_class_all|safe }};
         </script>
@@ -669,6 +669,10 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
     class_f_options = {{ class_f_options|safe }};
     class_t2 = {{ class_t2|safe }};
     class_t2_options = {{ class_t2_options|safe }};
+    class_o1 = {{ class_o1|safe }};
+    class_o1_options = {{ class_o1_options|safe }};
+    class_o2 = {{ class_o2|safe }};
+    class_o2_options = {{ class_o2_options|safe }};
     orphan = {{ orphan|safe }};
     orphan_options = {{ orphan_options|safe }};
     whole_dict = {{ whole_receptors|safe }}
@@ -692,6 +696,10 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
       DrawCircles('class_f', circles_data, maxLeafNodeLenght, conversion, true, false);
       changeLeavesLabels("class_t2","UniProt", whole_dict);
       DrawCircles('class_t2', circles_data, maxLeafNodeLenght, conversion, true, false);
+      changeLeavesLabels("class_o1","UniProt", whole_dict);
+      DrawCircles('class_o1', circles_data, maxLeafNodeLenght, conversion, true, false);
+      changeLeavesLabels("class_o2","UniProt", whole_dict);
+      DrawCircles('class_o2', circles_data, maxLeafNodeLenght, conversion, true, false);
       changeLeavesLabels("orphan","UniProt", whole_dict);
       DrawCircles('orphan', circles_data, maxLeafNodeLenght, conversion, true, false);
   });
@@ -710,6 +718,10 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
       DrawCircles('class_f', circles_data, maxLeafNodeLenght, conversion, true, false);
       changeLeavesLabels("class_t2","IUPHAR", whole_dict);
       DrawCircles('class_t2', circles_data, maxLeafNodeLenght, conversion, true, false);
+      changeLeavesLabels("class_o1","IUPHAR", whole_dict);
+      DrawCircles('class_o1', circles_data, maxLeafNodeLenght, conversion, true, false);
+      changeLeavesLabels("class_o2","IUPHAR", whole_dict);
+      DrawCircles('class_o2', circles_data, maxLeafNodeLenght, conversion, true, false);
       changeLeavesLabels("orphan","IUPHAR", whole_dict);
       DrawCircles('orphan', circles_data, maxLeafNodeLenght, conversion, true, false);
   });
@@ -1126,7 +1138,7 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
 
       <div class="span4">
         <div id="class_t2" class="text-center">
-          <h4>Class T <br /> (Taste 2)</h4>
+          <h4>Class T2 <br /> (Taste 2)</h4>
         </div>
       </div>
 
@@ -1216,6 +1228,85 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
   </div>
 </div>
 
+<br />
+<br />
+<br />
+
+<div class="row-fluid">
+  <div class="span12">
+    <div class="row-fluid">
+      <div class="span4">
+        <div id="class_o1" class="text-center">
+          <h4>Class O1<br />(fish-like odorant)</h4>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row-fluid">
+  <div class="span12">
+    <div class="row-fluid">
+      <div class="span4">
+        <div class="text-center">
+          <div class="btn-group">
+              <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                      aria-haspopup="true" aria-expanded="false">
+                  <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+              </button>
+              <ul class="dropdown-menu">
+                  <li>
+                      <a href="javascript:saveSvgAsPng(document.getElementById('class_o1_svg'), 'xtal_coverage_tree_class_o1.png');">PNG</a>
+                  </li>
+                  <li>
+                      <a href="javascript:saveSvgAsJpg(document.getElementById('class_o1_svg'), 'xtal_coverage_tree_class_o1.jpg');">JPG</a>
+                  </li>
+                  <li>
+                      <a href="javascript:saveSvgAsTiff(document.getElementById('class_o1_svg'), 'xtal_coverage_tree_class_o1.tiff');">TIFF</a>
+                      </a>
+                  </li>
+                  <li>
+                      <a href="javascript:saveSvg(document.getElementById('class_o1_svg'), 'xtal_coverage_tree_class_o1.svg');">SVG</a>
+                  </li>
+              </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<br />
+<br />
+<br />
+
+<div id="class_o2" class="text-center">
+  <h4>Class O2<br />(tetrapod specific odorant)</h4>
+</div>
+
+<p>
+  <div class="text-center">
+    <div class="btn-group">
+        <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                aria-haspopup="true" aria-expanded="false">
+            <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu">
+            <li>
+                <a href="javascript:saveSvgAsPng(document.getElementById('class_o2_svg'), 'xtals_tree_class_o2.png');">PNG</a>
+            </li>
+            <li>
+                <a href="javascript:saveSvgAsJpg(document.getElementById('class_o2_svg'), 'xtals_tree_class_o2.jpg');">JPG</a>
+            </li>
+            <li>
+                <a href="javascript:saveSvgAsTiff(document.getElementById('class_o2_svg'), 'xtals_tree_class_o2.tiff');">TIFF</a>
+            </li>
+            <li>
+                <a href="javascript:saveSvg(document.getElementById('class_o2_svg'), 'xtals_tree_class_o2.svg');">SVG</a>
+            </li>
+        </ul>
+    </div>
+  </div>
 
 {% endblock %}
 
@@ -1238,6 +1329,8 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
         draw_tree(class_c, class_c_options);
         draw_tree(class_f, class_f_options);
         draw_tree(class_t2, class_t2_options);
+        draw_tree(class_o1, class_o1_options);
+        draw_tree(class_o2, class_o2_options);
         draw_tree(orphan, orphan_options);
         DrawCircles('class_a', circles_data, maxLeafNodeLenght, conversion, true, false);
         DrawCircles('class_b1', circles_data, maxLeafNodeLenght, conversion, true, false);
@@ -1245,18 +1338,24 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
         DrawCircles('class_c', circles_data, maxLeafNodeLenght, conversion, true, false);
         DrawCircles('class_f', circles_data, maxLeafNodeLenght, conversion, true, false);
         DrawCircles('class_t2', circles_data, maxLeafNodeLenght, conversion, true, false);
+        DrawCircles('class_o1', circles_data, maxLeafNodeLenght, conversion, true, false);
+        DrawCircles('class_o2', circles_data, maxLeafNodeLenght, conversion, true, false);
         DrawCircles('orphan', circles_data, maxLeafNodeLenght, conversion, true, false);
         $("#class_a svg g").first().attr('transform', 'translate(555,555) scale(0.9,0.9) ');
-        $("#class_a_svg").attr('height', 1210);
+        $("#class_a_svg").attr('height', 1140);
         $("#class_a_svg").attr('width', 1110);
-        $("#class_b1 svg g").first().attr('transform', 'translate(190,220) scale(0.80,0.80) ');
+        $("#class_b1 svg g").first().attr('transform', 'translate(200,220) scale(0.80,0.80) ');
         $("#class_b2 svg g").first().attr('transform', 'translate(195,182) scale(0.85,0.85) ');
         $("#class_b2_svg").attr('height', 390);
         $("#class_c svg g").first().attr('transform', 'translate(200,200) scale(0.85,0.85) ');
         $("#class_f svg g").first().attr('transform', 'translate(180,180) scale(0.85,0.85) ');
         $("#class_t2 svg g").first().attr('transform', 'translate(172,172) scale(0.85,0.85) ');
-        $("#orphan svg g").first().attr('transform', 'translate(175,180) scale(0.85,0.85)');
-        $("#orphan_svg").attr('height', 360).attr('width', 360);
+        $("#class_o1 svg g").first().attr('transform', 'translate(200,230) scale(0.85,0.85) ');
+        $("#class_o2 svg g").first().attr('transform', 'translate(555,585) scale(0.9,0.9) ');
+        $("#class_o2_svg").attr('height', 1180);
+        $("#class_o2_svg").attr('width', 1110);
+        $("#orphan svg g").first().attr('transform', 'translate(200,220) scale(0.75,0.75)');
+        $("#orphan_svg").attr('height', 460).attr('width', 460);
     });
 </script>
 {% elif page == 'gprot' %}
