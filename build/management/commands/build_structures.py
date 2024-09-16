@@ -1370,6 +1370,9 @@ class Command(BaseBuild):
                 if line.startswith('JRNL        DOI'):
                     sd['doi_id'] = line[19:].strip()
 
+            if pdb_id=='8FEG':
+                sd['doi_id'] = '10.1038/s41467-023-43718-w'
+
             if len(hetsyn) == 0:
                 self.logger.info("PDB file contained NO hetsyn")
 

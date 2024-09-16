@@ -199,7 +199,7 @@ class Command(BaseBuild):
         # Remove parameter, value and PMID is columns to have the complete dataset
         filtered_data = endogenous_data.loc[endogenous_data['target_id'].isin(
             iuphar_ids)]
-        uniq_rows = filtered_data.drop(columns=['interaction_parameter','interation_units','interaction_pubmed_ids']).drop_duplicates()
+        uniq_rows = filtered_data.drop(columns=['interaction_parameter','interaction_value','interaction_pubmed_ids']).drop_duplicates()
         uniq_rows = uniq_rows.dropna(subset=['ligand_name'])
         association = filtered_data[['ligand_id', 'target_id']].drop_duplicates(
         ).groupby('target_id')['ligand_id'].apply(list).to_dict()
@@ -262,7 +262,7 @@ class Command(BaseBuild):
                             endogenous_data['ligand_id'] == ligand) & (endogenous_data['interaction_parameter'] == par)]['interaction_species'].tolist()
                         for org in species:
                             data = endogenous_data.loc[(endogenous_data['target_id'] == target) & (endogenous_data['ligand_id'] == ligand) & (
-                                endogenous_data['interaction_parameter'] == par) & (endogenous_data['interaction_species'] == org)]['interation_units'].tolist()
+                                endogenous_data['interaction_parameter'] == par) & (endogenous_data['interaction_species'] == org)]['interaction_value'].tolist()
                             if len(data) == 1:
                                 if '-' not in data[0]:
                                     uniq_rows.loc[(uniq_rows['target_id'] == target) & (
