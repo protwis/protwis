@@ -66,19 +66,6 @@ import signal
 from contextlib import contextmanager
 
 
-# Imports for Structure_Blast
-import tempfile
-import uuid
-import docker
-import threading
-from functools import wraps
-from django.utils.decorators import method_decorator
-import shutil
-import signal
-from contextlib import contextmanager
-
-
-
 class_dict = {'001':'A','002':'B1','003':'B2','004':'C','005':'D1','006':'F','007':'O1','008':'O2','009':'T2','010':'O'}
 
 class StructureBrowser(TemplateView):
