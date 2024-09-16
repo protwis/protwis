@@ -49,7 +49,7 @@ class Protein(models.Model):
         while tmp.parent.parent is not None:
             tmp = tmp.parent
         return tmp.name
-    
+
     def get_protein_class_from_slug(self,slug=None,short=False):
         if slug is None:
             slug = self.family.slug
@@ -91,7 +91,7 @@ class Protein(models.Model):
         while tmp.parent.parent.parent is not None:
             tmp = tmp.parent
         return tmp.name
-    
+
     def get_protein_family_from_slug(self,slug=None,short=False):
         if slug is None:
             slug = self.family.slug
