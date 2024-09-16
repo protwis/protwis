@@ -86,7 +86,8 @@ urlpatterns = [
     path('biased/', views.CachedOTFBiasBrowser, name='bias_browser-list'),
     path('biasedsubtypes/',views.CachedOTFBiasSubtypeBrowser, name='bias_browser-list'),
     path('pathwaypreference/',views.CachedOTFPathwayPrefBrowser, name='bias_browser-list'),
-    path('endogenousbrowser/', cache_page(3600*24*7)(views.EndogenousBrowser.as_view()), name='endogenous_browser'),
+    path('endogenousbrowser/', cache_page(3600*24*7)(views.endogenous_redirect), name='endogenous_browser'),
+    path('physiological_ligands/', cache_page(3600*24*7)(views.PhysiologicalLigands.as_view()), name='physiological_ligands'),
 
     #User selected calculations
     #Biased Family

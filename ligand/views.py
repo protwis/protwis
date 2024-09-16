@@ -14,6 +14,7 @@ from collections import defaultdict, OrderedDict
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.views.generic import TemplateView, DetailView
+from django.http import HttpResponseRedirect
 
 from django.db.models import Q, Count, Subquery, OuterRef, Prefetch
 from django.views.decorators.csrf import csrf_exempt
@@ -2402,7 +2403,7 @@ class ReferenceSelection(TemplateView):
         context = super().get_context_data(**kwargs)
         return context
 
-class EndogenousBrowser(TemplateView):
+class PhysiologicalLigands(TemplateView):
 
     template_name = 'endogenous_browser.html'
 
@@ -2523,3 +2524,6 @@ class EndogenousBrowser(TemplateView):
         # context = dict()
         context['Array'] = table.to_numpy()
         return context
+    
+def endogenous_redirect(request):
+    return HttpResponseRedirect('/ligand/physiological_ligands')
