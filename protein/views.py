@@ -158,7 +158,7 @@ def SelectionAutocomplete(request):
             field_list = fields.split(',')
             # if 'all' in field_list:
             #     fields = None
-            
+
         referer = request.META.get('HTTP_REFERER')
 
         if 'gproteinselection' in str(referer) or 'signprot' in str(referer) and not 'ginterface' in str(referer):
@@ -183,6 +183,8 @@ def SelectionAutocomplete(request):
         protein_source_list = []
         for protein_source in selection.annotation:
             protein_source_list.append(protein_source.item)
+
+        indexes = []
 
         # find proteins
         if type_of_selection!='navbar' and type_of_selection!='ligands':
@@ -215,7 +217,7 @@ def SelectionAutocomplete(request):
                     if qsl is None:
                         qsl = Q(id=q)
                     else:
-                        qsl = qsl | Q(id__contains=q)        
+                        qsl = qsl | Q(id__contains=q)
                 elif field == 'inchikey':
                     if qsl is None:
                         qsl = Q(inchikey__contains=q)
@@ -226,14 +228,14 @@ def SelectionAutocomplete(request):
                         qslid = Q(index=q) & Q(web_resource_id=web_resource_slug_2_id[field])
                     else:
                         qslid = qslid | Q(index=q) & Q(web_resource_id=web_resource_slug_2_id[field])
-            if qsl is not None:      
+            if qsl is not None:
                 ps = Ligand.objects.filter(qsl)[:10]
             else:
                 ps = []
             if qslid is not None:
                 indexes = LigandID.objects.filter(qslid).values_list('ligand_id','ligand_id__name','web_resource_id__name')
             else:
-                indexes = []  
+                indexes = []
         else:
             ps = Protein.objects.filter(Q(name__icontains=q) | Q(entry_name__icontains=q) | Q(family__name__icontains=q) | Q(accession=q),
                                         species__common_name='Human', source__name='SWISSPROT').exclude(entry_name__endswith='_a').exclude(sequence_type__slug='consensus')[:10]
