@@ -86,7 +86,9 @@ urlpatterns = [
     path('biased/', views.CachedOTFBiasBrowser, name='bias_browser-list'),
     path('biasedsubtypes/',views.CachedOTFBiasSubtypeBrowser, name='bias_browser-list'),
     path('pathwaypreference/',views.CachedOTFPathwayPrefBrowser, name='bias_browser-list'),
-    path('endogenousbrowser/', cache_page(3600*24*7)(views.EndogenousBrowser.as_view()), name='endogenous_browser'),
+    # path('endogenousbrowser/', cache_page(3600*24*7)(views.EndogenousBrowser.as_view()), name='endogenous_browser'),
+    path('endogenousbrowser/', views.EndogenousBrowser.as_view(), name='endogenous_browser'),
+
     #User selected calculations
     #Biased Family
     path('userselectionbiased', views.UserBiased.as_view(way='Browser'), name='bias_browser-list'),
