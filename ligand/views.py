@@ -22,6 +22,7 @@ from django.shortcuts import render, redirect
 from django.http import HttpResponse, HttpResponseServerError, JsonResponse
 from django.views.generic import TemplateView, DetailView, View
 from django.db import connection
+from django.http import HttpResponseRedirect
 
 from django.db.models import Q, Count, Subquery, OuterRef
 from django.views.decorators.csrf import csrf_exempt
@@ -1416,7 +1417,7 @@ class BiasedSignallingSelection(AbsReferenceSelectionTable):
             "sameSize": True,
         },
         'continue': {
-            'label': 'Physiology-biased ligands<br>(endogenous agonist reference)',
+            'label': 'Physiology-biased ligands<br>(physiological agonist reference)',
             'onclick': pathfinder[way]['Continue'],
             'color': 'success',
             'invisible': 'No',
@@ -2940,7 +2941,7 @@ class LigandInformationView(TemplateView):
 
     @staticmethod
     def get_labels(ligand_data, endogenous_ligands, label_type):
-        endogenous_label = '<img src="https://icon-library.com/images/icon-e/icon-e-17.jpg" title="Endogenous ligand from GtoP" width="20" height="20"></img>'
+        endogenous_label = '<img src="https://icon-library.com/images/icon-e/icon-e-17.jpg" title="Physiological ligand from GtoP" width="20" height="20"></img>'
         surrogate_label = '<img src="https://icon-library.com/images/letter-s-icon/letter-s-icon-15.jpg"' + \
                           ' title="Surrogate ligand" width="20" height="20"></img>'
         drug_label = '<img src="https://icon-library.com/images/drugs-icon/drugs-icon-7.jpg" title="Approved drug" width="20" height="20"></img>'
@@ -3255,7 +3256,7 @@ class ReferenceSelection(TemplateView):
         context = super().get_context_data(**kwargs)
         return context
 
-class EndogenousBrowser(TemplateView):
+class PhysiologicalLigands(TemplateView):
 
     template_name = 'endogenous_browser.html'
 
@@ -3366,3 +3367,7 @@ class EndogenousBrowser(TemplateView):
         # context = dict()
         context['Array'] = table.to_numpy()
         return context
+
+
+def endogenous_redirect(request):
+    return HttpResponseRedirect('/ligand/physiological_ligands')

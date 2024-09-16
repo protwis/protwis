@@ -78,7 +78,7 @@ class CustomBlast():
 
 	def __init__(self, fasta_file):
 		self.blastdb = fasta_file
-		self.blast_search = BlastSearch(blastdb=self.blastdb, top_results=5)
+		self.blast_search = BlastSearch(blastdb=self.blastdb, top_results=20)
 
 	def run(self, query):
 		out = self.blast_search.run(query)
