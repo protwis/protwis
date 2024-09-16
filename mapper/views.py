@@ -1,26 +1,16 @@
-from django.shortcuts import get_object_or_404, render, redirect
-from django.views import generic
+from django.shortcuts import render, redirect
 from django.http import JsonResponse, HttpResponse
 from django.db.models import Q, F, Func, Value, Prefetch
 from django.core.cache import cache
 from django.views.decorators.cache import cache_page
 from django.urls import reverse
-from django.shortcuts import render
 from django.conf import settings
-from django.views.decorators.cache import cache_page
 from django.views.generic import TemplateView
 from django.http import HttpResponseNotAllowed
 from django import forms
 from django import template
-
-
-from protein.models import Protein, ProteinConformation, ProteinAlias, ProteinFamily, Gene, ProteinSegment
-from residue.models import Residue
-from structure.models import Structure, StructureModel, StructureExtraProteins
-from interaction.models import ResidueFragmentInteraction,StructureLigandInteraction
-from common.selection import Selection
-from common.views import AbsBrowseSelection
-from ligand.models import Ligand, LigandID
+from protein.models import Protein, ProteinFamily, Gene
+from ligand.models import Ligand
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 
 import json
@@ -37,11 +27,8 @@ import umap.umap_ as umap
 
 import numpy as np
 import pandas as pd
-import random
-from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 from sklearn.cluster import KMeans
-from sklearn.preprocessing import StandardScaler
 
 import openpyxl
 import os
@@ -216,17 +203,11 @@ class LandingPage(TemplateView):
         ### TREE SECTION
         tree = PhylogeneticTreeGenerator()
         class_a_data = tree.get_tree_data(ProteinFamily.objects.get(name='Class A (Rhodopsin)'))
-        class_a_options = deepcopy(tree.d3_options)
         class_b1_data = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class B1 (Secretin)'))
-        class_b1_options = deepcopy(tree.d3_options)
         class_b2_data = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class B2 (Adhesion)'))
-        class_b2_options = deepcopy(tree.d3_options)
         class_c_data = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class C (Glutamate)'))
-        class_c_options = deepcopy(tree.d3_options)
         class_f_data = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class F (Frizzled)'))
-        class_f_options = deepcopy(tree.d3_options)
         class_t2_data = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class T (Taste 2)'))
-        class_t2_options = deepcopy(tree.d3_options)
         ### GETTING NODES
         data_a = class_a_data.get_nodes_dict(None)
         data_b1 = class_b1_data.get_nodes_dict(None)
