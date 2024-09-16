@@ -1,16 +1,11 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render
 from django.http import JsonResponse, HttpResponse
 from django.db.models import Q, F, Func, Value, Prefetch
-from django.core.cache import cache
-from django.views.decorators.cache import cache_page
-from django.urls import reverse
 from django.conf import settings
 from django.views.generic import TemplateView
-from django.http import HttpResponseNotAllowed
 from django import forms
 from django import template
-from protein.models import Protein, ProteinFamily, Gene
-from ligand.models import Ligand
+from protein.models import Protein, ProteinFamily
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 
 import json
@@ -23,9 +18,6 @@ try:
 except ImportError:
     sys.modules['importlib.metadata'] = __import__('importlib_metadata')
 
-import umap.umap_ as umap
-
-import numpy as np
 import pandas as pd
 from sklearn.manifold import TSNE
 from sklearn.cluster import KMeans
@@ -422,13 +414,13 @@ class LandingPage(TemplateView):
         return merged_df
 
     @staticmethod
-    def reduce_and_cluster(data, method='umap', n_components=2, n_clusters=5):
-        if method == 'umap':
-            reducer = umap.UMAP(n_components=n_components, random_state=42)
-        elif method == 'tsne':
+    def reduce_and_cluster(data, method='tsne', n_components=2, n_clusters=5):
+        # if method == 'umap':
+        #     reducer = umap.UMAP(n_components=n_components, random_state=42)
+        if method == 'tsne':
             reducer = TSNE(n_components=n_components, random_state=42)
-        elif method == 'pca':
-            reducer = PCA(n_components=n_components, random_state=42)
+        # elif method == 'pca':
+        #     reducer = PCA(n_components=n_components, random_state=42)
         else:
             raise ValueError("Method should be either 'umap' or 'tsne'")
 
