@@ -49,6 +49,18 @@ re_leading_whitespaces = re.compile('^\s+')
 re_trailing_whitespaces = re.compile('\s+$')
 MAX_RECORDS = 10**6
 
+
+def getLigandChemicalStructureSearchParameters(request):
+    param_dict = {}
+    param_dict['search_type_selection'] = search_type =  request.session.get('selection_ligand_chemical_structure_search_search_type_selection', 'identity')
+    return param_dict
+def setLigandChemicalStructureSearchParameters(request, search_params_data):
+    for key,value in search_params_data.items():
+        request.session["selection_ligand_chemical_structure_search_"+key] = value 
+    request.session.modified = True
+def validate_selection_ligand_chemical_structure_search_search_type_selection(value):
+    return value in {'identity','similarity','substructure'}
+
 def getLigandBulkSearchParameters(request):
     param_dict = {}
     default_search_text = ''
@@ -56,6 +68,7 @@ def getLigandBulkSearchParameters(request):
     param_dict['search_type_selection'] = search_type =  request.session.get('selection_ligand_bulk_search_search_type_selection', 'smiles')
     param_dict['search_text_by_id'] = request.session.get('selection_ligand_bulk_search_by_id_search_text', default_search_text)
     param_dict['search_text_by_name'] = request.session.get('selection_ligand_bulk_search_by_name_search_text', default_search_text)
+    param_dict['search_text_by_names'] = request.session.get('selection_ligand_bulk_search_by_names_search_text', default_search_text)
     param_dict['search_text_by_other'] = request.session.get('selection_ligand_bulk_search_by_other_search_text', default_search_text)
 
     key = 'search_text_by_id'
@@ -78,13 +91,16 @@ def setLigandBulkSearchParameters(request, search_params_data):
                 key2 = 'by_id_search_text'
             elif search_type == 'name':
                 key2 = 'by_name_search_text'
+            elif search_type == 'names':
+                key2 = 'by_names_search_text'
             else:
                 key2 = 'by_other_search_text'
             request.session["selection_ligand_bulk_search_"+key2] = value 
         elif search_type not in {'id','name'} and key == 'search_type':
             key2 = 'search_type_selection'
-            request.session["selection_ligand_bulk_search_"+key2] = value 
-        request.session["selection_ligand_bulk_search_"+key] = value 
+            request.session["selection_ligand_bulk_search_"+key2] = value
+        if not key == 'search_type_selection':
+            request.session["selection_ligand_bulk_search_"+key] = value 
     request.session.modified = True
 
 class LigandNameSelection(AbsTargetSelection):
@@ -99,13 +115,13 @@ class LigandNameSelection(AbsTargetSelection):
     family_tree = False
     type_of_selection = 'ligands'
     selection_only_receptors = False
-    title = "Ligand search"
-    description = 'Search for a ligand or several ligands by name, database ID (GPCRdb, GtP, ChEMBL) or structure (Standard InChIKey, SMILES or SMARTS).'
+    title = "Ligand search tools"
+    description = 'If searching for multiple ligands, separate queries by new lines.'
 
     buttons = {
         
         'continue' : {
-            'label' : 'Bulk search',
+            'label' : 'Search',
             'onclick' : "submitSelectionLigandBulkSearch('/ligand/ligand_bulk_search')",
             'color' : 'success',
             
@@ -147,12 +163,21 @@ class LigandNameSelection(AbsTargetSelection):
         context['ligandids'] = ligandids
 
         context['selection_ligand_bulk_search_parameters'] = getLigandBulkSearchParameters(self.request)
+        context['selection_ligand_chemical_search_type_parameters'] = getLigandChemicalStructureSearchParameters(self.request)
+        
         msg = self.request.session.pop('ligand_bulk_search_error_msg',None)
         if msg is not None:
             context['ligand_bulk_search_error_msg'] = msg
         msg = self.request.session.pop('ligand_bulk_search_by_name_error_msg',None)
         if msg is not None:
             context['ligand_bulk_search_by_name_error_msg'] = msg
+        msg = self.request.session.pop('ligand_bulk_search_by_names_error_msg',None)
+        if msg is not None:
+            context['ligand_bulk_search_by_names_error_msg'] = msg
+        
+        msg = self.request.session.pop('ligand_bulk_search_error_msg',None)
+        if msg is not None:
+            context['ligand_bulk_search_error_msg'] = msg
         msg = self.request.session.pop('ligand_bulk_search_by_id_error_msg',None)
         if msg is not None:
             context['ligand_bulk_search_by_id_error_msg'] = msg
@@ -162,7 +187,6 @@ class LigandNameSelection(AbsTargetSelection):
         msg = self.request.session.pop('ligand_structural_search_error_msg',None)
         if msg is not None:
             context['ligand_structural_search_error_msg'] = msg
-
         return context
     def get(self, request, *args, **kwargs):
         context = self.get_context_data(**kwargs)
@@ -183,7 +207,7 @@ def validate_SMARTS(smarts,smiles_only=False):
         error = True
         return (error, msg)
     if len(smarts) == 0:
-        msg = 'SMILES '+msg_part +' are empty.' % settings.SMILES_MAX_LENGTH
+        msg = 'SMILES '+msg_part +' are empty.'
         error = True
         return (error, msg)
     invalid_smarts_msg = 'Invalid SMILES'+msg_part+'.'
@@ -247,20 +271,36 @@ class ReadInputLigandBulkSearch(View):
         OK_request_dict = self.OK_request_dict.copy()
         bad_request_dict = self.bad_request_dict.copy()
         search_params_data = {}
+        ligand_chemical_structure_search = False
         error = False
+
         search_type = request.POST.get('search_type',None)
+        if search_type in {'smiles','smarts','inchikey'}:
+            ligand_chemical_structure_search = True
+
+            selection_ligand_chemical_structure_search_search_type_selection = value = request.POST.get('selection_ligand_chemical_structure_search_search_type_selection',None)
+            error = not validate_selection_ligand_chemical_structure_search_search_type_selection(value)
+            msg = 'Invalid selection_ligand_chemical_structure_search_search_type_selection value: '+str(value)
+            if error:
+                request.session['ligand_bulk_search_error_msg'] = msg
+                request.session.modified = True
+                bad_request_dict['msg'] = msg
+                return JsonResponse(bad_request_dict,status=400,reason='Bad Request')
+            del value
+
         for key in self.search_params_data_keys:
             if key == 'search_text' and search_type != 'name':
-                if search_type == 'id':
-                    entry_lines = [re_trailing_whitespaces.sub('',re_leading_whitespaces.sub('',l)) for l in request.POST.get(key,None).splitlines()]
-                    entry_lines_splited = [re_whitespaces.split(l) for l in entry_lines if l != '']
-                    entry_lines = []
-                    entries = []
-                    for els in entry_lines_splited:
-                        entries += els
-                    entries = [ e for e in entries if e != '']
-                else:
-                    entries = [re_whitespaces.split(re_leading_whitespaces.sub('',l))[0] for l in request.POST.get(key,None).splitlines()]
+                # if search_type == 'id':
+                #     entry_lines = [re_trailing_whitespaces.sub('',re_leading_whitespaces.sub('',l)) for l in request.POST.get(key,None).splitlines()]
+                #     entry_lines_splited = [re_whitespaces.split(l) for l in entry_lines if l != '']
+                #     entry_lines = []
+                #     entries = []
+                #     for els in entry_lines_splited:
+                #         entries += els
+                #     entries = [ e for e in entries if e != '']
+                # else:
+                #     entries = [re_whitespaces.split(re_leading_whitespaces.sub('',l))[0] for l in request.POST.get(key,None).splitlines()]
+                entries = [re_whitespaces.split(re_leading_whitespaces.sub('',l))[0] for l in request.POST.get(key,None).splitlines()]
                 search_params_data[key] = ''
                 entries = [ e for e in entries if e != '']
                 if len(entries) == 0:
@@ -268,6 +308,10 @@ class ReadInputLigandBulkSearch(View):
                     session_key = 'ligand_bulk_search_error_msg'
                     if search_type == 'id':
                         session_key = 'ligand_bulk_search_by_id_error_msg'
+                    elif search_type == 'inchikey':
+                        session_key = 'ligand_bulk_search_error_msg'
+                    elif search_type == 'names':
+                        session_key = 'ligand_bulk_search_by_names_error_msg'
                     request.session[session_key] = msg
                     request.session.modified = True
                     bad_request_dict['msg'] = msg
@@ -282,6 +326,7 @@ class ReadInputLigandBulkSearch(View):
                     return JsonResponse(bad_request_dict,status=400,reason='Bad Request')
             else:
                 search_params_data[key] = request.POST.get(key,None)
+        
         if search_type == 'smiles' or search_type == 'smarts':
             for i,smiles in enumerate(entries):
                 error, msg = self.validate_SMARTS(smiles,smiles_only = search_type == 'smiles')
@@ -295,6 +340,8 @@ class ReadInputLigandBulkSearch(View):
             pass
         elif search_type == 'name':
             pass
+        elif search_type == 'names':
+            pass
         elif search_type == 'id':
             if search_params_data['field'] == 'gpcrdb_id':
                 new_entries = []
@@ -302,7 +349,12 @@ class ReadInputLigandBulkSearch(View):
                     try:
                         new_entries.append(int(e))
                     except ValueError:
-                        pass
+                        msg = 'GPCRdb IDs must be integers.'
+                        session_key = 'ligand_bulk_search_by_id_error_msg'
+                        request.session[session_key] = msg
+                        request.session.modified = True
+                        bad_request_dict['msg'] = msg
+                        return JsonResponse(bad_request_dict,status=400,reason='Bad Request')
                     entries = new_entries
         else:
             raise ValidationError('Unknown ligand bulk search parameter: search_type="%s"' % str(search_type))
@@ -324,6 +376,8 @@ class ReadInputLigandBulkSearch(View):
             search_params_data['stereochemistry'] = bool(stereochemistry)
 
         setLigandBulkSearchParameters(request,search_params_data)
+        if ligand_chemical_structure_search:
+            setLigandChemicalStructureSearchParameters(request, {'search_type_selection':selection_ligand_chemical_structure_search_search_type_selection})
         return JsonResponse(OK_request_dict)
 
 class LigandBulkSearch(TemplateView):
@@ -331,20 +385,29 @@ class LigandBulkSearch(TemplateView):
     template_name = 'target_details.html'
 
     def get_context_data(self, **kwargs):
+
+        
+
         cache_key = False
         mode = 'compact'
         context = super().get_context_data(**kwargs)
         param_dict = getLigandBulkSearchParameters(self.request)
-        self.request.session["selection_ligand_bulk_search_search_entries"] = []
-        self.request.session.modified = True
         entries = param_dict['search_entries']
+        if len(entries) > 1:
+            self.request.session["selection_ligand_bulk_search_search_entries"] = []
+            self.request.session.modified = True
+        
         search_type = param_dict['search_type']
         search_text = param_dict['search_text']
-
         if len(entries) == 0 and search_type != 'name':
             session_key = 'ligand_bulk_search_error_msg'
             if search_type == 'id':
                 session_key = 'ligand_bulk_search_by_id_error_msg'
+            elif search_type == 'inchikey':
+                session_key = 'ligand_bulk_search_error_msg'
+            elif search_type == 'names':
+                session_key = 'ligand_bulk_search_by_names_error_msg'
+            
             self.request.session[session_key] = 'Empty search input.'
             self.request.session.modified = True
             return context
@@ -385,17 +448,22 @@ class LigandBulkSearch(TemplateView):
             if len(entries) <= 1:
                 id = entries[0]
                 cache_key = "ligand_bulk_search_" + ",".join([search_type,str(id),mode])        
-
+            
         elif search_type == 'name':
             cache_key = "ligand_bulk_search_" + ",".join([search_type,search_text,mode])
+        elif search_type == 'names':
+            if len(entries) <= 1:
+                name = entries[0]
+                cache_key = "ligand_bulk_search_" + ",".join([search_type,str(name),mode]) 
         else:
             raise ValidationError('Unknown ligand bulk search parameter: search_type="%s"' % str(search_type))
 
         # cache.delete(cache_key)
-
+        
         no_results_msg = 'No results found.'
         if mode == 'compact':
             if not(cache_key != False and cache.has_key(cache_key)):
+
                 if search_type == 'smiles' or search_type == 'smarts':
                     
                     if cursor_results != []:
@@ -460,18 +528,31 @@ class LigandBulkSearch(TemplateView):
                         ps = AssayExperiment.objects.filter(webrq & qindex).prefetch_related('protein', 'ligand', 'ligand__ligand_type','protein__family')                        
                 elif search_type == 'name':
                     ps = AssayExperiment.objects.filter(ligand__name__icontains=search_text).prefetch_related('protein', 'ligand', 'ligand__ligand_type','protein__family')
+                elif search_type == 'names':
+                    ps = AssayExperiment.objects.filter(ligand__name__icontains=entries[0])
+                    for entry in entries[1:]:
+                        ps2 = AssayExperiment.objects.filter(ligand__name__icontains=entry)
+                        ps = ps | ps2
+                    
+                    ps = ps.prefetch_related('protein', 'ligand', 'ligand__ligand_type','protein__family')
                 if not ps:
                     context = "redirect"
                     session_key = 'ligand_bulk_search_error_msg'
                     if search_type == 'id':
                         session_key = 'ligand_bulk_search_by_id_error_msg'
+                    elif search_type == 'inchikey':
+                        session_key = 'ligand_bulk_search_error_msg'
+                    elif search_type == 'names':
+                        session_key = 'ligand_bulk_search_by_names_error_msg'
                     elif search_type == 'name':
                         session_key = 'ligand_bulk_search_by_name_error_msg'
                     self.request.session[session_key] = no_results_msg
                     self.request.session.modified = True
                     return context
-            
-            
+                
+
+                ps = ps.order_by("ligand__id","protein__entry_name")
+
             if cache_key != False and cache.has_key(cache_key):
                 result = cache.get(cache_key)
                 if 'redirect_to' in result:
@@ -481,7 +562,7 @@ class LigandBulkSearch(TemplateView):
             else:
                 ligand_data_affinity,ligand_data_potency = LigandListDetails(mode, ps,ligand_search=True)
             context = {}
-            context['ligand_structural_search'] = True
+            context['ligand_query'] = True
             context['potency_data'] = ligand_data_potency
             context['affinity_data'] = ligand_data_affinity
             if len(ligand_data_potency) + len(ligand_data_affinity) > MAX_RECORDS:
@@ -489,8 +570,12 @@ class LigandBulkSearch(TemplateView):
                 session_key = 'ligand_bulk_search_error_msg'
                 if search_type == 'id':
                     session_key = 'ligand_bulk_search_by_id_error_msg'
+                elif search_type == 'inchikey':
+                    session_key = 'ligand_bulk_search_error_msg'
+                elif search_type == 'names':
+                    session_key = 'ligand_bulk_search_by_names_error_msg'
                 elif search_type == 'name':
-                    session_key = 'ligand_bulk_search_by_name_error_msg'               
+                    session_key = 'ligand_bulk_search_by_name_error_msg'              
                 self.request.session[session_key] = 'Too many records (max. %d). Try again with more specific search criteria.' % (MAX_RECORDS)
                 self.request.session.modified = True
                 return context
@@ -527,7 +612,7 @@ def setLigandStructuralSearchParameters(request, search_params_data):
         request.session["ligand_structural_search_"+key] = value 
     request.session.modified = True
 
-class LigandStructuralSelection(AbsTargetSelection):
+""" class LigandStructuralSelection(AbsTargetSelection):
     # Left panel
     step = 1
     number_of_steps = 1
@@ -561,7 +646,7 @@ class LigandStructuralSelection(AbsTargetSelection):
         msg = self.request.session.pop('ligand_structural_search_error_msg',None)
         if msg is not None:
             context['ligand_structural_search_error_msg'] = msg
-        return context
+        return context """
 
 class ReadInputLigandStructuralSearch(View):
     min_similarity = None
@@ -587,6 +672,19 @@ class ReadInputLigandStructuralSearch(View):
     def post(self, request, *args, **kwargs):
         OK_request_dict = self.OK_request_dict.copy()
         bad_request_dict = self.bad_request_dict.copy()
+
+
+        selection_ligand_chemical_structure_search_search_type_selection = value = request.POST.get('selection_ligand_chemical_structure_search_search_type_selection',None)
+        error = not validate_selection_ligand_chemical_structure_search_search_type_selection(value)
+        msg = 'Invalid selection_ligand_chemical_structure_search_search_type_selection value: '+str(value)
+        if error:
+            request.session['ligand_structural_search_error_msg'] = msg
+            request.session.modified = True
+            bad_request_dict['msg'] = msg
+            return JsonResponse(bad_request_dict,status=400,reason='Bad Request')
+        del value
+
+
         search_params_data = {}
         for key in self.search_params_data_keys:
             search_params_data[key] = request.POST.get(key,None)
@@ -648,6 +746,7 @@ class ReadInputLigandStructuralSearch(View):
                 del search_params_data['similarity_threshold']
 
         setLigandStructuralSearchParameters(request,search_params_data)
+        setLigandChemicalStructureSearchParameters(request, {'search_type_selection':selection_ligand_chemical_structure_search_search_type_selection})
         return JsonResponse(OK_request_dict)
 
 
@@ -710,6 +809,10 @@ class LigandStructuralSearch(TemplateView):
                 if cursor_results != []:
                     ligand_id = [x[0] for x in cursor_results]
                     ps = AssayExperiment.objects.filter(ligand__in=ligand_id).prefetch_related('protein', 'ligand', 'ligand__ligand_type','protein__family')
+                    if search_type == 'similarity':
+                        ps = ps.order_by("ligand__id","protein__entry_name")
+                    else:
+                        ps = ps.order_by("ligand__id","protein__entry_name")
                 else:
                     context = "redirect"
                     self.request.session['ligand_structural_search_error_msg'] = no_results_msg
@@ -729,9 +832,9 @@ class LigandStructuralSearch(TemplateView):
                 ligand_data_affinity = result['affinity_data']
                 ligand_data_potency = result['potency_data']
             else:
-                ligand_data_affinity,ligand_data_potency = LigandListDetails(mode, ps,ligand_search=True)
+                ligand_data_affinity,ligand_data_potency = LigandListDetails(mode, ps,ligand_search=True,similarities=None)
             context = {}
-            context['ligand_structural_search'] = True
+            context['ligand_query'] = True
             context['potency_data'] = ligand_data_potency
             context['affinity_data'] = ligand_data_affinity
             if len(ligand_data_potency) + len(ligand_data_affinity) > MAX_RECORDS:
@@ -746,7 +849,7 @@ class LigandStructuralSearch(TemplateView):
     def get(self, request, *args, **kwargs):
         context = self.get_context_data(**kwargs)
         if context == "redirect":
-            return redirect("ligand_structural_selection")
+            return redirect("ligand_selection")
         return self.render_to_response(context)
 
 class LigandStructureSelection(TemplateView):
@@ -871,7 +974,7 @@ def CachedTargetDetailsCompact(request, **kwargs):
 def CachedTargetDetailsExtended(request, **kwargs):
     return TargetDetails("extended", request, **kwargs)
 
-def LigandListDetails(mode, ps,ligand_search=False):
+def LigandListDetails(mode, ps,ligand_search=False,similarities=None):
     if mode == 'extended':
         ligand_data_affinity = []
         ligand_data_potency = []
@@ -922,7 +1025,7 @@ def LigandListDetails(mode, ps,ligand_search=False):
 
         result = {}
         img_setup_smiles = "https://cactus.nci.nih.gov/chemical/structure/{}/image"
-        d = {}
+        d = OrderedDict()
 
         for p in ps:
             if p.ligand not in d:
@@ -936,7 +1039,14 @@ def LigandListDetails(mode, ps,ligand_search=False):
         ligand_data_affinity = []
         ligand_data_potency = []
         assay_conversion = {'A': 'ADMET', 'B': 'Binding', 'F': 'Functional', 'U': 'N/A', 'T': 'Toxicity'}
-        for lig, records in d.items():
+        
+        if similarities is not None:
+            pass
+        else:
+            ligs = d.keys()
+            # ligs = sorted(list(d.keys()),key=lambda x: x.id)
+        for lig in ligs:
+            records = d[lig]
             # links = lig.ids.all()
             # chembl_id = [x for x in links if x.web_resource.slug == 'chembl_ligand'][0].index
             if lig.smiles is not None and (lig.mw is None or lig.mw < 800):
@@ -947,7 +1057,7 @@ def LigandListDetails(mode, ps,ligand_search=False):
 
             purchasability = vendors_dict[lig.id] if lig.id in vendors_dict.keys() else 0
 
-            data_parsed = {}
+            data_parsed = OrderedDict()
             protein_records_dict = {}
             for record in records:
                 protein = ''
@@ -974,14 +1084,28 @@ def LigandListDetails(mode, ps,ligand_search=False):
                         data_parsed[protein][record.source][assay][record.value_type] += data
                     else:
                         data_parsed[protein][record.source][assay][record.value_type].append(record.p_activity_value)
-            
             for protein in data_parsed.keys():
+            # for protein in sorted(list(data_parsed.keys())):
                 records = protein_records_dict[protein]
                 record = records[-1]
+
+                data_parsed2 = {}
                 for source in data_parsed[protein].keys():
                     for assay_type in data_parsed[protein][source].keys():
+                        if assay_type not in data_parsed2:
+                            data_parsed2[assay_type] = {}
                         for value_type in data_parsed[protein][source][assay_type].keys():
-                            values = [float(x) for x in data_parsed[protein][source][assay_type][value_type] if x != 'None']
+                            if value_type not in data_parsed2:
+                                data_parsed2[assay_type][value_type] = {}
+                            data_parsed2[assay_type][value_type][source] = data_parsed[protein][source][assay_type][value_type]
+
+                data_parsed[protein] = data_parsed2
+
+
+                for assay_type in sorted(data_parsed[protein].keys()):
+                    for value_type in sorted(data_parsed[protein][assay_type].keys()):
+                        for source in sorted(data_parsed[protein][assay_type][value_type].keys()):
+                            values = [float(x) for x in data_parsed[protein][assay_type][value_type][source] if x != 'None']
                             low_value, average_value, high_value = '-','-','-'
                             if len(values) > 0:
                                 low_value = min(values)
@@ -1077,7 +1201,7 @@ def TargetDetails(mode, request, **kwargs):
                 prot_id = [x.item for x in selection.reference]
                 if len(prot_id) > 0:
                     cache_key = "lig_ext_protid_" + ",".join(prot_id)
-                    ps = AssayExperiment.objects.filter(protein__in=prot_id).prefetch_related('protein','ligand', 'publication')
+                    ps = AssayExperiment.objects.filter(protein__in=prot_id).prefetch_related('protein','ligand', 'publication').order_by('ligand__id','assay_type','value_type','source')
 
         # if queryset is empty redirect to ligand browser
         if not ps and 'slug' not in kwargs:
