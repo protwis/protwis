@@ -53,7 +53,8 @@ from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 import smtplib
 
-class_dict = {'001':'A','002':'B1','003':'B2','004':'C','005':'D1','006':'F','007':'T','008':'O'}
+
+class_dict = {'001':'A','002':'B1','003':'B2','004':'C','005':'D1','006':'F','007':'O1','008':'O2','009':'T2','010':'O'}
 
 class StructureBrowser(TemplateView):
     """
@@ -1463,7 +1464,7 @@ class StructureStatistics(TemplateView):
             all_g_C_complexes = all_gprots.filter(structure__protein_conformation__protein__family__slug__startswith='004')
             all_g_D1_complexes = all_gprots.filter(structure__protein_conformation__protein__family__slug__startswith='005')
             all_g_F_complexes = all_gprots.filter(structure__protein_conformation__protein__family__slug__startswith='006')
-            all_g_T2_complexes = all_gprots.filter(structure__protein_conformation__protein__family__slug__startswith='007')
+            all_g_T2_complexes = all_gprots.filter(structure__protein_conformation__protein__family__slug__startswith='009')
             # unique_gprots = unique_structs.filter(id__in=SignprotComplex.objects.filter(protein__family__slug__startswith='100').values_list("structure__id", flat=True))
             # unique_gprots = unique_structs.filter(id__in=StructureExtraProteins.objects.filter(category='G alpha').values_list("structure__id", flat=True))
             unique_gprots = StructureExtraProteins.objects.filter(category='G alpha').exclude(structure__structure_type__slug__startswith='af-').prefetch_related("wt_protein", "wt_protein__family", "wt_protein__family__parent", "structure__protein_conformation__protein__family").distinct('structure__protein_conformation__protein__family__name')
@@ -1532,7 +1533,7 @@ class StructureStatistics(TemplateView):
             all_arr_C_complexes = all_arrestins.filter(structure__protein_conformation__protein__family__slug__startswith='004')
             all_arr_D1_complexes = all_arrestins.filter(structure__protein_conformation__protein__family__slug__startswith='005')
             all_arr_F_complexes = all_arrestins.filter(structure__protein_conformation__protein__family__slug__startswith='006')
-            all_arr_T2_complexes = all_arrestins.filter(structure__protein_conformation__protein__family__slug__startswith='007')
+            all_arr_T2_complexes = all_arrestins.filter(structure__protein_conformation__protein__family__slug__startswith='009')
             # unique_arrestins = unique_structs.filter(id__in=StructureExtraProteins.objects.filter(category='Arrestin').values_list("structure__id", flat=True))
             unique_arrestins = StructureExtraProteins.objects.filter(category='Arrestin').exclude(structure__structure_type__slug__startswith='af-').prefetch_related("wt_protein", "structure__protein_conformation__protein__family").distinct('structure__protein_conformation__protein__family__name')
             unique_arr_A_complexes = all_arr_A_complexes.annotate(distinct_name=Concat('wt_protein__family__name', 'structure__protein_conformation__protein__family__name', output_field=TextField())).order_by('distinct_name').distinct('distinct_name')
@@ -1627,17 +1628,30 @@ class StructureStatistics(TemplateView):
         context['class_f_options']['label_free'] = [1,]
         #json.dump(class_f_data.get_nodes_dict('crystalized'), open('tree_test.json', 'w'), indent=4)
         context['class_f'] = json.dumps(class_f_data.get_nodes_dict('crystals'))
-        class_t2_data = tree.get_tree_data(ProteinFamily.objects.get(name='Class T (Taste 2)'))
+        class_t2_data = tree.get_tree_data(ProteinFamily.objects.get(name='Class T2 (Taste 2)'))
         context['class_t2_options'] = deepcopy(tree.d3_options)
         context['class_t2_options']['anchor'] = 'class_t2'
         context['class_t2_options']['label_free'] = [1,]
         context['class_t2'] = json.dumps(class_t2_data.get_nodes_dict('crystals'))
+
+        class_o1_data = tree.get_tree_data(ProteinFamily.objects.get(name='Class O1 (fish-like odorant)'))
+        context['class_o1_options'] = deepcopy(tree.d3_options)
+        context['class_o1_options']['anchor'] = 'class_o1'
+        context['class_o1_options']['label_free'] = [1,]
+        context['class_o1'] = json.dumps(class_o1_data.get_nodes_dict('crystals'))
+        class_o2_data = tree.get_tree_data(ProteinFamily.objects.get(name='Class O2 (tetrapod specific odorant)'))
+        context['class_o2_options'] = deepcopy(tree.d3_options)
+        context['class_o2_options']['anchor'] = 'class_o2'
+        context['class_o2_options']['leaf_offset'] = 360
+        context['class_o2_options']['label_free'] = [1,]
+        context['class_o2'] = json.dumps(class_o2_data.get_nodes_dict('crystals'))
+
         # definition of the class a orphan tree
         context['orphan_options'] = deepcopy(tree.d3_options)
         context['orphan_options']['anchor'] = 'orphan'
         context['orphan_options']['label_free'] = [1,]
         context['orphan'] = json.dumps(orphan_data)
-        whole_receptors = Protein.objects.prefetch_related("family", "family__parent__parent__parent").filter(sequence_type__slug="wt", family__slug__startswith="00")
+        whole_receptors = Protein.objects.prefetch_related("family", "family__parent__parent__parent").filter(sequence_type__slug="wt", family__slug__startswith="0")
         whole_rec_dict = {}
         for rec in whole_receptors:
             rec_uniprot = rec.entry_short()
@@ -1695,7 +1709,8 @@ class StructureStatistics(TemplateView):
     def count_by_class(queryset, lookup, extra=False):
 
         #Ugly walkaround
-        classes = [lookup[x] for x in reversed(['001', '002', '003', '004', '005', '006', '007'])]
+        slugs = ProteinFamily.objects.filter(parent_id=1).exclude(name='G-Protein').values_list('slug', flat=True)
+        classes = [lookup[x] for x in reversed(slugs)]
         records = []
         if extra == False:
             for s in queryset:
@@ -1761,7 +1776,8 @@ class StructureStatistics(TemplateView):
         """
         Prepare data for multiBarGraph of unique crystallized receptors grouped by class. Returns data series for django-nvd3 wrapper.
         """
-        classes = [lookup[x] for x in ['001', '002', '003', '004', '005', '006', '007']]
+        slugs = ProteinFamily.objects.filter(parent_id=1).exclude(name='G-Protein').values_list('slug', flat=True)
+        classes = [lookup[x] for x in slugs]
         series = []
         data = {}
         for year in years:
@@ -1817,7 +1833,8 @@ class StructureStatistics(TemplateView):
         """
         Prepare data for multiBarGraph of unique crystallized receptors. Returns data series for django-nvd3 wrapper.
         """
-        classes =  [lookup[x] for x in ['001', '002', '003', '004', '005', '006', '007']]
+        slugs = ProteinFamily.objects.filter(parent_id=1).exclude(name='G-Protein').values_list('slug', flat=True)
+        classes =  [lookup[x] for x in slugs]
         series = []
         data = {}
         for year in years:
