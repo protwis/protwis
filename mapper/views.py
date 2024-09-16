@@ -289,7 +289,7 @@ class LandingPage(TemplateView):
         updated_data = {key.replace('_human', ''): value for key, value in input_data.items()}
         circles = {key.replace('_human', '').upper(): {k: v for k, v in value.items() if k != 'Inner'} for key, value in input_data.items()}
         master_dict = LandingPage.keep_by_names(master_dict, updated_data)
-        
+
         if len(master_dict['children']) == 1:
             master_dict = master_dict['children'][0]
             general_options['depth'] = 3
@@ -322,19 +322,19 @@ class LandingPage(TemplateView):
             reduced_df = LandingPage.reduce_and_cluster(data_df, method=method)
             df_merged = pd.merge(reduced_df, data_df['Value2'], left_on='label', right_index=True, how='left')
             df_merged.rename(columns={'Value2': 'fill'}, inplace=True)
-            
+
             ## add class/ligand_type/receptor_family clusters ##
 
             # Step 1: Fetch data
             proteins = Protein.objects.filter(
                 parent_id__isnull=True, species_id=1
             ).values_list(
-                'entry_name', 
+                'entry_name',
                 "family__parent__parent__parent__name",  # To be renamed as 'Class'
                 'family__parent__parent__name',  # To be renamed as 'Ligand type'
                 'family__parent__name'  # To be renamed as 'Receptor family'
             )
-            
+
             # Step 2: Convert to a DataFrame
             proteins_df = pd.DataFrame(list(proteins), columns=['entry_name', 'Class', 'Ligand type', 'Receptor family'])
 
@@ -353,7 +353,7 @@ class LandingPage(TemplateView):
                 # Get the info of the plot
                 full_matrix = LandingPage.generate_full_matrix(method)
                 # full_matrix_structure = LandingPage.generate_full_matrix_structure(method)
-                
+
                 # Filter the original fill matrix based on what we use provided
                 reduced_input = full_matrix[full_matrix['label'].isin(list(data.keys()))]
                 data_df = pd.DataFrame(data).T
@@ -365,7 +365,7 @@ class LandingPage(TemplateView):
             elif data_type == 'structure':
                 # Get the info of the plot
                 full_matrix_structure = LandingPage.generate_full_matrix_structure(method)
-                
+
                 # Filter the original fill matrix based on what we use provided
                 reduced_input = full_matrix_structure[full_matrix_structure['label'].isin(list(data.keys()))]
                 data_df = pd.DataFrame(data).T
@@ -406,7 +406,7 @@ class LandingPage(TemplateView):
 
             # Perform reduction and clustering
             reduced_df = LandingPage.reduce_and_cluster(distance_matrix_df, method='tsne')
-            
+
             reduced_df['label'] = reduced_df['label'].apply(lambda x: x.split('[Human] ')[1] if '[Human] ' in x else x)
             reduced_df['label'] = reduced_df['label'].apply(lambda x: x.split('_human')[0] if '_human' in x else x)
 
@@ -416,12 +416,12 @@ class LandingPage(TemplateView):
             proteins = Protein.objects.filter(
                 parent_id__isnull=True, species_id=1
             ).values_list(
-                'entry_name', 
+                'entry_name',
                 "family__parent__parent__parent__name",  # To be renamed as 'Class'
                 'family__parent__parent__name',  # To be renamed as 'Ligand type'
                 'family__parent__name'  # To be renamed as 'Receptor family'
             )
-            
+
             # Step 2: Convert to a DataFrame
             proteins_df = pd.DataFrame(list(proteins), columns=['entry_name', 'Class', 'Ligand type', 'Receptor family'])
             proteins_df.to_excel(os.sep.join([settings.DATA_DIR, 'structure_data', 'All_GPCRs_ligandType_Families.xlsx']),index=False)
@@ -756,7 +756,7 @@ class LandingPage(TemplateView):
 
                                     # Initialize dictionaries
                                     data_types = [cell.value for cell in worksheet[2]]
-                                    
+
                                     Data['Datatypes']['Listplot'] = {}
                                     Data['Datatypes']['Listplot']['Col1'] = data_types[2]
                                     Data['Datatypes']['Listplot']['Col2'] = data_types[4]
@@ -911,7 +911,7 @@ class LandingPage(TemplateView):
                                         Plot_parser[3] = status
                                     except:
                                         print("Heatmap Failed")
-                                
+
                                 ### GPCRome Plot ###
                                 elif sheet_name == 'GPCRome':
 
@@ -970,7 +970,7 @@ class LandingPage(TemplateView):
                                                                     pass
                                                             else:
                                                                 pass
-                                        
+
                                         # Check if any values are incorrect #
                                         status = 'Success'
 
@@ -985,7 +985,7 @@ class LandingPage(TemplateView):
                                                     break
                                         else:
                                             status = 'Failed'
-                                        
+
                                         ## Update Plot_parser for Cluster
                                         Plot_parser[4] = status
                                     except:
