@@ -61,10 +61,13 @@ function copyListToClipboard(selected, delimiter = " ") {
 /**
  * This helper function can create a range of identical YADCF filters with a single call
  *
- * Arg list: createYADCFfilters(start_column, num_cols, filter_type, select_type*, filter_default_label*, filter_reset_button_text*, filter_match_mode*, column_data_type*, width*, html5_data*)
+ * Arg list: createYADCFfilters(start_column, num_cols, filter_type, select_type*, filter_default_label*, filter_reset_button_text*, filter_match_mode*, column_data_type*, width*, html5_data*, ignore_char*, html_data_type*, html5_data*, other*)
+ * Arguments:
+ *   other: a javascript object with column parameters of Yet Another DataTables Column Filter - (yadcf) (jquery.dataTables.yadcf.js)
  * The asterisk indicates an optional function argument
  */
-function createYADCFfilters(start_column, num_cols, filter_type, select_type = null, filter_default_label = "", filter_reset_button_text = false, filter_match_mode = null, column_data_type = null, width = null, html5_data = null, ignore_char = null, html_data_type = null) {
+function createYADCFfilters(start_column, num_cols, filter_type, select_type = null, filter_default_label = "", filter_reset_button_text = false, filter_match_mode = null, column_data_type = null, width = null, html5_data = null, ignore_char = null, html_data_type = null, other = null) {
+  
   let filters = [];
   for (let i = 0; i < num_cols; i++) {
     let filter = {
@@ -97,8 +100,15 @@ function createYADCFfilters(start_column, num_cols, filter_type, select_type = n
       filter["html_data_type"] = html_data_type;
     }
 
+    if (other !== null) {
+      $.each( other, function( key, value ) {
+        
+        filter[key] = value;
+    });
+    }
     filters.push(filter);
   }
+  
   return filters;
 }
 

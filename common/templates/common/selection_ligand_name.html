@@ -1,5 +1,6 @@
 {% extends "home/base.html" %}
 {% load static %}
+{% load ligand_extras %}
 
 {% block addon_css %}
 <link rel="stylesheet" href="{% static 'home/css/button_spinner.css' %}" type="text/css" />
@@ -33,24 +34,54 @@
           <div class="col-md-12 panel panel-primary">
               <div class="panel-body">
                   <a name="by-name"></a>
-                  <h4>Search by name</h4>
-                  Search ligands by name.
+                  <h4>Ligand names</h4>
+
                       <div class="panel-body">
                         <div class="row">
-                          <input class="col-md-6 form-control" id="selection-autocomplete-ligand-by-name" size="25" value="{{ selection_ligand_bulk_search_parameters.search_text_by_name }}">
-                          <div id="selection-buttons-ligand-by-name" class="col-md-4">
-                              <div class="" id="selection-search-ligand-by-name">
-                                    <a id='selection-button-ligand-by-name' class="btn btn-success btn-lg btn-block has-spinner" onclick="submitSelectionLigandBulkSearchByName('/ligand/ligand_bulk_search')">
-                                        <span class="spinner"><i class="fa fa-spinner fa-spin"></i></span> Search
-                                    </a>
+                          <div class="form-group">
+                            <div class="col-md-5" style="padding-left:0px;padding-right:0px">
+                            <label class="" for="selection-autocomplete-ligand-by-name">Single query:</label>
+                            <input class="form-control" id="selection-autocomplete-ligand-by-name" style="width:60%" value="{{ selection_ligand_bulk_search_parameters.search_text_by_name }}">
+                            </div>
+                            <div id="selection-buttons-ligand-by-name" class="col-md-6" >
+                                <div class="col-md-6" id="selection-search-ligand-by-name">
+                                      <a id='selection-button-ligand-by-name' class="btn btn-success btn-lg btn-block has-spinner" onclick="submitSelectionLigandBulkSearchByName('/ligand/ligand_bulk_search')">
+                                          <span class="spinner"><i class="fa fa-spinner fa-spin"></i></span> Search
+                                      </a>
+                                </div>
+                            </div>
+                          </div>
+                          <br>
+                          <div class="form-group">
+                            <br>
+                            <label for="selection_ligand_bulk_search_by_names_textarea">Multiple query:</label>
+                            <br>
+                            <div class="col-md-6" style="padding-left:0px;padding-right:0px">
+                            <textarea class="form-control" id="selection_ligand_bulk_search_by_names_textarea" placeholder="Type or paste names here.">{{ selection_ligand_bulk_search_parameters.search_text_by_names }}</textarea>
+                            </div>
+                            <div id="selection-buttons-ligand-by-names" class="col-md-6">
+                              <div class="col-md-6" id="selection-search-ligand-by-names">
+                                <a id='selection-button-ligand-by-names' class="btn btn-success btn-lg btn-block has-spinner" onclick="submitSelectionLigandBulkSearchByNames('/ligand/ligand_bulk_search')">
+                                    <span class="spinner"><i class="fa fa-spinner fa-spin"></i></span> Search
+                                </a>
                               </div>
+                            </div>
                           </div>
                         </div>
+                        {% if ligand_bulk_search_by_name_error_msg %}
                         <div class="row">
                           <div class="form-group">
-                            <p id="ligand_bulk_search_by_name_error_msg" class="error-msg-p" style="{% if ligand_bulk_search_by_name_error_msg != 'No results found.'%}color: red; {% endif %}">{{ ligand_bulk_search_by_name_error_msg }}</p>
+                            <p id="ligand_bulk_search_by_name_error_msg" class="error-msg-p" style="{% if ligand_bulk_search_by_name_error_msg != 'No results found.'%}color: red; {% endif %}"><br>{{ ligand_bulk_search_by_name_error_msg }}</p>
                           </div>
                         </div>
+                        {% endif %}
+                        {% if ligand_bulk_search_by_names_error_msg %}
+                        <div class="row">
+                          <div class="form-group">
+                            <p id="ligand_bulk_search_by_names_error_msg" class="error-msg-p" style="{% if ligand_bulk_search_by_names_error_msg != 'No results found.'%}color: red; {% endif %}"><br>{{ ligand_bulk_search_by_names_error_msg }}</p>
+                          </div>
+                        </div>
+                        {% endif %}
                       </div>
 
               </div>    
@@ -66,14 +97,13 @@
       <div class="col-md-12 panel panel-primary">
         <div class="panel-body">
           <a name="by-id"></a>
-          <h4>Batch search by ID</h4>
-          Search ligands (separated by whitespace) by:
-          <br>
+          <h4>Database identifiers</h4>
+
           <br>
           <select id="selection_ligand_by_id_fields" class="form-select" aria-label="multiple select" style="{% comment %}FOR SELECT MULTIPLE{% endcomment %}{% comment %};height:120px{% endcomment %}"> 
-            <option {% if selection_ligand_bulk_search_parameters.fields == 'gpcrdb_id' %}selected {% endif %}value="gpcrdb_id">GPCRdb ID</option>
+            <option {% if selection_ligand_bulk_search_parameters.field == 'gpcrdb_id' %}selected {% endif %}value="gpcrdb_id">GPCRdb ID</option>
             {% for lid in ligandids %}
-            <option {% if selection_ligand_bulk_search_parameters.fields == lid.slug %}selected {% endif %}value="{{lid.slug}}">{{ lid.name }} ID</option>
+            <option {% if selection_ligand_bulk_search_parameters.field == lid.slug %}selected {% endif %}value="{{lid.slug}}">{{ lid.name }} ID</option>
             {% endfor %}
           </select>
 
@@ -88,7 +118,7 @@
           <div id="selection-buttons-ligand-by-id" class="">
               <div class="panel-body" id="selection-search-ligand-by-id">
                     <a id='selection-button-ligand-by-id' class="btn btn-success btn-lg btn-block has-spinner" onclick="submitSelectionLigandBulkSearchById('/ligand/ligand_bulk_search')">
-                        <span class="spinner"><i class="fa fa-spinner fa-spin"></i></span> Bulk search
+                        <span class="spinner"><i class="fa fa-spinner fa-spin"></i></span> Search
                     </a>
               </div>
           </div>
@@ -107,88 +137,78 @@
       <div class="col-md-12 panel panel-primary">
         <div class="panel-body">
           <a name="bulk-search"></a>
-          <h4>Batch exact match search</h4>
-          Search ligands by multiple SMILES or SMARTS exact match, or by Standard InChIKeys (one line per ligand).
-          <br>
+          <h4>Chemical structures</h4>
           <br>
           <div class="form-group">
-            <select id="selection_ligand_bulk_search_search_type" class="form-select" aria-label="select">
+            <label for="selection_ligand_chemical_search_type" class="">Search type:</label>
+            <select id="selection_ligand_chemical_search_type" class="form-select" aria-label="select">
+              <option {% if selection_ligand_chemical_search_type_parameters.search_type_selection == 'identity' %}selected {% endif %}value="identity">Identity (exact matches, multiple ligands)</option>
+              <option {% if selection_ligand_chemical_search_type_parameters.search_type_selection == 'similarity' %}selected {% endif %}value="similarity">Similarity (single ligand)</option>
+              <option {% if selection_ligand_chemical_search_type_parameters.search_type_selection == 'substructure' %}selected {% endif %}value="substructure">Substructure (single ligand)</option>
+            </select>
+          </div>
+          <div  class="form-group"> 
+            <select style="{% if selection_ligand_chemical_search_type_parameters.search_type_selection != 'identity' %}display:none;{% endif %}" id="selection_ligand_bulk_search_search_type" class="form-select" aria-label="select">
               <option {% if selection_ligand_bulk_search_parameters.search_type_selection == 'smiles' %}selected {% endif %}value="smiles">Search by SMILES</option>
               <option {% if selection_ligand_bulk_search_parameters.search_type_selection == 'smarts' %}selected {% endif %}value="smarts">Search by SMARTS</option>
               <option {% if selection_ligand_bulk_search_parameters.search_type_selection == 'inchikey' %}selected {% endif %}value="inchikey">Search by Standard InChIKeys</option>
             </select>          
           </div>
-          <div style="{% if selection_ligand_bulk_search_parameters.search_type_selection != 'smiles' and selection_ligand_bulk_search_parameters.search_type_selection != 'smarts'  %}display:none;{% endif %}height:44px" id="selection_ligand_bulk_search_stereo_div" class="form-group">
+          <div style="{% if selection_ligand_chemical_search_type_parameters.search_type_selection != 'identity' or selection_ligand_bulk_search_parameters.search_type_selection != 'smiles' and selection_ligand_bulk_search_parameters.search_type_selection != 'smarts'  %}display:none;{% endif %}height:44px" id="selection_ligand_bulk_search_stereo_div" class="form-group">
             <input type="checkbox" {% if selection_ligand_bulk_search_parameters.stereochemistry %}checked {% endif %}id="selection_ligand_bulk_search_stereochemistry" value="True">
           <label for="selection_ligand_bulk_search_stereochemistry">Stereochemistry</label><span class="glyphicon glyphicon-info-sign" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="bottom" data-content="<b>Stereochemistry</b><br>Toggles whether or not stereochemistry is used in substructure matching. If checked, stereochemistry is taken into account." data-original-title="" title="">
           </div>
-          <div class="form-group">
-            <textarea class="form-control" id="selection_ligand_bulk_search_textarea" placeholder="Type or paste your {% if selection_ligand_bulk_search_parameters.search_type_selection == 'smiles' %}SMILES strings{% endif %}{% if selection_ligand_bulk_search_parameters.search_type_selection == 'smarts' %}SMARTS strings{% endif %}{% if selection_ligand_bulk_search_parameters.search_type_selection == 'inchikey' %}InChIKeys{% endif %} here.">{{ selection_ligand_bulk_search_parameters.search_text_by_other }}</textarea>
+          <div style="{% if selection_ligand_chemical_search_type_parameters.search_type_selection != 'identity' %}display:none;{% endif %}" class="form-group" id="selection_ligand_bulk_search_textarea_div">
+            <textarea  class="form-control" id="selection_ligand_bulk_search_textarea" placeholder="Type or paste your {% if selection_ligand_bulk_search_parameters.search_type_selection == 'smiles' %}SMILES strings{% endif %}{% if selection_ligand_bulk_search_parameters.search_type_selection == 'smarts' %}SMARTS strings{% endif %}{% if selection_ligand_bulk_search_parameters.search_type_selection == 'inchikey' %}InChIKeys{% endif %} here.">{{ selection_ligand_bulk_search_parameters.search_text_by_other }}</textarea>
           </div>
+
+          <div class="form-group">
+            <select class="form-select" aria-label="select" style="{% if selection_ligand_chemical_search_type_parameters.search_type_selection != 'similarity' %}display:none;{% endif %}" id="ligand_structural_search_input_type_similarity" >
+              <option selected value="smiles">Search by SMILES</option>
+            </select>
+            <select class="form-select" aria-label="select" style="{% if selection_ligand_chemical_search_type_parameters.search_type_selection != 'substructure' %}display:none;{% endif %}" id="ligand_structural_search_input_type" >
+              <option {% if ligand_structural_search_parameters.input_type == 'smiles' %}selected {% endif %}value="smiles">Search by SMILES</option>
+              <option {% if ligand_structural_search_parameters.input_type == 'smarts' %}selected {% endif %}value="smarts">Search by SMARTS</option>
+            </select>
+          </div>
+          <div style="{% if selection_ligand_chemical_search_type_parameters.search_type_selection != 'similarity' %}display:none;{% endif %}height:44px" id="ligand_structural_search_similarity_div" class="form-group">
+            <label for="ligand_structural_search_similarity_threshold">Similarity threshold <span class="glyphicon glyphicon-info-sign" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="bottom" data-content="<b>Similarity threshold</b><br>Minimum Tanimoto similarity coefficient between the Morgan-2 fingerprints of the query molecule and the ones in GPCRdb. Only values between 0.5 and 1 are allowed." data-original-title="" title=""></span>:</label>
+            <input style="width:75px" id="ligand_structural_search_similarity_threshold" class="form-control" maxlength="4" size="4" value="{{ ligand_structural_search_parameters.similarity_threshold }}">
+          </div>
+          <div style="{% if selection_ligand_chemical_search_type_parameters.search_type_selection != 'substructure' %}display:none;{% endif %}height:44px" id="ligand_structural_search_stereo_div" class="form-group">
+              <input type="checkbox" {% if ligand_structural_search_parameters.stereochemistry %}checked {% endif %}id="ligand_structural_search_stereochemistry" value="True">
+            <label for="ligand_structural_search_stereochemistry">Stereochemistry<label><span class="glyphicon glyphicon-info-sign" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="bottom" data-content="<b>Stereochemistry</b><br>Toggles whether or not stereochemistry is used in substructure matching. If checked, stereochemistry is taken into account." data-original-title="" title="">
+          </div>
+          <div style="{% if selection_ligand_chemical_search_type_parameters.search_type_selection != 'similarity'%}{%if selection_ligand_chemical_search_type_parameters.search_type_selection != 'substructure' %}display:none;{% endif %}{% endif %}" class="form-group" id="ligand_structural_search_smiles_div">
+            {% comment %} <label class="" id="ligand_structural_search_smiles_label" style="{% if ligand_structural_search_parameters.search_type != 'similarity' %}display:none;{% endif %}width:100px" >SMILES:</label> {% endcomment %}
+            <textarea  id="ligand_structural_search_smiles" class="form-control" placeholder="Type or paste your {% if ligand_structural_search_parameters.search_type == 'similarity' or ligand_structural_search_parameters.input_type == 'smiles' %}SMILES strings{% endif %}{% if ligand_structural_search_parameters.search_type != 'similarity' and ligand_structural_search_parameters.input_type == 'smarts' %}SMARTS strings{% endif %} here.">{{ ligand_structural_search_parameters.smiles }}</textarea>
+            {% comment %} <input id="ligand_structural_search_smiles" class="form-control" size="30" maxlength="200" value="{{ ligand_structural_search_parameters.smiles }}"> {% endcomment %}
+          </div>
+          {% comment %} 
+          <div class="form-group">
+            <label for="ligand_structural_search_limit">Limit:</label>
+            <input type="number" style="width:75px" id="ligand_structural_search_limit" class="form-control" maxlength="3" size="3" min="1" max="100" value="{{ ligand_structural_search_parameters.limit }}">
+          </div> 
+          {% endcomment %}
           <div class="form-group">
             <p id="ligand_bulk_search_error_msg" class="error-msg-p" style="{% if ligand_bulk_search_error_msg != 'No results found.'%}color: red; {% endif %}">{{ ligand_bulk_search_error_msg }}</p>
           </div>
-          <div id="">
+          <div class="form-group">
+          <p id="ligand_structural_search_error_msg" class="error-msg-p" class="error-msg-p" style="{% if ligand_structural_search_error_msg != 'No results found.'%}color: red; {% endif %}">{{ ligand_structural_search_error_msg }}</p>
+          </div>
+
+          <div style="{% if selection_ligand_chemical_search_type_parameters.search_type_selection != 'identity' %}display:none;{% endif %}" id="selection-buttons-ligand-bulk-search">
             {% include 'common/selection_buttons.html' %}
+          </div>
+          <div style="{% if selection_ligand_chemical_search_type_parameters.search_type_selection != 'similarity' and selection_ligand_chemical_search_type_parameters.search_type_selection != 'substructure' %}display:none;{% endif %}" id="selection-buttons-smiles-search" class="">
+            <div class="panel-body" id="selection-smiles-search">
+                  <a id='selection-button-smiles-search' class="btn btn-success btn-lg btn-block has-spinner" onclick="submitLigandStructuralSearch('/ligand/ligand_structural_search')">
+                      <span class="spinner"><i class="fa fa-spinner fa-spin"></i></span> Search
+                  </a>
+            </div>
           </div>
         </div>
       </div>
-      {% endif %}
-    </div>
-  </div>
-  <div class="row">
-    <div class="col-md-8">
-      <!-- target search -->
-      {% if search %}
-          <div class="col-md-12 panel panel-primary">
-              <div class="panel-body">
-                  <a name="sim-sub-search"></a>
-                  <h4>Ligand similarity and substructure search</h4>
-                  Search ligands by similarity or substructure.
-                  <br>
-                  <br>
-                  <div>
-                      <form>
-                      <div class="form-group">
-                        <label class="" id="ligand_structural_search_smiles_label" style="{% if ligand_structural_search_parameters.search_type != 'similarity' %}display:none;{% endif %}width:100px" >SMILES:</label>
-                        <select class="form-select" style="{% if ligand_structural_search_parameters.search_type != 'substructure' %}display:none;{% endif %}width:100px" id="ligand_structural_search_input_type" >
-                          <option {% if ligand_structural_search_parameters.input_type == 'smiles' %}selected {% endif %}value="smiles">SMILES:</option>
-                          <option {% if ligand_structural_search_parameters.input_type == 'smarts' %}selected {% endif %}value="smarts">SMARTS:</option>
-                        </select>
-                        <input id="ligand_structural_search_smiles" class="form-control" size="30" maxlength="200" value="{{ ligand_structural_search_parameters.smiles }}">
-                        <select id="ligand_structural_search_search_type" class="form-select">
-                            <option {% if ligand_structural_search_parameters.search_type == 'similarity' %}selected {% endif %}value="similarity">Search by similarity</option>
-                            <option {% if ligand_structural_search_parameters.search_type == 'substructure' %}selected {% endif %}value="substructure">Search substructure</option>
-                          </select>
-                      </div>
-                      <div style="{% if ligand_structural_search_parameters.search_type != 'similarity' %}display:none;{% endif %}height:44px" id="ligand_structural_search_similarity_div" class="form-group">
-                        <label for="ligand_structural_search_similarity_threshold">Similarity threshold <span class="glyphicon glyphicon-info-sign" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="bottom" data-content="<b>Similarity threshold</b><br>Minimum Tanimoto similarity coefficient between the Morgan-2 fingerprints of the query molecule and the ones in GPCRdb. Only values between 0.5 and 1 are allowed." data-original-title="" title=""></span>:</label>
-                        <input style="width:75px" id="ligand_structural_search_similarity_threshold" class="form-control" maxlength="4" size="4" value="{{ ligand_structural_search_parameters.similarity_threshold }}">
-                      </div>
-                      <div style="{% if ligand_structural_search_parameters.search_type != 'substructure' %}display:none;{% endif %}height:44px" id="ligand_structural_search_stereo_div" class="form-group">
-                          <input type="checkbox" {% if ligand_structural_search_parameters.stereochemistry %}checked {% endif %}id="ligand_structural_search_stereochemistry" value="True">
-                        <label for="ligand_structural_search_stereochemistry">Stereochemistry<label><span class="glyphicon glyphicon-info-sign" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="bottom" data-content="<b>Stereochemistry</b><br>Toggles whether or not stereochemistry is used in substructure matching. If checked, stereochemistry is taken into account." data-original-title="" title="">
-                      </div>
-                      {% comment %} 
-                      <div class="form-group">
-                        <label for="ligand_structural_search_limit">Limit:</label>
-                        <input type="number" style="width:75px" id="ligand_structural_search_limit" class="form-control" maxlength="3" size="3" min="1" max="100" value="{{ ligand_structural_search_parameters.limit }}">
-                      </div> 
-                      {% endcomment %}
-                      <div class="form-group">
-                      <p id="ligand_structural_search_error_msg" class="error-msg-p" class="error-msg-p" style="{% if ligand_structural_search_error_msg != 'No results found.'%}color: red; {% endif %}">{{ ligand_structural_search_error_msg }}</p>
-                      </div>
-                      </form>
-                    </div>
-                    <div id="selection-buttons-smiles-search" class="">
-                      <div class="panel-body" id="selection-smiles-search">
-                            <a id='selection-button-smiles-search' class="btn btn-success btn-lg btn-block has-spinner" onclick="submitLigandStructuralSearch('/ligand/ligand_structural_search')">
-                                <span class="spinner"><i class="fa fa-spinner fa-spin"></i></span> Search
-                            </a>
-                      </div>
-                    </div>
-              </div>
-          </div>
       {% endif %}
     </div>
   </div>
@@ -220,7 +240,8 @@
           });
           selection_ligand_by_id_fields = selection_ligand_by_id_fields_list.join(',');
 
-          /*$('#selection_ligand_by_id_fields').change(function () {
+          /*CODE FOR ALL IN ONE AUTOCOMPLETE
+          $('#selection_ligand_by_id_fields').change(function () {
             selection_ligand_fields_by_id_list = []
             $('#selection_ligand_by_id_fields option:selected').each(function( index ) {
               selection_ligand_fields_by_id_list.push($( this ).val());
@@ -249,6 +270,30 @@
             }
  
           });
+
+          function update_ligand_structural_search_smiles_placeholder () {
+            var search_type = $("#ligand_structural_search_input_type").val();
+            if (search_type == 'smiles') {
+              $('#ligand_structural_search_smiles').attr('placeholder','Type or paste your SMILES strings here.');
+            } else if (search_type == 'smarts') {
+              $('#ligand_structural_search_smiles').attr('placeholder','Type or paste your SMARTS strings here.');
+            }
+          }
+
+          $('#ligand_structural_search_input_type').change(function () {
+            update_ligand_structural_search_smiles_placeholder();
+          });
+          $('#selection_ligand_chemical_search_type').change(function () {
+            var search_type = $("#selection_ligand_chemical_search_type").val();
+            if (search_type == 'similarity') {
+              $('#ligand_structural_search_smiles').attr('placeholder','Type or paste your SMILES strings here.');
+            } else if (search_type == 'substructure') {
+              update_ligand_structural_search_smiles_placeholder();
+            }
+            
+          });
+
+          
 
         });
         var type_of_selection = '{{ type_of_selection }}';
@@ -305,18 +350,49 @@
               }
                   
             });
-            $('#ligand_structural_search_search_type').on('change',function (e) {
-              if (this.value === 'similarity') {
-                
-                    $('#ligand_structural_search_smiles_label').show();
-                    $('#ligand_structural_search_input_type').hide();
-                    $('#ligand_structural_search_stereo_div').hide();
-                    $('#ligand_structural_search_similarity_div').show();
+            $('#selection_ligand_chemical_search_type').on('change',function (e) {
+                if (this.value === 'identity') {
+                  $('#selection_ligand_bulk_search_textarea_div').show();
+                  $('#selection_ligand_bulk_search_search_type').show();
+                  $('#selection_ligand_bulk_search_stereo_div').show();
+                  $('#selection-buttons-ligand-bulk-search').show();
+                  
+                  $('#ligand_structural_search_input_type').hide();
+                  //$('#ligand_structural_search_smiles_label').hide();
+                  $('#ligand_structural_search_input_type_similarity').hide();
+                  $('#ligand_structural_search_smiles_div').hide();
+                  $('#ligand_structural_search_input_type').hide();
+                  $('#ligand_structural_search_stereo_div').hide();
+                  $('#ligand_structural_search_similarity_div').hide();
+                  $('#selection-buttons-smiles-search').hide();
+                } else if (this.value === 'similarity') {
+                  $('#selection_ligand_bulk_search_textarea_div').hide();
+                  $('#selection_ligand_bulk_search_search_type').hide();
+                  $('#selection_ligand_bulk_search_stereo_div').hide();
+                  $('#selection-buttons-ligand-bulk-search').hide();
+                  
+                  $('#ligand_structural_search_input_type').hide();
+                  //$('#ligand_structural_search_smiles_label').show();
+                  $('#ligand_structural_search_input_type_similarity').show();
+                  $('#ligand_structural_search_smiles_div').show();
+                  $('#ligand_structural_search_input_type').hide();
+                  $('#ligand_structural_search_stereo_div').hide();
+                  $('#ligand_structural_search_similarity_div').show();
+                  $('#selection-buttons-smiles-search').show();
                 } else if (this.value === 'substructure') {
-                    $('#ligand_structural_search_smiles_label').hide();
-                    $('#ligand_structural_search_input_type').show();
-                    $('#ligand_structural_search_stereo_div').show();
-                    $('#ligand_structural_search_similarity_div').hide();
+                  $('#selection_ligand_bulk_search_textarea_div').hide();
+                  $('#selection_ligand_bulk_search_search_type').hide();
+                  $('#selection_ligand_bulk_search_stereo_div').hide();
+                  $('#selection-buttons-ligand-bulk-search').hide();
+                  
+                  $('#ligand_structural_search_input_type').show();
+                  //$('#ligand_structural_search_smiles_label').hide();
+                  $('#ligand_structural_search_input_type_similarity').hide();
+                  $('#ligand_structural_search_smiles_div').show();
+                  $('#ligand_structural_search_input_type').show();
+                  $('#ligand_structural_search_stereo_div').show();
+                  $('#ligand_structural_search_similarity_div').hide();
+                  $('#selection-buttons-smiles-search').show();
                 }
                   
             });
