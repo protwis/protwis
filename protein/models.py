@@ -7,7 +7,15 @@ from django.db import models
 from residue.models import (Residue, ResidueDataPoint, ResidueDataType,
                             ResidueGenericNumberEquivalent,
                             ResidueNumberingScheme)
-from common.definitions import CLASSLESS_PARENT_GPCR_SLUGS
+
+# Uncomment in the future
+# from common.definitions import CLASSLESS_PARENT_GPCR_SLUGS
+
+# Remove in the future
+from common.definitions import _BEFORE_NAR2025_CLASSLESS_PARENT_GPCR_SLUGS_DICT, _AFTER_NAR2025_CLASSLESS_PARENT_GPCR_SLUGS
+
+
+
 
 class_prefix_re = re.compile(r'^(Class)\s+', flags=re.I)
 
@@ -279,6 +287,11 @@ class ProteinFamily(models.Model):
         db_table = 'protein_family'
         ordering = ('id', )
 
+# Remove in the future
+# The next two lines must be after class ProteinFamily.
+from protein.model_func import get_current_classless_parent_gpcr_slugs 
+CLASSLESS_PARENT_GPCR_SLUGS = get_current_classless_parent_gpcr_slugs(_BEFORE_NAR2025_CLASSLESS_PARENT_GPCR_SLUGS_DICT,
+                                                                      _AFTER_NAR2025_CLASSLESS_PARENT_GPCR_SLUGS)
 
 class ProteinSequenceType(models.Model):
     slug = models.SlugField(max_length=20, unique=True)
@@ -404,3 +417,4 @@ def dgn(gn, protein_conformation):
     scheme = ResidueNumberingScheme.objects.get(slug=protein_conformation.protein.residue_numbering_scheme.slug)
     convert_gn = ResidueGenericNumberEquivalent.objects.get(label=gn, scheme=scheme).default_generic_number.label
     return Residue.objects.get(protein_conformation=protein_conformation, generic_number__label=convert_gn).display_generic_number.label
+
