@@ -23,10 +23,14 @@ var redirect_on_select_new_scope = redirect_on_select;
 var selection_autocomplete_id_suffix = '';
 function selectionAutocompleteCreateCatComplete(selection_ligand_fields = '') {
   function selectionAutocompleteMinLengthDetermination() {
-    if (selection_ligand_fields_min_length_1) {
-      return 1;
+    if (typeof selection_ligand_fields_min_length_1 !== 'undefined') {
+      if (selection_ligand_fields_min_length_1) {
+        return 1;
+      }
+      
     }
     return 2;
+
   }
 
   $("#selection-autocomplete"+selection_autocomplete_id_suffix).catcomplete({
