@@ -104,7 +104,7 @@ function createYADCFfilters(start_column, num_cols, filter_type, select_type = n
       $.each( other, function( key, value ) {
         
         filter[key] = value;
-    });
+      });
     }
     filters.push(filter);
   }
