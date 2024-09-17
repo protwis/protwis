@@ -247,7 +247,7 @@ class LandingPage(TemplateView):
                                   ('value', 0),
                                   ('color', 'Grey'),
                                   ('children',data_f['children'])])
-        class_t2_dict = OrderedDict([('name', 'Class T (Taste 2)'),
+        class_t2_dict = OrderedDict([('name', 'Class T2 (Taste 2)'),
                                   ('value', 0),
                                   ('color', 'Orange'),
                                   ('children',data_t2['children'])])
