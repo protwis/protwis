@@ -3,6 +3,7 @@ from decimal import Decimal
 
 from django.core.cache import cache
 
+
 AMINO_ACIDS = OrderedDict([
     ('A', 'Ala'),
     ('C', 'Cys'),
@@ -2287,4 +2288,11 @@ ARRESTIN_DISPLAY_NAME = {'arrc_human': 'Arrestin-C',
                          'arrb2':'Beta-arrestin-2',
                          'arrc':'Arrestin-C'}
 
-CLASSLESS_PARENT_GPCR_SLUGS = set({'008'}) # name = Other GPCRs
+# Remove this constants in the future
+_BEFORE_NAR2025_CLASSLESS_PARENT_GPCR_SLUGS_DICT = {'008':'Other GPCRs'} # {slug:name}
+_AFTER_NAR2025_CLASSLESS_PARENT_GPCR_SLUGS = {'010'}
+
+# DO NOT IMPORT 'CLASSLESS_PARENT_GPCR_SLUGS' DIRECTLY FROM HERE. Do it from protein.models instead.
+# protein.models fixes 'CLASSLESS_PARENT_GPCR_SLUGS' in case of changes in its definition
+# Uncomment next line in the future
+# CLASSLESS_PARENT_GPCR_SLUGS = {'010'}
