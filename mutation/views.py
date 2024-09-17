@@ -733,7 +733,7 @@ def coverage(request):
     for f in families:
         lookup[f.slug] = f.name.replace("receptors","")
 
-    class_proteins = Protein.objects.filter(family__slug__startswith="00", source__name='SWISSPROT').prefetch_related('family').order_by('family__slug')
+    class_proteins = Protein.objects.filter(family__slug__startswith="0", source__name='SWISSPROT').prefetch_related('family').order_by('family__slug')
     print("time 1")
 
     coverage = OrderedDict()

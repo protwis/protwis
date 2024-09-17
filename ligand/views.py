@@ -1365,10 +1365,10 @@ class LigandStatistics(TemplateView):
 
         if self.page == 'ligands':
             classes = ProteinFamily.objects.filter(
-                slug__in=['001', '002', '003', '004', '005', '006', '007'])  # ugly but fast
+                slug__in=['001', '002', '003', '004', '005', '006', '009'])  # ugly but fast
         else:
             classes = ProteinFamily.objects.filter(
-                slug__in=['001', '002', '003', '004', '006', '007'])  # ugly but fast
+                slug__in=['001', '002', '003', '004', '006', '009'])  # ugly but fast
 
         ligands = []
 
@@ -1391,7 +1391,7 @@ class LigandStatistics(TemplateView):
         lig_count_total = sum([x['num_ligands'] for x in ligands])
 
         prot_count_total = Protein.objects.filter(
-            family__slug__startswith='00').all().distinct('family').count()
+            family__slug__startswith='0').all().distinct('family').count()
 
         target_count_total = sum([x['target_count'] for x in ligands])
 
@@ -1696,7 +1696,7 @@ class LigandStatistics(TemplateView):
                 "Other GPCR orphans": "Grey",
                 "Class T (Taste 2)": 'MediumPurple',
                 }
-            heatmap_receptors = Protein.objects.filter(family__slug__startswith='00', species_id=1).exclude(
+            heatmap_receptors = Protein.objects.filter(family__slug__startswith='0', species_id=1).exclude(
                                               family__slug__startswith='005').prefetch_related(
                                               "family", "family__parent", "family__parent__parent", "family__parent__parent__parent")
             MasterDict = {}
