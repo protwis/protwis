@@ -2,6 +2,7 @@ label {
     font-weight: bold;
     margin-right: 10px;
 }
+
 body {
     font-family: Arial, sans-serif;
     background-color: white;
@@ -69,6 +70,7 @@ button {
     cursor: pointer;
     transition: background-color 0.3s ease;
 }
+
 button:hover {
     background-color: #0056b3;
 }
