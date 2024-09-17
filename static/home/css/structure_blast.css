@@ -8,6 +8,7 @@ body {
     margin: 0;
     padding: 20px;
 }
+
 h1 {
     text-align: center;
     color: #333;
@@ -18,6 +19,7 @@ h1 {
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
 form {
     background: #fff;
     padding: 20px;
@@ -26,12 +28,14 @@ form {
     max-width: 1000px;
     margin: 0 auto;
 }
+
 .flex-container {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
     gap: 20px;
 }
+
 .section {
     flex: 1;
     min-width: 200px;
@@ -41,15 +45,18 @@ form {
     padding: 20px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
+
 .section .row {
     display: flex;
     align-items: center;
     margin-bottom: 10px;
 }
+
 input[type="file"], button {
     width: 100%;
     margin-bottom: 20px;
 }
+
 button {
     padding: 10px; /* Increase padding to make the button more square */
     width: 80%; /* Maintain full width */
@@ -65,22 +72,24 @@ button {
 button:hover {
     background-color: #0056b3;
 }
+
 /* Tooltip styles */
 .tooltip-wrapper, .tooltip {
     position: relative;
     display: inline-block;
     cursor: pointer;
 }
+
 .tooltiptext {
     visibility: hidden;
-    background-color: #ffffff;
+    background-color: #fff;
     color: #333;
     text-align: left;
     border-radius: 8px;
     padding: 15px;
     position: absolute;
     z-index: 1;
-    box-shadow: 0px 4px 16px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
     border: 1px solid #ddd;
     transform: translateX(-50%);
     min-width: 200px;
@@ -88,9 +97,11 @@ button:hover {
     width: max-content;
     white-space: normal;
 }
+
 .tooltip-wrapper:hover .tooltiptext, .tooltip:hover .tooltiptext {
     visibility: visible;
 }
+
 /* Spinner styles */
 .spinner {
     border: 4px solid rgba(0, 0, 0, 0.1);
@@ -101,20 +112,24 @@ button:hover {
     animation: spin 1s ease infinite;
     margin: 0 auto;
 }
+
 @keyframes spin {
     0% {
         transform: rotate(0deg);
     }
+
     100% {
         transform: rotate(360deg);
     }
 }
+
 #loading-spinner {
     text-align: center;
     margin-top: 20px;
     font-family: Arial, sans-serif;
     color: #333;
 }
+
 /* Data Table */
 #results {
     width: 100%;
@@ -122,23 +137,27 @@ button:hover {
     justify-content: center;
     margin-top: 20px;
 }
+
 #results_table {
     width: 100%;
     max-width: 1200px;
     margin: 0 auto;
     font-size: medium;
 }
+
 .dataTables_wrapper {
     width: 100%;
     margin: 0 auto;
     overflow-x: auto;
 }
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
     .flex-container {
         flex-direction: column;
         align-items: stretch;
     }
+
     .section {
         margin-bottom: 20px;
     }

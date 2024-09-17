@@ -1214,7 +1214,7 @@ class ParseAFComplexModels():
                 beta_gamma = True
             else:
                 beta_gamma = False
-            
+
             self.complexes[f'{receptor}{peptide}-{signprot}'] = {
                 'receptor': receptor,
                 'peptide': peptide,
