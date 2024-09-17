@@ -149,7 +149,6 @@ class Command(BaseBuild):
                 if i in self.parsed_structures.complexes:
                     filtered_set[i] = self.parsed_structures.complexes[i]
             self.parsed_structures.complexes = filtered_set
-            # self.parsed_structures.complexes = [i for i in self.parsed_structures.complexes if i in options['structure'] or i.lower() in options['structure']]
 
         if options['incremental']:
             self.incremental_mode = True
@@ -646,108 +645,20 @@ class Command(BaseBuild):
         return None
 
     def build_contact_network(self, location, receptor, signprot):
-        # try:
             compute_interactions(location, protein=receptor, signprot=signprot, do_complexes=True, save_to_db=True, file_input=True) # add do_complexes
-        # except:
-        #     print('Error with computing interactions (%s)' % (location))
-        #     self.logger.error('Error with computing interactions (%s)' % (location))
-        #     return
 
     def purge_structures(self):
-        models = Structure.objects.filter(structure_type__slug='af-signprot')
+        models = Structure.objects.filter(structure_type__slug='rfaa-sm')
         for m in models:
             PdbData.objects.filter(pdb=m.pdb_data.pdb).delete()
             WebLink.objects.filter(index=m.pdb_code.index).delete()
         models.delete()
-        ResidueFragmentInteraction.objects.filter(structure_ligand_pair__structure__structure_type__slug='af-signprot').delete()
-        # ResidueFragmentInteractionType.objects.all().delete()
-        StructureLigandInteraction.objects.filter(structure__structure_type__slug='af-signprot').delete()
+        ResidueFragmentInteraction.objects.filter(structure_ligand_pair__structure__structure_type__slug='rfaa-sm').delete()
+        StructureLigandInteraction.objects.filter(structure__structure_type__slug='rfaa-sm').delete()
         #Remove previous Rotamers/Residues to prepare repopulate
-        Fragment.objects.filter(structure__structure_type__slug='af-signprot').delete()
-        Rotamer.objects.filter(structure__structure_type__slug='af-signprot').delete()
+        Fragment.objects.filter(structure__structure_type__slug='rfaa-sm').delete()
+        Rotamer.objects.filter(structure__structure_type__slug='rfaa-sm').delete()
         # PdbData.objects.all().delete()
-
-    @staticmethod
-    def parsecalculation(sd, data, molecule, ignore_ligand_preset=False):
-        module_dir = '/tmp/interactions/'
-        pdb_id = sd['pdb']
-        pdb_name = sd['location'].split('/')[-1]
-        complex_name = sd['location'].split('/')[-1].split('-r')[0]
-        gpcrdb_id = molecule['gpcrdb id']
-        pdb_location = module_dir + 'pdbs/' + complex_name + '/' + pdb_name
-        web_resource = WebResource.objects.get(slug='pdb')
-        web_link, _ = WebLink.objects.get_or_create(index=pdb_id)
-        structure = Structure.objects.filter(pdb_code=web_link)
-        if structure.exists():
-            structure = Structure.objects.get(pdb_code=web_link)
-
-            if structure.pdb_data is None:
-                if os.path.isfile(pdb_location):
-                    pdbdata, created = PdbData.objects.get_or_create(pdb=open(pdb_location, 'r').read())  # does this close the file?
-                else:
-                    print('quitting due to no pdb in filesystem')
-                    quit()
-                structure.pdb_data = pdbdata
-                structure.save()
-
-            protein = structure.protein_conformation
-            lig_key = list(data.keys())[0]
-            #/tmp/interactions/pdbs/oprd_mouse/oprd_mouse-1643-rank0.pdb
-            prot_pep = sd['location'].split('/')[-1].split('-r')[0]
-            # /tmp/interactions/results/ranked_0/interaction
-            f = module_dir + "results/" + prot_pep + "/interaction/" + prot_pep + "_" + lig_key + ".pdb"
-            print(f)
-
-            if os.path.isfile(f):
-                pdbdata, created = PdbData.objects.get_or_create(pdb=open(f, 'r').read())  # does this close the file?
-            else:
-                print('quitting due to no pdb for fragment in filesystem', f)
-                quit()
-
-            struct_lig_interactions = StructureLigandInteraction.objects.filter(pdb_reference=lig_key, ligand_id=gpcrdb_id, structure=structure, annotated=True) #, pdb_file=None
-            if struct_lig_interactions.exists():  # if the annotated exists
-                try:
-                    struct_lig_interactions = struct_lig_interactions.get()
-                    struct_lig_interactions.pdb_file = pdbdata
-                    ligand = struct_lig_interactions.ligand
-                except Exception as msg:
-                    print('error with duplication structureligand',lig_key,msg)
-                    quit() #not sure about this quit
-            elif StructureLigandInteraction.objects.filter(pdb_reference=lig_key, structure=structure).exists():
-                try:
-                    struct_lig_interactions = StructureLigandInteraction.objects.filter(pdb_reference=lig_key, structure=structure).get()
-                    struct_lig_interactions.pdb_file = pdbdata
-                except StructureLigandInteraction.DoesNotExist: #already there
-                    struct_lig_interactions = StructureLigandInteraction.objects.filter(pdb_reference=lig_key, structure=structure, pdb_file=pdbdata).get()
-                ligand = struct_lig_interactions.ligand
-            else:  # create ligand and pair
-                print(pdb_id, "Skipping interactions with ", pdb_id)
-                pass
-
-            struct_lig_interactions.save()
-
-            ResidueFragmentInteraction.objects.filter(structure_ligand_pair=struct_lig_interactions).delete()
-
-            for interaction in data[lig_key]['interactions']:
-                aa = interaction[0]
-                if aa[-1] != structure.preferred_chain:
-                    continue
-                aa, pos, _ = regexaa(aa)
-                residue = check_residue(protein, pos, aa)
-                f = interaction[1]
-                fragment, rotamer = extract_fragment_rotamer(f, residue, structure, ligand)
-                if fragment is not None:
-                    interaction_type, created = ResidueFragmentInteractionType.objects.get_or_create(
-                                                slug=interaction[2],
-                                                name=interaction[3],
-                                                type=interaction[4], direction=interaction[5])
-                    fragment_interaction, created = ResidueFragmentInteraction.objects.get_or_create(
-                                                    structure_ligand_pair=struct_lig_interactions,
-                                                    interaction_type=interaction_type,
-                                                    fragment=fragment, rotamer=rotamer)
-        else:
-            print('Something went wrong and we passed')
-            pass
 
     def main_func(self, positions, iteration, count, lock):
         # setting up processes
@@ -807,10 +718,6 @@ class Command(BaseBuild):
             except ProteinConformation.DoesNotExist:
                 self.logger.error('Protein conformation for construct {} does not exists'.format(con))
                 continue
-
-            # if struct.protein_conformation.state is not state:
-            #     ProteinConformation.objects.filter(protein=con).update(state=ps)
-
 
             pdb_path = sd['location']
 
@@ -925,48 +832,7 @@ class Command(BaseBuild):
                 print(f"Error creating LigandPeptideStructure: {str(e)}")
 
 ####################################################
-            Rotamer.objects.filter(structure=struct, pdbdata=pdbdata).delete()
-            # Residue.objects.filter(protein_conformation=struct.protein_conformation).delete()
 
-####################################################
-            d = {}
-
-            # try:
-            #     current = time.time()
-            #     self.create_rotamers(struct, pdb_path, d)
-            #     # residue_errors = sbc.check_rotamers(s.pdb_code.index)
-            #     # if len(residue_errors)>0:
-            #     #     raise Exception('Error with rotamer check: {}'.format(residue_errors))
-            #     end = time.time()
-            #     diff = round(end - current,1)
-            #     print('Create resides/rotamers done for {}. {} seconds.'.format(struct.protein_conformation.protein.entry_name, diff))
-            # except Exception as msg:
-            #     print(msg)
-            #     print('ERROR WITH ROTAMERS {}'.format(sd['pdb']))
-            #     self.logger.error('Error with rotamers for {}'.format(sd['pdb']))
-            #     self.rotamer_errors.append(struct)
-
-            try:
-                struct.protein_conformation.generate_sites()
-            except:
-                pass
-
-            ##### SIGNPROT
-            # beta_gamma = sd['beta_gamma']
-            # signprot = Protein.objects.get(entry_name=sd['signprot'])
-            # signprot_conf = ProteinConformation.objects.get(protein=signprot)
-            # if beta_gamma:
-            #     beta_protconf = ProteinConformation.objects.get(protein__entry_name='gbb1_human')
-            #     gamma_protconf = ProteinConformation.objects.get(protein__entry_name='gbg2_human')
-            #     sc = SignprotComplex.objects.get_or_create(alpha='B', protein=signprot, structure=struct,
-            #                                                beta_chain='C', gamma_chain='D', beta_protein=beta_protconf.protein, gamma_protein=gamma_protconf.protein)
-            # else:
-            #     sc = SignprotComplex.objects.get_or_create(alpha='B', protein=signprot, structure=struct,
-            #                                                beta_chain=None, gamma_chain=None, beta_protein=None, gamma_protein=None)
-            # struct.signprot_complex = sc[0]
-            # struct.save()
-
-            #### Adding metrics to StructureRFAAScores
 
             try:
                 metrics = StructureRFAAScores.objects.get(structure=struct)
@@ -988,26 +854,13 @@ class Command(BaseBuild):
                     try:
                         if chain.get_id()=='A':
                             res_obj = Residue.objects.get(protein_conformation__protein=con, sequence_number=res.get_id()[1])
-                        # elif chain.get_id()=='B':
-                        #     res_obj = Residue.objects.get(protein_conformation__protein=signprot, sequence_number=res.get_id()[1])
-                        # elif chain.get_id()=='C':
-                        #     res_obj = Residue.objects.get(protein_conformation__protein=beta_protconf.protein, sequence_number=res.get_id()[1])
-                        # elif chain.get_id()=='D':
-                        #     res_obj = Residue.objects.get(protein_conformation__protein=gamma_protconf.protein, sequence_number=res.get_id()[1])
                         r = StructureModelpLDDT(structure=struct, residue=res_obj, pLDDT=plddt)
                         resis.append(r)
                     except Residue.DoesNotExist:
                         continue
             StructureModelpLDDT.objects.bulk_create(resis)
 
-            # try:
             current = time.time()
-            # compute_interactions(sd['location'], protein=struct, lig=l, do_peptide_ligand=True, save_to_db=True, file_input=True)
-            # self.build_contact_network(sd['location'], receptor=struct, signprot=signprot)
             end = time.time()
             diff = round(end - current,1)
-            # print('Create contactnetwork done for {}.'.format(struct.protein_conformation.protein.entry_name))
-            # except Exception as msg:
-            #     print(msg)
-            #     print('ERROR WITH CONTACTNETWORK {}'.format(sd['pdb']))
-            #     self.logger.error('Error with contactnetwork for {}'.format(sd['pdb']))
+

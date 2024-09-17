@@ -1168,53 +1168,6 @@ class ParseAFModelsCSV():
             except IndexError:
                 print('Cannot find information for complex {}'.format(complex))
 
-
-# class ParseAFComplexModels():
-#     def __init__(self):
-#         self.data_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'AlphaFold_multimer'])
-#         self.filedirs = os.listdir(self.data_dir)
-#         self.complexes = {}
-#         for f in self.filedirs:
-
-#             parts = f.split('-', 1)
-#             receptor = parts[0]
-
-#             if len(parts) == 3:  # Case with peptide
-#                 peptide_id = parts[1]
-#                 ligand_id = re.sub(r'.*\[(.*?)\].*', r'\1', peptide_id)
-#                 peptide = "-" + re.sub(r'\[.*?\]', '', peptide_id).strip()
-
-#                 print('PEPTIDE')
-#                 print(ligand_id)
-#                 print(peptide)
-#                 print(peptide_id)
-
-#                 signprot = parts[2]
-#                 model = 'af-signprot-peptide'
-#             else:  # Case without peptide
-#                 peptide = None
-#                 signprot = parts[1]
-#                 model = 'af-signprot'
-
-#             # receptor, signprot = f.split('-')
-#             metrics_file = os.sep.join([self.data_dir, f, f+'_metrics.csv'])
-#             metrics = [row for row in csv.DictReader(open(metrics_file, 'r'))][0]
-#             location = os.sep.join([self.data_dir, f, f+'.pdb'])
-#             ### Grab model date/version from pdb file
-#             with open(location, 'r') as model_file:
-#                 line = model_file.readlines()[0]
-#                 date_re = re.search('HEADER[A-Z\S\D]+(\d{4}-\d{2}-\d{2})', line)
-#                 model_date = date_re.group(1)
-#             ### Check if model has full heterotrimer
-#             if 'gbb1_human' in f:
-#                 signprot = signprot.split('_')[0]+'_human'
-#                 beta_gamma = True
-#             else:
-#                 beta_gamma = False
-            
-#             self.complexes[f'{receptor}{peptide}-{signprot}'] = {'receptor':receptor, 'peptide': peptide, 'signprot':signprot, 'beta_gamma':beta_gamma, 'publication_date':model_date, 'location':location, 'model': model, 'preferred_chain':'A', 'PTM':metrics['ptm'], 'iPTM':metrics['iptm'], 'PAE_mean':metrics['pae_mean'], 'ligand_id':ligand_id}
-
-
 class ParseAFComplexModels():
 
     residue_to_one_letter = {

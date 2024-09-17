@@ -902,33 +902,6 @@ class Command(BaseBuild):
             # save structure before adding M2M relations
             struct.save()
 
-            print('BEFORE CREATING LIGAND')
-
-            # Create LigandPeptideStructure object
-            # if 'peptide' in sd['model']:
-            #     try:
-            #         # Get the existing Ligand object
-            #         ligand = Ligand.objects.get(id=sd['ligand_id'])
-                    
-            #         # Try to get existing LigandPeptideStructure or create a new one
-            #         ligand_peptide_structure, created = LigandPeptideStructure.objects.get_or_create(
-            #             structure=struct,
-            #             ligand=ligand,
-            #             chain='E',
-            #             defaults={'model': None}  # Set model to None
-            #         )
-                    
-            #         if created:
-            #             print(f"Created new LigandPeptideStructure for structure {struct.pdb_code.index} and ligand {ligand.name}")
-            #         else:
-            #             print(f"Found existing LigandPeptideStructure for structure {struct.pdb_code.index} and ligand {ligand.name}")
-                
-            #     except Ligand.DoesNotExist:
-            #         print(f"Error: Ligand with id {sd['ligand_id']} does not exist in the database.")
-            #     except Exception as e:
-            #         print(f"Error creating LigandPeptideStructure: {str(e)}")
-
-
 ################################ Ligand
 
             if 'peptide' in sd['model']:
