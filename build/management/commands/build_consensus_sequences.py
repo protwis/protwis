@@ -30,7 +30,7 @@ class Command(BuildHumanProteins):
     segments = ProteinSegment.objects.filter(partial=False, proteinfamily='GPCR')
 
     # fetch families
-    families = ProteinFamily.objects.filter(slug__startswith='00').all()
+    families = ProteinFamily.objects.filter(slug__startswith='0').all()
 
     #Setting the variables for the test tracking of the model upadates
     tracker = {}
