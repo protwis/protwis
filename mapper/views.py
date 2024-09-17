@@ -546,8 +546,7 @@ class LandingPage(TemplateView):
                                 if sheet_name == 'Tree':
 
                                     header = next(worksheet.iter_rows(min_row=1, max_row=1, values_only=True))
-                                    # Labels = next(worksheet.iter_rows(min_row=2, max_row=1, values_only=True))
-                                    # print(Labels)
+
                                     inner_col_idx = 2  # openpyxl uses 1-based indexing
                                     # Check the first value under the "Inner" header
                                     first_value = worksheet.cell(row=3, column=inner_col_idx).value
@@ -1016,16 +1015,10 @@ class LandingPage(TemplateView):
 
                     else:
                         return render(request, self.template_name, {'upload_status': 'Failed','Error_message': "Unable to load excel file, might be corrupted or not inline with the template file."})
-                    # Needs to send a response if everything is handled #
-                    #return render(request, self.template_name, {'upload_status': 'Success'})
 
             else:
                 # Return a 405 Method Not Allowed response if not a POST request
-                #return HttpResponseNotAllowed(['POST'])
                 return render(request, self.template_name, {'upload_status': 'Failed','Error_message': "Not a valid excel file. Please try and use the template excel file."})
-
-# def LandingPage(request):
-#     return render(request, 'mapper/data_mapper_landing.html')
 
 #######################
 ## Excel upload form ##

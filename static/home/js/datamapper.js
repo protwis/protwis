@@ -181,12 +181,12 @@ function draw_tree(data, options,circle_size) {
             }
         })
         .call(wrap, options.branch_trunc)
-        .style("font-size", function (d) { 
+        .style("font-size", function (d) {
             // Use the custom font size from options
-            if (d.depth == 1) { return options.fontSize.class; } 
-            else if (d.depth == 2) { return options.fontSize.ligandtype; } 
-            else if (d.depth == 3) { return options.fontSize.receptorfamily; } 
-            else { return options.fontSize.receptor; } 
+            if (d.depth == 1) { return options.fontSize.class; }
+            else if (d.depth == 2) { return options.fontSize.ligandtype; }
+            else if (d.depth == 3) { return options.fontSize.receptorfamily; }
+            else { return options.fontSize.receptor; }
         })
         .style("font-family", "Palatino")
         .style("fill", function (d) {
@@ -862,7 +862,7 @@ function modifyData(data) {
       data["Classless"] = data["Other GPCRs"];
       delete data["Other GPCRs"];
     }
-  
+
     // 2. Change "Other GPCR orphans" to "Classless orphans" (Layer3)
     Object.keys(data).forEach(layer1Key => {
       const layer2Data = data[layer1Key];
@@ -874,7 +874,7 @@ function modifyData(data) {
         }
       });
     });
-  
+
     // 3. Remove "Olfactory receptors" from Layer2
     Object.keys(data).forEach(layer1Key => {
       const layer2Data = data[layer1Key];
@@ -882,7 +882,7 @@ function modifyData(data) {
         delete layer2Data["Olfactory receptors"];
       }
     });
-  
+
     return data;  // Return the modified data
   }
 
@@ -1035,7 +1035,7 @@ function renderDataVisualization(data, location,styling_option,Layout_dict,data_
 
     // ## Calculate all spacing and dimensions ##
     let spacing_dict = Calculate_dimension(data,Checklist,Col_break_number,columns,label_conversion_dict,label_names,styling_option,margin);
-    
+
     // update spacing_dict
     spacing_dict.Col1 = spacing_dict.Col1 === -Infinity ? spacing_dict.Col1 : spacing_dict.Col1 + (indent == "No" ? 80 : 0); // 90 is the xoffset of the labels due to datapoints (this might change)
     spacing_dict.Col2 = spacing_dict.Col2 === -Infinity ? spacing_dict.Col2 : spacing_dict.Col2 + (indent == "No" ? 80 : 0);
@@ -1049,7 +1049,7 @@ function renderDataVisualization(data, location,styling_option,Layout_dict,data_
         width = width+spacing_dict[col_list[i]];
     }
     width = width+45;
-    
+
     // Recalculate width if its less than legend bars
     let number_of_bar_legends = 0;
     Object.keys(Data_styling).forEach(function(column) {
@@ -1209,7 +1209,7 @@ function renderDataVisualization(data, location,styling_option,Layout_dict,data_
                 temp_col_state++;
             }
 
-            
+
             if (level == 'level1') {
                 // Trimming Class
                 key = key.split(" (")[0];
@@ -1421,10 +1421,10 @@ function renderDataVisualization(data, location,styling_option,Layout_dict,data_
                 }
             }
         }
-        
+
         return Col_spacing_dict
     }
-    
+
 
     // ## Column breaker function ##
     function ColumnsBreakerFunc (columns,label_counter,Col_break_number,state) {
@@ -1596,7 +1596,7 @@ function renderDataVisualization(data, location,styling_option,Layout_dict,data_
                     // Calculate the subscript font size (e.g., 75% of the main font size)
                     const mainFontSize = parseFloat(fontSize);
                     const subFontSize = mainFontSize * 0.75 + 'px';
-                    
+
                     // Trimming Class
                     if (layer == 'Layer-1') {
                         label = label.split(" (")[0];
@@ -2243,8 +2243,7 @@ function handleRowLabels(textElement, label, labelType, fontSize) {
         // remove receptor and adrenoceptor
         transformedLabel = transformedLabel.replace("-adrenoceptor", '').replace(" receptor", '');
         // Clear existing content in textElement if needed
-        textElement.text('');
-        // textElement.text(transformedLabel);
+        textElement.text('')
 
         // Additional transformations specific to IUPHAR labels
         const parts = transformedLabel.split(/(<sub>|<\/sub>)/); // Split label into parts including <sub> tags
@@ -2263,8 +2262,6 @@ function handleRowLabels(textElement, label, labelType, fontSize) {
             } else {
                 const tspan = textElement.append('tspan').text(part).style("font-family", "sans-serif");
 
-                // Adjust font size and positioning for subscripts
-                // tspan.attr('font-size', inSub ? subFontSize : fontSize);
                 // Adjust dy based on subscript flag
                 if (inSub) {
                     tspan.attr('dy', '0.5em').attr('font-size', subFontSize); // Adjust dy for subscript
@@ -2566,13 +2563,12 @@ function Heatmap(data, location, heatmap_DataStyling,label_x_converter) {
     // Rerender height of plot as the last thing
     let label_length_final;
     if (rotation == 90) {
-        // label_length_final = Math.ceil(longestLabel*0.8 + 13.25*label_fontsize)
         label_length_final = Math.ceil(-128.69+6.61*longestLabel+11.19*label_fontsize)
         svg_home.attr("height",height + margin.bottom + label_length_final+55);
     } else {
         svg_home.attr("height",height + margin.bottom + 55 + 55);
     }
-    
+
   }
 
 // #################
@@ -2595,7 +2591,7 @@ function GPCRome_initializeData(data) {
     function addItemsToCircle(GPCRome, items) {
         Object.keys(items).forEach(ligandType => {
             const receptorFamilies = items[ligandType];
-            
+
             // Ensure receptorFamilies is an object
             if (typeof receptorFamilies === 'object' && receptorFamilies !== null) {
                 Object.keys(receptorFamilies).forEach(family => {
@@ -2635,7 +2631,7 @@ function GPCRome_initializeData(data) {
             });
         }
 
-        // Circle 2: "Orphan receptors" from "Class A (Rhodopsin)" 
+        // Circle 2: "Orphan receptors" from "Class A (Rhodopsin)"
         if (className === "Class A (Rhodopsin)" && classData["Orphan receptors"]) {
             addItemsToCircle(GPCRomes.GPCRome_AO, { "Orphan receptors": classData["Orphan receptors"] });
         }
@@ -2717,12 +2713,6 @@ function GPCRome_formatTextWithHTML(text, Family_list) {
             .replace(/(Class C Orphans)/g, 'Orphans') // Remove specific substrings
             .split("</tspan>")[0]
             .split(" (")[0]; // Keep only the part before the first " ("
-            
-
-        // // Truncate if necessary
-        // if (formattedText.length > 15 && level > 1) {
-        //     return formattedText.substring(0, 15) + "...";
-        // }
     }
 
     return formattedText;
@@ -2801,8 +2791,8 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling) {
     };
 
     // Create a new GPCRome_A object that excludes the last N entries
-    const updatedGPCRome_A = { 
-        ...layout_data.GPCRome_A 
+    const updatedGPCRome_A = {
+        ...layout_data.GPCRome_A
     };
 
     // Remove the last N properties from GPCRome_A
@@ -2815,7 +2805,7 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling) {
     // Now call Draw_a_GPCRome for both updated GPCRome_A and GPCRome_AO
 
     // First Draw_a_GPCRome with GPCRome_A, now without the two receptors
-    
+
     if (three_classes) {
 
         Draw_a_GPCRome(updatedGPCRome_A, fill_data, 0, dimensions, Spacing);
@@ -2843,7 +2833,7 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling) {
         const width = dimensions.width;
         const height = dimensions.height;
         const label_offset = 7; // Increased offset to push labels outward
-        
+
 
         const GPCRome_radius = Math.min(width, height) / 2 - 60 - ((level == 4) ? (90 * level) : (85 * level)); // Radius for each GPCRome
 
@@ -2913,25 +2903,19 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling) {
                 values.splice(42, 0, "Classless");
                 values.splice(42, 0, "");
                 values.push("")
-            } 
-                
+            }
+
         } else {
             if (level == 0) {
                 values.unshift("");
                 values.unshift("A");
                 values.push("");
             } else if (level == 1) {
-                // values.unshift("");
-                // values.unshift("");
-                // values.unshift("");
                 values.unshift("A");
                 values.push("");
-                // values.splice(62, 0, "A ORPHANS");
-                // values.splice(63, 0, "");
             } else if (level == 2) {
                 if (Spacing) {
                     values.splice(52, 0, "B2");
-                    // values.splice(52, 0, "");
                     values.splice(53, 0, "");
                     values.push("")
 
@@ -2962,23 +2946,23 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling) {
         function calculatePositionAndAngle(index, total, values, Header_list, Family_list, isSplit) {
             // Get the text value at the current index
             const text_value = values[index];
-            
+
             // Check if the text value is in the Header_list
             const isInHeaderList = Header_list.includes(text_value)  && text_value !== "Classless";
-            
+
             // Check if the text value is in the Family_list
             const isInFamilyList = Family_list.includes(text_value);
-            
+
             // Offset the angle calculation by -90 degrees (or -π/2 radians) to start at 12 o'clock
             const angle = -((index / total) * 2 * Math.PI) + (Math.PI / 2);
-            
+
             // If isSplit is true, treat it as a Family_list item (or handle it in a special way)
             const adjustedRadius = isSplit ? (GPCRome_radius - 8) : text_value === "Classless" ? (GPCRome_radius - 10) : (isInFamilyList ? (GPCRome_radius - 20) : (isInHeaderList ? (GPCRome_radius + 18) : (GPCRome_radius + label_offset)));
-        
+
             // Position on the GPCRome's border with or without label offset
             const x = width / 2 + Math.cos(angle) * adjustedRadius;
             const y = height / 2 - Math.sin(angle) * adjustedRadius;
-            
+
             // If it's a header, set the rotation to 0, otherwise calculate the outward-facing rotation
             let rotation;
             if (isInHeaderList) {
@@ -2988,11 +2972,10 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling) {
             } else {
                 rotation = -(angle * 180 / Math.PI);
             }
-            // const rotation = (isInHeaderList || "Classless") ? 0 : -(angle * 180 / Math.PI);
-            
+
             return { x, y, rotation };
         }
-        
+
        // Bind data and append text elements for the specific GPCRome
         svg.selectAll(`.GPCRome-text-${level}`)
         .data(values)
@@ -3030,10 +3013,10 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling) {
         .attr("dy", (d) => Header_list.includes(d) ? "0.1em" : "0.05em")  // Adjust 'dy' as needed
         .attr("transform", (d, i) => {
             const pos = calculatePositionAndAngle(i, values.length, values, Header_list, Family_list, false);
-            
+
             // Calculate the angle and determine the text's side (right or left)
             const angle = (i / values.length) * 360 - 90;
-            
+
             // Rotation logic
             let rotation;
             if (Header_list.includes(d)) {
@@ -3043,7 +3026,7 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling) {
                 // For non-headers, flip the text on the left-hand side by 180 degrees
                 rotation = angle >= -90 && angle < 90 ? 0 : 180;
             }
-            
+
             // Apply the rotation and positioning
             return `rotate(${pos.rotation + rotation}, ${pos.x}, ${pos.y})`;
         })
@@ -3053,9 +3036,6 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling) {
         .attr("font-weight", d => Header_list.includes(d) || Family_list.includes(d) ? "950" : "normal")
         .style("fill", d => Header_list.includes(d) ? "Black" : "black");
 
-            // .style("background",'black')
-            // .style("text-decoration", d => Header_list.includes(d) ? "underline" : "none");
-        
         // After drawing all the elements, adjust the y-position for all family labels
         // Adjust the y-position for all family labels based on the midpoint between current and previous positions
         svg.selectAll(".GPCRome-family-label")
@@ -3064,7 +3044,7 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling) {
 
                 // Find the index of the family label within the full values array
                 const index = values.indexOf(d);  // This gets the actual index of the current family label in the `values` array
-                
+
                 if (index !== -1 && index > 0) {  // Ensure the index is valid and not the first item (since we need index - 1)
 
                     const totalItems = values.length; // Total number of items in the current GPCRome
@@ -3175,7 +3155,7 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling) {
                     }
                 }
             });
-        
+
         // Define color scale for continuous data
         let colorScale;
 
@@ -3225,11 +3205,11 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling) {
                 if (datatype === "Continuous") {
                     // Use color scale for continuous data
                     const numericValue = parseFloat(value);
-                    
+
                     if (numericValue === 0) {
                         return "white";  // Return "white" if the value is 0
                     }
-                    
+
                     return !isNaN(numericValue) ? colorScale(numericValue) : "none";
                 } else {
                     // Handle discrete data or default case
@@ -3248,49 +3228,6 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling) {
                 return value === "" ? 0 : 0.5;  // Set stroke-width to 0 if the value is an empty string
             });
     }
-    // draw a clock
-
-    // const clock_center_X = dimensions.width/2;
-    // const clock_center_Y = dimensions.height/2;
-    // const clock_radius = 500;
-
-    // const romanNumerals = {
-    //     1: "I",
-    //     2: "II",
-    //     3: "III",
-    //     4: "IV",
-    //     5: "V",
-    //     6: "VI",
-    //     7: "VII",
-    //     8: "VIII",
-    //     9: "IX",
-    //     10: "X",
-    //     11: "XI",
-    //     12: "XII"
-    // };
-
-    // const numberOfNumerals = 12;
-
-    // // Iterate over each numeral (1 to 12)
-    // for (let i = 1; i <= numberOfNumerals; i++) {
-    //     // Calculate angle in radians for the current numeral
-    //     const angle = (i / numberOfNumerals) * 2 * Math.PI - Math.PI / 2; // Subtract Math.PI/2 to start at 12 o'clock
-        
-    //     // Calculate the x and y coordinates for the numeral
-    //     const x = clock_center_X + Math.cos(angle) * clock_radius;
-    //     const y = clock_center_Y + Math.sin(angle) * clock_radius;
-        
-    //     // Append the Roman numeral as text at the calculated (x, y) coordinates
-    //     svg.append("text")
-    //         .attr("x", x)
-    //         .attr("y", y)
-    //         .attr("text-anchor", "middle")
-    //         .attr("dominant-baseline", "middle")
-    //         .attr("font-size", "20px")
-    //         .attr("font-family", "Palatino")
-    //         .attr("fill", "gray")  // Set the fill color to light gray
-    //         .text(romanNumerals[i]);
-    // }
 }
 
 
@@ -3304,7 +3241,7 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling) {
 
 
 
-// // SPIRAL  - Maybe for later!! 
+// // SPIRAL  - Maybe for later!!
 
 // function formatTextWithHTML_spiral(text, receptorFamilies) {
 //     // List of receptor families that need special formatting
@@ -3359,31 +3296,31 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling) {
 //     ];
 
 //     spiral_data = Object.values(layout_data).flat();
-    
+
 //     const transformData = (dataObject, classMapping) => {
 //         const result = [];
 //         const familyList = new Set(); // Create a Set to hold receptor family names
-    
+
 //         // Iterate over each class in the data object
 //         Object.keys(dataObject).forEach(classIndex => {
 //             const className = classMapping[classIndex] || "UNKNOWN"; // Default to "UNKNOWN" if classMapping is missing
 //             result.push(className); // Add the class name
-    
+
 //             const receptorFamilies = dataObject[classIndex];
 //             Object.keys(receptorFamilies).forEach(familyName => {
 //                 familyList.add(familyName); // Add receptor family name to the Set
 //                 result.push(familyName); // Add the receptor family name
-    
+
 //                 const receptors = receptorFamilies[familyName];
 //                 result.push(...receptors); // Flatten the receptors into the result array
 //             });
 //         });
-    
+
 //         return { flattenedData: result, familyList: Array.from(familyList) }; // Convert Set to Array
 //     };
-    
+
 //     const { flattenedData, familyList } = transformData(spiral_data, classMapping);
-    
+
 //     // console.log(flattenedData);
 //     // Configuration
 //     const width = 1000;
@@ -3457,17 +3394,17 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling) {
 //         .attr("text-anchor", d => {
 //             // Calculate angle in radians
 //             const angle = Math.atan2(d.y - centerY, d.x - centerX);
-            
+
 //             // Determine text-anchor based on angle
 //             return (angle >= -Math.PI / 2 && angle < Math.PI / 2) ? "start" : "end";
 //         })
 //         .attr("transform", d => {
 //             // Calculate angle in radians
 //             const angle = Math.atan2(d.y - centerY, d.x - centerX);
-            
+
 //             // Calculate rotation for flipping text
 //             const rotation = angle >= -Math.PI / 2 && angle < Math.PI / 2 ? 0 : 180;
-            
+
 //             // Rotate text to follow spiral path and flip as needed
 //             return `rotate(${angle * 180 / Math.PI + rotation}, ${d.x}, ${d.y})`; // Adjust rotation angle
 //         });
@@ -3486,7 +3423,7 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling) {
 
 // const pieData = data.map((d, i) => {
 //     const halfStep = (desiredArcLength / d.radius) / 2;
-    
+
 //     // Start and end angles
 //     const startTheta = d.theta - halfStep;
 //     const endTheta = d.theta + halfStep;
@@ -3505,9 +3442,9 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling) {
 
 //     // Return the path commands for the custom arc
 //     return {
-//         path: `M ${startPointOuter.x},${startPointOuter.y} 
+//         path: `M ${startPointOuter.x},${startPointOuter.y}
 //                A ${d.radius - 5},${d.radius - 5} 0 0,1 ${endPointOuter.x},${endPointOuter.y}
-//                L ${endPointInner.x},${endPointInner.y} 
+//                L ${endPointInner.x},${endPointInner.y}
 //                A ${d.radius - 10},${d.radius - 10} 0 0,0 ${startPointInner.x},${startPointInner.y}
 //                Z`,
 //         data: d.text
