@@ -16,7 +16,7 @@ from django.http import HttpResponse
 from django.views.generic import TemplateView, DetailView
 from django.http import HttpResponseRedirect
 
-from django.db.models import Q, Count, Subquery, OuterRef, Prefetch
+from django.db.models import Count, Subquery, OuterRef
 from django.views.decorators.csrf import csrf_exempt
 
 from django.core.cache import cache
