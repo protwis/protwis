@@ -1,18 +1,16 @@
-from protein.models import Protein, ProteinSegment, Residue, ProteinConformation, ProteinCouplings
+from django.conf import settings
+from django.core.management.base import BaseCommand
+from django.db.models import OuterRef, Prefetch
+
+from protein.models import ProteinSegment, Residue, ProteinConformation, ProteinCouplings
 from structure.models import Structure, StructureModel
 from structure.assign_gn_foldseek import *
-import csv
-from django.core.management.base import *
-import pandas as pd 
-from Bio.PDB import PDBParser, PDBIO, Select
-from io import StringIO
 
-import re
-import time
-from django.db.models import Q, OuterRef, Prefetch
+from Bio.PDB import PDBParser, PDBIO, Select
 import shutil
 from pathlib import Path
-from django.conf import settings
+import os
+
 
 class ResidueBFactorSelect(Select):
     """A selection class for filtering residues based on the B-factor of their CA atoms."""
@@ -39,8 +37,8 @@ class Command(BaseCommand):
         # Clear and recreate output directories
         shutil.rmtree(output_dir, ignore_errors=True)
         dirs = [f'{prefix}_{db_id}{suffix}' for prefix in ['raw', 'ref', 'af'] for suffix in ['', '_trim']]
-        for dir in dirs:
-            (output_dir / dir).mkdir(parents=True, exist_ok=True)
+        for d in dirs:
+            (output_dir / d).mkdir(parents=True, exist_ok=True)
 
         # Process raw and reference structures
         structures = Structure.objects.filter(structure_type__in=raw_types + ref_types).select_related("pdb_data", "pdb_code")
@@ -61,7 +59,7 @@ def process_structure(structure, raw_types, ref_types, af_types, db_id, output_d
     structure_type = "raw" if s_type in raw_types else "ref" if s_type in ref_types else "af" if s_type in af_types else 'empty'
     assign_grn = GenericNumberingFromDB(structure, pdb_data)
     save_structure(assign_grn.assign_generic_numbers(), structure_type, db_id, pdb_code, output_dir)
-    
+
 
 def process_af_structure(structure, db_id, output_dir):
     pdb_data = structure.pdb_data.pdb

@@ -1207,7 +1207,7 @@ class ParseAFComplexModels():
                 line = model_file.readlines()[0]
                 date_re = re.search('HEADER[A-Z\S\D]+(\d{4}-\d{2}-\d{2})', line)
                 model_date = date_re.group(1)
-            
+
             # Check if model has full heterotrimer
             if 'gbb1_human' in f:
                 signprot = signprot.split('_')[0]+'_human'
