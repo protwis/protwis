@@ -480,9 +480,7 @@ function createLegendBars(location, data, conversion, circle_styling_dict) {
     var barWidth = 120;
     var barHeight = 15;
     var spacing = 50; // Horizontal spacing between bars
-    // console.log(barWidth);
     // Adjust SVG width if needed
-    // var totalWidth = margin.left + (existingCategories.length * (barWidth + spacing)) + margin.right;
     var totalWidth = 1200;
     svg.attr("width", totalWidth);
 
@@ -1041,7 +1039,6 @@ function renderDataVisualization(data, location,styling_option,Layout_dict,data_
     spacing_dict.Col2 = spacing_dict.Col2 === -Infinity ? spacing_dict.Col2 : spacing_dict.Col2 + (indent == "No" ? 80 : 0);
     spacing_dict.Col3 = spacing_dict.Col3 === -Infinity ? spacing_dict.Col3 : spacing_dict.Col3 + (indent == "No" ? 80 : 0);
     spacing_dict.Col4 = spacing_dict.Col4 === -Infinity ? spacing_dict.Col4 : spacing_dict.Col4 + (indent == "No" ? 80 : 0);
-    // console.log(spacing_dict);
     // Update width
 
     col_list = ['Col1','Col2','Col3','Col4'];
@@ -1255,7 +1252,6 @@ function renderDataVisualization(data, location,styling_option,Layout_dict,data_
             }
 
             label_length = label.length;
-            // console.log(label);
             // Update the max length for the current column
             if (label_max_dict[colKey]['level4'] < label_length) {
                 label_max_dict[colKey]['level4'] = label_length;
@@ -1386,7 +1382,6 @@ function renderDataVisualization(data, location,styling_option,Layout_dict,data_
         for (let i = 0; i < columns; i++) {
             const key = label_dict_keys[i];
             const max_label_values = label_max_dict[key];
-            // console.log(label_dict_keys);
             for (let j = 0; j < levels.length; j++) {
                 const levelKey = levels[j];
                 const layerKey = laters[j];
@@ -2668,15 +2663,6 @@ function GPCRome_initializeData(data) {
             GPCRomes[GPCRomeKey][familyKey] = Array.from(new Set(GPCRomes[GPCRomeKey][familyKey]));
         });
     });
-
-    // Print out GPCRome name and total number of values within each GPCRome
-    // Object.keys(GPCRomes).forEach(GPCRomeKey => {
-    //     let totalValues = 0;
-    //     Object.keys(GPCRomes[GPCRomeKey]).forEach(familyKey => {
-    //         totalValues += GPCRomes[GPCRomeKey][familyKey].length;
-    //     });
-    //     console.log(`${GPCRomeKey}: Total number of values = ${totalValues}`);
-    // });
 
     return GPCRomes;
 }
