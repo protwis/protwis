@@ -9,7 +9,6 @@ urlpatterns = [
     path('ligand_by_name', views.LigandNameSelection.as_view(), name='ligand_selection'),
     path('read_input_ligand_bulk_search', views.ReadInputLigandBulkSearch.as_view(), name='read_input_ligand_bulk_search'),
     path('ligand_bulk_search', views.LigandBulkSearch.as_view(), name='ligand_bulk_search'),
-    # path('ligand_by_smiles', views.LigandStructuralSelection.as_view(), name='ligand_structural_selection'),
     path('read_input_ligand_structural_search', views.ReadInputLigandStructuralSearch.as_view(), name='read_input_ligand_structural_search'),
     path('ligand_structural_search', views.LigandStructuralSearch.as_view(), name='ligand_structural_search'),
 
