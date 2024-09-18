@@ -156,8 +156,6 @@ def SelectionAutocomplete(request):
             field_list = []
         if fields is not None:
             field_list = fields.split(',')
-            # if 'all' in field_list:
-            #     fields = None
 
         referer = request.META.get('HTTP_REFERER')
 
