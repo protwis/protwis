@@ -1184,6 +1184,8 @@ class ParseAFComplexModels():
         for f in self.filedirs:
 
             metrics_file = os.sep.join([self.data_dir, f, f+'_metrics.csv'])
+            if not os.path.exists(metrics_file):
+                metrics_file = os.sep.join([self.data_dir, f, f+'.csv'])
             metrics = [row for row in csv.DictReader(open(metrics_file, 'r'))][0]
             location = os.sep.join([self.data_dir, f, f+'.pdb'])
 
