@@ -293,7 +293,7 @@ class ProteinFamily(models.Model):
 
 # Remove in the future
 # The next two lines must be after class ProteinFamily.
-from protein.model_func import get_current_classless_parent_gpcr_slugs 
+from protein.model_func import get_current_classless_parent_gpcr_slugs
 CLASSLESS_PARENT_GPCR_SLUGS = get_current_classless_parent_gpcr_slugs(_BEFORE_NAR2025_CLASSLESS_PARENT_GPCR_SLUGS_DICT,
                                                                       _AFTER_NAR2025_CLASSLESS_PARENT_GPCR_SLUGS)
 

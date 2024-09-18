@@ -23,7 +23,7 @@ def get_current_classless_parent_gpcr_slugs(old_slug_dict, new_slug_set):
     old_slug_dict_keys = old_slug_dict.keys()
     old_slug_dict_keys_set = set(old_slug_dict_keys)
 
-    # Make a set of the old slugs that are currently present in the database and check if their names match 
+    # Make a set of the old slugs that are currently present in the database and check if their names match
     # with the old ones
     q = ProteinFamily.objects.filter(slug__in=list(old_slug_dict_keys)).values('slug','name')
     current_db_old_slugs_set = set()
@@ -31,7 +31,7 @@ def get_current_classless_parent_gpcr_slugs(old_slug_dict, new_slug_set):
         current_db_old_slugs_set.add(pf['slug'])
         if pf['name'] != old_slug_dict[pf['slug']]:
             return new_slug_set
-        
+
     # Check if any new slugs are present in the database
     new_slugs = new_slug_set - old_slug_dict_keys_set
     if len(ProteinFamily.objects.filter(slug__in=list(new_slugs)).values_list('slug', flat=True)) > 0:
