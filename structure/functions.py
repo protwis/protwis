@@ -1181,8 +1181,8 @@ class ParseAFComplexModels():
         self.data_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'AlphaFold_multimer'])
         self.filedirs = os.listdir(self.data_dir)
         self.complexes = {}
-        for f in self.filedirs:
 
+        for f in self.filedirs:
             metrics_file = os.sep.join([self.data_dir, f, f+'_metrics.csv'])
             if not os.path.exists(metrics_file):
                 metrics_file = os.sep.join([self.data_dir, f, f+'.csv'])
@@ -1190,11 +1190,10 @@ class ParseAFComplexModels():
             location = os.sep.join([self.data_dir, f, f+'.pdb'])
 
             parts = f.split('-')
-            print(parts)
             receptor = parts[0]
             if len(parts) == 3:  # Case with peptide
                 peptide_id = parts[1]
-                peptide = "-" + re.sub(r'\[.*?\]', '', peptide_id).strip()
+                peptide = "-" + peptide_id
                 signprot = parts[2]
                 model = 'af-signprot-peptide'
                 chain_e_sequence = self.get_ligand_sequence(location, 'E')
@@ -1232,7 +1231,6 @@ class ParseAFComplexModels():
                 'PAE_mean': metrics['pae_mean'],
                 'chain_e_sequence': chain_e_sequence
             }
-
 
     def get_ligand_sequence(self, pdb_file, chain_id):
         sequence = ""

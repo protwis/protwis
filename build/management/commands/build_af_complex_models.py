@@ -654,17 +654,17 @@ class Command(BaseBuild):
         #     return
 
     def purge_structures(self):
-        models = Structure.objects.filter(structure_type__slug='af-signprot')
+        models = Structure.objects.filter(structure_type__slug__startswith='af-signprot')
         for m in models:
             PdbData.objects.filter(pdb=m.pdb_data.pdb).delete()
             WebLink.objects.filter(index=m.pdb_code.index).delete()
         models.delete()
-        ResidueFragmentInteraction.objects.filter(structure_ligand_pair__structure__structure_type__slug='af-signprot').delete()
+        ResidueFragmentInteraction.objects.filter(structure_ligand_pair__structure__structure_type__slug__startswith='af-signprot').delete()
         # ResidueFragmentInteractionType.objects.all().delete()
-        StructureLigandInteraction.objects.filter(structure__structure_type__slug='af-signprot').delete()
+        StructureLigandInteraction.objects.filter(structure__structure_type__slug__startswith='af-signprot').delete()
         #Remove previous Rotamers/Residues to prepare repopulate
-        Fragment.objects.filter(structure__structure_type__slug='af-signprot').delete()
-        Rotamer.objects.filter(structure__structure_type__slug='af-signprot').delete()
+        Fragment.objects.filter(structure__structure_type__slug__startswith='af-signprot').delete()
+        Rotamer.objects.filter(structure__structure_type__slug__startswith='af-signprot').delete()
         # PdbData.objects.all().delete()
 
     @staticmethod
@@ -908,7 +908,9 @@ class Command(BaseBuild):
                 try:
 
                     # Get the Ligand object based on the chain E sequence
-                    ligand = Ligand.objects.get(sequence=sd['chain_e_sequence'])
+                    ligand = Ligand.objects.filter(sequence=sd['chain_e_sequence'])
+                    if len(ligand)>0:
+                        ligand = ligand[0]
 
                     print(ligand)
 
@@ -926,7 +928,7 @@ class Command(BaseBuild):
                         print(f"Found existing LigandPeptideStructure for structure {struct.pdb_code.index} and ligand {ligand.name}")
                 
                 except Exception as e:
-                    print(f"Error creating LigandPeptideStructure: {str(e)}")
+                    print(f"Error creating LigandPeptideStructure: {str(e)} {ligand}")
 
 
 
