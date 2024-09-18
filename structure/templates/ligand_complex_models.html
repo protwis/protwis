@@ -188,6 +188,7 @@
                         select_type: 'select2',
                         filter_default_label: "Protein name",
                         filter_reset_button_text: false,
+                        column_data_type:'html',
                         select_type_options: {
                             width: '60px',
                         }
@@ -422,7 +423,7 @@
                     <th colspan=1 class="over_header">   MODEL   </th>
                     <th colspan=2 class="over_header" style="text-align: left;">LIGAND</th>
                     <th colspan=4 class="over_header" style="text-align: left;">RECEPTOR</th>
-                    <th colspan="2" class="over_header" style="text-align: left;">LIGAND PLACEMENT CONFIDENCE</th>
+                    <th colspan="2" class="over_header" style="text-align: left;">LIGAND MODEL SCORE</th>
                     <th colspan=1 class="over_header">Date</th>
                 </tr>
                 <tr>
@@ -478,7 +479,11 @@
 
                     {% for ligand_object in model.prefetch_ligands %}
                                         <!-- ligand name 7 -->
-                        <td> <a href="/ligand/{{ ligand_object.ligand.id }}/info">{{ ligand_object.ligand.name | upper }}</a>  </td>
+                        {% if ligand_object.ligand.name|length >= 6 %}
+                        <td><a href="/ligand/{{ ligand_object.ligand.id }}/info">{{ ligand_object.ligand.name | title }}</a></td>
+                        {% else %}
+                        <td><a href="/ligand/{{ ligand_object.ligand.id }}/info">{{ ligand_object.ligand.name | upper }}</a></td>
+                        {% endif %}</a></td>
 
                                             <!-- ligand type 8 -->
                         {% if ligand_object.ligand.ligand_type.slug == "small-molecule" %}

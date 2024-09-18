@@ -1215,7 +1215,7 @@ class ParseAFComplexModels():
                 beta_gamma = True
             else:
                 beta_gamma = False
-            
+
             self.complexes[f'{receptor}{peptide}-{signprot}'] = {
                 'receptor': receptor,
                 'peptide': peptide,
@@ -1268,7 +1268,6 @@ class ParseRFAAModels():
                 line = model_file.readlines()[0]
                 date_re = re.search('HEADER[A-Z\S\D]+(\d{4}-\d{2}-\d{2})', line)
                 model_date = date_re.group(1)
-            
             self.complexes[f'{receptor}-{inchikey}'] = {
                 'receptor':receptor, 
                 'ligand_id':inchikey,
