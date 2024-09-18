@@ -193,16 +193,6 @@
                             width: '60px',
                         }
                     },
-                    // {
-                    //     column_number : 6,
-                    //     filter_type: "multi_select",
-                    //     select_type: 'select2',
-                    //     filter_default_label: "Heterotrimer",
-                    //     filter_reset_button_text: false,
-                    //     select_type_options: {
-                    //         width: '80px',
-                    //     }
-                    // },
                     {
                         column_number : 6,
                         filter_type: "multi_select",
@@ -223,16 +213,6 @@
                             width: '80px',
                         }
                     },
-                    // {
-                    //     column_number : 8,
-                    //     filter_type: "multi_select",
-                    //     select_type: 'select2',
-                    //     filter_default_label: "Date",
-                    //     filter_reset_button_text: false,
-                    //     select_type_options: {
-                    //         width: '80px',
-                    //     }
-                    // },
                     {
                         column_number : 8,
                         filter_type: "range_number",
@@ -423,7 +403,7 @@
                     <th colspan=1 class="over_header">   MODEL   </th>
                     <th colspan=2 class="over_header" style="text-align: left;">LIGAND</th>
                     <th colspan=4 class="over_header" style="text-align: left;">RECEPTOR</th>
-                    <th colspan="2" class="over_header" style="text-align: left;">LIGAND MODEL SCORE</th>
+                    <th colspan=2 class="over_header" style="text-align: left;">LIGAND MODEL SCORE</th>
                     <th colspan=1 class="over_header">Date</th>
                 </tr>
                 <tr>
@@ -451,7 +431,6 @@
                     <!-- class 6-->
                     <th>Class</th>
                     <!-- SIGNPROT presence -->
-                    <!-- <th></th> -->
 
                 
                     <!--                    SCORES                  -->
@@ -471,34 +450,34 @@
                     <!-- CHECKBOX   1 -->
                     <td class="text-center"><input class="alt" type="checkbox" id="{{ model.pk }}"></td>
                                         <!-- model icon 2 -->
-                    <td style="text-align:center;"><a target="_blank" href="ligand_complex_models/{{ model.pdb_code.index }}"><img width="14px" height="20px" class="model-link" src="{% static 'home/images/model-surface.png' %}"></a></div></td>
+                    <td style="text-align:center;"><a target="_blank" href="ligand_complex_models/{{ model.pdb_code.index }}"><img width="14px" height="20px" class="model-link" src="{% static 'home/images/model-surface.png' %}"></a></td>
 
 
 
                                         <!--               LIGAND            -->
 
-                    {% for ligand_object in model.prefetch_ligands %}
+                    
                                         <!-- ligand name 7 -->
-                        {% if ligand_object.ligand.name|length >= 6 %}
-                        <td><a href="/ligand/{{ ligand_object.ligand.id }}/info">{{ ligand_object.ligand.name | title }}</a></td>
-                        {% else %}
-                        <td><a href="/ligand/{{ ligand_object.ligand.id }}/info">{{ ligand_object.ligand.name | upper }}</a></td>
-                        {% endif %}</a></td>
+                    {% if model.prefetch_ligands.0.ligand.name|length >= 6 %}
+                    <td><a href="/ligand/{{ model.prefetch_ligands.0.ligand.id }}/info">{{ model.prefetch_ligands.0.ligand.name | title | safe }}</a></td>
+                    {% else %}
+                    <td><a href="/ligand/{{ model.prefetch_ligands.0.ligand.id }}/info">{{ model.prefetch_ligands.0.ligand.name | upper | safe }}</a></td>
+                    {% endif %}</a></td>
 
-                                            <!-- ligand type 8 -->
-                        {% if ligand_object.ligand.ligand_type.slug == "small-molecule" %}
-                            <td>Small mol</td>
-                        {% else %}
-                            <td> {{ ligand_object.ligand.ligand_type.slug | title}} </td>
-                        {% endif %}
-                    {% endfor %}
+                                        <!-- ligand type 8 -->
+                    {% if model.prefetch_ligands.0.ligand.ligand_type.slug == "small-molecule" %}
+                        <td>Small mol</td>
+                    {% else %}
+                        <td> {{ model.prefetch_ligands.0.ligand.ligand_type.slug | title}} </td>
+                    {% endif %}
+                    
 
 
                                         <!--               RECEPTOR            -->
 
                     
                     <!-- Gene name 3 -->
-                    <td><a target="_blank" href="http://www.uniprot.org/uniprot/{{ model.protein_conformation.protein.accession }}">{{ model.gene_name }}</a></td>
+                    <td>{{ model.gene_name }}</td>
 
                     <!-- Protein name 4 -->
                     <td> <a href=" /protein/{{model.protein_conformation.protein.entry_name}} ">{{ model.protein_conformation.protein.name|receptor_short|safe }}</a></td>
@@ -509,28 +488,15 @@
                     <!-- Class 6-->
                     <td>{{ model.protein_conformation.protein.family.parent.parent.parent.name|cut_classname }}</td>
 
-                    <!-- HETEROTRIMMER -->
-                    <!-- {% if model.signprot_complex %}
-                        <td>Yes</td>
-                    {% else %}
-                        <td>No</td>
-                    {% endif %} -->
-
-
-
                     <!--                         Scores                           -->
 
                     {% if model.prefetch_af_scores %}
                         <td>{{ model.prefetch_af_scores.0.pae_mean }} </td>
-
-                        <!-- <td>{{ model.pk }} </td> -->
                     {% else %}
                         <td> - </td>
                     {% endif %}
                     {% if model.prefetch_rfaa_scores %}
                         <td>{{ model.prefetch_rfaa_scores.0.plddt_mean }} </td>
-
-                        <!-- <td>{{ model.pk }} </td> -->
                     {% else %}
                         <td> - </td>
                     {% endif %}
@@ -545,7 +511,7 @@
         </table>
     </div>
 </div>
-<div id="superposition-modal" class="modal">
+<!-- <div id="superposition-modal" class="modal"> -->
   <!-- Modal content -->
     <!-- <div class="modal-content">
         <button id="close_superposition_modal" style="float:right;display:inline;" aria-hidden="true" aria-label="Close" class="close" data-dismiss="superposition-modal">&times;</button>

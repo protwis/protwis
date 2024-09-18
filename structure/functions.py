@@ -1250,8 +1250,6 @@ class ParseRFAAModels():
         self.filedirs = os.listdir(self.data_dir)
         self.complexes = {}
         for f in self.filedirs:
-
-
             parts = f.split('-', 1)
             receptor = parts[0]
             ligand_secs = parts[1].split('[')
@@ -1259,7 +1257,6 @@ class ParseRFAAModels():
             inchikey = ligand_secs[1].replace(']', '')
             model = 'rfaa-sm'
 
-            # receptor, signprot = f.split('-')
             metrics_file = os.sep.join([self.data_dir, f, receptor + '-' + ligand +'_metrics.csv'])
             metrics = [row for row in csv.DictReader(open(metrics_file, 'r'))][0]
             location = os.sep.join([self.data_dir, f, f+'.pdb'])
@@ -1267,7 +1264,10 @@ class ParseRFAAModels():
             with open(location, 'r') as model_file:
                 line = model_file.readlines()[0]
                 date_re = re.search('HEADER[A-Z\S\D]+(\d{4}-\d{2}-\d{2})', line)
-                model_date = date_re.group(1)
+                try:
+                    model_date = date_re.group(1)
+                except:
+                    model_date = '2024-05-15'
             self.complexes[f'{receptor}-{inchikey}'] = {
                 'receptor':receptor, 
                 'ligand_id':inchikey,

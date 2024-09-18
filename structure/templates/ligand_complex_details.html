@@ -101,9 +101,9 @@ canvas {
           {% if structure_type == "af-signprot-peptide" %}
               <h2> <a href="/ligand/{{ ligand_object.ligand.id }}/info">
                 {% if ligand_object.ligand.name|length >= 6 %}
-                    {{ ligand_object.ligand.name | title }}
+                    {{ ligand_object.ligand.name | title | safe }}
                 {% else %}
-                    {{ ligand_object.ligand.name | upper }}
+                    {{ ligand_object.ligand.name | upper | safe }}
                 {% endif %}
             </a> -
                   <a href="/protein/{{ model.protein_conformation.protein.entry_name }}" target="_blank">{{ model.protein_conformation.protein.name|safe }}</a> -
@@ -111,9 +111,9 @@ canvas {
           {% else %}
               <h2>(<a href="/ligand/{{ ligand_object.ligand.id }}/info">
                 {% if ligand_object.ligand.name|length >= 6 %}
-                    {{ ligand_object.ligand.name | title }}
+                    {{ ligand_object.ligand.name | title | safe }}
                 {% else %}
-                    {{ ligand_object.ligand.name | upper }}
+                    {{ ligand_object.ligand.name | upper | safe }}
                 {% endif %}
              </a> - 
                 <a href="/protein/{{ model.protein_conformation.protein.entry_name }}" target="_blank">{{ model.protein_conformation.protein.name|safe }}</a> model) 
@@ -172,7 +172,7 @@ canvas {
         <h4 style="color: black;">PHYSIOLOGICAL LIGAND</h4>
     </div>
     <div class="col-md-6">
-        {{ ligand_object.ligand.name|safe | upper }}
+        {{ ligand_object.ligand.name | upper | safe}}
     </div>
 </div>
 
