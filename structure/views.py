@@ -3293,6 +3293,8 @@ def ConvertStructuresToProteins(request):
     if selection.targets != []:
         for struct in selection.targets:
             prot = struct.item.protein_conformation.protein.parent
+            if not prot:
+                prot = struct.item.protein_conformation.protein
             selection.remove('targets', 'structure', struct.item.id)
             selection.add('targets', 'protein', SelectionItem('protein', prot))
         if selection.reference != []:

@@ -42,8 +42,6 @@
         }
 
         table.dataTable.compact thead th.over_header {
-            border-right: 1px solid;
-            border-left: 0px solid;
             text-align: center;
             padding: 4px 4px 4px 4px;
         }
@@ -128,7 +126,7 @@
                 scrollX:        true,
                 scrollCollapse: true,
                 paging:         false,
-                "order": [[1,'asc'],[3,'asc']],
+                "order": [[2,'asc'],[5,'asc']],
                   columnDefs: [
                     { targets: 'no-sort', orderable: false }
 
@@ -289,11 +287,11 @@
                 var checked_data = oTable.rows('.alt_selected').data();
                 ClearSelection('targets');
                 for (i = 0; i < checked_data.length; i++) {
-
-                    AddToSelection('targets', 'structure_model',  checked_data[i][9]+"_"+checked_data[i][3]);
+                    console.log(checked_data[i][11])
+                    AddToSelection('targets', 'structure',  checked_data[i][11]);
 
                 }
-                window.location.href = '/structure/selection_convert_model';
+                window.location.href = '/structure/selection_convert';
             });
 
             $('#superpose_template_btn').click(function () {
@@ -399,12 +397,13 @@
         <table width="100%" class="display compact" id="homology_models">
             <thead>
                 <tr class='over_header' style='max-height: 20px'>
-                    <th colspan=1 class="over_header"></th> 
-                    <th colspan=1 class="over_header">   MODEL   </th>
-                    <th colspan=2 class="over_header" style="text-align: left;">LIGAND</th>
-                    <th colspan=4 class="over_header" style="text-align: left;">RECEPTOR</th>
-                    <th colspan=2 class="over_header" style="text-align: left;">LIGAND MODEL SCORE</th>
+                    <th colspan=1 class="over_header rightborder"></th> 
+                    <th colspan=1 class="over_header rightborder">   MODEL   </th>
+                    <th colspan=2 class="over_header rightborder" style="text-align: left;">LIGAND</th>
+                    <th colspan=4 class="over_header rightborder" style="text-align: left;">RECEPTOR</th>
+                    <th colspan=2 class="over_header rightborder" style="text-align: left;">LIGAND MODEL SCORE</th>
                     <th colspan=1 class="over_header">Date</th>
+                    <th style='display:none;'></th>
                 </tr>
                 <tr>
                     <!-- checkbox  1 -->
@@ -417,7 +416,7 @@
                     <!-- ligand name 7 -->
                     <th>Name</th>
                     <!-- ligand type 8-->
-                    <th >Type</th>
+                    <th>Type</th>
 
                    
                    <!--                     Receptor                -->
@@ -441,6 +440,9 @@
                     <!--                date                 -->
                     <th></th>
 
+                    <!-- Hidden -->
+                    <th style='display:none;'></th>
+
                 </tr>
 
             </thead>
@@ -448,7 +450,7 @@
             {% for model in structure_model %}
                 <tr model_id='{{model.pk}}'>
                     <!-- CHECKBOX   1 -->
-                    <td class="text-center"><input class="alt" type="checkbox" id="{{ model.pk }}"></td>
+                    <td class="text-center" data='{{ model }}'><input class="alt" type="checkbox" id="{{ model.pk }}"></td>
                                         <!-- model icon 2 -->
                     <td style="text-align:center;"><a target="_blank" href="ligand_complex_models/{{ model.pdb_code.index }}"><img width="14px" height="20px" class="model-link" src="{% static 'home/images/model-surface.png' %}"></a></td>
 
@@ -504,6 +506,9 @@
 
                     <!--                         DATE                           -->
                      <td> {{ model.publication_date }} </td>
+
+                     <!-- Hidden -->
+                     <td style='display:none;'>{{ model }}</td>
 
                 </tr>
             {% endfor %}
