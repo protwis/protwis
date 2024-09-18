@@ -477,9 +477,7 @@ class LigandBulkSearch(TemplateView):
                         self.request.session['ligand_bulk_search_error_msg'] = no_results_msg
                         self.request.session.modified = True
                         return context
-                        # return redirect("ligand_selection")                                                                            # 'ligand__ids__web_resource',                                                                      # 'ligand')
-                        # if queryset is empty redirect to ligand browser
-                        # return redirect("ligand_selection")
+
                 elif search_type == 'inchikey':
                     if len(entries) == 1:
                         ps = Ligand.objects.filter(inchikey=inchikey).values('id')
@@ -779,14 +777,13 @@ class LigandStructuralSearch(TemplateView):
                     self.request.session['ligand_structural_search_error_msg'] = no_results_msg
                     self.request.session.modified = True
                     return context
-                    # return redirect("ligand_selection")                                                                            # 'ligand__ids__web_resource',                                                                      # 'ligand')
-                    # if queryset is empty redirect to ligand browser
+
+                # if queryset is empty redirect to ligand browser
                 if not ps:
                     context = "redirect"
                     self.request.session['ligand_structural_search_error_msg'] = no_results_msg
                     self.request.session.modified = True
                     return context
-                    # return redirect("ligand_selection")
 
             if cache_key != False and cache.has_key(cache_key):
                 result = cache.get(cache_key)
@@ -1002,10 +999,9 @@ def LigandListDetails(mode, ps,ligand_search=False,similarities=None):
         assay_conversion = {'A': 'ADMET', 'B': 'Binding', 'F': 'Functional', 'U': 'N/A', 'T': 'Toxicity'}
         
         if similarities is not None:
-            pass
+            pass #TODO: sort d.keys() by similarity and save into 'ligs'.
         else:
             ligs = d.keys()
-            # ligs = sorted(list(d.keys()),key=lambda x: x.id)
         for lig in ligs:
             records = d[lig]
             # links = lig.ids.all()
@@ -1046,7 +1042,6 @@ def LigandListDetails(mode, ps,ligand_search=False,similarities=None):
                     else:
                         data_parsed[protein][record.source][assay][record.value_type].append(record.p_activity_value)
             for protein in data_parsed.keys():
-            # for protein in sorted(list(data_parsed.keys())):
                 records = protein_records_dict[protein]
                 record = records[-1]
 
@@ -1185,7 +1180,7 @@ def TargetDetails(mode, request, **kwargs):
             prot_id = [x.item for x in selection.reference]
             cache_key = "lig_compact_protid_" + ",".join(prot_id)
             ps = AssayExperiment.objects.filter(protein__in=prot_id).prefetch_related('protein', 'ligand', 'ligand__ligand_type')
-                                                                                      # 'ligand__ids__web_resource',                                                                      # 'ligand')
+        
         # if queryset is empty redirect to ligand browser
         if not ps:
             return redirect("ligand_selection")
