@@ -289,13 +289,23 @@
 <!--<script src="https://cdn.datatables.net/plug-ins/2.1.5/sorting/natural.js"></script>--><!-- Requires update to DataTables2+ -->
 
 <script type="text/javascript" charset="utf-8">
-    this.compoundPreview = function () {
+    var target_details_affinity_pages = {};
+    var target_details_potency_pages = {};
+    var target_details_iDisplayLength_potency = 50;
+    var target_details_iDisplayLength_affinity = 50;
+
+    var key_0_affinity = '0_'+target_details_iDisplayLength_affinity;  
+    target_details_affinity_pages[key_0_affinity] = true;
+    var key_0_potency = '0_'+target_details_iDisplayLength_potency; 
+    target_details_potency_pages[key_0_potency] = true;
+
+    this.compoundPreview = function (selection="a.struct") {
 
         //Define position of the tooltip in relation to the cursor
         xOffset = 30;
         yOffset = -10;
 
-        $("a.struct").hover(function (e) {
+        $(selection).hover(function (e) {
             this.t = this.title;
             this.title = "";
             var c = (this.t != "") ? "<br/>" + this.t : "";
@@ -309,7 +319,7 @@
                 this.title = this.t;
                 $("#struct").remove();
             });
-        $("a.struct").mousemove(function (e) {
+        $(selection).mousemove(function (e) {
             $("#struct")
                 .css("top", (e.pageY - yOffset) + "px")
                 .css("left", (e.pageX + xOffset) + "px");
@@ -336,7 +346,9 @@
         } else {
 
         }*/
-        
+        var iDisplayLength_potency = target_details_iDisplayLength_potency;
+        var iDisplayLength_affinity = target_details_iDisplayLength_affinity;
+
         var table_potency = $('#proteins_potency').DataTable({
             columnDefs: columnDefs,
             scrollX: true,
@@ -344,9 +356,24 @@
             bScrollCollapse: true,
             paging: true,
             paging_type: 'full_numbers',
-            iDisplayLength: 50,
+            iDisplayLength: iDisplayLength_potency,
             orderCellsTop: true,
             autoWidth: true,
+            drawCallback: function (settings) {
+              if (typeof target_details_table_potency === 'undefined') {
+                return;
+              }
+              var page = target_details_table_potency.page.info().page;
+              var page_length = target_details_table_potency.page.info().length;
+              if (typeof page === 'undefined' || typeof page_length === 'undefined') {
+                return;
+              }
+              var key = page+'_'+page_length;
+              if (!target_details_potency_pages.hasOwnProperty(key)) {
+                compoundPreview("a.struct_potency");
+                target_details_potency_pages[key] = true;
+              }
+            },
         });
 
         var table_affinity = $('#proteins_affinity').DataTable({
@@ -356,14 +383,30 @@
             bScrollCollapse: true,
             paging: true,
             paging_type: 'full_numbers',
-            iDisplayLength: 50,
+            iDisplayLength: iDisplayLength_affinity,
             orderCellsTop: true,
             autoWidth: true,
+            drawCallback: function (settings) {
+              if (typeof target_details_table_affinity === 'undefined') {
+                return;
+              }
+              var page = target_details_table_affinity.page.info().page;
+              var page_length = target_details_table_affinity.page.info().length;
+              if (typeof page === 'undefined' || typeof page_length === 'undefined') {
+                return;
+              }
+              var key = page+'_'+page_length;
+              if (!target_details_affinity_pages.hasOwnProperty(key)) {
+                compoundPreview("a.struct_affinity");
+                target_details_affinity_pages[key] = true;
+              }
+            }
         });
 
         target_details_table_potency = table_potency;
         target_details_table_affinity = table_affinity;
 
+        var target_details_affinity_current_page = 1;
         let column_filters = [];
         var other_YADCF_filters_num = {sort_as: 'num'};
         var other_YADCF_filters_text = {sort_as: 'custom', case_insensitive: true, sort_as_custom_func: alphaSortCaseInsensitive};
@@ -1008,7 +1051,7 @@
                    {% for record in potency_data %}
                    <tr>
                        <td><input class="alt" type="checkbox"></td>
-                       <td><a class="struct" rel="{{record.picture}}" href="/ligand/{{record.lig_id}}/info" target="_blank">{{record.ligand_name|safe}}</a></td>
+                       <td><a class="struct struct_potency" rel="{{record.picture}}" href="/ligand/{{record.lig_id}}/info" target="_blank">{{record.ligand_name|safe}}</a></td>
                        <td><a href="/ligand/{{record.lig_id}}/info" target="_blank">{{record.lig_id}}</a></td>
                        <td>{{record.ligand_type}}</td>
                        <td>{{record.reference}}</td>
@@ -1138,7 +1181,7 @@
                 {% for record in affinity_data %}
                 <tr>
                     <td><input class="alt" type="checkbox"></td>
-                    <td><a class="struct" rel="{{record.picture}}" href="/ligand/{{record.lig_id}}/info" target="_blank">{{record.ligand_name|safe}}</a></td>
+                    <td><a class="struct struct_affinity" rel="{{record.picture}}" href="/ligand/{{record.lig_id}}/info" target="_blank">{{record.ligand_name|safe}}</a></td>
                     <td><a href="/ligand/{{record.lig_id}}/info" target="_blank">{{record.lig_id}}</a></td>
                     <td>{{record.ligand_type}}</td>
                     <td>{{record.reference}}</td>
