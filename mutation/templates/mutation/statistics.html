@@ -1,384 +1,249 @@
 {% extends "home/base.html" %}
-
+{% load static %}
+{% load humanize %}
 {% block addon_css %}
 <style>
-.node circle {
-  /*fill: #fff;*/
-  /*stroke: DarkGreen;*/
-  /*fill: DarkGreen;*/
-  stroke: #000000 ;
-  stroke-width: .3px;
-}
-
-.node {
-  font: 8px sans-serif;
-}
-
-.link {
-  fill: none;
-  stroke: #eee;
-  stroke-width: 1px;
-}
-
-.node text {
-  font: 8px sans-serif;
-}
-
-.links {
-  fill: none;
-  stroke: #000;
-}
-
-.link-extensions {
-  fill: none;
-  stroke: #000;
-  stroke-opacity: .25;
-}
-
-
-body {
-  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-  margin: 0;
-}
-
-/*#show-length {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-}*/
-
-.links {
-  fill: none;
-  stroke: #000;
-}
-
-.link-extensions {
-  fill: none;
-  stroke: #000;
-  stroke-opacity: .25;
-}
-
-.labels {
-  font: 14px Palatino;
-  font-weight: bold;
-}
-
-.link--active {
-  stroke: #000 !important;
-  stroke-width: 3.5px;
-}
-
-.link-extension--active {
-  stroke-opacity: .6;
-}
-
-.label--active {
-  font-weight: bold;
-}
-
-
 </style>
-{% endblock %}
-{% block addon_js %}
-<script  type="text/javascript" charset="utf-8" src="//d3js.org/d3.v3.min.js"></script>
-<script type="text/javascript" charset="utf-8">
-
-interactions = {{ tree|safe }};
-interactions2 = {{ tree2|safe }};
-
-// Like d3.svg.diagonal.radial, but with square corners.
-function step(startAngle, startRadius, endAngle, endRadius) {
-  var c0 = Math.cos(startAngle = (startAngle - 90) / 180 * Math.PI),
-      s0 = Math.sin(startAngle),
-      c1 = Math.cos(endAngle = (endAngle - 90) / 180 * Math.PI),
-      s1 = Math.sin(endAngle);
-  return "M" + startRadius * c0 + "," + startRadius * s0
-      + (endAngle === startAngle ? "" : "A" + startRadius + "," + startRadius + " 0 0 " + (endAngle > startAngle ? 1 : 0) + " " + startRadius * c1 + "," + startRadius * s1)
-      + "L" + endRadius * c1 + "," + endRadius * s1;
-}
-
-var color = d3.scale.category20();
-
-var diameter = 1350;
-
-
-function getBB(selection) {
-    selection.each(function(d){d.bbox = this.getBBox();})
-}
-
-
-function getAngle(d) {
-    // Offset the angle by 90 deg since the '0' degree axis for arc is Y axis, while
-    // for text it is the X axis.
-    var thetaDeg = (180 / Math.PI * (arc.startAngle()(d) + arc.endAngle()(d)) / 2 - 90);
-    // If we are rotating the text by more than 90 deg, then "flip" it.
-    // This is why "text-anchor", "middle" is important, otherwise, this "flip" would
-    // a little harder.
-    return (thetaDeg > 90) ? thetaDeg - 180 : thetaDeg;
-}
-
-
-// Stash the old values for transition.
-function stash(d) {
-  d.x0 = d.x;
-  d.dx0 = d.dx;
-}
-
-
-/////////////////
-
-
-
-//////////////////////////////
-
-var color = d3.scale.category20c();
-
-var only_data = 0;
-
-var width = 1350,
-      height = 1350,
-      radius = Math.min(width, height) / 2 - 50;
-
-    var x = d3.scale.linear()
-      .range([0, 2 * Math.PI]);
-
-    var y = d3.scale.linear()
-      .range([0, radius]);
-      // console.log(y(0),y(1),y(radius))
-
-    var svg3 = d3.select("#svg3")
-      .append("svg")
-      // .attr("width", width)
-      // .attr("height", height)
-      .attr("xmlns","http://www.w3.org/2000/svg")
-      .attr("version","1.1")
-      .attr("width", "100%")
-      .attr("viewBox", "0 0 " + width  + " " + height)
-      .append("g")
-      .attr("id", "scan")
-      .attr("transform", "translate(" + width / 2 + "," + (height / 2) + ")")
-      ;
-
-    var partition = d3.layout.partition()
-      .sort(function(a,b) { return b.sort - a.sort; })
-      .value(function(d) { if (only_data) {
-        if (d.depth!=4) {return d.receptor_i+d.receptor_m_an;} else { return Math.min(1,d.receptor_i+d.receptor_m_an); }
-        } else {
-          return d.receptor_t;
-        }
-      });
-      // .value(function(d) { return d.receptor_t });
-
-    var arc = d3.svg.arc()
-      .startAngle(function(d) { return Math.max(0, Math.min(2 * Math.PI, x(d.x))); })
-      .endAngle(function(d) { return Math.max(0, Math.min(2 * Math.PI, x(d.x + d.dx))); })
-      .innerRadius(function(d) {
-
-        // console.log("inner" + d.y+" "+Math.max(0, y(d.y))); return Math.max(0, y(d.y));
-        if (d.y<0.3) {
-            return 2;
-        } else if (d.y<0.5) {
-            return 180;
-        } else if (d.y<0.7) {
-            return 150+(radius-45-150)*0.4;
-        } else if (d.y<0.9) {
-            return radius-45;
-        }
-
-  })
-      .outerRadius(function(d) {
-
-        // console.log("outer" + d.y+" "+Math.max(0, y(d.y + d.dy))); return Math.max(0, y(d.y + d.dy));
-        if (d.y<0.3) {
-            return 180;
-        } else if (d.y<0.5) {
-            return 150+(radius-45-150)*0.4;
-        } else if (d.y<0.7) {
-            return radius-45;
-        } else if (d.y<0.9) {
-            return radius-35;
-        }
-         });
-
-var lineFunction = d3.svg.line()
-      .x(function(d) { return d.x; })
-      .y(function(d) { return d.y; })
-      .interpolate("linear");
-
-var path = svg3.datum(interactions).selectAll("path")
-      .data(partition.nodes)
-      .enter().append("g")
-
-  path.append("path")
-      .attr("display", function(d) { return d.depth ? null : "none"; }) // hide inner ring
-      .attr("d", arc)
-      .style("fill", function(d) {
-          if (d.color && d.depth<4 && 1==2 ){ return "#FFF" } //&& d.depth<4 && 1==2
-          // else if (d.interactions > 0 && d.mutations_an > 0) {return "#31a354" }
-          // else if (d.interactions > 0) {return "#3182bd" }
-          // else if (d.mutations_an > 0) {return "#fdae6b" }
-          // else {return "#969696"}; })
-          // else if (d.interactions > 0 && d.mutations_an > 0) {return "FireBrick" }
-          // else if (d.interactions > 0) {return "Olive" }
-          // else if (d.mutations_an > 0) {return "Chocolate" }
-          else if (d.interactions > 0 && d.mutations_an > 0) {return "#75C262" }
-          else if (d.interactions > 0) {return "#5493D0" }
-          else if (d.mutations_an > 0) {return "#F8A153" }
-          else if (d.interactions > 0 && d.mutations_an > 0) {return "#7893BC" }
-          else if (d.interactions > 0) {return "#AAE58B" }
-          else if (d.mutations_an > 0) {return "#FFEA87" }
-          else if (d.interactions > 0 && d.mutations_an > 0) {return "#31a354" }
-          else if (d.interactions > 0) {return "#3182bd" }
-          else if (d.mutations_an > 0) {return "#fdae6b" }
-          else {return "#ddd" }
-          })
-      .style("stroke-width", function(d) { return (d.depth<4? "2px" : "1px" ) })
-      .style("stroke", function(d) {
-          if (d.color && d.depth<4 && 1==2 ){ return d.color } //&& d.depth<4 && 1==2
-          // else if (d.interactions > 0 && d.mutations_an > 0) {return "#31a354" }
-          // else if (d.interactions > 0) {return "#3182bd" }
-          // else if (d.mutations_an > 0) {return "#fdae6b" }
-          // else {return "#969696"}; })
-          else if (1==1) {return "#FFF"}
-          else if (d.interactions > 0 && d.mutations_an > 0) {return "FireBrick" }
-          else if (d.interactions > 0) {return "Olive" }
-          else if (d.mutations_an > 0) {return "Chocolate" }
-          else {return "#ddd" }
-        })
-      // .style("fill", function(d) { return color((d.children ? d : d.parent).name); })
-      .style("opacity", function(d) {
-          if ((d.interactions > 0 && d.mutations_an > 0) || 1==2 ) {return 0.9 } // || 1==1
-          else if (d.interactions > 0) {return 0.9 }
-          else if (d.mutations_an > 0) {return 0.9 }
-          else {return 0.3}; })
-      // .style("fill-rule", "evenodd")
-      .each(stash);
-
-      path.filter(function(d) {return (d.depth==1 || d.name=='Other GPCRs')}).each(function(d,i) {
-                         console.log(d.name+ " "+i);
-                         svg3.append("line")
-                         .attr("x1",  function() { console.log(d.name + " " + d.x + " " + d.y +" " + x(d.x)*180/Math.PI + " " + x(d.x + d.dx)*180/Math.PI);
-                          return 2 * Math.cos(x(d.x)-Math.PI/2); })
-                         .attr("y1", function() { return 2* Math.sin(x(d.x)-Math.PI/2); })
-                         .attr("x2", function() { return (radius-36) * Math.cos(x(d.x)-Math.PI/2); })
-                         .attr("y2", function() { return (radius-36) * Math.sin(x(d.x)-Math.PI/2); })
-                         .attr("stroke-width", 3)
-                         .style("opacity", 0.0)
-                         .attr("stroke", "#FFF");
-                       });
-
-
-  function a(t) {
-        return .299 * t.r + .587 * t.g + .114 * t.b
-    }
-  function n(t) {
-        if (t.children) {
-            var e = t.children.map(n),
-                r = d3.hsl(e[0]),
-                a = d3.hsl(e[1]);
-            return d3.hsl((r.h + a.h) / 2, 1.2 * r.s, r.l / 1.2)
-        }
-        return t.colour || "#fff"
-    }
-
-      var i = radius*2,
-        l = i,
-        o = i / 2,
-        d = d3.scale.linear().range([0, 2 * Math.PI]),
-        u = d3.scale.pow().exponent(1.3).domain([0, 1]).range([0, o]),
-        c = 5,
-        s = 1e3
-
-
-  path.each(function(d,i) {
-
-        svg3.append("text")
-        .text(function() {
-            // if ( d.receptor_i+d.receptor_m_an>0) {
-            //     return d.name
-            // } else if (1==1) { //if showing all
-            //     return d.name
-            // }
-            return ( ((d.depth==3 && d.value==1 && only_data!=1) || d.value==0 || d.depth==0) ? "": (d.depth==4 ? d.name.toUpperCase() : d.name) );
-        })
-        .classed("label2", true)
-        .attr("x", function() { if (d.depth==4) { return d.x;} else {return d.x; } })
-        // .attr("text-anchor", "end")
-        .attr("text-anchor", function() {
-            // console.log(d.name+ " "+arc.centroid(d));
-            if (d.depth==4) {
-                return arc.centroid(d)[0] < 0 ? "start" : "end";
-            } else if (d.depth>0) {
-                return arc.centroid(d)[0] < 0 ? "start" : "end";
-            } else {
-                return "middle";
-            }
-            })
-        // translate to the desired point and set the rotation
-        .attr("transform", function() {
-            if (d.depth > 0 && d.depth<4) {
-                return "translate(" + arc.centroid(d) + ")" +
-                       "rotate(" + getAngle(d) + ")";
-            }  else if (d.depth == 4) {
-                // return d.x < 180 ? "translate(8)" : "rotate(180)translate(-8)";
-                return "translate(" + arc.centroid(d) + ")" +
-                       "rotate(" + getAngle(d) + ")";
-            }  else {
-                return null;
-            }
-        })
-        // .attr("dx", "1") // margin
-         .attr("dx", function() {if (d.depth==4) { return arc.centroid(d)[0] < 0 ? "-58px" : "58px";
-                                    } else if (d.depth==1) { return arc.centroid(d)[0] < 0 ? "-65px" : "65px";
-                                    } else if (d.depth==2) { return arc.centroid(d)[0] < 0 ? "-65px" : "65px";
-                                    } else if (d.depth==3) { return arc.centroid(d)[0] < 0 ? "-100px" : "100px";
-                                    } else { return "0px"; } } ) // vertical-align
-         .attr("dy", ".35em") // vertical-align
-        .attr("pointer-events", "none")
-        // .style("font", function () { return (d.depth==1 ? "14px" : d.depth!=4 ? "12px" : "10px") + " Palatino" ;})
-
-        // .style("font", "Palatino")
-        .style("font", function() { if (d.depth<3) {return "17px"+ " Palatino"} else if (d.depth==3) {return "16px"+ " Palatino"} else { return "14px"+ " Palatino" } })
-
-        .style("fill", function() { return (d.depth<4 && (d.interactions > 0 && d.mutations_an > 0) ? "#000" : "#000") })
-
-        // .style("fill", function(d) {
-        //   if (d.interactions > 0 && d.mutations_an > 0) {return "#FFF" }
-        //   else if (d.interactions > 0) {return "#000" }
-        //   else if (d.mutations_an > 0) {return "#000" }
-        //   else {return "#000"}; });
-})
-
-
-
-</script>
-
 {% endblock %}
 
 {% block content %}
+<div style="padding-top: 10px; font-size: 11px; white-space: nowrap;">
+  <div class="col-md-12">
+    <br />
 
-<h4>Mutations overview</h4>
-<ul>
-    <li>{{ totals.total_m_un }} total mutations.</li>
-    <li>{{ totals.total_m }} total annotated mutations.</li>
-    <li>{{ totals.total_r_un }} unique receptors with mutations.</li>
-    <li>{{ totals.total_r }} unique receptors with annotated mutations.</li>
-</ul>
+    The tree highlights receptors for which ligand interaction data is available from: Orange: annotated literature mutations, Blue:  structure complexes and Green: both.<br>
+    The following receptors have no data and has been exluded for clarity: Class A orphans, Class B2 (Adhesions), Class T (Taste 2) and Other GPCRs (not part of any of the classes A-C or F).<br>
+    The labs of David Gloriam, Anke Schiedel, Chris de Graaf and Hugo Gutiérrez-de-Terán are acknowledged for the annotation of mutation data.
+    <br>
+
+    <div class="col-md-3">
+      Receptor names:
+        <div class="btn-group" role="group" id="gtp_plus">
+            <button id="GPCRome_UniProtNames" class="btn btn-info ">Gene</button>
+            <button id="GPCRome_IUPHARNames" class="btn btn-info active">Protein</button>
+        </div>
+    </div>
+
+    <div class="col-md-2" style="padding-top: 5px;">
+      Icon toggle:
+      <button id="ToggleIcon" class="btn btn-info active">On</button>
+    </div>
+
+  <div class="col-md-3">
+    <div class="text-center">
+      <div class="dropdown">
+        <button type="button" class="btn btn-primary dropdown-toggle" style="font-size: 14px;" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          <span class="glyphicon glyphicon-download" style="vertical-align: top;line-height: 1.3"></span> Download <span class="caret"></span>
+        </button>
+        <div class="dropdown-menu dropdown-menu-right-middle">
+          <li><a class="dropdown-item" href="javascript:saveSvg(document.getElementById('GPCRome_plot_svg'), 'GPCRome_plot.svg');">SVG</a></li>
+          <li><a class="dropdown-item" href="javascript:saveSvgAsPng(document.getElementById('GPCRome_plot_svg'), 'GPCRome_plot.png');">PNG</a></li>
+          <li><a class="dropdown-item" href="javascript:saveSvgAsJpg(document.getElementById('GPCRome_plot_svg'), 'GPCRome_plot.jpg');">JPG</a></li>
+          <li><a class="dropdown-item" href="javascript:saveSvgAsTiff(document.getElementById('GPCRome_plot_svg'), 'GPCRome_plot.tiff');">TIFF</a></li>
+        </div>
+      </div>
+    </div>
+  </div>
+    Circle colors indicate a number of mutations:
+    <table style="width:30%">
+        <tr>
+            <td ><div id="circle_lightgray"></div></td>
+            <td> < 100 </td>
+            <td ><div id="circle_darkgray"></div></td>
+            <td> < 500 </td>
+            <td ><div id="circle_gray"></div></td>
+            <td> < 1000 </td>
+            <td ><div id="circle_black"></div></td>
+            <td> 1000+</td>
+        </tr>
+    </table>
+  </div>
+
+<br />
+<br />
 <br />
 
-<div id=svg3 width="100%"></div>
-The tree highlights receptors for which ligand interaction data is available from: Orange: annotated literature mutations, Blue:  structure complexes and Green: both.<br>
-The following receptors have no data and has been exluded for clarity: Class A orphans, Class B2 (Adhesions), Class T (Taste 2) and Other GPCRs (not part of any of the classes A-C or F).<br>
-The labs of David Gloriam, Anke Schiedel, Chris de Graaf and Hugo Gutiérrez-de-Terán are acknowledged for the annotation of mutation data.
+  <div id="image-container" data-image-url="{% static 'home/images/DataMapper_GPCRome_icon_legend.png' %}"></div>
+  <!-- GPCRome -->
+  <div class="col-md-12" style="margin-top: 0px;margin-bottom: 30px;">
+      <div id="GPCRome_plot" class="text-center"></div>
+  </div>
 
-<br>
-<!-- {% for k_class,v_class in coverage.items %}
-  {% for k_ligand,v_ligand in v_class.children.items %}
-    {% for k_family,v_family in v_ligand.children.items %}
-      {% for k,v in v_family.children.items %}
-       {{v.name}}_human, {{v_class.name}}, {{v_ligand.name}}, {{v_family.name}}<br>
-      {% endfor %}
-    {% endfor %}
-  {% endfor %}
-{% endfor %} -->
+</div>
+
+{% endblock %}
+
+{% block addon_js %}
+<script src="{% static 'home/js/d3.min.js' %}"></script>
+<script src="{% static 'home/js/nv.d3.min.js' %}"></script>
+<script src="{% static 'home/js/d3.v4.min.js' %}"></script>
+<script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
+<script src="{% static 'home/js/saveSvg.js' %}"></script>
+<script src="{% static 'home/js/datamapper.js' %}"></script>
+<script src="{% static 'home/js/popper.min.js' %}"></script>
+<script src="{% static 'home/js/popper.min.js' %}"></script>
+<script src="{% static 'home/js/spectrum_v1_8_1.js' %}"></script>
+<script src="{% static 'home/js/ml.js' %}"></script>
+<script>
+
+var GPCRome_categories_data = {{ GPCRome_data|safe }};
+var fill_data = {{ GPCRome_data_variables|safe }};
+var GPCRome_Label_conversion_dict = {{GPCRome_Label_Conversion|safe}};
+
+// Initialize the conversion dictionary
+GPCRome_Label_conversion_dict = initializeGPCRomeLabelConversionDict(GPCRome_Label_conversion_dict);
+
+function initializeGPCRomeLabelConversionDict(conversionDict) {
+    const updatedDict = {};
+
+    Object.keys(conversionDict).forEach(originalLabel => {
+        let uniProtLabel = conversionDict[originalLabel];
+        uniProtLabel = uniProtLabel.replace(/_human$/, "").toUpperCase(); // Remove "_human" and convert to uppercase
+        updatedDict[originalLabel] = uniProtLabel;
+    });
+
+    return updatedDict;
+}
+
+// # Initialize data styling #
+var layout_data = GPCRome_initializeData(GPCRome_categories_data);
+
+const GPCRome_fill_data_values = Object.values(fill_data).map(receptor => receptor.Value1);
+const GPCRome_fill_minValue = Math.min(...GPCRome_fill_data_values);
+const GPCRome_fill_maxValue = Math.max(...GPCRome_fill_data_values);
+// Calculate median
+// Sort the values in ascending order
+GPCRome_fill_data_values.sort((a, b) => a - b);
+
+// Calculate the median
+let GPCRome_fill_medianValue;
+const middleIndex = Math.floor(GPCRome_fill_data_values.length / 2);
+
+if (GPCRome_fill_data_values.length % 2 === 0) {
+    // Even number of elements, median is the average of the two middle values
+    GPCRome_fill_medianValue = (GPCRome_fill_data_values[middleIndex - 1] + GPCRome_fill_data_values[middleIndex]) / 2;
+} else {
+    // Odd number of elements, median is the middle value
+    GPCRome_fill_medianValue = GPCRome_fill_data_values[middleIndex];
+}
+
+GPCRome_fill_avg = (GPCRome_fill_minValue+GPCRome_fill_maxValue)/2
+
+var GPCRomes_styling = {
+  Spacing: true,
+  family: true,
+  datatype: "Continuous",
+  minValue: GPCRome_fill_minValue,
+  median_value: GPCRome_fill_medianValue,
+  avg_value: GPCRome_fill_avg,
+  maxValue: GPCRome_fill_maxValue,
+  colorStart: "#D3D3D3",
+  color_median: "#696969",
+  colorEnd: "#000000",
+  data_color_complexity: 'Two',
+  showIcon: true  // Add this property to control the icon visibility
+}
+
+
+// # initial draw
+let GPCRome_location = "GPCRome_plot";
+Draw_GPCRomes(layout_data, fill_data, GPCRome_location, GPCRomes_styling);
+
+// Global variables for current label type
+let currentLabelType = "IUPHAR"; // Default
+
+// Event listeners for label type buttons
+document.getElementById("GPCRome_UniProtNames").addEventListener("click", () => {
+    switchLabelType("UniProt");
+});
+
+document.getElementById("GPCRome_IUPHARNames").addEventListener("click", () => {
+    switchLabelType("IUPHAR");
+});
+
+// Function to switch label types
+function switchLabelType(labelType) {
+    currentLabelType = labelType;
+    updateGPCRome();
+}
+
+
+// Function to toggle the icon visibility and redraw the GPCRomes
+function toggleIcon() {
+    const button = d3.select("#ToggleIcon");
+
+    // Toggle the showIcon property in GPCRomes_styling
+    GPCRomes_styling.showIcon = !GPCRomes_styling.showIcon;
+
+    // Update button text and state
+    if (GPCRomes_styling.showIcon) {
+        button.text("On");
+        button.classed("active", true);
+    } else {
+        button.text("Off");
+        button.classed("active", false);
+    }
+
+    // Redraw the GPCRomes with the updated icon state
+    updateGPCRome();
+}
+
+// Attach event listener to the button
+d3.select("#ToggleIcon").on("click", toggleIcon);
+
+// Function to update and redraw GPCRomes
+function updateGPCRome() {
+    const updatedLayoutData = updateLayoutData(layout_data, GPCRome_Label_conversion_dict, currentLabelType);
+    const updatedFillData = updateFillData(fill_data, GPCRome_Label_conversion_dict, currentLabelType);
+
+    // Clear the existing SVG content
+    d3.select("#" + GPCRome_location).select("svg").remove();
+
+    // Redraw the GPCRomes with the updated data
+    Draw_GPCRomes(updatedLayoutData, updatedFillData, GPCRome_location, GPCRomes_styling);
+
+    // Update button active states
+    // updateActiveButtonState(currentLabelType);
+}
+
+// Function to update layout data
+function updateLayoutData(layout_data, conversionDict, labelType) {
+    const updatedData = {};
+
+    Object.keys(layout_data).forEach(GPCRomeKey => {
+        const GPCRome = layout_data[GPCRomeKey];
+        updatedData[GPCRomeKey] = {};
+
+        Object.keys(GPCRome).forEach(ligandType => {
+            const receptors = GPCRome[ligandType];
+            updatedData[GPCRomeKey][ligandType] = receptors.map(receptor => {
+                if (labelType === "UniProt") {
+                    return conversionDict[receptor] || receptor;
+                } else {
+                    return Object.keys(conversionDict).find(key => conversionDict[key] === receptor) || receptor;
+                }
+            });
+        });
+    });
+
+    return updatedData;
+}
+
+// Function to update fill data
+function updateFillData(fill_data, conversionDict, labelType) {
+    const updatedData = {};
+
+    Object.keys(fill_data).forEach(receptor => {
+        let updatedReceptor;
+        if (labelType === "UniProt") {
+            updatedReceptor = conversionDict[receptor] || receptor;
+        } else {
+            updatedReceptor = Object.keys(conversionDict).find(key => conversionDict[key] === receptor) || receptor;
+        }
+        updatedData[updatedReceptor] = fill_data[receptor];
+    });
+
+    return updatedData;
+}
+</script>
 {% endblock %}
