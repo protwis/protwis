@@ -287,16 +287,6 @@ class ReadInputLigandBulkSearch(View):
 
         for key in self.search_params_data_keys:
             if key == 'search_text' and search_type != 'name':
-                # if search_type == 'id':
-                #     entry_lines = [re_trailing_whitespaces.sub('',re_leading_whitespaces.sub('',l)) for l in request.POST.get(key,None).splitlines()]
-                #     entry_lines_splited = [re_whitespaces.split(l) for l in entry_lines if l != '']
-                #     entry_lines = []
-                #     entries = []
-                #     for els in entry_lines_splited:
-                #         entries += els
-                #     entries = [ e for e in entries if e != '']
-                # else:
-                #     entries = [re_whitespaces.split(re_leading_whitespaces.sub('',l))[0] for l in request.POST.get(key,None).splitlines()]
                 entries = [re_whitespaces.split(re_leading_whitespaces.sub('',l))[0] for l in request.POST.get(key,None).splitlines()]
                 search_params_data[key] = ''
                 entries = [ e for e in entries if e != '']
