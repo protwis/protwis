@@ -988,8 +988,6 @@ def LigandListDetails(mode, ps,ligand_search=False,similarities=None):
             ligs = d.keys()
         for lig in ligs:
             records = d[lig]
-            # links = lig.ids.all()
-            # chembl_id = [x for x in links if x.web_resource.slug == 'chembl_ligand'][0].index
             if lig.smiles is not None and (lig.mw is None or lig.mw < 800):
                 picture = img_setup_smiles.format(urllib.parse.quote(lig.smiles))
             else:

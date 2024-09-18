@@ -62,7 +62,6 @@ function selectionAutocompleteCreateCatComplete(selection_ligand_fields = '') {
             setTimeout(function(){window.location = "/signprot/" + ui.item["slug"];}, 200);
         } else if (type_of_selection === "ligands") {
             //custom for ligands
-            //AddToSelection("targets", ui.item["type"], ui.item["id"]);
             toggleButtonClass("selection-button"+selection_autocomplete_id_suffix); // loading effect on button
             setTimeout(function(){window.location = "/ligand/" + ui.item["id"] + "/info";}, 200);
         } else {
