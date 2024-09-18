@@ -56,7 +56,6 @@ function submitSelectionLigandBulkSearchByName(url) {
   let search_params_data = {
     search_text : $("#selection-autocomplete-ligand-by-name").val().trim(),
     search_type : 'name',
-    // limit : $("#ligand_structural_search_limit").val().trim()
   }
 
   // set CSRF csrf_token
@@ -102,7 +101,6 @@ function submitSelectionLigandBulkSearchByNames(url) {
   let search_params_data = {
     search_text : $("#selection_ligand_bulk_search_by_names_textarea").val().trim(),
     search_type : 'names',
-    // limit : $("#ligand_structural_search_limit").val().trim()
   }
 
   // set CSRF csrf_token
@@ -146,7 +144,6 @@ function submitSelectionLigandBulkSearchById(url) {
     search_text : $("#selection_ligand_bulk_search_by_id_textarea").val().trim(),
     search_type : 'id',
     field: $("#selection_ligand_by_id_fields").val(),
-    // limit : $("#ligand_structural_search_limit").val().trim()
   }
 
 
@@ -198,7 +195,6 @@ function submitSelectionLigandBulkSearch(url) {
     search_text : $("#selection_ligand_bulk_search_textarea").val().trim(),
     search_type : $("#selection_ligand_bulk_search_search_type").val(),
     stereochemistry : $("#selection_ligand_bulk_search_stereochemistry").is(":checked"),
-    // limit : $("#ligand_structural_search_limit").val().trim()
   }
   
 
@@ -244,7 +240,6 @@ function submitLigandStructuralSearch(url) {
       input_type : $("#ligand_structural_search_input_type").val(),
       similarity_threshold : $("#ligand_structural_search_similarity_threshold").val().trim(),
       stereochemistry : $("#ligand_structural_search_stereochemistry").is(":checked"),
-      // limit : $("#ligand_structural_search_limit").val().trim()
     }
     toggleButtonClass('selection-button-smiles-search');
 

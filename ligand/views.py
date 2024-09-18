@@ -580,14 +580,9 @@ def getLigandStructuralSearchParameters(request):
     param_dict = {}
     default_smiles = ''
     param_dict['search_type'] = request.session.get('ligand_structural_search_search_type', 'similarity')
-    # if param_dict['search_type'] == 'similarity':
-    #     default_smiles = "O=C1OC2C3([C@H]1OCc1ccccc1)C([C@@H](C1C43[C@@](O2)(C(=O)O1)[C@@]1([C@H](C4O)OC(=O)C1C)O)F)C(C)(C)C"
-    # else:
-    #     default_smiles = 'cccccc'
     param_dict['input_type'] = request.session.get('ligand_structural_search_input_type', 'smiles')
     param_dict['smiles'] = request.session.get('ligand_structural_search_smiles', default_smiles)
     param_dict['similarity_threshold'] = float(request.session.get('ligand_structural_search_similarity_threshold', 0.5))
-    # param_dict['search_limit'] = request.session.get('ligand_structural_search_limit ', 100)
 
     param_dict['stereochemistry'] = request.session.get('ligand_structural_search_stereochemistry',False)
     return param_dict
@@ -750,7 +745,6 @@ class LigandStructuralSearch(TemplateView):
             else:
                 raise ValidationError('Unknown ligand structural search parameter: search_type="%s"' % str(search_type))
             pass
-        # cache.delete(cache_key)
 
         if mode == 'compact':
             if not(cache_key != False and cache.has_key(cache_key)):
