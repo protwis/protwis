@@ -612,42 +612,6 @@ def setLigandStructuralSearchParameters(request, search_params_data):
         request.session["ligand_structural_search_"+key] = value 
     request.session.modified = True
 
-""" class LigandStructuralSelection(AbsTargetSelection):
-    # Left panel
-    step = 1
-    number_of_steps = 1
-    template_name = 'ligand_structural_selection.html'
-    filters = False
-    import_export_box = False
-    target_input = False
-    psets = False
-    family_tree = False
-    type_of_selection = 'ligands'
-    selection_only_receptors = False
-    title = "Ligand similarity or substructure search"
-    description = 'Search ligands by similarity or substructure.'
-
-    buttons = {
-        
-        'continue' : {
-            'label' : 'SMILES search',
-            'onclick' : "submitLigandStructuralSearch('/ligand/ligand_structural_search')",
-            'color' : 'success',
-            
-            },
-        'no_box' : True,
-        }
-
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['ligand_structural_search_parameters'] = getLigandStructuralSearchParameters(self.request)
-        context['ligand_structural_search_parameters']['similarity_threshold'] = '%.2f' % context['ligand_structural_search_parameters']['similarity_threshold']
-        msg = self.request.session.pop('ligand_structural_search_error_msg',None)
-        if msg is not None:
-            context['ligand_structural_search_error_msg'] = msg
-        return context """
-
 class ReadInputLigandStructuralSearch(View):
     min_similarity = None
     OK_request_dict = {'status':'OK',
