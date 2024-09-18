@@ -3,7 +3,6 @@
 {% load structure_extras %}
 {% load ligand_extras %}
 
-
 {% block addon_css %}
 <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
 <link rel="stylesheet" href="{% static 'home/css/bootstrap2-toggle.min.css' %}" type="text/css" />
@@ -80,9 +79,15 @@
 		margin-top: 20px;
 	}
 
+
+  .select2-container {
+    max-width: 50px !important;
+  }
+
+
 	table.dataTable thead th,
 	table.dataTable tbody td {
-		max-width: 65px;
+		max-width: 50px;
 		word-break: break-all;
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -134,7 +139,8 @@
 		min-width: 30px;
 	}
 
-  .select-page-th.sorting {
+/*Uncomment to remove arrows*/
+/*  .select-page-th.sorting {
 		background-image: none !important;
 	}
 
@@ -157,12 +163,7 @@
 	table.dataTable thead .sorting_asc {
 		background-image: none !important;
 	}
-
-  table.dataTable th  {
-		padding-left: 3px !important;
-    padding-right: 2px !important;
-	}
-
+*/
 
   table.dataTable.compact tbody th,
 	table.dataTable.compact tbody td {
@@ -320,7 +321,9 @@
     var target_details_table_potency;
     var target_details_table_affinity ;
     $(document).ready(function () {
-        var columnDefs = [];
+        var columnDefs = [
+
+        ];
         //Requires update to DataTables2+ for natural sorting
         /*var columnDefs = [
           { type: 'natural-ci', target: 1 },
@@ -362,7 +365,6 @@
         target_details_table_affinity = table_affinity;
 
         let column_filters = [];
-        // createYADCFfilters(start_column, num_cols, filter_type, select_type = null, filter_default_label = "", filter_reset_button_text = false, filter_match_mode = null, column_data_type = null, width = null, html5_data = null, ignore_char = null, html_data_type = null, other = null)
         var other_YADCF_filters_num = {sort_as: 'num'};
         var other_YADCF_filters_text = {sort_as: 'custom', case_insensitive: true, sort_as_custom_func: alphaSortCaseInsensitive};
         var other_YADCF_filters_smiles = {sort_as: 'alpha', case_insensitive: false};
@@ -400,10 +402,6 @@
             column_filters = column_filters.concat(createYADCFfilters(3, 2, "multi_select", "select2", "Select", false, "exact", "rendered_html", "50px", null, null, null, other_YADCF_filters_text));
             column_filters = column_filters.concat(createYADCFfilters(5, 2, "range_number", null, ["Min", "Max"], false, null, null, "30px"));
             column_filters = column_filters.concat(createYADCFfilters(7, 5, "multi_select", "select2", "Select", false, "exact", "rendered_html", "50px", null, null, null, other_YADCF_filters_text));
-            //column_filters = column_filters.concat(createYADCFfilters(7, 3, "multi_select", "select2", "Select", false, null, null, "50px"));
-            //column_filters = column_filters.concat(createYADCFfilters(8, 3, "multi_select", "select2", "Select", false, null, null, "50px"));
-            //column_filters = column_filters.concat(createYADCFfilters(9, 3, "multi_select", "select2", "Select", false, null, null, "50px"));          
-            //column_filters = column_filters.concat(createYADCFfilters(10, 3, "multi_select", "select2", "Select", false, null, null, "50px"));
             column_filters = column_filters.concat(createYADCFfilters(12, 1, "range_number", null, ["Min", "Max"], false, null, null, "30px"));
             column_filters = column_filters.concat(createYADCFfilters(13, 1, "multi_select", "select2", "Select", false, "exact",  "rendered_html", "50px", null, null, null, other_YADCF_filters_text));
             column_filters = column_filters.concat(createYADCFfilters(14, 4, "range_number", null, ["Min", "Max"], false, null, null, "30px"));
@@ -518,40 +516,8 @@
           let affinity_columns = Array.from(new Array(affinity_length - 1), (x, i) => i);
           table_affinity.columns(affinity_columns).visible(true, false);
           table_affinity.draw();
-        } );
-
-        function reset_hidden_target_details_affinity() {
-          var table_affinity = target_details_table_affinity;
-  
-          let affinity_length = table_affinity.columns()[0].length;
-          let affinity_columns = Array.from(new Array(affinity_length - 1), (x, i) => i);
-          table_affinity.columns(affinity_columns).visible(true, false);
-          table_affinity.draw();
-        }
-        function reset_hidden_target_details_potency() {
-          var table_potency = target_details_table_potency;
-
-          let potency_length = table_potency.columns()[0].length;
-          let potency_columns = Array.from(new Array(potency_length - 1), (x, i) => i);
-          table_potency.columns(potency_columns).visible(true, false);
-          table_potency.draw();
-        }
-
-
-        setTimeout(function () {
-          $("a[href='#affinity']").trigger('click');
-          setTimeout(function () {
-            reset_hidden_target_details_affinity();
-            setTimeout(function () {
-              $("a[href='#potency']").trigger('click');
-              reset_hidden_target_details_potency();
-            },0);
-          },0);
-        },0);
+        } );    
         
-        
-        
-
         $('#csv_btn_potency').click(function () {
             // TODO: redactor in a single fucntion shared by csv_btn_potency and csv_btn_potency affinity
             var checked_data = table_potency.rows('.alt_selected').data();
