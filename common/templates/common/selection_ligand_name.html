@@ -182,7 +182,7 @@
           <div style="{% if selection_ligand_chemical_search_type_parameters.search_type_selection != 'similarity'%}{%if selection_ligand_chemical_search_type_parameters.search_type_selection != 'substructure' %}display:none;{% endif %}{% endif %}" class="form-group" id="ligand_structural_search_smiles_div">
             <textarea  id="ligand_structural_search_smiles" class="form-control" placeholder="Type or paste your {% if ligand_structural_search_parameters.search_type == 'similarity' or ligand_structural_search_parameters.input_type == 'smiles' %}SMILES strings{% endif %}{% if ligand_structural_search_parameters.search_type != 'similarity' and ligand_structural_search_parameters.input_type == 'smarts' %}SMARTS strings{% endif %} here.">{{ ligand_structural_search_parameters.smiles }}</textarea>
           </div>
-          
+
           <div class="form-group">
             <p id="ligand_bulk_search_error_msg" class="error-msg-p" style="{% if ligand_bulk_search_error_msg != 'No results found.'%}color: red; {% endif %}">{{ ligand_bulk_search_error_msg }}</p>
           </div>
@@ -221,8 +221,7 @@
           selection_autocomplete_id_suffix = '-ligand-by-name';
           var selection_ligand_by_name_fields_list = ['name']
           var selection_ligand_by_name_fields = selection_ligand_by_name_fields_list.join(',');
-          //$("#selection-autocomplete").catcomplete('destroy');
-          //$("#selection-autocomplete"+selection_autocomplete_id_suffix).catcomplete('destroy');
+
           selectionAutocompleteCreateCatComplete(selection_ligand_by_name_fields);
 
 
@@ -232,25 +231,6 @@
             selection_ligand_by_id_fields_list.push($( this ).val());
           });
           selection_ligand_by_id_fields = selection_ligand_by_id_fields_list.join(',');
-
-          /*CODE FOR ALL IN ONE AUTOCOMPLETE
-          $('#selection_ligand_by_id_fields').change(function () {
-            selection_ligand_fields_by_id_list = []
-            $('#selection_ligand_by_id_fields option:selected').each(function( index ) {
-              selection_ligand_fields_by_id_list.push($( this ).val());
-            });
-            if (selection_ligand_fields_list.length > 0) {
-              if (selection_ligand_fields_list.indexOf('all') > -1 || selection_ligand_fields_list.indexOf('name') > -1 || selection_ligand_fields_list.indexOf('inchikey') > -1) {
-                selection_ligand_fields_min_length_1 = false;
-              } else {
-                selection_ligand_fields_min_length_1 = true;
-              }
-            } else {
-              selection_ligand_fields_min_length_1 = false;
-            }
-
-            selection_ligand_by_id_fields = selection_ligand_fields_by_id_list.join(',');
-          });*/
 
           $('#selection_ligand_bulk_search_search_type').change(function () {
             var search_type = $("#selection_ligand_bulk_search_search_type").val();
