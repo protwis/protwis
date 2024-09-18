@@ -536,11 +536,9 @@
                     var div = document.createElement("div");
                     div.innerHTML = checked_data[i][j];
                     if (typeof div.innerText !== "undefined") {
-                        //csv_row.push(div.innerText.replace(/\s+/g, ''));
-                        csv_row.push(div.innerText.trim());
+                      csv_row.push(div.innerText.trim());
                     } else {
-                        //csv_row.push(div.textContent.replace(/\s+/g, ''));
-                        csv_row.push(div.textContent.trim());
+                      csv_row.push(div.textContent.trim());
                     }
                 }
                 csv_data.push(csv_row.join(';'));
@@ -576,11 +574,9 @@
                     var div = document.createElement("div");
                     div.innerHTML = checked_data[i][j];
                     if (typeof div.innerText !== "undefined") {
-                      //csv_row.push(div.innerText.replace(/\s+/g, ''));
                       csv_row.push(div.innerText.trim());
                     } else {
-                        //csv_row.push(div.textContent.replace(/\s+/g, ''));
-                        csv_row.push(div.textContent.trim());
+                      csv_row.push(div.textContent.trim());
                     }
                 }
                 csv_data.push(csv_row.join(';'));
