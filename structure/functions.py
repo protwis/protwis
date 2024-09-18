@@ -1201,6 +1201,7 @@ class ParseAFComplexModels():
                 peptide = None
                 signprot = parts[1]
                 model = 'af-signprot'
+                chain_e_sequence = None
 
             # Grab model date/version from pdb file
             with open(location, 'r') as model_file:
