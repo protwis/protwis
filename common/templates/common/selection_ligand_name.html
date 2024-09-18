@@ -180,16 +180,9 @@
             <label for="ligand_structural_search_stereochemistry">Stereochemistry<label><span class="glyphicon glyphicon-info-sign" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="bottom" data-content="<b>Stereochemistry</b><br>Toggles whether or not stereochemistry is used in substructure matching. If checked, stereochemistry is taken into account." data-original-title="" title="">
           </div>
           <div style="{% if selection_ligand_chemical_search_type_parameters.search_type_selection != 'similarity'%}{%if selection_ligand_chemical_search_type_parameters.search_type_selection != 'substructure' %}display:none;{% endif %}{% endif %}" class="form-group" id="ligand_structural_search_smiles_div">
-            {% comment %} <label class="" id="ligand_structural_search_smiles_label" style="{% if ligand_structural_search_parameters.search_type != 'similarity' %}display:none;{% endif %}width:100px" >SMILES:</label> {% endcomment %}
             <textarea  id="ligand_structural_search_smiles" class="form-control" placeholder="Type or paste your {% if ligand_structural_search_parameters.search_type == 'similarity' or ligand_structural_search_parameters.input_type == 'smiles' %}SMILES strings{% endif %}{% if ligand_structural_search_parameters.search_type != 'similarity' and ligand_structural_search_parameters.input_type == 'smarts' %}SMARTS strings{% endif %} here.">{{ ligand_structural_search_parameters.smiles }}</textarea>
-            {% comment %} <input id="ligand_structural_search_smiles" class="form-control" size="30" maxlength="200" value="{{ ligand_structural_search_parameters.smiles }}"> {% endcomment %}
           </div>
-          {% comment %} 
-          <div class="form-group">
-            <label for="ligand_structural_search_limit">Limit:</label>
-            <input type="number" style="width:75px" id="ligand_structural_search_limit" class="form-control" maxlength="3" size="3" min="1" max="100" value="{{ ligand_structural_search_parameters.limit }}">
-          </div> 
-          {% endcomment %}
+          
           <div class="form-group">
             <p id="ligand_bulk_search_error_msg" class="error-msg-p" style="{% if ligand_bulk_search_error_msg != 'No results found.'%}color: red; {% endif %}">{{ ligand_bulk_search_error_msg }}</p>
           </div>
@@ -307,24 +300,6 @@
     <script>
         const csrf_token = "{{ csrf_token }}";
 
-  
-
-
-{% comment %}         {% if filter_tableselect %}
-        $(document).ready(function() {
-            // Get Receptor Targets for table build
-            initializeTargetChooserTables();
-
-            $('#targetselect-modal-table').on('shown.bs.modal', function (e) {
-                showTARGETtable('#targetselect-modal-table');
-            })
-
-
-            $('#targetselect-modal-table').on('hidden.bs.modal', AddMultipleTargets);
-
-        }); 
-        {% endif %}
-        {% endcomment %}
         $(document).ready(function() {
             $('[data-toggle="popover"]').popover();
 
@@ -338,7 +313,6 @@
               } else if (this.value === 'smiles' || this.value === 'smarts') {
                     $('#selection_ligand_bulk_search_stereo_div').show();
               }
-                  
             });
             $('#selection_ligand_chemical_search_type').on('change',function (e) {
                 if (this.value === 'identity') {
@@ -346,7 +320,7 @@
                   $('#selection_ligand_bulk_search_search_type').show();
                   $('#selection_ligand_bulk_search_stereo_div').show();
                   $('#selection-buttons-ligand-bulk-search').show();
-                  
+
                   $('#ligand_structural_search_input_type').hide();
                   $('#ligand_structural_search_input_type_similarity').hide();
                   $('#ligand_structural_search_smiles_div').hide();
@@ -359,8 +333,9 @@
                   $('#selection_ligand_bulk_search_search_type').hide();
                   $('#selection_ligand_bulk_search_stereo_div').hide();
                   $('#selection-buttons-ligand-bulk-search').hide();
-                  
-                  $('#ligand_structural_search_input_type').hide();                  $('#ligand_structural_search_input_type_similarity').show();
+
+                  $('#ligand_structural_search_input_type').hide();                  
+                  $('#ligand_structural_search_input_type_similarity').show();
                   $('#ligand_structural_search_smiles_div').show();
                   $('#ligand_structural_search_input_type').hide();
                   $('#ligand_structural_search_stereo_div').hide();
@@ -371,7 +346,7 @@
                   $('#selection_ligand_bulk_search_search_type').hide();
                   $('#selection_ligand_bulk_search_stereo_div').hide();
                   $('#selection-buttons-ligand-bulk-search').hide();
-                  
+
                   $('#ligand_structural_search_input_type').show();
                   $('#ligand_structural_search_input_type_similarity').hide();
                   $('#ligand_structural_search_smiles_div').show();
@@ -379,11 +354,8 @@
                   $('#ligand_structural_search_stereo_div').show();
                   $('#ligand_structural_search_similarity_div').hide();
                   $('#selection-buttons-smiles-search').show();
-                }
-                  
+                }  
             });
-
         });
-
     </script>
 {% endblock %}
