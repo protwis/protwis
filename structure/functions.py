@@ -1255,7 +1255,7 @@ class ParseRFAAModels():
             ligand_secs = parts[1].split('[')
             ligand = ligand_secs[0]
             inchikey = ligand_secs[1].replace(']', '')
-            model = 'rfaa-sm'
+            model = 'af-rfaa-sm'
 
             metrics_file = os.sep.join([self.data_dir, f, receptor + '-' + ligand +'_metrics.csv'])
             metrics = [row for row in csv.DictReader(open(metrics_file, 'r'))][0]

@@ -648,16 +648,16 @@ class Command(BaseBuild):
             compute_interactions(location, protein=receptor, signprot=signprot, do_complexes=True, save_to_db=True, file_input=True) # add do_complexes
 
     def purge_structures(self):
-        models = Structure.objects.filter(structure_type__slug='rfaa-sm')
+        models = Structure.objects.filter(structure_type__slug='af-rfaa-sm')
         for m in models:
             PdbData.objects.filter(pdb=m.pdb_data.pdb).delete()
             WebLink.objects.filter(index=m.pdb_code.index).delete()
         models.delete()
-        ResidueFragmentInteraction.objects.filter(structure_ligand_pair__structure__structure_type__slug='rfaa-sm').delete()
-        StructureLigandInteraction.objects.filter(structure__structure_type__slug='rfaa-sm').delete()
+        ResidueFragmentInteraction.objects.filter(structure_ligand_pair__structure__structure_type__slug='af-rfaa-sm').delete()
+        StructureLigandInteraction.objects.filter(structure__structure_type__slug='af-rfaa-sm').delete()
         #Remove previous Rotamers/Residues to prepare repopulate
-        Fragment.objects.filter(structure__structure_type__slug='rfaa-sm').delete()
-        Rotamer.objects.filter(structure__structure_type__slug='rfaa-sm').delete()
+        Fragment.objects.filter(structure__structure_type__slug='af-rfaa-sm').delete()
+        Rotamer.objects.filter(structure__structure_type__slug='af-rfaa-sm').delete()
         # PdbData.objects.all().delete()
 
     def main_func(self, positions, iteration, count, lock):
