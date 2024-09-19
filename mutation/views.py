@@ -34,6 +34,7 @@ from seqsign.sequence_signature import SequenceSignature
 
 from datetime import datetime
 from collections import OrderedDict
+import time
 import json
 import yaml
 import os
@@ -48,7 +49,7 @@ import xlsxwriter #sudo pip3 install XlsxWriter
 import operator
 import numpy as np
 
-Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
+# Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 
 class TargetSelection(AbsTargetSelectionTable):
     step = 1
@@ -71,25 +72,6 @@ class TargetSelection(AbsTargetSelectionTable):
     }
 
     default_species = False
-
-# class TargetSelection(AbsTargetSelection):
-#     step = 1
-#     number_of_steps = 2
-#     docs = 'mutations.html#mutation-browser'
-#     selection_boxes = OrderedDict([
-#         ('reference', False),
-#         ('targets', True),
-#         ('segments', False),
-#     ])
-#     buttons = {
-#         'continue': {
-#             'label': 'Continue to next step',
-#             'url': '/mutations/segmentselection',
-#             'color': 'success',
-#         },
-#     }
-#     default_species = False
-
 
 class SegmentSelection(AbsSegmentSelection):
     step = 2
@@ -720,74 +702,89 @@ def showcalculationPDB(request):
 
         return render(request, 'mutation/designpdb.html', context)
 
-@cache_page(60 * 60 * 24 *7)
-def Coverage(request):
 
-    context = {}
+class MutationStatistics(TemplateView):
+    """
+    So not ready that EA wanted to publish it.
+    """
+    template_name = 'mutation_statistics.html'
 
-    mut_count_receptor_dict = {}
+    def get_context_data (self, **kwargs):
+        start_time = time.time()
+        context = super().get_context_data(**kwargs)
 
-    experimental_mutations = list(MutationExperiment.objects.all().values('protein__entry_name').annotate(c=Count('mutation_id', distinct=True)))
+        mut_count_receptor_dict = {}
 
-    for a in experimental_mutations:
-        mut_count_receptor_dict[a['protein__entry_name']] = a['c']
+        # Use iterator to process the queryset in chunks
+        experimental_mutations_iterator = MutationExperiment.objects.all().values(
+            'protein__entry_name'
+        ).annotate(
+            c=Count('mutation_id', distinct=True)
+        ).iterator(chunk_size=2000)
 
-    names_dict = Protein.objects.filter(parent_id__isnull=True, accession__isnull=False, family_id__slug__startswith='00').values('entry_name', 'name').order_by('entry_name')
-    names_conversion_dict = {item['entry_name']: item['name'] for item in names_dict}
-    data = list(names_conversion_dict.keys())
-    names = list(Protein.objects.filter(entry_name__in=data).values_list('name', flat=True))
-    IUPHAR_to_uniprot_dict = {item['name']: item['entry_name'] for item in names_dict}
+        # Collect results into a list
+        experimental_mutations = list(experimental_mutations_iterator)
+        print('check 1')
+        for a in experimental_mutations:
+            mut_count_receptor_dict[a['protein__entry_name']] = a['c']
+        print('check 2')
 
-    families = ProteinFamily.objects.all()
-    datatree = {}
-    conversion = {}
-    human_mut = {}
-    # Iterate over the dictionary
-    for key, value in mut_count_receptor_dict.items():
-        # Extract the base protein name (everything before the first underscore)
-        protein_name = key.split('_')[0]
+        proteins = list(Protein.objects.filter(
+            parent_id__isnull=True,
+            accession__isnull=False,
+            family_id__slug__startswith='00'
+        ).values('entry_name', 'name').order_by('entry_name'))
 
-        # Check if the "_human" version exists in the original dictionary
-        human_key = f'{protein_name}_human'
+        names_conversion_dict = {item['entry_name']: item['name'] for item in proteins}
 
-        if human_key in mut_count_receptor_dict:
-            # Initialize the human key in the result dictionary if it hasn't been already
-            if human_key not in human_mut:
-                human_mut[human_key] = 0
+        data = list(names_conversion_dict.keys())
+        names = list(Protein.objects.filter(entry_name__in=data).values_list('name', flat=True))
+        IUPHAR_to_uniprot_dict = {item['name']: item['entry_name'] for item in proteins}
+        print('check 3')
+        families = ProteinFamily.objects.all()
+        datatree = {}
+        conversion = {}
+        human_mut = {}
 
-            # Sum values under the human key
-            human_mut[human_key] += value
-        else:
-            # Initialize the human key in the result dictionary if it hasn't been already
-            if key not in human_mut:
-                human_mut[key] = 0
+        # Iterate over the dictionary
+        for key, value in mut_count_receptor_dict.items():
+            protein_name = key.split('_')[0]
+            human_key = f'{protein_name}_human'
+            target_key = human_key if human_key in mut_count_receptor_dict else key
 
-            # Sum values under the human key
-            human_mut[key] += value
+            if target_key not in human_mut:
+                human_mut[target_key] = 0
 
-    for item in families:
-        if len(item.slug) == 3 and item.slug not in datatree.keys():
-            datatree[item.slug] = {}
-            conversion[item.slug] = item.name
-        if len(item.slug) == 7 and item.slug not in datatree[item.slug[:3]].keys():
-            datatree[item.slug[:3]][item.slug[:7]] = {}
-            conversion[item.slug] = item.name
-        if len(item.slug) == 11 and item.slug not in datatree[item.slug[:3]][item.slug[:7]].keys():
-            datatree[item.slug[:3]][item.slug[:7]][item.slug[:11]] = []
-            conversion[item.slug] = item.name
-        if len(item.slug) == 15 and item.slug not in datatree[item.slug[:3]][item.slug[:7]][item.slug[:11]]:
-            datatree[item.slug[:3]][item.slug[:7]][item.slug[:11]].append(item.name)
+            human_mut[target_key] += value
 
-    datatree2 = LandingPage.convert_keys(datatree, conversion)
-    datatree2.pop('Parent family', None)
-    datatree3 = LandingPage.filter_dict(datatree2, names)
-    data_converted = {names_conversion_dict[key]: {'Value1':value} for key, value in human_mut.items()}
-    Data_full = {"NameList": datatree3, "DataPoints": data_converted, "LabelConversionDict":IUPHAR_to_uniprot_dict}
-    context['GPCRome_data'] = json.dumps(Data_full["NameList"])
-    context['GPCRome_data_variables'] = json.dumps(Data_full['DataPoints'])
-    context['GPCRome_Label_Conversion'] = json.dumps(Data_full['LabelConversionDict'])
+        print('check 4')
+        for item in families:
+            if len(item.slug) == 3 and item.slug not in datatree.keys():
+                datatree[item.slug] = {}
+                conversion[item.slug] = item.name
+            if len(item.slug) == 7 and item.slug not in datatree[item.slug[:3]].keys():
+                datatree[item.slug[:3]][item.slug[:7]] = {}
+                conversion[item.slug] = item.name
+            if len(item.slug) == 11 and item.slug not in datatree[item.slug[:3]][item.slug[:7]].keys():
+                datatree[item.slug[:3]][item.slug[:7]][item.slug[:11]] = []
+                conversion[item.slug] = item.name
+            if len(item.slug) == 15 and item.slug not in datatree[item.slug[:3]][item.slug[:7]][item.slug[:11]]:
+                datatree[item.slug[:3]][item.slug[:7]][item.slug[:11]].append(item.name)
+        print('check 5')
+        datatree2 = LandingPage.convert_keys(datatree, conversion)
+        datatree2.pop('Parent family', None)
+        datatree3 = LandingPage.filter_dict(datatree2, names)
+        data_converted = {names_conversion_dict[key]: {'Value1':value} for key, value in human_mut.items()}
+        Data_full = {"NameList": datatree3, "DataPoints": data_converted, "LabelConversionDict":IUPHAR_to_uniprot_dict}
+        context['GPCRome_data'] = json.dumps(Data_full["NameList"])
+        context['GPCRome_data_variables'] = json.dumps(Data_full['DataPoints'])
+        context['GPCRome_Label_Conversion'] = json.dumps(Data_full['LabelConversionDict'])
+        print('check 6')
+        # End time
+        end_time = time.time()
+        print(f"Total time for view execution: {end_time - start_time:.2f} seconds")
 
-    return render(request, 'mutation/statistics.html', context)
+        return context
 
 def pocket(request):
 

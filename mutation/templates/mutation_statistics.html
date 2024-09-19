@@ -3,19 +3,26 @@
 {% load humanize %}
 {% block addon_css %}
 <style>
+  .graydiv {
+      height: 20px;
+      width: 350px;
+      background: linear-gradient(to right, white 0%, black 100%)
+  }
 </style>
 {% endblock %}
 
 {% block content %}
 <div style="padding-top: 10px; font-size: 11px; white-space: nowrap;">
   <div class="col-md-12">
-    <br />
-
-    The tree highlights receptors for which ligand interaction data is available from: Orange: annotated literature mutations, Blue:  structure complexes and Green: both.<br>
-    The following receptors have no data and has been exluded for clarity: Class A orphans, Class B2 (Adhesions), Class T (Taste 2) and Other GPCRs (not part of any of the classes A-C or F).<br>
-    The labs of David Gloriam, Anke Schiedel, Chris de Graaf and Hugo Gutiérrez-de-Terán are acknowledged for the annotation of mutation data.
+    <div class="col-md-12" style="margin-bottom: 40px;"">
+      <br>
+      The GPCRome wheel plot shows receptors for which mutation data has been annotated.<br>
+      Data is shown in a grayscale gradient, where light gray denotes a small amount of mutations annotated in thata receptor,
+      and darker grey/black implies high number of annotated mutations.<br>
+      The labs of <i>David Gloriam</i>, <i>Anke Schiedel</i>, <i>Chris de Graaf</i> and <i>Hugo Gutiérrez-de-Terán</i> are acknowledged for the annotation of mutation data.
+      <br>
+    </div>
     <br>
-
     <div class="col-md-3">
       Receptor names:
         <div class="btn-group" role="group" id="gtp_plus">
@@ -44,21 +51,12 @@
       </div>
     </div>
   </div>
-    Circle colors indicate a number of mutations:
-    <table style="width:30%">
-        <tr>
-            <td ><div id="circle_lightgray"></div></td>
-            <td> < 100 </td>
-            <td ><div id="circle_darkgray"></div></td>
-            <td> < 500 </td>
-            <td ><div id="circle_gray"></div></td>
-            <td> < 1000 </td>
-            <td ><div id="circle_black"></div></td>
-            <td> 1000+</td>
-        </tr>
-    </table>
+  <div class="col-md-3">
+    <div style="float: right;" class="text-center">
+      <b>Mutations count (from low to high)</b>
+      <div class="graydiv"></div>
+    </div>
   </div>
-
 <br />
 <br />
 <br />
