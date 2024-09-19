@@ -175,6 +175,17 @@
                         column_number : 4,
                         filter_type: "multi_select",
                         select_type: 'select2',
+                        filter_default_label: "Method",
+                        filter_reset_button_text: false,
+                        filter_match_mode : "exact",
+                        select_type_options: {
+                            width: '100px',
+                        }
+                    },
+                    {
+                        column_number : 5,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
                         column_data_type: "html",
                         filter_default_label: "UniProt",
                         filter_reset_button_text: false,
@@ -183,7 +194,7 @@
                         }
                     },
                     {
-                        column_number: 5,
+                        column_number: 6,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         column_data_type: "html",
@@ -194,7 +205,7 @@
                         }
                     },
                     {
-                        column_number: 6,
+                        column_number: 7,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         filter_default_label: "Rec. family",
@@ -204,7 +215,7 @@
                         }
                     },
                     {
-                        column_number : 7,
+                        column_number : 8,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         filter_default_label: "Class",
@@ -214,7 +225,7 @@
                         }
                     },
                     {
-                        column_number : 8,
+                        column_number : 9,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         filter_default_label: "Species",
@@ -257,18 +268,18 @@
                 ClearSelection('targets');
                 for (i = 0; i < checked_data.length; i++) {
 
-                    AddToSelection('targets', 'structure_model',  checked_data[i][9]+"_"+checked_data[i][3]);
+                    AddToSelection('targets', 'structure_model',  checked_data[i][10]+"_"+checked_data[i][3]);
 
                 }
                 window.location.href = '/structure/selection_convert_model';
             });
 
             $('#superpose_template_btn').click(function () {
-                direct_superposition(oTable, "gpcr", [9,3], "structure_model");
+                direct_superposition(oTable, "gpcr", [10,3], "structure_model");
             });
 
             $("#superpose_btn").click(function() {
-                superposition(oTable, [4,5,6,7,8,2,3,9], "homology_model_browser", 'gpcr', 9, [9]);
+                superposition(oTable, [5,6,7,8,9,2,3,4,10], "homology_model_browser", 'gpcr', 10, [10]);
             });
         });
 
@@ -400,13 +411,14 @@
         <table width="100%" class="display compact" id="homology_models">
             <thead>
                 <tr class='over_header' style='max-height: 20px'>
-                    <th colspan=4 class="over_header">MODEL</th>
+                    <th colspan=5 class="over_header">MODEL</th>
                     <th colspan=5 class="over_header">RECEPTOR</th>
                 </tr>
                 <tr>
                     <th class='no-sort checkbox_tr'><input class="select-all" type="checkbox" onclick="select_all(this)"></th>
                     <th></th>
                     <th>Date</th>
+                    <th></th>
                     <th class='rightborder'></th>
                     <th></th>
                     <th></th>
@@ -428,6 +440,11 @@
                     {% endif %}
                     <td>{{ model.version|date:"Y-m-d" }}</td>
                     <td>{{ model.state.name }}</td>
+                    {% if model.model_type == 'AFMS' %}
+                        <td><a href="https://doi.org/10.1002/prot.26382" target="_blank">AlphaFold2-Multistate</a></td>
+                    {% else %}
+                        <td><a href="https://doi.org/10.1038/s41586-021-03819-2", target="_blank">AlphaFold2</a></td>
+                    {% endif %}
                     <td>
                         {% if not model.protein.accession %}
                             <a href="http://www.uniprot.org/uniprot/{{ model.protein.parent.accession }}">{{ model.protein.parent.entry_short|safe }}</a>
@@ -470,6 +487,7 @@
                     <th>Species</th>
                     <th>Date</th>
                     <th>State</th>
+                    <th>Method</th>
                   </tr>
               </thead>
               <tbody>

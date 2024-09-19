@@ -142,6 +142,7 @@ class StructureModel(models.Model):
     pdb_data = models.ForeignKey('PdbData', null=True, on_delete=models.CASCADE)
     version = models.DateField()
     stats_text = models.ForeignKey('StatsText', null=True, on_delete=models.CASCADE)
+    model_type = models.CharField(max_length=20, null=True)
     # ligand = models.ForeignKey('ligand.Ligand', null=True, on_delete=models.CASCADE)
     # type = models.ForeignKey('StructureType', null=True, on_delete=models.CASCADE)
 

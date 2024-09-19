@@ -3389,10 +3389,14 @@ def HommodDownload(request):
                 stat_name = 'Class{}_{}_{}_refined_{}_{}_GPCRdb.templates.csv'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.parent.entry_name,
                                                                    hommod.main_template.pdb_code.index, hommod.state.name, hommod.version)
             else:
+                if hasattr(hommod, 'model_type'):
+                    model_type = hommod.model_type
+                else:
+                    model_type = 'AF'
                 mod_name = 'Class{}_{}_{}_{}_{}_GPCRdb.pdb'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.entry_name,
-                                                                          hommod.state.name, 'AF', hommod.version)
+                                                                          hommod.state.name, model_type, hommod.version)
                 stat_name = 'Class{}_{}_{}_{}_{}_GPCRdb.templates.csv'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.entry_name,
-                                                                          hommod.state.name, 'AF', hommod.version)
+                                                                          hommod.state.name, model_type, hommod.version)
             backup_zip.writestr(mod_name, io.getvalue())
             if hommod.stats_text:
                 stats_text = StringIO(hommod.stats_text.stats_text)
@@ -3620,8 +3624,12 @@ def SingleModelDownload(request, modelname, fullness, state=None, csv=False):
             stat_name = 'Class{}_{}_{}_{}_{}_GPCRdb.templates.csv'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.entry_name,
                                                                            hommod.state.name, hommod.main_template.pdb_code.index, hommod.version)
         else:
+            if hasattr(hommod, 'model_type'):
+                model_type = hommod.model_type
+            else:
+                model_type = 'AF'
             mod_name = 'Class{}_{}_{}_{}_{}_GPCRdb.pdb'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.entry_name,
-                                                                           hommod.state.name, 'AF', hommod.version)
+                                                                           hommod.state.name, model_type, hommod.version)
     pdb_lines = hommod.pdb_data.pdb
     if stat_name:
         stats_lines = hommod.stats_text.stats_text
