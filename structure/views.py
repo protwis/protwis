@@ -4260,6 +4260,8 @@ class StructureBlastView(View):
         with open(result_file_path, 'r') as file:
             output_content = file.readlines()
 
+        output_content = set(output_content)
+
         temp_data = []
         try:
             for line in output_content:
