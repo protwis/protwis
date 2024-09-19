@@ -62,7 +62,7 @@ $(document).ready(function() {
         if ($('#results_table').length) {
             try {
                 var table = $('#results_table').DataTable({
-                    "order": [[1, "desc"], [2, "asc"], [3, "asc"]],
+                    "order": [[1, "desc"], [2, "desc"], [3, "asc"]],
                     "pageLength": 20,
                     'lengthChange': false,
                     "columnDefs": [{
@@ -78,18 +78,6 @@ $(document).ready(function() {
                             return data;  // Return the original data for sorting/filtering
                         }
                     },
-                    {
-                        "targets": [9,10],  // Column
-                        "createdCell": function(td, cellData, rowData, row, col) {
-                            // Set initial small width
-                            $(td).css({
-                                "width": "5px",      // Initial small width
-                                "overflow": "hidden", // Hide overflow content
-                                "white-space": "nowrap", // Prevent text wrapping
-                                "transition": "width 0.3s ease" // Smooth transition effect
-                            });
-                        }
-                    }
                 ]
                 });
 
@@ -106,7 +94,6 @@ $(document).ready(function() {
                     { column_number: 9, filter_type: "multi_select", filter_reset_button_text:false ,select_type: "select2" }, 
                     { column_number: 10, filter_type: "multi_select", filter_reset_button_text:false ,select_type: "select2" }, 
                     { column_number: 11, filter_type: "multi_select", filter_reset_button_text:false ,select_type: "select2" }, 
-                    { column_number: 12, filter_type: "multi_select", filter_reset_button_text:false ,select_type: "select2" }, 
                 ]);
 
                 console.log('DataTable initialized successfully');

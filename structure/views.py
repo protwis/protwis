@@ -3989,8 +3989,9 @@ def RenderTrees(request):
 #   response.write(out_stream)
 #   return response
 
+# SEMAPHORE WRAPPER
+#-------------------
 shared_semaphore = threading.Semaphore(100)
-
 def semaphore_view(semaphore, timeout=5):
     def decorator(view_func):
         @wraps(view_func)
