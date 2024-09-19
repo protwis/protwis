@@ -774,29 +774,29 @@
                   </tr>
                   <tr>
                       <th class="select-page-th"><input class="select-page" type="checkbox">Sel. page</th>
-                      <th style="text-align:left">Common<br \>name</th>
+                      <th style="text-align:left">Common<br />name</th>
                       <th style="text-align:left">GPCRdb<br />ID</th>
-                      <th style="text-align:left">#Vendors<br \><br \></th>
-                      <th style="text-align:left">Reference<br \>ligand</th>
+                      <th style="text-align:left">#Vendors<br /><br /></th>
+                      <th style="text-align:left">Reference<br />ligand</th>
 
-                      <th style="border-left: 1px solid black;text-align:left" class="general-th">Fold<br \>selectivity</th>
-                      <th style="text-align:left"># Tested<br \>GPCRs</th>
+                      <th style="border-left: 1px solid black;text-align:left" class="general-th">Fold<br />selectivity</th>
+                      <th style="text-align:left"># Tested<br />GPCRs</th>
 
-                      <th style="text-align:left">Species<br \><br \></th>
+                      <th style="text-align:left">Species<br /><br /></th>
                       <th style="border-left: 1px solid black;text-align:left" class="activity-th">p-value<br />(-log)</th>
                       <th style="text-align:left">Activity<br />Type</th>
                       <th style="text-align:left">Activity<br />Relation</th>
                       <th style="text-align:left">Activity<br />Value</th>
-                      <th style="text-align:left">AssayType<br \><br \></th>
+                      <th style="text-align:left">AssayType<br /><br /></th>
                       <th style="text-align:left">Assay<br>Description</th>
-                      <th style="text-align:left">Source<br \><br \></th>
+                      <th style="text-align:left">Source<br /><br /></th>
                       <th style="border-left: 1px solid black;text-align:left" class="chemical-th">Mol<br />weight</th>
                       <th style="text-align:left">Rot<br />Bonds</th>
-                      <th style="text-align:left">H don<br \><br \></th>
-                      <th style="text-align:left">H acc<br \><br \></th>
-                      <th style="text-align:left">LogP<br \><br \></th>
-                      <th style="text-align:left">Smiles<br \><br \></th>
-                      <th style="text-align:left">DOI<br \><br \></th>
+                      <th style="text-align:left">H don<br /><br /></th>
+                      <th style="text-align:left">H acc<br /><br /></th>
+                      <th style="text-align:left">LogP<br /><br /></th>
+                      <th style="text-align:left">Smiles<br /><br /></th>
+                      <th style="text-align:left">DOI<br /><br /></th>
                   </tr>
               </thead>
               <tbody>
@@ -804,26 +804,26 @@
                   <tr>
                       <td><input class="alt" type="checkbox"></td>
                       <td><a class="struct" rel="http://www.ebi.ac.uk/chembl/api/data/image/{{p.ligand__ids__index}}" href="/ligand/{{p.ligand__id}}/info" target="_blank">{{p.ligand__ids__index}}</a></td>
-                      <td><a href="/ligand/{{p.ligand__id}}/info" target="_blank">{{p.ligand__id}}</a></td>
-                      <td>{{p.purchasability}}</td>
+                      <td align="right"><a href="/ligand/{{p.ligand__id}}/info" target="_blank">{{p.ligand__id}}</a></td>
+                      <td align="right">{{p.purchasability}}</td>
                       <td>{{p.reference_ligand}}</td>
 
-                      <td>{{p.potency}}</td>
-                      <td>{{p.count_potency_test}}</td>
+                      <td align="right">{{p.potency}}</td>
+                      <td align="right">{{p.count_potency_test}}</td>
 
                       <td>{{p.protein__species__common_name}}</td>
                       <td align="right">{{p.p_activity_value|floatformat:1}}</td>
                       <td align="center">{% if p.source == 'ChEMBL' %} p{{p.value_type}} {% else %} {{p.value_type}} {% endif %}</td>
                       <td>{{p.standard_relation}}</td>
-                      <td>{{p.p_activity_value|floatformat}}</td>
+                      <td align="right">{{p.p_activity_value|floatformat}}</td>
                       <td>{% if p.assay_type == 'B' %} Binding {% elif p.assay_type == 'F' %} Functional {% elif p.assay_type == 'U' %} Unclassified {% elif p.assay_type == 'A' %} ADMET {% endif %}</td>
                       <td class="AssayCell"> <div style="overflow: hidden; text-overflow: ellipsis; word-wrap: break-word; max-width: 350px;white-space: nowrap;">{{p.assay_description}}<span class="AssayDetail">{{p.assay_description}}</span> </div></td>
                       <td>{{p.source}}</td>
-                      <td>{{p.ligand__mw|floatformat:0}}</td>
-                      <td>{{p.ligand__rotatable_bonds}}</td>
-                      <td>{{p.ligand__hdon}}</td>
-                      <td>{{p.ligand__hacc}}</td>
-                      <td>{{p.ligand__logp|floatformat:1}}</td>
+                      <td align="right">{{p.ligand__mw|floatformat:0}}</td>
+                      <td align="right">{{p.ligand__rotatable_bonds}}</td>
+                      <td align="right">{{p.ligand__hdon}}</td>
+                      <td align="right">{{p.ligand__hacc}}</td>
+                      <td align="right">{{p.ligand__logp|floatformat:1}}</td>
                       <td class="dt-left">{{p.ligand__smiles}}</td>
                       <td><a href="{{p.link}}" target="_blank">{{p.publication__web_link__index}}</a></td>
                   </tr>
@@ -886,29 +886,29 @@
                 </tr>
                 <tr>
                     <th class="select-page-th"><input class="select-page" type="checkbox">Sel. page</th>
-                    <th style="text-align:left">Common<br \>name</th>
+                    <th style="text-align:left">Common<br >name</th>
                     <th style="text-align:left">GPCRdb<br />ID</th>
-                    <th style="text-align:left">#Vendors<br \><br \></th>
-                    <th style="text-align:left">Reference<br \>ligand</th>
+                    <th style="text-align:left">#Vendors<br /><br /></th>
+                    <th style="text-align:left">Reference<br />ligand</th>
 
-                    <th style="border-left: 1px solid black;text-align:left" class="general-th">Fold<br \>selectivity</th>
-                    <th style="text-align:left"># Tested<br \>GPCRs</th>
+                    <th style="border-left: 1px solid black;text-align:left" class="general-th">Fold<br />selectivity</th>
+                    <th style="text-align:left"># Tested<br />GPCRs</th>
 
-                    <th style="text-align:left">Species<br \><br \></th>
+                    <th style="text-align:left">Species<br /><br /></th>
                     <th style="border-left: 1px solid black;text-align:left" class="activity-th">p-value<br />(-log)</th>
                     <th style="text-align:left">Activity<br />Type</th>
                     <th style="text-align:left">Activity<br />Relation</th>
                     <th style="text-align:left">Activity<br />Value</th>
                     <th style="text-align:left">Assay<br>Type</th>
-                    <th style="text-align:left">Assay<br \>Description</th>
-                    <th style="text-align:left">Source<br \><br \></th>
+                    <th style="text-align:left">Assay<br />Description</th>
+                    <th style="text-align:left">Source<br /><br /></th>
                     <th style="border-left: 1px solid black;text-align:left" class="chemical-th">Mol<br />weight</th>
                     <th style="text-align:left">Rot<br />Bonds</th>
-                    <th style="text-align:left">H don<br \><br \></th>
-                    <th style="text-align:left">H acc<br \><br \></th>
-                    <th style="text-align:left">LogP<br \><br \></th>
-                    <th style="text-align:left">Smiles<br \><br \></th>
-                    <th style="text-align:left">DOI<br \><br \></th>
+                    <th style="text-align:left">H don<br /><br /></th>
+                    <th style="text-align:left">H acc<br /><br /></th>
+                    <th style="text-align:left">LogP<br /><br /></th>
+                    <th style="text-align:left">Smiles<br /><br /></th>
+                    <th style="text-align:left">DOI<br /><br /></th>
                 </tr>
             </thead>
             <tbody>
@@ -916,26 +916,26 @@
                 <tr>
                     <td><input class="alt" type="checkbox"></td>
                     <td><a class="struct" rel="http://www.ebi.ac.uk/chembl/api/data/image/{{p.ligand__ids__index}}" href="/ligand/{{p.ligand__id}}/info" target="_blank">{{p.ligand__ids__index}}</a></td>
-                    <td><a href="/ligand/{{p.ligand__id}}/info" target="_blank">{{p.ligand__id}}</a></td>
-                    <td>{{p.purchasability}}</td>
+                    <td align="right"><a href="/ligand/{{p.ligand__id}}/info" target="_blank">{{p.ligand__id}}</a></td>
+                    <td align="right">{{p.purchasability}}</td>
                     <td>{{p.reference_ligand}}</td>
 
-                    <td>{{p.affinity}}</td>
-                    <td>{{p.count_affinity_test}}</td>
+                    <td align="right">{{p.affinity}}</td>
+                    <td align="right">{{p.count_affinity_test}}</td>
 
                     <td>{{p.protein__species__common_name}}</td>
                     <td align="right">{{p.p_activity_value|floatformat:1}}</td>
                     <td align="center">{% if p.source == 'ChEMBL' %} p{{p.value_type}} {% else %} {{p.value_type}} {% endif %}</td>
                     <td>{{p.standard_relation}}</td>
-                    <td>{{p.p_activity_value|floatformat}}</td>
+                    <td align="right">{{p.p_activity_value|floatformat}}</td>
                     <td>{% if p.assay_type == 'B' %} Binding {% elif p.assay_type == 'F' %} Functional {% elif p.assay_type == 'U' %} Unclassified {% elif p.assay_type == 'A' %} ADMET {% endif %}</td>
                     <td class="AssayCell"> <div style="overflow: hidden; text-overflow: ellipsis; word-wrap: break-word; max-width: 350px;white-space: nowrap;">{{p.assay_description}}<span class="AssayDetail">{{p.assay_description}}</span> </div></td>
                     <td>{{p.source}}</td>
-                    <td>{{p.ligand__mw|floatformat:0}}</td>
-                    <td>{{p.ligand__rotatable_bonds}}</td>
-                    <td>{{p.ligand__hdon}}</td>
-                    <td>{{p.ligand__hacc}}</td>
-                    <td>{{p.ligand__logp|floatformat:1}}</td>
+                    <td align="right">{{p.ligand__mw|floatformat:0}}</td>
+                    <td align="right">{{p.ligand__rotatable_bonds}}</td>
+                    <td align="right">{{p.ligand__hdon}}</td>
+                    <td align="right">{{p.ligand__hacc}}</td>
+                    <td align="right">{{p.ligand__logp|floatformat:1}}</td>
                     <td class="dt-left">{{p.ligand__smiles}}</td>
                     <td><a href="{{p.link}}" target="_blank">{{p.publication__web_link__index}}</a></td>
                 </tr>
@@ -1017,34 +1017,34 @@
                    <th class="select-page-th"><input class="select-page" type="checkbox">Sel. page</th>
                    <th style="text-align:left">Common<br />name</th>
                    <th style="text-align:left">GPCRdb<br />ID</th>
-                   <th style="text-align:left">Type<br \><br \></th>
-                   <th style="text-align:left">Reference<br \>ligand</th>
+                   <th style="text-align:left">Type<br /><br /></th>
+                   <th style="text-align:left">Reference<br />ligand</th>
 
-                   <th style="border-left: 1px solid black; text-align:left">Fold<br \>selectivity</th>
-                   <th style="text-align:left"># Tested<br \>GPCRs</th>
+                   <th style="border-left: 1px solid black; text-align:left">Fold<br />selectivity</th>
+                   <th style="text-align:left"># Tested<br />GPCRs</th>
                    {% if ligand_query %}
                    <th style="text-align:left">GtP<br>name</th>
                    <th style="text-align:left">UniProt<br>name</th>
                    {% endif %}
-                   <th style="text-align:left">Species<br \><br \></th>
+                   <th style="text-align:left">Species<br /><br /></th>
                    {% if ligand_query %}
-                   <th style="text-align:left">Class<br \><br \></th>
-                   <th style="text-align:left">Family<br \><br \></th>
+                   <th style="text-align:left">Class<br /><br /></th>
+                   <th style="text-align:left">Family<br /><br /></th>
                    {% endif %}
-                   <th style="border-left: 1px solid black; text-align:left">#Vendors<br \><br \></th>
+                   <th style="border-left: 1px solid black; text-align:left">#Vendors<br /><br /></th>
                    <th style="text-align:left">Assay<br>Type</th>
-                   <th style="text-align:left">No.<br \>records</th>
-                   <th style="text-align:left">Min.<br \><br \></th>
-                   <th style="text-align:left">Average<br \><br \></th>
-                   <th style="text-align:left">Max.<br \><br \></th>
+                   <th style="text-align:left">No.<br />records</th>
+                   <th style="text-align:left">Min.<br /><br /></th>
+                   <th style="text-align:left">Average<br /><br /></th>
+                   <th style="text-align:left">Max.<br /><br /></th>
                    <th style="text-align:left">Param<br>-eter</th>
-                   <th style="text-align:left">Source<br \><br \></th>
+                   <th style="text-align:left">Source<br /><br /></th>
                    <th style="border-left: 1px solid black; text-align:left">Mol<br />weight</th>
                    <th style="text-align:left">Rot<br />Bonds</th>
-                   <th style="text-align:left">H don<br \><br \></th>
-                   <th style="text-align:left">H acc<br \><br \></th>
-                   <th style="text-align:left">LogP<br \><br \></th>
-                   <th style="text-align:left">Smiles<br \><br \></th>
+                   <th style="text-align:left">H don<br /><br /></th>
+                   <th style="text-align:left">H acc<br /><br /></th>
+                   <th style="text-align:left">LogP<br /><br /></th>
+                   <th style="text-align:left">Smiles<br /><br /></th>
            			</tr>
            		</thead>
                <tbody>
@@ -1052,12 +1052,12 @@
                    <tr>
                        <td><input class="alt" type="checkbox"></td>
                        <td><a class="struct struct_potency" rel="{{record.picture}}" href="/ligand/{{record.lig_id}}/info" target="_blank">{{record.ligand_name|safe}}</a></td>
-                       <td><a href="/ligand/{{record.lig_id}}/info" target="_blank">{{record.lig_id}}</a></td>
+                       <td align="right"><a href="/ligand/{{record.lig_id}}/info" target="_blank">{{record.lig_id}}</a></td>
                        <td>{{record.ligand_type}}</td>
                        <td>{{record.reference}}</td>
 
-                       <td>{{record.potency}}</td>
-                       <td>{{record.potency_tested}}</td>
+                       <td align="right">{{record.potency}}</td>
+                       <td align="right">{{record.potency_tested}}</td>
 
                        {% if ligand_query %}
                        <td>{{record.name|safe}}</td>
@@ -1068,19 +1068,19 @@
                        <td>{{record.class|safe}}</td>
                        <td>{{record.family|safe}}</td>
                        {% endif %}
-                       <td>{{record.purchasability}}</td>
+                       <td align="right">{{record.purchasability}}</td>
                        <td>{{record.assay_type}}</td>
-                       <td>{{record.record_count}}</td>
-                       <td>{{record.low_value|floatformat:1}}</td>
-                       <td>{{record.average_value|floatformat:1}}</td>
-                       <td>{{record.high_value|floatformat:1}}</td>
+                       <td align="right">{{record.record_count}}</td>
+                       <td align="right">{{record.low_value|floatformat:1}}</td>
+                       <td align="right">{{record.average_value|floatformat:1}}</td>
+                       <td align="right">{{record.high_value|floatformat:1}}</td>
                        <td>{{record.value_type}}</td>
                        <td>{{record.source}}</td>
-                       <td>{{record.mw|floatformat:0}}</td>
-                       <td>{{record.rotatable_bonds}}</td>
-                       <td>{{record.hdon}}</td>
-                       <td>{{record.hacc}}</td>
-                       <td>{{record.logp|floatformat:1}}</td>
+                       <td align="right">{{record.mw|floatformat:0}}</td>
+                       <td align="right">{{record.rotatable_bonds}}</td>
+                       <td align="right">{{record.hdon}}</td>
+                       <td align="right">{{record.hacc}}</td>
+                       <td align="right">{{record.logp|floatformat:1}}</td>
                        <td class="dt-left">{{record.smiles}}</td>
 
                    </tr>
@@ -1146,35 +1146,35 @@
                 <th class="select-page-th"><input class="select-page" type="checkbox">Sel. page</th>
                 <th style="text-align:left">Common<br />name</th>
                 <th style="text-align:left">GPCRdb<br />ID</th>
-                <th style="text-align:left">Type<br \><br \></th>
-                <th style="text-align:left">Reference<br \>ligand</th>
+                <th style="text-align:left">Type<br /><br /></th>
+                <th style="text-align:left">Reference<br />ligand</th>
 
-                <th style="border-left: 1px solid black; text-align:left">Fold<br \>selectivity</th>
-                <th style="text-align:left"># Tested<br \>GPCRs</th>
+                <th style="border-left: 1px solid black; text-align:left">Fold<br />selectivity</th>
+                <th style="text-align:left"># Tested<br />GPCRs</th>
 
                 {% if ligand_query %}
-                <th style="text-align:left">GtP<br \>name</th>
-                <th style="text-align:left">UniProt<br \>name</th>
+                <th style="text-align:left">GtP<br />name</th>
+                <th style="text-align:left">UniProt<br />name</th>
                 {% endif %}
-                <th style="text-align:left">Species<br \><br \></th>
+                <th style="text-align:left">Species<br /><br /></th>
                 {% if ligand_query %}
-                <th style="text-align:left">Class<br \><br \></th>
-                <th style="text-align:left">Family<br \><br \></th>
+                <th style="text-align:left">Class<br /><br /></th>
+                <th style="text-align:left">Family<br /><br /></th>
                 {% endif %}
-                <th style="border-left: 1px solid black; text-align:left">#Vendors<br \><br \></th>
+                <th style="border-left: 1px solid black; text-align:left">#Vendors<br /><br /></th>
                 <th style="text-align:left">Assay<br>Type</th>
-                <th style="text-align:left">No.<br \>records</th>
-                <th style="text-align:left">Min.<br \><br \></th>
-                <th style="text-align:left">Average<br \><br \></th>
-                <th style="text-align:left">Max.<br \><br \></th>
+                <th style="text-align:left">No.<br />records</th>
+                <th style="text-align:left">Min.<br /><br /></th>
+                <th style="text-align:left">Average<br /><br /></th>
+                <th style="text-align:left">Max.<br /><br /></th>
                 <th style="text-align:left">Param<br>-eter</th>
-                <th style="text-align:left">Source<br \><br \></th>
+                <th style="text-align:left">Source<br /><br /></th>
                 <th style="border-left: 1px solid black; text-align:left">Mol<br />weight</th>
                 <th style="text-align:left">Rot<br />Bonds</th>
-                <th style="text-align:left">H don<br \><br \></th>
-                <th style="text-align:left">H acc<br \><br \></th>
-                <th style="text-align:left">LogP<br \><br \></th>
-                <th style="text-align:left">Smiles<br \><br \></th>
+                <th style="text-align:left">H don<br /><br /></th>
+                <th style="text-align:left">H acc<br /><br /></th>
+                <th style="text-align:left">LogP<br /><br /></th>
+                <th style="text-align:left">Smiles<br /><br /></th>
              </tr>
            </thead>
             <tbody>
@@ -1182,12 +1182,12 @@
                 <tr>
                     <td><input class="alt" type="checkbox"></td>
                     <td><a class="struct struct_affinity" rel="{{record.picture}}" href="/ligand/{{record.lig_id}}/info" target="_blank">{{record.ligand_name|safe}}</a></td>
-                    <td><a href="/ligand/{{record.lig_id}}/info" target="_blank">{{record.lig_id}}</a></td>
+                    <td align="right"><a href="/ligand/{{record.lig_id}}/info" target="_blank">{{record.lig_id}}</a></td>
                     <td>{{record.ligand_type}}</td>
                     <td>{{record.reference}}</td>
 
-                    <td>{{record.affinity}}</td>
-                    <td>{{record.affinity_tested}}</td>
+                    <td align="right">{{record.affinity}}</td>
+                    <td align="right">{{record.affinity_tested}}</td>
 
                     {% if ligand_query %}
                     <td>{{record.name|safe}}</td>
@@ -1198,19 +1198,19 @@
                     <td>{{record.class|safe}}</td>
                     <td>{{record.family|safe}}</td>
                     {% endif %}
-                    <td>{{record.purchasability}}</td>
+                    <td align="right">{{record.purchasability}}</td>
                     <td>{{record.assay_type}}</td>
-                    <td>{{record.record_count}}</td>
-                    <td>{{record.low_value|floatformat:1}}</td>
-                    <td>{{record.average_value|floatformat:1}}</td>
-                    <td>{{record.high_value|floatformat:1}}</td>
+                    <td align="right">{{record.record_count}}</td>
+                    <td align="right">{{record.low_value|floatformat:1}}</td>
+                    <td align="right">{{record.average_value|floatformat:1}}</td>
+                    <td align="right">{{record.high_value|floatformat:1}}</td>
                     <td>{{record.value_type}}</td>
                     <td>{{record.source}}</td>
-                    <td>{{record.mw|floatformat:0}}</td>
-                    <td>{{record.rotatable_bonds}}</td>
-                    <td>{{record.hdon}}</td>
-                    <td>{{record.hacc}}</td>
-                    <td>{{record.logp|floatformat:1}}</td>
+                    <td align="right">{{record.mw|floatformat:0}}</td>
+                    <td align="right">{{record.rotatable_bonds}}</td>
+                    <td align="right">{{record.hdon}}</td>
+                    <td align="right">{{record.hacc}}</td>
+                    <td align="right">{{record.logp|floatformat:1}}</td>
                     <td class="dt-left">{{record.smiles}}</td>
 
                 </tr>
