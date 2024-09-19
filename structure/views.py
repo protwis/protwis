@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.conf import settings
 from django.views.generic import TemplateView, View
 from django.http import HttpResponse, HttpResponseRedirect
-from django.db.models import Count, Q, Prefetch, TextField, Avg
+from django.db.models import Count, Q, Prefetch, TextField, Avg, Case, When, IntegerField, F, Value, CharField
 from django.db.models.functions import Concat
 from django import forms
 
@@ -27,6 +27,7 @@ from common.models import ReleaseNotes
 from common.alignment import Alignment, GProteinAlignment
 from residue.models import Residue, ResidueNumberingScheme, ResiduePositionSet
 from contactnetwork.models import Interaction
+from mapper.views import LandingPage
 
 import io
 import numpy as np
@@ -1412,6 +1413,7 @@ class StructureStatistics(TemplateView):
 
     def get_context_data (self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context["page"] = self.origin
         families = ProteinFamily.objects.all()
         lookup = {}
         for f in families:
@@ -1590,93 +1592,194 @@ class StructureStatistics(TemplateView):
         for key in list(context['all_structures_by_class'].keys()):
             context['all_structures_by_class'][key.replace('Class','')] = context['all_structures_by_class'].pop(key)
 
-        tree = PhylogeneticTreeGenerator()
-        class_a_data = tree.get_tree_data(ProteinFamily.objects.get(name='Class A (Rhodopsin)'))
-        context['class_a_options'] = deepcopy(tree.d3_options)
-        context['class_a_options']['anchor'] = 'class_a'
-        context['class_a_options']['leaf_offset'] = 50
-        context['class_a_options']['label_free'] = []
-        # section to remove Orphan from Class A tree and apply to a different tree
-        whole_class_a = class_a_data.get_nodes_dict(None)
-        for item in whole_class_a['children']:
-            if item['name'] == 'Orphan':
-                orphan_data = OrderedDict([('name', ''), ('value', 3000), ('color', ''), ('children',[item])])
-                whole_class_a['children'].remove(item)
-                break
-        context['class_a'] = json.dumps(whole_class_a)
-        class_b1_data = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class B1 (Secretin)'))
-        context['class_b1_options'] = deepcopy(tree.d3_options)
-        context['class_b1_options']['anchor'] = 'class_b1'
-        context['class_b1_options']['branch_trunc'] = 60
-        context['class_b1_options']['label_free'] = [1,]
-        context['class_b1'] = json.dumps(class_b1_data.get_nodes_dict('crystals'))
-        class_b2_data = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class B2 (Adhesion)'))
-        context['class_b2_options'] = deepcopy(tree.d3_options)
-        context['class_b2_options']['anchor'] = 'class_b2'
-        context['class_b2_options']['label_free'] = [1,]
-        context['class_b2'] = json.dumps(class_b2_data.get_nodes_dict('crystals'))
-        class_c_data = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class C (Glutamate)'))
-        context['class_c_options'] = deepcopy(tree.d3_options)
-        context['class_c_options']['anchor'] = 'class_c'
-        context['class_c_options']['branch_trunc'] = 50
-        context['class_c_options']['label_free'] = [1,]
-        context['class_c'] = json.dumps(class_c_data.get_nodes_dict('crystals'))
-        class_f_data = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class F (Frizzled)'))
-        context['class_f_options'] = deepcopy(tree.d3_options)
-        context['class_f_options']['anchor'] = 'class_f'
-        context['class_f_options']['label_free'] = [1,]
-        #json.dump(class_f_data.get_nodes_dict('crystalized'), open('tree_test.json', 'w'), indent=4)
-        context['class_f'] = json.dumps(class_f_data.get_nodes_dict('crystals'))
-        class_t2_data = tree.get_tree_data(ProteinFamily.objects.get(name='Class T (Taste 2)'))
-        context['class_t2_options'] = deepcopy(tree.d3_options)
-        context['class_t2_options']['anchor'] = 'class_t2'
-        context['class_t2_options']['label_free'] = [1,]
-        context['class_t2'] = json.dumps(class_t2_data.get_nodes_dict('crystals'))
-        # definition of the class a orphan tree
-        context['orphan_options'] = deepcopy(tree.d3_options)
-        context['orphan_options']['anchor'] = 'orphan'
-        context['orphan_options']['label_free'] = [1,]
-        context['orphan'] = json.dumps(orphan_data)
-        whole_receptors = Protein.objects.prefetch_related("family", "family__parent__parent__parent").filter(sequence_type__slug="wt", family__slug__startswith="00")
-        whole_rec_dict = {}
-        for rec in whole_receptors:
-            rec_uniprot = rec.entry_short()
-            rec_iuphar = rec.family.name.replace("receptor", '').replace("<i>","").replace("</i>","").strip()
-            if (rec_iuphar[0].isupper()) or (rec_iuphar[0].isdigit()):
-                whole_rec_dict[rec_uniprot] = [rec_iuphar]
-            else:
-                whole_rec_dict[rec_uniprot] = [rec_iuphar.capitalize()]
-
-        context["whole_receptors"] = json.dumps(whole_rec_dict)
-        context["page"] = self.origin
-
-        save_mapping = {}
-        circles = {}
-
-        for data in circle_data:
-            # Ugly workaround for mapping non-human receptors to human
-            if data[1].split('_')[1] != 'human':
-                if data[1] not in save_mapping:
-                    tmp = Protein.objects.get(entry_name=data[1])
-                    reference = Protein.objects.filter(sequence_type__slug="wt", species__common_name="Human", family=tmp.family)
-                    if reference.count():
-                        save_mapping[data[1]] = reference.first().entry_name.split('_')[0].upper()
-
-            key = 0
-            if data[1].split('_')[1] == 'human':
-                key = data[1].split('_')[0].upper()
-            elif data[1] in save_mapping:
-                key = save_mapping[data[1]]
-            if key:
-                if key not in circles.keys():
-                    circles[key] = {}
-                    circles[key][data[0]] = 1
-                elif data[0] not in circles[key].keys():
-                    circles[key][data[0]] = 1
+        #if not structure coverage, then generate the trees
+        if self.origin != 'structure':
+            tree = PhylogeneticTreeGenerator()
+            class_a_data = tree.get_tree_data(ProteinFamily.objects.get(name='Class A (Rhodopsin)'))
+            context['class_a_options'] = deepcopy(tree.d3_options)
+            context['class_a_options']['anchor'] = 'class_a'
+            context['class_a_options']['leaf_offset'] = 50
+            context['class_a_options']['label_free'] = []
+            # section to remove Orphan from Class A tree and apply to a different tree
+            whole_class_a = class_a_data.get_nodes_dict(None)
+            for item in whole_class_a['children']:
+                if item['name'] == 'Orphan':
+                    orphan_data = OrderedDict([('name', ''), ('value', 3000), ('color', ''), ('children',[item])])
+                    whole_class_a['children'].remove(item)
+                    break
+            context['class_a'] = json.dumps(whole_class_a)
+            class_b1_data = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class B1 (Secretin)'))
+            context['class_b1_options'] = deepcopy(tree.d3_options)
+            context['class_b1_options']['anchor'] = 'class_b1'
+            context['class_b1_options']['branch_trunc'] = 60
+            context['class_b1_options']['label_free'] = [1,]
+            context['class_b1'] = json.dumps(class_b1_data.get_nodes_dict('crystals'))
+            class_b2_data = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class B2 (Adhesion)'))
+            context['class_b2_options'] = deepcopy(tree.d3_options)
+            context['class_b2_options']['anchor'] = 'class_b2'
+            context['class_b2_options']['label_free'] = [1,]
+            context['class_b2'] = json.dumps(class_b2_data.get_nodes_dict('crystals'))
+            class_c_data = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class C (Glutamate)'))
+            context['class_c_options'] = deepcopy(tree.d3_options)
+            context['class_c_options']['anchor'] = 'class_c'
+            context['class_c_options']['branch_trunc'] = 50
+            context['class_c_options']['label_free'] = [1,]
+            context['class_c'] = json.dumps(class_c_data.get_nodes_dict('crystals'))
+            class_f_data = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class F (Frizzled)'))
+            context['class_f_options'] = deepcopy(tree.d3_options)
+            context['class_f_options']['anchor'] = 'class_f'
+            context['class_f_options']['label_free'] = [1,]
+            #json.dump(class_f_data.get_nodes_dict('crystalized'), open('tree_test.json', 'w'), indent=4)
+            context['class_f'] = json.dumps(class_f_data.get_nodes_dict('crystals'))
+            class_t2_data = tree.get_tree_data(ProteinFamily.objects.get(name='Class T (Taste 2)'))
+            context['class_t2_options'] = deepcopy(tree.d3_options)
+            context['class_t2_options']['anchor'] = 'class_t2'
+            context['class_t2_options']['label_free'] = [1,]
+            context['class_t2'] = json.dumps(class_t2_data.get_nodes_dict('crystals'))
+            # definition of the class a orphan tree
+            context['orphan_options'] = deepcopy(tree.d3_options)
+            context['orphan_options']['anchor'] = 'orphan'
+            context['orphan_options']['label_free'] = [1,]
+            context['orphan'] = json.dumps(orphan_data)
+            whole_receptors = Protein.objects.prefetch_related("family", "family__parent__parent__parent").filter(sequence_type__slug="wt", family__slug__startswith="00")
+            whole_rec_dict = {}
+            for rec in whole_receptors:
+                rec_uniprot = rec.entry_short()
+                rec_iuphar = rec.family.name.replace("receptor", '').replace("<i>","").replace("</i>","").strip()
+                if (rec_iuphar[0].isupper()) or (rec_iuphar[0].isdigit()):
+                    whole_rec_dict[rec_uniprot] = [rec_iuphar]
                 else:
-                    circles[key][data[0]] += 1
+                    whole_rec_dict[rec_uniprot] = [rec_iuphar.capitalize()]
 
-        context["circles_data"] = json.dumps(circles)
+            context["whole_receptors"] = json.dumps(whole_rec_dict)
+
+            save_mapping = {}
+            circles = {}
+
+            for data in circle_data:
+                # Ugly workaround for mapping non-human receptors to human
+                if data[1].split('_')[1] != 'human':
+                    if data[1] not in save_mapping:
+                        tmp = Protein.objects.get(entry_name=data[1])
+                        reference = Protein.objects.filter(sequence_type__slug="wt", species__common_name="Human", family=tmp.family)
+                        if reference.count():
+                            save_mapping[data[1]] = reference.first().entry_name.split('_')[0].upper()
+
+                key = 0
+                if data[1].split('_')[1] == 'human':
+                    key = data[1].split('_')[0].upper()
+                elif data[1] in save_mapping:
+                    key = save_mapping[data[1]]
+                if key:
+                    if key not in circles.keys():
+                        circles[key] = {}
+                        circles[key][data[0]] = 1
+                    elif data[0] not in circles[key].keys():
+                        circles[key][data[0]] = 1
+                    else:
+                        circles[key][data[0]] += 1
+
+            context["circles_data"] = json.dumps(circles)
+        else: #JIMMY
+
+            start_time = time.time()
+            all_structs = Structure.objects.all().exclude(structure_type__slug__startswith='af-').prefetch_related('protein_conformation__protein__family')
+            circle_data = all_structs.values_list(
+                          "state_id__slug", "protein_conformation__protein__parent__entry_name").order_by(
+                          "state_id__slug", "protein_conformation__protein__parent__entry_name").distinct(
+                          "state_id__slug", "protein_conformation__protein__parent__entry_name")
+
+            result_dict = {}
+            print('check 1')
+
+            for item in circle_data:
+                key = item[1]
+                value = item[0]
+
+                # Initialize the key in result_dict if not already present
+                if key not in result_dict:
+                    result_dict[key] = {'states': set(), 'status': ''}
+
+                # Add the value to the states set to avoid duplicates
+                result_dict[key]['states'].add(value)
+
+                # Determine the status based on the current set of states
+                if len(result_dict[key]['states']) == 1:
+                    if 'active' in result_dict[key]['states']:
+                        result_dict[key]['status'] = 'Active'
+                    elif 'inactive' in result_dict[key]['states']:
+                        result_dict[key]['status'] = 'Inactive'
+                elif 'active' in result_dict[key]['states'] and 'inactive' in result_dict[key]['states']:
+                    result_dict[key]['status'] = 'Both'
+                elif 'active' in result_dict[key]['states']:
+                    result_dict[key]['status'] = 'Active'
+                elif 'inactive' in result_dict[key]['states']:
+                    result_dict[key]['status'] = 'Inactive'
+
+            # Optionally, reduce to key-status dictionary
+            result_dict = {k: v['status'] for k, v in result_dict.items()}
+
+            print('check 2')
+
+            proteins = list(Protein.objects.filter(
+                parent_id__isnull=True,
+                accession__isnull=False,
+                family_id__slug__startswith='00'
+            ).values('entry_name', 'name').order_by('entry_name'))
+
+            names_conversion_dict = {item['entry_name']: item['name'] for item in proteins}
+
+            data = list(names_conversion_dict.keys())
+            names = list(names_conversion_dict.values())
+
+            IUPHAR_to_uniprot_dict = {item['name']: item['entry_name'] for item in proteins}
+            print('check 3')
+            families = ProteinFamily.objects.all()
+            datatree = {}
+            conversion = {}
+
+            print('check 4')
+            for item in families:
+                if len(item.slug) == 3 and item.slug not in datatree.keys():
+                    datatree[item.slug] = {}
+                    conversion[item.slug] = item.name
+                if len(item.slug) == 7 and item.slug not in datatree[item.slug[:3]].keys():
+                    datatree[item.slug[:3]][item.slug[:7]] = {}
+                    conversion[item.slug] = item.name
+                if len(item.slug) == 11 and item.slug not in datatree[item.slug[:3]][item.slug[:7]].keys():
+                    datatree[item.slug[:3]][item.slug[:7]][item.slug[:11]] = []
+                    conversion[item.slug] = item.name
+                if len(item.slug) == 15 and item.slug not in datatree[item.slug[:3]][item.slug[:7]][item.slug[:11]]:
+                    datatree[item.slug[:3]][item.slug[:7]][item.slug[:11]].append(item.name)
+            print('check 5')
+            datatree2 = LandingPage.convert_keys(datatree, conversion)
+            datatree2.pop('Parent family', None)
+            datatree3 = LandingPage.filter_dict(datatree2, names)
+            data_converted = {names_conversion_dict[key]: {'Value1':value} for key, value in result_dict.items()}
+            data_full = {"NameList": datatree3, "DataPoints": data_converted, "LabelConversionDict":IUPHAR_to_uniprot_dict}
+            context['GPCRome_data'] = json.dumps(data_full["NameList"])
+            context['GPCRome_data_variables'] = json.dumps(data_full['DataPoints'])
+            context['GPCRome_Label_Conversion'] = json.dumps(data_full['LabelConversionDict'])
+            print('check 6')
+
+            complexes_count = StructureLigandInteraction.objects.filter(annotated=True).exclude(
+                    structure__structure_type__slug__startswith='af-').values(
+                        'structure_id__protein_conformation_id__protein__parent__entry_name'
+                    ).annotate(
+                        c=Count('id', distinct=True)
+                    )
+            complexes_dict = {}
+
+            complexes_list = list(complexes_count)
+            print('check 7')
+            for a in complexes_list:
+                complexes_dict[a['structure_id__protein_conformation_id__protein__parent__entry_name']] = a['c']
+
+            data_complexes = {names_conversion_dict[key]: {'Value1':value} for key, value in complexes_dict.items()}
+            complexes_full = {"NameList": datatree3, "DataPoints": data_complexes, "LabelConversionDict":IUPHAR_to_uniprot_dict}
+            context['GPCRome_data_variables_complexes'] = json.dumps(complexes_full['DataPoints'])
+            end_time = time.time()
+            print(f"Total time for view execution: {end_time - start_time:.2f} seconds")
 
         return context
 

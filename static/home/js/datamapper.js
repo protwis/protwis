@@ -3197,10 +3197,17 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling) {
                     }
 
                     return !isNaN(numericValue) ? colorScale(numericValue) : "none";
-                } else {
+                } else if (datatype === "Discrete") {
                     // Handle discrete data or default case
                     if (value === "Yes") return "green";
                     if (value === "No") return "red";
+                    return "none";  // Make the slice invisible if the value is ""
+                // Expand this section for handling specific coverage pages with colors
+                } else if (datatype === "Structure") {
+                    // Handle discrete data or default case
+                    if (value === "Active") return "green";
+                    if (value === "Inactive") return "red";
+                    if (value === "Both") return "blue";
                     return "none";  // Make the slice invisible if the value is ""
                 }
             })

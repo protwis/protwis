@@ -738,7 +738,7 @@ class MutationStatistics(TemplateView):
         names_conversion_dict = {item['entry_name']: item['name'] for item in proteins}
 
         data = list(names_conversion_dict.keys())
-        names = list(Protein.objects.filter(entry_name__in=data).values_list('name', flat=True))
+        names = list(names_conversion_dict.values())
         IUPHAR_to_uniprot_dict = {item['name']: item['entry_name'] for item in proteins}
         print('check 3')
         families = ProteinFamily.objects.all()
