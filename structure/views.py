@@ -3449,18 +3449,18 @@ def LigComplexmodDownload(request):
     # Initialize an empty dictionary to hold the scores
     scores_dict = {}
 
-    if structure_typeslugs == {'rfaa-sm'}:
+    if structure_typeslugs == {'af-rfaa-sm'}:
         # All models are 'rfaa-sm'; use StructureRFAAScores
         scores = StructureRFAAScores.objects.filter(structure__in=models)
         scores_dict = {score.structure: score for score in scores}
-    elif 'rfaa-sm' not in structure_typeslugs:
+    elif 'af-rfaa-sm' not in structure_typeslugs:
         # None are 'rfaa-sm'; use StructureAFScores
         scores = StructureAFScores.objects.filter(structure__in=models)
         scores_dict = {score.structure: score for score in scores}
     else:
         # Mixed types; fetch both types of scores
-        models_rfaa = [mod for mod in models if mod.structure_type.slug == 'rfaa-sm']
-        models_af = [mod for mod in models if mod.structure_type.slug != 'rfaa-sm']
+        models_rfaa = [mod for mod in models if mod.structure_type.slug == 'af-rfaa-sm']
+        models_af = [mod for mod in models if mod.structure_type.slug != 'af-rfaa-sm']
         scores_rfaa = StructureRFAAScores.objects.filter(structure__in=models_rfaa)
         scores_af = StructureAFScores.objects.filter(structure__in=models_af)
         # Combine both score dictionaries
@@ -3487,8 +3487,8 @@ def prepare_lig_complex_download(mod, scores_obj=None, refined=False):
 
     # Determine the structure type
     structure_type_slug = mod.structure_type.slug
-    if structure_type_slug == 'rfaa-sm':
-        # Use fields for 'rfaa-sm'
+    if structure_type_slug == 'af-rfaa-sm':
+        # Use fields for 'af-rfaa-sm'
         gprot_entry = ''
         pipeline_used = 'RFAA'
         if scores_obj:
@@ -4467,7 +4467,7 @@ class LigandComplexModels(TemplateView):
         context = super(LigandComplexModels, self).get_context_data(**kwargs)
         try:
             subquery_gene = Gene.objects.filter(proteins=OuterRef('protein_conformation__protein__pk')).values('name')[:1]
-            context['structure_model'] = Structure.objects.filter(structure_type__slug__in=['af-signprot-peptide', 'rfaa-sm']).prefetch_related(
+            context['structure_model'] = Structure.objects.filter(structure_type__slug__in=['af-signprot-peptide', 'af-rfaa-sm']).prefetch_related(
                 "protein_conformation__protein__family",
                 "protein_conformation__protein",
                 "state",
