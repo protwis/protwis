@@ -36,6 +36,10 @@ class Protein(models.Model):
     def entry_short(self):
         return self.entry_name.split("_")[0].upper()
 
+    def rfaa_short(self):
+        receptor = self.entry_name.split("_")[1].replace("_human").upper()
+        return receptor
+
     def short(self):
         return self.name.replace(" receptor","").replace("-adrenoceptor","")
 

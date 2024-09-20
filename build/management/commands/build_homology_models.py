@@ -185,7 +185,10 @@ class Command(BaseBuild):
                                                                                                                                       Q(family__slug__istartswith='004') |
                                                                                                                                       Q(family__slug__istartswith='005') |
                                                                                                                                       Q(family__slug__istartswith='006') |
-                                                                                                                                      Q(family__slug__istartswith='007')).order_by('entry_name')
+                                                                                                                                      Q(family__slug__istartswith='007') |
+                                                                                                                                      Q(family__slug__istartswith='008') |
+                                                                                                                                      Q(family__slug__istartswith='009') |
+                                                                                                                                      Q(family__slug__istartswith='010')).order_by('entry_name')
             structs = Structure.objects.filter(annotated=True).exclude(structure_type__slug__startswith='af-').order_by('pdb_code__index')
             all_receptors = list(all_receptors)+[i.protein_conformation.protein for i in structs]
         elif options['c'].upper() not in GPCR_class_codes:
@@ -1536,7 +1539,7 @@ class HomologyModeling(object):
             self.prot_conf = ProteinConformation.objects.get(protein=self.reference_protein)
             self.uniprot_id = self.reference_protein.accession
             self.revise_xtal = False
-        class_tree = {'001':'A', '002':'B1', '003':'B2', '004':'C', '005':'D1', '006':'F', '007':'T'}
+        class_tree = {'001':'A', '002':'B1', '003':'B2', '004':'C', '005':'D1', '006':'F', '009':'T'}
         self.class_name = 'Class'+class_tree[Protein.objects.get(entry_name=self.reference_entry_name).family.parent.slug[:3]]
         self.statistics.add_info('uniprot_id',self.uniprot_id)
         self.statistics.add_info('state',self.state)

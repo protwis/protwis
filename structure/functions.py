@@ -1168,32 +1168,116 @@ class ParseAFModelsCSV():
             except IndexError:
                 print('Cannot find information for complex {}'.format(complex))
 
-
 class ParseAFComplexModels():
+
+    residue_to_one_letter = {
+        'ALA': 'A', 'CYS': 'C', 'ASP': 'D', 'GLU': 'E', 'PHE': 'F',
+        'GLY': 'G', 'HIS': 'H', 'ILE': 'I', 'LYS': 'K', 'LEU': 'L',
+        'MET': 'M', 'ASN': 'N', 'PRO': 'P', 'GLN': 'Q', 'ARG': 'R',
+        'SER': 'S', 'THR': 'T', 'VAL': 'V', 'TRP': 'W', 'TYR': 'Y'
+    }
+
     def __init__(self):
         self.data_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'AlphaFold_multimer'])
         self.filedirs = os.listdir(self.data_dir)
         self.complexes = {}
-        for f in self.filedirs:
-            if '-' not in f:
-                continue
 
-            receptor, signprot = f.split('-')
+        for f in self.filedirs:
             metrics_file = os.sep.join([self.data_dir, f, f+'_metrics.csv'])
+            if not os.path.exists(metrics_file):
+                metrics_file = os.sep.join([self.data_dir, f, f+'.csv'])
+            metrics = [row for row in csv.DictReader(open(metrics_file, 'r'))][0]
+            location = os.sep.join([self.data_dir, f, f+'.pdb'])
+
+            parts = f.split('-')
+            receptor = parts[0]
+            if len(parts) == 3:  # Case with peptide
+                peptide_id = parts[1]
+                peptide = "-" + peptide_id
+                signprot = parts[2]
+                model = 'af-signprot-peptide'
+                chain_e_sequence = self.get_ligand_sequence(location, 'E')
+
+            else:  # Case without peptide
+                peptide = None
+                signprot = parts[1]
+                model = 'af-signprot'
+                chain_e_sequence = None
+
+            # Grab model date/version from pdb file
+            with open(location, 'r') as model_file:
+                line = model_file.readlines()[0]
+                date_re = re.search('HEADER[A-Z\S\D]+(\d{4}-\d{2}-\d{2})', line)
+                model_date = date_re.group(1)
+
+            # Check if model has full heterotrimer
+            if 'gbb1_human' in f:
+                signprot = signprot.split('_')[0]+'_human'
+                beta_gamma = True
+            else:
+                beta_gamma = False
+
+            self.complexes[f'{receptor}{peptide}-{signprot}'] = {
+                'receptor': receptor,
+                'peptide': peptide,
+                'signprot': signprot,
+                'beta_gamma': beta_gamma,
+                'publication_date': model_date,
+                'location': location,
+                'model': model,
+                'preferred_chain': 'A',
+                'PTM': metrics['ptm'],
+                'iPTM': metrics['iptm'],
+                'PAE_mean': metrics['pae_mean'],
+                'chain_e_sequence': chain_e_sequence
+            }
+
+    def get_ligand_sequence(self, pdb_file, chain_id):
+        sequence = ""
+        with open(pdb_file, 'r') as file:
+            for line in file:
+                if line.startswith("ATOM") and line[21] == chain_id:
+                    residue = line[17:20]
+                    res_seq = int(line[22:26])
+                    if len(sequence) < res_seq:
+                        sequence += self.residue_to_one_letter.get(residue, 'X')
+        return sequence
+
+
+class ParseRFAAModels():
+    def __init__(self):
+        self.data_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'RFAA'])
+        self.filedirs = os.listdir(self.data_dir)
+        self.complexes = {}
+        for f in self.filedirs:
+            parts = f.split('-', 1)
+            receptor = parts[0]
+            ligand_secs = parts[1].split('[')
+            ligand = ligand_secs[0]
+            inchikey = ligand_secs[1].replace(']', '')
+            model = 'af-rfaa-sm'
+
+            metrics_file = os.sep.join([self.data_dir, f, receptor + '-' + ligand +'_metrics.csv'])
             metrics = [row for row in csv.DictReader(open(metrics_file, 'r'))][0]
             location = os.sep.join([self.data_dir, f, f+'.pdb'])
             ### Grab model date/version from pdb file
             with open(location, 'r') as model_file:
                 line = model_file.readlines()[0]
                 date_re = re.search('HEADER[A-Z\S\D]+(\d{4}-\d{2}-\d{2})', line)
-                model_date = date_re.group(1)
-            ### Check if model has full heterotrimer
-            if 'gbb1_human' in f:
-                signprot = signprot.split('_')[0]+'_human'
-                beta_gamma = True
-            else:
-                beta_gamma = False
-            self.complexes[receptor+'-'+signprot] = {'receptor':receptor, 'signprot':signprot, 'beta_gamma':beta_gamma, 'publication_date':model_date, 'location':location, 'model':'af-signprot', 'preferred_chain':'A', 'PTM':metrics['ptm'], 'iPTM':metrics['iptm'], 'PAE_mean':metrics['pae_mean']}
+                try:
+                    model_date = date_re.group(1)
+                except:
+                    model_date = '2024-05-15'
+            self.complexes[f'{receptor}-{inchikey}'] = {
+                'receptor':receptor, 
+                'ligand_id':inchikey,
+                'publication_date':model_date, 
+                'location':location, 
+                'model': model, 
+                'preferred_chain':'A', 
+                'pae_7tm':metrics['pae_7tm'], 
+                'plddt_mean':metrics['plddt_sm_mean'], 
+                }
 
 
 class ParseStructureCSV():

@@ -53,7 +53,7 @@ class Command(BaseBuild):
         if pdbname in self.cached_structures:
             return self.cached_structures[pdbname]
         else:
-            if pdbname=='AF':
+            if pdbname in ['AF','AFMS']:
                 return None
             else:
                 s = Structure.objects.get(pdb_code__index=pdbname)
@@ -216,7 +216,7 @@ class Command(BaseBuild):
         else:
             templates = ''
 
-        if main_structure=='AF':
+        if main_structure in ['AF', 'AFMS']:
             stats_text = None
         else:
             stats_text = StatsText.objects.get_or_create(stats_text=''.join(templates))[0]
@@ -271,10 +271,15 @@ class Command(BaseBuild):
             s_state = ProteinState.objects.get(name=state)
             m_s = self.get_structures(main_structure)
             prot = Protein.objects.get(entry_name=gpcr_prot)
-            sm, _ = StructureModel.objects.get_or_create(protein=prot, state=s_state, main_template=m_s, pdb_data=pdb, version=build_date, stats_text=stats_text)
-            if main_structure=='AF':
+            if main_structure in ['AF','AFMS']:
+                model_type = main_structure
+            else:
+                model_type = None
+            sm, _ = StructureModel.objects.get_or_create(protein=prot, state=s_state, main_template=m_s, pdb_data=pdb, version=build_date, stats_text=stats_text, model_type=model_type)
+            if main_structure in ['AF','AFMS']:
                 p = PDB.PDBParser().get_structure('model', os.sep.join([path, modelname, modelname+'.pdb']))[0]
                 resis = []
+                deleted = False
                 for chain in p:
                     for res in chain:
                         plddt = res['C'].get_bfactor()

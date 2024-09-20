@@ -35,7 +35,7 @@ from common.views import AbsReferenceSelectionTable, getReferenceTable, getLigan
 from common.models import ReleaseNotes, WebResource, Publication
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from common.selection import Selection, SelectionItem
-from ligand.models import Ligand, LigandVendorLink, BiasedPathways, AssayExperiment, BiasedData, Endogenous_GTP, LigandID, LigandMol, LigandFingerprint
+from ligand.models import Ligand, LigandVendorLink, BiasedPathways, AssayExperiment, BiasedData, Endogenous_GTP, LigandID, LigandPeptideStructure, LigandMol, LigandFingerprint
 from ligand.functions import OnTheFly, AddPathwayData
 from protein.models import Protein, ProteinFamily
 from interaction.models import StructureLigandInteraction
@@ -2159,10 +2159,10 @@ class LigandStatistics(TemplateView):
 
         if self.page == 'ligands':
             classes = ProteinFamily.objects.filter(
-                slug__in=['001', '002', '003', '004', '005', '006', '007'])  # ugly but fast
+                slug__in=['001', '002', '003', '004', '005', '006', '009'])  # ugly but fast
         else:
             classes = ProteinFamily.objects.filter(
-                slug__in=['001', '002', '003', '004', '006', '007'])  # ugly but fast
+                slug__in=['001', '002', '003', '004', '006', '009'])  # ugly but fast
 
         ligands = []
 
@@ -2185,7 +2185,7 @@ class LigandStatistics(TemplateView):
         lig_count_total = sum([x['num_ligands'] for x in ligands])
 
         prot_count_total = Protein.objects.filter(
-            family__slug__startswith='00').all().distinct('family').count()
+            family__slug__startswith='0').all().distinct('family').count()
 
         target_count_total = sum([x['target_count'] for x in ligands])
 
@@ -2490,7 +2490,7 @@ class LigandStatistics(TemplateView):
                 "Other GPCR orphans": "Grey",
                 "Class T (Taste 2)": 'MediumPurple',
                 }
-            heatmap_receptors = Protein.objects.filter(family__slug__startswith='00', species_id=1).exclude(
+            heatmap_receptors = Protein.objects.filter(family__slug__startswith='0', species_id=1).exclude(
                                               family__slug__startswith='005').prefetch_related(
                                               "family", "family__parent", "family__parent__parent", "family__parent__parent__parent")
             MasterDict = {}
@@ -3212,7 +3212,15 @@ class PhysiologicalLigands(TemplateView):
 
         table = pd.DataFrame(columns=browser_columns)
         #receptor_id
-        endogenous_data = Endogenous_GTP.objects.all().values_list(
+
+        pdb_subquery = LigandPeptideStructure.objects.filter(
+            ligand=OuterRef('ligand'),
+            structure__protein_conformation__protein=OuterRef('receptor')
+        ).values('structure__pdb_code__index')[:1]
+
+        endogenous_data = Endogenous_GTP.objects.annotate(
+            pdb_code=Subquery(pdb_subquery)
+        ).values_list(
                             "receptor__family__parent__parent__parent__name", #0 Class
                             "receptor__family__parent__name",                 #1 Receptor Family
                             "receptor__entry_name",                           #2 UniProt
@@ -3234,7 +3242,8 @@ class PhysiologicalLigands(TemplateView):
                             "publication__reference",                         #18 Pub Reference
                             "publication__web_link__index",                   #19 DOI/PMID
                             "receptor",                                       #20 Receptor ID
-                            "receptor__accession").distinct()                 #21 Accession (UniProt link)                       
+                            "receptor__accession",                            #21 Accession (UniProt link)
+                            'pdb_code').distinct()          #22 pdb_code (UniProt link)                       
 
 
         gtpidlinks = dict(list(LigandID.objects.filter(web_resource__slug='gtoplig').values_list(
@@ -3302,6 +3311,7 @@ class PhysiologicalLigands(TemplateView):
                 data_subset['ID'] = data[6]                                                 #19
                 data_subset['Entry Name'] = data[2]                                         #20
                 data_subset['Accession'] = data[21]                                         #21
+                data_subset["pdb_code"] = data[22]
                 table = table.append(data_subset, ignore_index=True)
 
         table.fillna('', inplace=True)
