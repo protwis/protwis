@@ -53,12 +53,12 @@ form {
     margin-bottom: 10px;
 }
 
-input[type="file"], button {
+input[type="file"] {
     width: 100%;
     margin-bottom: 20px;
 }
 
-button {
+.submit-button {
     padding: 10px; /* Increase padding to make the button more square */
     width: 80%; /* Maintain full width */
     height: fit-content;
@@ -71,7 +71,7 @@ button {
     transition: background-color 0.3s ease;
 }
 
-button:hover {
+.submit-button:hover {
     background-color: #0056b3;
 }
 

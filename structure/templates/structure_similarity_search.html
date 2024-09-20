@@ -32,7 +32,7 @@
             <label for="input_pdb">Upload a pdb file (query):
                 <input type="file" id="input_pdb" name="input_file" required>
             </label>
-            <button type="submit">Submit</button>
+            <button class="submit-button" type="submit">Submit</button>
             <!-- <div>
                 <input type="hidden" name="tm7_h8" value="False">
                 <input type="checkbox" id="tm7_h8" name="tm7_h8" value="True">
@@ -133,24 +133,18 @@
                 <td>{{ row.lddt }}</td>
                 <td>{{ row.E_value }}</td>
 
-                
-                <td style="text-align: center;">{{ row.pdb_id }} </td>
-                 <!-- <td></td> -->
-
-
-
+                {% if row.pdb_id == '-' %}
+                <td>-</td>
+                {% else %}
+                <td style="text-align: center;"><a href="/structure/{{ row.pdb_id }}" target="_blank">{{ row.pdb_id }}</a></td>
+                {% endif %}
                 <td>{{ row.type }}</td>
                 <td>{{ row.state | title}}</td>
-                <!-- <td>
-                    <a href="http://www.uniprot.org/uniprot/{{ row.accession }}" target="_blank">{{ row.gene }}</a>
-                </td> -->
-                <td>{{ row.gene }} </td>
+                <td>{{ row.gene | upper }} </td>
                 <td>
                     <a href="/protein/{{ row.entry_name }}" target="_blank">{{ row.gtopdb|safe }}</a>
                 </td>
-                <!-- <td>{{ row.chain }}</td>
-                <td>{{ row.input_chain }}</td> -->
-                <td>{{ row.clas }}</td>
+                <td>{{ row.class }}</td>
                 <td>{{ row.rec_fam|safe }}</td>
                 <td>{{ row.species }}</td>
             </tr>

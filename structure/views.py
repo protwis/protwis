@@ -4295,7 +4295,7 @@ class StructureBlastView(View):
         Get protein origin information based on the origin acronym.
         """
         if origin_acr == 'raw':
-            return 'Raw Experimental structure', protein, ''
+            return 'Raw experimental structure', protein, ''
         
         elif origin_acr == 'af':
             protein_data = protein.split('_human_')
@@ -4420,7 +4420,7 @@ class StructureBlastView(View):
                     'protein': protein, 'chain': entry["chain"].strip(), 'type': entry["origin"].replace('Experimental', 'exp').replace('experimental', 'exp').strip(), 
                     'TM_score': entry["TM_score"], 'lddt': entry['lddt'], 'E_value': entry["E_value"], 'link': entry["linking"], 
                     'state': entry["state"] or structure_values[1], 
-                    'clas': structure_values[2].split(' ')[1].strip(),
+                    'class': structure_values[2].split(' ')[1].strip(),
                     'rec_fam': structure_values[3].replace('receptors', '').strip(),
                     'species': structure_values[4].strip(), 
                     'uniprot': structure_values[6].split('_')[0].upper().strip(),
@@ -4433,7 +4433,7 @@ class StructureBlastView(View):
             except Exception as e:
                 # print('An error occurred when enhancing data')
                 # print(e)
-                return
+                pass
 
         return data
 
