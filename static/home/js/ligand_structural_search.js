@@ -1,9 +1,25 @@
 function toggleButtonClass(button_id) {
   $('#'+button_id).toggleClass('active')
 }
+$("html").css('pointer-events','none');
+$("html").css('-webkit-user-select','none'); /* Safari */
+$("html").css('-webkit-user-select','none'); /* IE 10 and IE 11 */
+$("html").css('user-select','none'); /* IE 10 and IE 11 */
+
+function queryByLigandUnlockClick() {
+  $("html").css('pointer-events','');
+  $("html").css('-webkit-user-select',''); /* Safari */
+  $("html").css('-webkit-user-select',''); /* IE 10 and IE 11 */
+  $("html").css('user-select',''); /* IE 10 and IE 11 */
+}
+
 $(document).ready(function() {
+  var error = false;
   $(".error-msg-p").each(function (i,e) {
+    
     if ($(e).text() != '') {
+      showAlert("No results obtained. Scroll down to the corresponding section for details.","info");
+      error = true;
       var hash = '#';
       switch ($(e).attr('id')) {
         case 'ligand_bulk_search_by_name_error_msg':
@@ -19,7 +35,7 @@ $(document).ready(function() {
           hash = "#bulk-search";
           break;
         case 'ligand_structural_search_error_msg':
-          hash = "#sim-sub-search";
+          hash = "#simsub-search";
           break;      
         default:
           break;
@@ -27,9 +43,19 @@ $(document).ready(function() {
 
       setTimeout(() => {
         location.hash = hash;
-      }, 100);
-    }
-  })
+        $(document).ready(function() {
+
+          queryByLigandUnlockClick();
+        });
+      }, 500);
+
+    } 
+
+  });
+
+  if (!error) {
+    queryByLigandUnlockClick();
+  }
 
   $("#selection-autocomplete-ligand-by-name")
   .on('change',function (e) {$("#ligand_bulk_search_by_name_error_msg").text('');});

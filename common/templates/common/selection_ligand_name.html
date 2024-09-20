@@ -33,7 +33,7 @@
       {% if search %}
           <div class="col-md-12 panel panel-primary">
               <div class="panel-body">
-                  <a name="by-name"></a>
+                  <a id="by-name" name="by-name"></a>
                   <h4>Ligand names</h4>
 
                       <div class="panel-body">
@@ -96,7 +96,7 @@
       {% if search %}
       <div class="col-md-12 panel panel-primary">
         <div class="panel-body">
-          <a name="by-id"></a>
+          <a id="by-id" name="by-id"></a>
           <h4>Database identifiers</h4>
 
           <br>
@@ -136,7 +136,6 @@
       {% if search %}
       <div class="col-md-12 panel panel-primary">
         <div class="panel-body">
-          <a name="bulk-search"></a>
           <h4>Chemical structures</h4>
           <br>
           <div class="form-group">
@@ -182,7 +181,8 @@
           <div style="{% if selection_ligand_chemical_search_type_parameters.search_type_selection != 'similarity'%}{%if selection_ligand_chemical_search_type_parameters.search_type_selection != 'substructure' %}display:none;{% endif %}{% endif %}" class="form-group" id="ligand_structural_search_smiles_div">
             <textarea  id="ligand_structural_search_smiles" class="form-control" placeholder="Type or paste your {% if ligand_structural_search_parameters.search_type == 'similarity' or ligand_structural_search_parameters.input_type == 'smiles' %}SMILES strings{% endif %}{% if ligand_structural_search_parameters.search_type != 'similarity' and ligand_structural_search_parameters.input_type == 'smarts' %}SMARTS strings{% endif %} here.">{{ ligand_structural_search_parameters.smiles }}</textarea>
           </div>
-
+          <a id="simsub-search" name="simsub-search"></a>
+          <a id="bulk-search" name="bulk-search"></a>
           <div class="form-group">
             <p id="ligand_bulk_search_error_msg" class="error-msg-p" style="{% if ligand_bulk_search_error_msg != 'No results found.'%}color: red; {% endif %}">{{ ligand_bulk_search_error_msg }}</p>
           </div>
