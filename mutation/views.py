@@ -729,10 +729,28 @@ class MutationStatistics(TemplateView):
             mut_count_receptor_dict[a['protein__entry_name']] = a['c']
         print('check 2')
 
-        proteins = list(Protein.objects.filter(
-            parent_id__isnull=True,
-            accession__isnull=False,
-            family_id__slug__startswith='00'
+        #aggregate data for receptor of other organisms into human if available
+        aggregated = {}
+        for key, value in mut_count_receptor_dict.items():
+            # Split the key into protein name and organism
+            base_name, organism = key.rsplit('_', 1)
+            # If it's a human version, initialize or add to it in the result dictionary
+            if organism == 'human':
+                if key not in aggregated:
+                    aggregated[key] = value
+                else:
+                    aggregated[key] += value
+            else:
+                # Check if a human version exists for this protein
+                human_key = f"{base_name}_human"
+                if human_key in aggregated:
+                    # Add the current organism's value to the human version
+                    aggregated[human_key] += value
+                else:
+                    # If no human version exists, add this non-human version as is
+                    aggregated[key] = value
+
+        proteins = list(Protein.objects.filter(entry_name__in=aggregated.keys()
         ).values('entry_name', 'name').order_by('entry_name'))
 
         names_conversion_dict = {item['entry_name']: item['name'] for item in proteins}

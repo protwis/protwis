@@ -1721,10 +1721,7 @@ class StructureStatistics(TemplateView):
 
             print('check 2')
 
-            proteins = list(Protein.objects.filter(
-                parent_id__isnull=True,
-                accession__isnull=False,
-                family_id__slug__startswith='00'
+            proteins = list(Protein.objects.filter(entry_name__in=result_dict.keys()
             ).values('entry_name', 'name').order_by('entry_name'))
 
             names_conversion_dict = {item['entry_name']: item['name'] for item in proteins}
@@ -1775,11 +1772,18 @@ class StructureStatistics(TemplateView):
             for a in complexes_list:
                 complexes_dict[a['structure_id__protein_conformation_id__protein__parent__entry_name']] = a['c']
 
-            data_complexes = {names_conversion_dict[key]: {'Value1':value} for key, value in complexes_dict.items()}
-            complexes_full = {"NameList": datatree3, "DataPoints": data_complexes, "LabelConversionDict":IUPHAR_to_uniprot_dict}
+            complexes_proteins = list(Protein.objects.filter(entry_name__in=complexes_dict.keys()
+            ).values('entry_name', 'name').order_by('entry_name'))
+
+            names_complexes_dict = {item['entry_name']: item['name'] for item in complexes_proteins}
+
+            names_complexes = list(names_complexes_dict.values())
+
+            IUPHAR_to_uniprot_complexes = {item['name']: item['entry_name'] for item in complexes_proteins}
+            datatree4 = LandingPage.filter_dict(datatree2, names_complexes)
+            data_complexes = {names_complexes_dict[key]: {'Value1':value} for key, value in complexes_dict.items()}
+            complexes_full = {"NameList": datatree4, "DataPoints": data_complexes, "LabelConversionDict":IUPHAR_to_uniprot_complexes}
             context['GPCRome_data_variables_complexes'] = json.dumps(complexes_full['DataPoints'])
-            end_time = time.time()
-            print(f"Total time for view execution: {end_time - start_time:.2f} seconds")
 
         return context
 
