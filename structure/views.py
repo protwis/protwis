@@ -3517,10 +3517,9 @@ def prepare_lig_complex_download(mod, scores_obj=None, refined=False):
     # Get ligand name(s)
     ligand_names = [lps.ligand.name for lps in getattr(mod, 'ligandpeptide_structures', [])]
     if ligand_names:
-        ligand_name_str = '_'.join(ligand_names)
+        ligand_name_str = '_'.join(ligand_names).replace('<sup>','').replace('</sup>','').replace('<sub>','').replace('</sub>','').replace('<i>','').replace('</i>','').replace('<b>','').replace('</b>','')
     else:
         ligand_name_str = 'unknown_ligand'
-
 
     scores_io = StringIO(scores_text)
     classname = class_dict[mod.protein_conformation.protein.family.slug[:3]]
@@ -3532,7 +3531,7 @@ def prepare_lig_complex_download(mod, scores_obj=None, refined=False):
     mod_name = 'Class{}_{}-{}_{}_{}_GPCRdb.pdb'.format(
         classname, gpcr_entry, ligand_name_str, gprot_entry, pipeline_used, date)
     scores_name = 'Class{}_{}-{}_{}_{}_GPCRdb.scores.csv'.format(
-        classname, ligand_name_str, ligand_name_str, gpcr_entry, gprot_entry, pipeline_used, date)
+        classname, gpcr_entry, ligand_name_str, gprot_entry, pipeline_used, date)
 
     return mod_name, scores_name, pdb_io, scores_io
 
