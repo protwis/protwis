@@ -6,6 +6,7 @@ from django.http import HttpResponse
 from django.conf import settings
 from django.core.cache import cache
 from django.views.decorators.cache import cache_page
+from django.views.generic import TemplateView, DetailView, View
 from mutation.functions import *
 from mutation.models import *
 
@@ -28,16 +29,16 @@ from residue.models import Residue,ResidueNumberingScheme, ResidueGenericNumberE
 from residue.views import ResidueTablesDisplay
 from protein.models import Protein, ProteinSegment, ProteinFamily, ProteinConformation, ProteinCouplings
 from structure.models import Structure
-
+from mapper.views import LandingPage
 from seqsign.sequence_signature import SequenceSignature
 
 from datetime import datetime
 from collections import OrderedDict
+import time
 import json
 import yaml
 import os
 import copy
-#env/bin/python3 -m pip install xlrd
 import csv
 import hashlib
 from io import BytesIO
@@ -48,7 +49,7 @@ import xlsxwriter #sudo pip3 install XlsxWriter
 import operator
 import numpy as np
 
-Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
+# Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 
 class TargetSelection(AbsTargetSelectionTable):
     step = 1
@@ -71,25 +72,6 @@ class TargetSelection(AbsTargetSelectionTable):
     }
 
     default_species = False
-
-# class TargetSelection(AbsTargetSelection):
-#     step = 1
-#     number_of_steps = 2
-#     docs = 'mutations.html#mutation-browser'
-#     selection_boxes = OrderedDict([
-#         ('reference', False),
-#         ('targets', True),
-#         ('segments', False),
-#     ])
-#     buttons = {
-#         'continue': {
-#             'label': 'Continue to next step',
-#             'url': '/mutations/segmentselection',
-#             'color': 'success',
-#         },
-#     }
-#     default_species = False
-
 
 class SegmentSelection(AbsSegmentSelection):
     step = 2
@@ -721,244 +703,112 @@ def showcalculationPDB(request):
         return render(request, 'mutation/designpdb.html', context)
 
 
-@cache_page(60 * 60 * 24 *7)
-def coverage(request):
+class MutationStatistics(TemplateView):
+    """
+    So not ready that EA wanted to publish it.
+    """
+    template_name = 'mutation_statistics.html'
 
-    context = {}
+    def get_context_data (self, **kwargs):
+        start_time = time.time()
+        context = super().get_context_data(**kwargs)
 
-    #gpcr_class = '004' #class a
+        mut_count_receptor_dict = {}
 
-    families = ProteinFamily.objects.all()
-    lookup = {}
-    for f in families:
-        lookup[f.slug] = f.name.replace("receptors","")
+        # Use iterator to process the queryset in chunks
+        experimental_mutations_iterator = MutationExperiment.objects.all().values(
+            'protein__entry_name'
+        ).annotate(
+            c=Count('mutation_id', distinct=True)
+        ).iterator(chunk_size=2000)
 
-    class_proteins = Protein.objects.filter(family__slug__startswith="0", source__name='SWISSPROT').prefetch_related('family').order_by('family__slug')
-    print("time 1")
+        # Collect results into a list
+        experimental_mutations = list(experimental_mutations_iterator)
+        print('check 1')
+        all_proteins = Protein.objects.filter(species_id=1, parent_id__isnull=True, accession__isnull=False, family_id__slug__startswith='00')
 
-    coverage = OrderedDict()
+        for prot in all_proteins:
+            mut_count_receptor_dict[prot.entry_name] = 0
 
-    temp = OrderedDict([
-                        ('name',''),
-                        ('interactions', 0),
-                        ('receptor_i', 0) ,
-                        ('mutations' , 0),
-                        ('receptor_m', 0),
-                        ('mutations_an' , 0),
-                        ('receptor_m_an', 0),
-                        ('receptor_t',0),
-                        ('children', OrderedDict()) ,
-                        ('fraction_i',0),
-                        ('fraction_m',0),
-                        ('fraction_m_an',0)
-                        ])
+        for a in experimental_mutations:
+            mut_count_receptor_dict[a['protein__entry_name']] = a['c']
+        print('check 2')
 
-    for p in class_proteins:
-        #print(p,p.family.slug)
-        fid = p.family.slug.split("_")
-        if fid[0] not in coverage:
-            coverage[fid[0]] = copy.deepcopy(temp)
-            coverage[fid[0]]['name'] = lookup[fid[0]]
-        if fid[1] not in coverage[fid[0]]['children']:
-            coverage[fid[0]]['children'][fid[1]] = copy.deepcopy(temp)
-            coverage[fid[0]]['children'][fid[1]]['name'] = lookup[fid[0]+"_"+fid[1]]
-        if fid[2] not in coverage[fid[0]]['children'][fid[1]]['children']:
-            coverage[fid[0]]['children'][fid[1]]['children'][fid[2]] = copy.deepcopy(temp)
-            coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['name'] = lookup[fid[0]+"_"+fid[1]+"_"+fid[2]][:28]
-        if fid[3] not in coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children']:
-            coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]] = copy.deepcopy(temp)
-            coverage[fid[0]]['receptor_t'] += 1
-            coverage[fid[0]]['children'][fid[1]]['receptor_t'] += 1
-            coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['receptor_t'] += 1
-            coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['name'] = p.entry_name.split("_")[0] #[:10]
-            coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['receptor_t'] = 1
+        #aggregate data for receptor of other organisms into human if available
+        aggregated = {}
 
-    coverage3 = copy.deepcopy(coverage)
-    print("time 2")
-
-
-    if 1==1:
-        class_interactions = ResidueFragmentInteraction.objects.filter(structure_ligand_pair__annotated=True).exclude(structure_ligand_pair__structure__structure_type__slug__startswith='af-').prefetch_related(
-            'rotamer__residue__display_generic_number','interaction_type',
-            'structure_ligand_pair__structure__protein_conformation__protein__parent__family',
-            'structure_ligand_pair__ligand',
-            )
-
-        class_mutations = MutationExperiment.objects.all().prefetch_related('protein__family','protein__parent__family','exp_func','residue__display_generic_number','mutation','refs__web_link', 'exp_qual','ligand').order_by('foldchange','exp_qual')
-
-        generic = {}
-
-        score_copy = {'score': {'a':0,'i':0,'i_weight':0,'m':0,'m_weight':0,'s':0,'s_weight':0} , 'interaction' : {},'mutation': {}}
-
-        dump_interactions = []
-        for i in class_interactions:
-            fid = i.structure_ligand_pair.structure.protein_conformation.protein.parent.family.slug.split("_")
-            interaction_type = i.interaction_type.slug
-            interaction_type_class = i.interaction_type.type
-            if i.rotamer.residue.display_generic_number:
-                dgn = i.rotamer.residue.display_generic_number.label
+        for key, value in mut_count_receptor_dict.items():
+            # Split the key into protein name and organism
+            base_name, organism = key.rsplit('_', 1)
+            # If it's a human version, initialize or add to it in the result dictionary
+            if organism == 'human':
+                if key not in aggregated:
+                    aggregated[key] = value
+                else:
+                    aggregated[key] += value
             else:
-                dgn = 'N/A'
-            #dump_interactions.append([dgn,i.rotamer.residue.sequence_number, i.rotamer.residue.amino_acid,i.structure_ligand_pair.structure.pdb_code.index,interaction_type,interaction_type_class,i.interaction_type.name,i.structure_ligand_pair.structure.protein_conformation.protein.parent.entry_name])
-            if interaction_type=='polar_backbone':
-                continue
-            if interaction_type=='acc':
-                continue
-            coverage[fid[0]]['interactions'] += 1
-            coverage[fid[0]]['children'][fid[1]]['interactions'] += 1
-            coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['interactions'] += 1
-            coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['interactions'] += 1
+                # Check if a human version exists for this protein
+                human_key = f"{base_name}_human"
+                if human_key in mut_count_receptor_dict.keys():
+                    # Add the current organism's value to the human version
+                    aggregated[human_key] += value
+                # else:
+                #     # If no human version exists, add this non-human version as is
+                #     aggregated[key] = value
 
-            if coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['interactions']==1: #if first time receptor gets a point
-                coverage[fid[0]]['receptor_i'] += 1
-                coverage[fid[0]]['children'][fid[1]]['receptor_i'] += 1
-                coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['receptor_i'] += 1
-                coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['receptor_i'] = 1
+        proteins = list(Protein.objects.filter(entry_name__in=aggregated.keys()
+        ).values('entry_name', 'name').order_by('entry_name'))
 
-                coverage[fid[0]]['fraction_i'] = coverage[fid[0]]['receptor_i']/coverage[fid[0]]['receptor_t']
-                coverage[fid[0]]['children'][fid[1]]['fraction_i'] = coverage[fid[0]]['children'][fid[1]]['receptor_i']/coverage[fid[0]]['children'][fid[1]]['receptor_t']
-                coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['fraction_i'] = coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['receptor_i']/coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['receptor_t']
+        names_conversion_dict = {item['entry_name']: item['name'] for item in proteins}
 
-        # FOR ALEX
-        # print(dump_interactions)
-        # with open('interactions_dump.csv', 'w', newline='') as myfile:
-        #     wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
-        #     wr.writerows(dump_interactions)
-        total_r = 0
-        total_r_un = 0 #unannotated
-        total_m = 0 #annotated
-        total_m_un = 0 #unannotated
-        for m in class_mutations:
-            # break
-            fid = m.protein.family.slug.split("_")
-            total_m_un += 1
-            coverage[fid[0]]['mutations'] += 1
-            coverage[fid[0]]['children'][fid[1]]['mutations'] += 1
-            coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['mutations'] += 1
-            coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['mutations'] += 1
+        data = list(names_conversion_dict.keys())
+        names = list(names_conversion_dict.values())
+        IUPHAR_to_uniprot_dict = {item['name']: item['entry_name'] for item in proteins}
+        print('check 3')
+        families = ProteinFamily.objects.all()
+        datatree = {}
+        conversion = {}
+        human_mut = {}
 
-            if coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['mutations']==1: #if first time receptor gets a point
-                total_r_un += 1
-                coverage[fid[0]]['receptor_m'] += 1
-                coverage[fid[0]]['children'][fid[1]]['receptor_m'] += 1
-                coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['receptor_m'] += 1
+        # Iterate over the dictionary
+        for key, value in aggregated.items():
+            protein_name = key.split('_')[0]
+            human_key = f'{protein_name}_human'
+            # target_key = human_key if human_key in mut_count_receptor_dict else key
+            if human_key not in human_mut:
+                human_mut[human_key] = 0
 
-                coverage[fid[0]]['fraction_m'] = coverage[fid[0]]['receptor_m']/coverage[fid[0]]['receptor_t']
-                coverage[fid[0]]['children'][fid[1]]['fraction_m'] = coverage[fid[0]]['children'][fid[1]]['receptor_m']/coverage[fid[0]]['children'][fid[1]]['receptor_t']
-                coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['fraction_m'] = coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['receptor_m']/coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['receptor_t']
+            human_mut[human_key] += value
 
-            if m.exp_func is not None or m.foldchange!=0 or m.exp_qual is not None or m.ligand is not None: #if exp with data
-                total_m += 1
-                coverage[fid[0]]['mutations_an'] += 1
-                coverage[fid[0]]['children'][fid[1]]['mutations_an'] += 1
-                coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['mutations_an'] += 1
-                coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['mutations_an'] += 1
+        print('check 4')
+        for item in families:
+            if len(item.slug) == 3 and item.slug not in datatree.keys():
+                datatree[item.slug] = {}
+                conversion[item.slug] = item.name
+            if len(item.slug) == 7 and item.slug not in datatree[item.slug[:3]].keys():
+                datatree[item.slug[:3]][item.slug[:7]] = {}
+                conversion[item.slug] = item.name
+            if len(item.slug) == 11 and item.slug not in datatree[item.slug[:3]][item.slug[:7]].keys():
+                datatree[item.slug[:3]][item.slug[:7]][item.slug[:11]] = []
+                conversion[item.slug] = item.name
+            if len(item.slug) == 15 and item.slug not in datatree[item.slug[:3]][item.slug[:7]][item.slug[:11]]:
+                datatree[item.slug[:3]][item.slug[:7]][item.slug[:11]].append(item.name)
 
-                if coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['mutations_an']==1: #if first time receptor gets a point
-                    total_r += 1
-                    coverage[fid[0]]['receptor_m_an'] += 1
-                    coverage[fid[0]]['children'][fid[1]]['receptor_m_an'] += 1
-                    coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['receptor_m_an'] += 1
-                    coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['receptor_m_an'] += 1
+        print('check 5')
+        datatree2 = LandingPage.convert_keys(datatree, conversion)
+        datatree2.pop('Parent family', None)
+        datatree3 = LandingPage.filter_dict(datatree2, names)
+        data_converted = {names_conversion_dict[key]: {'Value1':value} for key, value in human_mut.items()}
+        Data_full = {"NameList": datatree3, "DataPoints": data_converted, "LabelConversionDict":IUPHAR_to_uniprot_dict}
+        context['GPCRome_data'] = json.dumps(Data_full["NameList"])
+        context['GPCRome_data_variables'] = json.dumps(Data_full['DataPoints'])
+        context['GPCRome_Label_Conversion'] = json.dumps(Data_full['LabelConversionDict'])
+        print('check 6')
+        # End time
+        end_time = time.time()
+        print(f"Total time for view execution: {end_time - start_time:.2f} seconds")
 
-                    coverage[fid[0]]['fraction_m_an'] = coverage[fid[0]]['receptor_m_an']/coverage[fid[0]]['receptor_t']
-                    coverage[fid[0]]['children'][fid[1]]['fraction_m_an'] = coverage[fid[0]]['children'][fid[1]]['receptor_m_an']/coverage[fid[0]]['children'][fid[1]]['receptor_t']
-                    coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['fraction_m_an'] = coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['receptor_m_an']/coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['receptor_t']
-
-        print("Total R",total_r,"Total M",total_m," <-- annotated || unannotated -->","Total R",total_r_un,"Total M",total_m_un)
-        context['totals'] = {'total_r':total_r,'total_r_un':total_r_un, 'total_m':total_m, 'total_m_un':total_m_un}
-        generic = OrderedDict(sorted(generic.items(), key=lambda x: x[1]['score']['s_weight'], reverse=True))
-
-    CSS_COLOR_NAMES = ["AliceBlue","AntiqueWhite","Aqua","Aquamarine","Azure","Beige","Bisque","Black","BlanchedAlmond","Blue","BlueViolet","Brown","BurlyWood","CadetBlue","Chartreuse","Chocolate","Coral","CornflowerBlue","Cornsilk","Crimson","Cyan","DarkBlue","DarkCyan","DarkGoldenRod","DarkGray","DarkGrey","DarkGreen","DarkKhaki","DarkMagenta","DarkOliveGreen","Darkorange","DarkOrchid","DarkRed","DarkSalmon","DarkSeaGreen","DarkSlateBlue","DarkSlateGray","DarkSlateGrey","DarkTurquoise","DarkViolet","DeepPink","DeepSkyBlue","DimGray","DimGrey","DodgerBlue","FireBrick","FloralWhite","ForestGreen","Fuchsia","Gainsboro","GhostWhite","Gold","GoldenRod","Gray","Grey","Green","GreenYellow","HoneyDew","HotPink","IndianRed","Indigo","Ivory","Khaki","Lavender","LavenderBlush","LawnGreen","LemonChiffon","LightBlue","LightCoral","LightCyan","LightGoldenRodYellow","LightGray","LightGrey","LightGreen","LightPink","LightSalmon","LightSeaGreen","LightSkyBlue","LightSlateGray","LightSlateGrey","LightSteelBlue","LightYellow","Lime","LimeGreen","Linen","Magenta","Maroon","MediumAquaMarine","MediumBlue","MediumOrchid","MediumPurple","MediumSeaGreen","MediumSlateBlue","MediumSpringGreen","MediumTurquoise","MediumVioletRed","MidnightBlue","MintCream","MistyRose","Moccasin","NavajoWhite","Navy","OldLace","Olive","OliveDrab","Orange","OrangeRed","Orchid","PaleGoldenRod","PaleGreen","PaleTurquoise","PaleVioletRed","PapayaWhip","PeachPuff","Peru","Pink","Plum","PowderBlue","Purple","Red","RosyBrown","RoyalBlue","SaddleBrown","Salmon","SandyBrown","SeaGreen","SeaShell","Sienna","Silver","SkyBlue","SlateBlue","SlateGray","SlateGrey","Snow","SpringGreen","SteelBlue","Tan","Teal","Thistle","Tomato","Turquoise","Violet","Wheat","White","WhiteSmoke","Yellow","YellowGreen"];
-
-#LightBlue
-    CSS_COLOR_NAMES = ["SteelBlue","SlateBlue","LightCoral","Orange","LightGreen","LightGray","PeachPuff","PaleGoldenRod"]
-
-    print("time 3")
-    coverage2 = copy.deepcopy(coverage)
-
-    print("time 4")
-    tree = OrderedDict({'name':'GPCRs','children':[]})
-    i = 0
-    n = 0
-    for c,c_v in coverage.items():
-        c_v['name'] = c_v['name'].split("(")[0]
-        if c_v['name'].strip() in ['Other GPCRs','Class T (Taste 2)','Class B2']:
-            # i += 1
-            continue
-            # pass
-        children = []
-        for lt,lt_v in c_v['children'].items():
-            if lt_v['name'].strip() == 'Orphan' and c_v['name'].strip()=="Class A":
-                # $pass
-                continue
-            children_rf = []
-            for rf,rf_v in lt_v['children'].items():
-                rf_v['name'] = rf_v['name'].split("<")[0]
-                if rf_v['name'].strip() == 'Class T (Taste 2)':
-                    continue
-                children_r = []
-                for r,r_v in rf_v['children'].items():
-                    r_v['color'] = CSS_COLOR_NAMES[i]
-                    r_v['sort'] = n
-                    children_r.append(r_v)
-                    n += 1
-                rf_v['children'] = children_r
-                rf_v['sort'] = n
-                rf_v['color'] = CSS_COLOR_NAMES[i]
-                children_rf.append(rf_v)
-            lt_v['children'] = children_rf
-            lt_v['sort'] = n
-            lt_v['color'] = CSS_COLOR_NAMES[i]
-            children.append(lt_v)
-        c_v['children'] = children
-        c_v['sort'] = n
-        c_v['color'] = CSS_COLOR_NAMES[i]
-        tree['children'].append(c_v)
-        #tree = c_v
-        #break
-        i += 1
-
-    print("time 5")
-    tree2 = OrderedDict({'name':'GPCRs','children':[]})
-    i = 0
-    n = 0
-    for c,c_v in coverage2.items():
-        children = []
-        for lt,lt_v in c_v['children'].items():
-            # if lt_v['name'].strip() == 'Orphan':
-            #     continue
-            children_rf = []
-            for rf,rf_v in lt_v['children'].items():
-                children_r = []
-                for r,r_v in rf_v['children'].items():
-                    r_v['color'] = CSS_COLOR_NAMES[i]
-                    r_v['sort'] = n
-                    children_r.append(r_v)
-                    n += 1
-                rf_v['children'] = [{'name':'', 'color':CSS_COLOR_NAMES[i], 'children': children_r }]
-                rf_v['sort'] = n
-                rf_v['color'] = CSS_COLOR_NAMES[i]
-                children_rf.append(rf_v)
-            lt_v['children'] = [{'name':'', 'color':CSS_COLOR_NAMES[i], 'children': children_rf }]
-            lt_v['sort'] = n
-            lt_v['color'] = CSS_COLOR_NAMES[i]
-            children.append(lt_v)
-        c_v['children'] = [{'name':'', 'color':CSS_COLOR_NAMES[i], 'children': children }]
-        c_v['sort'] = n
-        c_v['color'] = CSS_COLOR_NAMES[i]
-        tree2['children'].append(c_v)
-        i += 1
-       # break
-    #print(json.dumps(tree))
-    print("time 6")
-    context['coverage'] = coverage3 #coverage
-    context['tree'] = json.dumps(tree)
-    context['tree2'] = json.dumps(tree2)
-    print("time 7")
-    # return render(request, 'mutation/coverage.html', context)
-    return render(request, 'mutation/statistics.html', context)
-
+        return context
 
 def pocket(request):
 

@@ -1,0 +1,248 @@
+{% extends "home/base.html" %}
+{% load static %}
+{% load humanize %}
+{% block addon_css %}
+<style>
+  .graydiv {
+      height: 20px;
+      width: 275px;
+      background: linear-gradient(to right, white 0%, black 100%)
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="padding-top: 10px; font-size: 11px; white-space: nowrap;">
+  <div class="col-md-12">
+    <div class="col-md-12" style="margin-bottom: 40px;"">
+      <br>
+      The GPCRome wheel plot shows receptors for which mutation data has been annotated.<br>
+      Data is shown in a grayscale gradient, where light gray denotes a small amount of mutations annotated in thata receptor,
+      and darker grey/black implies high number of annotated mutations.<br>
+      The labs of <i>David Gloriam</i>, <i>Anke Schiedel</i>, <i>Chris de Graaf</i> and <i>Hugo Gutiérrez-de-Terán</i> are acknowledged for the annotation of mutation data.
+      <br>
+    </div>
+    <br>
+    <div class="col-md-3">
+      Receptor names:
+        <div class="btn-group" role="group" id="gtp_plus">
+            <button id="GPCRome_UniProtNames" class="btn btn-info ">Gene</button>
+            <button id="GPCRome_IUPHARNames" class="btn btn-info active">Protein</button>
+        </div>
+    </div>
+
+    <div class="col-md-2" style="padding-top: 5px;">
+      Icon toggle:
+      <button id="ToggleIcon" class="btn btn-info active">On</button>
+    </div>
+
+    <div class="col-md-4">
+      <div class="text-center">
+        <div class="dropdown">
+          <button type="button" class="btn btn-primary dropdown-toggle" style="font-size: 14px;" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <span class="glyphicon glyphicon-download" style="vertical-align: top;line-height: 1.3"></span> Download <span class="caret"></span>
+          </button>
+          <div class="dropdown-menu dropdown-menu-right-middle">
+            <li><a class="dropdown-item" href="javascript:saveSvg(document.getElementById('GPCRome_plot_svg'), 'GPCRome_plot.svg');">SVG</a></li>
+            <li><a class="dropdown-item" href="javascript:saveSvgAsPng(document.getElementById('GPCRome_plot_svg'), 'GPCRome_plot.png');">PNG</a></li>
+            <li><a class="dropdown-item" href="javascript:saveSvgAsJpg(document.getElementById('GPCRome_plot_svg'), 'GPCRome_plot.jpg');">JPG</a></li>
+            <li><a class="dropdown-item" href="javascript:saveSvgAsTiff(document.getElementById('GPCRome_plot_svg'), 'GPCRome_plot.tiff');">TIFF</a></li>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div style="float: right;" class="text-center">
+        <b>Mutations count (from low to high)</b>
+        <div class="graydiv"></div>
+      </div>
+    </div>
+  <br />
+  <br />
+  <br />
+
+    <div id="image-container" data-image-url="{% static 'home/images/DataMapper_GPCRome_icon_legend.png' %}"></div>
+    <!-- GPCRome -->
+    <div class="col-md-12" style="margin-top: 0px;margin-bottom: 30px;">
+        <div id="GPCRome_plot" class="text-center"></div>
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}
+
+{% block addon_js %}
+<script src="{% static 'home/js/d3.min.js' %}"></script>
+<script src="{% static 'home/js/nv.d3.min.js' %}"></script>
+<script src="{% static 'home/js/d3.v4.min.js' %}"></script>
+<script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
+<script src="{% static 'home/js/saveSvg.js' %}"></script>
+<script src="{% static 'home/js/datamapper.js' %}"></script>
+<script src="{% static 'home/js/popper.min.js' %}"></script>
+<script src="{% static 'home/js/popper.min.js' %}"></script>
+<script src="{% static 'home/js/spectrum_v1_8_1.js' %}"></script>
+<script src="{% static 'home/js/ml.js' %}"></script>
+<script>
+
+var GPCRome_categories_data = {{ GPCRome_data|safe }};
+var fill_data = {{ GPCRome_data_variables|safe }};
+var GPCRome_Label_conversion_dict = {{GPCRome_Label_Conversion|safe}};
+
+// Initialize the conversion dictionary
+GPCRome_Label_conversion_dict = initializeGPCRomeLabelConversionDict(GPCRome_Label_conversion_dict);
+
+function initializeGPCRomeLabelConversionDict(conversionDict) {
+    const updatedDict = {};
+
+    Object.keys(conversionDict).forEach(originalLabel => {
+        let uniProtLabel = conversionDict[originalLabel];
+        uniProtLabel = uniProtLabel.replace(/_human$/, "").toUpperCase(); // Remove "_human" and convert to uppercase
+        updatedDict[originalLabel] = uniProtLabel;
+    });
+
+    return updatedDict;
+}
+
+// # Initialize data styling #
+var layout_data = GPCRome_initializeData(GPCRome_categories_data);
+
+const GPCRome_fill_data_values = Object.values(fill_data).map(receptor => receptor.Value1);
+const GPCRome_fill_minValue = Math.min(...GPCRome_fill_data_values);
+const GPCRome_fill_maxValue = Math.max(...GPCRome_fill_data_values);
+// Calculate median
+// Sort the values in ascending order
+GPCRome_fill_data_values.sort((a, b) => a - b);
+
+// Calculate the median
+let GPCRome_fill_medianValue;
+const middleIndex = Math.floor(GPCRome_fill_data_values.length / 2);
+
+if (GPCRome_fill_data_values.length % 2 === 0) {
+    // Even number of elements, median is the average of the two middle values
+    GPCRome_fill_medianValue = (GPCRome_fill_data_values[middleIndex - 1] + GPCRome_fill_data_values[middleIndex]) / 2;
+} else {
+    // Odd number of elements, median is the middle value
+    GPCRome_fill_medianValue = GPCRome_fill_data_values[middleIndex];
+}
+
+GPCRome_fill_avg = (GPCRome_fill_minValue+GPCRome_fill_maxValue)/2
+
+var GPCRomes_styling = {
+  Spacing: true,
+  family: true,
+  datatype: "Continuous",
+  minValue: GPCRome_fill_minValue,
+  median_value: GPCRome_fill_medianValue,
+  avg_value: GPCRome_fill_avg,
+  maxValue: GPCRome_fill_maxValue,
+  colorStart: "#D3D3D3",
+  color_median: "#696969",
+  colorEnd: "#000000",
+  data_color_complexity: 'Two',
+  showIcon: true  // Add this property to control the icon visibility
+}
+
+
+// # initial draw
+let GPCRome_location = "GPCRome_plot";
+Draw_GPCRomes(layout_data, fill_data, GPCRome_location, GPCRomes_styling);
+
+// Global variables for current label type
+let currentLabelType = "IUPHAR"; // Default
+
+// Event listeners for label type buttons
+document.getElementById("GPCRome_UniProtNames").addEventListener("click", () => {
+    switchLabelType("UniProt");
+});
+
+document.getElementById("GPCRome_IUPHARNames").addEventListener("click", () => {
+    switchLabelType("IUPHAR");
+});
+
+// Function to switch label types
+function switchLabelType(labelType) {
+    currentLabelType = labelType;
+    updateGPCRome();
+}
+
+
+// Function to toggle the icon visibility and redraw the GPCRomes
+function toggleIcon() {
+    const button = d3.select("#ToggleIcon");
+
+    // Toggle the showIcon property in GPCRomes_styling
+    GPCRomes_styling.showIcon = !GPCRomes_styling.showIcon;
+
+    // Update button text and state
+    if (GPCRomes_styling.showIcon) {
+        button.text("On");
+        button.classed("active", true);
+    } else {
+        button.text("Off");
+        button.classed("active", false);
+    }
+
+    // Redraw the GPCRomes with the updated icon state
+    updateGPCRome();
+}
+
+// Attach event listener to the button
+d3.select("#ToggleIcon").on("click", toggleIcon);
+
+// Function to update and redraw GPCRomes
+function updateGPCRome() {
+    const updatedLayoutData = updateLayoutData(layout_data, GPCRome_Label_conversion_dict, currentLabelType);
+    const updatedFillData = updateFillData(fill_data, GPCRome_Label_conversion_dict, currentLabelType);
+
+    // Clear the existing SVG content
+    d3.select("#" + GPCRome_location).select("svg").remove();
+
+    // Redraw the GPCRomes with the updated data
+    Draw_GPCRomes(updatedLayoutData, updatedFillData, GPCRome_location, GPCRomes_styling);
+
+    // Update button active states
+    // updateActiveButtonState(currentLabelType);
+}
+
+// Function to update layout data
+function updateLayoutData(layout_data, conversionDict, labelType) {
+    const updatedData = {};
+
+    Object.keys(layout_data).forEach(GPCRomeKey => {
+        const GPCRome = layout_data[GPCRomeKey];
+        updatedData[GPCRomeKey] = {};
+
+        Object.keys(GPCRome).forEach(ligandType => {
+            const receptors = GPCRome[ligandType];
+            updatedData[GPCRomeKey][ligandType] = receptors.map(receptor => {
+                if (labelType === "UniProt") {
+                    return conversionDict[receptor] || receptor;
+                } else {
+                    return Object.keys(conversionDict).find(key => conversionDict[key] === receptor) || receptor;
+                }
+            });
+        });
+    });
+
+    return updatedData;
+}
+
+// Function to update fill data
+function updateFillData(fill_data, conversionDict, labelType) {
+    const updatedData = {};
+
+    Object.keys(fill_data).forEach(receptor => {
+        let updatedReceptor;
+        if (labelType === "UniProt") {
+            updatedReceptor = conversionDict[receptor] || receptor;
+        } else {
+            updatedReceptor = Object.keys(conversionDict).find(key => conversionDict[key] === receptor) || receptor;
+        }
+        updatedData[updatedReceptor] = fill_data[receptor];
+    });
+
+    return updatedData;
+}
+</script>
+{% endblock %}
