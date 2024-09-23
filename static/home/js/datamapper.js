@@ -2647,7 +2647,7 @@ function GPCRome_initializeData(data) {
         }
 
         // Circle 6: "Class T (Taste 2)"
-        if (className === "Class T (Taste 2)") {
+        if (className === "Class T2 (Taste 2)") {
             addItemsToCircle(GPCRomes.GPCRome_T, classData);
         }
 
@@ -3187,8 +3187,6 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling) {
             .attr("transform", `translate(${width / 2}, ${height / 2})`)
             .style("fill", (d) => {
                 const value = fill_data[d.data]?.Value1;
-                console.log(value);
-
                 if (datatype === "Continuous") {
                     // Use color scale for continuous data
                     const numericValue = parseFloat(value);
@@ -3200,8 +3198,17 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling) {
                     return !isNaN(numericValue) ? colorScale(numericValue) : "none";
                 } else if (datatype === "Discrete") {
                     // Handle discrete data or default case
-                    if (value === "Yes") return "green";
-                    if (value === "No") return "red";
+                    let discrete_color_min;
+                    let discrete_color_max;
+                    if (GPCRomes_styling.data_color_complexity === 'One') {
+                        discrete_color_min = '#FFFFFF';
+                        discrete_color_max = GPCRomes_styling.colorEnd;
+                    } else {
+                        discrete_color_min = GPCRomes_styling.colorStart;
+                        discrete_color_max = GPCRomes_styling.colorEnd;
+                    }
+                    if (value === "Yes") return discrete_color_max;
+                    if (value === "No") return discrete_color_min;
                     return "none";  // Make the slice invisible if the value is ""
                 // Expand this section for handling specific coverage pages with colors
                 } else if (datatype === "Structure") {
@@ -3225,17 +3232,6 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling) {
             });
     }
 }
-
-
-
-
-
-
-
-
-
-
-
 
 // // SPIRAL  - Maybe for later!!
 

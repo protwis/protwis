@@ -1711,8 +1711,6 @@ class StructureStatistics(TemplateView):
                 if key not in result_dict:
                     result_dict[key] = {'states': set(), 'status': 'empty'}
 
-            print('check 1')
-
             for item in circle_data:
                 key = item[1]
                 value = item[0]
@@ -1740,8 +1738,6 @@ class StructureStatistics(TemplateView):
             # Optionally, reduce to key-status dictionary
             result_dict = {k: v['status'] for k, v in result_dict.items()}
 
-            print('check 2')
-
             proteins = list(Protein.objects.filter(entry_name__in=result_dict.keys()
             ).values('entry_name', 'name').order_by('entry_name'))
 
@@ -1751,12 +1747,11 @@ class StructureStatistics(TemplateView):
             names = list(names_conversion_dict.values())
 
             IUPHAR_to_uniprot_dict = {item['name']: item['entry_name'] for item in proteins}
-            print('check 3')
+
             families = ProteinFamily.objects.all()
             datatree = {}
             conversion = {}
 
-            print('check 4')
             for item in families:
                 if len(item.slug) == 3 and item.slug not in datatree.keys():
                     datatree[item.slug] = {}
@@ -1769,7 +1764,7 @@ class StructureStatistics(TemplateView):
                     conversion[item.slug] = item.name
                 if len(item.slug) == 15 and item.slug not in datatree[item.slug[:3]][item.slug[:7]][item.slug[:11]]:
                     datatree[item.slug[:3]][item.slug[:7]][item.slug[:11]].append(item.name)
-            print('check 5')
+
             datatree2 = LandingPage.convert_keys(datatree, conversion)
             datatree2.pop('Parent family', None)
             datatree3 = LandingPage.filter_dict(datatree2, names)
@@ -1778,7 +1773,6 @@ class StructureStatistics(TemplateView):
             context['GPCRome_data'] = json.dumps(data_full["NameList"])
             context['GPCRome_data_variables'] = json.dumps(data_full['DataPoints'])
             context['GPCRome_Label_Conversion'] = json.dumps(data_full['LabelConversionDict'])
-            print('check 6')
 
             complexes_count = StructureLigandInteraction.objects.filter(annotated=True).exclude(
                     structure__structure_type__slug__startswith='af-').values(
@@ -1789,7 +1783,6 @@ class StructureStatistics(TemplateView):
             complexes_dict = {}
 
             complexes_list = list(complexes_count)
-            print('check 7')
 
             complexes_dict = {}
             for prot in all_proteins:

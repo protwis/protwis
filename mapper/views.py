@@ -31,20 +31,6 @@ class LandingPage(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # input_dict = LandingPage.parse_data_from_xls()
-        ################################
-        # Will be implemented later !! #
-        ################################
-        # method = 'umap' #will be defined by user input
-        # list_plot = LandingPage.generate_list_plot()
-        # tree_plot, tree_options = LandingPage.generate_tree_plot()
-        # cluster_plot = LandingPage.generate_test_cluster(method)
-        # context['list_data'] = json.dumps(list_plot)
-        # context['tree_dict'] = json.dumps(tree_plot)
-        # context['tree_options'] = tree_options
-        # context['cluster_data'] = cluster_plot
-        # context['plot_type'] = method
-        # context['HeatMapData'] = json.dumps(HeatMapData)
         return context
 
     @staticmethod
@@ -199,7 +185,7 @@ class LandingPage(TemplateView):
         class_b2_data = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class B2 (Adhesion)'))
         class_c_data = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class C (Glutamate)'))
         class_f_data = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class F (Frizzled)'))
-        class_t2_data = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class T (Taste 2)'))
+        class_t2_data = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class T2 (Taste 2)'))
         ### GETTING NODES
         data_a = class_a_data.get_nodes_dict(None)
         data_b1 = class_b1_data.get_nodes_dict(None)
@@ -490,10 +476,7 @@ class LandingPage(TemplateView):
                         sheet_names = workbook.sheetnames
 
                         # Sheets and headers #
-                        # Phylogenetic_Tree_Header = ['Receptor (Uniprot)', '1. Feature (Inner cicle)', '2. Order (Outer cicle 1)',	'3. Order (Outer cicle 2)',	'4. Order (Outer cicle 3)', '5. Order (Outer cicle 4)',	'6. Order (Outer cicle 5)']
-                        # Cluster_Analysis_Header = ['Receptor (Uniprot)','Feature 1','Feature 2','Feature 3','Feature 4']
-                        # List_Plot_Header = ['Receptor (Uniprot)']
-                        # Heatmap_Header = ['Receptor (Uniprot)','Feature 1','Feature 2','Feature 3','Feature 4','Feature 5']
+
                         Sheet_Header_pass_check = [False,False,False,False,False]
 
                         # Check all sheet names, headers and subheaders (needs to be implemented) #
@@ -519,7 +502,7 @@ class LandingPage(TemplateView):
                         else:
 
                             # Init incorrect values #
-                            plot_names = ['Tree', 'Cluster', 'List', 'Heatmap','GPCRome']
+                            plot_names = ['GPCRome','Tree', 'Cluster', 'List', 'Heatmap']
                             Data = {}
                             Data['Datatypes'] = {}
                             Incorrect_values = {}
@@ -650,7 +633,7 @@ class LandingPage(TemplateView):
                                             status = 'Failed'
 
                                         ## Update Plot parser ##
-                                        Plot_parser[0] = status
+                                        Plot_parser[1] = status
                                     except:
                                         print("Tree failed")
 
@@ -719,7 +702,7 @@ class LandingPage(TemplateView):
                                             status = 'Failed'
 
                                         ## Update Plot_parser for Cluster
-                                        Plot_parser[1] = status
+                                        Plot_parser[2] = status
                                     except:
                                         print("Cluster failed")
 
@@ -803,7 +786,7 @@ class LandingPage(TemplateView):
                                             status = 'Failed'
 
                                         ## Update Plot_parser for Cluster
-                                        Plot_parser[2] = status
+                                        Plot_parser[3] = status
                                     except:
                                         print("List failed")
 
@@ -879,8 +862,8 @@ class LandingPage(TemplateView):
                                         else:
                                             status = 'Failed'
 
-                                        ## Update Plot_parser for Cluster
-                                        Plot_parser[3] = status
+                                        ## Update Plot_parser for Heatmap
+                                        Plot_parser[4] = status
                                     except:
                                         print("Heatmap Failed")
 
@@ -958,13 +941,13 @@ class LandingPage(TemplateView):
                                         else:
                                             status = 'Failed'
 
-                                        ## Update Plot_parser for Cluster
-                                        Plot_parser[4] = status
+                                        ## Update Plot_parser for GPCRome
+                                        Plot_parser[0] = status
                                     except:
                                         print("GPCRome failed")
                             ## Return all values for plotparser and correctly (or partially) succesful plots ##
 
-                            plot_names = ['Tree', 'Cluster', 'List', 'Heatmap','GPCRome']
+                            plot_names = ['GPCRome','Tree', 'Cluster', 'List', 'Heatmap']
                             plot_data = {}
                             plot_incorrect_data = {}
 
@@ -1054,7 +1037,7 @@ class plotrender(TemplateView):
             context['listplot_data'] = {}
             if Plot_evaluation:
                 # tree #
-                if Plot_evaluation[0]:
+                if Plot_evaluation[1]:
                     print("Tree success")
                     tree, tree_options, circles, receptors = LandingPage.generate_tree_plot(Data['Tree'])
                     context['tree'] = json.dumps(tree)
@@ -1063,7 +1046,7 @@ class plotrender(TemplateView):
                     context['whole_dict'] = json.dumps(receptors)
 
                 # Cluster analysis #
-                if Plot_evaluation[1]:
+                if Plot_evaluation[2]:
                     print("Cluster success")
                     output_seq = LandingPage.clustering_test('umap', Data['Cluster'],'seq')
                     # output_structure = LandingPage.clustering_test('umap', Data['Cluster'],'structure')
@@ -1072,7 +1055,7 @@ class plotrender(TemplateView):
                     context['plot_type'] = 'UMAP'
 
                 # List plot #
-                if Plot_evaluation[2]:
+                if Plot_evaluation[3]:
                     print("List success")
                     listplot_data = LandingPage.generate_list_plot(Data['List'])
                     context['listplot_data'] = json.dumps(listplot_data["NameList"])
@@ -1080,14 +1063,14 @@ class plotrender(TemplateView):
                     context['Label_Conversion'] = json.dumps(listplot_data['LabelConversionDict'])
                     context['listplot_datatypes'] = json.dumps(Data['Datatypes']['Listplot'])
                 # Heatmap #
-                if Plot_evaluation[3]:
+                if Plot_evaluation[4]:
                     print("Heatmap success")
                     label_converter = LandingPage.Label_conversion_info(Data['Heatmap'])
                     context['Label_converter'] = json.dumps(label_converter)
                     context['heatmap_data'] = json.dumps(Data['Heatmap'])
                     context['Heatmap_Label_dict'] = json.dumps(Data['Heatmap_Label_dict'])
                 # GPCRome #
-                if Plot_evaluation[4]:
+                if Plot_evaluation[0]:
                     print("GPCRome success")
                     GPCRome_data = LandingPage.generate_list_plot(Data['GPCRome'])
                     context['GPCRome_data'] = json.dumps(GPCRome_data["NameList"])

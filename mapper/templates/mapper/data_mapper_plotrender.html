@@ -104,38 +104,135 @@
 <ul class="nav nav-tabs">
   {% if Plot_evaluation_json.0 %}
     <li class="{% if first_active_tab == '#tab1' %}active{% endif %}">
-      <a href="#tab1" data-toggle="tab">Tree</a>
+      <a href="#tab1" data-toggle="tab">GPCRome wheel</a>
     </li>
   {% endif %}
   {% if Plot_evaluation_json.1 %}
     <li class="{% if first_active_tab == '#tab2' %}active{% endif %}">
-      <a href="#tab2" data-toggle="tab">Cluster</a>
+      <a href="#tab2" data-toggle="tab">Tree</a>
     </li>
   {% endif %}
   {% if Plot_evaluation_json.2 %}
     <li class="{% if first_active_tab == '#tab3' %}active{% endif %}">
-      <a href="#tab3" data-toggle="tab">List</a>
+      <a href="#tab3" data-toggle="tab">Cluster</a>
     </li>
   {% endif %}
   {% if Plot_evaluation_json.3 %}
     <li class="{% if first_active_tab == '#tab4' %}active{% endif %}">
-      <a href="#tab4" data-toggle="tab">Heatmap</a>
+      <a href="#tab4" data-toggle="tab">List</a>
     </li>
   {% endif %}
   {% if Plot_evaluation_json.4 %}
   <li class="{% if first_active_tab == '#tab5' %}active{% endif %}">
-    <a href="#tab5" data-toggle="tab">GPCRome</a>
+    <a href="#tab5" data-toggle="tab">Heatmap</a>
   </li>
   {% endif %}
 </ul>
 
 <!-- ## Tab content ## -->
 <div class="tab-content">
+  <!-- ##################### -->
+  <!-- ## tab 5 - GPCRome ## -->
+  <!-- ##################### -->
+  {% if Plot_evaluation_json.0 %}
+  <div id="tab1" class="tab-pane fade {% if first_active_tab == '#tab1' %}in active{% endif %}">
+    <div style="padding-top: 10px; font-size: 11px; white-space: nowrap;">
+      <div class="col-md-12" style="margin-bottom: 20px;">
+        <div class="col-md-3" style="padding-top: 5px;">
+          Receptor names:
+            <div class="btn-group" role="group" id="gtp_plus">
+                <button id="GPCRome_UniProtNames" class="btn btn-info ">Gene</button>
+                <button id="GPCRome_IUPHARNames" class="btn btn-info active">Protein</button>
+            </div>
+        </div>
+        <!-- <div style="padding-top: 5px;">
+          Circle Spacing:
+          <button id="ToggleSpacing" class="btn btn-info active">On</button>
+        </div> -->
+        <div class="col-md-2" style="padding-top: 5px;">
+          Icon toggle:
+          <button id="ToggleIcon" class="btn btn-info active">On</button>
+        </div>
+
+
+
+      <!-- # Download button # -->
+      <div class="col-md-2">
+        <div class="dropdown" style="width: 500px !important;">
+          <button class="btn btn-primary dropdown-toggle" type="button" id="GPCRome_Color_Styling_Menu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            Color styling
+          </button>
+          <div class="dropdown-menu dropdown-menu-listplot" aria-labelledby="GPCRome_Color_Styling_Menu">
+            <!-- Color complexity Dropdown -->
+            <div class="col-md-12" style="width:400px;height: 50px; margin-top: 20px;margin-bottom: 20px;">
+              <div class="col-md-6" style="width:150px;margin-right: 20px;">
+                <select id="GPCRome_color_styling" class="form-select" style="height: 35px;width: 175px;font-size: 14px;" aria-label="Default select example" onchange="UpdateGPCRomeColorPickers()">
+                  <option value="One" selected>White - Color</option>
+                  <option value="Two">Color - Color</option>
+                  <option value="Three">Color - White - Color</option>
+                </select>
+              </div>
+
+              <!-- Color Selector Dropdown -->
+              <div class="col-md-6" style="height: 15px;width: 200px;">
+                <div class="col-md-3" id="GPCRome_Color_min_container" style="display: none;width: 80px;margin-left: 0px;margin-right: 0px;">
+                  <input type="text" id="GPCRome_colorPicker_min" />
+                </div>
+                <div class="col-md-3" id="GPCRome_Color_avg_container" style="display: none;width: 80px;margin-left: 0px;margin-right: 0px;">
+                  <input type="text" id="GPCRome_colorPicker_avg" />
+                </div>
+                <div class="col-md-3" id="GPCRome_Color_max_container" style="width: 80px;margin-left: 0px;margin-right: 0px;">
+                  <input type="text" id="GPCRome_colorPicker_max"/>
+                </div>
+              </div>
+            </div>
+
+            <!-- Set Colors Buttons -->
+            <div class="text-center" style="margin-bottom: 15px;">
+              <div class="col-md-12" style="margin-bottom: 5px;">
+                <div class="col-md-6"><button id="GPCRome_GrayScale" type="button" class="btn btn-primary" style="width:150px;font-size: 14px; margin-right: 10px;">Grey scale</button></div>
+                <div class="col-md-6"><button id="GPCRome_GrayBlueScale" type="button" class="btn btn-primary" style="width:150px;font-size: 14px;  margin-right: 10px;">Grey-Blue scale</button></div>
+              </div>
+              <div class="col-md-12" style="margin-bottom: 15px;">
+                <div class="col-md-6"><button id="GPCRome_RedBlueScale" type="button" class="btn btn-primary" style="width:150px;font-size: 14px; margin-right: 10px;">Red-Blue Scale</button></div>
+                <div class="col-md-6"><button id="GPCRome_TealMagentaScale" type="button" class="btn btn-primary" style="width:150px;font-size: 14px; margin-right: 10px;">Teal-Magenta Scale</button></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-2"></div>
+      <div class="col-md-3">
+        <div class="text-center">
+          <div class="dropdown">
+            <button type="button" class="btn btn-primary dropdown-toggle" style="font-size: 14px;" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              <span class="glyphicon glyphicon-download" style="vertical-align: top;line-height: 1.3"></span> Download <span class="caret"></span>
+            </button>
+            <div class="dropdown-menu dropdown-menu-right-middle">
+              <li><a class="dropdown-item" href="javascript:saveSvg(document.getElementById('GPCRome_plot_svg'), 'GPCRome_plot.svg');">SVG</a></li>
+              <li><a class="dropdown-item" href="javascript:saveSvgAsPng(document.getElementById('GPCRome_plot_svg'), 'GPCRome_plot.png');">PNG</a></li>
+              <li><a class="dropdown-item" href="javascript:saveSvgAsJpg(document.getElementById('GPCRome_plot_svg'), 'GPCRome_plot.jpg');">JPG</a></li>
+              <li><a class="dropdown-item" href="javascript:saveSvgAsTiff(document.getElementById('GPCRome_plot_svg'), 'GPCRome_plot.tiff');">TIFF</a></li>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+      <div id="image-container" data-image-url="{% static 'home/images/DataMapper_GPCRome_icon_legend.png' %}"></div>
+      <!-- GPCRome -->
+      <div class="col-md-12" style="margin-top: 0px;margin-bottom: 30px;">
+          <div id="GPCRome_plot" class="text-center"></div>
+      </div>
+
+      </div>
+    </div>
+  {% endif %}
   <!-- ####################### -->
   <!-- ##   Tab 1 - Tree    ## -->
   <!-- ####################### -->
-  {% if Plot_evaluation_json.0 %}
-  <div id="tab1" class="tab-pane fade {% if first_active_tab == '#tab1' %}in active{% endif %}">
+  {% if Plot_evaluation_json.1 %}
+  <div id="tab2" class="tab-pane fade {% if first_active_tab == '#tab2' %}in active{% endif %}">
     <div style="padding-top: 10px; font-size: 11px; white-space: nowrap;">
       <div>
         <div style="padding-top: 5px;">
@@ -402,8 +499,8 @@
   <!-- ####################### -->
   <!-- ## Tab 2 - Cluster   ## -->
   <!-- ####################### -->
-  {% if Plot_evaluation_json.1 %}
-    <div id="tab2" class="tab-pane fade {% if first_active_tab == '#tab2' %}in active{% endif %}">
+  {% if Plot_evaluation_json.2 %}
+    <div id="tab3" class="tab-pane fade {% if first_active_tab == '#tab3' %}in active{% endif %}">
       <div style="padding-top: 10px; font-size: 14px; white-space: nowrap;">
         <!-- <div class="col-md-12" style="padding-top: 20px;">
           <div class="col-md-4">
@@ -507,8 +604,8 @@
   <!-- ####################### -->
   <!-- ##   Tab 3 - List    ## -->
   <!-- ####################### -->
-  {% if Plot_evaluation_json.2 %}
-    <div id="tab3" class="tab-pane fade {% if first_active_tab == '#tab3' %}in active{% endif %}">
+  {% if Plot_evaluation_json.3 %}
+    <div id="tab4" class="tab-pane fade {% if first_active_tab == '#tab4' %}in active{% endif %}">
       <div style="padding-top: 10px; font-size: 11px; white-space: nowrap;"></div>
       <!-- ############ -->
       <!-- ## Layout ## -->
@@ -776,8 +873,8 @@
   <!-- ##################### -->
   <!-- ## Tab 4 - Heatmap ## -->
   <!-- ##################### -->
-  {% if Plot_evaluation_json.3 %}
-    <div id="tab4" class="tab-pane fade {% if first_active_tab == '#tab4' %}in active{% endif %}">
+  {% if Plot_evaluation_json.4 %}
+    <div id="tab5" class="tab-pane fade {% if first_active_tab == '#tab5' %}in active{% endif %}">
       <div style="padding-top: 10px; font-size: 11px; white-space: nowrap;"></div>
       <!-- Receptor label switch -->
       <div class="col-md-12" style="margin-top: 20px;">
@@ -926,103 +1023,7 @@
       <div id="heatmapPlot" class="text-center" style="margin-left: -150px;"></div>
       </div>
   {% endif %}
-  <!-- ##################### -->
-  <!-- ## tab 5 - GPCRome ## -->
-  <!-- ##################### -->
-  {% if Plot_evaluation_json.4 %}
-  <div id="tab5" class="tab-pane fade {% if first_active_tab == '#tab5' %}in active{% endif %}">
-    <div style="padding-top: 10px; font-size: 11px; white-space: nowrap;">
-      <div class="col-md-12">
-        <div class="col-md-3" style="padding-top: 5px;">
-          Receptor names:
-            <div class="btn-group" role="group" id="gtp_plus">
-                <button id="GPCRome_UniProtNames" class="btn btn-info ">Gene</button>
-                <button id="GPCRome_IUPHARNames" class="btn btn-info active">Protein</button>
-            </div>
-        </div>
-        <!-- <div style="padding-top: 5px;">
-          Circle Spacing:
-          <button id="ToggleSpacing" class="btn btn-info active">On</button>
-        </div> -->
-        <div class="col-md-2" style="padding-top: 5px;">
-          Icon toggle:
-          <button id="ToggleIcon" class="btn btn-info active">On</button>
-        </div>
-
-
-
-      <!-- # Download button # -->
-      <div class="col-md-2">
-        <div class="dropdown" style="width: 500px !important;">
-          <button class="btn btn-primary dropdown-toggle" type="button" id="GPCRome_Color_Styling_Menu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            Color styling
-          </button>
-          <div class="dropdown-menu dropdown-menu-listplot" aria-labelledby="GPCRome_Color_Styling_Menu">
-            <!-- Color complexity Dropdown -->
-            <div class="col-md-12" style="width:400px;height: 50px; margin-top: 20px;margin-bottom: 20px;">
-              <div class="col-md-6" style="width:150px;margin-right: 20px;">
-                <select id="GPCRome_color_styling" class="form-select" style="height: 35px;width: 175px;font-size: 14px;" aria-label="Default select example" onchange="UpdateGPCRomeColorPickers()">
-                  <option value="One" selected>White - Color</option>
-                  <option value="Two">Color - Color</option>
-                  <option value="Three">Color - White - Color</option>
-                </select>
-              </div>
-
-              <!-- Color Selector Dropdown -->
-              <div class="col-md-6" style="height: 15px;width: 200px;">
-                <div class="col-md-3" id="GPCRome_Color_min_container" style="display: none;width: 80px;margin-left: 0px;margin-right: 0px;">
-                  <input type="text" id="GPCRome_colorPicker_min" />
-                </div>
-                <div class="col-md-3" id="GPCRome_Color_avg_container" style="display: none;width: 80px;margin-left: 0px;margin-right: 0px;">
-                  <input type="text" id="GPCRome_colorPicker_avg" />
-                </div>
-                <div class="col-md-3" id="GPCRome_Color_max_container" style="width: 80px;margin-left: 0px;margin-right: 0px;">
-                  <input type="text" id="GPCRome_colorPicker_max"/>
-                </div>
-              </div>
-            </div>
-
-            <!-- Set Colors Buttons -->
-            <div class="text-center" style="margin-bottom: 15px;">
-              <div class="col-md-12" style="margin-bottom: 5px;">
-                <div class="col-md-6"><button id="GPCRome_GrayScale" type="button" class="btn btn-primary" style="width:150px;font-size: 14px; margin-right: 10px;">Grey scale</button></div>
-                <div class="col-md-6"><button id="GPCRome_GrayBlueScale" type="button" class="btn btn-primary" style="width:150px;font-size: 14px;  margin-right: 10px;">Grey-Blue scale</button></div>
-              </div>
-              <div class="col-md-12" style="margin-bottom: 15px;">
-                <div class="col-md-6"><button id="GPCRome_RedBlueScale" type="button" class="btn btn-primary" style="width:150px;font-size: 14px; margin-right: 10px;">Red-Blue Scale</button></div>
-                <div class="col-md-6"><button id="GPCRome_TealMagentaScale" type="button" class="btn btn-primary" style="width:150px;font-size: 14px; margin-right: 10px;">Teal-Magenta Scale</button></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-2"></div>
-      <div class="col-md-3">
-        <div class="text-center">
-          <div class="dropdown">
-            <button type="button" class="btn btn-primary dropdown-toggle" style="font-size: 14px;" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-              <span class="glyphicon glyphicon-download" style="vertical-align: top;line-height: 1.3"></span> Download <span class="caret"></span>
-            </button>
-            <div class="dropdown-menu dropdown-menu-right-middle">
-              <li><a class="dropdown-item" href="javascript:saveSvg(document.getElementById('GPCRome_plot_svg'), 'GPCRome_plot.svg');">SVG</a></li>
-              <li><a class="dropdown-item" href="javascript:saveSvgAsPng(document.getElementById('GPCRome_plot_svg'), 'GPCRome_plot.png');">PNG</a></li>
-              <li><a class="dropdown-item" href="javascript:saveSvgAsJpg(document.getElementById('GPCRome_plot_svg'), 'GPCRome_plot.jpg');">JPG</a></li>
-              <li><a class="dropdown-item" href="javascript:saveSvgAsTiff(document.getElementById('GPCRome_plot_svg'), 'GPCRome_plot.tiff');">TIFF</a></li>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-      <div id="image-container" data-image-url="{% static 'home/images/DataMapper_GPCRome_icon_legend.png' %}"></div>
-      <!-- GPCRome -->
-      <div class="col-md-12" style="margin-top: 0px;margin-bottom: 30px;">
-          <div id="GPCRome_plot" class="text-center"></div>
-      </div>
-
-      </div>
-    </div>
-  {% endif %}
+  
 </div>
 
 {% endblock %}
@@ -1045,7 +1046,7 @@
 <!-- ################## -->
 <!-- ###    Tree    ### -->
 <!-- ################## -->
-{% if Plot_evaluation_json.0 %}
+{% if Plot_evaluation_json.1 %}
 
 <script type="text/javascript" charset="utf-8">
   $(document).ready(function() {
@@ -1446,7 +1447,7 @@ document.getElementById('Tree_circleSpacerSlider').addEventListener('input', fun
 <!-- ################## -->
 <!-- ###  Cluster   ### -->
 <!-- ################## -->
-{% if Plot_evaluation_json.1 %}
+{% if Plot_evaluation_json.2 %}
 <script>
 
 $('.dropdown-menu').on('click', function(event){
@@ -1987,7 +1988,7 @@ function performClustering(numClusters) {
 <!-- ###    List    ### -->
 <!-- ################## -->
 
-{% if Plot_evaluation_json.2 %}
+{% if Plot_evaluation_json.3 %}
 
 <script>
   $(document).ready(function() {
@@ -2359,7 +2360,7 @@ $("#List_IUPHARNames").click(function() {
 <!-- ############# -->
 <!-- ## Heatmap ## -->
 <!-- ############# -->
-{% if Plot_evaluation_json.3 %}
+{% if Plot_evaluation_json.4 %}
 
 
 <script>
@@ -2653,7 +2654,7 @@ $("#Heatmap_IUPHARNames").click(function() {
 <!-- ############# -->
 <!-- ## GPCRome ## -->
 <!-- ############# -->
-{% if Plot_evaluation_json.4 %}
+{% if Plot_evaluation_json.1 %}
 <script>
 
 $('.dropdown-menu').on('click', function(event){
@@ -2861,6 +2862,9 @@ function UpdateGPCRomeColorPickers() {
   $("#GPCRome_colorPicker_min").spectrum("set", GPCRomes_styling.colorStart);
   $("#GPCRome_colorPicker_avg").spectrum("set", GPCRomes_styling.color_avg);
   $("#GPCRome_colorPicker_max").spectrum("set", GPCRomes_styling.colorEnd);
+
+  // Dynamically update the plot
+  GPCRomeWheel_updateVisualization();
 }
 
 // Initialize all color pickers for GPCRomeWheel
@@ -2921,9 +2925,9 @@ $("#GPCRome_GrayBlueScale").click(function() {
 });
 
 $("#GPCRome_RedBlueScale").click(function() {
-  GPCRomes_styling.colorStart = "#1a80bb";
+  GPCRomes_styling.colorStart = "#a00000";
   GPCRomes_styling.color_avg = "#FFFFFF";
-  GPCRomes_styling.colorEnd = "#a00000";
+  GPCRomes_styling.colorEnd = "#1a80bb";
   setGPCRomeColors(GPCRomes_styling.colorStart, GPCRomes_styling.color_avg, GPCRomes_styling.colorEnd, "Three");
   // Dynamically update the plot
   GPCRomeWheel_updateVisualization();
