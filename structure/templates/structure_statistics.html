@@ -69,7 +69,7 @@
             <td><b>Class<br />(Family)</b></td>
             {% for class in all_structures_by_class.items %}
             <td align="center"><b>
-              {% if class.0 == " T (Taste 2)" %}T2 (Taste&nbsp;2)
+              {% if class.0 == " T2 (Taste 2)" %}T2 (Taste&nbsp;2)
               {% elif class.0 == " D1 (Ste2-like fungal pheromone)" %}D1<br \>(Ste2-like fungal pheromone)
               {% else %}{{ class.0 }}
               {% endif %}
@@ -120,7 +120,7 @@
             <td><b>Class<br />(Family)</b></td>
             {% for class in unique_structures_by_class.items %}
             <td align="center"><b>
-              {% if class.0 == " T (Taste 2)" %}T2 (Taste&nbsp;2)
+              {% if class.0 == " T2 (Taste 2)" %}T2 (Taste&nbsp;2)
               {% elif class.0 == " D1 (Ste2-like fungal pheromone)" %}D1<br \>(Ste2-like fungal pheromone)
               {% else %}{{ class.0 }}
               {% endif %}
@@ -420,7 +420,7 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
         <text x="20" y="73" font-family="Verdana" font-size="10">The number of structures available.</text>
     </svg>
     <div id="unique" class="chart_container" style="display: none;">
-        <div id="unique_cryst_container"><svg id="unique_cryst" style="width:800px;height:600px;"></svg></div>
+        <div id="unique_cryst_container"><svg id="unique_cryst" style="width:900px;height:600px;"></svg></div>
         <script>
         data_unique_cryst_container = {{ chartdata|safe }};
         </script>
@@ -450,7 +450,7 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
         </div>
     </div>
     <div id="unique_y" class="chart_container" style="display: none;">
-        <div id="unique_cryst_year_container"><svg id="unique_cryst_year" style="width:800px;height:600px;"></svg></div>
+        <div id="unique_cryst_year_container"><svg id="unique_cryst_year" style="width:900px;height:600px;"></svg></div>
         <script>
             data_unique_cryst_year_container={{ chartdata_y|safe }};
         </script>
@@ -480,7 +480,7 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
         </div>
     </div>
     <div id="all" class="chart_container" style="display: none;">
-        <div id="cryst_year_container"><svg id="data_cryst_year" style="width:800px;height:600px;"></svg></div>
+        <div id="cryst_year_container"><svg id="data_cryst_year" style="width:900px;height:600px;"></svg></div>
         <script>
             data_cryst_year_container={{ chartdata_all|safe }};
         </script>
@@ -524,7 +524,7 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
         <text x="20" y="53" font-family="Verdana" font-size="10">The number of crystal structures available each year.</text>
     </svg> -->
     <div id="unique_class" class="chart_container" style="display: none;">
-        <div id="unique_cryst_class_container"><svg id="unique_class_cryst" style="width:800px;height:600px;"></svg></div>
+        <div id="unique_cryst_class_container"><svg id="unique_class_cryst" style="width:900px;height:600px;"></svg></div>
         <script>
         data_unique_class_cryst_container={{ chartdata_class|safe }};
         </script>
@@ -554,7 +554,7 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
         </div>
     </div>
     <div id="unique_class_y" class="chart_container" style="display: none;">
-        <div id="unique_class_cryst_year_container"><svg id="unique_class_cryst_year" style="width:800px;height:600px;"></svg></div>
+        <div id="unique_class_cryst_year_container"><svg id="unique_class_cryst_year" style="width:900px;height:600px;"></svg></div>
         <script>
             data_unique_class_cryst_year_container={{ chartdata_class_y|safe }};
         </script>
@@ -584,7 +584,7 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
         </div>
     </div>
     <div id="all_class" class="chart_container" style="display: none;">
-        <div id="cryst_class_year_container"><svg id="data_class_cryst_year" style="width:800px;height:600px;"></svg></div>
+        <div id="cryst_class_year_container"><svg id="data_class_cryst_year" style="width:900px;height:600px;"></svg></div>
         <script>
             data_cryst_class_year_container={{ chartdata_class_all|safe }};
         </script>

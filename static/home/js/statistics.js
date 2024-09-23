@@ -61,7 +61,7 @@
               .call(chart);
           d3.select("#unique_cryst_container svg").selectAll("g.nv-wrap.nv-multiBarWithLegend").append("g")
               .attr("class", "nv-y nv-axis")
-              .attr("transform", "translate(680, 0)")
+              .attr("transform", "translate(780, 0)")
               .call(yAxis2);
       });
       //Unique crystals/year
@@ -91,7 +91,7 @@
               .call(chart);
           d3.select("#unique_cryst_year_container svg").selectAll("g.nv-wrap.nv-multiBarWithLegend").append("g")
               .attr("class", "nv-y nv-axis")
-              .attr("transform", "translate(680, 0)")
+              .attr("transform", "translate(780, 0)")
               .call(yAxis2);
       });
       //All crystals/year
@@ -120,7 +120,7 @@
               .call(chart);
           d3.select("#cryst_year_container svg").selectAll("g.nv-wrap.nv-multiBarWithLegend").append("g")
               .attr("class", "nv-y nv-axis")
-              .attr("transform", "translate(680, 0)")
+              .attr("transform", "translate(780, 0)")
               .call(yAxis2);
       });
       //Unique crystallized receptors per class graph
@@ -150,7 +150,7 @@
               .call(chart);
           d3.select("#unique_cryst_class_container svg").selectAll("g.nv-wrap.nv-multiBarWithLegend").append("g")
               .attr("class", "nv-y nv-axis")
-              .attr("transform", "translate(680, 0)")
+              .attr("transform", "translate(780, 0)")
               .call(yAxis2);
       });
       //Unique crystals/year per class
@@ -180,7 +180,7 @@
               .call(chart);
           d3.select("#unique_class_cryst_year_container svg").selectAll("g.nv-wrap.nv-multiBarWithLegend").append("g")
               .attr("class", "nv-y nv-axis")
-              .attr("transform", "translate(680, 0)")
+              .attr("transform", "translate(780, 0)")
               .call(yAxis2);
       });
       //All crystals/year per class
@@ -209,7 +209,7 @@
               .call(chart);
           d3.select("#cryst_class_year_container svg").selectAll("g.nv-wrap.nv-multiBarWithLegend").append("g")
               .attr("class", "nv-y nv-axis")
-              .attr("transform", "translate(680, 0)")
+              .attr("transform", "translate(780, 0)")
               .call(yAxis2);
       });
 

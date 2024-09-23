@@ -1,0 +1,468 @@
+{% extends "home/base.html" %}
+{% load static %}
+{% load structure_extras %}
+
+{% block addon_css %}
+    <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/simple_browser.css' %}" type="text/css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link href="{% static 'home/css/signprotmat.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<style>
+canvas {
+    border:2px solid #888888;
+}
+.col-md-3 {
+    color: black;
+}
+</style>
+
+<style>
+.inline {display:inline;}
+.graphcolor {
+              display:inline-block;
+              padding: 1px 5px;
+              text-align: center;
+              margin-left: 10px;
+              vertical-align: middle;
+              width: 20px;
+              height: 20px;
+              margin-top: 5px;}
+</style>
+
+<style>
+    .tooltip {
+        position: absolute;
+        text-align: center;
+        padding: 10px;
+        background: #f8f8f8;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        pointer-events: none;
+    }
+    .newrow {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+    }
+    .legend-header {
+      font-family: Arial;
+      font-size: 14px;
+      font-weight: bold;
+      fill: black;
+    }
+    path.highlight {
+      stroke-width: 2;
+    }
+    .checkbox-group {
+      display: flex;
+    }
+
+    .checkbox-item {
+      display: inline-block;
+      margin-right: 10px;  /* Add right margin */
+      font-size: 18px;
+    }
+    .dotted {
+      stroke-dasharray: 5,5;
+    }
+    .checkbox-item:last-child {
+      margin-right: 0;  /* Remove right margin for the last item */
+    }
+
+    tr td {
+      padding: 5px;
+      text-align: center;
+    }
+
+    .overlay{
+      border: 1px solid #888888;
+      position: absolute;
+      margin: 0 auto;
+      background:#eeeeee;
+      z-index:2;
+      min-width: 200px;
+    }
+    .wide-popover {
+      min-width: 40%;
+      max-width: 650px;
+    }
+    #interaction-cutoffs th {
+      text-align: center;
+    }
+</style>
+
+<div class="row text-success">
+    <div class="text-center">
+        <div style="display: inline;">
+          {% if structure_type == "af-signprot-peptide" %}
+              <h2> <a href="/ligand/{{ ligand_object.ligand.id }}/info">
+                {% if ligand_object.ligand.name|length >= 6 %}
+                    {{ ligand_object.ligand.name | title | safe }}
+                {% else %}
+                    {{ ligand_object.ligand.name | upper | safe }}
+                {% endif %}
+            </a> -
+                  <a href="/protein/{{ model.protein_conformation.protein.entry_name }}" target="_blank">{{ model.protein_conformation.protein.name|safe }}</a> -
+                  <a href="/protein/{{ model.signprot_complex.protein.entry_name }}" target="_blank">G<sub>{{ model.signprot_complex.protein.family.name|gprot_short|slice:"1:" }}</sub></a> complex model
+          {% else %}
+              <h2>(<a href="/ligand/{{ ligand_object.ligand.id }}/info">
+                {% if ligand_object.ligand.name|length >= 6 %}
+                    {{ ligand_object.ligand.name | title | safe }}
+                {% else %}
+                    {{ ligand_object.ligand.name | upper | safe }}
+                {% endif %}
+             </a> - 
+                <a href="/protein/{{ model.protein_conformation.protein.entry_name }}" target="_blank">{{ model.protein_conformation.protein.name|safe }}</a> model) 
+          {% endif %}
+
+            <div style="display: inline;">
+              <div class="btn-group">
+                  <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                      Download <span class="caret"></span>
+                  </button>
+                  <ul class="dropdown-menu">
+                    <li><a id="download_btn1" href="./{{model.pdb_code.index}}/download_lig_complex_pdb">Full</a></li>
+                  </ul>
+              </div>
+            </div>
+            <div style="display: inline;">
+                <i style="color:black; font-size:16px;" class="fas fa-info-circle simple-popover" data-html="true" data-toggle="popover" data-trigger="click hover" data-placement="below" data-html="true" data-content="The PDB file contains GPCRdb generic residue numbers in the B-factor field of C&alpha; atoms <a target='_blank' href='https://doi.org/10.1016/j.tips.2014.11.001'>Isberg et al. 2015</a>"></i>
+            </div>
+            </h2>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 text-right text-info">
+        <h4 style="color: black;">GPCR CLASS (FAMILY)</h4>
+    </div>
+    <div class="col-md-6">
+        {{ model.protein_conformation.protein.get_protein_class|cut_classname }}
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 text-right text-info">
+        <h4 style="color: black;">SPECIES</h4>
+    </div>
+    <div class="col-md-6">
+        {{ model.protein_conformation.protein.species.latin_name }}
+    </div>
+</div>
+
+
+{% if structure_type == "af-signprot-peptide" %}
+    <div class="row">
+        <div class="col-md-6 text-right text-info">
+            <h4 style="color: black;">G PROTEIN FAMILY</h4>
+        </div>
+        <div class="col-md-6">
+            G<sub>{{ model.signprot_complex.protein.family.parent|safe|slice:"1:" }}</sub>
+        </div>
+    </div>
+{% endif %}
+
+<div class="row">
+    <div class="col-md-6 text-right text-info">
+        <h4 style="color: black;">PHYSIOLOGICAL LIGAND</h4>
+    </div>
+    <div class="col-md-6">
+        {{ ligand_object.ligand.name | upper | safe}}
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 text-right text-info">
+        <h4 style="color: black;">DATE</h4>
+    </div>
+    <div class="col-md-6">
+    {{ model.publication_date|date:"Y-m-d" }}
+    </div>
+</div>
+
+<div class="row">
+    <!-- <div class="col-md-3 text-right text-info">
+        <h4>3D VIEW</h4>
+    </div> -->
+    <div class="col-md-5">
+      <div style="float: left; width: 60%;">
+          <div id="viewport" style="width:100rem; height:60rem;background-color: white;"></div>
+          <div style="width:500px; background-color:#eaeaea; border-radius: 0px 0px 5px 5px;">
+              <p style="padding: 2px 0px 2px 5px; font-size: 10px;"><button id="fullscreen">Full Screen</button><a href="https://github.com/arose/ngl"> NGL</a> is a WebGL based 3D viewer powered by <a href="https://mmtf.rcsb.org">MMTF</a>.</p>
+          </div>
+      </div>
+
+      <br>
+    </div>
+
+    <div class="col-md-5" style='padding-left: 45rem; width: 73rem;'>
+        <div><h4>Tertiary structure confidence <i class="fas fa-info-circle simple-popover" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="below" data-content="<b>Interpretation of Predicted models</b><br>The pLDDT score is the confidence assessment of the placement of each residue relative to its preceding and succeeding residues."></i></h4></div>
+        <p>pLDDT score avg.: {{ plddt_avg|floatformat:1 }}</p>
+        <div style='width: 90%; display:table; position:relative;'>
+            <div style='display: table-cell;'>
+              <div class="graphcolor" style="background-color: blue; "></div>
+              <span style="margin-left: 5px; vertical-align: middle; padding-top: 5px;">Very high (>90)</span>
+              <br>
+              <div class="graphcolor" style="background-color: lightblue; "></div>
+              <span style="margin-left: 5px; vertical-align: middle;">Confident (90-70)</span>
+              <br>
+              <div class="graphcolor" style="background-color: yellow; "></div>
+              <span style="margin-left: 5px; vertical-align: middle;">Low (70-50)</span>
+              <br>
+              <div class="graphcolor" style="background-color: orange;"></div>
+              <span style="margin-left: 5px; vertical-align: middle;">Very low (<50)</span>
+              <br>
+              <div class="graphcolor" style="background-color: red;"></div>
+              <span style="margin-left: 5px; vertical-align: middle;">Disordered</span>
+              <br>
+            </div>
+        </div>
+        <br>
+        <div>
+        {% if structure_type == "af-signprot-peptide" %}
+          <h5>PTM Score: <b>{{ scores.ptm|floatformat:1 }}</b>
+            <span class="fa fa-info-circle simple-popover" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="bottom" data-content="<b>Predicted TM-score </b>:<br /> Confidence assessment of the overall fold and topology"></span>
+          </h5>
+        </div>
+        <div id="PTM_location"></div>
+        <div>
+          <h5>iPTM Score: <b>{{ scores.iptm|floatformat:1 }}</b>
+            <span class="fa fa-info-circle simple-popover" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="bottom" data-content="<b>Interface predicted TM-score</b>:<br />
+Confidence assessment of the relative positioning of protein chains at the interface."></span>
+          </h5>
+        </div>
+        <div id="iPTM_location"></div>
+        <div>
+          <h5>PAE mean: <b>{{ scores.pae_mean|floatformat:1 }}</b>
+            <span class="fa fa-info-circle simple-popover" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="bottom" data-content="<b>The mean of the predicted alignment errors</b><br>Confidence assessment of the relative position of the ligand and receptor."></span>
+          </h5>
+        </div>
+        <div id="PAE_location"></div>
+    </div>
+    {% else %}
+              <h5>7TM PAE mean: <b>{{ scores.pae_7tm|floatformat:1 }}</b>
+            <span class="fa fa-info-circle simple-popover" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="bottom" data-content="<b>The mean of thte predicted alignment errors on the 7TM domains </b>:<br /> Confidence assessment of the relative positioning of residue pairs in the receptor 7TM domain."></span>
+          </h5>
+        </div>
+        <div id="PTM_location"></div>
+        <div>
+          <h5>pLDDT mean: <b>{{ scores.plddt_mean|floatformat:1 }}</b>
+            <span class="fa fa-info-circle simple-popover" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="bottom" data-content="<b>predicted LDDT mean</b>:<br />Confidence assessment of the placement of ligand atom relative to all other atoms within 15 Å."></span>
+          </h5>
+        </div>
+        <div id="iPTM_location"></div>
+    </div>
+
+    {% endif %}
+</div>
+
+<!-- Structure type as json_script to use in javascript variable -->
+{{ structure_type|json_script:"structure-type" }}
+
+{% endblock %}
+{% block addon_js %}
+    <script src="{% static 'home/js/ngl.js' %}"> </script>
+    <script>
+        document.addEventListener( "DOMContentLoaded", function(){
+            // Model viewer
+            var stage_full;
+            var stage = new NGL.Stage( "viewport", { backgroundColor: "white" } );
+            var color_residues = JSON.parse('{{color_residues|safe}}');
+            var schemeId = NGL.ColorMakerRegistry.addSelectionScheme( color_residues );
+            stage.loadFile( "/structure/ligand_complex_models/view/{{pdbname}}", { ext: "pdb" }  ).then( function( o ){
+                o.addRepresentation( "cartoon", {color: schemeId} );  // pass schemeId here ,{ color: schemeId }
+                o.addRepresentation( 'cartoon', {sele: ':E', aspectRatio:'20.0', color:schemeId}, )
+                if ({{ small_molecule }}) {
+                o.addRepresentation('licorice', {sele: ':B', color:schemeId});
+                o.addRepresentation('surface', {sele: ':B', opacity:0.1, useWorker:false});
+            };
+                o.centerView();
+            } );
+            $( "#fullscreen" ).click(function() {
+                stage.toggleFullscreen();
+            });
+
+
+    });
+    </script>
+
+    <script src="{% static 'home/js/d3.min.js' %}"></script>
+    <script src="{% static 'home/js/nv.d3.min.js' %}"></script>
+    <script src="{% static 'home/js/d3.v4.min.js' %}"></script>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script src="{% static 'home/js/d3.tip.v4comp.js' %}"></script>
+    <script src="{% static 'home/js/d3-legend.min.js' %}"></script>
+    <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
+    <script src="{% static 'home/js/dataTables.tableTools.min.js' %}"> </script>
+    <script src="{% static 'home/js/jquery.dataTables.columnFilter.js' %}"> </script>
+    <script src="{% static 'home/js/selection.js' %}"> </script>
+    <script src="{% static 'home/js/table2csv.js' %}"> </script>
+    <script src="{% static 'home/js/phylo_tree.js' %}"></script>
+    <script src="{% static 'home/js/lodash.min.js' %}"></script>
+    <script src="{% static 'home/js/chroma.min.js' %}"></script>
+    <script src="{% static 'home/js/gpcrdb.js' %}"></script>
+    <!-- <script src="{% static 'home/js/jquery.tablesorter.js' %}"></script> -->
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <!-- <script src="{% static 'home/js/matrix_utilities.js' %}"></script> -->
+    <!-- <script src="{% static 'home/js/signprotmat.js' %}"></script> -->
+    <!-- <script src="{% static 'home/js/fixed_columns.js' %}"></script> -->
+    <script>
+      $(function () {
+        $(".simple-popover").popover();
+        $('#wide-popover').popover().data('bs.popover').tip().addClass('wide-popover');
+      });
+    </script>
+    <script type="text/javascript" charset="utf-8">
+        $(document).ready(function () {
+
+            console.log('EVALIATE0')
+            // Structure type as serialized variable
+            var structureType = JSON.parse(document.getElementById('structure-type').textContent);
+
+            if (structureType === "af-signprot-peptide") {
+                var x = null
+                ptm = Number({{ scores.ptm }});
+                iptm = Number({{ scores.iptm }});
+                pae = Number({{ scores.pae_mean }});
+                draw_model_scores('PTM_location', 'PTM_divider', 'PTM',  0, 1, ptm, 0.5);
+                draw_model_scores('iPTM_location', 'iPTM_divider', 'iPTM',  0, 1, iptm, 0.5);
+                draw_model_scores('PAE_location', 'PAE_divider', 'PAE',  0, 31, pae, 15.5, true);
+            } else {
+                console.log("Executing else block");
+                pae_7 =   Number({{ scores.pae_7tm  }});
+                plddt = Number({{ scores.plddt_mean }});
+
+
+                draw_model_scores('PTM_location', 'PAE_divider', 'PTM',  0, 31, pae_7, 15.5, true);
+                draw_model_scores('iPTM_location', 'iPTM_divider', 'iPTM',  0, 100, plddt, 50);
+                // draw_model_scores('PAE_location', 'PAE_divider', 'PAE',  0, 31, pae, 15.5, true);
+            };
+
+
+            ClearSelection('targets');
+            ClearSelection('reference');
+
+            // Attach event listeners to checkboxes
+            document.querySelectorAll('input[name="chain"]').forEach(el => {
+              el.addEventListener('change', updateHighlight);
+            });
+            var table = $('#rotamers').DataTable({
+                'scrollX': true,
+                'scrollY': '15vh',
+                'bScrollCollapse': true,
+                'paging': false,
+                'orderCellsTop': true,
+                'autoWidth': false,
+                'dom': 'iTlfrt',
+                'order': [[1, "asc"]], // order by date
+
+                'tableTools': {
+                    "sRowSelect": "single",
+                    "aButtons": []
+                },
+
+                initComplete: function () {
+                    $('#rotamers').dataTable().columnFilter({
+                        sPlaceHolder: "head:after",
+                        sRangeFormat: "{from}:{to}",
+                        aoColumns: [
+                            { type: "select" }, // segment
+                            { type: "number-range"}, // seq num
+                            { type: "text" }, // AA
+                            { type: "text" }, // gn
+                            { type: "text" }, // backbone
+                            { type: "text" }, // backbone xtal
+                            { type: "text" }, // rotamer
+                            { type: "text" }, // rotamer xtal
+                        ]
+                    });
+                },
+            });
+            var table2 = $('#signprot_rotamers').DataTable({
+                'scrollX': true,
+                'scrollY': '15vh',
+                'bScrollCollapse': true,
+                'paging': false,
+                'orderCellsTop': true,
+                'autoWidth': false,
+                'dom': 'iTlfrt',
+                'order': [[1, "asc"]], // order by date
+
+                'tableTools': {
+                    "sRowSelect": "single",
+                    "aButtons": []
+                },
+
+                initComplete: function () {
+                    $('#signprot_rotamers').dataTable().columnFilter({
+                        sPlaceHolder: "head:after",
+                        sRangeFormat: "{from}:{to}",
+                        aoColumns: [
+                            { type: "select" }, // segment
+                            { type: "number-range"}, // seq num
+                            { type: "text" }, // AA
+                            { type: "text" }, // gn
+                            { type: "text" }, // backbone
+                            { type: "text" }, // backbone xtal
+                            { type: "text" }, // rotamer
+                            { type: "text" }, // rotamer xtal
+                        ]
+                    });
+                },
+            });
+        });
+
+        function downloadCSV() {
+          $('#rotamers').table2csv({filename: 'Complex_model_templates.csv', quoteFields: true});
+        }
+        function downloadSVG(svgElementId, filename, format = 'svg') {
+          const svgElement = document.getElementById(svgElementId);
+
+          if (!svgElement) {
+            console.error(`Element with id "${svgElementId}" not found.`);
+            return;
+          }
+
+          if (format === 'svg') {
+            const svgString = new XMLSerializer().serializeToString(svgElement);
+            const blob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = filename + '.svg';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+          } else {
+            const svgString = new XMLSerializer().serializeToString(svgElement);
+            const img = new Image();
+            img.src = 'data:image/svg+xml;base64,' + window.btoa(svgString);
+            img.onload = function() {
+              const canvas = document.createElement('canvas');
+              const bbox = svgElement.getBBox();
+              canvas.width = bbox.width * 1.2;
+              canvas.height = bbox.height * 1.2;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(img, 0, 0);
+              let mimeType = 'image/png';
+              if (format === 'jpeg') mimeType = 'image/jpeg';
+              else if (format === 'tiff') mimeType = 'image/tiff';
+              canvas.toBlob((blob) => {
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = filename + '.' + format;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+              }, mimeType);
+            };
+          }
+        }
+</script>
+
+
+{% endblock %}
