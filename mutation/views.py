@@ -725,12 +725,18 @@ class MutationStatistics(TemplateView):
         # Collect results into a list
         experimental_mutations = list(experimental_mutations_iterator)
         print('check 1')
+        all_proteins = Protein.objects.filter(species_id=1, parent_id__isnull=True, accession__isnull=False, family_id__slug__startswith='00')
+
+        for prot in all_proteins:
+            mut_count_receptor_dict[prot.entry_name] = 0
+
         for a in experimental_mutations:
             mut_count_receptor_dict[a['protein__entry_name']] = a['c']
         print('check 2')
 
         #aggregate data for receptor of other organisms into human if available
         aggregated = {}
+
         for key, value in mut_count_receptor_dict.items():
             # Split the key into protein name and organism
             base_name, organism = key.rsplit('_', 1)
@@ -743,12 +749,12 @@ class MutationStatistics(TemplateView):
             else:
                 # Check if a human version exists for this protein
                 human_key = f"{base_name}_human"
-                if human_key in aggregated:
+                if human_key in mut_count_receptor_dict.keys():
                     # Add the current organism's value to the human version
                     aggregated[human_key] += value
-                else:
-                    # If no human version exists, add this non-human version as is
-                    aggregated[key] = value
+                # else:
+                #     # If no human version exists, add this non-human version as is
+                #     aggregated[key] = value
 
         proteins = list(Protein.objects.filter(entry_name__in=aggregated.keys()
         ).values('entry_name', 'name').order_by('entry_name'))
@@ -765,15 +771,14 @@ class MutationStatistics(TemplateView):
         human_mut = {}
 
         # Iterate over the dictionary
-        for key, value in mut_count_receptor_dict.items():
+        for key, value in aggregated.items():
             protein_name = key.split('_')[0]
             human_key = f'{protein_name}_human'
-            target_key = human_key if human_key in mut_count_receptor_dict else key
+            # target_key = human_key if human_key in mut_count_receptor_dict else key
+            if human_key not in human_mut:
+                human_mut[human_key] = 0
 
-            if target_key not in human_mut:
-                human_mut[target_key] = 0
-
-            human_mut[target_key] += value
+            human_mut[human_key] += value
 
         print('check 4')
         for item in families:
@@ -788,6 +793,7 @@ class MutationStatistics(TemplateView):
                 conversion[item.slug] = item.name
             if len(item.slug) == 15 and item.slug not in datatree[item.slug[:3]][item.slug[:7]][item.slug[:11]]:
                 datatree[item.slug[:3]][item.slug[:7]][item.slug[:11]].append(item.name)
+
         print('check 5')
         datatree2 = LandingPage.convert_keys(datatree, conversion)
         datatree2.pop('Parent family', None)

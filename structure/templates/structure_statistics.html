@@ -1209,8 +1209,8 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
         <div class="col-md-3">
           Receptor names:
             <div class="btn-group" role="group" id="gtp_plus">
-                <button id="GPCRome_UniProtNames" class="btn btn-info ">Gene</button>
-                <button id="GPCRome_IUPHARNames" class="btn btn-info active">Protein</button>
+                <button id="GPCRome_UniProtNames_complexes" class="btn btn-info ">Gene</button>
+                <button id="GPCRome_IUPHARNames_complexes" class="btn btn-info active">Protein</button>
             </div>
         </div>
 
@@ -1280,8 +1280,6 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
 var GPCRome_categories_data = {{ GPCRome_data|safe }};
 var fill_data = {{ GPCRome_data_variables|safe }};
 var fill_data_complexes = {{ GPCRome_data_variables_complexes|safe }};
-console.log('fill_data_complexes');
-console.log(fill_data_complexes);
 var GPCRome_Label_conversion_dict = {{GPCRome_Label_Conversion|safe}};
 // Initialize the conversion dictionary
 GPCRome_Label_conversion_dict = initializeGPCRomeLabelConversionDict(GPCRome_Label_conversion_dict);
@@ -1365,15 +1363,21 @@ let currentLabelType = "IUPHAR"; // Default
 document.getElementById("GPCRome_UniProtNames").addEventListener("click", () => {
     switchLabelType("UniProt");
 });
+document.getElementById("GPCRome_UniProtNames_complexes").addEventListener("click", () => {
+    switchLabelType("UniProt");
+})
 
 document.getElementById("GPCRome_IUPHARNames").addEventListener("click", () => {
     switchLabelType("IUPHAR");
 });
+document.getElementById("GPCRome_IUPHARNames_complexes").addEventListener("click", () => {
+    switchLabelType("IUPHAR");
+});
 
 // Function to switch label types
-function switchLabelType(labelType) {
+function switchLabelType(labelType, location, fill, conversion, styling) {
     currentLabelType = labelType;
-    updateGPCRome();
+    updateGPCRome(location, fill, conversion, styling);
 }
 
 // Function to toggle the icon visibility and redraw the GPCRomes
@@ -1400,15 +1404,16 @@ function toggleIcon() {
 d3.select("#ToggleIcon").on("click", toggleIcon);
 
 // Function to update and redraw GPCRomes
-function updateGPCRome() {
-    const updatedLayoutData = updateLayoutData(layout_data, GPCRome_Label_conversion_dict, currentLabelType);
-    const updatedFillData = updateFillData(fill_data, GPCRome_Label_conversion_dict, currentLabelType);
+function updateGPCRome(location, fill, conversion, styling) {
+
+    const updatedLayoutData = updateLayoutData(layout_data, conversion, currentLabelType);
+    const updatedFillData = updateFillData(fill, conversion, currentLabelType);
 
     // Clear the existing SVG content
-    d3.select("#" + GPCRome_location).select("svg").remove();
+    d3.select("#" + location).select("svg").remove();
 
     // Redraw the GPCRomes with the updated data
-    Draw_GPCRomes(updatedLayoutData, updatedFillData, GPCRome_location, GPCRomes_styling);
+    Draw_GPCRomes(updatedLayoutData, updatedFillData, location, styling);
 
     // Update button active states
     // updateActiveButtonState(currentLabelType);

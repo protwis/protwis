@@ -3187,6 +3187,7 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling) {
             .attr("transform", `translate(${width / 2}, ${height / 2})`)
             .style("fill", (d) => {
                 const value = fill_data[d.data]?.Value1;
+                console.log(value);
 
                 if (datatype === "Continuous") {
                     // Use color scale for continuous data
@@ -3208,12 +3209,14 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling) {
                     if (value === "Active") return "green";
                     if (value === "Inactive") return "red";
                     if (value === "Both") return "blue";
+                    if (value === "empty") return "white";
                     return "none";  // Make the slice invisible if the value is ""
                 }
             })
             .style("stroke", (d) => {
                 const value = fill_data[d.data]?.Value1;
                 if (value === "Yes" || value === "No" || !isNaN(value)) return "black";
+                if (value === "Active" || value === "Inactive" || value === "Both" || value === "empty") return "black";
                 return "none";  // Remove the stroke if the value is ""
             })
             .style("stroke-width", (d) => {

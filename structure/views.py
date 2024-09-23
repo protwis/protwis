@@ -1683,6 +1683,7 @@ class StructureStatistics(TemplateView):
         else: #JIMMY
 
             start_time = time.time()
+            all_proteins = Protein.objects.filter(species_id=1, parent_id__isnull=True, accession__isnull=False, family_id__slug__startswith='00')
             all_structs = Structure.objects.all().exclude(structure_type__slug__startswith='af-').prefetch_related('protein_conformation__protein__family')
             circle_data = all_structs.values_list(
                           "state_id__slug", "protein_conformation__protein__parent__entry_name").order_by(
@@ -1690,6 +1691,12 @@ class StructureStatistics(TemplateView):
                           "state_id__slug", "protein_conformation__protein__parent__entry_name")
 
             result_dict = {}
+            for prot in all_proteins:
+                key = prot.entry_name
+                # Initialize the key in result_dict if not already present
+                if key not in result_dict:
+                    result_dict[key] = {'states': set(), 'status': 'empty'}
+
             print('check 1')
 
             for item in circle_data:
@@ -1769,6 +1776,14 @@ class StructureStatistics(TemplateView):
 
             complexes_list = list(complexes_count)
             print('check 7')
+
+            complexes_dict = {}
+            for prot in all_proteins:
+                key = prot.entry_name
+                # Initialize the key in result_dict if not already present
+                if key not in complexes_dict:
+                    complexes_dict[key] = 0
+
             for a in complexes_list:
                 complexes_dict[a['structure_id__protein_conformation_id__protein__parent__entry_name']] = a['c']
 
