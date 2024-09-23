@@ -25,7 +25,8 @@ from common.views import AbsReferenceSelectionTable, getReferenceTable, getLigan
 from common.models import ReleaseNotes, WebResource, Publication
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from common.selection import Selection, SelectionItem
-from ligand.models import Ligand, LigandVendorLink, BiasedPathways, AssayExperiment, BiasedData, Endogenous_GTP, LigandID, LigandPeptideStructure
+from mapper.views import LandingPage
+from ligand.models import Ligand, LigandVendorLink, BiasedPathways, AssayExperiment, BiasedData, Endogenous_GTP, LigandID
 from ligand.functions import OnTheFly, AddPathwayData
 from protein.models import Protein, ProteinFamily
 from interaction.models import StructureLigandInteraction
@@ -1314,12 +1315,17 @@ class LigandStatistics(TemplateView):
 
         context = super().get_context_data(**kwargs)
         lig_count_dict = {}
+        lig_count_receptor_dict = {}
 
         if self.page == 'ligands':
             assays_lig = list(AssayExperiment.objects.all().values(
                 'protein__family__parent__parent__parent__name').annotate(c=Count('ligand', distinct=True)))
+            assays_lig_rec = list(AssayExperiment.objects.all().values(
+                'protein__entry_name').annotate(c=Count('ligand', distinct=True)))
             for a in assays_lig:
                 lig_count_dict[a['protein__family__parent__parent__parent__name']] = a['c']
+            for a in assays_lig_rec:
+                lig_count_receptor_dict[a['protein__entry_name']] = a['c']
         else:
             if self.page == 'ligand_bias':
                 assays_lig = list(BiasedData.objects
@@ -1537,6 +1543,55 @@ class LigandStatistics(TemplateView):
         ##### END COPIED SECTION #####
 
         if self.page == 'ligands':
+            # Generate the master dict of protein families
+
+            names_dict = Protein.objects.filter(species_id=1, parent_id__isnull=True, accession__isnull=False, family_id__slug__startswith='00').values('entry_name', 'name').order_by('entry_name')
+            names_conversion_dict = {item['entry_name']: item['name'] for item in names_dict}
+            data = list(names_conversion_dict.keys())
+            names = list(Protein.objects.filter(entry_name__in=data).values_list('name', flat=True))
+            IUPHAR_to_uniprot_dict = {item['name']: item['entry_name'] for item in names_dict}
+
+            families = ProteinFamily.objects.all()
+            datatree = {}
+            conversion = {}
+            human_dict = {}
+            # Iterate over the dictionary
+            for key, value in lig_count_receptor_dict.items():
+                # Extract the base protein name (everything before the first underscore)
+                protein_name = key.split('_')[0]
+
+                # Check if the "_human" version exists in the original dictionary
+                human_key = f'{protein_name}_human'
+
+                if human_key in lig_count_receptor_dict:
+                    # Initialize the human key in the result dictionary if it hasn't been already
+                    if human_key not in human_dict:
+                        human_dict[human_key] = 0
+
+                    # Sum values under the human key
+                    human_dict[human_key] += value
+
+            for item in families:
+                if len(item.slug) == 3 and item.slug not in datatree.keys():
+                    datatree[item.slug] = {}
+                    conversion[item.slug] = item.name
+                if len(item.slug) == 7 and item.slug not in datatree[item.slug[:3]].keys():
+                    datatree[item.slug[:3]][item.slug[:7]] = {}
+                    conversion[item.slug] = item.name
+                if len(item.slug) == 11 and item.slug not in datatree[item.slug[:3]][item.slug[:7]].keys():
+                    datatree[item.slug[:3]][item.slug[:7]][item.slug[:11]] = []
+                    conversion[item.slug] = item.name
+                if len(item.slug) == 15 and item.slug not in datatree[item.slug[:3]][item.slug[:7]][item.slug[:11]]:
+                    datatree[item.slug[:3]][item.slug[:7]][item.slug[:11]].append(item.name)
+
+            datatree2 = LandingPage.convert_keys(datatree, conversion)
+            datatree2.pop('Parent family', None)
+            datatree3 = LandingPage.filter_dict(datatree2, names)
+            data_converted = {names_conversion_dict[key]: {'Value1':value} for key, value in human_dict.items()}
+            Data_full = {"NameList": datatree3, "DataPoints": data_converted, "LabelConversionDict":IUPHAR_to_uniprot_dict}
+            context['GPCRome_data'] = json.dumps(Data_full["NameList"])
+            context['GPCRome_data_variables'] = json.dumps(Data_full['DataPoints'])
+            context['GPCRome_Label_Conversion'] = json.dumps(Data_full['LabelConversionDict'])
             context["render"] = "not_bias"
 
         else:
@@ -2448,8 +2503,7 @@ class PhysiologicalLigands(TemplateView):
                             "publication__reference",                         #18 Pub Reference
                             "publication__web_link__index",                   #19 DOI/PMID
                             "receptor",                                       #20 Receptor ID
-                            "receptor__accession",                            #21 Accession (UniProt link)
-                            'pdb_code').distinct()          #22 pdb_code (UniProt link)                       
+                            "receptor__accession").distinct()                 #21 Accession (UniProt link)
 
 
         gtpidlinks = dict(list(LigandID.objects.filter(web_resource__slug='gtoplig').values_list(

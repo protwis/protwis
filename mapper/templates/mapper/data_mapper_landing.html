@@ -1,0 +1,660 @@
+{% extends "home/base.html" %}
+{% load static %}
+{% load humanize %}
+{% block addon_css %}
+<link rel="stylesheet" href="{% static 'home/css/nv.d3.min.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/nvd3-update.css' %}" type="text/css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+<!-- <link rel="stylesheet" href="{% static 'home/css/Awesomefonts_all.min.css' %}" type="text/css" /> -->
+<link href="{% static 'home/css/bootstrap-responsive.css' %}" rel="stylesheet" media="screen">
+
+<style>
+  /* added by soren - start*/
+  .wide-modal {
+    max-width: 80% !important; /* Adjust as necessary */
+    width: 60% !important; /* Add explicit width */
+  }
+
+    .plot-item {
+      display: flex;
+      align-items: center;
+  }
+
+  .plot-status {
+      margin-left: auto;
+  }
+  .right-content {
+    margin-left: auto;
+}
+  /* added by soren - End */
+</style>
+<style>
+  .col-md-12 img {
+    transition: transform 0.3s ease, opacity 0.3s ease; /* Smooth transformation for scaling and opacity */
+    opacity: 1; /* Full opacity by default */
+  }
+
+  .col-md-12 img:hover {
+    transform: scale(1.1); /* Scales the image up on hover */
+    opacity: 1; /* Full opacity on hover */
+  }
+
+  .col-md-12:hover img {
+    opacity: 0.5; /* Reduces opacity of all images when any part of the div is hovered over */
+  }
+
+  .col-md-12 img:last-child {
+    margin-left: 5px; /* Adds 5px margin to the left of the last image */
+  }
+
+  .col-md-12 img:hover {
+    opacity: 1 !important; /* Ensures the hovered image stays fully opaque */
+  }
+
+  .img-container .tooltip {
+    position: absolute;
+    background-color: black;
+    color: white;
+    padding: 5px 10px;
+    white-space: nowrap;
+    visibility: hidden;
+    bottom: 100%; /* Adjust if the tooltip appears too high or low */
+    left: 50%;
+    transform: translateX(-50%) translateY(-10px); /* Adjust to ensure tooltip does not overlap the image */
+    z-index: 100; /* Higher value to ensure it's on top of other elements */
+  }
+
+  .img-container:hover .tooltip {
+    visibility: visible;
+    opacity: 1; /* Ensure it's fully opaque */
+    transition: visibility 0s, opacity 0.5s linear; /* Immediate visibility change with smooth opacity transition */
+  }
+
+  /* added by soren - start */
+  .expandable_partially_success, .expandable_failed {
+    cursor: pointer;
+}
+
+.hidden {
+    display: none;
+}
+
+.dropdown-icon {
+    transition: transform 0.3s ease;
+}
+
+.dropdown-icon.expanded {
+    transform: rotate(90deg);
+}
+  /* added by soren - end */
+</style>
+<style>
+    .root { fill: red; }
+    .sub { fill: black; }
+    text { font-family: sans-serif; }
+</style>
+
+{% endblock %}
+
+{% block content %}
+
+
+<div class='col-md-12'>
+    <h2 style='text-align:center;margin-top: 30px;margin-bottom: 50px;'>Data Mapper</h2>
+    <div style="margin-top: 20px;font-size: 13px;">
+      <span>
+        Data mapper lets users upload data for any set of human receptors to swiftly
+        map them using several visualization options suitable for e.g., publications or presentations.
+        A downloadable data template (MS Excel) is provided through the green download button,
+        whereas the blue button allows user to upload their data, and plot details are highlighted by clicking on each
+        orange plot icon. Once the user data has been uploaded, a data overview pop up will show errors, if any, in the data formatting.
+        After this check, users will be redirected to a plotting page with a tab for each plot for which uploaded data.
+      </span>
+    </div>
+</div>
+
+
+<!-- ##################################### -->
+<!-- ####    Download   //   Upload    ### -->
+<!-- ##################################### -->
+
+<div class='col-md-12' style="margin-top: 50px;">
+  <!-- ################# -->
+  <!-- #### Download ### -->
+  <!-- ################# -->
+  <div class="col-md-3" style="text-align:center;"></div>
+  <!-- ################# -->
+  <!-- ####  Upload  ### -->
+  <!-- ################# -->
+  <div class="col-md-6 img-container" style="text-align:center;">
+    <form id="upload-file" name="upload-file" enctype="multipart/form-data" method="POST" action="{% url 'landing_page' %}">
+      {% csrf_token %}
+      <!-- Hidden file input -->
+      <input id="file-input" type="file" name="file" style="display:none;" accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+      <!-- Image selector -- Upload  -->
+      <img id="file-trigger" src="{% if upload_status == 'Success' %}{% static 'home/images/Mapper_Upload_Success.png' %}
+      {% elif upload_status == 'Failed' %}{% static 'home/images/Mapper_Upload_Failed.png' %}
+      {% else %}
+      {% static 'home/images/Mapper_Upload.png' %}
+      {% endif %}" alt="file" width="140" height="140" style="cursor:pointer;">
+      <br>
+      <h4 style='text-align:center;margin-top: 10px;'>Upload Data</h4>
+    </form>
+  </div>
+
+</div>
+
+<!-- ##################################### -->
+<!-- ####          PLOT OPTIONS        ### -->
+<!-- ##################################### -->
+<div class='col-md-12' style="margin-top: 10px;">
+    <h3 style='text-align:center;'></h3>
+</div>
+
+<div class='col-md-12' style="display: flex; justify-content: center; align-items: center;">
+  <div class="img-container">
+    <img id="GPCRomeImage" src="{% static 'home/images/gpcrome_example.png' %}" width="140" height="140" style='cursor:pointer;'>
+    <br>
+    <h4 style='text-align:center;margin-top: 10px;'>GPCRome<br>wheel</h4>
+    <!-- <span class="tooltip">Heatmap</span> -->
+  </div>
+  <div class="img-container">
+    <img id="phyloTreeImage" src="{% static 'home/images/phylo_example.png' %}" width="140" height="140" style='margin-left: 40px;cursor:pointer;'>
+    <br>
+    <h4 style='text-align:center;margin-left: 40px;margin-top: 10px;'>Tree</h4>
+    <!-- <span class="tooltip">Phylogenetic Tree</span> -->
+  </div>
+  <div class="img-container">
+    <img id="ClusterImage" src="{% static 'home/images/cluster_example.png' %}" width="140" height="140" style='margin-left: 40px;cursor:pointer;'>
+    <br>
+    <h4 style='text-align:center;margin-left: 40px;margin-top: 10px;'>Cluster</h4>
+    <!-- <span class="tooltip">Cluster Analysis</span> -->
+  </div>
+  <div class="img-container">
+    <img id="ListImage" src="{% static 'home/images/list_example.png' %}" width="140" height="140" style='margin-left: 40px;cursor:pointer;'>
+    <br>
+    <h4 style='text-align:center;margin-left: 40px;margin-top: 10px;'>List</h4>
+    <!-- <span class="tooltip">List Plot</span> -->
+  </div>
+  <div class="img-container">
+    <img id="HeatmapImage" src="{% static 'home/images/heatmap_example.png' %}" width="140" height="140" style='margin-left: 40px;cursor:pointer;'>
+    <br>
+    <h4 style='text-align:center;margin-left: 40px;margin-top: 10px;'>Heatmap</h4>
+    <!-- <span class="tooltip">Heatmap</span> -->
+  </div>
+</div>
+  <div class="img-container" style="text-align:center;">
+    <a href="{% static 'Files/Upload_test.xlsx' %}" download="Upload_test.xlsx">
+      <img src="{% static 'home/images/Mapper_Download.png' %}" width="80" height="80">
+    </a>
+    <br>
+    <h5 style='text-align:center;margin-top: 10px'>Download<br>Template.xlsx</h4>
+  </div>
+
+
+<!-- ######################## -->
+<!-- ###### MODALS ! ######## -->
+<!-- ######################## -->
+
+<!-- ################################### -->
+<!-- ## Failed to submit correct file ## -->
+<!-- ################################### -->
+
+<div class="modal fade" id="uploadFailedModal" tabindex="-1" role="dialog" aria-labelledby="uploadFailedModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+      <div class="modal-content">
+          <div class="modal-header">
+              <h5 class="modal-title" id="uploadFailedModalLabel">Upload Failed</h5>
+              <!-- <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+              </button> -->
+          </div>
+          <div class="modal-body">
+              {{Error_message}}
+          </div>
+          <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          </div>
+      </div>
+  </div>
+</div>
+
+
+
+<!-- ##################### -->
+<!-- ## Report Success! ## -->
+<!-- ##################### -->
+
+<div class="modal fade" id="Report_modal_success" tabindex="-1" role="dialog" aria-labelledby="Report-modal-label" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+      <div class="modal-content">
+          <div class="modal-header">
+              <h3 class="modal-title" id="Report-modal-label">Report: Successful</h3>
+          </div>
+          <div class="modal-body">
+            {% if plots_status %}
+              {% for plot in plots_status %}
+                {% if plot.status == 'Success' %}
+                  <h4 class="plot-item">
+                    <img src="{% static 'home/images/Mapper_Success.png' %}" width="20" height="20" style="vertical-align: middle; margin-right: 5px;">
+                    {{ plot.plot_name }}
+                    <span class="plot-status">Plot available for rendering</span>
+                  </h4>
+                {% endif %}
+              {% endfor %}
+            {% endif %}
+          </div>
+          <div class="modal-footer" style="display: flex; justify-content: space-between;">
+              <button type="button" class="btn btn-primary" onclick="window.location.href=window.location.href;">Back</button>
+              <form method="POST" action="{% url 'data_mapper_plotrender' %}">
+                  {% csrf_token %}
+                  <input type="hidden" name="Plot_evaluation" value="{{ Plot_parser_json }}">
+                  <input type="hidden" name="Data" value="{{ Data }}">
+                  <button type="submit" class="btn btn-primary">Continue</button>
+              </form>
+          </div>
+      </div>
+  </div>
+</div>
+
+<!-- ############################# -->
+<!-- ## Partially success report ! ## -->
+<!-- ############################# -->
+
+<div class="modal fade" id="Report_modal_partially_success" tabindex="-1" role="dialog" aria-labelledby="NoReport-modal-label" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+      <div class="modal-content">
+          <div class="modal-header">
+              <h3 class="modal-title" id="NoReport-modal-label">Report: Partially successful</h3>
+              <!-- <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+              </button> -->
+          </div>
+          <div class="modal-body">
+            {% if plots_status %}
+              {% for plot in plots_status %}
+                {% if plot.status == 'Success' %}
+                  <h4 class="plot-item">
+                    <img src="{% static 'home/images/Mapper_Success.png' %}" width="20" height="20" style="vertical-align: middle; margin-right: 5px;">
+                    {{ plot.plot_name }}
+                    <span class="plot-status">Plot available for rendering</span>
+                  </h4>
+                {% elif plot.status == 'Empty sheet' %}
+                  <h4 class="expandable_partially_success plot-item" data-target="sortable-{{ forloop.counter }}">
+                    <img src="{% static 'home/images/Mapper_NoData.png' %}" width="22" height="22" style="vertical-align: middle; margin-right: 5px;">
+                    {{ plot.plot_name }}
+                    <i class="fas fa-chevron-right dropdown-icon" style="margin-left: 10px;"></i>
+                    <div class="right-content">
+                        <span class="float-right">Plot unavailable (Click for info)</span>
+                    </div>
+                  </h4>
+                  <ul id="sortable-{{ forloop.counter }}" class="hidden">
+                   <p>Data is empty, and will not be processed for plot rendering.</p>
+                  </ul>
+                {% elif plot.status == "Failed" %}
+                  <h4 class="expandable_partially_success" data-target="sortable-{{ forloop.counter }}" >
+                    <img src="{% static 'home/images/Mapper_Failed.png' %}" width="22" height="22" style="vertical-align: middle; margin-right: 5px;">
+                    {{ plot.plot_name }}
+                    <i class="fas fa-chevron-right dropdown-icon" style="margin-left: 10px;"></i>
+                    <div class="right-content">
+                      <span class="float-right">Plot unavailable (Click for info)</span>
+                    </div>
+                  </h4>
+                  </h4>
+                  {% for name, plot_data in Incorrect_data_json.items %}
+                    {% if name == plot.plot_name %}
+                      {% if plot_data %}
+                        <ul id="sortable-{{ forloop.parentloop.counter }}" class="hidden">
+                          {% for primary_key, nested_dict in plot_data.items %}
+                            {% if nested_dict %}
+                              {% if nested_dict.items %}
+                                <ul>
+                                  <li>{{ primary_key }}</li>
+                                  <ul>
+                                    {% for key, value in nested_dict.items %}
+                                      {% if value %}
+                                        <li>Row {{ key }}: {{ value }}</li>
+                                      {% endif %}
+                                    {% endfor %}
+                                  </ul>
+                                </ul>
+                              {% else %}
+                                <li>{{ primary_key }}: {{ nested_dict }}</li>
+                              {% endif %}
+                            {% endif %}
+                          {% endfor %}
+                        </ul>
+                      {% endif %}
+                    {% endif %}
+                  {% endfor %}
+                {% endif %}
+              {% endfor %}
+            {% endif %}
+          </div>
+          <div class="modal-footer" style="display: flex; justify-content: space-between;">
+            <button type="button" class="btn btn-primary" onclick="window.location.href=window.location.href;">Back</button>
+            <form method="POST" action="{% url 'data_mapper_plotrender' %}">
+                {% csrf_token %}
+                <input type="hidden" name="Plot_evaluation" value="{{ Plot_parser_json }}">
+                <input type="hidden" name="Data" value="{{ Data }}">
+                <button type="submit" class="btn btn-primary">Continue (anyway)</button>
+            </form>
+          </div>
+      </div>
+  </div>
+</div>
+
+<!-- ############################# -->
+<!-- ## Report Failed ! ## -->
+<!-- ############################# -->
+
+<div class="modal fade" id="Report_modal_failed" tabindex="-1" role="dialog" aria-labelledby="NoReport-modal-label" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+      <div class="modal-content">
+          <div class="modal-header">
+              <h3 class="modal-title" id="NoReport-modal-label">Report: Failed</h3>
+              <!-- <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+              </button> -->
+          </div>
+          <div class="modal-body">
+            {% if plots_status %}
+              {% for plot in plots_status %}
+                {% if plot.status == 'Success' %}
+                  <h4 class="plot-item">
+                    <img src="{% static 'home/images/Mapper_Success.png' %}" width="20" height="20" style="vertical-align: middle; margin-right: 5px;">
+                    {{ plot.plot_name }}
+                    <span class="plot-status">Plot available for rendering</span>
+                  </h4>
+                {% elif plot.status == 'Empty sheet' %}
+                  <h4 class="expandable_failed plot-item" data-target="sortable_failed-{{ forloop.counter }}">
+                    <img src="{% static 'home/images/Mapper_NoData.png' %}" width="22" height="22" style="vertical-align: middle; margin-right: 5px;">
+                    {{ plot.plot_name }}
+                    <i class="fas fa-chevron-right dropdown-icon" style="margin-left: 10px;"></i>
+                    <div class="right-content">
+                        <span class="float-right">Plot unavailable (Click for info)</span>
+                    </div>
+                  </h4>
+                  <ul id="sortable_failed-{{ forloop.counter }}" class="hidden">
+                   <p>Data is empty, and will not be processed for plot rendering.</p>
+                  </ul>
+                {% elif plot.status == "Failed" %}
+                  <h4 class="expandable_failed plot-item" data-target="sortable_failed-{{ forloop.counter }}">
+                    <img src="{% static 'home/images/Mapper_Failed.png' %}" width="22" height="22" style="vertical-align: middle; margin-right: 5px;">
+                    {{ plot.plot_name }}
+                    <i class="fas fa-chevron-right dropdown-icon" style="margin-left: 10px;"></i>
+                    <div class="right-content">
+                        <span class="float-right">Plot unavailable (Click for info)</span>
+                    </div>
+                  </h4>
+                  {% for name, plot_data in Incorrect_data_json.items %}
+                    {% if name == plot.plot_name %}
+                      {% if plot_data %}
+                        <ul id="sortable_failed-{{ forloop.parentloop.counter }}" class="hidden">
+                          {% for primary_key, nested_dict in plot_data.items %}
+                            {% if nested_dict %}
+                              {% if nested_dict.items %}
+                                <ul>
+                                  <li>{{ primary_key }}</li>
+                                  <ul>
+                                    {% for key, value in nested_dict.items %}
+                                      {% if value %}
+                                        <li>Row {{ key }}: {{ value }}</li>
+                                      {% endif %}
+                                    {% endfor %}
+                                  </ul>
+                                </ul>
+                              {% else %}
+                                <li>{{ primary_key }}: {{ nested_dict }}</li>
+                              {% endif %}
+                            {% endif %}
+                          {% endfor %}
+                        </ul>
+                      {% endif %}
+                    {% endif %}
+                  {% endfor %}
+                {% endif %}
+              {% endfor %}
+            {% endif %}
+          </div>
+          <div class="modal-footer" style="display: flex; justify-content: space-between;">
+              <button type="button" class="btn btn-primary" onclick="window.location.href=window.location.href;">Go back and fix</button>
+              <!-- <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button> -->
+          </div>
+      </div>
+  </div>
+</div>
+
+
+<!-- ######################## -->
+<!-- # Plot options section # -->
+<!-- ######################## -->
+
+<!-- Phylogenetic Tree Modal -->
+<div class="modal fade" id="phyloTreeModal" tabindex="-1" role="dialog" aria-labelledby="phyloTreeModalLabel" aria-hidden="true">
+  <div class="modal-dialog wide-modal" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title" id="phyloTreeModalLabel">Tree</h3>
+      </div>
+      <div class="modal-body">
+        <div class="img-container">
+          <img src="{% static 'home/images/PhylogeneticsTree_Modal_Example.png' %}" width="100%" height="400" style='margin-top: 10px'>
+        </div>
+        <div style="margin-top: 20px;font-size: 15px;">
+          <span>The Phylogenetic tree analysis requires a list of receptors placed in the first column, <b>Receptor (Uniprot)</b>, to the left (Illustrated with purple arrow).
+            The analysis will then form the branches connected into families and classes.
+            There is 6 feature columns. First column, <b>1. Feature (Inner cicle)</b>, is the inner circles which is placed inbetween the receptor name and the branches (Illustrated with blue arrow).
+            The 5 other columns are the circles in the outer layer efter the receptor names (Illustrated with Green arrow). <br>
+            The different features can either be <b><u>Boolean</u></b> or <b><u>Number</u></b> values. <br>
+            <ul>
+            <li><b><u>Boolean</u></b>: This value is a Yes/No input type. It can be "Yes", "1", and "X" as present values and "No", "0", and "None" / "empty cell" as absent values.</li>
+            <li><b><u>Number</u></b>: This input can be any number.</li>
+            </ul>
+            The boolean will be a white or a colored circle. The Number will be a gradient, divided into 4 quartiles (shown in the upper left corner of the plotrender.)
+          </span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Cluster analysis Modal -->
+<div class="modal fade" id="ClusterModal" tabindex="-1" role="dialog" aria-labelledby="ClusterModalLabel" aria-hidden="true">
+  <div class="modal-dialog wide-modal" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title" id="ClusterModalLabel">Cluster</h3>
+      </div>
+      <div class="modal-body" style="text-align: center;">
+        <div class="img-container">
+          <img src="{% static 'home/images/cluster_modal.png' %}" width="50%" height="40%" style='margin-top: 10px'>
+        </div>
+        <div style="margin-top: 10px;font-size: 15px;">
+          <span>The Cluster plot clusters user-uploaded receptors based on their <i>sequence similarity</i> across their shared
+            segments, the transmembrane helices 1-7 and helix 8. Alternatively, users can replace the sequence similarity
+            to instead cluster receptors based on own data type, which is entered in the “<b>Spatial positioning”</b>
+            column in the data template for uploads. The number of clusters can be adjusted to group receptors into fewer,
+            larger or more, smaller clusters. The data points can be alternative shapes, and their color can be by
+            cluster (default) or defined in the data upload.
+          </span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- List plot Modal -->
+<div class="modal fade" id="ListModal" tabindex="-1" role="dialog" aria-labelledby="ListModalLabel" aria-hidden="true">
+  <div class="modal-dialog wide-modal" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title" id="ListModalLabel">List</h3>
+      </div>
+      <div class="modal-body">
+        <div class="img-container" style="text-align: center;">
+          <img src="{% static 'home/images/list_modal.png' %}" width="60%" height="30%" style='margin-top: 10px'>
+        </div>
+        <div style="margin-top: 10px;font-size: 15px;">
+          <span>
+          The List plot lists receptors grouped by headings for the class, ligand type, and/or receptor family
+          (default is set to class and receptor family). Uniquely for this plot, the grouping can be changed by
+          omitting any of the classification levels. Data are mapped to up to four dots, or other shapes (circle,
+          star, triangle, square, diamond). The user has the option to change the layout (number and size of columns),
+          text-styling for each category separately, and dynamically change the coloring of continuous data input.
+          </span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Heatmap Modal -->
+<div class="modal fade" id="HeatmapModal" tabindex="-1" role="dialog" aria-labelledby="HeatmapModalLabel" aria-hidden="true">
+  <div class="modal-dialog wide-modal" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title" id="HeatmapModalLabel">Heatmap</h3>
+      </div>
+      <div class="modal-body">
+        <div class="img-container" style="text-align: center;">
+          <img src="{% static 'home/images/heatmap_modal.png' %}" width="60%" height="30%" style='margin-top: 10px'>
+        </div>
+        <div style="margin-top: 10px;font-size: 15px;">
+          <span>
+            The Heatmap plot maps data to cells (max 250) instead of dots. The cells highlight data by applying a
+            color gradient (default from blue to red) based on the user-supplied values. The heatmap can be styled
+            in various ways to best fit the users preference by moving or rotating the data labels, showing/hidden
+            borders or data values, or resizing the font size of receptors, data labels or data values.
+          </span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- GPCRome Modal -->
+<div class="modal fade" id="GPCRomeModal" tabindex="-1" role="dialog" aria-labelledby="GPCRomeModalLabel" aria-hidden="true">
+  <div class="modal-dialog wide-modal" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title" id="GPCRomeModalLabel">GPCRome wheel</h3>
+      </div>
+      <div class="modal-body">
+        <div class="img-container" style="text-align: center;">
+          <img src="{% static 'home/images/gpcrome_modal.png' %}" width="60%" height="40%" style='margin-top: 10px'>
+        </div>
+        <div style="margin-top: 10px;font-size: 15px;">
+          <span>The GPCRome wheel plot spans the non-odorant human GPCRome in a single data mapping visualization.
+            The outer to inner layers list receptors by their class, as follows: <b>class A</b> with known physiological ligands,
+              <b>class A orphans</b> (have unknown physiological ligands),
+              <b>class B</b> (B1/Secretin and B2/Adhesion families), <i>class C</i>,
+              <b>class T2</b> and <b>class F</b>.
+              In each class, receptors are listed alphabetically, first by their <i>receptor family</i> (not shown) and secondly,
+              by the <i>receptor name</i>. Data is mapped to a circular band divided in sections next to the name of the receptors
+              for the subset of those that was uploaded by the user, as shown in the above image. Data can be submitted either as <b>discrete</b>
+              data (Yes, No or blank), or as <b>continuous</b> values. In the former case data will be shown
+          </span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+{% endblock %}
+
+
+{% block addon_js %}
+<script src="{% static 'home/js/d3.min.js' %}"></script>
+<script src="{% static 'home/js/nv.d3.min.js' %}"></script>
+<script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
+<script src="{% static 'home/js/saveSvg.js' %}"></script>
+<script src="{% static 'home/js/phylo_tree.js' %}"></script>
+<script src="{% static 'home/js/datamapper.js' %}"></script>
+
+<script>
+$(document).ready(function() {
+    $(".expandable_partially_success").click(function() {
+        var targetId = $(this).data("target");
+        $("#" + targetId).toggleClass("hidden");
+
+        var icon = $(this).find(".dropdown-icon");
+        icon.toggleClass("expanded");
+    });
+
+    $(".expandable_failed").click(function() {
+        var targetId = $(this).data("target");
+        $("#" + targetId).toggleClass("hidden");
+
+        var icon = $(this).find(".dropdown-icon");
+        icon.toggleClass("expanded");
+    });
+});
+
+  // Function to handle file selection
+  function handleFileSelect(event) {
+          var fileInput = document.getElementById('file-input');
+          // Attach change event listener to handle selected file
+          fileInput.addEventListener('change', function(event) {
+              // Submit the form with selection of a file
+              document.getElementById('upload-file').submit();
+          });
+          // Trigger the file input
+          fileInput.click();
+      }
+  // Add click event listener to the image to trigger file selection
+  document.getElementById('file-trigger').addEventListener('click', handleFileSelect);
+  // Add click event listener to the Phylogenetic Tree image
+  document.getElementById('phyloTreeImage').addEventListener('click', function() {
+      $('#phyloTreeModal').modal('show');
+    });
+  document.getElementById('ClusterImage').addEventListener('click', function() {
+      $('#ClusterModal').modal('show');
+    });
+    document.getElementById('ListImage').addEventListener('click', function() {
+      $('#ListModal').modal('show');
+    });
+    document.getElementById('HeatmapImage').addEventListener('click', function() {
+      $('#HeatmapModal').modal('show');
+    });
+    document.getElementById('GPCRomeImage').addEventListener('click', function() {
+      $('#GPCRomeModal').modal('show');
+    });
+
+
+  // Check upload status after form submission
+  document.addEventListener('DOMContentLoaded', function() {
+      // Check if upload was successful
+      if ("{{ upload_status }}" === "Success") {
+        // Check if report generation was successful
+        if ("{{ report_status }}" === "Success") {
+          $('#Report_modal_success').modal('show');
+        } else if ("{{ report_status }}" === "Partially_success") {
+          $('#Report_modal_partially_success').modal('show');
+        } else if ("{{ report_status }}" === "Failed") {
+          $('#Report_modal_failed').modal('show');
+        }
+      } else if ("{{ upload_status }}" === "Failed") {
+        // Show the upload failed modal
+        $('#uploadFailedModal').modal('show');
+      }
+  });
+</script>
+
+{% endblock %}
