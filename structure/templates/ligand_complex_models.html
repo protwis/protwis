@@ -461,7 +461,7 @@
                     
                                         <!-- ligand name 7 -->
                     {% if model.prefetch_ligands.0.ligand.name|length >= 6 %}
-                    <td><a href="/ligand/{{ model.prefetch_ligands.0.ligand.id }}/info">{{ model.prefetch_ligands.0.ligand.name | title | safe }}</a></td>
+                    <td><a href="/ligand/{{ model.prefetch_ligands.0.ligand.id }}/info">{{ model.prefetch_ligands.0.ligand.name | capfirst | safe }}</a></td>
                     {% else %}
                     <td><a href="/ligand/{{ model.prefetch_ligands.0.ligand.id }}/info">{{ model.prefetch_ligands.0.ligand.name | upper | safe }}</a></td>
                     {% endif %}</a></td>

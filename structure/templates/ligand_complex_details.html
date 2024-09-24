@@ -101,7 +101,7 @@ canvas {
           {% if structure_type == "af-signprot-peptide" %}
               <h2> <a href="/ligand/{{ ligand_object.ligand.id }}/info">
                 {% if ligand_object.ligand.name|length >= 6 %}
-                    {{ ligand_object.ligand.name | title | safe }}
+                    {{ ligand_object.ligand.name | capfirst | safe }}
                 {% else %}
                     {{ ligand_object.ligand.name | upper | safe }}
                 {% endif %}
@@ -111,7 +111,7 @@ canvas {
           {% else %}
               <h2>(<a href="/ligand/{{ ligand_object.ligand.id }}/info">
                 {% if ligand_object.ligand.name|length >= 6 %}
-                    {{ ligand_object.ligand.name | title | safe }}
+                    {{ ligand_object.ligand.name | capfirst | safe }}
                 {% else %}
                     {{ ligand_object.ligand.name | upper | safe }}
                 {% endif %}
@@ -172,7 +172,7 @@ canvas {
         <h4 style="color: black;">PHYSIOLOGICAL LIGAND</h4>
     </div>
     <div class="col-md-6">
-        {{ ligand_object.ligand.name | upper | safe}}
+        {{ ligand_object.ligand.name | capfirst | safe}}
     </div>
 </div>
 
