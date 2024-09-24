@@ -1216,7 +1216,7 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
 
         <div class="col-md-2" style="padding-top: 5px;">
           Icon toggle:
-          <button id="ToggleIcon" class="btn btn-info active">On</button>
+          <button id="ToggleIconComplexes" class="btn btn-info active">On</button>
         </div>
 
       <div class="col-md-3">
@@ -1226,10 +1226,10 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
               <span class="glyphicon glyphicon-download" style="vertical-align: top;line-height: 1.3"></span> Download <span class="caret"></span>
             </button>
             <div class="dropdown-menu dropdown-menu-right-middle">
-              <li><a class="dropdown-item" href="javascript:saveSvg(document.getElementById('GPCRome_complexes__plot_svg'), 'GPCRome_plot.svg');">SVG</a></li>
-              <li><a class="dropdown-item" href="javascript:saveSvgAsPng(document.getElementById('GPCRome_complexes__plot_svg'), 'GPCRome_plot.png');">PNG</a></li>
-              <li><a class="dropdown-item" href="javascript:saveSvgAsJpg(document.getElementById('GPCRome_complexes__plot_svg'), 'GPCRome_plot.jpg');">JPG</a></li>
-              <li><a class="dropdown-item" href="javascript:saveSvgAsTiff(document.getElementById('GPCRome_complexes__plot_svg'), 'GPCRome_plot.tiff');">TIFF</a></li>
+              <li><a class="dropdown-item" href="javascript:saveSvg(document.getElementById('GPCRome_complexes_plot_svg'), 'GPCRome_complexes_plot.svg');">SVG</a></li>
+              <li><a class="dropdown-item" href="javascript:saveSvgAsPng(document.getElementById('GPCRome_complexes_plot_svg'), 'GPCRome_complexes_plot.png');">PNG</a></li>
+              <li><a class="dropdown-item" href="javascript:saveSvgAsJpg(document.getElementById('GPCRome_complexes_plot_svg'), 'GPCRome_complexes_plot.jpg');">JPG</a></li>
+              <li><a class="dropdown-item" href="javascript:saveSvgAsTiff(document.getElementById('GPCRome_complexes_plot_svg'), 'GPCRome_complexes_plot.tiff');">TIFF</a></li>
             </div>
           </div>
         </div>
@@ -1283,6 +1283,8 @@ var fill_data_complexes = {{ GPCRome_data_variables_complexes|safe }};
 var GPCRome_Label_conversion_dict = {{GPCRome_Label_Conversion|safe}};
 // Initialize the conversion dictionary
 GPCRome_Label_conversion_dict = initializeGPCRomeLabelConversionDict(GPCRome_Label_conversion_dict);
+
+console.log(GPCRome_Label_conversion_dict);
 
 function initializeGPCRomeLabelConversionDict(conversionDict) {
     const updatedDict = {};
@@ -1361,17 +1363,17 @@ let currentLabelType = "IUPHAR"; // Default
 
 // Event listeners for label type buttons
 document.getElementById("GPCRome_UniProtNames").addEventListener("click", () => {
-    switchLabelType("UniProt");
+    switchLabelType("UniProt", GPCRome_location, fill_data, GPCRome_Label_conversion_dict, GPCRomes_styling);
 });
 document.getElementById("GPCRome_UniProtNames_complexes").addEventListener("click", () => {
-    switchLabelType("UniProt");
+    switchLabelType("UniProt", GPCRome_complexes_location, fill_data_complexes, GPCRome_Label_conversion_dict, GPCRomes_complexes_styling);
 })
 
 document.getElementById("GPCRome_IUPHARNames").addEventListener("click", () => {
-    switchLabelType("IUPHAR");
+    switchLabelType("IUPHAR", GPCRome_location, fill_data, GPCRome_Label_conversion_dict, GPCRomes_styling);
 });
 document.getElementById("GPCRome_IUPHARNames_complexes").addEventListener("click", () => {
-    switchLabelType("IUPHAR");
+    switchLabelType("IUPHAR", GPCRome_complexes_location, fill_data_complexes, GPCRome_Label_conversion_dict, GPCRomes_complexes_styling);
 });
 
 // Function to switch label types
@@ -1397,11 +1399,32 @@ function toggleIcon() {
     }
 
     // Redraw the GPCRomes with the updated icon state
-    updateGPCRome();
+    updateGPCRome(GPCRome_location, fill_data, GPCRome_Label_conversion_dict, GPCRomes_styling);
+}
+
+// Function to toggle the icon visibility and redraw the GPCRomes
+function toggleIconComplexes() {
+    const button = d3.select("#ToggleIconComplexes");
+
+    // Toggle the showIcon property in GPCRomes_styling
+    GPCRomes_complexes_styling.showIcon = !GPCRomes_complexes_styling.showIcon;
+
+    // Update button text and state
+    if (GPCRomes_complexes_styling.showIcon) {
+        button.text("On");
+        button.classed("active", true);
+    } else {
+        button.text("Off");
+        button.classed("active", false);
+    }
+
+    // Redraw the GPCRomes with the updated icon state
+    updateGPCRome(GPCRome_complexes_location, fill_data_complexes, GPCRome_Label_conversion_dict, GPCRomes_complexes_styling);
 }
 
 // Attach event listener to the button
 d3.select("#ToggleIcon").on("click", toggleIcon);
+d3.select("#ToggleIconComplexes").on("click", toggleIconComplexes);
 
 // Function to update and redraw GPCRomes
 function updateGPCRome(location, fill, conversion, styling) {
