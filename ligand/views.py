@@ -26,7 +26,7 @@ from common.models import ReleaseNotes, WebResource, Publication
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from common.selection import Selection, SelectionItem
 from mapper.views import LandingPage
-from ligand.models import Ligand, LigandVendorLink, BiasedPathways, AssayExperiment, BiasedData, Endogenous_GTP, LigandID
+from ligand.models import Ligand, LigandVendorLink, BiasedPathways, AssayExperiment, BiasedData, Endogenous_GTP, LigandID, LigandPeptideStructure
 from ligand.functions import OnTheFly, AddPathwayData
 from protein.models import Protein, ProteinFamily
 from interaction.models import StructureLigandInteraction
@@ -2467,11 +2467,11 @@ class PhysiologicalLigands(TemplateView):
         context = super().get_context_data(**kwargs)
 
         browser_columns = ['Class', 'Receptor family', 'UniProt', 'IUPHAR', 'Species',
-                           'Ligand name', 'GtP link', 'GtP Classification', 'Potency Ranking', 'Type','smiles','inchikey',
-                           'pEC50 - min', 'pEC50 - mid', 'pEC50 - max',
-                           'pKi - min', 'pKi - mid', 'pKi - max', 'Reference', 'ID']
-
-        table = pd.DataFrame(columns=browser_columns)
+                        'Ligand name', 'GtP link', 'GtP Classification', 'Potency Ranking', 'Type','smiles','inchikey',
+                        'pEC50 - min', 'pEC50 - mid', 'pEC50 - max',
+                        'pKi - min', 'pKi - mid', 'pKi - max', 'Reference', 'ID',
+                        'Entry Name', 'Accession', 'pdb_code', 'structure_type']
+        data_subsets = []
         #receptor_id
 
         pdb_subquery = LigandPeptideStructure.objects.filter(
@@ -2479,8 +2479,14 @@ class PhysiologicalLigands(TemplateView):
             structure__protein_conformation__protein=OuterRef('receptor')
         ).values('structure__pdb_code__index')[:1]
 
+        structure_type_subquery = LigandPeptideStructure.objects.filter(
+            ligand=OuterRef('ligand'),
+            structure__protein_conformation__protein=OuterRef('receptor')
+        ).values('structure__structure_type__slug')[:1]
+
         endogenous_data = Endogenous_GTP.objects.annotate(
-            pdb_code=Subquery(pdb_subquery)
+            pdb_code=Subquery(pdb_subquery),
+            structure_type=Subquery(structure_type_subquery)
         ).values_list(
                             "receptor__family__parent__parent__parent__name", #0 Class
                             "receptor__family__parent__name",                 #1 Receptor Family
@@ -2503,7 +2509,10 @@ class PhysiologicalLigands(TemplateView):
                             "publication__reference",                         #18 Pub Reference
                             "publication__web_link__index",                   #19 DOI/PMID
                             "receptor",                                       #20 Receptor ID
-                            "receptor__accession").distinct()                 #21 Accession (UniProt link)
+                            "receptor__accession",                            #21 Accession (UniProt link)
+                            'pdb_code',                                       #22 pdb_code (UniProt link)
+                            'structure_type'                                  # 23
+                            ).distinct()             
 
 
         gtpidlinks = dict(list(LigandID.objects.filter(web_resource__slug='gtoplig').values_list(
@@ -2571,10 +2580,13 @@ class PhysiologicalLigands(TemplateView):
                 data_subset['ID'] = data[6]                                                 #19
                 data_subset['Entry Name'] = data[2]                                         #20
                 data_subset['Accession'] = data[21]                                         #21
-                data_subset["pdb_code"] = data[22]
-                table = table.append(data_subset, ignore_index=True)
+                data_subset["pdb_code"] = data[22]                                          #22
+                data_subset['structure_type'] = data[23]                      
+                data_subsets.append(data_subset)
 
+        table = pd.DataFrame(data_subsets, columns=browser_columns)
         table.fillna('', inplace=True)
+
         # context = dict()
         context['Array'] = table.to_numpy()
         return context
