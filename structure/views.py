@@ -1697,7 +1697,12 @@ class StructureStatistics(TemplateView):
         else: #JIMMY
 
             start_time = time.time()
-            all_proteins = Protein.objects.filter(species_id=1, parent_id__isnull=True, accession__isnull=False, family_id__slug__startswith='00')
+            #Adjust call to exclude odorants
+            all_proteins = Protein.objects.filter(species_id=1, parent_id__isnull=True, accession__isnull=False, family_id__slug__startswith='0').exclude(
+                                                family_id__slug__startswith='007'
+                                            ).exclude(
+                                                family_id__slug__startswith='008'
+                                            )
             all_structs = Structure.objects.all().exclude(structure_type__slug__startswith='af-').prefetch_related('protein_conformation__protein__family')
             circle_data = all_structs.values_list(
                           "state_id__slug", "protein_conformation__protein__parent__entry_name").order_by(
@@ -1716,24 +1721,22 @@ class StructureStatistics(TemplateView):
                 value = item[0]
 
                 # Initialize the key in result_dict if not already present
-                if key not in result_dict:
-                    result_dict[key] = {'states': set(), 'status': ''}
+                if key in result_dict:
+                    # Add the value to the states set to avoid duplicates
+                    result_dict[key]['states'].add(value)
 
-                # Add the value to the states set to avoid duplicates
-                result_dict[key]['states'].add(value)
-
-                # Determine the status based on the current set of states
-                if len(result_dict[key]['states']) == 1:
-                    if 'active' in result_dict[key]['states']:
+                    # Determine the status based on the current set of states
+                    if len(result_dict[key]['states']) == 1:
+                        if 'active' in result_dict[key]['states']:
+                            result_dict[key]['status'] = 'Active'
+                        elif 'inactive' in result_dict[key]['states']:
+                            result_dict[key]['status'] = 'Inactive'
+                    elif 'active' in result_dict[key]['states'] and 'inactive' in result_dict[key]['states']:
+                        result_dict[key]['status'] = 'Both'
+                    elif 'active' in result_dict[key]['states']:
                         result_dict[key]['status'] = 'Active'
                     elif 'inactive' in result_dict[key]['states']:
                         result_dict[key]['status'] = 'Inactive'
-                elif 'active' in result_dict[key]['states'] and 'inactive' in result_dict[key]['states']:
-                    result_dict[key]['status'] = 'Both'
-                elif 'active' in result_dict[key]['states']:
-                    result_dict[key]['status'] = 'Active'
-                elif 'inactive' in result_dict[key]['states']:
-                    result_dict[key]['status'] = 'Inactive'
 
             # Optionally, reduce to key-status dictionary
             result_dict = {k: v['status'] for k, v in result_dict.items()}
@@ -3681,7 +3684,7 @@ def SingleLigComplexModelDownload(request, modelname, csv=False):
         scores_obj = StructureRFAAScores.objects.get(structure=mod)
     else:
         scores_obj = StructureAFScores.objects.get(structure=mod)
-        
+
     mod_name, scores_name, pdb_io, scores_io = prepare_lig_complex_download(mod, scores_obj, False)
 
     with zipfile.ZipFile(zip_io, mode='w', compression=zipfile.ZIP_DEFLATED) as backup_zip:
@@ -4106,7 +4109,7 @@ def semaphore_view(semaphore, timeout=5):
         def wrapped_view(request, *args, **kwargs):
             # Try to acquire the semaphore
             acquired = semaphore.acquire(timeout=timeout)
-            
+
             if acquired:
                 try:
                     # Call the Structure_blast view
@@ -4118,7 +4121,7 @@ def semaphore_view(semaphore, timeout=5):
             else:
                 # If the semaphore couldn't be acquired, return an error response
                 return render(request, 'error_503.html', status=503)
-        
+
         return wrapped_view
     return decorator
 
@@ -4163,7 +4166,7 @@ class StructureBlastView(View):
                 self.structure_methods = request.POST.getlist('structure_type')
                 if not self.structure_methods:
                     return self.render_error(request, "Please select at least one structure type.")
-                
+
                 self.structure_type = [self.get_structure_type(method) for method in self.structure_methods]
 
                 alignment_method = request.POST.get('alignment_method')
@@ -4381,7 +4384,7 @@ class StructureBlastView(View):
                 chain = protein_info[1].replace('_', '').upper() if protein_info[1] != '' else '-'
                 origin, linking, state = self.get_protein_origin_info(protein, origin_acr)
                 temp_data.append({
-                    'input_chain': input_chain, "protein": protein, "chain": chain, "origin": origin, "linking": linking, 
+                    'input_chain': input_chain, "protein": protein, "chain": chain, "origin": origin, "linking": linking,
                     "state": state, "TM_score": values[2], "E_value": values[4], "lddt": values[3]
                 })
         except Exception as e:
@@ -4397,7 +4400,7 @@ class StructureBlastView(View):
         """
         if origin_acr == 'raw':
             return 'Raw experimental structure', protein, ''
-        
+
         elif origin_acr == 'af':
             protein_data = protein.split('_human_')
             return 'AF2 model', f'homology_models/{protein}', protein_data[1]
@@ -4424,12 +4427,12 @@ class StructureBlastView(View):
             try:
                 af_structures = StructureModel.objects.filter(main_template__isnull=True).annotate( gene_name=Subquery(gene_subquery_models)
                 ).values_list(
-                    'protein__entry_name', 'state__slug', 
+                    'protein__entry_name', 'state__slug',
                     'protein__family__parent__parent__parent__name',  # Class
                     'protein__family__parent__name',  # Family
-                    'protein__species__common_name', 
+                    'protein__species__common_name',
                     'protein__name',
-                    'protein__entry_name', 
+                    'protein__entry_name',
                     'protein__accession',
                     'gene_name',
                 )
@@ -4437,7 +4440,7 @@ class StructureBlastView(View):
             except Exception as e:
                 print(e)
                 print('full first fail')
-            
+
             structures_info.update({f'{item[0]}_{item[1]}': item for item in af_structures})
 
         if 'raw_foldseek_db' in self.structure_type:
@@ -4456,11 +4459,11 @@ class StructureBlastView(View):
                 ).annotate(
                     gene_name=Subquery(gene_subquery_exp)
                 ).values_list(
-                    'pdb_code__index', 
-                    'state__slug', 
+                    'pdb_code__index',
+                    'state__slug',
                     'protein_conformation__protein__family__parent__parent__parent__name',  # Class
                     'protein_conformation__protein__family__parent__name',  # Family
-                    'protein_conformation__protein__species__common_name', 
+                    'protein_conformation__protein__species__common_name',
                     'protein_conformation__protein__parent__name',  # Parent name
                     'protein_conformation__protein__parent__entry_name',  # Parent entry name
                     'protein_conformation__protein__parent__accession',  # Parent accession
@@ -4488,11 +4491,11 @@ class StructureBlastView(View):
                 ).annotate(
                     gene_name=Subquery(gene_subquery_ref)
                 ).values_list(
-                    'pdb_code__index', 
-                    'state__slug', 
+                    'pdb_code__index',
+                    'state__slug',
                     'protein_conformation__protein__family__parent__parent__parent__name',  # Class
                     'protein_conformation__protein__family__parent__name',  # Family
-                    'protein_conformation__protein__species__common_name', 
+                    'protein_conformation__protein__species__common_name',
                     'protein_conformation__protein__name',  # Regular protein name
                     'protein_conformation__protein__entry_name',  # Regular entry name
                     'protein_conformation__protein__accession',  # Regular accession
@@ -4518,12 +4521,12 @@ class StructureBlastView(View):
                 structure_values = structures_info.get(protein)
                 data.append({
                     'input_chain': entry['input_chain'].strip(),
-                    'protein': protein, 'chain': entry["chain"].strip(), 'type': entry["origin"].replace('Experimental', 'exp').replace('experimental', 'exp').strip(), 
-                    'TM_score': entry["TM_score"], 'lddt': entry['lddt'], 'E_value': entry["E_value"], 'link': entry["linking"], 
-                    'state': entry["state"] or structure_values[1], 
+                    'protein': protein, 'chain': entry["chain"].strip(), 'type': entry["origin"].replace('Experimental', 'exp').replace('experimental', 'exp').strip(),
+                    'TM_score': entry["TM_score"], 'lddt': entry['lddt'], 'E_value': entry["E_value"], 'link': entry["linking"],
+                    'state': entry["state"] or structure_values[1],
                     'class': structure_values[2].split(' ')[1].strip(),
                     'rec_fam': structure_values[3].replace('receptors', '').strip(),
-                    'species': structure_values[4].strip(), 
+                    'species': structure_values[4].strip(),
                     'uniprot': structure_values[6].split('_')[0].upper().strip(),
                     'entry_name': structure_values[6],
                     'gtopdb': structure_values[5].replace('receptor', '').replace('-adrenoceptor', '').strip(),
@@ -4621,17 +4624,17 @@ def chain_e_and_lg1_coloring(structure):
     """
     segments_out = []
     hex_colors = colour_af_plddt()
-    
+
     if not hasattr(structure, 'pdb_data') or not structure.pdb_data:
         print("No PDB data found for the structure.")
         return segments_out
-    
+
     pdb_content = structure.pdb_data.pdb
     pdb_lines = pdb_content.split('\n')
-    
+
     chain_e_residues = {}
     lg1_atoms = {}
-    
+
     for line in pdb_lines:
         if line.startswith('ATOM') or line.startswith('HETATM'):
             chain = line[21:22]
@@ -4639,16 +4642,16 @@ def chain_e_and_lg1_coloring(structure):
             residue_number = int(line[22:26].strip())
             atom_name = line[12:16].strip()
             b_factor = float(line[60:66].strip())
-            
+
             if chain == 'E':
                 chain_e_residues[residue_number] = b_factor
             elif residue_name == 'LG1':
                 lg1_atoms[f"{residue_number}:{atom_name}"] = b_factor
-    
+
     if not chain_e_residues and not lg1_atoms:
         print("No residues found for chain E or LG1.")
         return segments_out
-    
+
     # Process chain E
     color_groups = {}
     for residue, score in chain_e_residues.items():
@@ -4656,7 +4659,7 @@ def chain_e_and_lg1_coloring(structure):
         if color not in color_groups:
             color_groups[color] = []
         color_groups[color].append(residue)
-    
+
     for color, residues in color_groups.items():
         segments = []
         sorted_residues = sorted(residues)
@@ -4672,14 +4675,14 @@ def chain_e_and_lg1_coloring(structure):
             prev = residue
         segment_string = f":E and ({' or '.join(segments)})"
         segments_out.append([color, segment_string])
-    
+
     # Process LG1 residue
     for atom, score in lg1_atoms.items():
         color = from_score_to_color(score, hex_colors)
         residue_number, atom_name = atom.split(':')
         segment_string = f":B and LG1 and .{atom_name}"
         segments_out.append([color, segment_string])
-    
+
     return segments_out
 
 def LigandComplexDetails(request, header, refined=False):
@@ -4719,7 +4722,7 @@ def LigandComplexDetails(request, header, refined=False):
         scores = StructureRFAAScores.objects.get(structure=model)
         chains = ['A', 'B']
         small_molecule = True
-    
+
     segments_out = af_model_coloring(residues_plddt, chains)
     ligand_segments = chain_e_and_lg1_coloring(model)
     segments_out.extend(ligand_segments)
@@ -4754,5 +4757,3 @@ def LigandComplexDetails(request, header, refined=False):
                                                             # 'chain_colors': json.dumps(chain_colors),
                                                             # 'residue_number_labels':conversion_dict_residue_numbers
                                                             })
-
-

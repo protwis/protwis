@@ -2717,7 +2717,7 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling) {
     // Append SVG to the div with the provided id
     const svg = d3v4.select("#" + location)
         .append("svg")
-        .attr("id", "GPCRome_plot_svg")  // Add the id here for download reference
+        .attr("id", location+'_svg')  // Add the id here for download reference
         .attr("width", dimensions.width)
         .attr("height", dimensions.height);
 
