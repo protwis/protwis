@@ -2511,9 +2511,7 @@ class PhysiologicalLigands(TemplateView):
                             "receptor",                                       #20 Receptor ID
                             "receptor__accession",                            #21 Accession (UniProt link)
                             'pdb_code',                                       #22 pdb_code (UniProt link)
-                            'structure_type'                                  # 23
-                            ).distinct()             
-
+                            'structure_type').distinct()                      #23           
 
         gtpidlinks = dict(list(LigandID.objects.filter(web_resource__slug='gtoplig').values_list(
                             "ligand",
@@ -2581,7 +2579,7 @@ class PhysiologicalLigands(TemplateView):
                 data_subset['Entry Name'] = data[2]                                         #20
                 data_subset['Accession'] = data[21]                                         #21
                 data_subset["pdb_code"] = data[22]                                          #22
-                data_subset['structure_type'] = data[23]                      
+                data_subset['structure_type'] = data[23]
                 data_subsets.append(data_subset)
 
         table = pd.DataFrame(data_subsets, columns=browser_columns)
