@@ -105,7 +105,7 @@ class Command(BaseBuild):
     with open(xtal_seg_end_file, 'r') as f:
         xtal_seg_ends = yaml.load(f, Loader=yaml.Loader)
 
-    xtal_anomalies_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'all_anomalities.yaml'])
+    xtal_anomalies_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'all_anomalies.yaml'])
     with open(xtal_anomalies_file, 'r') as f2:
         xtal_anomalies = yaml.load(f2, Loader=yaml.Loader)
 

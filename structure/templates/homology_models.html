@@ -119,7 +119,7 @@
                 scrollX:        true,
                 scrollCollapse: true,
                 paging:         false,
-                "order": [[8,'asc'],[1,'asc']],
+                "order": [[1,'asc'],[3,'asc']],
                   columnDefs: [
                     { targets: 'no-sort', orderable: false }
 
@@ -175,8 +175,9 @@
                         column_number : 4,
                         filter_type: "multi_select",
                         select_type: 'select2',
-                        filter_default_label: "Refined",
+                        filter_default_label: "Method",
                         filter_reset_button_text: false,
+                        column_data_type: "html",
                         filter_match_mode : "exact",
                         select_type_options: {
                             width: '100px',
@@ -234,28 +235,6 @@
                             width: '100px',
                         }
                     },
-                    {
-                        column_number : 10,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        column_data_type: "html",
-                        filter_default_label: "Receptor",
-                        filter_reset_button_text: false,
-                        select_type_options: {
-                            width: '120px',
-                        }
-                    },
-                    {
-                        column_number : 11,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        column_data_type: "html",
-                        filter_default_label: "PDB",
-                        filter_reset_button_text: false,
-                        select_type_options: {
-                            width: '100px',
-                        }
-                    },
                 ],
                 {
                     cumulative_filtering: false
@@ -290,33 +269,18 @@
                 ClearSelection('targets');
                 for (i = 0; i < checked_data.length; i++) {
 
-                    AddToSelection('targets', 'structure_model',  checked_data[i][12]+"_"+checked_data[i][3]);
+                    AddToSelection('targets', 'structure_model',  checked_data[i][10]+"_"+checked_data[i][3]);
 
                 }
                 window.location.href = '/structure/selection_convert_model';
             });
 
             $('#superpose_template_btn').click(function () {
-                var checked_data = oTable.rows('.alt_selected').data();
-                var value = CheckSelection('reference');
-                var destination;
-                if (value != 0){
-                  destination = 'targets';
-                } else {
-                  destination = 'reference';
-                }
-                if (checked_data.length == 1) {
-                    AddToSelection(destination, 'structure_model', checked_data[0][12]+"_"+checked_data[0][3]);
-                } else {
-                  for (i = 0; i < checked_data.length; i++) {
-                      AddToSelection('targets', 'structure_model', checked_data[i][12]+"_"+checked_data[i][3]);
-                  }
-                }
-                window.location.href = '/structure/superposition_workflow_index#keepselection';
+                direct_superposition(oTable, "gpcr", [10,3], "structure_model");
             });
 
             $("#superpose_btn").click(function() {
-                superposition(oTable, [5,6,7,8,9,2,3,4,10,11,12], "homology_model_browser", 'gpcr', 12, [12]);
+                superposition(oTable, [5,6,7,8,9,2,3,4,10], "homology_model_browser", 'gpcr', 10, [10]);
             });
         });
 
@@ -408,6 +372,7 @@
             <span class="glyphicon glyphicon-download"></span> Archive <span class="caret"></span>
         </button>
         <ul class="dropdown-menu" style="left:auto;right:0;margin-right:-10px;">
+          <li><a href="https://files.gpcrdb.org/GPCRdb_AF_models_2022-08-16.tar.gz"> 2022 August AF models </a></li>
           <li><a href="https://files.gpcrdb.org/GPCRdb_homology_models_2022-06-23.zip"> 2022 June models </a></li>
           <li><a href="https://files.gpcrdb.org/GPCRdb_homology_models_2022-04-30.zip"> 2022 April models </a></li>
           <li><a href="https://files.gpcrdb.org/GPCRdb_homology_models_2022-03-30.zip"> 2022 March models </a></li>
@@ -450,7 +415,6 @@
                 <tr class='over_header' style='max-height: 20px'>
                     <th colspan=5 class="over_header">MODEL</th>
                     <th colspan=5 class="over_header">RECEPTOR</th>
-                    <th colspan=2 class="over_header">TEMPLATE</th>
                 </tr>
                 <tr>
                     <th class='no-sort checkbox_tr'><input class="select-all" type="checkbox" onclick="select_all(this)"></th>
@@ -461,8 +425,6 @@
                     <th></th>
                     <th></th>
                     <th ></th>
-                    <th></th>
-                    <th class='rightborder'></th>
                     <th></th>
                     <th class='rightborder'></th>
                     <th style="display:none;"></th>
@@ -480,13 +442,11 @@
                     {% endif %}
                     <td>{{ model.version|date:"Y-m-d" }}</td>
                     <td>{{ model.state.name }}</td>
-                    <td>
-                    {% if not model.protein.accession %}
-                        Yes
+                    {% if model.model_type == 'AFMS' %}
+                        <td><a href="https://doi.org/10.1002/prot.26382" target="_blank">AlphaFold2-Multistate</a></td>
                     {% else %}
-                        No
+                        <td><a href="https://doi.org/10.1038/s41586-021-03819-2", target="_blank">AlphaFold2</a></td>
                     {% endif %}
-                    </td>
                     <td>
                         {% if not model.protein.accession %}
                             <a href="http://www.uniprot.org/uniprot/{{ model.protein.parent.accession }}">{{ model.protein.parent.entry_short|safe }}</a>
@@ -504,13 +464,6 @@
                     <td>{{ model.protein.family.parent.short|safe }}</td>
                     <td>{{ model.protein.family.parent.parent.parent.short }}</td>
                     <td>{{ model.protein.species.common_name }}</td>
-                    {% if model.main_template %}
-                        <td><a href="/protein/{{ model.main_template.protein_conformation.protein.parent.entry_name }}">{{ model.main_template.protein_conformation.protein.parent.family.name|safe }}</a></td>
-                        <td><a href="{{ model.main_template.pdb_code.index }}">{{ model.main_template.pdb_code.index}}</a></td>
-                    {% else %}
-                        <td>-</td>
-                        <td>-</td>
-                    {% endif %}
                     <td style="display:none;">{{ model.protein.entry_name }}</td>
                 </tr>
             {% endfor %}
@@ -536,9 +489,7 @@
                     <th>Species</th>
                     <th>Date</th>
                     <th>State</th>
-                    <th>Refined</th>
-                    <th>Main template receptor</th>
-                    <th>Main template PDB</th>
+                    <th>Method</th>
                   </tr>
               </thead>
               <tbody>

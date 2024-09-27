@@ -19,8 +19,9 @@ urlpatterns = [
     path('gprot_coupling_<goal>', views.gprotMutationDesign, name='design_gprot_mutations'),
 
     path('pocket', views.pocket, name='pocket'),
-    path('statistics', views.coverage, name='statistics'),
-    path('coverage', views.coverage, name='coverage'),
+    # path('statistics', views.coverage, name='statistics'),
+    # path('coverage', views.coverage, name='coverage'),
+    path('statistics', views.MutationStatistics.as_view(), name='statistics'),
     path('calculatepdb', views.showcalculationPDB, name='showcalculationPDB'),
     path('calculate', views.showcalculation, name='showcalculation'),
     path('targetselection', cache_page(60*60*24*7)(views.TargetSelection.as_view()), name='targetselection'),

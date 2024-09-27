@@ -60,7 +60,7 @@ def getLigandTable(receptor_id, browser_type):
                 <th style=\"width; 100px;\">Ligand name<br>&nbsp;</th> \
                 <th>2D structure<br>&nbsp;</th> \
                 <th>Ligand type<br>&nbsp;</th> \
-                <th>Endogenous<br>&nbsp;</th> \
+                <th>Physiological<br>&nbsp;</th> \
                 <th>Publication count</th> \
                 <th>Comparable ligands</th> \
               </tr> \

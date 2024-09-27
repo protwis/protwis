@@ -12,6 +12,7 @@ urlpatterns = [
     url(r'^common/', include('common.urls')),
     url(r'^protein/', include('protein.urls')),
     url(r'^family/', include('family.urls')),
+    url(r'^mapper/', include('mapper.urls')),
     url(r'^mutations/', include('mutation.urls')),
     url(r'^news/', include('news.urls')),
     url(r'^interaction/', include('interaction.urls')),

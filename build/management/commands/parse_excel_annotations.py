@@ -63,8 +63,8 @@ class Command(BaseCommand):
     non_xtal_seg_end_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'non_xtal_segends.yaml'])
     non_xtal_seg_end_bw_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'non_xtal_segends_bw.yaml'])
 
-    all_anomalities_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'all_anomalities.yaml'])
-    xtal_anomalities_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'xtal_anomalities.yaml'])
+    all_anomalies_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'all_anomalies.yaml'])
+    xtal_anomalies_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'xtal_anomalies.yaml'])
 
     sequence_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'sequences.yaml'])
 
@@ -151,7 +151,7 @@ class Command(BaseCommand):
                     continue
                 NonXtal_Bulges_Constr_GPCRdb[entry][key] = val
         NonXtal_Bulges_Constr_GPCRdb = OrderedDict(sorted(NonXtal_Bulges_Constr_GPCRdb.items()))
-        with open(self.all_anomalities_file, 'a') as outfile:
+        with open(self.all_anomalies_file, 'a') as outfile:
             yaml.dump(NonXtal_Bulges_Constr_GPCRdb, outfile, indent=4)
         data = self.ClassD_data["Seqs"]
         Seqs = {}
@@ -458,11 +458,11 @@ class Command(BaseCommand):
             yaml.dump(NonXtal_SegEnds_Prot, outfile, indent=4)
 
         # Xtal_Bulges_Constr_GPCRdb = OrderedDict(sorted(Xtal_Bulges_Constr_GPCRdb.items()))
-        # with open(self.xtal_anomalities_file, 'w') as outfile:
+        # with open(self.xtal_anomalies_file, 'w') as outfile:
         #     yaml.dump(Xtal_Bulges_Constr_GPCRdb, outfile, indent=4)
 
         NonXtal_Bulges_Constr_GPCRdb = OrderedDict(sorted(NonXtal_Bulges_Constr_GPCRdb.items()))
-        with open(self.all_anomalities_file, 'w') as outfile:
+        with open(self.all_anomalies_file, 'w') as outfile:
             yaml.dump(NonXtal_Bulges_Constr_GPCRdb, outfile, indent=4)
 
         Seqs = OrderedDict(sorted(Seqs.items()))

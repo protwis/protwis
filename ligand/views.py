@@ -14,8 +14,9 @@ from collections import defaultdict, OrderedDict
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.views.generic import TemplateView, DetailView
+from django.http import HttpResponseRedirect
 
-from django.db.models import Q, Count, Subquery, OuterRef
+from django.db.models import Count, Subquery, OuterRef
 from django.views.decorators.csrf import csrf_exempt
 
 from django.core.cache import cache
@@ -24,7 +25,8 @@ from common.views import AbsReferenceSelectionTable, getReferenceTable, getLigan
 from common.models import ReleaseNotes, WebResource, Publication
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from common.selection import Selection, SelectionItem
-from ligand.models import Ligand, LigandVendorLink, BiasedPathways, AssayExperiment, BiasedData, Endogenous_GTP, LigandID
+from mapper.views import LandingPage
+from ligand.models import Ligand, LigandVendorLink, BiasedPathways, AssayExperiment, BiasedData, Endogenous_GTP, LigandID, LigandPeptideStructure
 from ligand.functions import OnTheFly, AddPathwayData
 from protein.models import Protein, ProteinFamily
 from interaction.models import StructureLigandInteraction
@@ -563,7 +565,7 @@ class BiasedSignallingSelection(AbsReferenceSelectionTable):
             "sameSize": True,
         },
         'continue': {
-            'label': 'Physiology-biased ligands<br>(endogenous agonist reference)',
+            'label': 'Physiology-biased ligands<br>(physiological agonist reference)',
             'onclick': pathfinder[way]['Continue'],
             'color': 'success',
             'invisible': 'No',
@@ -1313,12 +1315,17 @@ class LigandStatistics(TemplateView):
 
         context = super().get_context_data(**kwargs)
         lig_count_dict = {}
+        lig_count_receptor_dict = {}
 
         if self.page == 'ligands':
             assays_lig = list(AssayExperiment.objects.all().values(
                 'protein__family__parent__parent__parent__name').annotate(c=Count('ligand', distinct=True)))
+            assays_lig_rec = list(AssayExperiment.objects.all().values(
+                'protein__entry_name').annotate(c=Count('ligand', distinct=True)))
             for a in assays_lig:
                 lig_count_dict[a['protein__family__parent__parent__parent__name']] = a['c']
+            for a in assays_lig_rec:
+                lig_count_receptor_dict[a['protein__entry_name']] = a['c']
         else:
             if self.page == 'ligand_bias':
                 assays_lig = list(BiasedData.objects
@@ -1364,10 +1371,10 @@ class LigandStatistics(TemplateView):
 
         if self.page == 'ligands':
             classes = ProteinFamily.objects.filter(
-                slug__in=['001', '002', '003', '004', '005', '006', '007'])  # ugly but fast
+                slug__in=['001', '002', '003', '004', '005', '006', '009'])  # ugly but fast
         else:
             classes = ProteinFamily.objects.filter(
-                slug__in=['001', '002', '003', '004', '006', '007'])  # ugly but fast
+                slug__in=['001', '002', '003', '004', '006', '009'])  # ugly but fast
 
         ligands = []
 
@@ -1390,7 +1397,7 @@ class LigandStatistics(TemplateView):
         lig_count_total = sum([x['num_ligands'] for x in ligands])
 
         prot_count_total = Protein.objects.filter(
-            family__slug__startswith='00').all().distinct('family').count()
+            family__slug__startswith='0').all().distinct('family').count()
 
         target_count_total = sum([x['target_count'] for x in ligands])
 
@@ -1536,6 +1543,55 @@ class LigandStatistics(TemplateView):
         ##### END COPIED SECTION #####
 
         if self.page == 'ligands':
+            # Generate the master dict of protein families
+
+            names_dict = Protein.objects.filter(species_id=1, parent_id__isnull=True, accession__isnull=False, family_id__slug__startswith='00').values('entry_name', 'name').order_by('entry_name')
+            names_conversion_dict = {item['entry_name']: item['name'] for item in names_dict}
+            data = list(names_conversion_dict.keys())
+            names = list(Protein.objects.filter(entry_name__in=data).values_list('name', flat=True))
+            IUPHAR_to_uniprot_dict = {item['name']: item['entry_name'] for item in names_dict}
+
+            families = ProteinFamily.objects.all()
+            datatree = {}
+            conversion = {}
+            human_dict = {}
+            # Iterate over the dictionary
+            for key, value in lig_count_receptor_dict.items():
+                # Extract the base protein name (everything before the first underscore)
+                protein_name = key.split('_')[0]
+
+                # Check if the "_human" version exists in the original dictionary
+                human_key = f'{protein_name}_human'
+
+                if human_key in lig_count_receptor_dict:
+                    # Initialize the human key in the result dictionary if it hasn't been already
+                    if human_key not in human_dict:
+                        human_dict[human_key] = 0
+
+                    # Sum values under the human key
+                    human_dict[human_key] += value
+
+            for item in families:
+                if len(item.slug) == 3 and item.slug not in datatree.keys():
+                    datatree[item.slug] = {}
+                    conversion[item.slug] = item.name
+                if len(item.slug) == 7 and item.slug not in datatree[item.slug[:3]].keys():
+                    datatree[item.slug[:3]][item.slug[:7]] = {}
+                    conversion[item.slug] = item.name
+                if len(item.slug) == 11 and item.slug not in datatree[item.slug[:3]][item.slug[:7]].keys():
+                    datatree[item.slug[:3]][item.slug[:7]][item.slug[:11]] = []
+                    conversion[item.slug] = item.name
+                if len(item.slug) == 15 and item.slug not in datatree[item.slug[:3]][item.slug[:7]][item.slug[:11]]:
+                    datatree[item.slug[:3]][item.slug[:7]][item.slug[:11]].append(item.name)
+
+            datatree2 = LandingPage.convert_keys(datatree, conversion)
+            datatree2.pop('Parent family', None)
+            datatree3 = LandingPage.filter_dict(datatree2, names)
+            data_converted = {names_conversion_dict[key]: {'Value1':value} for key, value in human_dict.items()}
+            Data_full = {"NameList": datatree3, "DataPoints": data_converted, "LabelConversionDict":IUPHAR_to_uniprot_dict}
+            context['GPCRome_data'] = json.dumps(Data_full["NameList"])
+            context['GPCRome_data_variables'] = json.dumps(Data_full['DataPoints'])
+            context['GPCRome_Label_Conversion'] = json.dumps(Data_full['LabelConversionDict'])
             context["render"] = "not_bias"
 
         else:
@@ -1695,7 +1751,7 @@ class LigandStatistics(TemplateView):
                 "Other GPCR orphans": "Grey",
                 "Class T (Taste 2)": 'MediumPurple',
                 }
-            heatmap_receptors = Protein.objects.filter(family__slug__startswith='00', species_id=1).exclude(
+            heatmap_receptors = Protein.objects.filter(family__slug__startswith='0', species_id=1).exclude(
                                               family__slug__startswith='005').prefetch_related(
                                               "family", "family__parent", "family__parent__parent", "family__parent__parent__parent")
             MasterDict = {}
@@ -1808,7 +1864,7 @@ class LigandGtoPInfoView(TemplateView):
         ligand_conversion = LigandID.objects.filter(index=ligand_id, web_resource_id__slug="gtoplig").values_list('ligand_id')[0][0]
         ligand_data = Ligand.objects.get(id=ligand_conversion)
         endogenous_ligands =  Endogenous_GTP.objects.all().values_list("ligand_id", flat=True)
-        assay_data = list(AssayExperiment.objects.filter(ligand=ligand_id).prefetch_related(
+        assay_data = list(AssayExperiment.objects.filter(ligand=ligand_conversion).prefetch_related(
             'ligand', 'protein', 'protein__family',
             'protein__family__parent', 'protein__family__parent__parent__parent',
             'protein__family__parent__parent', 'protein__family', 'protein__species'))
@@ -2087,7 +2143,7 @@ class LigandInformationView(TemplateView):
 
     @staticmethod
     def get_labels(ligand_data, endogenous_ligands, label_type):
-        endogenous_label = '<img src="https://icon-library.com/images/icon-e/icon-e-17.jpg" title="Endogenous ligand from GtoP" width="20" height="20"></img>'
+        endogenous_label = '<img src="https://icon-library.com/images/icon-e/icon-e-17.jpg" title="Physiological ligand from GtoP" width="20" height="20"></img>'
         surrogate_label = '<img src="https://icon-library.com/images/letter-s-icon/letter-s-icon-15.jpg"' + \
                           ' title="Surrogate ligand" width="20" height="20"></img>'
         drug_label = '<img src="https://icon-library.com/images/drugs-icon/drugs-icon-7.jpg" title="Approved drug" width="20" height="20"></img>'
@@ -2402,7 +2458,7 @@ class ReferenceSelection(TemplateView):
         context = super().get_context_data(**kwargs)
         return context
 
-class EndogenousBrowser(TemplateView):
+class PhysiologicalLigands(TemplateView):
 
     template_name = 'endogenous_browser.html'
 
@@ -2411,13 +2467,27 @@ class EndogenousBrowser(TemplateView):
         context = super().get_context_data(**kwargs)
 
         browser_columns = ['Class', 'Receptor family', 'UniProt', 'IUPHAR', 'Species',
-                           'Ligand name', 'GtP link', 'GtP Classification', 'Potency Ranking', 'Type',
-                           'pEC50 - min', 'pEC50 - mid', 'pEC50 - max',
-                           'pKi - min', 'pKi - mid', 'pKi - max', 'Reference', 'ID']
-
-        table = pd.DataFrame(columns=browser_columns)
+                        'Ligand name', 'GtP link', 'GtP Classification', 'Potency Ranking', 'Type','smiles','inchikey',
+                        'pEC50 - min', 'pEC50 - mid', 'pEC50 - max',
+                        'pKi - min', 'pKi - mid', 'pKi - max', 'Reference', 'ID',
+                        'Entry Name', 'Accession', 'pdb_code', 'structure_type']
+        data_subsets = []
         #receptor_id
-        endogenous_data = Endogenous_GTP.objects.all().values_list(
+
+        pdb_subquery = LigandPeptideStructure.objects.filter(
+            ligand=OuterRef('ligand'),
+            structure__protein_conformation__protein=OuterRef('receptor')
+        ).values('structure__pdb_code__index')[:1]
+
+        structure_type_subquery = LigandPeptideStructure.objects.filter(
+            ligand=OuterRef('ligand'),
+            structure__protein_conformation__protein=OuterRef('receptor')
+        ).values('structure__structure_type__slug')[:1]
+
+        endogenous_data = Endogenous_GTP.objects.annotate(
+            pdb_code=Subquery(pdb_subquery),
+            structure_type=Subquery(structure_type_subquery)
+        ).values_list(
                             "receptor__family__parent__parent__parent__name", #0 Class
                             "receptor__family__parent__name",                 #1 Receptor Family
                             "receptor__entry_name",                           #2 UniProt
@@ -2428,17 +2498,20 @@ class EndogenousBrowser(TemplateView):
                             "endogenous_status",                              #7 Principal/Secondary
                             "potency_ranking",                                #8 Potency Ranking
                             "ligand__ligand_type__name",                      #9 Type
-                            "pec50",                                          #10 pEC50 - min - med - max
-                            "pKi",                                            #11 pKi - min - med - max
-                            "publication__authors",                           #12 Pub Authors
-                            "publication__year",                              #13 Pub Year
-                            "publication__title",                             #14 Pub Title
-                            "publication__journal__name",                     #15 Pub Journal
-                            "publication__reference",                         #16 Pub Reference
-                            "publication__web_link__index",                   #17 DOI/PMID
-                            "receptor",                                       #18 Receptor ID
-                            "receptor__accession").distinct()                 #19 Accession (UniProt link)
-
+                            "ligand__smiles",                                 #10 Smiles
+                            "ligand__inchikey",                               #11 inchikey
+                            "pec50",                                          #12 pEC50 - min - med - max
+                            "pKi",                                            #13 pKi - min - med - max
+                            "publication__authors",                           #14 Pub Authors
+                            "publication__year",                              #15 Pub Year
+                            "publication__title",                             #16 Pub Title
+                            "publication__journal__name",                     #17 Pub Journal
+                            "publication__reference",                         #18 Pub Reference
+                            "publication__web_link__index",                   #19 DOI/PMID
+                            "receptor",                                       #20 Receptor ID
+                            "receptor__accession",                            #21 Accession (UniProt link)
+                            'pdb_code',                                       #22 pdb_code (UniProt link)
+                            'structure_type').distinct()                      #23           
 
         gtpidlinks = dict(list(LigandID.objects.filter(web_resource__slug='gtoplig').values_list(
                             "ligand",
@@ -2447,23 +2520,23 @@ class EndogenousBrowser(TemplateView):
         matches = []
         publications = {}
         gtplink = 'https://www.guidetopharmacology.org/GRAC/LigandDisplayForward?ligandId={}'
-        pub_ref = "<b>{0}. ({1})</b><br />{2}.<br /><i>{3}</i>, <b>{4}</b> [PMID: <a href='{5}'>{6}</a>]<br /><br />"
+        pub_ref = "<b>{0}. ({1})</b><br />{2}.<br /><i>{3}</i>, <b>{4}</b> [PMID: <a target='_blank' href='{5}'>{6}</a>]<br /><br />"
         for data in endogenous_data:
             pub_link = ''
-            ligand_receptor = str(data[6]) + '_' + str(data[18])
+            ligand_receptor = str(data[6]) + '_' + str(data[20])
             if data[6] not in gtpidlinks.keys():
                 continue
             if ligand_receptor not in publications.keys():
                 publications[ligand_receptor] = {}
-            if data[17]:
-                pub_link = "https://pubmed.ncbi.nlm.nih.gov/" + data[17] if data[17].isdigit() else "https://dx.doi.org/" + data[17]
+            if data[19]:
+                pub_link = "https://pubmed.ncbi.nlm.nih.gov/" + data[19] if data[19].isdigit() else "https://dx.doi.org/" + data[17]
                 #skipping publications without info (probably bug in the database)
-                if data[13] == None:
+                if data[15] == None:
                     continue
                 #splicing for years so we can then merge later
-                if data[13] not in publications[ligand_receptor].keys():
-                    publications[ligand_receptor][data[13]] = ''
-                publications[ligand_receptor][data[13]] = publications[ligand_receptor][data[13]] + pub_ref.format(data[12],data[13],data[14],data[15],data[16], pub_link, data[17])
+                if data[15] not in publications[ligand_receptor].keys():
+                    publications[ligand_receptor][data[15]] = ''
+                publications[ligand_receptor][data[15]] = publications[ligand_receptor][data[15]] + pub_ref.format(data[14],data[15],data[16],data[17],data[18], pub_link, data[19])
         #Cycling through the years to make a single reference string
         for key in publications:
             years = sorted(publications[key].keys())
@@ -2476,36 +2549,46 @@ class EndogenousBrowser(TemplateView):
         for data in endogenous_data:
             if data[6] not in gtpidlinks.keys():
                 continue
-            pair = str(data[6]) + '_' + str(data[18])
+            pair = str(data[6]) + '_' + str(data[20])
             if pair not in matches:
                 matches.append(pair)
                 data_subset = {}
                 data_subset['Class'] = data[0].replace('Class ', '')                        #0
                 data_subset['Receptor family'] = data[1].strip('receptors')                 #1
                 data_subset['UniProt'] = data[2].split('_')[0].upper()                      #2
-                data_subset['IUPHAR'] = data[3].strip('receptor')                           #3
+                data_subset['IUPHAR'] = data[3].replace(" receptor","").replace("-adrenoceptor","")                          #3
                 data_subset['Species'] = data[4]                                            #4
                 data_subset['Ligand name'] = data[5]                                        #5
                 data_subset['GtP link'] =  gtplink.format(gtpidlinks[data[6]])              #6
                 data_subset['GtP Classification'] = data[7] if data[7] else ""              #7
                 data_subset['Potency Ranking'] = str(data[8]) if data[8] else ""            #8
                 data_subset['Type'] = data[9].replace('-',' ').capitalize()                 #9
-                data_subset['pEC50 - min'] = data[10].split(' | ')[0]                       #10
-                data_subset['pEC50 - mid'] = data[10].split(' | ')[1]                       #11
-                data_subset['pEC50 - max'] = data[10].split(' | ')[2]                       #12
-                data_subset['pKi - min'] = data[11].split(' | ')[0]                         #13
-                data_subset['pKi - mid'] = data[11].split(' | ')[1]                         #14
-                data_subset['pKi - max'] = data[11].split(' | ')[2]                         #15
+                data_subset['smiles'] = str(data[10]) if data[10] else "-"                  #10
+                data_subset['inchikey'] = str(data[11]) if data[11] else "-"                #11
+                data_subset['pEC50 - min'] = data[12].split(' | ')[0]                       #12
+                data_subset['pEC50 - mid'] = data[12].split(' | ')[1]                       #13
+                data_subset['pEC50 - max'] = data[12].split(' | ')[2]                       #14
+                data_subset['pKi - min'] = data[13].split(' | ')[0]                         #15
+                data_subset['pKi - mid'] = data[13].split(' | ')[1]                         #16
+                data_subset['pKi - max'] = data[13].split(' | ')[2]                         #17
                 if len(publications[pair]) != 0:
-                    data_subset['Reference'] = publications[pair]                           #16
+                    data_subset['Reference'] = publications[pair]                           #18
                 else:
                     data_subset['Reference'] = 'empty'
-                data_subset['ID'] = data[6]                                                 #17
-                data_subset['Entry Name'] = data[2]                                         #18
-                data_subset['Accession'] = data[19]                                         #19
-                table = table.append(data_subset, ignore_index=True)
+                data_subset['ID'] = data[6]                                                 #19
+                data_subset['Entry Name'] = data[2]                                         #20
+                data_subset['Accession'] = data[21]                                         #21
+                data_subset["pdb_code"] = data[22]                                          #22
+                data_subset['structure_type'] = data[23]
+                data_subsets.append(data_subset)
 
+        table = pd.DataFrame(data_subsets, columns=browser_columns)
         table.fillna('', inplace=True)
+
         # context = dict()
         context['Array'] = table.to_numpy()
         return context
+
+
+def endogenous_redirect(request):
+    return HttpResponseRedirect('/ligand/physiological_ligands')

@@ -1123,7 +1123,7 @@ class Alignment:
                 # calculate identity, similarity and similarity score to the reference
                 calc_values = self.pairwise_similarity(self.proteins[i], self.proteins[k])
 
-                # Identity
+                # Similarity
                 value = calc_values[1].strip()
                 if int(value) < 10:
                     color_class = 0
@@ -1131,7 +1131,7 @@ class Alignment:
                     color_class = str(value)[:-1]
                 self.similarity_matrix[self.proteins[k].protein.entry_name]['values'][i] = [value, color_class]
 
-                # Similarity
+                # Identity
                 value = calc_values[0].strip()
                 if int(value) < 10:
                     color_class = 0

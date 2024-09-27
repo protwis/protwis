@@ -181,7 +181,7 @@ def fetch_pdb_info(pdbname, protein ,new_xtal=False, ignore_gasper_annotation=Fa
         elif line.startswith('SEQADV'):
             line = line.split()
             # if it is relevant to correct uniprot
-            if line[7]=='DELETION':
+            if len(line)>7 and line[7]=='DELETION':
                 if line[4]==uniprot_code:
                         #remove from pdb_range
                         # print(line)
@@ -1800,8 +1800,16 @@ def construct_structure_annotation_override(pdb_code, removed, deletions):
         deletions = []
     elif pdb_code=='8JD6':
         removed = [1002]
+    elif pdb_code=='8JJO':
+        removed = list(range(231,340))
+    elif pdb_code=='8HN1':
+        removed = list(range(214,229))
+    elif pdb_code in ['8J46','8W77']:
+        removed = list(range(996,1114))
+        deletions = list(range(226,236))
     ### make deletions and removed empty
-    elif pdb_code in ['7SF7','7SF8','7EB2','7X1T','7X1U','7SRS','7UL2','7UL3','7UL5','7XBX','7XWO','8G2Y','7XJJ','7YM8','8IY5','8IRU']:
+    elif pdb_code in ['7SF7','7SF8','7EB2','7X1T','7X1U','7SRS','7UL2','7UL3','7UL5','7XBX','7XWO','8G2Y','7XJJ','7YM8','8IY5','8IRU',
+                      '8JMT','8W8Q','8W8R','8W8S','8I9L','8ITL','8I9A','8I95','8ITM','8HTI']:
         deletions, removed = [], []
     elif pdb_code in ['7ZLY']:
         deletions = []
