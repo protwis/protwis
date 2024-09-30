@@ -7,13 +7,6 @@ import socket
 from protwis.settings_local_development import *
 
 # Database. f-string requires Python 3.6+
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'protwis',
-        'USER': 'protwis',
-        'PASSWORD': 'protwis',
-        'HOST': f'{socket.gethostname()}.local',
-    }
-}
+DATABASES['default']['HOST'] = f'{socket.gethostname()}.local'
+
 
