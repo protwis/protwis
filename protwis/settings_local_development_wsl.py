@@ -1,4 +1,4 @@
-﻿# Local settings for django server running in Microsoft Windows 
+﻿# Local settings for django server running in Microsoft Windows
 # WSL + Docker with PostgreSQL.
 # Copy and edit the contents of this file to protwis/settings_local.py
 import socket
