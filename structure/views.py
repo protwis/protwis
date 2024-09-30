@@ -4419,7 +4419,6 @@ class StructureBlastView(View):
         if 'af_foldseek_db' in self.structure_type:
             try:
                 gene_subquery_models = Gene.objects.filter(proteins=OuterRef('protein__pk')).values('name')[:1]
-                print('First sub succs')
 
             except Exception as e:
                 e
@@ -4504,6 +4503,23 @@ class StructureBlastView(View):
                 )
 
                 structures_info.update({item[0]: item for item in exp_structures_info_null_accession})
+
+                gene_subquery_ref = Gene.objects.filter(proteins=OuterRef('protein__pk')).values('name')[:1]
+                ref_structures = StructureModel.objects.filter(main_template__isnull=False).annotate( gene_name=Subquery(gene_subquery_ref)
+                ).values_list(
+                    'protein__entry_name', 'state__slug',
+                    'protein__family__parent__parent__parent__name',  # Class
+                    'protein__family__parent__name',  # Family
+                    'protein__species__common_name',
+                    'protein__name',
+                    'protein__entry_name',
+                    'protein__accession',
+                    'gene_name',
+                )
+
+                structures_info.update({item[0]: item for item in ref_structures})
+
+
             except Exception as e:
                 print('REF failed')
                 print(e)
