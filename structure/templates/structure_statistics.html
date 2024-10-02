@@ -775,77 +775,8 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
   }
 </style>
 <br />
-<br />
 <p><h4><strong>Structural coverage of GPCR-Arrestin complexes.</strong></h4></p>
 <br />
-<div>
-  Receptor names:
-    <div class="btn-group" role="group" id="gtp_plus">
-        <button id="UniProtNames" class="btn btn-info active">UniProt</button>
-        <button id="IUPHARNames" class="btn btn-info">IUPHAR</button>
-    </div>
-</div>
-<br />
-<br />
-<script type="text/javascript" charset="utf-8">
-    class_a = {{ class_a|safe }};
-    class_a_options = {{ class_a_options|safe }};
-    class_b1 = {{ class_b1|safe }};
-    class_b1_options = {{ class_b1_options|safe }};
-    class_b2 = {{ class_b2|safe }};
-    class_b2_options = {{ class_b2_options|safe }};
-    class_c = {{ class_c|safe }};
-    class_c_options = {{ class_c_options|safe }};
-    class_f = {{ class_f|safe }};
-    class_f_options = {{ class_f_options|safe }};
-    class_t2 = {{ class_t2|safe }};
-    class_t2_options = {{ class_t2_options|safe }};
-    orphan = {{ orphan|safe }};
-    orphan_options = {{ orphan_options|safe }};
-    whole_dict = {{ whole_receptors|safe }};
-    matching = {{ circles_data|safe }}
-</script>
-<script language='javascript'>
-  maxLeafNodeLenght = 46;
-  conversion = {"ARRB1":"#FFC300", "ARRB2":"#581845", "ARRC":"#48D1CC", "ARRS":"#6495ED"};
-  $("#UniProtNames").click(function() {
-      $("#UniProtNames").addClass("active");
-      $("#IUPHARNames").removeClass("active");
-      changeLeavesLabels("class_a","UniProt", whole_dict);
-      DrawCircles('class_a', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-      changeLeavesLabels("class_b1","UniProt", whole_dict);
-      DrawCircles('class_b1', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-      changeLeavesLabels("class_b2","UniProt", whole_dict);
-      DrawCircles('class_b2', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-      changeLeavesLabels("class_c","UniProt", whole_dict);
-      DrawCircles('class_c', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-      changeLeavesLabels("class_f","UniProt", whole_dict);
-      DrawCircles('class_f', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-      changeLeavesLabels("class_t2","UniProt", whole_dict);
-      DrawCircles('class_t2', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-      changeLeavesLabels("orphan","UniProt", whole_dict);
-      DrawCircles('orphan', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-  });
-  $("#IUPHARNames").click(function() {
-      $("#UniProtNames").removeClass("active");
-      $("#IUPHARNames").addClass("active");
-      changeLeavesLabels("class_a","IUPHAR", whole_dict);
-      DrawCircles('class_a', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-      changeLeavesLabels("class_b1","IUPHAR", whole_dict);
-      DrawCircles('class_b1', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-      changeLeavesLabels("class_b2","IUPHAR", whole_dict);
-      DrawCircles('class_b2', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-      changeLeavesLabels("class_c","IUPHAR", whole_dict);
-      DrawCircles('class_c', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-      changeLeavesLabels("class_f","IUPHAR", whole_dict);
-      DrawCircles('class_f', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-      changeLeavesLabels("class_t2","IUPHAR", whole_dict);
-      DrawCircles('class_t2', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-      changeLeavesLabels("orphan","IUPHAR", whole_dict);
-      DrawCircles('orphan', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-  });
-</script>
-
 {% endif %}
   {% if page != 'structure' %}
     {% if page == 'gprot' %}
@@ -866,24 +797,6 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
                 <span class="gprot_pink">&#11044; <b>GPa1</b></span>
       </div>
     </div>
-    {% elif page == 'arrestin' %}
-    <div id="class_a" class="text-center">
-    <h4>Class A<br />(Rhodopsin)</h4>
-    <br />
-    <div>
-      <!-- <div style="float: right; position: relative" class="text-center">
-        <b>Arrestin complexes structures frequency (from low to high)</b>
-        <div class="graydiv"></div>
-      </div> -->
-      <div style="float: left; position: relative" class="text-center">
-        <b>Arrestin complexes</b> <br />
-            <span class="gprot_orange">&#11044; &beta;-Arrestin<sub>1</sub></span>
-            <span class="gprot_purple">&#11044; &beta;-Arrestin<sub>2</sub></span>
-            <span class="gprot_aquamarine">&#11044; Arrestin-C</span>
-            <span class="gprot_cornflower">&#11044; S-Arrestin</span>
-      </div>
-    </div>
-    {% endif %}
   </div>
   <p>
     <div class="text-center">
@@ -1132,6 +1045,63 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
       </div>
     </div>
   </div>
+    {% elif page == 'arrestin' %}
+    <div style="padding-top: 10px; font-size: 11px; white-space: nowrap;">
+      <div class="col-md-12">
+        <br>
+        <div class="col-md-3">
+          Receptor names:
+            <div class="btn-group" role="group" id="gtp_plus">
+                <button id="GPCRome_Arrestin_UniProtNames" class="btn btn-info ">Gene</button>
+                <button id="GPCRome_Arrestin_IUPHARNames" class="btn btn-info active">Protein</button>
+            </div>
+        </div>
+
+        <div class="col-md-2" style="padding-top: 5px;">
+          Icon toggle:
+          <button id="ToggleIconArrestin" class="btn btn-info active">On</button>
+        </div>
+
+      <div class="col-md-3">
+        <div class="text-center">
+          <div class="dropdown">
+            <button type="button" class="btn btn-primary dropdown-toggle" style="font-size: 14px;" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              <span class="glyphicon glyphicon-download" style="vertical-align: top;line-height: 1.3"></span> Download <span class="caret"></span>
+            </button>
+            <div class="dropdown-menu dropdown-menu-right-middle">
+              <li><a class="dropdown-item" href="javascript:saveSvg(document.getElementById('GPCRome_Arrestin_plot_svg'), 'GPCRome_Arrestin_plot.svg');">SVG</a></li>
+              <li><a class="dropdown-item" href="javascript:saveSvgAsPng(document.getElementById('GPCRome_Arrestin_plot_svg'), 'GPCRome_Arrestin_plot.png');">PNG</a></li>
+              <li><a class="dropdown-item" href="javascript:saveSvgAsJpg(document.getElementById('GPCRome_Arrestin_plot_svg'), 'GPCRome_Arrestin_plot.jpg');">JPG</a></li>
+              <li><a class="dropdown-item" href="javascript:saveSvgAsTiff(document.getElementById('GPCRome_Arrestin_plot_svg'), 'GPCRome_Arrestin_plot.tiff');">TIFF</a></li>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-3">
+        <div style="float: left; position: relative" class="text-center">
+          <b>GPCR-Arrestin complexes coverage</b> <br/>
+              <span class="gprot_orange">&#9644; <b>&beta;-Arrestin<sub>1</sub></b></span>
+              <span class="gprot_purple">&#9644; <b>&beta;-Arrestin<sub>2</sub></b></span>
+              <span class="gprot_aquamarine">&#9644; <b>Arrestin-C</b></span>
+              <span class="gprot_cornflower">&#9644; <b>S-Arrestin</b></span>
+        </div>
+      </div>
+
+      <br />
+      <br />
+      <br />
+
+        <div id="image-container" data-image-url="{% static 'home/images/DataMapper_GPCRome_icon_legend.png' %}"></div>
+        <!-- GPCRome -->
+        <div class="col-md-12" style="margin-top: 0px;margin-bottom: 30px;">
+            <div id="GPCRome_Arrestin_plot" class="text-center"></div>
+        </div>
+
+      </div>
+    </div>
+    {% endif %}
+
 {% else %}
 
 <!-- ### Create the panel tabs ### -->
@@ -1655,36 +1625,154 @@ function updateFillData(fill_data, conversionDict, labelType) {
     });
 </script>
 {% elif page == 'arrestin' %}
-<script type="text/javascript" charset="utf-8">
-    maxLeafNodeLenght = 46;
-    conversion = {"ARRB1":"#FFC300", "ARRB2":"#581845", "ARRC":"#48D1CC", "ARRS":"#6495ED"};
-    $(window).on("load", function() {
-        draw_tree(class_a, class_a_options);
-        draw_tree(class_b1, class_b1_options);
-        draw_tree(class_b2, class_b2_options);
-        draw_tree(class_c, class_c_options);
-        draw_tree(class_f, class_f_options);
-        draw_tree(class_t2, class_t2_options);
-        draw_tree(orphan, orphan_options);
-        DrawCircles('class_a', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-        DrawCircles('class_b1', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-        DrawCircles('class_b2', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-        DrawCircles('class_c', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-        DrawCircles('class_f', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-        DrawCircles('class_t2', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-        DrawCircles('orphan', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-        $("#class_a svg g").first().attr('transform', 'translate(555,555) scale(0.9,0.9) ');
-        $("#class_a_svg").attr('height', 1210);
-        $("#class_a_svg").attr('width', 1110);
-        $("#class_b1 svg g").first().attr('transform', 'translate(190,220) scale(0.80,0.80) ');
-        $("#class_b2 svg g").first().attr('transform', 'translate(195,182) scale(0.85,0.85) ');
-        $("#class_b2_svg").attr('height', 390);
-        $("#class_c svg g").first().attr('transform', 'translate(200,200) scale(0.85,0.85) ');
-        $("#class_f svg g").first().attr('transform', 'translate(180,180) scale(0.85,0.85) ');
-        $("#class_t2 svg g").first().attr('transform', 'translate(172,172) scale(0.85,0.85) ');
-        $("#orphan svg g").first().attr('transform', 'translate(175,180) scale(0.85,0.85)');
-        $("#orphan_svg").attr('height', 360).attr('width', 360);
+<script src="{% static 'home/js/datamapper.js' %}"></script>
+<script src="{% static 'home/js/popper.min.js' %}"></script>
+<script src="{% static 'home/js/spectrum_v1_8_1.js' %}"></script>
+<script src="{% static 'home/js/ml.js' %}"></script>
+<script>
+
+var GPCRome_Arrestin_categories_data = {{ GPCRome_Arrestin_data|safe }};
+var arrestin_fill_data = {{ GPCRome_Arrestin_data_variables|safe }};
+var GPCRome_Arrestin_Label_conversion_dict = {{GPCRome_Arrestin_Label_Conversion|safe}};
+
+console.log(GPCRome_Arrestin_categories_data);
+console.log(arrestin_fill_data);
+
+// Initialize the conversion dictionary
+GPCRome_Arrestin_Label_conversion_dict = initializeGPCRomeLabelConversionDict(GPCRome_Arrestin_Label_conversion_dict);
+
+
+function initializeGPCRomeLabelConversionDict(conversionDict) {
+    const updatedDict = {};
+
+    Object.keys(conversionDict).forEach(originalLabel => {
+        let uniProtLabel = conversionDict[originalLabel];
+        uniProtLabel = uniProtLabel.replace(/_human$/, "").toUpperCase(); // Remove "_human" and convert to uppercase
+        updatedDict[originalLabel] = uniProtLabel;
     });
+
+    return updatedDict;
+}
+
+// # Initialize data styling #
+var arrestin_layout_data = GPCRome_initializeData(GPCRome_Arrestin_categories_data);
+
+var GPCRomes_styling = {
+  Spacing: true,
+  family: true,
+  datatype: "Arrestin",
+  minValue: 0,
+  median_value: 3,
+  avg_value: 3,
+  maxValue: 6,
+  colorStart: "white",
+  color_median: "blue",
+  colorEnd: "#000000",
+  data_color_complexity: 'Two',
+  showIcon: true  // Add this property to control the icon visibility
+}
+
+// # initial draw
+let GPCRome_Arrestin_location = "GPCRome_Arrestin_plot";
+Draw_GPCRomes(arrestin_layout_data, arrestin_fill_data, GPCRome_Arrestin_location, GPCRomes_styling);
+
+// Global variables for current label type
+let currentLabelType = "IUPHAR"; // Default
+
+// Event listeners for label type buttons
+document.getElementById("GPCRome_Arrestin_UniProtNames").addEventListener("click", () => {
+    switchLabelType("UniProt", GPCRome_Arrestin_location, arrestin_fill_data, GPCRome_Arrestin_Label_conversion_dict, GPCRomes_styling);
+});
+
+document.getElementById("GPCRome_Arrestin_IUPHARNames").addEventListener("click", () => {
+    switchLabelType("IUPHAR", GPCRome_Arrestin_location, arrestin_fill_data, GPCRome_Arrestin_Label_conversion_dict, GPCRomes_styling);
+});
+
+// Function to switch label types
+function switchLabelType(labelType, location, fill, conversion, styling, odorant=false) {
+    currentLabelType = labelType;
+    updateArrestinGPCRome(location, fill, conversion, styling, odorant);
+}
+
+// Function to toggle the icon visibility and redraw the GPCRomes
+function toggleIcon() {
+    const button = d3.select("#ToggleIconArrestin");
+
+    // Toggle the showIcon property in GPCRomes_styling
+    GPCRomes_styling.showIcon = !GPCRomes_styling.showIcon;
+
+    // Update button text and state
+    if (GPCRomes_styling.showIcon) {
+        button.text("On");
+        button.classed("active", true);
+    } else {
+        button.text("Off");
+        button.classed("active", false);
+    }
+
+    // Redraw the GPCRomes with the updated icon state
+    updateArrestinGPCRome(GPCRome_Arrestin_location, arrestin_fill_data, GPCRome_Arrestin_Label_conversion_dict, GPCRomes_styling);
+}
+
+// Attach event listener to the button
+d3.select("#ToggleIconArrestin").on("click", toggleIcon);
+
+
+// Function to update and redraw GPCRomes
+function updateArrestinGPCRome(location, fill, conversion, styling, odorant=false) {
+    let updatedLayoutData;
+    updatedLayoutData = updateLayoutData(arrestin_layout_data, conversion, currentLabelType);
+    const updatedFillData = updateFillData(fill, conversion, currentLabelType);
+
+    // Clear the existing SVG content
+    d3.select("#" + location).select("svg").remove();
+
+    // Redraw the GPCRomes with the updated data
+    Draw_GPCRomes(updatedLayoutData, updatedFillData, location, styling, odorant);
+
+    // Update button active states
+    // updateActiveButtonState(currentLabelType);
+}
+
+// Function to update layout data
+function updateLayoutData(layout_data, conversionDict, labelType) {
+    const updatedData = {};
+
+    Object.keys(layout_data).forEach(GPCRomeKey => {
+        const GPCRome = layout_data[GPCRomeKey];
+        updatedData[GPCRomeKey] = {};
+
+        Object.keys(GPCRome).forEach(ligandType => {
+            const receptors = GPCRome[ligandType];
+            updatedData[GPCRomeKey][ligandType] = receptors.map(receptor => {
+                if (labelType === "UniProt") {
+                    return conversionDict[receptor] || receptor;
+                } else {
+                    return Object.keys(conversionDict).find(key => conversionDict[key] === receptor) || receptor;
+                }
+            });
+        });
+    });
+
+    return updatedData;
+}
+
+// Function to update fill data
+function updateFillData(fill_data, conversionDict, labelType) {
+    const updatedData = {};
+
+    Object.keys(fill_data).forEach(receptor => {
+        let updatedReceptor;
+        if (labelType === "UniProt") {
+            updatedReceptor = conversionDict[receptor] || receptor;
+        } else {
+            updatedReceptor = Object.keys(conversionDict).find(key => conversionDict[key] === receptor) || receptor;
+        }
+        updatedData[updatedReceptor] = fill_data[receptor];
+    });
+
+    return updatedData;
+}
 </script>
 {% endif %}
 {% endblock %}

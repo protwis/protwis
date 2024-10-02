@@ -3160,7 +3160,7 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling, odoran
                                 .attr("transform", `rotate(${prevPos.rotation + additionalRotation}, ${prevPos.x}, ${prevPos.y})`)
                                 .attr("class", "GPCRome-family-label-split")
                                 .text(firstPart)
-                                .style("font-weight", "bold")
+                                // .style("font-weight", "bold")
                                 .style("font-size",family_fontsize);
 
                             // Append the second part of the text (using currentPos)
@@ -3172,7 +3172,7 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling, odoran
                                 .attr("transform", `rotate(${currentPos.rotation + additionalRotation}, ${currentPos.x}, ${currentPos.y})`)
                                 .attr("class", "GPCRome-family-label-split")
                                 .text(secondPart)
-                                .style("font-weight", "bold")
+                                // .style("font-weight", "bold")
                                 .style("font-size", family_fontsize);
 
                         } else {
@@ -3187,7 +3187,7 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling, odoran
                                 .attr("transform", `rotate(${currentPos.rotation + additionalRotation}, ${currentPos.x}, ${currentPos.y})`)
                                 .attr("class", "GPCRome-family-label-split")
                                 .text(firstPart)
-                                .style("font-weight", "bold")
+                                // .style("font-weight", "bold")
                                 .style("font-size",family_fontsize);
 
                             // Append the second part of the text (using prevPos)
@@ -3199,7 +3199,7 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling, odoran
                                 .attr("transform", `rotate(${prevPos.rotation + additionalRotation}, ${prevPos.x}, ${prevPos.y})`)
                                 .attr("class", "GPCRome-family-label-split")
                                 .text(secondPart)
-                                .style("font-weight", "bold")
+                                // .style("font-weight", "bold")
                                 .style("font-size",family_fontsize);
                         }
 
@@ -3223,7 +3223,7 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling, odoran
                             .attr("transform", `rotate(${midRotation + additionalRotation}, ${midX}, ${midY})`)
                             .attr("class", "GPCRome-family-label")
                             .text(formatText(formattedText))
-                            .style("font-weight", "bold")
+                            // .style("font-weight", "bold")
                             .style("font-size",family_fontsize+5);
                     }
                 }
@@ -3305,12 +3305,21 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling, odoran
                     if (value === "Both") return "blue";
                     if (value === "empty") return "white";
                     return "none";  // Make the slice invisible if the value is ""
+                } else if (datatype === "Arrestin") {
+                    // Handle discrete data or default case
+                    if (value === "ARRB1") return "orange";
+                    if (value === "ARRB2") return "purple";
+                    if (value === "ARRC") return "aquamarine";
+                    if (value === "ARRS") return "cornflowerblue";
+                    if (value === "empty") return "white";
+                    return "none";  // Make the slice invisible if the value is ""
                 }
             })
             .style("stroke", (d) => {
                 const value = fill_data[d.data]?.Value1;
                 if (value === "Yes" || value === "No" || !isNaN(value)) return "black";
                 if (value === "Active" || value === "Inactive" || value === "Both" || value === "empty") return "black";
+                if (value === "ARRB1" || value === "ARRB2" || value === "ARRC" || value === "ARRS" || value === "empty") return "black";
                 return "none";  // Remove the stroke if the value is ""
             })
             .style("stroke-width", (d) => {
