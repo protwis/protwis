@@ -1471,7 +1471,7 @@ class StructureStatistics(TemplateView):
         # GPROT Complex information
         all_gprots = StructureExtraProteins.objects.filter(category='G alpha').exclude(structure__structure_type__slug__startswith='af-').prefetch_related("wt_protein","wt_protein__family", "wt_protein__family__parent", "structure__protein_conformation__protein__family")
         # all_gprots = all_structs.filter(id__in=SignprotComplex.objects.filter(protein__family__slug__startswith='100').values_list("structure__id", flat=True))
-
+        print(self.origin)
         ###### these are query sets for G-Prot Structure Statistics
         if self.origin != 'arrestin':
             all_g_A_complexes = all_gprots.filter(structure__protein_conformation__protein__family__slug__startswith='001')
@@ -1646,7 +1646,7 @@ class StructureStatistics(TemplateView):
             context['class_f_options']['label_free'] = [1,]
             #json.dump(class_f_data.get_nodes_dict('crystalized'), open('tree_test.json', 'w'), indent=4)
             context['class_f'] = json.dumps(class_f_data.get_nodes_dict('crystals'))
-            class_t2_data = tree.get_tree_data(ProteinFamily.objects.get(name='Class T (Taste 2)'))
+            class_t2_data = tree.get_tree_data(ProteinFamily.objects.get(name='Class T2 (Taste 2)'))
             context['class_t2_options'] = deepcopy(tree.d3_options)
             context['class_t2_options']['anchor'] = 'class_t2'
             context['class_t2_options']['label_free'] = [1,]
@@ -1882,7 +1882,6 @@ class StructureStatistics(TemplateView):
             context['GPCRome_odorant_data'] = json.dumps(odorant_full["NameList"])
             context['GPCRome_odorant_data_variables'] = json.dumps(odorant_full['DataPoints'])
             context['GPCRome_odorant_Label_Conversion'] = json.dumps(odorant_full['LabelConversionDict'])
-
 
         return context
 
