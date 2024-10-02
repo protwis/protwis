@@ -808,7 +808,6 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
 <script language='javascript'>
   maxLeafNodeLenght = 46;
   conversion = {"ARRB1":"#FFC300", "ARRB2":"#581845", "ARRC":"#48D1CC", "ARRS":"#6495ED"};
-  console.log(matching);
   $("#UniProtNames").click(function() {
       $("#UniProtNames").addClass("active");
       $("#IUPHARNames").removeClass("active");
@@ -1143,6 +1142,9 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
     <li>
       <a href="#complexes" data-toggle="tab">Receptor-ligand complexes</a>
     </li>
+    <li>
+      <a href="#odorant" data-toggle="tab">Odorant receptors</a>
+    </li>
 </ul>
 
 <!-- ## Tab content ## -->
@@ -1255,6 +1257,59 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
       </div>
     </div>
   </div>
+  <div id="odorant" class="tab-pane fade">
+    <div style="padding-top: 10px; font-size: 11px; white-space: nowrap;">
+      <div class="col-md-12">
+        <br>
+        <div class="col-md-3">
+          Receptor names:
+            <div class="btn-group" role="group" id="gtp_plus">
+                <button id="GPCRome_UniProtNames_odorant" class="btn btn-info ">Gene</button>
+                <button id="GPCRome_IUPHARNames_odorant" class="btn btn-info active">Protein</button>
+            </div>
+        </div>
+
+        <div class="col-md-2" style="padding-top: 5px;">
+          Icon toggle:
+          <button id="ToggleIconOdorant" class="btn btn-info active">On</button>
+        </div>
+
+      <div class="col-md-3">
+        <div class="text-center">
+          <div class="dropdown">
+            <button type="button" class="btn btn-primary dropdown-toggle" style="font-size: 14px;" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              <span class="glyphicon glyphicon-download" style="vertical-align: top;line-height: 1.3"></span> Download <span class="caret"></span>
+            </button>
+            <div class="dropdown-menu dropdown-menu-right-middle">
+              <li><a class="dropdown-item" href="javascript:saveSvg(document.getElementById('GPCRome_odorant_plot_svg'), 'GPCRome_odorant_plot.svg');">SVG</a></li>
+              <li><a class="dropdown-item" href="javascript:saveSvgAsPng(document.getElementById('GPCRome_odorant_plot_svg'), 'GPCRome_odorant_plot.png');">PNG</a></li>
+              <li><a class="dropdown-item" href="javascript:saveSvgAsJpg(document.getElementById('GPCRome_odorant_plot_svg'), 'GPCRome_odorant_plot.jpg');">JPG</a></li>
+              <li><a class="dropdown-item" href="javascript:saveSvgAsTiff(document.getElementById('GPCRome_odorant_plot_svg'), 'GPCRome_odorant_plot.tiff');">TIFF</a></li>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-3">
+        <div style="float: right;" class="text-center">
+          <b>Structures count (from low to high)</b>
+          <div class="graydiv"></div>
+        </div>
+      </div>
+
+      <br />
+      <br />
+      <br />
+
+        <div id="image-container" data-image-url="{% static 'home/images/DataMapper_GPCRome_icon_legend.png' %}"></div>
+        <!-- GPCRome -->
+        <div class="col-md-12" style="margin-top: 0px;margin-bottom: 30px;">
+            <div id="GPCRome_odorant_plot" class="text-center"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
   </div>
 {% endif %}
 
@@ -1281,10 +1336,17 @@ var GPCRome_categories_data = {{ GPCRome_data|safe }};
 var fill_data = {{ GPCRome_data_variables|safe }};
 var fill_data_complexes = {{ GPCRome_data_variables_complexes|safe }};
 var GPCRome_Label_conversion_dict = {{GPCRome_Label_Conversion|safe}};
+
+var GPCRome_odorant_data = {{ GPCRome_odorant_data|safe }};
+var odorant_fill_data = {{ GPCRome_odorant_data_variables|safe }};
+var GPCRome_odorant_Label_conversion_dict = {{GPCRome_odorant_Label_Conversion|safe}};
+
+console.log(GPCRome_odorant_Label_conversion_dict);
+
 // Initialize the conversion dictionary
 GPCRome_Label_conversion_dict = initializeGPCRomeLabelConversionDict(GPCRome_Label_conversion_dict);
-
-console.log(GPCRome_Label_conversion_dict);
+GPCRome_odorant_Label_conversion_dict = initializeGPCRomeLabelConversionDict(GPCRome_odorant_Label_conversion_dict);
+console.log(GPCRome_odorant_Label_conversion_dict);
 
 function initializeGPCRomeLabelConversionDict(conversionDict) {
     const updatedDict = {};
@@ -1300,6 +1362,12 @@ function initializeGPCRomeLabelConversionDict(conversionDict) {
 
 // # Initialize data styling #
 var layout_data = GPCRome_initializeData(GPCRome_categories_data);
+// ODORANT
+var odorant_data = GPCRome_initializeOdorantData(GPCRome_odorant_data);
+//ODORANT
+const GPCRome_odorant_fill_data_values = Object.values(odorant_fill_data).map(receptor => receptor.Value1);
+const GPCRome_odorant_fill_minValue = Math.min(...GPCRome_odorant_fill_data_values);
+const GPCRome_odorant_fill_maxValue = Math.max(...GPCRome_odorant_fill_data_values);
 
 const GPCRome_fill_data_values = Object.values(fill_data_complexes).map(receptor => receptor.Value1);
 const GPCRome_fill_minValue = Math.min(...GPCRome_fill_data_values);
@@ -1307,6 +1375,23 @@ const GPCRome_fill_maxValue = Math.max(...GPCRome_fill_data_values);
 // Calculate median
 // Sort the values in ascending order
 GPCRome_fill_data_values.sort((a, b) => a - b);
+
+//ODORANT
+GPCRome_odorant_fill_data_values.sort((a, b) => a - b);
+
+// ODORANT
+let GPCRome_odorant_fill_medianValue;
+const odorant_middleIndex = Math.floor(GPCRome_odorant_fill_data_values.length / 2);
+
+if (GPCRome_odorant_fill_data_values.length % 2 === 0) {
+    // Even number of elements, median is the average of the two middle values
+    GPCRome_odorant_fill_medianValue = (GPCRome_odorant_fill_data_values[odorant_middleIndex - 1] + GPCRome_odorant_fill_data_values[middleIndex]) / 2;
+} else {
+    // Odd number of elements, median is the middle value
+    GPCRome_odorant_fill_medianValue = GPCRome_odorant_fill_data_values[odorant_middleIndex];
+}
+
+GPCRome_odorant_fill_avg = (GPCRome_odorant_fill_minValue+GPCRome_odorant_fill_maxValue)/2
 
 // Calculate the median
 let GPCRome_fill_medianValue;
@@ -1352,11 +1437,32 @@ var GPCRomes_complexes_styling = {
   showIcon: true  // Add this property to control the icon visibility
 }
 
+var GPCRomes_odorant_styling = {
+  Spacing: true,
+  family: true,
+  datatype: "Continuous",
+  minValue: GPCRome_odorant_fill_minValue,
+  median_value: GPCRome_odorant_fill_medianValue,
+  avg_value: GPCRome_odorant_fill_avg,
+  maxValue: GPCRome_odorant_fill_maxValue,
+  colorStart: "#D3D3D3",
+  color_median: "#696969",
+  colorEnd: "#000000",
+  data_color_complexity: 'Two',
+  showIcon: true  // Add this property to control the icon visibility
+}
+
+
 // # initial draw
 let GPCRome_location = "GPCRome_plot";
 let GPCRome_complexes_location = "GPCRome_complexes_plot";
 Draw_GPCRomes(layout_data, fill_data, GPCRome_location, GPCRomes_styling);
 Draw_GPCRomes(layout_data, fill_data_complexes, GPCRome_complexes_location, GPCRomes_complexes_styling);
+
+//ODORANT
+let GPCRome_odorant_location = "GPCRome_odorant_plot";
+Draw_GPCRomes(odorant_data, odorant_fill_data, GPCRome_odorant_location, GPCRomes_odorant_styling, true);
+
 
 // Global variables for current label type
 let currentLabelType = "IUPHAR"; // Default
@@ -1367,6 +1473,9 @@ document.getElementById("GPCRome_UniProtNames").addEventListener("click", () => 
 });
 document.getElementById("GPCRome_UniProtNames_complexes").addEventListener("click", () => {
     switchLabelType("UniProt", GPCRome_complexes_location, fill_data_complexes, GPCRome_Label_conversion_dict, GPCRomes_complexes_styling);
+});
+document.getElementById("GPCRome_UniProtNames_odorant").addEventListener("click", () => {
+    switchLabelType("UniProt", GPCRome_odorant_location, odorant_fill_data, GPCRome_odorant_Label_conversion_dict, GPCRomes_odorant_styling, true);
 })
 
 document.getElementById("GPCRome_IUPHARNames").addEventListener("click", () => {
@@ -1375,11 +1484,16 @@ document.getElementById("GPCRome_IUPHARNames").addEventListener("click", () => {
 document.getElementById("GPCRome_IUPHARNames_complexes").addEventListener("click", () => {
     switchLabelType("IUPHAR", GPCRome_complexes_location, fill_data_complexes, GPCRome_Label_conversion_dict, GPCRomes_complexes_styling);
 });
+document.getElementById("GPCRome_IUPHARNames_odorant").addEventListener("click", () => {
+    switchLabelType("IUPHAR", GPCRome_odorant_location, odorant_fill_data, GPCRome_odorant_Label_conversion_dict, GPCRomes_odorant_styling, true);
+});
+
 
 // Function to switch label types
-function switchLabelType(labelType, location, fill, conversion, styling) {
+function switchLabelType(labelType, location, fill, conversion, styling, odorant=false) {
     currentLabelType = labelType;
-    updateGPCRome(location, fill, conversion, styling);
+    console.log(currentLabelType);
+    updateGPCRome(location, fill, conversion, styling, odorant);
 }
 
 // Function to toggle the icon visibility and redraw the GPCRomes
@@ -1422,21 +1536,47 @@ function toggleIconComplexes() {
     updateGPCRome(GPCRome_complexes_location, fill_data_complexes, GPCRome_Label_conversion_dict, GPCRomes_complexes_styling);
 }
 
+// Function to toggle the icon visibility and redraw the GPCRomes
+function toggleIconOdorant() {
+    const button = d3.select("#ToggleIconOdorant");
+
+    // Toggle the showIcon property in GPCRomes_styling
+    GPCRomes_odorant_styling.showIcon = !GPCRomes_odorant_styling.showIcon;
+
+    // Update button text and state
+    if (GPCRomes_odorant_styling.showIcon) {
+        button.text("On");
+        button.classed("active", true);
+    } else {
+        button.text("Off");
+        button.classed("active", false);
+    }
+
+    // Redraw the GPCRomes with the updated icon state
+    updateGPCRome(GPCRome_odorant_location, odorant_fill_data, GPCRome_odorant_Label_conversion_dict, GPCRomes_odorant_styling, true);
+}
+
 // Attach event listener to the button
 d3.select("#ToggleIcon").on("click", toggleIcon);
 d3.select("#ToggleIconComplexes").on("click", toggleIconComplexes);
+d3.select("#ToggleIconOdorant").on("click", toggleIconOdorant);
 
 // Function to update and redraw GPCRomes
-function updateGPCRome(location, fill, conversion, styling) {
-
-    const updatedLayoutData = updateLayoutData(layout_data, conversion, currentLabelType);
+function updateGPCRome(location, fill, conversion, styling, odorant=false) {
+    let updatedLayoutData;
+    if (odorant){
+      console.log(currentLabelType);
+      updatedLayoutData = updateLayoutData(odorant_data, conversion, currentLabelType);
+    } else {
+      updatedLayoutData = updateLayoutData(layout_data, conversion, currentLabelType);
+    };
     const updatedFillData = updateFillData(fill, conversion, currentLabelType);
 
     // Clear the existing SVG content
     d3.select("#" + location).select("svg").remove();
 
     // Redraw the GPCRomes with the updated data
-    Draw_GPCRomes(updatedLayoutData, updatedFillData, location, styling);
+    Draw_GPCRomes(updatedLayoutData, updatedFillData, location, styling, odorant);
 
     // Update button active states
     // updateActiveButtonState(currentLabelType);

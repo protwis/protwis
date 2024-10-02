@@ -1811,6 +1811,79 @@ class StructureStatistics(TemplateView):
             complexes_full = {"NameList": datatree4, "DataPoints": data_complexes, "LabelConversionDict":IUPHAR_to_uniprot_complexes}
             context['GPCRome_data_variables_complexes'] = json.dumps(complexes_full['DataPoints'])
 
+
+            ### TESTING GPCROME FOR ODORANTS
+            all_odorant = Protein.objects.filter(species_id=1, parent_id__isnull=True, accession__isnull=False
+                                                ).filter(Q(family_id__slug__startswith='007') | Q(family_id__slug__startswith='008'))
+            odorant_names = list(Protein.objects.filter(species_id=1, parent_id__isnull=True, accession__isnull=False
+                                                ).filter(Q(family_id__slug__startswith='007') | Q(family_id__slug__startswith='008')).values(
+                                                'entry_name', 'name').order_by('entry_name'))
+            odorant_families = ProteinFamily.objects.filter(Q(slug__startswith='007') | Q(slug__startswith='008'))
+
+            odoranttree = {}
+            conversion = {}
+
+            for item in odorant_families:
+                if len(item.slug) == 3 and item.slug not in odoranttree.keys():
+                    odoranttree[item.slug] = {}
+                    conversion[item.slug] = item.name
+                if len(item.slug) == 7 and item.slug not in odoranttree[item.slug[:3]].keys():
+                    odoranttree[item.slug[:3]][item.slug[:7]] = {}
+                    conversion[item.slug] = item.name
+                if len(item.slug) == 11 and item.slug not in odoranttree[item.slug[:3]][item.slug[:7]].keys():
+                    odoranttree[item.slug[:3]][item.slug[:7]][item.slug[:11]] = []
+                    conversion[item.slug] = item.name
+                if len(item.slug) == 15 and item.slug not in odoranttree[item.slug[:3]][item.slug[:7]][item.slug[:11]]:
+                    odoranttree[item.slug[:3]][item.slug[:7]][item.slug[:11]].append(item.name)
+
+            odorant_struct = Structure.objects.filter(Q(protein_conformation__protein__family_id__slug__startswith='007') | Q(protein_conformation__protein__family_id__slug__startswith='008')).values(
+                                                    'protein_conformation__protein__parent__entry_name'
+                                                ).annotate(
+                                                    c=Count('id', distinct=True)
+                                                )
+
+            odorant_struct_dict = {}
+            for prot in all_odorant:
+                odorant_struct_dict[prot.entry_name] = 0
+
+            for a in odorant_struct:
+                odorant_struct_dict[a['protein_conformation__protein__parent__entry_name']] = a['c']
+
+            odorant_struct_dict.pop(None)
+
+            odorant_conversion_dict = {item['entry_name']: item['name'] for item in odorant_names}
+            odoranttree2 = LandingPage.convert_keys(odoranttree, conversion)
+            names_odorant = list(odorant_conversion_dict.values())
+            odoranttree3 = LandingPage.filter_dict(odoranttree2, names_odorant)
+
+            # Splitting the families into three dictionaries
+            odorant_receptors = odoranttree3['Class O2 (tetrapod specific odorant)']['Odorant receptors']
+            # Families 1 to 4
+            families_1_to_4 = {key: odorant_receptors[key] for key in odorant_receptors if key[-2:] in [' 1', ' 2', ' 3', ' 4',]}
+            # Families 5 to 10
+            families_5_to_9 = {key: odorant_receptors[key] for key in odorant_receptors if key[-2:] in [' 5', ' 6', ' 7', ' 8', ' 9']}
+            # Families 11 to 14
+            families_10_to_14 = {key: odorant_receptors[key] for key in odorant_receptors if key.endswith(('10', '11', '12', '13', '14'))}
+
+            odoranttree4 = {}
+            odoranttree4['Class O1 (fish-like odorant)'] = odoranttree3['Class O1 (fish-like odorant)']
+            odoranttree4['Class O2 (tetrapod specific odorant) EXT'] = {'Odorant receptors' : families_1_to_4}
+            odoranttree4['Class O2 (tetrapod specific odorant) MID'] = {'Odorant receptors' : families_5_to_9}
+            odoranttree4['Class O2 (tetrapod specific odorant) INT'] = {'Odorant receptors' : families_10_to_14}
+
+            odorant_data = {odorant_conversion_dict[key]: {'Value1':value} for key, value in odorant_struct_dict.items()}
+
+            odorant_proteins = list(Protein.objects.filter(entry_name__in=odorant_struct_dict.keys()
+            ).values('entry_name', 'name').order_by('entry_name'))
+
+            odorant_IUPHAR_to_Uniprot = {item['name']: item['entry_name'] for item in odorant_proteins}
+
+            odorant_full = {"NameList": odoranttree4, "DataPoints": odorant_data, "LabelConversionDict":odorant_IUPHAR_to_Uniprot}
+            context['GPCRome_odorant_data'] = json.dumps(odorant_full["NameList"])
+            context['GPCRome_odorant_data_variables'] = json.dumps(odorant_full['DataPoints'])
+            context['GPCRome_odorant_Label_Conversion'] = json.dumps(odorant_full['LabelConversionDict'])
+
+
         return context
 
     def get_families_dict(self, queryset, lookup):
