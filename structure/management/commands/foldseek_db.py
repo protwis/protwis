@@ -1,12 +1,7 @@
 from build.management.commands.base_build import Command as BaseBuild
-from protein.models import Protein
-from residue.models import Residue
-from structure.functions import PdbChainSelector
 from structure.models import Structure, StructureModel
-from Bio.PDB import PDBIO, PDBParser, Select, Structure as BioPDBStructure
+from Bio.PDB import PDBIO, PDBParser, Select
 from Bio.PDB.Model import Model
-from collections import OrderedDict
-import pandas as pd
 from structure.assign_generic_numbers_gpcr import GenericNumbering as as_gn
 from io import StringIO
 import os
