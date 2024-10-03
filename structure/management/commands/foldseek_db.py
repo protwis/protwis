@@ -187,11 +187,12 @@ def process_structures(structure_type, output_dir):
     elif structure_type == 'af':
         af_structures = StructureModel.objects.filter(main_template_id__isnull=True).values_list(
             'protein__entry_name',
-            'pdb_data__pdb'
+            'pdb_data__pdb',
+            'state__slug'
         )
 
-        for pdb_code, pdb_data in af_structures:
-            output_filename = f"{output_db_dir}/{pdb_code}_af_info.pdb"
+        for pdb_code, pdb_data, state in af_structures:
+            output_filename = f"{output_db_dir}/{pdb_code}_{state}_af_info.pdb"
             print(f"Processing structure {pdb_code}")
             process_structure(pdb_code, pdb_data, output_filename)
 
