@@ -318,7 +318,7 @@ class Command(BaseBuild):
             structs_in_class = Structure.objects.filter(protein_conformation__protein__parent__family__slug__startswith=rec_class.slug, annotated=True).exclude(structure_type__slug__startswith='af-')
         possible_states = structs_in_class.exclude(protein_conformation__protein__parent=receptor).exclude(state__name='Other').values_list('state__name', flat=True).distinct()
         if len(possible_states)==0:
-            if rec_class.name=='Class T (Taste 2)':
+            if rec_class.name=='Class T2 (Taste 2)':
                 rec_class = ProteinFamily.objects.get(name='Class A (Rhodopsin)')
                 structs_in_class = Structure.objects.filter(protein_conformation__protein__parent__family__slug__startswith=rec_class.slug, annotated=True).exclude(structure_type__slug__startswith='af-')
             possible_states = structs_in_class.exclude(protein_conformation__protein__parent=receptor).exclude(state__name='Other').values_list('state__name', flat=True).distinct()
@@ -842,7 +842,7 @@ class CallHomologyModeling():
                             return 0
                 else:
                     af_path = os.sep.join([self.alphafold_refined_data_dir, Homology_model.main_structure.pdb_code.index+'_refined.pdb'])
-                
+
                 ihm = ImportHomologyModel(Homology_model.reference_protein.parent)
                 ihm.path_to_pdb = af_path
                 p = PDB.PDBParser()
@@ -854,7 +854,7 @@ class CallHomologyModeling():
                     model_signprot = p.get_structure('signprot',  af_path)[0]['B']
                     ihm2 = ImportHomologyModel(signprot, 'Alpha')
                     spaf_reference_dict, spaf_template_dict, spaf_alignment_dict, spaf_main_pdb_array = deepcopy(ihm2.parse_model(model_signprot))
-                    
+
                     for i, j, k, l in zip(spaf_reference_dict, spaf_template_dict, spaf_alignment_dict, spaf_main_pdb_array):
                         af_reference_dict[i] = spaf_reference_dict[i]
                         af_template_dict[j] = spaf_template_dict[j]
@@ -1067,7 +1067,7 @@ class CallHomologyModeling():
                             template_source['G.hgh4'][i] = [None, None]
                             missing_h4.append(['G.hgh4', i])
                         missing_sections.append(missing_h4)
-                        
+
                     ### Shorten ICL3
                     for i in reference_dict:
                         if i.startswith('ICL3'):
