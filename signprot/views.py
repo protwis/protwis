@@ -912,7 +912,7 @@ def CouplingProfiles(request, render_part="both", signalling_data="empty"):
         context['tree_class_f_options']['anchor'] = 'tree_class_f'
         context['tree_class_f_options']['label_free'] = [1,]
         context['tree_class_f'] = json.dumps(class_f_data.get_nodes_dict(None))
-        class_t2_data = tree.get_tree_data(ProteinFamily.objects.get(name='Class T (Taste 2)'))
+        class_t2_data = tree.get_tree_data(ProteinFamily.objects.get(name='Class T2 (Taste 2)'))
         context['tree_class_t2_options'] = deepcopy(tree.d3_options)
         context['tree_class_t2_options']['anchor'] = 'tree_class_t2'
         context['tree_class_t2_options']['label_free'] = [1,]

@@ -1456,7 +1456,7 @@ class LigandStatistics(TemplateView):
         context['class_f_options']['label_free'] = [1, ]
         context['class_f'] = json.dumps(class_f_data.get_nodes_dict(self.page))
         class_t2_data = tree.get_tree_data(
-            ProteinFamily.objects.get(name__startswith='Class T (Taste 2)'))
+            ProteinFamily.objects.get(name__startswith='Class T2 (Taste 2)'))
         context['class_t2_options'] = deepcopy(tree.d3_options)
         context['class_t2_options']['anchor'] = 'class_t2'
         context['class_t2_options']['label_free'] = [1, ]
@@ -1528,7 +1528,7 @@ class LigandStatistics(TemplateView):
             context['class_f_options_bal']['label_free'] = [1, ]
             context['class_f_bal'] = json.dumps(class_f_data_bal.get_nodes_dict(self.page+"_bal"))
             class_t2_data_bal = tree.get_tree_data(
-                ProteinFamily.objects.get(name__startswith='Class T (Taste 2)'))
+                ProteinFamily.objects.get(name__startswith='Class T2 (Taste 2)'))
             context['class_t2_options_bal'] = deepcopy(tree.d3_options)
             context['class_t2_options_bal']['anchor'] = 'class_t2_bal'
             context['class_t2_options_bal']['label_free'] = [1, ]
@@ -1749,7 +1749,7 @@ class LigandStatistics(TemplateView):
                 "Class A (Rhodopsin)": 'Violet',
                 "Class F (Frizzled)": 'Teal',
                 "Other GPCR orphans": "Grey",
-                "Class T (Taste 2)": 'MediumPurple',
+                "Class T2 (Taste 2)": 'MediumPurple',
                 }
             heatmap_receptors = Protein.objects.filter(family__slug__startswith='0', species_id=1).exclude(
                                               family__slug__startswith='005').prefetch_related(
