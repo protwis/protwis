@@ -710,7 +710,6 @@ class MutationStatistics(TemplateView):
     template_name = 'mutation_statistics.html'
 
     def get_context_data (self, **kwargs):
-        start_time = time.time()
         context = super().get_context_data(**kwargs)
 
         mut_count_receptor_dict = {}
@@ -724,15 +723,17 @@ class MutationStatistics(TemplateView):
 
         # Collect results into a list
         experimental_mutations = list(experimental_mutations_iterator)
-        print('check 1')
-        all_proteins = Protein.objects.filter(species_id=1, parent_id__isnull=True, accession__isnull=False, family_id__slug__startswith='00')
 
+        all_proteins = Protein.objects.filter(species_id=1, parent_id__isnull=True, accession__isnull=False, family_id__slug__startswith='0').exclude(
+                                            family_id__slug__startswith='007'
+                                        ).exclude(
+                                            family_id__slug__startswith='008'
+                                        )
         for prot in all_proteins:
             mut_count_receptor_dict[prot.entry_name] = 0
 
         for a in experimental_mutations:
             mut_count_receptor_dict[a['protein__entry_name']] = a['c']
-        print('check 2')
 
         #aggregate data for receptor of other organisms into human if available
         aggregated = {}
@@ -764,7 +765,7 @@ class MutationStatistics(TemplateView):
         data = list(names_conversion_dict.keys())
         names = list(names_conversion_dict.values())
         IUPHAR_to_uniprot_dict = {item['name']: item['entry_name'] for item in proteins}
-        print('check 3')
+
         families = ProteinFamily.objects.all()
         datatree = {}
         conversion = {}
@@ -780,7 +781,6 @@ class MutationStatistics(TemplateView):
 
             human_mut[human_key] += value
 
-        print('check 4')
         for item in families:
             if len(item.slug) == 3 and item.slug not in datatree.keys():
                 datatree[item.slug] = {}
@@ -794,7 +794,6 @@ class MutationStatistics(TemplateView):
             if len(item.slug) == 15 and item.slug not in datatree[item.slug[:3]][item.slug[:7]][item.slug[:11]]:
                 datatree[item.slug[:3]][item.slug[:7]][item.slug[:11]].append(item.name)
 
-        print('check 5')
         datatree2 = LandingPage.convert_keys(datatree, conversion)
         datatree2.pop('Parent family', None)
         datatree3 = LandingPage.filter_dict(datatree2, names)
@@ -803,10 +802,6 @@ class MutationStatistics(TemplateView):
         context['GPCRome_data'] = json.dumps(Data_full["NameList"])
         context['GPCRome_data_variables'] = json.dumps(Data_full['DataPoints'])
         context['GPCRome_Label_Conversion'] = json.dumps(Data_full['LabelConversionDict'])
-        print('check 6')
-        # End time
-        end_time = time.time()
-        print(f"Total time for view execution: {end_time - start_time:.2f} seconds")
 
         return context
 

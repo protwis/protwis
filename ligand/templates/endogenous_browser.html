@@ -228,9 +228,13 @@
                     {% for value in Array %}
                     <tr>
                         {% if value.22 %}
-                        <td style="text-align:center;"><a target="_blank" href="/structure/ligand_complex_models/{{ value.22}}"><img width="14px" height="20px" class="model-link" src="{% static 'home/images/model-surface.png' %}"></a></div></td>
+                            {% if value.23 == "af-signprot-peptide" %}
+                                <td style="text-align:center;"><a target="_blank" href="/structure/ligand_complex_models/{{ value.22 }}"><img width="14px" height="20px" class="model-link" src="{% static 'home/images/model-surface.png' %}"></a></div></td>
+                            {% else %}
+                            <td style="text-align:center;"><a target="_blank" href="/structure/ligand_complex_models/{{ value.22 }}"><img width="14px" height="20px" class="model-link" src="{% static 'home/images/gpcr_structure_logo.png' %}"></a></div></td>
+                            {% endif %}
                         {% else %}
-                        <td></td>
+                        <td style="text-align: center;"> - </td>
                         {% endif %}
                         <!-- Receptor block -->
                         <td style="text-align:right">{{value.0}}</td>
