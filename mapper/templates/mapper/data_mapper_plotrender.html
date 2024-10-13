@@ -559,6 +559,7 @@
             <div class="btn-group" role="group" id="gtp_plus">
                 <button id="show" class="btn btn-info">Show</button>
                 <button id="hide" class="btn btn-info active">Hide</button>
+                <button id="textColorToggleButton" type="button" class="btn btn-info" style="width: 50%; font-weight: bold;">Text Color: Yes</button>
             </div>
           </div>
           <div class="col-md-6"></div>
@@ -626,7 +627,7 @@
             
                         <!-- Border Toggle Button -->
                         <div class="col-md-12" style="text-align: center;margin-bottom: 20px;">
-                            <button id="cluster_borderToggleButton" type="button" class="btn btn-secondary" style="width: 50%;font-weight: bold;">Border On</button>
+                          <button id="borderToggleButton" type="button" class="btn btn-primary" style="width: 50%; font-weight: bold;">Border: On</button>
                         </div>
             
                     </div>
@@ -1186,17 +1187,18 @@ function Tree_handleColorPickerState(elementId, action) {
     tree_options = {{ tree_options | safe }};
     Tree_circles = {{ circles|safe }};
     Tree_label_dict = {{ whole_dict|safe }};
+    Tree_datatypes_dict = {{ Tree_datatypes|safe }};
 
-    console.log(Tree_circles);
+    const maxLeafNodeLenght_scaler = 2.5
 
     tree_data = update_tree_data(tree_data,tree_options.depth);
     const depth = tree_options.depth;  // Set this value when the page loads
 
     // Handler for one class -> reduce the depth
     if (tree_options.depth == 4) {
-      maxLeafNodeLenght = 4*parseInt(tree_options.fontSize.receptor);
+      maxLeafNodeLenght = maxLeafNodeLenght_scaler*parseInt(tree_options.fontSize.receptor);
     } else if (tree_options.depth == 3) {
-      maxLeafNodeLenght = 4*parseInt(tree_options.fontSize.receptorfamily);
+      maxLeafNodeLenght = maxLeafNodeLenght_scaler*parseInt(tree_options.fontSize.receptor);
     }
     circle_size = 4;
     circle_spacer = circle_size*2+1;
@@ -1237,7 +1239,7 @@ function Tree_handleColorPickerState(elementId, action) {
       draw_tree(tree_data, tree_options,circle_size);
       updateLeavesLabels();
       DrawCircles('tree_plot', Tree_circles, maxLeafNodeLenght, Tree_colors, true, true,Tree_circle_styling_dict,circle_spacer,circle_size);
-      createLegendBars('legend_bars', Tree_circles, Tree_colors,Tree_circle_styling_dict);
+      createLegendBars('legend_bars', Tree_circles, Tree_colors, Tree_circle_styling_dict, Tree_datatypes_dict.Tree);
     }
 
     function ReDraw_Circles_and_Labels() {
@@ -1248,7 +1250,7 @@ function Tree_handleColorPickerState(elementId, action) {
 
     function ReDraw_cicles_and_bars() {
       DrawCircles('tree_plot', Tree_circles, maxLeafNodeLenght, Tree_colors, true, true,Tree_circle_styling_dict,circle_spacer,circle_size);
-      createLegendBars('legend_bars', Tree_circles, Tree_colors,Tree_circle_styling_dict);
+      createLegendBars('legend_bars', Tree_circles, Tree_colors, Tree_circle_styling_dict, Tree_datatypes_dict.Tree);
     }
 
     // # Change leaves buttons #
@@ -1432,9 +1434,9 @@ function applyLabelStyling() {
 
     // Recalculate max leaf node length based on the selected depth
     if (tree_options.depth === 4) {
-        maxLeafNodeLenght = 4 * parseInt(tree_options.fontSize.receptor);
+        maxLeafNodeLenght = maxLeafNodeLenght_scaler * parseInt(tree_options.fontSize.receptor);
     } else if (tree_options.depth === 3) {
-        maxLeafNodeLenght = 4 * parseInt(tree_options.fontSize.receptorfamily);
+        maxLeafNodeLenght = maxLeafNodeLenght_scaler * parseInt(tree_options.fontSize.receptor);
     }
 
     // Redraw the tree and circles with updated font sizes
@@ -1536,7 +1538,8 @@ const cluster_DataStyling = {
     labelFontSize: 14,
     markerSize: 10,
     strokeWidth: 0.5,
-    borderOn: true
+    borderOn: true,
+    textColorEnabled: true
 };
 
 // Function to download the plot
@@ -1645,24 +1648,68 @@ $('#cluster_labelFontSizeSlider').on('input', function() {
         updatePlotWithAnnotations();  // Dynamically update the plot
     });
 
-    // Toggle border on/off with background color change
-    $('#cluster_borderToggleButton').on('click', function() {
-        cluster_DataStyling.borderOn = !cluster_DataStyling.borderOn;  // Toggle the border state
+    // Initial state for border toggle
+    cluster_DataStyling.borderOn = true;  // Default to true (border on)
+
+    // Get the button element for border toggle
+    const borderToggleButton = document.getElementById('borderToggleButton');
+
+    // Add click event listener to the button
+    borderToggleButton.addEventListener('click', () => {
+        // Toggle the borderOn state
+        cluster_DataStyling.borderOn = !cluster_DataStyling.borderOn;
+
+        // Update the button text and styling based on the state
         if (cluster_DataStyling.borderOn) {
-            $(this).text('Border On');
-            $(this).css('background-color', 'green');  // Green background when border is on
+            borderToggleButton.textContent = 'Border: On';
+            borderToggleButton.classList.add('btn-primary');  // Use Bootstrap's "info" class for the "On" state
+            borderToggleButton.classList.remove('btn-danger');
         } else {
-            $(this).text('Border Off');
-            $(this).css('background-color', 'red');  // Red background when border is off
+            borderToggleButton.textContent = 'Border: Off';
+            borderToggleButton.classList.remove('btn-primary');
+            borderToggleButton.classList.add('btn-danger');  // Use Bootstrap's "danger" class for the "Off" state
         }
-        updatePlotWithAnnotations();  // Dynamically update the plot
+
+        // Update the plot with the new border setting
+        updatePlotWithAnnotations();  // Call the function to re-render the plot
     });
 
-    // Set initial button state to "Border On" with green background
-    $('#cluster_borderToggleButton').css('background-color', 'green');
+    // Set initial button state to "Border: On" with info button styling
+    borderToggleButton.textContent = 'Border: On';
+    borderToggleButton.classList.add('btn-primary');
 
-// Initial plot rendering on page load
-renderInitialPlot();
+    // Initial state for text color
+    cluster_DataStyling.textColorEnabled = true;  // Default to true (text color on)
+
+    // Get the button element
+    const textColorToggleButton = document.getElementById('textColorToggleButton');
+
+    // Add click event listener to the button
+    textColorToggleButton.addEventListener('click', () => {
+        // Toggle the textColorEnabled state
+        cluster_DataStyling.textColorEnabled = !cluster_DataStyling.textColorEnabled;
+
+        // Update the button text and styling based on the state
+        if (cluster_DataStyling.textColorEnabled) {
+            textColorToggleButton.textContent = 'Text Color: Yes';
+            textColorToggleButton.classList.add('btn-info');  // Use bootstrap class for "Yes" state
+            textColorToggleButton.classList.remove('btn-danger');
+        } else {
+            textColorToggleButton.textContent = 'Text Color: No';
+            textColorToggleButton.classList.remove('btn-info');
+            textColorToggleButton.classList.add('btn-danger');  // Use bootstrap class for "No" state
+        }
+
+        // Update the plot with the new text color setting
+        updatePlotWithAnnotations();  // Call the function to re-render the plot
+    });
+
+    // Set initial button state to "Text Color: Yes" with primary button styling
+    textColorToggleButton.textContent = 'Text Color: Yes';
+    textColorToggleButton.classList.add('btn-info');
+
+  // Initial plot rendering on page load
+  renderInitialPlot();
 });
 
 
@@ -1695,156 +1742,6 @@ function getActiveColorOption() {
     return 'cluster'; // Default to 'cluster' if no option is active
 }
 
-// Function to naturally sort an array
-function naturalSort(a, b) {
-    return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
-}
-
-// Function to create traces for the plot
-function createTraces(colorOption, showLabels) {
-
-let traces = [];
-let colorMapping = {};
-const stroke_width = cluster_DataStyling.strokeWidth;  // Get stroke width from data styling
-const marker_size = cluster_DataStyling.markerSize;    // Get marker size from data styling
-const border_on = cluster_DataStyling.borderOn;        // Get border toggle state from data styling
-
-if (['Class', 'Ligand type', 'Receptor family'].includes(colorOption)) {
-    let uniqueValues = Array.from(new Set(currentClusterData.map(d => d[colorOption])));
-
-    // Replace "Other GPCRs" with "Classless"
-    uniqueValues = uniqueValues.map(value => value === 'Other GPCRs' ? 'Classless' : value);
-
-    // Apply natural sorting
-    uniqueValues.sort(naturalSort);
-
-    uniqueValues.forEach((value, index) => {
-        colorMapping[value] = colorPalette[index % colorPalette.length];
-    });
-}
-
-const clusterSet = Array.from(new Set(currentClusterData.map(d => d.cluster))).sort((a, b) => a - b);
-
-if (colorOption === 'cluster') {
-    clusterSet.forEach(cluster => {
-        const clusterData = currentClusterData.filter(d => d.cluster === cluster);
-
-        const markerTrace = {
-            x: clusterData.map(d => d.x),
-            y: clusterData.map(d => d.y),
-            mode: 'markers',
-            type: 'scatter',
-            hoverinfo: 'text',  // Show labels on hover
-            text: clusterData.map(d => d.label),  // Use labels as hover text
-            marker: {
-                size: marker_size,  // Use dynamic marker size
-                symbol: 'circle',
-                line: {
-                    width: border_on ? stroke_width : 0,  // Use dynamic stroke width or none if border is off
-                    color: 'black'  // Custom stroke color
-                },
-                color: clusterData.map(d => colorPalette[d.cluster % colorPalette.length]),
-            },
-            name: `Cluster ${cluster + 1}`
-        };
-
-        traces.push(markerTrace);
-    });
-} else if (colorOption === 'gradient') {
-    const gradientTrace = {
-        x: currentClusterData.map(d => d.x),
-        y: currentClusterData.map(d => d.y),
-        mode: 'markers',
-        type: 'scatter',
-        hoverinfo: 'text',  // Show labels on hover
-        text: currentClusterData.map(d => `${d.label}: ${d.fill}`),  // Combine label and fill with a hyphen for hover text
-        marker: {
-            size: marker_size,  // Use dynamic marker size
-            symbol: 'circle',
-            line: {
-                width: border_on ? stroke_width : 0,  // Use dynamic stroke width or none if border is off
-                color: 'black'  // Custom stroke color
-            },
-            color: currentClusterData.map(d => d.fill),
-            coloraxis: 'coloraxis'
-        },
-        showlegend: false
-    };
-
-    traces.push(gradientTrace);
-} else if (['Class', 'Ligand type', 'Receptor family'].includes(colorOption)) {
-    const uniqueEntries = new Set();
-
-    currentClusterData.forEach(point => {
-        const entry = point[colorOption] === 'Other GPCRs' ? 'Classless' : point[colorOption];
-        if (!uniqueEntries.has(entry)) {
-            uniqueEntries.add(entry);
-
-            const markerTrace = {
-                x: currentClusterData.filter(d => d[colorOption] === point[colorOption]).map(d => d.x),
-                y: currentClusterData.filter(d => d[colorOption] === point[colorOption]).map(d => d.y),
-                mode: 'markers',
-                type: 'scatter',
-                hoverinfo: 'text',  // Show labels on hover
-                text: currentClusterData.filter(d => d[colorOption] === point[colorOption]).map(d => d.label),  // Use labels as hover text
-                marker: {
-                    size: marker_size,  // Use dynamic marker size
-                    symbol: 'circle',
-                    line: {
-                        width: border_on ? stroke_width : 0,  // Use dynamic stroke width or none if border is off
-                        color: 'black'  // Custom stroke color
-                    },
-                    color: colorMapping[entry],
-                },
-                name: entry
-            };
-
-            traces.push(markerTrace);
-        }
-    });
-
-    // Sort traces by entry name naturally (if needed)
-    traces.sort((a, b) => naturalSort(a.name, b.name));
-}
-return traces;
-}
-
-
-
-// Function to create annotations for labels
-function createAnnotations(filteredData) {
-    const annotations = [];
-    const xOffset = 0.02;
-    const yOffset = 0.03;
-
-    filteredData.forEach((d, index) => {
-        annotations.push({
-            x: d.x,
-            y: d.y,
-            xref: 'x',
-            yref: 'y',
-            text: d.label,
-            showarrow: false,
-            font: {
-                family: 'Arial',
-                size: cluster_DataStyling.labelFontSize,  // Use dynamic font size
-                color: 'black'
-            },
-            ax: xOffset * ((index % 2 === 0) ? 1 : -1),  // Alternate direction for better visual spread
-            ay: yOffset * ((index % 2 === 0) ? 1 : -1),
-            align: 'center',
-            bgcolor: 'rgb(255, 255, 255)',  // Set to opaque white
-            bordercolor: '#888',
-            borderwidth: 1,
-            borderpad: 4
-        });
-    });
-
-    return annotations;
-}
-
-
-
 // Function to render the initial plot
 function renderInitialPlot() {
     const colorOption = getActiveColorOption(); // Get the initially selected color option
@@ -1862,80 +1759,6 @@ function renderInitialPlot() {
         'xaxis.autorange': true,
         'yaxis.autorange': true
     });
-}
-
-// Function to update the plot with annotations for labels
-function updatePlotWithAnnotations() {
-    const colorOption = getActiveColorOption(); // Get the active color option
-    const showLabels = document.getElementById('show').classList.contains('active');
-
-    // Capture current layout to preserve zoom state
-    const plotElement = document.getElementById('plotContainer_cluster');
-    const currentLayout = plotElement ? Plotly.d3.select('#plotContainer_cluster').node().layout : {};
-
-    // Safely extract xaxis and yaxis ranges with default values (if null, provide default ranges)
-    const xRange = (currentLayout && currentLayout.xaxis && currentLayout.xaxis.range) ? currentLayout.xaxis.range : [Math.min(...currentClusterData.map(d => d.x)), Math.max(...currentClusterData.map(d => d.x))];
-    const yRange = (currentLayout && currentLayout.yaxis && currentLayout.yaxis.range) ? currentLayout.yaxis.range : [Math.min(...currentClusterData.map(d => d.y)), Math.max(...currentClusterData.map(d => d.y))];
-
-    const traces = createTraces(colorOption, showLabels);
-
-    // Filter the data for labels within the current zoom range
-    const filteredData = currentClusterData.filter(d => {
-        const inXRange = (d.x >= xRange[0] && d.x <= xRange[1]);
-        const inYRange = (d.y >= yRange[0] && d.y <= yRange[1]);
-        return inXRange && inYRange;
-    });
-
-    // Generate annotations based on filtered data
-    const annotations = showLabels ? createAnnotations(filteredData) : [];
-
-    // Define new layout with annotations
-    const layout = {
-        xaxis: {
-            visible: false,
-            showgrid: false,
-            range: xRange,  // Preserve x-axis range from current layout or use default
-            scaleanchor: 'y'  // Ensure aspect ratio is preserved
-        },
-        yaxis: {
-            visible: false,
-            showgrid: false,
-            range: yRange,  // Preserve y-axis range from current layout or use default
-        },
-        hovermode: 'closest',
-        showlegend: true,
-        annotations: annotations, // Add annotations to the plot
-        legend: {
-            x: 1,
-            xanchor: 'left',
-            y: 0.5,
-            orientation: 'v'
-        },
-        plot_bgcolor: '#FFFFFF',
-        autosize: false,
-        width: 1024,
-        height: 700,
-        margin: {
-            l: 50,
-            r: 374,
-            t: 50,
-            b: 50
-        },
-        coloraxis: colorOption === 'gradient' ? {
-            colorscale: 'RdBu',
-            colorbar: {
-                thickness: 20,
-                len: 0.5,
-                title: {
-                    text: 'Fill Gradient',
-                    side: 'right'
-                }
-            }
-        } : undefined
-    };
-
-    // Update the plot using Plotly.react
-    Plotly.react('plotContainer_cluster', traces, layout);
 }
 
 // Function to perform clustering
@@ -2033,6 +1856,9 @@ var Label_conversion_dict = {{Label_Conversion|safe}};
 
 var modded_list_data = Initialize_Data(listdata);
 
+console.log(list_data_wow)
+console.log(listdata)
+console.log(modded_list_data)
 
 // #################################
 // ## Initialize global variables ##

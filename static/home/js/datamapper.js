@@ -33,250 +33,7 @@ function update_tree_data(data,depth) {
     return data
 }
 
-// Draw Tree function
-function draw_tree_OLD(data, options,circle_size) {
-
-    // Remove existing SVG if present
-    d3.select('#' + options.anchor + "_svg").remove();
-
-    var branches = {};
-    var branch_offset = 0;
-    var thickness = options.depth + 1;
-    for (var key in options.branch_length) {
-        if (key == options.depth) { continue };
-        if (options.label_free.includes(parseInt(key))) {
-            branch_offset = branch_offset + 10;
-        } else {
-            if (options.branch_trunc != 0) {
-                branch_offset = branch_offset + 2 * options.branch_trunc + 10;
-            } else {
-                branch_offset = branch_offset + string_pixlen(options.branch_length[key], key);
-            }
-        }
-        branches[key] = branch_offset;
-    }
-    branches[options.depth] = branch_offset + options.leaf_offset;
-
-    var diameter = 2 * branches[options.depth] + 140;
-
-    var tree = d3.layout.tree()
-        .size([360, diameter / 2])
-        .separation(function (a, b) { return (a.parent == b.parent ? 1 : 2) / a.depth; });
-
-    var diagonal = d3.svg.diagonal.radial()
-        .projection(function (d) { return [d.y, d.x / 180 * Math.PI]; });
-
-    var svg = d3.select('#' + options.anchor).append("svg")
-        .attr("width", diameter)
-        .attr("height", diameter)
-        .attr("id", options.anchor + "_svg")
-        .attr("xmlns", "http://www.w3.org/2000/svg");
-
-    var svg_g = svg.append("g")
-        .attr("transform", "translate(" + diameter / 2 + "," + diameter / 2 + ")");
-
-    var nodes = tree.nodes(data);
-
-    nodes.forEach(function (d) {
-        if (d.depth == 0) {
-            d.y = 0
-        } else {
-            d.y = branches[d.depth]
-        }
-    });
-
-    var links = tree.links(nodes);
-
-    var link = svg_g.append("g")
-        .attr("class", "links")
-        .selectAll("path")
-        .data(links)
-        .enter().append("path")
-        .each(function (d) { d.target.linkNode = this; })
-        .attr("d", diagonal) //function (d) { return step(d.source.x, d.source.y, d.target.x, d.target.y) })
-        .style("stroke", function (d) { return d.target.color; })
-        .style("stroke-width", function (d) { if (d.target.depth > 0) { return thickness - d.target.depth; } else { return 0; } })
-        .style("fill-opacity", 0)
-        .style("opacity", function (d) {
-            if ((d.target.interactions > 0 && d.target.mutations_an > 0) || 1 == 1) { return 0.8 } //|| 1==1
-            else if (d.target.interactions > 0) { return 0.5 }
-            else if (d.target.mutations_an > 0) { return 0.5 }
-            else { return 0.1 };
-        });
-
-    var node = svg_g.selectAll(".node")
-        .data(nodes)
-        .enter().append("g")
-        .attr("class", "node")
-        .attr("transform", function (d) { if (d.name == '') { return "rotate(" + (d.x) + ")translate(" + d.y + ")"; } else { return "rotate(" + (d.x - 90) + ")translate(" + d.y + ")"; } })
-//TODO: add a check to remove circles when nothing is passed (?)
-    node.filter(function (d) { return (d.depth == options.depth) })
-        .filter(function (d) { return (d.value !== 3000) })
-        .append("circle")
-        .attr("r", function (d) { if (d.name == '') { return "0" } else { return circle_size } })
-        .style("stroke", "black")
-        .style("stroke-width", ".3px")
-        .style("fill", function (d) {
-            if (d.color && d.depth < options.depth) { return d.color }
-            else if (d.value === 1) {
-                return "FireBrick";
-            }
-            else if (d.value === 10) {
-                return "LightGray";
-            }
-            else if (d.value === 20) {
-                return "DarkGray";
-            }
-            else if (d.value === 30) {
-                return "Gray";
-            }
-            else if (d.value === 40) {
-                return "Black";
-            }
-            else if (d.value === 100) {
-                return 'LightGray';
-            }
-            else if (d.value === 500) {
-                return 'DarkGray';
-            }
-            else if (d.value === 1000) {
-                return 'Gray';
-            }
-            else if (d.value === 2000) {
-                return 'Black';
-            }
-            else { return "White" };
-        })
-        .style("opacity", .99);
-
-    node.filter(function (d) { return (d.depth == options.depth) })
-        .attr("id", function (d) { if (d.name == '') { return "innerNode" } else { return 'X' + d.name.toUpperCase() } });
-
-    node.append("text")
-        .attr("dy", ".31em")
-        .attr("name", function (d) { if (d.name == '') { return "branch" } else { return d.name } })
-        .attr("text-anchor", function (d) {
-            if (d.depth == options.depth) {
-                return d.x < 180 ? "start" : "end";
-            } else {
-                return d.x < 180 ? "end" : "start";
-            }
-        })
-        .attr("transform", function (d) {
-            var labelOffset = parseFloat(circle_size) + 4;  // Adjust the offset as needed
-            if (d.depth == options.depth) {
-                return d.x < 180 ? `translate(${labelOffset})` : `rotate(180)translate(-${labelOffset})`;
-            } else {
-                return d.x < 180 ? "translate(-12)" : "rotate(180)translate(12)";
-            }
-        })
-        .text(function (d) {
-            if (d.depth == options.depth) {
-                return d.name.toUpperCase();
-            } else if (options.label_free.includes(d.depth)) {
-                return "";
-            } else if (d.depth > 0) {
-                return d.name;
-            } else {
-                return "";
-            }
-        })
-        .call(wrap, options.branch_trunc)
-        .style("font-size", function (d) {
-            // Use the custom font size from options
-            if (d.depth == 1) { return options.fontSize.class; }
-            else if (d.depth == 2) { return options.fontSize.ligandtype; }
-            else if (d.depth == 3) { return options.fontSize.receptorfamily; }
-            else { return options.fontSize.receptor; }
-        })
-        .style("font-family", "Palatino")
-        .style("fill", function (d) {
-            if (d.color) { return "#111"; }
-            else { return "#222"; };
-        }).call(getBB);
-
-    node.filter(function (d) { return (d.depth != options.depth) }).insert("rect", "text")
-        .attr("x", function (d) { return d.x < 180 ? d.bbox.x - 12 : d.bbox.x - d.bbox.width - 12; })
-        .attr("y", function (d) { return d.bbox.y; })
-        .attr("width", function (d) { return d.bbox.width; })
-        .attr("height", function (d) { return d.bbox.height; })
-        .style("fill", "#FFF");
-
-    function step(startAngle, startRadius, endAngle, endRadius) {
-        var c0 = Math.cos(startAngle = (startAngle - 90) / 180 * Math.PI),
-            s0 = Math.sin(startAngle),
-            c1 = Math.cos(endAngle = (endAngle - 90) / 180 * Math.PI),
-            s1 = Math.sin(endAngle);
-        return "M" + startRadius * c0 + "," + startRadius * s0
-            + (endAngle === startAngle ? "" : "A" + startRadius + "," + startRadius + " 0 0 " + (endAngle > startAngle ? 1 : 0) + " " + startRadius * c1 + "," + startRadius * s1)
-            + "L" + endRadius * c1 + "," + endRadius * s1;
-    }
-
-    function string_pixlen(text, depth) {
-        var canvas = document.createElement('canvas');
-        var ctx = canvas.getContext("2d");
-        // Use the custom font size from options
-        if (depth == 1) {
-            ctx.font = options.fontSize.class + " Palatino";
-        } else if (depth == 2) {
-            ctx.font = options.fontSize.ligandtype + " Palatino";
-        } else if (depth == 3) {
-            ctx.font = options.fontSize.receptorfamily + " Palatino";
-        } else {
-            ctx.font = options.fontSize.receptor + " Palatino";
-        }
-        return parseInt(ctx.measureText(text).width) + 40;
-    }
-
-    function getBB(selection) {
-        selection.each(function (d) { d.bbox = this.getBBox(); })
-    }
-
-    function wrap(text, width) {
-        if (width == 0) {
-            return;
-        }
-        text.each(function () {
-            var text = d3.select(this),
-                words = text.text().split(/\s+/).reverse(),
-                word,
-                line = [],
-                lineNumber = 0,
-                lineHeight = 1.1, // ems
-                y = text.attr("y"),
-                dy = parseFloat(text.attr("dy")),
-                tspan = text.text(null).append("tspan").attr("x", 0).attr("y", y).attr("dy", dy + "em");
-            while (word = words.pop()) {
-                line.push(word);
-                tspan.text(line.join(" "));
-                if (tspan.node().getComputedTextLength() > width) {
-                    line.pop();
-                    tspan.text(line.join(" "));
-                    line = [word];
-                    tspan = text.append("tspan").attr("x", 0).attr("y", y).attr("dy", ++lineNumber * lineHeight + dy + "em").text(word);
-                }
-            }
-        });
-    }
-    // === Centering Logic ===
-    var scaleFactor = 0.8;  // Adjust this as needed
-    var svgElement = d3.select('#' + options.anchor + ' svg');
-    var svgWidth = +svgElement.attr('width');
-    var svgHeight = +svgElement.attr('height');
-
-    // Calculate the center point
-    var cx = svgWidth / 2;
-    var cy = svgHeight / 2;
-
-    // Adjust the translation to keep the tree centered after scaling
-    var translateX = cx;
-    var translateY = cy;
-
-    // Apply the transform to the 'g' element to scale and center it
-    svgElement.select('g')
-        .attr('transform', `translate(${translateX},${translateY}) scale(${scaleFactor},${scaleFactor})`);
-}
-
+// Draw the Tree
 function draw_tree(data, options,circle_size) {
 
     // Remove existing SVG if present
@@ -388,10 +145,16 @@ function draw_tree(data, options,circle_size) {
         .call(wrap, options.branch_trunc)
         .style("font-size", function (d) {
             // Use the custom font size from options
+            if (options.depth == 4) {
             if (d.depth == 1) { return options.fontSize.class; }
             else if (d.depth == 2) { return options.fontSize.ligandtype; }
             else if (d.depth == 3) { return options.fontSize.receptorfamily; }
             else { return options.fontSize.receptor; }
+        } else {
+            if (d.depth == 1) { return options.fontSize.ligandtype; }
+            else if (d.depth == 2) { return options.fontSize.receptorfamily; }
+            else { return options.fontSize.receptor; }
+        }
         })
         .style("font-family", "Palatino")
         .style("fill", function (d) {
@@ -419,17 +182,32 @@ function draw_tree(data, options,circle_size) {
     function string_pixlen(text, depth) {
         var canvas = document.createElement('canvas');
         var ctx = canvas.getContext("2d");
-        // Use the custom font size from options
-        if (depth == 1) {
-            ctx.font = options.fontSize.class + " Palatino";
-        } else if (depth == 2) {
-            ctx.font = options.fontSize.ligandtype + " Palatino";
-        } else if (depth == 3) {
-            ctx.font = options.fontSize.receptorfamily + " Palatino";
-        } else {
-            ctx.font = options.fontSize.receptor + " Palatino";
+    
+        // Check the depth condition
+        if (options.depth === 4) {
+            // Use the custom font size from options for all levels
+            if (depth == 1) {
+                ctx.font = options.fontSize.class + " Palatino";
+            } else if (depth == 2) {
+                ctx.font = options.fontSize.ligandtype + " Palatino";
+            } else if (depth == 3) {
+                ctx.font = options.fontSize.receptorfamily + " Palatino";
+            } else {
+                ctx.font = options.fontSize.receptor + " Palatino";
+            }
+        } else if (options.depth === 3) {
+            // Omit class and start from ligandtype
+            if (depth == 1) {
+                ctx.font = options.fontSize.ligandtype + " Palatino";
+            } else if (depth == 2) {
+                ctx.font = options.fontSize.receptorfamily + " Palatino";
+            } else {
+                ctx.font = options.fontSize.receptor + " Palatino";
+            }
         }
-        return parseInt(ctx.measureText(text).width) + 40;
+    
+        // Measure and return the text width plus padding
+        return parseInt(ctx.measureText(text).width);
     }
 
     function getBB(selection) {
@@ -466,7 +244,7 @@ function draw_tree(data, options,circle_size) {
     var scaleFactor = 0.8;  // Adjust this as needed
 
     // Calculate the extra padding needed based on circle size and spacer
-    var extraPadding = circle_size + (circle_spacer*2);  // Adjust the multiplier based on how much padding is needed
+    var extraPadding = (circle_size) + (circle_spacer*2) + parseInt(options.fontSize.receptor)*4;  // Adjust the multiplier based on how much padding is needed
 
     // Calculate new dimensions
     var newWidth = diameter + extraPadding;  // Add padding to both sides
@@ -485,7 +263,7 @@ function draw_tree(data, options,circle_size) {
     var translateY = cy;
 
     // Apply the transform to the 'g' element to scale and center it
-    svgElement.select('g')
+    svg.select('g')
         .attr('transform', `translate(${translateX},${translateY}) scale(${scaleFactor},${scaleFactor})`);
 }
 
@@ -546,81 +324,6 @@ function changeLeavesLabels(location, value, dict){
   }
 
 // Draw the circles (data) of the tree plot
-function DrawCircles_OLD(location, data, starter, dict, clean = true, gradient = true, circle_styling_dict, circle_spacer, circle_size) {
-    var svg = d3.select('#' + location);
-    var node = svg.selectAll(".node");
-
-    if (clean === true) {
-        node.selectAll("circle.outerCircle").remove();
-    }
-
-    var spacer = circle_spacer;
-
-    // Initialize a dictionary to store min and max values for each unit
-    var minMaxValues = {};
-
-    // First pass: Determine min and max values for each unit
-    for (var x in data) {
-        var keys = Object.keys(data[x]);
-        for (var unit of keys) {
-            if (!minMaxValues[unit]) {
-                minMaxValues[unit] = { min: Infinity, max: -Infinity };
-            }
-            var value = data[x][unit];
-            if (value < minMaxValues[unit].min) {
-                minMaxValues[unit].min = value;
-            }
-            if (value > minMaxValues[unit].max) {
-                minMaxValues[unit].max = value;
-            }
-        }
-    }
-
-    // Second pass: Draw the circles
-    for (var x in data) {
-        var keys = Object.keys(data[x]);
-
-        for (var unit of keys) {
-            if (dict[unit]) {
-                var value = data[x][unit];
-                var minValue = minMaxValues[unit].min;
-                var maxValue = minMaxValues[unit].max;
-
-                // Determine the styling
-
-                var styling = circle_styling_dict[unit] || "Two";
-
-                // Create color scale based on min and max values
-                var colorScale;
-                if (styling === "Three") {
-                    // Three-color gradient with white in the middle
-                    colorScale = d3.scale.linear()
-                        .domain([minValue, (minValue + maxValue) / 2, maxValue])
-                        .range([dict[unit][0], "#FFFFFF", dict[unit][1]]);
-                } else {
-                    // Two-color gradient
-                    colorScale = d3.scale.linear()
-                        .domain([minValue, maxValue])
-                        .range(dict[unit]);
-                }
-
-                // Calculate color using the color scale
-                var color = gradient ? colorScale(value) : dict[unit][0]; // Use the first color if no gradient
-
-                var multiply = 1 + Object.keys(dict).indexOf(unit);
-                var leaf = svg.selectAll('g[id=X' + x + ']');
-
-                leaf.append("circle")
-                    .attr("r", circle_size)
-                    .attr("class", "outerCircle") // Add class to distinguish outer circles
-                    .style("stroke", "black") // Use the first color for the stroke
-                    .style("stroke-width", 0.8)
-                    .style("fill", color)
-                    .attr("transform", "translate(" + (Math.ceil(starter) + multiply * spacer) + ",0)");
-            }
-        }
-    }
-}
 
 function DrawCircles(location, data, starter, dict, clean = true, gradient = true, circle_styling_dict, circle_spacer, circle_size) {
     var svg = d3.select('#' + location);
@@ -738,9 +441,8 @@ function DrawCircles(location, data, starter, dict, clean = true, gradient = tru
     }
 }
 
-
 // Create the bar legends
-function createLegendBars(location, data, conversion, circle_styling_dict) {
+function createLegendBars(location, data, conversion, circle_styling_dict, datatype_dict) {
     var svg = d3.select('#' + location + ' svg');
 
     // Clear existing content
@@ -775,6 +477,11 @@ function createLegendBars(location, data, conversion, circle_styling_dict) {
     // Create a color scale function for each category
     var colorScales = {};
     existingCategories.forEach(category => {
+        // Check the datatype in the datatype_dict
+        if (datatype_dict[category] === "Discrete") {
+            return; // Skip this category if its datatype is Discrete
+        }
+
         var colors = conversion[category];
         var gradientId = `gradient-${category}`;
 
@@ -809,15 +516,23 @@ function createLegendBars(location, data, conversion, circle_styling_dict) {
         colorScales[category] = gradientId;
     });
 
-    // var barWidth = width / existingCategories.length - 20; // Adjust the width of each bar
     var barWidth = 120;
     var barHeight = 15;
     var spacing = 50; // Horizontal spacing between bars
+
     // Adjust SVG width if needed
     var totalWidth = 1200;
     svg.attr("width", totalWidth);
 
+    var skippedDiscreteCount = 0;  // Track how many discrete bars have been skipped
+
     existingCategories.forEach((category, index) => {
+        // Check if datatype is "Continuous" before drawing the legend
+        if (datatype_dict[category] !== "Continuous") {
+            skippedDiscreteCount++; // Increment the count of skipped discrete bars
+            return; // Skip this category if it's Discrete
+        }
+
         var gradientId = colorScales[category];
         var minValue = categoryMax[category].min;
         var maxValue = categoryMax[category].max;
@@ -826,7 +541,8 @@ function createLegendBars(location, data, conversion, circle_styling_dict) {
         maxValue = parseFloat(maxValue.toFixed(2));
         midValue = parseFloat(midValue.toFixed(2));
 
-        var xPosition = margin.left + index * (barWidth + spacing); // Calculate the x position
+        // Adjust the x position based on how many "Discrete" bars were skipped
+        var xPosition = margin.left + (index - skippedDiscreteCount) * (barWidth + spacing);
 
         // Add a rectangle to represent the gradient
         svg.append("rect")
@@ -868,10 +584,282 @@ function createLegendBars(location, data, conversion, circle_styling_dict) {
 }
 
 
+
 // #################
 // ###  CLUSTER  ###
 // #################
 
+// Function to naturally sort an array
+function naturalSort(a, b) {
+    return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
+}
+
+
+// Function to create traces for the plot
+function createTraces(colorOption, showLabels, colorMapping, textColorEnabled) {
+    let traces = [];
+    const stroke_width = cluster_DataStyling.strokeWidth;  // Get stroke width from data styling
+    const marker_size = cluster_DataStyling.markerSize;    // Get marker size from data styling
+    const border_on = cluster_DataStyling.borderOn;        // Get border toggle state from data styling
+
+    const clusterSet = Array.from(new Set(currentClusterData.map(d => d.cluster))).sort((a, b) => a - b);
+
+    // Handle clustering color option
+    if (colorOption === 'cluster') {
+        clusterSet.forEach(cluster => {
+            const clusterData = currentClusterData.filter(d => d.cluster === cluster);
+
+            // Create marker traces, only display markers when labels are not shown
+            const markerTrace = {
+                x: clusterData.map(d => d.x),
+                y: clusterData.map(d => d.y),
+                mode: showLabels ? 'none' : 'markers',  // Hide markers if labels are shown
+                type: 'scatter',
+                hoverinfo: 'text',
+                text: clusterData.map(d => `${d.label.toUpperCase()}`),  // Combine label and fill for hover text
+                marker: {
+                    size: marker_size,
+                    symbol: 'circle',
+                    line: {
+                        width: border_on ? stroke_width : 0,
+                        color: 'black'
+                    },
+                    color: clusterData.map(d => colorPalette[d.cluster % colorPalette.length]),  // Keep legend colors based on clusters
+                },
+                // Customize legend text color only when showLabels and textColorEnabled are both true
+                name: (showLabels && textColorEnabled)
+                ? `<span style="color:${colorPalette[cluster % colorPalette.length]}">Cluster ${cluster + 1}</span>`
+                : `Cluster ${cluster + 1}`  // Regular label if conditions are false
+            };
+
+            traces.push(markerTrace);
+        });
+    }
+    // Handle gradient color option
+    else if (colorOption === 'gradient') {
+        const fillValues = currentClusterData.map(d => d.fill);
+        const minFill = Math.min(...fillValues);
+        const maxFill = Math.max(...fillValues);
+        const gradientTrace = {
+            x: currentClusterData.map(d => d.x),
+            y: currentClusterData.map(d => d.y),
+            mode: showLabels ? 'none' : 'markers',  // Hide markers if labels are shown
+            type: 'scatter',
+            hoverinfo: 'text',
+            text: currentClusterData.map(d => `${d.label.toUpperCase()}: ${d.fill}`),  // Combine label and fill for hover text
+            marker: {
+                size: marker_size,
+                symbol: 'circle',
+                line: {
+                    width: border_on ? stroke_width : 0,
+                    color: 'black'
+                },
+                color: currentClusterData.map(d => d.fill),
+                cmin: minFill,  // Set color axis minimum value
+                cmax: maxFill,  // Set color axis maximum value
+                colorscale: 'RdBu',  // Use RdBu color scale
+                colorbar: {
+                    thickness: 20,
+                    len: 0.5,
+                }
+            },
+            showlegend: false
+        };
+
+        traces.push(gradientTrace);
+    }
+    // Handle Class, Ligand type, or Receptor family color option
+    else if (['Class', 'Ligand type', 'Receptor family'].includes(colorOption)) {
+        
+        const uniqueEntries = new Set();
+        
+        currentClusterData.forEach(point => {
+            const entry = point[colorOption] === 'Other GPCRs' ? 'Classless' : point[colorOption];
+            if (!uniqueEntries.has(entry)) {
+                uniqueEntries.add(entry);
+
+                // Create marker traces, only display markers when labels are not shown
+                const markerTrace = {
+                    x: currentClusterData.filter(d => d[colorOption] === point[colorOption]).map(d => d.x),
+                    y: currentClusterData.filter(d => d[colorOption] === point[colorOption]).map(d => d.y),
+                    mode: showLabels ? 'none' : 'markers',
+                    type: 'scatter',
+                    hoverinfo: 'text',
+                    text: currentClusterData.filter(d => d[colorOption] === point[colorOption]).map(d => d.label.toUpperCase()),
+                    marker: {
+                        size: marker_size,
+                        symbol: 'circle',
+                        line: {
+                            width: border_on ? stroke_width : 0,
+                            color: 'black'
+                        },
+                        color: colorMapping[entry],
+                    },
+                    // Customize legend text color only when showLabels and textColorEnabled are both true
+                    name: (showLabels && textColorEnabled)
+                        ? `<span style="color:${colorMapping[entry]}">${entry}</span>`
+                        : entry  // Regular label if conditions are false
+                };
+
+                traces.push(markerTrace);
+            }
+        });
+
+        traces.sort((a, b) => naturalSort(a.name, b.name));
+    }
+
+    return traces;
+}
+
+
+// Function to create annotations for labels with optional text coloring based on `textColorEnabled`
+function createAnnotations(filteredData, colorOption, textColorEnabled, colorMapping) {
+    const annotations = [];
+
+    // Get global min and max values for `fill` from all data (currentClusterData), not just the filtered data
+    const fillValues = currentClusterData.map(d => d.fill);  // Use all data, not just filtered
+    const minFill = Math.min(...fillValues);
+    const maxFill = Math.max(...fillValues);
+
+    // Use d3.interpolateRdBu for the exact RdBu color scale in D3 v4
+    const rdBuColorScale = d3v4.scaleSequential(d3v4.interpolateRdBu)
+        .domain([maxFill, minFill]);  // Inverse the domain for red to blue coloring
+
+
+    filteredData.forEach((d) => {
+        let textColor;
+
+        if (textColorEnabled) {
+            if (colorOption === 'cluster') {
+                textColor = colorPalette[d.cluster % colorPalette.length];
+            } else if (colorOption === 'gradient') {
+                textColor = rdBuColorScale(d.fill);  // Gradient-based coloring
+            } else if (['Class', 'Ligand type', 'Receptor family'].includes(colorOption)) {
+                const entry = d[colorOption] === 'Other GPCRs' ? 'Classless' : d[colorOption];
+                textColor = colorMapping[entry];
+            } else {
+                textColor = 'black';
+            }
+        } else {
+            textColor = 'black';
+        }
+
+        annotations.push({
+            x: d.x,
+            y: d.y,
+            xref: 'x',
+            yref: 'y',
+            text: `${d.label.toUpperCase()}: ${d.fill}`,  // Combine label and fill for hover text
+            showarrow: false,
+            font: {
+                family: 'Arial',
+                size: cluster_DataStyling.labelFontSize,
+                color: textColor
+            },
+            align: 'center',
+            bgcolor: 'rgba(0,0,0,0)',
+            borderwidth: 0
+        });
+    });
+
+    return annotations;
+}
+
+// Function to update the plot with markers or labels
+function updatePlotWithAnnotations() {
+    const colorOption = getActiveColorOption();  // Get the active color option
+    const showLabels = document.getElementById('show').classList.contains('active');
+    const textColorEnabled = cluster_DataStyling.textColorEnabled;
+
+    const plotElement = document.getElementById('plotContainer_cluster');
+    const currentLayout = plotElement ? Plotly.d3.select('#plotContainer_cluster').node().layout : {};
+
+    const xRange = (currentLayout && currentLayout.xaxis && currentLayout.xaxis.range) ? currentLayout.xaxis.range : [Math.min(...currentClusterData.map(d => d.x)), Math.max(...currentClusterData.map(d => d.x))];
+    const yRange = (currentLayout && currentLayout.yaxis && currentLayout.yaxis.range) ? currentLayout.yaxis.range : [Math.min(...currentClusterData.map(d => d.y)), Math.max(...currentClusterData.map(d => d.y))];
+
+    let colorMapping = {};
+    if (['Class', 'Ligand type', 'Receptor family'].includes(colorOption)) {
+        let uniqueValues = Array.from(new Set(currentClusterData.map(d => d[colorOption])));
+        uniqueValues = uniqueValues.map(value => value === 'Other GPCRs' ? 'Classless' : value);
+        uniqueValues.sort(naturalSort);
+        uniqueValues.forEach((value, index) => {
+            colorMapping[value] = colorPalette[index % colorPalette.length];
+        });
+    }
+
+    // Generate the traces and pass the colorMapping
+    const traces = createTraces(colorOption, showLabels, colorMapping, textColorEnabled);
+
+    // Add the color bar for gradient only if we're displaying annotations (text labels)
+    if (colorOption === 'gradient' && showLabels) {
+        const fillValues = currentClusterData.map(d => d.fill);
+        const minFill = Math.min(...fillValues);
+        const maxFill = Math.max(...fillValues);
+
+        const colorbarTrace = {
+            z: [[minFill, maxFill], [minFill, maxFill]],  // Use actual min/max values for z
+            x: [0, 1],
+            y: [0, 1],
+            type: 'heatmap',
+            colorscale: 'RdBu',
+            showscale: true,  // Only show the color bar when annotations are visible
+            colorbar: {
+                thickness: 20,
+                len: 0.5,
+                // Removed title from the colorbar
+            },
+            opacity: 0  // Make the heatmap itself transparent
+        };
+
+        traces.push(colorbarTrace);
+    }
+
+    // Filter the data for labels within the current zoom range
+    const filteredData = currentClusterData.filter(d => {
+        const inXRange = (d.x >= xRange[0] && d.x <= xRange[1]);
+        const inYRange = (d.y >= yRange[0] && d.y <= yRange[1]);
+        return inXRange && inYRange;
+    });
+
+    // Generate annotations based on filtered data, text coloring state, and shared colorMapping
+    const annotations = showLabels ? createAnnotations(filteredData, colorOption, textColorEnabled, colorMapping) : [];
+
+    // Define new layout with annotations
+    const layout = {
+        xaxis: {
+            visible: false,
+            showgrid: false,
+            range: xRange,
+            scaleanchor: 'y'
+        },
+        yaxis: {
+            visible: false,
+            showgrid: false,
+            range: yRange
+        },
+        hovermode: 'closest',
+        showlegend: true,
+        annotations: annotations,  // Add annotations to the plot
+        legend: {
+            x: 1,
+            xanchor: 'left',
+            y: 0.5,
+            orientation: 'v'
+        },
+        plot_bgcolor: '#FFFFFF',
+        autosize: false,
+        width: 1024,
+        height: 700,
+        margin: {
+            l: 50,
+            r: 374,
+            t: 50,
+            b: 50
+        }
+    };
+
+    Plotly.react('plotContainer_cluster', traces, layout);
+}
 
 
 // #################
@@ -2066,11 +2054,40 @@ function Heatmap(data, location, heatmap_DataStyling,label_x_converter) {
     let legend_y_position = 30;
 
     let rowLabelWidth;
+    const baseWidth = 20;  // Minimum column width
+    const chartData = [];
+    let highest_value = -Infinity;
+    let lowest_value = Infinity;
+
+    rows.forEach(row => {
+      cols.forEach(col => {
+        const value = data[row][col];
+        chartData.push({ row, col, value });
+        if (value > highest_value) {
+          highest_value = value;
+        }
+        if (value < lowest_value) {
+            lowest_value = value;
+        }
+      });
+    });
+
+    // Calculate the length of the longest data value
+    
+    const longestDataValue = d3.max(chartData, d => Number(parseFloat(d.value).toFixed(1)).toString().length);
+
+    // Calculate width based on the longest data value
+    const calculatedDataValueWidth = longestDataValue * 40 * (label_fontsize / 14);
+
     if (rotation === 90 || rotation === 45) {
-        // Adjust rowLabelWidth to be slightly wider than the font size height of x-axis labels
-        rowLabelWidth = 20; // Adjust this value based on your font size and label requirements
+        // Use the larger value between base width and calculated data value width for rotation
+        rowLabelWidth = Math.max(baseWidth, calculatedDataValueWidth);
     } else {
-        rowLabelWidth = d3.max(col_labels, d => d.length* 40 * (label_fontsize/14)); // Default width calculation
+        // Calculate the width based on the longest column label
+        const calculatedLabelWidth = d3.max(col_labels, d => d.length * 40 * (label_fontsize / 14));
+
+        // Choose the maximum value between base width, calculated label width, and calculated data value width
+        rowLabelWidth = Math.max(baseWidth, calculatedLabelWidth, calculatedDataValueWidth);
     }
 
     // Calculate the longest column label length
@@ -2090,23 +2107,6 @@ function Heatmap(data, location, heatmap_DataStyling,label_x_converter) {
             legend_y_position = longestLabel * (fontSize * 0.55)
         }
     }
-
-    const chartData = [];
-    let highest_value = -Infinity;
-    let lowest_value = Infinity;
-
-    rows.forEach(row => {
-      cols.forEach(col => {
-        const value = data[row][col];
-        chartData.push({ row, col, value });
-        if (value > highest_value) {
-          highest_value = value;
-        }
-        if (value < lowest_value) {
-            lowest_value = value;
-        }
-      });
-    });
 
     const width = (20 * cols.length) + rowLabelWidth;
     const height = (20 * rows.length);
@@ -2228,7 +2228,7 @@ function Heatmap(data, location, heatmap_DataStyling,label_x_converter) {
           .style("font-size", `${data_fontsize}px`)
           .style("font-family", "sans-serif")
           .style("fill", textColor)
-          .text(d.value);
+          .text(Number(parseFloat(d.value).toFixed(1)));  // Round and fix to 1 decimal place
       });
     }
 
@@ -2316,7 +2316,7 @@ function Heatmap(data, location, heatmap_DataStyling,label_x_converter) {
       .attr('y', 50)
       .style("font-size", `${data_fontsize}px`)
       .style("font-family", "sans-serif")
-      .text(lowest_value);
+      .text(Number(parseFloat(lowest_value).toFixed(1)));
 
     if (heatmap_DataStyling.Number_of_colors === 'Three') {
         legend_svg.append("text")
@@ -2325,7 +2325,7 @@ function Heatmap(data, location, heatmap_DataStyling,label_x_converter) {
         .style("font-size", `${data_fontsize}px`)
         .style("font-family", "sans-serif")
         .style("text-anchor", "middle")
-        .text((highest_value + lowest_value) / 2); // Middle value
+        .text(Number(parseFloat((highest_value + lowest_value) / 2).toFixed(1)));
     }
 
     legend_svg.append("text")
@@ -2334,7 +2334,7 @@ function Heatmap(data, location, heatmap_DataStyling,label_x_converter) {
       .style("font-size", `${data_fontsize}px`)
       .style("font-family", "sans-serif")
       .style("text-anchor", "end")
-      .text(highest_value);
+      .text(Number(parseFloat(highest_value).toFixed(1)));
 
     // Rerender height of plot as the last thing
     let label_length_final;
