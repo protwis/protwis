@@ -620,7 +620,6 @@ class LandingPage(TemplateView):
                                         if empty_sheet:
                                             status = 'Empty sheet'
                                         elif Data[sheet_name]:
-                                            # print(Data[sheet_name])
                                             for col_idx in Incorrect_values[sheet_name]:
                                                 # Check if there are any assigned index values for this col_idx
                                                 if any(Incorrect_values[sheet_name][col_idx].values()):
@@ -981,7 +980,6 @@ class LandingPage(TemplateView):
                             # plot_incorrect_data_json = json.dumps(plot_incorrect_data, indent=4, sort_keys=True) if plot_incorrect_data else None
 
                             Plot_parser_json = json.dumps([status == 'Success' for status in Plot_parser])
-                            # print(Plot_parser_json)
 
                             plots_status = [{'status': status, 'plot_name': plot_name} for status, plot_name in zip(Plot_parser, plot_names)]
                             # Rearrange plots in the report #
@@ -994,7 +992,6 @@ class LandingPage(TemplateView):
                                        'plot_names':plot_names,
                                        'plots_status':plots_status}
 
-                            # print(Plot_parser)
                             if plot_data:
                                 if all(status == 'Success' for status in Plot_parser):
                                     context['report_status'] = 'Success'
