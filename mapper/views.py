@@ -190,7 +190,7 @@ class LandingPage(TemplateView):
             # Initialize the key in result_dict if not already present
             if key not in result_dict:
                 result_dict[key] = 'empty'
-        
+
         for key in data:
             if key in result_dict:
                 result_dict[key] = data[key]['Value1']
