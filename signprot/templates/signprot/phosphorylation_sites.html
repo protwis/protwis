@@ -67,7 +67,7 @@
 
                     <!-- Phosphorylations -->
                     {% for header, subs in headers %}
-                    <th class="{{ header.1|lower }}" colspan="{{ subs|length }}" style="border-right: 1px solid; text-align: center;">{{ header.0 }}</th>
+                    <th class="{{ header.1|lower }}" colspan="{{ subs|length }}" style="border-right: 1px solid; text-align: center;">{{ header.0|upper }}</th>
                     {% endfor %}
                     <!-- logmax -->
                     <th></th>

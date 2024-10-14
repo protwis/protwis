@@ -56,3 +56,11 @@ def pub_out(objs):
     return '{} et al. <i>{}</i> {}'.format(main_auth, objs.journal.name, objs.year)
     # else:
     #     return 'weird {}'.format(objs)
+
+
+@register.filter
+def dict_get(dictionary, key):
+    try:
+        return dictionary.get(key, '')
+    except (TypeError, AttributeError):
+        return ''
