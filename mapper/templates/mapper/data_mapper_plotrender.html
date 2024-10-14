@@ -2569,10 +2569,12 @@ function initializeGPCRomeLabelConversionDict(conversionDict) {
 // # Initialize data styling #
 var layout_data = GPCRome_initializeData(GPCRome_categories_data);
 
-const GPCRome_fill_data_values = Object.values(fill_data).map(receptor => receptor.Value1);
+const GPCRome_fill_data_values = Object.values(fill_data)
+    .map(receptor => receptor.Value1)
+    .filter(value => value !== null && value !== undefined && value !== '' && !isNaN(value)); // Filtering out invalid values
 
-const GPCRome_fill_minValue = Math.min(...GPCRome_fill_data_values);
-const GPCRome_fill_maxValue = Math.max(...GPCRome_fill_data_values);
+const GPCRome_fill_minValue = GPCRome_fill_data_values.length > 0 ? Math.min(...GPCRome_fill_data_values) : null; 
+const GPCRome_fill_maxValue = GPCRome_fill_data_values.length > 0 ? Math.max(...GPCRome_fill_data_values) : null;
 
 // Calculate median
 // Sort the values in ascending order

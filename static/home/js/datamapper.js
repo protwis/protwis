@@ -1705,7 +1705,12 @@ function data_visualization(data, category_data, location, Layout_dict, data_sty
 
         if (column_styling.Datatype === 'Discrete') {
             const Color_list = ['black', 'red', 'blue', 'green'];
-            color = Color_list.includes(data_value.toLowerCase()) ? data_value : 'black';
+            if (data_value) {
+                const valueString = String(data_value); // Ensures data_value is converted to a string
+                color = Color_list.includes(valueString.toLowerCase()) ? valueString : 'black';
+            } else {
+                color = 'black';
+            }
         } else if (column_styling.Datatype === 'Continuous') {
             const gradientScale = d3.scale.linear()
                 .domain([column_styling.Data_min, column_styling.Data_max]);
@@ -2487,10 +2492,8 @@ function GPCRome_formatTextWithHTML(text, Family_list) {
     return formattedText;
 }
 
-
-function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling, odorant = false) {
 // Draw / generate the GPCRome plot
-function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling) {
+function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling, odorant = false) {
 
     dimensions = { height: 1000, width: 1000 };
 
