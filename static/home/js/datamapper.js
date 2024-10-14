@@ -2487,6 +2487,8 @@ function GPCRome_formatTextWithHTML(text, Family_list) {
     return formattedText;
 }
 
+
+function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling, odorant = false) {
 // Draw / generate the GPCRome plot
 function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling) {
 
@@ -2499,7 +2501,7 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling) {
 
     const svg = d3v4.select("#" + location)
     .append("svg")
-    .attr("id", "GPCRome_plot_svg")  // Add the id here for download reference
+    .attr("id", location+'_svg')  // Add the id here for download reference
     .attr("width", dimensions.width)
     .attr("height", dimensions.height)
     .attr("xmlns", "http://www.w3.org/2000/svg")  // Add the SVG namespace
@@ -2560,71 +2562,70 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling) {
         layout_data[dartKey] = naturalSort(layout_data[dartKey]);
     });
 
-
-    // Number of last entries to transfer and remove
-    const N = 14;  // Change this value to 2, 3, or any number you want
-
-    // Get the keys of the GPCRome_A object
-    const dartAKeys = Object.keys(layout_data.GPCRome_A);
-
-    // Get the last N keys
-    const lastNKeys = dartAKeys.slice(-N);
-
-    // Create a copy of GPCRome_AO and add the new entries from GPCRome_A
-    const updatedGPCRome_AO = {
-        ...lastNKeys.reduce((acc, key) => {
-            acc[key] = layout_data.GPCRome_A[key]; // Add the last N entries from GPCRome_A
-            return acc;
-        }, {}),
-        ...layout_data.GPCRome_AO // Spread the original GPCRome_AO entries
-    };
-
-    // Create a new GPCRome_A object that excludes the last N entries
-    const updatedGPCRome_A = {
-        ...layout_data.GPCRome_A
-    };
-
-    // Remove the last N properties from GPCRome_A
-    lastNKeys.forEach(key => {
-        delete updatedGPCRome_A[key];
-    });
-
-
-    let three_classes = false;
     // Now call Draw_a_GPCRome for both updated GPCRome_A and GPCRome_AO
 
     // First Draw_a_GPCRome with GPCRome_A, now without the two receptors
 
-    if (three_classes) {
+    if (odorant) {
 
-        Draw_a_GPCRome(updatedGPCRome_A, fill_data, 0, dimensions, Spacing);
-
-        // Second Draw_a_GPCRome with GPCRome_AO, now with the two receptors added
-        Draw_a_GPCRome(updatedGPCRome_AO, fill_data, 1, dimensions, Spacing);
-
-        Draw_a_GPCRome({...layout_data.GPCRome_B,...layout_data.GPCRome_C}, fill_data, 2, dimensions,Spacing);
-        Draw_a_GPCRome({...layout_data.GPCRome_F,...layout_data.GPCRome_T,...layout_data.GPCRome_CL}, fill_data, 3, dimensions,Spacing);
+        Draw_a_GPCRome(layout_data.GPCRome_O2_ext, fill_data, 0, dimensions, Spacing, odorant);
+        Draw_a_GPCRome(layout_data.GPCRome_O2_mid, fill_data, 1, dimensions, Spacing, odorant);
+        Draw_a_GPCRome(layout_data.GPCRome_O2_int, fill_data, 2, dimensions, Spacing, odorant);
+        Draw_a_GPCRome(layout_data.GPCRome_O1, fill_data, 3, dimensions, Spacing, odorant);
 
     } else {
-    Draw_a_GPCRome(updatedGPCRome_A, fill_data, 0, dimensions, Spacing);
 
-    // Second Draw_a_GPCRome with GPCRome_AO, now with the two receptors added
-    Draw_a_GPCRome(updatedGPCRome_AO, fill_data, 1, dimensions, Spacing);
+      // Number of last entries to transfer and remove
+      const N = 14;  // Change this value to 2, 3, or any number you want
 
-    Draw_a_GPCRome(layout_data.GPCRome_B, fill_data, 2, dimensions,Spacing);
-    Draw_a_GPCRome({...layout_data.GPCRome_C, ...layout_data.GPCRome_F}, fill_data, 3, dimensions,Spacing);
-    Draw_a_GPCRome({...layout_data.GPCRome_T,...layout_data.GPCRome_CL}, fill_data, 4, dimensions,Spacing);
+      // Get the keys of the GPCRome_A object
+      const dartAKeys = Object.keys(layout_data.GPCRome_A);
+
+      // Get the last N keys
+      const lastNKeys = dartAKeys.slice(-N);
+
+      // Create a copy of GPCRome_AO and add the new entries from GPCRome_A
+      const updatedGPCRome_AO = {
+          ...lastNKeys.reduce((acc, key) => {
+              acc[key] = layout_data.GPCRome_A[key]; // Add the last N entries from GPCRome_A
+              return acc;
+          }, {}),
+          ...layout_data.GPCRome_AO // Spread the original GPCRome_AO entries
+      };
+
+      // Create a new GPCRome_A object that excludes the last N entries
+      const updatedGPCRome_A = {
+          ...layout_data.GPCRome_A
+      };
+
+      // Remove the last N properties from GPCRome_A
+      lastNKeys.forEach(key => {
+          delete updatedGPCRome_A[key];
+      });
+
+      Draw_a_GPCRome(updatedGPCRome_A, fill_data, 0, dimensions, Spacing);
+
+      // Second Draw_a_GPCRome with GPCRome_AO, now with the two receptors added
+      Draw_a_GPCRome(updatedGPCRome_AO, fill_data, 1, dimensions, Spacing);
+
+      Draw_a_GPCRome(layout_data.GPCRome_B, fill_data, 2, dimensions,Spacing);
+      Draw_a_GPCRome({...layout_data.GPCRome_C, ...layout_data.GPCRome_F}, fill_data, 3, dimensions,Spacing);
+      Draw_a_GPCRome({...layout_data.GPCRome_T,...layout_data.GPCRome_CL}, fill_data, 4, dimensions,Spacing);
 
     }
-    function Draw_a_GPCRome(label_data, fill_data, level, dimensions,Spacing) {
+    function Draw_a_GPCRome(label_data, fill_data, level, dimensions, Spacing, odorant = false) {
 
         // Define SVG dimensions
         const width = dimensions.width;
         const height = dimensions.height;
         const label_offset = 7; // Increased offset to push labels outward
+        let GPCRome_radius;
 
-
-        const GPCRome_radius = Math.min(width, height) / 2 - 60 - ((level == 4) ? (90 * level) : (85 * level)); // Radius for each GPCRome
+        if (odorant) {
+          GPCRome_radius = Math.min(width, height) / 2 - 60 - ((level == 3) ? (100 * level) : (95 * level)); // Radius for each GPCRome
+        } else {
+          GPCRome_radius = Math.min(width, height) / 2 - 60 - ((level == 4) ? (90 * level) : (85 * level)); // Radius for each GPCRome
+        }
 
         let values = [];
         let Family_list  = []
@@ -2667,34 +2668,28 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling) {
         }
 
         // Add in Class
-        if (three_classes) {
+        if (odorant) {
+            Header_list = ["O2","O1"];
             if (level == 0) {
                 values.unshift("");
-                values.unshift("A");
+                values.unshift("O2");
                 values.push("");
             } else if (level == 1) {
-                values.unshift("A");
+                values.unshift("");
+                values.unshift("O2");
                 values.push("");
             } else if (level == 2) {
-                values.unshift("B1");
-                values.splice(52, 0, "");
-                values.splice(52, 0, "");
-                values.splice(54, 0, "B2");
-                values.splice(55, 0, "");
-                values.splice(80, 0, "");
-                values.splice(81, 0, "C");
-                values.splice(82, 0, "");
+                values.unshift("");
+                values.unshift("O2");
                 values.push("");
-            }else if (level == 3) {
-                values.unshift("F");
-                values.splice(14, 0, "T2");
-                values.splice(14, 0, "");
-                values.splice(42, 0, "Classless");
-                values.splice(42, 0, "");
-                values.push("")
+            } else if (level == 3) {
+                values.unshift("");
+                values.unshift("O1");
+                values.push("");
             }
 
         } else {
+            Header_list = ["A","B1","B2","C","F","T2","Classless"];
             if (level == 0) {
                 values.unshift("");
                 values.unshift("A");
@@ -2730,7 +2725,6 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling) {
             }
         }
         // Header_list = ["CLASS A","A CONT.","A ORPHANS","CLASS B1","CLASS B2","CLASS C","CLASS F","CLASS T2","CLASSLESS"];
-        Header_list = ["A","A cont.","A ORPHANS","B1","B2","C","F","T2","Classless"];
 
         function calculatePositionAndAngle(index, total, values, Header_list, Family_list, isSplit) {
             // Get the text value at the current index
@@ -2825,6 +2819,18 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling) {
         .attr("font-weight", d => Header_list.includes(d) || Family_list.includes(d) ? "950" : "normal")
         .style("fill", d => Header_list.includes(d) ? "Black" : "black");
 
+        // Function to process the formattedText
+        function formatText(text) {
+            if (text.includes("Odorant")) {
+                // Split the text by the word "Odorant" and trim any leading/trailing spaces
+                let result = text.split("Odorant").pop().trim();
+
+                // Capitalize the first letter and ensure the rest is lowercase
+                return result.charAt(0).toUpperCase() + result.slice(1).toLowerCase();
+            }
+            return text;  // Return the text unchanged if it doesn't contain "Odorant"
+        }
+
         // After drawing all the elements, adjust the y-position for all family labels
         // Adjust the y-position for all family labels based on the midpoint between current and previous positions
         svg.selectAll(".GPCRome-family-label")
@@ -2881,6 +2887,7 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling) {
                                 .attr("transform", `rotate(${prevPos.rotation + additionalRotation}, ${prevPos.x}, ${prevPos.y})`)
                                 .attr("class", "GPCRome-family-label-split")
                                 .text(firstPart)
+                                // .style("font-weight", "bold")
                                 .style("font-size",family_fontsize);
 
                             // Append the second part of the text (using currentPos)
@@ -2892,6 +2899,7 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling) {
                                 .attr("transform", `rotate(${currentPos.rotation + additionalRotation}, ${currentPos.x}, ${currentPos.y})`)
                                 .attr("class", "GPCRome-family-label-split")
                                 .text(secondPart)
+                                // .style("font-weight", "bold")
                                 .style("font-size", family_fontsize);
 
                         } else {
@@ -2906,6 +2914,7 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling) {
                                 .attr("transform", `rotate(${currentPos.rotation + additionalRotation}, ${currentPos.x}, ${currentPos.y})`)
                                 .attr("class", "GPCRome-family-label-split")
                                 .text(firstPart)
+                                // .style("font-weight", "bold")
                                 .style("font-size",family_fontsize);
 
                             // Append the second part of the text (using prevPos)
@@ -2917,6 +2926,7 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling) {
                                 .attr("transform", `rotate(${prevPos.rotation + additionalRotation}, ${prevPos.x}, ${prevPos.y})`)
                                 .attr("class", "GPCRome-family-label-split")
                                 .text(secondPart)
+                                // .style("font-weight", "bold")
                                 .style("font-size",family_fontsize);
                         }
 
@@ -2939,8 +2949,9 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling) {
                             .attr("text-anchor", (angle >= -90 && angle < 90) ? "start" : "end")
                             .attr("transform", `rotate(${midRotation + additionalRotation}, ${midX}, ${midY})`)
                             .attr("class", "GPCRome-family-label")
-                            .text(formattedText)
-                            .style("font-size",family_fontsize);
+                            .text(formatText(formattedText))
+                            // .style("font-weight", "bold")
+                            .style("font-size",family_fontsize+5);
                     }
                 }
             });
@@ -3021,12 +3032,21 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling) {
                     if (value === "Both") return "blue";
                     if (value === "empty") return "white";
                     return "none";  // Make the slice invisible if the value is ""
+                } else if (datatype === "Arrestin") {
+                    // Handle discrete data or default case
+                    if (value === "ARRB1") return "orange";
+                    if (value === "ARRB2") return "purple";
+                    if (value === "ARRC") return "aquamarine";
+                    if (value === "ARRS") return "cornflowerblue";
+                    if (value === "empty") return "white";
+                    return "none";  // Make the slice invisible if the value is ""
                 }
             })
             .style("stroke", (d) => {
                 const value = fill_data[d.data]?.Value1;
                 if (value === "Yes" || value === "No" || !isNaN(value)) return "black";
                 if (value === "Active" || value === "Inactive" || value === "Both" || value === "empty") return "black";
+                if (value === "ARRB1" || value === "ARRB2" || value === "ARRC" || value === "ARRS" || value === "empty") return "black";
                 return "none";  // Remove the stroke if the value is ""
             })
             .style("stroke-width", (d) => {
