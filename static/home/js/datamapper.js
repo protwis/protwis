@@ -47,7 +47,7 @@ function draw_tree(data, options,circle_size) {
         if (options.label_free.includes(parseInt(key,10))) {
             branch_offset = branch_offset + 10;
         } else {
-            if (options.branch_trunc != 0) {
+            if (options.branch_trunc !== 0) {
                 branch_offset = branch_offset + 2 * options.branch_trunc + 10;
             } else {
                 branch_offset = branch_offset + string_pixlen(options.branch_length[key], key);
@@ -116,7 +116,7 @@ function draw_tree(data, options,circle_size) {
     node.append("text")
         .attr("dy", ".31em")
         .attr("name", function (d) { if (d.name === '') { return "branch" } else { return d.name } })
-        .attr("text-anchor", function (d) {
+        .attr("text-anchor", function (d) { 
             if (d.depth === options.depth) {
                 return d.x < 180 ? "start" : "end";
             } else {
@@ -162,7 +162,7 @@ function draw_tree(data, options,circle_size) {
             else { return "#222"; };
         }).call(getBB);
 
-    node.filter(function (d) { return (d.depth != options.depth) }).insert("rect", "text")
+    node.filter(function (d) { return (d.depth !== options.depth) }).insert("rect", "text")
         .attr("x", function (d) { return d.x < 180 ? d.bbox.x - 12 : d.bbox.x - d.bbox.width - 12; })
         .attr("y", function (d) { return d.bbox.y; })
         .attr("width", function (d) { return d.bbox.width; })
