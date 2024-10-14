@@ -175,6 +175,59 @@ class LandingPage(TemplateView):
         data_converted = {names_conversion_dict[key]: value for key, value in listplot.items()}
         Data_full = {"NameList": datatree3, "DataPoints": data_converted, "LabelConversionDict":IUPHAR_to_uniprot_dict}
         return Data_full
+    
+    def generate_GPCRome_data(data):
+        #Adjust call to exclude odorants
+        all_proteins = Protein.objects.filter(species_id=1, parent_id__isnull=True, accession__isnull=False, family_id__slug__startswith='0').exclude(
+                                            family_id__slug__startswith='007'
+                                        ).exclude(
+                                            family_id__slug__startswith='008'
+                                        )
+
+        result_dict = {}
+        for prot in all_proteins:
+            key = prot.entry_name
+            # Initialize the key in result_dict if not already present
+            if key not in result_dict:
+                result_dict[key] = 'empty'
+        
+        for key in data:
+            if key in result_dict:
+                result_dict[key] = data[key]['Value1']
+        
+        proteins = list(Protein.objects.filter(entry_name__in=result_dict.keys()
+            ).values('entry_name', 'name').order_by('entry_name'))
+
+        names_conversion_dict = {item['entry_name']: item['name'] for item in proteins}
+
+        names = list(names_conversion_dict.values())
+
+        IUPHAR_to_uniprot_dict = {item['name']: item['entry_name'] for item in proteins}
+
+        families = ProteinFamily.objects.all()
+        datatree = {}
+        conversion = {}
+
+        for item in families:
+            if len(item.slug) == 3 and item.slug not in datatree.keys():
+                datatree[item.slug] = {}
+                conversion[item.slug] = item.name
+            if len(item.slug) == 7 and item.slug not in datatree[item.slug[:3]].keys():
+                datatree[item.slug[:3]][item.slug[:7]] = {}
+                conversion[item.slug] = item.name
+            if len(item.slug) == 11 and item.slug not in datatree[item.slug[:3]][item.slug[:7]].keys():
+                datatree[item.slug[:3]][item.slug[:7]][item.slug[:11]] = []
+                conversion[item.slug] = item.name
+            if len(item.slug) == 15 and item.slug not in datatree[item.slug[:3]][item.slug[:7]][item.slug[:11]]:
+                datatree[item.slug[:3]][item.slug[:7]][item.slug[:11]].append(item.name)
+
+        datatree2 = LandingPage.convert_keys(datatree, conversion)
+        datatree2.pop('Parent family', None)
+        datatree3 = LandingPage.filter_dict(datatree2, names)
+        data_converted = {names_conversion_dict[key]: {'Value1':value} for key, value in result_dict.items()}
+        data_full = {"NameList": datatree3, "DataPoints": data_converted, "LabelConversionDict":IUPHAR_to_uniprot_dict}
+
+        return data_full
 
     @staticmethod
     def generate_tree_plot(input_data): #ADD AN INPUT FILTER DICTIONARY
@@ -1088,7 +1141,7 @@ class plotrender(TemplateView):
                 # GPCRome #
                 if Plot_evaluation[0]:
                     print("GPCRome success")
-                    GPCRome_data = LandingPage.generate_list_plot(Data['GPCRome'])
+                    GPCRome_data = LandingPage.generate_GPCRome_data(Data['GPCRome'])
                     context['GPCRome_data'] = json.dumps(GPCRome_data["NameList"])
                     context['GPCRome_data_variables'] = json.dumps(GPCRome_data['DataPoints'])
                     context['GPCRome_Label_Conversion'] = json.dumps(GPCRome_data['LabelConversionDict'])
