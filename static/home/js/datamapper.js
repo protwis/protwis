@@ -228,14 +228,19 @@ function draw_tree(data, options,circle_size) {
                 y = text.attr("y"),
                 dy = parseFloat(text.attr("dy")),
                 tspan = text.text(null).append("tspan").attr("x", 0).attr("y", y).attr("dy", dy + "em");
-            while (word = words.pop()) {
+            let word;
+            while ((word = words.pop()) !== undefined) {
                 line.push(word);
                 tspan.text(line.join(" "));
                 if (tspan.node().getComputedTextLength() > width) {
-                    line.pop();
-                    tspan.text(line.join(" "));
-                    line = [word];
-                    tspan = text.append("tspan").attr("x", 0).attr("y", y).attr("dy", ++lineNumber * lineHeight + dy + "em").text(word);
+                    line.pop(); // Remove the last word as it exceeds the width
+                    tspan.text(line.join(" ")); // Update the tspan with the valid words
+                    line = [word]; // Start a new line with the word that didn't fit
+                    tspan = text.append("tspan")
+                                .attr("x", 0)
+                                .attr("y", y)
+                                .attr("dy", ++lineNumber * lineHeight + dy + "em")
+                                .text(word); // Add the word to the new tspan
                 }
             }
         });

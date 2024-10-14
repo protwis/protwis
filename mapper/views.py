@@ -174,7 +174,7 @@ class LandingPage(TemplateView):
         data_converted = {names_conversion_dict[key]: value for key, value in listplot.items()}
         Data_full = {"NameList": datatree3, "DataPoints": data_converted, "LabelConversionDict":IUPHAR_to_uniprot_dict}
         return Data_full
-    
+
     @staticmethod
     def generate_GPCRome_data(data):
         #Adjust call to exclude odorants
