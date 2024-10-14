@@ -194,7 +194,7 @@ class LandingPage(TemplateView):
         for key in data:
             if key in result_dict:
                 result_dict[key] = data[key]['Value1']
-        
+
         proteins = list(Protein.objects.filter(entry_name__in=result_dict.keys()
             ).values('entry_name', 'name').order_by('entry_name'))
 
@@ -608,10 +608,10 @@ class LandingPage(TemplateView):
                                             # If the first column is None or empty, ignore the row
                                             if row[0] is None or row[0] == "":
                                                 continue
-                                            
+
                                             # Increment the count if the first column has a value
                                             non_empty_count += 1
-                                            
+
                                             # Check only the columns that have headers, skipping the first column
                                             if any(row[i] is not None for i, header in enumerate(header_list[1:], start=1) if header):
                                                 empty_sheet = False  # If any other column has a value, set empty_sheet to False
@@ -853,7 +853,7 @@ class LandingPage(TemplateView):
                                     for key in header_list:
                                         Incorrect_values[sheet_name][key] = {}
                                     try:
-                                        
+
                                         empty_sheet = True  # Initialize the flag
                                         non_empty_count = 0  # Initialize the count for non-empty cells in the first column
 
@@ -862,10 +862,10 @@ class LandingPage(TemplateView):
                                             # If the first column is None or empty, ignore the row
                                             if row[0] is None or row[0] == "":
                                                 continue
-                                            
+
                                             # Increment the count if the first column has a value
                                             non_empty_count += 1
-                                            
+
                                             # Check only the columns that have headers, skipping the first column
                                             if any(row[i] is not None for i, header in enumerate(header_list[1:], start=1) if header):
                                                 empty_sheet = False  # If any other column has a value, set empty_sheet to False
@@ -1029,7 +1029,6 @@ class LandingPage(TemplateView):
                                 plot_data['Heatmap_Label_dict'] = Heatmap_Label_dict
 
                             plot_data_json = json.dumps(plot_data, indent=4, sort_keys=True) if plot_data else None
-                            # plot_incorrect_data_json = json.dumps(plot_incorrect_data, indent=4, sort_keys=True) if plot_incorrect_data else None
 
                             Plot_parser_json = json.dumps([status == 'Success' for status in Plot_parser])
 
@@ -1059,7 +1058,6 @@ class LandingPage(TemplateView):
                             else:
                                 context['Incorrect_data_json'] = "No incorrect data"
                             return render(request, self.template_name, context)
-
 
                     else:
                         return render(request, self.template_name, {'upload_status': 'Failed','Error_message': "Unable to load excel file, might be corrupted or not inline with the template file."})
@@ -1136,7 +1134,7 @@ class plotrender(TemplateView):
                     context['Label_converter'] = json.dumps(label_converter)
                     context['heatmap_data'] = json.dumps(Data['Heatmap'])
                     context['Heatmap_Label_dict'] = json.dumps(Data['Heatmap_Label_dict'])
-                
+
                 # GPCRome #
                 if Plot_evaluation[0]:
                     print("GPCRome success")
