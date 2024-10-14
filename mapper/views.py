@@ -168,7 +168,6 @@ class LandingPage(TemplateView):
             if len(item.slug) == 15 and item.slug not in datatree[item.slug[:3]][item.slug[:7]][item.slug[:11]]:
                 datatree[item.slug[:3]][item.slug[:7]][item.slug[:11]].append(item.name)
 
-
         datatree2 = LandingPage.convert_keys(datatree, conversion)
         datatree2.pop('Parent family', None)
         datatree3 = LandingPage.filter_dict(datatree2, names)
@@ -322,7 +321,6 @@ class LandingPage(TemplateView):
                 whole_rec_dict[rec_uniprot] = [rec_iuphar.capitalize()]
 
         return master_dict, general_options, circles, whole_rec_dict
-
 
     @staticmethod
     def clustering_test(method, data, data_type):

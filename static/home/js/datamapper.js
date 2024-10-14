@@ -43,8 +43,8 @@ function draw_tree(data, options,circle_size) {
     var branch_offset = 0;
     var thickness = options.depth + 1;
     for (var key in options.branch_length) {
-        if (key == options.depth) { continue };
-        if (options.label_free.includes(parseInt(key))) {
+        if (key === options.depth) { continue };
+        if (options.label_free.includes(parseInt(key,10))) {
             branch_offset = branch_offset + 10;
         } else {
             if (options.branch_trunc != 0) {
@@ -61,7 +61,7 @@ function draw_tree(data, options,circle_size) {
 
     var tree = d3.layout.tree()
         .size([360, diameter / 2])
-        .separation(function (a, b) { return (a.parent == b.parent ? 1 : 2) / a.depth; });
+        .separation(function (a, b) { return (a.parent === b.parent ? 1 : 2) / a.depth; });
 
     var diagonal = d3.svg.diagonal.radial()
         .projection(function (d) { return [d.y, d.x / 180 * Math.PI]; });
@@ -78,7 +78,7 @@ function draw_tree(data, options,circle_size) {
     var nodes = tree.nodes(data);
 
     nodes.forEach(function (d) {
-        if (d.depth == 0) {
+        if (d.depth === 0) {
             d.y = 0
         } else {
             d.y = branches[d.depth]
@@ -98,7 +98,7 @@ function draw_tree(data, options,circle_size) {
         .style("stroke-width", function (d) { if (d.target.depth > 0) { return thickness - d.target.depth; } else { return 0; } })
         .style("fill-opacity", 0)
         .style("opacity", function (d) {
-            if ((d.target.interactions > 0 && d.target.mutations_an > 0) || 1 == 1) { return 0.8 } //|| 1==1
+            if ((d.target.interactions > 0 && d.target.mutations_an > 0) || 1 === 1) { return 0.8 } //|| 1==1
             else if (d.target.interactions > 0) { return 0.5 }
             else if (d.target.mutations_an > 0) { return 0.5 }
             else { return 0.1 };
@@ -108,16 +108,16 @@ function draw_tree(data, options,circle_size) {
         .data(nodes)
         .enter().append("g")
         .attr("class", "node")
-        .attr("transform", function (d) { if (d.name == '') { return "rotate(" + (d.x) + ")translate(" + d.y + ")"; } else { return "rotate(" + (d.x - 90) + ")translate(" + d.y + ")"; } })
+        .attr("transform", function (d) { if (d.name === '') { return "rotate(" + (d.x) + ")translate(" + d.y + ")"; } else { return "rotate(" + (d.x - 90) + ")translate(" + d.y + ")"; } })
 
-    node.filter(function (d) { return (d.depth == options.depth) })
-        .attr("id", function (d) { if (d.name == '') { return "innerNode" } else { return 'X' + d.name.toUpperCase() } });
+    node.filter(function (d) { return (d.depth === options.depth) })
+        .attr("id", function (d) { if (d.name === '') { return "innerNode" } else { return 'X' + d.name.toUpperCase() } });
 
     node.append("text")
         .attr("dy", ".31em")
-        .attr("name", function (d) { if (d.name == '') { return "branch" } else { return d.name } })
+        .attr("name", function (d) { if (d.name === '') { return "branch" } else { return d.name } })
         .attr("text-anchor", function (d) {
-            if (d.depth == options.depth) {
+            if (d.depth === options.depth) {
                 return d.x < 180 ? "start" : "end";
             } else {
                 return d.x < 180 ? "end" : "start";
@@ -125,14 +125,14 @@ function draw_tree(data, options,circle_size) {
         })
         .attr("transform", function (d) {
             var labelOffset = parseFloat(circle_size) + 4;  // Adjust the offset as needed
-            if (d.depth == options.depth) {
+            if (d.depth === options.depth) {
                 return d.x < 180 ? `translate(${labelOffset})` : `rotate(180)translate(-${labelOffset})`;
             } else {
                 return d.x < 180 ? "translate(-12)" : "rotate(180)translate(12)";
             }
         })
         .text(function (d) {
-            if (d.depth == options.depth) {
+            if (d.depth === options.depth) {
                 return d.name.toUpperCase();
             } else if (options.label_free.includes(d.depth)) {
                 return "";
@@ -145,14 +145,14 @@ function draw_tree(data, options,circle_size) {
         .call(wrap, options.branch_trunc)
         .style("font-size", function (d) {
             // Use the custom font size from options
-            if (options.depth == 4) {
-            if (d.depth == 1) { return options.fontSize.class; }
-            else if (d.depth == 2) { return options.fontSize.ligandtype; }
-            else if (d.depth == 3) { return options.fontSize.receptorfamily; }
+            if (options.depth === 4) {
+            if (d.depth === 1) { return options.fontSize.class; }
+            else if (d.depth === 2) { return options.fontSize.ligandtype; }
+            else if (d.depth === 3) { return options.fontSize.receptorfamily; }
             else { return options.fontSize.receptor; }
         } else {
-            if (d.depth == 1) { return options.fontSize.ligandtype; }
-            else if (d.depth == 2) { return options.fontSize.receptorfamily; }
+            if (d.depth === 1) { return options.fontSize.ligandtype; }
+            else if (d.depth === 2) { return options.fontSize.receptorfamily; }
             else { return options.fontSize.receptor; }
         }
         })
@@ -186,20 +186,20 @@ function draw_tree(data, options,circle_size) {
         // Check the depth condition
         if (options.depth === 4) {
             // Use the custom font size from options for all levels
-            if (depth == 1) {
+            if (depth === 1) {
                 ctx.font = options.fontSize.class + " Palatino";
-            } else if (depth == 2) {
+            } else if (depth === 2) {
                 ctx.font = options.fontSize.ligandtype + " Palatino";
-            } else if (depth == 3) {
+            } else if (depth === 3) {
                 ctx.font = options.fontSize.receptorfamily + " Palatino";
             } else {
                 ctx.font = options.fontSize.receptor + " Palatino";
             }
         } else if (options.depth === 3) {
             // Omit class and start from ligandtype
-            if (depth == 1) {
+            if (depth === 1) {
                 ctx.font = options.fontSize.ligandtype + " Palatino";
-            } else if (depth == 2) {
+            } else if (depth === 2) {
                 ctx.font = options.fontSize.receptorfamily + " Palatino";
             } else {
                 ctx.font = options.fontSize.receptor + " Palatino";
@@ -207,7 +207,7 @@ function draw_tree(data, options,circle_size) {
         }
     
         // Measure and return the text width plus padding
-        return parseInt(ctx.measureText(text).width);
+        return parseInt(ctx.measureText(text).width,10);
     }
 
     function getBB(selection) {
@@ -215,7 +215,7 @@ function draw_tree(data, options,circle_size) {
     }
 
     function wrap(text, width) {
-        if (width == 0) {
+        if (width === 0) {
             return;
         }
         text.each(function () {
@@ -244,7 +244,7 @@ function draw_tree(data, options,circle_size) {
     var scaleFactor = 0.8;  // Adjust this as needed
 
     // Calculate the extra padding needed based on circle size and spacer
-    var extraPadding = (circle_size) + (circle_spacer*2) + parseInt(options.fontSize.receptor)*4;  // Adjust the multiplier based on how much padding is needed
+    var extraPadding = (circle_size) + (circle_spacer*2) + parseInt(options.fontSize.receptor,10)*4;  // Adjust the multiplier based on how much padding is needed
 
     // Calculate new dimensions
     var newWidth = diameter + extraPadding;  // Add padding to both sides
@@ -2019,7 +2019,7 @@ function handleRowLabels(textElement, label, labelType, fontSize) {
 
         // Calculate the subscript font size (e.g., 75% of the main font size)
         const mainFontSize = parseFloat(fontSize);
-        const subFontSize = parseInt(mainFontSize * 0.75);
+        const subFontSize = parseInt(mainFontSize * 0.75,10);
 
         // Handle each part of the label
         parts.forEach(part => {
@@ -2343,7 +2343,7 @@ function Heatmap(data, location, heatmap_DataStyling,label_x_converter) {
 
     // Rerender height of plot as the last thing
     let label_length_final;
-    if (rotation == 90) {
+    if (rotation === 90) {
         label_length_final = Math.ceil(-128.69+6.61*longestLabel+11.19*label_fontsize)
         svg_home.attr("height",height + margin.bottom + label_length_final+55);
     } else {
@@ -2625,9 +2625,9 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling, odoran
         let GPCRome_radius;
 
         if (odorant) {
-          GPCRome_radius = Math.min(width, height) / 2 - 60 - ((level == 3) ? (100 * level) : (95 * level)); // Radius for each GPCRome
+          GPCRome_radius = Math.min(width, height) / 2 - 60 - ((level === 3) ? (100 * level) : (95 * level)); // Radius for each GPCRome
         } else {
-          GPCRome_radius = Math.min(width, height) / 2 - 60 - ((level == 4) ? (90 * level) : (85 * level)); // Radius for each GPCRome
+          GPCRome_radius = Math.min(width, height) / 2 - 60 - ((level === 4) ? (90 * level) : (85 * level)); // Radius for each GPCRome
         }
 
         let values = [];
@@ -2673,19 +2673,19 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling, odoran
         // Add in Class
         if (odorant) {
             Header_list = ["O2","O1"];
-            if (level == 0) {
+            if (level === 0) {
                 values.unshift("");
                 values.unshift("O2");
                 values.push("");
-            } else if (level == 1) {
+            } else if (level === 1) {
                 values.unshift("");
                 values.unshift("O2");
                 values.push("");
-            } else if (level == 2) {
+            } else if (level === 2) {
                 values.unshift("");
                 values.unshift("O2");
                 values.push("");
-            } else if (level == 3) {
+            } else if (level === 3) {
                 values.unshift("");
                 values.unshift("O1");
                 values.push("");
@@ -2693,14 +2693,14 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling, odoran
 
         } else {
             Header_list = ["A","B1","B2","C","F","T2","Classless"];
-            if (level == 0) {
+            if (level === 0) {
                 values.unshift("");
                 values.unshift("A");
                 values.push("");
-            } else if (level == 1) {
+            } else if (level === 1) {
                 values.unshift("A");
                 values.push("");
-            } else if (level == 2) {
+            } else if (level === 2) {
                 if (Spacing) {
                     values.splice(52, 0, "B2");
                     values.splice(53, 0, "");
@@ -2710,20 +2710,20 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling, odoran
                     values.splice(15, 0, "B2");
                 }
                 values.unshift("B1");
-            } else if (level == 3) {
+            } else if (level === 3) {
                 values.unshift("C");
                 values.splice(33, 0, "F");
                 values.splice(33, 0, "");
                 values.push("")
-            } else if (level == 4) {
+            } else if (level === 4) {
                 values.unshift("T2");
                 values.splice(28, 0, "Classless");
                 values.splice(28, 0, "");
                 values.splice(30, 0, "");
                 values.push("")
-            } else if (level == 5) {
+            } else if (level === 5) {
                 values.unshift("CLASS F");
-            } else if (level == 6) {
+            } else if (level === 6) {
                 values.unshift("CLASSLESS");
             }
         }
