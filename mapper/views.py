@@ -175,6 +175,7 @@ class LandingPage(TemplateView):
         Data_full = {"NameList": datatree3, "DataPoints": data_converted, "LabelConversionDict":IUPHAR_to_uniprot_dict}
         return Data_full
     
+    @staticmethod
     def generate_GPCRome_data(data):
         #Adjust call to exclude odorants
         all_proteins = Protein.objects.filter(species_id=1, parent_id__isnull=True, accession__isnull=False, family_id__slug__startswith='0').exclude(
