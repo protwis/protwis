@@ -67,9 +67,92 @@
                 <th></th>
                 <th></th>
 
-                <!-- Phosphorylations -->
-                {% for header, subs in headers %}
-                <th class="{{ header.1|lower }}" colspan="{{ subs|length }}" style="border-right: 1px solid; text-align: center;">{{ header.0 }}</th>
+                    <!-- Phosphorylations -->
+                    {% for header, subs in headers %}
+                    <th class="{{ header.1|lower }}" colspan="{{ subs|length }}" style="border-right: 1px solid; text-align: center;">{{ header.0|upper }}</th>
+                    {% endfor %}
+                    <!-- logmax -->
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                </tr>
+
+                <tr>
+                    <!-- checkbox -->
+                    <!-- <th class='no-sort checkbox_tr'><input class="select-all" type="checkbox" style="vertical-align: middle !important" onclick="select_all(this)"></th> -->
+                    <th></th>
+                    <!-- Receptor -->
+                    <th style="vertical-align: middle; text-align: center;">Uniprot</th>
+                    <th style="vertical-align: middle; text-align: center;">GtoPdb</th>
+                    <th style="vertical-align: middle; text-align: center;">Family</th>
+                    <th style="vertical-align: middle; text-align: center;">Class</th>
+                    <!-- Phosphorylations -->
+                    {% for header, subs in headers %}
+                        {% for sub in subs %}
+                        <th style="text-align: center; vertical-align: middle" class="{{ header.1|lower }}">
+                            {{ sub }}
+                        </th>
+                        {% endfor %}
+                    {% endfor %}
+
+                    <!-- logmax -->
+                    {% for labels in coupling_labels %}
+                        {% if labels.1 == 'Regular' %}
+                            <th class="{{ labels.0 }}" style="vertical-align: middle; text-align: center;">{{ labels.0 }}</th>
+                        {% else %}
+                            <th class="{{ labels.0 }} {{ labels.1 }}" style="vertical-align: middle; text-align: center;">{{ labels.0 }}<br><span style="color: red">{{ labels.1 }}</span></th>   
+                        {% endif %}
+                    {% endfor %}
+                    
+                    <!-- <th style="vertical-align: middle">ARRB1<br><span style="color: red;">+ GRK</span></th>
+                    <th style="vertical-align: middle">ARRB1</th>
+                    <th style="vertical-align: middle">ARRB2<br><span style="color: red;">+ GRK</span></th> -->
+
+                </tr>
+
+                <!-- Yadcf-->
+                <tr>
+                    <th></th> <!-- checkbox -->
+                    <!-- Receptors -->
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+
+                    <!-- Phosphorylation -->
+                    {% for header, subs in headers %}
+                        {% for sub in subs%}
+                    <th class="{{ header.1|lower }}" style="max-width: 2rem;"></th><!-- Yadcf filter -->
+                        {% endfor %}
+                    {% endfor %}
+
+                    <!-- Couplings -->
+                    {% for labels in coupling_labels%}
+                        <th style="text-align: center;"></th>
+                    {% endfor %}
+
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in sites %}
+                <tr>
+                    <td class="text-center"><input class="alt" type="checkbox"></td>
+
+                    {% for key, val in row.items %}
+
+                        {% if key != 'logemaxec50' %}
+                            {% if key == 'icl2_seq' or key == 'icl3_seq' or key == 'c-term_seq' %}
+                                <td class="truncate {{ val.1 }}" style="text-align: center;"> {{ val.0 }} </td>
+                            {% else %}
+                                <td class="{{ val.1 }}" style="text-align: center;">{{ val.0|safe }}</td>
+                            {% endif %}
+                        {% endif %}
+                    {% endfor %}
+
+                    {% for val1, val2, val3 in row.logemaxec50 %}
+                    <td style="text-align: center;">{{ val2|safe }}</td>
+                    {% endfor %}
+                </tr>
                 {% endfor %}
                 <!-- logmax -->
                 <th>arrb1</th>
