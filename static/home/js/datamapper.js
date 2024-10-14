@@ -229,7 +229,7 @@ function draw_tree(data, options,circle_size) {
                 dy = parseFloat(text.attr("dy")),
                 tspan = text.text(null).append("tspan").attr("x", 0).attr("y", y).attr("dy", dy + "em");
             
-            let word = words.pop(); // Initialize the first word
+            word = words.pop(); // Initialize the first word
             while (word !== undefined) {
                 line.push(word);
                 tspan.text(line.join(" "));
