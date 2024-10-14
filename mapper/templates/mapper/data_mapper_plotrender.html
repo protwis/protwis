@@ -1188,20 +1188,10 @@ function Tree_handleColorPickerState(elementId, action) {
     Tree_circles = {{ circles|safe }};
     Tree_label_dict = {{ whole_dict|safe }};
     Tree_datatypes_dict = {{ Tree_datatypes|safe }};
-
     const maxLeafNodeLenght_scaler = 2.5
 
     tree_data = update_tree_data(tree_data,tree_options.depth);
     const depth = tree_options.depth;  // Set this value when the page loads
-
-    // Handler for one class -> reduce the depth
-    if (tree_options.depth == 4) {
-      maxLeafNodeLenght = maxLeafNodeLenght_scaler*parseInt(tree_options.fontSize.receptor);
-    } else if (tree_options.depth == 3) {
-      maxLeafNodeLenght = maxLeafNodeLenght_scaler*parseInt(tree_options.fontSize.receptor);
-    }
-    circle_size = 4;
-    circle_spacer = circle_size*2+1;
 
     var Tree_circle_styling_dict = {
       "Inner":'Three',
@@ -1266,7 +1256,7 @@ function Tree_handleColorPickerState(elementId, action) {
     });
     // # Initialize tree plot #
     document.addEventListener("DOMContentLoaded", function() {
-      ReDraw_all();
+      initdraw();
     });
 
 
@@ -1504,6 +1494,35 @@ document.getElementById('Tree_circleSpacerSlider').addEventListener('input', fun
   document.getElementById('Tree_circleSpacerValue').textContent = this.value;
   updateTreePlot(); // Dynamically update the tree plot
 });
+
+function initdraw() {
+  const Tree_Slider_circleSize = document.getElementById("Tree_circleSizeSlider");
+  const Tree_Slider_circleSize_value = Tree_Slider_circleSize.value;
+
+  const Tree_Slider_circleSpacer = document.getElementById("Tree_circleSpacerSlider");
+  const Tree_Slider_circleSpacer_value = Tree_Slider_circleSpacer.value;
+
+  // Recalculate circle size and spacer
+  circle_size = 3 + 1 * Tree_Slider_circleSize_value;
+  circle_spacer = circle_size * (2 + 0.5 * Tree_Slider_circleSpacer_value) + 1;
+
+  const classFontSize = $("#classFontSizeSlider").val();
+  const ligandTypeFontSize = $("#ligandTypeFontSizeSlider").val();
+  const receptorFamilyFontSize = $("#receptorFamilyFontSizeSlider").val();
+  const receptorFontSize = $("#receptorFontSizeSlider").val();
+
+  // Update the tree options with the new font sizes
+  tree_options.fontSize.class = `${classFontSize}px`;
+  tree_options.fontSize.ligandtype = `${ligandTypeFontSize}px`;
+  tree_options.fontSize.receptorfamily = `${receptorFamilyFontSize}px`;
+  tree_options.fontSize.receptor = `${receptorFontSize}px`;
+
+  // Recalculate max leaf node length based on the selected depth
+  maxLeafNodeLenght = maxLeafNodeLenght_scaler * parseInt(tree_options.fontSize.receptor);
+
+  // Redraw the tree and circles with updated font sizes
+  ReDraw_all();
+}
 
 
 </script>

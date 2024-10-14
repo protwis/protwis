@@ -749,7 +749,7 @@ function createAnnotations(filteredData, colorOption, textColorEnabled, colorMap
             y: d.y,
             xref: 'x',
             yref: 'y',
-            text: `${d.label.toUpperCase()}: ${d.fill}`,  // Combine label and fill for hover text
+            text: `${d.label.toUpperCase()}`,  // Combine label and fill for hover text
             showarrow: false,
             font: {
                 family: 'Arial',
