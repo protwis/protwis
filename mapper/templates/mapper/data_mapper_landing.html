@@ -236,7 +236,7 @@
               {% for plot in plots_status %}
                 {% if plot.status == 'Success' %}
                   <h4 class="plot-item">
-                    <img src="{% static 'home/images/Mapper_Success.png' %}" width="20" height="20" style="vertical-align: middle; margin-right: 5px;">
+                    <img src="{% static 'home/images/Mapper_Success_image.png' %}" width="20" height="20" style="vertical-align: middle; margin-right: 5px;">
                     {{ plot.plot_name }}
                     <span class="plot-status">Plot available for rendering</span>
                   </h4>
@@ -275,13 +275,13 @@
               {% for plot in plots_status %}
                 {% if plot.status == 'Success' %}
                   <h4 class="plot-item">
-                    <img src="{% static 'home/images/Mapper_Success.png' %}" width="20" height="20" style="vertical-align: middle; margin-right: 5px;">
+                    <img src="{% static 'home/images/Mapper_Success_image.png' %}" width="20" height="20" style="vertical-align: middle; margin-right: 5px;">
                     {{ plot.plot_name }}
                     <span class="plot-status">Plot available for rendering</span>
                   </h4>
                 {% elif plot.status == 'Empty sheet' %}
                   <h4 class="expandable_partially_success plot-item" data-target="sortable-{{ forloop.counter }}">
-                    <img src="{% static 'home/images/Mapper_NoData.png' %}" width="22" height="22" style="vertical-align: middle; margin-right: 5px;">
+                    <img src="{% static 'home/images/Mapper_NoData_image.png' %}" width="22" height="22" style="vertical-align: middle; margin-right: 5px;">
                     {{ plot.plot_name }}
                     <i class="fas fa-chevron-right dropdown-icon" style="margin-left: 10px;"></i>
                     <div class="right-content">
@@ -293,7 +293,7 @@
                   </ul>
                 {% elif plot.status == "Failed" %}
                   <h4 class="expandable_partially_success" data-target="sortable-{{ forloop.counter }}" >
-                    <img src="{% static 'home/images/Mapper_Failed.png' %}" width="22" height="22" style="vertical-align: middle; margin-right: 5px;">
+                    <img src="{% static 'home/images/Mapper_Failed_image.png' %}" width="22" height="22" style="vertical-align: middle; margin-right: 5px;">
                     {{ plot.plot_name }}
                     <i class="fas fa-chevron-right dropdown-icon" style="margin-left: 10px;"></i>
                     <div class="right-content">
@@ -362,13 +362,13 @@
               {% for plot in plots_status %}
                 {% if plot.status == 'Success' %}
                   <h4 class="plot-item">
-                    <img src="{% static 'home/images/Mapper_Success.png' %}" width="20" height="20" style="vertical-align: middle; margin-right: 5px;">
+                    <img src="{% static 'home/images/Mapper_Success_image.png' %}" width="20" height="20" style="vertical-align: middle; margin-right: 5px;">
                     {{ plot.plot_name }}
                     <span class="plot-status">Plot available for rendering</span>
                   </h4>
                 {% elif plot.status == 'Empty sheet' %}
                   <h4 class="expandable_failed plot-item" data-target="sortable_failed-{{ forloop.counter }}">
-                    <img src="{% static 'home/images/Mapper_NoData.png' %}" width="22" height="22" style="vertical-align: middle; margin-right: 5px;">
+                    <img src="{% static 'home/images/Mapper_NoData_image.png' %}" width="22" height="22" style="vertical-align: middle; margin-right: 5px;">
                     {{ plot.plot_name }}
                     <i class="fas fa-chevron-right dropdown-icon" style="margin-left: 10px;"></i>
                     <div class="right-content">
@@ -380,7 +380,7 @@
                   </ul>
                 {% elif plot.status == "Failed" %}
                   <h4 class="expandable_failed plot-item" data-target="sortable_failed-{{ forloop.counter }}">
-                    <img src="{% static 'home/images/Mapper_Failed.png' %}" width="22" height="22" style="vertical-align: middle; margin-right: 5px;">
+                    <img src="{% static 'home/images/Mapper_Failed_image.png' %}" width="22" height="22" style="vertical-align: middle; margin-right: 5px;">
                     {{ plot.plot_name }}
                     <i class="fas fa-chevron-right dropdown-icon" style="margin-left: 10px;"></i>
                     <div class="right-content">

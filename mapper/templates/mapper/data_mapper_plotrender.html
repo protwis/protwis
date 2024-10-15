@@ -42,7 +42,7 @@
       align-items: center;
     }
 
-    #plotContainer_umap {
+    #plotContainer_cluster {
         width: 1600px; /* Set width */
         height: 1200px; /* Set height */
         margin: auto; /* Center the plot */
@@ -132,7 +132,7 @@
 <!-- ## Tab content ## -->
 <div class="tab-content">
   <!-- ##################### -->
-  <!-- ## tab 5 - GPCRome ## -->
+  <!-- ## tab 1 - GPCRome ## -->
   <!-- ##################### -->
   {% if Plot_evaluation_json.0 %}
   <div id="tab1" class="tab-pane fade {% if first_active_tab == '#tab1' %}in active{% endif %}">
@@ -229,7 +229,7 @@
     </div>
   {% endif %}
   <!-- ####################### -->
-  <!-- ##   Tab 1 - Tree    ## -->
+  <!-- ##   Tab 2 - Tree    ## -->
   <!-- ####################### -->
   {% if Plot_evaluation_json.1 %}
   <div id="tab2" class="tab-pane fade {% if first_active_tab == '#tab2' %}in active{% endif %}">
@@ -253,11 +253,34 @@
                       Color styling
                   </button>
                   <div class="dropdown-menu dropdown-menu-listplot" aria-labelledby="Styling_Menu">
+                  
+                  <!-- Outer1 Color Pickers with Dropdown -->
+                  <div class="col-md-12" style="width: 550px; margin-top: 20px;">
+                    <div class="col-md-1 text-center" style="width: 50px;">
+                        <h5>Inner</h5>
+                    </div>
+                    <div class="col-md-3 text-center" style="width: 150px;">
+                        <select id="Inner_Style" class="form-select" style="height: 30px;">
+                            <option value="White-Color">White-Color</option>
+                            <option value="Color-Color">Color-Color</option>
+                            <option value="Color-White-Color">Color-White-Color</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 text-center" style="width: 100px;">
+                        <input type="text" id="Tree_colorPicker_min_Inner" placeholder="Min Color" />
+                    </div>
+                    <div class="col-md-2 text-center" style="width: 100px;">
+                        <input type="text" id="Tree_colorPicker_middle_Inner" placeholder="Middle Color" />
+                    </div>
+                    <div class="col-md-2 text-center" style="width: 100px;">
+                        <input type="text" id="Tree_colorPicker_max_Inner" placeholder="Max Color" />
+                    </div>
+                  </div>
 
                   <!-- Outer1 Color Pickers with Dropdown -->
                   <div class="col-md-12" style="width: 550px; margin-top: 20px;">
                       <div class="col-md-1 text-center" style="width: 50px;">
-                          <h5>Outer1</h5>
+                          <h5>Outer 1</h5>
                       </div>
                       <div class="col-md-3 text-center" style="width: 150px;">
                           <select id="Outer1_Style" class="form-select" style="height: 30px;">
@@ -280,7 +303,7 @@
                   <!-- Outer2 Color Pickers with Dropdown -->
                   <div class="col-md-12" style="width: 550px; margin-top: 20px;">
                     <div class="col-md-1 text-center" style="width: 50px;">
-                        <h5>Outer2</h5>
+                        <h5>Outer 2</h5>
                     </div>
                     <div class="col-md-3 text-center" style="width: 150px;">
                         <select id="Outer2_Style" class="form-select" style="height: 30px;">
@@ -303,7 +326,7 @@
                   <!-- Outer3 Color Pickers with Dropdown -->
                   <div class="col-md-12" style="width: 550px; margin-top: 20px;">
                     <div class="col-md-1 text-center" style="width: 50px;">
-                        <h5>Outer3</h5>
+                        <h5>Outer 3</h5>
                     </div>
                     <div class="col-md-3 text-center" style="width: 150px;">
                         <select id="Outer3_Style" class="form-select" style="height: 30px;">
@@ -326,7 +349,7 @@
                   <!-- Outer4 Color Pickers with Dropdown -->
                   <div class="col-md-12" style="width: 550px; margin-top: 20px;">
                     <div class="col-md-1 text-center" style="width: 50px;">
-                        <h5>Outer4</h5>
+                        <h5>Outer 4</h5>
                     </div>
                     <div class="col-md-3 text-center" style="width: 150px;">
                         <select id="Outer4_Style" class="form-select" style="height: 30px;">
@@ -349,7 +372,7 @@
                   <!-- Outer5 Color Pickers with Dropdown -->
                   <div class="col-md-12" style="width: 550px; margin-top: 20px;">
                     <div class="col-md-1 text-center" style="width: 50px;">
-                        <h5>Outer5</h5>
+                        <h5>Outer 5</h5>
                     </div>
                     <div class="col-md-3 text-center" style="width: 150px;">
                         <select id="Outer5_Style" class="form-select" style="height: 30px;">
@@ -497,36 +520,11 @@
   </div>
   {% endif %}
   <!-- ####################### -->
-  <!-- ## Tab 2 - Cluster   ## -->
+  <!-- ## Tab 3 - Cluster   ## -->
   <!-- ####################### -->
   {% if Plot_evaluation_json.2 %}
     <div id="tab3" class="tab-pane fade {% if first_active_tab == '#tab3' %}in active{% endif %}">
       <div style="padding-top: 10px; font-size: 14px; white-space: nowrap;">
-        <!-- <div class="col-md-12" style="padding-top: 20px;">
-          <div class="col-md-4">
-          Clustering by:
-            <div class="btn-group" role="group" id="gtp_plus">
-                <button id="datasetSeq" class="btn btn-info active">Sequence similiarity</button>
-                <button id="datasetStructure" class="btn btn-info">Structure similiarity</button>
-            </div>
-          </div>
-          <div class="col-md-6"></div>
-          <div class="col-md-2">
-            <div class="text-center">
-                <div class="dropdown">
-                    <button type="button" class="btn btn-primary dropdown-toggle" style="font-size: 14px;" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <span class="glyphicon glyphicon-download" style="vertical-align: top;line-height: 1.3"></span> Download <span class="caret"></span>
-                    </button>
-                    <div class="dropdown-menu dropdown-menu-right-middle">
-                        <li><a class="dropdown-item" href="javascript:downloadPlot('svg');">SVG</a></li>
-                        <li><a class="dropdown-item" href="javascript:downloadPlot('png');">PNG</a></li>
-                        <li><a class="dropdown-item" href="javascript:downloadPlot('jpg');">JPG</a></li>
-                        <li><a class="dropdown-item" href="javascript:downloadPlot('tiff');">TIFF</a></li>
-                    </div>
-                </div>
-            </div>
-        </div>
-        </div> -->
         <div class="col-md-12" style="padding-top: 20px;">
           <div class="col-md-1">Color by:</div>
             <div class="col-md-7">
@@ -561,7 +559,7 @@
             <div class="btn-group" role="group" id="gtp_plus">
                 <button id="show" class="btn btn-info">Show</button>
                 <button id="hide" class="btn btn-info active">Hide</button>
-                <button id="rerenderLabels" type="button" class="btn btn-custom-blue">Rerender Labels</button>
+                <button id="textColorToggleButton" type="button" class="btn btn-info" style="width: 50%; font-weight: bold;">Text Color: Yes</button>
             </div>
           </div>
           <div class="col-md-6"></div>
@@ -584,25 +582,67 @@
                                   <span id="clusterSliderValue">5</span>
                               </div>
                           </div>
-
-                          <!-- Render Plot Button -->
-                          <div class="col-md-12" style="text-align: center;">
-                              <div class="text-center" style="margin-bottom: 20px;">
-                                  <button id="renderClusterPlot" type="button" class="btn btn-primary" style="font-size: 18px;">Render Clustering</button>
-                              </div>
-                          </div>
                       </div>
                   </div>
               </div>
+              <div class="col-md-2" style="margin-left: 10px; margin-right: -10px;margin-top: 30px;">
+                <div class="dropdown" style="width: 400px !important;">
+                    <button class="btn btn-primary dropdown-toggle" type="button" id="clusteringMenu_datastyling" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Data Styling
+                    </button>
+                    <div class="dropdown-menu p-3" aria-labelledby="clusteringMenu_datastyling">
+            
+                        <!-- Label Font Size Slider -->
+                        <div class="col-md-12" style="text-align: center;">
+                          <label for="cluster_labelFontSizeSlider" id="cluster_labelFontSizeLabel" class="form-label">Label Font Size</label>
+                        </div>
+                        <div class="col-md-12" style="margin-bottom: 10px;">
+                          <input type="range" class="form-range" min="5" max="25" value="14" id="cluster_labelFontSizeSlider">
+                          <div style="text-align: center;">
+                              <span id="cluster_labelFontSizeValue">14</span>px
+                          </div>
+                        </div>
+            
+                        <!-- Marker Size Slider -->
+                        <div class="col-md-12" style="text-align: center;">
+                            <label for="cluster_markerSizeSlider" id="cluster_markerSizeLabel" class="form-label">Marker Size</label>
+                        </div>
+                        <div class="col-md-12" style="margin-bottom: 10px;">
+                            <input type="range" class="form-range" min="5" max="20" value="10" id="cluster_markerSizeSlider">
+                            <div style="text-align: center;">
+                                <span id="cluster_markerSizeValue">10</span>px
+                            </div>
+                        </div>
+            
+                      <!-- Stroke Width Slider -->
+                      <div class="col-md-12" style="text-align: center;">
+                        <label for="cluster_strokeWidthSlider" id="cluster_strokeWidthLabel" class="form-label">Stroke Width</label>
+                      </div>
+                      <div class="col-md-12" style="margin-bottom: 10px;">
+                        <input type="range" class="form-range" min="0.1" max="2" value="0.5" step="0.1" id="cluster_strokeWidthSlider">
+                        <div style="text-align: center;">
+                            <span id="cluster_strokeWidthValue">0.5</span>px
+                        </div>
+                      </div>
+            
+                        <!-- Border Toggle Button -->
+                        <div class="col-md-12" style="text-align: center;margin-bottom: 20px;">
+                          <button id="borderToggleButton" type="button" class="btn btn-primary" style="width: 50%; font-weight: bold;">Border: On</button>
+                        </div>
+            
+                    </div>
+                </div>
+            </div>
+            
       </div>
 
       <!-- Container for the Plotly Plot -->
-      <div id="plotContainer_umap" style="width: 1600px; height: 1200px;"></div>
+      <div id="plotContainer_cluster" style="width: 1600px; height: 1200px;"></div>
     </div>
   </div>
   {% endif %}
   <!-- ####################### -->
-  <!-- ##   Tab 3 - List    ## -->
+  <!-- ##   Tab 4 - List    ## -->
   <!-- ####################### -->
   {% if Plot_evaluation_json.3 %}
     <div id="tab4" class="tab-pane fade {% if first_active_tab == '#tab4' %}in active{% endif %}">
@@ -686,130 +726,130 @@
 
                 <!-- Layer1 (Class) Styling Section -->
                 <div class="col-md-12" style="width:300px;margin-top: 20px;margin-bottom: 20px;">
-                  <h4>Class (Layer1)</h4>
+                  <h4>Class</h4>
                   <!-- Color Picker -->
                   <div class="col-md-6">
                     <div class="color-picker">
                       <label>Color:</label>
-                      <input type="text" id="colorPicker_Layer1" />
+                      <input type="text" id="colorPicker_Class" />
                     </div>
                   </div>
 
                   <!-- Styling Checkboxes -->
                   <div class="col-md-12" style="margin-top: 20px;">
                     <div class="form-check col-md-4" style="padding-left:0;padding-right:0;">
-                      <input class="form-check-input" type="checkbox" value="" id="boldCheckbox_Layer1">
-                      <label class="form-check-label" for="boldCheckbox_Layer1">Bold</label>
+                      <input class="form-check-input" type="checkbox" value="" id="boldCheckbox_Class">
+                      <label class="form-check-label" for="boldCheckbox_Class">Bold</label>
                     </div>
                     <div class="form-check col-md-4" style="padding-left:0;padding-right:0;">
-                      <input class="form-check-input" type="checkbox" value="" id="italicCheckbox_Layer1">
-                      <label class="form-check-label" for="italicCheckbox_Layer1">Italic</label>
+                      <input class="form-check-input" type="checkbox" value="" id="italicCheckbox_Class">
+                      <label class="form-check-label" for="italicCheckbox_Class">Italic</label>
                     </div>
                     <div class="form-check col-md-4" style="padding-left:0;padding-right:0;">
-                      <input class="form-check-input" type="checkbox" value="" id="underlineCheckbox_Layer1">
-                      <label class="form-check-label" for="underlineCheckbox_Layer1">Underline</label>
+                      <input class="form-check-input" type="checkbox" value="" id="underlineCheckbox_Class">
+                      <label class="form-check-label" for="underlineCheckbox_Class">Underline</label>
                     </div>
                   </div>
 
                   <!-- Font Size Slider -->
                   <div class="col-md-12" style="text-align: center;">
-                    <label for="fontSizeSlider_Layer1" id="fontSizeSliderLabel_Layer1" class="form-label">Font Size: 20px</label>
+                    <label for="fontSizeSlider_Class" id="fontSizeSliderLabel_Class" class="form-label">Font Size: 20px</label>
                   </div>
                   <div class="col-md-12" style="margin-bottom: 30px;">
-                    <input type="range" class="form-range" min="8" max="32" id="fontSizeSlider_Layer1">
+                    <input type="range" class="form-range" min="8" max="32" id="fontSizeSlider_Class">
                   </div>
                 </div>
 
-                <!-- Layer2 (Ligand type) Styling Section -->
+                <!-- LigandType (Ligand type) Styling Section -->
                 <div class="col-md-12" style="width:300px;margin-top: 20px;margin-bottom: 20px;">
-                  <h4>Ligand type (Layer2)</h4>
+                  <h4>Ligand type</h4>
                   <div class="color-picker">
                     <label>Color:</label>
-                    <input type="text" id="colorPicker_Layer2" />
+                    <input type="text" id="colorPicker_LigandType" />
                   </div>
 
                   <div class="col-md-12" style="margin-top: 20px;">
                     <div class="form-check col-md-4" style="padding-left:0;padding-right:0;">
-                      <input class="form-check-input" type="checkbox" value="" id="boldCheckbox_Layer2">
-                      <label class="form-check-label" for="boldCheckbox_Layer2">Bold</label>
+                      <input class="form-check-input" type="checkbox" value="" id="boldCheckbox_LigandType">
+                      <label class="form-check-label" for="boldCheckbox_LigandType">Bold</label>
                     </div>
                     <div class="form-check col-md-4" style="padding-left:0;padding-right:0;">
-                      <input class="form-check-input" type="checkbox" value="" id="italicCheckbox_Layer2">
-                      <label class="form-check-label" for="italicCheckbox_Layer2">Italic</label>
+                      <input class="form-check-input" type="checkbox" value="" id="italicCheckbox_LigandType">
+                      <label class="form-check-label" for="italicCheckbox_LigandType">Italic</label>
                     </div>
                     <div class="form-check col-md-4" style="padding-left:0;padding-right:0;">
-                      <input class="form-check-input" type="checkbox" value="" id="underlineCheckbox_Layer2">
-                      <label class="form-check-label" for="underlineCheckbox_Layer2">Underline</label>
+                      <input class="form-check-input" type="checkbox" value="" id="underlineCheckbox_LigandType">
+                      <label class="form-check-label" for="underlineCheckbox_LigandType">Underline</label>
                     </div>
                   </div>
 
                   <div class="col-md-12" style="text-align: center;">
-                    <label for="fontSizeSlider_Layer2" id="fontSizeSliderLabel_Layer2" class="form-label">Font Size: 18px</label>
+                    <label for="fontSizeSlider_LigandType" id="fontSizeSliderLabel_LigandType" class="form-label">Font Size: 18px</label>
                   </div>
                   <div class="col-md-12" style="margin-bottom: 30px;">
-                    <input type="range" class="form-range" min="8" max="32" id="fontSizeSlider_Layer2">
+                    <input type="range" class="form-range" min="8" max="28" id="fontSizeSlider_LigandType">
                   </div>
                 </div>
 
-                <!-- Layer3 (Receptor family) Styling Section -->
+                <!-- ReceptorFamily (Receptor family) Styling Section -->
                 <div class="col-md-12" style="width:300px;margin-top: 20px;margin-bottom: 20px;">
-                  <h4>Receptor family (Layer3)</h4>
+                  <h4>Receptor family</h4>
                   <div class="color-picker">
                     <label>Color:</label>
-                    <input type="text" id="colorPicker_Layer3" />
+                    <input type="text" id="colorPicker_ReceptorFamily" />
                   </div>
 
                   <div class="col-md-12" style="margin-top: 20px;">
                     <div class="form-check col-md-4" style="padding-left:0;padding-right:0;">
-                      <input class="form-check-input" type="checkbox" value="" id="boldCheckbox_Layer3">
-                      <label class="form-check-label" for="boldCheckbox_Layer3">Bold</label>
+                      <input class="form-check-input" type="checkbox" value="" id="boldCheckbox_ReceptorFamily">
+                      <label class="form-check-label" for="boldCheckbox_ReceptorFamily">Bold</label>
                     </div>
                     <div class="form-check col-md-4" style="padding-left:0;padding-right:0;">
-                      <input class="form-check-input" type="checkbox" value="" id="italicCheckbox_Layer3">
-                      <label class="form-check-label" for="italicCheckbox_Layer3">Italic</label>
+                      <input class="form-check-input" type="checkbox" value="" id="italicCheckbox_ReceptorFamily">
+                      <label class="form-check-label" for="italicCheckbox_ReceptorFamily">Italic</label>
                     </div>
                     <div class="form-check col-md-4" style="padding-left:0;padding-right:0;">
-                      <input class="form-check-input" type="checkbox" value="" id="underlineCheckbox_Layer3">
-                      <label class="form-check-label" for="underlineCheckbox_Layer3">Underline</label>
+                      <input class="form-check-input" type="checkbox" value="" id="underlineCheckbox_ReceptorFamily">
+                      <label class="form-check-label" for="underlineCheckbox_ReceptorFamily">Underline</label>
                     </div>
                   </div>
 
                   <div class="col-md-12" style="text-align: center;">
-                    <label for="fontSizeSlider_Layer3" id="fontSizeSliderLabel_Layer3" class="form-label">Font Size: 16px</label>
+                    <label for="fontSizeSlider_ReceptorFamily" id="fontSizeSliderLabel_ReceptorFamily" class="form-label">Font Size: 16px</label>
                   </div>
                   <div class="col-md-12" style="margin-bottom: 30px;">
-                    <input type="range" class="form-range" min="8" max="32" id="fontSizeSlider_Layer3">
+                    <input type="range" class="form-range" min="8" max="28" id="fontSizeSlider_ReceptorFamily">
                   </div>
                 </div>
 
-                <!-- Layer4 (Receptor) Styling Section -->
+                <!-- Receptor (Receptor) Styling Section -->
                 <div class="col-md-12" style="width:300px;margin-top: 20px;margin-bottom: 20px;">
-                  <h4>Receptor (Layer4)</h4>
+                  <h4>Receptor</h4>
                   <div class="color-picker">
                     <label>Color:</label>
-                    <input type="text" id="colorPicker_Layer4" />
+                    <input type="text" id="colorPicker_Receptor" />
                   </div>
 
                   <div class="col-md-12" style="margin-top: 20px;">
                     <div class="form-check col-md-4" style="padding-left:0;padding-right:0;">
-                      <input class="form-check-input" type="checkbox" value="" id="boldCheckbox_Layer4">
-                      <label class="form-check-label" for="boldCheckbox_Layer4">Bold</label>
+                      <input class="form-check-input" type="checkbox" value="" id="boldCheckbox_Receptor">
+                      <label class="form-check-label" for="boldCheckbox_Receptor">Bold</label>
                     </div>
                     <div class="form-check col-md-4" style="padding-left:0;padding-right:0;">
-                      <input class="form-check-input" type="checkbox" value="" id="italicCheckbox_Layer4">
-                      <label class="form-check-label" for="italicCheckbox_Layer4">Italic</label>
+                      <input class="form-check-input" type="checkbox" value="" id="italicCheckbox_Receptor">
+                      <label class="form-check-label" for="italicCheckbox_Receptor">Italic</label>
                     </div>
                     <div class="form-check col-md-4" style="padding-left:0;padding-right:0;">
-                      <input class="form-check-input" type="checkbox" value="" id="underlineCheckbox_Layer4">
-                      <label class="form-check-label" for="underlineCheckbox_Layer4">Underline</label>
+                      <input class="form-check-input" type="checkbox" value="" id="underlineCheckbox_Receptor">
+                      <label class="form-check-label" for="underlineCheckbox_Receptor">Underline</label>
                     </div>
                   </div>
 
                   <div class="col-md-12" style="text-align: center;">
-                    <label for="fontSizeSlider_Layer4" id="fontSizeSliderLabel_Layer4" class="form-label">Font Size: 14px</label>
+                    <label for="fontSizeSlider_Receptor" id="fontSizeSliderLabel_Receptor" class="form-label">Font Size: 14px</label>
                   </div>
                   <div class="col-md-12" style="margin-bottom: 30px;">
-                    <input type="range" class="form-range" min="8" max="32" id="fontSizeSlider_Layer4">
+                    <input type="range" class="form-range" min="8" max="26" id="fontSizeSlider_Receptor">
                   </div>
                 </div>
 
@@ -861,8 +901,8 @@
         <div>
           Receptor names:
             <div class="btn-group" role="group" id="gtp_plus">
-                <button id="List_UniProtNames" class="btn btn-info">UniProt</button>
-                <button id="List_IUPHARNames" class="btn btn-info active">IUPHAR</button>
+                <button id="List_UniProtNames" class="btn btn-info">Gene</button>
+                <button id="List_IUPHARNames" class="btn btn-info active">Protein</button>
             </div>
         </div>
       </div>
@@ -871,7 +911,7 @@
 
   {% endif %}
   <!-- ##################### -->
-  <!-- ## Tab 4 - Heatmap ## -->
+  <!-- ## Tab 5 - Heatmap ## -->
   <!-- ##################### -->
   {% if Plot_evaluation_json.4 %}
     <div id="tab5" class="tab-pane fade {% if first_active_tab == '#tab5' %}in active{% endif %}">
@@ -881,8 +921,8 @@
         <div>
           Receptor names:
             <div class="btn-group" role="group" id="gtp_plus">
-                <button id="Heatmap_UniProtNames" class="btn btn-info active">UniProt</button>
-                <button id="Heatmap_IUPHARNames" class="btn btn-info">IUPHAR</button>
+                <button id="Heatmap_UniProtNames" class="btn btn-info active">Gene</button>
+                <button id="Heatmap_IUPHARNames" class="btn btn-info">Protein</button>
             </div>
         </div>
       </div>
@@ -1034,7 +1074,6 @@
 <script src="{% static 'home/js/d3.v4.min.js' %}"></script>
 <script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
 <script src="{% static 'home/js/saveSvg.js' %}"></script>
-<!-- <script src="{% static 'home/js/phylo_tree.js' %}"></script> -->
 <script src="{% static 'home/js/datamapper.js' %}"></script>
 <script src="{% static 'home/js/plotly_v1_58_5.js' %}"></script>
 <script src="{% static 'home/js/popper.min.js' %}"></script>
@@ -1148,21 +1187,14 @@ function Tree_handleColorPickerState(elementId, action) {
     tree_options = {{ tree_options | safe }};
     Tree_circles = {{ circles|safe }};
     Tree_label_dict = {{ whole_dict|safe }};
+    Tree_datatypes_dict = {{ Tree_datatypes|safe }};
+    const maxLeafNodeLenght_scaler = 2.5
 
     tree_data = update_tree_data(tree_data,tree_options.depth);
     const depth = tree_options.depth;  // Set this value when the page loads
 
-    // Handler for one class -> reduce the depth
-    if (tree_options.depth == 4) {
-      maxLeafNodeLenght = 4*parseInt(tree_options.fontSize.receptor);
-    } else if (tree_options.depth == 3) {
-      maxLeafNodeLenght = 4*parseInt(tree_options.fontSize.receptorfamily);
-    }
-    circle_size = 4;
-    circle_spacer = circle_size*2+1;
-
     var Tree_circle_styling_dict = {
-      "Inner":'One',
+      "Inner":'Three',
       "Outer1":"One",
       "Outer2":"Two",
       "Outer3":"Two",
@@ -1170,30 +1202,61 @@ function Tree_handleColorPickerState(elementId, action) {
       "Outer5":"Three",
     }
 
-    Tree_colors = {"Outer1":["#FFFFFF","#0000FF"],
+    Tree_colors = {"Inner":["#FFFFFF","#000000"],
+                  "Outer1":["#FFFFFF","#0000FF"],
                   "Outer2":["#FFFFFF","#FF0000"],
                   "Outer3":["#FFFFFF","#22c7b1"],
                   "Outer4":["#FFFFFF","#008000"],
                   "Outer5":["#FFFFFF","#FFA500"]};
 
+
+    // Function to change the active button and call changeLeavesLabels with the active value
+    function updateLeavesLabels() {
+        var activeLabelType;
+
+        // Check which button is active
+        if (document.getElementById("TREE_UniProtNames").classList.contains("active")) {
+            activeLabelType = "UniProt";  // If "Gene" button is active
+        } else {
+            activeLabelType = "IUPHAR";  // If "Protein" button is active
+        }
+
+        // Call the function with the active label type
+        changeLeavesLabels("tree_plot", activeLabelType, Tree_label_dict);
+    }
+
+    function ReDraw_all() {
+      draw_tree(tree_data, tree_options,circle_size);
+      updateLeavesLabels();
+      DrawCircles('tree_plot', Tree_circles, maxLeafNodeLenght, Tree_colors, true, true,Tree_circle_styling_dict,circle_spacer,circle_size);
+      createLegendBars('legend_bars', Tree_circles, Tree_colors, Tree_circle_styling_dict, Tree_datatypes_dict.Tree);
+    }
+
+    function ReDraw_Circles_and_Labels() {
+      updateLeavesLabels();
+      DrawCircles('tree_plot', Tree_circles, maxLeafNodeLenght, Tree_colors, true, true,Tree_circle_styling_dict,circle_spacer,circle_size);
+      
+    }
+
+    function ReDraw_cicles_and_bars() {
+      DrawCircles('tree_plot', Tree_circles, maxLeafNodeLenght, Tree_colors, true, true,Tree_circle_styling_dict,circle_spacer,circle_size);
+      createLegendBars('legend_bars', Tree_circles, Tree_colors, Tree_circle_styling_dict, Tree_datatypes_dict.Tree);
+    }
+
     // # Change leaves buttons #
     $("#TREE_UniProtNames").click(function(){
         $("#TREE_UniProtNames").addClass("active");
         $("#TREE_IUPHARNames").removeClass("active");
-        changeLeavesLabels("tree_plot", "UniProt", Tree_label_dict);
-        DrawCircles('tree_plot', Tree_circles, maxLeafNodeLenght, Tree_colors, true, true,Tree_circle_styling_dict,circle_spacer,circle_size);
+        ReDraw_Circles_and_Labels();
     });
     $("#TREE_IUPHARNames").click(function() {
-      $("#TREE_UniProtNames_bal").removeClass("active");
-      $("#TREE_IUPHARNames_bal").addClass("active");
-      changeLeavesLabels("tree_plot","IUPHAR", Tree_label_dict);
-      DrawCircles('tree_plot', Tree_circles, maxLeafNodeLenght, Tree_colors,true,true,Tree_circle_styling_dict,circle_spacer,circle_size);
+      $("#TREE_UniProtNames").removeClass("active");
+      $("#TREE_IUPHARNames").addClass("active");
+      ReDraw_Circles_and_Labels();
     });
     // # Initialize tree plot #
     document.addEventListener("DOMContentLoaded", function() {
-      draw_tree(tree_data, tree_options,circle_size);
-      DrawCircles('tree_plot', Tree_circles, maxLeafNodeLenght, Tree_colors, true, true,Tree_circle_styling_dict,circle_spacer,circle_size);
-      createLegendBars('legend_bars', Tree_circles, Tree_colors,Tree_circle_styling_dict);
+      initdraw();
     });
 
 
@@ -1223,8 +1286,8 @@ function Tree_handleColorPickerState(elementId, action) {
           Tree_circle_styling_dict.Inner = "Three";
       }
       // Updated state - Draw circles
-      DrawCircles('tree_plot', Tree_circles, maxLeafNodeLenght, Tree_colors, true, true,Tree_circle_styling_dict,circle_spacer,circle_size);
-      createLegendBars('legend_bars', Tree_circles, Tree_colors,Tree_circle_styling_dict);
+      ReDraw_cicles_and_bars();
+      
   });
 
   // Handle Dropdown Changes for Outer1
@@ -1244,8 +1307,7 @@ function Tree_handleColorPickerState(elementId, action) {
           Tree_circle_styling_dict.Outer1 = "Three";
       }
       // Updated state - Draw circles
-      DrawCircles('tree_plot', Tree_circles, maxLeafNodeLenght, Tree_colors, true, true,Tree_circle_styling_dict,circle_spacer,circle_size);
-      createLegendBars('legend_bars', Tree_circles, Tree_colors,Tree_circle_styling_dict);
+      ReDraw_cicles_and_bars();
   });
 
   // Handle Dropdown Changes for Outer2
@@ -1265,8 +1327,7 @@ function Tree_handleColorPickerState(elementId, action) {
           Tree_circle_styling_dict.Outer1 = "Three";
       }
       // Updated state - Draw circles
-      DrawCircles('tree_plot', Tree_circles, maxLeafNodeLenght, Tree_colors, true, true,Tree_circle_styling_dict,circle_spacer,circle_size);
-      createLegendBars('legend_bars', Tree_circles, Tree_colors,Tree_circle_styling_dict);
+      ReDraw_cicles_and_bars();
   });
 
   // Handle Dropdown Changes for Outer3
@@ -1286,8 +1347,7 @@ function Tree_handleColorPickerState(elementId, action) {
           Tree_circle_styling_dict.Outer1 = "Three";
       }
       // Updated state - Draw circles
-      DrawCircles('tree_plot', Tree_circles, maxLeafNodeLenght, Tree_colors, true, true,Tree_circle_styling_dict,circle_spacer,circle_size);
-      createLegendBars('legend_bars', Tree_circles, Tree_colors,Tree_circle_styling_dict);
+      ReDraw_cicles_and_bars();
   });
 
   // Handle Dropdown Changes for Outer4
@@ -1307,8 +1367,7 @@ function Tree_handleColorPickerState(elementId, action) {
           Tree_circle_styling_dict.Outer1 = "Three";
       }
       // Updated state - Draw circles
-      DrawCircles('tree_plot', Tree_circles, maxLeafNodeLenght, Tree_colors, true, true,Tree_circle_styling_dict,circle_spacer,circle_size);
-      createLegendBars('legend_bars', Tree_circles, Tree_colors,Tree_circle_styling_dict);
+      ReDraw_cicles_and_bars();
   });
 
   // Handle Dropdown Changes for Outer5
@@ -1328,8 +1387,7 @@ function Tree_handleColorPickerState(elementId, action) {
           Tree_circle_styling_dict.Outer1 = "Three";
       }
       // Updated state - Draw circles
-      DrawCircles('tree_plot', Tree_circles, maxLeafNodeLenght, Tree_colors, true, true,Tree_circle_styling_dict,circle_spacer,circle_size);
-      createLegendBars('legend_bars', Tree_circles, Tree_colors,Tree_circle_styling_dict);
+      ReDraw_cicles_and_bars();
   });
 
 // #################
@@ -1366,15 +1424,13 @@ function applyLabelStyling() {
 
     // Recalculate max leaf node length based on the selected depth
     if (tree_options.depth === 4) {
-        maxLeafNodeLenght = 4 * parseInt(tree_options.fontSize.receptor);
+        maxLeafNodeLenght = maxLeafNodeLenght_scaler * parseInt(tree_options.fontSize.receptor);
     } else if (tree_options.depth === 3) {
-        maxLeafNodeLenght = 4 * parseInt(tree_options.fontSize.receptorfamily);
+        maxLeafNodeLenght = maxLeafNodeLenght_scaler * parseInt(tree_options.fontSize.receptor);
     }
 
     // Redraw the tree and circles with updated font sizes
-    draw_tree(tree_data, tree_options, circle_size);
-    DrawCircles('tree_plot', Tree_circles, maxLeafNodeLenght, Tree_colors, true, true, Tree_circle_styling_dict, circle_spacer, circle_size);
-    createLegendBars('legend_bars', Tree_circles, Tree_colors, Tree_circle_styling_dict);
+    ReDraw_all();
 }
 
 // Attach event listeners for each slider to dynamically update the plot when changed
@@ -1425,8 +1481,7 @@ function updateTreePlot() {
   circle_spacer = circle_size * (2 + 0.5 * Tree_Slider_circleSpacer_value) + 1;
 
   // Render tree with new values
-  draw_tree(tree_data, tree_options, circle_size);
-  DrawCircles('tree_plot', Tree_circles, maxLeafNodeLenght, Tree_colors, true, true, Tree_circle_styling_dict, circle_spacer, circle_size);
+  ReDraw_all();
 }
 
 // Update slider value display and trigger plot update
@@ -1440,36 +1495,75 @@ document.getElementById('Tree_circleSpacerSlider').addEventListener('input', fun
   updateTreePlot(); // Dynamically update the tree plot
 });
 
+function initdraw() {
+  const Tree_Slider_circleSize = document.getElementById("Tree_circleSizeSlider");
+  const Tree_Slider_circleSize_value = Tree_Slider_circleSize.value;
+
+  const Tree_Slider_circleSpacer = document.getElementById("Tree_circleSpacerSlider");
+  const Tree_Slider_circleSpacer_value = Tree_Slider_circleSpacer.value;
+
+  // Recalculate circle size and spacer
+  circle_size = 3 + 1 * Tree_Slider_circleSize_value;
+  circle_spacer = circle_size * (2 + 0.5 * Tree_Slider_circleSpacer_value) + 1;
+
+  const classFontSize = $("#classFontSizeSlider").val();
+  const ligandTypeFontSize = $("#ligandTypeFontSizeSlider").val();
+  const receptorFamilyFontSize = $("#receptorFamilyFontSizeSlider").val();
+  const receptorFontSize = $("#receptorFontSizeSlider").val();
+
+  // Update the tree options with the new font sizes
+  tree_options.fontSize.class = `${classFontSize}px`;
+  tree_options.fontSize.ligandtype = `${ligandTypeFontSize}px`;
+  tree_options.fontSize.receptorfamily = `${receptorFamilyFontSize}px`;
+  tree_options.fontSize.receptor = `${receptorFontSize}px`;
+
+  // Recalculate max leaf node length based on the selected depth
+  maxLeafNodeLenght = maxLeafNodeLenght_scaler * parseInt(tree_options.fontSize.receptor);
+
+  // Redraw the tree and circles with updated font sizes
+  ReDraw_all();
+}
+
 
 </script>
+
 {% endif %}
 
 <!-- ################## -->
 <!-- ###  Cluster   ### -->
 <!-- ################## -->
 {% if Plot_evaluation_json.2 %}
-<script>
 
+<script>
+  
 $('.dropdown-menu').on('click', function(event){
     event.stopPropagation();
 });
 
+// Global variables for cluster data
+var cluster_data_seq = {{ cluster_data_seq|safe }};
+var currentClusterData = cluster_data_seq; // Default to cluster_data_seq
 
-// Global variable to store the cluster data
- // Global variables for cluster data
- var cluster_data_seq = {{ cluster_data_seq|safe }};
-  // var cluster_data_structure = {{ cluster_data_structure|safe }};
-  var currentClusterData = cluster_data_seq; // Default to cluster_data_seq
-
-// Predefined color palette
+// Predefined 20-color palette
 const colorPalette = [
     '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd',
-    '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'
+    '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf',
+    '#393b79', '#e7969c', '#17becf', '#98df8a', '#ffbb78',
+    '#9edae5', '#c5b0d5', '#f7b6d2', '#dbdb8d', '#c49c94'
 ];
+
+// Data styling object to store current values
+const cluster_DataStyling = {
+    labelFontSize: 14,
+    markerSize: 10,
+    strokeWidth: 0.5,
+    borderOn: true,
+    textColorEnabled: true
+};
 
 // Function to download the plot
 function downloadPlot(format) {
-    const plotElement = document.getElementById('plotContainer_umap');
+    const plotElement = document.getElementById('plotContainer_cluster');
 
     Plotly.toImage(plotElement, {
         format: format,
@@ -1489,70 +1583,154 @@ function downloadPlot(format) {
 // Document ready function
 $(document).ready(function() {
 
-    // Event listeners for color options
-    $("#colorByCluster").on("click", function() {
-        setActiveButton("colorByCluster");
-        updatePlot('cluster');
-    });
-
-    $("#colorByGradient").on("click", function() {
-        setActiveButton("colorByGradient");
-        updatePlot('gradient');
-    });
-
-    $("#colorByClass").on("click", function() {
-        setActiveButton("colorByClass");
-        updatePlot('Class');
-    });
-
-    $("#colorByLigandType").on("click", function() {
-        setActiveButton("colorByLigandType");
-        updatePlot('Ligand type');
-    });
-
-    $("#colorByReceptorFamily").on("click", function() {
-        setActiveButton("colorByReceptorFamily");
-        updatePlot('Receptor family');
-    });
-
-    // Show/hide labels
-    document.getElementById("show").addEventListener("click", function() {
-        document.getElementById("show").classList.add("active");
-        document.getElementById("hide").classList.remove("active");
-        const activeColorOption = getActiveColorOption();
-        updatePlot(activeColorOption);
-    });
-
-    document.getElementById("hide").addEventListener("click", function() {
-        document.getElementById("show").classList.remove("active");
-        document.getElementById("hide").classList.add("active");
-        const activeColorOption = getActiveColorOption();
-        updatePlot(activeColorOption);
-    });
-
-    // Clustering options
-    const clusterSlider = document.getElementById('clusterSlider');
-    const clusterSliderValue = document.getElementById('clusterSliderValue');
-    const renderClusterPlotButton = document.getElementById('renderClusterPlot');
-
-    clusterSlider.addEventListener('input', function() {
-        clusterSliderValue.textContent = clusterSlider.value;
-    });
-
-    renderClusterPlotButton.addEventListener('click', function() {
-        const numClusters = parseInt(clusterSlider.value, 10);
-        performClustering(numClusters);
-    });
-
-    // Initial plot rendering on page load
-    renderInitialPlot();
-
-    // Event listener for "Rerender Labels" button
-    document.getElementById("rerenderLabels").addEventListener("click", function() {
-      const activeColorOption = getActiveColorOption();
-      updatePlot(activeColorOption);
-    });
+// Event listeners for color options
+$("#colorByCluster").on("click", function() {
+    setActiveButton("colorByCluster");
+    updatePlotWithAnnotations(); // Updated function
 });
+
+$("#colorByGradient").on("click", function() {
+    setActiveButton("colorByGradient");
+    updatePlotWithAnnotations(); // Updated function
+});
+
+$("#colorByClass").on("click", function() {
+    setActiveButton("colorByClass");
+    updatePlotWithAnnotations(); // Updated function
+});
+
+$("#colorByLigandType").on("click", function() {
+    setActiveButton("colorByLigandType");
+    updatePlotWithAnnotations(); // Updated function
+});
+
+$("#colorByReceptorFamily").on("click", function() {
+    setActiveButton("colorByReceptorFamily");
+    updatePlotWithAnnotations(); // Updated function
+});
+
+// Show/hide labels
+document.getElementById("show").addEventListener("click", function() {
+    document.getElementById("show").classList.add("active");
+    document.getElementById("hide").classList.remove("active");
+    updatePlotWithAnnotations(); // Updated function
+});
+
+document.getElementById("hide").addEventListener("click", function() {
+    document.getElementById("show").classList.remove("active");
+    document.getElementById("hide").classList.add("active");
+    updatePlotWithAnnotations(); // Updated function
+});
+
+// Clustering options
+const clusterSlider = document.getElementById('clusterSlider');
+const clusterSliderValue = document.getElementById('clusterSliderValue');
+
+// Set max value of the slider to dataPointsCount - 1
+const dataPointsCount = currentClusterData.length; // Get the number of data points
+clusterSlider.max = Math.min(20, dataPointsCount - 1); // Max 20 clusters or dataPoints - 1
+
+// Update the displayed value of the slider
+clusterSliderValue.textContent = clusterSlider.value;
+
+// Add an event listener for the slider input event to dynamically render clustering
+clusterSlider.addEventListener('input', function() {
+    // Update the number next to the slider dynamically
+    clusterSliderValue.textContent = clusterSlider.value;
+
+    // Perform dynamic clustering based on the current value of the slider
+    const numClusters = parseInt(clusterSlider.value, 10);
+    performClustering(numClusters);
+});
+
+// Update label font size slider
+$('#cluster_labelFontSizeSlider').on('input', function() {
+        const fontSize = $(this).val();
+        $('#cluster_labelFontSizeValue').text(fontSize);
+        cluster_DataStyling.labelFontSize = parseInt(fontSize, 10);  // Update the data styling object
+        updatePlotWithAnnotations();  // Dynamically update the plot
+    });
+
+    // Update marker size slider
+    $('#cluster_markerSizeSlider').on('input', function() {
+        const markerSize = $(this).val();
+        $('#cluster_markerSizeValue').text(markerSize);
+        cluster_DataStyling.markerSize = parseInt(markerSize, 10);  // Update the data styling object
+        updatePlotWithAnnotations();  // Dynamically update the plot
+    });
+
+    // Update stroke width slider
+    $('#cluster_strokeWidthSlider').on('input', function() {
+        const strokeWidth = $(this).val();
+        $('#cluster_strokeWidthValue').text(strokeWidth);
+        cluster_DataStyling.strokeWidth = parseFloat(strokeWidth);  // Update the data styling object
+        updatePlotWithAnnotations();  // Dynamically update the plot
+    });
+
+    // Initial state for border toggle
+    cluster_DataStyling.borderOn = true;  // Default to true (border on)
+
+    // Get the button element for border toggle
+    const borderToggleButton = document.getElementById('borderToggleButton');
+
+    // Add click event listener to the button
+    borderToggleButton.addEventListener('click', () => {
+        // Toggle the borderOn state
+        cluster_DataStyling.borderOn = !cluster_DataStyling.borderOn;
+
+        // Update the button text and styling based on the state
+        if (cluster_DataStyling.borderOn) {
+            borderToggleButton.textContent = 'Border: On';
+            borderToggleButton.classList.add('btn-primary');  // Use Bootstrap's "info" class for the "On" state
+            borderToggleButton.classList.remove('btn-danger');
+        } else {
+            borderToggleButton.textContent = 'Border: Off';
+            borderToggleButton.classList.remove('btn-primary');
+            borderToggleButton.classList.add('btn-danger');  // Use Bootstrap's "danger" class for the "Off" state
+        }
+
+        // Update the plot with the new border setting
+        updatePlotWithAnnotations();  // Call the function to re-render the plot
+    });
+
+    // Set initial button state to "Border: On" with info button styling
+    borderToggleButton.textContent = 'Border: On';
+    borderToggleButton.classList.add('btn-primary');
+
+    // Initial state for text color
+    cluster_DataStyling.textColorEnabled = true;  // Default to true (text color on)
+
+    // Get the button element
+    const textColorToggleButton = document.getElementById('textColorToggleButton');
+
+    // Add click event listener to the button
+    textColorToggleButton.addEventListener('click', () => {
+        // Toggle the textColorEnabled state
+        cluster_DataStyling.textColorEnabled = !cluster_DataStyling.textColorEnabled;
+
+        // Update the button text and styling based on the state
+        if (cluster_DataStyling.textColorEnabled) {
+            textColorToggleButton.textContent = 'Text Color: Yes';
+            textColorToggleButton.classList.add('btn-info');  // Use bootstrap class for "Yes" state
+            textColorToggleButton.classList.remove('btn-danger');
+        } else {
+            textColorToggleButton.textContent = 'Text Color: No';
+            textColorToggleButton.classList.remove('btn-info');
+            textColorToggleButton.classList.add('btn-danger');  // Use bootstrap class for "No" state
+        }
+
+        // Update the plot with the new text color setting
+        updatePlotWithAnnotations();  // Call the function to re-render the plot
+    });
+
+    // Set initial button state to "Text Color: Yes" with primary button styling
+    textColorToggleButton.textContent = 'Text Color: Yes';
+    textColorToggleButton.classList.add('btn-info');
+
+  // Initial plot rendering on page load
+  renderInitialPlot();
+});
+
 
 // Function to set the active button and deactivate others
 function setActiveButton(activeButtonId) {
@@ -1583,376 +1761,23 @@ function getActiveColorOption() {
     return 'cluster'; // Default to 'cluster' if no option is active
 }
 
-// Function to create traces for the plot
-function createTraces(colorOption, showLabels) {
-
-  let traces = [];
-  let colorMapping = {};
-
-  if (['Class', 'Ligand type', 'Receptor family'].includes(colorOption)) {
-        const uniqueValues = Array.from(new Set(currentClusterData.map(d => d[colorOption])));
-        uniqueValues.forEach((value, index) => {
-            colorMapping[value] = colorPalette[index % colorPalette.length];
-        });
-    }
-
-  const clusterSet = Array.from(new Set(currentClusterData.map(d => d.cluster))).sort((a, b) => a - b);
-
-  if (colorOption === 'cluster') {
-        clusterSet.forEach(cluster => {
-            const clusterData = currentClusterData.filter(d => d.cluster === cluster);
-
-            const markerTrace = {
-                x: clusterData.map(d => d.x),
-                y: clusterData.map(d => d.y),
-                mode: 'markers',
-                type: 'scatter',
-                hoverinfo: 'text',  // Show labels on hover
-                text: clusterData.map(d => d.label),  // Use labels as hover text
-                marker: {
-                    size: 10,
-                    symbol: 'circle',
-                    color: clusterData.map(d => colorPalette[d.cluster % colorPalette.length]),
-                },
-                name: `Cluster ${cluster}`
-            };
-
-            traces.push(markerTrace);
-        });
-      } else if (colorOption === 'gradient') {
-        const gradientTrace = {
-            x: currentClusterData.map(d => d.x),
-            y: currentClusterData.map(d => d.y),
-            mode: 'markers',
-            type: 'scatter',
-            hoverinfo: 'text',  // Show labels on hover
-            text: currentClusterData.map(d => `${d.label}: ${d.fill}`),  // Combine label and fill with a hyphen for hover text
-            marker: {
-                size: 10,
-                symbol: 'circle',
-                color: currentClusterData.map(d => d.fill),
-                coloraxis: 'coloraxis'
-            },
-            showlegend: false
-        };
-
-        traces.push(gradientTrace);
-
-      } else if (['Class', 'Ligand type', 'Receptor family'].includes(colorOption)) {
-              const uniqueEntries = new Set();
-
-              currentClusterData.forEach(point => {
-                  const entry = point[colorOption];
-                  if (!uniqueEntries.has(entry)) {
-                      uniqueEntries.add(entry);
-
-                      const markerTrace = {
-                          x: currentClusterData.filter(d => d[colorOption] === point[colorOption]).map(d => d.x),
-                          y: currentClusterData.filter(d => d[colorOption] === point[colorOption]).map(d => d.y),
-                          mode: 'markers',
-                          type: 'scatter',
-                          hoverinfo: 'text',  // Show labels on hover
-                          text: currentClusterData.filter(d => d[colorOption] === point[colorOption]).map(d => d.label),  // Use labels as hover text
-                          marker: {
-                              size: 10,
-                              symbol: 'circle',
-                              color: colorMapping[point[colorOption]],
-                          },
-                          name: entry
-                      };
-
-                      traces.push(markerTrace);
-                  }
-              });
-        }
-        return traces;
-  }
-
-
-
-// Function to plot labels, avoiding overlap with markers and each other
-function plotLabels(showLabels, xRange = null, yRange = null) {
-    if (!showLabels) {
-        return null; // Return null if labels are not to be shown
-    }
-
-    // Ensure xRange and yRange are not null and have default values
-    xRange = xRange || [0, 1];
-    yRange = yRange || [0, 1];
-
-    const filteredData = currentClusterData.filter(d => {
-        const inXRange = (d.x >= xRange[0] && d.x <= xRange[1]);
-        const inYRange = (d.y >= yRange[0] && d.y <= yRange[1]);
-        return inXRange && inYRange;
-    });
-
-    // Basic strategy to position labels around markers
-    const labels = filteredData.map(d => ({
-        x: d.x,
-        y: d.y,
-        text: d.label,
-        position: getDefaultLabelPosition()
-    }));
-
-    // Adjust label positions based on zoom level and avoid overlap
-    const adjustedLabels = adjustAndAvoidOverlaps(labels, xRange, yRange);
-
-    return {
-        x: adjustedLabels.map(d => d.x),
-        y: adjustedLabels.map(d => d.y),
-        mode: 'text',
-        type: 'scatter',
-        text: adjustedLabels.map(d => d.text),
-        textfont: {
-            family: 'Arial',
-            size: 12,
-            color: '#000000'
-        },
-        hoverinfo: 'none',
-        showlegend: false
-    };
-}
-
-// Function to get default label position around the marker
-function getDefaultLabelPosition() {
-    const textPositions = ['middle left', 'top left', 'bottom left', 'top right', 'bottom right', 'middle right'];
-    return textPositions[Math.floor(Math.random() * textPositions.length)];
-}
-
-// Function to get offset based on label position
-function getLabelOffset(position, minDistance) {
-    switch (position) {
-        case 'middle left':
-            return { x: -1 * minDistance, y: 0 };
-        case 'top left':
-            return { x: -1 * minDistance, y: minDistance };
-        case 'bottom left':
-            return { x: -1 * minDistance, y: -1 * minDistance };
-        case 'top right':
-            return { x: minDistance, y: minDistance };
-        case 'bottom right':
-            return { x: minDistance, y: -1 * minDistance };
-        case 'middle right':
-            return { x: minDistance, y: 0 };
-        default:
-            return { x: 0, y: 0 };
-    }
-}
-
-// Combined function to adjust label positions and avoid overlaps
-function adjustAndAvoidOverlaps(labels, xRange, yRange) {
-    const rangeWidth = xRange ? (xRange[1] - xRange[0]) : 1;
-    const minDistance = rangeWidth * 0.05; // Scale factor for minimum distance
-    const offsetScale = rangeWidth * 0.03; // Scale factor for label offset
-
-    // Initial adjustment for label positions based on zoom level
-    let adjustedLabels = labels.map(label => {
-        const offset = getLabelOffset(label.position, offsetScale);
-        return {
-            x: label.x + offset.x,
-            y: label.y + offset.y,
-            text: label.text
-        };
-    });
-
-    // Adjust label positions to avoid overlap with each other
-    adjustedLabels = avoidLabelOverlaps(adjustedLabels, minDistance);
-
-    // Further adjust labels to ensure they are within plot bounds
-    adjustedLabels = adjustedLabels.map(label => ({
-        x: Math.min(Math.max(label.x, xRange[0]), xRange[1]),
-        y: Math.min(Math.max(label.y, yRange[0]), yRange[1]),
-        text: label.text
-    }));
-
-    return adjustedLabels;
-}
-
-// Function to avoid label overlaps with each other
-function avoidLabelOverlaps(labels, minDistance) {
-    const avoidOverlap = (labels) => {
-        for (let i = 0; i < labels.length; i++) {
-            for (let j = i + 1; j < labels.length; j++) {
-                const dx = labels[i].x - labels[j].x;
-                const dy = labels[i].y - labels[j].y;
-                const distance = Math.sqrt(dx * dx + dy * dy);
-
-                if (distance < minDistance) {
-                    // If overlap, move label j away from label i
-                    const moveAmount = (minDistance - distance) * 0.5;
-                    labels[j].x += moveAmount * (dx / distance);
-                    labels[j].y += moveAmount * (dy / distance);
-                }
-            }
-        }
-    };
-
-    avoidOverlap(labels);
-    return labels;
-}
-
-
-
 // Function to render the initial plot
 function renderInitialPlot() {
     const colorOption = getActiveColorOption(); // Get the initially selected color option
     const showLabels = document.getElementById('show').classList.contains('active');
 
-    performClustering(5);
+    performClustering(5); // Perform initial clustering with 5 clusters
 
-    const traces = createTraces(colorOption, showLabels);
+    updatePlotWithAnnotations(); // Use the updated function to render the plot with annotations
 
-    // Capture current layout to preserve zoom state
-    const plotElement = document.getElementById('plotContainer_umap');
-    const currentLayout = plotElement ? Plotly.d3.select('#plotContainer_umap').node().layout : {};
-
-    // Safely extract xaxis and yaxis ranges with default values
-    const xRange = (currentLayout && currentLayout.xaxis && currentLayout.xaxis.range) ? currentLayout.xaxis.range : null;
-    const yRange = (currentLayout && currentLayout.yaxis && currentLayout.yaxis.range) ? currentLayout.yaxis.range : null;
-
-    // Plot labels initially
-    const labelTrace = plotLabels(showLabels,xRange,yRange);
-    if (labelTrace) {
-        traces.push(labelTrace);
-    }
-
-    // Define new layout with fixed dimensions
-    const layout = {
-        xaxis: {
-            visible: false,
-            showgrid: false,
-            range: xRange,  // Restore x-axis range from current layout
-            scaleanchor: 'y'  // Ensure the aspect ratio is preserved
-        },
-        yaxis: {
-            visible: false,
-            showgrid: false,
-            range: yRange,  // Restore y-axis range from current layout
-        },
-        hovermode: 'closest',
-        showlegend: true,
-        legend: {
-            x: 1,
-            xanchor: 'left',
-            y: 0.5,
-            orientation: 'v'
-        },
-        plot_bgcolor: '#FFFFFF',
-        autosize: false,
-        width: 1024,  // Total plot width: 600px (plot area) + 324px (legend area) + margins
-        height: 700,  // Total height to accommodate the plot area and some extra space
-        margin: {
-            l: 50,   // Left margin
-            r: 374,  // Right margin (to accommodate legend and some spacing)
-            t: 50,   // Top margin
-            b: 50    // Bottom margin
-        },
-        coloraxis: colorOption === 'gradient' ? {
-            colorscale: 'RdBu',
-            colorbar: {
-                thickness: 20,
-                len: 0.5,
-                title: {
-                    text: 'Fill Gradient',
-                    side: 'right'
-                },
-            }
-        } : undefined
-    };
-
-    Plotly.newPlot('plotContainer_umap', traces, layout);
-
-    // // Add zoom event to the plot
-    plotElement.on('plotly_relayout', function(eventdata) {
-      const showLabels = document.getElementById('show').classList.contains('active');
-      // Capture current layout to preserve zoom state
-      const plotElement = document.getElementById('plotContainer_umap');
-      const currentLayout = plotElement ? Plotly.d3.select('#plotContainer_umap').node().layout : {};
-
-      // Safely extract xaxis and yaxis ranges with default values
-      const xRange = (currentLayout && currentLayout.xaxis && currentLayout.xaxis.range) ? currentLayout.xaxis.range : null;
-      const yRange = (currentLayout && currentLayout.yaxis && currentLayout.yaxis.range) ? currentLayout.yaxis.range : null;
-
-      // Plot labels initially
-      const labelTrace = plotLabels(showLabels,xRange,yRange);
-      if (labelTrace) {
-          traces.push(labelTrace);
-      }
-      const activeColorOption = getActiveColorOption();
-      updatePlot(activeColorOption);
-    });
-
-    // Auto-scale the axes after the plot is initially rendered
+    // Perform autoscale after the initial plot is rendered
+    const plotElement = document.getElementById('plotContainer_cluster');
+    
+    // Autoscale the axes after the plot is initially rendered
     Plotly.relayout(plotElement, {
         'xaxis.autorange': true,
         'yaxis.autorange': true
     });
-}
-
-// Function to update the plot based on color option
-function updatePlot(colorOption) {
-    const showLabels = document.getElementById('show').classList.contains('active');
-    const traces = createTraces(colorOption, showLabels);
-
-    // Capture current layout to preserve zoom state
-    const plotElement = document.getElementById('plotContainer_umap');
-    const currentLayout = plotElement ? Plotly.d3.select('#plotContainer_umap').node().layout : {};
-
-    // Safely extract xaxis and yaxis ranges with default values
-    const xRange = (currentLayout && currentLayout.xaxis && currentLayout.xaxis.range) ? currentLayout.xaxis.range : null;
-    const yRange = (currentLayout && currentLayout.yaxis && currentLayout.yaxis.range) ? currentLayout.yaxis.range : null;
-
-    const labelTrace = plotLabels(showLabels, xRange, yRange);
-    if (labelTrace) {
-        traces.push(labelTrace);
-    }
-
-    // Define new layout with fixed dimensions
-    const layout = {
-        xaxis: {
-            visible: false,
-            showgrid: false,
-            range: xRange,  // Restore x-axis range from current layout
-            scaleanchor: 'y'  // Ensure the aspect ratio is preserved
-        },
-        yaxis: {
-            visible: false,
-            showgrid: false,
-            range: yRange,  // Restore y-axis range from current layout
-        },
-        hovermode: 'closest',
-        showlegend: true,
-        legend: {
-            x: 1,
-            xanchor: 'left',
-            y: 0.5,
-            orientation: 'v'
-        },
-        plot_bgcolor: '#FFFFFF',
-        autosize: false,
-        width: 1024,  // Total plot width: 600px (plot area) + 324px (legend area) + margins
-        height: 700,  // Total height to accommodate the plot area and some extra space
-        margin: {
-            l: 50,   // Left margin
-            r: 374,  // Right margin (to accommodate legend and some spacing)
-            t: 50,   // Top margin
-            b: 50    // Bottom margin
-        },
-        coloraxis: colorOption === 'gradient' ? {
-            colorscale: 'RdBu',
-            colorbar: {
-                thickness: 20,
-                len: 0.5,
-                title: {
-                    text: 'Fill Gradient',
-                    side: 'right'
-                },
-            }
-        } : undefined
-    };
-
-    // Use Plotly.react to update the plot while preserving the zoom state
-    Plotly.react('plotContainer_umap', traces, layout);
 }
 
 // Function to perform clustering
@@ -1975,13 +1800,20 @@ function performClustering(numClusters) {
 
         currentClusterData = data; // Update cluster_data
         setActiveButton("colorByCluster");
-        updatePlot('cluster');  // Pass 'cluster' as the color option
+        updatePlotWithAnnotations();  // Pass 'cluster' as the color option
     } else {
         console.error('kmeans-js library not loaded correctly.');
     }
 }
 
+// Attach the plotly_relayout event listener for zoom handling using jQuery
+$('#plotContainer_cluster').on('plotly_relayout', function(eventdata) {
+    updatePlotWithAnnotations(); // Update annotations on zoom or pan
+});
+
+
 </script>
+
 {% endif %}
 
 <!-- ################## -->
@@ -1998,7 +1830,7 @@ function performClustering(numClusters) {
     // });
 
     // Function to initialize Spectrum color picker
-    function initialize_Tree_Styling_ColorPicker(elementId, start_color, layer) {
+    function initialize_List_Styling_ColorPicker(elementId, start_color, layer) {
         $("#" + elementId).spectrum({
             color: start_color,
             showPalette: true,
@@ -2012,16 +1844,20 @@ function performClustering(numClusters) {
             ],
             change: function(color) {
                 Styling_Option_dict[layer].Color = color.toHexString();
-                updateVisualization();  // Re-render after final color selection
+                updateVisualization_list();  // Re-render after final color selection
+            },
+            move: function(color) {
+                Styling_Option_dict[layer].Color = color.toHexString();
+                updateVisualization_list();  // Re-render after final color selection
             }
         });
     }
 
     // Initialize all color pickers
-    initialize_Tree_Styling_ColorPicker('colorPicker_Layer1', Styling_Option_dict.Layer1.Color, 'Layer1');
-    initialize_Tree_Styling_ColorPicker('colorPicker_Layer2', Styling_Option_dict.Layer2.Color, 'Layer2');
-    initialize_Tree_Styling_ColorPicker('colorPicker_Layer3', Styling_Option_dict.Layer3.Color, 'Layer3');
-    initialize_Tree_Styling_ColorPicker('colorPicker_Layer4', Styling_Option_dict.Layer4.Color, 'Layer4');
+    initialize_List_Styling_ColorPicker('colorPicker_Class', Styling_Option_dict.Class.Color, 'Class');
+    initialize_List_Styling_ColorPicker('colorPicker_LigandType', Styling_Option_dict.LigandType.Color, 'LigandType');
+    initialize_List_Styling_ColorPicker('colorPicker_ReceptorFamily', Styling_Option_dict.ReceptorFamily.Color, 'ReceptorFamily');
+    initialize_List_Styling_ColorPicker('colorPicker_Receptor', Styling_Option_dict.Receptor.Color, 'Receptor');
   });
 </script>
 
@@ -2037,7 +1873,7 @@ var list_data_wow = {{ listplot_data_variables|safe }};
 var data_types_list = {{listplot_datatypes|safe}};
 var Label_conversion_dict = {{Label_Conversion|safe}};
 
-var modded_list_data = modifyData(listdata);
+var modded_list_data = Initialize_Data(listdata);
 
 // #################################
 // ## Initialize global variables ##
@@ -2049,39 +1885,96 @@ var Layout_dict = {columns: 2, col_breaker: 'Custom', col_max_label: 'Auto', ind
 
 //  Initialize styling
 var Styling_Option_dict = {
-    Layer1: {Bold: true, Italic: false, Underline: false, Fontsize: "20px", Color: "#000"},
-    Layer2: {Bold: true, Italic: false, Underline: false, Fontsize: "18px", Color: "#000"},
-    Layer3: {Bold: false, Italic: false, Underline: false, Fontsize: "16px", Color: "#000"},
-    Layer4: {Bold: false, Italic: false, Underline: false, Fontsize: "14px", Color: "#000"}};
+    Class: {Bold: true, Italic: false, Underline: false, Fontsize: "20px", Color: "#000"},
+    LigandType: {Bold: false, Italic: false, Underline: false, Fontsize: "18px", Color: "#000"},
+    ReceptorFamily: {Bold: false, Italic: false, Underline: false, Fontsize: "16px", Color: "#000"},
+    Receptor: {Bold: false, Italic: false, Underline: false, Fontsize: "14px", Color: "#000"}};
+
+
+// Initialize each section to match Styling_Option_dict
+function initializeStyling() {
+    // Class
+    document.getElementById('boldCheckbox_Class').checked = Styling_Option_dict.Class.Bold;
+    document.getElementById('italicCheckbox_Class').checked = Styling_Option_dict.Class.Italic;
+    document.getElementById('underlineCheckbox_Class').checked = Styling_Option_dict.Class.Underline;
+    document.getElementById('fontSizeSlider_Class').value = parseInt(Styling_Option_dict.Class.Fontsize);
+    document.getElementById('fontSizeSliderLabel_Class').textContent = `Font Size: ${Styling_Option_dict.Class.Fontsize}`;
+    document.getElementById('colorPicker_Class').value = Styling_Option_dict.Class.Color;
+
+    // LigandType
+    document.getElementById('boldCheckbox_LigandType').checked = Styling_Option_dict.LigandType.Bold;
+    document.getElementById('italicCheckbox_LigandType').checked = Styling_Option_dict.LigandType.Italic;
+    document.getElementById('underlineCheckbox_LigandType').checked = Styling_Option_dict.LigandType.Underline;
+    document.getElementById('fontSizeSlider_LigandType').value = parseInt(Styling_Option_dict.LigandType.Fontsize);
+    document.getElementById('fontSizeSliderLabel_LigandType').textContent = `Font Size: ${Styling_Option_dict.LigandType.Fontsize}`;
+    document.getElementById('colorPicker_LigandType').value = Styling_Option_dict.LigandType.Color;
+
+    // ReceptorFamily
+    document.getElementById('boldCheckbox_ReceptorFamily').checked = Styling_Option_dict.ReceptorFamily.Bold;
+    document.getElementById('italicCheckbox_ReceptorFamily').checked = Styling_Option_dict.ReceptorFamily.Italic;
+    document.getElementById('underlineCheckbox_ReceptorFamily').checked = Styling_Option_dict.ReceptorFamily.Underline;
+    document.getElementById('fontSizeSlider_ReceptorFamily').value = parseInt(Styling_Option_dict.ReceptorFamily.Fontsize);
+    document.getElementById('fontSizeSliderLabel_ReceptorFamily').textContent = `Font Size: ${Styling_Option_dict.ReceptorFamily.Fontsize}`;
+    document.getElementById('colorPicker_ReceptorFamily').value = Styling_Option_dict.ReceptorFamily.Color;
+
+    // Receptor
+    document.getElementById('boldCheckbox_Receptor').checked = Styling_Option_dict.Receptor.Bold;
+    document.getElementById('italicCheckbox_Receptor').checked = Styling_Option_dict.Receptor.Italic;
+    document.getElementById('underlineCheckbox_Receptor').checked = Styling_Option_dict.Receptor.Underline;
+    document.getElementById('fontSizeSlider_Receptor').value = parseInt(Styling_Option_dict.Receptor.Fontsize);
+    document.getElementById('fontSizeSliderLabel_Receptor').textContent = `Font Size: ${Styling_Option_dict.Receptor.Fontsize}`;
+    document.getElementById('colorPicker_Receptor').value = Styling_Option_dict.Receptor.Color;
+}
 
 // # Initialize label switcher #
-var Label_names = 'IUPHAR';
+var Label_names = 'Protein';
 
 // # Initialize data styling #
 var Data_styling = initializeDataStyling(list_data_wow, data_types_list);
 
-// console.log(Data_styling)
+const List_Data_result = Data_resorter(modded_list_data);
+var Data_array = List_Data_result.final_array;
+var Data_Category_array = List_Data_result.category_array;
 
 // #################################
 // # Initialize data visualization #
 // #################################
 
+function Listplot_render_visualization(){
+  const Col_break_number = Layout_dict.col_max_label === "Auto" ? Math.ceil(Data_array.length / Layout_dict.columns) : Layout_dict.Col_break_number;
+  var layout_spacing = Calculate_dimension(Data_array, Data_Category_array, Col_break_number, Layout_dict.columns, Label_conversion_dict, Label_names, Styling_Option_dict);
+  RenderListPlot_Labels(Data_array,Data_Category_array, 'ListPlot',Styling_Option_dict,Layout_dict,Label_conversion_dict,Label_names);
+  data_visualization(Data_array, Data_Category_array, 'ListPlot', Layout_dict, Data_styling, layout_spacing);
+}
+
 document.addEventListener("DOMContentLoaded", function() {
-
-
-  renderDataVisualization(modded_list_data, 'ListPlot',Styling_Option_dict,Layout_dict,Data_styling,Label_conversion_dict,Label_names);
+  initializeStyling();
+  Listplot_render_visualization();
 });
 
+
+function Recalculate_data_and_update() {
+  // Recalculate the data
+  const List_Data_result = Data_resorter(modded_list_data);
+  
+  // Update the previously declared variables with new values
+  Data_array = List_Data_result.final_array; 
+  Data_Category_array = List_Data_result.category_array;
+  
+  // Call the function to update the visualization
+  updateVisualization_list();
+}
+
 // Function to update the visualization
-function updateVisualization() {
+function updateVisualization_list() {
       // Clear existing SVG content
       d3.select("#ListPlot_visualization").remove();
       // Re-render the visualization
-      renderDataVisualization(modded_list_data, "ListPlot",Styling_Option_dict,Layout_dict,Data_styling,Label_conversion_dict,Label_names);
+      Listplot_render_visualization();
     }
 
 // Add event listeners to checkboxes
-d3.selectAll('input[type="checkbox"]').on("change", updateVisualization);
+d3.selectAll('input[type="checkbox"]').on("change", Recalculate_data_and_update);
 
 $('.dropdown-menu').on('click', function(event){
     event.stopPropagation();
@@ -2097,7 +1990,7 @@ function UpdateLayout() {
   // Get values from dropdowns and input
   const Cols = parseInt(document.querySelector("#List_Layout_Column_Selector").value);
   const Max_label_selector = document.querySelector("#Layout_Max_Label").value;
-  const Max_label_number = parseInt(document.querySelector("#List_Layout_Max_Label_input").value);
+  const Max_label_number = parseInt(document.querySelector("#List_Layout_Max_Label_input").value) || 1;
 
   // Handle Max label number
   if (Max_label_selector === 'Auto') {
@@ -2111,7 +2004,7 @@ function UpdateLayout() {
   Layout_dict.columns = Cols;
 
   // Update visualization dynamically
-  updateVisualization();
+  updateVisualization_list();
 }
 
 // Event listeners for dropdown and input changes
@@ -2156,14 +2049,12 @@ function updateLayerStyling(layer) {
 
 
   // Update the visualization with the new styles (replace with your visualization update logic)
-  updateVisualization();
+  updateVisualization_list();
 }
-
-
 
 // Add event listeners to checkboxes and sliders for all layers
 function addEventListeners() {
-  ["Layer1", "Layer2", "Layer3", "Layer4"].forEach(layer => {
+  ["Class", "LigandType", "ReceptorFamily", "Receptor"].forEach(layer => {
     // Add event listeners for checkboxes
     document.getElementById(`boldCheckbox_${layer}`).addEventListener("change", function() {
       updateLayerStyling(layer);
@@ -2292,7 +2183,16 @@ function initialize_ListPlot_ColorPicker(elementId, start_color, column, type) {
       } else if (type === 'max') {
         Data_styling[column].Data_color2 = color.toHexString();
       }
-      updateVisualization();  // Call function to update the visualization
+      updateVisualization_list();  // Call function to update the visualization
+    },
+    move: function(color) {
+      // Store the color in Data_styling for this column and type
+      if (type === 'min') {
+        Data_styling[column].Data_color1 = color.toHexString();
+      } else if (type === 'max') {
+        Data_styling[column].Data_color2 = color.toHexString();
+      }
+      updateVisualization_list();  // Call function to update the visualization
     }
   });
 }
@@ -2318,7 +2218,7 @@ function handleListPlotDropdownChanges(column) {
       handleColorPickerState(`${column}_ColorPicker_min`, 'enable');
     }
 
-    updateVisualization();  // Call function to update the visualization
+    updateVisualization_list();  // Call function to update the visualization
   });
 }
 
@@ -2343,25 +2243,25 @@ populateListPlotStyling();
 $("#List_UniProtNames").click(function() {
     $("#List_UniProtNames").addClass("active");
     $("#List_IUPHARNames").removeClass("active");
-    Label_names = 'UniProt';
-    updateVisualization();
+    Label_names = 'Gene';
+    updateVisualization_list();
 });
 
 $("#List_IUPHARNames").click(function() {
       $("#List_UniProtNames").removeClass("active");
       $("#List_IUPHARNames").addClass("active");
-      Label_names = 'IUPHAR';
-      updateVisualization();
+      Label_names = 'Protein';
+      updateVisualization_list();
   });
 
 </script>
+
 {% endif %}
 
 <!-- ############# -->
 <!-- ## Heatmap ## -->
 <!-- ############# -->
 {% if Plot_evaluation_json.4 %}
-
 
 <script>
   $(document).ready(function() {
@@ -2650,11 +2550,12 @@ $("#Heatmap_IUPHARNames").click(function() {
   });
 
 </script>
+
 {% endif %}
 <!-- ############# -->
 <!-- ## GPCRome ## -->
 <!-- ############# -->
-{% if Plot_evaluation_json.1 %}
+{% if Plot_evaluation_json.0 %}
 <script>
 
 $('.dropdown-menu').on('click', function(event){
@@ -2687,10 +2588,12 @@ function initializeGPCRomeLabelConversionDict(conversionDict) {
 // # Initialize data styling #
 var layout_data = GPCRome_initializeData(GPCRome_categories_data);
 
-const GPCRome_fill_data_values = Object.values(fill_data).map(receptor => receptor.Value1);
+const GPCRome_fill_data_values = Object.values(fill_data)
+    .map(receptor => receptor.Value1)
+    .filter(value => value !== null && value !== undefined && value !== '' && !isNaN(value)); // Filtering out invalid values
 
-const GPCRome_fill_minValue = Math.min(...GPCRome_fill_data_values);
-const GPCRome_fill_maxValue = Math.max(...GPCRome_fill_data_values);
+const GPCRome_fill_minValue = GPCRome_fill_data_values.length > 0 ? Math.min(...GPCRome_fill_data_values) : null; 
+const GPCRome_fill_maxValue = GPCRome_fill_data_values.length > 0 ? Math.max(...GPCRome_fill_data_values) : null;
 
 // Calculate median
 // Sort the values in ascending order
@@ -2969,6 +2872,7 @@ function GPCRomeWheel_updateVisualization() {
 }
 
 </script>
+
 {% endif %}
 
 {% endblock %}
