@@ -4569,7 +4569,6 @@ class StructureBlastView(View):
                     'gene_name',
                 )
                 print('Full query sucess')
-                print(af_structures)
             except Exception as e:
                 print(e)
                 print('full first fail')
