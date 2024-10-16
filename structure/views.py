@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.conf import settings
 from django.views.generic import TemplateView, View
 from django.http import HttpResponse, HttpResponseRedirect
-from django.db.models import Count, Q, Prefetch, TextField, Avg, Case, When, IntegerField, F, Value, CharField, Subquery, OuterRef
+from django.db.models import Count, Q, Prefetch, TextField, Avg, Case, When, IntegerField, F, Value, CharField, Subquery, OuterRef, Exists
 from django.db.models.functions import Concat
 from django import forms
 
@@ -4733,8 +4733,14 @@ class LigandComplexModels(TemplateView):
     def get_context_data(self, **kwargs):
         context = super(LigandComplexModels, self).get_context_data(**kwargs)
         try:
-            subquery_gene = Gene.objects.filter(proteins=OuterRef('protein_conformation__protein__pk')).values('name')[:1]
-            context['structure_model'] = Structure.objects.filter(structure_type__slug__in=['af-signprot-peptide', 'af-rfaa-sm']).prefetch_related(
+            subquery_gene = Gene.objects.filter(
+                proteins=OuterRef('protein_conformation__protein__pk')
+            ).values('name')[:1]
+            
+            # Annotate the main queryset with an Exists subquery
+            context['structure_model'] = Structure.objects.filter(
+                structure_type__slug__in=['af-signprot-peptide', 'af-rfaa-sm']
+            ).prefetch_related(
                 "protein_conformation__protein__family",
                 "protein_conformation__protein",
                 "state",
@@ -4760,12 +4766,31 @@ class LigandComplexModels(TemplateView):
                     ),
                     to_attr="prefetch_ligands"
                 )
-            ).annotate(gene_name=Subquery(subquery_gene))
+            ).annotate(
+                gene_name=Subquery(subquery_gene),
+                # Annotate with the existence of a matching experimental PDB
+                experimental_pdb_exists=Exists(
+                    StructureLigandInteraction.objects.filter(
+                        structure__structure_type__slug__in=[
+                            'x-ray-diffraction', 
+                            'electron-crystallography', 
+                            'electron-microscopy'
+                        ],
+                        structure__protein_conformation__protein__parent__entry_name=OuterRef('protein_conformation__protein__entry_name'),
+                        ligand__in=Subquery(
+                            LigandPeptideStructure.objects.filter(
+                                structure=OuterRef('pk')
+                            ).values('ligand')
+                        )
+                    )
+                )
+            ).exclude(
+                experimental_pdb_exists=True
+            )
         except Structure.DoesNotExist as e:
             pass
 
         return context
-
 
 # This may be momentarily
 def chain_e_and_lg1_coloring(structure):
