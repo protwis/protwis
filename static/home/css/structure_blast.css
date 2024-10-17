@@ -56,6 +56,14 @@ form {
 input[type="file"] {
     width: 100%;
     margin-bottom: 20px;
+
+}
+
+input[type="radio"], input[type="checkbox"] {
+    margin-right: 15px; /* Space between the input and the label */
+    margin-left: 5px;
+    transform: scale(1.5); /* Adjust this to increase size */
+    transform-origin: center; /* Keeps the element centered while scaling */
 }
 
 .submit-button {
