@@ -100,8 +100,9 @@ class Command(BaseCommand):
             ['Ligand bioactivities GPCRdb', AssayExperiment.objects.all().count(), 'GPCRdb'],
             ['Ligand site mutations GPCRdb', MutationExperiment.objects.all().count(), 'GPCRdb'],
             ['Ligand interactions GPCRdb', ResidueFragmentInteraction.objects.all().exclude(structure_ligand_pair__structure__structure_type__slug__startswith='af-').count(), 'GPCRdb'],
-            ['GPCRs structures GPCRdb', Structure.objects.filter(protein_conformation__protein__family__slug__startswith="0").exclude(structure_type__slug__startswith='af-').count(), 'GPCRdb'],
-            ['GPCRs structure models GPCRdb', StructureModel.objects.filter(protein__accession__isnull=False).count(), 'GPCRdb'],
+            ['GPCR structures GPCRdb', Structure.objects.filter(protein_conformation__protein__family__slug__startswith="0").exclude(structure_type__slug__startswith='af-').count(), 'GPCRdb'],
+            ['GPCR structure models GPCRdb', StructureModel.objects.filter(protein__accession__isnull=False).count(), 'GPCRdb'],
+            ['GPCR-ligand structure models GPCRdb', Structure.objects.filter(structure_type__slug__in=['af-rfaa-sm','af-signprot-peptide']).count(), 'GPCRdb'],
             ['Generic residues GPCRdb', ResidueGenericNumber.objects.filter(scheme_id__in=[7,8,9,10,11]).values('label').count(), 'GPCRdb'],
             ['Refined structures GPCRdb', StructureModel.objects.filter(protein__accession__isnull=True, protein__family__slug__startswith="0").count() + Structure.objects.filter(structure_type__slug__startswith="af-signprot-refined").count(), 'GPCRdb'],
             #GproteinDb block
