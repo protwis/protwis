@@ -2507,7 +2507,8 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling, odoran
     dimensions = { height: 1000, width: 1000 };
 
     const Spacing = GPCRome_styling.Spacing;
-    const datatype = GPCRome_styling.datatype;
+    // const datatype = GPCRome_styling.datatype;
+    const datatype = "NRDD";
     const family = GPCRome_styling.family
     const showIcon = GPCRome_styling.showIcon;  // Get the icon visibility state
 
@@ -2519,7 +2520,6 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling, odoran
     .attr("xmlns", "http://www.w3.org/2000/svg")  // Add the SVG namespace
     .attr("xmlns:xlink", "http://www.w3.org/1999/xlink");  // Add the xlink namespace for images
 
-
    // Get the image URL from the data-attribute
     const imageUrl = document.getElementById("image-container").getAttribute("data-image-url");
 
@@ -2527,30 +2527,28 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling, odoran
         var img = new Image();
         img.crossOrigin = "Anonymous";  // Ensure cross-origin handling
         img.src = imageUrl;
-    
+
         img.onload = function() {
             var canvas = document.createElement('canvas');
             canvas.width = img.width;
             canvas.height = img.height;
             var context = canvas.getContext('2d');
             context.drawImage(img, 0, 0);
-    
+
             // Convert the image to a base64-encoded string
             var dataUrl = canvas.toDataURL('image/png');
-    
+
             // Append the image to the SVG using 'xlink:href' (D3 v4 compatible)
             svg.append("image")
                 .attr("xlink:href", dataUrl)  // Use 'xlink:href' for D3 v4 compatibility
-                .attr("x", 5)  // Top-left corner
-                .attr("y", 5)  // Top-left corner
+                .attr("x", 0)  // Top-left corner
+                .attr("y", 0)  // Top-left corner
                 .attr("width", 230)  // Set width for the image
                 .attr("height", 230)  // Set height for the image
                 .attr("class", "toggle-image");  // Add a class to control visibility
         };
     }
-    
 
-    
     // SORT the data
 
     // Function to perform natural sorting
@@ -3052,6 +3050,16 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling, odoran
                     if (value === "ARRS") return "cornflowerblue";
                     if (value === "empty") return "white";
                     return "none";  // Make the slice invisible if the value is ""
+                } else if (datatype === "NRDD") {
+                    // Handle discrete data or default case
+                    if (value === 1) return "#F5BCBF";
+                    if (value === 2) return "#F17270";
+                    if (value === 3) return "#DD2628";
+                    if (value === 4) return "#2C87C8";
+                    if (value === 5) return "#D3D3D3";
+                    if (value === 6) return "#A3D9C8";
+                    if (value === 7) return "White";
+                    return "none";  // Make the slice invisible if the value is ""
                 }
             })
             .style("stroke", (d) => {
@@ -3066,4 +3074,15 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling, odoran
                 return value === "" ? 0 : 0.5;  // Set stroke-width to 0 if the value is an empty string
             });
     }
+    // Add padding and scale
+    const padding = 50;  // Adjust padding value as needed (50px for this example)
+    const originalWidth = +svg.attr("width");
+    const originalHeight = +svg.attr("height");
+
+    // Adjust the viewBox to add padding
+    svg.attr("viewBox", `-${padding} -${padding} ${originalWidth + 2 * padding} ${originalHeight + 2 * padding}`);
+
+    // Apply scaling to the content (e.g., 95% of the original size)
+    svg.attr("transform", "scale(0.95)")
+    .attr("transform-origin", "center");
 }
