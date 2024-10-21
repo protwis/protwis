@@ -2460,7 +2460,6 @@ function GPCRome_initializeData(data) {
         });
     });
 
-    console.log(GPCRomes)
     return GPCRomes;
 }
 
@@ -2472,7 +2471,7 @@ function GPCRome_formatTextWithHTML(text, Family_list) {
         .replace(" receptor", '')
         .replace("-adrenoceptor", '')
         .replace(" receptor-", '-')
-        .replace("<sub>", '</tspan><tspan baseline-shift="-20%" style:"font-size: 5">')
+        .replace("<sub>", '</tspan><tspan baseline-shift="-20%">')
         .replace("</sub>", '</tspan><tspan>')
         .replace("<i>", '</tspan><tspan font-style="italic">')
         .replace("</i>", '</tspan><tspan>')
@@ -2523,8 +2522,7 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling, odoran
     dimensions = { height: 1000, width: 1000 };
 
     const Spacing = GPCRome_styling.Spacing;
-    // const datatype = GPCRome_styling.datatype;
-    const datatype = "NRDD";
+    const datatype = GPCRome_styling.datatype;
     const family = GPCRome_styling.family
     const showIcon = GPCRome_styling.showIcon;  // Get the icon visibility state
 
