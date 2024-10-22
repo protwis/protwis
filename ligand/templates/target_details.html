@@ -442,18 +442,22 @@
             column_filters = column_filters.concat(createYADCFfilters(16, 5, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
             column_filters = column_filters.concat(createYADCFfilters(21, 1, "multi_select", "select2", "Select", false, "exact", "text", "50px", null, null, null, other_YADCF_filters_smiles));
             }else{
-            var smiles_column = 25;            
-            column_filters = column_filters.concat(createYADCFfilters(1, 1, "multi_select", "select2", "Select", false, "exact", "html", "80px", null, null, null, other_YADCF_filters_text));
-            column_filters = column_filters.concat(createYADCFfilters(2, 1, "multi_select", "select2", "Select", false, "exact", "html", "80px", null, null, null, other_YADCF_filters_num));
-            column_filters = column_filters.concat(createYADCFfilters(3, 2, "multi_select", "select2", "Select", false, "exact", "rendered_html", "50px", null, null, null, other_YADCF_filters_text));
-            column_filters = column_filters.concat(createYADCFfilters(5, 2, "range_number", null, ["Min", "Max"], false, null, null, "30px"));
-            column_filters = column_filters.concat(createYADCFfilters(7, 5, "multi_select", "select2", "Select", false, "exact", "rendered_html", "50px", null, null, null, other_YADCF_filters_text));
-            column_filters = column_filters.concat(createYADCFfilters(12, 1, "range_number", null, ["Min", "Max"], false, null, null, "30px"));
-            column_filters = column_filters.concat(createYADCFfilters(13, 1, "multi_select", "select2", "Select", false, "exact",  "rendered_html", "50px", null, null, null, other_YADCF_filters_text));
-            column_filters = column_filters.concat(createYADCFfilters(14, 4, "range_number", null, ["Min", "Max"], false, null, null, "30px"));
-            column_filters = column_filters.concat(createYADCFfilters(18, 2, "multi_select", "select2", "Select", false, "exact", "rendered_html", "50px", null, null, null, other_YADCF_filters_text));
-            column_filters = column_filters.concat(createYADCFfilters(20, 5, "range_number", null, ["Min", "Max"], false, null, null, "30px"));
-            column_filters = column_filters.concat(createYADCFfilters(25, 1, "multi_select", "select2", "Select", false, "exact", "text", "50px", null, null, null, other_YADCF_filters_smiles));
+            const SSHIFT = {% if ligand_similarity %}1{% else %}0{% endif %};
+            var smiles_column = 25 + SSHIFT;
+            {% if ligand_similarity %}
+            column_filters = column_filters.concat(createYADCFfilters(1, 1, "range_number", null, ["Min", "Max"], false, null, null, "30px"));
+            {% endif %};
+            column_filters = column_filters.concat(createYADCFfilters(1 + SSHIFT, 1, "multi_select", "select2", "Select", false, "exact", "html", "80px", null, null, null, other_YADCF_filters_text));
+            column_filters = column_filters.concat(createYADCFfilters(2 + SSHIFT, 1, "multi_select", "select2", "Select", false, "exact", "html", "80px", null, null, null, other_YADCF_filters_num));
+            column_filters = column_filters.concat(createYADCFfilters(3 + SSHIFT, 2, "multi_select", "select2", "Select", false, "exact", "rendered_html", "50px", null, null, null, other_YADCF_filters_text));
+            column_filters = column_filters.concat(createYADCFfilters(5 + SSHIFT, 2, "range_number", null, ["Min", "Max"], false, null, null, "30px"));
+            column_filters = column_filters.concat(createYADCFfilters(7 + SSHIFT, 5, "multi_select", "select2", "Select", false, "exact", "rendered_html", "50px", null, null, null, other_YADCF_filters_text));
+            column_filters = column_filters.concat(createYADCFfilters(12 + SSHIFT, 1, "range_number", null, ["Min", "Max"], false, null, null, "30px"));
+            column_filters = column_filters.concat(createYADCFfilters(13 + SSHIFT, 1, "multi_select", "select2", "Select", false, "exact",  "rendered_html", "50px", null, null, null, other_YADCF_filters_text));
+            column_filters = column_filters.concat(createYADCFfilters(14 + SSHIFT, 4, "range_number", null, ["Min", "Max"], false, null, null, "30px"));
+            column_filters = column_filters.concat(createYADCFfilters(18 + SSHIFT, 2, "multi_select", "select2", "Select", false, "exact", "rendered_html", "50px", null, null, null, other_YADCF_filters_text));
+            column_filters = column_filters.concat(createYADCFfilters(20 + SSHIFT, 5, "range_number", null, ["Min", "Max"], false, null, null, "30px"));
+            column_filters = column_filters.concat(createYADCFfilters(25 + SSHIFT, 1, "multi_select", "select2", "Select", false, "exact", "text", "50px", null, null, null, other_YADCF_filters_smiles));
           }
         }
 
@@ -889,7 +893,8 @@
                 </tr>
                 <tr>
                     <th class="select-page-th"><input class="select-page" type="checkbox">Sel. page</th>
-                    <th style="text-align:left">Common<br >name</th>
+                    <th style="text-align:left">Similar-<br />ity</th>
+                    <th style="text-align:left">Common<br />name</th>
                     <th style="text-align:left">GPCRdb<br />ID</th>
                     <th style="text-align:left">#Vendors<br /><br /></th>
                     <th style="text-align:left">Reference<br />ligand</th>
@@ -918,6 +923,7 @@
                 {% for p in affinity_data %}
                 <tr>
                     <td><input class="alt" type="checkbox"></td>
+                    <td align="right">{{p.ligand_similarity}}</td>
                     <td><a class="struct" rel="http://www.ebi.ac.uk/chembl/api/data/image/{{p.ligand__ids__index}}" href="/ligand/{{p.ligand__id}}/info" target="_blank">{{p.ligand__ids__index}}</a></td>
                     <td align="right"><a href="/ligand/{{p.ligand__id}}/info" target="_blank">{{p.ligand__id}}</a></td>
                     <td align="right">{{p.purchasability}}</td>
@@ -1003,21 +1009,22 @@
            <table style="width:100%" class="display" id="proteins_potency">
                <thead id="headers_potency">
            			<tr class="header-spans">
-           				<th style="text-align:left" colspan="5">Ligands (move mouse cursor over ligand name to see structure)
-                     <button type="button" class="close hide_columns" columns="1,2,3,4"  aria-label="Close"><span aria-hidden="true">&times;</span></button>
+           				<th style="text-align:left" colspan="{% if ligand_similarity %}6{% else %}5{% endif %}">Ligands (move mouse cursor over ligand name to see structure)
+                     <button type="button" class="close hide_columns" columns="1,2,3,4{% if ligand_similarity %},5{% endif %}"  aria-label="Close"><span aria-hidden="true">&times;</span></button>
                    </th>
                    <th style="border-left: 1px solid black; text-align:left" colspan="{% if ligand_query %}7{% else %}3{% endif %}" style="">Receptor
-                    <button type="button" class="close hide_columns" columns="{% if ligand_query %}5,6,7,8,9,10,11{% else %}5,6,7{% endif %}" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <button type="button" class="close hide_columns" columns="{% if ligand_query %}{% if not ligand_similarity %}5,{% endif %}6,7,8,9,10,11{% if ligand_similarity %},12{% endif %}{% else %}5,6,7{% endif %}" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                   </th>
                    <th style="border-left: 1px solid black; text-align:left" colspan="8">Assay information
-                    <button type="button" class="close hide_columns" columns="{% if ligand_query %}12,13,14,15,16,17,18,19{% else %}8,9,10,11,12,13,14,15{% endif %}" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <button type="button" class="close hide_columns" columns="{% if ligand_query %}{% if not ligand_similarity %}12,{% endif %}13,14,15,16,17,18,19{% if ligand_similarity %},20{% endif %}{% else %}8,9,10,11,12,13,14,15{% endif %}" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                   </th>
                   <th style="border-left: 1px solid black; text-align:left" colspan="6">Chemical information
-                    <button type="button" class="close hide_columns" columns="{% if ligand_query %}20,21,22,23,24,25{% else %}16,17,18,19,20,21{% endif %}"  aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <button type="button" class="close hide_columns" columns="{% if ligand_query %}{% if not ligand_similarity %}20,{% endif %}21,22,23,24,25{% if ligand_similarity %},26{% endif %}{% else %}16,17,18,19,20,21{% endif %}"  aria-label="Close"><span aria-hidden="true">&times;</span></button>
                   </th>
            			</tr>
            			<tr class="table-filter-dropdown">
                    <th class="select-page-th"><input class="select-page" type="checkbox">Sel. page</th>
+                   {% if ligand_similarity %}<th style="text-align:left">Similar-<br />ity</th>{% endif %}
                    <th style="text-align:left">Common<br />name</th>
                    <th style="text-align:left">GPCRdb<br />ID</th>
                    <th style="text-align:left">Type<br /><br /></th>
@@ -1054,6 +1061,9 @@
                    {% for record in potency_data %}
                    <tr>
                        <td><input class="alt" type="checkbox"></td>
+                       {% if ligand_similarity %}
+                       <td align="right">{{record.ligand_similarity|stringformat:".2f"}}</td>
+                       {% endif %}
                        <td><a class="struct struct_potency" rel="{{record.picture}}" href="/ligand/{{record.lig_id}}/info" target="_blank">{{record.ligand_name|safe}}</a></td>
                        <td align="right"><a href="/ligand/{{record.lig_id}}/info" target="_blank">{{record.lig_id}}</a></td>
                        <td>{{record.ligand_type}}</td>
@@ -1132,21 +1142,22 @@
         <table style="width:100%" class="display" id="proteins_affinity">
             <thead id="headers_affinity">
              <tr class="header-spans">
-               <th style="text-align:left" colspan="5">Ligands (move mouse cursor over ligand name to see structure)
-                  <button type="button" class="close hide_columns" columns="1,2,3,4"  aria-label="Close"><span aria-hidden="true">&times;</span></button>
+               <th style="text-align:left" colspan="{% if ligand_similarity %}6{% else %}5{% endif %}">Ligands (move mouse cursor over ligand name to see structure)
+                  <button type="button" class="close hide_columns" columns="1,2,3,4{% if ligand_similarity %},5{% endif %}"  aria-label="Close"><span aria-hidden="true">&times;</span></button>
                 </th>
                 <th style="border-left: 1px solid black; text-align:left" colspan="{% if ligand_query %}7{% else %}3{% endif %}" style="">Receptor
-                  <button type="button" class="close hide_columns" columns="{% if ligand_query %}5,6,7,8,9,10,11{% else %}5,6,7{% endif %}" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                  <button type="button" class="close hide_columns" columns="{% if ligand_query %}{% if not ligand_similarity %}5,{% endif %}6,7,8,9,10,11{% if ligand_similarity %},12{% endif %}{% else %}5,6,7{% endif %}" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                 </th>
                  <th style="border-left: 1px solid black; text-align:left" colspan="8">Assay information
-                  <button type="button" class="close hide_columns" columns="{% if ligand_query %}12,13,14,15,16,17,18,19{% else %}8,9,10,11,12,13,14,15{% endif %}" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                  <button type="button" class="close hide_columns" columns="{% if ligand_query %}{% if not ligand_similarity %}12,{% endif %}13,14,15,16,17,18,19{% if ligand_similarity %},20{% endif %}{% else %}8,9,10,11,12,13,14,15{% endif %}" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                 </th>
                 <th style="border-left: 1px solid black; text-align:left" colspan="6">Chemical information
-                  <button type="button" class="close hide_columns" columns="{% if ligand_query %}20,21,22,23,24,25{% else %}16,17,18,19,20,21{% endif %}"  aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                  <button type="button" class="close hide_columns" columns="{% if ligand_query %}{% if not ligand_similarity %}20,{% endif %}21,22,23,24,25{% if ligand_similarity %},26{% endif %}{% else %}16,17,18,19,20,21{% endif %}"  aria-label="Close"><span aria-hidden="true">&times;</span></button>
                 </th>
              </tr>
              <tr class="table-filter-dropdown">
                 <th class="select-page-th"><input class="select-page" type="checkbox">Sel. page</th>
+                {% if ligand_similarity %}<th style="text-align:left">Similar-<br />ity</th>{% endif %}
                 <th style="text-align:left">Common<br />name</th>
                 <th style="text-align:left">GPCRdb<br />ID</th>
                 <th style="text-align:left">Type<br /><br /></th>
@@ -1184,6 +1195,9 @@
                 {% for record in affinity_data %}
                 <tr>
                     <td><input class="alt" type="checkbox"></td>
+                    {% if ligand_similarity %}
+                    <td align="right">{{record.ligand_similarity|stringformat:".2f"}}</td>
+                    {% endif %}
                     <td><a class="struct struct_affinity" rel="{{record.picture}}" href="/ligand/{{record.lig_id}}/info" target="_blank">{{record.ligand_name|safe}}</a></td>
                     <td align="right"><a href="/ligand/{{record.lig_id}}/info" target="_blank">{{record.lig_id}}</a></td>
                     <td>{{record.ligand_type}}</td>
@@ -1223,6 +1237,9 @@
 
       </div>
     </div>
+  </div>
+  <div style="margin-top:210px">
+    &nbsp;
   </div>
  {% endif %}
 {% endblock %}
