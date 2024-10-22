@@ -157,6 +157,7 @@ class LigandNameSelection(AbsTargetSelection):
             cache.set(cache_key, ligandids, 60*60*24*7)
         else:
             ligandids = cache.get(cache_key)
+            cache.touch(cache_key, 60*60*24*7)
 
         context['ligandids'] = ligandids
 
@@ -541,10 +542,10 @@ class LigandBulkSearch(TemplateView):
 
             if cache_key != False and cache.has_key(cache_key):
                 result = cache.get(cache_key)
+                cache.touch(cache_key, 60*60*24*7)
                 if 'redirect_to' in result:
                     return result
-                ligand_data_affinity = result['affinity_data']
-                ligand_data_potency = result['potency_data']
+                return result
             else:
                 ligand_data_affinity,ligand_data_potency = LigandListDetails(mode, ps,ligand_search=True)
             context = {}
@@ -565,8 +566,8 @@ class LigandBulkSearch(TemplateView):
                 self.request.session[session_key] = 'Too many records (max. %d). Try again with more specific search criteria.' % (MAX_RECORDS)
                 self.request.session.modified = True
                 return context
-            cache.set(cache_key, context, 60*60*24*7)
         context['mode'] = mode
+        cache.set(cache_key, context, 60*60*24*7)
         return context
     
     def get(self, request, *args, **kwargs):
@@ -704,6 +705,7 @@ class LigandStructuralSearch(TemplateView):
     def get_context_data(self, **kwargs):
         cache_key = False
         mode = 'compact'
+        similarities = None
         context = super().get_context_data(**kwargs)
         param_dict = getLigandStructuralSearchParameters(self.request)
         search_type = param_dict['search_type']
@@ -751,12 +753,15 @@ class LigandStructuralSearch(TemplateView):
             if not(cache_key != False and cache.has_key(cache_key)):
                 no_results_msg = 'No results found.'
                 if cursor_results != []:
-                    ligand_id = [x[0] for x in cursor_results]
+                    ligand_id = []
+                    similarities = {}
+                    for r in cursor_results:
+                        lig_id = r[0]
+                        ligand_id.append(lig_id)
+                        similarities[lig_id] = r[1]
                     ps = AssayExperiment.objects.filter(ligand__in=ligand_id).prefetch_related('protein', 'ligand', 'ligand__ligand_type','protein__family')
-                    if search_type == 'similarity':
-                        ps = ps.order_by("ligand__id","protein__entry_name")
-                    else:
-                        ps = ps.order_by("ligand__id","protein__entry_name")
+                    ps = ps.order_by("ligand__id","protein__entry_name")
+
                 else:
                     context = "redirect"
                     self.request.session['ligand_structural_search_error_msg'] = no_results_msg
@@ -771,13 +776,15 @@ class LigandStructuralSearch(TemplateView):
                     return context
 
             if cache_key != False and cache.has_key(cache_key):
-                result = cache.get(cache_key)
-                ligand_data_affinity = result['affinity_data']
-                ligand_data_potency = result['potency_data']
+                context = cache.get(cache_key)
+                cache.touch(cache_key, 60*60*24*7)
+                return context
             else:
-                ligand_data_affinity,ligand_data_potency = LigandListDetails(mode, ps,ligand_search=True,similarities=None)
+                ligand_data_affinity,ligand_data_potency = LigandListDetails(mode, ps,ligand_search=True,ligand_similarities=similarities)
             context = {}
             context['ligand_query'] = True
+            if similarities is not None:
+                context['ligand_similarity'] = True
             context['potency_data'] = ligand_data_potency
             context['affinity_data'] = ligand_data_affinity
             if len(ligand_data_potency) + len(ligand_data_affinity) > MAX_RECORDS:
@@ -785,8 +792,9 @@ class LigandStructuralSearch(TemplateView):
                 self.request.session['ligand_structural_search_error_msg'] = 'Too many records (max. %d). Try again with more specific search criteria.' % (MAX_RECORDS)
                 self.request.session.modified = True
                 return context
-            cache.set(cache_key, context, 60*60*24*7)
+            
         context['mode'] = mode
+        cache.set(cache_key, context, 60*60*24*7)
         return context
     
     def get(self, request, *args, **kwargs):
@@ -917,7 +925,7 @@ def CachedTargetDetailsCompact(request, **kwargs):
 def CachedTargetDetailsExtended(request, **kwargs):
     return TargetDetails("extended", request, **kwargs)
 
-def LigandListDetails(mode, ps,ligand_search=False,similarities=None):
+def LigandListDetails(mode, ps,ligand_search=False,ligand_similarities=None):
     if mode == 'extended':
         ligand_data_affinity = []
         ligand_data_potency = []
@@ -970,12 +978,19 @@ def LigandListDetails(mode, ps,ligand_search=False,similarities=None):
         img_setup_smiles = "https://cactus.nci.nih.gov/chemical/structure/{}/image"
         d = OrderedDict()
 
+        ligs = []
+        lig_ids_list = []
+
         for p in ps:
             if p.ligand not in d:
                 d[p.ligand] = []
+                ligs.append(p.ligand)
+                lig_ids_list.append(p.ligand_id)
             d[p.ligand].append(p)
+        if ligand_similarities is not None:
+            ligs = sorted(ligs, key=lambda x:ligand_similarities[x.id], reverse = True)
 
-        lig_ids = set([record.ligand_id for record in ps])
+        lig_ids = set(lig_ids_list)
         vendor_output = list(LigandVendorLink.objects.filter(ligand_id__in=lig_ids).values_list("ligand_id").annotate(Count('vendor_id', distinct=True)))
         vendors_dict = {entry[0]:entry[1] for entry in vendor_output}
 
@@ -983,10 +998,6 @@ def LigandListDetails(mode, ps,ligand_search=False,similarities=None):
         ligand_data_potency = []
         assay_conversion = {'A': 'ADMET', 'B': 'Binding', 'F': 'Functional', 'U': 'N/A', 'T': 'Toxicity'}
         
-        if similarities is not None:
-            pass #TODO: sort d.keys() by similarity and save into 'ligs'.
-        else:
-            ligs = d.keys()
         for lig in ligs:
             records = d[lig]
             if lig.smiles is not None and (lig.mw is None or lig.mw < 800):
@@ -1080,6 +1091,8 @@ def LigandListDetails(mode, ps,ligand_search=False,similarities=None):
                                     binding_dict['entry_name'] = protein.entry_name
                                     binding_dict['class'] = protein.get_protein_class_from_slug(short=True)
                                     binding_dict['family'] = protein.get_protein_family_from_slug(short=True)
+                                if ligand_similarities is not None:
+                                    binding_dict['ligand_similarity'] = ligand_similarities[lig.id]
                                 ligand_data_affinity.append(binding_dict)
                             elif assay_type == 'Functional': #Potency
                                 functional_dict = {
@@ -1111,6 +1124,8 @@ def LigandListDetails(mode, ps,ligand_search=False,similarities=None):
                                     functional_dict['entry_name'] = protein.entry_name
                                     functional_dict['class'] = protein.get_protein_class_from_slug(short=True)
                                     functional_dict['family'] = protein.get_protein_family_from_slug(short=True)
+                                    if ligand_similarities is not None:
+                                        functional_dict['ligand_similarity'] = ligand_similarities[lig.id]
                                 ligand_data_potency.append(functional_dict)
 
 
