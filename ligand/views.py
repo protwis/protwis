@@ -25,6 +25,7 @@ from django.db import connection
 from django.http import HttpResponseRedirect
 
 from django.db.models import Q, Count, Subquery, OuterRef
+from django.db.models.functions import Coalesce
 from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import ValidationError
 from django_rdkit.models import *
@@ -3281,8 +3282,8 @@ class PhysiologicalLigands(TemplateView):
                         'pKi - min', 'pKi - mid', 'pKi - max', 'Reference', 'ID',
                         'Entry Name', 'Accession', 'pdb_code', 'structure_type']
         data_subsets = []
-        #receptor_id
 
+        # Subqueries to get the desired fields directly
         pdb_subquery = LigandPeptideStructure.objects.filter(
             ligand=OuterRef('ligand'),
             structure__protein_conformation__protein=OuterRef('receptor')
@@ -3293,9 +3294,27 @@ class PhysiologicalLigands(TemplateView):
             structure__protein_conformation__protein=OuterRef('receptor')
         ).values('structure__structure_type__slug')[:1]
 
+        experimental_pdb_subquery = StructureLigandInteraction.objects.filter(
+            structure__structure_type__slug__in=['x-ray-diffraction', 'electron-crystallography', 'electron-microscopy'],
+            ligand=OuterRef('ligand'),
+            structure__protein_conformation__protein__parent__pk=OuterRef('receptor')
+        ).values('structure__pdb_code__index')[:1]
+
+        experimental_structure_type_subquery = StructureLigandInteraction.objects.filter(
+            structure__structure_type__slug__in=['x-ray-diffraction', 'electron-crystallography', 'electron-microscopy'],
+            ligand=OuterRef('ligand'),
+            structure__protein_conformation__protein__parent__pk=OuterRef('receptor')
+        ).values('structure__structure_type__slug')[:1]
+
+        # Annotate the queryset
         endogenous_data = Endogenous_GTP.objects.annotate(
-            pdb_code=Subquery(pdb_subquery),
-            structure_type=Subquery(structure_type_subquery)
+            experimental_pdb_code=Subquery(experimental_pdb_subquery),
+            experimental_structure_type=Subquery(experimental_structure_type_subquery),
+            model_pdb_code=Subquery(pdb_subquery),
+            model_structure_type=Subquery(structure_type_subquery),
+        ).annotate(
+            pdb_code=Coalesce('experimental_pdb_code', 'model_pdb_code'),
+            structure_type=Coalesce('experimental_structure_type', 'model_structure_type'),
         ).values_list(
                             "receptor__family__parent__parent__parent__name", #0 Class
                             "receptor__family__parent__name",                 #1 Receptor Family
@@ -3320,7 +3339,7 @@ class PhysiologicalLigands(TemplateView):
                             "receptor",                                       #20 Receptor ID
                             "receptor__accession",                            #21 Accession (UniProt link)
                             'pdb_code',                                       #22 pdb_code (UniProt link)
-                            'structure_type').distinct()                      #23           
+                            'structure_type').distinct()                      #23          
 
         gtpidlinks = dict(list(LigandID.objects.filter(web_resource__slug='gtoplig').values_list(
                             "ligand",
