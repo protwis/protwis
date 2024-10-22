@@ -7,6 +7,10 @@ urlpatterns = [
     #  url(r'^browser$', cache_page(3600*24*7)(views.LigandBrowser.as_view()), name='ligand_browser'),
     url(r'^$', views.LigandTargetSelection.as_view(), name='ligand_selection'),
     path('ligand_by_name', views.LigandNameSelection.as_view(), name='ligand_selection'),
+    path('read_input_ligand_bulk_search', views.ReadInputLigandBulkSearch.as_view(), name='read_input_ligand_bulk_search'),
+    path('ligand_bulk_search', views.LigandBulkSearch.as_view(), name='ligand_bulk_search'),
+    path('read_input_ligand_structural_search', views.ReadInputLigandStructuralSearch.as_view(), name='read_input_ligand_structural_search'),
+    path('ligand_structural_search', views.LigandStructuralSearch.as_view(), name='ligand_structural_search'),
 
     url(r'^target/all/(?P<slug>[-\w]+)/$', views.CachedTargetDetailsExtended, name='ligand_target_detail'),
     path('target_detail', views.CachedTargetDetailsExtended, name='ligand_target_detail'),
