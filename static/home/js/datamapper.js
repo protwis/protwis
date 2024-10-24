@@ -2465,16 +2465,13 @@ function GPCRome_initializeData(data) {
 
 // Reformat the labels (manual curated)
 function GPCRome_formatTextWithHTML(text, Family_list) {
-    // Check if the text is in the Family_list
-    const isInFamilyList = Family_list.includes(text);
-
     // Apply all the replacements step by step
     let formattedText = text
         .replace(" receptors", '')
         .replace(" receptor", '')
         .replace("-adrenoceptor", '')
         .replace(" receptor-", '-')
-        .replace("<sub>", '</tspan><tspan baseline-shift="sub">')
+        .replace("<sub>", '</tspan><tspan baseline-shift="-20%">')
         .replace("</sub>", '</tspan><tspan>')
         .replace("<i>", '</tspan><tspan font-style="italic">')
         .replace("</i>", '</tspan><tspan>')
@@ -2485,21 +2482,39 @@ function GPCRome_formatTextWithHTML(text, Family_list) {
         .replace("calcitonin-like receptor", 'CLR')
         .replace("5-Hydroxytryptamine", '5-HT');
 
+    // Capitalize the first letter after applying all replacements
+    function capitalizeFirstLetter(str) {
+        let match = str.match(/^[^a-zA-Z]*([a-zA-Z])/);
+        if (match) {
+            let index = match.index + match[0].length - 1;
+            let firstLetter = str[index].toUpperCase(); // Capitalize the first letter
+            return str.slice(0, index) + firstLetter + str.slice(index + 1);
+        }
+        return str; // If no alphabetic characters, return unchanged
+    }
+
+    // Apply capitalization after all replacements
+    formattedText = capitalizeFirstLetter(formattedText);
+
+    // Check if the text is in the Family_list for additional formatting
+    const isInFamilyList = Family_list.includes(text);
+
     // Apply additional formatting if the text is in the Family_list
     if (isInFamilyList) {
         formattedText = formattedText
             .replace(/( receptors|neuropeptide )/g, '') // Remove specific substrings
-            .replace(/(-releasing)/g, '-rel.') // Remove specific substrings
-            .replace(/(-concentrating)/g, '-conc.') // Remove specific substrings
-            .replace(/( and )/g, ' & ') // Remove specific substrings
-            .replace(/(GPR18, GPR55 & GPR119)/g, 'GPR18, 55 & 119') // Remove specific substrings
-            .replace(/(Class C Orphans)/g, 'Orphans') // Remove specific substrings
-            .split("</tspan>")[0]
-            .split(" (")[0]; // Keep only the part before the first " ("
+            .replace(/(-releasing)/g, '-rel.') // Abbreviate specific substrings
+            .replace(/(-concentrating)/g, '-conc.') // Abbreviate specific substrings
+            .replace(/( and )/g, ' & ') // Replace "and" with "&"
+            .replace(/(GPR18, GPR55 & GPR119)/g, 'GPR18, 55 & 119') // Special case formatting
+            .replace(/(Class C Orphans)/g, 'Orphans') // Replace "Class C Orphans"
+            .split("</tspan>")[0] // Keep only part before the first closing tspan tag
+            .split(" (")[0]; // Keep only the part before the first " (" parenthesis
     }
 
     return formattedText;
 }
+
 
 // Draw / generate the GPCRome plot
 function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling, odorant = false) {
@@ -2510,6 +2525,9 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling, odoran
     const datatype = GPCRome_styling.datatype;
     const family = GPCRome_styling.family
     const showIcon = GPCRome_styling.showIcon;  // Get the icon visibility state
+    const Font_family = "Arial"
+    const Class_fontsize = "20px"
+    const Receptor_and_family_fontsize = "11px"
 
     const svg = d3v4.select("#" + location)
     .append("svg")
@@ -2519,7 +2537,6 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling, odoran
     .attr("xmlns", "http://www.w3.org/2000/svg")  // Add the SVG namespace
     .attr("xmlns:xlink", "http://www.w3.org/1999/xlink");  // Add the xlink namespace for images
 
-
    // Get the image URL from the data-attribute
     const imageUrl = document.getElementById("image-container").getAttribute("data-image-url");
 
@@ -2527,30 +2544,28 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling, odoran
         var img = new Image();
         img.crossOrigin = "Anonymous";  // Ensure cross-origin handling
         img.src = imageUrl;
-    
+
         img.onload = function() {
             var canvas = document.createElement('canvas');
             canvas.width = img.width;
             canvas.height = img.height;
             var context = canvas.getContext('2d');
             context.drawImage(img, 0, 0);
-    
+
             // Convert the image to a base64-encoded string
             var dataUrl = canvas.toDataURL('image/png');
-    
+
             // Append the image to the SVG using 'xlink:href' (D3 v4 compatible)
             svg.append("image")
                 .attr("xlink:href", dataUrl)  // Use 'xlink:href' for D3 v4 compatibility
-                .attr("x", 5)  // Top-left corner
-                .attr("y", 5)  // Top-left corner
+                .attr("x", 0)  // Top-left corner
+                .attr("y", -45)  // Top-left corner
                 .attr("width", 230)  // Set width for the image
                 .attr("height", 230)  // Set height for the image
                 .attr("class", "toggle-image");  // Add a class to control visibility
         };
     }
-    
 
-    
     // SORT the data
 
     // Function to perform natural sorting
@@ -2588,7 +2603,7 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling, odoran
     } else {
 
       // Number of last entries to transfer and remove
-      const N = 14;  // Change this value to 2, 3, or any number you want
+      const N = 16;  // Change this value to 2, 3, or any number you want
 
       // Get the keys of the GPCRome_A object
       const dartAKeys = Object.keys(layout_data.GPCRome_A);
@@ -2826,8 +2841,8 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling, odoran
             return `rotate(${pos.rotation + rotation}, ${pos.x}, ${pos.y})`;
         })
         .html(d => GPCRome_formatTextWithHTML(d, Family_list, level))
-        .style("font-size", d => Header_list.includes(d) ? "26px" : "9px")
-        .style("font-family", "Palatino")
+        .style("font-size", d => Header_list.includes(d) ? Class_fontsize : Receptor_and_family_fontsize)
+        .style("font-family", Font_family)
         .attr("font-weight", d => Header_list.includes(d) || Family_list.includes(d) ? "950" : "normal")
         .style("fill", d => Header_list.includes(d) ? "Black" : "black");
 
@@ -2867,7 +2882,7 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling, odoran
                     textElement.remove();
 
                     // fontsize
-                    let family_fontsize = "9px";
+                    let family_fontsize = Receptor_and_family_fontsize;
 
                     // Check if the formatted text is longer than 10 characters (or any desired length)
                     if (formattedText.length > 18) {
@@ -2885,7 +2900,8 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling, odoran
                         // Get the current and previous positions using calculatePositionAndAngle with the isSplit flag
                         const currentPos = calculatePositionAndAngle(index, totalItems, values, Header_list, Family_list, true);
                         const prevPos = calculatePositionAndAngle(index - 1, totalItems, values, Header_list, Family_list, true);
-
+                        
+                        off_set = level+1
 
                         if (angle >= -90 && angle < 90) {
                             // Right-hand side: use prevPos for the first part and currentPos for the second part
@@ -2893,25 +2909,28 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling, odoran
                             // Append the first part of the text (using prevPos)
                             svg.append("text")
                                 .attr("x", prevPos.x)
-                                .attr("y", prevPos.y)
+                                .attr("y", prevPos.y+off_set)
                                 .attr("text-anchor", "start")
                                 .attr("dominant-baseline", "middle")
                                 .attr("transform", `rotate(${prevPos.rotation + additionalRotation}, ${prevPos.x}, ${prevPos.y})`)
                                 .attr("class", "GPCRome-family-label-split")
                                 .text(firstPart)
                                 // .style("font-weight", "bold")
+                                .style("font-family", Font_family)
                                 .style("font-size",family_fontsize);
+                                
 
                             // Append the second part of the text (using currentPos)
                             svg.append("text")
                                 .attr("x", currentPos.x)
-                                .attr("y", currentPos.y)
+                                .attr("y", currentPos.y-off_set)
                                 .attr("text-anchor", "start")
                                 .attr("dominant-baseline", "middle")
                                 .attr("transform", `rotate(${currentPos.rotation + additionalRotation}, ${currentPos.x}, ${currentPos.y})`)
                                 .attr("class", "GPCRome-family-label-split")
                                 .text(secondPart)
                                 // .style("font-weight", "bold")
+                                .style("font-family", Font_family)
                                 .style("font-size", family_fontsize);
 
                         } else {
@@ -2920,25 +2939,27 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling, odoran
                             // Append the first part of the text (using currentPos)
                             svg.append("text")
                                 .attr("x", currentPos.x)
-                                .attr("y", currentPos.y)
+                                .attr("y", currentPos.y+off_set)
                                 .attr("text-anchor", "end")
                                 .attr("dominant-baseline", "middle")
                                 .attr("transform", `rotate(${currentPos.rotation + additionalRotation}, ${currentPos.x}, ${currentPos.y})`)
                                 .attr("class", "GPCRome-family-label-split")
                                 .text(firstPart)
                                 // .style("font-weight", "bold")
+                                .style("font-family", Font_family)
                                 .style("font-size",family_fontsize);
 
                             // Append the second part of the text (using prevPos)
                             svg.append("text")
                                 .attr("x", prevPos.x)
-                                .attr("y", prevPos.y)
+                                .attr("y", prevPos.y-off_set)
                                 .attr("text-anchor", "end")
                                 .attr("dominant-baseline", "middle")
                                 .attr("transform", `rotate(${prevPos.rotation + additionalRotation}, ${prevPos.x}, ${prevPos.y})`)
                                 .attr("class", "GPCRome-family-label-split")
                                 .text(secondPart)
                                 // .style("font-weight", "bold")
+                                .style("font-family", Font_family)
                                 .style("font-size",family_fontsize);
                         }
 
@@ -2963,7 +2984,8 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling, odoran
                             .attr("class", "GPCRome-family-label")
                             .text(formatText(formattedText))
                             // .style("font-weight", "bold")
-                            .style("font-size",family_fontsize+5);
+                            .style("font-family", Font_family)
+                            .style("font-size",family_fontsize);
                     }
                 }
             });
@@ -3052,6 +3074,16 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling, odoran
                     if (value === "ARRS") return "cornflowerblue";
                     if (value === "empty") return "white";
                     return "none";  // Make the slice invisible if the value is ""
+                } else if (datatype === "NRDD") {
+                    // Handle discrete data or default case
+                    if (value === 1) return "#F5BCBF";
+                    if (value === 2) return "#F17270";
+                    if (value === 3) return "#DD2628";
+                    if (value === 4) return "#2C87C8";
+                    if (value === 5) return "#D3D3D3";
+                    if (value === 6) return "#A3D9C8";
+                    if (value === 7) return "White";
+                    return "none";  // Make the slice invisible if the value is ""
                 }
             })
             .style("stroke", (d) => {
@@ -3066,4 +3098,15 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling, odoran
                 return value === "" ? 0 : 0.5;  // Set stroke-width to 0 if the value is an empty string
             });
     }
+    // Add padding and scale
+    const padding = 10;  // Adjust padding value as needed (50px for this example)
+    const originalWidth = +svg.attr("width");
+    const originalHeight = +svg.attr("height");
+
+    // Adjust the viewBox to add padding
+    svg.attr("viewBox", `-${padding} -${padding} ${originalWidth + 2 * padding} ${originalHeight + 2 * padding}`);
+
+    // Apply scaling to the content (e.g., 95% of the original size)
+    svg.attr("transform", "scale(0.95)")
+    .attr("transform-origin", "center");
 }
