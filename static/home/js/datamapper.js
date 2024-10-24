@@ -2600,6 +2600,9 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling, odoran
     const datatype = GPCRome_styling.datatype;
     const family = GPCRome_styling.family
     const showIcon = GPCRome_styling.showIcon;  // Get the icon visibility state
+    const Font_family = "Arial"
+    const Class_fontsize = "20px"
+    const Receptor_and_family_fontsize = "11px"
 
     const svg = d3v4.select("#" + location)
         .append("svg")
@@ -2717,7 +2720,6 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling, odoran
         const height = dimensions.height;
         const label_offset = 7; // Increased offset to push labels outward
         let GPCRome_radius;
-        const Receptor_and_family_fontsize = "12px"
 
         if (odorant) {
           GPCRome_radius = Math.min(width, height) / 2 - 60 - ((level === 3) ? (100 * level) : (95 * level)); // Radius for each GPCRome
@@ -2912,8 +2914,8 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling, odoran
             return `rotate(${pos.rotation + rotation}, ${pos.x}, ${pos.y})`;
         })
         .html(d => GPCRome_formatTextWithHTML(d, Family_list, level))
-        .style("font-size", d => Header_list.includes(d) ? "26px" : Receptor_and_family_fontsize)
-        .style("font-family", "Palatino")
+        .style("font-size", d => Header_list.includes(d) ? Class_fontsize : Receptor_and_family_fontsize)
+        .style("font-family", Font_family)
         .attr("font-weight", d => Header_list.includes(d) || Family_list.includes(d) ? "950" : "normal")
         .style("fill", d => Header_list.includes(d) ? "Black" : "black");
 
@@ -2953,7 +2955,7 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling, odoran
                     textElement.remove();
 
                     // fontsize
-                    let family_fontsize = "12px";
+                    let family_fontsize = Receptor_and_family_fontsize;
 
                     // Check if the formatted text is longer than 10 characters (or any desired length)
                     if (formattedText.length > 18) {
@@ -2987,7 +2989,7 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling, odoran
                                 .attr("class", "GPCRome-family-label-split")
                                 .text(firstPart)
                                 // .style("font-weight", "bold")
-                                .style("font-family", "Palatino")
+                                .style("font-family", Font_family)
                                 .style("font-size",family_fontsize);
                                 
 
@@ -3001,7 +3003,7 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling, odoran
                                 .attr("class", "GPCRome-family-label-split")
                                 .text(secondPart)
                                 // .style("font-weight", "bold")
-                                .style("font-family", "Palatino")
+                                .style("font-family", Font_family)
                                 .style("font-size", family_fontsize);
 
                         } else {
@@ -3017,7 +3019,7 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling, odoran
                                 .attr("class", "GPCRome-family-label-split")
                                 .text(firstPart)
                                 // .style("font-weight", "bold")
-                                .style("font-family", "Palatino")
+                                .style("font-family", Font_family)
                                 .style("font-size",family_fontsize);
 
                             // Append the second part of the text (using prevPos)
@@ -3030,7 +3032,7 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling, odoran
                                 .attr("class", "GPCRome-family-label-split")
                                 .text(secondPart)
                                 // .style("font-weight", "bold")
-                                .style("font-family", "Palatino")
+                                .style("font-family", Font_family)
                                 .style("font-size",family_fontsize);
                         }
 
@@ -3055,7 +3057,7 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling, odoran
                             .attr("class", "GPCRome-family-label")
                             .text(formatText(formattedText))
                             // .style("font-weight", "bold")
-                            .style("font-family", "Palatino")
+                            .style("font-family", Font_family)
                             .style("font-size",family_fontsize);
                     }
                 }
