@@ -1207,14 +1207,24 @@ class ParseAFComplexModels():
             # Grab model date/version from pdb file
             with open(location, 'r') as model_file:
                 line = model_file.readlines()[0]
+                print('LINE')
+                print(line)
                 date_re = re.search('HEADER[A-Z\S\D]+(\d{4}-\d{2}-\d{2})', line)
                 model_date = date_re.group(1)
 
-            # Check if model has full heterotrimer
-            if 'gbb1_human' in f:
-                signprot = signprot.split('_')[0]+'_human'
-                beta_gamma = True
+            # Check signprot type
+
+            if signprot.startswith('gna'):
+
+                # Check if model has full heterotrimer
+                if 'gbb1_human' in f:
+                    signprot = signprot.split('_')[0]+'_human'
+                    beta_gamma = True
+                else:
+                    beta_gamma = False
+
             else:
+                model = 'af-arrestin'
                 beta_gamma = False
 
             self.complexes[f'{receptor}{peptide}-{signprot}'] = {
