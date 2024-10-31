@@ -1224,7 +1224,22 @@ class ParseAFComplexModels():
                     current_date = datetime.now().date()
                     model_date = current_date.strftime('%Y-%m-%d')
 
-            complex_info = {
+            # Check signprot type
+
+            if signprot.startswith('gna'):
+
+                # Check if model has full heterotrimer
+                if 'gbb1_human' in f:
+                    signprot = signprot.split('_')[0]+'_human'
+                    beta_gamma = True
+                else:
+                    beta_gamma = False
+
+            else:
+                model = 'af-arrestin'
+                beta_gamma = False
+
+            self.complexes[f'{receptor}{peptide}-{signprot}'] = {
                 'receptor': receptor,
                 'peptide': peptide,
                 'signprot': signprot,
