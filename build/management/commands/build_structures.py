@@ -407,8 +407,10 @@ class Command(BaseBuild):
             seq = seq[:265]
         elif structure.pdb_code.index in ['1GZM', '3C9L']:
             seq = seq[:-3]
+        elif structure.pdb_code.index=='8WU1':
+            seq = seq[:-13]
         if structure.pdb_code.index in ['6NBI','6NBF','6NBH','6U1N','6M1H','6PWC','7JVR','7SHF','7EJ0','7EJ8','7EJA','7EJK','7VVJ','7TS0','7W6P','7W7E','8IRS',
-                                        '8FLQ','8FLR','8FLS','8FLU','8FU6','8IRU','7Y35','7Y36','8TB7']:
+                                        '8FLQ','8FLR','8FLS','8FLU','8FU6','8IRU','7Y35','7Y36','8TB7','8SZI','8TZQ','8U02','8W8Q','8W8R','8W8S']:
             pw2 = pairwise2.align.localms(parent_seq, seq, 3, -4, -3, -1)
         elif structure.pdb_code.index in ['6KUX','6KUY','6KUW','7SRS']:
             pw2 = pairwise2.align.localms(parent_seq, seq, 3, -4, -4, -1.5)
@@ -633,6 +635,74 @@ class Command(BaseBuild):
         elif structure.pdb_code.index in ['8HTI','8J46','8W77']:
             ref_seq = ref_seq[:114]+ref_seq[115:145]+'IL'+ref_seq[149:160]+ref_seq[161:170]+ref_seq[171:215]+ref_seq[216:]
             temp_seq = temp_seq[:118]+temp_seq[119:150]+temp_seq[152:156]+temp_seq[157:168]+temp_seq[169:209]+temp_seq[210:]
+        elif structure.pdb_code.index=='8J24':
+            ref_seq = ref_seq[:245]+ref_seq[246:]
+            temp_seq = temp_seq[:247]+TEMP_seq[248:]
+        elif structure.pdb_code.index in ['7YFC','7FYD']:
+            temp_seq = temp_seq[:203]+'R'+temp_seq[203:296]+temp_seq[297:]
+        elif structure.pdb_code.index in ['8GGA','8GGP']:
+            temp_seq = temp_seq[:236]+'E'+temp_seq[236:267]+temp_seq[268:]
+        elif structure.pdb_code.index=='8GGB':
+            temp_seq = temp_seq[:95]+'T-'+temp_seq[97:236]+'E'+temp_seq[236:267]+temp_seq[268:]
+        elif structure.pdb_code.index=='8GGE':
+            temp_seq = temp_seq[:186]+'E-'+temp_seq[188:]
+        elif structure.pdb_code.index=='8GTI':
+            temp_seq = temp_seq[:219]+'T---'+temp_seq[223:]
+        elif structure.pdb_code.index in ['8HN8','8HOC']:
+            ref_seq = ref_seq[:180]+ref_seq[181:]
+            temp_seq = temp_seq[:182]+temp_seq[183:202]+'G'+temp_seq[202:222]+'-----'+temp_seq[230:291]+'HL'+temp_seq[291:]
+        elif structure.pdb_code.index=='8IKH':
+            temp_seq = temp_seq[:78]+'F---'+temp_seq[82:]
+        elif structure.pdb_code.index in ['8J22','8J23']:
+            ref_seq = ref_seq[:245]+ref_seq[246:]
+            temp_seq = temp_seq[:247]+temp_seq[248:]
+        elif structure.pdb_code.index=='8JXW':
+            temp_seq = temp_seq[:205]+'H'+temp_seq[205:291]+temp_seq[292:]
+        elif structure.pdb_code.index=='8KH5':
+            temp_seq = temp_seq[:154]+'RT'+temp_seq[154:163]+temp_seq[165:]
+        elif structure.pdb_code.index=='8PJK':
+            temp_seq = temp_seq[:175]+'R'+temp_seq[175:180]+temp_seq[181:]
+        elif structure.pdb_code.index=='8QJ2':
+            temp_seq = temp_seq[:70]+'KN--'+temp_seq[74:]
+        elif structure.pdb_code.index=='8QW4':
+            temp_seq = temp_seq[:460]+'Y'+temp_seq[460:466]+temp_seq[467:]
+        elif structure.pdb_code.index=='8SZF':
+            temp_seq = temp_seq[:684]+'L'+temp_seq[684:702]+temp_seq[703:]
+        elif structure.pdb_code.index=='8T3Q':
+            temp_seq = temp_seq[:123]+'RG---'+temp_seq[128:]
+        elif structure.pdb_code.index=='8TR2':
+            temp_seq = temp_seq[:472]+'QT-G'+temp_seq[476:511]+'P---'+temp_seq[515:629]+'F--'+temp_seq[632:]
+        elif structure.pdb_code.index in ['8TRC','8TRD']:
+            temp_seq = temp_seq[:472]+'Q----'+temp_seq[477:]
+        elif structure.pdb_code.index=='8UWL':
+            temp_seq = temp_seq[:200]+'T'+temp_seq[200:245]+temp_seq[246:]
+        elif structure.pdb_code.index=='8V6U':
+            temp_seq = temp_seq[:283]+'C----'+temp_seq[288:]
+        elif structure.pdb_code.index=='8WCB':
+            temp_seq = temp_seq[:178]+'G-'+temp_seq[180:]
+        elif structure.pdb_code.index=='8WKY':
+            temp_seq = temp_seq[:94]+'TD--'+temp_seq[98:]
+        elif structure.pdb_code.index=='8WPG':
+            temp_seq = temp_seq[:683]+'L'+temp_seq[683:701]+temp_seq[702:]
+        elif structure.pdb_code.index in ['8X79','8X7A']:
+            temp_seq = temp_seq[:221]+'G'+temp_seq[221:230]+temp_seq[231:]
+        elif structure.pdb_code.index=='8XQO':
+            temp_seq = temp_seq[:160]+'N'+temp_seq[160:169]+temp_seq[170:215]+'K'+temp_seq[215:223]+temp_seq[224:]
+        elif structure.pdb_code.index=='8XQP':
+            temp_seq = temp_seq[:160]+'N'+temp_seq[160:169]+temp_seq[170:]
+        elif structure.pdb_code.index in ['8YW3']:
+            temp_seq = temp_seq[:105]+'S'+temp_seq[105:111]+temp_seq[112:]
+        elif structure.pdb_code.index=='8YW4':
+            temp_seq = temp_seq[:9]+temp_seq[87:105]+temp_seq[9:87]+temp_seq[105:]
+        elif structure.pdb_code.index=='8YW5':
+            temp_seq = temp_seq[:20]+'L'+temp_seq[20:29]+temp_seq[30:]
+        elif structure.pdb_code.index=='8ZFJ':
+            temp_seq = temp_seq[:262]+'C--'+temp_seq[265:]
+        elif structure.pdb_code.index=='8ZSJ':
+            temp_seq = temp_seq[:228]+'K'+temp_seq[228:243]+temp_seq[244:]
+        elif structure.pdb_code.index=='9AVL':
+            temp_seq = temp_seq[:123]+'N'+temp_seq[123:129]+temp_seq[130:]
+
 
 
         for i, r in enumerate(ref_seq, 1): #loop over alignment to create lookups (track pos)
@@ -760,7 +830,7 @@ class Command(BaseBuild):
                                     elif residue.sequence_number!=wt_r.sequence_number:
                                         # print('WT pos not same pos, mismatch',residue.sequence_number,residue.amino_acid,wt_r.sequence_number,wt_r.amino_acid)
                                         wt_pdb_lookup.append(OrderedDict([('WT_POS',wt_r.sequence_number), ('PDB_POS',residue.sequence_number), ('AA',wt_r.amino_acid)]))
-                                        if structure.pdb_code.index not in ['4GBR','6C1R','6C1Q','7XBX','7F1Q','7ZLY','8JWY','8JWZ','8JMT','8TB7','8ITM']:
+                                        if structure.pdb_code.index not in ['4GBR','6C1R','6C1Q','7XBX','7F1Q','7ZLY','8JWY','8JWZ','8JMT','8TB7','8ITM','9D3G']:
                                             if residue.sequence_number in unmapped_ref:
                                                 # print('residue.sequence_number',residue.sequence_number,'not mapped though')
                                                 if residue.amino_acid == wt_lookup[residue.sequence_number].amino_acid:
@@ -1031,6 +1101,7 @@ class Command(BaseBuild):
                     segments_present.append(res.protein_segment.slug)
                 if res.generic_number==None and (res.protein_segment.category == "helix" or res.missing_gn): # residue.missing_gn
                     if (res.protein_segment==prev_segment):
+                        # print(res, prev_gn, res.protein_segment)
                         gn_split = prev_gn.split("x")
                         new_gn = gn_split[0]+"x"+str(int(gn_split[1])+1)
 
@@ -1156,7 +1227,7 @@ class Command(BaseBuild):
             return
 
     @staticmethod
-    def parsecalculation(pdb_id, data, debug=True, ignore_ligand_preset=False):
+    def parsecalculation(pdb_id, data, ligand_name, debug=True, ignore_ligand_preset=False):
         module_dir = '/tmp/interactions'
         web_resource = WebResource.objects.get(slug='pdb')
         web_link, _ = WebLink.objects.get_or_create(web_resource=web_resource, index=pdb_id)
@@ -1185,20 +1256,23 @@ class Command(BaseBuild):
                 print('quitting due to no pdb for fragment in filesystem', f)
                 quit()
 
-            struct_lig_interactions = StructureLigandInteraction.objects.filter(pdb_reference=lig_key, structure=structure, annotated=True) #, pdb_file=None
+            lig_db_key = lig_key
+            if lig_key!=ligand_name and len(lig_key)==3 and len(ligand_name)==5:
+                lig_db_key = ligand_name
+            struct_lig_interactions = StructureLigandInteraction.objects.filter(pdb_reference=lig_db_key, structure=structure, annotated=True) #, pdb_file=None
             if struct_lig_interactions.exists():  # if the annotated exists
                 try:
                     struct_lig_interactions = struct_lig_interactions.get()
                     struct_lig_interactions.pdb_file = pdbdata
                     ligand = struct_lig_interactions.ligand
                 except Exception as msg:
-                    print('error with duplication structureligand',lig_key,msg)
-            elif StructureLigandInteraction.objects.filter(pdb_reference=lig_key, structure=structure).exists():
+                    print('error with duplication structureligand',lig_db_key,msg)
+            elif StructureLigandInteraction.objects.filter(pdb_reference=lig_db_key, structure=structure).exists():
                 try:
-                    struct_lig_interactions = StructureLigandInteraction.objects.filter(pdb_reference=lig_key, structure=structure).get()
+                    struct_lig_interactions = StructureLigandInteraction.objects.filter(pdb_reference=lig_db_key, structure=structure).get()
                     struct_lig_interactions.pdb_file = pdbdata
                 except StructureLigandInteraction.DoesNotExist: #already there
-                    struct_lig_interactions = StructureLigandInteraction.objects.filter(pdb_reference=lig_key, structure=structure, pdb_file=pdbdata).get()
+                    struct_lig_interactions = StructureLigandInteraction.objects.filter(pdb_reference=lig_db_key, structure=structure, pdb_file=pdbdata).get()
                 ligand = struct_lig_interactions.ligand
             else:  # create ligand and pair
                 print(pdb_id, "Skipping interactions with ", pdb_id)
@@ -1553,9 +1627,8 @@ class Command(BaseBuild):
                         if peptide_chain in self.parsed_pdb:
                             seq = ''
                             for res in self.parsed_pdb[peptide_chain]:
-                                try:
-                                    one_letter = Polypeptide.three_to_one(res.get_resname())
-                                except KeyError:
+                                one_letter = Polypeptide.protein_letters_3to1.get(res.get_resname())
+                                if not one_letter:
                                     if res.get_resname() in self.unnatural_amino_acids:
                                         one_letter = self.unnatural_amino_acids[res.get_resname()]
                                     else:
@@ -1773,7 +1846,7 @@ class Command(BaseBuild):
                         data_results = runcalculation_2022(sd['pdb'], peptide_chain)
                         if 'NAG' in data_results:
                             del data_results['NAG']
-                        self.parsecalculation(sd['pdb'], data_results, False)
+                        self.parsecalculation(sd['pdb'], data_results, ligand['name'], False)
                         end = time.time()
                         diff = round(end - current,1)
                         print('Interaction calculations done for {}. {} seconds.'.format(
