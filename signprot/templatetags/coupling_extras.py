@@ -64,3 +64,17 @@ def dict_get(dictionary, key):
         return dictionary.get(key, '')
     except (TypeError, AttributeError):
         return ''
+    
+@register.filter
+def remove_prefix(value):
+    prefixes = ['Psites_', 'Osites_', 'Plong_', 'Olong_']
+    for prefix in prefixes:
+        if value.startswith(prefix):
+            return value[len(prefix):]
+    return value
+
+@register.filter
+def join_if_list(value, separator=', '):
+    if isinstance(value, list):
+        return separator.join(map(str, value))
+    return value
