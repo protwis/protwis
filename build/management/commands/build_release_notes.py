@@ -89,8 +89,8 @@ class Command(BaseCommand):
             # ['GPCR-G protein structure models', StructureComplexModel.objects.filter(receptor_protein__accession__isnull=False).count(), 'GPCRdb'],
         stats = [
             #GPCRdb Block
-            ['Human proteins GPCRdb', Protein.objects.filter(sequence_type__slug='wt', family__slug__startswith='00', species__common_name="Human").count(), 'GPCRdb'],
-            ['Species orthologs GPCRdb', Protein.objects.filter(sequence_type__slug='wt', family__slug__startswith='00').exclude(species__common_name="Human").count(), 'GPCRdb'],
+            ['Human proteins GPCRdb', Protein.objects.filter(sequence_type__slug='wt', family__slug__startswith='0', species__common_name="Human").count(), 'GPCRdb'],
+            ['Species orthologs GPCRdb', Protein.objects.filter(sequence_type__slug='wt', family__slug__startswith='0').exclude(species__common_name="Human").count(), 'GPCRdb'],
             ['Genetic variants GPCRdb', NaturalMutations.objects.all().count(), 'GPCRdb'],
             ['Drugs GPCRdb', Drugs.objects.values('name').distinct().count(), 'GPCRdb'],
             ['Drug targets GPCRdb', Drugs.objects.values('target').distinct().count(), 'GPCRdb'],
@@ -99,11 +99,11 @@ class Command(BaseCommand):
             ['Endogenous ligands GPCRdb', Endogenous_GTP.objects.values('ligand_id').distinct().count(), 'GPCRdb'],
             ['Ligand bioactivities GPCRdb', AssayExperiment.objects.all().count(), 'GPCRdb'],
             ['Ligand site mutations GPCRdb', MutationExperiment.objects.all().count(), 'GPCRdb'],
-            ['Ligand interactions GPCRdb', ResidueFragmentInteraction.objects.all().count(), 'GPCRdb'],
-            ['GPCRs structures GPCRdb', Structure.objects.filter(protein_conformation__protein__family__slug__startswith="00").exclude(structure_type__slug__startswith='af-').count(), 'GPCRdb'],
+            ['Ligand interactions GPCRdb', ResidueFragmentInteraction.objects.all().exclude(structure_ligand_pair__structure__structure_type__slug__startswith='af-').count(), 'GPCRdb'],
+            ['GPCRs structures GPCRdb', Structure.objects.filter(protein_conformation__protein__family__slug__startswith="0").exclude(structure_type__slug__startswith='af-').count(), 'GPCRdb'],
             ['GPCRs structure models GPCRdb', StructureModel.objects.filter(protein__accession__isnull=False).count(), 'GPCRdb'],
             ['Generic residues GPCRdb', ResidueGenericNumber.objects.filter(scheme_id__in=[7,8,9,10,11]).values('label').count(), 'GPCRdb'],
-            ['Refined structures GPCRdb', StructureModel.objects.filter(protein__accession__isnull=True, protein__family__slug__startswith="00").count() + StructureComplexModel.objects.filter(receptor_protein__accession__isnull=True, receptor_protein__family__slug__startswith="00").count(), 'GPCRdb'],
+            ['Refined structures GPCRdb', StructureModel.objects.filter(protein__accession__isnull=True, protein__family__slug__startswith="0").count() + Structure.objects.filter(structure_type__slug__startswith="af-signprot-refined").count(), 'GPCRdb'],
             #GproteinDb block
             ['Human G proteins GproteinDb', Protein.objects.filter(family__parent__parent__name="Alpha", species__common_name="Human", accession__isnull=False).count(), 'GproteinDb'],
             ['Species orthologs GproteinDb', Protein.objects.filter(family__parent__parent__name="Alpha", accession__isnull=False).count(), 'GproteinDb'],

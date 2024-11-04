@@ -1,0 +1,550 @@
+{% extends "home/base.html" %}
+{% load static %}
+{% load structure_extras %}
+
+{% block addon_css %}
+    <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/construct_browser.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
+    <!-- <link rel="stylesheet" href="{% static 'home/structure_browser.css' %}"> -->
+    <link href="{% static 'home/css/construct_alignment.css' %}" rel="stylesheet">
+    <link href="{% static 'home/css/sequenceviewer.css' %}" rel="stylesheet">
+    <link href="{% static 'home/css/modal.css' %}" rel="stylesheet">
+
+    <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/construct_browser.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
+    <link href="{% static 'home/css/construct_alignment.css' %}" rel="stylesheet">
+    <link href="{% static 'home/css/sequenceviewer.css' %}" rel="stylesheet">
+    <style type="text/css">
+        .select2-result-label{
+            font-size:x-small;
+            font-size: 10px;
+        }
+
+        #filters{
+
+            font-size: 10px;
+            padding:  7px 15px;
+        }
+
+        @media (min-width: 1600px){
+            #content {
+                width: 1570px;
+            }
+        }
+        @media (min-width: 1800px){
+            #content {
+                width: 1770px;
+            }
+        }
+
+        table.dataTable.compact thead th.over_header {
+            text-align: center;
+            padding: 4px 4px 4px 4px;
+        }
+
+        table.dataTable.compact thead tr.over_header th {
+            border-bottom: 1px solid #ccc;
+        }
+
+        table.dataTable.compact thead th.leftborder {
+            border-left: 1px solid;
+        }
+
+        table.dataTable.compact thead th.rightborder {
+            border-right: 1px solid;
+        }
+
+        table.dataTable.compact thead th.checkbox_tr {
+            text-align: left;
+            padding: 4px 4px 4px 4px;
+        }
+
+        table.dataTable.compact thead th {
+            padding: 4px 16px 4px 2px;
+        }
+        .yadcf-filter-wrapper {
+            margin-top: 0px;
+        }
+        input.yadcf-filter  {
+            width: 100px;
+            font-family: sans-serif;
+            font-size: 100%;
+            font-weight: bold;
+        }
+        .yadcf-filter-range-date, .yadcf-filter-range-number {
+            width: 30px;
+            font-family: sans-serif;
+            font-size: 100%;
+            font-weight: bold;
+        }
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1; /* Sit on top */
+            padding-top: 100px; /* Location of the box */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgb(0,0,0); /* Fallback color */
+            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+        }
+    }
+    </style>
+{% endblock %}
+
+{% block addon_js %}
+    <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
+    <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
+    <script src="{% static 'home/js/select2.js' %}"> </script>
+    <script src="{% static 'home/js/alignment.js' %}"> </script>
+    <!-- <script src="{% static 'home/js/browser_functions.js' %}"> </script> -->
+    <script src="{% static 'home/js/structure_browser.js' %}"></script>
+
+<system.webServer>
+   <httpErrors errorMode="Detailed" />
+   <asp scriptErrorSentToBrowser="true"/>
+</system.webServer>
+
+<script>
+//   window.addEventListener("hashchange", updateSuperpositionButtonConfiguration, false);
+
+  // Call this function on page load to set the initial configuration
+//   document.addEventListener("DOMContentLoaded", updateSuperpositionButtonConfiguration);
+
+</script>
+    <script type="text/javascript" charset="utf-8">
+        $(document).ready(function () {
+
+            var oTable = $('#homology_models').DataTable({
+                scrollY:        "65vh",
+                scrollX:        true,
+                scrollCollapse: true,
+                paging:         false,
+                "order": [[2,'asc'],[5,'asc']],
+                  columnDefs: [
+                    { targets: 'no-sort', orderable: false }
+
+                  ]
+            });
+
+            $("#homology_models_div").show();
+            assign_to_row();
+            $("#loading_div").hide();
+
+            //Uncheck every row when using back button on browser
+            $('.alt-selected').prop('checked',false)
+            $('.alt').prop('checked',false)
+            $('.select-all').prop('checked',false)
+            //
+
+            yadcf.init(oTable,
+                [
+                    {
+                        column_number : 2,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        column_data_type: "html",
+                        filter_default_label: "Name",
+                        filter_reset_button_text: false,
+                        select_type_options: {
+                            width: '80px',
+                        }
+                    },
+                    {
+                        column_number : 3,
+                        filter_type: "multi_select",
+                        select_type: "select2",
+                        filter_default_label: "Type",
+                        filter_match_mode : "exact",
+                        filter_reset_button_text: false,
+                        select_type_options: {
+                            width: "60px",
+                        }
+                    },
+
+                    // Receptor
+
+                    {
+                        column_number: 4,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "Gene name",
+                        filter_reset_button_text: false,
+                        select_type_options: {
+                            width: '60px',
+                        }
+                    },
+                    {
+                        column_number : 5,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "Protein name",
+                        filter_reset_button_text: false,
+                        column_data_type:'html',
+                        select_type_options: {
+                            width: '60px',
+                        }
+                    },
+                    {
+                        column_number : 6,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "Family",
+                        filter_reset_button_text: false,
+                        select_type_options: {
+                            width: '60px',
+                        }
+                    },
+                    {
+                        column_number : 7,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "Class",
+                        filter_reset_button_text: false,
+                        select_type_options: {
+                            width: '80px',
+                        }
+                    },
+                    {
+                        column_number : 8,
+                        filter_type: "range_number",
+                        select_type: 'select2',
+                        filter_default_label: ["From", "To"],
+                        filter_reset_button_text: false,
+                        select_type_options: {
+                            width: '50px',
+                        }
+                    },
+                    {
+                        column_number : 9,
+                        filter_type: "range_number",
+                        select_type: 'select2',
+                        filter_default_label: ["From", "To"],
+                        filter_reset_button_text: false,
+                        select_type_options: {
+                            width: '50',
+                        }
+                    },
+                    {
+                        column_number : 10,
+                        filter_type: "range_date",
+                        date_format: "yyyy-mm-dd",
+                        select_type: 'select2',
+                        filter_default_label: ["From", "To"],
+                        filter_reset_button_text: false,
+                        select_type_options: {
+                            width: '100px',
+                        }
+                    },
+                ],
+
+                {
+                    cumulative_filtering: false
+                }
+            );
+
+
+
+            // Make range number on top of each other
+            $("[id^='yadcf-filter--homology_models-from']").after("<br>");
+            // $("#yadcf-filter--homology_models-from-9").after("<br>");
+            // $("#yadcf-filter--homology_models-from-date-10").after("<br>");
+
+
+
+            //yadcf.exResetAllFilters(oTable);
+            oTable.columns.adjust()
+
+
+            $('.alt').change(function () {
+                $(this).parent().parent().toggleClass('alt_selected');
+            });
+
+            $('.select-all').change(function () {
+                $('.alt').prop('checked', $(this).prop("checked"));
+                $('.alt').parent().parent().toggleClass('alt_selected');
+            });
+
+
+            $('[data-toggle="tooltip"]').tooltip({ container: 'body' })
+            $('.table_tooltip').tooltip({ container: 'body', html: true, placement: "top"})
+
+            $('#download_btn').click(function () {
+                var selected_ids = [];
+                 $.each($(".alt_selected"), function(){
+                    hom_id = $(this).closest('tr').attr('model_id');
+                    selected_ids.push(hom_id);
+                });
+                window.location.href = '/structure/lig_complexmod_download?ids='+selected_ids.join(",");
+            });
+            $('#align_btn').click(function () {
+                var checked_data = oTable.rows('.alt_selected').data();
+                ClearSelection('targets');
+                for (i = 0; i < checked_data.length; i++) {
+                    console.log(checked_data[i][11])
+                    AddToSelection('targets', 'structure',  checked_data[i][11]);
+
+                }
+                window.location.href = '/structure/selection_convert';
+            });
+
+            $('#superpose_template_btn').click(function () {
+                direct_superposition(oTable, "gpcr", [9,3], "structure_model");
+            });
+
+            $("#superpose_btn").click(function() {
+                superposition(oTable, [4,5,6,7,8,2,3,9], "homology_model_browser", 'gpcr', 9, [9]);
+            });
+        });
+
+        function ClearSelection(selection_type) {
+            $.ajax({
+                'url': '/common/clearselection',
+                'data': {
+                    selection_type: selection_type
+                },
+                'type': 'GET',
+                'async': false,
+                'success': function (data) {
+                    $("#selection-" + selection_type).html(data);
+                }
+            });
+        }
+
+        function CheckSelection(selection_type) {
+            var result = null;
+
+            $.ajax({
+                'url': '/common/checkselection',
+                'data': {
+                    selection_type: selection_type
+                },
+                'type': 'GET',
+                'dataType': 'json',  // Expecting JSON response from the server
+                'async': false,
+                'success': function(response) {
+                    result = response.total;
+                },
+                'error': function(error) {
+                    console.error("An error occurred:", error);
+                }
+            });
+
+            return result;
+        }
+
+        function AddToSelection(selection_type, selection_subtype, selection_id) {
+            $.ajax({
+                'url': '/common/addtoselection',
+                'data': {
+                    selection_type: selection_type,
+                    selection_subtype: selection_subtype,
+                    selection_id: selection_id
+                },
+                'type': 'GET',
+                'async': false,
+                'success': function(data) {
+                    $("#selection-" + selection_type).html(data);
+                },
+            });
+        }
+
+        function select_all(e) {
+            var checkedStatus = $(e).prop("checked");
+
+            $('.select-all  ').each(function () {
+                    $(this).prop('checked', checkedStatus);
+            });
+
+            $('.alt').each(function () {
+                    $(this).prop('checked', checkedStatus);
+            });
+        };
+
+        function assign_to_row(){
+          $('tbody tr').click(function(event) {
+            if (event.target.type !== 'checkbox') {
+              $(':checkbox', this).trigger('click');
+            }
+          });
+        }
+
+    </script>
+
+{% endblock %}
+
+{% block content %}
+<div class="btn-group">
+    <label class="btn btn-default btn-s" id="align_btn" href="javascript:void(0)">Align</label>
+    <label class="btn btn-default btn-s" id="download_btn" href="javascript:void(0)">Download</label>
+    <!-- <label class="btn btn-default btn-s" id="superpose_template_btn" href="javascript:void(0)">Superposition</label> -->
+</div>
+
+<br><br>
+
+    <!-- <div style="padding-top: 0px; font-size: 15px; white-space: nowrap;" id="loading_div">
+    <br>Loading...
+    </div> -->
+</div>
+<div id="browser">
+    <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;" id="homology_models_div">
+        <table width="100%" class="display compact" id="homology_models">
+            <thead>
+                <tr class='over_header' style='max-height: 20px'>
+                    <th colspan=1 class="over_header rightborder"></th> 
+                    <th colspan=1 class="over_header rightborder">   MODEL   </th>
+                    <th colspan=2 class="over_header rightborder" style="text-align: left;">LIGAND</th>
+                    <th colspan=4 class="over_header rightborder" style="text-align: left;">RECEPTOR</th>
+                    <th colspan=2 class="over_header rightborder" style="text-align: left;">LIGAND MODEL SCORE</th>
+                    <th colspan=1 class="over_header">Date</th>
+                    <th style='display:none;'></th>
+                </tr>
+                <tr>
+                    <!-- checkbox  1 -->
+                    <th class='no-sort checkbox_tr text-center' style="text-align: center !important;"><input class="select-all" type="checkbox" onclick="select_all(this)"></th>
+                   <!-- model icon -->
+                    <th></th>
+
+                    <!--               LIGAND            -->
+
+                    <!-- ligand name 7 -->
+                    <th>Name</th>
+                    <!-- ligand type 8-->
+                    <th>Type</th>
+
+                   
+                   <!--                     Receptor                -->
+
+                    <!-- uniprot 3 -->
+                    <th>Gene <br>name</th>
+                    <!-- guitoph 4 -->
+                    <th>Protein <br>name</th>
+                    <!-- family 5 -->
+                    <th>Family</th>
+                    <!-- class 6-->
+                    <th>Class</th>
+                    <!-- SIGNPROT presence -->
+
+                
+                    <!--                    SCORES                  -->
+                    <th>AF2 <br>(PAE mean)</th>
+                    <th>RFAA <br>(pLDDT mean)</th>
+
+
+                    <!--                date                 -->
+                    <th></th>
+
+                    <!-- Hidden -->
+                    <th style='display:none;'></th>
+
+                </tr>
+
+            </thead>
+            <tbody>
+            {% for model in structure_model %}
+                <tr model_id='{{model.pk}}'>
+                    <!-- CHECKBOX   1 -->
+                    <td class="text-center" data='{{ model }}'><input class="alt" type="checkbox" id="{{ model.pk }}"></td>
+                                        <!-- model icon 2 -->
+                    {% if model.prefetch_ligands.0.ligand.ligand_type.slug == "small-molecule" %}
+                        <td style="text-align:center;"><a target="_blank" href="ligand_complex_models/{{ model.pdb_code.index }}"><img width="14px" height="20px" class="model-link" src="{% static 'home/images/gpcr_structure_logo.png' %}"></a></td>
+                    {% else %}
+                        <td style="text-align:center;"><a target="_blank" href="ligand_complex_models/{{ model.pdb_code.index }}"><img width="14px" height="20px" class="model-link" src="{% static 'home/images/model-surface.png' %}"></a></td>
+                    {% endif %}
+
+
+
+
+                                        <!--               LIGAND            -->
+
+                    
+                                        <!-- ligand name 7 -->
+                    {% if model.prefetch_ligands.0.ligand.name|length >= 6 %}
+                    <td><a href="/ligand/{{ model.prefetch_ligands.0.ligand.id }}/info">{{ model.prefetch_ligands.0.ligand.name | capfirst | safe }}</a></td>
+                    {% else %}
+                    <td><a href="/ligand/{{ model.prefetch_ligands.0.ligand.id }}/info">{{ model.prefetch_ligands.0.ligand.name | upper | safe }}</a></td>
+                    {% endif %}</a></td>
+
+                                        <!-- ligand type 8 -->
+                    {% if model.prefetch_ligands.0.ligand.ligand_type.slug == "small-molecule" %}
+                        <td>Small mol</td>
+                    {% else %}
+                        <td> {{ model.prefetch_ligands.0.ligand.ligand_type.slug | title}} </td>
+                    {% endif %}
+                    
+
+
+                                        <!--               RECEPTOR            -->
+
+                    
+                    <!-- Gene name 3 -->
+                    <td>{{ model.gene_name }}</td>
+
+                    <!-- Protein name 4 -->
+                    <td> <a href=" /protein/{{model.protein_conformation.protein.entry_name}} ">{{ model.protein_conformation.protein.name|receptor_short|safe }}</a></td>
+
+                    <!-- Fam 5 -->
+                    <td>{{ model.protein_conformation.protein.family.parent.name }}</td>
+
+                    <!-- Class 6-->
+                    <td>{{ model.protein_conformation.protein.family.parent.parent.parent.name|cut_classname }}</td>
+
+                    <!--                         Scores                           -->
+
+                    {% if model.prefetch_af_scores %}
+                        <td>{{ model.prefetch_af_scores.0.pae_mean }} </td>
+                    {% else %}
+                        <td> - </td>
+                    {% endif %}
+                    {% if model.prefetch_rfaa_scores %}
+                        <td>{{ model.prefetch_rfaa_scores.0.plddt_mean }} </td>
+                    {% else %}
+                        <td> - </td>
+                    {% endif %}
+
+
+                    <!--                         DATE                           -->
+                     <td> {{ model.publication_date }} </td>
+
+                     <!-- Hidden -->
+                     <td style='display:none;'>{{ model }}</td>
+
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+<!-- <div id="superposition-modal" class="modal"> -->
+  <!-- Modal content -->
+    <!-- <div class="modal-content">
+        <button id="close_superposition_modal" style="float:right;display:inline;" aria-hidden="true" aria-label="Close" class="close" data-dismiss="superposition-modal">&times;</button>
+        <h3>Pick template from selection</h3>
+        <p>Superpositions structures selected in the browser to the template checked in this table</p>
+        <br>
+        <table id="superposition_modal_table" class="display compact" width="100%">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>Gene <br>name</th>
+                    <th>Protein <br>name</th>
+                    <th>Rec. family</th>
+                    <th>Class</th>
+                    <th>Species</th>
+                    <th>Date</th>
+                    <th>State</th>
+                  </tr>
+              </thead>
+              <tbody> -->
+                  <!-- Javascript populates the table from selected rows -->
+              <!-- </tbody>
+          </table>
+      </div>
+  </div> -->
+{% endblock %}

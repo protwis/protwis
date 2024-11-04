@@ -1504,7 +1504,8 @@ def stabilisation_browser(request):
     class_interactions_list = {}
     for c in gpcr_class:
         class_interactions = ResidueFragmentInteraction.objects.filter(
-            structure_ligand_pair__structure__protein_conformation__protein__family__slug__startswith=c, structure_ligand_pair__annotated=True).exclude(interaction_type__slug='acc').prefetch_related(
+            structure_ligand_pair__structure__protein_conformation__protein__family__slug__startswith=c, structure_ligand_pair__annotated=True).exclude(
+            structure_ligand_pair__structure__structure_type__slug__startswith='af-').exclude(interaction_type__slug='acc').prefetch_related(
             'rotamer__residue__generic_number','interaction_type',
             'rotamer__residue__protein_conformation__protein__parent__family')
 

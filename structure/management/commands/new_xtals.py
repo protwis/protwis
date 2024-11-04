@@ -117,7 +117,7 @@ class Command(BaseBuild):
 
     def get_all_GPCR_uniprots(self):
         try:
-            uniprots = [i.accession for i in Protein.objects.filter(accession__isnull=False).filter(family__slug__istartswith='00')]
+            uniprots = [i.accession for i in Protein.objects.filter(accession__isnull=False).filter(family__slug__istartswith='0')]
             if len(uniprots)<100:
                 raise Exception()
         except:

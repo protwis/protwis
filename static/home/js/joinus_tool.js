@@ -8,7 +8,7 @@ function joinus(type) {
 			break;
 		case "development":
 			title += "Database development";
-			message = "The GPCRdb team is constantly looking for talented programmers either for remote collaboration, to fill an open position or to apply together for a scientific project.  Please contact our lead developer lead developer Gáspár Pándy-Szekeres  (<a href='mailto:gaspar@sund.ku.dk'>gaspar@sund.ku.dk</a>) if you would like to know more.";
+			message = "The GPCRdb team is constantly looking for talented programmers either for remote collaboration, to fill an open position or to apply together for a scientific project.  Please contact our lead developer Gáspár Pándy-Szekeres  (<a href='mailto:gaspar@sund.ku.dk'>gaspar@sund.ku.dk</a>) if you would like to know more.";
 			break;
 		case "collaboration":
 			title += "Scientific collaboration";
@@ -16,7 +16,7 @@ function joinus(type) {
 			break;
 		case "media":
 			title += "Social media";
-			message = "To follow the latest updates and news from GPCRdb join our <a href='https://www.linkedin.com/groups/8104679/' target='_blank'>LinkedIn group</a> and follow us on Twitter (<a href='https://twitter.com/gpcrdb' target='_blank'>@gpcrdb</a>). The latest releases are also listed on the main page of GPCRdb.";
+			message = "To follow the latest updates and news from GPCRdb join our <a href='https://www.linkedin.com/groups/8104679/' target='_blank'>LinkedIn group</a> and follow us on X (<a href='https://x.com/gpcrdb' target='_blank'>@gpcrdb</a>). The latest releases are also listed on the main page of GPCRdb.";
 			break;
 		case "feedback":
 		default:

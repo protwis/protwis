@@ -42,6 +42,7 @@ INSTALLED_APPS = (
     'structure',
     'ligand',
     'interaction',
+    'mapper',
     'mutation',
     'phylogenetic_trees',
     'sitesearch',
@@ -107,7 +108,6 @@ TEMPLATES = [
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
             # insert your TEMPLATE_DIRS here
-
         ],
         'APP_DIRS': True,
         'OPTIONS': {

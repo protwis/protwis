@@ -1,4 +1,5 @@
 from django.conf.urls import url
+from django.urls import path
 from structure.views import *
 from structure import views
 from django.conf import settings
@@ -12,28 +13,7 @@ urlpatterns = [
     url(r'^g_protein_structure_browser$', cache_page(60*60*24)(EffectorStructureBrowser.as_view(effector='gprot')), name='g_protein_structure_browser'),
     # url(r'^g_protein_structure_browser$', EffectorStructureBrowser.as_view(effector='gprot'), name='g_protein_structure_browser'),
     url(r'^arrestin_structure_browser$', cache_page(60*60*24)(EffectorStructureBrowser.as_view(effector='arrestin')), name='arrestin_structure_browser'),
-    url(r'^sign_complex_pdb$', SignComplexPdb, name="sign_complex_pdb"),
-    ### LEGACY LINKS ###
-    url(r'^gprot_statistics$', StructureStatistics.as_view(), name='structure_statistics'),
-    url(r'^arrestin_statistics$', StructureStatistics.as_view(), name='structure_statistics'),
-    path('statistics', StructureStatistics.as_view(), name='structure_statistics'),
-    url(r'^$', views.DomainBrowser, name='structure_browser'),
-    url(r'^g_protein_structure_browser$', views.DomainBrowser, name='g_protein_structure_browser'),
-    url(r'^arrestin_structure_browser$', views.DomainBrowser, name='arrestin_structure_browser'),
-    url(r'^homology_models$', views.ModelsRedirect, name='homology_models'),
-    url(r'^complex_models$', views.ModelsRedirect, name='complex_models'),
-    url(r'^arrestin_models$',views.ModelsRedirect, name='complex_models'),
-    ### LEGACY BUT STILL NEEDED  ###
-    url(r'^homology_models/(?P<modelname>\w+)_(?P<state>\w+)$', cache_page(60*60*24*7)(HomologyModelDetails), name='homology_model_details'),
-    url(r'^homology_models/(?P<modelname>\w+)_(?P<state>\w+)_(?P<fullness>\w+)/download_pdb$', SingleModelDownload, name='single_model_download'),
-    url(r'^homology_models/view/(?P<modelname>\w+)_(?P<state>\w+)$', ServeHomModDiagram, name='hommod_serve_view'),
-    url(r'^complex_models/(?P<header>\w+)$',cache_page(60*60*24*7)(ComplexModelDetails), name='complex_model_details'),
-    url(r'^complex_models/view/(?P<modelname>\w+)$', ServeComplexModDiagram, name='complexmod_serve_view'),
-    url(r'^complex_models/(?P<modelname>\w+)/download_complex_pdb$', SingleComplexModelDownload, name='single_complex_model_download'),
-    ################################
-    url(r'^structure_browser$', views.DomainBrowser, name='domain_browser'),
-    url(r'^structure_coverage$', StructureStatistics.as_view(), name='structure_statistics'),
-    url(r'^structure_models$', views.ModelsRedirect, name='models_redirect'),
+    path('structure_similarity_search', StructureBlastView.as_view(), name='structure-similarity-search'),
     url(r'^browser$', RedirectBrowser, name='redirect_browser'),
     url(r'^selection_convert$', ConvertStructuresToProteins, name='convert'),
     url(r'^selection_convert_model$', ConvertStructureModelsToProteins, name='convert_mod'),
@@ -43,6 +23,18 @@ urlpatterns = [
     url(r'^template_browser', TemplateBrowser.as_view(), name='structure_browser'),
     url(r'^template_selection', TemplateTargetSelection.as_view(), name='structure_browser'),
     url(r'^template_segment_selection', TemplateSegmentSelection.as_view(), name='structure_browser'),
+    url(r'^gprot_statistics$', cache_page(60*60*24)(StructureStatistics.as_view(origin='gprot')), name='structure_statistics'),
+    url(r'^arrestin_statistics$', cache_page(60*60*24)(StructureStatistics.as_view(origin='arrestin')), name='structure_statistics'),
+    url(r'^statistics$', cache_page(60*60*24)(StructureStatistics.as_view()), name='structure_statistics'),
+    url(r'^homology_models$', cache_page(60*60*24)(ServeHomologyModels.as_view()), name='homology_models'),
+    path('ligand_complex_models', LigandComplexModels.as_view(), name='ligand_complex_models'),
+    url(r'^ligand_complex_models/(?P<header>[^/]+)$', LigandComplexDetails, name='ligand_complex_details'),
+    url(r'^ligand_complex_models/view/(?P<modelname>[^/]+)$', ServeComplexModDiagram, name='complexmod_serve_view'),
+    path('lig_complexmod_download', LigComplexmodDownload, name='lig_complexmod_download'),
+    url(r'^ligand_complex_models/(?P<modelname>[^/]+)/download_lig_complex_pdb$', SingleLigComplexModelDownload, name='single_complex_model_download'),
+    # url(r'^homology_models$', ServeHomologyModels.as_view(), name='homology_models'),
+    url(r'^complex_models$', cache_page(60*60*24)(ServeComplexModels.as_view()), name='complex_models'),
+    # url(r'^complex_models$', ServeComplexModels.as_view(), name='complex_models'),
     url(r'^model_statistics$', cache_page(60*60*24)(ServeModelStatistics.as_view()), name='model_statistics'),
     url(r'^pdb_segment_selection', PDBSegmentSelection.as_view(), name='pdb_download'),
     url(r'^pdb_download$', PDBClean.as_view(), name='pdb_download'),
