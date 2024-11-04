@@ -115,9 +115,9 @@ function draw_tree(data, options,circle_size) {
 
     node.append("text")
         .attr("dy", ".31em")
-        .attr("name", function (d) { if (d.name === '') { return "branch" } else { return d.name } })
-        .attr("text-anchor", function (d) { 
-            if (d.depth === options.depth) {
+        .attr("name", function (d) { if (d.name == '') { return "branch" } else { return d.name } })
+        .attr("text-anchor", function (d) {
+            if (d.depth == options.depth) {
                 return d.x < 180 ? "start" : "end";
             } else {
                 return d.x < 180 ? "end" : "start";
@@ -182,32 +182,17 @@ function draw_tree(data, options,circle_size) {
     function string_pixlen(text, depth) {
         var canvas = document.createElement('canvas');
         var ctx = canvas.getContext("2d");
-    
-        // Check the depth condition
-        if (options.depth === 4) {
-            // Use the custom font size from options for all levels
-            if (depth === 1) {
-                ctx.font = options.fontSize.class + " Palatino";
-            } else if (depth === 2) {
-                ctx.font = options.fontSize.ligandtype + " Palatino";
-            } else if (depth === 3) {
-                ctx.font = options.fontSize.receptorfamily + " Palatino";
-            } else {
-                ctx.font = options.fontSize.receptor + " Palatino";
-            }
-        } else if (options.depth === 3) {
-            // Omit class and start from ligandtype
-            if (depth === 1) {
-                ctx.font = options.fontSize.ligandtype + " Palatino";
-            } else if (depth === 2) {
-                ctx.font = options.fontSize.receptorfamily + " Palatino";
-            } else {
-                ctx.font = options.fontSize.receptor + " Palatino";
-            }
+        // Use the custom font size from options
+        if (depth == 1) {
+            ctx.font = options.fontSize.class + " Palatino";
+        } else if (depth == 2) {
+            ctx.font = options.fontSize.ligandtype + " Palatino";
+        } else if (depth == 3) {
+            ctx.font = options.fontSize.receptorfamily + " Palatino";
+        } else {
+            ctx.font = options.fontSize.receptor + " Palatino";
         }
-    
-        // Measure and return the text width plus padding
-        return parseInt(ctx.measureText(text).width,10);
+        return parseInt(ctx.measureText(text).width) + 40;
     }
 
     function getBB(selection) {
@@ -228,12 +213,9 @@ function draw_tree(data, options,circle_size) {
                 y = text.attr("y"),
                 dy = parseFloat(text.attr("dy")),
                 tspan = text.text(null).append("tspan").attr("x", 0).attr("y", y).attr("dy", dy + "em");
-            
-            word = words.pop(); // Initialize the first word
-            while (word !== undefined) {
+            while (word = words.pop()) {
                 line.push(word);
                 tspan.text(line.join(" "));
-            
                 if (tspan.node().getComputedTextLength() > width) {
                     line.pop(); // Remove the last word as it exceeds the width
                     tspan.text(line.join(" ")); // Update the tspan with the valid words
@@ -244,24 +226,14 @@ function draw_tree(data, options,circle_size) {
                                 .attr("dy", ++lineNumber * lineHeight + dy + "em")
                                 .text(word); // Add the word to the new tspan
                 }
-            
-                word = words.pop(); // Reassign the next word at the end of the loop
             }
         });
     }
     // === Centering Logic ===
     var scaleFactor = 0.8;  // Adjust this as needed
-
-    // Calculate the extra padding needed based on circle size and spacer
-    var extraPadding = (circle_size) + (circle_spacer*2) + parseInt(options.fontSize.receptor,10)*4;  // Adjust the multiplier based on how much padding is needed
-
-    // Calculate new dimensions
-    var newWidth = diameter + extraPadding;  // Add padding to both sides
-    var newHeight = diameter + extraPadding;  // Add padding to both sides
-    
-    // Set new width and height for the SVG
-    svg.attr('width', newWidth)
-       .attr('height', newHeight);
+    var svgElement = d3.select('#' + options.anchor + ' svg');
+    var svgWidth = +svgElement.attr('width');
+    var svgHeight = +svgElement.attr('height');
 
     // Calculate the center point
     var cx = newWidth / 2;
@@ -294,7 +266,6 @@ function formatTextWithHTML(text) {
         .replace("calcitonin-like receptor", 'CLR');
 }
 
-// Change the labels 
 function changeLeavesLabels(location, value, dict){
     // Initialize leaf node length
     maxLeafNodeLenght = 0;
@@ -677,101 +648,84 @@ function createTraces(colorOption, showLabels, colorMapping, textColorEnabled) {
 
         traces.push(gradientTrace);
     }
-    // Handle Class, Ligand type, or Receptor family color option
-    else if (['Class', 'Ligand type', 'Receptor family'].includes(colorOption)) {
-        
-        const uniqueEntries = new Set();
-        
-        currentClusterData.forEach(point => {
-            const entry = point[colorOption] === 'Other GPCRs' ? 'Classless' : point[colorOption];
-            if (!uniqueEntries.has(entry)) {
-                uniqueEntries.add(entry);
 
-                // Create marker traces, only display markers when labels are not shown
-                const markerTrace = {
-                    x: currentClusterData.filter(d => d[colorOption] === point[colorOption]).map(d => d.x),
-                    y: currentClusterData.filter(d => d[colorOption] === point[colorOption]).map(d => d.y),
-                    mode: showLabels ? 'none' : 'markers',
-                    type: 'scatter',
-                    hoverinfo: 'text',
-                    text: currentClusterData.filter(d => d[colorOption] === point[colorOption]).map(d => d.label.toUpperCase()),
-                    marker: {
-                        size: marker_size,
-                        symbol: 'circle',
-                        line: {
-                            width: border_on ? stroke_width : 0,
-                            color: 'black'
-                        },
-                        color: colorMapping[entry],
-                    },
-                    // Customize legend text color only when showLabels and textColorEnabled are both true
-                    name: (showLabels && textColorEnabled)
-                        ? `<span style="color:${colorMapping[entry]}">${entry}</span>`
-                        : entry  // Regular label if conditions are false
-                };
+    // Function to handle click event
+    function handleClick(d) {
+        d3.event.stopPropagation();
+        const cluster = d.cluster;
 
-                traces.push(markerTrace);
-            }
-        });
+        if (selectedCluster === cluster) {
+            selectedCluster = null;
+            resetOpacity();
+        } else {
+            resetOpacity();
+            selectedCluster = cluster;
+            circles.style("opacity", 0.2);
+            labels.style("opacity", 0.2);
+            lines.style("opacity", 0.2);
 
-        traces.sort((a, b) => naturalSort(a.name, b.name));
+            circles.filter(c => c.cluster === cluster)
+                .style("opacity", 1)
+                .style("stroke", "black")
+                .style("stroke-width", 2);
+
+            labels.filter(c => c.cluster === cluster)
+                .style("opacity", 1);
+
+            lines.filter(c => c.cluster === cluster)
+                .style("opacity", 1);
+        }
     }
 
-    return traces;
-}
+    // Function to reset the opacity when clicking outside circles
+    function resetOpacity() {
+        circles.style("opacity", 1).style("stroke", "none").style("stroke-width", 0);
+        labels.style("opacity", 1).style("font-weight", "normal");
+        lines.style("opacity", 1);
+    }
 
+    // Add an overlay to capture clicks outside circles
+    svg.append("rect")
+        .attr("width", width - margin.left - margin.right)
+        .attr("height", height - margin.top - margin.bottom)
+        .style("fill", "none")
+        .style("pointer-events", "all")
+        .on("click", resetOpacity);
 
-// Function to create annotations for labels with optional text coloring based on `textColorEnabled`
-function createAnnotations(filteredData, colorOption, textColorEnabled, colorMapping) {
-    const annotations = [];
+    // Create a legend based on clusters
+    const uniqueClusters = [...new Set(data.map(d => d.cluster))].sort((a, b) => a - b);
 
-    // Get global min and max values for `fill` from all data (currentClusterData), not just the filtered data
-    const fillValues = currentClusterData.map(d => d.fill);  // Use all data, not just filtered
-    const minFill = Math.min(...fillValues);
-    const maxFill = Math.max(...fillValues);
+    const legend = svg.selectAll(".legend")
+        .data(uniqueClusters)
+        .enter().append("g")
+        .attr("class", "legend")
+        .attr("transform", (d, i) => `translate(${width - margin.right + 10},${i * 20})`)
+        .on("click", function(d) {
+            selectedCluster = d;
+            circles.style("opacity", 0.2);
 
-    // Use d3.interpolateRdBu for the exact RdBu color scale in D3 v4
-    const rdBuColorScale = d3v4.scaleSequential(d3v4.interpolateRdBu)
-        .domain([maxFill, minFill]);  // Inverse the domain for red to blue coloring
+            circles.filter(c => c.cluster === d)
+                .style("opacity", 1)
+                .style("stroke", "black")
+                .style("stroke-width", 2);
 
-
-    filteredData.forEach((d) => {
-        let textColor;
-
-        if (textColorEnabled) {
-            if (colorOption === 'cluster') {
-                textColor = colorPalette[d.cluster % colorPalette.length];
-            } else if (colorOption === 'gradient') {
-                textColor = rdBuColorScale(d.fill);  // Gradient-based coloring
-            } else if (['Class', 'Ligand type', 'Receptor family'].includes(colorOption)) {
-                const entry = d[colorOption] === 'Other GPCRs' ? 'Classless' : d[colorOption];
-                textColor = colorMapping[entry];
-            } else {
-                textColor = 'black';
-            }
-        } else {
-            textColor = 'black';
-        }
-
-        annotations.push({
-            x: d.x,
-            y: d.y,
-            xref: 'x',
-            yref: 'y',
-            text: `${d.label.toUpperCase()}`,  // Combine label and fill for hover text
-            showarrow: false,
-            font: {
-                family: 'Arial',
-                size: cluster_DataStyling.labelFontSize,
-                color: textColor
-            },
-            align: 'center',
-            bgcolor: 'rgba(0,0,0,0)',
-            borderwidth: 0
+            d3.event.stopPropagation();
         });
-    });
 
-    return annotations;
+    legend.append("circle")
+        .attr("cx", 10)
+        .attr("cy", 9)
+        .attr("r", 5)
+        .style("fill", d => color(d));
+
+    legend.append("text")
+        .attr("x", 20)
+        .attr("y", 14)
+        .text(d => `Cluster ${d}`)
+        .style("font-size", "12px");
+
+    // Adjust label positions to prevent overlap
+    adjustLabelPositions(labels);
 }
 
 // Function to update the plot with markers or labels
@@ -997,35 +951,13 @@ function Initialize_Data(data) {
     return data;  // Return the modified data
   }
 
-//   Create Classification dict
-function Create_classification_dict(data) {
-    // Initialize the arrays for present items
-    let present_class = [];
-    let present_LigandType = [];
-    let present_ReceptorFamilies = [];
-    let present_receptors = [];
+// ### Visualization Function ###
+function renderDataVisualization(data, location,styling_option,Layout_dict,data_styling,label_conversion_dict,label_names) {
 
-    // Iterate over the nested dictionary to split into the respective arrays
-    for (const classKey in data) {
-        present_class.push(classKey);  // Add the class key to the present_class array
+    // ######################
+    // ## Initializzation  ##
+    // ######################
 
-        for (const ligandKey in data[classKey]) {
-            present_LigandType.push(ligandKey);  // Add the ligand type key to the present_LigandType array
-
-            for (const receptorFamilyKey in data[classKey][ligandKey]) {
-                present_ReceptorFamilies.push(receptorFamilyKey);  // Add receptor family key to present_ReceptorFamilies
-
-                // Add the receptors to the present_receptors array
-                present_receptors.push(...data[classKey][ligandKey][receptorFamilyKey]);
-            }
-        }
-    }
-    
-}
-
-// Create array of sorted entries and classification array for printing
-function Data_resorter(data) {
-    
     // Check the visibility of each layer
     const Layer1_isChecked = d3.select(`#toggle-layer-1`).property('checked');
     const Layer2_isChecked = d3.select(`#toggle-layer-2`).property('checked');
@@ -1277,48 +1209,177 @@ function Calculate_dimension(data, Category_data, Col_break_number, columns, lab
             temp_col_state++; // Move to the next column
         }
 
-        // Trimming and processing labels based on category
-        if (category === 'Class') {
-            // Trimming Class (e.g., "Class (some text)" becomes "Class")
-            label = label.split(" (")[0];
+            if (level == 'level1') {
+                // Trimming Class
+                key = key.split(" (")[0];
+            } else if (level == 'level2') {
+                key = key;
+            } else if (level == 'level3') {
+                // Trimming receptor family
+                key = key.replace(/( receptors|neuropeptide )/g, '');
+                key = key.split(" (")[0];
+            }
 
-        } else if (category === 'LigandType') {
-            // No additional processing for LigandType
-            label = label;
+            // Dynamic key for the current column
+            const colKey = `col${temp_col_state}_label_max`;
+            label_length = key.length;
 
-        } else if (category === 'ReceptorFamily') {
-            // Trimming ReceptorFamily (removing "receptors" or "neuropeptide" and trimming after "(")
-            label = label.replace(/( receptors|neuropeptide )/g, '').split(" (")[0];
-
-        } else if (category === 'Receptor') {
-            // For Receptors, apply the label conversion based on 'label_names'
-            if (label_names === 'Gene') {
-                // Convert based on UniProt data
-                label = label_conversion_dict[label];
-                label = label ? label.replace(/_human/g, '').toUpperCase() : label; // Clean up UniProt receptor names
-            } else if (label_names === 'Protein') {
-                // Apply IUPHAR-specific replacements and clean up
-                label = replaceHtmlEntities(label)
-                    .replace(/<\/?i>|(-adrenoceptor| receptor)|<\/?sub>/g, '');
-                
-                // Subscript handling for accurate label length measurement
-                label = label.replace(/<sub>.*?<\/sub>/g, ''); // Simplified subscript removal for length estimation
+            // Update the max length for the current column
+            if (label_max_dict[colKey][level] < label_length) {
+                label_max_dict[colKey][level] = label_length;
             }
         }
 
-        // Determine current column
-        const colKey = `col${temp_col_state}_label_max`;
+        // Function to update label max length for array items with specific conversions
+        function updateLabelMaxLengthForItems(item) {
+            label_dim_counter++;
 
-        // Measure the label length and update the max length for that column's category
-        const label_length = label.length;
-        if (label_max_dict[colKey][category] < label_length) {
-            label_max_dict[colKey][category] = label_length;
+            // Update current column state
+            if (label_dim_counter > Col_break_number && temp_col_state < columns) {
+                label_dim_counter = 1;
+                temp_col_state++;
+            }
+
+            // Dynamic key for the current column
+            const colKey = `col${temp_col_state}_label_max`;
+            let label = item;
+
+            if (label_names == 'UniProt') {
+                label = label_conversion_dict[item];
+                // label = label.replace(/_human/g, '');
+            } else if (label_names == 'IUPHAR') {
+                label = item;
+                label = replaceHtmlEntities(label)
+                label = label.replace(/<\/?i>|(-adrenoceptor| receptor)|<\/?sub>/g, '');
+            }
+
+            label_length = label.length;
+            // Update the max length for the current column
+            if (label_max_dict[colKey]['level4'] < label_length) {
+                label_max_dict[colKey]['level4'] = label_length;
+            }
         }
-    });
+        Object.entries(data).forEach(([key, value]) => {
+            // If Class is there
+            if (Checklist[0]) {
+                updateLabelMaxLength(key,'level1');
+                // transverse next level 2
+                if (Checklist[1] && typeof value === 'object') {
+                    Object.entries(value).forEach(([subKey1, subValue1]) => {
+                        updateLabelMaxLength(subKey1,'level2');
+                        // transverse next level 3
+                        if (Checklist[2] && typeof subValue1 === 'object') {
+                            Object.entries(subValue1).forEach(([subKey2, subValue2]) => {
+                                updateLabelMaxLength(subKey2,'level3');
+                                // transverse final level 4
+                                if (Array.isArray(subValue2)) {
+                                    subValue2.forEach(item => {
+                                        updateLabelMaxLengthForItems(item)
+                                    });
+                                }
+                            });
+                        } else if (!Checklist[2]) {
+                            Object.entries(subValue1).forEach(([subKey2, subValue2]) => {
+                                if (Array.isArray(subValue2)) {
+                                    subValue2.forEach(item => {
+                                        updateLabelMaxLengthForItems(item)
+                                    });
+                                }
+                            });
+                        }
+                    });
+                } else if (!Checklist[1] && Checklist[2]) {
+                    // transverse final level 2
+                    Object.entries(value).forEach(([subKey1, subValue1]) => {
+                        if (Checklist[2] && typeof subValue1 === 'object') {
+                            // transverse final level 3
+                            Object.entries(subValue1).forEach(([subKey2, subValue2]) => {
+                                updateLabelMaxLength(subKey2,'level3');
+                                // transverse final level 4
+                                if (Array.isArray(subValue2)) {
+                                    subValue2.forEach(item => {
+                                        updateLabelMaxLengthForItems(item)
+                                    });
+                                }
+                            });
+                        }
+                    });
+                } else if (!Checklist[1] && !Checklist[2]) {
+                    // transverse final level 2
+                    Object.entries(value).forEach(([subKey1, subValue1]) => {
+                        // transverse final level 3
+                        Object.entries(subValue1).forEach(([subKey2, subValue2]) => {
+                            // transverse final level 4
+                            if (Array.isArray(subValue2)) {
+                                subValue2.forEach(item => {
+                                    updateLabelMaxLengthForItems(item)
+                                });
+                            }
+                        });
+                    });
+                }
+            } else if (!Checklist[0] && Checklist[1]) {
+                // transverse final level 2
+                Object.entries(value).forEach(([subKey1, subValue1]) => {
+                    updateLabelMaxLength(subKey1,'level2');
+                    if (Checklist[2] && typeof subValue1 === 'object') {
+                        // transverse final level 3
+                        Object.entries(subValue1).forEach(([subKey2, subValue2]) => {
+                            updateLabelMaxLength(subKey2,'level3');
+                            // transverse final level 4
+                            if (Array.isArray(subValue2)) {
+                                subValue2.forEach(item => {
+                                    updateLabelMaxLengthForItems(item)
+                                });
+                            }
+                        });
+                    } else if (!Checklist[2]) {
+                        // transverse final level 3
+                        Object.entries(subValue1).forEach(([subKey2, subValue2]) => {
+                            // transverse final level 4
+                            if (Array.isArray(subValue2)) {
+                                subValue2.forEach(item => {
+                                    updateLabelMaxLengthForItems(item)
+                                });
+                            }
+                        });
+                    }
+                });
+            } else if (!Checklist[0] && !Checklist[1] && Checklist[2]) {
+                // transverse final level 2
+                Object.entries(value).forEach(([subKey1, subValue1]) => {
+                    // transverse final level 3
+                    Object.entries(subValue1).forEach(([subKey2, subValue2]) => {
+                        updateLabelMaxLength(subKey2,'level3');
+                        // transverse final level 4
+                        if (Array.isArray(subValue2)) {
+                            subValue2.forEach(item => {
+                                updateLabelMaxLengthForItems(item)
+                            });
+                        }
+                    });
+                });
+            } else if (!Checklist[0] && !Checklist[1] && !Checklist[2]){
+                // transverse final level 2
+                Object.entries(value).forEach(([subKey1, subValue1]) => {
+                    // transverse final level 3
+                    Object.entries(subValue1).forEach(([subKey2, subValue2]) => {
+                        // transverse final level 4
+                        if (Array.isArray(subValue2)) {
+                            subValue2.forEach(item => {
+                                updateLabelMaxLengthForItems(item)
+                            });
+                        }
+                    });
+                });
+            }
+        });
 
-    // Calculate the actual pixel widths for each column and category
-    const categories = ['Class', 'LigandType', 'ReceptorFamily', 'Receptor'];
-    const cols = ['Col1', 'Col2', 'Col3', 'Col4'];
+        // calculate the longest entry for each column
+        const levels = ['level1', 'level2', 'level3', 'level4'];
+        const laters = ['Layer1', 'Layer2', 'Layer3', 'Layer4'];
+        const cols = ['Col1', 'Col2', 'Col3', 'Col4'];
+
 
     for (let i = 0; i < columns; i++) {
         const key = `col${i + 1}_label_max`;
@@ -1562,272 +1623,383 @@ function RenderListPlot_Labels(data, category_data, location, styling_option, La
         }
     }
 
+                // #############################
+                // ### Implement data points ###
+                // #############################
 
-    // ###########################
-    // ## Render List of Labels ##
-    // ###########################
+                if (layer == 'Layer-4') {
+                    if (list_data_wow.hasOwnProperty(label_key)) {
 
-    let label_counter = 1;
-    let current_col = 1; // Track the current column being rendered
+                        // Initialize all variables for better overview
 
-    for (let i = 0; i < data.length; i++) {
-        const label = data[i];
-        const category = category_data[i];
-        const label_key = label; // Use original label before conversions
-        const style = styling_option[category]; // Get the style options for the category
+                        // Col data checker
+                        var Col1_data_checker = data_styling.Col1.Data == "Yes";
+                        var Col2_data_checker = data_styling.Col2.Data == "Yes";
+                        var Col3_data_checker = data_styling.Col3.Data == "Yes";
+                        var Col4_data_checker = data_styling.Col4.Data == "Yes";
 
-        // Add text for the label
-        add_text(label, yOffset, category, label_key, style.Bold, style.Italic, style.Underline, style.Fontsize, style.Color,label_names);
+                        // Col lebels
+                        var Col1_shape = list_data_wow[label_key].hasOwnProperty('Value1') ? list_data_wow[label_key].Value1.toLowerCase() : false;
+                        var Col2_shape = list_data_wow[label_key].hasOwnProperty('Value3') ? list_data_wow[label_key].Value3.toLowerCase() : false;
+                        var Col3_shape = list_data_wow[label_key].hasOwnProperty('Value5') ? list_data_wow[label_key].Value5.toLowerCase() : false;
+                        var Col4_shape = list_data_wow[label_key].hasOwnProperty('Value7') ? list_data_wow[label_key].Value7.toLowerCase() : false;
 
-        yOffset += 30; // Adjust Y-offset for the next label
+                        // Col data shapes checker
+                        var Col1_data = list_data_wow[label_key].hasOwnProperty('Value2') ? list_data_wow[label_key].Value2 : false;
+                        var Col2_data = list_data_wow[label_key].hasOwnProperty('Value4') ? list_data_wow[label_key].Value4 : false;
+                        var Col3_data = list_data_wow[label_key].hasOwnProperty('Value6') ? list_data_wow[label_key].Value6 : false;
+                        var Col4_data = list_data_wow[label_key].hasOwnProperty('Value8') ? list_data_wow[label_key].Value8 : false;
 
-        // Check if this is the new maximum yOffset encountered
-        if (yOffset > yOffset_max) {
-            yOffset_max = yOffset; // Update yOffset_max globally
-        }
+                        // Col Datatype
+                        var Col1_datatype = data_styling.Col1.Datatype;
+                        var Col2_datatype = data_styling.Col2.Datatype;
+                        var Col3_datatype = data_styling.Col3.Datatype;
+                        var Col4_datatype = data_styling.Col4.Datatype;
 
-        label_counter++;
+                        // Col data coloring scheme
 
-        // Handle column breaks when Col_break_number is reached
-        if (label_counter > Col_break_number && current_col < columns) {
-            current_col++;
-            xOffset += spacing_dict[`Col${current_col - 1}`]; // Move to the next column
-            label_counter = 1; // Reset label counter for the new column
-            yOffset = margin.top + 5 + 80; // Reset yOffset for the new column
-        }
+                        const Col1_coloring = data_styling.Col1.Data_coloring;
+                        const Col2_coloring = data_styling.Col2.Data_coloring;
+                        const Col3_coloring = data_styling.Col3.Data_coloring;
+                        const Col4_coloring = data_styling.Col4.Data_coloring;
 
-        // Ensure the global maximum yOffset is tracked
-        if (yOffset > yOffset_max) {
-            yOffset_max = yOffset; // Update the maximum yOffset encountered
-        }
-    }
+                        const Color_list = ['black', 'red', 'blue', 'green'];
+                        const Shape_list = ['circle','rect','triangle','star','diamond']
 
-    // Rerender height of plot based on the max yOffset encountered
-    svg.attr("height", yOffset_max + margin.top + margin.bottom);
+                        const col1_XoffSet = 0 + (indent === 'Yes' ? 85 : 0)
+                        const col2_XoffSet = 20 + (indent === 'Yes' ? 85 : 0)
+                        const col3_XoffSet = 40 + (indent === 'Yes' ? 85 : 0)
+                        const col4_XoffSet = 60 + (indent === 'Yes' ? 85 : 0)
 
-    return svg;
-}
+                        // ## Col 1 ##
+                        if (Col1_data_checker && (Col1_shape || Col1_data)) {
+                            if (Col1_shape) {
+                                if (Col1_data && Col1_datatype == 'Discrete') {
+                                    shape_color = Color_list.includes(Col1_data.toLowerCase()) ? Col1_data : 'black';
+                                } else if (Col1_data && Col1_datatype == 'Continuous') {
+                                    if (Col1_coloring == 'All') {
+                                        shape_color = Color_dict.Col1.All(Col1_data);
+                                    } else if (Col1_coloring == 'Shapes') {
+                                        shape_color = Color_dict['Col1'][Col1_shape](Col1_data);
+                                    }
+                                } else {
+                                    shape_color = 'black';
+                                }
+                                shape_value = Col1_shape === "square" ? 'rect' : Col1_shape;
+                                addShape(Shape_list.includes(shape_value) ? shape_value : 'circle', margin.left + xOffset  + col1_XoffSet, yOffset - (parseFloat(fontSize) * 0.50), 6, shape_color);
+                            } else {
+                                if (Col1_data && Col1_datatype == 'Discrete') {
+                                    shape_color = Color_list.includes(Col1_data.toLowerCase()) ? Col1_data : 'black';
+                                    addShape('circle', margin.left + xOffset + col1_XoffSet, yOffset - (parseFloat(fontSize) * 0.50), 6, shape_color);
+                                } else if (Col1_data && Col1_datatype == 'Continuous') {
+                                    shape_color = Color_dict.Col1.All(Col1_data);
+                                    addShape('circle', margin.left + xOffset + col1_XoffSet, yOffset - (parseFloat(fontSize) * 0.50), 6, shape_color);
+                                }
+                            }
+                        }
 
-// Handles the data visualization
-function data_visualization(data, category_data, location, Layout_dict, data_styling, spacing_dict) {
+                        // ## Col 2 ##
+                        if (Col2_data_checker && (Col2_shape || Col2_data)) {
+                            if (Col2_shape) {
 
-    // ###########################
-    // ## Initialize Variables  ##
-    // ###########################
-    
-    // Set default margins, xOffset, yOffset, and columns based on Layout_dict
-    const margin = { top: 40, right: 20, bottom: 20, left: 20 };
-    let yOffset = margin.top + 5 + 80 + 5;
-    let xOffset = 5;
-    let columns = Layout_dict.columns;
 
-    // Get the SVG container
-    const svg = d3.select(`#${location} svg`);
+                                if (Col2_data && Col2_datatype == 'Discrete') {
+                                    shape_color = Color_list.includes(Col2_data.toLowerCase()) ? Col2_data : 'black';
+                                } else if (Col2_data && Col2_datatype == 'Continuous') {
 
-    // Track the current column and Y-offsets
-    let current_col = 1;
-    let label_counter = 1;
-    const Col_break_number = Layout_dict.Col_break_number || Math.ceil(data.length / columns);
+                                    if (Col2_coloring == 'All') {
+                                        shape_color = Color_dict.Col2.All(Col2_data);
+                                    } else if (Col2_coloring == 'Shapes') {
+                                        shape_color = Color_dict['Col2'][Col2_shape](Col2_data);
+                                    }
+                                } else {
+                                    shape_color = 'black';
+                                }
+                                shape_value = Col2_shape === "square" ? 'rect' : Col2_shape;
+                                addShape(Shape_list.includes(shape_value) ? shape_value : 'circle', margin.left + xOffset + col2_XoffSet, yOffset - (parseFloat(fontSize) * 0.50), 6, shape_color);
+                            } else {
+                                if (Col2_data && Col2_datatype == 'Discrete') {
+                                    shape_color = Color_list.includes(Col2_data.toLowerCase()) ? Col2_data : 'black';
+                                    addShape('circle', margin.left + xOffset + col2_XoffSet, yOffset - (parseFloat(fontSize) * 0.50), 6, shape_color);
+                                } else if (Col2_data && Col2_datatype == 'Continuous') {
+                                    shape_color = Color_dict.Col2.All(Col2_data);
+                                    addShape('circle', margin.left + xOffset + col2_XoffSet, yOffset - (parseFloat(fontSize) * 0.50), 6, shape_color);
+                                }
+                            }
+                        }
 
-    // Function to add different shapes
-    function addShape(shapeType, x, y, size, fillColor) {
-        switch (shapeType) {
-            case 'circle':
-                svg.append('circle')
-                    .attr('cx', x)
-                    .attr('cy', y)
-                    .attr('r', size)
-                    .style('dominant-baseline', 'middle') // Set vertical alignment
-                    .style('stroke', 'black')
-                    .style('stroke-width', 1)
-                    .style('fill', fillColor);
-                break;
-            case 'rect':
-                svg.append('rect')
-                    .attr('x', x - size)
-                    .attr('y', y - size)
-                    .attr('width', size * 2)
-                    .attr('height', size * 2)
-                    .style('dominant-baseline', 'middle') // Set vertical alignment
-                    .style('stroke', 'black')
-                    .style('stroke-width', 1)
-                    .style('fill', fillColor);
-                break;
-            case 'triangle':
-                svg.append('path')
-                    .attr('d', `M ${x} ${y - size} L ${x - size} ${y + size} L ${x + size} ${y + size} Z`)
-                    .style('stroke', 'black')
-                    .style('dominant-baseline', 'middle') // Set vertical alignment
-                    .style('stroke-width', 1)
-                    .style('fill', fillColor);
-                break;
-            case 'diamond':
-                svg.append('path')
-                    .attr('d', `M ${x} ${y - size} L ${x - size} ${y} L ${x} ${y + size} L ${x + size} ${y} Z`)
-                    .style('stroke', 'black')
-                    .style('dominant-baseline', 'middle') // Set vertical alignment
-                    .style('stroke-width', 1)
-                    .style('fill', fillColor);
-                break;
-            case 'star':
-                const points = 5;
-                const outerRadius = size;
-                const innerRadius = size / 2.5;
-                let starPath = '';
-                for (let i = 0; i < points * 2; i++) {
-                    const angle = (Math.PI / points) * i;
-                    const radius = i % 2 === 0 ? outerRadius : innerRadius;
-                    const xPoint = x + Math.cos(angle) * radius;
-                    const yPoint = y + Math.sin(angle) * radius;
-                    starPath += i === 0 ? `M ${xPoint} ${yPoint}` : `L ${xPoint} ${yPoint}`;
-                }
-                starPath += 'Z';
-                svg.append('path')
-                    .attr('d', starPath)
-                    .style('stroke', 'black')
-                    .style('dominant-baseline', 'middle') // Set vertical alignment
-                    .style('stroke-width', 1)
-                    .style('fill', fillColor);
-                break;
-            default:
-                console.log('Unknown shape type');
-        }
-    }
+                        // ## Col 3 ##
+                        if (Col3_data_checker && (Col3_shape || Col3_data)) {
+                            if (Col3_shape) {
+                                if (Col3_data && Col3_datatype == 'Discrete') {
+                                    shape_color = Color_list.includes(Col3_data.toLowerCase()) ? Col3_data : 'black';
+                                } else if (Col3_data && Col3_datatype == 'Continuous') {
+                                    if (Col3_coloring == 'All') {
+                                        shape_color = Color_dict.Col3.All(Col3_data);
+                                    } else if (Col3_coloring == 'Shapes') {
+                                        shape_color = Color_dict['Col3'][Col3_shape](Col3_data);
+                                    }
+                                } else {
+                                    shape_color = 'black';
+                                }
+                                shape_value = Col3_shape === "square" ? 'rect' : Col3_shape;
+                                addShape(Shape_list.includes(shape_value) ? shape_value : 'circle', margin.left + xOffset + col3_XoffSet, yOffset - (parseFloat(fontSize) * 0.50), 6, shape_color);
+                            } else {
+                                if (Col3_data && Col3_datatype == 'Discrete') {
+                                    shape_color = Color_list.includes(Col3_data.toLowerCase()) ? Col3_data : 'black';
+                                    addShape('circle', margin.left + xOffset + col3_XoffSet, yOffset - (parseFloat(fontSize) * 0.50), 6, shape_color);
+                                } else if (Col3_data && Col3_datatype == 'Continuous') {
+                                    shape_color = Color_dict.Col3.All(Col3_data);
+                                    addShape('circle', margin.left + xOffset + col3_XoffSet, yOffset - (parseFloat(fontSize) * 0.50), 6, shape_color);
+                                }
+                            }
+                        }
 
-    // Function to handle column breaks
-    function handleColumnBreak() {
-        if (label_counter > Col_break_number && current_col < columns) {
-            current_col++;
-            xOffset += spacing_dict[`Col${current_col - 1}`]; // Move to the next column
-            label_counter = 1; // Reset label counter for the new column
-            yOffset = margin.top + 5 + 80 + 5; // Reset yOffset for the new column
-        }
-    }
-
-    // ###############################
-    // ## Color Logic Function      ##
-    // ###############################
-
-    function getShapeColor(column, data_value) {
-        const column_styling = data_styling[column];
-        let color = 'black';
-
-        if (column_styling.Datatype === 'Discrete') {
-            const Color_list = ['black', 'red', 'blue', 'green'];
-            if (data_value) {
-                const valueString = String(data_value); // Ensures data_value is converted to a string
-                color = Color_list.includes(valueString.toLowerCase()) ? valueString : 'black';
-            } else {
-                color = 'black';
-            }
-        } else if (column_styling.Datatype === 'Continuous') {
-            const gradientScale = d3.scale.linear()
-                .domain([column_styling.Data_min, column_styling.Data_max]);
-
-            if (column_styling.data_color_complexity === 'One') {
-                gradientScale.range(['#FFFFFF', column_styling.Data_color2]);
-            } else if (column_styling.data_color_complexity === 'Two') {
-                gradientScale.range([column_styling.Data_color1, column_styling.Data_color2]);
-            } else if (column_styling.data_color_complexity === 'Three') {
-                gradientScale.range([column_styling.Data_color1, '#FFFFFF', column_styling.Data_color2])
-                    .domain([column_styling.Data_min, (column_styling.Data_min + column_styling.Data_max) / 2, column_styling.Data_max]);
-            }
-
-            color = gradientScale(data_value);
-        }
-
-        return color;
-    }
-
-    // ###############################
-    // ## Iterate through data rows ##
-    // ###############################
-
-    for (let i = 0; i < data.length; i++) {
-        const label = data[i];
-        const category = category_data[i];
-
-        // Check if category is 'Receptor' (only for receptors do we render shapes)
-        if (category === 'Receptor') {
-            // Check if data exists for the receptor (in the shape data)
-            if (list_data_wow.hasOwnProperty(label)) {
-                const receptorData = list_data_wow[label];
-
-                // Col data checker
-                const Col1_data_checker = data_styling.Col1.Data == "Yes";
-                const Col2_data_checker = data_styling.Col2.Data == "Yes";
-                const Col3_data_checker = data_styling.Col3.Data == "Yes";
-                const Col4_data_checker = data_styling.Col4.Data == "Yes";
-
-                // Col labels and shapes
-                const Col1_shape = receptorData.hasOwnProperty('Value1') ? receptorData.Value1.toLowerCase() : false;
-                const Col2_shape = receptorData.hasOwnProperty('Value3') ? receptorData.Value3.toLowerCase() : false;
-                const Col3_shape = receptorData.hasOwnProperty('Value5') ? receptorData.Value5.toLowerCase() : false;
-                const Col4_shape = receptorData.hasOwnProperty('Value7') ? receptorData.Value7.toLowerCase() : false;
-
-                // Col data
-                const Col1_data = receptorData.hasOwnProperty('Value2') ? receptorData.Value2 : false;
-                const Col2_data = receptorData.hasOwnProperty('Value4') ? receptorData.Value4 : false;
-                const Col3_data = receptorData.hasOwnProperty('Value6') ? receptorData.Value6 : false;
-                const Col4_data = receptorData.hasOwnProperty('Value8') ? receptorData.Value8 : false;
-
-                // Shapes and data rendering for each column
-                const col1_XoffSet = 0;
-                const col2_XoffSet = 20;
-                const col3_XoffSet = 40;
-                const col4_XoffSet = 60;
-
-                const Shape_list = ['circle', 'rect', 'triangle', 'star', 'diamond'];
-
-                // ### Column 1 ###
-                if (Col1_data_checker && (Col1_shape || Col1_data)) {
-                    const shape_color = Col1_data ? getShapeColor('Col1', Col1_data) : 'black';
-                    addShape(Shape_list.includes(Col1_shape) ? Col1_shape : 'circle', margin.left + xOffset + col1_XoffSet, yOffset - 10, 6, shape_color);
-                }
-
-                // ### Column 2 ###
-                if (Col2_data_checker && (Col2_shape || Col2_data)) {
-                    const shape_color = Col2_data ? getShapeColor('Col2', Col2_data) : 'black';
-                    addShape(Shape_list.includes(Col2_shape) ? Col2_shape : 'circle', margin.left + xOffset + col2_XoffSet, yOffset - 10, 6, shape_color);
-                }
-
-                // ### Column 3 ###
-                if (Col3_data_checker && (Col3_shape || Col3_data)) {
-                    const shape_color = Col3_data ? getShapeColor('Col3', Col3_data) : 'black';
-                    addShape(Shape_list.includes(Col3_shape) ? Col3_shape : 'circle', margin.left + xOffset + col3_XoffSet, yOffset - 10, 6, shape_color);
-                }
-
-                // ### Column 4 ###
-                if (Col4_data_checker && (Col4_shape || Col4_data)) {
-                    const shape_color = Col4_data ? getShapeColor('Col4', Col4_data) : 'black';
-                    addShape(Shape_list.includes(Col4_shape) ? Col4_shape : 'circle', margin.left + xOffset + col4_XoffSet, yOffset - 10, 6, shape_color);
+                        // ## Col 4 ##
+                        if (Col4_data_checker && (Col4_shape || Col4_data)) {
+                            if (Col4_shape) {
+                                if (Col4_data && Col4_datatype == 'Discrete') {
+                                    shape_color = Color_list.includes(Col4_data.toLowerCase()) ? Col4_data : 'black';
+                                } else if (Col4_data && Col4_datatype == 'Continuous') {
+                                    if (Col4_coloring == 'All') {
+                                        shape_color = Color_dict.Col4.All(Col4_data);
+                                    } else if (Col4_coloring == 'Shapes') {
+                                        shape_color = Color_dict['Col4'][Col4_shape](Col4_data);
+                                    }
+                                } else {
+                                    shape_color = 'black';
+                                }
+                                shape_value = Col4_shape === "square" ? 'rect' : Col4_shape;
+                                addShape(Shape_list.includes(shape_value) ? shape_value : 'circle', margin.left + xOffset + col4_XoffSet, yOffset - (parseFloat(fontSize) * 0.50), 6, shape_color);
+                            } else {
+                                if (Col4_data && Col4_datatype == 'Discrete') {
+                                    shape_color = Color_list.includes(Col4_data.toLowerCase()) ? Col4_data : 'black';
+                                    addShape('circle', margin.left + xOffset + col4_XoffSet, yOffset - (parseFloat(fontSize) * 0.50), 6, shape_color);
+                                } else if (Col4_data && Col4_datatype == 'Continuous') {
+                                    shape_color = Color_dict.Col4.All(Col4_data);
+                                    addShape('circle', margin.left + xOffset + col4_XoffSet, yOffset - (parseFloat(fontSize) * 0.50), 6, shape_color);
+                                }
+                            }
+                        }
+                    } else {
+                        console.log(label_key);
+                    }
                 }
             }
 
-            // Increment yOffset for the next label and shape
-            yOffset += 30;
-            label_counter++;
+            // # Check and append text for Layer 1 breaker if it's visible #
 
-            // Handle column break
-            handleColumnBreak();
+            if (Checklist[0]) {
+                if (col_breaker == "Layer1" || col_breaker == "Custom") {
+                    ColumnsBreakerFunc(columns,label_counter,Col_break_number,state);
+                }
+                add_text(key, yOffset, "Layer-1",styling_option.Layer1.Bold,styling_option.Layer1.Italic,styling_option.Layer1.Underline,styling_option.Layer1.Fontsize,styling_option.Layer1.Color);
+                yOffset += 30;
+                label_counter++;
 
-        } else {
-            // If the category is not 'Receptor', simply move the Y offset without rendering shapes
-            yOffset += 30;
-            label_counter++;
-            
-            // Handle column break
-            handleColumnBreak();
-        }
+                // Check and append text for Layer 2 if it's visible and has sublayers
+                if (Checklist[1] && typeof value === 'object') {
+                    Object.entries(value).forEach(([subKey, subValue]) => {
+                        if (col_breaker == "Layer2" || col_breaker == "Custom") {
+                            ColumnsBreakerFunc(columns,label_counter,Col_break_number,state);
+                        }
+                        add_text(subKey, yOffset, "Layer-2",styling_option.Layer2.Bold,styling_option.Layer2.Italic,styling_option.Layer2.Underline,styling_option.Layer2.Fontsize,styling_option.Layer2.Color);
+                        yOffset += 30;
+                        label_counter++;
+
+                        // Check and append text for Layer 3 if it's visible and has sublayers
+                        if (Checklist[2] && typeof subValue === 'object') {
+                            Object.entries(subValue).forEach(([subSubKey, subSubValue]) => {
+                                if (col_breaker == "Layer3" || col_breaker == "Custom") {
+                                    ColumnsBreakerFunc(columns,label_counter,Col_break_number,state);
+                                }
+                                add_text(subSubKey, yOffset, "Layer-3",styling_option.Layer3.Bold,styling_option.Layer3.Italic,styling_option.Layer3.Underline,styling_option.Layer3.Fontsize,styling_option.Layer3.Color);
+                                yOffset += 30;
+                                label_counter++;
+
+                                // Check and append text for Layer 4 if it's visible and is an array
+                                if (Array.isArray(subSubValue)) {
+                                    subSubValue.forEach(item => {
+                                        if (col_breaker == "Layer4" || col_breaker == "Custom") {
+                                            ColumnsBreakerFunc(columns,label_counter,Col_break_number,state);
+                                        }
+                                        add_text(item, yOffset, "Layer-4",styling_option.Layer4.Bold,styling_option.Layer4.Italic,styling_option.Layer4.Underline,styling_option.Layer4.Fontsize,styling_option.Layer4.Color);
+
+                                        yOffset += 30;
+                                        label_counter++;
+
+                                    });
+                                }
+                            });
+                        } else {
+                            Object.entries(subValue).forEach(([subSubKey, subSubValue]) => {
+                                // Check and append text for Layer 4 if it's visible and is an array
+                                if (Array.isArray(subSubValue)) {
+                                    subSubValue.forEach(item => {
+                                        if (col_breaker == "Layer4" || col_breaker == "Custom") {
+                                            ColumnsBreakerFunc(columns,label_counter,Col_break_number,state);
+                                        }
+                                        add_text(item, yOffset, "Layer-4",styling_option.Layer4.Bold,styling_option.Layer4.Italic,styling_option.Layer4.Underline,styling_option.Layer4.Fontsize,styling_option.Layer4.Color);
+                                        yOffset += 30;
+                                        label_counter++;
+
+                                    });
+                                }
+                            });
+                        }
+                    });
+                } else {
+                    Object.entries(value).forEach(([subKey, subValue]) => {
+                        // Check and append text for Layer 3 if it's visible and has sublayers
+                        if (Checklist[2] && typeof subValue === 'object') {
+                            Object.entries(subValue).forEach(([subSubKey, subSubValue]) => {
+                                if (col_breaker == "Layer3" || col_breaker == "Custom") {
+                                    ColumnsBreakerFunc(columns,label_counter,Col_break_number,state);
+                                }
+                                add_text(subSubKey, yOffset, "Layer-3",styling_option.Layer3.Bold,styling_option.Layer3.Italic,styling_option.Layer3.Underline,styling_option.Layer3.Fontsize,styling_option.Layer3.Color);
+                                yOffset += 30;
+                                label_counter++;
+
+                                // Check and append text for Layer 4 if it's visible and is an array
+                                if (Array.isArray(subSubValue)) {
+                                    subSubValue.forEach(item => {
+                                        if (col_breaker == "Layer4" || col_breaker == "Custom") {
+                                            ColumnsBreakerFunc(columns,label_counter,Col_break_number,state);
+                                        }
+                                        add_text(item, yOffset, "Layer-4",styling_option.Layer4.Bold,styling_option.Layer4.Italic,styling_option.Layer4.Underline,styling_option.Layer4.Fontsize,styling_option.Layer4.Color);
+                                        yOffset += 30;
+                                        label_counter++;
+
+                                    });
+                                }
+                            });
+                        } else {
+                            Object.entries(subValue).forEach(([subSubKey, subSubValue]) => {
+                                // Check and append text for Layer 4 if it's visible and is an array
+                                if (Array.isArray(subSubValue)) {
+                                    subSubValue.forEach(item => {
+                                        if (col_breaker == "Layer4" || col_breaker == "Custom") {
+                                            ColumnsBreakerFunc(columns,label_counter,Col_break_number,state);
+                                        }
+                                        add_text(item, yOffset, "Layer-4",styling_option.Layer4.Bold,styling_option.Layer4.Italic,styling_option.Layer4.Underline,styling_option.Layer4.Fontsize,styling_option.Layer4.Color);
+                                        yOffset += 30;
+                                        label_counter++;
+
+                                    });
+                                }
+                            });
+                        }
+                    });
+                }
+            } else if (!Checklist[0] && Checklist[1]) {
+                // Check and append text for Layer 2 if it's visible and has sublayers
+                if (Checklist[1] && typeof value === 'object') {
+                    Object.entries(value).forEach(([subKey, subValue]) => {
+                        if (col_breaker == "Layer2" || col_breaker == "Custom") {
+                            ColumnsBreakerFunc(columns,label_counter,Col_break_number,state);
+                        }
+                        add_text(subKey, yOffset, "Layer-2",styling_option.Layer2.Bold,styling_option.Layer2.Italic,styling_option.Layer2.Underline,styling_option.Layer2.Fontsize,styling_option.Layer2.Color);
+                        yOffset += 30;
+                        label_counter++;
+
+                        // Check and append text for Layer 3 if it's visible and has sublayers
+                        if (Checklist[2] && typeof subValue === 'object') {
+                            Object.entries(subValue).forEach(([subSubKey, subSubValue]) => {
+                                if (col_breaker == "Layer3" || col_breaker == "Custom") {
+                                    ColumnsBreakerFunc(columns,label_counter,Col_break_number,state);
+                                }
+                                add_text(subSubKey, yOffset, "Layer-3",styling_option.Layer3.Bold,styling_option.Layer3.Italic,styling_option.Layer3.Underline,styling_option.Layer3.Fontsize,styling_option.Layer3.Color);
+                                yOffset += 30;
+                                label_counter++;
+
+                                // Check and append text for Layer 4 if it's visible and is an array
+                                if (Array.isArray(subSubValue)) {
+                                    subSubValue.forEach(item => {
+                                        if (col_breaker == "Layer4" || col_breaker == "Custom") {
+                                            ColumnsBreakerFunc(columns,label_counter,Col_break_number,state);
+                                        }
+                                        add_text(item, yOffset, "Layer-4",styling_option.Layer4.Bold,styling_option.Layer4.Italic,styling_option.Layer4.Underline,styling_option.Layer4.Fontsize,styling_option.Layer4.Color);
+                                        yOffset += 30;
+                                        label_counter++;
+
+                                    });
+                                }
+                            });
+                        } else {
+                            Object.entries(subValue).forEach(([subSubKey, subSubValue]) => {
+                                // Check and append text for Layer 4 if it's visible and is an array
+                                if (Array.isArray(subSubValue)) {
+                                    subSubValue.forEach(item => {
+                                        if (col_breaker == "Layer4" || col_breaker == "Custom") {
+                                            ColumnsBreakerFunc(columns,label_counter,Col_break_number,state);
+                                        }
+                                        add_text(item, yOffset, "Layer-4",styling_option.Layer4.Bold,styling_option.Layer4.Italic,styling_option.Layer4.Underline,styling_option.Layer4.Fontsize,styling_option.Layer4.Color);
+                                        yOffset += 30;
+                                        label_counter++;
+
+                                    });
+                                }
+                            });
+                        }
+                    });
+                }
+            } else if (!Checklist[0] && !Checklist[1] && Checklist[2]) {
+                Object.entries(value).forEach(([subKey, subValue]) => {
+                    if (Checklist[2] && typeof subValue === 'object') {
+                        Object.entries(subValue).forEach(([subSubKey, subSubValue]) => {
+                            if (col_breaker == "Layer3" || col_breaker == "Custom") {
+                                ColumnsBreakerFunc(columns,label_counter,Col_break_number,state);
+                            }
+                            add_text(subSubKey, yOffset, "Layer-3",styling_option.Layer3.Bold,styling_option.Layer3.Italic,styling_option.Layer3.Underline,styling_option.Layer3.Fontsize,styling_option.Layer3.Color);
+                            yOffset += 30;
+                            label_counter++;
+
+                            // Check and append text for Layer 4 if it's visible and is an array
+                            if (Array.isArray(subSubValue)) {
+                                subSubValue.forEach(item => {
+                                    if (col_breaker == "Layer4" || col_breaker == "Custom") {
+                                        ColumnsBreakerFunc(columns,label_counter,Col_break_number,state);
+                                    }
+                                    add_text(item, yOffset, "Layer-4",styling_option.Layer4.Bold,styling_option.Layer4.Italic,styling_option.Layer4.Underline,styling_option.Layer4.Fontsize,styling_option.Layer4.Color);
+                                    yOffset += 30;
+                                    label_counter++;
+
+                                });
+                            }
+                        });
+                    }
+                });
+            } else if (!Checklist[0] && !Checklist[1] && !Checklist[2]) {
+                Object.entries(value).forEach(([subKey, subValue]) => {
+                    Object.entries(subValue).forEach(([subSubKey, subSubValue]) => {
+                        if (Array.isArray(subSubValue)) {
+                            subSubValue.forEach(item => {
+                                if (col_breaker == "Layer4" || col_breaker == "Custom") {
+                                    ColumnsBreakerFunc(columns,label_counter,Col_break_number,state);
+                                }
+                                add_text(item, yOffset, "Layer-4",styling_option.Layer4.Bold,styling_option.Layer4.Italic,styling_option.Layer4.Underline,styling_option.Layer4.Fontsize,styling_option.Layer4.Color);
+                                yOffset += 30;
+                                label_counter++;
+
+                            });
+                        }
+                    });
+                });
+            }
+        });
+
+    // # check if y-off-set is more than max, if so expand canvas #
+    if (yOffset_max < yOffset) {
+        yOffset_max = yOffset;
     }
 
-    // #############################
-    // ## Render Legend Bars on Top ##
-    // #############################
+    // Rerender height of plot as the last thing
+    svg.attr("height",yOffset_max + margin.top + margin.bottom)
 
-    let bar_index = 0;
-    Object.keys(data_styling).forEach(function(column) {
-        if (data_styling[column].Data === "Yes" && data_styling[column].Datatype === 'Continuous') {
+    // ## Add legend bars on top ##
+    let bar_index = 0
+    Object.keys(Data_styling).forEach(function(column) {
+        if (Data_styling[column].Data === "Yes" && Data_styling[column].Datatype === 'Continuous') {
             const legendWidth = 200; // Width of the legend bar
             const data_fontsize = 14; // Adjust as needed
             const lowest_value = data_styling[column].Data_min;
@@ -2068,31 +2240,6 @@ function Heatmap(data, location, heatmap_DataStyling,label_x_converter) {
     let legend_y_position = 30;
 
     let rowLabelWidth;
-    const baseWidth = 20;  // Minimum column width
-    const chartData = [];
-    let highest_value = -Infinity;
-    let lowest_value = Infinity;
-
-    rows.forEach(row => {
-      cols.forEach(col => {
-        const value = data[row][col];
-        chartData.push({ row, col, value });
-        if (value > highest_value) {
-          highest_value = value;
-        }
-        if (value < lowest_value) {
-            lowest_value = value;
-        }
-      });
-    });
-
-    // Calculate the length of the longest data value
-    
-    const longestDataValue = d3.max(chartData, d => Number(parseFloat(d.value).toFixed(1)).toString().length);
-
-    // Calculate width based on the longest data value
-    const calculatedDataValueWidth = longestDataValue * 40 * (label_fontsize / 14);
-
     if (rotation === 90 || rotation === 45) {
         // Use the larger value between base width and calculated data value width for rotation
         rowLabelWidth = Math.max(baseWidth, calculatedDataValueWidth);
@@ -2592,6 +2739,7 @@ function GPCRome_formatTextWithHTML(text, Family_list) {
     return formattedText;
 }
 
+// Draw / generate the GPCRome plot
 function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling, odorant = false) {
 
     dimensions = { height: 1000, width: 1000 };
@@ -2605,10 +2753,12 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling, odoran
     const Receptor_and_family_fontsize = "11px"
 
     const svg = d3v4.select("#" + location)
-        .append("svg")
-        .attr("id", location+'_svg')  // Add the id here for download reference
-        .attr("width", dimensions.width)
-        .attr("height", dimensions.height);
+    .append("svg")
+    .attr("id", location+'_svg')  // Add the id here for download reference
+    .attr("width", dimensions.width)
+    .attr("height", dimensions.height)
+    .attr("xmlns", "http://www.w3.org/2000/svg")  // Add the SVG namespace
+    .attr("xmlns:xlink", "http://www.w3.org/1999/xlink");  // Add the xlink namespace for images
 
    // Get the image URL from the data-attribute
     const imageUrl = document.getElementById("image-container").getAttribute("data-image-url");
@@ -2973,8 +3123,7 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling, odoran
                         // Get the current and previous positions using calculatePositionAndAngle with the isSplit flag
                         const currentPos = calculatePositionAndAngle(index, totalItems, values, Header_list, Family_list, true);
                         const prevPos = calculatePositionAndAngle(index - 1, totalItems, values, Header_list, Family_list, true);
-                        
-                        off_set = level+1
+
 
                         if (angle >= -90 && angle < 90) {
                             // Right-hand side: use prevPos for the first part and currentPos for the second part
@@ -2992,6 +3141,7 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling, odoran
                                 .style("font-family", Font_family)
                                 .style("font-size",family_fontsize);
                                 
+
 
                             // Append the second part of the text (using currentPos)
                             svg.append("text")
@@ -3171,15 +3321,247 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling, odoran
                 return value === "" ? 0 : 0.5;  // Set stroke-width to 0 if the value is an empty string
             });
     }
-    // Add padding and scale
-    const padding = 10;  // Adjust padding value as needed (50px for this example)
-    const originalWidth = +svg.attr("width");
-    const originalHeight = +svg.attr("height");
-
-    // Adjust the viewBox to add padding
-    svg.attr("viewBox", `-${padding} -${padding} ${originalWidth + 2 * padding} ${originalHeight + 2 * padding}`);
-
-    // Apply scaling to the content (e.g., 95% of the original size)
-    svg.attr("transform", "scale(0.95)")
-    .attr("transform-origin", "center");
 }
+
+// // SPIRAL  - Maybe for later!!
+
+// function formatTextWithHTML_spiral(text, receptorFamilies) {
+//     // List of receptor families that need special formatting
+//     const specialFormattingFamilies = new Set(receptorFamilies);
+
+//     // Apply initial replacements
+//     let formattedText = text
+//         .replace(" receptors", '')
+//         .replace(" receptor", '')
+//         .replace("-adrenoceptor", ' ')
+//         .replace(" receptor-", '-')
+//         .replace("<sub>", '</tspan><tspan baseline-shift="sub">')
+//         .replace("</sub>", '</tspan><tspan>')
+//         .replace("<i>", '</tspan><tspan font-style="italic">')
+//         .replace("</i>", '</tspan><tspan>')
+//         .replace("Long-wave-sensitive", 'LWS')
+//         .replace("Medium-wave-sensitive", 'MWS')
+//         .replace("Short-wave-sensitive", 'SWS')
+//         .replace("Olfactory", 'OLF')
+//         .replace("calcitonin-like receptor", 'CLR');
+
+//     // Apply additional formatting if the text is in the special formatting families
+//     if (specialFormattingFamilies.has(text)) {
+//         formattedText = formattedText
+//             .replace(/( receptors|neuropeptide )/g, '') // Remove specific substrings
+//             .replace(/(-releasing)/g, '-rel.') // Remove specific substrings
+//             .replace(/(-concentrating)/g, '-conc.') // Remove specific substrings
+//             .split(" (")[0]; // Keep only the part before the first " ("
+
+//         // Truncate if necessary
+//         if (formattedText.length > 15) {
+//             return formattedText.substring(0, 15) + "...";
+//         }
+//     }
+
+//     return formattedText;
+// }
+
+// function Draw_Spiral(layout_data, fill_data, location, spiral_styling) {
+//     // Data format
+
+//     const datatype = spiral_styling.datatype;
+//     const classMapping = [
+//         "CLASS A",
+//         "A ORPHANS",
+//         "CLASS B1",
+//         "CLASS B2",
+//         "CLASS C",
+//         "CLASS F",
+//         "CLASS T2",
+//         "CLASSLESS"
+//     ];
+
+//     spiral_data = Object.values(layout_data).flat();
+
+//     const transformData = (dataObject, classMapping) => {
+//         const result = [];
+//         const familyList = new Set(); // Create a Set to hold receptor family names
+
+//         // Iterate over each class in the data object
+//         Object.keys(dataObject).forEach(classIndex => {
+//             const className = classMapping[classIndex] || "UNKNOWN"; // Default to "UNKNOWN" if classMapping is missing
+//             result.push(className); // Add the class name
+
+//             const receptorFamilies = dataObject[classIndex];
+//             Object.keys(receptorFamilies).forEach(familyName => {
+//                 familyList.add(familyName); // Add receptor family name to the Set
+//                 result.push(familyName); // Add the receptor family name
+
+//                 const receptors = receptorFamilies[familyName];
+//                 result.push(...receptors); // Flatten the receptors into the result array
+//             });
+//         });
+
+//         return { flattenedData: result, familyList: Array.from(familyList) }; // Convert Set to Array
+//     };
+
+//     const { flattenedData, familyList } = transformData(spiral_data, classMapping);
+
+//     // console.log(flattenedData);
+//     // Configuration
+//     const width = 1000;
+//     const height = 1000;
+//     const centerX = width / 2;
+//     const centerY = height / 2;
+//     const numPoints = flattenedData.length;
+//     const maxRadius = Math.min(centerX, centerY) - 80; // Maximum radius of the spiral
+//     console.log(numPoints);
+//     // Define color scale for continuous data
+//     const colorScale = d3.scaleLinear()
+//         .domain([spiral_styling.minValue, spiral_styling.median_value, spiral_styling.maxValue])  // Input domain with median
+//         .range([spiral_styling.colorStart, spiral_styling.color_median, spiral_styling.colorEnd]);  // Output range with median color
+
+//     // Create SVG container
+//     const svg = d3.select("#" + location);
+
+//     const numTurns = 15;  // Number of spiral turns
+//     const totalTheta = 2 * Math.PI * numTurns;  // Total angular range for the full spiral
+
+//     // Parameters for the flipped Archimedean spiral
+//     // const maxRadius = 500;  // Starting radius (the furthest point from the center)
+//     const b = 14;  // Controls how tight the spiral is
+//     const desiredArcLength = 14;  // Desired arc length (distance between points)
+
+//     // Generate spiral data, starting from the outermost point and moving inwards
+//     const data = [];
+//     let theta = 0 - (Math.PI / 2);  // Start at 0 degrees
+
+//     for (let i = 0; i < numPoints; i++) {
+//         // Flip the radius calculation: start from maxRadius and decrease as theta increases
+//         const radius = maxRadius - b * theta;
+
+//         // Calculate x and y positions based on the spiral formula
+//         const x = centerX + radius * Math.cos(theta);
+//         const y = centerY + radius * Math.sin(theta);
+
+//         // Add the current point to the data array
+//         data.push({
+//             x: x,
+//             y: y,
+//             theta: theta,  // Store theta for pie slice alignment
+//             theta_box: theta + (Math.PI / 2),
+//             radius: radius,  // Store radius for use in pie chart
+//             angularStep: desiredArcLength,  // This will get updated with the current angular step
+//             text: flattenedData[i]
+//         });
+
+//         // Calculate the next angular step to maintain constant arc length
+//         const angularStep = desiredArcLength / radius;  // Adjust based on current radius
+
+//         // Update the angle for the next point
+//         theta += angularStep;
+//     }
+
+
+//     // Append text elements to the SVG
+//     svg.selectAll("text")
+//         .data(data)
+//         .enter()
+//         .append("text")
+//         .attr("x", d => d.x)
+//         .attr("y", d => d.y)
+//         .attr("dominant-baseline", "middle")
+//         .attr("class", "text")
+//         .html(d => formatTextWithHTML_spiral(d.text, familyList)) // Use HTML formatting function
+//         .style("font-size", d => classMapping.includes(d.text) ? "12px" : "10px")
+//         .style("text-decoration", d => classMapping.includes(d.text) ? "underline" : "none")
+//         .style("font-family", "Palatino")
+//         .style("font-weight", d => classMapping.includes(d.text) || familyList.includes(d.text) ? "bold" : "normal")
+//         .attr("text-anchor", d => {
+//             // Calculate angle in radians
+//             const angle = Math.atan2(d.y - centerY, d.x - centerX);
+
+//             // Determine text-anchor based on angle
+//             return (angle >= -Math.PI / 2 && angle < Math.PI / 2) ? "start" : "end";
+//         })
+//         .attr("transform", d => {
+//             // Calculate angle in radians
+//             const angle = Math.atan2(d.y - centerY, d.x - centerX);
+
+//             // Calculate rotation for flipping text
+//             const rotation = angle >= -Math.PI / 2 && angle < Math.PI / 2 ? 0 : 180;
+
+//             // Rotate text to follow spiral path and flip as needed
+//             return `rotate(${angle * 180 / Math.PI + rotation}, ${d.x}, ${d.y})`; // Adjust rotation angle
+//         });
+
+// // Function to generate spiral points
+// const generateSpiralPoint = (theta, radius) => {
+//     return {
+//         x: centerX + radius * Math.cos(theta),
+//         y: centerY + radius * Math.sin(theta)
+//     };
+// };
+
+// // Variables to store the last arc's end points for continuity
+// let lastEndPointOuter = null;
+// let lastEndPointInner = null;
+
+// const pieData = data.map((d, i) => {
+//     const halfStep = (desiredArcLength / d.radius) / 2;
+
+//     // Start and end angles
+//     const startTheta = d.theta - halfStep;
+//     const endTheta = d.theta + halfStep;
+
+//     // If this is the first arc, calculate start points normally
+//     let startPointOuter = lastEndPointOuter || generateSpiralPoint(startTheta, d.radius - 5);
+//     let startPointInner = lastEndPointInner || generateSpiralPoint(startTheta, d.radius - 10);
+
+//     // Calculate the end points for the current arc
+//     const endPointOuter = generateSpiralPoint(endTheta, d.radius - 5);
+//     const endPointInner = generateSpiralPoint(endTheta, d.radius - 15);
+
+//     // Save the end points to use them for the next arc
+//     lastEndPointOuter = endPointOuter;
+//     lastEndPointInner = endPointInner;
+
+//     // Return the path commands for the custom arc
+//     return {
+//         path: `M ${startPointOuter.x},${startPointOuter.y}
+//                A ${d.radius - 5},${d.radius - 5} 0 0,1 ${endPointOuter.x},${endPointOuter.y}
+//                L ${endPointInner.x},${endPointInner.y}
+//                A ${d.radius - 10},${d.radius - 10} 0 0,0 ${startPointInner.x},${startPointInner.y}
+//                Z`,
+//         data: d.text
+//     };
+// });
+
+// // Draw the spiral-aligned custom arcs
+// svg.selectAll(`.hollow-pie`)
+//     .data(pieData)
+//     .enter()
+//     .append("path")
+//     .attr("class", `hollow-pie`)
+//     .attr("d", d => d.path)  // Use custom path data
+//     .style("fill", d => {
+//         const value = fill_data[d.data]?.Value1;
+//         if (datatype === "Continuous") {
+//             const numericValue = parseFloat(value);
+//             if (numericValue === 0) {
+//                 return "white";  // Return "white" if the value is 0
+//             }
+//             return !isNaN(numericValue) ? colorScale(numericValue) : "none";
+//         } else {
+//             if (value === "Yes") return "green";
+//             if (value === "No") return "red";
+//             return "none";  // Make the slice invisible if the value is ""
+//         }
+//     })
+//     .style("stroke", d => {
+//         const value = fill_data[d.data]?.Value1;
+//         if (value === "Yes" || value === "No" || !isNaN(value)) return "black";
+//         return "none";  // Remove stroke if no value
+//     })
+//     .style("stroke-width", d => {
+//         const value = fill_data[d.data]?.Value1;
+//         return value === "" ? 0 : 0.5;  // No stroke if empty
+//     });
+
+// }
