@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.conf import settings
 from django.views.generic import TemplateView, View
 from django.http import HttpResponse, HttpResponseRedirect
-from django.db.models import Count, Q, Prefetch, TextField, Avg, Case, When, IntegerField, F, Value, CharField, Subquery, OuterRef
+from django.db.models import Count, Q, Prefetch, TextField, Avg, Case, When, IntegerField, F, Value, CharField, Subquery, OuterRef, Exists
 from django.db.models.functions import Concat
 from django import forms
 
@@ -4556,13 +4556,7 @@ class StructureBlastView(View):
         if 'af_foldseek_db' in self.structure_type:
             try:
                 gene_subquery_models = Gene.objects.filter(proteins=OuterRef('protein__pk')).values('name')[:1]
-                print('First sub succs')
 
-            except Exception as e:
-                e
-                # print('First SUB fail')
-                # print(e)
-            try:
                 af_structures = StructureModel.objects.filter(main_template__isnull=True).annotate( gene_name=Subquery(gene_subquery_models)
                 ).values_list(
                     'protein__entry_name', 'state__slug',
@@ -4623,7 +4617,7 @@ class StructureBlastView(View):
             gene_subquery_ref = Gene.objects.filter(proteins=OuterRef('protein_conformation__protein__pk')).values('name')[:1]
 
             try:
-                exp_structures_info_null_accession = Structure.objects.filter(
+                ref_structures_info_null_accession = Structure.objects.filter(
                     structure_type__slug__in=filter_structures,
                     protein_conformation__protein__accession__isnull=False
                 ).annotate(
@@ -4640,7 +4634,25 @@ class StructureBlastView(View):
                     'gene_name'
                 )
 
-                structures_info.update({item[0]: item for item in exp_structures_info_null_accession})
+                structures_info.update({item[0]: item for item in ref_structures_info_null_accession})
+
+                gene_subquery_models = Gene.objects.filter(proteins=OuterRef('protein__parent__pk')).values('name')[:1]
+
+                ref_structures = StructureModel.objects.filter(main_template__isnull=False).annotate( gene_name=Subquery(gene_subquery_models)
+                ).values_list(
+                    'protein__entry_name', 
+                    'state__slug',
+                    'protein__family__parent__parent__parent__name',  # Class
+                    'protein__family__parent__name',  # Family
+                    'protein__species__common_name',
+                    'protein__parent__name',
+                    'protein__parent__entry_name',
+                    'protein__parent__accession',
+                    'gene_name',
+                )
+
+                structures_info.update({item[0]: item for item in ref_structures})
+
             except Exception as e:
                 print('REF failed')
                 print(e)
@@ -4659,7 +4671,9 @@ class StructureBlastView(View):
                 structure_values = structures_info.get(protein)
                 data.append({
                     'input_chain': entry['input_chain'].strip(),
-                    'protein': protein, 'chain': entry["chain"].strip(), 'type': entry["origin"].replace('Experimental', 'exp').replace('experimental', 'exp').strip(),
+                    'protein': protein, 
+                    'chain': entry["chain"].strip(), 
+                    'type': entry["origin"].replace('Experimental', 'exp').replace('experimental', 'exp').strip(),
                     'TM_score': entry["TM_score"], 'lddt': entry['lddt'], 'E_value': entry["E_value"], 'link': entry["linking"],
                     'state': entry["state"] or structure_values[1],
                     'class': structure_values[2].split(' ')[1].strip(),
@@ -4670,7 +4684,7 @@ class StructureBlastView(View):
                     'gtopdb': structure_values[5].replace('receptor', '').replace('-adrenoceptor', '').strip(),
                     'accession': structure_values[7],
                     'gene': structure_values[8],
-                    'pdb_id': '-' if structure_values[0].endswith('refined') or structure_values[0].endswith('human') else structure_values[0]
+                    'pdb_id': structure_values[0] if 'Raw' in entry["origin"] else '-'
                 })
             except Exception as e:
                 # print('An error occurred when enhancing data')
@@ -4718,8 +4732,14 @@ class LigandComplexModels(TemplateView):
     def get_context_data(self, **kwargs):
         context = super(LigandComplexModels, self).get_context_data(**kwargs)
         try:
-            subquery_gene = Gene.objects.filter(proteins=OuterRef('protein_conformation__protein__pk')).values('name')[:1]
-            context['structure_model'] = Structure.objects.filter(structure_type__slug__in=['af-signprot-peptide', 'af-rfaa-sm']).prefetch_related(
+            subquery_gene = Gene.objects.filter(
+                proteins=OuterRef('protein_conformation__protein__pk')
+            ).values('name')[:1]
+            
+            # Annotate the main queryset with an Exists subquery
+            context['structure_model'] = Structure.objects.filter(
+                structure_type__slug__in=['af-signprot-peptide', 'af-rfaa-sm']
+            ).prefetch_related(
                 "protein_conformation__protein__family",
                 "protein_conformation__protein",
                 "state",
@@ -4745,12 +4765,31 @@ class LigandComplexModels(TemplateView):
                     ),
                     to_attr="prefetch_ligands"
                 )
-            ).annotate(gene_name=Subquery(subquery_gene))
+            ).annotate(
+                gene_name=Subquery(subquery_gene),
+                # Annotate with the existence of a matching experimental PDB
+                experimental_pdb_exists=Exists(
+                    StructureLigandInteraction.objects.filter(
+                        structure__structure_type__slug__in=[
+                            'x-ray-diffraction', 
+                            'electron-crystallography', 
+                            'electron-microscopy'
+                        ],
+                        structure__protein_conformation__protein__parent__entry_name=OuterRef('protein_conformation__protein__entry_name'),
+                        ligand__in=Subquery(
+                            LigandPeptideStructure.objects.filter(
+                                structure=OuterRef('pk')
+                            ).values('ligand')
+                        )
+                    )
+                )
+            ).exclude(
+                experimental_pdb_exists=True
+            )
         except Structure.DoesNotExist as e:
             pass
 
         return context
-
 
 # This may be momentarily
 def chain_e_and_lg1_coloring(structure):
