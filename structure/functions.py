@@ -38,6 +38,7 @@ import numpy
 import json
 import yaml
 from urllib.request import urlopen, Request
+from datetime import datetime
 import re
 
 
@@ -79,6 +80,16 @@ class BlastSearch(object):
             blast = Popen('%s -db %s -outfmt 5' % (self.blast_path, self.blastdb), universal_newlines=True, shell=True,
                 stdin=PIPE, stdout=PIPE, stderr=PIPE)
             (blast_out, blast_err) = blast.communicate(input=str(input_seq))
+
+            # Log the BLAST output and errors for inspection
+            logger.debug("BLAST Output: {}".format(blast_out))
+            if blast_err:
+                logger.error("BLAST Error: {}".format(blast_err))
+
+            # Check if BLAST output is empty
+            if not blast_out.strip():
+                logger.error("No output returned from BLAST command.")
+                return []
 
         if len(blast_err) != 0:
             logger.debug(blast_err)
@@ -1210,6 +1221,7 @@ class ParseAFComplexModels():
                 print('LINE')
                 print(line)
                 date_re = re.search('HEADER[A-Z\S\D]+(\d{4}-\d{2}-\d{2})', line)
+
                 model_date = date_re.group(1)
 
             # Check signprot type

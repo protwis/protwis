@@ -61,7 +61,7 @@
 
 
 {% block content %}
-{% if page == 'structure' %}
+{% if page == 'gpcr' %}
 <h4>Number of structures, including multiple of same receptor (complex)</h4>
 <table style="width:75% !important" class="table table-stripped">
     <thead>
@@ -163,7 +163,7 @@
 </table>
 *Active state is defined as agonist-bound and opened intracellular TM bundle.
 **Receptor-orthologues are only counted once.
-{% elif page == 'gprot' %}
+{% elif page == 'gprotein' %}
 <h4>Number of G protein structures</h4>
 <table style="width:75% !important" class="table table-stripped">
     <thead>
@@ -375,7 +375,7 @@
 Specific sets of structures can be downloaded from the <a href="/structure">Structures</a> page.<br />
 The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }}</strong>.<br />
 
-{% if page == 'structure' %}
+{% if page == 'gpcr' %}
 <style type="text/css">
   .gprot_blue {
     color: blue;
@@ -644,7 +644,7 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
 </div></p>
 <br />-->
 
-{% elif page == 'gprot' %}
+{% elif page == 'gprotein' %}
 <style type="text/css">
   .gprot_blue {
     color: blue;
@@ -778,10 +778,12 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
 <p><h4><strong>Structural coverage of GPCR-Arrestin complexes.</strong></h4></p>
 <br />
 {% endif %}
+
   {% if page != 'structure' %}
     {% if page == 'gprot' %}
     <div id="class_a" class="text-center">
     <h4>Class A<br />(Rhodopsin)</h4>
+
     <br />
     <div>
       <!-- <div style="float: right; position: relative" class="text-center">
@@ -797,6 +799,7 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
                 <span class="gprot_pink">&#11044; <b>GPa1</b></span>
       </div>
     </div>
+
   </div>
   <p>
     <div class="text-center">
@@ -1295,6 +1298,7 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
 <script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
 <script src="{% static 'home/js/saveSvg.js' %}"></script>
 <script src="{% static 'home/js/phylo_tree.js' %}"></script>
+
 {% if page == 'structure' %}
 <script src="{% static 'home/js/datamapper.js' %}"></script>
 <script src="{% static 'home/js/popper.min.js' %}"></script>
@@ -1325,6 +1329,7 @@ function initializeGPCRomeLabelConversionDict(conversionDict) {
         let uniProtLabel = conversionDict[originalLabel];
         uniProtLabel = uniProtLabel.replace(/_human$/, "").toUpperCase(); // Remove "_human" and convert to uppercase
         updatedDict[originalLabel] = uniProtLabel;
+
     });
 
     return updatedDict;
@@ -1592,7 +1597,7 @@ function updateFillData(fill_data, conversionDict, labelType) {
     return updatedData;
 }
 </script>
-{% elif page == 'gprot' %}
+{% elif page == 'gprotein' %}
 <script type="text/javascript" charset="utf-8">
     maxLeafNodeLenght = 46;
     conversion = {"Gs":"#0000FF", "Gi/o":"#FF0000", "Gq/11":"#000000", "G12/13":"#008000", "GPa1 family":"#FFC0CB"};
