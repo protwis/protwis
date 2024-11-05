@@ -116,7 +116,7 @@ function draw_tree(data, options,circle_size) {
     node.append("text")
         .attr("dy", ".31em")
         .attr("name", function (d) { if (d.name === '') { return "branch" } else { return d.name } })
-        .attr("text-anchor", function (d) { 
+        .attr("text-anchor", function (d) {
             if (d.depth === options.depth) {
                 return d.x < 180 ? "start" : "end";
             } else {
@@ -182,7 +182,7 @@ function draw_tree(data, options,circle_size) {
     function string_pixlen(text, depth) {
         var canvas = document.createElement('canvas');
         var ctx = canvas.getContext("2d");
-    
+
         // Check the depth condition
         if (options.depth === 4) {
             // Use the custom font size from options for all levels
@@ -205,7 +205,7 @@ function draw_tree(data, options,circle_size) {
                 ctx.font = options.fontSize.receptor + " Palatino";
             }
         }
-    
+
         // Measure and return the text width plus padding
         return parseInt(ctx.measureText(text).width,10);
     }
@@ -228,12 +228,12 @@ function draw_tree(data, options,circle_size) {
                 y = text.attr("y"),
                 dy = parseFloat(text.attr("dy")),
                 tspan = text.text(null).append("tspan").attr("x", 0).attr("y", y).attr("dy", dy + "em");
-            
+
             word = words.pop(); // Initialize the first word
             while (word !== undefined) {
                 line.push(word);
                 tspan.text(line.join(" "));
-            
+
                 if (tspan.node().getComputedTextLength() > width) {
                     line.pop(); // Remove the last word as it exceeds the width
                     tspan.text(line.join(" ")); // Update the tspan with the valid words
@@ -244,7 +244,7 @@ function draw_tree(data, options,circle_size) {
                                 .attr("dy", ++lineNumber * lineHeight + dy + "em")
                                 .text(word); // Add the word to the new tspan
                 }
-            
+
                 word = words.pop(); // Reassign the next word at the end of the loop
             }
         });
@@ -258,7 +258,7 @@ function draw_tree(data, options,circle_size) {
     // Calculate new dimensions
     var newWidth = diameter + extraPadding;  // Add padding to both sides
     var newHeight = diameter + extraPadding;  // Add padding to both sides
-    
+
     // Set new width and height for the SVG
     svg.attr('width', newWidth)
        .attr('height', newHeight);
@@ -294,7 +294,7 @@ function formatTextWithHTML(text) {
         .replace("calcitonin-like receptor", 'CLR');
 }
 
-// Change the labels 
+// Change the labels
 function changeLeavesLabels(location, value, dict){
     // Initialize leaf node length
     maxLeafNodeLenght = 0;
@@ -679,9 +679,9 @@ function createTraces(colorOption, showLabels, colorMapping, textColorEnabled) {
     }
     // Handle Class, Ligand type, or Receptor family color option
     else if (['Class', 'Ligand type', 'Receptor family'].includes(colorOption)) {
-        
+
         const uniqueEntries = new Set();
-        
+
         currentClusterData.forEach(point => {
             const entry = point[colorOption] === 'Other GPCRs' ? 'Classless' : point[colorOption];
             if (!uniqueEntries.has(entry)) {
@@ -1020,12 +1020,12 @@ function Create_classification_dict(data) {
             }
         }
     }
-    
+
 }
 
 // Create array of sorted entries and classification array for printing
 function Data_resorter(data) {
-    
+
     // Check the visibility of each layer
     const Layer1_isChecked = d3.select(`#toggle-layer-1`).property('checked');
     const Layer2_isChecked = d3.select(`#toggle-layer-2`).property('checked');
@@ -1300,7 +1300,7 @@ function Calculate_dimension(data, Category_data, Col_break_number, columns, lab
                 // Apply IUPHAR-specific replacements and clean up
                 label = replaceHtmlEntities(label)
                     .replace(/<\/?i>|(-adrenoceptor| receptor)|<\/?sub>/g, '');
-                
+
                 // Subscript handling for accurate label length measurement
                 label = label.replace(/<sub>.*?<\/sub>/g, ''); // Simplified subscript removal for length estimation
             }
@@ -1614,7 +1614,7 @@ function data_visualization(data, category_data, location, Layout_dict, data_sty
     // ###########################
     // ## Initialize Variables  ##
     // ###########################
-    
+
     // Set default margins, xOffset, yOffset, and columns based on Layout_dict
     const margin = { top: 40, right: 20, bottom: 20, left: 20 };
     let yOffset = margin.top + 5 + 80 + 5;
@@ -1815,7 +1815,7 @@ function data_visualization(data, category_data, location, Layout_dict, data_sty
             // If the category is not 'Receptor', simply move the Y offset without rendering shapes
             yOffset += 30;
             label_counter++;
-            
+
             // Handle column break
             handleColumnBreak();
         }
@@ -2087,7 +2087,7 @@ function Heatmap(data, location, heatmap_DataStyling,label_x_converter) {
     });
 
     // Calculate the length of the longest data value
-    
+
     const longestDataValue = d3.max(chartData, d => Number(parseFloat(d.value).toFixed(1)).toString().length);
 
     // Calculate width based on the longest data value
@@ -2364,6 +2364,84 @@ function Heatmap(data, location, heatmap_DataStyling,label_x_converter) {
 // #################
 // ###  GPCRome  ###
 // #################
+
+function GPCRome_initializeOdorantData(data) {
+    // Initialize the GPCRomes
+    let GPCRomes = {
+        GPCRome_O1: {},
+        GPCRome_O2_ext: {},
+        GPCRome_O2_mid: {},
+        GPCRome_O2_int: {},
+    };
+
+    // Helper function to add items to the GPCRome using receptor family as key
+    function addItemsToCircle(GPCRome, items) {
+        Object.keys(items).forEach(ligandType => {
+            const receptorFamilies = items[ligandType];
+
+            // Debugging - log the receptorFamilies structure
+            // console.log(`Processing ligandType: ${ligandType}`);
+            // console.log(`Receptor families:`, receptorFamilies);
+            // Ensure receptorFamilies is an object
+            if (typeof receptorFamilies === 'object' && receptorFamilies !== null) {
+                Object.keys(receptorFamilies).forEach(family => {
+                    if (!GPCRome[family]) {
+                        GPCRome[family] = [];
+                    }
+
+                    const receptors = receptorFamilies[family];
+                    if (Array.isArray(receptors)) {
+                        GPCRome[family].push(...receptors);
+                    } else {
+                        console.warn(`Unexpected data format for family ${family}`);
+                    }
+                });
+            } else {
+                console.warn(`Unexpected data format for ligand type ${ligandType}`);
+            }
+        });
+    }
+
+    // Process the data
+    Object.keys(data).forEach(className => {
+        const classData = data[className];
+        // Handle cases where classData is not an object
+        if (typeof classData !== 'object' || classData === null) {
+            console.warn(`Expected object but got ${typeof classData} for class ${className}`);
+            return;
+        }
+
+        // Circle 1 : "Class O2 (tetrapod specific odorant) EXT"
+        if (className === "Class O2 (tetrapod specific odorant) EXT") {
+            addItemsToCircle(GPCRomes.GPCRome_O2_ext, classData);
+        }
+
+        // Circle 2 : "Class O2 (tetrapod specific odorant) MID"
+        if (className === "Class O2 (tetrapod specific odorant) MID") {
+            addItemsToCircle(GPCRomes.GPCRome_O2_mid, classData);
+        }
+
+        // Circle 3 : "Class O2 (tetrapod specific odorant) INT"
+        if (className === "Class O2 (tetrapod specific odorant) INT") {
+            addItemsToCircle(GPCRomes.GPCRome_O2_int, classData);
+        }
+
+        // Circle 4: "Class O1 (fish-like odorant)"
+        if (className === "Class O1 (fish-like odorant)") {
+            addItemsToCircle(GPCRomes.GPCRome_O1, classData);
+        }
+
+    });
+
+    // Convert the arrays to unique values
+    Object.keys(GPCRomes).forEach(GPCRomeKey => {
+        Object.keys(GPCRomes[GPCRomeKey]).forEach(familyKey => {
+            GPCRomes[GPCRomeKey][familyKey] = Array.from(new Set(GPCRomes[GPCRomeKey][familyKey]));
+        });
+    });
+
+    return GPCRomes;
+}
 
 // Initialize the data for the handle of the GPCRome from the view
 function GPCRome_initializeData(data) {
@@ -2900,7 +2978,7 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling, odoran
                         // Get the current and previous positions using calculatePositionAndAngle with the isSplit flag
                         const currentPos = calculatePositionAndAngle(index, totalItems, values, Header_list, Family_list, true);
                         const prevPos = calculatePositionAndAngle(index - 1, totalItems, values, Header_list, Family_list, true);
-                        
+
                         off_set = level+1
 
                         if (angle >= -90 && angle < 90) {
@@ -2918,7 +2996,8 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling, odoran
                                 // .style("font-weight", "bold")
                                 .style("font-family", Font_family)
                                 .style("font-size",family_fontsize);
-                                
+
+
 
                             // Append the second part of the text (using currentPos)
                             svg.append("text")

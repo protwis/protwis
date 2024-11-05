@@ -17,12 +17,12 @@
 {% block content %}
 <title>Structure similarity search</title>
 
-<h1>Structure similarity search uses Foldseek 
-    <a href="https://www.nature.com/articles/s41587-023-01773-0#citeas"> (Ref) </a> 
-    to query a pdb file to get a list 
-    <a href="structure">structures</a>/<a href="structure/homology_models">models</a> 
-    with the highest structural similarity. 
-    <br> GPCRdb provides  <a href="structure">structures</a> and <a href="structure/homology_models">models</a>  
+<h1>Structure similarity search uses Foldseek
+    <a href="https://www.nature.com/articles/s41587-023-01773-0#citeas"> (Ref) </a>
+    to query a pdb file to get a list
+    <a href="structure">structures</a>/<a href="structure/homology_models">models</a>
+    with the highest structural similarity.
+    <br> GPCRdb provides  <a href="structure">structures</a> and <a href="structure/homology_models">models</a>
 </h1>
 
 <form method="post" enctype="multipart/form-data" id="structure-blast-form">
@@ -32,7 +32,7 @@
             <label for="input_pdb">Upload a pdb file (query):
                 <input type="file" id="input_pdb" name="input_file" required>
             </label>
-            <button class="submit-button" type="submit">Submit</button>
+            <button class="submit-button" type="submit">Search</button>
             <!-- <div>
                 <input type="hidden" name="tm7_h8" value="False">
                 <input type="checkbox" id="tm7_h8" name="tm7_h8" value="True">
@@ -124,7 +124,7 @@
             {% for row in data %}
             <tr>
 
-                <td> 
+                <td>
                     <a href="{{ row.link }}" target="_blank">
                         <img width="14px" height="20px" class="model-link" src="/static/home/images/gpcr_structure_logo.png">
                     </a>
@@ -167,6 +167,6 @@
 <script src="{% static 'home/js/browser_functions.js' %}"></script>
 <script src="{% static 'home/js/structure_browser.js' %}"></script> <!-- Structure browser -->
 <script src="{% static 'home/js/jquery.powertip.js' %}"></script>
-<script src="{% static 'home/js/xlsx.full.min.js' %}"></script>  
+<script src="{% static 'home/js/xlsx.full.min.js' %}"></script>
 <script src="{% static 'home/js/structure-blast.js' %}"></script>
 {% endblock %}
