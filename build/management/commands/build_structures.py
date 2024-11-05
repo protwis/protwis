@@ -637,7 +637,7 @@ class Command(BaseBuild):
             temp_seq = temp_seq[:118]+temp_seq[119:150]+temp_seq[152:156]+temp_seq[157:168]+temp_seq[169:209]+temp_seq[210:]
         elif structure.pdb_code.index=='8J24':
             ref_seq = ref_seq[:245]+ref_seq[246:]
-            temp_seq = temp_seq[:247]+TEMP_seq[248:]
+            temp_seq = temp_seq[:247]+temp_seq[248:]
         elif structure.pdb_code.index in ['7YFC','7FYD']:
             temp_seq = temp_seq[:203]+'R'+temp_seq[203:296]+temp_seq[297:]
         elif structure.pdb_code.index in ['8GGA','8GGP']:
