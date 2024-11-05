@@ -53,6 +53,7 @@ AA = {'ALA': 'A', 'ARG': 'R', 'ASN': 'N', 'ASP': 'D',
       'HIS': 'H', 'ILE': 'I', 'LEU': 'L', 'LYS': 'K',
       'MET': 'M', 'PHE': 'F', 'PRO': 'P', 'SER': 'S',
       'THR': 'T', 'TRP': 'W', 'TYR': 'Y', 'VAL': 'V'}
+pdb_refs = {}
 
 #IMPLEMENTING THE LEGACY FUNCTIONS HERE!
 
@@ -277,6 +278,9 @@ def find_interacting_ligand(pdb_location, pdb, file_input):
     f_in = open(pdb_location, 'r')
     d = {}
     for lig in db_ligs:
+        if len(lig)==5:
+            pdb_refs[lig[:3]] = lig
+            lig = lig[:3]
         d[lig] = ''
         if lig == 'pep':
             continue
@@ -376,6 +380,8 @@ def check_unique_ligand_mol(filename): # IS THIS NEEDED?
 
 def get_sdf_ligand_from_cache(comp_id):
     #CHECK IF THE SDF IS CACHED
+    if comp_id in pdb_refs:
+        comp_id = pdb_refs[comp_id]
     url = 'https://files.rcsb.org/ligands/download/$index'
     cache_dir = ["pdbe", 'sdf_models']
     comp_id += '_model.sdf'

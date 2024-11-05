@@ -3843,7 +3843,6 @@ def SingleStructureDownload(request, pdbcode):
 
     return response
 
-
 def SingleModelDownload(request, modelname, fullness, state=None, csv=False):
     "Download single homology model"
     zip_io = BytesIO()
