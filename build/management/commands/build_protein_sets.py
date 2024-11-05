@@ -34,8 +34,6 @@ class Command(BaseCommand):
 
         ProteinSet.objects.all().delete()
 
-        class_dict = {'001': 'A', '002': 'B1', '003': 'B2', '004': 'C', '005': 'D1', '006': 'F', '007': 'T', '008': 'Other'}
-
         # proteins with a structure
         structures = Structure.objects.exclude(structure_type__slug__startswith='af-').order_by('protein_conformation__protein__parent__entry_name').distinct(
             'protein_conformation__protein__parent__entry_name')
@@ -44,9 +42,11 @@ class Command(BaseCommand):
             ps_class = {}
             for structure in structures:
                 # Grab the class slug
-                pc = structure.protein_conformation.protein.parent.family.slug.split("_")[0]
+                pc = structure.protein_conformation.protein.parent.get_protein_class()
+                if pc.startswith('Class'):
+                    pc = pc.split(' ')[1]
                 if pc not in ps_class:
-                    ps_class[pc] = ProteinSet.objects.create(name='{}'.format(class_dict[pc])) # David's request
+                    ps_class[pc] = ProteinSet.objects.create(name='{}'.format(pc)) # David's request
 
                 ps.proteins.add(structure.protein_conformation.protein.parent)
                 ps_class[pc].proteins.add(structure.protein_conformation.protein.parent)

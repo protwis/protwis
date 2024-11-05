@@ -61,15 +61,15 @@ class Command(BaseBuild):
     with open(non_xtal_seg_end_file, 'r') as f:
         non_xtal_seg_end = yaml.load(f, Loader=yaml.FullLoader)
 
-    all_anomalities_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'all_anomalities.yaml'])
-    with open(all_anomalities_file, 'r') as f:
-        all_anomalities = yaml.load(f, Loader=yaml.FullLoader)
+    all_anomalies_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'all_anomalies.yaml'])
+    with open(all_anomalies_file, 'r') as f:
+        all_anomalies = yaml.load(f, Loader=yaml.FullLoader)
 
     sequence_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'sequences.yaml'])
     with open(sequence_file, 'r') as f:
         gpcr_sequences = yaml.load(f, Loader=yaml.FullLoader)
 
-    xtal_anomalities_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'xtal_anomalities.yaml'])
+    xtal_anomalities_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'xtal_anomalies.yaml'])
     non_xtal_seg_end_bw_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'non_xtal_segends_bw.yaml'])
     xtal_seg_end_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'xtal_segends.yaml'])
     mod_xtal_seg_end_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'mod_xtal_segends.yaml'])
@@ -394,7 +394,7 @@ class Command(BaseBuild):
                             v = new_v
                             #exit()
                             b_and_c = {}
-                            for entry,gn in self.all_anomalities[human_ortholog.entry_name].items():
+                            for entry,gn in self.all_anomalies[human_ortholog.entry_name].items():
                                 if len(entry)<3:
                                     continue
                                 if entry[1]=='x' or entry[2]=='x':
@@ -420,7 +420,7 @@ class Command(BaseBuild):
                     s = self.gpcr_sequences[entry_name]['Sequence']
                     b_and_c = {}
                     b_and_c_mod = []
-                    for entry,gn in self.all_anomalities[entry_name].items():
+                    for entry,gn in self.all_anomalies[entry_name].items():
                         if len(entry)<3:
                             continue
                         if entry[1]=='x' or entry[2]=='x':
@@ -519,7 +519,7 @@ class Command(BaseBuild):
         s = self.gpcr_sequences[human.entry_name]['Sequence']
         human_seq = self.gpcr_sequences[human.entry_name]['Sequence']
         b_and_c = {}
-        for entry,gn in self.all_anomalities[human.entry_name].items():
+        for entry,gn in self.all_anomalies[human.entry_name].items():
             if len(entry)<3:
                 continue
             if entry[1]=='x' or entry[2]=='x':

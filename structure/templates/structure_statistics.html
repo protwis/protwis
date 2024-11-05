@@ -69,7 +69,7 @@
             <td><b>Class<br />(Family)</b></td>
             {% for class in all_structures_by_class.items %}
             <td align="center"><b>
-              {% if class.0 == " T (Taste 2)" %}T2 (Taste&nbsp;2)
+              {% if class.0 == " T2 (Taste 2)" %}T2 (Taste&nbsp;2)
               {% elif class.0 == " D1 (Ste2-like fungal pheromone)" %}D1<br \>(Ste2-like fungal pheromone)
               {% else %}{{ class.0 }}
               {% endif %}
@@ -120,7 +120,7 @@
             <td><b>Class<br />(Family)</b></td>
             {% for class in unique_structures_by_class.items %}
             <td align="center"><b>
-              {% if class.0 == " T (Taste 2)" %}T2 (Taste&nbsp;2)
+              {% if class.0 == " T2 (Taste 2)" %}T2 (Taste&nbsp;2)
               {% elif class.0 == " D1 (Ste2-like fungal pheromone)" %}D1<br \>(Ste2-like fungal pheromone)
               {% else %}{{ class.0 }}
               {% endif %}
@@ -377,21 +377,18 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
 
 {% if page == 'structure' %}
 <style type="text/css">
-  .gprot_orange {
-    color: orange;
+  .gprot_blue {
+    color: blue;
   }
-
   .gprot_red {
     color: red;
   }
-
   .gprot_green {
     color: forestgreen;
   }
-
   .graydiv {
       height: 20px;
-      width: 350px;
+      width: 275px;
       background: linear-gradient(to right, white 0%, black 100%)
   }
 </style>
@@ -423,7 +420,7 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
         <text x="20" y="73" font-family="Verdana" font-size="10">The number of structures available.</text>
     </svg>
     <div id="unique" class="chart_container" style="display: none;">
-        <div id="unique_cryst_container"><svg id="unique_cryst" style="width:800px;height:600px;"></svg></div>
+        <div id="unique_cryst_container"><svg id="unique_cryst" style="width:900px;height:600px;"></svg></div>
         <script>
         data_unique_cryst_container = {{ chartdata|safe }};
         </script>
@@ -453,7 +450,7 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
         </div>
     </div>
     <div id="unique_y" class="chart_container" style="display: none;">
-        <div id="unique_cryst_year_container"><svg id="unique_cryst_year" style="width:800px;height:600px;"></svg></div>
+        <div id="unique_cryst_year_container"><svg id="unique_cryst_year" style="width:900px;height:600px;"></svg></div>
         <script>
             data_unique_cryst_year_container={{ chartdata_y|safe }};
         </script>
@@ -483,7 +480,7 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
         </div>
     </div>
     <div id="all" class="chart_container" style="display: none;">
-        <div id="cryst_year_container"><svg id="data_cryst_year" style="width:800px;height:600px;"></svg></div>
+        <div id="cryst_year_container"><svg id="data_cryst_year" style="width:900px;height:600px;"></svg></div>
         <script>
             data_cryst_year_container={{ chartdata_all|safe }};
         </script>
@@ -527,7 +524,7 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
         <text x="20" y="53" font-family="Verdana" font-size="10">The number of crystal structures available each year.</text>
     </svg> -->
     <div id="unique_class" class="chart_container" style="display: none;">
-        <div id="unique_cryst_class_container"><svg id="unique_class_cryst" style="width:800px;height:600px;"></svg></div>
+        <div id="unique_cryst_class_container"><svg id="unique_class_cryst" style="width:900px;height:600px;"></svg></div>
         <script>
         data_unique_class_cryst_container={{ chartdata_class|safe }};
         </script>
@@ -557,7 +554,7 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
         </div>
     </div>
     <div id="unique_class_y" class="chart_container" style="display: none;">
-        <div id="unique_class_cryst_year_container"><svg id="unique_class_cryst_year" style="width:800px;height:600px;"></svg></div>
+        <div id="unique_class_cryst_year_container"><svg id="unique_class_cryst_year" style="width:900px;height:600px;"></svg></div>
         <script>
             data_unique_class_cryst_year_container={{ chartdata_class_y|safe }};
         </script>
@@ -587,7 +584,7 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
         </div>
     </div>
     <div id="all_class" class="chart_container" style="display: none;">
-        <div id="cryst_class_year_container"><svg id="data_class_cryst_year" style="width:800px;height:600px;"></svg></div>
+        <div id="cryst_class_year_container"><svg id="data_class_cryst_year" style="width:900px;height:600px;"></svg></div>
         <script>
             data_cryst_class_year_container={{ chartdata_class_all|safe }};
         </script>
@@ -646,74 +643,6 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
     </ul>
 </div></p>
 <br />-->
-<h4>Structural coverage of GPCR Classes</h4>
-<br />
-<div>
-  Receptor names:
-    <div class="btn-group" role="group" id="gtp_plus">
-        <button id="UniProtNames" class="btn btn-info active">UniProt</button>
-        <button id="IUPHARNames" class="btn btn-info">IUPHAR</button>
-    </div>
-</div>
-<br />
-<script type="text/javascript" charset="utf-8">
-    class_a = {{ class_a|safe }};
-    class_a_options = {{ class_a_options|safe }};
-    class_b1 = {{ class_b1|safe }};
-    class_b1_options = {{ class_b1_options|safe }};
-    class_b2 = {{ class_b2|safe }};
-    class_b2_options = {{ class_b2_options|safe }};
-    class_c = {{ class_c|safe }};
-    class_c_options = {{ class_c_options|safe }};
-    class_f = {{ class_f|safe }};
-    class_f_options = {{ class_f_options|safe }};
-    class_t2 = {{ class_t2|safe }};
-    class_t2_options = {{ class_t2_options|safe }};
-    orphan = {{ orphan|safe }};
-    orphan_options = {{ orphan_options|safe }};
-    whole_dict = {{ whole_receptors|safe }}
-    circles_data = {{ circles_data | safe}}
-</script>
-<script language='javascript'>
-  maxLeafNodeLenght = 46;
-  conversion = {"active":"#008000", "intermediate":"#FFA500", "inactive":"#FF0000"};
-  $("#UniProtNames").click(function() {
-      $("#UniProtNames").addClass("active");
-      $("#IUPHARNames").removeClass("active");
-      changeLeavesLabels("class_a","UniProt", whole_dict);
-      DrawCircles('class_a', circles_data, maxLeafNodeLenght, conversion, true, false);
-      changeLeavesLabels("class_b1","UniProt", whole_dict);
-      DrawCircles('class_b1', circles_data, maxLeafNodeLenght, conversion, true, false);
-      changeLeavesLabels("class_b2","UniProt", whole_dict);
-      DrawCircles('class_b2', circles_data, maxLeafNodeLenght, conversion, true, false);
-      changeLeavesLabels("class_c","UniProt", whole_dict);
-      DrawCircles('class_c', circles_data, maxLeafNodeLenght, conversion, true, false);
-      changeLeavesLabels("class_f","UniProt", whole_dict);
-      DrawCircles('class_f', circles_data, maxLeafNodeLenght, conversion, true, false);
-      changeLeavesLabels("class_t2","UniProt", whole_dict);
-      DrawCircles('class_t2', circles_data, maxLeafNodeLenght, conversion, true, false);
-      changeLeavesLabels("orphan","UniProt", whole_dict);
-      DrawCircles('orphan', circles_data, maxLeafNodeLenght, conversion, true, false);
-  });
-  $("#IUPHARNames").click(function() {
-      $("#UniProtNames").removeClass("active");
-      $("#IUPHARNames").addClass("active");
-      changeLeavesLabels("class_a","IUPHAR", whole_dict);
-      DrawCircles('class_a', circles_data, maxLeafNodeLenght, conversion, true, false);
-      changeLeavesLabels("class_b1","IUPHAR", whole_dict);
-      DrawCircles('class_b1', circles_data, maxLeafNodeLenght, conversion, true, false);
-      changeLeavesLabels("class_b2","IUPHAR", whole_dict);
-      DrawCircles('class_b2', circles_data, maxLeafNodeLenght, conversion, true, false);
-      changeLeavesLabels("class_c","IUPHAR", whole_dict);
-      DrawCircles('class_c', circles_data, maxLeafNodeLenght, conversion, true, false);
-      changeLeavesLabels("class_f","IUPHAR", whole_dict);
-      DrawCircles('class_f', circles_data, maxLeafNodeLenght, conversion, true, false);
-      changeLeavesLabels("class_t2","IUPHAR", whole_dict);
-      DrawCircles('class_t2', circles_data, maxLeafNodeLenght, conversion, true, false);
-      changeLeavesLabels("orphan","IUPHAR", whole_dict);
-      DrawCircles('orphan', circles_data, maxLeafNodeLenght, conversion, true, false);
-  });
-</script>
 
 {% elif page == 'gprot' %}
 <style type="text/css">
@@ -846,375 +775,513 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
   }
 </style>
 <br />
-<br />
 <p><h4><strong>Structural coverage of GPCR-Arrestin complexes.</strong></h4></p>
 <br />
-<div>
-  Receptor names:
-    <div class="btn-group" role="group" id="gtp_plus">
-        <button id="UniProtNames" class="btn btn-info active">UniProt</button>
-        <button id="IUPHARNames" class="btn btn-info">IUPHAR</button>
-    </div>
-</div>
-<br />
-<br />
-<script type="text/javascript" charset="utf-8">
-    class_a = {{ class_a|safe }};
-    class_a_options = {{ class_a_options|safe }};
-    class_b1 = {{ class_b1|safe }};
-    class_b1_options = {{ class_b1_options|safe }};
-    class_b2 = {{ class_b2|safe }};
-    class_b2_options = {{ class_b2_options|safe }};
-    class_c = {{ class_c|safe }};
-    class_c_options = {{ class_c_options|safe }};
-    class_f = {{ class_f|safe }};
-    class_f_options = {{ class_f_options|safe }};
-    class_t2 = {{ class_t2|safe }};
-    class_t2_options = {{ class_t2_options|safe }};
-    orphan = {{ orphan|safe }};
-    orphan_options = {{ orphan_options|safe }};
-    whole_dict = {{ whole_receptors|safe }};
-    matching = {{ circles_data|safe }}
-</script>
-<script language='javascript'>
-  maxLeafNodeLenght = 46;
-  conversion = {"ARRB1":"#FFC300", "ARRB2":"#581845", "ARRC":"#48D1CC", "ARRS":"#6495ED"};
-  console.log(matching);
-  $("#UniProtNames").click(function() {
-      $("#UniProtNames").addClass("active");
-      $("#IUPHARNames").removeClass("active");
-      changeLeavesLabels("class_a","UniProt", whole_dict);
-      DrawCircles('class_a', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-      changeLeavesLabels("class_b1","UniProt", whole_dict);
-      DrawCircles('class_b1', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-      changeLeavesLabels("class_b2","UniProt", whole_dict);
-      DrawCircles('class_b2', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-      changeLeavesLabels("class_c","UniProt", whole_dict);
-      DrawCircles('class_c', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-      changeLeavesLabels("class_f","UniProt", whole_dict);
-      DrawCircles('class_f', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-      changeLeavesLabels("class_t2","UniProt", whole_dict);
-      DrawCircles('class_t2', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-      changeLeavesLabels("orphan","UniProt", whole_dict);
-      DrawCircles('orphan', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-  });
-  $("#IUPHARNames").click(function() {
-      $("#UniProtNames").removeClass("active");
-      $("#IUPHARNames").addClass("active");
-      changeLeavesLabels("class_a","IUPHAR", whole_dict);
-      DrawCircles('class_a', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-      changeLeavesLabels("class_b1","IUPHAR", whole_dict);
-      DrawCircles('class_b1', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-      changeLeavesLabels("class_b2","IUPHAR", whole_dict);
-      DrawCircles('class_b2', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-      changeLeavesLabels("class_c","IUPHAR", whole_dict);
-      DrawCircles('class_c', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-      changeLeavesLabels("class_f","IUPHAR", whole_dict);
-      DrawCircles('class_f', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-      changeLeavesLabels("class_t2","IUPHAR", whole_dict);
-      DrawCircles('class_t2', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-      changeLeavesLabels("orphan","IUPHAR", whole_dict);
-      DrawCircles('orphan', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-  });
-</script>
-
 {% endif %}
-<div id="class_a" class="text-center">
-  <h4>Class A<br />(Rhodopsin)</h4>
-  {% if page == 'structure' %}
+  {% if page != 'structure' %}
+    {% if page == 'gprot' %}
+    <div id="class_a" class="text-center">
+    <h4>Class A<br />(Rhodopsin)</h4>
     <br />
     <div>
-      <div style="float: right; position: relative" class="text-center">
-        <b>Structure state frequency (from low to high)</b>
+      <!-- <div style="float: right; position: relative" class="text-center">
+        <b>G Protein complexes structures frequency (from low to high)</b>
         <div class="graydiv"></div>
-      </div>
+      </div> -->
       <div style="float: left; position: relative" class="text-center">
-        <b>Structure state</b> <br />
-              <span class="gprot_green">&#9675; <b>Active</b></span>
-              <span class="gprot_orange">&#9675; <b>Intermediate</b></span>
-              <span class="gprot_red">&#9675; <b>Inactive</b></span>
+        <b>G Protein complexes</b> <br />
+                <span class="gprot_blue">&#11044; <b>G&alpha;<sub>s</sub></b></span>
+                <span class="gprot_red">&#11044; <b>G&alpha;<sub>i/o</sub></b></span>
+                <span class="gprot_black">&#11044; <b>G&alpha;<sub>q/11</sub></b></span>
+                <span class="gprot_green">&#11044; <b>G&alpha;<sub>12/13</sub></b></span>
+                <span class="gprot_pink">&#11044; <b>GPa1</b></span>
       </div>
     </div>
-  {% elif page == 'gprot' %}
+  </div>
+  <p>
+    <div class="text-center">
+      <div class="btn-group">
+          <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                  aria-haspopup="true" aria-expanded="false">
+              <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+          </button>
+          <ul class="dropdown-menu">
+              <li>
+                  <a href="javascript:saveSvgAsPng(document.getElementById('class_a_svg'), 'xtals_tree_class_a.png');">PNG</a>
+              </li>
+              <li>
+                  <a href="javascript:saveSvgAsJpg(document.getElementById('class_a_svg'), 'xtals_tree_class_a.jpg');">JPG</a>
+              </li>
+              <li>
+                  <a href="javascript:saveSvgAsTiff(document.getElementById('class_a_svg'), 'xtals_tree_class_a.tiff');">TIFF</a>
+              </li>
+              <li>
+                  <a href="javascript:saveSvg(document.getElementById('class_a_svg'), 'xtals_tree_class_a.svg');">SVG</a>
+              </li>
+          </ul>
+      </div>
+    </div>
   <br />
-  <div>
-    <!-- <div style="float: right; position: relative" class="text-center">
-      <b>G Protein complexes structures frequency (from low to high)</b>
-      <div class="graydiv"></div>
-    </div> -->
-    <div style="float: left; position: relative" class="text-center">
-      <b>G Protein complexes</b> <br />
-              <span class="gprot_blue">&#11044; <b>G&alpha;<sub>s</sub></b></span>
-              <span class="gprot_red">&#11044; <b>G&alpha;<sub>i/o</sub></b></span>
-              <span class="gprot_black">&#11044; <b>G&alpha;<sub>q/11</sub></b></span>
-              <span class="gprot_green">&#11044; <b>G&alpha;<sub>12/13</sub></b></span>
-              <span class="gprot_pink">&#11044; <b>GPa1</b></span>
-    </div>
-  </div>
-  {% elif page == 'arrestin' %}
   <br />
-  <div>
-    <!-- <div style="float: right; position: relative" class="text-center">
-      <b>Arrestin complexes structures frequency (from low to high)</b>
-      <div class="graydiv"></div>
-    </div> -->
-    <div style="float: left; position: relative" class="text-center">
-      <b>Arrestin complexes</b> <br />
-          <span class="gprot_orange">&#11044; &beta;-Arrestin<sub>1</sub></span>
-          <span class="gprot_purple">&#11044; &beta;-Arrestin<sub>2</sub></span>
-          <span class="gprot_aquamarine">&#11044; Arrestin-C</span>
-          <span class="gprot_cornflower">&#11044; S-Arrestin</span>
-    </div>
-  </div>
-  {% endif %}
-</div>
-<p>
-  <div class="text-center">
-    <div class="btn-group">
-        <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
-                aria-haspopup="true" aria-expanded="false">
-            <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
-        </button>
-        <ul class="dropdown-menu">
-            <li>
-                <a href="javascript:saveSvgAsPng(document.getElementById('class_a_svg'), 'xtals_tree_class_a.png');">PNG</a>
-            </li>
-            <li>
-                <a href="javascript:saveSvgAsJpg(document.getElementById('class_a_svg'), 'xtals_tree_class_a.jpg');">JPG</a>
-            </li>
-            <li>
-                <a href="javascript:saveSvgAsTiff(document.getElementById('class_a_svg'), 'xtals_tree_class_a.tiff');">TIFF</a>
-            </li>
-            <li>
-                <a href="javascript:saveSvg(document.getElementById('class_a_svg'), 'xtals_tree_class_a.svg');">SVG</a>
-            </li>
-        </ul>
-    </div>
-  </div>
-<br />
-<br />
-<br />
+  <br />
 
-<div class="row-fluid">
-  <div class="span12">
-    <div class="row-fluid">
+  <div class="row-fluid">
+    <div class="span12">
+      <div class="row-fluid">
 
-      <div class="span4">
-        <div id="orphan" class="text-center">
-          <h4>Class A <br /> Orphans</h4>
-        </div>
-      </div>
-
-      <div class="span4">
-        <div id="class_b1" class="text-center">
-          <h4>Class B1<br />(Secretin)</h4>
-        </div>
-      </div>
-
-      <div class="span4">
-        <div id="class_b2" class="text-center">
-          <h4>Class B2<br />(Adhesion)</h4>
-        </div>
-      </div>
-
-    </div>
-  </div>
-</div>
-
-<div class="row-fluid">
-  <div class="span12">
-    <div class="row-fluid">
-
-      <div class="span4">
-        <div class="text-center">
-          <div class="btn-group">
-              <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
-                      aria-haspopup="true" aria-expanded="false">
-                  <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
-              </button>
-              <ul class="dropdown-menu">
-                  <li>
-                      <a href="javascript:saveSvgAsPng(document.getElementById('orphan_svg'), 'xtal_coverage_tree_class_a_orphan.png');">PNG</a>
-                  </li>
-                  <li>
-                      <a href="javascript:saveSvgAsJpg(document.getElementById('orphan_svg'), 'xtal_coverage_tree_class_a_orphan.jpg');">JPG</a>
-                  </li>
-                  <li>
-                      <a href="javascript:saveSvgAsTiff(document.getElementById('orphan_svg'), 'xtal_coverage_tree_class_a_orphan.tiff');">TIFF</a>
-                      </a>
-                  </li>
-                  <li>
-                      <a href="javascript:saveSvg(document.getElementById('orphan_svg'), 'xtal_coverage_tree_class_a_orphan.svg');">SVG</a>
-                  </li>
-              </ul>
+        <div class="span4">
+          <div id="orphan" class="text-center">
+            <h4>Class A <br /> Orphans</h4>
           </div>
         </div>
-      </div>
 
-      <div class="span4">
-        <div class="text-center">
-          <div class="btn-group">
-              <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
-                      aria-haspopup="true" aria-expanded="false">
-                  <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
-              </button>
-              <ul class="dropdown-menu">
-                  <li>
-                      <a href="javascript:saveSvgAsPng(document.getElementById('class_b1_svg'), 'xtal_coverage_tree_class_b1.png');">PNG</a>
-                  </li>
-                  <li>
-                      <a href="javascript:saveSvgAsJpg(document.getElementById('class_b1_svg'), 'xtal_coverage_tree_class_b1.jpg');">JPG</a>
-                  </li>
-                  <li>
-                      <a href="javascript:saveSvgAsTiff(document.getElementById('class_b1_svg'), 'xtal_coverage_tree_class_b1.tiff');">TIFF</a>
-                      </a>
-                  </li>
-                  <li>
-                      <a href="javascript:saveSvg(document.getElementById('class_b1_svg'), 'xtal_coverage_tree_class_b1.svg');">SVG</a>
-                  </li>
-              </ul>
+        <div class="span4">
+          <div id="class_b1" class="text-center">
+            <h4>Class B1<br />(Secretin)</h4>
           </div>
         </div>
+
+        <div class="span4">
+          <div id="class_b2" class="text-center">
+            <h4>Class B2<br />(Adhesion)</h4>
+          </div>
+        </div>
+
       </div>
-      <div class="span4">
-        <div class="text-center">
-          <div class="btn-group">
-              <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
-                      aria-haspopup="true" aria-expanded="false">
-                  <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
-              </button>
-              <ul class="dropdown-menu">
-                  <li>
-                      <a href="javascript:saveSvgAsPng(document.getElementById('class_b2_svg'), 'xtal_coverage_tree_class_b2.png');">PNG</a>
-                  </li>
-                  <li>
-                      <a href="javascript:saveSvgAsJpg(document.getElementById('class_b2_svg'), 'xtal_coverage_tree_class_b2.jpg');">JPG</a>
-                  </li>
-                  <li>
-                      <a href="javascript:saveSvgAsTiff(document.getElementById('class_b2_svg'), 'xtal_coverage_tree_class_b2.tiff');">TIFF</a>
-                      </a>
-                  </li>
-                  <li>
-                      <a href="javascript:saveSvg(document.getElementById('class_b2_svg'), 'xtal_coverage_tree_class_b2.svg');">SVG</a>
-                  </li>
-              </ul>
+    </div>
+  </div>
+
+  <div class="row-fluid">
+    <div class="span12">
+      <div class="row-fluid">
+
+        <div class="span4">
+          <div class="text-center">
+            <div class="btn-group">
+                <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                        aria-haspopup="true" aria-expanded="false">
+                    <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li>
+                        <a href="javascript:saveSvgAsPng(document.getElementById('orphan_svg'), 'xtal_coverage_tree_class_a_orphan.png');">PNG</a>
+                    </li>
+                    <li>
+                        <a href="javascript:saveSvgAsJpg(document.getElementById('orphan_svg'), 'xtal_coverage_tree_class_a_orphan.jpg');">JPG</a>
+                    </li>
+                    <li>
+                        <a href="javascript:saveSvgAsTiff(document.getElementById('orphan_svg'), 'xtal_coverage_tree_class_a_orphan.tiff');">TIFF</a>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="javascript:saveSvg(document.getElementById('orphan_svg'), 'xtal_coverage_tree_class_a_orphan.svg');">SVG</a>
+                    </li>
+                </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="span4">
+          <div class="text-center">
+            <div class="btn-group">
+                <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                        aria-haspopup="true" aria-expanded="false">
+                    <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li>
+                        <a href="javascript:saveSvgAsPng(document.getElementById('class_b1_svg'), 'xtal_coverage_tree_class_b1.png');">PNG</a>
+                    </li>
+                    <li>
+                        <a href="javascript:saveSvgAsJpg(document.getElementById('class_b1_svg'), 'xtal_coverage_tree_class_b1.jpg');">JPG</a>
+                    </li>
+                    <li>
+                        <a href="javascript:saveSvgAsTiff(document.getElementById('class_b1_svg'), 'xtal_coverage_tree_class_b1.tiff');">TIFF</a>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="javascript:saveSvg(document.getElementById('class_b1_svg'), 'xtal_coverage_tree_class_b1.svg');">SVG</a>
+                    </li>
+                </ul>
+            </div>
+          </div>
+        </div>
+        <div class="span4">
+          <div class="text-center">
+            <div class="btn-group">
+                <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                        aria-haspopup="true" aria-expanded="false">
+                    <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li>
+                        <a href="javascript:saveSvgAsPng(document.getElementById('class_b2_svg'), 'xtal_coverage_tree_class_b2.png');">PNG</a>
+                    </li>
+                    <li>
+                        <a href="javascript:saveSvgAsJpg(document.getElementById('class_b2_svg'), 'xtal_coverage_tree_class_b2.jpg');">JPG</a>
+                    </li>
+                    <li>
+                        <a href="javascript:saveSvgAsTiff(document.getElementById('class_b2_svg'), 'xtal_coverage_tree_class_b2.tiff');">TIFF</a>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="javascript:saveSvg(document.getElementById('class_b2_svg'), 'xtal_coverage_tree_class_b2.svg');">SVG</a>
+                    </li>
+                </ul>
+            </div>
           </div>
         </div>
       </div>
     </div>
   </div>
-</div>
 
-<br />
-<br />
-<br />
+  <br />
+  <br />
+  <br />
 
-<div class="row-fluid">
-  <div class="span12">
-    <div class="row-fluid">
-      <div class="span4">
-        <div id="class_c" class="text-center">
-          <h4>Class C<br />(Glutamate)</h4>
-        </div>
-      </div>
-
-      <div class="span4">
-        <div id="class_f" class="text-center">
-          <h4>Class F<br />(Frizzled)</h4>
-        </div>
-      </div>
-
-      <div class="span4">
-        <div id="class_t2" class="text-center">
-          <h4>Class T <br /> (Taste 2)</h4>
-        </div>
-      </div>
-
-    </div>
-  </div>
-</div>
-
-<div class="row-fluid">
-  <div class="span12">
-    <div class="row-fluid">
-      <div class="span4">
-        <div class="text-center">
-          <div class="btn-group">
-              <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
-                      aria-haspopup="true" aria-expanded="false">
-                  <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
-              </button>
-              <ul class="dropdown-menu">
-                  <li>
-                      <a href="javascript:saveSvgAsPng(document.getElementById('class_c_svg'), 'xtal_coverage_tree_class_c.png');">PNG</a>
-                  </li>
-                  <li>
-                      <a href="javascript:saveSvgAsJpg(document.getElementById('class_c_svg'), 'xtal_coverage_tree_class_c.jpg');">JPG</a>
-                  </li>
-                  <li>
-                      <a href="javascript:saveSvgAsTiff(document.getElementById('class_c_svg'), 'xtal_coverage_tree_class_c.tiff');">TIFF</a>
-                      </a>
-                  </li>
-                  <li>
-                      <a href="javascript:saveSvg(document.getElementById('class_c_svg'), 'xtal_coverage_tree_class_c.svg');">SVG</a>
-                  </li>
-              </ul>
+  <div class="row-fluid">
+    <div class="span12">
+      <div class="row-fluid">
+        <div class="span4">
+          <div id="class_c" class="text-center">
+            <h4>Class C<br />(Glutamate)</h4>
           </div>
         </div>
-      </div>
-      <div class="span4">
-        <div class="text-center">
-          <div class="btn-group">
-              <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
-                      aria-haspopup="true" aria-expanded="false">
-                  <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
-              </button>
-              <ul class="dropdown-menu">
-                  <li>
-                      <a href="javascript:saveSvgAsPng(document.getElementById('class_f_svg'), 'xtal_coverage_tree_class_f.png');">PNG</a>
-                  </li>
-                  <li>
-                      <a href="javascript:saveSvgAsJpg(document.getElementById('class_f_svg'), 'xtal_coverage_tree_class_f.jpg');">JPG</a>
-                  </li>
-                  <li>
-                      <a href="javascript:saveSvgAsTiff(document.getElementById('class_f_svg'), 'xtal_coverage_tree_class_f.tiff');">TIFF</a>
-                      </a>
-                  </li>
-                  <li>
-                      <a href="javascript:saveSvg(document.getElementById('class_f_svg'), 'xtal_coverage_tree_class_f.svg');">SVG</a>
-                  </li>
-              </ul>
+
+        <div class="span4">
+          <div id="class_f" class="text-center">
+            <h4>Class F<br />(Frizzled)</h4>
           </div>
         </div>
-      </div>
-      <div class="span4">
-        <div class="text-center">
-          <div class="btn-group">
-              <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
-                      aria-haspopup="true" aria-expanded="false">
-                  <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
-              </button>
-              <ul class="dropdown-menu">
-                  <li>
-                      <a href="javascript:saveSvgAsPng(document.getElementById('class_t2_svg'), 'xtal_coverage_tree_class_t2.png');">PNG</a>
-                  </li>
-                  <li>
-                      <a href="javascript:saveSvgAsJpg(document.getElementById('class_t2_svg'), 'xtal_coverage_tree_class_t2.jpg');">JPG</a>
-                  </li>
-                  <li>
-                      <a href="javascript:saveSvgAsTiff(document.getElementById('class_t2_svg'), 'xtal_coverage_tree_class_t2.tiff');">TIFF</a>
-                      </a>
-                  </li>
-                  <li>
-                      <a href="javascript:saveSvg(document.getElementById('class_t2_svg'), 'xtal_coverage_tree_class_t2.svg');">SVG</a>
-                  </li>
-              </ul>
+
+        <div class="span4">
+          <div id="class_t2" class="text-center">
+            <h4>Class T <br /> (Taste 2)</h4>
           </div>
         </div>
+
       </div>
     </div>
   </div>
-</div>
+
+  <div class="row-fluid">
+    <div class="span12">
+      <div class="row-fluid">
+        <div class="span4">
+          <div class="text-center">
+            <div class="btn-group">
+                <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                        aria-haspopup="true" aria-expanded="false">
+                    <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li>
+                        <a href="javascript:saveSvgAsPng(document.getElementById('class_c_svg'), 'xtal_coverage_tree_class_c.png');">PNG</a>
+                    </li>
+                    <li>
+                        <a href="javascript:saveSvgAsJpg(document.getElementById('class_c_svg'), 'xtal_coverage_tree_class_c.jpg');">JPG</a>
+                    </li>
+                    <li>
+                        <a href="javascript:saveSvgAsTiff(document.getElementById('class_c_svg'), 'xtal_coverage_tree_class_c.tiff');">TIFF</a>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="javascript:saveSvg(document.getElementById('class_c_svg'), 'xtal_coverage_tree_class_c.svg');">SVG</a>
+                    </li>
+                </ul>
+            </div>
+          </div>
+        </div>
+        <div class="span4">
+          <div class="text-center">
+            <div class="btn-group">
+                <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                        aria-haspopup="true" aria-expanded="false">
+                    <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li>
+                        <a href="javascript:saveSvgAsPng(document.getElementById('class_f_svg'), 'xtal_coverage_tree_class_f.png');">PNG</a>
+                    </li>
+                    <li>
+                        <a href="javascript:saveSvgAsJpg(document.getElementById('class_f_svg'), 'xtal_coverage_tree_class_f.jpg');">JPG</a>
+                    </li>
+                    <li>
+                        <a href="javascript:saveSvgAsTiff(document.getElementById('class_f_svg'), 'xtal_coverage_tree_class_f.tiff');">TIFF</a>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="javascript:saveSvg(document.getElementById('class_f_svg'), 'xtal_coverage_tree_class_f.svg');">SVG</a>
+                    </li>
+                </ul>
+            </div>
+          </div>
+        </div>
+        <div class="span4">
+          <div class="text-center">
+            <div class="btn-group">
+                <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                        aria-haspopup="true" aria-expanded="false">
+                    <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li>
+                        <a href="javascript:saveSvgAsPng(document.getElementById('class_t2_svg'), 'xtal_coverage_tree_class_t2.png');">PNG</a>
+                    </li>
+                    <li>
+                        <a href="javascript:saveSvgAsJpg(document.getElementById('class_t2_svg'), 'xtal_coverage_tree_class_t2.jpg');">JPG</a>
+                    </li>
+                    <li>
+                        <a href="javascript:saveSvgAsTiff(document.getElementById('class_t2_svg'), 'xtal_coverage_tree_class_t2.tiff');">TIFF</a>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="javascript:saveSvg(document.getElementById('class_t2_svg'), 'xtal_coverage_tree_class_t2.svg');">SVG</a>
+                    </li>
+                </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+    {% elif page == 'arrestin' %}
+    <div style="padding-top: 10px; font-size: 11px; white-space: nowrap;">
+      <div class="col-md-12">
+        <br>
+        <div class="col-md-3">
+          Receptor names:
+            <div class="btn-group" role="group" id="gtp_plus">
+                <button id="GPCRome_Arrestin_UniProtNames" class="btn btn-info ">Gene</button>
+                <button id="GPCRome_Arrestin_IUPHARNames" class="btn btn-info active">Protein</button>
+            </div>
+        </div>
+
+        <div class="col-md-2" style="padding-top: 5px;">
+          Icon toggle:
+          <button id="ToggleIconArrestin" class="btn btn-info active">On</button>
+        </div>
+
+      <div class="col-md-3">
+        <div class="text-center">
+          <div class="dropdown">
+            <button type="button" class="btn btn-primary dropdown-toggle" style="font-size: 14px;" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              <span class="glyphicon glyphicon-download" style="vertical-align: top;line-height: 1.3"></span> Download <span class="caret"></span>
+            </button>
+            <div class="dropdown-menu dropdown-menu-right-middle">
+              <li><a class="dropdown-item" href="javascript:saveSvg(document.getElementById('GPCRome_Arrestin_plot_svg'), 'GPCRome_Arrestin_plot.svg');">SVG</a></li>
+              <li><a class="dropdown-item" href="javascript:saveSvgAsPng(document.getElementById('GPCRome_Arrestin_plot_svg'), 'GPCRome_Arrestin_plot.png');">PNG</a></li>
+              <li><a class="dropdown-item" href="javascript:saveSvgAsJpg(document.getElementById('GPCRome_Arrestin_plot_svg'), 'GPCRome_Arrestin_plot.jpg');">JPG</a></li>
+              <li><a class="dropdown-item" href="javascript:saveSvgAsTiff(document.getElementById('GPCRome_Arrestin_plot_svg'), 'GPCRome_Arrestin_plot.tiff');">TIFF</a></li>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-3">
+        <div style="float: left; position: relative" class="text-center">
+          <b>GPCR-Arrestin complexes coverage</b> <br/>
+              <span class="gprot_orange">&#9644; <b>&beta;-Arrestin<sub>1</sub></b></span>
+              <span class="gprot_purple">&#9644; <b>&beta;-Arrestin<sub>2</sub></b></span>
+              <span class="gprot_aquamarine">&#9644; <b>Arrestin-C</b></span>
+              <span class="gprot_cornflower">&#9644; <b>S-Arrestin</b></span>
+        </div>
+      </div>
+
+      <br />
+      <br />
+      <br />
+
+        <div id="image-container" data-image-url="{% static 'home/images/DataMapper_GPCRome_icon_legend.png' %}"></div>
+        <!-- GPCRome -->
+        <div class="col-md-12" style="margin-top: 0px;margin-bottom: 30px;">
+            <div id="GPCRome_Arrestin_plot" class="text-center"></div>
+        </div>
+
+      </div>
+    </div>
+    {% endif %}
+
+{% else %}
+
+<!-- ### Create the panel tabs ### -->
+<ul class="nav nav-tabs">
+    <li class="active">
+      <a href="#coverage" data-toggle="tab">Structure coverage</a>
+    </li>
+    <li>
+      <a href="#complexes" data-toggle="tab">Receptor-ligand complexes</a>
+    </li>
+    <li>
+      <a href="#odorant" data-toggle="tab">Odorant receptors</a>
+    </li>
+</ul>
+
+<!-- ## Tab content ## -->
+<div class="tab-content">
+  <div id="coverage" class="tab-pane fade in active">
+    <div style="padding-top: 10px; font-size: 11px; white-space: nowrap;">
+      <div class="col-md-12">
+        <br>
+        <div class="col-md-3">
+          Receptor names:
+            <div class="btn-group" role="group" id="gtp_plus">
+                <button id="GPCRome_UniProtNames" class="btn btn-info ">Gene</button>
+                <button id="GPCRome_IUPHARNames" class="btn btn-info active">Protein</button>
+            </div>
+        </div>
+
+        <div class="col-md-2" style="padding-top: 5px;">
+          Icon toggle:
+          <button id="ToggleIcon" class="btn btn-info active">On</button>
+        </div>
+
+      <div class="col-md-3">
+        <div class="text-center">
+          <div class="dropdown">
+            <button type="button" class="btn btn-primary dropdown-toggle" style="font-size: 14px;" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              <span class="glyphicon glyphicon-download" style="vertical-align: top;line-height: 1.3"></span> Download <span class="caret"></span>
+            </button>
+            <div class="dropdown-menu dropdown-menu-right-middle">
+              <li><a class="dropdown-item" href="javascript:saveSvg(document.getElementById('GPCRome_plot_svg'), 'GPCRome_plot.svg');">SVG</a></li>
+              <li><a class="dropdown-item" href="javascript:saveSvgAsPng(document.getElementById('GPCRome_plot_svg'), 'GPCRome_plot.png');">PNG</a></li>
+              <li><a class="dropdown-item" href="javascript:saveSvgAsJpg(document.getElementById('GPCRome_plot_svg'), 'GPCRome_plot.jpg');">JPG</a></li>
+              <li><a class="dropdown-item" href="javascript:saveSvgAsTiff(document.getElementById('GPCRome_plot_svg'), 'GPCRome_plot.tiff');">TIFF</a></li>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-3">
+        <div style="float: left; position: relative" class="text-center">
+          <b>Structure coverage</b> <br/>
+              <span class="gprot_green">&#9644; <b>Active</b></span>
+              <span class="gprot_red">&#9644; <b>Inactive</b></span>
+              <span class="gprot_blue">&#9644; <b>Both</b></span>
+        </div>
+      </div>
+
+      <br />
+      <br />
+      <br />
+
+        <div id="image-container" data-image-url="{% static 'home/images/DataMapper_GPCRome_icon_legend.png' %}"></div>
+        <!-- GPCRome -->
+        <div class="col-md-12" style="margin-top: 0px;margin-bottom: 30px;">
+            <div id="GPCRome_plot" class="text-center"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+  <div id="complexes" class="tab-pane fade">
+    <div style="padding-top: 10px; font-size: 11px; white-space: nowrap;">
+      <div class="col-md-12">
+        <br>
+        <div class="col-md-3">
+          Receptor names:
+            <div class="btn-group" role="group" id="gtp_plus">
+                <button id="GPCRome_UniProtNames_complexes" class="btn btn-info ">Gene</button>
+                <button id="GPCRome_IUPHARNames_complexes" class="btn btn-info active">Protein</button>
+            </div>
+        </div>
+
+        <div class="col-md-2" style="padding-top: 5px;">
+          Icon toggle:
+          <button id="ToggleIconComplexes" class="btn btn-info active">On</button>
+        </div>
+
+      <div class="col-md-3">
+        <div class="text-center">
+          <div class="dropdown">
+            <button type="button" class="btn btn-primary dropdown-toggle" style="font-size: 14px;" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              <span class="glyphicon glyphicon-download" style="vertical-align: top;line-height: 1.3"></span> Download <span class="caret"></span>
+            </button>
+            <div class="dropdown-menu dropdown-menu-right-middle">
+              <li><a class="dropdown-item" href="javascript:saveSvg(document.getElementById('GPCRome_complexes_plot_svg'), 'GPCRome_complexes_plot.svg');">SVG</a></li>
+              <li><a class="dropdown-item" href="javascript:saveSvgAsPng(document.getElementById('GPCRome_complexes_plot_svg'), 'GPCRome_complexes_plot.png');">PNG</a></li>
+              <li><a class="dropdown-item" href="javascript:saveSvgAsJpg(document.getElementById('GPCRome_complexes_plot_svg'), 'GPCRome_complexes_plot.jpg');">JPG</a></li>
+              <li><a class="dropdown-item" href="javascript:saveSvgAsTiff(document.getElementById('GPCRome_complexes_plot_svg'), 'GPCRome_complexes_plot.tiff');">TIFF</a></li>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-3">
+        <div style="float: right;" class="text-center">
+          <b>Receptor-ligand complexes count (from low to high)</b>
+          <div class="graydiv"></div>
+        </div>
+      </div>
+
+      <br />
+      <br />
+      <br />
+
+        <div id="image-container" data-image-url="{% static 'home/images/DataMapper_GPCRome_icon_legend.png' %}"></div>
+        <!-- GPCRome -->
+        <div class="col-md-12" style="margin-top: 0px;margin-bottom: 30px;">
+            <div id="GPCRome_complexes_plot" class="text-center"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+  <div id="odorant" class="tab-pane fade">
+    <div style="padding-top: 10px; font-size: 11px; white-space: nowrap;">
+      <div class="col-md-12">
+        <br>
+        <div class="col-md-3">
+          Receptor names:
+            <div class="btn-group" role="group" id="gtp_plus">
+                <button id="GPCRome_UniProtNames_odorant" class="btn btn-info ">Gene</button>
+                <button id="GPCRome_IUPHARNames_odorant" class="btn btn-info active">Protein</button>
+            </div>
+        </div>
+
+        <div class="col-md-2" style="padding-top: 5px;">
+          Icon toggle:
+          <button id="ToggleIconOdorant" class="btn btn-info active">On</button>
+        </div>
+
+      <div class="col-md-3">
+        <div class="text-center">
+          <div class="dropdown">
+            <button type="button" class="btn btn-primary dropdown-toggle" style="font-size: 14px;" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              <span class="glyphicon glyphicon-download" style="vertical-align: top;line-height: 1.3"></span> Download <span class="caret"></span>
+            </button>
+            <div class="dropdown-menu dropdown-menu-right-middle">
+              <li><a class="dropdown-item" href="javascript:saveSvg(document.getElementById('GPCRome_odorant_plot_svg'), 'GPCRome_odorant_plot.svg');">SVG</a></li>
+              <li><a class="dropdown-item" href="javascript:saveSvgAsPng(document.getElementById('GPCRome_odorant_plot_svg'), 'GPCRome_odorant_plot.png');">PNG</a></li>
+              <li><a class="dropdown-item" href="javascript:saveSvgAsJpg(document.getElementById('GPCRome_odorant_plot_svg'), 'GPCRome_odorant_plot.jpg');">JPG</a></li>
+              <li><a class="dropdown-item" href="javascript:saveSvgAsTiff(document.getElementById('GPCRome_odorant_plot_svg'), 'GPCRome_odorant_plot.tiff');">TIFF</a></li>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-3">
+        <div style="float: right;" class="text-center">
+          <b>Structures count (from low to high)</b>
+          <div class="graydiv"></div>
+        </div>
+      </div>
+
+      <br />
+      <br />
+      <br />
+
+        <div id="image-container" data-image-url="{% static 'home/images/DataMapper_GPCRome_icon_legend.png' %}"></div>
+        <!-- GPCRome -->
+        <div class="col-md-12" style="margin-top: 0px;margin-bottom: 30px;">
+            <div id="GPCRome_odorant_plot" class="text-center"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+  </div>
+{% endif %}
 
 
 {% endblock %}
@@ -1223,41 +1290,307 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
 <script src="{% static 'home/js/bootstrap-toggle.min.js' %}"></script>
 <script src="{% static 'home/js/d3.min.js' %}"></script>
 <script src="{% static 'home/js/nv.d3.min.js' %}"></script>
+<script src="{% static 'home/js/d3.v4.min.js' %}"></script>
 <script src="{% static 'home/js/statistics.js' %}"></script>
 <script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
 <script src="{% static 'home/js/saveSvg.js' %}"></script>
 <script src="{% static 'home/js/phylo_tree.js' %}"></script>
 {% if page == 'structure' %}
-<script type="text/javascript" charset="utf-8">
-    maxLeafNodeLenght = 46;
-    conversion = {"active":"#008000", "intermediate":"#FFA500", "inactive":"#FF0000"};
-    $(window).on("load", function() {
-        draw_tree(class_a, class_a_options);
-        draw_tree(class_b1, class_b1_options);
-        draw_tree(class_b2, class_b2_options);
-        draw_tree(class_c, class_c_options);
-        draw_tree(class_f, class_f_options);
-        draw_tree(class_t2, class_t2_options);
-        draw_tree(orphan, orphan_options);
-        DrawCircles('class_a', circles_data, maxLeafNodeLenght, conversion, true, false);
-        DrawCircles('class_b1', circles_data, maxLeafNodeLenght, conversion, true, false);
-        DrawCircles('class_b2', circles_data, maxLeafNodeLenght, conversion, true, false);
-        DrawCircles('class_c', circles_data, maxLeafNodeLenght, conversion, true, false);
-        DrawCircles('class_f', circles_data, maxLeafNodeLenght, conversion, true, false);
-        DrawCircles('class_t2', circles_data, maxLeafNodeLenght, conversion, true, false);
-        DrawCircles('orphan', circles_data, maxLeafNodeLenght, conversion, true, false);
-        $("#class_a svg g").first().attr('transform', 'translate(555,555) scale(0.9,0.9) ');
-        $("#class_a_svg").attr('height', 1210);
-        $("#class_a_svg").attr('width', 1110);
-        $("#class_b1 svg g").first().attr('transform', 'translate(190,220) scale(0.80,0.80) ');
-        $("#class_b2 svg g").first().attr('transform', 'translate(195,182) scale(0.85,0.85) ');
-        $("#class_b2_svg").attr('height', 390);
-        $("#class_c svg g").first().attr('transform', 'translate(200,200) scale(0.85,0.85) ');
-        $("#class_f svg g").first().attr('transform', 'translate(180,180) scale(0.85,0.85) ');
-        $("#class_t2 svg g").first().attr('transform', 'translate(172,172) scale(0.85,0.85) ');
-        $("#orphan svg g").first().attr('transform', 'translate(175,180) scale(0.85,0.85)');
-        $("#orphan_svg").attr('height', 360).attr('width', 360);
+<script src="{% static 'home/js/datamapper.js' %}"></script>
+<script src="{% static 'home/js/popper.min.js' %}"></script>
+<script src="{% static 'home/js/spectrum_v1_8_1.js' %}"></script>
+<script src="{% static 'home/js/ml.js' %}"></script>
+<script>
+
+var GPCRome_categories_data = {{ GPCRome_data|safe }};
+var fill_data = {{ GPCRome_data_variables|safe }};
+var fill_data_complexes = {{ GPCRome_data_variables_complexes|safe }};
+var GPCRome_Label_conversion_dict = {{GPCRome_Label_Conversion|safe}};
+
+var GPCRome_odorant_data = {{ GPCRome_odorant_data|safe }};
+var odorant_fill_data = {{ GPCRome_odorant_data_variables|safe }};
+var GPCRome_odorant_Label_conversion_dict = {{GPCRome_odorant_Label_Conversion|safe}};
+
+console.log(GPCRome_odorant_Label_conversion_dict);
+
+// Initialize the conversion dictionary
+GPCRome_Label_conversion_dict = initializeGPCRomeLabelConversionDict(GPCRome_Label_conversion_dict);
+GPCRome_odorant_Label_conversion_dict = initializeGPCRomeLabelConversionDict(GPCRome_odorant_Label_conversion_dict);
+console.log(GPCRome_odorant_Label_conversion_dict);
+
+function initializeGPCRomeLabelConversionDict(conversionDict) {
+    const updatedDict = {};
+
+    Object.keys(conversionDict).forEach(originalLabel => {
+        let uniProtLabel = conversionDict[originalLabel];
+        uniProtLabel = uniProtLabel.replace(/_human$/, "").toUpperCase(); // Remove "_human" and convert to uppercase
+        updatedDict[originalLabel] = uniProtLabel;
     });
+
+    return updatedDict;
+}
+
+// # Initialize data styling #
+var layout_data = GPCRome_initializeData(GPCRome_categories_data);
+// ODORANT
+var odorant_data = GPCRome_initializeOdorantData(GPCRome_odorant_data);
+//ODORANT
+const GPCRome_odorant_fill_data_values = Object.values(odorant_fill_data).map(receptor => receptor.Value1);
+const GPCRome_odorant_fill_minValue = Math.min(...GPCRome_odorant_fill_data_values);
+const GPCRome_odorant_fill_maxValue = Math.max(...GPCRome_odorant_fill_data_values);
+
+const GPCRome_fill_data_values = Object.values(fill_data_complexes).map(receptor => receptor.Value1);
+const GPCRome_fill_minValue = Math.min(...GPCRome_fill_data_values);
+const GPCRome_fill_maxValue = Math.max(...GPCRome_fill_data_values);
+// Calculate median
+// Sort the values in ascending order
+GPCRome_fill_data_values.sort((a, b) => a - b);
+
+//ODORANT
+GPCRome_odorant_fill_data_values.sort((a, b) => a - b);
+
+// ODORANT
+let GPCRome_odorant_fill_medianValue;
+const odorant_middleIndex = Math.floor(GPCRome_odorant_fill_data_values.length / 2);
+
+if (GPCRome_odorant_fill_data_values.length % 2 === 0) {
+    // Even number of elements, median is the average of the two middle values
+    GPCRome_odorant_fill_medianValue = (GPCRome_odorant_fill_data_values[odorant_middleIndex - 1] + GPCRome_odorant_fill_data_values[middleIndex]) / 2;
+} else {
+    // Odd number of elements, median is the middle value
+    GPCRome_odorant_fill_medianValue = GPCRome_odorant_fill_data_values[odorant_middleIndex];
+}
+
+GPCRome_odorant_fill_avg = (GPCRome_odorant_fill_minValue+GPCRome_odorant_fill_maxValue)/2
+
+// Calculate the median
+let GPCRome_fill_medianValue;
+const middleIndex = Math.floor(GPCRome_fill_data_values.length / 2);
+
+if (GPCRome_fill_data_values.length % 2 === 0) {
+    // Even number of elements, median is the average of the two middle values
+    GPCRome_fill_medianValue = (GPCRome_fill_data_values[middleIndex - 1] + GPCRome_fill_data_values[middleIndex]) / 2;
+} else {
+    // Odd number of elements, median is the middle value
+    GPCRome_fill_medianValue = GPCRome_fill_data_values[middleIndex];
+}
+
+GPCRome_fill_avg = (GPCRome_fill_minValue+GPCRome_fill_maxValue)/2
+
+var GPCRomes_styling = {
+  Spacing: true,
+  family: true,
+  datatype: "Structure",
+  minValue: GPCRome_fill_minValue,
+  median_value: GPCRome_fill_medianValue,
+  avg_value: GPCRome_fill_avg,
+  maxValue: GPCRome_fill_maxValue,
+  colorStart: "#696969",
+  color_median: "blue",
+  colorEnd: "#000000",
+  data_color_complexity: 'Three',
+  showIcon: true  // Add this property to control the icon visibility
+}
+
+var GPCRomes_complexes_styling = {
+  Spacing: true,
+  family: true,
+  datatype: "Continuous",
+  minValue: GPCRome_fill_minValue,
+  median_value: GPCRome_fill_medianValue,
+  avg_value: GPCRome_fill_avg,
+  maxValue: GPCRome_fill_maxValue,
+  colorStart: "#696969",
+  color_median: "red",
+  colorEnd: "#000000",
+  data_color_complexity: 'Two',
+  showIcon: true  // Add this property to control the icon visibility
+}
+
+var GPCRomes_odorant_styling = {
+  Spacing: true,
+  family: true,
+  datatype: "Continuous",
+  minValue: GPCRome_odorant_fill_minValue,
+  median_value: GPCRome_odorant_fill_medianValue,
+  avg_value: GPCRome_odorant_fill_avg,
+  maxValue: GPCRome_odorant_fill_maxValue,
+  colorStart: "#D3D3D3",
+  color_median: "#696969",
+  colorEnd: "#000000",
+  data_color_complexity: 'Two',
+  showIcon: true  // Add this property to control the icon visibility
+}
+
+
+// # initial draw
+let GPCRome_location = "GPCRome_plot";
+let GPCRome_complexes_location = "GPCRome_complexes_plot";
+Draw_GPCRomes(layout_data, fill_data, GPCRome_location, GPCRomes_styling);
+Draw_GPCRomes(layout_data, fill_data_complexes, GPCRome_complexes_location, GPCRomes_complexes_styling);
+
+//ODORANT
+let GPCRome_odorant_location = "GPCRome_odorant_plot";
+Draw_GPCRomes(odorant_data, odorant_fill_data, GPCRome_odorant_location, GPCRomes_odorant_styling, true);
+
+
+// Global variables for current label type
+let currentLabelType = "IUPHAR"; // Default
+
+// Event listeners for label type buttons
+document.getElementById("GPCRome_UniProtNames").addEventListener("click", () => {
+    switchLabelType("UniProt", GPCRome_location, fill_data, GPCRome_Label_conversion_dict, GPCRomes_styling);
+});
+document.getElementById("GPCRome_UniProtNames_complexes").addEventListener("click", () => {
+    switchLabelType("UniProt", GPCRome_complexes_location, fill_data_complexes, GPCRome_Label_conversion_dict, GPCRomes_complexes_styling);
+});
+document.getElementById("GPCRome_UniProtNames_odorant").addEventListener("click", () => {
+    switchLabelType("UniProt", GPCRome_odorant_location, odorant_fill_data, GPCRome_odorant_Label_conversion_dict, GPCRomes_odorant_styling, true);
+})
+
+document.getElementById("GPCRome_IUPHARNames").addEventListener("click", () => {
+    switchLabelType("IUPHAR", GPCRome_location, fill_data, GPCRome_Label_conversion_dict, GPCRomes_styling);
+});
+document.getElementById("GPCRome_IUPHARNames_complexes").addEventListener("click", () => {
+    switchLabelType("IUPHAR", GPCRome_complexes_location, fill_data_complexes, GPCRome_Label_conversion_dict, GPCRomes_complexes_styling);
+});
+document.getElementById("GPCRome_IUPHARNames_odorant").addEventListener("click", () => {
+    switchLabelType("IUPHAR", GPCRome_odorant_location, odorant_fill_data, GPCRome_odorant_Label_conversion_dict, GPCRomes_odorant_styling, true);
+});
+
+
+// Function to switch label types
+function switchLabelType(labelType, location, fill, conversion, styling, odorant=false) {
+    currentLabelType = labelType;
+    console.log(currentLabelType);
+    updateGPCRome(location, fill, conversion, styling, odorant);
+}
+
+// Function to toggle the icon visibility and redraw the GPCRomes
+function toggleIcon() {
+    const button = d3.select("#ToggleIcon");
+
+    // Toggle the showIcon property in GPCRomes_styling
+    GPCRomes_styling.showIcon = !GPCRomes_styling.showIcon;
+
+    // Update button text and state
+    if (GPCRomes_styling.showIcon) {
+        button.text("On");
+        button.classed("active", true);
+    } else {
+        button.text("Off");
+        button.classed("active", false);
+    }
+
+    // Redraw the GPCRomes with the updated icon state
+    updateGPCRome(GPCRome_location, fill_data, GPCRome_Label_conversion_dict, GPCRomes_styling);
+}
+
+// Function to toggle the icon visibility and redraw the GPCRomes
+function toggleIconComplexes() {
+    const button = d3.select("#ToggleIconComplexes");
+
+    // Toggle the showIcon property in GPCRomes_styling
+    GPCRomes_complexes_styling.showIcon = !GPCRomes_complexes_styling.showIcon;
+
+    // Update button text and state
+    if (GPCRomes_complexes_styling.showIcon) {
+        button.text("On");
+        button.classed("active", true);
+    } else {
+        button.text("Off");
+        button.classed("active", false);
+    }
+
+    // Redraw the GPCRomes with the updated icon state
+    updateGPCRome(GPCRome_complexes_location, fill_data_complexes, GPCRome_Label_conversion_dict, GPCRomes_complexes_styling);
+}
+
+// Function to toggle the icon visibility and redraw the GPCRomes
+function toggleIconOdorant() {
+    const button = d3.select("#ToggleIconOdorant");
+
+    // Toggle the showIcon property in GPCRomes_styling
+    GPCRomes_odorant_styling.showIcon = !GPCRomes_odorant_styling.showIcon;
+
+    // Update button text and state
+    if (GPCRomes_odorant_styling.showIcon) {
+        button.text("On");
+        button.classed("active", true);
+    } else {
+        button.text("Off");
+        button.classed("active", false);
+    }
+
+    // Redraw the GPCRomes with the updated icon state
+    updateGPCRome(GPCRome_odorant_location, odorant_fill_data, GPCRome_odorant_Label_conversion_dict, GPCRomes_odorant_styling, true);
+}
+
+// Attach event listener to the button
+d3.select("#ToggleIcon").on("click", toggleIcon);
+d3.select("#ToggleIconComplexes").on("click", toggleIconComplexes);
+d3.select("#ToggleIconOdorant").on("click", toggleIconOdorant);
+
+// Function to update and redraw GPCRomes
+function updateGPCRome(location, fill, conversion, styling, odorant=false) {
+    let updatedLayoutData;
+    if (odorant){
+      console.log(currentLabelType);
+      updatedLayoutData = updateLayoutData(odorant_data, conversion, currentLabelType);
+    } else {
+      updatedLayoutData = updateLayoutData(layout_data, conversion, currentLabelType);
+    };
+    const updatedFillData = updateFillData(fill, conversion, currentLabelType);
+
+    // Clear the existing SVG content
+    d3.select("#" + location).select("svg").remove();
+
+    // Redraw the GPCRomes with the updated data
+    Draw_GPCRomes(updatedLayoutData, updatedFillData, location, styling, odorant);
+
+    // Update button active states
+    // updateActiveButtonState(currentLabelType);
+}
+
+// Function to update layout data
+function updateLayoutData(layout_data, conversionDict, labelType) {
+    const updatedData = {};
+
+    Object.keys(layout_data).forEach(GPCRomeKey => {
+        const GPCRome = layout_data[GPCRomeKey];
+        updatedData[GPCRomeKey] = {};
+
+        Object.keys(GPCRome).forEach(ligandType => {
+            const receptors = GPCRome[ligandType];
+            updatedData[GPCRomeKey][ligandType] = receptors.map(receptor => {
+                if (labelType === "UniProt") {
+                    return conversionDict[receptor] || receptor;
+                } else {
+                    return Object.keys(conversionDict).find(key => conversionDict[key] === receptor) || receptor;
+                }
+            });
+        });
+    });
+
+    return updatedData;
+}
+
+// Function to update fill data
+function updateFillData(fill_data, conversionDict, labelType) {
+    const updatedData = {};
+
+    Object.keys(fill_data).forEach(receptor => {
+        let updatedReceptor;
+        if (labelType === "UniProt") {
+            updatedReceptor = conversionDict[receptor] || receptor;
+        } else {
+            updatedReceptor = Object.keys(conversionDict).find(key => conversionDict[key] === receptor) || receptor;
+        }
+        updatedData[updatedReceptor] = fill_data[receptor];
+    });
+
+    return updatedData;
+}
 </script>
 {% elif page == 'gprot' %}
 <script type="text/javascript" charset="utf-8">
@@ -1292,36 +1625,154 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
     });
 </script>
 {% elif page == 'arrestin' %}
-<script type="text/javascript" charset="utf-8">
-    maxLeafNodeLenght = 46;
-    conversion = {"ARRB1":"#FFC300", "ARRB2":"#581845", "ARRC":"#48D1CC", "ARRS":"#6495ED"};
-    $(window).on("load", function() {
-        draw_tree(class_a, class_a_options);
-        draw_tree(class_b1, class_b1_options);
-        draw_tree(class_b2, class_b2_options);
-        draw_tree(class_c, class_c_options);
-        draw_tree(class_f, class_f_options);
-        draw_tree(class_t2, class_t2_options);
-        draw_tree(orphan, orphan_options);
-        DrawCircles('class_a', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-        DrawCircles('class_b1', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-        DrawCircles('class_b2', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-        DrawCircles('class_c', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-        DrawCircles('class_f', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-        DrawCircles('class_t2', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-        DrawCircles('orphan', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-        $("#class_a svg g").first().attr('transform', 'translate(555,555) scale(0.9,0.9) ');
-        $("#class_a_svg").attr('height', 1210);
-        $("#class_a_svg").attr('width', 1110);
-        $("#class_b1 svg g").first().attr('transform', 'translate(190,220) scale(0.80,0.80) ');
-        $("#class_b2 svg g").first().attr('transform', 'translate(195,182) scale(0.85,0.85) ');
-        $("#class_b2_svg").attr('height', 390);
-        $("#class_c svg g").first().attr('transform', 'translate(200,200) scale(0.85,0.85) ');
-        $("#class_f svg g").first().attr('transform', 'translate(180,180) scale(0.85,0.85) ');
-        $("#class_t2 svg g").first().attr('transform', 'translate(172,172) scale(0.85,0.85) ');
-        $("#orphan svg g").first().attr('transform', 'translate(175,180) scale(0.85,0.85)');
-        $("#orphan_svg").attr('height', 360).attr('width', 360);
+<script src="{% static 'home/js/datamapper.js' %}"></script>
+<script src="{% static 'home/js/popper.min.js' %}"></script>
+<script src="{% static 'home/js/spectrum_v1_8_1.js' %}"></script>
+<script src="{% static 'home/js/ml.js' %}"></script>
+<script>
+
+var GPCRome_Arrestin_categories_data = {{ GPCRome_Arrestin_data|safe }};
+var arrestin_fill_data = {{ GPCRome_Arrestin_data_variables|safe }};
+var GPCRome_Arrestin_Label_conversion_dict = {{GPCRome_Arrestin_Label_Conversion|safe}};
+
+console.log(GPCRome_Arrestin_categories_data);
+console.log(arrestin_fill_data);
+
+// Initialize the conversion dictionary
+GPCRome_Arrestin_Label_conversion_dict = initializeGPCRomeLabelConversionDict(GPCRome_Arrestin_Label_conversion_dict);
+
+
+function initializeGPCRomeLabelConversionDict(conversionDict) {
+    const updatedDict = {};
+
+    Object.keys(conversionDict).forEach(originalLabel => {
+        let uniProtLabel = conversionDict[originalLabel];
+        uniProtLabel = uniProtLabel.replace(/_human$/, "").toUpperCase(); // Remove "_human" and convert to uppercase
+        updatedDict[originalLabel] = uniProtLabel;
     });
+
+    return updatedDict;
+}
+
+// # Initialize data styling #
+var arrestin_layout_data = GPCRome_initializeData(GPCRome_Arrestin_categories_data);
+
+var GPCRomes_styling = {
+  Spacing: true,
+  family: true,
+  datatype: "Arrestin",
+  minValue: 0,
+  median_value: 3,
+  avg_value: 3,
+  maxValue: 6,
+  colorStart: "white",
+  color_median: "blue",
+  colorEnd: "#000000",
+  data_color_complexity: 'Two',
+  showIcon: true  // Add this property to control the icon visibility
+}
+
+// # initial draw
+let GPCRome_Arrestin_location = "GPCRome_Arrestin_plot";
+Draw_GPCRomes(arrestin_layout_data, arrestin_fill_data, GPCRome_Arrestin_location, GPCRomes_styling);
+
+// Global variables for current label type
+let currentLabelType = "IUPHAR"; // Default
+
+// Event listeners for label type buttons
+document.getElementById("GPCRome_Arrestin_UniProtNames").addEventListener("click", () => {
+    switchLabelType("UniProt", GPCRome_Arrestin_location, arrestin_fill_data, GPCRome_Arrestin_Label_conversion_dict, GPCRomes_styling);
+});
+
+document.getElementById("GPCRome_Arrestin_IUPHARNames").addEventListener("click", () => {
+    switchLabelType("IUPHAR", GPCRome_Arrestin_location, arrestin_fill_data, GPCRome_Arrestin_Label_conversion_dict, GPCRomes_styling);
+});
+
+// Function to switch label types
+function switchLabelType(labelType, location, fill, conversion, styling, odorant=false) {
+    currentLabelType = labelType;
+    updateArrestinGPCRome(location, fill, conversion, styling, odorant);
+}
+
+// Function to toggle the icon visibility and redraw the GPCRomes
+function toggleIcon() {
+    const button = d3.select("#ToggleIconArrestin");
+
+    // Toggle the showIcon property in GPCRomes_styling
+    GPCRomes_styling.showIcon = !GPCRomes_styling.showIcon;
+
+    // Update button text and state
+    if (GPCRomes_styling.showIcon) {
+        button.text("On");
+        button.classed("active", true);
+    } else {
+        button.text("Off");
+        button.classed("active", false);
+    }
+
+    // Redraw the GPCRomes with the updated icon state
+    updateArrestinGPCRome(GPCRome_Arrestin_location, arrestin_fill_data, GPCRome_Arrestin_Label_conversion_dict, GPCRomes_styling);
+}
+
+// Attach event listener to the button
+d3.select("#ToggleIconArrestin").on("click", toggleIcon);
+
+
+// Function to update and redraw GPCRomes
+function updateArrestinGPCRome(location, fill, conversion, styling, odorant=false) {
+    let updatedLayoutData;
+    updatedLayoutData = updateLayoutData(arrestin_layout_data, conversion, currentLabelType);
+    const updatedFillData = updateFillData(fill, conversion, currentLabelType);
+
+    // Clear the existing SVG content
+    d3.select("#" + location).select("svg").remove();
+
+    // Redraw the GPCRomes with the updated data
+    Draw_GPCRomes(updatedLayoutData, updatedFillData, location, styling, odorant);
+
+    // Update button active states
+    // updateActiveButtonState(currentLabelType);
+}
+
+// Function to update layout data
+function updateLayoutData(layout_data, conversionDict, labelType) {
+    const updatedData = {};
+
+    Object.keys(layout_data).forEach(GPCRomeKey => {
+        const GPCRome = layout_data[GPCRomeKey];
+        updatedData[GPCRomeKey] = {};
+
+        Object.keys(GPCRome).forEach(ligandType => {
+            const receptors = GPCRome[ligandType];
+            updatedData[GPCRomeKey][ligandType] = receptors.map(receptor => {
+                if (labelType === "UniProt") {
+                    return conversionDict[receptor] || receptor;
+                } else {
+                    return Object.keys(conversionDict).find(key => conversionDict[key] === receptor) || receptor;
+                }
+            });
+        });
+    });
+
+    return updatedData;
+}
+
+// Function to update fill data
+function updateFillData(fill_data, conversionDict, labelType) {
+    const updatedData = {};
+
+    Object.keys(fill_data).forEach(receptor => {
+        let updatedReceptor;
+        if (labelType === "UniProt") {
+            updatedReceptor = conversionDict[receptor] || receptor;
+        } else {
+            updatedReceptor = Object.keys(conversionDict).find(key => conversionDict[key] === receptor) || receptor;
+        }
+        updatedData[updatedReceptor] = fill_data[receptor];
+    });
+
+    return updatedData;
+}
 </script>
 {% endif %}
 {% endblock %}

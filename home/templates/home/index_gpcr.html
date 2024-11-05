@@ -16,54 +16,68 @@
                     <li data-target="#carousel-example-generic" data-slide-to="2"></li>
                     <li data-target="#carousel-example-generic" data-slide-to="3"></li>
                     <li data-target="#carousel-example-generic" data-slide-to="4"></li>
+                    <li data-target="#carousel-example-generic" data-slide-to="5"></li>
                 </ol>
 
                 <!-- Wrapper for carousel slides -->
                 <div class="carousel-inner" role="listbox">
                     <div class="item active">
-                      <a href="https://docs.gpcrdb.org/structures.html#structure-models" target="_blank">
-                        <img src="{% static 'home/carousel/alphafold_models.png' %}">
-                      </a>
+                        <a href='https://academic.oup.com/nar/article/51/D1/D395/6827106?login=true' target="_blank">
+                          <img src="{% static 'home/carousel/carousel_datamapper.png' %}">
+                        </a>
                         <div class="carousel-caption">
-                            <h3>New state-specific <a href="structure/homology_models" target="_blank">structure models</a></h3>
-                            <p>Models and refined structures using AlphaFold2.</p>
+                            <h3><a href="/mapper/" target="_blank">Data Mapper</a> tool</h3>
+                            <p>Map your own data in interactive plots</p>
                         </div>
                     </div>
+
                     <div class="item">
-                      <a href="https://docs.gpcrdb.org/index.html" target="_blank">
-                        <img src="{% static 'home/carousel/ligand_resources.png' %}">
-                      </a>
+                        <a href='https://academic.oup.com/nar/article/51/D1/D395/6827106?login=true' target="_blank">
+                          <img src="{% static 'home/carousel/carousel_odorant.png' %}">
+                        </a>
                         <div class="carousel-caption">
-                            <h3>New <a href="ligand/endogenousbrowser/" target="_blank">ligand</a> resources</h3>
-                            <p>Endogenous ligands and tool compounds.</p>
+                            <h3>Odorant receptors</h3>
+                            <p>All human ORs and major model organisms</p>
                         </div>
                     </div>
+
+                    <div class="item">
+                      <a href='https://academic.oup.com/nar/article/51/D1/D395/6827106?login=true' target="_blank">
+                        <img src="{% static 'home/carousel/carousel_structure_models.png' %}">
+                      </a>
+                        <div class="carousel-caption">
+                            <h3>Structure models</h3>
+                            <p>Inactive-/active state GPCRs and physiological ligand complexes</p>
+                        </div>
+                    </div>
+
                     <div class="item">
                       <a href="https://docs.gpcrdb.org/structure_comparison.html#structure-comparison-tool" target="_blank">
                         <img src="{% static 'home/carousel/struct_comparison_tool.png' %}">
                       </a>
                         <div class="carousel-caption">
-                            <h3>New <a href="/structure_comparison/comparative_analysis" target="_blank">structure analysis</a> resource</h3>
+                            <h3><a href="/structure_comparison/comparative_analysis" target="_blank">Structure analysis</a> resource</h3>
                             <p>Structure comparison tool and similarity trees.</p>
                         </div>
                     </div>
 
                     <div class="item">
-                      <a href="https://docs.gpcrdb.org/sites.html#sites" target="_blank">
-                        <img src="{% static 'home/carousel/residplots.png' %}">
-                      <a>
-                        <div class="carousel-caption">
-                            <h3>Residue Plots</h3>
-                            <p>Custom helix and snake plots .</p>
-                        </div>
-                    </div>
-                    <div class="item">
-                      <a href="https://docs.gpcrdb.org/sequences.html#structure-based-alignments" target="_blank">
-                        <img src="{% static 'home/carousel/seqali_phyltree.png' %}">
+                      <a href='https://academic.oup.com/nar/article/51/D1/D395/6827106?login=true' target="_blank">
+                        <img src="{% static 'home/carousel/carousel_similarity_structure.png' %}">
                       </a>
                         <div class="carousel-caption">
-                            <h3><a href="/alignment/targetselection" target="_blank">Alignments</a> and <a href="/phylogenetic_trees/targetselection" target="_blank">Trees</a></h3>
-                            <p>Customized sequence alignments and phylogenetic trees .</p>
+                            <h3>Structure similarity search</h3>
+                            <p>Search all of GPCRdb’s structures and models</p>
+                        </div>
+                    </div>
+
+                    <div class="item">
+                      <a href='https://academic.oup.com/nar/article/51/D1/D395/6827106?login=true' target="_blank">
+                        <img src="{% static 'home/carousel/carousel_ligand_search.png' %}">
+                      </a>
+                        <div class="carousel-caption">
+                            <h3>Ligand search</h3>
+                            <p>Find ligands by name, database identifier, similarity or substructure</p>
                         </div>
                     </div>
 
@@ -233,14 +247,14 @@
                 </div>
             </div>
 
-            <div class="panel panel-primary">
+            <!-- <div class="panel panel-primary">
                 <div class="panel-body">
                     <h3>
                         <a class="twitter-timeline" data-height="400" data-theme="light" href="https://twitter.com/gpcrdb"></a>
                     </h3>
                     <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
                 </div>
-            </div>
+            </div> -->
 
         </div>
 

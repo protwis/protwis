@@ -1,0 +1,19 @@
+<!-- error_503.html -->
+{% extends "home/base.html" %}
+{% load static %}
+
+{% block addon_css %}
+<link rel="stylesheet" href="{% static 'home/css/error.css' %}" type="text/css" />
+{% endblock %}
+
+{% block content %}
+<title>Service Unavailable</title>
+<div class="error-container">
+    <h1>Service Unavailable</h1>
+    <p>Too many concurrent requests. Please try again later.</p>
+</div>
+{% endblock %}
+
+{% block addon_js %}
+<!-- Add any specific JS for error handling if needed -->
+{% endblock %}

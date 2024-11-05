@@ -127,6 +127,14 @@ class StructureAFScores(models.Model):
     class Meta():
         db_table = 'structure_af_scores'
 
+class StructureRFAAScores(models.Model):
+    structure = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
+    pae_7tm = models.DecimalField(max_digits=4, decimal_places=2)
+    plddt_mean = models.DecimalField(max_digits=4, decimal_places=2)
+
+    class Meta():
+        db_table = 'structure_rfaa_scores'
+
 class StructureModel(models.Model):
     protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE)
     state = models.ForeignKey('protein.ProteinState', on_delete=models.CASCADE)
@@ -134,6 +142,7 @@ class StructureModel(models.Model):
     pdb_data = models.ForeignKey('PdbData', null=True, on_delete=models.CASCADE)
     version = models.DateField()
     stats_text = models.ForeignKey('StatsText', null=True, on_delete=models.CASCADE)
+    model_type = models.CharField(max_length=20, null=True)
     # ligand = models.ForeignKey('ligand.Ligand', null=True, on_delete=models.CASCADE)
     # type = models.ForeignKey('StructureType', null=True, on_delete=models.CASCADE)
 

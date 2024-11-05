@@ -18,7 +18,7 @@ from Bio.PDB import PDBParser, PPBuilder, PDBIO
 from Bio import pairwise2
 
 from structure.functions import ParseAFComplexModels
-from ligand.models import Ligand
+from ligand.models import Ligand, LigandPeptideStructure
 from interaction.models import *
 from interaction.views import regexaa, check_residue, extract_fragment_rotamer
 from signprot.models import SignprotComplex
@@ -35,6 +35,7 @@ from datetime import datetime, date
 import json
 from io import StringIO
 from Bio.PDB.Selection import *
+import re
 
 # import traceback
 
@@ -97,7 +98,7 @@ class Command(BaseBuild):
     with open(xtal_seg_end_file, 'r') as f:
         xtal_seg_ends = yaml.load(f, Loader=yaml.Loader)
 
-    xtal_anomalies_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'all_anomalities.yaml'])
+    xtal_anomalies_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'all_anomalies.yaml'])
     with open(xtal_anomalies_file, 'r') as f2:
         xtal_anomalies = yaml.load(f2, Loader=yaml.Loader)
 
@@ -653,17 +654,17 @@ class Command(BaseBuild):
         #     return
 
     def purge_structures(self):
-        models = Structure.objects.filter(structure_type__slug='af-signprot')
+        models = Structure.objects.filter(structure_type__slug__startswith='af-signprot')
         for m in models:
             PdbData.objects.filter(pdb=m.pdb_data.pdb).delete()
             WebLink.objects.filter(index=m.pdb_code.index).delete()
         models.delete()
-        ResidueFragmentInteraction.objects.filter(structure_ligand_pair__structure__structure_type__slug='af-signprot').delete()
+        ResidueFragmentInteraction.objects.filter(structure_ligand_pair__structure__structure_type__slug__startswith='af-signprot').delete()
         # ResidueFragmentInteractionType.objects.all().delete()
-        StructureLigandInteraction.objects.filter(structure__structure_type__slug='af-signprot').delete()
+        StructureLigandInteraction.objects.filter(structure__structure_type__slug__startswith='af-signprot').delete()
         #Remove previous Rotamers/Residues to prepare repopulate
-        Fragment.objects.filter(structure__structure_type__slug='af-signprot').delete()
-        Rotamer.objects.filter(structure__structure_type__slug='af-signprot').delete()
+        Fragment.objects.filter(structure__structure_type__slug__startswith='af-signprot').delete()
+        Rotamer.objects.filter(structure__structure_type__slug__startswith='af-signprot').delete()
         # PdbData.objects.all().delete()
 
     @staticmethod
@@ -775,12 +776,15 @@ class Command(BaseBuild):
                 continue
 
             # get the PDB file and save to DB
-            sd['pdb'] = 'AFM_' + sd['receptor'].upper() + '_' + sd['signprot'].upper()
+            if 'peptide' in sd['model']:
+                sd['pdb'] = f'AFM_{sd["receptor"].upper()}_{sd["peptide"].replace("-","").upper()}_{sd["signprot"].upper()}'
+            else:
+                sd['pdb'] = 'AFM_' + sd['receptor'].upper() + '_' + sd['signprot'].upper()
 
             # create a structure record
             # check if there is a ligand
             try:
-                struct = Structure.objects.get(protein_conformation__protein=con, pdb_code__index=sd['pdb'], structure_type__slug='af-signprot')
+                struct = Structure.objects.get(protein_conformation__protein=con, pdb_code__index=sd['pdb'], structure_type__slug=sd['model'])
             except Structure.DoesNotExist:
                 struct = Structure()
 
@@ -897,6 +901,36 @@ class Command(BaseBuild):
             #Resolution and
             # save structure before adding M2M relations
             struct.save()
+
+################################ Ligand
+
+            if 'peptide' in sd['model']:
+                try:
+
+                    # Get the Ligand object based on the chain E sequence
+                    ligand = Ligand.objects.filter(sequence=sd['chain_e_sequence'])
+                    if len(ligand)>0:
+                        ligand = ligand[0]
+
+                    print(ligand)
+
+                    # Try to get existing LigandPeptideStructure or create a new one
+                    ligand_peptide_structure, created = LigandPeptideStructure.objects.get_or_create(
+                        structure=struct,
+                        ligand=ligand,
+                        chain='E',
+                        defaults={'model': None}  # Set model to None
+                    )
+                    
+                    if created:
+                        print(f"Created new LigandPeptideStructure for structure {struct.pdb_code.index} and ligand {ligand.name}")
+                    else:
+                        print(f"Found existing LigandPeptideStructure for structure {struct.pdb_code.index} and ligand {ligand.name}")
+                
+                except Exception as e:
+                    print(f"Error creating LigandPeptideStructure: {str(e)} {ligand}")
+
+
 
 ####################################################
             Rotamer.objects.filter(structure=struct, pdbdata=pdbdata).delete()

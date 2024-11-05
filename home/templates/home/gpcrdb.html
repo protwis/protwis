@@ -15,7 +15,12 @@
                     <span class="glyphicon glyphicon-film"></span>
                 </button>
             </a></li>
-
+            <!-- SEQUENCES -->
+            <li class="divider"></li>
+            <li>
+              <a href="{{ hosts.gpcr }}/mapper">Data Mapper
+              </a>
+            </li>
             <!-- SEQUENCES -->
             <li class="divider"></li>
             <li class="nav-header disabled text-left"><a>SEQUENCES</a></li>
@@ -68,8 +73,9 @@
                 </button>
             </a></li>
             <li><a href="{{ hosts.gpcr }}/structure">Structures</a></li>
-            <li><a href="{{ hosts.gpcr }}/structure/homology_models">Structure models</a></li>
-            <li><a href="{{ hosts.gpcr }}/structure/model_statistics">Structure model validation</a></li>
+            <li><a href="{{ hosts.gpcr }}/structure/homology_models">Structure models (receptor)</a></li>
+            <li><a href="{{ host.gpcr }}/structure/ligand_complex_models">Structure models (ligand complexes)</a></li>
+            <!-- <li><a href="{{ hosts.gpcr }}/structure/model_statistics">Structure model validation</a></li> -->
             {#  DEPRECATED FOR NOW #}
             {#  <li><a href="{{ hosts.gpcr }}/structure/template_selection">Template selection</a></li> #}
 
@@ -81,6 +87,7 @@
             <li><a href="{{ hosts.gpcr }}/structure/superposition_workflow_index/true">Structure superposition</a></li>
             {#  NOTE: we need the spacing here to keep all elements including icons in a single line #}
             <li><a href="{{ hosts.gpcr }}/structure/generic_numbering_index">Generic residue numbering (PDB)&nbsp;&nbsp;&nbsp;&nbsp;</a></li>
+            <li><a href="{{ host.gpcr }}/structure/structure_similarity_search">Structure similarity search</a></li>
 
             <!-- STRUCTURE CONSTRUCTS -->
             <li class="divider"></li>
@@ -154,14 +161,15 @@
         <li class="dropdown-submenu">
             <a tabindex="0" href="#">Ligands (ChEMBL, GtP, Ki db)</a>
             <ul class="dropdown-menu">
-                <li><a href="{{ hosts.gpcr }}/ligand">Ligands (by receptor query)<a/></li>
+                <li><a href="{{ hosts.gpcr }}/ligand">Ligands (by receptor query)</a></li>
                 <li><a href="{{ hosts.gpcr }}/ligand/ligand_by_name">Ligands (by ligand query)</a></li>
+                {% comment %} <li><a href="{{ hosts.gpcr }}/ligand/ligand_by_smiles">Similarity and substructure search</a></li> {% endcomment %}
                 <!-- <li><a href="{{ hosts.gpcr }}/ligand/ligand_by_structure">Ligands (by structure)</a></li> -->
             </ul>
         </li>
         <li class="divider"></li>
-        <li class="nav-header disabled"><a>ENDOGENOUS LIGANDS</a></li>
-        <li><a href="{{ hosts.gpcr }}/ligand/endogenousbrowser">Endogenous ligands (GtP)</a></li>
+        <li class="nav-header disabled"><a>PHYSIOLOGICAL LIGANDS</a></li>
+        <li><a href="{{ hosts.gpcr }}/ligand/physiological_ligands">Physiological ligands (GtP)</a></li>
         <li class="divider"></li>
         <li class="nav-header disabled"><a>DRUGS & AGENTS IN TRIAL</a></li>
         <li><a href="{{ hosts.gpcr }}/drugs/drugbrowser">Drugs, targets <span>&#38;</span> indications</a></li>

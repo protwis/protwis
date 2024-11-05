@@ -44,7 +44,7 @@ class Command(BaseCommand):
         
 
         # Get all human GPCRs
-        ps = Protein.objects.filter(sequence_type__slug='wt', species__common_name="Human", family__slug__startswith='00').all().prefetch_related('genes').order_by('entry_name')
+        ps = Protein.objects.filter(sequence_type__slug='wt', species__common_name="Human", family__slug__startswith='0').all().prefetch_related('genes').order_by('entry_name')
        
         isoforms = {}
         total_transcripts = 0

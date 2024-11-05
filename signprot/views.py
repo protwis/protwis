@@ -363,11 +363,11 @@ class CouplingBrowser(TemplateView):
         coupling_receptors = list(ProteinCouplings.objects.filter(g_protein__slug__startswith=subunit_filter).values_list("protein__entry_name", flat = True).distinct())
 
         proteins = Protein.objects.filter(entry_name__in=coupling_receptors, sequence_type__slug='wt',
-                                          family__slug__startswith='00').prefetch_related(
+                                          family__slug__startswith='0').prefetch_related(
                                           'family', 'family__parent__parent__parent', 'web_links')
 
         proteins_links = Protein.objects.filter(entry_name__in=coupling_receptors, sequence_type__slug='wt',
-                                          family__slug__startswith='00', web_links__web_resource__slug='gtop').prefetch_related(
+                                          family__slug__startswith='0', web_links__web_resource__slug='gtop').prefetch_related(
                                           'family', 'family__parent__parent__parent', 'web_links').values_list(
                                           'id', 'web_links__web_resource__url').distinct()
 
@@ -523,11 +523,11 @@ class CouplingBrowser_deprecated(TemplateView):
         coupling_receptors = list(ProteinCouplings.objects.filter(g_protein__slug__startswith=subunit_filter).values_list("protein__entry_name", flat = True).distinct())
 
         proteins = Protein.objects.filter(entry_name__in=coupling_receptors, sequence_type__slug='wt',
-                                          family__slug__startswith='00').prefetch_related(
+                                          family__slug__startswith='0').prefetch_related(
                                           'family', 'family__parent__parent__parent', 'web_links')
 
         proteins_links = Protein.objects.filter(entry_name__in=coupling_receptors, sequence_type__slug='wt',
-                                          family__slug__startswith='00', web_links__web_resource__slug='gtop').prefetch_related(
+                                          family__slug__startswith='0', web_links__web_resource__slug='gtop').prefetch_related(
                                           'family', 'family__parent__parent__parent', 'web_links').values_list(
                                           'id', 'web_links__web_resource__url').distinct()
 
@@ -912,7 +912,7 @@ def CouplingProfiles(request, render_part="both", signalling_data="empty"):
         context['tree_class_f_options']['anchor'] = 'tree_class_f'
         context['tree_class_f_options']['label_free'] = [1,]
         context['tree_class_f'] = json.dumps(class_f_data.get_nodes_dict(None))
-        class_t2_data = tree.get_tree_data(ProteinFamily.objects.get(name='Class T (Taste 2)'))
+        class_t2_data = tree.get_tree_data(ProteinFamily.objects.get(name='Class T2 (Taste 2)'))
         context['tree_class_t2_options'] = deepcopy(tree.d3_options)
         context['tree_class_t2_options']['anchor'] = 'tree_class_t2'
         context['tree_class_t2_options']['label_free'] = [1,]
@@ -932,7 +932,7 @@ def CouplingProfiles(request, render_part="both", signalling_data="empty"):
         for arr in arrestin_prots:
             arrestin_translate[arr[0]] = arr[1]
 
-        slug_translate = {'001': "ClassA", '002': "ClassB1", '003': "ClassB2", '004': "ClassC", '006': "ClassF", '007': "ClassT"}
+        slug_translate = {'001': "ClassA", '002': "ClassB1", '003': "ClassB2", '004': "ClassC", '006': "ClassF", '009': "ClassT2"}
         key_translate ={'Gs':"G<sub>s</sub>", 'Gi/o':"G<sub>i/o</sub>",
                         'Gq/11':"G<sub>q/11</sub>", 'G12/13':"G<sub>12/13</sub>",
                         'Beta-arrestin-1':"&beta;-Arrestin<sub>1</sub>", 'Beta-arrestin-2':"&beta;-Arrestin<sub>2</sub>"}
@@ -1075,7 +1075,7 @@ def CouplingProfiles(request, render_part="both", signalling_data="empty"):
             rec_iuphar = p.family.name.replace("receptor", '').replace("<i>","").replace("</i>","").strip()
             receptor_dictionary[rec_uniprot] = [rec_class, rec_ligandtype, rec_family, rec_uniprot, rec_iuphar]
 
-        whole_receptors = Protein.objects.prefetch_related("family", "family__parent__parent__parent").filter(sequence_type__slug="wt", family__slug__startswith="00")
+        whole_receptors = Protein.objects.prefetch_related("family", "family__parent__parent__parent").filter(sequence_type__slug="wt", family__slug__startswith="0")
         whole_rec_dict = {}
         for rec in whole_receptors:
             rec_uniprot = rec.entry_short()
@@ -1452,7 +1452,7 @@ def signprotdetail(request, slug):
     p = Protein.objects.prefetch_related('web_links__web_resource').get(entry_name=slug, sequence_type__slug='wt')
 
     # Redirect to protein page
-    if p.family.slug.startswith("00"):
+    if p.family.slug.startswith("0"):
         return redirect("/protein/"+slug)
 
     # get family list

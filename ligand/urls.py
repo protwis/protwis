@@ -7,6 +7,10 @@ urlpatterns = [
     #  url(r'^browser$', cache_page(3600*24*7)(views.LigandBrowser.as_view()), name='ligand_browser'),
     url(r'^$', views.LigandTargetSelection.as_view(), name='ligand_selection'),
     path('ligand_by_name', views.LigandNameSelection.as_view(), name='ligand_selection'),
+    path('read_input_ligand_bulk_search', views.ReadInputLigandBulkSearch.as_view(), name='read_input_ligand_bulk_search'),
+    path('ligand_bulk_search', views.LigandBulkSearch.as_view(), name='ligand_bulk_search'),
+    path('read_input_ligand_structural_search', views.ReadInputLigandStructuralSearch.as_view(), name='read_input_ligand_structural_search'),
+    path('ligand_structural_search', views.LigandStructuralSearch.as_view(), name='ligand_structural_search'),
 
     url(r'^target/all/(?P<slug>[-\w]+)/$', views.CachedTargetDetailsExtended, name='ligand_target_detail'),
     path('target_detail', views.CachedTargetDetailsExtended, name='ligand_target_detail'),
@@ -86,7 +90,8 @@ urlpatterns = [
     path('biased/', views.CachedOTFBiasBrowser, name='bias_browser-list'),
     path('biasedsubtypes/',views.CachedOTFBiasSubtypeBrowser, name='bias_browser-list'),
     path('pathwaypreference/',views.CachedOTFPathwayPrefBrowser, name='bias_browser-list'),
-    path('endogenousbrowser/', cache_page(3600*24*7)(views.EndogenousBrowser.as_view()), name='endogenous_browser'),
+    path('endogenousbrowser/', cache_page(3600*24*7)(views.endogenous_redirect), name='endogenous_browser'),
+    path('physiological_ligands/', cache_page(3600*24*7)(views.PhysiologicalLigands.as_view()), name='physiological_ligands'),
     #User selected calculations
     #Biased Family
     path('userselectionbiased', views.UserBiased.as_view(way='Browser'), name='bias_browser-list'),

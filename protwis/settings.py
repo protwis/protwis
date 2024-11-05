@@ -42,6 +42,7 @@ INSTALLED_APPS = (
     'structure',
     'ligand',
     'interaction',
+    'mapper',
     'mutation',
     'phylogenetic_trees',
     'sitesearch',
@@ -55,6 +56,7 @@ INSTALLED_APPS = (
     'seqsign',
     'angles',
     'hotspots',
+    'django_rdkit',
 )
 
 MIDDLEWARE = (
@@ -107,7 +109,6 @@ TEMPLATES = [
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
             # insert your TEMPLATE_DIRS here
-
         ],
         'APP_DIRS': True,
         'OPTIONS': {
@@ -136,6 +137,9 @@ if DEBUG:
 if DEBUG:
     DEBUG_TOOLBAR_PATCH_SETTINGS = False
     INTERNAL_IPS = ('10.0.2.2')
+
+SMILES_MAX_LENGTH = 200
+PYTHON_SMILES_VALIDATION = True
 
 # Logging
 if DEBUG:
