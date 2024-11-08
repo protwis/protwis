@@ -911,7 +911,7 @@ class LandingPage(TemplateView):
                                                                     else:
                                                                         pass
                                                                 else:
-                                                                    pass
+                                                                    del Data[sheet_name][row[0]]
 
                                         # Check if any values are incorrect #
                                         status = 'Success'
