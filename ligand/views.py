@@ -2561,6 +2561,9 @@ class LigandStatistics(TemplateView):
                 "Class F (Frizzled)": 'Teal',
                 "Other GPCR orphans": "Grey",
                 "Class T2 (Taste 2)": 'MediumPurple',
+                "Class O1 (fish-like odorant)": "Tomato",
+                "Class O2 (tetrapod specific odorant)": "Peru",
+                "Odorant receptors": "DarkOliveGreen",
                 }
             heatmap_receptors = Protein.objects.filter(family__slug__startswith='0', species_id=1).exclude(
                                               family__slug__startswith='005').prefetch_related(
