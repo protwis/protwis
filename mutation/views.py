@@ -49,7 +49,7 @@ import xlsxwriter #sudo pip3 install XlsxWriter
 import operator
 import numpy as np
 
-# Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
+Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 
 class TargetSelection(AbsTargetSelectionTable):
     step = 1
