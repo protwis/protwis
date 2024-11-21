@@ -2449,7 +2449,8 @@ function GPCRome_initializeData(data) {
     let GPCRomes = {
         GPCRome_A: {},
         GPCRome_AO: {},
-        GPCRome_B: {},
+        GPCRome_B1: {},
+        GPCRome_B2: {},
         GPCRome_C: {},
         GPCRome_F: {},
         GPCRome_T: {},
@@ -2506,8 +2507,13 @@ function GPCRome_initializeData(data) {
         }
 
         // Circle 3: "Class B1 (Secretin)" or "Class B2 (Adhesion)"
-        if (className === "Class B1 (Secretin)" || className === "Class B2 (Adhesion)") {
-            addItemsToCircle(GPCRomes.GPCRome_B, classData);
+        if (className === "Class B1 (Secretin)") {
+            addItemsToCircle(GPCRomes.GPCRome_B1, classData);
+        }
+
+        // Circle 3: "Class B1 (Secretin)" or "Class B2 (Adhesion)"
+        if (className === "Class B2 (Adhesion)") {
+            addItemsToCircle(GPCRomes.GPCRome_B2, classData);
         }
 
         // Circle 4: "Class C (Glutamate)"
@@ -2713,7 +2719,7 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling, odoran
       // Second Draw_a_GPCRome with GPCRome_AO, now with the two receptors added
       Draw_a_GPCRome(updatedGPCRome_AO, fill_data, 1, dimensions, Spacing);
 
-      Draw_a_GPCRome(layout_data.GPCRome_B, fill_data, 2, dimensions,Spacing);
+      Draw_a_GPCRome({...layout_data.GPCRome_B1, ...layout_data.GPCRome_B2}, fill_data, 2, dimensions,Spacing);
       Draw_a_GPCRome({...layout_data.GPCRome_C, ...layout_data.GPCRome_F}, fill_data, 3, dimensions,Spacing);
       Draw_a_GPCRome({...layout_data.GPCRome_T,...layout_data.GPCRome_CL}, fill_data, 4, dimensions,Spacing);
 
@@ -2804,8 +2810,8 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling, odoran
                 values.push("");
             } else if (level === 2) {
                 if (Spacing) {
-                    values.splice(52, 0, "B2");
-                    values.splice(53, 0, "");
+                    values.splice(26, 0, "B2");
+                    values.splice(27, 0, "");
                     values.push("")
 
                 } else {
