@@ -259,7 +259,7 @@ class Command(BaseBuild):
                     print(remaining_mismatches)
                     pprint.pprint(pdb_num_dict)
 
-                no_seqnum_shift = ['6OY9', '6OYA', '6LPB', '6WHA', '7D77', '6XOX', '7L1U', '7L1V']
+                no_seqnum_shift = ['6OY9', '6OYA', '6LPB', '6WHA', '7D77', '6XOX', '7L1U', '7L1V', '8YUT']
 
                 # Check if HN is mutated to GNAI1 for the scFv16 stabilizer
                 if sc.protein.entry_name!='gnai1_human' and len(remaining_mismatches)>0:
@@ -367,7 +367,7 @@ class Command(BaseBuild):
                         self.chimeras_gapped = SeqIO.to_dict(SeqIO.parse(open(os.sep.join([settings.DATA_DIR, 'g_protein_data', 'g_protein_chimeras_gapped.fasta'])), "fasta"))
                         for chimera_key in matched_chimeras:
                             ref_seq_chim, temp_seq, identity, identity_strict, chimera_wt_key = self.chimera_pairwise(chimera_key[0], seq)
-                            
+
                             if identity>94 or identity_strict>95:
                                 good_enough_matches.append([identity, chimera_wt_key, temp_seq, chimera_key[0]])
 
