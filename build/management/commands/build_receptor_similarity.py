@@ -191,13 +191,7 @@ class Command(BaseBuild):
 
             yeast_non_human_parent_gpcr_families_protein = {}
             yeast_non_human_parent_gpcr_families_protein_num = {} 
-            # for gpcr_class in yeast_non_human_parent_gpcr_families:
-            #     gpcr_class_proteins = Protein.objects.all().annotate(family_slug=F('family__slug')).filter(species=yeast_species,family_slug__startswith=gpcr_class.slug)
-            #     gpcr_class_proteins = gpcr_class_proteins.exclude(accession=None).order_by('family_slug','entry_name')
-            #     yeast_non_human_parent_gpcr_families_protein[gpcr_class] = list(gpcr_class_proteins)
-            #     yeast_non_human_parent_gpcr_families_protein_num[gpcr_class] = len(gpcr_class_proteins)
-
-            # selected_parent_gpcr_families = human_parent_gpcr_families + yeast_non_human_parent_gpcr_families
+            
             selected_parent_gpcr_families = human_parent_gpcr_families
             selected_parent_gpcr_families_protein = {}
             selected_parent_gpcr_families_protein_num = {}
