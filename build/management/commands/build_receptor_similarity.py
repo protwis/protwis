@@ -21,8 +21,8 @@ import time
 
 
 starttime = datetime.now()
-logger = logging.getLogger('class_similarity')
-hdlr = logging.FileHandler('./logs/class_similarity.log')
+logger = logging.getLogger('receptor_similarity')
+hdlr = logging.FileHandler('./logs/receptor_similarity.log')
 formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
 hdlr.setFormatter(formatter)
 logger.addHandler(hdlr)
@@ -46,12 +46,12 @@ import warnings
 warnings.filterwarnings("ignore")
 
 class Command(BaseBuild):
-    help = 'Build cross-class receptor similarity and identity.'
+    help = 'Build receptor similarity and identity.'
     
 
     def add_arguments(self, parser):
         super(Command, self).add_arguments(parser=parser)
-        parser.add_argument('--output',type=str, help="Output file path. Default 'gpcr_cross_class_similarity_data.csv'.", default='gpcr_cross_class_similarity_data.csv', action='store')
+        parser.add_argument('--output',type=str, help="Output file path. Default 'gpcr_similarity_data.csv'.", default='gpcr_similarity_data.csv', action='store')
         parser.add_argument('--verbose', help='Prints progress in stdout.', default=False, action='store_true')
         parser.add_argument('--force', help="Overwrites output file. If --output is not used, overwrites the file 'gpcr_similarity_data.csv'.", default=False, action='store_true')
         parser.add_argument('--limit',type=int, help='Use only any indicated number of GPCRs per class.', default=False, action='store')
