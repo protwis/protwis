@@ -356,7 +356,7 @@ from common.models import WebLink
 
 class PhosphorylationBrowser_x(TemplateView):
     # template_name = 'signprot/phosphorylation_sites_x1.html'
-    template_name = 'signprot/phosphorylation_sites_x1.html'
+    template_name = 'signprot/phosphorylation_sites.html'
     signprot = 'Arrestin'
 
     # Define regex patterns used in analysis
@@ -597,7 +597,7 @@ class PhosphorylationBrowser_x(TemplateView):
 
 
 class PhosphorylationBrowser(TemplateView):
-    template_name = 'signprot/phosphorylation_sites_x1.html'
+    template_name = 'signprot/phosphorylation_sites.html'
     signprot = 'Arrestin'
 
     # Define regex patterns used in analysis
@@ -625,7 +625,16 @@ class PhosphorylationBrowser(TemplateView):
         sites, coupling_labels = self.calculating()
         context['fixed_headers'] = ['uniprot', 'gtodb', 'family', 'class']
         context['segment_headers'] = self._headers()['headers']
-        context['coupling_labels'] = coupling_labels
+        context['extra_headers'] = ['log(Emax/EC50)', 'emax', 'pEC50']
+
+        # Collect all unique labels from 'emax', 'pec50', 'logemaxec50'
+        labels_set = set()
+        for site in sites:
+            for header in context['extra_headers']:
+                data_dict = site.get(header, {})
+                labels_set.update(data_dict.keys())
+        context['coupling_labels'] = sorted(labels_set)
+
         context['sites'] = sites
         return context
 

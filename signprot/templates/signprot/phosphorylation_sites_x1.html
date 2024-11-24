@@ -62,19 +62,19 @@
     <thead>
         <tr>
             <!-- checkbox -->
-            <th colspan="1"></th> 
+            <th colspan="1" style="width: 0.2rem;"></th> 
 
             <th class="col_size" colspan="4">Receptor</th>
 
-            <th class="segment-col icl3-col col_size main_th" colspan="2" style="width: 10rem;">Segment<br>(ICL3)</th>
-            <th class="segment-col icl3-col col_size main_th" colspan="4">Sites from<br>structures</th>
-            <th class="segment-col icl3-col col_size main_th" colspan="5">P sites</th>
+            <th class="segment-col icl3-col col_size main_th" colspan="2" style="width: 8rem;">Segment<br>(ICL3)</th>
+            <th class="segment-col icl3-col col_size main_th" colspan="4" style="width: 35rem;">Sites from<br>structures</th>
+            <th class="segment-col icl3-col col_size main_th" colspan="5" style="width: 31rem;">P sites</th>
             <th class="segment-col icl3-col col_size main_th" colspan="4">Longest<br>P site</th>
             <th class="segment-col icl3-col col_size main_th" colspan="5">O sites</th>
             <th class="segment-col icl3-col col_size main_th" colspan="4">Longest<br>O site</th>
 
-            <th class="segment-col cterm-col col_size main_th" colspan="2" style="width: 10rem;">Segment<br>(Ct)</th>
-            <th class="segment-col cterm-col col_size main_th" colspan="4">Sites from<br>structures</th>
+            <th class="segment-col cterm-col col_size main_th" colspan="2" style="width: 8rem;">Segment<br>(Ct)</th>
+            <th class="segment-col cterm-col col_size main_th" colspan="4" style="width: 31rem;">Sites from<br>structures</th>
             <th class="segment-col cterm-col col_size main_th" colspan="5">P sites</th>
             <th class="segment-col cterm-col col_size main_th" colspan="4">Longest<br>P site</th>
             <th class="segment-col cterm-col col_size main_th" colspan="5">O sites</th>
@@ -143,14 +143,19 @@
   <script src="{% static 'home/js/xlsx.full.min.js' %}"></script>  
   <script src="{% static 'home/js/gpcrdb.js' %}"></script>
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script> -->
 
 
   <!-- Initialize DataTable -->
   <script>
     $(document).ready(function() {
 
-      $('#proteinTable').DataTable({
+        let column_filters = [];
+      // Arg list: createYADCFfilters(start_column, num_cols, filter_type, select_type*, filter_default_label*, filter_reset_button_text*, filter_match_mode*, column_data_type*, width*)
+      column_filters = column_filters.concat(createYADCFfilters(1, 61, "multi_select", 'select2', 'select' ,false, null));
+
+    var proteintable = $('#proteinTable').DataTable({
         searching: true,
         info: true,
         autoWidth: false,
@@ -158,14 +163,38 @@
         columnDefs: [
           { targets: 'segment-col', visible: true },
           {
-            targets: [3,4,28],
-            width: '3rem !important',
+            // targets: [3,4,28],
+            targets: [5,11,29, 34, 35, 40, 44, 49],
+            // width: '30rem !important',
             className: 'truncate', // Apply a class for truncation and hover effect
         },
         ],
         order: []
       });
+    // Initialize YADCF
+      yadcf.init(proteintable, column_filters, {
+      cumulative_filtering: false
     });
+
+    });
+
+
+    $('#proteinTable').on('change', 'input.alt', function() {
+        var $checkbox = $(this);
+        var $td = $checkbox.closest('td');   // The <td> containing the checkbox
+        var $row = $checkbox.closest('tr');  // The <tr> containing the checkbox
+
+        if ($checkbox.is(':checked')) {
+            // Add 'highlight' class to all <td>s in the row
+            $row.find('td').addClass('highlight');
+            $row.addClass('alt_selected')
+        } else {
+            // Remove 'highlight' class from all <td>s in the row
+            $row.find('td').removeClass('highlight');
+            $row.removeClass('alt_selected')
+        }
+    });
+    
 
     //handle column visibility
     function showSegment(segment) {

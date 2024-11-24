@@ -79,7 +79,7 @@ function gproteinstructurebrowser(effector) {
       // Arg list: createYADCFfilters(start_column, num_cols, filter_type, select_type*, filter_default_label*, filter_reset_button_text*, filter_match_mode*, column_data_type*, width*)
       column_filters = column_filters.concat(createYADCFfilters(0, 1, "none"));
       // Structure Section
-      // column_filters = column_filters.concat(createYADCFfilters(2, 2, "multi_select", "select2", "", false, null, "html", "50px"));
+      column_filters = column_filters.concat(createYADCFfilters(1, 2, "multi_select", "select2", "Select", false, null, 'html'));
       column_filters = column_filters.concat(createYADCFfilters(3, 1, "multi_select", "select2", "Method", false, null, null, "60px"));
       column_filters = column_filters.concat(createYADCFfilters(4, 1, "range_number", null, ["Min", "Max"], false, null, null, "30px"));
       // Receptor Section
@@ -157,7 +157,7 @@ function gproteinstructurebrowser(effector) {
       // Arg list: createYADCFfilters(start_column, num_cols, filter_type, select_type*, filter_default_label*, filter_reset_button_text*, filter_match_mode*, column_data_type*, width*)
       column_filters = column_filters.concat(createYADCFfilters(0, 1, "none"));
       // Structure Block
-      // column_filters = column_filters.concat(createYADCFfilters(1, 2, "multi_select", "select2", "", false, null, "html", "50px"));
+      column_filters = column_filters.concat(createYADCFfilters(1, 2, "multi_select", "select2", "Select", false, null, 'html'));
       column_filters = column_filters.concat(createYADCFfilters(3, 1, "multi_select", "select2", "Method", false, null, null, "60px"));
       column_filters = column_filters.concat(createYADCFfilters(4, 1, "range_number", null, ["Min", "Max"], false, null, null, "30px"));
       // Receptor Block

@@ -56,9 +56,6 @@
             <label class="btn btn-default btn-s" id="align_btn_g_prot" href="javascript:void(0)">
                 Align seqs
             </label>
-            <label class="btn btn-default btn-s" id="sign_complex_pdb_btn">
-                Download PDBs
-            </label>
             {% if effector == 'gprot' %}
             <label class="btn btn-default btn-s" id="superpose_template_btn" href="javascript:void(0)">
                 Superposition
@@ -131,7 +128,7 @@
                                     <button type="button" class="close hide_columns" columns="25,26" style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                                 </div>
                             </div>
-                        </th> -->
+                        </th> 
                         <th colspan=3 class="over_header flexible_over_header" id='reference_over_header'>
                             <div class='overhead_text'>REFERENCE</div>
                                 <div class='overhead_close'>
@@ -230,24 +227,18 @@
                           <!-- Structure Block -->
                           {% if structure.protein %}
                               <td style="text-align:center;">
-                                <a target="_blank" href="/signprot/structure/{{ structure.pdb_code.index }}" id="{{ structure.pdb_code.index }}">
-                                  <img width="14px" height="20px" class="model-link" src="{% static 'home/images/model-surface.png' %}">
-                                  <span style="visibility: hidden;">{{ structure.pdb_code.index }}</span>
-                                </a>
+                                <a target="_blank" href="/signprot/structure/{{ structure.pdb_code.index }}" id="{{ structure.pdb_code.index }}">{{ structure.pdb_code.index }}</a>
                               </td>
                               <!-- <td class="pdb text-left"><a href="/signprot/structure/{{ structure.pdb_code.index }}">{{ structure.pdb_code.index}}</a></td> -->
                           {% else %}
                               <td style="text-align:center;">
-                                <a target="_blank" href="{{ structure.pdb_code.index }}" id="{{ structure.pdb_code.index }}">
-                                  <img width="14px" height="20px" class="model-link" src="{% static 'home/images/model-surface.png' %}">
-                                  <span style="visibility: hidden;">{{ structure.pdb_code.index }}</span>
-                                </a>
+                                <a target="_blank" href="{{ structure.pdb_code.index }}" id="{{ structure.pdb_code.index }}">{{ structure.pdb_code.index }}</a>
                               </td>
                               <!-- <td class="pdb text-left"><a href="{{ structure.pdb_code.index }}">{{ structure.pdb_code.index}}</a></td> -->
                           {% endif %}
                           <td class="text-center">
                               {% if structure.refined %}
-                                <a target="_blank" href="refined/{{ structure.pdb_code.index|upper }}"><img width="12px" height="12px" class="gpcrdb-link" src="{% static 'home/logo/gpcr/main.png' %}"></a>
+                                <a target="_blank" href="refined/{{ structure.pdb_code.index|upper }}">{{ structure.pdb_code.index|upper }}_refined</a>
                                 <!-- <a target='_blank' href="refined/{{ structure.pdb_code.index|upper }}">{{structure.pdb_code.index}}_refined</a> -->
                               {% else %}
                                 -
@@ -395,7 +386,7 @@
                                   <button type="button" class="close hide_columns" columns="25,26" style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                               </div>
                           </div>
-                      </th> -->
+                      </th>
                       <th colspan=3 class="over_header flexible_over_header" id='reference_over_header'>
                           <div class='overhead_text'>REFERENCE</div>
                           <div class='overhead_close'>
@@ -490,15 +481,15 @@
 
                       <!-- Structure block -->
                       {% if structure.protein %}
-                          <td style="text-align:center;"><a target="_blank" href="/signprot/structure/{{ structure.pdb_code.index }}"><img width="14px" height="20px" class="model-link" src="{% static 'home/images/arrestin-surface.png' %}"></a></td>
+                          <td style="text-align:center;"><a target="_blank" href="/signprot/structure/{{ structure.pdb_code.index }}">{{ structure.pdb_code.index }}</a></td>
                           <!-- <td class="pdb text-left"><a href="/signprot/structure/{{ structure.pdb_code.index }}">{{ structure.pdb_code.index}}</a></td> -->
                       {% else %}
-                          <td style="text-align:center;"><a target="_blank" href="{{ structure.pdb_code.index }}"><img width="14px" height="20px" class="model-link" src="{% static 'home/images/arrestin-surface.png' %}"></a></td>
+                          <td style="text-align:center;"><a target="_blank" href="{{ structure.pdb_code.index }}">{{ structure.pdb_code.index }}</a></td>
                           <!-- <td class="pdb text-left"><a href="{{ structure.pdb_code.index }}">{{ structure.pdb_code.index}}</a></td> -->
                       {% endif %}
                       <td>
                           {% if structure.refined %}
-                            <a target="_blank" href="refined/{{ structure.pdb_code.index|upper }}"><img width="12px" height="12px" class="gpcrdb-link" src="{% static 'home/logo/gpcr/main.png' %}"></a>
+                            <a target="_blank" href="refined/{{ structure.pdb_code.index|upper }}">{{ structure.pdb_code.index|upper }}_refined</a>
                             <!-- <a target='_blank' href="refined/{{ structure.pdb_code.index|upper }}">{{structure.pdb_code.index}}_refined</a> -->
                           {% else %}
                             -
