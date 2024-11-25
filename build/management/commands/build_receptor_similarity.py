@@ -1,7 +1,7 @@
 from build.management.commands.base_build import Command as BaseBuild
 
 from django.db.models import F,Q
-
+from django.conf import settings
 
 from protein.models import Protein, ProteinSegment, ProteinFamily, Species
 
@@ -12,6 +12,8 @@ import os
 import sys
 import logging
 import re
+from pathlib import Path
+
 
 import csv
 
@@ -51,10 +53,12 @@ class Command(BaseBuild):
 
     def add_arguments(self, parser):
         super(Command, self).add_arguments(parser=parser)
-        parser.add_argument('--output',type=str, help="Output file path. Default 'gpcr_similarity_data.csv'.", default='gpcr_similarity_data.csv', action='store')
+        parser.add_argument('--output',type=str, help="Output file path. Default '[settings.DATA_DIR]/structure_data/human_gpcr_similarity_data_all_segments.csv'.", default=os.sep.join([settings.DATA_DIR, 'structure_data', 'human_gpcr_similarity_data_all_segments.csv']), action='store')
         parser.add_argument('--verbose', help='Prints progress in stdout.', default=False, action='store_true')
-        parser.add_argument('--force', help="Overwrites output file. If --output is not used, overwrites the file 'gpcr_similarity_data.csv'.", default=False, action='store_true')
+        parser.add_argument('--no-backup', help="Overwrites the output file without creating a backup. If --output is not used, overwrites the file '[settings.DATA_DIR]/structure_data/human_gpcr_similarity_data_all_segments.csv'.", default=False, action='store_true')
         parser.add_argument('--limit',type=int, help='Use only any indicated number of GPCRs per class.', default=False, action='store')
+
+    logger = logging.getLogger(__name__)
 
     def get_parent_gpcr_families(self,exclude_classless_artificial_class=True,include_classless_natural_classes=True):
         parent_family = ProteinFamily.objects.get(slug='000') 
@@ -156,13 +160,37 @@ class Command(BaseBuild):
         return self.filter_out_non_species_parent_gpcr_families(parent_gpcr_families,self.get_yeast_species())
     
     def handle(self, *args, **options):
-        if os.path.lexists(options['output']) and not options['force']:
-            print('Path "'+options['output']+' already exists. Aborting.')
-            exit(1)
-        with open(options['output'],'w') as csvfile:
+        output_folder_path = os.path.dirname(options['output'])
+        if os.path.lexists(options['output']) and not options['no_backup']:
+            rootname, ext = os.path.splitext(options['output'])
+            while True:
+                ts = '%.f' % (time.time()*1000)
+                bkp_output = rootname + '_' + ts + ext + '.bkp'
+                try:
+                    os.link(options['output'],bkp_output)
+                except FileNotFoundError:
+                    break
+                except FileExistsError:
+                    continue
+                os.unlink(options['output'])
+                txt = 'Renamed output file to "'+bkp_output+'" as backup.'
+                if options['verbose']: print(txt)
+                self.logger.info(txt)
+                break
+        Path(os.path.dirname(output_folder_path)).mkdir(parents=True, exist_ok=True)
+        if options['no_backup']:
+            mode = 'w'
+            txt = 'Opening file "'+options['output']+'" for writing (overwrite mode)...'
+        else:
+            mode = 'x'
+            txt = 'Opening file "'+options['output']+'" for writing (create mode)...'
+        if options['verbose']: print(txt)
+        self.logger.info(txt)
+
+        with open(options['output'],mode) as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=FIELDNAMES)
             writer.writeheader()
-
+            self.logger.info("Computing receptor similarity...")
             initial_step1 = 380 #If alignment fails, please, set this to a lower value
             initial_step2 = 380 #If alignment fails, please, set this to a lower value
             start_time = time.time()
@@ -342,6 +370,8 @@ class Command(BaseBuild):
         if options['verbose']:
             print('Execution time:', elapsed_time, 'seconds')
             print('Done.')
+        self.logger.info('Execution time: '+str(elapsed_time)+' seconds')
+        self.logger.info('Done.')
 
      
 
