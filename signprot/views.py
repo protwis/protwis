@@ -622,7 +622,7 @@ class PhosphorylationBrowser(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        sites, coupling_labels = self.calculating()
+        sites = self.calculating()
         context['fixed_headers'] = ['uniprot', 'gtodb', 'family', 'class']
         context['segment_headers'] = self._headers()['headers']
         context['extra_headers'] = ['log(Emax/EC50)', 'emax', 'pEC50']
@@ -640,7 +640,7 @@ class PhosphorylationBrowser(TemplateView):
 
     def _headers(self):
         segment_headers = [
-            "Seg", 
+            "Seq", 
             "AA",
             "PxPP", 
             "PxPxxO", 
@@ -679,25 +679,40 @@ class PhosphorylationBrowser(TemplateView):
         ).select_related('g_protein_subunit'
         ).order_by('g_protein_subunit__entry_name', 'variant')
 
-        coupling_labels_raw = protein_couplings_queryset.values_list(
-            'g_protein_subunit__entry_name', 'variant'
-        ).distinct()
-
-        coupling_labels = [(label.split('_')[0].upper(), variant) for label, variant in coupling_labels_raw if label]
-
+        # Prefetch the protein couplings
         protein_couplings_prefetch = Prefetch(
             'proteincouplings_set',
             queryset=protein_couplings_queryset,
             to_attr='filtered_couplings')
 
+        # Prefetch web links for UniProt and Guide to Pharmacology
         web_links_prefetch = Prefetch(
             'web_links',
             queryset=WebLink.objects.filter(web_resource__id__in=[8, 5]).select_related('web_resource'),
             to_attr='links')
 
         # Fetch proteins with necessary related objects
+        # prots = Protein.objects.filter(
+        #     proteincouplings__g_protein__parent__name=self.signprot
+        # ).distinct().select_related(
+        #     'family', 'family__parent', 'family__parent__parent', 'family__parent__parent__parent'
+        # ).prefetch_related(
+        #     'proteinconformation_set__residue_set__protein_segment',
+        #     protein_couplings_prefetch,
+        #     web_links_prefetch
+        # ).only(
+        #     'entry_name', 'name', 'family',
+        # )
         prots = Protein.objects.filter(
-            proteincouplings__g_protein__parent__name=self.signprot
+            (Q(family__parent__parent__parent__slug__startswith='001')
+            | Q(family__parent__parent__parent__slug__startswith='002') 
+            | Q(family__parent__parent__parent__slug__startswith='003')
+            | Q(family__parent__parent__parent__slug__startswith='004')
+            | Q(family__parent__parent__parent__slug__startswith='005')
+            | Q(family__parent__parent__parent__slug__startswith='006')
+            | Q(family__parent__parent__parent__slug__startswith='010')
+            | Q(family__parent__parent__parent__slug__startswith='009')) 
+            & Q(entry_name__endswith='_human')
         ).distinct().select_related(
             'family', 'family__parent', 'family__parent__parent', 'family__parent__parent__parent'
         ).prefetch_related(
@@ -708,8 +723,12 @@ class PhosphorylationBrowser(TemplateView):
             'entry_name', 'name', 'family',
         )
 
+        i = 0
         for protein in prots:
-            # Define parent variables
+            i += 1
+            print(f'PROTEINS {i}')
+            print(protein.entry_name)
+            # Define family hierarchy
             family_name = protein.family.name if protein.family else ''
             parent1 = protein.family.parent if protein.family else None
             parent2 = parent1.parent if parent1 else None
@@ -717,12 +736,32 @@ class PhosphorylationBrowser(TemplateView):
 
             # Construct base data
             base_data = {
-                'uniprot': self.get_uniprot_link(protein), # gpcr
+                'uniprot': self.get_uniprot_link(protein),  # GPCR
                 'gtodb': self.get_gtodb_link(protein),
                 'family': parent1.name.replace('receptors', '').replace('Class', '') if parent1 else '',
                 'class': parent3.name.split(' ')[1] if parent3 else '',
             }
 
+            coupling_data = {
+                'emax': {},
+                'pec50': {},
+                'logemaxec50': {}
+            }
+
+            for coupling in getattr(protein, 'filtered_couplings', []):
+                # Use the g_protein_subunit_entry_name directly
+                label = (coupling.g_protein_subunit.entry_name, coupling.variant)
+                
+                if coupling.emax is not None:
+                    coupling_data['emax'][label] = coupling.emax
+                if coupling.pec50 is not None:
+                    coupling_data['pec50'][label] = coupling.pec50
+                if coupling.logemaxec50 is not None:
+                    coupling_data['logemaxec50'][label] = coupling.logemaxec50
+
+            base_data.update(coupling_data)
+
+            # Initialize sequences for segments of interest
             segment_sequences = {'icl3': '', 'c-term': ''}
 
             # Build sequences for each segment
@@ -736,8 +775,6 @@ class PhosphorylationBrowser(TemplateView):
 
             # Initialize segment data
             segment_data = base_data.copy()
-            segment_data['icl3_data'] = {}
-            segment_data['cterm_data'] = {}
 
             # Analyze sequences for each segment and store in segment_data
             for segment, seq in segment_sequences.items():
@@ -747,10 +784,10 @@ class PhosphorylationBrowser(TemplateView):
                     # Prefix keys with segment name to avoid collisions
                     segment_data[f'{segment}_{key}'] = value
 
+            # Append the complete data for this protein to protein_data
             protein_data.append(segment_data)
 
-        return protein_data, coupling_labels
-
+        return protein_data
 
     def get_uniprot_link(self, protein):
         """Retrieve the UniProt link for the protein."""
@@ -813,7 +850,7 @@ class PhosphorylationBrowser(TemplateView):
             processed_seq = self.lower_upper_Ct(sequence)
         else:
             processed_seq = self.lower_upper_non(sequence)
-        data['Seg'] = processed_seq
+        data['Seq'] = processed_seq
         data['AA'] = len(processed_seq)
 
         # Count patterns in sequences
@@ -849,8 +886,8 @@ class PhosphorylationBrowser(TemplateView):
 
 
     def calculating(self):
-        sites_dict, coupling_labels = self.segments()
-        return sites_dict, coupling_labels
+        sites_dict = self.segments()
+        return sites_dict
 
 ####### lazy loader
 
