@@ -10,7 +10,8 @@ from django.views.decorators.cache import cache_page
 urlpatterns = [
     url(r'^$', cache_page(60*60*24)(StructureBrowser.as_view()), name='structure_browser'),
     # url(r'^$', StructureBrowser.as_view(), name='structure_browser'),
-    url(r'^g_protein_structure_browser$', cache_page(60*60*24)(EffectorStructureBrowser.as_view(effector='gprot')), name='g_protein_structure_browser'),
+    # url(r'^g_protein_structure_browser$', cache_page(60*60*24)(EffectorStructureBrowser.as_view(effector='gprot')), name='g_protein_structure_browser'), # ORIGINAL
+    url(r'^g_protein_structure_browser$', EffectorStructureBrowser.as_view(effector='gprot'), name='g_protein_structure_browser'), # ERASE
     # url(r'^g_protein_structure_browser$', EffectorStructureBrowser.as_view(effector='gprot'), name='g_protein_structure_browser'),
     url(r'^arrestin_structure_browser$', cache_page(60*60*24)(EffectorStructureBrowser.as_view(effector='arrestin')), name='arrestin_structure_browser'),
     path('structure_similarity_search', StructureBlastView.as_view(), name='structure-similarity-search'),
@@ -34,6 +35,8 @@ urlpatterns = [
     url(r'^ligand_complex_models/(?P<modelname>[^/]+)/download_lig_complex_pdb$', SingleLigComplexModelDownload, name='single_complex_model_download'),
     # url(r'^homology_models$', ServeHomologyModels.as_view(), name='homology_models'),
     url(r'^complex_models$', cache_page(60*60*24)(ServeComplexModels.as_view()), name='complex_models'),
+    url(r'^arrestin_models$', cache_page(60*60*24)(ServeComplexModels.as_view(signalling_protein='af-arrestin')), name='arrestin_complex_models'),
+
     # url(r'^complex_models$', ServeComplexModels.as_view(), name='complex_models'),
     url(r'^model_statistics$', cache_page(60*60*24)(ServeModelStatistics.as_view()), name='model_statistics'),
     url(r'^pdb_segment_selection', PDBSegmentSelection.as_view(), name='pdb_download'),
@@ -69,6 +72,8 @@ urlpatterns = [
     url(r'^refined/(?P<pdbname>\w+)$', cache_page(60*60*24*7)(RefinedModelDetails), name="refined_model_details"),
     url(r'^refined/(?P<modelname>\w+)/download_complex_pdb$', SingleComplexModelDownload, name='single_complex_model_download'),
     url(r'^pdb/(?P<pdbname>\w+)/ligand/(?P<ligand>.+)$', ServePdbLigandDiagram, name='structure_serve_pdb_ligand'),
+    url(r'^complex_models/(?P<header>\w+)$',cache_page(60*60*24*7)(ComplexModelDetails), name='complex_model_details'),
+    url(r'^complex_models/view/(?P<modelname>\w+)$', ServeComplexModDiagram, name='complexmod_serve_view'),
     ##### COMMENTED PATHS #####
     # url(r'^complex_models/(?P<header>\w+)$',ComplexModelDetails, name='complex_model_details'),
     # url(r'^complex_models/view/(?P<modelname>\w+)-(?P<signprot>\w+)$', ServeComplexModDiagram, name='complexmod_serve_view'),
