@@ -120,15 +120,13 @@
                                 </div>
                             </div>
                         </th>
-
-                        <th colspan=2 class="over_header flexible_over_header" id='endo_ligand_over_header'>
-                            <div class='overhead_text'>PHYSIOLOGICAL LIGAND</div>
-
+                        <!-- <th colspan=2 class="over_header flexible_over_header" id='endo_ligand_over_header'>
+                            <div class='overhead_text'>ENDOGENOUS LIGAND</div>
                                 <div class='overhead_close'>
                                     <button type="button" class="close hide_columns" columns="25,26" style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                                 </div>
                             </div>
-                        </th> 
+                        </th> -->
                         <th colspan=3 class="over_header flexible_over_header" id='reference_over_header'>
                             <div class='overhead_text'>REFERENCE</div>
                                 <div class='overhead_close'>
@@ -303,10 +301,8 @@
                         <td>
                             {{ structure.ligands.all|ligandrole|linebreaksbr }}
                         </td>
-
-                        <!-- Physiological ligand -->
-                        <td class='expand'>
-
+                        <!-- Endogenous ligand -->
+                        <!-- <td class='expand'>
                             {% autoescape off %}
                               {{ structure.protein_conformation.protein.parent.endogenous_gtp_set.all | endo_format }}
                             {% endautoescape %}
@@ -378,15 +374,13 @@
                               <button type="button" class="close hide_columns" columns="18,19,20" style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                           </div>
                       </th>
-
-                      <th colspan=2 class="over_header flexible_over_header" id='endo_ligand_over_header'>
-                          <div class='overhead_text'>PHYSIOLOGICAL LIGAND</div>
-
+                      <!-- <th colspan=2 class="over_header flexible_over_header" id='endo_ligand_over_header'>
+                          <div class='overhead_text'>ENDOGENOUS LIGAND</div>
                               <div class='overhead_close'>
                                   <button type="button" class="close hide_columns" columns="25,26" style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                               </div>
                           </div>
-                      </th>
+                      </th> -->
                       <th colspan=3 class="over_header flexible_over_header" id='reference_over_header'>
                           <div class='overhead_text'>REFERENCE</div>
                           <div class='overhead_close'>
@@ -544,10 +538,8 @@
                       <td>
                           {{ structure.ligands.all|ligandrole|linebreaksbr }}
                       </td>
-
-                      <!-- Physiological ligand -->
-                      <td class='expand'>
-
+                      <!-- Endogenous ligand -->
+                      <!-- <td class='expand'>
                           {% autoescape off %}
                             {{ structure.protein_conformation.protein.parent.endogenous_gtp_set.all | endo_format }}
                           {% endautoescape %}
