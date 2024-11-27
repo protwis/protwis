@@ -15,9 +15,13 @@ import pprint
 
 class DrawSnakePlot(Diagram):
 
-    def __init__(self, residue_list, protein_class,protein_name, nobuttons = None):
+    def __init__(self, residue_list, protein_class, protein_name, nobuttons = None, domain=None):
         self.nobuttons = nobuttons
-        self.type = 'snakeplot'
+        self.domain = domain
+        if self.domain:
+            self.type = 'snakeplot2'
+        else:
+            self.type = 'snakeplot'
         plot_data = {}
         plot_data['direction'] = [0,0, 1, 0, 1, 0, 1, 0]; # 0: EC->IC, 1: IC->EC
         plot_data['helixRadius'] = 70;
@@ -112,7 +116,7 @@ class DrawSnakePlot(Diagram):
         self.traceoutput = ""
         self.helixoutput = ""
 
-        if self.family.startswith('Class B2'):
+        if self.family.startswith('Class B2') and self.domain=='GAIN':
             self.count = 2
             self.count_sheet = 0
             for s in self.segments:
@@ -151,25 +155,33 @@ class DrawSnakePlot(Diagram):
                     print('error with helix',i,msg)
                     pass
 
-        # if "H8" in self.segments: #if helix8
-        #     try:
-        #         self.helixoutput += self.drawSnakePlotHelix8()
-        #     except Exception as msg:
-        #         self.TBCoords[8] = {}
-        #         startX = self.helixWidth+self.offsetX+(self.margin+self.helixWidth)*(8-1)
-        #         startY = self.offsetY
-        #         self.TBCoords[8]['top'] = [startX,startY]
-        #         self.TBCoords[8]['bottom'] = [startX,startY+140]
-        #         print('error with helix',8,msg)
+            if "H8" in self.segments: #if helix8
+                try:
+                    self.helixoutput += self.drawSnakePlotHelix8()
+                except Exception as msg:
+                    self.TBCoords[8] = {}
+                    startX = self.helixWidth+self.offsetX+(self.margin+self.helixWidth)*(8-1)
+                    startY = self.offsetY
+                    self.TBCoords[8]['top'] = [startX,startY]
+                    self.TBCoords[8]['bottom'] = [startX,startY+140]
+                    print('error with helix',8,msg)
 
-        # self.drawSnakePlotLoops()
+            self.drawSnakePlotLoops()
 
-        # self.drawSnakePlotTerminals()
+            self.drawSnakePlotTerminals()
 
     def __str__(self):
         # NOTE: this translate is overwritten in JS (diagram.js)
-        self.output_final = "<g id=snake transform='translate(0, " + str(-self.low+ self.offsetY) + ")'>" + self.traceoutput+self.output+self.helixoutput+self.drawToolTip() + "</g>"; #for resizing height
-        return mark_safe(self.create(self.output_final,self.maxX['right']+30,self.high-self.low+self.offsetY*2,"snakeplot", self.nobuttons))
+        if self.domain:
+            id_tag = 'snake2'
+        else:
+            id_tag = 'snake'
+        self.output_final = "<g id="+id_tag+" transform='translate(0, " + str(-self.low+ self.offsetY) + ")'>" + self.traceoutput+self.output+self.helixoutput+self.drawToolTip() + "</g>"; #for resizing height
+        if self.domain:
+            id_tag = 'snakeplot2'
+        else:
+            id_tag = 'snakeplot'
+        return mark_safe(self.create(self.output_final,self.maxX['right']+30,self.high-self.low+self.offsetY*2,id_tag, self.nobuttons))
 
     def drawSnakePlotHelix(self, helix_num):
         # helix_num = self.count

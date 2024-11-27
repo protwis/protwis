@@ -530,7 +530,6 @@ class Alignment:
                 if len(s) > 1:
                     del self.segments[segment]
                 else:
-                    # self.segments[segment].sort()
                     sorted_segment = []
                     if segment=='B.GPS':
                         if 'B.GPS-2' in self.segments[segment]:
@@ -761,6 +760,8 @@ class Alignment:
 
     def merge_generic_numbers(self):
         """Check whether there are many display numbers for each position, and merge them if there are."""
+        # deepcopy is required because the dictionary changes during the loop
+        # generic_numbers = deepcopy(self.generic_numbers)
         for ns, segments in self.generic_numbers.items():
             for segment, positions in segments.items():
                 for pos, dns in positions.items():
@@ -780,9 +781,6 @@ class Alignment:
                     del self.generic_numbers[ns][segment]
                 else:
                     ordered_generic_numbers = OrderedDict()
-
-                    for gn in sorted(self.generic_numbers[ns][segment], key=lambda x: x.split('x')):
-                        ordered_generic_numbers[gn] = self.generic_numbers[ns][segment][gn]
 
                     if segment=='B.GPS':
                         if 'B.GPS-2' in self.generic_numbers[ns][segment]:
