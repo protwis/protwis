@@ -1262,12 +1262,12 @@ class ParseAFComplexModels():
                 else:
                     beta_gamma = False
             else:
-                complex_info['model'] = 'af-arrestin'
+                self.complexes[f'{receptor}{peptide}-{signprot}']['model'] = 'af-arrestin'
                 beta_gamma = False
 
-            complex_info['beta_gamma'] = beta_gamma
+            self.complexes[f'{receptor}{peptide}-{signprot}']['beta_gamma'] = beta_gamma
 
-            self.complexes[f'{receptor}{peptide}-{signprot}'] = complex_info
+            # self.complexes[f'{receptor}{peptide}-{signprot}'] = complex_info
 
     def get_ligand_sequence(self, pdb_file, chain_id):
         sequence = ""

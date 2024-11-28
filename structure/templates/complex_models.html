@@ -115,8 +115,12 @@
                 // }
             });
 
-            var prev_ids = Array()
-            var current_align_ids = Array()
+            var prev_ids = Array();
+            var current_align_ids = Array();
+
+            {% if signalling_protein != 'af-signprot' %}
+                oTable.column(10).visible(false);
+            {% endif %}
 
             $("#constructs_div").show();
             assign_to_row();
