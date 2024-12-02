@@ -217,6 +217,7 @@ class ProteinSegment(models.Model):
     fully_aligned = models.BooleanField(default=False)
     partial = models.BooleanField(default=False)
     proteinfamily = models.CharField(max_length=20)
+    domain = models.CharField(max_length=20, null=True)
 
     def __str__(self):
         return self.slug
