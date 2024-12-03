@@ -38,7 +38,7 @@
                     <!-- numbering scheme lines -->
                     {% for ns in a.numbering_schemes %}
                     <tr>
-                        <td class="ali-td-generic-num ali-td-first-col" colspan="3"><a href='http://docs.gpcrdb.org/generic_numbering.html'><span class="glyphicon glyphicon-question-sign"></span></a> Residue number<br>Sequence-based ({{ ns.2 }})<br>Structure-based (GPCRdb)</td>
+                        <td class="ali-td-generic-num ali-td-first-col" colspan="3"><a href='http://docs.gpcrdb.org/generic_numbering.html'><span class="glyphicon glyphicon-question-sign"></span></a> Generic<br>residue<br>number</td>
                     </tr>
                     {% endfor %}
 
@@ -74,7 +74,7 @@
                     <!-- numbering scheme lines -->
                     {% for ns in a.numbering_schemes %}
                     <tr>
-                        <td class="ali-td-generic-num ali-td-first-col" colspan="3"><a href='http://docs.gpcrdb.org/generic_numbering.html'><span class="glyphicon glyphicon-question-sign"></span></a> Residue number<br>Sequence-based ({{ ns.2 }})<br>Structure-based (GPCRdb)</td>
+                        <td class="ali-td-generic-num ali-td-first-col" colspan="3"><a href='http://docs.gpcrdb.org/generic_numbering.html'><span class="glyphicon glyphicon-question-sign"></span></a> Generic<br>residue<br>number</td>
                     </tr>
                     {% endfor %}
 
@@ -138,7 +138,8 @@
                     <!-- numbering scheme lines -->
                     {% for ns in a.numbering_schemes %}
                     <tr>
-                        <td class="ali-td-generic-num ali-td-first-col" colspan="3"><a href='http://docs.gpcrdb.org/generic_numbering.html'><span class="glyphicon glyphicon-question-sign"></span></a> Residue number<br>Sequence-based ({{ ns.2 }})<br>Structure-based (GPCRdb)</td>
+                        <!-- <td class="ali-td-generic-num ali-td-first-col" colspan="3"><a href='http://docs.gpcrdb.org/generic_numbering.html'><span class="glyphicon glyphicon-question-sign"></span></a> Residue number<br>Sequence-based ({{ ns.2 }})<br>Structure-based (GPCRdb)</td> -->
+                        <td class="ali-td-generic-num ali-td-first-col" colspan="3"><a href='http://docs.gpcrdb.org/generic_numbering.html'><span class="glyphicon glyphicon-question-sign"></span></a> Generic<br>residue<br>number</td>
                     </tr>
                     {% endfor %}
                 </table>
@@ -172,9 +173,11 @@
                             {% for s, num in segments.items %}
                                 {% for n, dn in num.items %}
                                     {% if 'Common G-alpha numbering scheme' in a.numbering_schemes.0 %}
-                                    <td class="ali-td-generic-num">{{ dn|make_list|slice:'2:'|join:'' }}</td>
+                                    <!-- <td class="ali-td-generic-num">{{ dn|make_list|slice:'2:'|join:'' }}</td> -->
+                                    <td class="ali-td-generic-num">{{ dn|column_splitter|safe }}</td>
                                     {% else %}
-                                    <td class="ali-td-generic-num">{{ dn|safe }}</td>
+                                    <!-- <td class="ali-td-generic-num">{{ dn|safe }}</td> -->
+                                    <td class="ali-td-generic-num">{{ dn|column_splitter|safe }}</td>
                                     {% endif %}
                                 {% endfor %}
                                 <td class="ali-td">&nbsp;</td>
@@ -225,9 +228,11 @@
                             {% for s, num in segments.items %}
                                 {% for n, dn in num.items %}
                                     {% if 'Common G-alpha numbering scheme' in a.numbering_schemes.0 %}
-                                    <td class="ali-td-generic-num">{{ dn|make_list|slice:'2:'|join:''}}</td>
+                                    <!-- <td class="ali-td-generic-num">{{ dn|make_list|slice:'2:'|join:''}}</td> -->
+                                    <td class="ali-td-generic-num">{{ dn|column_splitter|safe }}</td>
                                     {% else %}
-                                    <td class="ali-td-generic-num">{{ dn|safe }}</td>
+                                    <!-- <td class="ali-td-generic-num">{{ dn|safe }}</td> -->
+                                    <td class="ali-td-generic-num">{{ dn|column_splitter|safe }}</td>
                                     {% endif %}
                                 {% endfor %}
                                 <td class="ali-td">&nbsp;</td>
@@ -318,9 +323,11 @@
                             {% for s, num in segments.items %}
                                 {% for n, dn in num.items %}
                                     {% if 'Common G-alpha numbering scheme' in a.numbering_schemes.0 %}
-                                        <td class="ali-td-generic-num">{{ dn|make_list|slice:'2:'|join:'' }}</td>
+                                        <!-- <td class="ali-td-generic-num">{{ dn|make_list|slice:'2:'|join:'' }}</td> -->
+                                        <td class="ali-td-generic-num">{{ dn|column_splitter|safe }}</td>
                                     {% else %}
-                                        <td class="ali-td-generic-num">{{ dn|safe }}</td>
+                                        <!-- <td class="ali-td-generic-num">{{ dn|safe }}</td> -->
+                                        <td class="ali-td-generic-num">{{ dn|column_splitter|safe }}</td>
                                     {% endif %}
                                     {% endfor %}
                                 <td class="ali-td">&nbsp;</td>
