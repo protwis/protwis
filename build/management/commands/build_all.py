@@ -87,6 +87,7 @@ class Command(BaseCommand):
             ['build_contact_representative'],
             ['build_mammalian_representative'],
             ['upload_excel_bias_pathways'],
+            ['build_receptor_similarity'],
             ['build_text'],
             ['build_release_notes'],
         ]

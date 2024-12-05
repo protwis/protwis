@@ -292,10 +292,14 @@ class ProteinFamily(models.Model):
         ordering = ('id', )
 
 # Remove in the future
-# The next two lines must be after class ProteinFamily.
-from protein.model_func import get_current_classless_parent_gpcr_slugs
-CLASSLESS_PARENT_GPCR_SLUGS = get_current_classless_parent_gpcr_slugs(_BEFORE_NAR2025_CLASSLESS_PARENT_GPCR_SLUGS_DICT,
-                                                                      _AFTER_NAR2025_CLASSLESS_PARENT_GPCR_SLUGS)
+# The next two lines must be after class ProteinFamily
+try:
+  # This usually fails if ProteinFamily table does not exist in DB or "from protein.models import ProteinFamily" fails
+  from protein.model_func import get_current_classless_parent_gpcr_slugs
+  CLASSLESS_PARENT_GPCR_SLUGS = get_current_classless_parent_gpcr_slugs(_BEFORE_NAR2025_CLASSLESS_PARENT_GPCR_SLUGS_DICT,
+                                                                        _AFTER_NAR2025_CLASSLESS_PARENT_GPCR_SLUGS)
+except:
+  CLASSLESS_PARENT_GPCR_SLUGS = _AFTER_NAR2025_CLASSLESS_PARENT_GPCR_SLUGS
 
 class ProteinSequenceType(models.Model):
     slug = models.SlugField(max_length=20, unique=True)
