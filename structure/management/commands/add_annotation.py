@@ -105,7 +105,7 @@ class Command(BaseCommand):
 
                         ### Running x50 finder
                         if up['entry_name'] not in self.nonxtal_seg_ends:
-                            x = X50Finder(os.sep.join([path_to_models, m]))
+                            x = X50Finder(os.sep.join([path_to_models, m]), self.debug)
                             x50s_gn = x.run()
 
                             if self.debug:
@@ -154,6 +154,8 @@ class Command(BaseCommand):
                             x50s['6x'] = 262
                             x50s['7x'] = 286
                             x50s['8x'] = 295
+                        elif m=='O14718.pdb':
+                            x50s['1x'] = 43
                         ###
 
                         for lab, x50 in x50s.items():
