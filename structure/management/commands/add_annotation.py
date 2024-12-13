@@ -337,7 +337,7 @@ class Command(BaseCommand):
             errors = {}
 
             for s, data in self.parsed_structures.structures.items():
-                # try:
+                try:
                     ### New structures
                     if len(self.structures_to_annotate)>0 and s not in self.structures_to_annotate:
                         continue
@@ -713,8 +713,8 @@ class Command(BaseCommand):
                         if self.save_annotation:
                             with open(self.xtal_seg_end_file, 'w') as f1:
                                 yaml.dump(self.xtal_seg_ends, f1, default_flow_style=False)
-                # except Exception as msg:
-                #     errors[s] = msg
+                except Exception as msg:
+                    errors[s] = msg
             
             print('Missing ligand info:')
             print(missing_ligand_info)
