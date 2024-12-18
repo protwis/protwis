@@ -702,7 +702,12 @@ class Command(BaseBuild):
             temp_seq = temp_seq[:228]+'K'+temp_seq[228:243]+temp_seq[244:]
         elif structure.pdb_code.index=='9AVL':
             temp_seq = temp_seq[:123]+'N'+temp_seq[123:129]+temp_seq[130:]
-
+        elif structure.pdb_code.index=='8UXY':
+            ref_seq = ref_seq[:90]+ref_seq[92:108]+ref_seq[109:151]+ref_seq[152:200]+ref_seq[201:213]+ref_seq[214:]
+            temp_seq = temp_seq[:84]+'I'+temp_seq[87:105]+temp_seq[106:149]+temp_seq[150:202]+temp_seq[203:211]+temp_seq[212:271]+'-YS'+temp_seq[274:]
+        elif structure.pdb_code.index=='8UXV':
+            ref_seq = ref_seq[:144]+ref_seq[145:210]+ref_seq[211:266]+ref_seq[267:]
+            temp_seq = temp_seq[:146]+temp_seq[147:208]+temp_seq[209:268]+temp_seq[269:]
 
 
         for i, r in enumerate(ref_seq, 1): #loop over alignment to create lookups (track pos)
@@ -830,7 +835,7 @@ class Command(BaseBuild):
                                     elif residue.sequence_number!=wt_r.sequence_number:
                                         # print('WT pos not same pos, mismatch',residue.sequence_number,residue.amino_acid,wt_r.sequence_number,wt_r.amino_acid)
                                         wt_pdb_lookup.append(OrderedDict([('WT_POS',wt_r.sequence_number), ('PDB_POS',residue.sequence_number), ('AA',wt_r.amino_acid)]))
-                                        if structure.pdb_code.index not in ['4GBR','6C1R','6C1Q','7XBX','7F1Q','7ZLY','8JWY','8JWZ','8JMT','8TB7','8ITM','9D3G']:
+                                        if structure.pdb_code.index not in ['4GBR','6C1R','6C1Q','7XBX','7F1Q','7ZLY','8JWY','8JWZ','8JMT','8TB7','8ITM','9D3G','9D3E']:
                                             if residue.sequence_number in unmapped_ref:
                                                 # print('residue.sequence_number',residue.sequence_number,'not mapped though')
                                                 if residue.amino_acid == wt_lookup[residue.sequence_number].amino_acid:
