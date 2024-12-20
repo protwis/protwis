@@ -1836,7 +1836,7 @@ def construct_structure_annotation_override(pdb_code, removed, deletions):
     elif pdb_code=='8RLN':
         removed.append(1106)
     elif pdb_code=='9D3E':
-        removed = range(list(242,363))
+        removed = list(range(242,363))
 
 
     return removed, deletions
