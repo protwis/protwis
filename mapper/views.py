@@ -168,13 +168,66 @@ class LandingPage(TemplateView):
             if len(item.slug) == 15 and item.slug not in datatree[item.slug[:3]][item.slug[:7]][item.slug[:11]]:
                 datatree[item.slug[:3]][item.slug[:7]][item.slug[:11]].append(item.name)
 
-
         datatree2 = LandingPage.convert_keys(datatree, conversion)
         datatree2.pop('Parent family', None)
         datatree3 = LandingPage.filter_dict(datatree2, names)
         data_converted = {names_conversion_dict[key]: value for key, value in listplot.items()}
         Data_full = {"NameList": datatree3, "DataPoints": data_converted, "LabelConversionDict":IUPHAR_to_uniprot_dict}
         return Data_full
+
+    @staticmethod
+    def generate_GPCRome_data(data):
+        #Adjust call to exclude odorants
+        all_proteins = Protein.objects.filter(species_id=1, parent_id__isnull=True, accession__isnull=False, family_id__slug__startswith='0').exclude(
+                                            family_id__slug__startswith='007'
+                                        ).exclude(
+                                            family_id__slug__startswith='008'
+                                        )
+
+        result_dict = {}
+        for prot in all_proteins:
+            key = prot.entry_name
+            # Initialize the key in result_dict if not already present
+            if key not in result_dict:
+                result_dict[key] = 'empty'
+
+        for key in data:
+            if key in result_dict:
+                result_dict[key] = data[key]['Value1']
+
+        proteins = list(Protein.objects.filter(entry_name__in=result_dict.keys()
+            ).values('entry_name', 'name').order_by('entry_name'))
+
+        names_conversion_dict = {item['entry_name']: item['name'] for item in proteins}
+
+        names = list(names_conversion_dict.values())
+
+        IUPHAR_to_uniprot_dict = {item['name']: item['entry_name'] for item in proteins}
+
+        families = ProteinFamily.objects.all()
+        datatree = {}
+        conversion = {}
+
+        for item in families:
+            if len(item.slug) == 3 and item.slug not in datatree.keys():
+                datatree[item.slug] = {}
+                conversion[item.slug] = item.name
+            if len(item.slug) == 7 and item.slug not in datatree[item.slug[:3]].keys():
+                datatree[item.slug[:3]][item.slug[:7]] = {}
+                conversion[item.slug] = item.name
+            if len(item.slug) == 11 and item.slug not in datatree[item.slug[:3]][item.slug[:7]].keys():
+                datatree[item.slug[:3]][item.slug[:7]][item.slug[:11]] = []
+                conversion[item.slug] = item.name
+            if len(item.slug) == 15 and item.slug not in datatree[item.slug[:3]][item.slug[:7]][item.slug[:11]]:
+                datatree[item.slug[:3]][item.slug[:7]][item.slug[:11]].append(item.name)
+
+        datatree2 = LandingPage.convert_keys(datatree, conversion)
+        datatree2.pop('Parent family', None)
+        datatree3 = LandingPage.filter_dict(datatree2, names)
+        data_converted = {names_conversion_dict[key]: {'Value1':value} for key, value in result_dict.items()}
+        data_full = {"NameList": datatree3, "DataPoints": data_converted, "LabelConversionDict":IUPHAR_to_uniprot_dict}
+
+        return data_full
 
     @staticmethod
     def generate_tree_plot(input_data): #ADD AN INPUT FILTER DICTIONARY
@@ -246,7 +299,7 @@ class LandingPage(TemplateView):
         master_dict['children'].append(class_t2_dict)
 
         updated_data = {key.replace('_human', ''): value for key, value in input_data.items()}
-        circles = {key.replace('_human', '').upper(): {k: v for k, v in value.items() if k != 'Inner'} for key, value in input_data.items()}
+        circles = {key.replace('_human', '').upper(): {k: v for k, v in value.items()} for key, value in input_data.items()}
         master_dict = LandingPage.keep_by_names(master_dict, updated_data)
 
         if len(master_dict['children']) == 1:
@@ -269,7 +322,6 @@ class LandingPage(TemplateView):
                 whole_rec_dict[rec_uniprot] = [rec_iuphar.capitalize()]
 
         return master_dict, general_options, circles, whole_rec_dict
-
 
     @staticmethod
     def clustering_test(method, data, data_type):
@@ -338,16 +390,15 @@ class LandingPage(TemplateView):
 
     # Generate full similarity matrix for cluster or load existing #
     def generate_full_matrix(method):
-        output_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'HumanGPCRSimilarityAllData_{}.csv'.format(method)])
+        Data_dir = settings.DATA_DIR
+        output_file = os.sep.join([Data_dir, 'structure_data', 'HumanGPCRSimilarityAllData_{}.csv'.format(method)])
         # Check if the file exists
         if os.path.exists(output_file):
-        # bob_test = 1
-        # if bob_test == 2:
             # Load the data from the existing file
             merged_df = pd.read_csv(output_file, index_col=0)
         else:
             # Original processing steps
-            similarity_matrix_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'human_gpcr_similarity_data_all_segments.csv'])
+            similarity_matrix_file = os.sep.join([Data_dir, 'structure_data', 'human_gpcr_similarity_data_all_segments.csv'])
             data = pd.read_csv(similarity_matrix_file)
             data = data[['receptor1_entry_name', 'receptor2_entry_name', 'similarity']]
             matrix = data.pivot(index='receptor1_entry_name', columns='receptor2_entry_name', values='similarity')
@@ -498,7 +549,7 @@ class LandingPage(TemplateView):
 
                         if not all(Sheet_Header_pass_check):
                             # Add addition for the different sheets.
-                            return render(request, self.template_name, {'upload_status': 'Failed','Error_message': "The excel file is not structured as the template file. There are incorrect headers and subheaders."})
+                            return render(request, self.template_name, {'upload_status': 'Failed','Error_message': "The excel file is not structured as the template file. There are incorrect sheet names and data setup."})
                         else:
 
                             # Init incorrect values #
@@ -523,35 +574,24 @@ class LandingPage(TemplateView):
                                 try:
                                     header_list = [cell.value for cell in worksheet[1]]
                                 except:
-                                    return render(request, self.template_name, {'upload_status': 'Failed','Error_message': "Corrupted excel, headers not inline with the template file."})
+                                    return render(request, self.template_name, {'upload_status': 'Failed','Error_message': "Corrupted excel, sheets not inline with the template file."})
 
                                 # If first sheet is receptor with correct headers #
                                 if sheet_name == 'Tree':
 
                                     header = next(worksheet.iter_rows(min_row=1, max_row=1, values_only=True))
 
-                                    inner_col_idx = 2  # openpyxl uses 1-based indexing
-                                    # Check the first value under the "Inner" header
-                                    first_value = worksheet.cell(row=3, column=inner_col_idx).value
-                                    if first_value != "Discrete":
-                                        # Extract all values from the "Inner" column, skipping the header
-                                        inner_values = []
-                                        for row in worksheet.iter_rows(min_row=3, min_col=inner_col_idx, max_col=inner_col_idx, values_only=True):
-                                            if row[0] is not None:
-                                                inner_values.append(row[0])
-
-                                        inner_series = pd.Series(inner_values)
-                                        # Calculate the quartiles
-                                        quartiles = inner_series.quantile([0.25, 0.5, 0.75])
-                                        # Apply the function to the series, passing quartiles as an argument
-                                        mapped_values = inner_series.apply(lambda x: self.map_to_quartile(x, quartiles))
-
-                                        # If you need to update the worksheet with these values
-                                        for i, value in enumerate(mapped_values, start=3):  # start=3 to skip the header row
-                                            worksheet.cell(row=i, column=inner_col_idx).value = value
-
                                     # Initialize dictionaries
                                     data_types = [cell.value for cell in worksheet[3]]
+
+                                    Data['Datatypes']['Tree'] = {}
+                                    Data['Datatypes']['Tree']['Inner'] = data_types[1]
+                                    Data['Datatypes']['Tree']['Outer1'] = data_types[2]
+                                    Data['Datatypes']['Tree']['Outer2'] = data_types[3]
+                                    Data['Datatypes']['Tree']['Outer3'] = data_types[4]
+                                    Data['Datatypes']['Tree']['Outer4'] = data_types[5]
+                                    Data['Datatypes']['Tree']['Outer5'] = data_types[6]
+
                                     for key in header_list:
                                         Incorrect_values[sheet_name][key] = {}
 
@@ -561,56 +601,69 @@ class LandingPage(TemplateView):
                                     try:
 
                                         empty_sheet = True  # Initialize the flag
+                                        non_empty_count = 0  # Initialize the count for non-empty cells in the first column
 
-                                        # Iterate over rows starting from the second row (excluding the header row)
+                                        # Iterate over rows starting from the second row (min_row=4, excluding the first 3 header rows)
                                         for row in worksheet.iter_rows(min_row=4, values_only=True):
+                                            # If the first column is None or empty, ignore the row
+                                            if row[0] is None or row[0] == "":
+                                                continue
+
+                                            # Increment the count if the first column has a value
+                                            non_empty_count += 1
+
                                             # Check only the columns that have headers, skipping the first column
                                             if any(row[i] is not None for i, header in enumerate(header_list[1:], start=1) if header):
-                                                empty_sheet = False
-                                                break
+                                                empty_sheet = False  # If any other column has a value, set empty_sheet to False
 
                                         if empty_sheet:
                                             pass
                                         else:
-                                            # Iterate through rows starting from the third row
-                                            for index, row in enumerate(worksheet.iter_rows(min_row=4, values_only=True), start=3):
-                                                # Check the "Receptor (Uniprot)" column for correct values
-                                                if row[0] not in protein_data:
-                                                    Incorrect_values[sheet_name][header_list[0]][index] = '"{}" is a invalid entry'.format(row[0])
-                                                else:
-                                                    if row[0] not in Data[sheet_name]:
-                                                        Data[sheet_name][row[0]] = {}
-
-                                                    # Check each column for data points, boolean values, and float values
-                                                    for col_idx, value in enumerate(row):
-                                                        if col_idx == 0:
-                                                            continue  # Skip the "Receptor (Uniprot)" column and completely empty columns
-                                                        elif data_types[col_idx] not in ['Discrete','Continuous']:
-                                                            Incorrect_values[sheet_name][header_list[col_idx]] = 'Incorrect datatype'
+                                            if non_empty_count > 200:
+                                                Incorrect_values[sheet_name]['Error'] = "More than 200 Receptors, please provide less than 200 receptors"
+                                            else:
+                                                # Iterate through rows starting from the third row
+                                                for index, row in enumerate(worksheet.iter_rows(min_row=4, values_only=True), start=3):
+                                                    # Check the "Receptor (Uniprot)" column for correct values
+                                                    if row[0] not in protein_data:
+                                                        if row[0] is None or row[0] == "":
+                                                            pass
                                                         else:
-                                                            if value is not None:
-                                                                if data_types[col_idx] == 'Discrete':
-                                                                    if str(value).lower() not in ['yes', 'no', '1', '0', 'x']:
-                                                                        Incorrect_values[sheet_name][header_list[col_idx]][index] = 'Non-Boolean Value'
-                                                                    else:
-                                                                        if col_idx == 1:
-                                                                            Data[sheet_name][row[0]]['Inner'] = 2000 if value in ['yes', 'Yes', '1', 'X'] else 0
-                                                                        else:
-                                                                            Data[sheet_name][row[0]]['Outer{}'.format(col_idx-1)] = 1 if value in ['yes', 'Yes', '1', 'X'] else 0
-                                                                elif data_types[col_idx] == 'Continuous':
-                                                                    try:
-                                                                        float_value = float(value)
-                                                                        if col_idx == 1:
-                                                                            Data[sheet_name][row[0]]['Inner'] = value
-                                                                        else:
-                                                                            Data[sheet_name][row[0]]['Outer{}'.format(col_idx-1)] = float_value
-                                                                    except ValueError:
-                                                                        Incorrect_values[sheet_name][header_list[col_idx]][index] = 'Non-Continuous Value'
-                                                                else:
-                                                                    pass
+                                                            Incorrect_values[sheet_name][header_list[0]][index] = '"{}" is a invalid entry'.format(row[0])
+                                                    else:
+                                                        if row[0] not in Data[sheet_name]:
+                                                            Data[sheet_name][row[0]] = {}
+
+                                                        # Check each column for data points, boolean values, and float values
+                                                        for col_idx, value in enumerate(row):
+                                                            if col_idx == 0:
+                                                                continue  # Skip the "Receptor (Uniprot)" column and completely empty columns
+                                                            elif data_types[col_idx] not in ['Discrete','Continuous']:
+                                                                Incorrect_values[sheet_name][header_list[col_idx]] = 'Incorrect datatype'
                                                             else:
-                                                                if data_types[col_idx] == 'Discrete' and col_idx == 1:
-                                                                    Data[sheet_name][row[0]]['Inner'] = 0
+                                                                if value is not None:
+                                                                    if data_types[col_idx] == 'Discrete':
+                                                                        if str(value).lower() not in ['yes', 'no', '1', '0', 'x']:
+                                                                            Incorrect_values[sheet_name][header_list[col_idx]][index] = 'Non-Boolean Value'
+                                                                        else:
+                                                                            if col_idx == 1:
+                                                                                Data[sheet_name][row[0]]['Inner'] = 1 if value in ['yes', 'Yes', '1', 'X'] else 0
+                                                                            else:
+                                                                                Data[sheet_name][row[0]]['Outer{}'.format(col_idx-1)] = 1 if value in ['yes', 'Yes', '1', 'X'] else 0
+                                                                    elif data_types[col_idx] == 'Continuous':
+                                                                        try:
+                                                                            float_value = float(value)
+                                                                            if col_idx == 1:
+                                                                                Data[sheet_name][row[0]]['Inner'] = float_value
+                                                                            else:
+                                                                                Data[sheet_name][row[0]]['Outer{}'.format(col_idx-1)] = float_value
+                                                                        except ValueError:
+                                                                            Incorrect_values[sheet_name][header_list[col_idx]][index] = 'Non-Continuous Value'
+                                                                    else:
+                                                                        pass
+                                                                else:
+                                                                    if data_types[col_idx] == 'Discrete' and col_idx == 1:
+                                                                        Data[sheet_name][row[0]]['Inner'] = 0
 
 
                                         # Check if any values are incorrect #
@@ -619,16 +672,12 @@ class LandingPage(TemplateView):
                                         if empty_sheet:
                                             status = 'Empty sheet'
                                         elif Data[sheet_name]:
-                                            # print(Data[sheet_name])
                                             for col_idx in Incorrect_values[sheet_name]:
                                                 # Check if there are any assigned index values for this col_idx
                                                 if any(Incorrect_values[sheet_name][col_idx].values()):
                                                     # If any index is assigned, set status to 'Partially_success' and break out of the loop
                                                     status = 'Failed'
                                                     break
-                                            if len(Data[sheet_name]) > 200:
-                                                status = 'Failed'
-                                                Incorrect_values[sheet_name]['Col1'] = "More than 200 Receptors, please provide less than 200 receptors"
                                         else:
                                             status = 'Failed'
 
@@ -663,7 +712,10 @@ class LandingPage(TemplateView):
                                             for index, row in enumerate(worksheet.iter_rows(min_row=4, values_only=True), start=4):
                                                 # Check the "Receptor (Uniprot)" column for correct values
                                                 if row[0] not in protein_data:
-                                                    Incorrect_values[sheet_name][header_list[0]][index] = '"{}" is a invalid entry'.format(row[0])
+                                                    if row[0] is None or row[0] == "":
+                                                        pass
+                                                    else:
+                                                        Incorrect_values[sheet_name][header_list[0]][index] = '"{}" is a invalid entry'.format(row[0])
                                                 else:
                                                     if row[0] not in Data[sheet_name]:
                                                         Data[sheet_name][row[0]] = {}
@@ -735,10 +787,11 @@ class LandingPage(TemplateView):
                                             # Iterate through rows starting from the second row
                                             for index, row in enumerate(worksheet.iter_rows(min_row=3, values_only=True), start=3):
                                                 # Check the "Receptor (Uniprot)" column for correct values
-                                                if row[0] is None:
-                                                    continue
-                                                elif row[0] not in protein_data:
-                                                    Incorrect_values[sheet_name][header_list[0]][index] = '"{}" is a invalid entry'.format(row[0])
+                                                if row[0] not in protein_data:
+                                                    if row[0] is None or row[0] == "":
+                                                        pass
+                                                    else:
+                                                        Incorrect_values[sheet_name][header_list[0]][index] = '"{}" is a invalid entry'.format(row[0])
                                                 else:
                                                     if row[0] not in Data[sheet_name]:
                                                         Data[sheet_name][row[0]] = {}
@@ -802,50 +855,63 @@ class LandingPage(TemplateView):
                                     try:
 
                                         empty_sheet = True  # Initialize the flag
+                                        non_empty_count = 0  # Initialize the count for non-empty cells in the first column
 
-                                        # Iterate over rows starting from the second row (excluding the header row)
+                                        # Iterate over rows starting from the second row (min_row=4, excluding the first 3 header rows)
                                         for row in worksheet.iter_rows(min_row=3, values_only=True):
+                                            # If the first column is None or empty, ignore the row
+                                            if row[0] is None or row[0] == "":
+                                                continue
+
+                                            # Increment the count if the first column has a value
+                                            non_empty_count += 1
+
                                             # Check only the columns that have headers, skipping the first column
                                             if any(row[i] is not None for i, header in enumerate(header_list[1:], start=1) if header):
-                                                empty_sheet = False
-                                                break
+                                                empty_sheet = False  # If any other column has a value, set empty_sheet to False
 
                                         if empty_sheet:
                                             pass
                                         else:
-                                            # create label variables
-                                            i = 0
-                                            for key in header_list[1:]:
-                                                i += 1
-                                                Heatmap_Label_dict['Value{}'.format(i)] = key
-                                            # Iterate through rows starting from the second row
-                                            for index, row in enumerate(worksheet.iter_rows(min_row=3, values_only=True), start=3):
-                                                # Check the "Receptor (Uniprot)" column for correct values
-                                                if row[0] not in protein_data:
-                                                    Incorrect_values[sheet_name][header_list[0]][index] = '"{}" is a invalid entry'.format(row[0])
-                                                else:
-                                                    if row[0] not in Data[sheet_name]:
-                                                        Data[sheet_name][row[0]] = {}
-
-                                                    # Check each column for data points, boolean values, and float values #
-                                                    for col_idx, value in enumerate(row):
-                                                        if col_idx == 0:
-                                                            continue  # Skip the "Receptor (Uniprot)" column and completely empty columns #
-                                                        elif data_types[col_idx] not in ['Continuous']:
-                                                            Incorrect_values[sheet_name][header_list[col_idx]] = 'Incorrect datatype'
+                                            if non_empty_count > 50:
+                                                Incorrect_values[sheet_name]['Error'] = "More than 50 Receptors, current count: {}, please provide less than 51 receptors".format(non_empty_count)
+                                            else:
+                                                # create label variables
+                                                i = 0
+                                                for key in header_list[1:]:
+                                                    i += 1
+                                                    Heatmap_Label_dict['Value{}'.format(i)] = key
+                                                # Iterate through rows starting from the second row
+                                                for index, row in enumerate(worksheet.iter_rows(min_row=3, values_only=True), start=3):
+                                                    # Check the "Receptor (Uniprot)" column for correct values
+                                                    if row[0] not in protein_data:
+                                                        if row[0] is None or row[0] == "":
+                                                            pass
                                                         else:
-                                                            if value is not None:
-                                                                # Handle the 1 different types of input for Heatmap (Number) #
-                                                                if data_types[col_idx] == 'Continuous':
-                                                                    try:
-                                                                        float_value = float(value)
-                                                                        Data[sheet_name][row[0]]['Value{}'.format(col_idx)] = float_value
-                                                                    except ValueError:
-                                                                        Incorrect_values[sheet_name][header_list[col_idx]][index] = 'Non-Continuous Value'
-                                                                else:
-                                                                    pass
+                                                            Incorrect_values[sheet_name][header_list[0]][index] = '"{}" is a invalid entry'.format(row[0])
+                                                    else:
+                                                        if row[0] not in Data[sheet_name]:
+                                                            Data[sheet_name][row[0]] = {}
+
+                                                        # Check each column for data points, boolean values, and float values #
+                                                        for col_idx, value in enumerate(row):
+                                                            if col_idx == 0:
+                                                                continue  # Skip the "Receptor (Uniprot)" column and completely empty columns #
+                                                            elif data_types[col_idx] not in ['Continuous']:
+                                                                Incorrect_values[sheet_name][header_list[col_idx]] = 'Incorrect datatype'
                                                             else:
-                                                                pass
+                                                                if value is not None:
+                                                                    # Handle the 1 different types of input for Heatmap (Number) #
+                                                                    if data_types[col_idx] == 'Continuous':
+                                                                        try:
+                                                                            float_value = float(value)
+                                                                            Data[sheet_name][row[0]]['Value{}'.format(col_idx)] = float_value
+                                                                        except ValueError:
+                                                                            Incorrect_values[sheet_name][header_list[col_idx]][index] = 'Non-Continuous Value'
+                                                                    else:
+                                                                        pass
+                                                                else:
+                                                                    del Data[sheet_name][row[0]]
 
                                         # Check if any values are incorrect #
                                         status = 'Success'
@@ -893,10 +959,11 @@ class LandingPage(TemplateView):
                                             # Iterate through rows starting from the second row
                                             for index, row in enumerate(worksheet.iter_rows(min_row=3, values_only=True), start=3):
                                                 # Check the "Receptor (Uniprot)" column for correct values
-                                                if row[0] is None:
-                                                    continue
-                                                elif row[0] not in protein_data:
-                                                    Incorrect_values[sheet_name][header_list[0]][index] = '"{}" is a invalid entry'.format(row[0])
+                                                if row[0] not in protein_data:
+                                                    if row[0] is None or row[0] == "":
+                                                        pass
+                                                    else:
+                                                        Incorrect_values[sheet_name][header_list[0]][index] = '"{}" is a invalid entry'.format(row[0])
                                                 else:
                                                     if row[0] not in Data[sheet_name]:
                                                         Data[sheet_name][row[0]] = {}
@@ -962,10 +1029,8 @@ class LandingPage(TemplateView):
                                 plot_data['Heatmap_Label_dict'] = Heatmap_Label_dict
 
                             plot_data_json = json.dumps(plot_data, indent=4, sort_keys=True) if plot_data else None
-                            # plot_incorrect_data_json = json.dumps(plot_incorrect_data, indent=4, sort_keys=True) if plot_incorrect_data else None
 
                             Plot_parser_json = json.dumps([status == 'Success' for status in Plot_parser])
-                            # print(Plot_parser_json)
 
                             plots_status = [{'status': status, 'plot_name': plot_name} for status, plot_name in zip(Plot_parser, plot_names)]
                             # Rearrange plots in the report #
@@ -978,7 +1043,6 @@ class LandingPage(TemplateView):
                                        'plot_names':plot_names,
                                        'plots_status':plots_status}
 
-                            # print(Plot_parser)
                             if plot_data:
                                 if all(status == 'Success' for status in Plot_parser):
                                     context['report_status'] = 'Success'
@@ -994,7 +1058,6 @@ class LandingPage(TemplateView):
                             else:
                                 context['Incorrect_data_json'] = "No incorrect data"
                             return render(request, self.template_name, context)
-
 
                     else:
                         return render(request, self.template_name, {'upload_status': 'Failed','Error_message': "Unable to load excel file, might be corrupted or not inline with the template file."})
@@ -1044,15 +1107,16 @@ class plotrender(TemplateView):
                     context['tree_options'] = tree_options
                     context['circles'] = json.dumps(circles)
                     context['whole_dict'] = json.dumps(receptors)
+                    context['Tree_datatypes'] = json.dumps(Data['Datatypes'])
 
                 # Cluster analysis #
                 if Plot_evaluation[2]:
                     print("Cluster success")
-                    output_seq = LandingPage.clustering_test('umap', Data['Cluster'],'seq')
+                    output_seq = LandingPage.clustering_test('tsne', Data['Cluster'],'seq')
                     # output_structure = LandingPage.clustering_test('umap', Data['Cluster'],'structure')
                     context['cluster_data_seq'] = output_seq
                     # context['cluster_data_structure'] = output_structure
-                    context['plot_type'] = 'UMAP'
+                    context['plot_type'] = 'Tsne'
 
                 # List plot #
                 if Plot_evaluation[3]:
@@ -1062,6 +1126,7 @@ class plotrender(TemplateView):
                     context['listplot_data_variables'] = json.dumps(listplot_data['DataPoints'])
                     context['Label_Conversion'] = json.dumps(listplot_data['LabelConversionDict'])
                     context['listplot_datatypes'] = json.dumps(Data['Datatypes']['Listplot'])
+
                 # Heatmap #
                 if Plot_evaluation[4]:
                     print("Heatmap success")
@@ -1069,10 +1134,11 @@ class plotrender(TemplateView):
                     context['Label_converter'] = json.dumps(label_converter)
                     context['heatmap_data'] = json.dumps(Data['Heatmap'])
                     context['Heatmap_Label_dict'] = json.dumps(Data['Heatmap_Label_dict'])
+
                 # GPCRome #
                 if Plot_evaluation[0]:
                     print("GPCRome success")
-                    GPCRome_data = LandingPage.generate_list_plot(Data['GPCRome'])
+                    GPCRome_data = LandingPage.generate_GPCRome_data(Data['GPCRome'])
                     context['GPCRome_data'] = json.dumps(GPCRome_data["NameList"])
                     context['GPCRome_data_variables'] = json.dumps(GPCRome_data['DataPoints'])
                     context['GPCRome_Label_Conversion'] = json.dumps(GPCRome_data['LabelConversionDict'])

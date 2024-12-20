@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.conf import settings
 from django.views.generic import TemplateView, View
 from django.http import HttpResponse, HttpResponseRedirect
-from django.db.models import Count, Q, Prefetch, TextField, Avg, Case, When, IntegerField, F, Value, CharField, Subquery, OuterRef
+from django.db.models import Count, Q, Prefetch, TextField, Avg, Case, When, IntegerField, F, Value, CharField, Subquery, OuterRef, Exists
 from django.db.models.functions import Concat
 from django import forms
 
@@ -1471,7 +1471,7 @@ class StructureStatistics(TemplateView):
         # GPROT Complex information
         all_gprots = StructureExtraProteins.objects.filter(category='G alpha').exclude(structure__structure_type__slug__startswith='af-').prefetch_related("wt_protein","wt_protein__family", "wt_protein__family__parent", "structure__protein_conformation__protein__family")
         # all_gprots = all_structs.filter(id__in=SignprotComplex.objects.filter(protein__family__slug__startswith='100').values_list("structure__id", flat=True))
-
+        print(self.origin)
         ###### these are query sets for G-Prot Structure Statistics
         if self.origin != 'arrestin':
             all_g_A_complexes = all_gprots.filter(structure__protein_conformation__protein__family__slug__startswith='001')
@@ -1588,27 +1588,18 @@ class StructureStatistics(TemplateView):
             context['unique_arrestins'] = len(unique_arrestins)
             context['unique_arrestins_by_gclass'] = self.count_by_effector_class(unique_arrestins, lookup, effector='arrestin')
             context['unique_arrestins_by_class'] = self.count_by_class(unique_arrestins, lookup, extra=True)
-            circle_data = all_arrestins.values_list(
-                          "wt_protein__family__name", "structure__protein_conformation__protein__parent__entry_name", "structure__pdb_code_id__index").order_by(
-                          "wt_protein__family__name", "structure__protein_conformation__protein__parent__entry_name", "structure__pdb_code_id__index").distinct(
-                          "wt_protein__family__name", "structure__protein_conformation__protein__parent__entry_name", "structure__pdb_code_id__index")
             context['total_arrestins_by_gclass'] = []
             for key in context['all_arrestins_by_gclass']:
                 context['total_arrestins_by_gclass'].append(context['all_arrestins_by_gclass'][key] + context['noncomplex_arrestins_by_gclass'][key])
             context['total_arrestins'] = sum(context['total_arrestins_by_gclass'])
 
-        #context['coverage'] = self.get_diagram_coverage()
-        #{
-        #    'depth': 3,
-        #    'anchor': '#crystals'}
-        # relabeling table columns for sake of consistency
         for key in list(context['unique_structures_by_class'].keys()):
             context['unique_structures_by_class'][key.replace('Class','')] = context['unique_structures_by_class'].pop(key)
         for key in list(context['all_structures_by_class'].keys()):
             context['all_structures_by_class'][key.replace('Class','')] = context['all_structures_by_class'].pop(key)
 
         #if not structure coverage, then generate the trees
-        if self.origin != 'structure':
+        if self.origin == 'gprot':
             tree = PhylogeneticTreeGenerator()
             class_a_data = tree.get_tree_data(ProteinFamily.objects.get(name='Class A (Rhodopsin)'))
             context['class_a_options'] = deepcopy(tree.d3_options)
@@ -1646,7 +1637,7 @@ class StructureStatistics(TemplateView):
             context['class_f_options']['label_free'] = [1,]
             #json.dump(class_f_data.get_nodes_dict('crystalized'), open('tree_test.json', 'w'), indent=4)
             context['class_f'] = json.dumps(class_f_data.get_nodes_dict('crystals'))
-            class_t2_data = tree.get_tree_data(ProteinFamily.objects.get(name='Class T (Taste 2)'))
+            class_t2_data = tree.get_tree_data(ProteinFamily.objects.get(name='Class T2 (Taste 2)'))
             context['class_t2_options'] = deepcopy(tree.d3_options)
             context['class_t2_options']['anchor'] = 'class_t2'
             context['class_t2_options']['label_free'] = [1,]
@@ -1696,120 +1687,266 @@ class StructureStatistics(TemplateView):
 
             context["circles_data"] = json.dumps(circles)
         else: #JIMMY
-
             start_time = time.time()
-            #Adjust call to exclude odorants
-            all_proteins = Protein.objects.filter(species_id=1, parent_id__isnull=True, accession__isnull=False, family_id__slug__startswith='0').exclude(
-                                                family_id__slug__startswith='007'
-                                            ).exclude(
-                                                family_id__slug__startswith='008'
-                                            )
-            all_structs = Structure.objects.all().exclude(structure_type__slug__startswith='af-').prefetch_related('protein_conformation__protein__family')
-            circle_data = all_structs.values_list(
-                          "state_id__slug", "protein_conformation__protein__parent__entry_name").order_by(
-                          "state_id__slug", "protein_conformation__protein__parent__entry_name").distinct(
-                          "state_id__slug", "protein_conformation__protein__parent__entry_name")
+            if self.origin == 'arrestin':
+                #Adjust call to exclude odorants
+                all_proteins = Protein.objects.filter(species_id=1, parent_id__isnull=True, accession__isnull=False, family_id__slug__startswith='0').exclude(
+                                                    family_id__slug__startswith='007'
+                                                ).exclude(
+                                                    family_id__slug__startswith='008'
+                                                )
+                all_arrestins = StructureExtraProteins.objects.filter(category='Arrestin').exclude(structure__structure_type__slug__startswith='af-').prefetch_related("wt_protein","wt_protein__family", "wt_protein__family__parent", "structure__protein_conformation__protein__family")
 
-            result_dict = {}
-            for prot in all_proteins:
-                key = prot.entry_name
-                # Initialize the key in result_dict if not already present
-                if key not in result_dict:
-                    result_dict[key] = {'states': set(), 'status': 'empty'}
+                circle_data = all_arrestins.values_list(
+                              "wt_protein__family__name", "structure__protein_conformation__protein__parent__entry_name").order_by(
+                              "wt_protein__family__name", "structure__protein_conformation__protein__parent__entry_name").distinct(
+                              "wt_protein__family__name", "structure__protein_conformation__protein__parent__entry_name")
 
-            for item in circle_data:
-                key = item[1]
-                value = item[0]
+                result_dict = {}
+                for prot in all_proteins:
+                    key = prot.entry_name
+                    # Initialize the key in result_dict if not already present
+                    if key not in result_dict:
+                        result_dict[key] = ['empty']
 
-                # Initialize the key in result_dict if not already present
-                if key in result_dict:
-                    # Add the value to the states set to avoid duplicates
-                    result_dict[key]['states'].add(value)
+                for item in circle_data:
+                    key = item[1]
+                    value = item[0]
 
-                    # Determine the status based on the current set of states
-                    if len(result_dict[key]['states']) == 1:
-                        if 'active' in result_dict[key]['states']:
+                    # Initialize the key in result_dict if not already present
+                    if key in result_dict:
+                        # Add the value to the states set to avoid duplicates
+                        if 'empty' in result_dict[key]:
+                            result_dict[key].remove('empty')
+                        result_dict[key].append(value)
+
+                # SO THIS IS JUST A FIX RIGHT NOW AND DOESN'T ACCOUNT FOR
+                # MULTIPLE ARRESTIN COMPLEXES DUE TO THE DESIGN OF THE GPCROME PLOT
+                # IDEALLY IT SHOULD HAVE A LIST INSTEAD OF A SINGLE VALUE AND THEN
+                # GENERATE MULTIPLE COLORS BASED ON THE DIFFERENT COMPLEXES AVAILABLE
+                # RIGHT NOW THE DATA IS SMALL SO WE CAN GET AWAY WITH THIS
+                result_dict = {k: v[0] for k, v in result_dict.items()}
+
+                proteins = list(Protein.objects.filter(entry_name__in=result_dict.keys()
+                ).values('entry_name', 'name').order_by('entry_name'))
+
+                names_conversion_dict = {item['entry_name']: item['name'] for item in proteins}
+
+                names = list(names_conversion_dict.values())
+
+                IUPHAR_to_uniprot_dict = {item['name']: item['entry_name'] for item in proteins}
+
+                families = ProteinFamily.objects.all()
+                datatree = {}
+                conversion = {}
+
+                for item in families:
+                    if len(item.slug) == 3 and item.slug not in datatree.keys():
+                        datatree[item.slug] = {}
+                        conversion[item.slug] = item.name
+                    if len(item.slug) == 7 and item.slug not in datatree[item.slug[:3]].keys():
+                        datatree[item.slug[:3]][item.slug[:7]] = {}
+                        conversion[item.slug] = item.name
+                    if len(item.slug) == 11 and item.slug not in datatree[item.slug[:3]][item.slug[:7]].keys():
+                        datatree[item.slug[:3]][item.slug[:7]][item.slug[:11]] = []
+                        conversion[item.slug] = item.name
+                    if len(item.slug) == 15 and item.slug not in datatree[item.slug[:3]][item.slug[:7]][item.slug[:11]]:
+                        datatree[item.slug[:3]][item.slug[:7]][item.slug[:11]].append(item.name)
+
+                datatree2 = LandingPage.convert_keys(datatree, conversion)
+                datatree2.pop('Parent family', None)
+                datatree3 = LandingPage.filter_dict(datatree2, names)
+                data_converted = {names_conversion_dict[key]: {'Value1':value} for key, value in result_dict.items()}
+                data_full = {"NameList": datatree3, "DataPoints": data_converted, "LabelConversionDict":IUPHAR_to_uniprot_dict}
+                context['GPCRome_Arrestin_data'] = json.dumps(data_full["NameList"])
+                context['GPCRome_Arrestin_data_variables'] = json.dumps(data_full['DataPoints'])
+                context['GPCRome_Arrestin_Label_Conversion'] = json.dumps(data_full['LabelConversionDict'])
+
+            else:
+                #Adjust call to exclude odorants
+                all_proteins = Protein.objects.filter(species_id=1, parent_id__isnull=True, accession__isnull=False, family_id__slug__startswith='0').exclude(
+                                                    family_id__slug__startswith='007'
+                                                ).exclude(
+                                                    family_id__slug__startswith='008'
+                                                )
+                all_structs = Structure.objects.all().exclude(structure_type__slug__startswith='af-').prefetch_related('protein_conformation__protein__family')
+                circle_data = all_structs.values_list(
+                              "state_id__slug", "protein_conformation__protein__parent__entry_name").order_by(
+                              "state_id__slug", "protein_conformation__protein__parent__entry_name").distinct(
+                              "state_id__slug", "protein_conformation__protein__parent__entry_name")
+
+                result_dict = {}
+                for prot in all_proteins:
+                    key = prot.entry_name
+                    # Initialize the key in result_dict if not already present
+                    if key not in result_dict:
+                        result_dict[key] = {'states': set(), 'status': 'empty'}
+
+                for item in circle_data:
+                    key = item[1]
+                    value = item[0]
+
+                    # Initialize the key in result_dict if not already present
+                    if key in result_dict:
+                        # Add the value to the states set to avoid duplicates
+                        result_dict[key]['states'].add(value)
+
+                        # Determine the status based on the current set of states
+                        if len(result_dict[key]['states']) == 1:
+                            if 'active' in result_dict[key]['states']:
+                                result_dict[key]['status'] = 'Active'
+                            elif 'inactive' in result_dict[key]['states']:
+                                result_dict[key]['status'] = 'Inactive'
+                        elif 'active' in result_dict[key]['states'] and 'inactive' in result_dict[key]['states']:
+                            result_dict[key]['status'] = 'Both'
+                        elif 'active' in result_dict[key]['states']:
                             result_dict[key]['status'] = 'Active'
                         elif 'inactive' in result_dict[key]['states']:
                             result_dict[key]['status'] = 'Inactive'
-                    elif 'active' in result_dict[key]['states'] and 'inactive' in result_dict[key]['states']:
-                        result_dict[key]['status'] = 'Both'
-                    elif 'active' in result_dict[key]['states']:
-                        result_dict[key]['status'] = 'Active'
-                    elif 'inactive' in result_dict[key]['states']:
-                        result_dict[key]['status'] = 'Inactive'
 
-            # Optionally, reduce to key-status dictionary
-            result_dict = {k: v['status'] for k, v in result_dict.items()}
+                # Optionally, reduce to key-status dictionary
+                result_dict = {k: v['status'] for k, v in result_dict.items()}
 
-            proteins = list(Protein.objects.filter(entry_name__in=result_dict.keys()
-            ).values('entry_name', 'name').order_by('entry_name'))
+                proteins = list(Protein.objects.filter(entry_name__in=result_dict.keys()
+                ).values('entry_name', 'name').order_by('entry_name'))
 
-            names_conversion_dict = {item['entry_name']: item['name'] for item in proteins}
+                names_conversion_dict = {item['entry_name']: item['name'] for item in proteins}
 
-            data = list(names_conversion_dict.keys())
-            names = list(names_conversion_dict.values())
+                data = list(names_conversion_dict.keys())
+                names = list(names_conversion_dict.values())
 
-            IUPHAR_to_uniprot_dict = {item['name']: item['entry_name'] for item in proteins}
+                IUPHAR_to_uniprot_dict = {item['name']: item['entry_name'] for item in proteins}
 
-            families = ProteinFamily.objects.all()
-            datatree = {}
-            conversion = {}
+                families = ProteinFamily.objects.all()
+                datatree = {}
+                conversion = {}
 
-            for item in families:
-                if len(item.slug) == 3 and item.slug not in datatree.keys():
-                    datatree[item.slug] = {}
-                    conversion[item.slug] = item.name
-                if len(item.slug) == 7 and item.slug not in datatree[item.slug[:3]].keys():
-                    datatree[item.slug[:3]][item.slug[:7]] = {}
-                    conversion[item.slug] = item.name
-                if len(item.slug) == 11 and item.slug not in datatree[item.slug[:3]][item.slug[:7]].keys():
-                    datatree[item.slug[:3]][item.slug[:7]][item.slug[:11]] = []
-                    conversion[item.slug] = item.name
-                if len(item.slug) == 15 and item.slug not in datatree[item.slug[:3]][item.slug[:7]][item.slug[:11]]:
-                    datatree[item.slug[:3]][item.slug[:7]][item.slug[:11]].append(item.name)
+                for item in families:
+                    if len(item.slug) == 3 and item.slug not in datatree.keys():
+                        datatree[item.slug] = {}
+                        conversion[item.slug] = item.name
+                    if len(item.slug) == 7 and item.slug not in datatree[item.slug[:3]].keys():
+                        datatree[item.slug[:3]][item.slug[:7]] = {}
+                        conversion[item.slug] = item.name
+                    if len(item.slug) == 11 and item.slug not in datatree[item.slug[:3]][item.slug[:7]].keys():
+                        datatree[item.slug[:3]][item.slug[:7]][item.slug[:11]] = []
+                        conversion[item.slug] = item.name
+                    if len(item.slug) == 15 and item.slug not in datatree[item.slug[:3]][item.slug[:7]][item.slug[:11]]:
+                        datatree[item.slug[:3]][item.slug[:7]][item.slug[:11]].append(item.name)
 
-            datatree2 = LandingPage.convert_keys(datatree, conversion)
-            datatree2.pop('Parent family', None)
-            datatree3 = LandingPage.filter_dict(datatree2, names)
-            data_converted = {names_conversion_dict[key]: {'Value1':value} for key, value in result_dict.items()}
-            data_full = {"NameList": datatree3, "DataPoints": data_converted, "LabelConversionDict":IUPHAR_to_uniprot_dict}
-            context['GPCRome_data'] = json.dumps(data_full["NameList"])
-            context['GPCRome_data_variables'] = json.dumps(data_full['DataPoints'])
-            context['GPCRome_Label_Conversion'] = json.dumps(data_full['LabelConversionDict'])
+                datatree2 = LandingPage.convert_keys(datatree, conversion)
+                datatree2.pop('Parent family', None)
+                datatree3 = LandingPage.filter_dict(datatree2, names)
+                data_converted = {names_conversion_dict[key]: {'Value1':value} for key, value in result_dict.items()}
+                data_full = {"NameList": datatree3, "DataPoints": data_converted, "LabelConversionDict":IUPHAR_to_uniprot_dict}
+                context['GPCRome_data'] = json.dumps(data_full["NameList"])
+                context['GPCRome_data_variables'] = json.dumps(data_full['DataPoints'])
+                context['GPCRome_Label_Conversion'] = json.dumps(data_full['LabelConversionDict'])
 
-            complexes_count = StructureLigandInteraction.objects.filter(annotated=True).exclude(
-                    structure__structure_type__slug__startswith='af-').values(
-                        'structure_id__protein_conformation_id__protein__parent__entry_name'
-                    ).annotate(
-                        c=Count('id', distinct=True)
-                    )
-            complexes_dict = {}
+                complexes_count = StructureLigandInteraction.objects.filter(annotated=True).exclude(
+                        structure__structure_type__slug__startswith='af-').values(
+                            'structure_id__protein_conformation_id__protein__parent__entry_name'
+                        ).annotate(
+                            c=Count('id', distinct=True)
+                        )
+                complexes_dict = {}
 
-            complexes_list = list(complexes_count)
+                complexes_list = list(complexes_count)
 
-            complexes_dict = {}
-            for prot in all_proteins:
-                key = prot.entry_name
-                # Initialize the key in result_dict if not already present
-                if key not in complexes_dict:
-                    complexes_dict[key] = 0
+                complexes_dict = {}
+                for prot in all_proteins:
+                    key = prot.entry_name
+                    # Initialize the key in result_dict if not already present
+                    if key not in complexes_dict:
+                        complexes_dict[key] = 0
 
-            for a in complexes_list:
-                complexes_dict[a['structure_id__protein_conformation_id__protein__parent__entry_name']] = a['c']
+                for a in complexes_list:
+                    complexes_dict[a['structure_id__protein_conformation_id__protein__parent__entry_name']] = a['c']
 
-            complexes_proteins = list(Protein.objects.filter(entry_name__in=complexes_dict.keys()
-            ).values('entry_name', 'name').order_by('entry_name'))
+                complexes_proteins = list(Protein.objects.filter(entry_name__in=complexes_dict.keys()
+                ).values('entry_name', 'name').order_by('entry_name'))
 
-            names_complexes_dict = {item['entry_name']: item['name'] for item in complexes_proteins}
+                names_complexes_dict = {item['entry_name']: item['name'] for item in complexes_proteins}
 
-            names_complexes = list(names_complexes_dict.values())
+                names_complexes = list(names_complexes_dict.values())
 
-            IUPHAR_to_uniprot_complexes = {item['name']: item['entry_name'] for item in complexes_proteins}
-            datatree4 = LandingPage.filter_dict(datatree2, names_complexes)
-            data_complexes = {names_complexes_dict[key]: {'Value1':value} for key, value in complexes_dict.items()}
-            complexes_full = {"NameList": datatree4, "DataPoints": data_complexes, "LabelConversionDict":IUPHAR_to_uniprot_complexes}
-            context['GPCRome_data_variables_complexes'] = json.dumps(complexes_full['DataPoints'])
+                IUPHAR_to_uniprot_complexes = {item['name']: item['entry_name'] for item in complexes_proteins}
+                datatree4 = LandingPage.filter_dict(datatree2, names_complexes)
+                data_complexes = {names_complexes_dict[key]: {'Value1':value} for key, value in complexes_dict.items()}
+                complexes_full = {"NameList": datatree4, "DataPoints": data_complexes, "LabelConversionDict":IUPHAR_to_uniprot_complexes}
+                context['GPCRome_data_variables_complexes'] = json.dumps(complexes_full['DataPoints'])
+
+
+                ### TESTING GPCROME FOR ODORANTS
+                all_odorant = Protein.objects.filter(species_id=1, parent_id__isnull=True, accession__isnull=False
+                                                    ).filter(Q(family_id__slug__startswith='007') | Q(family_id__slug__startswith='008'))
+                odorant_names = list(Protein.objects.filter(species_id=1, parent_id__isnull=True, accession__isnull=False
+                                                    ).filter(Q(family_id__slug__startswith='007') | Q(family_id__slug__startswith='008')).values(
+                                                    'entry_name', 'name').order_by('entry_name'))
+                odorant_families = ProteinFamily.objects.filter(Q(slug__startswith='007') | Q(slug__startswith='008'))
+
+                odoranttree = {}
+                conversion = {}
+
+                for item in odorant_families:
+                    if len(item.slug) == 3 and item.slug not in odoranttree.keys():
+                        odoranttree[item.slug] = {}
+                        conversion[item.slug] = item.name
+                    if len(item.slug) == 7 and item.slug not in odoranttree[item.slug[:3]].keys():
+                        odoranttree[item.slug[:3]][item.slug[:7]] = {}
+                        conversion[item.slug] = item.name
+                    if len(item.slug) == 11 and item.slug not in odoranttree[item.slug[:3]][item.slug[:7]].keys():
+                        odoranttree[item.slug[:3]][item.slug[:7]][item.slug[:11]] = []
+                        conversion[item.slug] = item.name
+                    if len(item.slug) == 15 and item.slug not in odoranttree[item.slug[:3]][item.slug[:7]][item.slug[:11]]:
+                        odoranttree[item.slug[:3]][item.slug[:7]][item.slug[:11]].append(item.name)
+
+                odorant_struct = Structure.objects.filter(Q(protein_conformation__protein__family_id__slug__startswith='007') | Q(protein_conformation__protein__family_id__slug__startswith='008')).values(
+                                                        'protein_conformation__protein__parent__entry_name'
+                                                    ).annotate(
+                                                        c=Count('id', distinct=True)
+                                                    )
+
+                odorant_struct_dict = {}
+                for prot in all_odorant:
+                    odorant_struct_dict[prot.entry_name] = 0
+
+                for a in odorant_struct:
+                    odorant_struct_dict[a['protein_conformation__protein__parent__entry_name']] = a['c']
+
+                odorant_struct_dict.pop(None)
+
+                odorant_conversion_dict = {item['entry_name']: item['name'] for item in odorant_names}
+                odoranttree2 = LandingPage.convert_keys(odoranttree, conversion)
+                names_odorant = list(odorant_conversion_dict.values())
+                odoranttree3 = LandingPage.filter_dict(odoranttree2, names_odorant)
+
+                # Splitting the families into three dictionaries
+                odorant_receptors = odoranttree3['Class O2 (tetrapod specific odorant)']['Odorant receptors']
+                # Families 1 to 4
+                families_1_to_4 = {key: odorant_receptors[key] for key in odorant_receptors if key[-2:] in [' 1', ' 2', ' 3', ' 4',]}
+                # Families 5 to 10
+                families_5_to_9 = {key: odorant_receptors[key] for key in odorant_receptors if key[-2:] in [' 5', ' 6', ' 7', ' 8', ' 9']}
+                # Families 11 to 14
+                families_10_to_14 = {key: odorant_receptors[key] for key in odorant_receptors if key.endswith(('10', '11', '12', '13', '14'))}
+
+                odoranttree4 = {}
+                odoranttree4['Class O1 (fish-like odorant)'] = odoranttree3['Class O1 (fish-like odorant)']
+                odoranttree4['Class O2 (tetrapod specific odorant) EXT'] = {'Odorant receptors' : families_1_to_4}
+                odoranttree4['Class O2 (tetrapod specific odorant) MID'] = {'Odorant receptors' : families_5_to_9}
+                odoranttree4['Class O2 (tetrapod specific odorant) INT'] = {'Odorant receptors' : families_10_to_14}
+
+                odorant_data = {odorant_conversion_dict[key]: {'Value1':value} for key, value in odorant_struct_dict.items()}
+
+                odorant_proteins = list(Protein.objects.filter(entry_name__in=odorant_struct_dict.keys()
+                ).values('entry_name', 'name').order_by('entry_name'))
+
+                odorant_IUPHAR_to_Uniprot = {item['name']: item['entry_name'] for item in odorant_proteins}
+
+                odorant_full = {"NameList": odoranttree4, "DataPoints": odorant_data, "LabelConversionDict":odorant_IUPHAR_to_Uniprot}
+                context['GPCRome_odorant_data'] = json.dumps(odorant_full["NameList"])
+                context['GPCRome_odorant_data_variables'] = json.dumps(odorant_full['DataPoints'])
+                context['GPCRome_odorant_Label_Conversion'] = json.dumps(odorant_full['LabelConversionDict'])
 
         return context
 
@@ -2124,7 +2261,7 @@ class StructureStatistics(TemplateView):
                 children_rf = []
                 for rf_v in lt_v['children'].values():
                     rf_v['name'] = rf_v['name'].split("<")[0]
-                    if rf_v['name'].strip() == 'Class T (Taste 2)':
+                    if rf_v['name'].strip() == 'Class T2 (Taste 2)':
                         continue
                     children_r = []
                     for r_v in rf_v['children'].values():
@@ -2237,7 +2374,7 @@ class StructureStatistics(TemplateView):
                 children_rf = []
                 for rf,rf_v in lt_v['children'].items():
                     rf_v['name'] = rf_v['name'].split("<")[0]
-                    if rf_v['name'].strip() == 'Class T (Taste 2)':
+                    if rf_v['name'].strip() == 'Class T2 (Taste 2)':
                         continue
                     children_r = []
                     for r,r_v in rf_v['children'].items():
@@ -3706,7 +3843,6 @@ def SingleStructureDownload(request, pdbcode):
 
     return response
 
-
 def SingleModelDownload(request, modelname, fullness, state=None, csv=False):
     "Download single homology model"
     zip_io = BytesIO()
@@ -4419,13 +4555,7 @@ class StructureBlastView(View):
         if 'af_foldseek_db' in self.structure_type:
             try:
                 gene_subquery_models = Gene.objects.filter(proteins=OuterRef('protein__pk')).values('name')[:1]
-                print('First sub succs')
 
-            except Exception as e:
-                e
-                # print('First SUB fail')
-                # print(e)
-            try:
                 af_structures = StructureModel.objects.filter(main_template__isnull=True).annotate( gene_name=Subquery(gene_subquery_models)
                 ).values_list(
                     'protein__entry_name', 'state__slug',
@@ -4486,7 +4616,7 @@ class StructureBlastView(View):
             gene_subquery_ref = Gene.objects.filter(proteins=OuterRef('protein_conformation__protein__pk')).values('name')[:1]
 
             try:
-                exp_structures_info_null_accession = Structure.objects.filter(
+                ref_structures_info_null_accession = Structure.objects.filter(
                     structure_type__slug__in=filter_structures,
                     protein_conformation__protein__accession__isnull=False
                 ).annotate(
@@ -4503,7 +4633,25 @@ class StructureBlastView(View):
                     'gene_name'
                 )
 
-                structures_info.update({item[0]: item for item in exp_structures_info_null_accession})
+                structures_info.update({item[0]: item for item in ref_structures_info_null_accession})
+
+                gene_subquery_models = Gene.objects.filter(proteins=OuterRef('protein__parent__pk')).values('name')[:1]
+
+                ref_structures = StructureModel.objects.filter(main_template__isnull=False).annotate( gene_name=Subquery(gene_subquery_models)
+                ).values_list(
+                    'protein__entry_name', 
+                    'state__slug',
+                    'protein__family__parent__parent__parent__name',  # Class
+                    'protein__family__parent__name',  # Family
+                    'protein__species__common_name',
+                    'protein__parent__name',
+                    'protein__parent__entry_name',
+                    'protein__parent__accession',
+                    'gene_name',
+                )
+
+                structures_info.update({item[0]: item for item in ref_structures})
+
             except Exception as e:
                 print('REF failed')
                 print(e)
@@ -4522,7 +4670,9 @@ class StructureBlastView(View):
                 structure_values = structures_info.get(protein)
                 data.append({
                     'input_chain': entry['input_chain'].strip(),
-                    'protein': protein, 'chain': entry["chain"].strip(), 'type': entry["origin"].replace('Experimental', 'exp').replace('experimental', 'exp').strip(),
+                    'protein': protein, 
+                    'chain': entry["chain"].strip(), 
+                    'type': entry["origin"].replace('Experimental', 'exp').replace('experimental', 'exp').strip(),
                     'TM_score': entry["TM_score"], 'lddt': entry['lddt'], 'E_value': entry["E_value"], 'link': entry["linking"],
                     'state': entry["state"] or structure_values[1],
                     'class': structure_values[2].split(' ')[1].strip(),
@@ -4533,7 +4683,7 @@ class StructureBlastView(View):
                     'gtopdb': structure_values[5].replace('receptor', '').replace('-adrenoceptor', '').strip(),
                     'accession': structure_values[7],
                     'gene': structure_values[8],
-                    'pdb_id': '-' if structure_values[0].endswith('refined') or structure_values[0].endswith('human') else structure_values[0]
+                    'pdb_id': structure_values[0] if 'Raw' in entry["origin"] else '-'
                 })
             except Exception as e:
                 # print('An error occurred when enhancing data')
@@ -4581,8 +4731,14 @@ class LigandComplexModels(TemplateView):
     def get_context_data(self, **kwargs):
         context = super(LigandComplexModels, self).get_context_data(**kwargs)
         try:
-            subquery_gene = Gene.objects.filter(proteins=OuterRef('protein_conformation__protein__pk')).values('name')[:1]
-            context['structure_model'] = Structure.objects.filter(structure_type__slug__in=['af-signprot-peptide', 'af-rfaa-sm']).prefetch_related(
+            subquery_gene = Gene.objects.filter(
+                proteins=OuterRef('protein_conformation__protein__pk')
+            ).values('name')[:1]
+            
+            # Annotate the main queryset with an Exists subquery
+            context['structure_model'] = Structure.objects.filter(
+                structure_type__slug__in=['af-signprot-peptide', 'af-rfaa-sm']
+            ).prefetch_related(
                 "protein_conformation__protein__family",
                 "protein_conformation__protein",
                 "state",
@@ -4608,12 +4764,31 @@ class LigandComplexModels(TemplateView):
                     ),
                     to_attr="prefetch_ligands"
                 )
-            ).annotate(gene_name=Subquery(subquery_gene))
+            ).annotate(
+                gene_name=Subquery(subquery_gene),
+                # Annotate with the existence of a matching experimental PDB
+                experimental_pdb_exists=Exists(
+                    StructureLigandInteraction.objects.filter(
+                        structure__structure_type__slug__in=[
+                            'x-ray-diffraction', 
+                            'electron-crystallography', 
+                            'electron-microscopy'
+                        ],
+                        structure__protein_conformation__protein__parent__entry_name=OuterRef('protein_conformation__protein__entry_name'),
+                        ligand__in=Subquery(
+                            LigandPeptideStructure.objects.filter(
+                                structure=OuterRef('pk')
+                            ).values('ligand')
+                        )
+                    )
+                )
+            ).exclude(
+                experimental_pdb_exists=True
+            )
         except Structure.DoesNotExist as e:
             pass
 
         return context
-
 
 # This may be momentarily
 def chain_e_and_lg1_coloring(structure):

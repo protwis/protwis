@@ -105,7 +105,7 @@ class Command(BaseCommand):
 
                         ### Running x50 finder
                         if up['entry_name'] not in self.nonxtal_seg_ends:
-                            x = X50Finder(os.sep.join([path_to_models, m]))
+                            x = X50Finder(os.sep.join([path_to_models, m]), self.debug)
                             x50s_gn = x.run()
 
                             if self.debug:
@@ -154,6 +154,8 @@ class Command(BaseCommand):
                             x50s['6x'] = 262
                             x50s['7x'] = 286
                             x50s['8x'] = 295
+                        elif m=='O14718.pdb':
+                            x50s['1x'] = 43
                         ###
 
                         for lab, x50 in x50s.items():
@@ -351,7 +353,7 @@ class Command(BaseCommand):
                                 print('WARNING: {} {} ligand missing modality'.format(s, l['title']))
                     if s not in self.xtal_seg_ends or s in self.structures_to_annotate:
                         print(s)
-                        segends[s] = self.default_segends
+                        segends[s] = deepcopy(self.default_segends)
 
                         self.download_pdb(s)
 
@@ -370,7 +372,7 @@ class Command(BaseCommand):
                             if len([a for a in data['auxiliary_protein'] if a in self.parsed_structures.fusion_proteins])>0:
                                 fusion_present = True
                                 try:
-                                    d = fetch_pdb_info(s, parent_protein, True)
+                                    d = fetch_pdb_info(s, parent_protein, True, preferred_chain=data['preferred_chain'])
                                     if self.debug:
                                         print('pdb info fetched', datetime.now()- starttime)
                                     if 'deletions' in d:
@@ -408,8 +410,11 @@ class Command(BaseCommand):
                             ### Skip residues with missing backbone atoms
                             if not res.has_id('N') or not res.has_id('CA') or not res.has_id('C') or not res.has_id('O'):
                                 continue
+                            ### Skip heteroatom residues - non-receptor residues
+                            if res.get_id()[0].startswith('H'):
+                                continue
                             try:
-                                seq+=Polypeptide.protein_letters_3to1(res.get_resname())
+                                seq+=Polypeptide.protein_letters_3to1.get(res.get_resname())
                                 res_list.append(res)
                             except KeyError:
                                 pass
@@ -440,7 +445,7 @@ class Command(BaseCommand):
                         dssp = self.dssp(s, structure[0][data['preferred_chain']], structure)
 
                         if fusion_present or s in ['7V68','7V69','7V6A','7W6P','7W7E','8E9W','8E9X','8E9Y','8E9Z','8EA0','7T8X','7T90','7T94','7T96',
-                                                   '7TRK','7TRP','7TRQ','7TRS','8IRU','8FX5','8W8R','8W8S','7V9L']:
+                                                   '7TRK','7TRP','7TRQ','7TRS','8IRU','8FX5','8W8R','8W8S','7V9L','8TZQ','8U02','8YN2']:
                             pw2 = Bio.pairwise2.align.localms(parent_seq, seq, 3, -3, -3.5, -1)
                         else:
                             pw2 = Bio.pairwise2.align.localms(parent_seq, seq, 3, -4, -5, -2)
@@ -546,7 +551,7 @@ class Command(BaseCommand):
                             end_range = range(parent_x50, parent_end+1)
                             non_helical, remove_list = self.get_non_helicals(end_range, res_dict)
                             if len(non_helical)==0:
-                                while parent_end in res_dict and res_dict[parent_end][1][2]=='H' and res_dict[parent_end+1][0].get_id()[1]-res_dict[parent_end][0].get_id()[1]==1:
+                                while parent_end in res_dict and res_dict[parent_end][1][2]=='H' and parent_end+1 in res_dict and res_dict[parent_end+1][0].get_id()[1]-res_dict[parent_end][0].get_id()[1]==1:
                                     parent_end+=1
                                 end_range = range(parent_x50, parent_end+1)
                                 non_helical, remove_list = self.get_non_helicals(end_range, res_dict)
@@ -560,10 +565,12 @@ class Command(BaseCommand):
                             except ValueError:
                                 start = '-'
                                 end = '-'
-                            if i<8 and (start=='-' or end=='-'):
-                                print('WARNING: helix {} for {} {} has missing annotation'.format(i, s, parent_protein))
-                            if i==8 and end==segends[s]['7e'] and end!='-':
-                                segends[s]['7e']-=1
+
+                            if i==8 and start!='-':
+                                if start==segends[s]['7e'] and parent_x50-start==3:
+                                    segends[s]['7e']-=1
+                                elif start-segends[s]['7e']==2:
+                                    segends[s]['7e'] = start-1
                             if needs_lookup:
                                 if start in wt_pdb_lookup:
                                     start = wt_pdb_lookup[start]
@@ -583,6 +590,27 @@ class Command(BaseCommand):
                             elif s=='8WPG' and i==3:
                                 start = 673
                                 end = 699
+                            elif s in ['8GGC','8GGF'] and i==7:
+                                start = 304
+                                end = 322
+                            elif s=='8TQB' and i==3:
+                                start = 640
+                                end = 663
+                            elif s=='8TR0' and i==3:
+                                start = 640
+                                end = 664
+                            elif s=='8TR2' and i==3:
+                                start = 641
+                                end = 665
+                            elif s=='8YW3' and i==6:
+                                start = 346
+                                end = 367
+                            elif s in ['9C1P','9C2F'] and i==3:
+                                start = 673
+                                end = 698
+
+                            if i<8 and (start=='-' or end=='-'):
+                                print('WARNING: helix {} for {} {} has missing annotation'.format(i, s, parent_protein))
 
                             segends[s][str(i)+'b'] = start
                             segends[s][str(i)+'e'] = end
@@ -668,8 +696,18 @@ class Command(BaseCommand):
                         #         mismatches[s] = [seg, int(parent_segends[seg]), val]
                         #     elif val!=int(parent_segends[seg]):
                         #         mismatches[s].append([seg, int(parent_segends[seg]), val])
+
                         for s, data in segends.items():
-                            self.xtal_seg_ends[s] = data
+                            formatted_out = {}
+                            for seg, end in data.items():
+                                formatted_out[seg] = end
+                            self.xtal_seg_ends[s] = formatted_out
+
+                        ### Sort
+                        sorted_keys = list(self.xtal_seg_ends)
+                        sorted_keys.sort()
+                        sorted_dict = {i: self.xtal_seg_ends[i] for i in sorted_keys}
+                        self.xtal_seg_ends = sorted_dict
 
                         ### Save to file
                         if self.save_annotation:

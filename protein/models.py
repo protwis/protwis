@@ -1,4 +1,6 @@
-﻿from common.diagrams_arrestin import DrawArrestinPlot
+﻿import re
+
+from common.diagrams_arrestin import DrawArrestinPlot
 from common.diagrams_gpcr import DrawHelixBox, DrawSnakePlot
 from common.diagrams_gprotein import DrawGproteinPlot
 from django.db import models
@@ -6,6 +8,16 @@ from residue.models import (Residue, ResidueDataPoint, ResidueDataType,
                             ResidueGenericNumberEquivalent,
                             ResidueNumberingScheme)
 
+# Uncomment in the future
+# from common.definitions import CLASSLESS_PARENT_GPCR_SLUGS
+
+# Remove in the future
+from common.definitions import _BEFORE_NAR2025_CLASSLESS_PARENT_GPCR_SLUGS_DICT, _AFTER_NAR2025_CLASSLESS_PARENT_GPCR_SLUGS
+
+
+
+
+class_prefix_re = re.compile(r'^(Class)\s+', flags=re.I)
 
 class Protein(models.Model):
     parent = models.ForeignKey('self', null=True, on_delete=models.CASCADE)
@@ -46,6 +58,18 @@ class Protein(models.Model):
             tmp = tmp.parent
         return tmp.name
 
+    def get_protein_class_from_slug(self,slug=None,short=False):
+        if slug is None:
+            slug = self.family.slug
+        class_slug = slug.split('_')[0]
+        if class_slug in CLASSLESS_PARENT_GPCR_SLUGS:
+            f = self.family
+        else:
+            f = ProteinFamily.objects.get(slug=class_slug)
+        if short:
+            return class_prefix_re.sub(r'',f.name.replace('<i>','').replace('</i>',''))
+        return f.name
+
     def get_helical_box(self):
         residuelist = Residue.objects.filter(protein_conformation__protein__entry_name=str(self)).prefetch_related('protein_segment','display_generic_number','generic_number')
         return DrawHelixBox(residuelist,self.get_protein_class(),str(self))
@@ -79,6 +103,21 @@ class Protein(models.Model):
         while tmp.parent.parent.parent is not None:
             tmp = tmp.parent
         return tmp.name
+
+    def get_protein_family_from_slug(self,slug=None,short=False):
+        if slug is None:
+            slug = self.family.slug
+        splited_slug = slug.split('_')
+        if len(splited_slug) < 2:
+            return None
+        class_slug = '_'.join(splited_slug[:2])
+        if class_slug in CLASSLESS_PARENT_GPCR_SLUGS:
+            f = self.family
+        else:
+            f = ProteinFamily.objects.get(slug=class_slug)
+        if short:
+            pass
+        return f.name
 
     def get_protein_subfamily(self):
         tmp = self.family
@@ -257,6 +296,15 @@ class ProteinFamily(models.Model):
         db_table = 'protein_family'
         ordering = ('id', )
 
+# Remove in the future
+# The next two lines must be after class ProteinFamily
+try:
+  # This usually fails if ProteinFamily table does not exist in DB or "from protein.models import ProteinFamily" fails
+  from protein.model_func import get_current_classless_parent_gpcr_slugs
+  CLASSLESS_PARENT_GPCR_SLUGS = get_current_classless_parent_gpcr_slugs(_BEFORE_NAR2025_CLASSLESS_PARENT_GPCR_SLUGS_DICT,
+                                                                        _AFTER_NAR2025_CLASSLESS_PARENT_GPCR_SLUGS)
+except:
+  CLASSLESS_PARENT_GPCR_SLUGS = _AFTER_NAR2025_CLASSLESS_PARENT_GPCR_SLUGS
 
 class ProteinSequenceType(models.Model):
     slug = models.SlugField(max_length=20, unique=True)
@@ -382,3 +430,4 @@ def dgn(gn, protein_conformation):
     scheme = ResidueNumberingScheme.objects.get(slug=protein_conformation.protein.residue_numbering_scheme.slug)
     convert_gn = ResidueGenericNumberEquivalent.objects.get(label=gn, scheme=scheme).default_generic_number.label
     return Residue.objects.get(protein_conformation=protein_conformation, generic_number__label=convert_gn).display_generic_number.label
+

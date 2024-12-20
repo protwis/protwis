@@ -78,7 +78,7 @@ class ReceptorList(generics.ListAPIView):
     \n/receptorlist/
     """
 
-    queryset = Protein.objects.filter(accession__isnull=False, parent__isnull=True, family__slug__startswith="00", source__name="SWISSPROT").prefetch_related('family','endogenous_gtp_set')
+    queryset = Protein.objects.filter(accession__isnull=False, parent__isnull=True, family__slug__startswith="0", source__name="SWISSPROT").prefetch_related('family','endogenous_gtp_set')
     serializer_class = ReceptorListSerializer
 
 class ProteinFamilyList(generics.ListAPIView):
@@ -524,7 +524,7 @@ class StructureAccessionHuman(views.APIView):
     """
 
     def get(self, request):
-        unique_slugs = list(Structure.objects.filter(protein_conformation__protein__family__slug__startswith="00").exclude(structure_type__slug__startswith='af-')\
+        unique_slugs = list(Structure.objects.filter(protein_conformation__protein__family__slug__startswith="0").exclude(structure_type__slug__startswith='af-')\
             .order_by('protein_conformation__protein__family__slug').values_list('protein_conformation__protein__family__slug', flat=True).distinct())
         accession_codes = list(Protein.objects.filter(family__slug__in=unique_slugs, sequence_type__slug='wt', species__latin_name='Homo sapiens')\
                             .values_list('entry_name', flat=True))
@@ -1087,8 +1087,8 @@ class StructurePeptideLigandInteractions(generics.ListAPIView):
     Get a list of interactions between structure and peptide ligand
     \n/structure/{value}/peptideinteraction/
     \n{value} can be a structure identifier from the Protein Data Bank, e.g. 5VBL
-    \n{value} can also be a protein identifier from Uniprot, e.g. adrb2_human
-    \n{value} can also be a protein identifier from Uniprot, e.g. P07550
+    \n{value} can also be a protein identifier from Uniprot, e.g. cxcr4_human
+    \n{value} can also be a protein identifier from Uniprot, e.g. P61073
     \nThe inserted value will be queried in the following order: PDB code --> UniProt entry name --> UniProt accession
     \nBy default, UniProt values (entry name and accession) will be queried to AlphaFold Models interaction data
     """
@@ -1099,10 +1099,13 @@ class StructurePeptideLigandInteractions(generics.ListAPIView):
         #trying different inputs: pdb_code, entry_name, accession_number
         queryset = InteractionPeptide.objects.filter(interacting_peptide_pair__peptide__structure__pdb_code__index__iexact=value)
         if len(queryset) == 0:
-            queryset = InteractionPeptide.objects.filter(interacting_peptide_pair__peptide__model__protein__entry_name__iexact=value)
+            queryset = InteractionPeptide.objects.filter(interacting_peptide_pair__peptide__structure__protein_conformation__protein__entry_name__iexact=value)
+        if len(queryset) == 0: #check also the parent if it's a PDB structure
+            queryset = InteractionPeptide.objects.filter(interacting_peptide_pair__peptide__structure__protein_conformation__protein__parent__entry_name__iexact=value)
         if len(queryset) == 0:
-            queryset = InteractionPeptide.objects.filter(interacting_peptide_pair__peptide__model__protein__accession__iexact=value)
-
+            queryset = InteractionPeptide.objects.filter(interacting_peptide_pair__peptide__structure__protein_conformation__protein__accession__iexact=value)
+        if len(queryset) == 0: #check also the parent if it's a PDB structure
+            queryset = InteractionPeptide.objects.filter(interacting_peptide_pair__peptide__structure__protein_conformation__protein__parent__accession__iexact=value)
 
         queryset = queryset.values('interacting_peptide_pair__peptide__structure__pdb_code__index',
                             'interacting_peptide_pair__peptide__ligand__name',

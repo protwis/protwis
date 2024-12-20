@@ -37,7 +37,7 @@ starttime = datetime.now()
 def fetch_pdb_info(pdbname, protein ,new_xtal=False, ignore_gasper_annotation=False, model=False, preferred_chain=None):
     # ignore_gaspar_annotation skips PDB_RANGE edits that mark missing residues as deleted, which messes up constructs.
     if not protein:
-        if pdbname in ['6ORV','6YVR','6Z4Q','6Z4S','6Z4V','6Z66','6Z8N','6ZA8','6ZIN','7B6W'] or model==True:
+        if pdbname in ['6ORV','6YVR','6Z4Q','6Z4S','6Z4V','6Z66','6Z8N','6ZA8','6ZIN','7B6W','9D3G'] or model==True:
             with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'pdbs', '{}.pdb'.format(pdbname)]), 'r') as pdbcustom:
                 pdbdata_raw = pdbcustom.read()
         else:
@@ -167,6 +167,8 @@ def fetch_pdb_info(pdbname, protein ,new_xtal=False, ignore_gasper_annotation=Fa
             line = line.split()
             if len(line)<8:
                 continue
+            if len(line)==9 and pdbname=='8U4T':
+                line = ['DBREF', '8U4T','AA', '2', '352', 'UNP', 'P61073', 'CXCR4_HUMAN', '2', '352']
             if line[7] in uniprot_convert_table:
                 uniprot = uniprot_convert_table[line[7]]
             else:
@@ -740,13 +742,21 @@ def fetch_pdb_info(pdbname, protein ,new_xtal=False, ignore_gasper_annotation=Fa
                             continue
                         if not uniprot_pos:
                             uniprot_pos = pos
-                        #print('pref_chain',preferred_chain, chain,pos,uniprot_pos)
+                        # print('pref_chain',preferred_chain, chain,pos,uniprot_pos)
                         if pdbname in ['7EPE','7EPF'] and pos>1000:
                             continue
-                        if pdbname in ['7F4D','7F4F','7F4H','7F4I','8HS2','8HSC','7XZ5','7XZ6','8IW4','8IW9','8ITF',''] and chain!='R':
+                        if pdbname in ['7F4D','7F4F','7F4H','7F4I','8HS2','8HSC','7XZ5','7XZ6','8IW4','8IW9','8ITF'] and chain!='R':
                             continue
                         if pdbname in ['8HJ5'] and chain!='F':
                             continue
+                        if pdbname=='9D3G':
+                            if 242<uniprot_pos<363:
+                                continue
+                            elif uniprot_pos>=363:
+                                uniprot_pos = uniprot_pos-112
+                        if pdbname=='9D3E' and uniprot_pos>374:
+                            continue
+
                         wt_aa = d['wt_seq'][uniprot_pos-1]
                         prev_receptor = True
                             # if pos==250 or uniprot_pos==250:
@@ -1809,9 +1819,24 @@ def construct_structure_annotation_override(pdb_code, removed, deletions):
         deletions = list(range(226,236))
     ### make deletions and removed empty
     elif pdb_code in ['7SF7','7SF8','7EB2','7X1T','7X1U','7SRS','7UL2','7UL3','7UL5','7XBX','7XWO','8G2Y','7XJJ','7YM8','8IY5','8IRU',
-                      '8JMT','8W8Q','8W8R','8W8S','8I9L','8ITL','8I9A','8I95','8ITM','8HTI']:
+                      '8JMT','8W8Q','8W8R','8W8S','8I9L','8ITL','8I9A','8I95','8ITM','8HTI','8YZK','8ZSV','8IKL','8IYH','8J24','8JHN',
+                      '8T3S','8ZR5','8ZQE','8K4O','8GTI','8TRC','8TRD','8WU1','8J9N','8UXY','8UXV']:
         deletions, removed = [], []
     elif pdb_code in ['7ZLY']:
         deletions = []
+    elif pdb_code in ['8TH3','8TH4']:
+        deletions = []
+        removed = list(range(227,342))
+    elif pdb_code=='9D3G':
+        deletions = []
+        removed = list(range(242,363))
+    elif pdb_code in ['8XVJ','8XVK','8JHC','8XVL']:
+        removed = list(range(1001,1119))
+        deletions = []
+    elif pdb_code=='8RLN':
+        removed.append(1106)
+    elif pdb_code=='9D3E':
+        removed = range(list(242,363))
+
 
     return removed, deletions

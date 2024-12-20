@@ -2,7 +2,7 @@
 // ###   TREE    ###
 // #################
 
-
+// Restructure tree data if only one Class is present
 function update_tree_data(data,depth) {
     if (depth === 4) {
         // Iterate over each class and update name
@@ -33,6 +33,7 @@ function update_tree_data(data,depth) {
     return data
 }
 
+// Draw the Tree
 function draw_tree(data, options,circle_size) {
 
     // Remove existing SVG if present
@@ -42,11 +43,11 @@ function draw_tree(data, options,circle_size) {
     var branch_offset = 0;
     var thickness = options.depth + 1;
     for (var key in options.branch_length) {
-        if (key == options.depth) { continue };
-        if (options.label_free.includes(parseInt(key))) {
+        if (key === options.depth) { continue };
+        if (options.label_free.includes(parseInt(key,10))) {
             branch_offset = branch_offset + 10;
         } else {
-            if (options.branch_trunc != 0) {
+            if (options.branch_trunc !== 0) {
                 branch_offset = branch_offset + 2 * options.branch_trunc + 10;
             } else {
                 branch_offset = branch_offset + string_pixlen(options.branch_length[key], key);
@@ -60,7 +61,7 @@ function draw_tree(data, options,circle_size) {
 
     var tree = d3.layout.tree()
         .size([360, diameter / 2])
-        .separation(function (a, b) { return (a.parent == b.parent ? 1 : 2) / a.depth; });
+        .separation(function (a, b) { return (a.parent === b.parent ? 1 : 2) / a.depth; });
 
     var diagonal = d3.svg.diagonal.radial()
         .projection(function (d) { return [d.y, d.x / 180 * Math.PI]; });
@@ -77,7 +78,7 @@ function draw_tree(data, options,circle_size) {
     var nodes = tree.nodes(data);
 
     nodes.forEach(function (d) {
-        if (d.depth == 0) {
+        if (d.depth === 0) {
             d.y = 0
         } else {
             d.y = branches[d.depth]
@@ -97,7 +98,7 @@ function draw_tree(data, options,circle_size) {
         .style("stroke-width", function (d) { if (d.target.depth > 0) { return thickness - d.target.depth; } else { return 0; } })
         .style("fill-opacity", 0)
         .style("opacity", function (d) {
-            if ((d.target.interactions > 0 && d.target.mutations_an > 0) || 1 == 1) { return 0.8 } //|| 1==1
+            if ((d.target.interactions > 0 && d.target.mutations_an > 0) || 1 === 1) { return 0.8 } //|| 1==1
             else if (d.target.interactions > 0) { return 0.5 }
             else if (d.target.mutations_an > 0) { return 0.5 }
             else { return 0.1 };
@@ -107,55 +108,16 @@ function draw_tree(data, options,circle_size) {
         .data(nodes)
         .enter().append("g")
         .attr("class", "node")
-        .attr("transform", function (d) { if (d.name == '') { return "rotate(" + (d.x) + ")translate(" + d.y + ")"; } else { return "rotate(" + (d.x - 90) + ")translate(" + d.y + ")"; } })
-//TODO: add a check to remove circles when nothing is passed (?)
-    node.filter(function (d) { return (d.depth == options.depth) })
-        .filter(function (d) { return (d.value !== 3000) })
-        .append("circle")
-        .attr("r", function (d) { if (d.name == '') { return "0" } else { return circle_size } })
-        .style("stroke", "black")
-        .style("stroke-width", ".3px")
-        .style("fill", function (d) {
-            if (d.color && d.depth < options.depth) { return d.color }
-            else if (d.value === 1) {
-                return "FireBrick";
-            }
-            else if (d.value === 10) {
-                return "LightGray";
-            }
-            else if (d.value === 20) {
-                return "DarkGray";
-            }
-            else if (d.value === 30) {
-                return "Gray";
-            }
-            else if (d.value === 40) {
-                return "Black";
-            }
-            else if (d.value === 100) {
-                return 'LightGray';
-            }
-            else if (d.value === 500) {
-                return 'DarkGray';
-            }
-            else if (d.value === 1000) {
-                return 'Gray';
-            }
-            else if (d.value === 2000) {
-                return 'Black';
-            }
-            else { return "White" };
-        })
-        .style("opacity", .99);
+        .attr("transform", function (d) { if (d.name === '') { return "rotate(" + (d.x) + ")translate(" + d.y + ")"; } else { return "rotate(" + (d.x - 90) + ")translate(" + d.y + ")"; } })
 
-    node.filter(function (d) { return (d.depth == options.depth) })
-        .attr("id", function (d) { if (d.name == '') { return "innerNode" } else { return 'X' + d.name.toUpperCase() } });
+    node.filter(function (d) { return (d.depth === options.depth) })
+        .attr("id", function (d) { if (d.name === '') { return "innerNode" } else { return 'X' + d.name.toUpperCase() } });
 
     node.append("text")
         .attr("dy", ".31em")
-        .attr("name", function (d) { if (d.name == '') { return "branch" } else { return d.name } })
+        .attr("name", function (d) { if (d.name === '') { return "branch" } else { return d.name } })
         .attr("text-anchor", function (d) {
-            if (d.depth == options.depth) {
+            if (d.depth === options.depth) {
                 return d.x < 180 ? "start" : "end";
             } else {
                 return d.x < 180 ? "end" : "start";
@@ -163,14 +125,14 @@ function draw_tree(data, options,circle_size) {
         })
         .attr("transform", function (d) {
             var labelOffset = parseFloat(circle_size) + 4;  // Adjust the offset as needed
-            if (d.depth == options.depth) {
+            if (d.depth === options.depth) {
                 return d.x < 180 ? `translate(${labelOffset})` : `rotate(180)translate(-${labelOffset})`;
             } else {
                 return d.x < 180 ? "translate(-12)" : "rotate(180)translate(12)";
             }
         })
         .text(function (d) {
-            if (d.depth == options.depth) {
+            if (d.depth === options.depth) {
                 return d.name.toUpperCase();
             } else if (options.label_free.includes(d.depth)) {
                 return "";
@@ -183,10 +145,16 @@ function draw_tree(data, options,circle_size) {
         .call(wrap, options.branch_trunc)
         .style("font-size", function (d) {
             // Use the custom font size from options
-            if (d.depth == 1) { return options.fontSize.class; }
-            else if (d.depth == 2) { return options.fontSize.ligandtype; }
-            else if (d.depth == 3) { return options.fontSize.receptorfamily; }
+            if (options.depth === 4) {
+            if (d.depth === 1) { return options.fontSize.class; }
+            else if (d.depth === 2) { return options.fontSize.ligandtype; }
+            else if (d.depth === 3) { return options.fontSize.receptorfamily; }
             else { return options.fontSize.receptor; }
+        } else {
+            if (d.depth === 1) { return options.fontSize.ligandtype; }
+            else if (d.depth === 2) { return options.fontSize.receptorfamily; }
+            else { return options.fontSize.receptor; }
+        }
         })
         .style("font-family", "Palatino")
         .style("fill", function (d) {
@@ -194,7 +162,7 @@ function draw_tree(data, options,circle_size) {
             else { return "#222"; };
         }).call(getBB);
 
-    node.filter(function (d) { return (d.depth != options.depth) }).insert("rect", "text")
+    node.filter(function (d) { return (d.depth !== options.depth) }).insert("rect", "text")
         .attr("x", function (d) { return d.x < 180 ? d.bbox.x - 12 : d.bbox.x - d.bbox.width - 12; })
         .attr("y", function (d) { return d.bbox.y; })
         .attr("width", function (d) { return d.bbox.width; })
@@ -214,17 +182,32 @@ function draw_tree(data, options,circle_size) {
     function string_pixlen(text, depth) {
         var canvas = document.createElement('canvas');
         var ctx = canvas.getContext("2d");
-        // Use the custom font size from options
-        if (depth == 1) {
-            ctx.font = options.fontSize.class + " Palatino";
-        } else if (depth == 2) {
-            ctx.font = options.fontSize.ligandtype + " Palatino";
-        } else if (depth == 3) {
-            ctx.font = options.fontSize.receptorfamily + " Palatino";
-        } else {
-            ctx.font = options.fontSize.receptor + " Palatino";
+
+        // Check the depth condition
+        if (options.depth === 4) {
+            // Use the custom font size from options for all levels
+            if (depth === 1) {
+                ctx.font = options.fontSize.class + " Palatino";
+            } else if (depth === 2) {
+                ctx.font = options.fontSize.ligandtype + " Palatino";
+            } else if (depth === 3) {
+                ctx.font = options.fontSize.receptorfamily + " Palatino";
+            } else {
+                ctx.font = options.fontSize.receptor + " Palatino";
+            }
+        } else if (options.depth === 3) {
+            // Omit class and start from ligandtype
+            if (depth === 1) {
+                ctx.font = options.fontSize.ligandtype + " Palatino";
+            } else if (depth === 2) {
+                ctx.font = options.fontSize.receptorfamily + " Palatino";
+            } else {
+                ctx.font = options.fontSize.receptor + " Palatino";
+            }
         }
-        return parseInt(ctx.measureText(text).width) + 40;
+
+        // Measure and return the text width plus padding
+        return parseInt(ctx.measureText(text).width,10);
     }
 
     function getBB(selection) {
@@ -232,7 +215,7 @@ function draw_tree(data, options,circle_size) {
     }
 
     function wrap(text, width) {
-        if (width == 0) {
+        if (width === 0) {
             return;
         }
         text.each(function () {
@@ -245,34 +228,51 @@ function draw_tree(data, options,circle_size) {
                 y = text.attr("y"),
                 dy = parseFloat(text.attr("dy")),
                 tspan = text.text(null).append("tspan").attr("x", 0).attr("y", y).attr("dy", dy + "em");
-            while (word = words.pop()) {
+
+            word = words.pop(); // Initialize the first word
+            while (word !== undefined) {
                 line.push(word);
                 tspan.text(line.join(" "));
+
                 if (tspan.node().getComputedTextLength() > width) {
-                    line.pop();
-                    tspan.text(line.join(" "));
-                    line = [word];
-                    tspan = text.append("tspan").attr("x", 0).attr("y", y).attr("dy", ++lineNumber * lineHeight + dy + "em").text(word);
+                    line.pop(); // Remove the last word as it exceeds the width
+                    tspan.text(line.join(" ")); // Update the tspan with the valid words
+                    line = [word]; // Start a new line with the word that didn't fit
+                    tspan = text.append("tspan")
+                                .attr("x", 0)
+                                .attr("y", y)
+                                .attr("dy", ++lineNumber * lineHeight + dy + "em")
+                                .text(word); // Add the word to the new tspan
                 }
+
+                word = words.pop(); // Reassign the next word at the end of the loop
             }
         });
     }
     // === Centering Logic ===
     var scaleFactor = 0.8;  // Adjust this as needed
-    var svgElement = d3.select('#' + options.anchor + ' svg');
-    var svgWidth = +svgElement.attr('width');
-    var svgHeight = +svgElement.attr('height');
+
+    // Calculate the extra padding needed based on circle size and spacer
+    var extraPadding = (circle_size) + (circle_spacer*2) + parseInt(options.fontSize.receptor,10)*4;  // Adjust the multiplier based on how much padding is needed
+
+    // Calculate new dimensions
+    var newWidth = diameter + extraPadding;  // Add padding to both sides
+    var newHeight = diameter + extraPadding;  // Add padding to both sides
+
+    // Set new width and height for the SVG
+    svg.attr('width', newWidth)
+       .attr('height', newHeight);
 
     // Calculate the center point
-    var cx = svgWidth / 2;
-    var cy = svgHeight / 2;
+    var cx = newWidth / 2;
+    var cy = newHeight / 2;
 
     // Adjust the translation to keep the tree centered after scaling
     var translateX = cx;
     var translateY = cy;
 
     // Apply the transform to the 'g' element to scale and center it
-    svgElement.select('g')
+    svg.select('g')
         .attr('transform', `translate(${translateX},${translateY}) scale(${scaleFactor},${scaleFactor})`);
 }
 
@@ -294,6 +294,7 @@ function formatTextWithHTML(text) {
         .replace("calcitonin-like receptor", 'CLR');
 }
 
+// Change the labels
 function changeLeavesLabels(location, value, dict){
     // Initialize leaf node length
     maxLeafNodeLenght = 0;
@@ -331,12 +332,14 @@ function changeLeavesLabels(location, value, dict){
     });
   }
 
-  function DrawCircles(location, data, starter, dict, clean = true, gradient = true, circle_styling_dict, circle_spacer, circle_size) {
+// Draw the circles (data) of the tree plot
+
+function DrawCircles(location, data, starter, dict, clean = true, gradient = true, circle_styling_dict, circle_spacer, circle_size) {
     var svg = d3.select('#' + location);
     var node = svg.selectAll(".node");
 
     if (clean === true) {
-        node.selectAll("circle.outerCircle").remove();
+        node.selectAll("circle.outerCircle, circle.innerCircle").remove();  // Remove previously drawn circles (both outer and inner)
     }
 
     var spacer = circle_spacer;
@@ -344,7 +347,7 @@ function changeLeavesLabels(location, value, dict){
     // Initialize a dictionary to store min and max values for each unit
     var minMaxValues = {};
 
-    // First pass: Determine min and max values for each unit
+    // First pass: Determine min and max values for each unit (including 'Inner')
     for (var x in data) {
         var keys = Object.keys(data[x]);
         for (var unit of keys) {
@@ -361,53 +364,94 @@ function changeLeavesLabels(location, value, dict){
         }
     }
 
-    // Second pass: Draw the circles
+    // Second pass: Draw the circles for both "Inner" and "Outer" units
     for (var x in data) {
         var keys = Object.keys(data[x]);
 
         for (var unit of keys) {
-            if (dict[unit]) {
-                var value = data[x][unit];
-                var minValue = minMaxValues[unit].min;
-                var maxValue = minMaxValues[unit].max;
+            var leaf = svg.selectAll('g[id=X' + x + ']');  // Use the node positions from the tree
 
-                // Determine the styling
+            if (unit === 'Inner') {
+                // Draw 'Inner' circle at the node position
+                if (dict[unit]) {
+                    var value = data[x][unit];
+                    var minValue = minMaxValues[unit].min;
+                    var maxValue = minMaxValues[unit].max;
 
-                var styling = circle_styling_dict[unit] || "Two";
+                    // Determine the styling for the 'Inner' unit
+                    var styling = circle_styling_dict[unit] || "Two";
 
-                // Create color scale based on min and max values
-                var colorScale;
-                if (styling === "Three") {
-                    // Three-color gradient with white in the middle
-                    colorScale = d3.scale.linear()
-                        .domain([minValue, (minValue + maxValue) / 2, maxValue])
-                        .range([dict[unit][0], "#FFFFFF", dict[unit][1]]);
-                } else {
-                    // Two-color gradient
-                    colorScale = d3.scale.linear()
-                        .domain([minValue, maxValue])
-                        .range(dict[unit]);
+                    // Create color scale based on min and max values
+                    var colorScale;
+                    if (styling === "Three") {
+                        // Three-color gradient with white in the middle
+                        colorScale = d3.scale.linear()
+                            .domain([minValue, (minValue + maxValue) / 2, maxValue])
+                            .range([dict[unit][0], "#FFFFFF", dict[unit][1]]);
+                    } else {
+                        // Two-color gradient
+                        colorScale = d3.scale.linear()
+                            .domain([minValue, maxValue])
+                            .range(dict[unit]);
+                    }
+
+                    // Calculate color using the color scale
+                    var color = gradient ? colorScale(value) : dict[unit][0];  // Use the first color if no gradient
+
+                    // Append the 'Inner' circle
+                    leaf.append("circle")
+                        .attr("r", circle_size)  // Draw 'Inner' circle
+                        .attr("class", "innerCircle")  // Add class to distinguish inner circles
+                        .style("stroke", "black")  // Use the first color for the stroke
+                        .style("stroke-width", 0.8)
+                        .style("fill", color)
+                        .attr("transform", "translate(0,0)");  // Draw at the center of the node
                 }
+            } else {
+                // Draw 'Outer' circles based on the unit
+                if (dict[unit]) {
+                    var value = data[x][unit];
+                    var minValue = minMaxValues[unit].min;
+                    var maxValue = minMaxValues[unit].max;
 
-                // Calculate color using the color scale
-                var color = gradient ? colorScale(value) : dict[unit][0]; // Use the first color if no gradient
+                    // Determine the styling for the outer units
+                    var styling = circle_styling_dict[unit] || "Two";
 
-                var multiply = 1 + Object.keys(dict).indexOf(unit);
-                var leaf = svg.selectAll('g[id=X' + x + ']');
+                    // Create color scale based on min and max values
+                    var colorScale;
+                    if (styling === "Three") {
+                        // Three-color gradient with white in the middle
+                        colorScale = d3.scale.linear()
+                            .domain([minValue, (minValue + maxValue) / 2, maxValue])
+                            .range([dict[unit][0], "#FFFFFF", dict[unit][1]]);
+                    } else {
+                        // Two-color gradient
+                        colorScale = d3.scale.linear()
+                            .domain([minValue, maxValue])
+                            .range(dict[unit]);
+                    }
 
-                leaf.append("circle")
-                    .attr("r", circle_size)
-                    .attr("class", "outerCircle") // Add class to distinguish outer circles
-                    .style("stroke", "black") // Use the first color for the stroke
-                    .style("stroke-width", 0.8)
-                    .style("fill", color)
-                    .attr("transform", "translate(" + (Math.ceil(starter) + multiply * spacer) + ",0)");
+                    // Calculate color using the color scale
+                    var color = gradient ? colorScale(value) : dict[unit][0];  // Use the first color if no gradient
+
+                    var multiply = 1 + Object.keys(dict).indexOf(unit);  // For spacing between outer circles
+
+                    // Append the outer circles, position them with `circle_spacer`
+                    leaf.append("circle")
+                        .attr("r", circle_size)
+                        .attr("class", "outerCircle")  // Add class to distinguish outer circles
+                        .style("stroke", "black")  // Use the first color for the stroke
+                        .style("stroke-width", 0.8)
+                        .style("fill", color)
+                        .attr("transform", "translate(" + (Math.ceil(starter) + multiply * spacer) + ",0)");
+                }
             }
         }
     }
 }
 
-function createLegendBars(location, data, conversion, circle_styling_dict) {
+// Create the bar legends
+function createLegendBars(location, data, conversion, circle_styling_dict, datatype_dict) {
     var svg = d3.select('#' + location + ' svg');
 
     // Clear existing content
@@ -442,6 +486,11 @@ function createLegendBars(location, data, conversion, circle_styling_dict) {
     // Create a color scale function for each category
     var colorScales = {};
     existingCategories.forEach(category => {
+        // Check the datatype in the datatype_dict
+        if (datatype_dict[category] === "Discrete") {
+            return; // Skip this category if its datatype is Discrete
+        }
+
         var colors = conversion[category];
         var gradientId = `gradient-${category}`;
 
@@ -476,21 +525,33 @@ function createLegendBars(location, data, conversion, circle_styling_dict) {
         colorScales[category] = gradientId;
     });
 
-    // var barWidth = width / existingCategories.length - 20; // Adjust the width of each bar
     var barWidth = 120;
     var barHeight = 15;
     var spacing = 50; // Horizontal spacing between bars
+
     // Adjust SVG width if needed
     var totalWidth = 1200;
     svg.attr("width", totalWidth);
 
+    var skippedDiscreteCount = 0;  // Track how many discrete bars have been skipped
+
     existingCategories.forEach((category, index) => {
+        // Check if datatype is "Continuous" before drawing the legend
+        if (datatype_dict[category] !== "Continuous") {
+            skippedDiscreteCount++; // Increment the count of skipped discrete bars
+            return; // Skip this category if it's Discrete
+        }
+
         var gradientId = colorScales[category];
         var minValue = categoryMax[category].min;
         var maxValue = categoryMax[category].max;
         var midValue = (minValue + maxValue) / 2;
+        minValue = parseFloat(minValue.toFixed(2));
+        maxValue = parseFloat(maxValue.toFixed(2));
+        midValue = parseFloat(midValue.toFixed(2));
 
-        var xPosition = margin.left + index * (barWidth + spacing); // Calculate the x position
+        // Adjust the x position based on how many "Discrete" bars were skipped
+        var xPosition = margin.left + (index - skippedDiscreteCount) * (barWidth + spacing);
 
         // Add a rectangle to represent the gradient
         svg.append("rect")
@@ -532,231 +593,283 @@ function createLegendBars(location, data, conversion, circle_styling_dict) {
 }
 
 
+
 // #################
 // ###  CLUSTER  ###
 // #################
 
-function renderClusterPlot(data, selector, method) {
-    const width = 800;
-    const height = 600;
-    const margin = { top: 80, right: 150, bottom: 50, left: 50 };
-
-    // Clear the previous plot
-    d3.select(selector).html("");
-
-    const svg = d3.select(selector)
-        .append("svg")
-        .attr("width", width)
-        .attr("height", height)
-        .append("g")
-        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-    const x = d3.scale.linear()
-        .domain(d3.extent(data, d => +d.x))
-        .range([0, width - margin.left - margin.right]);
-
-    const y = d3.scale.linear()
-        .domain(d3.extent(data, d => +d.y))
-        .range([height - margin.top - margin.bottom, 0]);
-
-    const color = d3.scale.category10();
-
-    let selectedCluster = null;
-
-    const circles = svg.selectAll(".dot")
-        .data(data)
-        .enter().append("circle")
-        .attr("class", "dot")
-        .attr("cx", d => x(+d.x))
-        .attr("cy", d => y(+d.y))
-        .attr("r", 5)
-        .attr("cluster", d => d.cluster)
-        .style("fill", d => color(d.cluster))
-        .attr("id", d => "circle" + d.label.replace(/\[|\]|\(|\)|\s|\,|\'/g,""))
-        .on("click", handleClick);
-
-    const labels = svg.selectAll(".label")
-        .data(data)
-        .enter().append("text")
-        .attr("class", "label")
-        .attr("x", d => x(+d.x))
-        .attr("y", d => y(+d.y))
-        .attr("dy", -10)
-        .attr("cluster", d => d.cluster)
-        .text(d => d.label)
-        .style("font-size", "11px")
-        .style("text-anchor", "middle")
-        .on("click", function(d, i) {
-            d3.event.stopPropagation();
-            handleClick.call(circles[0][i], d);
-        });
-
-    // Add leader lines from circles to labels
-    const lines = svg.selectAll(".line")
-        .data(data)
-        .enter().append("line")
-        .attr("class", "line")
-        .style("stroke", "black")
-        .style("stroke-width", 1);
-
-    // Add title based on the method with more spacing
-    svg.append("text")
-        .attr("x", (width - margin.left - margin.right) / 2)
-        .attr("y", -50)
-        .attr("text-anchor", "middle")
-        .style("font-size", "20px")
-        .text("Cluster Plot (" + method.toUpperCase() + ")");
-
-    // Add force simulation to spread out circles
-    const simulation = d3v4.forceSimulation(data)
-        .force("x", d3v4.forceX(d => x(d.x)).strength(1))
-        .force("y", d3v4.forceY(d => y(d.y)).strength(1))
-        .force("collide", d3.forceCollide(10)) // Set to twice the circle radius for spacing
-        .on("tick", ticked);
-
-    function ticked() {
-        circles
-            .attr("cx", d => d.x = Math.max(5, Math.min(width - 5, d.x))) // Prevent circles from going outside SVG
-            .attr("cy", d => d.y = Math.max(5, Math.min(height - 5, d.y))); // Prevent circles from going outside SVG
-
-        labels
-            .attr("x", d => d.x)
-            .attr("y", d => d.y - 10);
-
-        lines
-            .attr("x1", d => x(d.x))
-            .attr("y1", d => y(d.y))
-            .attr("x2", d => d.x)
-            .attr("y2", d => d.y - 10);
-    }
-
-    // Function to handle click event
-    function handleClick(d) {
-        d3.event.stopPropagation();
-        const cluster = d.cluster;
-
-        if (selectedCluster === cluster) {
-            selectedCluster = null;
-            resetOpacity();
-        } else {
-            resetOpacity();
-            selectedCluster = cluster;
-            circles.style("opacity", 0.2);
-            labels.style("opacity", 0.2);
-            lines.style("opacity", 0.2);
-
-            circles.filter(c => c.cluster === cluster)
-                .style("opacity", 1)
-                .style("stroke", "black")
-                .style("stroke-width", 2);
-
-            labels.filter(c => c.cluster === cluster)
-                .style("opacity", 1);
-
-            lines.filter(c => c.cluster === cluster)
-                .style("opacity", 1);
-        }
-    }
-
-    // Function to reset the opacity when clicking outside circles
-    function resetOpacity() {
-        circles.style("opacity", 1).style("stroke", "none").style("stroke-width", 0);
-        labels.style("opacity", 1).style("font-weight", "normal");
-        lines.style("opacity", 1);
-    }
-
-    // Add an overlay to capture clicks outside circles
-    svg.append("rect")
-        .attr("width", width - margin.left - margin.right)
-        .attr("height", height - margin.top - margin.bottom)
-        .style("fill", "none")
-        .style("pointer-events", "all")
-        .on("click", resetOpacity);
-
-    // Create a legend based on clusters
-    const uniqueClusters = [...new Set(data.map(d => d.cluster))].sort((a, b) => a - b);
-
-    const legend = svg.selectAll(".legend")
-        .data(uniqueClusters)
-        .enter().append("g")
-        .attr("class", "legend")
-        .attr("transform", (d, i) => `translate(${width - margin.right + 10},${i * 20})`)
-        .on("click", function(d) {
-            selectedCluster = d;
-            circles.style("opacity", 0.2);
-
-            circles.filter(c => c.cluster === d)
-                .style("opacity", 1)
-                .style("stroke", "black")
-                .style("stroke-width", 2);
-
-            d3.event.stopPropagation();
-        });
-
-    legend.append("circle")
-        .attr("cx", 10)
-        .attr("cy", 9)
-        .attr("r", 5)
-        .style("fill", d => color(d));
-
-    legend.append("text")
-        .attr("x", 20)
-        .attr("y", 14)
-        .text(d => `Cluster ${d}`)
-        .style("font-size", "12px");
-
-    // Adjust label positions to prevent overlap
-    adjustLabelPositions(labels);
+// Function to naturally sort an array
+function naturalSort(a, b) {
+    return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
 }
 
-// Function to adjust label positions to prevent overlap
-function adjustLabelPositions(labels) {
-    const labelPadding = 2; // Padding between labels to avoid overlap
-    let iterations = 10; // Maximum iterations to adjust labels
 
-    while (iterations-- > 0) {
-        let overlaps = false;
+// Function to create traces for the plot
+function createTraces(colorOption, showLabels, colorMapping, textColorEnabled) {
+    let traces = [];
+    const stroke_width = cluster_DataStyling.strokeWidth;  // Get stroke width from data styling
+    const marker_size = cluster_DataStyling.markerSize;    // Get marker size from data styling
+    const border_on = cluster_DataStyling.borderOn;        // Get border toggle state from data styling
 
-        labels.each(function() {
-            const label = d3.select(this);
-            const bbox = label.node().getBBox();
+    const clusterSet = Array.from(new Set(currentClusterData.map(d => d.cluster))).sort((a, b) => a - b);
 
-            labels.each(function() {
-                const otherLabel = d3.select(this);
-                if (label.node() !== otherLabel.node()) {
-                    const otherBBox = otherLabel.node().getBBox();
-                    if (intersect(bbox, otherBBox)) {
-                        overlaps = true;
-                        const dx = (bbox.x + bbox.width / 2) - (otherBBox.x + otherBBox.width / 2);
-                        const dy = (bbox.y + bbox.height / 2) - (otherBBox.y + otherBBox.height / 2);
+    // Handle clustering color option
+    if (colorOption === 'cluster') {
+        clusterSet.forEach(cluster => {
+            const clusterData = currentClusterData.filter(d => d.cluster === cluster);
 
-                        const offset = labelPadding / Math.sqrt(dx * dx + dy * dy);
-                        const moveX = dx * offset;
-                        const moveY = dy * offset;
+            // Create marker traces, only display markers when labels are not shown
+            const markerTrace = {
+                x: clusterData.map(d => d.x),
+                y: clusterData.map(d => d.y),
+                mode: showLabels ? 'none' : 'markers',  // Hide markers if labels are shown
+                type: 'scatter',
+                hoverinfo: 'text',
+                text: clusterData.map(d => `${d.label.toUpperCase()}`),  // Combine label and fill for hover text
+                marker: {
+                    size: marker_size,
+                    symbol: 'circle',
+                    line: {
+                        width: border_on ? stroke_width : 0,
+                        color: 'black'
+                    },
+                    color: clusterData.map(d => colorPalette[d.cluster % colorPalette.length]),  // Keep legend colors based on clusters
+                },
+                // Customize legend text color only when showLabels and textColorEnabled are both true
+                name: (showLabels && textColorEnabled)
+                ? `<span style="color:${colorPalette[cluster % colorPalette.length]}">Cluster ${cluster + 1}</span>`
+                : `Cluster ${cluster + 1}`  // Regular label if conditions are false
+            };
 
-                        label.attr("x", parseFloat(label.attr("x")) + moveX)
-                            .attr("y", parseFloat(label.attr("y")) + moveY);
-                        otherLabel.attr("x", parseFloat(otherLabel.attr("x")) - moveX)
-                            .attr("y", parseFloat(otherLabel.attr("y")) - moveY);
-
-                        bbox.x += moveX;
-                        bbox.y += moveY;
-                    }
+            traces.push(markerTrace);
+        });
+    }
+    // Handle gradient color option
+    else if (colorOption === 'gradient') {
+        const fillValues = currentClusterData.map(d => d.fill);
+        const minFill = Math.min(...fillValues);
+        const maxFill = Math.max(...fillValues);
+        const gradientTrace = {
+            x: currentClusterData.map(d => d.x),
+            y: currentClusterData.map(d => d.y),
+            mode: showLabels ? 'none' : 'markers',  // Hide markers if labels are shown
+            type: 'scatter',
+            hoverinfo: 'text',
+            text: currentClusterData.map(d => `${d.label.toUpperCase()}: ${d.fill}`),  // Combine label and fill for hover text
+            marker: {
+                size: marker_size,
+                symbol: 'circle',
+                line: {
+                    width: border_on ? stroke_width : 0,
+                    color: 'black'
+                },
+                color: currentClusterData.map(d => d.fill),
+                cmin: minFill,  // Set color axis minimum value
+                cmax: maxFill,  // Set color axis maximum value
+                colorscale: 'RdBu',  // Use RdBu color scale
+                colorbar: {
+                    thickness: 20,
+                    len: 0.5,
                 }
-            });
+            },
+            showlegend: false
+        };
+
+        traces.push(gradientTrace);
+    }
+    // Handle Class, Ligand type, or Receptor family color option
+    else if (['Class', 'Ligand type', 'Receptor family'].includes(colorOption)) {
+
+        const uniqueEntries = new Set();
+
+        currentClusterData.forEach(point => {
+            const entry = point[colorOption] === 'Other GPCRs' ? 'Classless' : point[colorOption];
+            if (!uniqueEntries.has(entry)) {
+                uniqueEntries.add(entry);
+
+                // Create marker traces, only display markers when labels are not shown
+                const markerTrace = {
+                    x: currentClusterData.filter(d => d[colorOption] === point[colorOption]).map(d => d.x),
+                    y: currentClusterData.filter(d => d[colorOption] === point[colorOption]).map(d => d.y),
+                    mode: showLabels ? 'none' : 'markers',
+                    type: 'scatter',
+                    hoverinfo: 'text',
+                    text: currentClusterData.filter(d => d[colorOption] === point[colorOption]).map(d => d.label.toUpperCase()),
+                    marker: {
+                        size: marker_size,
+                        symbol: 'circle',
+                        line: {
+                            width: border_on ? stroke_width : 0,
+                            color: 'black'
+                        },
+                        color: colorMapping[entry],
+                    },
+                    // Customize legend text color only when showLabels and textColorEnabled are both true
+                    name: (showLabels && textColorEnabled)
+                        ? `<span style="color:${colorMapping[entry]}">${entry}</span>`
+                        : entry  // Regular label if conditions are false
+                };
+
+                traces.push(markerTrace);
+            }
         });
 
-        if (!overlaps) break; // Stop if no overlaps found
+        traces.sort((a, b) => naturalSort(a.name, b.name));
     }
+
+    return traces;
 }
 
-// Function to check if two bounding boxes intersect
-function intersect(bbox1, bbox2) {
-    return !(bbox2.x > bbox1.x + bbox1.width ||
-             bbox2.x + bbox2.width < bbox1.x ||
-             bbox2.y > bbox1.y + bbox1.height ||
-             bbox2.y + bbox2.height < bbox1.y);
+
+// Function to create annotations for labels with optional text coloring based on `textColorEnabled`
+function createAnnotations(filteredData, colorOption, textColorEnabled, colorMapping) {
+    const annotations = [];
+
+    // Get global min and max values for `fill` from all data (currentClusterData), not just the filtered data
+    const fillValues = currentClusterData.map(d => d.fill);  // Use all data, not just filtered
+    const minFill = Math.min(...fillValues);
+    const maxFill = Math.max(...fillValues);
+
+    // Use d3.interpolateRdBu for the exact RdBu color scale in D3 v4
+    const rdBuColorScale = d3v4.scaleSequential(d3v4.interpolateRdBu)
+        .domain([maxFill, minFill]);  // Inverse the domain for red to blue coloring
+
+
+    filteredData.forEach((d) => {
+        let textColor;
+
+        if (textColorEnabled) {
+            if (colorOption === 'cluster') {
+                textColor = colorPalette[d.cluster % colorPalette.length];
+            } else if (colorOption === 'gradient') {
+                textColor = rdBuColorScale(d.fill);  // Gradient-based coloring
+            } else if (['Class', 'Ligand type', 'Receptor family'].includes(colorOption)) {
+                const entry = d[colorOption] === 'Other GPCRs' ? 'Classless' : d[colorOption];
+                textColor = colorMapping[entry];
+            } else {
+                textColor = 'black';
+            }
+        } else {
+            textColor = 'black';
+        }
+
+        annotations.push({
+            x: d.x,
+            y: d.y,
+            xref: 'x',
+            yref: 'y',
+            text: `${d.label.toUpperCase()}`,  // Combine label and fill for hover text
+            showarrow: false,
+            font: {
+                family: 'Arial',
+                size: cluster_DataStyling.labelFontSize,
+                color: textColor
+            },
+            align: 'center',
+            bgcolor: 'rgba(0,0,0,0)',
+            borderwidth: 0
+        });
+    });
+
+    return annotations;
 }
+
+// Function to update the plot with markers or labels
+function updatePlotWithAnnotations() {
+    const colorOption = getActiveColorOption();  // Get the active color option
+    const showLabels = document.getElementById('show').classList.contains('active');
+    const textColorEnabled = cluster_DataStyling.textColorEnabled;
+
+    const plotElement = document.getElementById('plotContainer_cluster');
+    const currentLayout = plotElement ? Plotly.d3.select('#plotContainer_cluster').node().layout : {};
+
+    const xRange = (currentLayout && currentLayout.xaxis && currentLayout.xaxis.range) ? currentLayout.xaxis.range : [Math.min(...currentClusterData.map(d => d.x)), Math.max(...currentClusterData.map(d => d.x))];
+    const yRange = (currentLayout && currentLayout.yaxis && currentLayout.yaxis.range) ? currentLayout.yaxis.range : [Math.min(...currentClusterData.map(d => d.y)), Math.max(...currentClusterData.map(d => d.y))];
+
+    let colorMapping = {};
+    if (['Class', 'Ligand type', 'Receptor family'].includes(colorOption)) {
+        let uniqueValues = Array.from(new Set(currentClusterData.map(d => d[colorOption])));
+        uniqueValues = uniqueValues.map(value => value === 'Other GPCRs' ? 'Classless' : value);
+        uniqueValues.sort(naturalSort);
+        uniqueValues.forEach((value, index) => {
+            colorMapping[value] = colorPalette[index % colorPalette.length];
+        });
+    }
+
+    // Generate the traces and pass the colorMapping
+    const traces = createTraces(colorOption, showLabels, colorMapping, textColorEnabled);
+
+    // Add the color bar for gradient only if we're displaying annotations (text labels)
+    if (colorOption === 'gradient' && showLabels) {
+        const fillValues = currentClusterData.map(d => d.fill);
+        const minFill = Math.min(...fillValues);
+        const maxFill = Math.max(...fillValues);
+
+        const colorbarTrace = {
+            z: [[minFill, maxFill], [minFill, maxFill]],  // Use actual min/max values for z
+            x: [0, 1],
+            y: [0, 1],
+            type: 'heatmap',
+            colorscale: 'RdBu',
+            showscale: true,  // Only show the color bar when annotations are visible
+            colorbar: {
+                thickness: 20,
+                len: 0.5,
+                // Removed title from the colorbar
+            },
+            opacity: 0  // Make the heatmap itself transparent
+        };
+
+        traces.push(colorbarTrace);
+    }
+
+    // Filter the data for labels within the current zoom range
+    const filteredData = currentClusterData.filter(d => {
+        const inXRange = (d.x >= xRange[0] && d.x <= xRange[1]);
+        const inYRange = (d.y >= yRange[0] && d.y <= yRange[1]);
+        return inXRange && inYRange;
+    });
+
+    // Generate annotations based on filtered data, text coloring state, and shared colorMapping
+    const annotations = showLabels ? createAnnotations(filteredData, colorOption, textColorEnabled, colorMapping) : [];
+
+    // Define new layout with annotations
+    const layout = {
+        xaxis: {
+            visible: false,
+            showgrid: false,
+            range: xRange,
+            scaleanchor: 'y'
+        },
+        yaxis: {
+            visible: false,
+            showgrid: false,
+            range: yRange
+        },
+        hovermode: 'closest',
+        showlegend: true,
+        annotations: annotations,  // Add annotations to the plot
+        legend: {
+            x: 1,
+            xanchor: 'left',
+            y: 0.5,
+            orientation: 'v'
+        },
+        plot_bgcolor: '#FFFFFF',
+        autosize: false,
+        width: 1024,
+        height: 700,
+        margin: {
+            l: 50,
+            r: 374,
+            t: 50,
+            b: 50
+        }
+    };
+
+    Plotly.react('plotContainer_cluster', traces, layout);
+}
+
 
 // #################
 // ###   LIST    ###
@@ -854,7 +967,7 @@ function initializeDataStyling(list_data_wow, data_types_list) {
 }
 
 // Function to modify the data
-function modifyData(data) {
+function Initialize_Data(data) {
     // 1. Change "Other GPCRs" to "Classless" (Layer1)
     if (data["Other GPCRs"]) {
       data["Classless"] = data["Other GPCRs"];
@@ -884,170 +997,400 @@ function modifyData(data) {
     return data;  // Return the modified data
   }
 
-// ### Visualization Function ###
-function renderDataVisualization(data, location,styling_option,Layout_dict,data_styling,label_conversion_dict,label_names) {
+//   Create Classification dict
+function Create_classification_dict(data) {
+    // Initialize the arrays for present items
+    let present_class = [];
+    let present_LigandType = [];
+    let present_ReceptorFamilies = [];
+    let present_receptors = [];
 
-    // ######################
-    // ## Initializzation  ##
-    // ######################
+    // Iterate over the nested dictionary to split into the respective arrays
+    for (const classKey in data) {
+        present_class.push(classKey);  // Add the class key to the present_class array
+
+        for (const ligandKey in data[classKey]) {
+            present_LigandType.push(ligandKey);  // Add the ligand type key to the present_LigandType array
+
+            for (const receptorFamilyKey in data[classKey][ligandKey]) {
+                present_ReceptorFamilies.push(receptorFamilyKey);  // Add receptor family key to present_ReceptorFamilies
+
+                // Add the receptors to the present_receptors array
+                present_receptors.push(...data[classKey][ligandKey][receptorFamilyKey]);
+            }
+        }
+    }
+
+}
+
+// Create array of sorted entries and classification array for printing
+function Data_resorter(data) {
 
     // Check the visibility of each layer
     const Layer1_isChecked = d3.select(`#toggle-layer-1`).property('checked');
     const Layer2_isChecked = d3.select(`#toggle-layer-2`).property('checked');
     const Layer3_isChecked = d3.select(`#toggle-layer-3`).property('checked');
 
-    let Checklist = [Layer1_isChecked, Layer2_isChecked, Layer3_isChecked];
-
-    // Indentation
-
     // Data sorter depending on layers being shown:
 
-    // Function to merge Layer3 into Layer2 while preserving the Layer4 arrays.
-    // Function to merge Layer3 into Layer2 while preserving the Layer4 arrays.
+    // Initialize the final array for results and the category array for categories
+    let final_array = [];
+    let category_array = [];
 
-    // // Function for natural sorting of keys and values (Layer1, Layer2, Layer3, Layer4)
-    // function naturalSort(a, b) {
-    //     return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
-    // }
-
-
-
-    // // Function to merge Layer3 into Layer2 while preserving Layer4 arrays
-    // function mergeLayer3IntoLayer2(data, checklist) {
-    //     const [layer1IsChecked, layer2IsChecked, layer3IsChecked] = checklist;
-    //     const mergedData = {};
-
-    //     Object.entries(data).forEach(([layer1Key, layer1Value]) => {
-    //         if (layer1IsChecked) {
-    //             mergedData[layer1Key] = {};
-    //         }
-
-    //         Object.entries(layer1Value).forEach(([layer2Key, layer2Value]) => {
-    //             if (layer1IsChecked) {
-    //                 mergedData[layer1Key][layer2Key] = {};
-    //             } else {
-    //                 mergedData[layer2Key] = {};
-    //             }
-
-    //             if (layer2IsChecked && !layer3IsChecked) {
-    //                 // If Layer3 is unchecked, merge its contents into Layer2
-    //                 Object.entries(layer2Value).forEach(([layer3Key, layer3Value]) => {
-    //                     // Ensure Layer4 arrays are preserved and merged into Layer2
-    //                     if (!mergedData[layer1Key][layer2Key]) {
-    //                         mergedData[layer1Key][layer2Key] = [];
-    //                     }
-    //                     mergedData[layer1Key][layer2Key] = [
-    //                         ...mergedData[layer1Key][layer2Key],
-    //                         ...layer3Value
-    //                     ];
-    //                 });
-    //             } else if (layer3IsChecked) {
-    //                 // If Layer3 is checked, retain Layer3 structure
-    //                 if (layer1IsChecked) {
-    //                     mergedData[layer1Key][layer2Key] = layer2Value;
-    //                 } else {
-    //                     mergedData[layer2Key] = layer2Value;
-    //                 }
-    //             } else if (layer1IsChecked) {
-    //                 mergedData[layer1Key][layer2Key] = layer2Value;
-    //             }
-    //         });
-    //     });
-
-    //     return mergedData;
-    // }
-
-    // // Recursive function to sort the data based on active layers
-    // function sortDataBasedOnLayers(data, checklist) {
-    //     const activeLayers = checklist
-    //         .map((isChecked, index) => (isChecked ? index + 1 : null))
-    //         .filter(Boolean); // Array of active layers
-
-    //     function sortLayer(data, layerIndex = 0) {
-    //         if (Array.isArray(data)) {
-    //             // Sort Layer4 arrays naturally
-    //             return data.sort(naturalSort);
-    //         } else if (typeof data === 'object' && data !== null) {
-    //             const keys = Object.keys(data).sort(naturalSort);
-    //             const sortedData = {};
-
-    //             keys.forEach((key) => {
-    //                 if (activeLayers[layerIndex] !== undefined) {
-    //                     sortedData[key] = sortLayer(data[key], layerIndex + 1);
-    //                 } else {
-    //                     sortedData[key] = data[key]; // Stop sorting if no more layers
-    //                 }
-    //             });
-
-    //             return sortedData;
-    //         }
-    //         return data; // Return non-object values as is
-    //     }
-
-    //     return sortLayer(data);
-    // }
-
-    // // Sort the data based on the checklist and apply merging if necessary
-    // function processData(data_unsorted, checklist) {
-    //     let data;
-    //     const [layer1IsChecked, layer2IsChecked, layer3IsChecked] = checklist;
-
-    //     if (!layer1IsChecked || !layer3IsChecked) {
-    //         data = mergeLayer3IntoLayer2(data_unsorted, checklist);
-    //     } else {
-    //         data = data_unsorted;
-    //     }
-
-    //     // Sort the data after merging
-    //     return sortDataBasedOnLayers(data, checklist);
-    // }
-    //     // Sort and merge the data based on the checklist
-    //     const data = processData(data_unsorted, Checklist);
-
-    // const Indentation_toggle = d3.select(`#toggle-indentation`).property('checked');
-
-
-    // ## Global Variables ##
-    let columns = Layout_dict.columns;
-    let col_breaker = Layout_dict.col_breaker;
-    let col_max_label = Layout_dict.col_max_label;
-    let indent = Layout_dict.indentation;
-
-
-    // Calculate total count
-    const total_count = calculateTotalCount(data,Checklist);
-
-    // set col breaker number
-    var Col_break_number;
-
-    if (col_max_label == "Auto") {
-        Col_break_number = Math.ceil(total_count / columns);
-    } else if (col_max_label == "Custom") {
-        Col_break_number = Layout_dict.Col_break_number
+    // Helper function to sort arrays naturally
+    function naturalSort(arr) {
+        return arr.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
     }
 
-    // Dimensions
+    // Build the sorted Class list (only include it if Layer1 is checked)
+    let sortedClasses = Layer1_isChecked ? naturalSort(Object.keys(data)) : [];
+
+    // Iterate over sorted Classes and handle layers accordingly
+    for (const classKey of sortedClasses) {
+        final_array.push(classKey); // Add the Class if Layer1 is checked
+        category_array.push("Class"); // Add "Class" category
+
+        let ligandTypeDict = {};
+
+        // Collect all LigandTypes and their families/receptors for the current Class
+        for (const ligandKey in data[classKey]) {
+            if (!ligandTypeDict[ligandKey]) {
+                ligandTypeDict[ligandKey] = [];
+            }
+
+            for (const receptorFamilyKey in data[classKey][ligandKey]) {
+                ligandTypeDict[ligandKey].push({
+                    family: receptorFamilyKey,
+                    receptors: data[classKey][ligandKey][receptorFamilyKey]
+                });
+            }
+        }
+
+        // Sort LigandTypes if Layer2 is checked, otherwise skip LigandTypes
+        let sortedLigandTypes = Layer2_isChecked ? naturalSort(Object.keys(ligandTypeDict)) : [];
+
+        // For each LigandType, process its ReceptorFamilies and Receptors
+        sortedLigandTypes.forEach(ligandKey => {
+            final_array.push(ligandKey); // Add LigandType if Layer2 is checked
+            category_array.push("LigandType"); // Add "LigandType" category
+
+            let receptorFamilies = ligandTypeDict[ligandKey].sort((a, b) => a.family.localeCompare(b.family)); // Sort ReceptorFamilies
+
+            receptorFamilies.forEach(familyObj => {
+                if (Layer3_isChecked) {
+                    final_array.push(familyObj.family); // Add ReceptorFamily if Layer3 is checked
+                    category_array.push("ReceptorFamily"); // Add "ReceptorFamily" category
+                }
+
+                // Always sort and add receptors
+                familyObj.receptors.forEach(receptor => {
+                    final_array.push(receptor);
+                    category_array.push("Receptor"); // Add "Receptor" category for each receptor
+                });
+            });
+        });
+
+        // If Layer2 is not checked but Layer3 is checked (Case [True, False, True])
+        if (!Layer2_isChecked && Layer3_isChecked) {
+            let receptorFamilies = [];
+            for (const ligandKey in ligandTypeDict) {
+                receptorFamilies.push(...ligandTypeDict[ligandKey]);
+            }
+
+            receptorFamilies.sort((a, b) => a.family.localeCompare(b.family));
+
+            receptorFamilies.forEach(familyObj => {
+                final_array.push(familyObj.family); // Add ReceptorFamily if Layer3 is checked
+                category_array.push("ReceptorFamily"); // Add "ReceptorFamily" category
+                familyObj.receptors.forEach(receptor => {
+                    final_array.push(receptor);
+                    category_array.push("Receptor"); // Add "Receptor" category
+                });
+            });
+        }
+
+        if (!Layer2_isChecked && !Layer3_isChecked) {
+            for (const ligandKey in ligandTypeDict) {
+                ligandTypeDict[ligandKey].forEach(familyObj => {
+                    familyObj.receptors.forEach(receptor => {
+                        final_array.push(receptor); // Add sorted Receptors
+                        category_array.push("Receptor"); // Add "Receptor" category
+                    });
+                });
+            }
+        }
+    }
+
+    // Case [False, True, True]: Include LigandType, ReceptorFamily, and Receptors, but no Class
+    if (!Layer1_isChecked && Layer2_isChecked && Layer3_isChecked) {
+        let allLigandTypes = [];
+
+        // Collect LigandTypes and ReceptorFamilies across all classes
+        for (const classKey in data) {
+            for (const ligandKey in data[classKey]) {
+                if (!allLigandTypes[ligandKey]) {
+                    allLigandTypes[ligandKey] = [];
+                }
+                for (const receptorFamilyKey in data[classKey][ligandKey]) {
+                    allLigandTypes[ligandKey].push({
+                        family: receptorFamilyKey,
+                        receptors: data[classKey][ligandKey][receptorFamilyKey]
+                    });
+                }
+            }
+        }
+
+        let sortedLigandTypes = naturalSort(Object.keys(allLigandTypes));
+
+        sortedLigandTypes.forEach(ligandKey => {
+            final_array.push(ligandKey); // Add LigandType
+            category_array.push("LigandType"); // Add "LigandType" category
+
+            let receptorFamilies = allLigandTypes[ligandKey].sort((a, b) => a.family.localeCompare(b.family));
+
+            receptorFamilies.forEach(familyObj => {
+                final_array.push(familyObj.family); // Add ReceptorFamily
+                category_array.push("ReceptorFamily"); // Add "ReceptorFamily" category
+
+                familyObj.receptors.forEach(receptor => {
+                    final_array.push(receptor);
+                    category_array.push("Receptor"); // Add "Receptor" category
+                });
+            });
+        });
+    }
+
+    // Case [False, True, False]: Include LigandType and Receptors, but no Class or ReceptorFamily
+    if (!Layer1_isChecked && Layer2_isChecked && !Layer3_isChecked) {
+        let allLigandTypes = [];
+
+        // Collect LigandTypes and Receptors across all classes
+        for (const classKey in data) {
+            for (const ligandKey in data[classKey]) {
+                if (!allLigandTypes[ligandKey]) {
+                    allLigandTypes[ligandKey] = [];
+                }
+                for (const receptorFamilyKey in data[classKey][ligandKey]) {
+                    allLigandTypes[ligandKey].push(...data[classKey][ligandKey][receptorFamilyKey]);
+                }
+            }
+        }
+
+        let sortedLigandTypes = naturalSort(Object.keys(allLigandTypes));
+
+        sortedLigandTypes.forEach(ligandKey => {
+            final_array.push(ligandKey); // Add LigandType
+            category_array.push("LigandType"); // Add "LigandType" category
+
+            naturalSort(allLigandTypes[ligandKey]).forEach(receptor => {
+                final_array.push(receptor);
+                category_array.push("Receptor"); // Add "Receptor" category
+            });
+        });
+    }
+
+    // If no Class or LigandType is checked but Receptors need to be included
+    if (!Layer1_isChecked && !Layer2_isChecked && Layer3_isChecked) {
+        let allReceptorFamilies = [];
+
+        for (const classKey in data) {
+            for (const ligandKey in data[classKey]) {
+                for (const receptorFamilyKey in data[classKey][ligandKey]) {
+                    // Collect receptor families and their receptors directly from data
+                    allReceptorFamilies.push({
+                        family: receptorFamilyKey,
+                        receptors: data[classKey][ligandKey][receptorFamilyKey]
+                    });
+                }
+            }
+        }
+
+        // Sort the receptor families
+        allReceptorFamilies.sort((a, b) => a.family.localeCompare(b.family));
+
+        allReceptorFamilies.forEach(familyObj => {
+            final_array.push(familyObj.family); // Add ReceptorFamily
+            category_array.push("ReceptorFamily"); // Add "ReceptorFamily" category
+            familyObj.receptors.forEach(receptor => {
+                final_array.push(receptor);
+                category_array.push("Receptor"); // Add "Receptor" category
+            });
+        });
+    }
+
+
+    // If all layers are unchecked, add all sorted receptors
+    if (!Layer1_isChecked && !Layer2_isChecked && !Layer3_isChecked) {
+        for (const classKey in data) {
+            for (const ligandKey in data[classKey]) {
+                for (const receptorFamilyKey in data[classKey][ligandKey]) {
+                    // Access receptors directly and sort them
+                    naturalSort(data[classKey][ligandKey][receptorFamilyKey]).forEach(receptor => {
+                        final_array.push(receptor); // Add sorted Receptors
+                        category_array.push("Receptor"); // Add "Receptor" category
+                    });
+                }
+            }
+        }
+    }
+
+
+    return { final_array, category_array };
+}
+
+// Calculate the dimensions of the plot
+function Calculate_dimension(data, Category_data, Col_break_number, columns, label_conversion_dict, label_names, styling_option) {
+
+    // Define the column tracking variables
+    let temp_col_state = 1; // Current column
+    let label_dim_counter = 0; // Counter for how many labels processed in the current column
+
+    // Initialize label max width tracking for up to 4 columns
+    let label_max_dict = {
+        col1_label_max: { 'Class': -Infinity, 'LigandType': -Infinity, 'ReceptorFamily': -Infinity, 'Receptor': -Infinity },
+        col2_label_max: { 'Class': -Infinity, 'LigandType': -Infinity, 'ReceptorFamily': -Infinity, 'Receptor': -Infinity },
+        col3_label_max: { 'Class': -Infinity, 'LigandType': -Infinity, 'ReceptorFamily': -Infinity, 'Receptor': -Infinity },
+        col4_label_max: { 'Class': -Infinity, 'LigandType': -Infinity, 'ReceptorFamily': -Infinity, 'Receptor': -Infinity }
+    };
+
+    let Col_spacing_dict = { 'Col1': -Infinity, 'Col2': -Infinity, 'Col3': -Infinity, 'Col4': -Infinity };
+
+    // List of known HTML entities to replace for correct label width calculation (for IUPHAR)
+    const htmlEntities = ['&alpha;', '&beta;', '&gamma;', '&delta;', '&epsilon;', '&zeta;', '&eta;', '&theta;', '&iota;', '&kappa;', '&lambda;', '&mu;', '&nu;', '&xi;', '&omicron;', '&pi;', '&rho;', '&sigma;', '&tau;', '&upsilon;', '&phi;', '&chi;', '&psi;', '&omega;'];
+
+    // Helper function to replace HTML entities in label text (only for IUPHAR)
+    function replaceHtmlEntities(str) {
+        const entityRegex = new RegExp(htmlEntities.join('|'), 'gi');
+        return str.replace(entityRegex, 'a'); // Replace with 'a' or some neutral character of approximate size
+    }
+
+    // Process each label in the data and check its corresponding category from Category_data
+    data.forEach((label, index) => {
+        const category = Category_data[index]; // Get the category of the current label ("Class", "LigandType", "ReceptorFamily", or "Receptor")
+
+        // Increment the label dimension counter
+        label_dim_counter++;
+
+        // Move to the next column if the Col_break_number is exceeded
+        if (label_dim_counter > Col_break_number && temp_col_state < columns) {
+            label_dim_counter = 1; // Reset the counter
+            temp_col_state++; // Move to the next column
+        }
+
+        // Trimming and processing labels based on category
+        if (category === 'Class') {
+            // Trimming Class (e.g., "Class (some text)" becomes "Class")
+            label = label.split(" (")[0];
+
+        } else if (category === 'LigandType') {
+            // No additional processing for LigandType
+            label = label;
+
+        } else if (category === 'ReceptorFamily') {
+            // Trimming ReceptorFamily (removing "receptors" or "neuropeptide" and trimming after "(")
+            label = label.replace(/( receptors|neuropeptide )/g, '').split(" (")[0];
+
+        } else if (category === 'Receptor') {
+            // For Receptors, apply the label conversion based on 'label_names'
+            if (label_names === 'Gene') {
+                // Convert based on UniProt data
+                label = label_conversion_dict[label];
+                label = label ? label.replace(/_human/g, '').toUpperCase() : label; // Clean up UniProt receptor names
+            } else if (label_names === 'Protein') {
+                // Apply IUPHAR-specific replacements and clean up
+                label = replaceHtmlEntities(label)
+                    .replace(/<\/?i>|(-adrenoceptor| receptor)|<\/?sub>/g, '');
+
+                // Subscript handling for accurate label length measurement
+                label = label.replace(/<sub>.*?<\/sub>/g, ''); // Simplified subscript removal for length estimation
+            }
+        }
+
+        // Determine current column
+        const colKey = `col${temp_col_state}_label_max`;
+
+        // Measure the label length and update the max length for that column's category
+        const label_length = label.length;
+        if (label_max_dict[colKey][category] < label_length) {
+            label_max_dict[colKey][category] = label_length;
+        }
+    });
+
+    // Calculate the actual pixel widths for each column and category
+    const categories = ['Class', 'LigandType', 'ReceptorFamily', 'Receptor'];
+    const cols = ['Col1', 'Col2', 'Col3', 'Col4'];
+
+    for (let i = 0; i < columns; i++) {
+        const key = `col${i + 1}_label_max`;
+        const max_label_values = label_max_dict[key];
+
+        categories.forEach(category => {
+            const columnKey = cols[i];
+
+            if (max_label_values[category] !== -Infinity) {
+                // Create a dummy text element to measure the width based on the max label length
+                const dummyText = d3.select("body")
+                    .append("svg")
+                    .attr("class", "dummy-text")
+                    .append("text")
+                    .attr("font-size", styling_option[category].Fontsize) // Use the category as the key for styling_option
+                    .attr("font-weight", styling_option[category].Bold ? "bold" : "normal")
+                    .text("X".repeat(max_label_values[category]));
+
+                const bbox = dummyText.node().getBBox();
+                let estimatedLength = bbox.width * 0.8 + 20;
+
+                if (category === 'Receptor') {
+                    estimatedLength += 80; // Additional margin for Receptors
+                }
+
+                // Remove the dummy text element
+                d3.select(".dummy-text").remove();
+
+                // Update the spacing dict if this label is the largest so far for this column
+                if (estimatedLength > Col_spacing_dict[columnKey]) {
+                    Col_spacing_dict[columnKey] = estimatedLength;
+                }
+            }
+        });
+    }
+    return Col_spacing_dict;
+}
+
+// Genreate the printing of the labels
+function RenderListPlot_Labels(data, category_data, location, styling_option, Layout_dict, label_conversion_dict, label_names) {
+    // ######################
+    // ## Initialization   ##
+    // ######################
+
+    // Extract necessary values from the layout
+    let columns = Layout_dict.columns;
+    let col_max_label = Layout_dict.col_max_label;
+
+    // Calculate total count
+    const total_count = data.length;
+
+    // Determine Col_break_number (automatic or custom)
+    let Col_break_number = col_max_label === "Auto" ? Math.ceil(total_count / columns) : Layout_dict.Col_break_number;
+
+    // ##################
+    // ## Dimensions   ##
+    // ##################
     let width = 0;
-    const height = 200;
+    const initial_height = 200;  // Starting height of the SVG
     const margin = { top: 40, right: 20, bottom: 20, left: 20 };
 
     // ## Calculate all spacing and dimensions ##
-    let spacing_dict = Calculate_dimension(data,Checklist,Col_break_number,columns,label_conversion_dict,label_names,styling_option,margin);
+    let spacing_dict = Calculate_dimension(data, category_data, Col_break_number, columns, label_conversion_dict, label_names, styling_option);
 
-    // update spacing_dict
-    spacing_dict.Col1 = spacing_dict.Col1 === -Infinity ? spacing_dict.Col1 : spacing_dict.Col1 + (indent == "No" ? 80 : 0); // 90 is the xoffset of the labels due to datapoints (this might change)
-    spacing_dict.Col2 = spacing_dict.Col2 === -Infinity ? spacing_dict.Col2 : spacing_dict.Col2 + (indent == "No" ? 80 : 0);
-    spacing_dict.Col3 = spacing_dict.Col3 === -Infinity ? spacing_dict.Col3 : spacing_dict.Col3 + (indent == "No" ? 80 : 0);
-    spacing_dict.Col4 = spacing_dict.Col4 === -Infinity ? spacing_dict.Col4 : spacing_dict.Col4 + (indent == "No" ? 80 : 0);
-    // Update width
-
-    col_list = ['Col1','Col2','Col3','Col4'];
+    // Calculate total width based on spacing_dict and columns
+    const col_list = ['Col1', 'Col2', 'Col3', 'Col4'];
     for (let i = 0; i < columns; i++) {
-        width = width+spacing_dict[col_list[i]];
+        width += spacing_dict[col_list[i]];
     }
-    width = width+45;
+    width += 45; // Add some padding
 
-    // Recalculate width if its less than legend bars
+    // // Recalculate width if its less than legend bars
     let number_of_bar_legends = 0;
     Object.keys(Data_styling).forEach(function(column) {
         if (Data_styling[column].Data === "Yes" && Data_styling[column].Datatype === 'Continuous') {
@@ -1062,46 +1405,230 @@ function renderDataVisualization(data, location,styling_option,Layout_dict,data_
         }
     }
 
-    // X & Y coordinates
-    let ylist_start = margin.top+5+80;
-    let yOffset = ylist_start;
-    let yOffset_max = 0
-    let xOffset = 0;
-
-    // Create svg element
-    const svg = d3.select("#" + location)
+    // Initialize SVG container
+    const svg = d3.select(`#${location}`)
         .append("svg")
         .attr("width", width + margin.left + margin.right)
-        .attr("height", height + margin.top + margin.bottom)
+        .attr("height", initial_height + margin.top + margin.bottom)  // Start with initial height
         .attr("id", "ListPlot_visualization");
 
+    // Set initial X & Y positions
+    let yOffset = margin.top + 5 + 80;
+    let yOffset_max = yOffset; // Track the maximum yOffset
+    let xOffset = 0;
 
-    // ###############
-    // ## Functions ##
-    // ###############
+    // ######################
+    // ## Label Handling   ##
+    // ######################
+
+    // Function to handle text rendering with special cases for IUPHAR and UniProt (only for Receptor category)
+    function add_text(label, yOffset, category, label_key, bold = false, italic = false, underline = false, fontSize = '16px', color = 'black', label_names) {
+        // Handle special cases for Receptors
+        if (category === 'Receptor') {
+            if (label_names === 'Protein') {
+
+                const htmlEntities = {
+                    '&alpha;': 'α', '&beta;': 'β', '&gamma;': 'γ', '&delta;': 'δ',
+                    '&epsilon;': 'ε', '&zeta;': 'ζ', '&eta;': 'η', '&theta;': 'θ',
+                    '&iota;': 'ι', '&kappa;': 'κ', '&lambda;': 'λ', '&mu;': 'μ',
+                    '&nu;': 'ν', '&xi;': 'ξ', '&omicron;': 'ο', '&pi;': 'π',
+                    '&rho;': 'ρ', '&sigma;': 'σ', '&tau;': 'τ', '&upsilon;': 'υ',
+                    '&phi;': 'φ', '&chi;': 'χ', '&psi;': 'ψ', '&omega;': 'ω'
+                };
+
+                // Replace HTML entities with corresponding Unicode characters
+                for (const [entity, char] of Object.entries(htmlEntities)) {
+                    label = label.replace(new RegExp(entity, 'g'), char);
+                }
+
+                // Remove <i> tags and (-adrenoceptor| receptor) from the label
+                label = label.replace(/<\/?i>/g, '')  // Remove <i> tags
+                .replace(/(-adrenoceptor| receptor)/g, '');  // Remove adrenoceptor/receptor text
 
 
-    // ## Function to calculate the total count of keys and values ##
-    function calculateTotalCount(obj,checklist) {
-        let totalCount = 0;
-        // Recursive function to traverse the nested object
-        for (const key in obj) {
-            // Increment count for each key
-            checklist[0] ? totalCount++ : totalCount;
-            for (const subkey1 in obj[key]) {
-                checklist[1] ? totalCount++ : totalCount;
-                for (const subkey2 in obj[key][subkey1]) {
-                    checklist[2] ? totalCount++ : totalCount;
-                    for (const item in obj[key][subkey1][subkey2]) {
-                        totalCount++;
+                // Create text element for IUPHAR receptor
+                const textElement = svg.append('text')
+                    .attr('x', margin.left + xOffset + 80)
+                    .attr('y', yOffset)
+                    .attr('class', category)
+                    .style('dominant-baseline', 'middle') // Set vertical alignment
+                    .style('font-weight', bold ? 'bold' : 'normal')
+                    .style('font-style', italic ? 'italic' : 'normal')
+                    .style('text-decoration', underline ? 'underline' : 'none')
+                    .style('font-size', fontSize)
+                    .style('fill', color);
+
+                // Subscript handling for IUPHAR receptors
+                const mainFontSize = parseFloat(fontSize);
+                const subFontSize = mainFontSize * 0.75 + 'px';
+                const parts = label.split(/(<sub>|<\/sub>)/);
+                let inSub = false;
+
+                // Handle subscripts
+                parts.forEach(part => {
+                    if (part === '<sub>') {
+                        inSub = true;
+                    } else if (part === '</sub>') {
+                        inSub = false;
+                    } else {
+                        const tspan = textElement.append('tspan')
+                            .text(part);
+
+                        if (inSub) {
+                            tspan.attr('dy', '0.3em') // Subscript positioning
+                                .attr('font-size', subFontSize);
+                        } else {
+                            tspan.attr('dy', '-0.3em') // Reset positioning
+                                .attr('font-size', fontSize);
+                        }
+                    }
+                });
+
+            } else if (label_names === 'Gene') {
+                // Handle UniProt receptor labels
+                label = label_conversion_dict[label_key]?.replace(/_human/g, '').toUpperCase() || label_key;
+                svg.append('text')
+                    .attr('x', margin.left + xOffset + 80)
+                    .attr('y', yOffset)
+                    .attr('class', category)
+                    .attr('dy', '-0.3em') // Adjust this value to move the text higher
+                    .style('dominant-baseline', 'middle') // Set vertical alignment
+                    .style('font-weight', bold ? 'bold' : 'normal')
+                    .style('font-style', italic ? 'italic' : 'normal')
+                    .style('text-decoration', underline ? 'underline' : 'none')
+                    .style('font-size', fontSize)
+                    .style('fill', color)
+                    .text(label);
+            }
+        } else if (category === 'ReceptorFamily') {
+            // Handle ReceptorFamily (subscript handling but no label_names logic)
+            label = label_key.replace(/( receptors|neuropeptide )/g, '').split(" (")[0];
+
+            // Create text element for ReceptorFamily
+            const textElement = svg.append('text')
+                .attr('x', margin.left + xOffset)
+                .attr('y', yOffset)
+                .attr('class', category)
+                .style('dominant-baseline', 'middle') // Set vertical alignment
+                .style('font-weight', bold ? 'bold' : 'normal')
+                .style('font-style', italic ? 'italic' : 'normal')
+                .style('text-decoration', underline ? 'underline' : 'none')
+                .style('font-size', fontSize)
+                .style('fill', color);
+
+            // Subscript handling for ReceptorFamily
+            const mainFontSize = parseFloat(fontSize);
+            const subFontSize = mainFontSize * 0.75 + 'px';
+            const parts = label.split(/(<sub>|<\/sub>)/);
+            let inSub = false;
+
+            // Handle subscripts
+            parts.forEach(part => {
+                if (part === '<sub>') {
+                    inSub = true;
+                } else if (part === '</sub>') {
+                    inSub = false;
+                } else {
+                    const tspan = textElement.append('tspan')
+                        .text(part);
+
+                    if (inSub) {
+                        tspan.attr('dy', '0.3em') // Subscript positioning
+                            .attr('font-size', subFontSize);
+                    } else {
+                        tspan.attr('dy', '-0.3em') // Reset positioning
+                            .attr('font-size', fontSize);
                     }
                 }
+            });
+        } else {
+            // General label handling for other categories
+            if (category === 'Class') {
+                label = label_key.split(" (")[0]; // Trim Class
             }
-        } return totalCount;
+
+            // Render text for non-receptor categories
+            svg.append('text')
+                .attr('x', margin.left + xOffset)
+                .attr('y', yOffset)
+                .attr('class', category)
+                .style('dominant-baseline', 'middle') // Set vertical alignment
+                .style('font-weight', bold ? 'bold' : 'normal')
+                .style('font-style', italic ? 'italic' : 'normal')
+                .style('text-decoration', underline ? 'underline' : 'none')
+                .style('font-size', fontSize)
+                .style('fill', color)
+                .text(label);
+        }
+    }
+
+
+    // ###########################
+    // ## Render List of Labels ##
+    // ###########################
+
+    let label_counter = 1;
+    let current_col = 1; // Track the current column being rendered
+
+    for (let i = 0; i < data.length; i++) {
+        const label = data[i];
+        const category = category_data[i];
+        const label_key = label; // Use original label before conversions
+        const style = styling_option[category]; // Get the style options for the category
+
+        // Add text for the label
+        add_text(label, yOffset, category, label_key, style.Bold, style.Italic, style.Underline, style.Fontsize, style.Color,label_names);
+
+        yOffset += 30; // Adjust Y-offset for the next label
+
+        // Check if this is the new maximum yOffset encountered
+        if (yOffset > yOffset_max) {
+            yOffset_max = yOffset; // Update yOffset_max globally
         }
 
+        label_counter++;
 
-    // ## Shape Funciton ##
+        // Handle column breaks when Col_break_number is reached
+        if (label_counter > Col_break_number && current_col < columns) {
+            current_col++;
+            xOffset += spacing_dict[`Col${current_col - 1}`]; // Move to the next column
+            label_counter = 1; // Reset label counter for the new column
+            yOffset = margin.top + 5 + 80; // Reset yOffset for the new column
+        }
+
+        // Ensure the global maximum yOffset is tracked
+        if (yOffset > yOffset_max) {
+            yOffset_max = yOffset; // Update the maximum yOffset encountered
+        }
+    }
+
+    // Rerender height of plot based on the max yOffset encountered
+    svg.attr("height", yOffset_max + margin.top + margin.bottom);
+
+    return svg;
+}
+
+// Handles the data visualization
+function data_visualization(data, category_data, location, Layout_dict, data_styling, spacing_dict) {
+
+    // ###########################
+    // ## Initialize Variables  ##
+    // ###########################
+
+    // Set default margins, xOffset, yOffset, and columns based on Layout_dict
+    const margin = { top: 40, right: 20, bottom: 20, left: 20 };
+    let yOffset = margin.top + 5 + 80 + 5;
+    let xOffset = 5;
+    let columns = Layout_dict.columns;
+
+    // Get the SVG container
+    const svg = d3.select(`#${location} svg`);
+
+    // Track the current column and Y-offsets
+    let current_col = 1;
+    let label_counter = 1;
+    const Col_break_number = Layout_dict.Col_break_number || Math.ceil(data.length / columns);
+
     // Function to add different shapes
     function addShape(shapeType, x, y, size, fillColor) {
         switch (shapeType) {
@@ -1110,6 +1637,7 @@ function renderDataVisualization(data, location,styling_option,Layout_dict,data_
                     .attr('cx', x)
                     .attr('cy', y)
                     .attr('r', size)
+                    .style('dominant-baseline', 'middle') // Set vertical alignment
                     .style('stroke', 'black')
                     .style('stroke-width', 1)
                     .style('fill', fillColor);
@@ -1120,6 +1648,7 @@ function renderDataVisualization(data, location,styling_option,Layout_dict,data_
                     .attr('y', y - size)
                     .attr('width', size * 2)
                     .attr('height', size * 2)
+                    .style('dominant-baseline', 'middle') // Set vertical alignment
                     .style('stroke', 'black')
                     .style('stroke-width', 1)
                     .style('fill', fillColor);
@@ -1128,6 +1657,7 @@ function renderDataVisualization(data, location,styling_option,Layout_dict,data_
                 svg.append('path')
                     .attr('d', `M ${x} ${y - size} L ${x - size} ${y + size} L ${x + size} ${y + size} Z`)
                     .style('stroke', 'black')
+                    .style('dominant-baseline', 'middle') // Set vertical alignment
                     .style('stroke-width', 1)
                     .style('fill', fillColor);
                 break;
@@ -1135,6 +1665,7 @@ function renderDataVisualization(data, location,styling_option,Layout_dict,data_
                 svg.append('path')
                     .attr('d', `M ${x} ${y - size} L ${x - size} ${y} L ${x} ${y + size} L ${x + size} ${y} Z`)
                     .style('stroke', 'black')
+                    .style('dominant-baseline', 'middle') // Set vertical alignment
                     .style('stroke-width', 1)
                     .style('fill', fillColor);
                 break;
@@ -1154,6 +1685,7 @@ function renderDataVisualization(data, location,styling_option,Layout_dict,data_
                 svg.append('path')
                     .attr('d', starPath)
                     .style('stroke', 'black')
+                    .style('dominant-baseline', 'middle') // Set vertical alignment
                     .style('stroke-width', 1)
                     .style('fill', fillColor);
                 break;
@@ -1162,1015 +1694,265 @@ function renderDataVisualization(data, location,styling_option,Layout_dict,data_
         }
     }
 
-    function Calculate_dimension(data,Checklist,Col_break_number,columns,label_conversion_dict,label_names,styling_option,margin) {
-
-        temp_col_state = 1;
-
-        label_max_dict = {col1_label_max: {'level1':-Infinity,'level2':-Infinity,'level3':-Infinity,'level4':-Infinity},
-                            col2_label_max: {'level1':-Infinity,'level2':-Infinity,'level3':-Infinity,'level4':-Infinity},
-                            col3_label_max: {'level1':-Infinity,'level2':-Infinity,'level3':-Infinity,'level4':-Infinity},
-                            col4_label_max: {'level1':-Infinity,'level2':-Infinity,'level3':-Infinity,'level4':-Infinity}};
-
-        Col_spacing_dict = {'Col1': -Infinity,'Col2': -Infinity,'Col3': -Infinity,'Col4': -Infinity};
-
-        const label_dict_keys = Object.keys(label_max_dict);
-
-        const htmlEntities = [
-            '&alpha;', '&beta;', '&gamma;', '&delta;', '&epsilon;',
-            '&zeta;', '&eta;', '&theta;', '&iota;', '&kappa;',
-            '&lambda;', '&mu;', '&nu;', '&xi;', '&omicron;',
-            '&pi;', '&rho;', '&sigma;', '&tau;', '&upsilon;',
-            '&phi;', '&chi;', '&psi;', '&omega;'
-        ];
-        function replaceHtmlEntities(str) {
-            // Create a regular expression to match any of the HTML entities as keys
-            const entityRegex = new RegExp(htmlEntities.join('|'), 'gi');
-
-            // Replace occurrences of HTML entities with a placeholder character (e.g., 'a')
-            return str.replace(entityRegex, 'a');
-        }
-
-
-        // initialize variables for length calculation
-        let label_dim_counter = 0;
-        let label_length = 0;
-
-        // Functions for length updates
-        // Function to update column state and label max length
-        function updateLabelMaxLength(key,level) {
-            label_dim_counter++;
-
-            // Update current column state
-            if (label_dim_counter > Col_break_number && temp_col_state < columns) {
-                label_dim_counter = 1;
-                temp_col_state++;
-            }
-
-
-            if (level == 'level1') {
-                // Trimming Class
-                key = key.split(" (")[0];
-            } else if (level == 'level2') {
-                key = key;
-            } else if (level == 'level3') {
-                // Trimming receptor family
-                key = key.replace(/( receptors|neuropeptide )/g, '');
-                key = key.split(" (")[0];
-            }
-
-            // Dynamic key for the current column
-            const colKey = `col${temp_col_state}_label_max`;
-            label_length = key.length;
-
-            // Update the max length for the current column
-            if (label_max_dict[colKey][level] < label_length) {
-                label_max_dict[colKey][level] = label_length;
-            }
-        }
-
-        // Function to update label max length for array items with specific conversions
-        function updateLabelMaxLengthForItems(item) {
-            label_dim_counter++;
-
-            // Update current column state
-            if (label_dim_counter > Col_break_number && temp_col_state < columns) {
-                label_dim_counter = 1;
-                temp_col_state++;
-            }
-
-            // Dynamic key for the current column
-            const colKey = `col${temp_col_state}_label_max`;
-            let label = item;
-
-            if (label_names == 'UniProt') {
-                label = label_conversion_dict[item];
-                // label = label.replace(/_human/g, '');
-            } else if (label_names == 'IUPHAR') {
-                label = item;
-                label = replaceHtmlEntities(label)
-                label = label.replace(/<\/?i>|(-adrenoceptor| receptor)|<\/?sub>/g, '');
-            }
-
-            label_length = label.length;
-            // Update the max length for the current column
-            if (label_max_dict[colKey]['level4'] < label_length) {
-                label_max_dict[colKey]['level4'] = label_length;
-            }
-        }
-        Object.entries(data).forEach(([key, value]) => {
-            // If Class is there
-            if (Checklist[0]) {
-                updateLabelMaxLength(key,'level1');
-                // transverse next level 2
-                if (Checklist[1] && typeof value === 'object') {
-                    Object.entries(value).forEach(([subKey1, subValue1]) => {
-                        updateLabelMaxLength(subKey1,'level2');
-                        // transverse next level 3
-                        if (Checklist[2] && typeof subValue1 === 'object') {
-                            Object.entries(subValue1).forEach(([subKey2, subValue2]) => {
-                                updateLabelMaxLength(subKey2,'level3');
-                                // transverse final level 4
-                                if (Array.isArray(subValue2)) {
-                                    subValue2.forEach(item => {
-                                        updateLabelMaxLengthForItems(item)
-                                    });
-                                }
-                            });
-                        } else if (!Checklist[2]) {
-                            Object.entries(subValue1).forEach(([subKey2, subValue2]) => {
-                                if (Array.isArray(subValue2)) {
-                                    subValue2.forEach(item => {
-                                        updateLabelMaxLengthForItems(item)
-                                    });
-                                }
-                            });
-                        }
-                    });
-                } else if (!Checklist[1] && Checklist[2]) {
-                    // transverse final level 2
-                    Object.entries(value).forEach(([subKey1, subValue1]) => {
-                        if (Checklist[2] && typeof subValue1 === 'object') {
-                            // transverse final level 3
-                            Object.entries(subValue1).forEach(([subKey2, subValue2]) => {
-                                updateLabelMaxLength(subKey2,'level3');
-                                // transverse final level 4
-                                if (Array.isArray(subValue2)) {
-                                    subValue2.forEach(item => {
-                                        updateLabelMaxLengthForItems(item)
-                                    });
-                                }
-                            });
-                        }
-                    });
-                } else if (!Checklist[1] && !Checklist[2]) {
-                    // transverse final level 2
-                    Object.entries(value).forEach(([subKey1, subValue1]) => {
-                        // transverse final level 3
-                        Object.entries(subValue1).forEach(([subKey2, subValue2]) => {
-                            // transverse final level 4
-                            if (Array.isArray(subValue2)) {
-                                subValue2.forEach(item => {
-                                    updateLabelMaxLengthForItems(item)
-                                });
-                            }
-                        });
-                    });
-                }
-            } else if (!Checklist[0] && Checklist[1]) {
-                // transverse final level 2
-                Object.entries(value).forEach(([subKey1, subValue1]) => {
-                    updateLabelMaxLength(subKey1,'level2');
-                    if (Checklist[2] && typeof subValue1 === 'object') {
-                        // transverse final level 3
-                        Object.entries(subValue1).forEach(([subKey2, subValue2]) => {
-                            updateLabelMaxLength(subKey2,'level3');
-                            // transverse final level 4
-                            if (Array.isArray(subValue2)) {
-                                subValue2.forEach(item => {
-                                    updateLabelMaxLengthForItems(item)
-                                });
-                            }
-                        });
-                    } else if (!Checklist[2]) {
-                        // transverse final level 3
-                        Object.entries(subValue1).forEach(([subKey2, subValue2]) => {
-                            // transverse final level 4
-                            if (Array.isArray(subValue2)) {
-                                subValue2.forEach(item => {
-                                    updateLabelMaxLengthForItems(item)
-                                });
-                            }
-                        });
-                    }
-                });
-            } else if (!Checklist[0] && !Checklist[1] && Checklist[2]) {
-                // transverse final level 2
-                Object.entries(value).forEach(([subKey1, subValue1]) => {
-                    // transverse final level 3
-                    Object.entries(subValue1).forEach(([subKey2, subValue2]) => {
-                        updateLabelMaxLength(subKey2,'level3');
-                        // transverse final level 4
-                        if (Array.isArray(subValue2)) {
-                            subValue2.forEach(item => {
-                                updateLabelMaxLengthForItems(item)
-                            });
-                        }
-                    });
-                });
-            } else if (!Checklist[0] && !Checklist[1] && !Checklist[2]){
-                // transverse final level 2
-                Object.entries(value).forEach(([subKey1, subValue1]) => {
-                    // transverse final level 3
-                    Object.entries(subValue1).forEach(([subKey2, subValue2]) => {
-                        // transverse final level 4
-                        if (Array.isArray(subValue2)) {
-                            subValue2.forEach(item => {
-                                updateLabelMaxLengthForItems(item)
-                            });
-                        }
-                    });
-                });
-            }
-        });
-
-        // calculate the longest entry for each column
-        const levels = ['level1', 'level2', 'level3', 'level4'];
-        const laters = ['Layer1', 'Layer2', 'Layer3', 'Layer4'];
-        const cols = ['Col1', 'Col2', 'Col3', 'Col4'];
-
-
-        for (let i = 0; i < columns; i++) {
-            const key = label_dict_keys[i];
-            const max_label_values = label_max_dict[key];
-            for (let j = 0; j < levels.length; j++) {
-                const levelKey = levels[j];
-                const layerKey = laters[j];
-                const columnKey = cols[i];
-
-                if (max_label_values[levelKey] !== -Infinity) {
-                    // Create a dummy text element to measure its size
-                    const dummyText = d3.select("body")
-                                    .append("svg")
-                                    .attr("class", "dummy-text")
-                                    .append("text")
-                                    .attr("font-size", styling_option[layerKey].Fontsize)
-                                    .attr("font-weight", styling_option[layerKey].Bold ? "bold" : "normal")
-                                    .text("X".repeat(max_label_values[levelKey]));
-
-                    // Measure the bounding box of the dummy text
-                    const bbox = dummyText.node().getBBox();
-                    let estimatedLength = 0;
-                    if (layerKey == 'Layer4') {
-                        estimatedLength = bbox.width*0.8+margin.left+80;
-                    } else {
-                        estimatedLength = bbox.width*0.8+margin.left;
-                    }
-
-                    // Remove the dummy text element
-                    d3.select(".dummy-text").remove();
-
-                    // Update Col_spacing_dict if the estimated length is greater
-                    if (estimatedLength > Col_spacing_dict[columnKey]) {
-                        Col_spacing_dict[columnKey] = estimatedLength;
-                    }
-                }
-            }
-        }
-
-        return Col_spacing_dict
-    }
-
-
-    // ## Column breaker function ##
-    function ColumnsBreakerFunc (columns,label_counter,Col_break_number,state) {
-        if (columns == 2 && label_counter > Col_break_number && state.current_col == 1){
-            state.current_col = 2;
-            xOffset = spacing_dict.Col1;
-            if (yOffset > yOffset_max) {yOffset_max = yOffset;}
-            yOffset = ylist_start;
-        }
-        if (columns == 3 && label_counter > Col_break_number && state.current_col == 1){
-            state.current_col = 2;
-            xOffset = spacing_dict.Col1;
-            if (yOffset > yOffset_max) {yOffset_max = yOffset;}
-            yOffset = ylist_start;
-        } else if (columns == 3 && label_counter > Col_break_number*2 && state.current_col == 2){
-            state.current_col = 3;
-            xOffset =  spacing_dict.Col1+spacing_dict.Col2;
-            if (yOffset > yOffset_max) {yOffset_max = yOffset;}
-            yOffset = ylist_start;
-        }
-        if (columns == 4 && label_counter > Col_break_number && state.current_col == 1){
-            state.current_col = 2;
-            xOffset = spacing_dict.Col1;
-            if (yOffset > yOffset_max) {yOffset_max = yOffset;}
-            yOffset = ylist_start;
-        } else if (columns == 4 && label_counter > Col_break_number*2 && state.current_col == 2){
-            state.current_col = 3;
-            xOffset = spacing_dict.Col1+spacing_dict.Col2;
-            if (yOffset > yOffset_max) {yOffset_max = yOffset;}
-            yOffset = ylist_start;
-        } else if (columns == 4 && label_counter > Col_break_number*3 && state.current_col == 3){
-            state.current_col = 4;
-            xOffset = spacing_dict.Col1+spacing_dict.Col2+spacing_dict.Col3;
-            if (yOffset > yOffset_max) {yOffset_max = yOffset;}
-            yOffset = ylist_start;
+    // Function to handle column breaks
+    function handleColumnBreak() {
+        if (label_counter > Col_break_number && current_col < columns) {
+            current_col++;
+            xOffset += spacing_dict[`Col${current_col - 1}`]; // Move to the next column
+            label_counter = 1; // Reset label counter for the new column
+            yOffset = margin.top + 5 + 80 + 5; // Reset yOffset for the new column
         }
     }
 
-    // #####################
-    // ## List processing ##
-    // #####################
+    // ###############################
+    // ## Color Logic Function      ##
+    // ###############################
 
-    function processList(list) {
-        // Check the visibility of each layer
-        const Layer1_isChecked = d3.select(`#toggle-layer-1`).property('checked');
-        const Layer2_isChecked = d3.select(`#toggle-layer-2`).property('checked');
-        const Layer3_isChecked = d3.select(`#toggle-layer-3`).property('checked');
+    function getShapeColor(column, data_value) {
+        const column_styling = data_styling[column];
+        let color = 'black';
 
-        let Checklist = [Layer1_isChecked, Layer2_isChecked, Layer3_isChecked];
+        if (column_styling.Datatype === 'Discrete') {
+            const Color_list = ['black', 'red', 'blue', 'green'];
+            if (data_value) {
+                const valueString = String(data_value); // Ensures data_value is converted to a string
+                color = Color_list.includes(valueString.toLowerCase()) ? valueString : 'black';
+            } else {
+                color = 'black';
+            }
+        } else if (column_styling.Datatype === 'Continuous') {
+            const gradientScale = d3.scale.linear()
+                .domain([column_styling.Data_min, column_styling.Data_max]);
 
+            if (column_styling.data_color_complexity === 'One') {
+                gradientScale.range(['#FFFFFF', column_styling.Data_color2]);
+            } else if (column_styling.data_color_complexity === 'Two') {
+                gradientScale.range([column_styling.Data_color1, column_styling.Data_color2]);
+            } else if (column_styling.data_color_complexity === 'Three') {
+                gradientScale.range([column_styling.Data_color1, '#FFFFFF', column_styling.Data_color2])
+                    .domain([column_styling.Data_min, (column_styling.Data_min + column_styling.Data_max) / 2, column_styling.Data_max]);
+            }
 
-        let col_max_label = Layout_dict.col_max_label;
-        var Col_break_number = 20;
-
-        if (col_max_label == "Auto") {
-            Col_break_number = Math.ceil(total_count / columns);
-        } else if (col_max_label == "Custom") {
-            Col_break_number = Layout_dict.Col_break_number
+            color = gradientScale(data_value);
         }
 
-        var state = { current_col: 1 };
-        // Setup amount of cols
-        let label_counter = 1;
-
-        // Set color gradient based on input
-
-        // Define Color_dict to store color scales for each column and shape
-        var Color_dict = {};
-
-        // # Setup color styling if "All" is chosen #
-        Object.keys(data_styling).forEach(function(col) {
-            Color_dict[col] = {};
-            if (data_styling[col].data_color_complexity == 'One') {
-                Color_dict[col]['All'] = d3.scale.linear().domain([data_styling[col].Data_min,data_styling[col].Data_max]).range(["#FFFFFF", data_styling[col].Data_color2]);
-            } else if (data_styling[col].data_color_complexity == 'Two') {
-                Color_dict[col]['All'] = d3.scale.linear()
-                .domain([data_styling[col].Data_min, data_styling[col].Data_max])
-                .range([data_styling[col].Data_color1, data_styling[col].Data_color2]);
-            } else if (data_styling[col].data_color_complexity == 'Three') {
-                Color_dict[col]['All'] = d3.scale.linear()
-                .domain([data_styling[col].Data_min, (data_styling[col].Data_min + data_styling[col].Data_max) / 2, data_styling[col].Data_max])
-                .range([data_styling[col].Data_color1, "#FFFFFF", data_styling[col].Data_color2]);
-            }
-        });
-
-        // ##############################
-        // ## Handle all list elements ##
-        // ##############################
-
-        Object.entries(list).forEach(([key, value]) => {
-            // Text input function
-            function add_text(label, yOffset, layer, bold = false, italic = false, underline = false, fontSize = '16px', color = 'black') {
-
-                // Function to break label into multiple lines based on length
-                function breakLabel(label) {
-                    const maxLength = 15;
-                    let result = '';
-                    let start = 0;
-
-                    while (start < label.length) {
-                        if (label.length - start <= maxLength) {
-                            result += label.slice(start);
-                            break;
-                        }
-
-                        let breakPosition = label.lastIndexOf(' ', start + maxLength);
-                        if (breakPosition === -1 || breakPosition < start) {
-                            breakPosition = label.indexOf('/', start);
-                            if (breakPosition === -1 || breakPosition > start + maxLength) {
-                                breakPosition = start + maxLength; // Default break position if no space or '/' found
-                            }
-                        }
-
-                        result += label.slice(start, breakPosition) + '\n';
-                        start = breakPosition + 1;
-                    }
-
-                    return result;
-                }
-
-                label_key = label;
-
-                // # Different types of label handling #
-                if (label_names == 'IUPHAR') {
-
-                    const htmlEntities = {
-                        '&alpha;': 'α',
-                        '&beta;': 'β',
-                        '&gamma;': 'γ',
-                        '&delta;': 'δ',
-                        '&epsilon;': 'ε',
-                        '&zeta;': 'ζ',
-                        '&eta;': 'η',
-                        '&theta;': 'θ',
-                        '&iota;': 'ι',
-                        '&kappa;': 'κ',
-                        '&lambda;': 'λ',
-                        '&mu;': 'μ',
-                        '&nu;': 'ν',
-                        '&xi;': 'ξ',
-                        '&omicron;': 'ο',
-                        '&pi;': 'π',
-                        '&rho;': 'ρ',
-                        '&sigma;': 'σ',
-                        '&tau;': 'τ',
-                        '&upsilon;': 'υ',
-                        '&phi;': 'φ',
-                        '&chi;': 'χ',
-                        '&psi;': 'ψ',
-                        '&omega;': 'ω'
-                    };
-
-                    // Replace HTML entities with corresponding Unicode characters
-                    for (const [entity, char] of Object.entries(htmlEntities)) {
-                        label = label.replace(new RegExp(entity, 'g'), char);
-                    }
-
-                    const textElement = svg.append('text')
-                        .attr('x', margin.left + xOffset + 80 + ((indent === 'Yes' && layer === 'Layer-4') ? 85 : 0))
-                        .attr('y', yOffset)
-                        .attr('class', layer)
-                        .style('dominant-baseline', 'middle') // Set vertical alignment
-                        .style('font-weight', bold ? 'bold' : 'normal')
-                        .style('font-style', italic ? 'italic' : 'normal')
-                        .style('text-decoration', underline ? 'underline' : 'none')
-                        .style('font-size', fontSize)
-                        .style('fill', color); // Set text color
-
-                    // Calculate the subscript font size (e.g., 75% of the main font size)
-                    const mainFontSize = parseFloat(fontSize);
-                    const subFontSize = mainFontSize * 0.75 + 'px';
-
-                    // Trimming Class
-                    if (layer == 'Layer-1') {
-                        label = label.split(" (")[0];
-                    }
-
-                    // Trimming receptor family
-                    if (layer == 'Layer-3') {
-                        label = label.replace(/( receptors|neuropeptide )/g, '');
-                        label = label.split(" (")[0];
-                    }
-
-                    // Remove <i> and </i> tags from the label
-                    // label = label.replace(/<\/?i>/g, '');
-                    if (layer == 'Layer-4') {
-                        label = label.replace(/<\/?i>|(-adrenoceptor| receptor)/g, '');
-                    }
-                    const parts = label.split(/(<sub>|<\/sub>)/); // Split label into parts including <sub> tags
-                    let inSub = false; // Flag to track if we are inside a subscript
-
-                    // Handle subscripts
-                    parts.forEach(part => {
-                        if (part === '<sub>') {
-                            inSub = true;
-                        } else if (part === '</sub>') {
-                            inSub = false;
-                        } else {
-                            const tspan = textElement.append('tspan')
-                                .text(part);
-
-                            if (inSub) {
-                                tspan.attr('dy', '0.3em') // Subscript positioning
-                                    .attr('font-size', subFontSize);
-                            } else {
-                                tspan.attr('dy', '-0.3em') // Reset positioning
-                                    .attr('font-size', fontSize);
-                            }
-                        }
-                    });
-
-                } else if (label_names == 'UniProt') {
-
-                    // Trimming Class
-                    if (layer == 'Layer-1') {
-                        label = label_key.split(" (")[0];
-                    } else if (layer == 'Layer-3') {
-                        label = label_key.replace(/( receptors|neuropeptide )/g, '');
-                        label = label.split(" (")[0];
-                    // } If UniProt, handle receptor names but keep classes etc. #
-                    } else if (layer == 'Layer-4') {
-                    label = label_conversion_dict[label_key];
-                    label = label.replace(/_human/g, '').toUpperCase();
-                    } else {
-                        label = label_key
-                    }
-
-                    const textElement = svg.append('text')
-                        .attr('x', margin.left + xOffset + 80 + ((indent === 'Yes' && layer === 'Layer-4') ? 85 : 0))
-                        .attr('y', yOffset)
-                        .attr('class', layer)
-                        .attr('dy', '-0.3em') // Adjust this value to move the text higher
-                        .style('dominant-baseline', 'middle') // Set vertical alignment
-                        .style('font-weight', bold ? 'bold' : 'normal')
-                        .style('font-style', italic ? 'italic' : 'normal')
-                        .style('text-decoration', underline ? 'underline' : 'none')
-                        .style('font-size', fontSize)
-                        .style('fill', color)
-                        .text(label);
-
-
-                }
-
-                // #############################
-                // ### Implement data points ###
-                // #############################
-
-                if (layer == 'Layer-4') {
-                    if (list_data_wow.hasOwnProperty(label_key)) {
-
-                        // Initialize all variables for better overview
-
-                        // Col data checker
-                        var Col1_data_checker = data_styling.Col1.Data == "Yes";
-                        var Col2_data_checker = data_styling.Col2.Data == "Yes";
-                        var Col3_data_checker = data_styling.Col3.Data == "Yes";
-                        var Col4_data_checker = data_styling.Col4.Data == "Yes";
-
-                        // Col lebels
-                        var Col1_shape = list_data_wow[label_key].hasOwnProperty('Value1') ? list_data_wow[label_key].Value1.toLowerCase() : false;
-                        var Col2_shape = list_data_wow[label_key].hasOwnProperty('Value3') ? list_data_wow[label_key].Value3.toLowerCase() : false;
-                        var Col3_shape = list_data_wow[label_key].hasOwnProperty('Value5') ? list_data_wow[label_key].Value5.toLowerCase() : false;
-                        var Col4_shape = list_data_wow[label_key].hasOwnProperty('Value7') ? list_data_wow[label_key].Value7.toLowerCase() : false;
-
-                        // Col data shapes checker
-                        var Col1_data = list_data_wow[label_key].hasOwnProperty('Value2') ? list_data_wow[label_key].Value2 : false;
-                        var Col2_data = list_data_wow[label_key].hasOwnProperty('Value4') ? list_data_wow[label_key].Value4 : false;
-                        var Col3_data = list_data_wow[label_key].hasOwnProperty('Value6') ? list_data_wow[label_key].Value6 : false;
-                        var Col4_data = list_data_wow[label_key].hasOwnProperty('Value8') ? list_data_wow[label_key].Value8 : false;
-
-                        // Col Datatype
-                        var Col1_datatype = data_styling.Col1.Datatype;
-                        var Col2_datatype = data_styling.Col2.Datatype;
-                        var Col3_datatype = data_styling.Col3.Datatype;
-                        var Col4_datatype = data_styling.Col4.Datatype;
-
-                        // Col data coloring scheme
-
-                        const Col1_coloring = data_styling.Col1.Data_coloring;
-                        const Col2_coloring = data_styling.Col2.Data_coloring;
-                        const Col3_coloring = data_styling.Col3.Data_coloring;
-                        const Col4_coloring = data_styling.Col4.Data_coloring;
-
-                        const Color_list = ['black', 'red', 'blue', 'green'];
-                        const Shape_list = ['circle','rect','triangle','star','diamond']
-
-                        const col1_XoffSet = 0 + (indent === 'Yes' ? 85 : 0)
-                        const col2_XoffSet = 20 + (indent === 'Yes' ? 85 : 0)
-                        const col3_XoffSet = 40 + (indent === 'Yes' ? 85 : 0)
-                        const col4_XoffSet = 60 + (indent === 'Yes' ? 85 : 0)
-
-                        // ## Col 1 ##
-                        if (Col1_data_checker && (Col1_shape || Col1_data)) {
-                            if (Col1_shape) {
-                                if (Col1_data && Col1_datatype == 'Discrete') {
-                                    shape_color = Color_list.includes(Col1_data.toLowerCase()) ? Col1_data : 'black';
-                                } else if (Col1_data && Col1_datatype == 'Continuous') {
-                                    if (Col1_coloring == 'All') {
-                                        shape_color = Color_dict.Col1.All(Col1_data);
-                                    } else if (Col1_coloring == 'Shapes') {
-                                        shape_color = Color_dict['Col1'][Col1_shape](Col1_data);
-                                    }
-                                } else {
-                                    shape_color = 'black';
-                                }
-                                shape_value = Col1_shape === "square" ? 'rect' : Col1_shape;
-                                addShape(Shape_list.includes(shape_value) ? shape_value : 'circle', margin.left + xOffset  + col1_XoffSet, yOffset - (parseFloat(fontSize) * 0.50), 6, shape_color);
-                            } else {
-                                if (Col1_data && Col1_datatype == 'Discrete') {
-                                    shape_color = Color_list.includes(Col1_data.toLowerCase()) ? Col1_data : 'black';
-                                    addShape('circle', margin.left + xOffset + col1_XoffSet, yOffset - (parseFloat(fontSize) * 0.50), 6, shape_color);
-                                } else if (Col1_data && Col1_datatype == 'Continuous') {
-                                    shape_color = Color_dict.Col1.All(Col1_data);
-                                    addShape('circle', margin.left + xOffset + col1_XoffSet, yOffset - (parseFloat(fontSize) * 0.50), 6, shape_color);
-                                }
-                            }
-                        }
-
-                        // ## Col 2 ##
-                        if (Col2_data_checker && (Col2_shape || Col2_data)) {
-                            if (Col2_shape) {
-
-
-                                if (Col2_data && Col2_datatype == 'Discrete') {
-                                    shape_color = Color_list.includes(Col2_data.toLowerCase()) ? Col2_data : 'black';
-                                } else if (Col2_data && Col2_datatype == 'Continuous') {
-
-                                    if (Col2_coloring == 'All') {
-                                        shape_color = Color_dict.Col2.All(Col2_data);
-                                    } else if (Col2_coloring == 'Shapes') {
-                                        shape_color = Color_dict['Col2'][Col2_shape](Col2_data);
-                                    }
-                                } else {
-                                    shape_color = 'black';
-                                }
-                                shape_value = Col2_shape === "square" ? 'rect' : Col2_shape;
-                                addShape(Shape_list.includes(shape_value) ? shape_value : 'circle', margin.left + xOffset + col2_XoffSet, yOffset - (parseFloat(fontSize) * 0.50), 6, shape_color);
-                            } else {
-                                if (Col2_data && Col2_datatype == 'Discrete') {
-                                    shape_color = Color_list.includes(Col2_data.toLowerCase()) ? Col2_data : 'black';
-                                    addShape('circle', margin.left + xOffset + col2_XoffSet, yOffset - (parseFloat(fontSize) * 0.50), 6, shape_color);
-                                } else if (Col2_data && Col2_datatype == 'Continuous') {
-                                    shape_color = Color_dict.Col2.All(Col2_data);
-                                    addShape('circle', margin.left + xOffset + col2_XoffSet, yOffset - (parseFloat(fontSize) * 0.50), 6, shape_color);
-                                }
-                            }
-                        }
-
-                        // ## Col 3 ##
-                        if (Col3_data_checker && (Col3_shape || Col3_data)) {
-                            if (Col3_shape) {
-                                if (Col3_data && Col3_datatype == 'Discrete') {
-                                    shape_color = Color_list.includes(Col3_data.toLowerCase()) ? Col3_data : 'black';
-                                } else if (Col3_data && Col3_datatype == 'Continuous') {
-                                    if (Col3_coloring == 'All') {
-                                        shape_color = Color_dict.Col3.All(Col3_data);
-                                    } else if (Col3_coloring == 'Shapes') {
-                                        shape_color = Color_dict['Col3'][Col3_shape](Col3_data);
-                                    }
-                                } else {
-                                    shape_color = 'black';
-                                }
-                                shape_value = Col3_shape === "square" ? 'rect' : Col3_shape;
-                                addShape(Shape_list.includes(shape_value) ? shape_value : 'circle', margin.left + xOffset + col3_XoffSet, yOffset - (parseFloat(fontSize) * 0.50), 6, shape_color);
-                            } else {
-                                if (Col3_data && Col3_datatype == 'Discrete') {
-                                    shape_color = Color_list.includes(Col3_data.toLowerCase()) ? Col3_data : 'black';
-                                    addShape('circle', margin.left + xOffset + col3_XoffSet, yOffset - (parseFloat(fontSize) * 0.50), 6, shape_color);
-                                } else if (Col3_data && Col3_datatype == 'Continuous') {
-                                    shape_color = Color_dict.Col3.All(Col3_data);
-                                    addShape('circle', margin.left + xOffset + col3_XoffSet, yOffset - (parseFloat(fontSize) * 0.50), 6, shape_color);
-                                }
-                            }
-                        }
-
-                        // ## Col 4 ##
-                        if (Col4_data_checker && (Col4_shape || Col4_data)) {
-                            if (Col4_shape) {
-                                if (Col4_data && Col4_datatype == 'Discrete') {
-                                    shape_color = Color_list.includes(Col4_data.toLowerCase()) ? Col4_data : 'black';
-                                } else if (Col4_data && Col4_datatype == 'Continuous') {
-                                    if (Col4_coloring == 'All') {
-                                        shape_color = Color_dict.Col4.All(Col4_data);
-                                    } else if (Col4_coloring == 'Shapes') {
-                                        shape_color = Color_dict['Col4'][Col4_shape](Col4_data);
-                                    }
-                                } else {
-                                    shape_color = 'black';
-                                }
-                                shape_value = Col4_shape === "square" ? 'rect' : Col4_shape;
-                                addShape(Shape_list.includes(shape_value) ? shape_value : 'circle', margin.left + xOffset + col4_XoffSet, yOffset - (parseFloat(fontSize) * 0.50), 6, shape_color);
-                            } else {
-                                if (Col4_data && Col4_datatype == 'Discrete') {
-                                    shape_color = Color_list.includes(Col4_data.toLowerCase()) ? Col4_data : 'black';
-                                    addShape('circle', margin.left + xOffset + col4_XoffSet, yOffset - (parseFloat(fontSize) * 0.50), 6, shape_color);
-                                } else if (Col4_data && Col4_datatype == 'Continuous') {
-                                    shape_color = Color_dict.Col4.All(Col4_data);
-                                    addShape('circle', margin.left + xOffset + col4_XoffSet, yOffset - (parseFloat(fontSize) * 0.50), 6, shape_color);
-                                }
-                            }
-                        }
-                    } else {
-                        console.log(label_key);
-                    }
-                }
-            }
-
-            // # Check and append text for Layer 1 breaker if it's visible #
-
-            if (Checklist[0]) {
-                if (col_breaker == "Layer1" || col_breaker == "Custom") {
-                    ColumnsBreakerFunc(columns,label_counter,Col_break_number,state);
-                }
-                add_text(key, yOffset, "Layer-1",styling_option.Layer1.Bold,styling_option.Layer1.Italic,styling_option.Layer1.Underline,styling_option.Layer1.Fontsize,styling_option.Layer1.Color);
-                yOffset += 30;
-                label_counter++;
-
-                // Check and append text for Layer 2 if it's visible and has sublayers
-                if (Checklist[1] && typeof value === 'object') {
-                    Object.entries(value).forEach(([subKey, subValue]) => {
-                        if (col_breaker == "Layer2" || col_breaker == "Custom") {
-                            ColumnsBreakerFunc(columns,label_counter,Col_break_number,state);
-                        }
-                        add_text(subKey, yOffset, "Layer-2",styling_option.Layer2.Bold,styling_option.Layer2.Italic,styling_option.Layer2.Underline,styling_option.Layer2.Fontsize,styling_option.Layer2.Color);
-                        yOffset += 30;
-                        label_counter++;
-
-                        // Check and append text for Layer 3 if it's visible and has sublayers
-                        if (Checklist[2] && typeof subValue === 'object') {
-                            Object.entries(subValue).forEach(([subSubKey, subSubValue]) => {
-                                if (col_breaker == "Layer3" || col_breaker == "Custom") {
-                                    ColumnsBreakerFunc(columns,label_counter,Col_break_number,state);
-                                }
-                                add_text(subSubKey, yOffset, "Layer-3",styling_option.Layer3.Bold,styling_option.Layer3.Italic,styling_option.Layer3.Underline,styling_option.Layer3.Fontsize,styling_option.Layer3.Color);
-                                yOffset += 30;
-                                label_counter++;
-
-                                // Check and append text for Layer 4 if it's visible and is an array
-                                if (Array.isArray(subSubValue)) {
-                                    subSubValue.forEach(item => {
-                                        if (col_breaker == "Layer4" || col_breaker == "Custom") {
-                                            ColumnsBreakerFunc(columns,label_counter,Col_break_number,state);
-                                        }
-                                        add_text(item, yOffset, "Layer-4",styling_option.Layer4.Bold,styling_option.Layer4.Italic,styling_option.Layer4.Underline,styling_option.Layer4.Fontsize,styling_option.Layer4.Color);
-
-                                        yOffset += 30;
-                                        label_counter++;
-
-                                    });
-                                }
-                            });
-                        } else {
-                            Object.entries(subValue).forEach(([subSubKey, subSubValue]) => {
-                                // Check and append text for Layer 4 if it's visible and is an array
-                                if (Array.isArray(subSubValue)) {
-                                    subSubValue.forEach(item => {
-                                        if (col_breaker == "Layer4" || col_breaker == "Custom") {
-                                            ColumnsBreakerFunc(columns,label_counter,Col_break_number,state);
-                                        }
-                                        add_text(item, yOffset, "Layer-4",styling_option.Layer4.Bold,styling_option.Layer4.Italic,styling_option.Layer4.Underline,styling_option.Layer4.Fontsize,styling_option.Layer4.Color);
-                                        yOffset += 30;
-                                        label_counter++;
-
-                                    });
-                                }
-                            });
-                        }
-                    });
-                } else {
-                    Object.entries(value).forEach(([subKey, subValue]) => {
-                        // Check and append text for Layer 3 if it's visible and has sublayers
-                        if (Checklist[2] && typeof subValue === 'object') {
-                            Object.entries(subValue).forEach(([subSubKey, subSubValue]) => {
-                                if (col_breaker == "Layer3" || col_breaker == "Custom") {
-                                    ColumnsBreakerFunc(columns,label_counter,Col_break_number,state);
-                                }
-                                add_text(subSubKey, yOffset, "Layer-3",styling_option.Layer3.Bold,styling_option.Layer3.Italic,styling_option.Layer3.Underline,styling_option.Layer3.Fontsize,styling_option.Layer3.Color);
-                                yOffset += 30;
-                                label_counter++;
-
-                                // Check and append text for Layer 4 if it's visible and is an array
-                                if (Array.isArray(subSubValue)) {
-                                    subSubValue.forEach(item => {
-                                        if (col_breaker == "Layer4" || col_breaker == "Custom") {
-                                            ColumnsBreakerFunc(columns,label_counter,Col_break_number,state);
-                                        }
-                                        add_text(item, yOffset, "Layer-4",styling_option.Layer4.Bold,styling_option.Layer4.Italic,styling_option.Layer4.Underline,styling_option.Layer4.Fontsize,styling_option.Layer4.Color);
-                                        yOffset += 30;
-                                        label_counter++;
-
-                                    });
-                                }
-                            });
-                        } else {
-                            Object.entries(subValue).forEach(([subSubKey, subSubValue]) => {
-                                // Check and append text for Layer 4 if it's visible and is an array
-                                if (Array.isArray(subSubValue)) {
-                                    subSubValue.forEach(item => {
-                                        if (col_breaker == "Layer4" || col_breaker == "Custom") {
-                                            ColumnsBreakerFunc(columns,label_counter,Col_break_number,state);
-                                        }
-                                        add_text(item, yOffset, "Layer-4",styling_option.Layer4.Bold,styling_option.Layer4.Italic,styling_option.Layer4.Underline,styling_option.Layer4.Fontsize,styling_option.Layer4.Color);
-                                        yOffset += 30;
-                                        label_counter++;
-
-                                    });
-                                }
-                            });
-                        }
-                    });
-                }
-            } else if (!Checklist[0] && Checklist[1]) {
-                // Check and append text for Layer 2 if it's visible and has sublayers
-                if (Checklist[1] && typeof value === 'object') {
-                    Object.entries(value).forEach(([subKey, subValue]) => {
-                        if (col_breaker == "Layer2" || col_breaker == "Custom") {
-                            ColumnsBreakerFunc(columns,label_counter,Col_break_number,state);
-                        }
-                        add_text(subKey, yOffset, "Layer-2",styling_option.Layer2.Bold,styling_option.Layer2.Italic,styling_option.Layer2.Underline,styling_option.Layer2.Fontsize,styling_option.Layer2.Color);
-                        yOffset += 30;
-                        label_counter++;
-
-                        // Check and append text for Layer 3 if it's visible and has sublayers
-                        if (Checklist[2] && typeof subValue === 'object') {
-                            Object.entries(subValue).forEach(([subSubKey, subSubValue]) => {
-                                if (col_breaker == "Layer3" || col_breaker == "Custom") {
-                                    ColumnsBreakerFunc(columns,label_counter,Col_break_number,state);
-                                }
-                                add_text(subSubKey, yOffset, "Layer-3",styling_option.Layer3.Bold,styling_option.Layer3.Italic,styling_option.Layer3.Underline,styling_option.Layer3.Fontsize,styling_option.Layer3.Color);
-                                yOffset += 30;
-                                label_counter++;
-
-                                // Check and append text for Layer 4 if it's visible and is an array
-                                if (Array.isArray(subSubValue)) {
-                                    subSubValue.forEach(item => {
-                                        if (col_breaker == "Layer4" || col_breaker == "Custom") {
-                                            ColumnsBreakerFunc(columns,label_counter,Col_break_number,state);
-                                        }
-                                        add_text(item, yOffset, "Layer-4",styling_option.Layer4.Bold,styling_option.Layer4.Italic,styling_option.Layer4.Underline,styling_option.Layer4.Fontsize,styling_option.Layer4.Color);
-                                        yOffset += 30;
-                                        label_counter++;
-
-                                    });
-                                }
-                            });
-                        } else {
-                            Object.entries(subValue).forEach(([subSubKey, subSubValue]) => {
-                                // Check and append text for Layer 4 if it's visible and is an array
-                                if (Array.isArray(subSubValue)) {
-                                    subSubValue.forEach(item => {
-                                        if (col_breaker == "Layer4" || col_breaker == "Custom") {
-                                            ColumnsBreakerFunc(columns,label_counter,Col_break_number,state);
-                                        }
-                                        add_text(item, yOffset, "Layer-4",styling_option.Layer4.Bold,styling_option.Layer4.Italic,styling_option.Layer4.Underline,styling_option.Layer4.Fontsize,styling_option.Layer4.Color);
-                                        yOffset += 30;
-                                        label_counter++;
-
-                                    });
-                                }
-                            });
-                        }
-                    });
-                }
-            } else if (!Checklist[0] && !Checklist[1] && Checklist[2]) {
-                Object.entries(value).forEach(([subKey, subValue]) => {
-                    if (Checklist[2] && typeof subValue === 'object') {
-                        Object.entries(subValue).forEach(([subSubKey, subSubValue]) => {
-                            if (col_breaker == "Layer3" || col_breaker == "Custom") {
-                                ColumnsBreakerFunc(columns,label_counter,Col_break_number,state);
-                            }
-                            add_text(subSubKey, yOffset, "Layer-3",styling_option.Layer3.Bold,styling_option.Layer3.Italic,styling_option.Layer3.Underline,styling_option.Layer3.Fontsize,styling_option.Layer3.Color);
-                            yOffset += 30;
-                            label_counter++;
-
-                            // Check and append text for Layer 4 if it's visible and is an array
-                            if (Array.isArray(subSubValue)) {
-                                subSubValue.forEach(item => {
-                                    if (col_breaker == "Layer4" || col_breaker == "Custom") {
-                                        ColumnsBreakerFunc(columns,label_counter,Col_break_number,state);
-                                    }
-                                    add_text(item, yOffset, "Layer-4",styling_option.Layer4.Bold,styling_option.Layer4.Italic,styling_option.Layer4.Underline,styling_option.Layer4.Fontsize,styling_option.Layer4.Color);
-                                    yOffset += 30;
-                                    label_counter++;
-
-                                });
-                            }
-                        });
-                    }
-                });
-            } else if (!Checklist[0] && !Checklist[1] && !Checklist[2]) {
-                Object.entries(value).forEach(([subKey, subValue]) => {
-                    Object.entries(subValue).forEach(([subSubKey, subSubValue]) => {
-                        if (Array.isArray(subSubValue)) {
-                            subSubValue.forEach(item => {
-                                if (col_breaker == "Layer4" || col_breaker == "Custom") {
-                                    ColumnsBreakerFunc(columns,label_counter,Col_break_number,state);
-                                }
-                                add_text(item, yOffset, "Layer-4",styling_option.Layer4.Bold,styling_option.Layer4.Italic,styling_option.Layer4.Underline,styling_option.Layer4.Fontsize,styling_option.Layer4.Color);
-                                yOffset += 30;
-                                label_counter++;
-
-                            });
-                        }
-                    });
-                });
-            }
-        });
-
-    // # check if y-off-set is more than max, if so expand canvas #
-    if (yOffset_max < yOffset) {
-        yOffset_max = yOffset;
+        return color;
     }
 
-    // Rerender height of plot as the last thing
-    svg.attr("height",yOffset_max + margin.top + margin.bottom)
+    // ###############################
+    // ## Iterate through data rows ##
+    // ###############################
 
-    // ## Add legend bars on top ##
-    let bar_index = 0
-    Object.keys(Data_styling).forEach(function(column) {
-        if (Data_styling[column].Data === "Yes" && Data_styling[column].Datatype === 'Continuous') {
+    for (let i = 0; i < data.length; i++) {
+        const label = data[i];
+        const category = category_data[i];
+
+        // Check if category is 'Receptor' (only for receptors do we render shapes)
+        if (category === 'Receptor') {
+            // Check if data exists for the receptor (in the shape data)
+            if (list_data_wow.hasOwnProperty(label)) {
+                const receptorData = list_data_wow[label];
+
+                // Col data checker
+                const Col1_data_checker = data_styling.Col1.Data == "Yes";
+                const Col2_data_checker = data_styling.Col2.Data == "Yes";
+                const Col3_data_checker = data_styling.Col3.Data == "Yes";
+                const Col4_data_checker = data_styling.Col4.Data == "Yes";
+
+                // Col labels and shapes
+                const Col1_shape = receptorData.hasOwnProperty('Value1') ? receptorData.Value1.toLowerCase() : false;
+                const Col2_shape = receptorData.hasOwnProperty('Value3') ? receptorData.Value3.toLowerCase() : false;
+                const Col3_shape = receptorData.hasOwnProperty('Value5') ? receptorData.Value5.toLowerCase() : false;
+                const Col4_shape = receptorData.hasOwnProperty('Value7') ? receptorData.Value7.toLowerCase() : false;
+
+                // Col data
+                const Col1_data = receptorData.hasOwnProperty('Value2') ? receptorData.Value2 : false;
+                const Col2_data = receptorData.hasOwnProperty('Value4') ? receptorData.Value4 : false;
+                const Col3_data = receptorData.hasOwnProperty('Value6') ? receptorData.Value6 : false;
+                const Col4_data = receptorData.hasOwnProperty('Value8') ? receptorData.Value8 : false;
+
+                // Shapes and data rendering for each column
+                const col1_XoffSet = 0;
+                const col2_XoffSet = 20;
+                const col3_XoffSet = 40;
+                const col4_XoffSet = 60;
+
+                const Shape_list = ['circle', 'rect', 'triangle', 'star', 'diamond'];
+
+                // ### Column 1 ###
+                if (Col1_data_checker && (Col1_shape || Col1_data)) {
+                    const shape_color = Col1_data ? getShapeColor('Col1', Col1_data) : 'black';
+                    addShape(Shape_list.includes(Col1_shape) ? Col1_shape : 'circle', margin.left + xOffset + col1_XoffSet, yOffset - 10, 6, shape_color);
+                }
+
+                // ### Column 2 ###
+                if (Col2_data_checker && (Col2_shape || Col2_data)) {
+                    const shape_color = Col2_data ? getShapeColor('Col2', Col2_data) : 'black';
+                    addShape(Shape_list.includes(Col2_shape) ? Col2_shape : 'circle', margin.left + xOffset + col2_XoffSet, yOffset - 10, 6, shape_color);
+                }
+
+                // ### Column 3 ###
+                if (Col3_data_checker && (Col3_shape || Col3_data)) {
+                    const shape_color = Col3_data ? getShapeColor('Col3', Col3_data) : 'black';
+                    addShape(Shape_list.includes(Col3_shape) ? Col3_shape : 'circle', margin.left + xOffset + col3_XoffSet, yOffset - 10, 6, shape_color);
+                }
+
+                // ### Column 4 ###
+                if (Col4_data_checker && (Col4_shape || Col4_data)) {
+                    const shape_color = Col4_data ? getShapeColor('Col4', Col4_data) : 'black';
+                    addShape(Shape_list.includes(Col4_shape) ? Col4_shape : 'circle', margin.left + xOffset + col4_XoffSet, yOffset - 10, 6, shape_color);
+                }
+            }
+
+            // Increment yOffset for the next label and shape
+            yOffset += 30;
+            label_counter++;
+
+            // Handle column break
+            handleColumnBreak();
+
+        } else {
+            // If the category is not 'Receptor', simply move the Y offset without rendering shapes
+            yOffset += 30;
+            label_counter++;
+
+            // Handle column break
+            handleColumnBreak();
+        }
+    }
+
+    // #############################
+    // ## Render Legend Bars on Top ##
+    // #############################
+
+    let bar_index = 0;
+    Object.keys(data_styling).forEach(function(column) {
+        if (data_styling[column].Data === "Yes" && data_styling[column].Datatype === 'Continuous') {
             const legendWidth = 200; // Width of the legend bar
             const data_fontsize = 14; // Adjust as needed
-            const lowest_value = Data_styling[column].Data_min;
-            const highest_value = Data_styling[column].Data_max;
+            const lowest_value = data_styling[column].Data_min;
+            const highest_value = data_styling[column].Data_max;
             const spacing_bar = 30;
             const bar_height = 20;
             const text_off_set = 35;
             const x_off_set = 100;
             const y_off_set = 20;
+
             // Calculate the x position for the current bar
-            const x_position = bar_index * (legendWidth + spacing_bar)+x_off_set;
+            const x_position = bar_index * (legendWidth + spacing_bar) + x_off_set;
 
             // Increment bar index for the next bar
             bar_index++;
 
             const legend_svg = svg.append("g"); // Append group for the legend bar
-
             const gradientId = `Gradient_${column}`;
             const defs = svg.append('defs');
 
             // Add centered text on top of the bar specifying the data column
             legend_svg.append("text")
-            .attr('x', x_position + legendWidth / 2) // Center the text horizontally over the bar
-            .attr('y', bar_height - 10 + y_off_set) // Adjust Y position as needed, e.g., 10px above the bar
-            .style("font-size", `${data_fontsize}px`)
-            .style("font-family", "sans-serif")
-            .style("text-anchor", "middle") // Center the text horizontally
-            .text(`Data column ${column.substr(3)}`); // Use the column name as the text
+                .attr('x', x_position + legendWidth / 2) // Center the text horizontally over the bar
+                .attr('y', bar_height - 10 + y_off_set) // Adjust Y position as needed, e.g., 10px above the bar
+                .style("font-size", `${data_fontsize}px`)
+                .style("font-family", "sans-serif")
+                .style("text-anchor", "middle") // Center the text horizontally
+                .text(`Data column ${column.substr(3)}`); // Use the column name as the text
 
             // Gradient definition
             const gradient = defs.append('linearGradient')
-            .attr('id', gradientId)
-            .attr('x1', '0%')
-            .attr('x2', '100%')
-            .attr('y1', '0%')
-            .attr('y2', '0%');
+                .attr('id', gradientId)
+                .attr('x1', '0%')
+                .attr('x2', '100%')
+                .attr('y1', '0%')
+                .attr('y2', '0%');
 
             // Adjust gradient stops based on color complexity
-            if (Data_styling[column].data_color_complexity === 'One') {
-            // One color: white to Data_color1
-            gradient.append('stop')
-                .attr('offset', '0%')
-                .attr('stop-color', '#FFFFFF'); // Start with white
+            if (data_styling[column].data_color_complexity === 'One') {
+                // One color: white to Data_color1
+                gradient.append('stop')
+                    .attr('offset', '0%')
+                    .attr('stop-color', '#FFFFFF'); // Start with white
 
-            gradient.append('stop')
-                .attr('offset', '100%')
-                .attr('stop-color', Data_styling[column].Data_color2); // End with color1
-            } else if (Data_styling[column].data_color_complexity === 'Two') {
-            // Two colors: Data_color1 to Data_color2
-            gradient.append('stop')
-                .attr('offset', '0%')
-                .attr('stop-color', Data_styling[column].Data_color1); // Start with color1
+                gradient.append('stop')
+                    .attr('offset', '100%')
+                    .attr('stop-color', data_styling[column].Data_color2); // End with color1
+            } else if (data_styling[column].data_color_complexity === 'Two') {
+                // Two colors: Data_color1 to Data_color2
+                gradient.append('stop')
+                    .attr('offset', '0%')
+                    .attr('stop-color', data_styling[column].Data_color1); // Start with color1
 
-            gradient.append('stop')
-                .attr('offset', '100%')
-                .attr('stop-color', Data_styling[column].Data_color2); // End with color2
-            } else if (Data_styling[column].data_color_complexity === 'Three') {
-            // Three colors: Data_color1 to white in the middle, then to Data_color2
-            gradient.append('stop')
-                .attr('offset', '0%')
-                .attr('stop-color', Data_styling[column].Data_color1); // Start with color1
+                gradient.append('stop')
+                    .attr('offset', '100%')
+                    .attr('stop-color', data_styling[column].Data_color2); // End with color2
+            } else if (data_styling[column].data_color_complexity === 'Three') {
+                // Three colors: Data_color1 to white in the middle, then to Data_color2
+                gradient.append('stop')
+                    .attr('offset', '0%')
+                    .attr('stop-color', data_styling[column].Data_color1); // Start with color1
 
-            gradient.append('stop')
-                .attr('offset', '50%')
-                .attr('stop-color', '#FFFFFF'); // Middle with white
+                gradient.append('stop')
+                    .attr('offset', '50%')
+                    .attr('stop-color', '#FFFFFF'); // Middle with white
 
-            gradient.append('stop')
-                .attr('offset', '100%')
-                .attr('stop-color', Data_styling[column].Data_color2); // End with color2
+                gradient.append('stop')
+                    .attr('offset', '100%')
+                    .attr('stop-color', data_styling[column].Data_color2); // End with color2
             }
 
             // Border around the rectangle
             legend_svg.append('rect')
-            .attr('x', x_position) // Align with the gradient rectangle
-            .attr('y', bar_height + y_off_set) // Align with the gradient rectangle
-            .attr('width', legendWidth) // Same width as the gradient rectangle
-            .attr('height', bar_height) // Same height as the gradient rectangle
-            .style('fill', 'none')
-            .style('stroke', 'black')
-            .style('stroke-width', 2);
+                .attr('x', x_position) // Align with the gradient rectangle
+                .attr('y', bar_height + y_off_set) // Align with the gradient rectangle
+                .attr('width', legendWidth) // Same width as the gradient rectangle
+                .attr('height', bar_height) // Same height as the gradient rectangle
+                .style('fill', 'none')
+                .style('stroke', 'black')
+                .style('stroke-width', 2);
 
             // Rectangle for the gradient
             legend_svg.append('rect')
-            .attr('x', x_position) // Horizontal spacing between bars
-            .attr('y', bar_height + y_off_set) // Adjust Y position as needed
-            .attr('width', legendWidth) // Legend bar width
-            .attr('height', bar_height) // Legend bar height
-            .style('fill', `url(#${gradientId})`);
+                .attr('x', x_position) // Horizontal spacing between bars
+                .attr('y', bar_height + y_off_set) // Adjust Y position as needed
+                .attr('width', legendWidth) // Legend bar width
+                .attr('height', bar_height) // Legend bar height
+                .style('fill', `url(#${gradientId})`);
 
             // Minimum value text
             legend_svg.append("text")
-            .attr('x', x_position) // Align with the bar
-            .attr('y', bar_height+text_off_set + y_off_set)
-            .style("font-size", `${data_fontsize}px`)
-            .style("font-family", "sans-serif")
-            .text(lowest_value);
-
-            // Middle value text (if applicable)
-            if (Data_styling[column].data_color_complexity === 'Three') {
-                legend_svg.append("text")
-                .attr('x', x_position + legendWidth / 2)
-                .attr('y', bar_height+text_off_set + y_off_set)
+                .attr('x', x_position) // Align with the bar
+                .attr('y', bar_height + text_off_set + y_off_set)
                 .style("font-size", `${data_fontsize}px`)
                 .style("font-family", "sans-serif")
-                .style("text-anchor", "middle")
-                .text((highest_value + lowest_value) / 2); // Middle value
+                .text(lowest_value);
+
+            // Middle value text (if applicable)
+            if (data_styling[column].data_color_complexity === 'Three') {
+                legend_svg.append("text")
+                    .attr('x', x_position + legendWidth / 2)
+                    .attr('y', bar_height + text_off_set + y_off_set)
+                    .style("font-size", `${data_fontsize}px`)
+                    .style("font-family", "sans-serif")
+                    .style("text-anchor", "middle")
+                    .text((highest_value + lowest_value) / 2); // Middle value
             }
 
             // Maximum value text
             legend_svg.append("text")
-            .attr('x', x_position + legendWidth)
-            .attr('y', bar_height+text_off_set + y_off_set)
-            .style("font-size", `${data_fontsize}px`)
-            .style("font-family", "sans-serif")
-            .style("text-anchor", "end")
-            .text(highest_value);
+                .attr('x', x_position + legendWidth)
+                .attr('y', bar_height + text_off_set + y_off_set)
+                .style("font-size", `${data_fontsize}px`)
+                .style("font-family", "sans-serif")
+                .style("text-anchor", "end")
+                .text(highest_value);
         }
     });
-
-
-}
-    // # Run list process and return svg #
-    processList(data,styling_option);
-    return svg;
 }
 
 // #################
 // ###  HEATMAP  ###
 // #################
 
-
+// Initialize the datastyling dict
 function heatmap_DataStyling() {
     var heatmap_DataStyling = {Number_of_colors: "Three",
         min_color: "#1a80bb",
@@ -2246,7 +2028,7 @@ function handleRowLabels(textElement, label, labelType, fontSize) {
 
         // Calculate the subscript font size (e.g., 75% of the main font size)
         const mainFontSize = parseFloat(fontSize);
-        const subFontSize = parseInt(mainFontSize * 0.75);
+        const subFontSize = parseInt(mainFontSize * 0.75,10);
 
         // Handle each part of the label
         parts.forEach(part => {
@@ -2268,6 +2050,7 @@ function handleRowLabels(textElement, label, labelType, fontSize) {
     }
 }
 
+// Create the heatmap
 function Heatmap(data, location, heatmap_DataStyling,label_x_converter) {
 
     const margin = { top: 30, right: 100, bottom: 30, left: 60 }; // Adjusted margin for row labels
@@ -2285,11 +2068,40 @@ function Heatmap(data, location, heatmap_DataStyling,label_x_converter) {
     let legend_y_position = 30;
 
     let rowLabelWidth;
+    const baseWidth = 20;  // Minimum column width
+    const chartData = [];
+    let highest_value = -Infinity;
+    let lowest_value = Infinity;
+
+    rows.forEach(row => {
+      cols.forEach(col => {
+        const value = data[row][col];
+        chartData.push({ row, col, value });
+        if (value > highest_value) {
+          highest_value = value;
+        }
+        if (value < lowest_value) {
+            lowest_value = value;
+        }
+      });
+    });
+
+    // Calculate the length of the longest data value
+
+    const longestDataValue = d3.max(chartData, d => Number(parseFloat(d.value).toFixed(1)).toString().length);
+
+    // Calculate width based on the longest data value
+    const calculatedDataValueWidth = longestDataValue * 40 * (label_fontsize / 14);
+
     if (rotation === 90 || rotation === 45) {
-        // Adjust rowLabelWidth to be slightly wider than the font size height of x-axis labels
-        rowLabelWidth = 20; // Adjust this value based on your font size and label requirements
+        // Use the larger value between base width and calculated data value width for rotation
+        rowLabelWidth = Math.max(baseWidth, calculatedDataValueWidth);
     } else {
-        rowLabelWidth = d3.max(col_labels, d => d.length* 40 * (label_fontsize/14)); // Default width calculation
+        // Calculate the width based on the longest column label
+        const calculatedLabelWidth = d3.max(col_labels, d => d.length * 40 * (label_fontsize / 14));
+
+        // Choose the maximum value between base width, calculated label width, and calculated data value width
+        rowLabelWidth = Math.max(baseWidth, calculatedLabelWidth, calculatedDataValueWidth);
     }
 
     // Calculate the longest column label length
@@ -2309,23 +2121,6 @@ function Heatmap(data, location, heatmap_DataStyling,label_x_converter) {
             legend_y_position = longestLabel * (fontSize * 0.55)
         }
     }
-
-    const chartData = [];
-    let highest_value = -Infinity;
-    let lowest_value = Infinity;
-
-    rows.forEach(row => {
-      cols.forEach(col => {
-        const value = data[row][col];
-        chartData.push({ row, col, value });
-        if (value > highest_value) {
-          highest_value = value;
-        }
-        if (value < lowest_value) {
-            lowest_value = value;
-        }
-      });
-    });
 
     const width = (20 * cols.length) + rowLabelWidth;
     const height = (20 * rows.length);
@@ -2447,7 +2242,7 @@ function Heatmap(data, location, heatmap_DataStyling,label_x_converter) {
           .style("font-size", `${data_fontsize}px`)
           .style("font-family", "sans-serif")
           .style("fill", textColor)
-          .text(d.value);
+          .text(Number(parseFloat(d.value).toFixed(1)));  // Round and fix to 1 decimal place
       });
     }
 
@@ -2535,7 +2330,7 @@ function Heatmap(data, location, heatmap_DataStyling,label_x_converter) {
       .attr('y', 50)
       .style("font-size", `${data_fontsize}px`)
       .style("font-family", "sans-serif")
-      .text(lowest_value);
+      .text(Number(parseFloat(lowest_value).toFixed(1)));
 
     if (heatmap_DataStyling.Number_of_colors === 'Three') {
         legend_svg.append("text")
@@ -2544,7 +2339,7 @@ function Heatmap(data, location, heatmap_DataStyling,label_x_converter) {
         .style("font-size", `${data_fontsize}px`)
         .style("font-family", "sans-serif")
         .style("text-anchor", "middle")
-        .text((highest_value + lowest_value) / 2); // Middle value
+        .text(Number(parseFloat((highest_value + lowest_value) / 2).toFixed(1)));
     }
 
     legend_svg.append("text")
@@ -2553,11 +2348,11 @@ function Heatmap(data, location, heatmap_DataStyling,label_x_converter) {
       .style("font-size", `${data_fontsize}px`)
       .style("font-family", "sans-serif")
       .style("text-anchor", "end")
-      .text(highest_value);
+      .text(Number(parseFloat(highest_value).toFixed(1)));
 
     // Rerender height of plot as the last thing
     let label_length_final;
-    if (rotation == 90) {
+    if (rotation === 90) {
         label_length_final = Math.ceil(-128.69+6.61*longestLabel+11.19*label_fontsize)
         svg_home.attr("height",height + margin.bottom + label_length_final+55);
     } else {
@@ -2570,12 +2365,92 @@ function Heatmap(data, location, heatmap_DataStyling,label_x_converter) {
 // ###  GPCRome  ###
 // #################
 
+function GPCRome_initializeOdorantData(data) {
+    // Initialize the GPCRomes
+    let GPCRomes = {
+        GPCRome_O1: {},
+        GPCRome_O2_ext: {},
+        GPCRome_O2_mid: {},
+        GPCRome_O2_int: {},
+    };
+
+    // Helper function to add items to the GPCRome using receptor family as key
+    function addItemsToCircle(GPCRome, items) {
+        Object.keys(items).forEach(ligandType => {
+            const receptorFamilies = items[ligandType];
+
+            // Debugging - log the receptorFamilies structure
+            // console.log(`Processing ligandType: ${ligandType}`);
+            // console.log(`Receptor families:`, receptorFamilies);
+            // Ensure receptorFamilies is an object
+            if (typeof receptorFamilies === 'object' && receptorFamilies !== null) {
+                Object.keys(receptorFamilies).forEach(family => {
+                    if (!GPCRome[family]) {
+                        GPCRome[family] = [];
+                    }
+
+                    const receptors = receptorFamilies[family];
+                    if (Array.isArray(receptors)) {
+                        GPCRome[family].push(...receptors);
+                    } else {
+                        console.warn(`Unexpected data format for family ${family}`);
+                    }
+                });
+            } else {
+                console.warn(`Unexpected data format for ligand type ${ligandType}`);
+            }
+        });
+    }
+
+    // Process the data
+    Object.keys(data).forEach(className => {
+        const classData = data[className];
+        // Handle cases where classData is not an object
+        if (typeof classData !== 'object' || classData === null) {
+            console.warn(`Expected object but got ${typeof classData} for class ${className}`);
+            return;
+        }
+
+        // Circle 1 : "Class O2 (tetrapod specific odorant) EXT"
+        if (className === "Class O2 (tetrapod specific odorant) EXT") {
+            addItemsToCircle(GPCRomes.GPCRome_O2_ext, classData);
+        }
+
+        // Circle 2 : "Class O2 (tetrapod specific odorant) MID"
+        if (className === "Class O2 (tetrapod specific odorant) MID") {
+            addItemsToCircle(GPCRomes.GPCRome_O2_mid, classData);
+        }
+
+        // Circle 3 : "Class O2 (tetrapod specific odorant) INT"
+        if (className === "Class O2 (tetrapod specific odorant) INT") {
+            addItemsToCircle(GPCRomes.GPCRome_O2_int, classData);
+        }
+
+        // Circle 4: "Class O1 (fish-like odorant)"
+        if (className === "Class O1 (fish-like odorant)") {
+            addItemsToCircle(GPCRomes.GPCRome_O1, classData);
+        }
+
+    });
+
+    // Convert the arrays to unique values
+    Object.keys(GPCRomes).forEach(GPCRomeKey => {
+        Object.keys(GPCRomes[GPCRomeKey]).forEach(familyKey => {
+            GPCRomes[GPCRomeKey][familyKey] = Array.from(new Set(GPCRomes[GPCRomeKey][familyKey]));
+        });
+    });
+
+    return GPCRomes;
+}
+
+// Initialize the data for the handle of the GPCRome from the view
 function GPCRome_initializeData(data) {
     // Initialize the GPCRomes
     let GPCRomes = {
         GPCRome_A: {},
         GPCRome_AO: {},
-        GPCRome_B: {},
+        GPCRome_B1: {},
+        GPCRome_B2: {},
         GPCRome_C: {},
         GPCRome_F: {},
         GPCRome_T: {},
@@ -2632,8 +2507,13 @@ function GPCRome_initializeData(data) {
         }
 
         // Circle 3: "Class B1 (Secretin)" or "Class B2 (Adhesion)"
-        if (className === "Class B1 (Secretin)" || className === "Class B2 (Adhesion)") {
-            addItemsToCircle(GPCRomes.GPCRome_B, classData);
+        if (className === "Class B1 (Secretin)") {
+            addItemsToCircle(GPCRomes.GPCRome_B1, classData);
+        }
+
+        // Circle 3: "Class B1 (Secretin)" or "Class B2 (Adhesion)"
+        if (className === "Class B2 (Adhesion)") {
+            addItemsToCircle(GPCRomes.GPCRome_B2, classData);
         }
 
         // Circle 4: "Class C (Glutamate)"
@@ -2667,17 +2547,15 @@ function GPCRome_initializeData(data) {
     return GPCRomes;
 }
 
+// Reformat the labels (manual curated)
 function GPCRome_formatTextWithHTML(text, Family_list) {
-    // Check if the text is in the Family_list
-    const isInFamilyList = Family_list.includes(text);
-
     // Apply all the replacements step by step
     let formattedText = text
         .replace(" receptors", '')
         .replace(" receptor", '')
         .replace("-adrenoceptor", '')
         .replace(" receptor-", '-')
-        .replace("<sub>", '</tspan><tspan baseline-shift="sub">')
+        .replace("<sub>", '</tspan><tspan baseline-shift="-20%">')
         .replace("</sub>", '</tspan><tspan>')
         .replace("<i>", '</tspan><tspan font-style="italic">')
         .replace("</i>", '</tspan><tspan>')
@@ -2688,24 +2566,42 @@ function GPCRome_formatTextWithHTML(text, Family_list) {
         .replace("calcitonin-like receptor", 'CLR')
         .replace("5-Hydroxytryptamine", '5-HT');
 
+    // Capitalize the first letter after applying all replacements
+    function capitalizeFirstLetter(str) {
+        let match = str.match(/^[^a-zA-Z]*([a-zA-Z])/);
+        if (match) {
+            let index = match.index + match[0].length - 1;
+            let firstLetter = str[index].toUpperCase(); // Capitalize the first letter
+            return str.slice(0, index) + firstLetter + str.slice(index + 1);
+        }
+        return str; // If no alphabetic characters, return unchanged
+    }
+
+    // Apply capitalization after all replacements
+    formattedText = capitalizeFirstLetter(formattedText);
+
+    // Check if the text is in the Family_list for additional formatting
+    const isInFamilyList = Family_list.includes(text);
+
     // Apply additional formatting if the text is in the Family_list
     if (isInFamilyList) {
         formattedText = formattedText
             .replace(/( receptors|neuropeptide )/g, '') // Remove specific substrings
-            .replace(/(-releasing)/g, '-rel.') // Remove specific substrings
-            .replace(/(-concentrating)/g, '-conc.') // Remove specific substrings
-            .replace(/( and )/g, ' & ') // Remove specific substrings
-            .replace(/(GPR18, GPR55 & GPR119)/g, 'GPR18, 55 & 119') // Remove specific substrings
-            .replace(/(Class C Orphans)/g, 'Orphans') // Remove specific substrings
-            .split("</tspan>")[0]
-            .split(" (")[0]; // Keep only the part before the first " ("
+            .replace(/(-releasing)/g, '-rel.') // Abbreviate specific substrings
+            .replace(/(-concentrating)/g, '-conc.') // Abbreviate specific substrings
+            .replace(/( and )/g, ' & ') // Replace "and" with "&"
+            .replace(/(GPR18, GPR55 & GPR119)/g, 'GPR18, 55 & 119') // Special case formatting
+            .replace(/(Class C Orphans)/g, 'Orphans') // Replace "Class C Orphans"
+            .split("</tspan>")[0] // Keep only part before the first closing tspan tag
+            .split(" (")[0]; // Keep only the part before the first " (" parenthesis
     }
 
     return formattedText;
 }
 
 
-function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling) {
+// Draw / generate the GPCRome plot
+function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling, odorant = false) {
 
     dimensions = { height: 1000, width: 1000 };
 
@@ -2713,27 +2609,47 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling) {
     const datatype = GPCRome_styling.datatype;
     const family = GPCRome_styling.family
     const showIcon = GPCRome_styling.showIcon;  // Get the icon visibility state
+    const Font_family = "Arial"
+    const Class_fontsize = "20px"
+    const Receptor_and_family_fontsize = "11px"
 
-    // Append SVG to the div with the provided id
     const svg = d3v4.select("#" + location)
-        .append("svg")
-        .attr("id", location+'_svg')  // Add the id here for download reference
-        .attr("width", dimensions.width)
-        .attr("height", dimensions.height);
+    .append("svg")
+    .attr("id", location+'_svg')  // Add the id here for download reference
+    .attr("width", dimensions.width)
+    .attr("height", dimensions.height)
+    .attr("xmlns", "http://www.w3.org/2000/svg")  // Add the SVG namespace
+    .attr("xmlns:xlink", "http://www.w3.org/1999/xlink");  // Add the xlink namespace for images
 
-
-    // // Get the image URL from the data-attribute
+   // Get the image URL from the data-attribute
     const imageUrl = document.getElementById("image-container").getAttribute("data-image-url");
+
     if (showIcon) {
-        // Use the imageUrl in D3 to append the image
-        svg.append("image")
-            .attr("xlink:href", imageUrl)  // Set the image URL from the data attribute
-            .attr("x", 5)  // Top-left corner
-            .attr("y", 5)  // Top-left corner
-            .attr("width", 230)  // Set width for the image
-            .attr("height", 230)  // Set height for the image
-            .attr("class", "toggle-image");  // Add a class to control visibility
+        var img = new Image();
+        img.crossOrigin = "Anonymous";  // Ensure cross-origin handling
+        img.src = imageUrl;
+
+        img.onload = function() {
+            var canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            var context = canvas.getContext('2d');
+            context.drawImage(img, 0, 0);
+
+            // Convert the image to a base64-encoded string
+            var dataUrl = canvas.toDataURL('image/png');
+
+            // Append the image to the SVG using 'xlink:href' (D3 v4 compatible)
+            svg.append("image")
+                .attr("xlink:href", dataUrl)  // Use 'xlink:href' for D3 v4 compatibility
+                .attr("x", 0)  // Top-left corner
+                .attr("y", -45)  // Top-left corner
+                .attr("width", 230)  // Set width for the image
+                .attr("height", 230)  // Set height for the image
+                .attr("class", "toggle-image");  // Add a class to control visibility
+        };
     }
+
     // SORT the data
 
     // Function to perform natural sorting
@@ -2757,71 +2673,70 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling) {
         layout_data[dartKey] = naturalSort(layout_data[dartKey]);
     });
 
-
-    // Number of last entries to transfer and remove
-    const N = 14;  // Change this value to 2, 3, or any number you want
-
-    // Get the keys of the GPCRome_A object
-    const dartAKeys = Object.keys(layout_data.GPCRome_A);
-
-    // Get the last N keys
-    const lastNKeys = dartAKeys.slice(-N);
-
-    // Create a copy of GPCRome_AO and add the new entries from GPCRome_A
-    const updatedGPCRome_AO = {
-        ...lastNKeys.reduce((acc, key) => {
-            acc[key] = layout_data.GPCRome_A[key]; // Add the last N entries from GPCRome_A
-            return acc;
-        }, {}),
-        ...layout_data.GPCRome_AO // Spread the original GPCRome_AO entries
-    };
-
-    // Create a new GPCRome_A object that excludes the last N entries
-    const updatedGPCRome_A = {
-        ...layout_data.GPCRome_A
-    };
-
-    // Remove the last N properties from GPCRome_A
-    lastNKeys.forEach(key => {
-        delete updatedGPCRome_A[key];
-    });
-
-
-    let three_classes = false;
     // Now call Draw_a_GPCRome for both updated GPCRome_A and GPCRome_AO
 
     // First Draw_a_GPCRome with GPCRome_A, now without the two receptors
 
-    if (three_classes) {
+    if (odorant) {
 
-        Draw_a_GPCRome(updatedGPCRome_A, fill_data, 0, dimensions, Spacing);
-
-        // Second Draw_a_GPCRome with GPCRome_AO, now with the two receptors added
-        Draw_a_GPCRome(updatedGPCRome_AO, fill_data, 1, dimensions, Spacing);
-
-        Draw_a_GPCRome({...layout_data.GPCRome_B,...layout_data.GPCRome_C}, fill_data, 2, dimensions,Spacing);
-        Draw_a_GPCRome({...layout_data.GPCRome_F,...layout_data.GPCRome_T,...layout_data.GPCRome_CL}, fill_data, 3, dimensions,Spacing);
+        Draw_a_GPCRome(layout_data.GPCRome_O2_ext, fill_data, 0, dimensions, Spacing, odorant);
+        Draw_a_GPCRome(layout_data.GPCRome_O2_mid, fill_data, 1, dimensions, Spacing, odorant);
+        Draw_a_GPCRome(layout_data.GPCRome_O2_int, fill_data, 2, dimensions, Spacing, odorant);
+        Draw_a_GPCRome(layout_data.GPCRome_O1, fill_data, 3, dimensions, Spacing, odorant);
 
     } else {
-    Draw_a_GPCRome(updatedGPCRome_A, fill_data, 0, dimensions, Spacing);
 
-    // Second Draw_a_GPCRome with GPCRome_AO, now with the two receptors added
-    Draw_a_GPCRome(updatedGPCRome_AO, fill_data, 1, dimensions, Spacing);
+      // Number of last entries to transfer and remove
+      const N = 16;  // Change this value to 2, 3, or any number you want
 
-    Draw_a_GPCRome(layout_data.GPCRome_B, fill_data, 2, dimensions,Spacing);
-    Draw_a_GPCRome({...layout_data.GPCRome_C, ...layout_data.GPCRome_F}, fill_data, 3, dimensions,Spacing);
-    Draw_a_GPCRome({...layout_data.GPCRome_T,...layout_data.GPCRome_CL}, fill_data, 4, dimensions,Spacing);
+      // Get the keys of the GPCRome_A object
+      const dartAKeys = Object.keys(layout_data.GPCRome_A);
+
+      // Get the last N keys
+      const lastNKeys = dartAKeys.slice(-N);
+
+      // Create a copy of GPCRome_AO and add the new entries from GPCRome_A
+      const updatedGPCRome_AO = {
+          ...lastNKeys.reduce((acc, key) => {
+              acc[key] = layout_data.GPCRome_A[key]; // Add the last N entries from GPCRome_A
+              return acc;
+          }, {}),
+          ...layout_data.GPCRome_AO // Spread the original GPCRome_AO entries
+      };
+
+      // Create a new GPCRome_A object that excludes the last N entries
+      const updatedGPCRome_A = {
+          ...layout_data.GPCRome_A
+      };
+
+      // Remove the last N properties from GPCRome_A
+      lastNKeys.forEach(key => {
+          delete updatedGPCRome_A[key];
+      });
+
+      Draw_a_GPCRome(updatedGPCRome_A, fill_data, 0, dimensions, Spacing);
+
+      // Second Draw_a_GPCRome with GPCRome_AO, now with the two receptors added
+      Draw_a_GPCRome(updatedGPCRome_AO, fill_data, 1, dimensions, Spacing);
+
+      Draw_a_GPCRome({...layout_data.GPCRome_B1, ...layout_data.GPCRome_B2}, fill_data, 2, dimensions,Spacing);
+      Draw_a_GPCRome({...layout_data.GPCRome_C, ...layout_data.GPCRome_F}, fill_data, 3, dimensions,Spacing);
+      Draw_a_GPCRome({...layout_data.GPCRome_T,...layout_data.GPCRome_CL}, fill_data, 4, dimensions,Spacing);
 
     }
-    function Draw_a_GPCRome(label_data, fill_data, level, dimensions,Spacing) {
+    function Draw_a_GPCRome(label_data, fill_data, level, dimensions, Spacing, odorant = false) {
 
         // Define SVG dimensions
         const width = dimensions.width;
         const height = dimensions.height;
         const label_offset = 7; // Increased offset to push labels outward
+        let GPCRome_radius;
 
-
-        const GPCRome_radius = Math.min(width, height) / 2 - 60 - ((level == 4) ? (90 * level) : (85 * level)); // Radius for each GPCRome
+        if (odorant) {
+          GPCRome_radius = Math.min(width, height) / 2 - 60 - ((level === 3) ? (100 * level) : (95 * level)); // Radius for each GPCRome
+        } else {
+          GPCRome_radius = Math.min(width, height) / 2 - 60 - ((level === 4) ? (90 * level) : (85 * level)); // Radius for each GPCRome
+        }
 
         let values = [];
         let Family_list  = []
@@ -2864,70 +2779,63 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling) {
         }
 
         // Add in Class
-        if (three_classes) {
-            if (level == 0) {
+        if (odorant) {
+            Header_list = ["O2","O1"];
+            if (level === 0) {
                 values.unshift("");
-                values.unshift("A");
+                values.unshift("O2");
                 values.push("");
-            } else if (level == 1) {
-                values.unshift("A");
+            } else if (level === 1) {
+                values.unshift("");
+                values.unshift("O2");
                 values.push("");
-            } else if (level == 2) {
-                values.unshift("B1");
-                values.splice(52, 0, "");
-                values.splice(52, 0, "");
-                values.splice(54, 0, "B2");
-                values.splice(55, 0, "");
-                values.splice(80, 0, "");
-                values.splice(81, 0, "C");
-                values.splice(82, 0, "");
+            } else if (level === 2) {
+                values.unshift("");
+                values.unshift("O2");
                 values.push("");
-            }else if (level == 3) {
-                values.unshift("F");
-                values.splice(14, 0, "T2");
-                values.splice(14, 0, "");
-                values.splice(42, 0, "Classless");
-                values.splice(42, 0, "");
-                values.push("")
+            } else if (level === 3) {
+                values.unshift("");
+                values.unshift("O1");
+                values.push("");
             }
 
         } else {
-            if (level == 0) {
+            Header_list = ["A","B1","B2","C","F","T2","Classless"];
+            if (level === 0) {
                 values.unshift("");
                 values.unshift("A");
                 values.push("");
-            } else if (level == 1) {
+            } else if (level === 1) {
                 values.unshift("A");
                 values.push("");
-            } else if (level == 2) {
+            } else if (level === 2) {
                 if (Spacing) {
-                    values.splice(52, 0, "B2");
-                    values.splice(53, 0, "");
+                    values.splice(26, 0, "B2");
+                    values.splice(27, 0, "");
                     values.push("")
 
                 } else {
                     values.splice(15, 0, "B2");
                 }
                 values.unshift("B1");
-            } else if (level == 3) {
+            } else if (level === 3) {
                 values.unshift("C");
                 values.splice(33, 0, "F");
                 values.splice(33, 0, "");
                 values.push("")
-            } else if (level == 4) {
+            } else if (level === 4) {
                 values.unshift("T2");
                 values.splice(28, 0, "Classless");
                 values.splice(28, 0, "");
                 values.splice(30, 0, "");
                 values.push("")
-            } else if (level == 5) {
+            } else if (level === 5) {
                 values.unshift("CLASS F");
-            } else if (level == 6) {
+            } else if (level === 6) {
                 values.unshift("CLASSLESS");
             }
         }
         // Header_list = ["CLASS A","A CONT.","A ORPHANS","CLASS B1","CLASS B2","CLASS C","CLASS F","CLASS T2","CLASSLESS"];
-        Header_list = ["A","A cont.","A ORPHANS","B1","B2","C","F","T2","Classless"];
 
         function calculatePositionAndAngle(index, total, values, Header_list, Family_list, isSplit) {
             // Get the text value at the current index
@@ -3017,10 +2925,22 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling) {
             return `rotate(${pos.rotation + rotation}, ${pos.x}, ${pos.y})`;
         })
         .html(d => GPCRome_formatTextWithHTML(d, Family_list, level))
-        .style("font-size", d => Header_list.includes(d) ? "26px" : "9px")
-        .style("font-family", "Palatino")
+        .style("font-size", d => Header_list.includes(d) ? Class_fontsize : Receptor_and_family_fontsize)
+        .style("font-family", Font_family)
         .attr("font-weight", d => Header_list.includes(d) || Family_list.includes(d) ? "950" : "normal")
         .style("fill", d => Header_list.includes(d) ? "Black" : "black");
+
+        // Function to process the formattedText
+        function formatText(text) {
+            if (text.includes("Odorant")) {
+                // Split the text by the word "Odorant" and trim any leading/trailing spaces
+                let result = text.split("Odorant").pop().trim();
+
+                // Capitalize the first letter and ensure the rest is lowercase
+                return result.charAt(0).toUpperCase() + result.slice(1).toLowerCase();
+            }
+            return text;  // Return the text unchanged if it doesn't contain "Odorant"
+        }
 
         // After drawing all the elements, adjust the y-position for all family labels
         // Adjust the y-position for all family labels based on the midpoint between current and previous positions
@@ -3046,7 +2966,7 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling) {
                     textElement.remove();
 
                     // fontsize
-                    let family_fontsize = "9px";
+                    let family_fontsize = Receptor_and_family_fontsize;
 
                     // Check if the formatted text is longer than 10 characters (or any desired length)
                     if (formattedText.length > 18) {
@@ -3065,6 +2985,7 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling) {
                         const currentPos = calculatePositionAndAngle(index, totalItems, values, Header_list, Family_list, true);
                         const prevPos = calculatePositionAndAngle(index - 1, totalItems, values, Header_list, Family_list, true);
 
+                        off_set = level+1
 
                         if (angle >= -90 && angle < 90) {
                             // Right-hand side: use prevPos for the first part and currentPos for the second part
@@ -3072,23 +2993,29 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling) {
                             // Append the first part of the text (using prevPos)
                             svg.append("text")
                                 .attr("x", prevPos.x)
-                                .attr("y", prevPos.y)
+                                .attr("y", prevPos.y+off_set)
                                 .attr("text-anchor", "start")
                                 .attr("dominant-baseline", "middle")
                                 .attr("transform", `rotate(${prevPos.rotation + additionalRotation}, ${prevPos.x}, ${prevPos.y})`)
                                 .attr("class", "GPCRome-family-label-split")
                                 .text(firstPart)
+                                // .style("font-weight", "bold")
+                                .style("font-family", Font_family)
                                 .style("font-size",family_fontsize);
+
+
 
                             // Append the second part of the text (using currentPos)
                             svg.append("text")
                                 .attr("x", currentPos.x)
-                                .attr("y", currentPos.y)
+                                .attr("y", currentPos.y-off_set)
                                 .attr("text-anchor", "start")
                                 .attr("dominant-baseline", "middle")
                                 .attr("transform", `rotate(${currentPos.rotation + additionalRotation}, ${currentPos.x}, ${currentPos.y})`)
                                 .attr("class", "GPCRome-family-label-split")
                                 .text(secondPart)
+                                // .style("font-weight", "bold")
+                                .style("font-family", Font_family)
                                 .style("font-size", family_fontsize);
 
                         } else {
@@ -3097,23 +3024,27 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling) {
                             // Append the first part of the text (using currentPos)
                             svg.append("text")
                                 .attr("x", currentPos.x)
-                                .attr("y", currentPos.y)
+                                .attr("y", currentPos.y+off_set)
                                 .attr("text-anchor", "end")
                                 .attr("dominant-baseline", "middle")
                                 .attr("transform", `rotate(${currentPos.rotation + additionalRotation}, ${currentPos.x}, ${currentPos.y})`)
                                 .attr("class", "GPCRome-family-label-split")
                                 .text(firstPart)
+                                // .style("font-weight", "bold")
+                                .style("font-family", Font_family)
                                 .style("font-size",family_fontsize);
 
                             // Append the second part of the text (using prevPos)
                             svg.append("text")
                                 .attr("x", prevPos.x)
-                                .attr("y", prevPos.y)
+                                .attr("y", prevPos.y-off_set)
                                 .attr("text-anchor", "end")
                                 .attr("dominant-baseline", "middle")
                                 .attr("transform", `rotate(${prevPos.rotation + additionalRotation}, ${prevPos.x}, ${prevPos.y})`)
                                 .attr("class", "GPCRome-family-label-split")
                                 .text(secondPart)
+                                // .style("font-weight", "bold")
+                                .style("font-family", Font_family)
                                 .style("font-size",family_fontsize);
                         }
 
@@ -3136,7 +3067,9 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling) {
                             .attr("text-anchor", (angle >= -90 && angle < 90) ? "start" : "end")
                             .attr("transform", `rotate(${midRotation + additionalRotation}, ${midX}, ${midY})`)
                             .attr("class", "GPCRome-family-label")
-                            .text(formattedText)
+                            .text(formatText(formattedText))
+                            // .style("font-weight", "bold")
+                            .style("font-family", Font_family)
                             .style("font-size",family_fontsize);
                     }
                 }
@@ -3218,12 +3151,31 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling) {
                     if (value === "Both") return "blue";
                     if (value === "empty") return "white";
                     return "none";  // Make the slice invisible if the value is ""
+                } else if (datatype === "Arrestin") {
+                    // Handle discrete data or default case
+                    if (value === "ARRB1") return "orange";
+                    if (value === "ARRB2") return "purple";
+                    if (value === "ARRC") return "aquamarine";
+                    if (value === "ARRS") return "cornflowerblue";
+                    if (value === "empty") return "white";
+                    return "none";  // Make the slice invisible if the value is ""
+                } else if (datatype === "NRDD") {
+                    // Handle discrete data or default case
+                    if (value === 1) return "#F5BCBF";
+                    if (value === 2) return "#F17270";
+                    if (value === 3) return "#DD2628";
+                    if (value === 4) return "#2C87C8";
+                    if (value === 5) return "#D3D3D3";
+                    if (value === 6) return "#A3D9C8";
+                    if (value === 7) return "White";
+                    return "none";  // Make the slice invisible if the value is ""
                 }
             })
             .style("stroke", (d) => {
                 const value = fill_data[d.data]?.Value1;
                 if (value === "Yes" || value === "No" || !isNaN(value)) return "black";
                 if (value === "Active" || value === "Inactive" || value === "Both" || value === "empty") return "black";
+                if (value === "ARRB1" || value === "ARRB2" || value === "ARRC" || value === "ARRS" || value === "empty") return "black";
                 return "none";  // Remove the stroke if the value is ""
             })
             .style("stroke-width", (d) => {
@@ -3231,247 +3183,15 @@ function Draw_GPCRomes(layout_data, fill_data, location, GPCRome_styling) {
                 return value === "" ? 0 : 0.5;  // Set stroke-width to 0 if the value is an empty string
             });
     }
+    // Add padding and scale
+    const padding = 10;  // Adjust padding value as needed (50px for this example)
+    const originalWidth = +svg.attr("width");
+    const originalHeight = +svg.attr("height");
+
+    // Adjust the viewBox to add padding
+    svg.attr("viewBox", `-${padding} -${padding} ${originalWidth + 2 * padding} ${originalHeight + 2 * padding}`);
+
+    // Apply scaling to the content (e.g., 95% of the original size)
+    svg.attr("transform", "scale(0.95)")
+    .attr("transform-origin", "center");
 }
-
-// // SPIRAL  - Maybe for later!!
-
-// function formatTextWithHTML_spiral(text, receptorFamilies) {
-//     // List of receptor families that need special formatting
-//     const specialFormattingFamilies = new Set(receptorFamilies);
-
-//     // Apply initial replacements
-//     let formattedText = text
-//         .replace(" receptors", '')
-//         .replace(" receptor", '')
-//         .replace("-adrenoceptor", ' ')
-//         .replace(" receptor-", '-')
-//         .replace("<sub>", '</tspan><tspan baseline-shift="sub">')
-//         .replace("</sub>", '</tspan><tspan>')
-//         .replace("<i>", '</tspan><tspan font-style="italic">')
-//         .replace("</i>", '</tspan><tspan>')
-//         .replace("Long-wave-sensitive", 'LWS')
-//         .replace("Medium-wave-sensitive", 'MWS')
-//         .replace("Short-wave-sensitive", 'SWS')
-//         .replace("Olfactory", 'OLF')
-//         .replace("calcitonin-like receptor", 'CLR');
-
-//     // Apply additional formatting if the text is in the special formatting families
-//     if (specialFormattingFamilies.has(text)) {
-//         formattedText = formattedText
-//             .replace(/( receptors|neuropeptide )/g, '') // Remove specific substrings
-//             .replace(/(-releasing)/g, '-rel.') // Remove specific substrings
-//             .replace(/(-concentrating)/g, '-conc.') // Remove specific substrings
-//             .split(" (")[0]; // Keep only the part before the first " ("
-
-//         // Truncate if necessary
-//         if (formattedText.length > 15) {
-//             return formattedText.substring(0, 15) + "...";
-//         }
-//     }
-
-//     return formattedText;
-// }
-
-// function Draw_Spiral(layout_data, fill_data, location, spiral_styling) {
-//     // Data format
-
-//     const datatype = spiral_styling.datatype;
-//     const classMapping = [
-//         "CLASS A",
-//         "A ORPHANS",
-//         "CLASS B1",
-//         "CLASS B2",
-//         "CLASS C",
-//         "CLASS F",
-//         "CLASS T2",
-//         "CLASSLESS"
-//     ];
-
-//     spiral_data = Object.values(layout_data).flat();
-
-//     const transformData = (dataObject, classMapping) => {
-//         const result = [];
-//         const familyList = new Set(); // Create a Set to hold receptor family names
-
-//         // Iterate over each class in the data object
-//         Object.keys(dataObject).forEach(classIndex => {
-//             const className = classMapping[classIndex] || "UNKNOWN"; // Default to "UNKNOWN" if classMapping is missing
-//             result.push(className); // Add the class name
-
-//             const receptorFamilies = dataObject[classIndex];
-//             Object.keys(receptorFamilies).forEach(familyName => {
-//                 familyList.add(familyName); // Add receptor family name to the Set
-//                 result.push(familyName); // Add the receptor family name
-
-//                 const receptors = receptorFamilies[familyName];
-//                 result.push(...receptors); // Flatten the receptors into the result array
-//             });
-//         });
-
-//         return { flattenedData: result, familyList: Array.from(familyList) }; // Convert Set to Array
-//     };
-
-//     const { flattenedData, familyList } = transformData(spiral_data, classMapping);
-
-//     // console.log(flattenedData);
-//     // Configuration
-//     const width = 1000;
-//     const height = 1000;
-//     const centerX = width / 2;
-//     const centerY = height / 2;
-//     const numPoints = flattenedData.length;
-//     const maxRadius = Math.min(centerX, centerY) - 80; // Maximum radius of the spiral
-//     console.log(numPoints);
-//     // Define color scale for continuous data
-//     const colorScale = d3.scaleLinear()
-//         .domain([spiral_styling.minValue, spiral_styling.median_value, spiral_styling.maxValue])  // Input domain with median
-//         .range([spiral_styling.colorStart, spiral_styling.color_median, spiral_styling.colorEnd]);  // Output range with median color
-
-//     // Create SVG container
-//     const svg = d3.select("#" + location);
-
-//     const numTurns = 15;  // Number of spiral turns
-//     const totalTheta = 2 * Math.PI * numTurns;  // Total angular range for the full spiral
-
-//     // Parameters for the flipped Archimedean spiral
-//     // const maxRadius = 500;  // Starting radius (the furthest point from the center)
-//     const b = 14;  // Controls how tight the spiral is
-//     const desiredArcLength = 14;  // Desired arc length (distance between points)
-
-//     // Generate spiral data, starting from the outermost point and moving inwards
-//     const data = [];
-//     let theta = 0 - (Math.PI / 2);  // Start at 0 degrees
-
-//     for (let i = 0; i < numPoints; i++) {
-//         // Flip the radius calculation: start from maxRadius and decrease as theta increases
-//         const radius = maxRadius - b * theta;
-
-//         // Calculate x and y positions based on the spiral formula
-//         const x = centerX + radius * Math.cos(theta);
-//         const y = centerY + radius * Math.sin(theta);
-
-//         // Add the current point to the data array
-//         data.push({
-//             x: x,
-//             y: y,
-//             theta: theta,  // Store theta for pie slice alignment
-//             theta_box: theta + (Math.PI / 2),
-//             radius: radius,  // Store radius for use in pie chart
-//             angularStep: desiredArcLength,  // This will get updated with the current angular step
-//             text: flattenedData[i]
-//         });
-
-//         // Calculate the next angular step to maintain constant arc length
-//         const angularStep = desiredArcLength / radius;  // Adjust based on current radius
-
-//         // Update the angle for the next point
-//         theta += angularStep;
-//     }
-
-
-//     // Append text elements to the SVG
-//     svg.selectAll("text")
-//         .data(data)
-//         .enter()
-//         .append("text")
-//         .attr("x", d => d.x)
-//         .attr("y", d => d.y)
-//         .attr("dominant-baseline", "middle")
-//         .attr("class", "text")
-//         .html(d => formatTextWithHTML_spiral(d.text, familyList)) // Use HTML formatting function
-//         .style("font-size", d => classMapping.includes(d.text) ? "12px" : "10px")
-//         .style("text-decoration", d => classMapping.includes(d.text) ? "underline" : "none")
-//         .style("font-family", "Palatino")
-//         .style("font-weight", d => classMapping.includes(d.text) || familyList.includes(d.text) ? "bold" : "normal")
-//         .attr("text-anchor", d => {
-//             // Calculate angle in radians
-//             const angle = Math.atan2(d.y - centerY, d.x - centerX);
-
-//             // Determine text-anchor based on angle
-//             return (angle >= -Math.PI / 2 && angle < Math.PI / 2) ? "start" : "end";
-//         })
-//         .attr("transform", d => {
-//             // Calculate angle in radians
-//             const angle = Math.atan2(d.y - centerY, d.x - centerX);
-
-//             // Calculate rotation for flipping text
-//             const rotation = angle >= -Math.PI / 2 && angle < Math.PI / 2 ? 0 : 180;
-
-//             // Rotate text to follow spiral path and flip as needed
-//             return `rotate(${angle * 180 / Math.PI + rotation}, ${d.x}, ${d.y})`; // Adjust rotation angle
-//         });
-
-// // Function to generate spiral points
-// const generateSpiralPoint = (theta, radius) => {
-//     return {
-//         x: centerX + radius * Math.cos(theta),
-//         y: centerY + radius * Math.sin(theta)
-//     };
-// };
-
-// // Variables to store the last arc's end points for continuity
-// let lastEndPointOuter = null;
-// let lastEndPointInner = null;
-
-// const pieData = data.map((d, i) => {
-//     const halfStep = (desiredArcLength / d.radius) / 2;
-
-//     // Start and end angles
-//     const startTheta = d.theta - halfStep;
-//     const endTheta = d.theta + halfStep;
-
-//     // If this is the first arc, calculate start points normally
-//     let startPointOuter = lastEndPointOuter || generateSpiralPoint(startTheta, d.radius - 5);
-//     let startPointInner = lastEndPointInner || generateSpiralPoint(startTheta, d.radius - 10);
-
-//     // Calculate the end points for the current arc
-//     const endPointOuter = generateSpiralPoint(endTheta, d.radius - 5);
-//     const endPointInner = generateSpiralPoint(endTheta, d.radius - 15);
-
-//     // Save the end points to use them for the next arc
-//     lastEndPointOuter = endPointOuter;
-//     lastEndPointInner = endPointInner;
-
-//     // Return the path commands for the custom arc
-//     return {
-//         path: `M ${startPointOuter.x},${startPointOuter.y}
-//                A ${d.radius - 5},${d.radius - 5} 0 0,1 ${endPointOuter.x},${endPointOuter.y}
-//                L ${endPointInner.x},${endPointInner.y}
-//                A ${d.radius - 10},${d.radius - 10} 0 0,0 ${startPointInner.x},${startPointInner.y}
-//                Z`,
-//         data: d.text
-//     };
-// });
-
-// // Draw the spiral-aligned custom arcs
-// svg.selectAll(`.hollow-pie`)
-//     .data(pieData)
-//     .enter()
-//     .append("path")
-//     .attr("class", `hollow-pie`)
-//     .attr("d", d => d.path)  // Use custom path data
-//     .style("fill", d => {
-//         const value = fill_data[d.data]?.Value1;
-//         if (datatype === "Continuous") {
-//             const numericValue = parseFloat(value);
-//             if (numericValue === 0) {
-//                 return "white";  // Return "white" if the value is 0
-//             }
-//             return !isNaN(numericValue) ? colorScale(numericValue) : "none";
-//         } else {
-//             if (value === "Yes") return "green";
-//             if (value === "No") return "red";
-//             return "none";  // Make the slice invisible if the value is ""
-//         }
-//     })
-//     .style("stroke", d => {
-//         const value = fill_data[d.data]?.Value1;
-//         if (value === "Yes" || value === "No" || !isNaN(value)) return "black";
-//         return "none";  // Remove stroke if no value
-//     })
-//     .style("stroke-width", d => {
-//         const value = fill_data[d.data]?.Value1;
-//         return value === "" ? 0 : 0.5;  // No stroke if empty
-//     });
-
-// }

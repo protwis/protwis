@@ -190,16 +190,18 @@
             <thead id="headers">
                 <tr class="header-spans">
 
-                    <th style="text-align: left;">MODEL</th>
+
                     <th style="border-left: 1px solid black; text-align:left; padding-left:5px;" colspan="5">RECEPTOR</th>
                     <th style="border-left: 1px solid black; text-align:left; padding-left:5px;" colspan="6" style="">PHYSIOLOGICAL LIGANDS</th>
+                    <th style="border-left: 1px solid black; text-align:left; padding-left:5px;" colspan="2">STRUCTURE</th>
                     <th style="border-left: 1px solid black; text-align:left; padding-left:5px;" colspan="3">pEC50</th>
                     <th style="border-left: 1px solid black; text-align:left; padding-left:5px;" colspan="3">pKi</th>
                     <th style="border-left: 1px solid black; text-align:left; padding-left:5px;" colspan="1">REFERENCES</th>
                 </tr>
                 <tr class="table-filter-dropdown">
+
+
             <!-- Receptor block -->
-                    <th></th>
                     <th>Class</th>
                     <th>Receptor family</th>
                     <th>UniProt</th>
@@ -212,6 +214,9 @@
                     <th class="pathways">Type</th>
                     <th class="pathways">Smiles</th>
                     <th class="pathways">Inchikey</th>
+            <!-- Structure block -->
+            <th>Model</th>
+            <th col_type_info='string'>Exp</th>
                     <!-- pEC50 block  -->
                     <th class="color-column">Min</th>
                     <th class="color-column">Mid</th>
@@ -223,19 +228,47 @@
             <!-- Reference block  -->
                     <th></th>
                 </tr>
+
+                <tr>
+            <!--      yadcf       -->
+
+                    <!-- Receptor  -->
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+
+                    <!-- ligand block -->
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+
+                    <!-- structure block  -->
+
+                    <th></th>
+                    <th></th>
+
+                    <!-- pEC50 block  -->
+                    <th></th>
+                    <th></th>
+                    <th></th>
+
+                    <!-- pKi block -->
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <!-- Reference block  -->
+                    <th></th>
+                </tr>
             </thead>
             <tbody id='endo_scrollable_body'>
                     {% for value in Array %}
                     <tr>
-                        {% if value.22 %}
-                            {% if value.23 == "af-signprot-peptide" %}
-                                <td style="text-align:center;"><a target="_blank" href="/structure/ligand_complex_models/{{ value.22 }}"><img width="14px" height="20px" class="model-link" src="{% static 'home/images/model-surface.png' %}"></a></div></td>
-                            {% else %}
-                            <td style="text-align:center;"><a target="_blank" href="/structure/ligand_complex_models/{{ value.22 }}"><img width="14px" height="20px" class="model-link" src="{% static 'home/images/gpcr_structure_logo.png' %}"></a></div></td>
-                            {% endif %}
-                        {% else %}
-                        <td style="text-align: center;"> - </td>
-                        {% endif %}
+
                         <!-- Receptor block -->
                         <td style="text-align:right">{{value.0}}</td>
                         <td style="text-align:right" class="expand">{{value.1}}</td>
@@ -250,6 +283,28 @@
                         <td style="text-align:left" class="pathway">{{value.9}}</td>
                         <td style="text-align:left" class="pathway expand">{{value.10|safe}}</td>
                         <td style="text-align:left" class="pathway expand">{{value.11|safe}}</td>
+
+                        <!-- STRUCTURES -->
+                        {% if value.22 %}
+                            {% if value.23 == "af-signprot-peptide" %}
+                                <td style="text-align:center;"><a target="_blank" href="/structure/ligand_complex_models/{{ value.22 }}"><img width="14px" height="20px" class="model-link" src="{% static 'home/images/model-surface.png' %}"></a></div></td>
+                            {% elif value.23 == "af-rfaa-sm" %}
+                            <td style="text-align:center;"><a target="_blank" href="/structure/ligand_complex_models/{{ value.22 }}"><img width="14px" height="20px" class="model-link" src="{% static 'home/images/gpcr_structure_logo.png' %}"></a></div></td>
+                            {% else %}
+                            <td style="text-align: center;"> - </td>
+                            {% endif %}
+                        {% else %}
+                        <td style="text-align: center;"> - </td>
+                        {% endif %}
+
+                        <!-- Experimental structure -->
+                        {% if value.22 and value.23 != "af-signprot-peptide" and value.23 != "af-rfaa-sm" %}
+                        <td style="text-align: center;">
+                            <a href="/structure/{{ value.22 }}" target="_blank">{{ value.22 }}</a>
+                        </td>
+                        {% else %}
+                            <td style="text-align: center;"> - </td>
+                        {% endif %}
 
                         <!-- pEC50 block  -->
                         <td style="text-align:right" class="color-column" id="lbf_p2_p1">{{value.12|floatformat:1}}</td>
@@ -334,37 +389,41 @@ $('#references').on('show.bs.modal', function(e) {
         // columns to hide: 3,14,15,18,19,22,23,26,27,28,31,32,33,36,37,38,41,42,43,46,47,48,51,52,53,56,57,58
         let column_filters = [];
         // createYADCFfilters(start_column, num_cols, filter_type, select_type = null, filter_default_label = "", filter_reset_button_text = false, filter_match_mode = null, column_data_type = null, width = null)
+        // PDB structures
+        column_filters = column_filters.concat(createYADCFfilters(0, 1, "multi_select", "select2", "Select", false, null, null, "80px"))
         // Class
-        column_filters = column_filters.concat(createYADCFfilters(1, 1, "multi_select", "select2", "Class", false, null, null, "80px"));
+        column_filters = column_filters.concat(createYADCFfilters(1, 1, "multi_select", "select2", "Select", false, null, null, "80px"));
         // Receptor section (4)
         column_filters = column_filters.concat(createYADCFfilters(2, 1, "multi_select", "select2", "Select", false, null, null, "80px"));
         column_filters = column_filters.concat(createYADCFfilters(3, 1, "multi_select", "select2", "Select", false, null, "html", "80px"));
-        column_filters = column_filters.concat(createYADCFfilters(4, 1, "multi_select", "select2", "Select", false, "exact", "html", "80px", null, null, "text"));
+        column_filters = column_filters.concat(createYADCFfilters(4, 1, "multi_select", "select2", "Select", false, null, null, "80px"));
         column_filters = column_filters.concat(createYADCFfilters(5, 1, "multi_select", "select2", "Select", false, null, null, "80px"));
         // Ligand column
         column_filters = column_filters.concat(createYADCFfilters(6, 1, "multi_select", "select2", "Select", false, null, "html", "80px"));
         column_filters = column_filters.concat(createYADCFfilters(7, 1, "multi_select", "select2", "Select", false, null, null, "80px"));
         column_filters = column_filters.concat(createYADCFfilters(8, 1, "multi_select", "select2", "Select", false, null, null, "80px"));
-        column_filters = column_filters.concat(createYADCFfilters(9, 1, "multi_select", "select2", "Select", false, null, null, "80px"));
+        column_filters = column_filters.concat(createYADCFfilters(9, 1, "multi_select", "select2", "Select", false, "exact", null, "80px", null, null, "text"));
         column_filters = column_filters.concat(createYADCFfilters(10, 1, "multi_select", "select2", "Select", false, "exact", null, "80px"));
-        column_filters = column_filters.concat(createYADCFfilters(11, 1, "multi_select", "select2", "Select", false, "exact", null, "80px"));
+        column_filters = column_filters.concat(createYADCFfilters(12, 1, "multi_select", "select2", "PDB ID", false, "exact", null, "80px"));
         // Pathway Preference block (5)
-        column_filters = column_filters.concat(createYADCFfilters(12, 1, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
         column_filters = column_filters.concat(createYADCFfilters(13, 1, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
         column_filters = column_filters.concat(createYADCFfilters(14, 1, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
         column_filters = column_filters.concat(createYADCFfilters(15, 1, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
         column_filters = column_filters.concat(createYADCFfilters(16, 1, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
         column_filters = column_filters.concat(createYADCFfilters(17, 1, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
+        column_filters = column_filters.concat(createYADCFfilters(18, 1, "range_number", null, ["Min", "Max"], false, null, null, "30px"))
 
         // Authors
         // column_filters = column_filters.concat(createYADCFfilters(15, 1, "multi_select", "select2", "Authors", false, null, null, "80px"));
         // DOI
         // column_filters = column_filters.concat(createYADCFfilters(16, 1, "multi_select", "select2", "DOI", false, null, "html", "80px"));
 
+        // Initialize YADCF with filters_tr_index set to 2
         yadcf.init(oTable1.draw(), column_filters, {
-            cumulative_filtering: false
+            cumulative_filtering: false,
+            filters_tr_index: 2
         });
-        yadcf.exFilterColumn(oTable1, [[5, ["Human"]]], true);
+        yadcf.exFilterColumn(oTable1, [[4, ["Human"]]], true);
 
         gray_scale_table($("#endo_scrollable"));
 

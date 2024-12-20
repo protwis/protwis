@@ -19,8 +19,11 @@ class Command(BaseCommand):
             for s in structs:
                 sbc.check_segment_ends(s)
             print("Missing segments: ", len(sbc.missing_seg))
+            p = []
             for i in sbc.missing_seg:
                 print("Error: Missing segment {} {} has no residue objects. Should have {} to {}".format(i[0],i[1],i[2],i[3]))
+                p.append(str(i[0]))
+            print(' '.join(p))
             print("Very short helix segments: ", len(sbc.helix_length_error))
             for i in sbc.helix_length_error:
                 print("Error: Very short helix segment for {}: {} {}".format(i[0],i[1],i[2]))

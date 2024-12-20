@@ -62,7 +62,7 @@ $(document).ready(function() {
         if ($('#results_table').length) {
             try {
                 var table = $('#results_table').DataTable({
-                    "order": [[1, "desc"], [2, "desc"], [3, "asc"]],
+                    "orderFixed": [[1, "desc"], [2, "desc"], [3, "asc"]], 
                     "pageLength": 20,
                     'lengthChange': false,
                     "columnDefs": [{

@@ -187,7 +187,7 @@ class GenericNumbering(object):
                             residue["CA"].set_bfactor(float(self.residues[chain.id][residue.id[1]].gpcrdb))
                         if self.residues[chain.id][residue.id[1]].bw != 0.:
                             residue["N"].set_bfactor(float(self.residues[chain.id][residue.id[1]].bw))
-                    except ValueError:
+                    except (ValueError, KeyError):
                         continue
 
         return self.pdb_structure
