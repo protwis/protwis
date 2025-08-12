@@ -5,6 +5,7 @@
 <link rel="stylesheet" href="{% static 'home/css/NewDrugsBrowser_datatables.min.css' %}" type="text/css"/>
 <link rel="stylesheet" href="{% static 'home/css/select2_4.1.0-rc.0._full.css' %}" type="text/css">
 <link rel="stylesheet" href="{% static 'home/css/BusyLoad.css' %}" type="text/css">
+<link rel="stylesheet" href="{% static 'home/css/struct_tooltip.css' %}" type="text/css" />
 
 <style type="text/css">
  /* Target the select2 dropdown and ensure it applies */
@@ -142,6 +143,9 @@
         background: white; /* Match the header background */
         border-right: 1px solid #cccccc; /* Optional for visual clarity */
     }
+    .popover {
+        z-index: 9999 !important;
+    }
 </style>
 {% endblock %}
 {% block content %}
@@ -196,20 +200,21 @@
                 <thead>
                     <!-- Dummy Header Row for Complex Header Fix -->
                     <tr>
-                        <td colspan="95" style="text-align: center" data-dt-order="disable"></td>
+                        <td colspan="97" style="text-align: center" data-dt-order="disable"></td>
                     </tr>
                     <!-- Super Header Row -->
                     <tr style="padding-top: 10px; font-size: 14px; white-space: nowrap;">
-                        <th colspan="6" style="text-align:center;">Targets</th>
-                        <th colspan="1" style="text-align:center;border-left: 1px solid #cccccc;">Literature</th>
-                        <th colspan="2" style="text-align:center;border-left: 1px solid #cccccc;">Novelty</th>
-                        <th colspan="3" style="text-align:center;border-left: 1px solid #cccccc;">Structures</th>
-                        <th colspan="4" style="text-align:center;border-left: 1px solid #cccccc;">All drugs & agents</th>
-                        <th colspan="4" style="text-align:center;border-left: 1px solid #cccccc;">Stimulatory</th>
-                        <th colspan="4" style="text-align:center;border-left: 1px solid #cccccc;">Inhibitory</th>
-                        <th colspan="50" style="text-align:center;border-left: 1px solid #cccccc;">Tissue expression</th>
-                        <th colspan="1" style="text-align:center;border-left: 1px solid #cccccc;">Overview</th>
-                        <th colspan="20" style="text-align:center;border-left: 1px solid #cccccc;">Cancer expression</th>
+                        <th colspan="6" style="text-align:center;" data-dt-order="disable">Targets</th>
+                        <th colspan="1" style="text-align:center;border-left: 1px solid #cccccc;" data-dt-order="disable">Literature</th>
+                        <th colspan="2" style="text-align:center;border-left: 1px solid #cccccc;" data-dt-order="disable">Novelty</th>
+                        <th colspan="3" style="text-align:center;border-left: 1px solid #cccccc;" data-dt-order="disable">Structures</th>
+                        <th colspan="4" style="text-align:center;border-left: 1px solid #cccccc;" data-dt-order="disable">All drugs & agents</th>
+                        <th colspan="2" style="text-align:center;border-left: 1px solid #cccccc;" data-dt-order="disable">Ligand type</th>
+                        <th colspan="4" style="text-align:center;border-left: 1px solid #cccccc;" data-dt-order="disable">Stimulatory</th>
+                        <th colspan="4" style="text-align:center;border-left: 1px solid #cccccc;" data-dt-order="disable">Inhibitory</th>
+                        <th colspan="50" style="text-align:center;border-left: 1px solid #cccccc;" data-dt-order="disable">Tissue expression</th>
+                        <th colspan="1" style="text-align:center;border-left: 1px solid #cccccc;" data-dt-order="disable">Overview</th>
+                        <th colspan="20" style="text-align:center;border-left: 1px solid #cccccc;" data-dt-order="disable">Cancer expression</th>
                     </tr>
                     <!-- Header Row -->
                     <tr>
@@ -229,6 +234,16 @@
                         <th style="text-align: center;">Drugs</th>
                         <th style="text-align: center;">Agents</th>
                         <th style="text-align: center;">Ligands</th>
+                        <th style="text-align: center;border-left: 1px solid #cccccc;">Small molecule</th>
+                        <th style="text-align: center;">Biologics
+                            <span class="glyphicon glyphicon-info-sign"
+                            data-html="true"
+                            data-toggle="popover"
+                            data-trigger="hover"
+                            data-placement="right"
+                            data-content="This includes peptides, proteins, and antibodies."
+                            style="font-size: 14px;">
+                        </span></th>
                         <th style="text-align: center;border-left: 1px solid #cccccc;">Max Phase</th>
                         <th style="text-align: center;">Drugs</th>
                         <th style="text-align: center;">Agents</th>
@@ -253,9 +268,11 @@
                         <td style="text-align: center;border-left: 1px solid #cccccc;" data-dt-order="disable"></td>
                         <td style="text-align: center" data-dt-order="disable"></td>
                         <td style="text-align: center" data-dt-order="disable"></td>
+                        <td style="text-align: center;border-left: 1px solid #cccccc;" data-dt-order="disable"></td> 
+                        <td style="text-align: center" data-dt-order="disable"></td>
+                        <td style="text-align: center" data-dt-order="disable"></td>
+                        <td style="text-align: center" data-dt-order="disable"></td>
                         <td style="text-align: center;border-left: 1px solid #cccccc;" data-dt-order="disable"></td>
-                        <td style="text-align: center" data-dt-order="disable"></td>
-                        <td style="text-align: center" data-dt-order="disable"></td>
                         <td style="text-align: center" data-dt-order="disable"></td>
                         <td style="text-align: center;border-left: 1px solid #cccccc;" data-dt-order="disable"></td>
                         <td style="text-align: center" data-dt-order="disable"></td>
@@ -283,9 +300,9 @@
                     </tr>
                     <!-- Super Header Row -->
                     <tr style="padding-top: 10px; font-size: 14px; white-space: nowrap;">
-                        <th colspan="6" style="text-align:center;">Targets</th>
-                        <th colspan="6" style="text-align:center;border-left: 1px solid #cccccc;">Diseases</th>
-                        <th colspan="2" style="text-align:center;border-left: 1px solid #cccccc;">Agents/drugs</th>
+                        <th colspan="6" style="text-align:center;" data-dt-order="disable">Targets</th>
+                        <th colspan="6" style="text-align:center;border-left: 1px solid #cccccc;" data-dt-order="disable">Diseases</th>
+                        <th colspan="2" style="text-align:center;border-left: 1px solid #cccccc;" data-dt-order="disable">Agents/drugs</th>
                     </tr>
                     <!-- Header Row -->
                     <tr>
@@ -335,8 +352,8 @@
                     </tr>
                     <!-- Super Header Row -->
                     <tr style="padding-top: 10px; font-size: 14px; white-space: nowrap;">
-                        <th colspan="6" style="text-align:center;">Targets</th>
-                        <th colspan="3" style="text-align:center;border-left: 1px solid #cccccc;">Diseases</th>
+                        <th colspan="6" style="text-align:center;" data-dt-order="disable">Targets</th>
+                        <th colspan="3" style="text-align:center;border-left: 1px solid #cccccc;" data-dt-order="disable">Diseases</th>
                     </tr>
                     <!-- Header Row -->
                     <tr>
@@ -376,6 +393,18 @@
 <script src="{% static 'home/js/NorgesDTFilterBuilder.js' %}"></script>
 <script src="{% static 'home/js/BusyLoad.js' %}"></script>
 
+<script type="text/javascript" charset="utf-8">
+  $(document).ready(function(){
+    paper.install(window);
+    $('[data-toggle="popover"]').popover({
+      trigger: 'hover',
+      html: true,
+      container: 'body',
+      delay: { show: 100, hide: 300 } // Makes it less twitchy
+    });
+  });
+</script>
+
 <script type="text/javascript">
 
 var Full_table_data;
@@ -384,7 +413,6 @@ var Untapped_table_data;
 Full_table_data = JSON.parse('{{ Full_data|escapejs }}');
 Disease_table_data = JSON.parse('{{ Disease_table|escapejs }}');
 Untapped_table_data = JSON.parse('{{ Untapped_table|escapejs }}');
-
 const Tissue_col_list = {{ Tissue_cols|safe }};
 const Cancer_col_list = {{ cancer_cols|safe }};
 
@@ -450,7 +478,7 @@ $(document).ready(function() {
     // Define columns
     var target_columnDefs = [
         { className: "dt-head-nowrap dt-head-center dt-center dt-body-center expand", targets: "_all" }, 
-        { targets: [6, 7, 9, 12, 16, 20,24,74,75], className: 'border-left' },
+        { targets: [6, 7, 9, 12, 16,18, 22,26,76,77], className: 'border-left' },
     ];
 
     var disease_columnDefs = [
@@ -492,6 +520,8 @@ $(document).ready(function() {
         {data: "All_Drugs", name: "All_Drugs", width: "125px", className: "small-width"},
         {data: "All_Agents", name: "All_Agents", width: "125px", className: "small-width"},
         {data: "Total_Ligands", name: "Total_Ligands", width: "125px", className: "small-width"},
+        {data: "Type_small_molecule", name: "Type_small_molecule", width: "125px", className: "small-width"},
+        {data: "Type_biologics", name: "Type_biologics", width: "125px", className: "small-width"},
         {data: "Stimulatory_max_phase", name: "All_Max_Phase", width: "125px", className: "small-width"},
         {data: "Stimulatory_Drugs", name: "Stimulatory_Drugs", width: "125px", className: "small-width"},
         {data: "Stimulatory_Agents", name: "Stimulatory_Agents", width: "125px", className: "small-width"},
@@ -499,7 +529,7 @@ $(document).ready(function() {
         {data: "Inhibitory_max_phase", name: "Inhibitory_max_phase", width: "125px", className: "small-width"},
         {data: "Inhibitory_Drugs", name: "Inhibitory_Drugs", width: "125px", className: "small-width"},
         {data: "Inhibitory_Agents", name: "Inhibitory_Agents", width: "125px", className: "small-width"},
-        {data: "pIC50_Count", name: "pIC50_Count", width: "125px", className: "small-width"},
+        {data: "pIC50_Count", name: "pIC50_Count", width: "125px", className: "small-width"}
     ];
 
     // Extend the target_columns with Tissue_col_list
@@ -662,7 +692,15 @@ $(document).ready(function() {
                     text: 'Reset filters', 
                     action: function () { reset_all(); } 
                 }
-            ]
+            ],
+            drawCallback: function(settings) {
+                $('[data-toggle="popover"]').popover({
+                    trigger: 'hover',
+                    html: true,
+                    container: 'body',
+                    delay: { show: 100, hide: 300 }
+                });
+            }
         });
     }
 
@@ -680,9 +718,9 @@ $(document).ready(function() {
         column_filters = column_filters.concat(CreateColumnFilters(Table_selector,0,6,"Multi-select-exact"));
         column_filters = column_filters.concat(CreateColumnFilters(Table_selector,6,2,"Range-float-vertical"));
         column_filters = column_filters.concat(CreateColumnFilters(Table_selector,8,1,"Multi-select-exact"));
-        column_filters = column_filters.concat(CreateColumnFilters(Table_selector,9,15,"Range-float-vertical"));
-        column_filters = column_filters.concat(CreateColumnFilters(Table_selector,24,51,"Range-float-vertical"));
-        column_filters = column_filters.concat(CreateColumnFilters(Table_selector,75,20,"Multi-select-exact"));
+        column_filters = column_filters.concat(CreateColumnFilters(Table_selector,9,17,"Range-float-vertical"));
+        column_filters = column_filters.concat(CreateColumnFilters(Table_selector,26,51,"Range-float-vertical"));
+        column_filters = column_filters.concat(CreateColumnFilters(Table_selector,77,20,"Multi-select-exact"));
         // // Create the filteres
         createDropdownFilters(Table_selector,column_filters);
     }
@@ -727,11 +765,11 @@ function range(start, end) {
 // column visibility configuration for the master button clicks
 const columnVisibilityConfig = {
     0: [...range(1, 5), ...range(6, 11)], // Characterization
-    1: [...range(1, 5), ...range(12, 23)], // Drugs/Agents/Ligands
+    1: [...range(1, 5), ...range(12, 25)], // Drugs/Agents/Ligands
     2: [...range(1, 5)], // Clinically targeted
     3: [...range(1, 5)], //  Untapped target disease associations
-    4: [...range(1, 5),...range(24,73)], //  Tissue expression 
-    5: [...range(1, 5),...range(74,94)], // Cancer expression
+    4: [...range(1, 5),...range(26,75)], //  Tissue expression 
+    5: [...range(1, 5),...range(76,96)], // Cancer expression
 };
 
 let activeTargetIds = []; // Stores globally synchronized IDs

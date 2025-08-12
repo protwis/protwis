@@ -894,21 +894,31 @@ Specific sets of ligands can be downloaded from the <a href="/ligand/biasedsubty
 
 {% if render == "not_bias" %}
   <div style="padding-top: 10px; font-size: 11px; white-space: nowrap;">
-    <div class="col-md-12">
-      <div class="col-md-3">
-        Receptor names:
-          <div class="btn-group" role="group" id="gtp_plus">
-              <button id="GPCRome_UniProtNames" class="btn btn-info ">Gene</button>
-              <button id="GPCRome_IUPHARNames" class="btn btn-info active">Protein</button>
-          </div>
-      </div>
-
-      <div class="col-md-2" style="padding-top: 5px;">
-        Icon toggle:
-        <button id="ToggleIcon" class="btn btn-info active">On</button>
-      </div>
-
+  <div class="col-md-12">
+    <div class="col-md-12" style="margin-bottom: 40px;">
+      <br>
+      The GPCRome wheel plot shows receptors for which mutation data has been annotated.<br>
+      Data is shown in a grayscale gradient, where light gray denotes a small amount of mutations annotated in thata receptor,
+      and darker grey/black implies high number of annotated mutations.<br>
+      The labs of <i>David Gloriam</i>, <i>Anke Schiedel</i>, <i>Chris de Graaf</i> and <i>Hugo Gutiérrez-de-Terán</i> are acknowledged for the annotation of mutation data.
+      <br>
+    </div>
+    <br>
     <div class="col-md-3">
+      Receptor names:
+      <div class="btn-group" role="group" id="gtp_plus">
+        <button id="GPCRome_Protein" class="btn btn-info active">Protein</button>
+          <button id="GPCRome_Entrez" class="btn btn-info">Gene</button>
+          <button id="GPCRome_Uniprot" class="btn btn-info ">UniProt</button>
+      </div>
+    </div>
+
+    <div class="col-md-2" style="padding-top: 5px;margin-left: 75px;">
+      Icon toggle:
+      <button id="ToggleIcon" class="btn btn-info active">On</button>
+    </div>
+
+    <div class="col-md-4">
       <div class="text-center">
         <div class="dropdown">
           <button type="button" class="btn btn-primary dropdown-toggle" style="font-size: 14px;" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -923,33 +933,13 @@ Specific sets of ligands can be downloaded from the <a href="/ligand/biasedsubty
         </div>
       </div>
     </div>
-      Circle colors indicate a number of ligands:
-      <table style="width:30%">
-          <tr>
-              <td ><div id="circle_lightgray"></div></td>
-              <td> < 100 </td>
-              <td ><div id="circle_darkgray"></div></td>
-              <td> < 500 </td>
-              <td ><div id="circle_gray"></div></td>
-              <td> < 1000 </td>
-              <td ><div id="circle_black"></div></td>
-              <td> 1000+</td>
-          </tr>
-      </table>
   </div>
-
-  <br />
-  <br />
-  <br />
-
-  <div id="image-container" data-image-url="{% static 'home/images/DataMapper_GPCRome_icon_legend.png' %}"></div>
-  <!-- GPCRome -->
-  <div class="col-md-12" style="margin-top: 0px;margin-bottom: 30px;">
-      <div id="GPCRome_plot" class="text-center"></div>
-  </div>
-
-  </div>
-
+  <div id="image-container" data-image-url="{% static 'home/images/DataMapper/DataMapper_GPCRome_icon_legend.png' %}"></div>
+    <!-- GPCRome -->
+    <div class="col-md-12" style="margin-top: 20px;margin-bottom: 30px">
+        <div id="GPCRome_plot" class="text-center"></div>
+    </div>
+</div>
 {% endif %}
 
 {% if render == "bias" or render == "subtype" %}
@@ -1635,87 +1625,115 @@ Specific sets of ligands can be downloaded from the <a href="/ligand/biasedsubty
 <script src="{% static 'home/js/ml.js' %}"></script>
 <script src="{% static 'home/js/d3.tip.js' %}"></script>
 <script>
-var GPCRome_categories_data = {{ GPCRome_data|safe }};
-var fill_data = {{ GPCRome_data_variables|safe }};
-var GPCRome_Label_conversion_dict = {{GPCRome_Label_Conversion|safe}};
 
-// Initialize the conversion dictionary
-GPCRome_Label_conversion_dict = initializeGPCRomeLabelConversionDict(GPCRome_Label_conversion_dict);
+var GPCRomeData = {{ GPCRome_data|safe }};
 
-function initializeGPCRomeLabelConversionDict(conversionDict) {
-    const updatedDict = {};
+// Recursively extract all "Data" values from a nested object
+function extractDataValues(obj) {
+    let values = [];
 
-    Object.keys(conversionDict).forEach(originalLabel => {
-        let uniProtLabel = conversionDict[originalLabel];
-        uniProtLabel = uniProtLabel.replace(/_human$/, "").toUpperCase(); // Remove "_human" and convert to uppercase
-        updatedDict[originalLabel] = uniProtLabel;
+    function findData(node) {
+        if (typeof node === "object" && node !== null) {
+            for (const key in node) {
+                const value = node[key];
+
+                if (value && typeof value === "object" && "Data" in value) {
+                    const dataValue = Number(value.Data);
+                    if (!isNaN(dataValue)) {
+                        values.push(dataValue);
+                    }
+                } else {
+                    findData(value); // keep digging
+                }
+            }
+        }
+    }
+
+    findData(obj);
+    return values;
+}
+
+// Extract min and max data (for numeric version)
+const GPCRomeWheelValues = extractDataValues(GPCRomeData)
+      .filter(value => value !== null && value !== '');
+
+  const GPCRomeMin = GPCRomeWheelValues.length > 0 ? Math.min(...GPCRomeWheelValues) : null;
+  const GPCRomeMax = GPCRomeWheelValues.length > 0 ? Math.max(...GPCRomeWheelValues) : null;
+  const GPCRomeAvg = GPCRomeWheelValues.length > 0 ? (GPCRomeMin + GPCRomeMax) / 2 : null;
+
+  function determineDecimalPlaces(minValue, maxValue) {
+    const allValues = [minValue, maxValue];
+    let maxDecimals = 0;
+
+    allValues.forEach(value => {
+        if (value == null) return; // Ignore nulls
+
+        const valueStr = Math.abs(value).toString();
+
+        if (valueStr.includes('e')) {
+            // Handle scientific notation separately
+            const parts = valueStr.split('e-');
+            if (parts.length === 2) {
+                const exp = parseInt(parts[1], 10);
+                maxDecimals = Math.max(maxDecimals, exp);
+            }
+        } else if (valueStr.includes('.')) {
+            const decimals = valueStr.split('.')[1].length;
+            maxDecimals = Math.max(maxDecimals, decimals);
+        }
     });
 
-    return updatedDict;
-}
+    // Cap at maximum 6 digits
+    return Math.min(maxDecimals, 6);
+  }
 
-// # Initialize data styling #
-var layout_data = GPCRome_initializeData(GPCRome_categories_data);
+  var GPCRomes_styling = {
+      GPCRomeMin: GPCRomeMin,
+      GPCRomeMax: GPCRomeMax,
+      GPCRomeAvg: GPCRomeAvg,
+      LegendbarDigit: determineDecimalPlaces(GPCRomeMin,GPCRomeMax),
+      LegendbarLength: 200,
+      LegendbarFontsize: "11px",
+      FontStyle: "Arial",
+      FontsizeGlobal: "11px",
+      FontsizeClass: "20px",
+      DataType: "Numeric",
+      colorStart: "#FFFFFF",
+      colorAvg: "#FFFFFF",
+      colorEnd: "#000000",
+      ColorSetup: 'One',
+      showIcon: true,
+      LabelType: "Protein",
+      ShowLegend: true,
+      LegendLabel: "Ligand count"
+  };
 
-const GPCRome_fill_data_values = Object.values(fill_data).map(receptor => receptor.Value1);
-const GPCRome_fill_minValue = Math.min(...GPCRome_fill_data_values);
-const GPCRome_fill_maxValue = Math.max(...GPCRome_fill_data_values);
-// Calculate median
-// Sort the values in ascending order
-GPCRome_fill_data_values.sort((a, b) => a - b);
-
-// Calculate the median
-let GPCRome_fill_medianValue;
-const middleIndex = Math.floor(GPCRome_fill_data_values.length / 2);
-
-if (GPCRome_fill_data_values.length % 2 === 0) {
-    // Even number of elements, median is the average of the two middle values
-    GPCRome_fill_medianValue = (GPCRome_fill_data_values[middleIndex - 1] + GPCRome_fill_data_values[middleIndex]) / 2;
-} else {
-    // Odd number of elements, median is the middle value
-    GPCRome_fill_medianValue = GPCRome_fill_data_values[middleIndex];
-}
-
-GPCRome_fill_avg = (GPCRome_fill_minValue+GPCRome_fill_maxValue)/2
-
-var GPCRomes_styling = {
-  Spacing: true,
-  family: true,
-  datatype: "Continuous",
-  minValue: GPCRome_fill_minValue,
-  median_value: GPCRome_fill_medianValue,
-  avg_value: GPCRome_fill_avg,
-  maxValue: GPCRome_fill_maxValue,
-  colorStart: "#D3D3D3",
-  color_median: "#696969",
-  colorEnd: "#000000",
-  data_color_complexity: 'Two',
-  showIcon: true  // Add this property to control the icon visibility
-}
-
-
-// # initial draw
 let GPCRome_location = "GPCRome_plot";
-Draw_GPCRomes(layout_data, fill_data, GPCRome_location, GPCRomes_styling);
+DrawGPCRomeWheel(GPCRomeData, GPCRome_location, GPCRomes_styling);
 
-// Global variables for current label type
-let currentLabelType = "IUPHAR"; // Default
 
-// Event listeners for label type buttons
-document.getElementById("GPCRome_UniProtNames").addEventListener("click", () => {
-    switchLabelType("UniProt");
-});
+function setupLabelButtons(groupIdPrefix, structureData, location, styling) {
+  const labelTypes = ["Protein", "Uniprot", "Entrez"];
 
-document.getElementById("GPCRome_IUPHARNames").addEventListener("click", () => {
-    switchLabelType("IUPHAR");
-});
-
-// Function to switch label types
-function switchLabelType(labelType) {
-    currentLabelType = labelType;
-    updateGPCRome();
+  labelTypes.forEach(label => {
+      const buttonId = `${groupIdPrefix}_${label}`;
+      document.getElementById(buttonId).addEventListener("click", () => {
+          styling.LabelType = label;
+          updateGPCRome(structureData, location, styling);
+          setActiveButton(groupIdPrefix, labelTypes, buttonId);
+      });
+  });
 }
 
+function setActiveButton(groupIdPrefix, labelTypes, activeId) {
+    labelTypes.forEach(label => {
+        const btnId = `${groupIdPrefix}_${label}`;
+        document.getElementById(btnId).classList.remove("active");
+    });
+    document.getElementById(activeId).classList.add("active");
+}
+
+setupLabelButtons("GPCRome", GPCRomeData, GPCRome_location, GPCRomes_styling);
 
 // Function to toggle the icon visibility and redraw the GPCRomes
 function toggleIcon() {
@@ -1734,66 +1752,23 @@ function toggleIcon() {
     }
 
     // Redraw the GPCRomes with the updated icon state
-    updateGPCRome();
+    updateGPCRome(GPCRomeData, GPCRome_location, GPCRomes_styling);
+}
+
+// Function to update and redraw GPCRomes
+function updateGPCRome(Data, location, styling) {
+
+// Clear the existing SVG content
+d3.select("#" + location).select("svg").remove();
+
+// Redraw the GPCRomes with the updated data
+DrawGPCRomeWheel(Data, location, styling);
 }
 
 // Attach event listener to the button
 d3.select("#ToggleIcon").on("click", toggleIcon);
 
-// Function to update and redraw GPCRomes
-function updateGPCRome() {
-    const updatedLayoutData = updateLayoutData(layout_data, GPCRome_Label_conversion_dict, currentLabelType);
-    const updatedFillData = updateFillData(fill_data, GPCRome_Label_conversion_dict, currentLabelType);
 
-    // Clear the existing SVG content
-    d3.select("#" + GPCRome_location).select("svg").remove();
-
-    // Redraw the GPCRomes with the updated data
-    Draw_GPCRomes(updatedLayoutData, updatedFillData, GPCRome_location, GPCRomes_styling);
-
-    // Update button active states
-    // updateActiveButtonState(currentLabelType);
-}
-
-// Function to update layout data
-function updateLayoutData(layout_data, conversionDict, labelType) {
-    const updatedData = {};
-
-    Object.keys(layout_data).forEach(GPCRomeKey => {
-        const GPCRome = layout_data[GPCRomeKey];
-        updatedData[GPCRomeKey] = {};
-
-        Object.keys(GPCRome).forEach(ligandType => {
-            const receptors = GPCRome[ligandType];
-            updatedData[GPCRomeKey][ligandType] = receptors.map(receptor => {
-                if (labelType === "UniProt") {
-                    return conversionDict[receptor] || receptor;
-                } else {
-                    return Object.keys(conversionDict).find(key => conversionDict[key] === receptor) || receptor;
-                }
-            });
-        });
-    });
-
-    return updatedData;
-}
-
-// Function to update fill data
-function updateFillData(fill_data, conversionDict, labelType) {
-    const updatedData = {};
-
-    Object.keys(fill_data).forEach(receptor => {
-        let updatedReceptor;
-        if (labelType === "UniProt") {
-            updatedReceptor = conversionDict[receptor] || receptor;
-        } else {
-            updatedReceptor = Object.keys(conversionDict).find(key => conversionDict[key] === receptor) || receptor;
-        }
-        updatedData[updatedReceptor] = fill_data[receptor];
-    });
-
-    return updatedData;
-}
 
 </script>
 {% endif %}

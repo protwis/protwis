@@ -285,6 +285,7 @@
 <script src="{% static 'home/js/selection.js' %}"></script>
 <script src="{% static 'home/js/compoundPreviewTooltip.js' %}"></script> <!-- Needed for the hover display of ligands-->
 <script src="{% static 'home/js/openchemlib-full.js' %}"></script> <!-- Dependency for the hover display of ligands-->
+<script src="{% static 'home/js/PeptideLayoutEngine.js' %}"></script>
 
 <script>
   ! function($) {
@@ -381,30 +382,44 @@ $(document).ready(function () {
 
     // Define column configurations for "drugs" and "targets"
     const drugsColumns = [
-        { data: "Ligand name", name: "Name",width: "7%", render: function (data, type, row, meta) {
-            if (type === 'display') {
-                // Ensure row.Variable exists
-                if (row && row.LigandID) {
-                    const smilesVal = row.smiles_for_image || "";
-                    const picVal    = row.picture || "Not_available";
-                    const ligID     = row.LigandID;
-                    // Wrap the text in <a class="struct" ...>
-                    return `
-                        <a class="struct"
-                            href="/ligand/${ligID}/info?tab=agent_drug"
-                            target="_blank"
-                            data-smiles="${smilesVal}"
-                            rel="${picVal}"
-                        >
-                        ${data}
-                        </a>
-                    `;
-                } else {
-                    return data || '';
+          {
+            data: "Ligand name", name: "Name", width: "7%", render: function (data, type, row, meta) {
+                if (type === 'display') {
+                    if (row && row.LigandID) {
+                        const smilesVal = row.smiles_for_image || ""; 
+                        const picVal    = row.picture || "Not_available";
+                        const ligID     = row.LigandID;
+                        const sequenceValue = row.sequence || "";
+
+
+                        if (row['Drug type'] && typeof row['Drug type'] === 'string' && row['Drug type'].toLowerCase() === 'peptide') {
+                            if (!sequenceValue) {
+                                console.warn("Venn Peptide ligand " + data + " (LigandID: " + ligID + ") has no sequence!");
+                            }
+                            return `
+                                <a class="struct" data-ligand-type="peptide" data-sequence="${sequenceValue}" href="/ligand/${ligID}/info?tab=agent_drug" target="_blank">
+                                ${data}
+                                </a>
+                                `;
+                        } else { 
+                            return `
+                                <a class="struct"
+                                    href="/ligand/${ligID}/info?tab=agent_drug"
+                                    target="_blank"
+                                    data-smiles="${smilesVal}"
+                                    rel="${picVal}"
+                                >
+                                ${data}
+                                </a>
+                            `;
+                        }
+                    } else {
+                        return data || '';
+                    }
                 }
+                return data;
             }
-            return data;
-        }},
+        },
         { data: "Drug type", name: "Drug type" },
         { data: "Modality", name: "Modality" },
         { data: 'ATC Parent Name', name: 'ATC Parent Name', visible: !hideColumns },
@@ -461,30 +476,43 @@ $(document).ready(function () {
         { data: "Receptor family", name: "Receptor family" },
         { data: "Ligand type", name: "Ligand type" },
         { data: "Class", name: "Class", render: function (data) { return data.split(' (')[0]; }},
-        { data: "Ligand name", name: "Name", render: function (data, type, row, meta) {
-            if (type === 'display') {
-                // Ensure row.Variable exists
-                if (row && row.LigandID) {
-                    const smilesVal = row.smiles_for_image || "";
-                    const picVal    = row.picture || "Not_available";
-                    const ligID     = row.LigandID;
-                    // Wrap the text in <a class="struct" ...>
-                    return `
-                        <a class="struct"
-                            href="/ligand/${ligID}/info?tab=agent_drug"
-                            target="_blank"
-                            data-smiles="${smilesVal}"
-                            rel="${picVal}"
-                        >
-                        ${data}
-                        </a>
-                    `;
-                } else {
-                    return data || '';
-                }
-            }
-            return data;
-        }},
+        {
+          data: "Ligand name", name: "Name", render: function (data, type, row, meta) {
+              if (type === 'display') {
+                  if (row && row.LigandID) {
+                      const smilesVal = row.smiles_for_image || "";
+                      const picVal    = row.picture || "Not_available";
+                      const ligID     = row.LigandID;
+                      const sequenceValue = row.sequence || "";
+
+                      if (row['Drug type'] && typeof row['Drug type'] === 'string' && row['Drug type'].toLowerCase() === 'peptide') {
+                           if (!sequenceValue) {
+                              console.warn("Venn Peptide ligand " + data + " (LigandID: " + ligID + ") has no sequence!");
+                          }
+                          return `
+                              <a class="struct" data-ligand-type="peptide" data-sequence="${sequenceValue}" href="/ligand/${ligID}/info?tab=agent_drug" target="_blank">
+                              ${data}
+                              </a>
+                              `;
+                      } else {
+                          return `
+                              <a class="struct"
+                                  href="/ligand/${ligID}/info?tab=agent_drug"
+                                  target="_blank"
+                                  data-smiles="${smilesVal}"
+                                  rel="${picVal}"
+                              >
+                              ${data}
+                              </a>
+                          `;
+                      }
+                  } else {
+                      return data || '';
+                  }
+              }
+              return data;
+          }
+      },
         { data: "Drug type", name: "Drug type" },
         { data: "Modality", name: "Modality" },
         { data: 'ATC Parent Name', name: 'ATC Parent Name', visible: !hideColumns },

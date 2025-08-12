@@ -87,11 +87,12 @@
         <div class="col-md-3">
           Receptor names:
             <div class="btn-group" role="group" id="gtp_plus">
-                <button id="GPCRome_UniProtNames" class="btn btn-info ">Gene</button>
-                <button id="GPCRome_IUPHARNames" class="btn btn-info active">Protein</button>
+              <button id="GPCRome_Protein" class="btn btn-info active">Protein</button>
+                <button id="GPCRome_Entrez" class="btn btn-info">Gene</button>
+                <button id="GPCRome_Uniprot" class="btn btn-info ">UniProt</button>
             </div>
         </div>
-
+        <div class="col-md-1"></div>
         <div class="col-md-2" style="padding-top: 5px;">
           Icon toggle:
           <button id="ToggleIcon" class="btn btn-info active">On</button>
@@ -126,12 +127,11 @@
       <br />
       <br />
 
-        <div id="image-container" data-image-url="{% static 'home/images/DataMapper_GPCRome_icon_legend.png' %}"></div>
+      <div id="image-container" data-image-url="{% static 'home/images/DataMapper/DataMapper_GPCRome_icon_legend.png' %}"></div>
         <!-- GPCRome -->
         <div class="col-md-12" style="margin-top: 0px;margin-bottom: 30px;">
             <div id="GPCRome_plot" class="text-center"></div>
         </div>
-
       </div>
     </div>
   </div>
@@ -141,13 +141,14 @@
         <br>
         <div class="col-md-3">
           Receptor names:
-            <div class="btn-group" role="group" id="gtp_plus">
-                <button id="GPCRome_UniProtNames_complexes" class="btn btn-info ">Gene</button>
-                <button id="GPCRome_IUPHARNames_complexes" class="btn btn-info active">Protein</button>
-            </div>
+          <div class="btn-group" role="group" id="gtp_plus">
+            <button id="GPCRome_Complexes_Protein" class="btn btn-info active">Protein</button>
+              <button id="GPCRome_Complexes_Entrez" class="btn btn-info">Gene</button>
+              <button id="GPCRome_Complexes_Uniprot" class="btn btn-info ">UniProt</button>
+          </div>
         </div>
-
-        <div class="col-md-2" style="padding-top: 5px;">
+        <div class="col-md-1"></div>
+        <div class="col-md-3" style="padding-top: 5px;">
           Icon toggle:
           <button id="ToggleIconComplexes" class="btn btn-info active">On</button>
         </div>
@@ -168,22 +169,15 @@
         </div>
       </div>
 
-      <div class="col-md-3">
-        <div style="float: right;" class="text-center">
-          <b>Receptor-ligand complexes count (from low to high)</b>
-          <div class="graydiv"></div>
-        </div>
+      <br />
+      <br />
+      <br />
+
+      <div id="image-container" data-image-url="{% static 'home/images/DataMapper/DataMapper_GPCRome_icon_legend.png' %}"></div>
+      <!-- GPCRome -->
+      <div class="col-md-12" style="margin-top: 0px;margin-bottom: 30px;">
+          <div id="GPCRome_complexes_plot" class="text-center"></div>
       </div>
-
-      <br />
-      <br />
-      <br />
-
-        <div id="image-container" data-image-url="{% static 'home/images/DataMapper_GPCRome_icon_legend.png' %}"></div>
-        <!-- GPCRome -->
-        <div class="col-md-12" style="margin-top: 0px;margin-bottom: 30px;">
-            <div id="GPCRome_complexes_plot" class="text-center"></div>
-        </div>
 
       </div>
     </div>
@@ -194,13 +188,14 @@
         <br>
         <div class="col-md-3">
           Receptor names:
-            <div class="btn-group" role="group" id="gtp_plus">
-                <button id="GPCRome_UniProtNames_odorant" class="btn btn-info ">Gene</button>
-                <button id="GPCRome_IUPHARNames_odorant" class="btn btn-info active">Protein</button>
-            </div>
+          <div class="btn-group" role="group" id="gtp_plus">
+            <button id="GPCRome_Odorant_Protein" class="btn btn-info active">Protein</button>
+              <button id="GPCRome_Odorant_Entrez" class="btn btn-info">Gene</button>
+              <button id="GPCRome_Odorant_Uniprot" class="btn btn-info ">UniProt</button>
+          </div>
         </div>
-
-        <div class="col-md-2" style="padding-top: 5px;">
+        <div class="col-md-1"></div>
+        <div class="col-md-3" style="padding-top: 5px;">
           Icon toggle:
           <button id="ToggleIconOdorant" class="btn btn-info active">On</button>
         </div>
@@ -221,18 +216,11 @@
         </div>
       </div>
 
-      <div class="col-md-3">
-        <div style="float: right;" class="text-center">
-          <b>Structures count (from low to high)</b>
-          <div class="graydiv"></div>
-        </div>
-      </div>
-
       <br />
       <br />
       <br />
 
-        <div id="image-container" data-image-url="{% static 'home/images/DataMapper_GPCRome_icon_legend.png' %}"></div>
+        <div id="image-container" data-image-url="{% static 'home/images/DataMapper/DataMapper_GPCRome_icon_legend.png' %}"></div>
         <!-- GPCRome -->
         <div class="col-md-12" style="margin-top: 0px;margin-bottom: 30px;">
             <div id="GPCRome_odorant_plot" class="text-center"></div>
@@ -362,11 +350,12 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
     <div style="padding-top: 10px; font-size: 11px; white-space: nowrap;">
       <div class="col-md-12">
         <br>
-        <div class="col-md-3">
+        <div class="col-md-4">
           Receptor names:
             <div class="btn-group" role="group" id="gtp_plus">
-                <button id="GPCRome_Arrestin_UniProtNames" class="btn btn-info ">Gene</button>
-                <button id="GPCRome_Arrestin_IUPHARNames" class="btn btn-info active">Protein</button>
+              <button id="GPCRome_Arrestin_Protein" class="btn btn-info active">Protein</button>
+                <button id="GPCRome_Arrestin_Entrez" class="btn btn-info">Gene</button>
+                <button id="GPCRome_Arrestin_Uniprot" class="btn btn-info ">UniProt</button>
             </div>
         </div>
 
@@ -405,7 +394,7 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
       <br />
       <br />
 
-        <div id="image-container" data-image-url="{% static 'home/images/DataMapper_GPCRome_icon_legend.png' %}"></div>
+        <div id="image-container" data-image-url="{% static 'home/images/DataMapper/DataMapper_GPCRome_icon_legend.png' %}"></div>
         <!-- GPCRome -->
         <div class="col-md-12" style="margin-top: 0px;margin-bottom: 30px;">
             <div id="GPCRome_Arrestin_plot" class="text-center"></div>
@@ -1331,169 +1320,200 @@ The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }
 <script src="{% static 'home/js/d3.tip.js' %}"></script>
 <script>
 
-var GPCRome_categories_data = {{ GPCRome_data|safe }};
-var fill_data = {{ GPCRome_data_variables|safe }};
-var fill_data_complexes = {{ GPCRome_data_variables_complexes|safe }};
-var GPCRome_Label_conversion_dict = {{GPCRome_Label_Conversion|safe}};
+// Import GPCRome data 
+var GPCRome_stucture_data = {{ GPCRome_data|safe }};
+var GPCRome_complexes_data = {{ GPCRome_data_complexes|safe }};
 
-var GPCRome_odorant_data = {{ GPCRome_odorant_data|safe }};
-var odorant_fill_data = {{ GPCRome_odorant_data_variables|safe }};
-var GPCRome_odorant_Label_conversion_dict = {{GPCRome_odorant_Label_Conversion|safe}};
+// == Structure GPCRome ==
 
-console.log(GPCRome_odorant_Label_conversion_dict);
+// Set styling
+var GPCRomes_styling = {
+    DataType: "Text",
+    FontStyle: "Arial",
+    FontsizeGlobal: "11px",
+    FontsizeClass: "20px",
+    Datatype: "Text",
+    showIcon: true,
+    LabelType: "Protein",
+    ShowLegend: false,
+    LegendLayout: { "mode": "row", "columns": "1", "sorted": "Vertically" }
+};
 
-// Initialize the conversion dictionary
-GPCRome_Label_conversion_dict = initializeGPCRomeLabelConversionDict(GPCRome_Label_conversion_dict);
-GPCRome_odorant_Label_conversion_dict = initializeGPCRomeLabelConversionDict(GPCRome_odorant_Label_conversion_dict);
-console.log(GPCRome_odorant_Label_conversion_dict);
+// Add location and draw the GPCRome plot
+let GPCRome_location = "GPCRome_plot";
+DrawGPCRomeWheel(GPCRome_stucture_data, GPCRome_location, GPCRomes_styling);
 
-function initializeGPCRomeLabelConversionDict(conversionDict) {
-    const updatedDict = {};
 
-    Object.keys(conversionDict).forEach(originalLabel => {
-        let uniProtLabel = conversionDict[originalLabel];
-        uniProtLabel = uniProtLabel.replace(/_human$/, "").toUpperCase(); // Remove "_human" and convert to uppercase
-        updatedDict[originalLabel] = uniProtLabel;
+// == Complexes GPCRome ===
+
+// Recursively extract all "Data" values from a nested object
+function extractDataValues(obj) {
+    let values = [];
+
+    function findData(node) {
+        if (typeof node === "object" && node !== null) {
+            for (const key in node) {
+                const value = node[key];
+
+                if (value && typeof value === "object" && "Data" in value) {
+                    const dataValue = Number(value.Data);
+                    if (!isNaN(dataValue)) {
+                        values.push(dataValue);
+                    }
+                } else {
+                    findData(value); // keep digging
+                }
+            }
+        }
+    }
+
+    findData(obj);
+    return values;
+}
+
+// Extract min and max data (for numeric version)
+const GPCRomeWheelValues = extractDataValues(GPCRome_complexes_data)
+      .filter(value => value !== null && value !== '');
+
+  const GPCRomeMin = GPCRomeWheelValues.length > 0 ? Math.min(...GPCRomeWheelValues) : null;
+  const GPCRomeMax = GPCRomeWheelValues.length > 0 ? Math.max(...GPCRomeWheelValues) : null;
+  const GPCRomeAvg = GPCRomeWheelValues.length > 0 ? (GPCRomeMin + GPCRomeMax) / 2 : null;
+
+  function determineDecimalPlaces(minValue, maxValue) {
+    const allValues = [minValue, maxValue];
+    let maxDecimals = 0;
+
+    allValues.forEach(value => {
+        if (value == null) return; // Ignore nulls
+
+        const valueStr = Math.abs(value).toString();
+
+        if (valueStr.includes('e')) {
+            // Handle scientific notation separately
+            const parts = valueStr.split('e-');
+            if (parts.length === 2) {
+                const exp = parseInt(parts[1], 10);
+                maxDecimals = Math.max(maxDecimals, exp);
+            }
+        } else if (valueStr.includes('.')) {
+            const decimals = valueStr.split('.')[1].length;
+            maxDecimals = Math.max(maxDecimals, decimals);
+        }
     });
 
-    return updatedDict;
-}
+    // Cap at maximum 6 digits
+    return Math.min(maxDecimals, 6);
+  }
 
-// # Initialize data styling #
-var layout_data = GPCRome_initializeData(GPCRome_categories_data);
-// ODORANT
-var odorant_data = GPCRome_initializeOdorantData(GPCRome_odorant_data);
-//ODORANT
-const GPCRome_odorant_fill_data_values = Object.values(odorant_fill_data).map(receptor => receptor.Value1);
-const GPCRome_odorant_fill_minValue = Math.min(...GPCRome_odorant_fill_data_values);
-const GPCRome_odorant_fill_maxValue = Math.max(...GPCRome_odorant_fill_data_values);
+  var GPCRomes_styling_complexes = {
+      GPCRomeMin: GPCRomeMin,
+      GPCRomeMax: GPCRomeMax,
+      GPCRomeAvg: GPCRomeAvg,
+      LegendbarDigit: determineDecimalPlaces(GPCRomeMin,GPCRomeMax),
+      LegendbarLength: 200,
+      LegendbarFontsize: "11px",
+      FontStyle: "Arial",
+      FontsizeGlobal: "11px",
+      FontsizeClass: "20px",
+      DataType: "Numeric",
+      colorStart: "#FFFFFF",
+      colorAvg: "#FFFFFF",
+      colorEnd: "#000000",
+      ColorSetup: 'One',
+      showIcon: true,
+      LabelType: "Protein",
+      ShowLegend: true,
+      LegendLabel: "Receptor-ligand complexes count (from low to high)"
+  };
 
-const GPCRome_fill_data_values = Object.values(fill_data_complexes).map(receptor => receptor.Value1);
-const GPCRome_fill_minValue = Math.min(...GPCRome_fill_data_values);
-const GPCRome_fill_maxValue = Math.max(...GPCRome_fill_data_values);
-// Calculate median
-// Sort the values in ascending order
-GPCRome_fill_data_values.sort((a, b) => a - b);
-
-//ODORANT
-GPCRome_odorant_fill_data_values.sort((a, b) => a - b);
-
-// ODORANT
-let GPCRome_odorant_fill_medianValue;
-const odorant_middleIndex = Math.floor(GPCRome_odorant_fill_data_values.length / 2);
-
-if (GPCRome_odorant_fill_data_values.length % 2 === 0) {
-    // Even number of elements, median is the average of the two middle values
-    GPCRome_odorant_fill_medianValue = (GPCRome_odorant_fill_data_values[odorant_middleIndex - 1] + GPCRome_odorant_fill_data_values[middleIndex]) / 2;
-} else {
-    // Odd number of elements, median is the middle value
-    GPCRome_odorant_fill_medianValue = GPCRome_odorant_fill_data_values[odorant_middleIndex];
-}
-
-GPCRome_odorant_fill_avg = (GPCRome_odorant_fill_minValue+GPCRome_odorant_fill_maxValue)/2
-
-// Calculate the median
-let GPCRome_fill_medianValue;
-const middleIndex = Math.floor(GPCRome_fill_data_values.length / 2);
-
-if (GPCRome_fill_data_values.length % 2 === 0) {
-    // Even number of elements, median is the average of the two middle values
-    GPCRome_fill_medianValue = (GPCRome_fill_data_values[middleIndex - 1] + GPCRome_fill_data_values[middleIndex]) / 2;
-} else {
-    // Odd number of elements, median is the middle value
-    GPCRome_fill_medianValue = GPCRome_fill_data_values[middleIndex];
-}
-
-GPCRome_fill_avg = (GPCRome_fill_minValue+GPCRome_fill_maxValue)/2
-
-var GPCRomes_styling = {
-  Spacing: true,
-  family: true,
-  datatype: "Structure",
-  minValue: GPCRome_fill_minValue,
-  median_value: GPCRome_fill_medianValue,
-  avg_value: GPCRome_fill_avg,
-  maxValue: GPCRome_fill_maxValue,
-  colorStart: "#696969",
-  color_median: "blue",
-  colorEnd: "#000000",
-  data_color_complexity: 'Three',
-  showIcon: true  // Add this property to control the icon visibility
-}
-
-var GPCRomes_complexes_styling = {
-  Spacing: true,
-  family: true,
-  datatype: "Continuous",
-  minValue: GPCRome_fill_minValue,
-  median_value: GPCRome_fill_medianValue,
-  avg_value: GPCRome_fill_avg,
-  maxValue: GPCRome_fill_maxValue,
-  colorStart: "#696969",
-  color_median: "red",
-  colorEnd: "#000000",
-  data_color_complexity: 'Two',
-  showIcon: true  // Add this property to control the icon visibility
-}
-
-var GPCRomes_odorant_styling = {
-  Spacing: true,
-  family: true,
-  datatype: "Continuous",
-  minValue: GPCRome_odorant_fill_minValue,
-  median_value: GPCRome_odorant_fill_medianValue,
-  avg_value: GPCRome_odorant_fill_avg,
-  maxValue: GPCRome_odorant_fill_maxValue,
-  colorStart: "#D3D3D3",
-  color_median: "#696969",
-  colorEnd: "#000000",
-  data_color_complexity: 'Two',
-  showIcon: true  // Add this property to control the icon visibility
-}
-
-
-// # initial draw
-let GPCRome_location = "GPCRome_plot";
 let GPCRome_complexes_location = "GPCRome_complexes_plot";
-Draw_GPCRomes(layout_data, fill_data, GPCRome_location, GPCRomes_styling);
-Draw_GPCRomes(layout_data, fill_data_complexes, GPCRome_complexes_location, GPCRomes_complexes_styling);
+DrawGPCRomeWheel(GPCRome_complexes_data, GPCRome_complexes_location, GPCRomes_styling_complexes);
 
-//ODORANT
-let GPCRome_odorant_location = "GPCRome_odorant_plot";
-Draw_GPCRomes(odorant_data, odorant_fill_data, GPCRome_odorant_location, GPCRomes_odorant_styling, true);
+var Odorant_data = {{GPCRome_data_odorant|safe}};
 
+// Extract min and max data (for numeric version)
+const GPCRomeWheelValues_odorant = extractDataValues(Odorant_data)
+      .filter(value => value !== null && value !== '');
 
-// Global variables for current label type
-let currentLabelType = "IUPHAR"; // Default
+  const GPCRomeMin_Odo = GPCRomeWheelValues_odorant.length > 0 ? Math.min(...GPCRomeWheelValues_odorant) : null;
+  const GPCRomeMax_Odo = GPCRomeWheelValues_odorant.length > 0 ? Math.max(...GPCRomeWheelValues_odorant) : null;
+  const GPCRomeAvg_Odo = GPCRomeWheelValues_odorant.length > 0 ? (GPCRomeMin_Odo + GPCRomeMax_Odo) / 2 : null;
+  
+  function determineDecimalPlaces(minValue, maxValue) {
+    const allValues = [minValue, maxValue];
+    let maxDecimals = 0;
 
-// Event listeners for label type buttons
-document.getElementById("GPCRome_UniProtNames").addEventListener("click", () => {
-    switchLabelType("UniProt", GPCRome_location, fill_data, GPCRome_Label_conversion_dict, GPCRomes_styling);
-});
-document.getElementById("GPCRome_UniProtNames_complexes").addEventListener("click", () => {
-    switchLabelType("UniProt", GPCRome_complexes_location, fill_data_complexes, GPCRome_Label_conversion_dict, GPCRomes_complexes_styling);
-});
-document.getElementById("GPCRome_UniProtNames_odorant").addEventListener("click", () => {
-    switchLabelType("UniProt", GPCRome_odorant_location, odorant_fill_data, GPCRome_odorant_Label_conversion_dict, GPCRomes_odorant_styling, true);
-})
+    allValues.forEach(value => {
+        if (value == null) return; // Ignore nulls
 
-document.getElementById("GPCRome_IUPHARNames").addEventListener("click", () => {
-    switchLabelType("IUPHAR", GPCRome_location, fill_data, GPCRome_Label_conversion_dict, GPCRomes_styling);
-});
-document.getElementById("GPCRome_IUPHARNames_complexes").addEventListener("click", () => {
-    switchLabelType("IUPHAR", GPCRome_complexes_location, fill_data_complexes, GPCRome_Label_conversion_dict, GPCRomes_complexes_styling);
-});
-document.getElementById("GPCRome_IUPHARNames_odorant").addEventListener("click", () => {
-    switchLabelType("IUPHAR", GPCRome_odorant_location, odorant_fill_data, GPCRome_odorant_Label_conversion_dict, GPCRomes_odorant_styling, true);
-});
+        const valueStr = Math.abs(value).toString();
 
+        if (valueStr.includes('e')) {
+            // Handle scientific notation separately
+            const parts = valueStr.split('e-');
+            if (parts.length === 2) {
+                const exp = parseInt(parts[1], 10);
+                maxDecimals = Math.max(maxDecimals, exp);
+            }
+        } else if (valueStr.includes('.')) {
+            const decimals = valueStr.split('.')[1].length;
+            maxDecimals = Math.max(maxDecimals, decimals);
+        }
+    });
 
-// Function to switch label types
-function switchLabelType(labelType, location, fill, conversion, styling, odorant=false) {
-    currentLabelType = labelType;
-    console.log(currentLabelType);
-    updateGPCRome(location, fill, conversion, styling, odorant);
+    // Cap at maximum 6 digits
+    return Math.min(maxDecimals, 6);
+  }
+
+  var GPCRomes_styling_Odorant = {
+      GPCRomeMin: GPCRomeMin_Odo,
+      GPCRomeMax: GPCRomeMax_Odo,
+      GPCRomeAvg: GPCRomeAvg_Odo,
+      LegendbarDigit: determineDecimalPlaces(GPCRomeMin_Odo,GPCRomeMax_Odo),
+      LegendbarLength: 200,
+      LegendbarFontsize: "11px",
+      FontStyle: "Arial",
+      FontsizeGlobal: "11px",
+      FontsizeClass: "20px",
+      DataType: "Numeric",
+      colorStart: "FFFFFF",
+      colorAvg: "#FFFFFF",
+      colorEnd: "#000000",
+      ColorSetup: 'One',
+      showIcon: true,
+      LabelType: "Protein",
+      ShowLegend: true,
+      LegendLabel: "Structures count (from low to high)"
+  };
+
+  let GPCRome_odorant_location = "GPCRome_odorant_plot";
+
+  DrawGPCRomeWheel(Odorant_data, GPCRome_odorant_location, GPCRomes_styling_Odorant);
+
+function setupLabelButtons(groupIdPrefix, structureData, location, styling) {
+  const labelTypes = ["Protein", "Uniprot", "Entrez"];
+
+  labelTypes.forEach(label => {
+      const buttonId = `${groupIdPrefix}_${label}`;
+      document.getElementById(buttonId).addEventListener("click", () => {
+          styling.LabelType = label;
+          updateGPCRome(structureData, location, styling);
+          setActiveButton(groupIdPrefix, labelTypes, buttonId);
+      });
+  });
 }
+
+function setActiveButton(groupIdPrefix, labelTypes, activeId) {
+    labelTypes.forEach(label => {
+        const btnId = `${groupIdPrefix}_${label}`;
+        document.getElementById(btnId).classList.remove("active");
+    });
+    document.getElementById(activeId).classList.add("active");
+}
+
+setupLabelButtons("GPCRome", GPCRome_stucture_data, GPCRome_location, GPCRomes_styling);
+setupLabelButtons("GPCRome_Complexes", GPCRome_complexes_data, GPCRome_complexes_location, GPCRomes_styling_complexes);
+setupLabelButtons("GPCRome_Odorant", Odorant_data, GPCRome_odorant_location, GPCRomes_styling_Odorant);
 
 // Function to toggle the icon visibility and redraw the GPCRomes
 function toggleIcon() {
@@ -1512,7 +1532,7 @@ function toggleIcon() {
     }
 
     // Redraw the GPCRomes with the updated icon state
-    updateGPCRome(GPCRome_location, fill_data, GPCRome_Label_conversion_dict, GPCRomes_styling);
+    updateGPCRome(GPCRome_stucture_data, GPCRome_location, GPCRomes_styling);
 }
 
 // Function to toggle the icon visibility and redraw the GPCRomes
@@ -1520,10 +1540,10 @@ function toggleIconComplexes() {
     const button = d3.select("#ToggleIconComplexes");
 
     // Toggle the showIcon property in GPCRomes_styling
-    GPCRomes_complexes_styling.showIcon = !GPCRomes_complexes_styling.showIcon;
+    GPCRomes_styling_complexes.showIcon = !GPCRomes_styling_complexes.showIcon;
 
     // Update button text and state
-    if (GPCRomes_complexes_styling.showIcon) {
+    if (GPCRomes_styling_complexes.showIcon) {
         button.text("On");
         button.classed("active", true);
     } else {
@@ -1532,7 +1552,7 @@ function toggleIconComplexes() {
     }
 
     // Redraw the GPCRomes with the updated icon state
-    updateGPCRome(GPCRome_complexes_location, fill_data_complexes, GPCRome_Label_conversion_dict, GPCRomes_complexes_styling);
+    updateGPCRome(GPCRome_complexes_data, GPCRome_complexes_location, GPCRomes_styling_complexes);
 }
 
 // Function to toggle the icon visibility and redraw the GPCRomes
@@ -1540,10 +1560,10 @@ function toggleIconOdorant() {
     const button = d3.select("#ToggleIconOdorant");
 
     // Toggle the showIcon property in GPCRomes_styling
-    GPCRomes_odorant_styling.showIcon = !GPCRomes_odorant_styling.showIcon;
+    GPCRomes_styling_Odorant.showIcon = !GPCRomes_styling_Odorant.showIcon;
 
     // Update button text and state
-    if (GPCRomes_odorant_styling.showIcon) {
+    if (GPCRomes_styling_Odorant.showIcon) {
         button.text("On");
         button.classed("active", true);
     } else {
@@ -1552,7 +1572,7 @@ function toggleIconOdorant() {
     }
 
     // Redraw the GPCRomes with the updated icon state
-    updateGPCRome(GPCRome_odorant_location, odorant_fill_data, GPCRome_odorant_Label_conversion_dict, GPCRomes_odorant_styling, true);
+    updateGPCRome(Odorant_data, GPCRome_odorant_location, GPCRomes_styling_Odorant);
 }
 
 // Attach event listener to the button
@@ -1561,65 +1581,15 @@ d3.select("#ToggleIconComplexes").on("click", toggleIconComplexes);
 d3.select("#ToggleIconOdorant").on("click", toggleIconOdorant);
 
 // Function to update and redraw GPCRomes
-function updateGPCRome(location, fill, conversion, styling, odorant=false) {
-    let updatedLayoutData;
-    if (odorant){
-      console.log(currentLabelType);
-      updatedLayoutData = updateLayoutData(odorant_data, conversion, currentLabelType);
-    } else {
-      updatedLayoutData = updateLayoutData(layout_data, conversion, currentLabelType);
-    };
-    const updatedFillData = updateFillData(fill, conversion, currentLabelType);
+function updateGPCRome(Data, location, styling) {
 
     // Clear the existing SVG content
     d3.select("#" + location).select("svg").remove();
 
     // Redraw the GPCRomes with the updated data
-    Draw_GPCRomes(updatedLayoutData, updatedFillData, location, styling, odorant);
-
-    // Update button active states
-    // updateActiveButtonState(currentLabelType);
+    DrawGPCRomeWheel(Data, location, styling);
 }
 
-// Function to update layout data
-function updateLayoutData(layout_data, conversionDict, labelType) {
-    const updatedData = {};
-
-    Object.keys(layout_data).forEach(GPCRomeKey => {
-        const GPCRome = layout_data[GPCRomeKey];
-        updatedData[GPCRomeKey] = {};
-
-        Object.keys(GPCRome).forEach(ligandType => {
-            const receptors = GPCRome[ligandType];
-            updatedData[GPCRomeKey][ligandType] = receptors.map(receptor => {
-                if (labelType === "UniProt") {
-                    return conversionDict[receptor] || receptor;
-                } else {
-                    return Object.keys(conversionDict).find(key => conversionDict[key] === receptor) || receptor;
-                }
-            });
-        });
-    });
-
-    return updatedData;
-}
-
-// Function to update fill data
-function updateFillData(fill_data, conversionDict, labelType) {
-    const updatedData = {};
-
-    Object.keys(fill_data).forEach(receptor => {
-        let updatedReceptor;
-        if (labelType === "UniProt") {
-            updatedReceptor = conversionDict[receptor] || receptor;
-        } else {
-            updatedReceptor = Object.keys(conversionDict).find(key => conversionDict[key] === receptor) || receptor;
-        }
-        updatedData[updatedReceptor] = fill_data[receptor];
-    });
-
-    return updatedData;
-}
 </script>
 {% elif page == 'gprot' %}
 <script type="text/javascript" charset="utf-8">
@@ -1661,68 +1631,51 @@ function updateFillData(fill_data, conversionDict, labelType) {
 <script src="{% static 'home/js/d3.tip.js' %}"></script>
 <script>
 
-var GPCRome_Arrestin_categories_data = {{ GPCRome_Arrestin_data|safe }};
-var arrestin_fill_data = {{ GPCRome_Arrestin_data_variables|safe }};
-var GPCRome_Arrestin_Label_conversion_dict = {{GPCRome_Arrestin_Label_Conversion|safe}};
 
-console.log(GPCRome_Arrestin_categories_data);
-console.log(arrestin_fill_data);
+// // Import GPCRome data 
+var GPCRome_stucture_data = {{ GPCRome_data|safe }};
 
-// Initialize the conversion dictionary
-GPCRome_Arrestin_Label_conversion_dict = initializeGPCRomeLabelConversionDict(GPCRome_Arrestin_Label_conversion_dict);
+// // == Structure GPCRome ==
 
-
-function initializeGPCRomeLabelConversionDict(conversionDict) {
-    const updatedDict = {};
-
-    Object.keys(conversionDict).forEach(originalLabel => {
-        let uniProtLabel = conversionDict[originalLabel];
-        uniProtLabel = uniProtLabel.replace(/_human$/, "").toUpperCase(); // Remove "_human" and convert to uppercase
-        updatedDict[originalLabel] = uniProtLabel;
-    });
-
-    return updatedDict;
-}
-
-// # Initialize data styling #
-var arrestin_layout_data = GPCRome_initializeData(GPCRome_Arrestin_categories_data);
-
+// Set styling
 var GPCRomes_styling = {
-  Spacing: true,
-  family: true,
-  datatype: "Arrestin",
-  minValue: 0,
-  median_value: 3,
-  avg_value: 3,
-  maxValue: 6,
-  colorStart: "white",
-  color_median: "blue",
-  colorEnd: "#000000",
-  data_color_complexity: 'Two',
-  showIcon: true  // Add this property to control the icon visibility
+    DataType: "Text",
+    FontStyle: "Arial",
+    FontsizeGlobal: "11px",
+    FontsizeClass: "20px",
+    Datatype: "Text",
+    showIcon: true,
+    LabelType: "Protein",
+    ShowLegend: false
+};
+
+// // Add location and draw the GPCRome plot
+let GPCRome_Arresting_location = "GPCRome_Arrestin_plot";
+DrawGPCRomeWheel(GPCRome_stucture_data, GPCRome_Arresting_location, GPCRomes_styling);
+
+
+function setupLabelButtons(groupIdPrefix, structureData, location, styling) {
+  const labelTypes = ["Protein", "Uniprot", "Entrez"];
+
+  labelTypes.forEach(label => {
+      const buttonId = `${groupIdPrefix}_${label}`;
+      document.getElementById(buttonId).addEventListener("click", () => {
+          styling.LabelType = label;
+          updateGPCRome(structureData, location, styling);
+          setActiveButton(groupIdPrefix, labelTypes, buttonId);
+      });
+  });
 }
 
-// # initial draw
-let GPCRome_Arrestin_location = "GPCRome_Arrestin_plot";
-Draw_GPCRomes(arrestin_layout_data, arrestin_fill_data, GPCRome_Arrestin_location, GPCRomes_styling);
-
-// Global variables for current label type
-let currentLabelType = "IUPHAR"; // Default
-
-// Event listeners for label type buttons
-document.getElementById("GPCRome_Arrestin_UniProtNames").addEventListener("click", () => {
-    switchLabelType("UniProt", GPCRome_Arrestin_location, arrestin_fill_data, GPCRome_Arrestin_Label_conversion_dict, GPCRomes_styling);
-});
-
-document.getElementById("GPCRome_Arrestin_IUPHARNames").addEventListener("click", () => {
-    switchLabelType("IUPHAR", GPCRome_Arrestin_location, arrestin_fill_data, GPCRome_Arrestin_Label_conversion_dict, GPCRomes_styling);
-});
-
-// Function to switch label types
-function switchLabelType(labelType, location, fill, conversion, styling, odorant=false) {
-    currentLabelType = labelType;
-    updateArrestinGPCRome(location, fill, conversion, styling, odorant);
+function setActiveButton(groupIdPrefix, labelTypes, activeId) {
+    labelTypes.forEach(label => {
+        const btnId = `${groupIdPrefix}_${label}`;
+        document.getElementById(btnId).classList.remove("active");
+    });
+    document.getElementById(activeId).classList.add("active");
 }
+
+setupLabelButtons("GPCRome_Arrestin", GPCRome_stucture_data, GPCRome_Arresting_location, GPCRomes_styling);
 
 // Function to toggle the icon visibility and redraw the GPCRomes
 function toggleIcon() {
@@ -1741,67 +1694,20 @@ function toggleIcon() {
     }
 
     // Redraw the GPCRomes with the updated icon state
-    updateArrestinGPCRome(GPCRome_Arrestin_location, arrestin_fill_data, GPCRome_Arrestin_Label_conversion_dict, GPCRomes_styling);
+    updateGPCRome(GPCRome_stucture_data, GPCRome_Arresting_location, GPCRomes_styling);
 }
 
 // Attach event listener to the button
 d3.select("#ToggleIconArrestin").on("click", toggleIcon);
 
-
 // Function to update and redraw GPCRomes
-function updateArrestinGPCRome(location, fill, conversion, styling, odorant=false) {
-    let updatedLayoutData;
-    updatedLayoutData = updateLayoutData(arrestin_layout_data, conversion, currentLabelType);
-    const updatedFillData = updateFillData(fill, conversion, currentLabelType);
+function updateGPCRome(Data, location, styling) {
 
     // Clear the existing SVG content
     d3.select("#" + location).select("svg").remove();
 
     // Redraw the GPCRomes with the updated data
-    Draw_GPCRomes(updatedLayoutData, updatedFillData, location, styling, odorant);
-
-    // Update button active states
-    // updateActiveButtonState(currentLabelType);
-}
-
-// Function to update layout data
-function updateLayoutData(layout_data, conversionDict, labelType) {
-    const updatedData = {};
-
-    Object.keys(layout_data).forEach(GPCRomeKey => {
-        const GPCRome = layout_data[GPCRomeKey];
-        updatedData[GPCRomeKey] = {};
-
-        Object.keys(GPCRome).forEach(ligandType => {
-            const receptors = GPCRome[ligandType];
-            updatedData[GPCRomeKey][ligandType] = receptors.map(receptor => {
-                if (labelType === "UniProt") {
-                    return conversionDict[receptor] || receptor;
-                } else {
-                    return Object.keys(conversionDict).find(key => conversionDict[key] === receptor) || receptor;
-                }
-            });
-        });
-    });
-
-    return updatedData;
-}
-
-// Function to update fill data
-function updateFillData(fill_data, conversionDict, labelType) {
-    const updatedData = {};
-
-    Object.keys(fill_data).forEach(receptor => {
-        let updatedReceptor;
-        if (labelType === "UniProt") {
-            updatedReceptor = conversionDict[receptor] || receptor;
-        } else {
-            updatedReceptor = Object.keys(conversionDict).find(key => conversionDict[key] === receptor) || receptor;
-        }
-        updatedData[updatedReceptor] = fill_data[receptor];
-    });
-
-    return updatedData;
+    DrawGPCRomeWheel(Data, location, styling);
 }
 </script>
 {% endif %}

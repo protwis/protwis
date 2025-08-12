@@ -1,8 +1,30 @@
 /*global showAlert*/
 
+
+function resetButtonState() {
+    $('.has-spinner.active').removeClass('active').prop('disabled', false);
+}
+
+$(document).ready(function() {
+    resetButtonState();
+});
+
+window.addEventListener('pageshow', function(event) {
+    if (event.persisted) {
+        resetButtonState();
+    }
+});
+
+
+
 $(function () {
-    $('#selection-button').click(function () {
-        toggleButtonClass('selection-button');
+
+    $('.has-spinner').on('click', function(e) {
+        if ($(this).is('[disabled]')) {
+            e.preventDefault();
+            return;
+        }
+        $(this).toggleClass('active');
     });
 });
 
@@ -472,7 +494,7 @@ function VerifyMinSegmentSelection() {
     if ($("#selection-segments .target-selection").length === 0){
       showAlert("Please select at least 1 segment item to continue", "danger");
       // Remove active button class => stop spinner after short timeout
-      setTimeout(function(){ $("#selection-button").removeClass("active"); }, 1000);
+      setTimeout(function(){ $(".has-spinner.active").removeClass("active"); }, 1000);
       return false;
     }
     return true;

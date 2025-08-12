@@ -279,13 +279,25 @@
 
                         <!-- ligand block -->
                         <td style="text-align:left" class="expand">
-                            <a class="struct" 
-                               href='/ligand/{{value.19}}/info' 
-                               target='_blank'
-                               data-smiles="{{ value.24|safe }}"
-                               rel="{{ value.25 }}">
-                              {{ value.5|title }}
-                            </a>
+                            {% with ligand_name_val=value.5 ligand_id_val=value.19 molecule_type_val=value.9 sequence_s_val=value.26 smiles_s_val=value.24 picture_s_val=value.25 %}
+                                {% if molecule_type_val and molecule_type_val|lower == 'peptide' %}
+                                    <a class="struct"
+                                       href='/ligand/{{ ligand_id_val }}/info'  {# Use the Ligand ID from value.19 #}
+                                       target='_blank'
+                                       data-ligand-type="peptide"
+                                       data-sequence="{{ sequence_s_val|default_if_none:''|escapejs }}">
+                                      {{ ligand_name_val|title }}
+                                    </a>
+                                {% else %}
+                                    <a class="struct"
+                                       href='/ligand/{{ ligand_id_val }}/info'  {# Use the Ligand ID from value.19 #}
+                                       target='_blank'
+                                       data-smiles="{{ smiles_s_val|default_if_none:''|escapejs }}"
+                                       rel="{{ picture_s_val|default_if_none:'Not_available' }}">
+                                      {{ ligand_name_val|title }}
+                                    </a>
+                                {% endif %}
+                            {% endwith %}
                         </td>
                         <td style="text-align:left">{{value.7|title}}</td>
                         <td style="text-align:left" class="pathway">{{value.8|floatformat:0}}</td>
@@ -368,7 +380,8 @@
 <script src="{% static 'home/js/signprot-multitabtable.js' %}"></script>
 <script src="{% static 'home/js/xlsx.full.min.js' %}"></script>
 <script src="{% static 'home/js/openchemlib-full.js' %}"></script> <!-- for rendering ligand images -->
-<script src="{% static 'home/js/compoundPreviewTooltip.js' %}">
+<script src="{% static 'home/js/PeptideLayoutEngine.js' %}"></script> <!-- For rendering peptide structures -->
+<script src="{% static 'home/js/compoundPreviewTooltip.js' %}"></script>
 
 
 <script type="text/javascript">

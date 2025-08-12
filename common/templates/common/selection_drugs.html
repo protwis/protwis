@@ -765,6 +765,7 @@
 <script src="{% static 'home/js/saveSankeySvgAsPng.js' %}"></script> <!-- For Saving Sankey plot -->
 <script src="{% static 'home/js/compoundPreviewTooltip.js' %}"></script> <!-- Needed for the hover display of ligands-->
 <script src="{% static 'home/js/openchemlib-full.js' %}"></script> <!-- Dependency for the hover display of ligands-->
+<script src="{% static 'home/js/PeptideLayoutEngine.js' %}"></script>
 
 <script type="text/javascript">
     window.NO_IMAGE_URL = "{% static 'home/images/No_image_available.svg' %}";
@@ -1176,32 +1177,45 @@
                 ];
             } else if (type === 'Targets') {
                 columns = [
-                    {data: "Ligand name", name: "Name",width: "7%", render: function (data, type, row, meta) {
+                {
+                    data: "Ligand name", name: "Name", width: "7%", render: function (data, type, row, meta) {
                         if (type === 'display') {
-                            // Ensure row.Variable exists
                             if (row && row.LigandID) {
                                 const smilesVal = row.smiles_for_image || "";
                                 const picVal    = row.picture || "Not_available";
                                 const ligID     = row.LigandID;
-                                // Wrap the text in <a class="struct" ...>
-                                return `
-                                    <a class="struct"
-                                        href="/ligand/${ligID}/info?tab=agent_drug"
-                                        target="_blank"
-                                        data-smiles="${smilesVal}"
-                                        rel="${picVal}"
-                                    >
-                                    ${data}
-                                    </a>
-                                `;
+            
+                                if (row['Type'] && typeof row['Type'] === 'string' && row['Type'].toLowerCase() === 'peptide') {
+                                    const sequenceValue = row.sequence || ""; 
+                                    if (!sequenceValue) {
+                                        console.warn("Peptide ligand " + data + " (LigandID: " + ligID + ") has no sequence!");
+                                    }
+                                    return `
+                                        <a class="struct" data-ligand-type="peptide" data-sequence="${sequenceValue}" href="/ligand/${ligID}/info?tab=agent_drug" target="_blank">
+                                        ${data}
+                                        </a>
+                                        `;
+                                } else {
+                                    return `
+                                        <a class="struct"
+                                            href="/ligand/${ligID}/info?tab=agent_drug"
+                                            target="_blank"
+                                            data-smiles="${smilesVal}"
+                                            rel="${picVal}"
+                                        >
+                                        ${data}
+                                        </a>
+                                    `;
+                                }
+            
                             } else {
                                 return data || '';
                             }
                         }
                         return data;
                     }},
-                    {data: "Modality", name: "Type",width: "7%"}, 
-                    {data: "Mode of action", name: "Modality",width: "10%"},
+                    {data: "Type", name: "Type",width: "7%"}, 
+                    {data: "Modality", name: "Modality",width: "10%"},
                     {data: "In trial", name: "In trial",width: "8%"},
                     {data: "Approved", name: "Approved",width: "8%"},
                     {data: "Indication name", name: "Indication",render: function (data, type, row, meta) {
@@ -1283,13 +1297,17 @@
                             if (row && row.LigandID) {
                             const smilesVal = row.smiles_for_image || "";
                             const picVal = row.picture || "Not_available";
+                            if (row['Molecule_type'] === 'Peptide') {
+                                return '<a class="struct" data-ligand-type="peptide" data-sequence="' + row.sequence + '" href="/ligand/' + row.LigandID + '/info?tab=agent_drug" target="_blank">' + data + '</a>';
+                            }
                             return '<a class="struct" href="/ligand/' + row.LigandID + '/info" target="_blank" data-smiles="' + smilesVal + '" rel="' + picVal + '">' + data + '</a>';
                             } else {
                             return data || ''; // Fallback to plain text if missing
                             }
                         }
                         return data; // For non-display types, just return the data
-                    }},
+                    }
+                    },
                     {data: "Molecule_type", name: "Type",width: "7%"},
                     {data: "Mode of action", name: "Modality",width: "7%"},
                     {data: "In trial", name: "In trial",width: "9%"},

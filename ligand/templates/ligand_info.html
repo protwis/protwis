@@ -317,6 +317,8 @@
                     <h3>{{ ligand.ligand_name }}</h3>
 					{% if ligand.picture == "Generate_from_SMILES" %}
 						<div id="my-molecule-svg-bioactivity" style="border: 1px solid #ccc; width: 300px; height: 300px;"></div>
+					{% elif ligand.type == 'Peptide' and ligand.sequence %}
+						<div id="peptide-svg-container-bioactivity" style="border: 1px solid #ccc; width: 300px; height: 300px;"></div>
 					{% else %}
 						<img src="{% static 'home/images/No_image_available.svg' %}" alt="No image available" width="300" height="300">
 					{% endif %}
@@ -522,6 +524,8 @@
                     <h3>{{ ligand.ligand_name }}</h3>
 					{% if ligand.picture == "Generate_from_SMILES" %}
 						<div id="my-molecule-svg-agent" style="border: 1px solid #ccc; width: 300px; height: 300px;"></div>
+					{% elif ligand.type == 'Peptide' and ligand.sequence %}
+						<div id="peptide-svg-container-agent" style="border: 1px solid #ccc; width: 300px; height: 300px;"></div>
 					{% else %}
 						<img src="{% static 'home/images/No_image_available.svg' %}" alt="No image available" width="300" height="300">
 					{% endif %}
@@ -710,42 +714,107 @@
 <script src="{% static 'home/js/buttons.html5.min.js' %}"></script> <!-- For CSV -->
 <script src="{% static 'home/js/jszip.min.js' %}"></script> <!-- For Excel -->
 <script src="{% static 'home/js/openchemlib-full.js' %}"></script> <!-- For rendering image from SMILES -->
+<script src="{% static 'home/js/PeptideLayoutEngine.js' %}"></script> <!-- For rendering peptide structures -->
 
 <script>
 	document.addEventListener('DOMContentLoaded', function() {
-	  // Check if we should render the molecule from SMILES
-	  var ligandPicture = "{{ ligand.picture }}";
-	  if (ligandPicture === "Generate_from_SMILES") {
-		const smiles = "{{ ligand.ligand_smiles_for_image|default:'' }}";  // Get SMILES from backend
-		if (typeof OCL !== "undefined" && smiles) {
-		  try {
-			const mol = OCL.Molecule.fromSmiles(smiles);  // Convert SMILES to molecule
-			// Ensure a consistent 2D coordinate layout
-			mol.inventCoordinates();  // Generate fixed 2D coordinates
-			const svgSize = 300;  // Set size for SVG
-			const options = { 
-			  autoCrop: false,
-			  noStereoProblem: true, 
-			  autoScale: false,
-			  suppressChiralText: true,
-			  suppressCIPParity: true,
-			  suppressESR: true,
-			};
-			const svg = mol.toSVG(svgSize, svgSize, null, options);
-  
-			// Inject the SVG into the HTML elements
-			document.getElementById("my-molecule-svg-bioactivity").innerHTML = svg;
-			document.getElementById("my-molecule-svg-agent").innerHTML = svg;
-  
-		  } catch (error) {
-			console.error("Error rendering SMILES with OCL:", error);
-		  }
-		} else {
-		  console.warn("OCL is not defined or no SMILES provided.");
+	// Get data from Django context
+	const ligandPicture = "{{ ligand.picture }}";
+	const ligandType = "{{ ligand.type }}";
+	const sequence = "{{ ligand.sequence|default:''|escapejs }}";
+	const smiles = "{{ ligand.ligand_smiles_for_image|default:''|escapejs }}";
+	const noImageUrl = "{% static 'home/images/No_image_available.svg' %}";
+
+	function displayFallbackImage(containerId) {
+		const container = document.getElementById(containerId);
+		if (container) {
+			container.innerHTML = `<img src="${noImageUrl}" alt="No image available" width="300" height="300" style="display: block; margin: auto;">`;
 		}
-	  }
-	  // Otherwise, do nothing because the fallback image is already in the HTML.
-	});
+	}
+
+	function isStandardPeptideSequence(seqStr) {
+		if (!seqStr) return false;
+		return /^[ABCDEFGHIKLMNOPQRSTUVWXYZ\s]+$/i.test(seqStr);
+	}
+
+	if (ligandPicture === "Generate_from_SMILES" && smiles) {
+		const containerBioId = "my-molecule-svg-bioactivity";
+		const containerAgentId = "my-molecule-svg-agent";
+		if (typeof OCL !== "undefined") {
+			try {
+				const mol = OCL.Molecule.fromSmiles(smiles);
+				mol.inventCoordinates();
+				const svgSize = 300;
+				const options = { 
+					autoCrop: false, noStereoProblem: true, autoScale: false,
+					suppressChiralText: true, suppressCIPParity: true, suppressESR: true,
+				};
+				const svg = mol.toSVG(svgSize, svgSize, null, options);
+				
+				const container1 = document.getElementById(containerBioId);
+				const container2 = document.getElementById(containerAgentId);
+				
+				if (container1) container1.innerHTML = svg;
+				if (container2) container2.innerHTML = svg;
+
+			} catch (error) {
+				console.error("Error rendering SMILES with OCL:", error);
+				displayFallbackImage(containerBioId); // Display fallback
+				displayFallbackImage(containerAgentId); // Display fallback
+			}
+		} else {
+			console.warn("OCL library not found for SMILES rendering.");
+			displayFallbackImage(containerBioId); // Display fallback
+			displayFallbackImage(containerAgentId); // Display fallback
+		}
+	} else if (ligandType === 'Peptide' && sequence) {
+		const containerBioId = "peptide-svg-container-bioactivity";
+		const containerAgentId = "peptide-svg-container-agent";
+		if (isStandardPeptideSequence(sequence) && typeof PeptideLayoutEngine !== "undefined") {
+			try {
+				const peptideDrawer = new PeptideLayoutEngine({
+					fixedWidth: 300,
+					fixedHeight: 300,
+					residuesPerRow: 8,
+					rowSpacingFactor: 1.3, 
+				});
+				const cleanedSequence = sequence.replace(/\s+/g, '').toUpperCase();
+				const svgElement = peptideDrawer.generateSvgElement(cleanedSequence);
+
+				const container1 = document.getElementById(containerBioId);
+				const container2 = document.getElementById(containerAgentId);
+
+				if (svgElement) { // Check if svgElement was successfully created
+					if (container1) {
+						while (container1.firstChild) container1.removeChild(container1.firstChild);
+						container1.appendChild(svgElement);
+					}
+					if (container2) {
+						while (container2.firstChild) container2.removeChild(container2.firstChild);
+						container2.appendChild(svgElement.cloneNode(true));
+					}
+				} else {
+						console.warn("PeptideLayoutEngine.generateSvgElement returned null for sequence:", cleanedSequence);
+						displayFallbackImage(containerBioId);
+						displayFallbackImage(containerAgentId);
+				}
+			} catch (error) {
+				console.error("Error rendering Peptide with PeptideLayoutEngine:", error, "Original sequence:", sequence);
+				displayFallbackImage(containerBioId); // Display fallback
+				displayFallbackImage(containerAgentId); // Display fallback
+			}
+		} else {
+			if (!isStandardPeptideSequence(sequence)) {
+				console.log("Ligand Info Page: Peptide sequence is non-standard. Sequence:", sequence);
+			}
+			if (typeof PeptideLayoutEngine === "undefined") {
+				console.warn("PeptideLayoutEngine library not found for Peptide rendering.");
+			}
+			displayFallbackImage(containerBioId); // Display fallback
+			displayFallbackImage(containerAgentId); // Display fallback
+		}
+	}
+});
 </script>
 
 <script type="text/javascript">
@@ -1092,43 +1161,46 @@
     }
 </script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    var sankey_data = JSON.parse('{{ sankey|safe }}');
-	var pathMatrix = JSON.parse('{{ path_matrix|safe }}');
-    var top_nodes = '{{ nodes_nr|safe }}';
-    var totalPoints = '{{ points }}';
-    var Sankey_location = 'sankey_plot';
-
-    // Function to initialize or redraw the Sankey plot
-    function initializeSankeyPlot() {
-        var containerWidth = document.getElementById(Sankey_location).offsetWidth;
-        
-        // Check if the container has a width greater than 0
-        if (containerWidth > 0) {
-            // Remove the existing plot to avoid duplication
-            d3v4.select('#' + Sankey_location).select('svg').remove();
-            
-            // Draw the Sankey plot with the current container width
-            SankeyPlot(sankey_data, Sankey_location, top_nodes, totalPoints, containerWidth, pathMatrix);
-        }
-    }
-
-    // Event listener for window resize to make the plot responsive
-    window.addEventListener('resize', function() {
-        initializeSankeyPlot();
-    });
-
-    // Event listener for Bootstrap tab shown event
-    $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
-        var target = $(e.target).attr("href"); // Get the href attribute to identify the active tab
-        
-        // Only initialize if the target is the tab containing the Sankey plot
-        if (target === '#agent_drug') {  // Change this to the ID of the tab containing the plot
-            initializeSankeyPlot();
-        }
-    });
-});
-</script>
+	document.addEventListener('DOMContentLoaded', function() {
+		// Safely get the JSON strings from the template
+		const sankeyJsonString = '{{ sankey|escapejs }}';
+		const pathMatrixJsonString = '{{ path_matrix|escapejs }}';
+	
+		// Check if the strings are valid (not empty) before trying to parse
+		if (sankeyJsonString && pathMatrixJsonString) {
+			try {
+				var sankey_data = JSON.parse(sankeyJsonString);
+				var pathMatrix = JSON.parse(pathMatrixJsonString);
+				var top_nodes = '{{ nodes_nr|safe }}';
+				var totalPoints = '{{ points }}';
+				var Sankey_location = 'sankey_plot';
+	
+				function initializeSankeyPlot() {
+					var containerWidth = document.getElementById(Sankey_location).offsetWidth;
+					if (containerWidth > 0) {
+						d3v4.select('#' + Sankey_location).select('svg').remove();
+						SankeyPlot(sankey_data, Sankey_location, top_nodes, totalPoints, containerWidth, pathMatrix);
+					}
+				}
+	
+				window.addEventListener('resize', initializeSankeyPlot);
+	
+				$('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+					if ($(e.target).attr("href") === '#agent_drug') {
+						initializeSankeyPlot();
+					}
+				});
+			} catch (e) {
+				console.error("Failed to parse Sankey plot data. Error:", e);
+				console.error("Received Sankey string:", sankeyJsonString);
+				console.error("Received Path Matrix string:", pathMatrixJsonString);
+			}
+		} else {
+			// This 'else' block will now execute for peptides, preventing the error.
+			console.log("Sankey plot data not available for this ligand. Skipping plot initialization.");
+		}
+	});
+	</script>
 <script type="text/javascript">
 	function openPopup(url, title, win, w, h) {
 		const y = win.top.outerHeight / 2 + win.top.screenY - (h / 2);

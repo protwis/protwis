@@ -67,15 +67,16 @@
         <div style="padding-top: 10px; font-size: 11px; white-space: nowrap;">
           <div class="col-md-12">
             <br>
-            <div class="col-md-2">
+            <div class="col-md-3">
               Receptor names:
               <div class="btn-group" role="group" id="gtp_plus">
-                  <button id="GPCRome_UniProtNames" class="btn btn-info ">Gene</button>
-                  <button id="GPCRome_IUPHARNames" class="btn btn-info active">Protein</button>
+                <button id="GPCRome_Protein" class="btn btn-info active">Protein</button>
+                  <button id="GPCRome_Entrez" class="btn btn-info">Gene</button>
+                  <button id="GPCRome_Uniprot" class="btn btn-info ">UniProt</button>
               </div>
             </div>
 
-            <div class="col-md-2" style="padding-top: 5px;">
+            <div class="col-md-2" style="padding-top: 5px;margin-left: 75px;">
               Icon toggle:
               <button id="ToggleIcon" class="btn btn-info active">On</button>
             </div>
@@ -110,7 +111,7 @@
           <br />
           <br />
           <br />
-          <div id="image-container" data-image-url="{% static 'home/images/DataMapper_GPCRome_icon_legend.png' %}"></div>
+          <div id="image-container" data-image-url="{% static 'home/images/DataMapper/DataMapper_GPCRome_icon_legend.png' %}"></div>
           <!-- GPCRome -->
           <div class="col-md-12" style="margin-top: 0px;margin-bottom: 30px;">
               <div id="GPCRome_plot" class="text-center"></div>
@@ -125,9 +126,10 @@
             <div class="col-md-3">
               Receptor names:
                 <div class="btn-group" role="group" id="gtp_plus">
-                    <button id="rep_TREE_UniProtNames" class="btn btn-info active">Gene</button>
-                    <button id="rep_TREE_IUPHARNames" class="btn btn-info">Protein</button>
-                </div>
+                  <button id="RepTree_Protein" class="btn btn-info active">Protein</button>
+                  <button id="RepTree_Entrez" class="btn btn-info">Gene</button>
+                  <button id="RepTree_Uniprot" class="btn btn-info">UniProt</button>
+              </div>
             </div>
             <div class="col-md-3">
               <div class="text-center">
@@ -160,7 +162,7 @@
             <div class="col-md-12" id="rep_legend_bars" style="margin-top: 30px;">
               <svg width="600" height="75"></svg>
             </div>
-            <div class="col-md-12" style="margin-top: -125px;margin-bottom: 30px;">
+            <div class="col-md-12" style="margin-top: 0px;margin-bottom: 30px;">
                 <div id="rep_tree_plot" class="text-center"></div>
             </div>
           </div>
@@ -172,10 +174,11 @@
             <br>
             <div class="col-md-3">
               Receptor names:
-                <div class="btn-group" role="group" id="gtp_plus">
-                    <button id="TREE_UniProtNames" class="btn btn-info active">Gene</button>
-                    <button id="TREE_IUPHARNames" class="btn btn-info">Protein</button>
-                </div>
+              <div class="btn-group" role="group" id="gtp_plus">
+                <button id="Tree_Protein" class="btn btn-info active">Protein</button>
+                <button id="Tree_Entrez" class="btn btn-info">Gene</button>
+                <button id="Tree_Uniprot" class="btn btn-info">UniProt</button>
+            </div>
             </div>
             <div class="col-md-3">
               <div class="text-center">
@@ -209,7 +212,7 @@
             <!-- ############# -->
             <!-- # TREE plot # -->
             <!-- ############# -->
-            <div class="col-md-12" style="margin-top: -125px;margin-bottom: 30px;">
+            <div class="col-md-12" style="margin-top: 0px;margin-bottom: 30px;">
                 <div id="tree_plot" class="text-center"></div>
             </div>
           </div>
@@ -232,108 +235,95 @@
 <script src="{% static 'home/js/d3.tip.js' %}"></script>
 
 <script>
-  var GPCRome_categories_data = {{ GPCRome_data|safe }};
-  var fill_data = {{ GPCRome_data_variables|safe }};
-  var GPCRome_Label_conversion_dict = {{GPCRome_Label_Conversion|safe}};
 
-  const receptorData = {"kisspeptin receptor": 5, "PKR<sub>2</sub>": 5, "LPA<sub>6</sub> receptor": 5, "Rhodopsin": 6, "OPN3": 6, "OPN4": 6, "OPN5": 6, "OPN1SW": 6,
-  "OPN1MW": 6, "OPN1LW": 6, "GPR20": 5, "GPR50": 5, "GPR65": 5, "GPR68": 5, "ADGRE2": 5, "CELSR1": 5, "ADGRG1": 5, "ADGRG2": 5, "ADGRG6": 5, "ADGRV1": 5,
-  "mGlu<sub>1</sub> receptor": 5, "mGlu<sub>6</sub> receptor": 5, "mGlu<sub>7</sub> receptor": 5, "TAS1R1": 6, "TAS1R2": 6, "TAS1R3": 6, "GPR179": 5, "FZD<sub>2</sub>": 5,
-  "FZD<sub>4</sub>": 5, "FZD<sub>5</sub>": 5, "FZD<sub>6</sub>": 5, "o51a2_human": 6, "o51a4_human": 6, "o51a7_human": 6, "o51b2_human": 6, "o51b4_human": 6, "o51b5_human": 6,
-    "o51b6_human": 6, "o51d1_human": 6, "o51e1_human": 6, "o51e2_human": 6, "o51f1_human": 6, "o51f2_human": 6, "o51g1_human": 6, "o51g2_human": 6, "o51i1_human": 6, "o51i2_human": 6,
-    "o51j1_human": 6, "o51l1_human": 6, "o51m1_human": 6, "o51q1_human": 6, "o51s1_human": 6, "o51t1_human": 6, "o51v1_human": 6, "or1a1_human": 6, "or1g1_human": 6, "o2t11_human": 6,
-    "TAS2R1": 6, "TAS2R3": 6, "TAS2R4": 6, "TAS2R5": 6, "TAS2R7": 6, "TAS2R8": 6, "TAS2R9": 6, "TAS2R10": 6, "TAS2R13": 6, "TAS2R14": 6, "TAS2R16": 6, "TAS2R19": 6, "TAS2R20": 6,
-    "TAS2R30": 6, "TAS2R31": 6, "TAS2R38": 6, "TAS2R39": 6, "TAS2R40": 6, "TAS2R41": 6, "TAS2R42": 6, "TAS2R43": 6, "TAS2R45": 6, "TAS2R46": 6, "TAS2R50": 6, "TAS2R60": 6, "GPR137": 5, "GPR143": 5};
 
-  // Function to update fill_data based on receptorData
-  function updateFillData_missingData(data, data_update) {
-      for (const receptorName in data_update) {
-          // console.log(receptorName);
-          // Check if the receptorName exists in fill_data
-          if (data.hasOwnProperty(receptorName)) {
-              // Update the Value1 field with the value from receptorData
-              data[receptorName]["Value1"] = receptorData[receptorName];
+var GPCRomeWheelData = {{ GPCRomeData|safe }};
+
+
+const receptorData = {"kisspeptin receptor": 5, "PKR<sub>2</sub>": 5, "LPA<sub>6</sub> receptor": 5, "Rhodopsin": 6, "OPN3": 6, "OPN4": 6, "OPN5": 6, "OPN1SW": 6,
+"OPN1MW": 6, "OPN1LW": 6, "GPR20": 5, "GPR50": 5, "GPR65": 5, "GPR68": 5, "ADGRE2": 5, "CELSR1": 5, "ADGRG1": 5, "ADGRG2": 5, "ADGRG6": 5, "ADGRV1": 5,
+"mGlu<sub>1</sub> receptor": 5, "mGlu<sub>6</sub> receptor": 5, "mGlu<sub>7</sub> receptor": 5, "TAS1R1": 6, "TAS1R2": 6, "TAS1R3": 6, "GPR179": 5, "FZD<sub>2</sub>": 5,
+"FZD<sub>4</sub>": 5, "FZD<sub>5</sub>": 5, "FZD<sub>6</sub>": 5, "o51a2_human": 6, "o51a4_human": 6, "o51a7_human": 6, "o51b2_human": 6, "o51b4_human": 6, "o51b5_human": 6,
+  "o51b6_human": 6, "o51d1_human": 6, "o51e1_human": 6, "o51e2_human": 6, "o51f1_human": 6, "o51f2_human": 6, "o51g1_human": 6, "o51g2_human": 6, "o51i1_human": 6, "o51i2_human": 6,
+  "o51j1_human": 6, "o51l1_human": 6, "o51m1_human": 6, "o51q1_human": 6, "o51s1_human": 6, "o51t1_human": 6, "o51v1_human": 6, "or1a1_human": 6, "or1g1_human": 6, "o2t11_human": 6,
+  "TAS2R1": 6, "TAS2R3": 6, "TAS2R4": 6, "TAS2R5": 6, "TAS2R7": 6, "TAS2R8": 6, "TAS2R9": 6, "TAS2R10": 6, "TAS2R13": 6, "TAS2R14": 6, "TAS2R16": 6, "TAS2R19": 6, "TAS2R20": 6,
+  "TAS2R30": 6, "TAS2R31": 6, "TAS2R38": 6, "TAS2R39": 6, "TAS2R40": 6, "TAS2R41": 6, "TAS2R42": 6, "TAS2R43": 6, "TAS2R45": 6, "TAS2R46": 6, "TAS2R50": 6, "TAS2R60": 6, "GPR137": 5, "GPR143": 5};
+
+// Function to update fill_data based on receptorData
+function updateReceptorData(fullData, receptorData) {
+  for (const circleKey in fullData) {
+      const circle = fullData[circleKey];
+
+      for (const groupKey in circle) {
+          const group = circle[groupKey];
+
+          for (const familyKey in group) {
+              const family = group[familyKey];
+
+              for (const receptorKey in family) {
+                  // If this receptor is in receptorData, update it
+                  if (receptorData.hasOwnProperty(receptorKey)) {
+                      const newValue = receptorData[receptorKey];
+                      family[receptorKey].Data = newValue;
+                      family[receptorKey].Color = newValue === 5 ? "#C0C0C0" : "#A3D9C8";
+                  }
+              }
           }
       }
   }
+}
 
-  // Execute the function to update fill_data
-  updateFillData_missingData(fill_data, receptorData);
+updateReceptorData(GPCRomeWheelData, receptorData);
 
-  // Initialize the conversion dictionary
-  GPCRome_Label_conversion_dict = initializeGPCRomeLabelConversionDict(GPCRome_Label_conversion_dict);
+var GPCRomes_styling = {
+  DataType: "Text",
+  FontStyle: "Arial",
+  FontsizeGlobal: "11px",
+  FontsizeClass: "20px",
+  Datatype: "Text",
+  showIcon: true,
+  LabelType: "Protein",
+  ShowLegend: false,
+  LegendLayout: { "mode": "row", "columns": "1", "sorted": "Vertically" }
+};
 
-  function initializeGPCRomeLabelConversionDict(conversionDict) {
-      const updatedDict = {};
+// # initial draw
+let GPCRome_location = "GPCRome_plot";
+DrawGPCRomeWheel(GPCRomeWheelData, GPCRome_location, GPCRomes_styling);
+// Draw_GPCRomes(layout_data, fill_data, GPCRome_location, GPCRomes_styling);
 
-      Object.keys(conversionDict).forEach(originalLabel => {
-          let uniProtLabel = conversionDict[originalLabel];
-          uniProtLabel = uniProtLabel.replace(/_human$/, "").toUpperCase(); // Remove "_human" and convert to uppercase
-          updatedDict[originalLabel] = uniProtLabel;
-      });
+// Function to update and redraw GPCRomes
+function updateGPCRome() {
+    // Remove current
+    d3.select("#" + GPCRome_location).select("svg").remove();
+    // Redraw the GPCRome wheel plot
+    DrawGPCRomeWheel(GPCRomeWheelData, GPCRome_location, GPCRomes_styling); // ← Use the updated copy
+}
 
-      return updatedDict;
-  }
+document.getElementById("GPCRome_Protein").addEventListener("click", () => {
+  GPCRomes_styling.LabelType = "Protein";
+  updateGPCRome();
+  setActiveButton("GPCRome_Protein");
+});
 
-  // # Initialize data styling #
-  var layout_data = GPCRome_initializeData(GPCRome_categories_data);
+document.getElementById("GPCRome_Uniprot").addEventListener("click", () => {
+    GPCRomes_styling.LabelType = "Uniprot";
+    updateGPCRome();
+    setActiveButton("GPCRome_Uniprot");
+});
 
-  const GPCRome_fill_data_values = Object.values(fill_data).map(receptor => receptor.Value1);
-  const GPCRome_fill_minValue = Math.min(...GPCRome_fill_data_values);
-  const GPCRome_fill_maxValue = Math.max(...GPCRome_fill_data_values);
-  // Sort the values in ascending order
-  GPCRome_fill_data_values.sort((a, b) => a - b);
+document.getElementById("GPCRome_Entrez").addEventListener("click", () => {
+    GPCRomes_styling.LabelType = "Entrez";
+    updateGPCRome();
+    setActiveButton("GPCRome_Entrez");
+});
 
-  // Calculate the median
-  let GPCRome_fill_medianValue;
-  const middleIndex = Math.floor(GPCRome_fill_data_values.length / 2);
-
-  if (GPCRome_fill_data_values.length % 2 === 0) {
-      // Even number of elements, median is the average of the two middle values
-      GPCRome_fill_medianValue = (GPCRome_fill_data_values[middleIndex - 1] + GPCRome_fill_data_values[middleIndex]) / 2;
-  } else {
-      // Odd number of elements, median is the middle value
-      GPCRome_fill_medianValue = GPCRome_fill_data_values[middleIndex];
-  }
-
-  GPCRome_fill_avg = (GPCRome_fill_minValue+GPCRome_fill_maxValue)/2
-
-  var GPCRomes_styling = {
-    Spacing: true,
-    family: true,
-    datatype: "Druggome",
-    minValue: GPCRome_fill_minValue,
-    median_value: GPCRome_fill_medianValue,
-    avg_value: GPCRome_fill_avg,
-    maxValue: GPCRome_fill_maxValue,
-    colorStart: "#D3D3D3",
-    color_median: "#696969",
-    colorEnd: "#000000",
-    data_color_complexity: 'Two',
-    showIcon: true  // Add this property to control the icon visibility
-  }
-
-  // # initial draw
-  let GPCRome_location = "GPCRome_plot";
-  Draw_GPCRomes(layout_data, fill_data, GPCRome_location, GPCRomes_styling);
-
-  // Global variables for current label type
-  let currentLabelType = "IUPHAR"; // Default
-
-  // Event listeners for label type buttons
-  document.getElementById("GPCRome_UniProtNames").addEventListener("click", () => {
-      switchLabelType("UniProt");
-  });
-
-  document.getElementById("GPCRome_IUPHARNames").addEventListener("click", () => {
-      switchLabelType("IUPHAR");
-  });
-
-  // Function to switch label types
-  function switchLabelType(labelType) {
-      currentLabelType = labelType;
-      updateGPCRome();
-  }
+function setActiveButton(id) {
+    document.getElementById("GPCRome_Protein").classList.remove("active");
+    document.getElementById("GPCRome_Uniprot").classList.remove("active");
+    document.getElementById("GPCRome_Entrez").classList.remove("active");
+    document.getElementById(id).classList.add("active");
+}
 
   // Function to toggle the icon visibility and redraw the GPCRomes
   function toggleIcon() {
@@ -358,17 +348,7 @@
   // Attach event listener to the button
   d3.select("#ToggleIcon").on("click", toggleIcon);
 
-  // Function to update and redraw GPCRomes
-  function updateGPCRome() {
-    const updatedLayoutData = updateLayoutData(layout_data, GPCRome_Label_conversion_dict, currentLabelType);
-    const updatedFillData = updateFillData(fill_data, GPCRome_Label_conversion_dict, currentLabelType);
 
-    // Clear the existing SVG content
-    d3.select("#" + GPCRome_location).select("svg").remove();
-
-    // Redraw the GPCRomes with the updated data
-    Draw_GPCRomes(updatedLayoutData, updatedFillData, GPCRome_location, GPCRomes_styling);
-  }
 
   // Function to update layout data
   function updateLayoutData(layout_data, conversionDict, labelType) {
@@ -420,12 +400,28 @@
   tree_data = {{ tree | safe }};
   tree_options = {{ tree_options | safe }};
   Tree_circles = {{ circles|safe }};
-  Tree_label_dict = {{ whole_dict|safe }};
+  // Tree_label_dict = {{ whole_dict|safe }};
+  Tree_label_dict = {{ Tree_Receptor_dict|safe }};
+  Tree_label_dict_Gene = {{ Tree_Entrez_dict|safe }};
+
+  let Tree_label_dicts = {
+    "IUPHAR": Tree_label_dict,
+    "Gene": Tree_label_dict_Gene,
+    "UniProt": {}  // No lookup needed; label is just the receptor ID
+  };
+
   // # repurposed data #
   rep_tree_data = {{ rep_tree | safe }};
   rep_tree_options = {{ rep_tree_options | safe }};
   rep_tree_circles = {{ rep_circles|safe }};
-  rep_tree_label_dict = {{ rep_whole_dict|safe }};
+  rep_tree_label_dict = {{ rep_Receptor_dict|safe }};
+  rep_tree_label_dict_Gene = {{ rep_Entrez_dict|safe }};
+
+  let RepTree_label_dicts = {
+    "IUPHAR": rep_tree_label_dict,
+    "Gene": rep_tree_label_dict_Gene,
+    "UniProt": {}  // No lookup needed; label is just the receptor ID
+  };
 
   tree_data = update_tree_data(tree_data,tree_options.depth);
   rep_tree_data = update_tree_data(rep_tree_data, rep_tree_options.depth);
@@ -531,9 +527,8 @@
     rep_maxLeafNodeLength = 4*parseInt(rep_tree_options.fontSize.receptorfamily);
   }
 
-  circle_size = 6;
-  circle_spacer = circle_size*2+1;
-  circle_spacer = circle_spacer+5
+let circle_size = 3 + 1 * 3;       // default slider value = 3
+let circle_spacer = circle_size * (2 + 0.5 * 1) + 1;  // default spacer slider = 1
 
   var Tree_circle_styling_dict = {
     "Inner":'Drugged_tree',
@@ -544,9 +539,27 @@
     "Outer5":"Three",
   }
 
-  rep_circle_size = 6;
-  rep_circle_spacer = rep_circle_size*2+1;
-  rep_circle_spacer = rep_circle_spacer+5
+  var styling_circles = {
+    starter: 1,
+    clean: true, 
+    gradient: true, 
+    circle_spacer: circle_spacer, 
+    circle_size: circle_size, 
+    mode: "Numeric"
+  }
+
+  let rep_circle_size = 3 + 1 * 3;       // default slider value = 3
+  let rep_circle_spacer = circle_size * (2 + 0.5 * 1) + 1;  // default spacer slider = 1
+
+
+  var rep_styling_circles = {
+    starter: 1,
+    clean: true, 
+    gradient: true, 
+    circle_spacer: rep_circle_spacer, 
+    circle_size: rep_circle_size, 
+    mode: "Numeric"
+  }
 
   var rep_Tree_circle_styling_dict = {
     "Inner":'Drugged_tree',
@@ -626,136 +639,369 @@
     { label: "" }
   ];
 
-  // Function to draw labels to the left of a specific node
-  function DrawLabelsToLeftOfNode(location, data, nodeId, offsetX, offsetY) {
-    // Select the SVG element by ID
-    var svg = d3.select('#' + location);
-    // Find the specific node by its ID (e.g., X5HT1A)
-    const leaf = svg.select(`g[id='X${nodeId}']`);
-    // Check if the target node exists
-    if (!leaf.empty()) {
-      // Position the text labels relative to the target node
-      data.forEach((d, i) => {
-        leaf.append("text")
-          .attr("id", `phase-label-${i}`)              // Assign unique ID to each label
-          .attr("x", i * -offsetX)                     // Place text to the left of the node
-          .attr("y", offsetY - 167)                    // Stack labels vertically with offset
-          .text(d.label)                               // Add label text
-          .attr("font-size", "14px")
-          .attr("fill", "black")
-          .attr("text-anchor", "end")                  // Align text to the end
-          .attr("class", "phase-label")
-          .attr("transform", `rotate(87, ${i * -offsetX - 28}, ${offsetY})`) // Rotate around the text position
-          .style("dominant-baseline", "middle");       // Align text vertically
-      });
+
+  // Create the bar legends
+function createDruggedLegendBars(location, data, conversion, circle_styling_dict, datatype_dict) {
+
+var svg = d3.select('#' + location + ' svg');
+
+var legendGroup = svg.append("g")
+.attr("class", "legend-group")
+
+// Clear existing content
+// svg.selectAll("*").remove();
+
+var margin = { top: 20, right: 20, bottom: 30, left: 60 };
+
+// Flatten data to get categories and their max values
+var categoryMax = {};
+
+Object.values(data).forEach(item => {
+    Object.entries(item).forEach(([category, value]) => {
+        if (category in conversion) {
+            if (!categoryMax[category]) {
+                categoryMax[category] = { min: value, max: value };
+            } else {
+                if (value > categoryMax[category].max) {
+                    categoryMax[category].max = value;
+                }
+                if (value < categoryMax[category].min) {
+                    categoryMax[category].min = value;
+                }
+            }
+        }
+    });
+});
+
+var existingCategories = Object.keys(categoryMax).filter(cat => categoryMax[cat].max > 0);
+
+// Create a color scale function for each category
+var colorScales = {};
+existingCategories.forEach(category => {
+    // Check the datatype in the datatype_dict
+    if (datatype_dict[category] === "Discrete") {
+        return; // Skip this category if its datatype is Discrete
     }
-  }
 
-  // stupid workaround changeLeavesLabels
-  function updatePhaseLabels(newLabels, labelType, maxLeafNodeLength, treeId) {
-    newLabels.forEach((label, i) => {
-      // Select the label element scoped to the specific treeId
-      const labelElement = d3.select(`${treeId} #phase-label-${i}`);
-      // Update label text
-      labelElement.text(label);
-      // Adjust y position based on labelType
-      const currentY = parseFloat(labelElement.attr("y"));
-      if (labelType === "IUPHAR") {
-        if (currentY !== -257) {
-          labelElement.attr("y", currentY - 50);
-        }
-      } else {
-        if (currentY !== -207) {
-          labelElement.attr("y", currentY + 50);
-        }
-      }
-    });
-  }
+    var colors = conversion[category];
+    var gradientId = `gradient-${category}`;
 
-  function rep_updatePhaseLabels(newLabels, labelType, maxLeafNodeLength, treeId) {
-    newLabels.forEach((label, i) => {
-      // Select the label element scoped to the specific treeId
-      const labelElement = d3.select(`${treeId} #phase-label-${i}`);
-      // Update label text
-      labelElement.text(label);
-      // Adjust y position based on labelType
-      const currentY = parseFloat(labelElement.attr("y"));
-      console.log(currentY);
-      if (labelType === "IUPHAR") {
-        if (currentY !== -249) {
-          labelElement.attr("y", currentY - 50);
-        }
-      } else {
-        if (currentY !== -199) {
-          labelElement.attr("y", currentY + 50);
-        }
-      }
-    });
-  }
+    var gradient = legendGroup.append("defs")
+        .append("linearGradient")
+        .attr("id", gradientId)
+        .attr("x1", "0%")
+        .attr("x2", "100%")
+        .attr("y1", "0%")
+        .attr("y2", "0%");
 
-  function updateLegendLabels(containerId) {
-    // Select all text elements within the specified container
-    d3.select(`#${containerId} svg`)
-        .selectAll("text")
-        .each(function() {
-            // Get the current text content
-            const currentText = d3.select(this).text();
+    var styling = circle_styling_dict[category] || "Two";
 
-            // Replace underscores with spaces and update the text content
-            const updatedText = currentText.replace(/_/g, " ");
-            d3.select(this).text(updatedText);
-        });
-  }
+    if (styling === "Three") {
+        gradient.append("stop")
+            .attr("offset", "0%")
+            .attr("stop-color", colors[0]);
+        gradient.append("stop")
+            .attr("offset", "50%")
+            .attr("stop-color", "#FFFFFF");
+        gradient.append("stop")
+            .attr("offset", "100%")
+            .attr("stop-color", colors[1]);
+    } else if (styling === "One") {
+        gradient.append("stop")
+            .attr("offset", "0%")
+            .attr("stop-color", "#FFFFFF");
+        gradient.append("stop")
+            .attr("offset", "100%")
+            .attr("stop-color", colors[1]);
+    } else {
+        gradient.append("stop")
+            .attr("offset", "0%")
+            .attr("stop-color", colors[0]);
+        gradient.append("stop")
+            .attr("offset", "100%")
+            .attr("stop-color", colors[1]);
+    }
 
-  // # Change leaves buttons #
-  $("#TREE_UniProtNames").click(function(){
-      $("#TREE_UniProtNames").addClass("active");
-      $("#TREE_IUPHARNames").removeClass("active");
-      changeLeavesLabels("tree_plot", "UniProt", Tree_label_dict,maxLeafNodeLength);
-      DrawCircles('tree_plot', Tree_circles, maxLeafNodeLength, Tree_colors, true, true, Tree_circle_styling_dict, circle_spacer, circle_size);
-      // Finally, restore original labels
-      updatePhaseLabels(["Phase IV", "III", "II", "I"],"UniProt",maxLeafNodeLength,"#tree_plot");
+    colorScales[category] = gradientId;
+});
+
+var barWidth = 120;
+var barHeight = 15;
+var spacing = 50; // Horizontal spacing between bars
+
+var skippedDiscreteCount = 0;  // Track how many discrete bars have been skipped
+
+existingCategories.forEach((category, index) => {
+    // Check if datatype is "Continuous" before drawing the legend
+    if (datatype_dict[category] !== "Continuous") {
+        skippedDiscreteCount++; // Increment the count of skipped discrete bars
+        return; // Skip this category if it's Discrete
+    }
+    var BarText = category.replace(/_/g, " ");
+
+    var gradientId = colorScales[category];
+    var minValue = categoryMax[category].min;
+    var maxValue = categoryMax[category].max;
+    var midValue = (minValue + maxValue) / 2;
+    minValue = parseFloat(minValue.toFixed(2));
+    maxValue = parseFloat(maxValue.toFixed(2));
+    midValue = parseFloat(midValue.toFixed(2));
+
+    // Adjust the x position based on how many "Discrete" bars were skipped
+    var xPosition = margin.left + (index - skippedDiscreteCount) * (barWidth + spacing);
+
+    // Add a rectangle to represent the gradient
+    legendGroup.append("rect")
+        .attr("x", xPosition)
+        .attr("y", margin.top)
+        .attr("width", barWidth)
+        .attr("height", barHeight)
+        .style("fill", `url(#${gradientId})`)
+        .style("stroke", "black")
+        .style("stroke-width", "1px");
+
+    // Add a label for the gradient bar
+    legendGroup.append("text")
+        .attr("x", xPosition + barWidth / 2)
+        .attr("y", margin.top - 10)
+        .attr("text-anchor", "middle")
+        .text(BarText);
+
+    // Add min and max value labels
+    legendGroup.append("text")
+        .attr("x", xPosition)
+        .attr("y", margin.top + barHeight + 15)
+        .attr("text-anchor", "start")
+        .text(`${minValue}`);
+
+    legendGroup.append("text")
+        .attr("x", xPosition + barWidth)
+        .attr("y", margin.top + barHeight + 15)
+        .attr("text-anchor", "end")
+        .text(`${maxValue}`);
+
+});
+}
+
+// Function to draw labels to the left of a specific node
+function DrawStaticPhaseLabelsRightAlignedViewBox(svgId, labels, options = {}) {
+  // Select the <svg>
+  const svgSel = d3.select(`#${svgId}`).select('svg');
+  const svgEl = svgSel.node();
+  if (!svgEl) return;
+
+  // Remove existing labels
+  svgSel.select("#static-phase-labels").remove();
+
+  // Read viewBox
+  const vb = svgEl.viewBox.baseVal; // { x, y, width, height }
+
+  // Options with defaults:
+  const {
+    // margin from top edge, in user units:
+    marginTop = 20,
+    // offset from center X: labels' right edge will be at (centerX - offsetX).
+    //    If offsetX=0, right edge at exact center. Increase offsetX to shift further left.
+    offsetX = 0,
+    // vertical spacing between lines, in user units:
+    spacingY = 22,
+    fontSize = "13px"
+  } = options;
+
+  // Compute anchor X: center of viewBox minus offset
+  const centerX = vb.x + vb.width / 2;
+  const anchorX = centerX - offsetX;
+  // Compute start Y: a bit down from top edge of viewBox
+  const startY = vb.y + marginTop;
+
+  // Append a <g> directly under <svg>
+  const labelGroup = svgSel.append("g")
+    .attr("id", "static-phase-labels")
+    .attr("transform", `translate(${anchorX}, ${startY})`);
+
+  labels.forEach((d, i) => {
+    labelGroup.append("text")
+      .text(d.label)
+      .attr("x", 0)
+      .attr("y", i * spacingY)
+      .attr("text-anchor", "end")   // right-align
+      .style("font-size", fontSize)
+      .style("fill", "black")
+      .style("font-family", "Palatino");
   });
-  $("#TREE_IUPHARNames").click(function() {
-    $("#TREE_UniProtNames").removeClass("active");
-    $("#TREE_IUPHARNames").addClass("active");
-    changeLeavesLabels("tree_plot","IUPHAR", Tree_label_dict,maxLeafNodeLength);
-    DrawCircles('tree_plot', Tree_circles, maxLeafNodeLength, Tree_colors, true, true, Tree_circle_styling_dict, circle_spacer, circle_size);
-    updatePhaseLabels(["Phase IV", "III", "II", "I"],"IUPHAR",maxLeafNodeLength,"#tree_plot");
-  });
+}
 
-  // # Change leaves buttons #
-  $("#rep_TREE_UniProtNames").click(function(){
-      $("#rep_TREE_UniProtNames").addClass("active");
-      $("#rep_TREE_IUPHARNames").removeClass("active");
-      changeLeavesLabels("rep_tree_plot", "UniProt", rep_tree_label_dict);
-      DrawCircles('rep_tree_plot', rep_tree_circles, maxLeafNodeLength, rep_tree_colors, true, true, Tree_circle_styling_dict, circle_spacer, circle_size);
-      // Finally, restore original labels
-      rep_updatePhaseLabels(["Approved", "Repurposed", "New", ""],"UniProt",maxLeafNodeLength,"#rep_tree_plot");
-  });
-  $("#rep_TREE_IUPHARNames").click(function() {
-    $("#rep_TREE_UniProtNames").removeClass("active");
-    $("#rep_TREE_IUPHARNames").addClass("active");
-    changeLeavesLabels("rep_tree_plot", "IUPHAR", rep_tree_label_dict);
-    DrawCircles('rep_tree_plot', rep_tree_circles, maxLeafNodeLength, rep_tree_colors, true, true, Tree_circle_styling_dict, circle_spacer, circle_size);
-    rep_updatePhaseLabels(["Approved", "Repurposed", "New", ""],"IUPHAR",maxLeafNodeLength,"#rep_tree_plot");
-  });
-
-  // # Initialize tree plot #
-  document.addEventListener("DOMContentLoaded", function() {
-    // Phase tree
+// # Change leaves buttons for tree #
+$("#Tree_Uniprot").click(function(){
+    $("#Tree_Uniprot").addClass("active");
+    $("#Tree_Entrez").removeClass("active");
+    $("#Tree_Protein").removeClass("active");
+    
     draw_tree(tree_data, tree_options, circle_size);
-    DrawCircles('tree_plot', Tree_circles, maxLeafNodeLength, Tree_colors, true, true, Tree_circle_styling_dict, circle_spacer, circle_size);
-    DrawLabelsToLeftOfNode("tree_plot", phases, "5HT1A", 18.5, -40); // Adjust offsets as needed
-    createLegendBars('legend_bars', Bar_Tree_circles, Bar_colors, Tree_bar_styling,Tree_datatype);
-    updateLegendLabels('legend_bars');
+    changeLeavesLabels("tree_plot", "UniProt", Tree_label_dicts["UniProt"],styling_circles);
+    DrawCircles('tree_plot', Tree_circles, Tree_colors, styling_circles, Tree_circle_styling_dict);
+    // DrawStaticPhaseLabelsInViewBox("tree_plot", phases);
+    DrawStaticPhaseLabelsRightAlignedViewBox("tree_plot", phases, {
+      marginTop: 28,
+      offsetX: 0,
+      spacingY: 16.5,
+      fontSize: "13px"
+    });
+});
+$("#Tree_Protein").click(function() {
+  $("#Tree_Uniprot").removeClass("active");
+  $("#Tree_Entrez").removeClass("active");
+  $("#Tree_Protein").addClass("active");
+  draw_tree(tree_data, tree_options, circle_size);
+  changeLeavesLabels("tree_plot","IUPHAR", Tree_label_dicts["IUPHAR"],styling_circles);
+  DrawCircles('tree_plot', Tree_circles, Tree_colors, styling_circles, Tree_circle_styling_dict);
+  DrawStaticPhaseLabelsRightAlignedViewBox("tree_plot", phases, {
+  marginTop: 28,
+  offsetX: 0,
+  spacingY: 16.5,
+  fontSize: "13px"
+});
+});
 
-    // Repurpose Tree
-    draw_tree(rep_tree_data, rep_tree_options, circle_size);
-    DrawCircles('rep_tree_plot', rep_tree_circles, maxLeafNodeLength, rep_tree_colors, true, true, rep_Tree_circle_styling_dict, rep_circle_spacer, rep_circle_size);
-    DrawLabelsToLeftOfNode("rep_tree_plot", rep_phases, "5HT1A", 18.5, -32); // Adjust offsets as needed
-    createLegendBars('rep_legend_bars', rep_Bar_tree_circles, rep_Bar_colors, rep_Tree_bar_styling,rep_Tree_datatype);
-    updateLegendLabels('rep_legend_bars');
+$("#Tree_Entrez").click(function(){
+    $("#Tree_Entrez").addClass("active");
+    $("#Tree_Uniprot").removeClass("active");
+    $("#Tree_Protein").removeClass("active");
+    draw_tree(tree_data, tree_options, circle_size);
+    changeLeavesLabels("tree_plot","Gene", Tree_label_dicts["Gene"],styling_circles);
+    DrawCircles('tree_plot', Tree_circles, Tree_colors, styling_circles, Tree_circle_styling_dict);
+    DrawStaticPhaseLabelsRightAlignedViewBox("tree_plot", phases, {
+      marginTop: 28,
+      offsetX: 0,
+      spacingY: 16.5,
+      fontSize: "13px"
+    });
+});
+
+// == Rep tree leave buttons
+$("#RepTree_Uniprot").click(function(){
+    $("#RepTree_Uniprot").addClass("active");
+    $("#RepTree_Entrez").removeClass("active");
+    $("#RepTree_Protein").removeClass("active");
+    draw_tree(rep_tree_data, rep_tree_options, rep_circle_size);
+    changeLeavesLabels("rep_tree_plot", "UniProt", RepTree_label_dicts["UniProt"],rep_styling_circles);
+    DrawCircles('rep_tree_plot', rep_tree_circles, rep_tree_colors, rep_styling_circles, Tree_circle_styling_dict);
+    DrawStaticPhaseLabelsRightAlignedViewBox("rep_tree_plot", rep_phases, {
+        marginTop: 28,
+        offsetX: -5,
+        spacingY: 16.5,
+        fontSize: "13px"
+      });
+});
+$("#RepTree_Protein").click(function() {
+  $("#RepTree_Uniprot").removeClass("active");
+  $("#RepTree_Entrez").removeClass("active");
+  $("#RepTree_Protein").addClass("active");
+  draw_tree(rep_tree_data, rep_tree_options, rep_circle_size);
+  changeLeavesLabels("rep_tree_plot", "IUPHAR", RepTree_label_dicts["IUPHAR"],rep_styling_circles);
+  DrawCircles('rep_tree_plot', rep_tree_circles, rep_tree_colors, rep_styling_circles, Tree_circle_styling_dict);
+  DrawStaticPhaseLabelsRightAlignedViewBox("rep_tree_plot", rep_phases, {
+        marginTop: 28,
+        offsetX: -5,
+        spacingY: 16.5,
+        fontSize: "14px"
+      });
+});
+
+$("#RepTree_Entrez").click(function(){
+    $("#RepTree_Entrez").addClass("active");
+    $("#RepTree_Uniprot").removeClass("active");
+    $("#RepTree_Protein").removeClass("active");
+    draw_tree(rep_tree_data, rep_tree_options, rep_circle_size);
+    changeLeavesLabels("rep_tree_plot", "Gene", RepTree_label_dicts["Gene"],rep_styling_circles);
+    DrawCircles('rep_tree_plot', rep_tree_circles, rep_tree_colors, rep_styling_circles, Tree_circle_styling_dict);
+    DrawStaticPhaseLabelsRightAlignedViewBox("rep_tree_plot", rep_phases, {
+        marginTop: 28,
+        offsetX: -5,
+        spacingY: 16.5,
+        fontSize: "14px"
+      });
+});
+
+
+  var Label_dict = {'Inner':'Inner','Outer1':'Outer 1','Outer2':'Outer 2','Outer3':'Outer 3','Outer4':'Outer 4','Outer5':'Outer 5'}
+  Tree_datatypes_dict = {'Inner':'Continuous','Outer1':'Continuous','Outer2':'Continuous','Outer3':'Continuous','Outer4':'Continuous','Outer5':'Continuous'}
+
+function updateLeavesLabels_tree() {
+    let activeButton = document.querySelector(".tree-label-btn.btn-primary");
+    let activeLabelType = activeButton ? activeButton.getAttribute("data-value") : "IUPHAR";
+
+    // Get the correct label dictionary
+    let activeDict = Tree_label_dicts[activeLabelType];
+
+    changeLeavesLabels("tree_plot", activeLabelType, activeDict);
+}
+
+$(document).ready(function () {
+  $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+    const tabId = $(e.target).attr('href');
+
+    if (tabId === '#tree') {
+      d3.select('#tree_plot svg').remove();
+      d3.select('#legend_bars svg').remove();
+
+      draw_tree(tree_data, tree_options, circle_size);
+
+      // Detect which label button is active
+      let labelType = "IUPHAR"; // default fallback
+      if ($("#Tree_Uniprot").hasClass("active")) {
+        labelType = "UniProt";
+      } else if ($("#Tree_Entrez").hasClass("active")) {
+        labelType = "Gene";
+      }
+
+      // Update tree labels accordingly
+      changeLeavesLabels("tree_plot", labelType, Tree_label_dicts[labelType], styling_circles);
+      DrawCircles('tree_plot', Tree_circles, Tree_colors, styling_circles, Tree_circle_styling_dict);
+      DrawStaticPhaseLabelsRightAlignedViewBox("tree_plot", phases, {
+        marginTop: 28,
+        offsetX: 0,
+        spacingY: 16.5,
+        fontSize: "13px"
+      });
+      createDruggedLegendBars('legend_bars', Bar_Tree_circles, Bar_colors, Tree_bar_styling, Tree_datatype);
+    }
+
+    if (tabId === '#repurposed') {
+      d3.select('#rep_tree_plot svg').remove();
+      d3.select('#rep_legend_bars svg').remove();
+
+      draw_tree(rep_tree_data, rep_tree_options, rep_circle_size);
+
+      // Detect which label button is active
+      let ReplabelType = "IUPHAR"; // default fallback
+      if ($("#RepTree_Uniprot").hasClass("active")) {
+        ReplabelType = "UniProt";
+      } else if ($("#RepTree_Entrez").hasClass("active")) {
+        ReplabelType = "Gene";
+      }
+
+      changeLeavesLabels("rep_tree_plot", ReplabelType, RepTree_label_dicts[ReplabelType], rep_styling_circles);
+      DrawCircles('rep_tree_plot', rep_tree_circles, rep_tree_colors, rep_styling_circles, Tree_circle_styling_dict);
+      // DrawLabelsToLeftOfNode("rep_tree_plot", rep_phases, "5HT1A", 18.5, -32);
+      DrawStaticPhaseLabelsRightAlignedViewBox("rep_tree_plot", rep_phases, {
+        marginTop: 28,
+        offsetX: -5,
+        spacingY: 16.5,
+        fontSize: "13px"
+      });
+      createDruggedLegendBars('rep_legend_bars', rep_Bar_tree_circles, rep_Bar_colors, rep_Tree_bar_styling, rep_Tree_datatype);
+    }
   });
+
+  // Trigger correct tab on page load
+  const activeTab = $('.nav-tabs .active a').attr('href');
+  if (activeTab === '#tree') {
+    $('a[href="#tree"]').trigger('shown.bs.tab');
+  } else if (activeTab === '#repurposed') {
+    $('a[href="#repurposed"]').trigger('shown.bs.tab');
+  }
+});
+
 </script>
 {% endblock %}

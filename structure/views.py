@@ -27,7 +27,7 @@ from common.models import ReleaseNotes
 from common.alignment import Alignment, GProteinAlignment
 from residue.models import Residue, ResidueNumberingScheme, ResiduePositionSet
 from contactnetwork.models import Interaction
-from mapper.views import LandingPage
+from mapper.views import DataMapperHome
 from ligand.models import LigandPeptideStructure
 from ligand.functions import standardize_smiles
 
@@ -1728,40 +1728,27 @@ class StructureStatistics(TemplateView):
                 # RIGHT NOW THE DATA IS SMALL SO WE CAN GET AWAY WITH THIS
                 result_dict = {k: v[0] for k, v in result_dict.items()}
 
-                proteins = list(Protein.objects.filter(entry_name__in=result_dict.keys()
-                ).values('entry_name', 'name').order_by('entry_name'))
+                # Mapping for Value2
+                status_color_map = {
+                    'ARRB1': 'orange',
+                    'ARRB2': 'purple',
+                    'ARRC': "mediumturquoise",
+                    'ARRS': 'cornflowerblue'
+                }
 
-                names_conversion_dict = {item['entry_name']: item['name'] for item in proteins}
+                # Creating the new dictionary
+                results_updated_dict = {
+                    key: {
+                        'Value1': value,
+                        'Value2': status_color_map.get(value, '#FFFFFF')  # Default to black if key not found
+                    }
+                    for key, value in result_dict.items()
+                }
 
-                names = list(names_conversion_dict.values())
+                gpcr_data = DataMapperHome.GenerateGPCRomeDataStructure(data_type="Classic")
+                updated_data = DataMapperHome.update_nested_GPCRome_data(gpcr_data["Data"], results_updated_dict)
 
-                IUPHAR_to_uniprot_dict = {item['name']: item['entry_name'] for item in proteins}
-
-                families = ProteinFamily.objects.all()
-                datatree = {}
-                conversion = {}
-
-                for item in families:
-                    if len(item.slug) == 3 and item.slug not in datatree.keys():
-                        datatree[item.slug] = {}
-                        conversion[item.slug] = item.name
-                    if len(item.slug) == 7 and item.slug not in datatree[item.slug[:3]].keys():
-                        datatree[item.slug[:3]][item.slug[:7]] = {}
-                        conversion[item.slug] = item.name
-                    if len(item.slug) == 11 and item.slug not in datatree[item.slug[:3]][item.slug[:7]].keys():
-                        datatree[item.slug[:3]][item.slug[:7]][item.slug[:11]] = []
-                        conversion[item.slug] = item.name
-                    if len(item.slug) == 15 and item.slug not in datatree[item.slug[:3]][item.slug[:7]][item.slug[:11]]:
-                        datatree[item.slug[:3]][item.slug[:7]][item.slug[:11]].append(item.name)
-
-                datatree2 = LandingPage.convert_keys(datatree, conversion)
-                datatree2.pop('Parent family', None)
-                datatree3 = LandingPage.filter_dict(datatree2, names)
-                data_converted = {names_conversion_dict[key]: {'Value1':value} for key, value in result_dict.items()}
-                data_full = {"NameList": datatree3, "DataPoints": data_converted, "LabelConversionDict":IUPHAR_to_uniprot_dict}
-                context['GPCRome_Arrestin_data'] = json.dumps(data_full["NameList"])
-                context['GPCRome_Arrestin_data_variables'] = json.dumps(data_full['DataPoints'])
-                context['GPCRome_Arrestin_Label_Conversion'] = json.dumps(data_full['LabelConversionDict'])
+                context['GPCRome_data'] = json.dumps(updated_data)
 
             else:
                 #Adjust call to exclude odorants
@@ -1803,47 +1790,33 @@ class StructureStatistics(TemplateView):
                         elif 'active' in result_dict[key]['states']:
                             result_dict[key]['status'] = 'Active'
                         elif 'inactive' in result_dict[key]['states']:
-                            result_dict[key]['status'] = 'Inactive'
+                            result_dict[key]['status'] = 'Inactive'                
 
                 # Optionally, reduce to key-status dictionary
                 result_dict = {k: v['status'] for k, v in result_dict.items()}
 
-                proteins = list(Protein.objects.filter(entry_name__in=result_dict.keys()
-                ).values('entry_name', 'name').order_by('entry_name'))
+                # Mapping for Value2
+                status_color_map = {
+                    'Both': 'blue',
+                    'Inactive': 'red',
+                    'Active': 'forestgreen'
+                }
 
-                names_conversion_dict = {item['entry_name']: item['name'] for item in proteins}
+                # Creating the new dictionary
+                results_updated_dict = {
+                    key: {
+                        'Value1': value,
+                        'Value2': status_color_map.get(value, '#FFFFFF')  # Default to black if key not found
+                    }
+                    for key, value in result_dict.items()
+                }
 
-                data = list(names_conversion_dict.keys())
-                names = list(names_conversion_dict.values())
+                gpcr_data = DataMapperHome.GenerateGPCRomeDataStructure(data_type="Classic")
+                updated_data = DataMapperHome.update_nested_GPCRome_data(gpcr_data["Data"], results_updated_dict)
 
-                IUPHAR_to_uniprot_dict = {item['name']: item['entry_name'] for item in proteins}
+                context['GPCRome_data'] = json.dumps(updated_data)
 
-                families = ProteinFamily.objects.all()
-                datatree = {}
-                conversion = {}
-
-                for item in families:
-                    if len(item.slug) == 3 and item.slug not in datatree.keys():
-                        datatree[item.slug] = {}
-                        conversion[item.slug] = item.name
-                    if len(item.slug) == 7 and item.slug not in datatree[item.slug[:3]].keys():
-                        datatree[item.slug[:3]][item.slug[:7]] = {}
-                        conversion[item.slug] = item.name
-                    if len(item.slug) == 11 and item.slug not in datatree[item.slug[:3]][item.slug[:7]].keys():
-                        datatree[item.slug[:3]][item.slug[:7]][item.slug[:11]] = []
-                        conversion[item.slug] = item.name
-                    if len(item.slug) == 15 and item.slug not in datatree[item.slug[:3]][item.slug[:7]][item.slug[:11]]:
-                        datatree[item.slug[:3]][item.slug[:7]][item.slug[:11]].append(item.name)
-
-                datatree2 = LandingPage.convert_keys(datatree, conversion)
-                datatree2.pop('Parent family', None)
-                datatree3 = LandingPage.filter_dict(datatree2, names)
-                data_converted = {names_conversion_dict[key]: {'Value1':value} for key, value in result_dict.items()}
-                data_full = {"NameList": datatree3, "DataPoints": data_converted, "LabelConversionDict":IUPHAR_to_uniprot_dict}
-                context['GPCRome_data'] = json.dumps(data_full["NameList"])
-                context['GPCRome_data_variables'] = json.dumps(data_full['DataPoints'])
-                context['GPCRome_Label_Conversion'] = json.dumps(data_full['LabelConversionDict'])
-
+                # fetech the Complexes data
                 complexes_count = StructureLigandInteraction.objects.filter(annotated=True).exclude(
                         structure__structure_type__slug__startswith='af-').values(
                             'structure_id__protein_conformation_id__protein__parent__entry_name'
@@ -1864,44 +1837,22 @@ class StructureStatistics(TemplateView):
                 for a in complexes_list:
                     complexes_dict[a['structure_id__protein_conformation_id__protein__parent__entry_name']] = a['c']
 
-                complexes_proteins = list(Protein.objects.filter(entry_name__in=complexes_dict.keys()
-                ).values('entry_name', 'name').order_by('entry_name'))
+                # Creating the new dictionary
+                complexes_updated_dict = {
+                    key: {
+                        'Value1': value,
+                    }
+                    for key, value in complexes_dict.items()
+                }
 
-                names_complexes_dict = {item['entry_name']: item['name'] for item in complexes_proteins}
+                gpcr_data_complexes = DataMapperHome.GenerateGPCRomeDataStructure(data_type="Classic")
+                complexes_updated_data = DataMapperHome.update_nested_GPCRome_data(gpcr_data_complexes["Data"], complexes_updated_dict)
 
-                names_complexes = list(names_complexes_dict.values())
-
-                IUPHAR_to_uniprot_complexes = {item['name']: item['entry_name'] for item in complexes_proteins}
-                datatree4 = LandingPage.filter_dict(datatree2, names_complexes)
-                data_complexes = {names_complexes_dict[key]: {'Value1':value} for key, value in complexes_dict.items()}
-                complexes_full = {"NameList": datatree4, "DataPoints": data_complexes, "LabelConversionDict":IUPHAR_to_uniprot_complexes}
-                context['GPCRome_data_variables_complexes'] = json.dumps(complexes_full['DataPoints'])
-
+                context['GPCRome_data_complexes'] = json.dumps(complexes_updated_data)
 
                 ### TESTING GPCROME FOR ODORANTS
                 all_odorant = Protein.objects.filter(species_id=1, parent_id__isnull=True, accession__isnull=False
                                                     ).filter(Q(family_id__slug__startswith='007') | Q(family_id__slug__startswith='008'))
-                odorant_names = list(Protein.objects.filter(species_id=1, parent_id__isnull=True, accession__isnull=False
-                                                    ).filter(Q(family_id__slug__startswith='007') | Q(family_id__slug__startswith='008')).values(
-                                                    'entry_name', 'name').order_by('entry_name'))
-                odorant_families = ProteinFamily.objects.filter(Q(slug__startswith='007') | Q(slug__startswith='008'))
-
-                odoranttree = {}
-                conversion = {}
-
-                for item in odorant_families:
-                    if len(item.slug) == 3 and item.slug not in odoranttree.keys():
-                        odoranttree[item.slug] = {}
-                        conversion[item.slug] = item.name
-                    if len(item.slug) == 7 and item.slug not in odoranttree[item.slug[:3]].keys():
-                        odoranttree[item.slug[:3]][item.slug[:7]] = {}
-                        conversion[item.slug] = item.name
-                    if len(item.slug) == 11 and item.slug not in odoranttree[item.slug[:3]][item.slug[:7]].keys():
-                        odoranttree[item.slug[:3]][item.slug[:7]][item.slug[:11]] = []
-                        conversion[item.slug] = item.name
-                    if len(item.slug) == 15 and item.slug not in odoranttree[item.slug[:3]][item.slug[:7]][item.slug[:11]]:
-                        odoranttree[item.slug[:3]][item.slug[:7]][item.slug[:11]].append(item.name)
-
                 odorant_struct = Structure.objects.filter(Q(protein_conformation__protein__family_id__slug__startswith='007') | Q(protein_conformation__protein__family_id__slug__startswith='008')).values(
                                                         'protein_conformation__protein__parent__entry_name'
                                                     ).annotate(
@@ -1917,37 +1868,16 @@ class StructureStatistics(TemplateView):
 
                 odorant_struct_dict.pop(None)
 
-                odorant_conversion_dict = {item['entry_name']: item['name'] for item in odorant_names}
-                odoranttree2 = LandingPage.convert_keys(odoranttree, conversion)
-                names_odorant = list(odorant_conversion_dict.values())
-                odoranttree3 = LandingPage.filter_dict(odoranttree2, names_odorant)
+                updated_odorant_struct_dict = {
+                    key: {
+                        'Value1': value,
+                    }
+                    for key, value in odorant_struct_dict.items()
+                }
 
-                # Splitting the families into three dictionaries
-                odorant_receptors = odoranttree3['Class O2 (tetrapod specific odorant)']['Odorant receptors']
-                # Families 1 to 4
-                families_1_to_4 = {key: odorant_receptors[key] for key in odorant_receptors if key[-2:] in [' 1', ' 2', ' 3', ' 4',]}
-                # Families 5 to 10
-                families_5_to_9 = {key: odorant_receptors[key] for key in odorant_receptors if key[-2:] in [' 5', ' 6', ' 7', ' 8', ' 9']}
-                # Families 11 to 14
-                families_10_to_14 = {key: odorant_receptors[key] for key in odorant_receptors if key.endswith(('10', '11', '12', '13', '14'))}
-
-                odoranttree4 = {}
-                odoranttree4['Class O1 (fish-like odorant)'] = odoranttree3['Class O1 (fish-like odorant)']
-                odoranttree4['Class O2 (tetrapod specific odorant) EXT'] = {'Odorant receptors' : families_1_to_4}
-                odoranttree4['Class O2 (tetrapod specific odorant) MID'] = {'Odorant receptors' : families_5_to_9}
-                odoranttree4['Class O2 (tetrapod specific odorant) INT'] = {'Odorant receptors' : families_10_to_14}
-
-                odorant_data = {odorant_conversion_dict[key]: {'Value1':value} for key, value in odorant_struct_dict.items()}
-
-                odorant_proteins = list(Protein.objects.filter(entry_name__in=odorant_struct_dict.keys()
-                ).values('entry_name', 'name').order_by('entry_name'))
-
-                odorant_IUPHAR_to_Uniprot = {item['name']: item['entry_name'] for item in odorant_proteins}
-
-                odorant_full = {"NameList": odoranttree4, "DataPoints": odorant_data, "LabelConversionDict":odorant_IUPHAR_to_Uniprot}
-                context['GPCRome_odorant_data'] = json.dumps(odorant_full["NameList"])
-                context['GPCRome_odorant_data_variables'] = json.dumps(odorant_full['DataPoints'])
-                context['GPCRome_odorant_Label_Conversion'] = json.dumps(odorant_full['LabelConversionDict'])
+                gpcr_data_odorant = DataMapperHome.GenerateGPCRomeDataStructure(data_type="Odorant")
+                Odorant_updated_data = DataMapperHome.update_nested_GPCRome_data(gpcr_data_odorant["Data"], updated_odorant_struct_dict)
+                context['GPCRome_data_odorant'] = json.dumps(Odorant_updated_data)
 
         return context
 
