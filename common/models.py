@@ -12,8 +12,8 @@ import re
 
 
 class Citation(models.Model):
-    publication = models.ForeignKey('Publication', on_delete=models.CASCADE)
-    url = models.TextField()
+    publication = models.ManyToManyField('Publication')
+    url = models.TextField(unique=True)
     video = models.TextField(null=True)
     docs = models.TextField(null=True)
     main = models.TextField(null=True)
@@ -24,6 +24,17 @@ class Citation(models.Model):
 
     class Meta():
         db_table = 'citation'
+
+class DefaultCitation(models.Model):
+    publication = models.ManyToManyField('Publication',default=None)
+    main = models.TextField(null=False,unique=True)
+
+
+    def __str__(self):
+        return self.main
+
+    class Meta():
+        db_table = 'default_citation'
 
 
 class WebResource(models.Model):
@@ -70,10 +81,10 @@ class Publication(models.Model):
 
 
     @staticmethod
-    def get_or_create_from_type(identifier, wr):
+    def get_or_create_from_type(identifier, wr,force=False):
         if isinstance(identifier, int):
             identifier = str(identifier)
-        if len(identifier) > 0:
+        if len(identifier) > 0 or (len(identifier) < 0 and force):
             # First test if identifier for publication already exists
             try:
                 wl = WebLink.objects.get(index__iexact=identifier, web_resource=wr)
