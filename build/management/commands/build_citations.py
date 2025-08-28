@@ -61,22 +61,24 @@ class Command(ParseExcel):
         wr = WebResource.objects.get(slug='doi')
         pubjournal = None
 
+        #Create DefaultCitation objects
         default_refs_pub_dict = {}
         for default_ref_name, vals in default_refs.items():
             pubs = []
             for ypub in sorted(vals, key = lambda x:x['Order']):
                 doi = ypub['DOI']
                 pub = False
-                print('doi:',ypub['DOI'])
-
                 title = ypub['Title']
                 there_is_title = len(title) > 0
                 year = ypub['Year']
+                journal = ypub["Journal"]
                 created_pj = False
                 pubjournal = None
-                if there_is_title:
-                    pubjournal, created_pj = PublicationJournal.objects.get_or_create(defaults={"name": ypub["Journal"], 'slug': slugify(ypub['Journal'])}, name__iexact=ypub["Journal"])
+                if there_is_title and journal:
+                    pubjournal, created_pj = PublicationJournal.objects.get_or_create(defaults={"name": journal, 'slug': slugify(ypub['Journal'])}, name__iexact=ypub["Journal"])
                 pub = self.create_publication(doi, wr, pubjournal,force=there_is_title,delete_pj=created_pj)
+                
+                #Add title and year if missing
                 edit = False
                 if there_is_title and not pub.title:
                     pub.title = title
@@ -86,10 +88,9 @@ class Command(ParseExcel):
                     edit = True
                 if edit:
                     pub.save()
-
-                print(pub)
                 if pub:
                     pubs.append(pub)
+
             default_refs_pub_dict[default_ref_name] = pubs
             dcit, created = DefaultCitation.objects.get_or_create(main=default_ref_name)
             for pub in pubs:
@@ -97,6 +98,7 @@ class Command(ParseExcel):
             dcit.save()
             self.logger.info('Created default citation: {}'.format(dcit))
 
+        #Create Citation objects
         for url, vals in refs.items():
             if vals['Default']!=0:
                 main = vals['Default']
@@ -117,19 +119,17 @@ class Command(ParseExcel):
                 doi = ypub['DOI']
                 title = ypub['Title']
                 year = ypub['Year']
+                journal = ypub["Journal"]
                 there_is_title = len(title) > 0
                 pub = False
-                print('juas juas1')
-                
-                print('juas juas2')
-
                 created_pj = False
                 pubjournal = None
-                if there_is_title:
-                    pubjournal, created_pj = PublicationJournal.objects.get_or_create(defaults={"name": ypub["Journal"], 'slug': slugify(ypub['Journal'])}, name__iexact=ypub["Journal"])
+                if there_is_title and journal:
+                    pubjournal, created_pj = PublicationJournal.objects.get_or_create(defaults={"name": journal, 'slug': slugify(ypub['Journal'])}, name__iexact=ypub["Journal"])
 
                 pub = self.create_publication(doi, wr, pubjournal,force=there_is_title,delete_pj=created_pj)
 
+                #Add title and year if missing
                 edit = False
                 if there_is_title and not pub.title:
                     pub.title = title
@@ -141,13 +141,11 @@ class Command(ParseExcel):
                     pub.save()
                 if pub:
                     pubs.append(pub)
-            print('juas juas4')
+
             cit, created = Citation.objects.get_or_create(defaults={'video':vid,'main':main,'docs':None,'page_name':page},url=url)
 
             for pub in pubs:
-                print('juas pub', pub)
                 cit.publication.add(pub)
-            print('juas juas5')
             cit.save()
             self.logger.info('Created citation: {}'.format(cit))
 
