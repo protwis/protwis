@@ -3,18 +3,26 @@ from django.core.cache import cache
 
 from common.models import Citation
 
-def current_site(request):
-    domain_switches = {"gpcrdb.org" : "gpcr", "gproteindb.org" : "gprotein", "arrestindb.org": "arrestin", "biasedsignalingatlas.org": "biasedsignalingatlas"}
-    domain = request.get_host().lower()
+domain_switches = {"gpcrdb.org" : "gpcr", "gproteindb.org" : "gprotein", "arrestindb.org": "arrestin", "biasedsignalingatlas.org": "biasedsignalingatlas"}
+inverse_domain_switches = {v : k for k,v in domain_switches.items()}
 
+def get_current_site(domain, return_domain=False):
     if not domain in domain_switches:
-        return {
-           'current_site': settings.DEFAULT_SITE
-         }
+        if return_domain:
+            return inverse_domain_switches[settings.DEFAULT_SITE]
+        else:
+            return settings.DEFAULT_SITE
     else:
-        return {
-           'current_site': domain_switches[domain]
-         }
+        if return_domain:
+            return domain
+        else:
+            return domain_switches[domain]
+
+def current_site(request):
+    domain = request.get_host().lower()
+    return {
+    'current_site': get_current_site(domain)
+    }
 
 def site_title(request):
     domain = current_site(request)["current_site"]
