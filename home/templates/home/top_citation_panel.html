@@ -1,0 +1,156 @@
+<div class="top-citation-panel" id="top_citation_panel">
+    <div class="container">
+        <div class="text-right">
+            <u><a class="collapse-toggle" role="button" aria-expanded="false"  data-toggle="collapse" aria-controls="top_citation_panel_collapsable" data-target="#top_citation_panel_collapsable"><span>Citation</span><i class="bi bi-chevron-right ms-2"></i></a></u>
+            
+        </div>
+        <div class="collapse top-citation-panel-content" id="top_citation_panel_collapsable">
+            <div id="top_citation_panel_content"><p>No citations</p></div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+  $(document).ready(function () {
+
+        function get_publication_html(publications) {
+            var publication_html = '<ul>';
+            var publications_found = false;
+            $.each(publications, function(index, value) {
+                publication_html += '<li>';
+                if (value['title']) {
+                    publication_html += value['title'];
+                    if (value['title'].slice(-1) != '.') {
+                        publication_html += '.'
+                    }
+                }
+                if (value['authors']) {
+                    publication_html += '<br\>' + value['authors'];
+                    if (value['authors'].slice(-1) != '.') {
+                        publication_html += '.'
+                    }
+                }
+                if (value['doi'] && value['year'] && !value['journal_name']) {
+                    publication_html +='<br\><u><a href="https://doi.org/'+value['doi']+'" target="_blank">'+
+                        'https://doi.org/'+value['doi']+'</a></u>'+', '+value['year'];
+                } else if (value['doi'] && !value['year'] && !value['journal_name']) {
+                    publication_html +='<br\><u><a href="https://doi.org/'+value['doi']+'" target="_blank">'+
+                        'https://doi.org/'+value['doi']+'</a></u>';
+                } else if (value['doi'] && value['year'] && value['journal_name']) {
+                    publication_html +='<br\><u><a href="https://doi.org/'+value['doi']+'" target="_blank">'+'<i>'+value['journal_name']+'</i>, '+value['year']+'</a></u>';
+                } else if (!value['doi']) {
+                    let journal_name_available = false;
+                    if (value['journal_name']) {
+                        publication_html += '<br><i>'+value['journal_name']+'</i>';
+                        journal_name_available = true;
+                    } 
+                    if (value['year']) {
+                        if (journal_name_available) {
+                            publication_html += ', '
+                        } else {
+                            publication_html += '<br>'
+                        }
+                        publication_html += value['year'];
+                    }
+                    publication_html += '.';
+                }
+                publication_html += '</li>';
+                publications_found = true;
+            });
+            publication_html += '</ul>';
+            return [publication_html,publications_found]
+        }
+
+        function numberToWords(num) {
+            const ones = ["", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"];
+            const teens = ["ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", 
+                            "sixteen", "seventeen", "eighteen", "nineteen"];
+            const tens = ["", "", "twenty", "thirty", "forty", "fifty", 
+                            "sixty", "seventy", "eighty", "ninety"];
+
+            if (num === 0) return "zero";
+
+            if (num < 10) return ones[num];
+            if (num < 20) return teens[num - 10];
+            if (num < 100) 
+                return tens[Math.floor(num / 10)] + (num % 10 ? "-" + ones[num % 10] : "");
+            if (num < 1000) 
+                return ones[Math.floor(num / 100)] + " hundred" + (num % 100 ? " " + numberToWords(num % 100) : "");
+            if (num < 10000) 
+                return ones[Math.floor(num / 1000)] + " thousand" + (num % 1000 ? " " + numberToWords(num % 1000) : "");
+
+            return "number too big";
+        }
+
+
+        $(document).on("click", function(event) {
+            var $top_citation_panel = $("#top_citation_panel");
+            var $top_citation_panel_content = $("#top_citation_panel_content");
+
+                if (!($(event.target).is($top_citation_panel) || $($top_citation_panel).has($(event.target)).length > 0)) {
+                    $("#top_citation_panel_collapsable").collapse('hide');
+                } 
+                else if (!($(event.target).is($top_citation_panel_content) || $($top_citation_panel_content).has($(event.target)).length > 0)) {
+                    $("#top_citation_panel_collapsable").collapse('toggle');
+                }
+        });
+
+        $.get('/citation_by_url/object/',{ url: removeQuery(window.location.href) }, function(data) {
+            
+            var publication_html = '';
+            var default_publication_html = '';
+            var main = data[1];
+            var only_default_citation = data[2];
+            var no_citation = data[3];
+            var default_citation_data = data[4];
+            var publications_found = false;
+            var msg = '';
+            var gpcrdb_is_main = false;
+
+            if (no_citation) {return};
+
+            if (data[0].length > 0) {
+                let r_pub = get_publication_html(data[0][0]['publication']);
+                publication_html = r_pub[0];
+                publications_found = r_pub[1];
+            }
+
+            let r_pub = get_publication_html(default_citation_data[0]['publication']);
+            default_publication_html = r_pub[0];
+            if (!publications_found) {
+                publications_found = r_pub[1];
+            }
+            var lower_main = main.toLowerCase();
+            if (only_default_citation || publications_found) {
+                $("body nav:first").css("margin-bottom", "0px");
+                $(".top-citation-panel").show();
+
+                if (main) {
+                    
+                    if (lower_main.indexOf("gpcr") !== -1) {
+                        msg = 'Please support GPCRdb development by citing the both the latest GPCRdb paper as well as the paper(s) describing the given page.';
+                        gpcrdb_is_main = true;
+                    } else if (lower_main.indexOf("arrestin") !== -1) {
+                        msg = 'When using ArrestinDb for publications, please support the development by citing the paper.';
+                    } else if (lower_main.indexOf("gprotein") !== -1) {
+                        msg =  'When using GproteinDb for publications, please support the development by citing its '+numberToWords(default_citation_data[0]['publication'].length)+' papers, as each paper describes different data and tools.'
+                    } else if (lower_main.indexOf("bias") !== -1) {
+                        msg = 'When using BSA for publications, please support the development by citing the paper.';
+                    }
+                }
+                
+                if (lower_main.indexOf("gpcr") !== -1) {
+                    $("#top_citation_panel_content").html(msg+'<br><br>' +
+                        '<b>Latest GPCRdb paper:</b><br>'+
+                        default_publication_html +
+                        '<b>Current page paper(s):</b><br>'+
+                        publication_html
+                    );
+                } else {
+                    $("#top_citation_panel_content").html(msg+'<br><br>' +
+                        default_publication_html
+                    );
+                }
+            }
+        });
+    });
+</script>
