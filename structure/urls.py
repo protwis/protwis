@@ -7,7 +7,9 @@ from django.views.generic import TemplateView
 from django.views.decorators.cache import cache_page
 
 urlpatterns = [
-    url(r'^$', cache_page(60*60*24)(StructureBrowser.as_view()), name='structure_browser'),
+    url(r'^$', StructureBrowser.as_view(), name='structure_browser'),
+    url(r'^data/$', cache_page(60 * 60 * 24)(StructureDataJsonView.as_view()), name='structure_data_json'),
+    # url(r'^data/$', StructureDataJsonView.as_view(), name='structure_data_json'),
     # url(r'^$', StructureBrowser.as_view(), name='structure_browser'),
     url(r'^g_protein_structure_browser$', cache_page(60*60*24)(EffectorStructureBrowser.as_view(effector='gprot')), name='g_protein_structure_browser'),
     # url(r'^g_protein_structure_browser$', EffectorStructureBrowser.as_view(effector='gprot'), name='g_protein_structure_browser'),

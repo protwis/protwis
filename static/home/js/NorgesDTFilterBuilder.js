@@ -56,7 +56,7 @@ function CreateColumnFilters(datatable_selector,column_number, column_range, fil
         // ## Filter type list of valid inputs ##
         // ######################################
 
-        const Filter_type_list = ['Multi-select-exact','Multi-select-unspecific','Range-float-vertical','Range-float-horizontal','Range-select-vertical','Range-select-horizontal']
+        const Filter_type_list = ['Multi-select-exact','Multi-select-unspecific','Range-float-vertical','Range-float-horizontal','Range-select-vertical','Range-select-horizontal','Multi-select-exact-filter']
         
         // ######################################################################
         // # Check if column_number is an integer in the range of the DataTable #
@@ -346,10 +346,103 @@ function createDropdownFilters(api,column_filters) {
                 } // End of is searchable
             }); // End of multi-selct filter
 
+            } else if (filter_type === 'Multi-select-exact-filter') {
+                api.columns([column_number]).every(function () {
+                    if (!this.searchable()) return;
+
+                    var that = this;
+                    var col = this.index();
+                    var selected_cell = that.column(col).header();
+                    var selectId = Table_id + '_Filter' + col;
+
+                    // render header control
+                    selected_cell.innerHTML = '<select id="'+selectId+'" class="select2" style="width: 80%;"></select>';
+
+                    // helpers
+                    function escapeRegex(s){ return String(s||'').replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+                    function decodeHTML(s){
+                    const div = document.createElement('div');
+                    div.innerHTML = String(s || '');
+                    return div.textContent || div.innerText || '';
+                    }
+                    function normalizeText(s){
+                    // turn <br> to \n, strip tags, decode entities → plain text
+                    const hasTags = /<[^>]+>/.test(s) || /&[a-z#0-9]+;/.test(s);
+                    if (!hasTags) return String(s || '');
+                    const div = document.createElement('div');
+                    div.innerHTML = String(s || '').replace(/<br\s*\/?>/gi, '\n');
+                    return div.textContent || div.innerText || '';
+                    }
+
+                    // ✅ collect tokens from the raw data when it's an array of names (best),
+                    //    otherwise from the orthogonal "filter" text (fallback)
+                    var tokenSet = new Set();
+
+                    var cells = api.cells(null, col, { search: 'applied' });
+                    cells.every(function () {
+                    var raw = this.data();
+
+                    if (Array.isArray(raw)) {
+                        // expected for ligands / endo_ligands: [{id, name}, ...]
+                        raw.forEach(function(x){
+                        var nm = x && (x.name || x.text || x.label);
+                        if (!nm) return;
+                        nm = decodeHTML(nm).trim();
+                        if (nm) tokenSet.add(nm);
+                        });
+                    } else {
+                        // fallback: use rendered "filter" text, then split
+                        var v = this.render('filter');
+                        v = normalizeText(v);
+                        v.split(/\s*(?:\n|,|\|)\s*/g).forEach(function(tok){
+                        tok = tok && tok.trim();
+                        if (tok) tokenSet.add(tok);
+                        });
+                    }
+                    });
+
+                    var tokens = Array.from(tokenSet).sort(function(a,b){
+                    return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
+                    });
+
+                    // build select (as text, not HTML)
+                    var $sel = $('#'+selectId);
+
+                    // Make it a real multi-select so the browser doesn't auto-select the first option
+                    $sel.prop('multiple', true);
+
+                    // Populate options (no empty option)
+                    tokens.forEach(function(tok){
+                    $('<option>', { value: tok, text: tok }).appendTo($sel);
+                    });
+
+                    // Init Select2
+                    $sel.select2({
+                    multiple: true,
+                    closeOnSelect: true,
+                    placeholder: { text: 'Filter' },
+                    dropdownAutoWidth: true
+                    });
+
+                    // Ensure no selection on init (helps when stateSave or the browser cached a value)
+                    $sel.val(null).trigger('change');
+                    
+                    // selection → exact token match within newline/comma/pipe-delimited list
+                    $sel.on('change', function(){
+                    var vals = ($(this).val() || []).map(escapeRegex);
+                    var rx = '';
+                    if (vals.length) {
+                        // boundaries: start/end or whitespace/comma/pipe
+                        rx = '(?:^|[\\s,|])(?:' + vals.join('|') + ')(?=$|[\\s,|])';
+                    }
+                    that.search(rx, true, false).draw();
+                    });
+                });
+
             // #########################################################
             // ## Range filter float (vertical and horizontal layout) ##
             // #########################################################
-
+            
             } else if (filter_type === "Range-float-vertical" ||  filter_type === "Range-float-horizontal") {
                 api.columns([column_number]).every(function() {
                 if (this.searchable()) {

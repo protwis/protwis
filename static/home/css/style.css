@@ -222,6 +222,13 @@ input.form-control {
   margin-right: -10px;
 }
 
+.dropdown-submenu > a::after {
+  position: absolute;
+  right: 5%;    /* stick to the far right */
+  top: 20%;
+  transform: translateY(-20%);
+}
+
 .dropdown-submenu:hover > a::after {
   border-left-color: #fff;
 }
@@ -340,7 +347,6 @@ a.external_link:link, a.external_link:visited, a.external_link:hover, a.external
     border-radius: 8px;
     text-align: center;
     position: relative;
-    /* max-width: 400px; */
     width: 60%;
 }
 

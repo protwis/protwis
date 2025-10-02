@@ -129,7 +129,7 @@ class Publication(models.Model):
                 term=doi
                 ))
             self.update_from_pubmed_data(record['IdList'][0])
-            if not doi=='10.21203/RS.3.RS-354878/V1':
+            if not doi in {'10.21203/RS.3.RS-354878/V1'} or doi.lower() in {'10.1038/S44386-025-00010-9'.lower()}:
                 return True
         except:
             return False

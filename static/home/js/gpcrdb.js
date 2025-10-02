@@ -268,7 +268,7 @@ function prepareExportTable(clonedTable) {
 function getReference(keys, callback) {
   $.ajax({
     url: '/common/getreference/',
-    data: { keys: keys },
+    data: { keys: keys.toUpperCase() },
     type: 'GET',
     async: true,
     dataType: 'json',
