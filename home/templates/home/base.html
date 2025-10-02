@@ -95,27 +95,27 @@
 <script src="{% static 'home/js/colors-pastel.js' %}"></script>
 
 <script type="text/javascript">
-  $(document).ready(function () {
+    $(document).ready(function () {
         $('[data-submenu]').submenupicker();
 
         // --- Helper: clear submenu "open/active" state inside a dropdown ---
         function resetSubmenus($scope) {
-        // 1) Reset only nested submenus (not the top-level dropdown)
-        $scope.find('.dropdown-submenu')
-            .removeClass('show open')
-            .children('a,[data-toggle="dropdown"]')
-            .attr('aria-expanded', 'false')
-            .removeClass('active');
+            // 1) Reset only nested submenus (not the top-level dropdown)
+            $scope.find('.dropdown-submenu')
+                .removeClass('show open')
+                .children('a,[data-toggle="dropdown"]')
+                .attr('aria-expanded', 'false')
+                .removeClass('active');
 
-        // 2) IMPORTANT: remove .show and any inline styles from nested menus
-        //    (don't call .hide(), which leaves display:none inline)
-        $scope.find('.dropdown-submenu > .dropdown-menu')
-            .stop(true, true)
-            .removeClass('show')
-            .removeAttr('style'); // clears display:none added by animations
+            // 2) IMPORTANT: remove .show and any inline styles from nested menus
+            //    (don't call .hide(), which leaves display:none inline)
+            $scope.find('.dropdown-submenu > .dropdown-menu')
+                .stop(true, true)
+                .removeClass('show')
+                .removeAttr('style'); // clears display:none added by animations
 
-        // Optional: clear focus that can look like a stuck highlight
-        $scope.find('a, button').blur();
+            // Optional: clear focus that can look like a stuck highlight
+            $scope.find('a, button').blur();
         }
 
         // Dropdown menu behavior
@@ -125,48 +125,48 @@
         let currentDropdown = null;
 
         $('.navbar .dropdown').on('mouseenter', function () {
-        const $this = $(this);
+            const $this = $(this);
 
-        clearTimeout(closeTimeout);
-        clearTimeout(openTimeout);
+            clearTimeout(closeTimeout);
+            clearTimeout(openTimeout);
 
-        // If moving to a new dropdown, close & reset the previous one immediately
-        if (currentDropdown && currentDropdown[0] !== $this[0]) {
-            currentDropdown.find('.dropdown-menu').first().stop(true, true).slideUp(200);
-            resetSubmenus(currentDropdown); // <-- NEW
-        }
+            // If moving to a new dropdown, close & reset the previous one immediately
+            if (currentDropdown && currentDropdown[0] !== $this[0]) {
+                currentDropdown.find('.dropdown-menu').first().stop(true, true).slideUp(200);
+                resetSubmenus(currentDropdown); // <-- NEW
+            }
 
-        // Only open after sustained hover
-        openTimeout = setTimeout(() => {
-            if (!$this.is(':hover')) return;
-            currentDropdown = $this;
-            currentDropdown.find('.dropdown-menu').first().stop(true, true).slideDown();
-        }, HOVER_OPEN_DELAY);
+            // Only open after sustained hover
+            openTimeout = setTimeout(() => {
+                if (!$this.is(':hover')) return;
+                currentDropdown = $this;
+                currentDropdown.find('.dropdown-menu').first().stop(true, true).slideDown();
+            }, HOVER_OPEN_DELAY);
         });
 
         $('.navbar .dropdown').on('mouseleave', function () {
-        const $this = $(this);
+            const $this = $(this);
 
-        clearTimeout(openTimeout);
+            clearTimeout(openTimeout);
 
-        closeTimeout = setTimeout(() => {
-            if (currentDropdown && currentDropdown[0] === $this[0]) {
-            // Close & reset on close
-            $this.find('.dropdown-menu').first().stop(true, true).slideUp();
-            resetSubmenus($this);       // <-- NEW
-            currentDropdown = null;
-            }
-        }, 600); // grace period
+            closeTimeout = setTimeout(() => {
+                if (currentDropdown && currentDropdown[0] === $this[0]) {
+                    // Close & reset on close
+                    $this.find('.dropdown-menu').first().stop(true, true).slideUp();
+                    resetSubmenus($this);       // <-- NEW
+                    currentDropdown = null;
+                }
+            }, 600); // grace period
         });
 
         // Also reset if Bootstrap closes it via its own events (e.g., click)
         $(document).on('hidden.bs.dropdown', '.navbar .dropdown', function () {
-        resetSubmenus($(this));         // <-- NEW
+            resetSubmenus($(this));         // <-- NEW
         });
 
         // Enable click on parent menu items in navbar
         $('.navbar .dropdown > a').click(function(){
-        location.href = this.href;
+            location.href = this.href;
         });
 
         // Assigning colors to .refLink elements based on matching first member of the 'keys' value
@@ -174,17 +174,17 @@
         var refs = $('.refLink');
 
         for (let i = 0; i < refs.length; i++) {
-        var keys = $(refs[i]).attr('keys');
-        var first_key = keys && keys.includes("|") ? keys.split("|")[0] : keys;
+            var keys = $(refs[i]).attr('keys');
+            var first_key = keys && keys.includes("|") ? keys.split("|")[0] : keys;
 
-        if (first_key in colordict) {
-            $(refs[i]).find('span').css('color', colordict[first_key]);
-        } else if (first_key !== "") {
-            $(refs[i]).find('span').css('color', colors[i]);
-            colordict[first_key] = colors[i];
-        } else {
-            $(refs[i]).find('span').css('color', "black");
-        }
+            if (first_key in colordict) {
+                $(refs[i]).find('span').css('color', colordict[first_key]);
+            } else if (first_key !== "") {
+                $(refs[i]).find('span').css('color', colors[i]);
+                colordict[first_key] = colors[i];
+            } else {
+                $(refs[i]).find('span').css('color', "black");
+            }
         }
     });
 </script>
