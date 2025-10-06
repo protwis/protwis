@@ -1,3 +1,4 @@
+
 .top-citation-panel {
     background-color: #e7fef7;
     border-bottom-color: #080808;
@@ -7,8 +8,7 @@
     display: none;
 
 }
-.top-citation-panel-content {
-    padding: 15px;
+.top-citation-panel-content-collapsible {
     margin-bottom: 20px;
     border: 1px solid transparent;
     border-radius: 4px;
@@ -23,6 +23,7 @@
     display: inline-block;           /* important */
     transition: transform 0.2s ease-in-out;
 }
+
 .collapse-toggle[aria-expanded="true"] .bi {
     transform: rotate(90deg); /* Rotate arrow when expanded */
 }

@@ -7,8 +7,6 @@ from django.views.generic import TemplateView
 from django.core.cache import cache
 from django.utils.html import escape
 
-from django.contrib.postgres.aggregates import ArrayAgg
-
 from protwis.context_processors import site_title
 from news.models import News
 from common.models import ReleaseNotes, ReleaseStatistics, Citation, DefaultCitation
@@ -25,7 +23,7 @@ from protwis.context_processors import get_current_site
 
 
 from collections import OrderedDict
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import urlparse
 import os
 import re
 
@@ -190,8 +188,8 @@ def citations_json(request, output_type='list'):
             c_citation_pub_order_dict = citation_pub_order_dict[citation_id]
             pubs = [v 
                     for k,v in sorted(citation[PUBLICATION_KEY].items(),
-                                    key=lambda x: c_citation_pub_order_dict['index'][x[0]])
-                ]
+                        key=lambda x: c_citation_pub_order_dict['index'][x[0]])
+            ]
         citation[PUBLICATION_KEY] = pubs
 
     if output_type == 'dict' or output_type == 'object':
@@ -288,7 +286,7 @@ def get_default_citation(main, output_type='list'):
     qcitpub = qcitpub.order_by('id')
 
     citation_pub_order_dict = {}
-    for id, citation_id, publication_id in qcitpub:
+    for citation_publication_through_id, citation_id, publication_id in qcitpub:
         if citation_id not in citation_pub_order_dict:
             citation_pub_order_dict[citation_id] = {'count':0,'index':{}}
             c_citation_pub_order_dict = citation_pub_order_dict[citation_id]

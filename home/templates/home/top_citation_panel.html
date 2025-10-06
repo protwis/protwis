@@ -1,10 +1,10 @@
 <div class="top-citation-panel" id="top_citation_panel">
     <div class="container">
         <div class="text-right">
-            <u><a class="collapse-toggle" role="button" aria-expanded="false"  data-toggle="collapse" aria-controls="top_citation_panel_collapsable" data-target="#top_citation_panel_collapsable"><span>Citation</span><i class="bi bi-chevron-right ms-2"></i></a></u>
+            <u><a class="collapse-toggle" role="button" aria-expanded="false"  data-toggle="collapse" aria-controls="top_citation_panel_collapsible" data-target="#top_citation_panel_collapsible"><span>Citation</span><i class="bi bi-chevron-right ms-2"></i></a></u>
             
         </div>
-        <div class="collapse top-citation-panel-content" id="top_citation_panel_collapsable">
+        <div class="collapse top-citation-panel-content-collapsible" id="top_citation_panel_collapsible">
             <div id="top_citation_panel_content"><p>No citations</p></div>
         </div>
     </div>
@@ -87,10 +87,10 @@
             var $top_citation_panel_content = $("#top_citation_panel_content");
 
                 if (!($(event.target).is($top_citation_panel) || $($top_citation_panel).has($(event.target)).length > 0)) {
-                    $("#top_citation_panel_collapsable").collapse('hide');
+                    $("#top_citation_panel_collapsible").collapse('hide');
                 } 
                 else if (!($(event.target).is($top_citation_panel_content) || $($top_citation_panel_content).has($(event.target)).length > 0)) {
-                    $("#top_citation_panel_collapsable").collapse('toggle');
+                    $("#top_citation_panel_collapsible").collapse('toggle');
                 }
         });
 
