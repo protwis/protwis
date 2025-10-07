@@ -133,7 +133,7 @@ def index(request):
 
 def _create_aggregated_publications_citations_dict(citations_q, citation_fields,
                                  publication_fields, publication_fields_aliases, PUBLICATION_KEY):
-    # Agregate publications
+    # Aggregate publications in a list as value of a key in the citation dictionary
     citations_dict = OrderedDict()
     for citation in citations_q:
         citation_id = citation['id']
@@ -154,6 +154,8 @@ def _create_aggregated_publications_citations_dict(citations_q, citation_fields,
     return citations_dict
 
 def _sort_in_place_aggregated_publications_citations_dict_publications(citations_dict, qcitpub):
+    # sort in place the publications in the citations_dict
+    # in the same order as qcitpub
     citation_pub_order_dict = {}
     for citation_id, publication_id in qcitpub:
         if citation_id not in citation_pub_order_dict:
@@ -222,7 +224,8 @@ def citations_json(request, output_type='list'):
     citations_dict = _create_aggregated_publications_citations_dict(citations_q,
                          citation_fields, publication_fields, publication_fields_aliases, PUBLICATION_KEY)
 
-    # get order of publications from citation_publication_through
+    # get order of publications from Citation.publication.through pk
+    # and sort in place the publications in the citations_dict
     citation_publication_through = Citation.publication.through
     qcitpub = citation_publication_through.objects.all()
     qcitpub = qcitpub.values_list('citation_id', 'publication_id')
@@ -261,7 +264,8 @@ def get_default_citation(main, output_type='list'):
     citations_dict = _create_aggregated_publications_citations_dict(citations_q,
                      citation_fields, publication_fields, publication_fields_aliases, PUBLICATION_KEY)
 
-    # get order of publications from *_citation_publication_through
+    # get order of publications from DefaultCitation.publication.through pk
+    # and sort in place the publications in the citations_dict
     citation_publication_through = DefaultCitation.publication.through
     qcitpub = citation_publication_through.objects.all()
     qcitpub = qcitpub.values_list('defaultcitation_id', 'publication_id')
@@ -278,7 +282,8 @@ def get_default_citation(main, output_type='list'):
 
 def citation_json_by_url(request, output_type='list'):
     cache_flag = True
-    replace_hostname = False #True for debuging ONLY_DEFAULT_CITATION_DOMAINS
+    replace_hostname = False # True for debuging ONLY_DEFAULT_CITATION_DOMAINS
+                             # and URL paths common to all DBs
 
     ONLY_DEFAULT_CITATION_DBS = ['arrestin','bias','gprotein']
     ONLY_DEFAULT_CITATION_DOMAINS_TAGS = {'gproteindb.org':'gprotein',
@@ -330,7 +335,9 @@ def citation_json_by_url(request, output_type='list'):
         citations_q = []
     else:
         hostname = None
-        if replace_hostname and settings.DEBUG:
+        if replace_hostname and settings.DEBUG: # Replaces the hostname for debuging
+                                                # ONLY_DEFAULT_CITATION_DOMAINS and
+                                                # URL paths common to all DBs
             hostname = parsed_input_url_hostname
         elif not settings.DEBUG:
             hostname = parsed_input_url.hostname
@@ -338,6 +345,9 @@ def citation_json_by_url(request, output_type='list'):
             citations_q = []
             only_default_citation = True
             db_citation_dict_data = {}
+
+            # main: DB name in Citations table
+            # get main from hostname if if possible and chache it
             if cache_flag:
                 db_citation_dict_data = cache.get("db_main_citation_dict", {})
             if hostname not in db_citation_dict_data:
@@ -349,13 +359,17 @@ def citation_json_by_url(request, output_type='list'):
                 main = db_citation_dict_data[hostname]
         else:
 
+            # SPECIAL URL: FIX for URLS with '#' that change the content of the page
             if parsed_input_url_path in {'/construct/analysis','/construct/analysis/'}:
                 parsed_input_url_path = '/construct/analysis'+'#'+parsed_input_url.fragment
 
+            # SPECIAL URL: force same publication for the URLs that begin with '/biased_signalling/'
             if parsed_input_url.path.startswith('/biased_signalling/') or parsed_input_url.path == '/biased_signalling':
                 parsed_input_url_path = '/biased_signalling/'
-            elif parsed_input_url.path == '/drugs/targets_venn':
+            elif parsed_input_url.path == '/drugs/targets_venn': # TODO: update URL in Site_references.xlsx
                 parsed_input_url_path = '/drugs/target_venn/'
+
+            # cannonicalize URL and try to find citation by exact match
             cannon_url = 'https://'+parsed_input_url_hostname + parsed_input_url_path
             cannon_url_star = 'https://'+parsed_input_url_hostname + os.path.join(parsed_input_url_path,'*')
             if parsed_input_url_path in {'/', '','/*','*'}:
@@ -374,10 +388,15 @@ def citation_json_by_url(request, output_type='list'):
                 if len(citations_q) > 0:
                     found_citation = True
                     break
+            # If citation not found by URL exact match, try to find it in the URL path list
+            # only by the path (without hostname)
             if not found_citation:
                 db_citation_dict_data = cache.get("db_citation_dict", None)
                 if db_citation_dict_data is None or not cache_flag:
                     db_citation_dict_data = {}
+
+                    # retrieve all citations by DB
+                    # for doing a list of all the values of main later
                     citations_arrestindb_q = Citation.objects.filter(main__icontains='arrestin')
                     citations_bsa_q = Citation.objects.filter(main__icontains='bias')
                     citations_gproteindb_q = Citation.objects.filter(main__icontains='gprotein')
@@ -389,8 +408,13 @@ def citation_json_by_url(request, output_type='list'):
                                           for db_citation_q in db_citation_q_list]
 
                     db_citation_q_list = [list(db_citation_q) for db_citation_q in db_citation_q_list]
+
+                    # get a list of all the values of main getting the first instance
                     main_names = [db_citation_q[0]['main'] for db_citation_q in db_citation_q_list]
                     db_citation_dict_data['main_names'] = main_names
+
+                    # create a URL paths dictionary with URL path as key and the corresponding citation as value
+                    # for URL path exact match and cache it
                     url_path_dict = {}
                     for db_citation_q in db_citation_q_list:
                         for item in db_citation_q:
@@ -399,6 +423,7 @@ def citation_json_by_url(request, output_type='list'):
                                 continue
                             v = (item['id'],item['main'])
                             parsed_item_url_path = parsed_item_url.path
+                            # SPECIAL URL: FIX for URLS with '#' that change the content of the page
                             if parsed_item_url_path in {'/construct/analysis','/construct/analysis/'}:
                                 parsed_item_url_path = '/construct/analysis'+'#'+parsed_item_url.fragment
                             url_path_dict[parsed_item_url_path] = v
@@ -411,13 +436,21 @@ def citation_json_by_url(request, output_type='list'):
                                 url_path_dict[parsed_item_url_path + '/'] = v
                     db_citation_dict_data['url_path_dict'] = url_path_dict
                     cache.set("db_citation_dict", db_citation_dict_data, timeout=60 * 60 * 24 * 7)
+
+                # URL paths dictionary for URL path exact match
                 url_path_dict = db_citation_dict_data['url_path_dict']
+
+                # get citation by URL path exact match
                 citation_id,main = url_path_dict.get(parsed_input_url_path, (None,None))
                 if citation_id is not None:
                     citations_q = Citation.objects.filter(id=citation_id).prefetch_related('publication')
                     citations_q = citations_q.values("id",'publication__id',*all_fields)
                     citations_q = citations_q.order_by("id")
                     citations_q = list(citations_q)
+
+                # if not possible to get the citation by URL path exact match
+                # try to get it by URL path pattern match with '*'
+                # with the URLs in the URL paths dictionary
                 else:
                     if db_citation_dict_data is None:
                         db_citation_dict_data = {}
@@ -450,11 +483,13 @@ def citation_json_by_url(request, output_type='list'):
     citations_dict = _create_aggregated_publications_citations_dict(citations_q,
                         citation_fields, publication_fields, publication_fields_aliases, PUBLICATION_KEY)
 
+    # get main from the first matching citation if not already set
     if main is None:
         for cit in citations_dict.values():
             main = cit['main']
             break
 
+    # check if main corresponds to a DB with only default citations
     if not only_default_citation:
         for db in ONLY_DEFAULT_CITATION_DBS:
             if main is not None:
@@ -462,7 +497,8 @@ def citation_json_by_url(request, output_type='list'):
                     only_default_citation = True
                     break
 
-    # get order of publications from citation_publication_through
+    # get order of publications from Citation.publication.through pk
+    # and sort in place the publications in the citations_dict
     citation_publication_through = Citation.publication.through
     qcitpub = citation_publication_through.objects.all()
     qcitpub = qcitpub.values_list('citation_id', 'publication_id')
