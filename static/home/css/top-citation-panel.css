@@ -8,13 +8,13 @@
     display: none;
 
 }
+
 .top-citation-panel-content-collapsible {
     margin-bottom: 20px;
     border: 1px solid transparent;
     border-radius: 4px;
     color: #31708f;
     background-color: #d9edf7;
-    border-color: #bce8f1;
     padding: 5px;
     border-color: black;
 }
