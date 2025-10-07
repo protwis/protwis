@@ -7,6 +7,7 @@
     margin-bottom: 20px;
     display: none;
     cursor: pointer;
+
 }
 
 .top-citation-panel-collapsible-content {
@@ -18,6 +19,21 @@
     margin-bottom: 20px;
     padding: 5px;
     cursor: auto;
+}
+
+
+.collapse-toggle::after {
+    content: "+";
+    font-family: monospace;
+    float: right;
+    font-weight: bold;
+    transition: transform 0.2s, content 0.2s;
+}
+
+/* When the collapse is open */
+.collapse-toggle[aria-expanded="true"]::after {
+    content: "–";
+    font-family: monospace;
 }
 
 .collapse-toggle .bi {
