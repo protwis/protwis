@@ -302,3 +302,257 @@ function removeQuery(url) {
     }
     return noQuery;
 }
+
+(function (global) {
+  'use strict';
+
+  /*
+   * Simple generic DataTables → XLSX exporter
+   * ------------------------------------------------------------
+   * Signature:
+   *   ExportDataTablesToXlsx(tableSelector, sheetName?, fileName?)
+   *
+   * Inputs:
+   *   - tableSelector:  CSS selector or DOM node for a DataTable
+   *   - sheetName:      optional worksheet name (default: 'Export')
+   *   - fileName:       optional file name (default: `${sheetName}_filtered_YYYY-MM-DD.xlsx`)
+   *
+   * Behavior:
+   *   - Detects THEAD structure assumed across your pages:
+   *       [0] dummy, [1] super header (merged via colspans), [2] titles, [3] filters
+   *   - Uses *currently visible* columns (robust visibility detection)
+   *   - Exports filtered + ordered rows exactly as on screen
+   *   - Cleans header cells from icons/buttons before reading titles
+   *   - Uses title names from column defenition (when generating data)
+   *   - Auto column widths; merges super-header ranges
+   *   - Depends only on DataTables and SheetJS (xlsx.full.min.js)
+   */
+
+  /** Ensure jQuery DataTables and SheetJS are present. */
+  function assertDeps() {
+    if (!global.jQuery || !jQuery.fn || !jQuery.fn.dataTable) {
+      throw new Error('DataTables not found. Load jQuery DataTables first.');
+    }
+    if (!(global.XLSX && XLSX.utils)) {
+      throw new Error('SheetJS not found. Include xlsx.full.min.js first.');
+    }
+  }
+
+  /**
+   * Sanitize a worksheet name to satisfy Excel constraints.
+   * - Removes invalid characters and trims to 31 chars.
+   */
+  function safeSheetName(name) {
+    const cleaned = String(name || 'Export')
+      .replace(/[:\\\/\?\*\[\]]/g, '–')
+      .slice(0, 31)
+      .trim();
+    return cleaned || 'Export';
+  }
+
+  /**
+   * Generate a default filename based on the sheet name and today’s date.
+   * Example: "Export_filtered_2025-10-03.xlsx"
+   */
+  function defaultFileName(base) {
+    const stamp = new Date().toISOString().slice(0, 10);
+    const b = (base || 'Export').replace(/\s+/g, '_');
+    return `${b}_filtered_${stamp}.xlsx`;
+  }
+
+  /**
+   * Convert an HTML snippet to clean, single-line text.
+   * - Replaces <br> with newlines
+   * - Removes interactive/icons from headers
+   * - Collapses whitespace
+   */
+  function htmlToText(html) {
+    const div = document.createElement('div');
+    div.innerHTML = String(html ?? '').replace(/<br\s*\/?>(?!\n)/gi, '\n');
+    div.querySelectorAll('button, i, .glyphicon, .icon-button, .dt-column-order')
+       .forEach(n => n.remove());
+    return (div.textContent || div.innerText || '').replace(/\s+/g, ' ').trim();
+  }
+
+  /**
+   * Best-effort numeric coercion:
+   * - Keeps true numbers as numbers
+   * - Trims and normalizes thousands/decimal separators (e.g., "1,234.56" or "1.234,56")
+   * - Returns original text if it’s not a plain number
+   */
+  function coerceMaybeNumber(v) {
+    if (v == null) return '';
+    if (typeof v === 'number') return v;
+    const s = String(v).trim();
+    if (!s) return '';
+    const norm = s
+      .replace(/\s+/g, '')
+      .replace(/(?<=\d),(?=\d{3}\b)/g, '')   // 1,234 -> 1234
+      .replace(/,(\d{1,})$/, '.$1');         // 1,23 -> 1.23
+    return (/^[+-]?\d*(?:\.\d+)?$/).test(norm) ? Number(norm) : s;
+  }
+
+  /**
+   * Locate relevant THEAD rows according to the shared layout contract:
+   * [0] dummy, [1] super header, [2] titles, [3] filters.
+   */
+  function getHeadRows(tableEl) {
+    const thead = tableEl.tHead;
+    const rows = thead ? Array.from(thead.rows) : [];
+    return {
+      rows,
+      dummyRow: rows[0] || null,               // [0] dummy (often TD colspan)
+      superRow: rows[1] || null,               // [1] super header (group labels with colspans)
+      titleRow: rows[rows.length - 2] || null, // [-2] titles (leaf text for columns)
+      filterRow: rows[rows.length - 1] || null // [-1] filters
+    };
+  }
+
+  /**
+   * Parse the super-header row into an ordered list of groups.
+   * Uses the original HTML `colspan` attribute (stable even when columns are hidden)
+   * rather than the live `th.colSpan`, which DataTables/DOM might mutate.
+   * @returns Array<{label: string, span: number}>
+   */
+  function getSuperGroups(superRow) {
+    const groups = [];
+    if (!superRow) return groups;
+
+    Array.from(superRow.children).forEach(th => {
+      const label = htmlToText(th.innerHTML);
+      const attrSpan = Number(th.getAttribute('colspan')) || 1; // prefer attribute
+      const liveSpan = Number(th.colSpan) || attrSpan || 1;     // safe fallback
+      const span = Math.max(1, attrSpan || liveSpan);
+      groups.push({ label, span });
+    });
+
+    return groups;
+  }
+
+  /**
+   * Determine the DataTables column indexes that are truly visible.
+   * Combines DataTables API visibility with DOM checks to ignore hidden/invisible headers.
+   */
+  function buildVisibleCols(dt, settings) {
+    const idxs = dt.columns().indexes().toArray();
+    return idxs.filter(i => {
+      try { if (dt.column(i).visible() === false) return false; } catch (e) {}
+      const th = (settings.aoColumns[i] && settings.aoColumns[i].nTh) || dt.column(i).header();
+      if (th && th instanceof HTMLElement) {
+        const style = getComputedStyle(th);
+        if (style.display === 'none' || style.visibility === 'hidden') return false;
+        if (th.offsetParent === null && style.position !== 'sticky') return false;
+      }
+      return true;
+    });
+  }
+
+  /**
+   * Build the top “group row” and merge ranges by *packing* super groups
+   * left-to-right across the current visible columns.
+   * This yields contiguous merges (e.g., 5/5/5) regardless of which concrete
+   * leaf columns are hidden, matching what users expect visually.
+   *
+   * @param groups       Array<{label, span}> from the super header
+   * @param visibleCount Number of currently visible columns
+   * @returns { groupRow: any[], merges: Array<{s:{r,c}, e:{r,c}}>}
+   */
+  function buildPackedGroupRow(groups, visibleCount) {
+    const groupRow = Array(visibleCount).fill(null);
+    const merges = [];
+
+    let pos = 0;
+    for (const g of groups) {
+      if (pos >= visibleCount) break;
+      const span = Math.min(g.span, visibleCount - pos);
+      if (span <= 0) continue;
+
+      if (g.label) groupRow[pos] = g.label;
+      if (span > 1) {
+        merges.push({ s: { r: 0, c: pos }, e: { r: 0, c: pos + span - 1 } });
+      }
+      pos += span;
+    }
+
+    return { groupRow, merges };
+  }
+
+  /**
+   * Export the visible state of a DataTable to an XLSX file.
+   * - Honors current search/filter + ordering
+   * - Uses only visible columns
+   * - Builds a super-header row with merged cells based on the super-row colspans
+   */
+  function ExportDataTablesToXlsx(tableSelector, sheetName, fileName) {
+    assertDeps();
+
+    const $ = jQuery;
+    const dt = $(tableSelector).DataTable();
+    const settings = dt.settings()[0];
+
+    // Resolve table element safely
+    const tableEl = (typeof tableSelector === 'string')
+      ? document.querySelector(tableSelector)
+      : tableSelector;
+    if (!tableEl) throw new Error('Table element not found for selector: ' + tableSelector);
+
+    // THEAD rows (we read group labels from superRow; titles from titleRow)
+    const { superRow, titleRow } = getHeadRows(tableEl);
+    if (!titleRow) throw new Error('Titles row not found in THEAD.');
+
+    // Parse groups and current visible column order
+    const groups = getSuperGroups(superRow);
+    const visibleDTIdxs = buildVisibleCols(dt, settings);
+    if (!visibleDTIdxs.length) { alert('No columns to export.'); return; }
+
+    // Build the grouping row and merges sized to the number of visible columns
+    const { groupRow, merges } = buildPackedGroupRow(groups, visibleDTIdxs.length);
+
+    // Row indexes after current search/order
+    const rowIdxs = dt.rows({ search: 'applied', order: 'applied' }).indexes().toArray();
+
+    // Header titles for visible columns (strip icons etc.)
+    const headerTitles = visibleDTIdxs.map(ci => {
+      const colCfg = (settings.aoColumns && settings.aoColumns[ci]) || {};
+      if (colCfg.sName) return String(colCfg.sName);
+      const th = dt.column(ci).header() || colCfg.nTh;
+      if (th && th.innerHTML != null) return htmlToText(th.innerHTML);
+      if (titleRow && titleRow.children && ci < titleRow.children.length) {
+        return htmlToText(titleRow.children[ci].innerHTML);
+      }
+      return `Column ${ci}`;
+    });
+
+    // Body values (prefer "export" render; fallback to "display"), with numeric coercion
+    const body = rowIdxs.map(ri =>
+      visibleDTIdxs.map(ci => {
+        const exp = dt.cell(ri, ci).render('export');
+        const val = (exp != null && exp !== '') ? exp : dt.cell(ri, ci).render('display');
+        return coerceMaybeNumber(htmlToText(val));
+      })
+    );
+
+    // Build worksheet (group row + header titles + data)
+    const aoa = [groupRow, headerTitles, ...body];
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    if (merges.length) ws['!merges'] = merges;
+
+    // Auto column widths based on header + data contents
+    ws['!cols'] = headerTitles.map((h, j) => {
+      const maxLen = Math.max(String(h || '').length, ...body.map(r => String(r[j] || '').length));
+      return { wch: Math.min(Math.max(10, maxLen + 2), 60) };
+    });
+
+    // Workbook + file write
+    const sheet = safeSheetName(sheetName || 'Export');
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, sheet);
+
+    const fname = (typeof fileName === 'string' && fileName) ? fileName : defaultFileName(sheet);
+    XLSX.writeFile(wb, fname);
+  }
+
+  // expose
+  global.ExportDataTablesToXlsx = ExportDataTablesToXlsx;
+
+})(window);

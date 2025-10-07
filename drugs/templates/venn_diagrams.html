@@ -6,6 +6,7 @@
 <link rel="stylesheet" href="{% static 'home/css/structure_browser.css' %}" type="text/css">
 <link rel="stylesheet" href="{% static 'home/css/NewDrugsBrowser_datatables.min.css' %}" type="text/css"/>
 <link rel="stylesheet" href="{% static 'home/css/struct_tooltip.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/uispinner.css' %}">
 <style type="text/css">
   textarea {
     resize: none;
@@ -281,11 +282,12 @@
 <script src="{% static 'home/js/select2_4.1.0-rc.0_full.js' %}"></script>
 <script src="{% static 'home/js/NewDrugsBrowser_datatables.min.js' %}"></script>
 <script src="{% static 'home/js/NorgesDTFilterBuilder.js' %}"></script>
-<script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
 <script src="{% static 'home/js/selection.js' %}"></script>
 <script src="{% static 'home/js/compoundPreviewTooltip.js' %}"></script> <!-- Needed for the hover display of ligands-->
 <script src="{% static 'home/js/openchemlib-full.js' %}"></script> <!-- Dependency for the hover display of ligands-->
 <script src="{% static 'home/js/PeptideLayoutEngine.js' %}"></script>
+<script src="{% static 'home/js/xlsx.full.min.js' %}"></script>
+<script src="{% static 'home/js/uiSpinner.js' %}"></script>
 
 <script>
   ! function($) {
@@ -390,8 +392,6 @@ $(document).ready(function () {
                         const picVal    = row.picture || "Not_available";
                         const ligID     = row.LigandID;
                         const sequenceValue = row.sequence || "";
-
-
                         if (row['Drug type'] && typeof row['Drug type'] === 'string' && row['Drug type'].toLowerCase() === 'peptide') {
                             if (!sequenceValue) {
                                 console.warn("Venn Peptide ligand " + data + " (LigandID: " + ligID + ") has no sequence!");
@@ -420,14 +420,14 @@ $(document).ready(function () {
                 return data;
             }
         },
-        { data: "Drug type", name: "Drug type" },
+        { data: "Drug type", name: "Type" },
         { data: "Modality", name: "Modality" },
-        { data: 'ATC Parent Name', name: 'ATC Parent Name', visible: !hideColumns },
-        { data: "ATC Name", name: "ATC Name", visible: !hideColumns},
-        { data: 'ATC Code', name: 'ATC Code', visible: !hideColumns },
+        { data: 'ATC Parent Name', name: 'Indication area (ATC)', visible: !hideColumns },
+        { data: "ATC Name", name: "Indication (ATC)", visible: !hideColumns},
+        { data: 'ATC Code', name: 'Indication code (ATC)', visible: !hideColumns },
         { data: "In trial", name: "In trial" },
         { data: "Approved", name: "Approved" },
-        { data: "Gene name", name: "Gene name", render: function (data, type, row, meta) {
+        { data: "Gene name", name: "Gene", render: function (data, type, row, meta) {
             if (type === 'display') {
                 const originalData = data; 
                 const transformedData = data.replace('_human', '').toUpperCase(); 
@@ -437,12 +437,12 @@ $(document).ready(function () {
             }
             return data;
         }},
-        { data: "Protein name", name: "Protein name", width: "125px", render: function (data) { return data.replace(' receptor', ''); }},
+        { data: "Protein name", name: "Protein", width: "125px", render: function (data) { return data.replace(' receptor', ''); }},
         {data: "Receptor family", name: "Receptor family", width: "150px", render: function (data) { return data.replace('receptors', ''); }},
         { data: "Ligand type", name: "Ligand type", render: function (data) { return data.replace('receptors', ''); }},
         { data: "Class", name: "Class", render: function (data) { return data.split(' (')[0].replace(/^Class /i, '').trim(); }},
-        { data: "Master Indication", name: "Master Indication" },
-        { data: "Indication name", name: "Indication", render: function (data, type, row, meta) {
+        { data: "Master Indication", name: "Disease area (ICD11)" },
+        { data: "Indication name", name: "Disease (ICD11)", render: function (data, type, row, meta) {
             if (type === 'display') {
                 if (row && row.ICD11) {
                     const transformedData = data || 'Unknown'; 
@@ -456,13 +456,13 @@ $(document).ready(function () {
             }
             return data;
         }},
-        { data: 'ICD11', name: 'ICD11' },
-        { data: "Phase", name: "Max" },
+        { data: 'ICD11', name: 'Disease code (ICD11)' },
+        { data: "Phase", name: "Max phase" },
         { data: 'Association score', name: "Association score", render: function (data) { return data === "" || data === null ? data : parseFloat(data).toFixed(4); }}
     ];
 
     const targetsColumns = [
-        { data: "Gene name", name: "Gene name", render: function (data, type, row, meta) {
+        { data: "Gene name", name: "Gene", render: function (data, type, row, meta) {
             if (type === 'display') {
                 const originalData = data; 
                 const transformedData = data.replace('_human', '').toUpperCase(); 
@@ -472,7 +472,7 @@ $(document).ready(function () {
             }
             return data;
         }},
-        { data: "Protein name", name: "Protein name" },
+        { data: "Protein name", name: "Protein" },
         { data: "Receptor family", name: "Receptor family" },
         { data: "Ligand type", name: "Ligand type" },
         { data: "Class", name: "Class", render: function (data) { return data.split(' (')[0]; }},
@@ -484,7 +484,6 @@ $(document).ready(function () {
                       const picVal    = row.picture || "Not_available";
                       const ligID     = row.LigandID;
                       const sequenceValue = row.sequence || "";
-
                       if (row['Drug type'] && typeof row['Drug type'] === 'string' && row['Drug type'].toLowerCase() === 'peptide') {
                            if (!sequenceValue) {
                               console.warn("Venn Peptide ligand " + data + " (LigandID: " + ligID + ") has no sequence!");
@@ -513,15 +512,15 @@ $(document).ready(function () {
               return data;
           }
       },
-        { data: "Drug type", name: "Drug type" },
+        { data: "Drug type", name: "Type" },
         { data: "Modality", name: "Modality" },
-        { data: 'ATC Parent Name', name: 'ATC Parent Name', visible: !hideColumns },
-        { data: "ATC Name", name: "ATC Name", visible: !hideColumns},
-        { data: 'ATC Code', name: 'ATC Code', visible: !hideColumns },
+        { data: 'ATC Parent Name', name: 'Indication area (ATC)', visible: !hideColumns },
+        { data: "ATC Name", name: "Indication (ATC)", visible: !hideColumns},
+        { data: 'ATC Code', name: 'Indication code (ATC)', visible: !hideColumns },
         { data: "In trial", name: "In trial" },
         { data: "Approved", name: "Approved" },
-        { data: "Master Indication", name: "Master Indication" },
-        { data: "Indication name", name: "Indication", render: function (data, type, row, meta) {
+        { data: "Master Indication", name: "Disease area (ICD11)" },
+        { data: "Indication name", name: "Disease (ICD11)", render: function (data, type, row, meta) {
             if (type === 'display') {
                 if (row && row.ICD11) {
                     const transformedData = data || 'Unknown'; 
@@ -535,8 +534,8 @@ $(document).ready(function () {
             }
             return data;
         }},
-        { data: 'ICD11', name: 'ICD11' },
-        { data: "Phase", name: "Max" },
+        { data: 'ICD11', name: 'Disease code (ICD11)' },
+        { data: "Phase", name: "Max pahse" },
         { data: 'Association score', name: "Association score", render: function (data) { return data === "" || data === null ? data : parseFloat(data).toFixed(4); }}
     ];
 
@@ -739,8 +738,25 @@ $(document).ready(function () {
     }
 
     const buttonsArray = [
-      { text: 'Reset filters', action: function () { reset_all(); } },
-      controlTableButton(layout, hideColumns), // Use the new function to create the control table button
+      {
+        text: 'Reset filters',
+        action: function (e, dt, node) {
+          UiSpinner.runWithButtonSpinner(node, () => reset_all(), { hideDelayMs: 150 });
+        }
+      },
+      controlTableButton(layout, hideColumns),
+      {
+        text: 'Export Excel',
+        name: 'exportExcel', // keep this so the helper can find the DT button
+        action: function (e, dt /*, node */) {
+          UiSpinner.runWithDtButtonSpinner(
+            dt,
+            'exportExcel:name',
+            () => ExportDataTablesToXlsx('#receptor_table', 'Targets', layout === "drugs" ? "GPCRdb_DrugsVenn.xlsx" : "GPCRdb_TargetsVenn.xlsx"),
+            { hideDelayMs: 150 }
+          );
+        }
+      }
     ];
 
     // Initialize or reinitialize DataTable
@@ -1230,5 +1246,6 @@ String.prototype.parseTransform = function() {
       element.style.color = color;
       // element.style.textDecoration = 'underline';
   }
+
 </script>
 {% endblock %}

@@ -6,6 +6,7 @@
 <link rel="stylesheet" href="{% static 'home/css/select2_4.1.0-rc.0._full.css' %}" type="text/css">
 <link rel="stylesheet" href="{% static 'home/css/BusyLoad.css' %}" type="text/css">
 <link rel="stylesheet" href="{% static 'home/css/struct_tooltip.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/uispinner.css' %}">
 
 <style type="text/css">
  /* Target the select2 dropdown and ensure it applies */
@@ -392,19 +393,8 @@
 <script src="{% static 'home/js/NewDrugsBrowser_datatables.min.js' %}"></script>
 <script src="{% static 'home/js/NorgesDTFilterBuilder.js' %}"></script>
 <script src="{% static 'home/js/BusyLoad.js' %}"></script>
-
-<script type="text/javascript" charset="utf-8">
-  $(document).ready(function(){
-    paper.install(window);
-    $('[data-toggle="popover"]').popover({
-      trigger: 'hover',
-      html: true,
-      container: 'body',
-      delay: { show: 100, hide: 300 } // Makes it less twitchy
-    });
-  });
-</script>
-
+<script src="{% static 'home/js/xlsx.full.min.js' %}"></script>
+<script src="{% static 'home/js/uiSpinner.js' %}"></script>
 <script type="text/javascript">
 
 var Full_table_data;
@@ -417,6 +407,8 @@ const Tissue_col_list = {{ Tissue_cols|safe }};
 const Cancer_col_list = {{ cancer_cols|safe }};
 
 let adjustTimeout; // Move this outside to make it global
+
+window.currentColumnType = 0;
 
 // ###############################
 // ### Initialization loader   ###
@@ -494,7 +486,7 @@ $(document).ready(function() {
     // Define columns dynamically based on the type
     var target_columns = [
         {data: "Target ID", name: "Target ID", visible: false}, // Hidden Target ID column
-        {data: "Gene name", name: "Gene name",width: "125px", className: "sticky-column", render: function (data, type, row, meta) {
+        {data: "Gene name", name: "Gene",width: "125px", className: "sticky-column", render: function (data, type, row, meta) {
                     if (type === 'display') {
                         const originalData = data; // Raw data
                         const transformedData = data.replace('_human', '').toUpperCase(); // Transformed display value
@@ -506,30 +498,30 @@ $(document).ready(function() {
                     }
                     return data; // Raw data for sorting
                     }},
-        {data: "Protein name", name: "Protein name", width: "125px", render: function (data) { return data.replace('receptor', ''); }},
+        {data: "Protein name", name: "Protein", width: "125px", render: function (data) { return data.replace('receptor', ''); }},
         {data: "Receptor family", name: "Receptor family", width: "150px",className: "receptor-width", render: function (data) { return data.replace('receptors', ''); }},
         {data: "Ligand type", name: "Ligand type", width: "150px"},
         {data: "Class", name: "Class", width: "50px", render: function (data) { return data.split(' (')[0].replace('Class ', ''); }},
-        {data: "Literature", name: "No. Publications", width: "125px", className: "small-width"}, 
+        {data: "Literature", name: "Publications", width: "125px", className: "small-width"}, 
         {data: "Novelty (Pharos)", name: "Novelty (Pharos)", width: "125px", className: "small-width", render: function (data) { return data === "" || data === null ? data : parseFloat(data).toFixed(digit_fixed); }},
         {data: "IDG", name: "IDG target level", width: "125px", className: "small-width"},
         {data: "Total", name: "Total", width: "125px", className: "small-width"},
         {data: "Inactive", name: "Inactive", width: "125px", className: "small-width"},
         {data: "Active", name: "Active", width: "125px", className: "small-width"},
-        {data: "All_Max_Phase", name: "Stimulatory_max_phase", width: "125px", className: "small-width"},
-        {data: "All_Drugs", name: "All_Drugs", width: "125px", className: "small-width"},
-        {data: "All_Agents", name: "All_Agents", width: "125px", className: "small-width"},
-        {data: "Total_Ligands", name: "Total_Ligands", width: "125px", className: "small-width"},
-        {data: "Type_small_molecule", name: "Type_small_molecule", width: "125px", className: "small-width"},
-        {data: "Type_biologics", name: "Type_biologics", width: "125px", className: "small-width"},
-        {data: "Stimulatory_max_phase", name: "All_Max_Phase", width: "125px", className: "small-width"},
-        {data: "Stimulatory_Drugs", name: "Stimulatory_Drugs", width: "125px", className: "small-width"},
-        {data: "Stimulatory_Agents", name: "Stimulatory_Agents", width: "125px", className: "small-width"},
-        {data: "pEC50_Count", name: "pEC50_Count", width: "125px", className: "small-width"},
-        {data: "Inhibitory_max_phase", name: "Inhibitory_max_phase", width: "125px", className: "small-width"},
-        {data: "Inhibitory_Drugs", name: "Inhibitory_Drugs", width: "125px", className: "small-width"},
-        {data: "Inhibitory_Agents", name: "Inhibitory_Agents", width: "125px", className: "small-width"},
-        {data: "pIC50_Count", name: "pIC50_Count", width: "125px", className: "small-width"}
+        {data: "All_Max_Phase", name: "Max Phase", width: "125px", className: "small-width"},
+        {data: "All_Drugs", name: "Drugs", width: "125px", className: "small-width"},
+        {data: "All_Agents", name: "Agents", width: "125px", className: "small-width"},
+        {data: "Total_Ligands", name: "Ligands", width: "125px", className: "small-width"},
+        {data: "Type_small_molecule", name: "Small molecule", width: "125px", className: "small-width"},
+        {data: "Type_biologics", name: "Biologics", width: "125px", className: "small-width"},
+        {data: "Stimulatory_max_phase", name: "Max Phase", width: "125px", className: "small-width"},
+        {data: "Stimulatory_Drugs", name: "Drugs", width: "125px", className: "small-width"},
+        {data: "Stimulatory_Agents", name: "Agents", width: "125px", className: "small-width"},
+        {data: "pEC50_Count", name: "Ligands", width: "125px", className: "small-width"},
+        {data: "Inhibitory_max_phase", name: "Max phase", width: "125px", className: "small-width"},
+        {data: "Inhibitory_Drugs", name: "Drugs", width: "125px", className: "small-width"},
+        {data: "Inhibitory_Agents", name: "Agents", width: "125px", className: "small-width"},
+        {data: "pIC50_Count", name: "Ligands", width: "125px", className: "small-width"}
     ];
 
     // Extend the target_columns with Tissue_col_list
@@ -547,7 +539,7 @@ $(document).ready(function() {
 
     target_columns.push({
             data: 'NumberOfCancers',
-            name: 'NumberOfCancers',
+            name: 'Medium-High expression',
             width: "125px",
             className: "small-width",
             render: function (data) {
@@ -571,7 +563,7 @@ $(document).ready(function() {
     // Define columns dynamically based on the type
     var disease_columns = [
         {data: "Target ID", name: "Target ID", visible: false}, // Hidden Target ID column
-        {data: "Gene name", name: "Gene name",width: "125px", className: "sticky-column", render: function (data, type, row, meta) {
+        {data: "Gene name", name: "Gene",width: "125px", className: "sticky-column", render: function (data, type, row, meta) {
                     if (type === 'display') {
                         const originalData = data; // Raw data
                         const transformedData = data.replace('_human', '').toUpperCase(); // Transformed display value
@@ -583,12 +575,12 @@ $(document).ready(function() {
                     }
                     return data; // Raw data for sorting
                     }},
-        {data: "Protein name", name: "Protein name", width: "125px", render: function (data) { return data.replace('receptor', ''); }},
+        {data: "Protein name", name: "Protein", width: "125px", render: function (data) { return data.replace('receptor', ''); }},
         {data: "Receptor family", name: "Receptor family", width: "150px",className: "receptor-width", render: function (data) { return data.replace('receptors', ''); }},
         {data: "Ligand type", name: "Ligand type", width: "150px"},
         {data: "Class", name: "Class", width: "50px", render: function (data) { return data.split(' (')[0].replace('Class ', ''); }},
-        {data: "Master Indication", name: "Master Indication", width: "150px", className: "medium-width"},
-        {data: "Indication", name: "Indication",width: "200px", className: "small-width",render: function (data, type, row, meta) {
+        {data: "Master Indication", name: "Disease area (ICD11)", width: "150px", className: "medium-width"},
+        {data: "Indication", name: "Disease (ICD11)",width: "200px", className: "small-width",render: function (data, type, row, meta) {
                         if (type === 'display') {
                             if (row && row.ICD11) {
                                 const transformedData = data || 'Unknown'; // Fallback if Indication name is missing
@@ -603,7 +595,7 @@ $(document).ready(function() {
                         }
                         return data; // Use raw data for sorting
                     }},
-        {data: "ATC Parent Name", name: "ATC Parent Name", width: "125px", className: "large-width", render: function (data) {
+        {data: "ATC Parent Name", name: "Indication area (ATC)", width: "125px", className: "large-width", render: function (data) {
             if (data && typeof data === 'string') {
                 return data
                     .toLowerCase() // Convert the entire string to lowercase
@@ -613,7 +605,7 @@ $(document).ready(function() {
             }
             return data; // Return unchanged if data is not a string or is empty
         } },
-        {data: "ATC Name", name: "ATC Name", width: "125px", className: "small-width", render: function (data) {
+        {data: "ATC Name", name: "Indication (ATC)", width: "125px", className: "small-width", render: function (data) {
             if (data && typeof data === 'string') {
                 return data
                     .toLowerCase() // Convert the entire string to lowercase
@@ -623,17 +615,17 @@ $(document).ready(function() {
             }
             return data; // Return unchanged if data is not a string or is empty
         } },
-        {data: "ATC Code", name: "ATC Code", width: "125px", className: "large-width"},
+        {data: "ATC Code", name: "Indication code (ATC)", width: "125px", className: "large-width"},
         {data: "Association Score", name: "Association Score", width: "125px", className: "small-width", render: function (data) { return data === "" || data === null ? data : parseFloat(data).toFixed(digit_fixed); }},
-        {data: "Drug Count", name: "Drug Count", width: "125px"},
-        {data: "Agent Count", name: "Agent Count", width: "125px"}
+        {data: "Drug Count", name: "Drugs", width: "125px"},
+        {data: "Agent Count", name: "Agents", width: "125px"}
         
     ];
 
     // Define columns dynamically based on the type
     var untapped_columns = [
         {data: "Target ID", name: "Target ID", visible: false}, // Hidden Target ID column
-        {data: "Gene name", name: "Gene name", width: "5%", className: "sticky-column", render: function (data, type, row, meta) {
+        {data: "Gene name", name: "Gene", width: "5%", className: "sticky-column", render: function (data, type, row, meta) {
                     if (type === 'display') {
                         const originalData = data; // Raw data
                         const transformedData = data.replace('_human', '').toUpperCase(); // Transformed display value
@@ -645,12 +637,12 @@ $(document).ready(function() {
                     }
                     return data; // Raw data for sorting
                     }},
-        {data: "Protein name", name: "Protein name", width: "10%", render: function (data) { return data.replace('receptor', ''); }},
+        {data: "Protein name", name: "Protein", width: "10%", render: function (data) { return data.replace('receptor', ''); }},
         {data: "Receptor family", name: "Receptor family", width: "10%",className: "receptor-width", render: function (data) { return data.replace('receptors', ''); }},
         {data: "Ligand type", name: "Ligand type", width: "10%"},
         {data: "Class", name: "Class", width: "5%", render: function (data) { return data.split(' (')[0].replace('Class ', ''); }},
-        {data: "Master Indication", name: "Master Indication", width: "25%", className: "large-width"},
-        {data: "Indication", name: "Indication",width: "25%", className: "large-width",render: function (data, type, row, meta) {
+        {data: "Master Indication", name: "Disease area (ICD11)", width: "25%", className: "large-width"},
+        {data: "Indication", name: "Disease (ICD11)",width: "25%", className: "large-width",render: function (data, type, row, meta) {
                         if (type === 'display') {
                             if (row && row.ICD11) {
                                 const transformedData = data || 'Unknown'; // Fallback if Indication name is missing
@@ -688,9 +680,32 @@ $(document).ready(function() {
             scrollCollapse: true,           // Allow the table to collapse vertically if data is less than `scrollY`
             fixedHeader: false, // Disable FixedHeader
             buttons: [
-                { 
-                    text: 'Reset filters', 
-                    action: function () { reset_all(); } 
+                {
+                    text: 'Reset filters',
+                    action: function (e, dt, node /*, config */) {
+                    // spinner on the *clicked* button, guards against double-clicks
+                    UiSpinner.runWithButtonSpinner(node, () => reset_all(), { hideDelayMs: 150 });
+                    }
+                },
+                {
+                    text: 'Export Excel',
+                    name: 'exportExcel', // keep this label so the helper can target the button
+                    action: function (e, dt /*, node */) {
+                    // pick proper sheet name based on which table this is
+                    const id = (typeof tableId === 'string') ? tableId : `#${tableId.id || tableId}`;
+                    const sheet =
+                        id === '#TargetSelectionToolTable'          ? 'Target Selection' :
+                        id === '#TargetSelectionToolTable_disease'  ? 'Clinically Targeted' :
+                        id === '#TargetSelectionToolTable_untapped' ? 'Clinically Untapped' :
+                        'Export';
+
+                    UiSpinner.runWithDtButtonSpinner(
+                        dt,
+                        'exportExcel:name',
+                        () => ExportDataTablesToXlsx(id, sheet,'GPCRdb_TargetSelectionTool.xlsx'),
+                        { hideDelayMs: 150 }
+                    );
+                    }
                 }
             ],
             drawCallback: function(settings) {
@@ -777,6 +792,8 @@ let currentActiveTargetIds = []; // Stores current table's active IDs
 
 // Handle button click
 function handleButtonClick(columnType) {
+
+    window.currentColumnType = columnType;
 
     // Determine the currently visible table
     let currentTableId;
@@ -1116,5 +1133,6 @@ function populateCancerColumns(cancerColumns) {
         filterRow.appendChild(td);
     });
 }
+
 </script>
 {% endblock %}
