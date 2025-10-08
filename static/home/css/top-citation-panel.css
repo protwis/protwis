@@ -21,7 +21,6 @@
     cursor: auto;
 }
 
-
 .collapse-toggle::after {
     content: "+";
     font-family: monospace;
@@ -35,15 +34,6 @@
     content: "–";
     font-family: monospace;
 }
-
-.collapse-toggle .bi {
-    display: inline-block;           /* important */
-    transition: transform 0.2s ease-in-out;
-}
-
-.collapse-toggle[aria-expanded="true"] .bi {
-    transform: rotate(90deg); /* Rotate arrow when expanded */
-} 
 
 #top_citation_panel_collapsible {
   transform: translateZ(0); /* important */
