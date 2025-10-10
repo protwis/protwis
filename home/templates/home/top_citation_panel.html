@@ -39,4 +39,22 @@
             }
         },settings={});
     });
+
+    var ticking = false;
+    var offset = $('#top_citation_panel').offset().top + 60;
+
+    $(window).on('scroll', function() {
+        if (!ticking) {
+            window.requestAnimationFrame(function() {
+            var scroll = $(window).scrollTop();
+            var $tcp = $('#top_citation_panel');
+
+            if (scroll > offset && !$tcp.hasClass('fixed-nav')) $tcp.addClass('fixed-nav');
+            else if (scroll <= offset && $tcp.hasClass('fixed-nav')) $tcp.removeClass('fixed-nav');
+
+            ticking = false;
+            });
+            ticking = true;
+        }
+    });
 </script>

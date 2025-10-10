@@ -42,3 +42,12 @@
   overflow: hidden; /* important */
 }
 
+.top-citation-panel.fixed-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1030;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    transition: all 0.3s ease-in-out;
+}
