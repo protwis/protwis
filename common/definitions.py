@@ -2279,6 +2279,8 @@ G_PROTEIN_DISPLAY_NAME = { # Alpha
 
 ARRESTIN_DISPLAY_NAME = {'arrs':'S-arrestin', 'arrb1':'Beta-arrestin-1'}
 
+GPCR_CLASS_SLUG_PREFIX = '0'
+
 # Remove this constants in the future
 _BEFORE_NAR2025_CLASSLESS_PARENT_GPCR_SLUGS_DICT = {'008':'Other GPCRs'} # {slug:name}
 _AFTER_NAR2025_CLASSLESS_PARENT_GPCR_SLUGS = {'010'}
