@@ -2290,6 +2290,8 @@ ARRESTIN_DISPLAY_NAME = {'arrc_human': 'Arrestin-C',
                          'arrc':'Arrestin-C'}
 
 
+GPCR_CLASS_SLUG_PREFIX = '0'
+
 # Remove this constants in the future
 _BEFORE_NAR2025_CLASSLESS_PARENT_GPCR_SLUGS_DICT = {'008':'Other GPCRs'} # {slug:name}
 _AFTER_NAR2025_CLASSLESS_PARENT_GPCR_SLUGS = {'010'}
