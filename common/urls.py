@@ -39,4 +39,5 @@ urlpatterns = [
     url(r'^importexcel$', views.ImportExcel, name='importexcel'),
     url(r'^convertsvg$', views.ConvertSVG, name='convertsvg'),
     url(r'^targettabledata', views.TargetTableData, name='targettabledata'),
+    url(r'^getreference', views.get_reference, name='get_reference'),
 ]

@@ -4,6 +4,9 @@ from django.db import connection
 from django.utils.text import slugify
 from django.db import IntegrityError
 
+# for automatic alignment fixes using space information from the pdb
+from build.management.commands.PDB_sequence_helper import *
+
 from build.management.commands.base_build import Command as BaseBuild
 from build.management.commands.build_ligand_functions import get_or_create_ligand, match_id_via_unichem
 from protein.models import (Protein, ProteinConformation, ProteinState, ProteinAnomaly, ProteinAnomalyType,
@@ -401,6 +404,17 @@ class Command(BaseBuild):
             print('parent_seq-pdb_seq length',len(parent_seq),'pdb_seq',len(seq))
             print(parent_seq)
             print(seq)
+
+        # =================================================================================
+        # === START OF ALIGNMENT SECTION ==================================================
+        # =================================================================================
+
+        # ---------------------------------------------------------------------------------
+        # --- [LEGACY PIPELINE] Current alignment method using pairwise2 and manual fixes -
+        # ---------------------------------------------------------------------------------
+        # NOTE FOR FUTURE REFACTORING: This entire block can be replaced by the 
+        # "NEW AUTOMATED PIPELINE" block below.
+        
         #align WT with structure seq -- make gaps penalties big, so to avoid too much overfitting
 
         if structure.pdb_code.index=='6U1N':
@@ -727,6 +741,69 @@ class Command(BaseBuild):
             temp_seq = temp_seq[:565]+temp_seq[566:]
         elif structure.pdb_code.index=='9IVM':
             temp_seq = temp_seq[:105]+'S'+temp_seq[105:111]+temp_seq[112:]
+
+        # --- [END OF LEGACY PIPELINE] ---
+
+        # ---------------------------------------------------------------------------------
+        # --- [NEW AUTOMATED PIPELINE] - Future replacement for the legacy block above ---
+        # ---------------------------------------------------------------------------------
+        # TO ENABLE THIS NEW PIPELINE:
+        #   1. UNCOMMENT this entire block.
+        #   2. COMMENT OUT or DELETE the entire "[LEGACY PIPELINE]" block above,
+        #      which includes all `pairwise2` calls and the large `if/elif` chain
+        #      of manual fixes.
+        # ---------------------------------------------------------------------------------
+        
+        # # New code block for automatic alignment fixes using space information from the pdb, starts here
+        # # parent_seq is the wt_seq from the context of this method.
+        
+        # # ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
+
+        # pdb_code = structure.pdb_code.index
+        # wt_seq = parent_seq  # Use the already prepared WT sequence
+        # pdb_text = structure.pdb_data.pdb
+
+        # # 'removed' list (for fusion proteins) is already calculated above.
+        # # We pass it to our helper to get a clean PDB sequence.
+        # pdb_seq, distances = generate_seq_and_distances_from_pdb_text(
+        #     pdb_text, preferred_chain, residues_to_remove=removed
+        # )
+
+        # # Get initial alignment and residue mapping
+        # initial_ref_seq, initial_temp_seq, pdb_map = run_pairwisealigner(
+        #     pdb_code, wt_seq, pdb_seq
+        # )
+
+        # # Find outliers which might indicate misalignments
+        # outlier_indexes = distances_stats(distances)
+
+        # # Attempt to automatically fix misalignments based on outliers and gaps
+        # # The function returns the final, corrected alignment string for the PDB sequence.
+        # fixed_temp_seq = detect_alignment_mistakes_and_reposition(
+        #     pdb_code,
+        #     wt_seq,
+        #     pdb_seq,
+        #     initial_ref_seq,
+        #     initial_temp_seq,
+        #     pdb_map,
+        #     distances,
+        #     outlier_indexes,
+        #     aanumber=3,
+        # )
+
+        # # Assign the final, corrected alignment strings to be used by the rest of the function.
+        # ref_seq = initial_ref_seq
+        # temp_seq = fixed_temp_seq
+
+
+        # # ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
+        # # New code block for automatic alignment fixes using space information from the pdb, ends here
+        # # --- [END OF NEW AUTOMATED PIPELINE] ---
+
+        
+        # =================================================================================
+        # === END OF ALIGNMENT SECTION ====================================================
+        # =================================================================================
 
 
         for i, r in enumerate(ref_seq, 1): #loop over alignment to create lookups (track pos)
@@ -1270,7 +1347,15 @@ class Command(BaseBuild):
                 structure.save()
 
             protein = structure.protein_conformation
-            lig_key = list(data.keys())[0]
+            lig_keys = list(data.keys())
+            if len(lig_keys)>1:
+                for l in lig_keys:
+                    if l==ligand_name:
+                        lig_key = l
+                    elif len(ligand_name)==5 and ligand_name[:3]==l:
+                        lig_key = l
+            else:
+                lig_key = list(data.keys())[0]
 
             f = module_dir + "/results/" + pdb_id + "/interaction" + "/" + pdb_id + "_" + lig_key + ".pdb"
             if os.path.isfile(f):
@@ -1283,6 +1368,8 @@ class Command(BaseBuild):
             lig_db_key = lig_key
             if lig_key!=ligand_name and len(lig_key)==3 and len(ligand_name)==5:
                 lig_db_key = ligand_name
+                if '.' in lig_db_key:
+                    lig_db_key = lig_db_key.split('.')[0]
             struct_lig_interactions = StructureLigandInteraction.objects.filter(pdb_reference=lig_db_key, structure=structure, annotated=True) #, pdb_file=None
             if struct_lig_interactions.exists():  # if the annotated exists
                 try:

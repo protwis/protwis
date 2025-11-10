@@ -1,0 +1,147 @@
+{% extends "home/base.html" %}
+{% load static %}
+{% load humanize %}
+{% block addon_css %}
+<link rel="stylesheet" href="{% static 'home/css/nv.d3.min.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/nvd3-update.css' %}" type="text/css" />
+<link href="{% static 'home/css/bootstrap-responsive.css' %}" rel="stylesheet" media="screen">
+{% endblock %}
+
+{% block content %}
+
+
+<div class='col-md-12'>
+  <!-- <div class='col-md-6' style="float:left; display:block;">
+    <br />
+    <h4 style='text-align:center;'>Overview adapted from the main GPCRdb reference</h4>
+    <br />
+    <img src="{% static 'home/images/GPCRdb_overview_upper.png' %}" style='height: 100%; width: 100%; object-fit: contain'>
+    <br />
+    <img src="{% static 'home/images/Drugs_Ligands_overview.png' %}" style='margin:5px; height: 100%; width: 100%; object-fit: contain'>
+  </div> -->
+
+  {% if site == 'gpcrdb' %}
+
+    <div class='col-md-12' style="display:block;">
+        <br />
+        <br \>
+        <p>
+        <b>Latest GPCRdb article</b><br>
+        GPCRdb in 2025: adding odorant receptors, data mapper, structure similarity search and models of physiological ligand complexes.<br />
+            Taracena Herrera L.P., Andreassen S.N., Caroli J., Rodríguez-Espigares I., Kermani A.A., Keserű G.M., Kooistra A.J., Pándy-Szekeres G., Gloriam D.E.<br />
+            <a href ='https://doi.org/10.1093/nar/gkae1065' target='_blank'><i>Nucleic Acids Research</i>, 2025</a><br />
+            <br />
+
+        <b>Structure analysis platform</b><br>
+        An online GPCR structure analysis platform.<br />
+            Kooistra, A.J., Munk, C., Hauser, A.S. and Gloriam, D.E.<br />
+            <a href ='https://doi.org/10.1038/s41594-021-00675-6' target='_blank'><i>Nature Structural & Molecular Biology</i>, 2021</a><br />
+            <br />
+
+        <b>Drug resource</b><br>
+        GPCR drug discovery: new agents, targets and indications.<br />
+            Sánchez Lorente, J., Sokolov, A.V., Ferguson, G., Schiöth, H.B., Hauser, A.S. and Gloriam, D.E.<br />
+            <a href ='https://doi.org/10.1038/s41573-025-01139-y' target='_blank'><i>Nature Reviews Drug Discovery</i>, 2017</a><br />
+            <br />
+
+        <b>Generic residue numbers</b><br>
+        Generic GPCR residue numbers - aligning topology maps while minding the gaps.<br />
+            Isberg, V., de Graaf, C., Bortolato, A., Cherezov, V., Katritch, V., Marshall, F.H., Mordalski, S., Pin, J.P., Stevens, R.C., Vriend, G. and Gloriam, D.E.<br />
+            <a href ='https://doi.org/10.1016/j.tips.2014.11.001' target='_blank'><i>Trends in pharmacological sciences</i>, 2015</a><br />
+            <br />
+
+        <br><br>
+        <b>Other publications</b><br>
+        GPCRdb in 2023: State-specific structure models using AlphaFold2 and expansion of ligand resources.<br />
+            Pándy-Szekeres, G., Caroli, J., Mamyrbekov, A., Kermani, A.A., Keserű, G.M., Kooistra, A.J. and Gloriam, D.E.<br />
+            <a href ='https://doi.org/10.1093/nar/gkac1013' target='_blank'><i>Nucleic Acids Research</i>, 2023</a><br />
+            <br />
+        
+        GPCRdb in 2021: integrating GPCR sequence, structure and function.<br />
+            Kooistra, A.J., Mordalski, S., Pándy-Szekeres, G., Esguerra, M., Mamyrbekov, A., Munk, C., Keserű, G.M. and Gloriam, D.E.<br />
+            <a href ='https://doi.org/10.1093/NAR/GKAA1080' target='_blank'><i>Nucleic Acids Research</i>, 2021</a><br />
+            <br />
+        
+        Combinatorial expression of GPCR isoforms affects signalling and drug responses.<br />
+            Marti-Solano, M., Crilly, S.E., Malinverni, D., Munk, C., Harris, M., Pearce, A., Quon, T., Mackenzie, A.E., Wang, X., Peng, J. et al.<br />
+            <a href ='https://doi.org/10.1038/s41586-020-2888-2' target='_blank'><i>Nature</i>, 2020</a><br />
+            <br />
+        An online resource for GPCR structure determination and analysis.<br />
+            Munk, C., Mutt, E., Isberg, V., Nikolajsen, L.F., Bibbe, J.M., Flock, T., Hanson, M.A., Stevens, R.C., Deupi, X. and Gloriam, D.E.<br />
+            <a href ='https://doi.org/10.1038/s41592-018-0302-x' target='_blank'><i>Nature Methods</i>, 2019</a><br />
+            <br />
+        GPCRdb in 2018: adding GPCR structure models and ligands.<br />
+            Pándy-Szekeres, G., Munk, C., Tsonkov, T.M., Mordalski, S., Harpsoe, K., Hauser, A.S., Bojarski, A.J. and Gloriam, D.E.<br />
+            <a href ='https://doi.org/10.1093/nar/gkx1109' target='_blank'><i>Nucleic Acids Research</i>, 2018</a><br />
+            <br />
+        <!-- Pharmacogenomics of GPCR Drug Targets.<br />
+            Hauser, A.S., Chavali, S., Masuho, I., Jahn, L.J., Martemyanov, K.A., Gloriam, D.E. and Babu, M.M.<br />
+            <a href ='https://doi.org/10.1016/j.cell.2017.11.033' target='_blank'><i>Cell</i>, 2018</a><br />
+            <br /> -->
+        Trends in GPCR drug discovery: new agents, targets and indications.<br />
+            Hauser, A.S., Attwood, M.M., Rask-Andersen, M., Schioth, H.B. and Gloriam, D.E.<br />
+            <a href ='https://doi.org/10.1038/nrd.2017.178' target='_blank'><i>Nature Reviews Drug Discovery</i>, 2017</a><br />
+            <br />
+        GPCRdb: an information system for G protein-coupled receptors.<br />
+            Isberg, V., Mordalski, S., Munk, C., Rataj, K., Harpsoe, K., Hauser, A.S., Vroling, B., Bojarski, A.J., Vriend, G. and Gloriam, D.E.<br />
+            <a href ='https://doi.org/10.1093/nar/gkv1178' target='_blank'><i>Nucleic Acids Research</i>, 2016</a><br />
+            <br />
+        GPCRdb: the G protein-coupled receptor database - an introduction.<br />
+            Munk, C., Isberg, V., Mordalski, S., Harpsoe, K., Rataj, K., Hauser, A.S., Kolb, P., Bojarski, A.J., Vriend, G. and Gloriam, D.E.<br />
+            <a href ='https://doi.org/10.1111/bph.13509' target='_blank'><i>British Journal of Pharmacololgy</i>, 2016</a><br />
+            <br />
+        Integrating structural and mutagenesis data to elucidate GPCR ligand binding.<br />
+            Munk, C., Harpsoe, K., Hauser, A.S., Isberg, V. and Gloriam, D.E.<br />
+            <a href ='https://doi.org/10.1016/j.coph.2016.07.003' target='_blank'><i>Current Opinion in Pharmacology</i>, 2016</a><br />
+            <br />
+        GPCRDB: an information system for G protein-coupled receptors.<br />
+            Isberg, V., Vroling, B., van der Kant, R., Li, K., Vriend, G. and Gloriam, D.<br />
+            <a href ='https://doi.org/10.1093/nar/gkt1255' target='_blank'><i>Nucleic Acids Research</i>, 2014</a><br />
+            <br />
+        </p>
+    </div>
+  {% elif site == 'gproteindb' %}
+    <br />
+    <h4 style='text-align:center;'>References</h4>
+    <br \>
+    <p>
+        GproteinDb in 2024: New G protein-GPCR couplings, AlphaFold2-Multimer models and interface interactions</a><br />
+        Pándy-Szekeres G, Taracena Herrera LP, Caroli J, Kermani AA, Kulkarni Y, Keserű GM, Gloriam DE.<br />
+        <a href="https://doi.org/10.1093/nar/gkad1089"><i>Nucleic Acids Research,</i> 2023</a>
+        <br />
+        Latest GproteinDb publication featuring e.g.:<br />
+        <ul>
+        <li>New coupling data with complimentary Biosensors and Datasets pages.</li>
+        <li>Structure models of nearly all human GPCR-G&alpha; complex built using AlphaFold2-Multimer.</li>
+        <li>Greatly expanded G protein-GPCR interface interaction data and visualization, including 'biflare plot' (2D residue diagram), 3D view, matrix and browser.</li>
+        <li>Refined experimental structures (mutations reverted to wildtype, missing coordinates modeled-in).</li>
+        </ul>
+        The G protein database, GproteinDb</a><br />
+        Pándy-Szekeres G, Esguerra M, Hauser AS, Caroli J, Munk C, Pilger S, Keserű GM, Kooistra AJ, Gloriam DE.<br />
+        <a href="https://doi.org/10.1093/nar/gkab852" target="_blank"><i>Nucleic Acids Research,</i> 2021</a><br />
+        First GproteinDb publication describing the majority of data and tools.
+        <br />
+        <br />
+        Common coupling map advances GPCR-G protein selectivity</a><br />
+        Hauser AS, Avet C, Normand C, Mancini A, Inoue A, Bouvier M, Gloriam DE.<br />
+        <a href="https://doi.org/10.7554/eLife.74107" target="_blank"><i>Elife,</i> 2022</a><br />
+        Describes the G protein - GPCR couplings in the <i>G protein couplings</i> page of GproteinDb. Integrates G protein family-level couplings from the Guide to Pharmacology database with large G protein subtype-level datasets generated by the groups of Michel Bouvier and Asuka Inoue.
+    </p>
+  {% elif site == 'arrestindb' %}
+    <br \>
+    <p>
+        The arrestin database, ArrestinDb<br />
+        Luis P. Taracena Herrera, Jimmy Caroli, Gáspár Pándy-Szekeres, Ali A. Kermani, Martha E. Sommer, Alexander S. Hauser, Albert J. Kooistra and David E. Gloriam<br />
+        <i>Manuscript</i>
+    </p>
+  {% elif site == 'biasedsignalingatlas' %}
+    <br \>
+    <p>
+        A community Biased Signaling Atlas<br />
+        Jimmy Caroli, Alibek Mamyrbekov, Kasper Harpsøe, Sahar Gardizi, Linda Dörries, Eshan Ghosh, Alexander S. Hauser, Albert J. Kooistra, and David E. Gloriam<br />
+        <a href="https://doi.org/https://doi.org/10.1038/s41589-023-01292-8" target="_blank"><i>Nature Chemical Biology, 2023, 19, 531-535</i></a>
+    </p>
+  {% endif %}
+</div>
+
+{% endblock %}

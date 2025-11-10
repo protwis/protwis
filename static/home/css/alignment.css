@@ -131,14 +131,20 @@
 }
 
 .ali-first-container {
+  /* position: relative;
+  top: 0px; */
+  /* position: absolute;
+  width: 250px; */
+}
+
+.ali-score-container {
   position: absolute;
-  width: 250px;
+  top: 0;
 }
 
 .ali-scroll-container {
   position: absolute; 
-  left: 250px; 
-  width: 1000px;
+  top: 0;
 }
 
 .ali-scroll-div,
@@ -154,6 +160,7 @@
 
 .dynamic-div {
   display: inline-block;
+  width:100%;
 }
 
 ::-webkit-scrollbar {

@@ -1185,8 +1185,8 @@ class CallHomologyModeling():
                                 if pos[0]=='ICL3':
                                     icl3_positions.append(e)
                             if len(icl3_positions)>0:
-                                start = icl3_positions[7]
-                                end = icl3_positions[-7]
+                                start = icl3_positions[5]
+                                end = icl3_positions[-5]
                                 i = i[:start]+i[end:]
 
                         orig_residues1 = parse.fetch_residues_from_array(main_pdb_array[first_seg], minus_gns)

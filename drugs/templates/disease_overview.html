@@ -1,0 +1,317 @@
+{% extends "home/base.html" %}
+{% load static %}
+{% load humanize %}
+{% block addon_css %}
+<style>
+  .graydiv {
+      height: 20px;
+      width: 275px;
+      background: linear-gradient(to right, white 0%, black 100%);
+      border-style: solid;
+      border-color: black;
+      border-width: 1px; /* Adjust the thickness here */
+  }
+  .approveddiv {
+      height: 20px;
+      width: 150px;
+      background: linear-gradient(to right, white 0%, #2c87c8 100%);
+      border-style: solid;
+      border-color: black;
+      border-width: 1px; /* Adjust the thickness here */
+  }
+  .repurposeddiv {
+      height: 20px;
+      width: 150px;
+      background: linear-gradient(to right, white 0%, #ae5dae 100%);
+      border-style: solid;
+      border-color: black;
+      border-width: 1px; /* Adjust the thickness here */
+  }
+  .agentsdiv {
+      height: 20px;
+      width: 150px;
+      background: linear-gradient(to right, white 0%, #dd2628 100%);
+      border-style: solid;
+      border-color: black;
+      border-width: 1px; /* Adjust the thickness here */
+  }
+  .color_phase1 {
+      color: #f5bcbf;
+      font-size: 15px;
+  }
+  .color_phase2 {
+      color: #f17270;
+      font-size: 15px;
+  }
+  .color_phase3 {
+      color: #dd2628;
+      font-size: 15px;
+  }
+  .color_phase4 {
+      color: #2c87c8;
+      font-size: 15px;
+  }
+  .color_untapped {
+      color: #D3D3D3;
+      font-size: 15px;
+  }
+  .color_sensory {
+      color: #A3D9C8;
+      font-size: 15px;
+  }
+  #plotContainer_cluster {
+      width: 1600px; /* Set width */
+      height: 1200px; /* Set height */
+      margin: auto; /* Center the plot */
+  }
+  .hidden {
+      display: none;
+  }
+.color-picker {
+  display: flex;
+  align-items: center;
+}
+.color-box {
+  width: 20px;
+  height: 20px;
+  margin-right: 10px;
+  border: 1px solid #000;
+}
+/* Style adjustments for better visibility */
+.custom-control-label {
+  cursor: pointer;
+}
+.dropdown-menu-listplot {
+  background-color: rgba(255, 255, 255, 1); /* Slightly transparent white background */
+  max-height: 300px; /* Maximum height of the dropdown menu */
+  overflow-y: auto; /* Enable vertical scrolling if needed */
+  left: 25%; /* Ensures the dropdown opens to the right */
+  top: 50%; /* Adjust this value to align the dropdown vertically in the middle */
+  transform: translateY(-50%); /* Center align vertically */
+  margin-left: 10px; /* Add some space between the button and the dropdown */
+}
+.dropdown-menu-right-middle {
+  left: 75%;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-left: 10px; /* Add some space between the button and the dropdown */
+  width: 100px !important;
+}
+.btn-custom-blue {
+    background-color: #5bc0de; /* Light blue color */
+    border-color: #5bc0de;
+    color: #fff; /* Darker text for better contrast */
+}
+.btn-custom-blue:hover {
+    background-color: #31b0d5; /* Lighter sky blue for hover effect */
+    border-color: #31b0d5;
+}
+.dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border-style: solid;
+    border-color: black;
+    border-width: 1px; /* Adjust the thickness here */
+    margin-right: 5px;
+    vertical-align: middle;
+}
+.no-bullet-indent {
+  list-style: none;  /* Remove bullets */
+  padding: 0;
+  margin: 0;
+}
+.no-bullet-indent li {
+    padding-left: 20px;  /* Add indentation */
+}
+.hover-pointer {
+    cursor: pointer; /* Changes cursor to a pointer on hover */
+}
+.hover-pointer:hover {
+    text-decoration: underline; /* Optional: Add an underline effect on hover */
+}
+</style>
+{% endblock %}
+{% block content %}
+<ul class="nav nav-tabs">
+    <li class="active">
+      <a href="#summary" data-toggle="tab">Outline</a>
+    </li>
+    <li>
+      <a href="#list" data-toggle="tab">List</a>
+    </li>
+</ul>
+
+<div class="tab-content">
+  <div id="summary" class="tab-pane fade in active">
+    <div style="padding-top: 10px; font-size: 11px; white-space: nowrap;margin-top: 20px;margin-bottom: 10px;">
+      <div class="col-md-12">
+        <div style="float: left; position: relative; padding-right: 10px;" class="text-center">
+          <b>New agents in trial</b>
+          <div class="agentsdiv"></div>
+        </div>
+        <div style="float: left; position: relative; padding-right: 10px;" class="text-center">
+          <b>Drugs repurposed</b>
+          <div class="repurposeddiv"></div>
+        </div>
+        <div style="float: left; position: relative; padding-right: 10px;" class="text-center">
+          <b>Approved drugs</b>
+          <div class="approveddiv"></div>
+        </div>
+        <br />
+        <div class="col-md-12" style="margin-bottom: 40px;margin-top: 20px;">
+          {% for block in combined %}
+          <details>
+            <summary>
+              <span class="dot" style="background-color: {{ block.main_label.red }};"></span>
+              <span class="dot" style="background-color: {{ block.main_label.purple }};"></span>
+              <span class="dot" style="background-color: {{ block.main_label.blue }};"></span>
+              <b class="hover-pointer">{{ block.main_key }}</b>
+            </summary>
+            {{ block.rendered_items|safe }}
+          </details>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="list" class="tab-pane fade in">
+    <div style="padding-top: 10px; font-size: 11px; white-space: nowrap;">
+      <div class="col-md-12" style="margin-left: -20px;">
+        <!-- # List plot # -->
+        <div class="col-md-1">
+          <div id="ListPlot" class="text-left" style="margin-top: 10px;"></div>
+        </div>
+        <!-- ## Download button ## -->
+        <div style="position: absolute; top: 43px; left: 850px;">
+          <div class="dropdown">
+            <button type="button" class="btn btn-primary dropdown-toggle" style="font-size: 14px;" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              <span class="glyphicon glyphicon-download" style="vertical-align: top;line-height: 1.3"></span> Download <span class="caret"></span>
+            </button>
+            <div class="dropdown-menu dropdown-menu-right-middle">
+              <li><a class="dropdown-item" href="javascript:saveSvg(document.getElementById('ListPlot_visualization'), 'Listplot.svg');">SVG</a></li>
+              <li><a class="dropdown-item" href="javascript:saveSvgAsPng(document.getElementById('ListPlot_visualization'), 'Listplot.png');">PNG</a></li>
+              <li><a class="dropdown-item" href="javascript:saveSvgAsJpg(document.getElementById('ListPlot_visualization'), 'Listplot.jpg');">JPG</a></li>
+              <li><a class="dropdown-item" href="javascript:saveSvgAsTiff(document.getElementById('ListPlot_visualization'), 'Listplot.tiff');">TIFF</a></li>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block addon_js %}
+<script src="{% static 'home/js/d3.min.js' %}"></script>
+<script src="{% static 'home/js/nv.d3.min.js' %}"></script>
+<script src="{% static 'home/js/d3.v4.min.js' %}"></script>
+<script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
+<script src="{% static 'home/js/saveSvg.js' %}"></script>
+<script src="{% static 'home/js/datamapper.js' %}"></script>
+<script src="{% static 'home/js/plotly_v1_58_5.js' %}"></script>
+<script src="{% static 'home/js/popper.min.js' %}"></script>
+<script src="{% static 'home/js/spectrum_v1_8_1.js' %}"></script>
+<script src="{% static 'home/js/ml.js' %}"></script>
+<script>
+
+// #####################
+// # Load view context #
+// #####################
+
+var listdata = {{ listplot_data|safe }};
+var list_data_wow = {{ listplot_data_variables|safe }};
+var data_types_list = {{listplot_datatypes|safe}};
+var Label_conversion_dict = {{Label_Conversion|safe}};
+var List_Data_result = {{List_Data_result|safe}};
+var modded_list_data = Initialize_Data(listdata);
+
+// #################################
+// ## Initialize global variables ##
+// #################################
+
+// # Initialize layout #
+var Layout_dict = {columns: 2, col_breaker: 'Custom', col_max_label: 'Custom', Col_break_number:150, indentation: 'Yes'};
+
+//  Initialize styling
+var Styling_Option_dict = {
+    ReceptorFamily: {Bold: true, Italic: false, Underline: false, Fontsize: "11px", Color: "#000"},
+    Receptor: {Bold: false, Italic: false, Underline: false, Fontsize: "10px", Color: "#000"}
+};
+
+// ## Initialization of global data for list ##
+function fixedStyling(list_data_wow, data_types_list) {
+
+    // Function to check if any of the specified keys are present in a given object
+    function checkKeysPresent(obj, keys) {
+        return keys.some(k => k in obj);
+    }
+
+    // Define the keys to check for each column
+    var col1Keys = ["Value1", "Value2"];
+    var col2Keys = ["Value3", "Value4"];
+    var col3Keys = ["Value5", "Value6"];
+
+    var Data_styling = {
+        Col1: {Data: "Yes", Datatype: 'Continuous', Data_min: Infinity,Data_max: -Infinity, Data_coloring: 'All', Data_color1: '#FFFFFF', Data_color2: '#FF0000', data_color_complexity: 'One'},
+        Col2: {Data: "Yes", Datatype: 'Continuous', Data_min: Infinity,Data_max: -Infinity, Data_coloring: 'All', Data_color1: '#FFFFFF', Data_color2: '#A020F0', data_color_complexity: 'One'},
+        Col3: {Data: "Yes", Datatype: 'Continuous', Data_min: Infinity,Data_max: -Infinity, Data_coloring: 'All', Data_color1: '#FFFFFF', Data_color2: '#0000FF', data_color_complexity: 'One'},
+        Col4: {Data: "No", Datatype: 'None', Data_min: Infinity,Data_max: -Infinity, Data_coloring: 'All', Data_color1: '#FFFFFF', Data_color2: '#FFFFFF', data_color_complexity: 'One'},
+        };
+
+    // Run through data and set min and max values
+    function updateDataMinMax(column, key, currentObj) {
+        if (Data_styling[column].Data === "Yes" && Data_styling[column].Datatype === 'Continuous' && currentObj.hasOwnProperty(key)) {
+            if (currentObj[key] > Data_styling[column].Data_max) {
+                Data_styling[column].Data_max = currentObj[key];
+            }
+            if (currentObj[key] < Data_styling[column].Data_min) {
+                Data_styling[column].Data_min = currentObj[key];
+            }
+        }
+    }
+
+    Object.keys(list_data_wow).forEach(function(key) {
+        var currentObj = list_data_wow[key];
+
+        updateDataMinMax('Col1', 'Value2', currentObj);
+        updateDataMinMax('Col2', 'Value4', currentObj);
+        updateDataMinMax('Col3', 'Value6', currentObj);
+    });
+
+    return Data_styling;
+}
+
+// # Initialize label switcher #
+var Label_names = 'Protein';
+// # Initialize data styling #
+var Data_styling = fixedStyling(list_data_wow, data_types_list);
+var Data_array = List_Data_result.final_array;
+var Data_Category_array = List_Data_result.category_array;
+
+// #################################
+// # Initialize data visualization #
+// #################################
+
+function Listplot_render_visualization(){
+  const Col_break_number = Layout_dict.col_max_label === "Auto" ? Math.ceil(Data_array.length / Layout_dict.columns) : Layout_dict.Col_break_number;
+  var layout_spacing = Calculate_dimension(Data_array, Data_Category_array, Col_break_number, Layout_dict.columns, Label_conversion_dict, Label_names, Styling_Option_dict);
+  // setting layout manually
+  // layout_spacing['Col1'] = 750;
+  RenderListPlot_Labels(Data_array,Data_Category_array, 'ListPlot',Styling_Option_dict,Layout_dict,Label_conversion_dict,Label_names,16);
+  data_visualization(Data_array, Data_Category_array, 'ListPlot', Layout_dict, Data_styling, layout_spacing,16,5,11);
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+  Listplot_render_visualization();
+  // Call this function to populate options for continuous data columns
+  document.getElementById("legend_1").textContent = "New agents";
+  document.getElementById("legend_2").textContent = "Drugs being repurposed";
+  document.getElementById("legend_3").textContent = "All drugs";
+});
+
+$('.dropdown-menu').on('click', function(event){
+    event.stopPropagation();
+  });
+</script>
+{% endblock %}

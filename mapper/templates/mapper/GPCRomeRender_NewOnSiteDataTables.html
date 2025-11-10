@@ -1,0 +1,386 @@
+{% extends "home/base.html" %}
+{% load static %}
+{% load humanize %}
+{% block addon_css %}
+<link rel="stylesheet" href="{% static 'home/css/nv.d3.min.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/nvd3-update.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/Spectrum_1_8_1.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/select2_4.1.0-rc.0._full.css' %}" type="text/css">
+<link rel="stylesheet" href="{% static 'home/css/structure_browser.css' %}" type="text/css">
+<link rel="stylesheet" href="{% static 'home/css/NewDrugsBrowser_datatables.min.css' %}" type="text/css"/>
+{% endblock %}
+
+{% block content %}
+
+<div id="image-container" data-image-url="{% static 'home/images/DataMapper_GPCRome_icon_legend.png' %}"></div>
+<div class="col-md-12" style="margin-top: 0px;margin-bottom: 30px;">
+    <div id="GPCRome_plot" class="text-center"></div>
+</div>
+<div class="col-md-12 mt-4">
+    <h4 class="text-center">GPCR Table Input</h4>
+    <table id="gpcr-table" class="table table-bordered" style="width: 60%; margin-top: 10px;">
+        <thead>
+            <tr>
+                <th>GPCR</th>
+                <th>Value</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- JS will populate rows -->
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block addon_js %}
+<script src="{% static 'home/js/d3.min.js' %}"></script>
+<script src="{% static 'home/js/nv.d3.min.js' %}"></script>
+<script src="{% static 'home/js/d3.v4.min.js' %}"></script>
+<script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
+<script src="{% static 'home/js/saveSvg.js' %}"></script>
+<script src="{% static 'home/js/datamapper.js' %}"></script>
+<script src="{% static 'home/js/spectrum_v1_8_1.js' %}"></script>
+<script src="{% static 'home/js/select2_4.1.0-rc.0_full.js' %}"></script>
+<script src="{% static 'home/js/NewDrugsBrowser_datatables.min.js' %}"></script>
+
+
+<!-- Universal scripts -->
+<script>
+$('.dropdown-menu').on('click', function(event){
+    event.stopPropagation();
+});
+
+$(document).ready(function() {
+    $('#gpcr-table').DataTable({
+        paging: false,
+        searching: false,
+        ordering: false,
+        info: false
+    });
+});
+
+var GPCRome_WheelDict = {{ gpcr_tree|safe }};
+// var raw_data = {{raw_data|safe}}
+// var GPCRome_conversion = {{ gpcr_conversion|safe }};
+var Updated_GPCRome_WheelDict = structuredClone(GPCRome_WheelDict);
+
+console.log(GPCRome_WheelDict)
+// console.log(raw_data)
+
+
+// Recursively extract all "Data" values from a nested object
+function extractDataValues(obj) {
+    let values = [];
+
+    function findData(node) {
+        if (typeof node === "object" && node !== null) {
+            for (const key in node) {
+                const value = node[key];
+
+                if (value && typeof value === "object" && "Data" in value) {
+                    const dataValue = Number(value.Data);
+                    if (!isNaN(dataValue)) {
+                        values.push(dataValue);
+                    }
+                } else {
+                    findData(value); // keep digging
+                }
+            }
+        }
+    }
+
+    findData(obj);
+    return values;
+}
+
+// Extract "Data" values
+const GPCRomeWheelValues = extractDataValues(GPCRome_WheelDict)
+    .filter(value => value !== null && value !== '');
+
+// Min, max, average
+const GPCRomeMin = GPCRomeWheelValues.length > 0 
+    ? Math.min(...GPCRomeWheelValues)
+    : null;
+
+const GPCRomeMax = GPCRomeWheelValues.length > 0 
+    ? Math.max(...GPCRomeWheelValues)
+    : null;
+
+const GPCRomeAvg = GPCRomeWheelValues.length > 0 
+    ? (GPCRomeMin + GPCRomeMax) / 2
+    : null;
+
+var GPCRomes_styling = {
+  GPCRomeMin: GPCRomeMin,
+  GPCRomeMax: GPCRomeMax,
+  GPCRomeAvg: GPCRomeAvg,
+  FontStyle: "Arial",
+  FontsizeGlobal: "11px",
+  FontsizeClass: "20px",
+  colorStart: "#e64b35",
+  colorAvg: "#FFFFFF",
+  colorEnd: "#3c5488",
+  ColorSetup: 'One',
+  showIcon: true
+};
+
+let GPCRome_location = "GPCRome_plot";
+DrawGPCRomeWheel(GPCRome_WheelDict,GPCRome_location,GPCRomes_styling);
+
+function updateGPCRome() {
+    d3.select("#" + GPCRome_location).select("svg").remove();
+    // Recalculate data values from the updated dict
+    const updatedValues = extractDataValues(Updated_GPCRome_WheelDict)
+        .filter(value => value !== null && value !== '');
+
+    const GPCRomeMin = updatedValues.length > 0 
+        ? Math.min(...updatedValues)
+        : null;
+
+    const GPCRomeMax = updatedValues.length > 0 
+        ? Math.max(...updatedValues)
+        : null;
+
+    const GPCRomeAvg = updatedValues.length > 0 
+        ? (GPCRomeMin + GPCRomeMax) / 2
+        : null;
+
+    // Update styling object
+    GPCRomes_styling.GPCRomeMin = GPCRomeMin;
+    GPCRomes_styling.GPCRomeMax = GPCRomeMax;
+    GPCRomes_styling.GPCRomeAvg = GPCRomeAvg;
+
+    console.log(Updated_GPCRome_WheelDict); // contains all user-modified values
+    DrawGPCRomeWheel(Updated_GPCRome_WheelDict, GPCRome_location, GPCRomes_styling); // ← Use the updated copy
+}
+
+// === Dynamic Table Setup ===
+
+// Extract unique GPCR names from nested GPCRome_WheelDict
+function extractReceptorNames(obj) {
+    let names = new Set();
+
+    function findNames(node) {
+        if (typeof node === "object" && node !== null) {
+            for (const key in node) {
+                const value = node[key];
+
+                if (value && typeof value === "object" && "Data" in value) {
+                    names.add(key); // GPCR name is the key
+                } else {
+                    findNames(value);
+                }
+            }
+        }
+    }
+
+    findNames(obj);
+    return Array.from(names).sort();
+}
+
+// Populate table with 5 rows and dropdown + input
+function renderGPCRTable(gpcrList, rowCount = 5) {
+    const tableBody = document.querySelector("#gpcr-table tbody");
+    tableBody.innerHTML = "";
+
+    const selects = []; // Keep track of select elements
+
+    for (let i = 0; i < rowCount; i++) {
+        const row = document.createElement("tr");
+
+        // === GPCR Dropdown ===
+        const gpcrCell = document.createElement("td");
+        const select = document.createElement("select");
+        select.className = "form-select mx-auto d-block";
+        selects.push(select);
+        gpcrCell.appendChild(select);
+        gpcrCell.classList.add("text-center", "align-middle");
+        row.appendChild(gpcrCell);
+
+        // === Value input ===
+        const valueCell = document.createElement("td");
+        const input = document.createElement("input");
+        input.type = "text";  // Allow full paste compatibility
+        input.className = "form-control mx-auto d-block";
+        input.placeholder = "Enter value";
+        valueCell.appendChild(input);
+        valueCell.classList.add("text-center", "align-middle");
+        row.appendChild(valueCell);
+
+        select.style.width = "90%";
+        input.style.width = "80%";
+
+        // === Event Listener for input change ===
+        input.addEventListener("change", () => {
+            const receptor = select.value;
+            const val = parseFloat(input.value);  // Accept int or float
+            if (receptor && !isNaN(val)) {
+                const updated = updateReceptorValue(receptor, val);
+                if (updated) {
+                    console.log(`Updated ${receptor} -> Data: ${val}`);
+                    updateGPCRome();
+                } else {
+                    console.warn(`Could not find receptor ${receptor} in structure.`);
+                }
+            }
+        });
+
+        tableBody.appendChild(row);
+    }
+
+
+    function updateAllDropdowns() {
+        const selectedValues = new Set(selects.map(s => s.value).filter(v => v !== ""));
+
+        selects.forEach(select => {
+            const currentValue = select.value;
+            select.innerHTML = ""; // Clear current options
+
+            // Empty default option
+            const emptyOpt = document.createElement("option");
+            emptyOpt.value = "";
+            emptyOpt.textContent = "-- Select a GPCR --";
+            select.appendChild(emptyOpt);
+
+            gpcrList.forEach(name => {
+                if (!selectedValues.has(name) || name === currentValue) {
+                    const opt = document.createElement("option");
+                    opt.value = name;
+                    opt.innerHTML = name; // render as HTML
+                    if (name === currentValue) opt.selected = true;
+                    select.appendChild(opt);
+                }
+            });
+        });
+    }
+
+    // Initial render
+    updateAllDropdowns();
+
+    // Attach listener to each select
+    selects.forEach((select, idx) => {
+        select.addEventListener("change", () => {
+            updateAllDropdowns();
+
+            const receptor = select.value;
+            const input = document.querySelectorAll("#gpcr-table input")[idx];
+            const val = parseInt(input.value, 10);
+
+            if (receptor && !isNaN(val)) {
+                const updated = updateReceptorValue(receptor, val);
+                if (updated) {
+                    console.log(`Updated ${receptor} → Data: ${val}`);
+                    updateGPCRome();
+                }
+            }
+        });
+    });
+
+}
+
+function updateReceptorValue(entryName, newValue) {
+    function updateData(node) {
+        if (typeof node === "object" && node !== null) {
+            for (const key in node) {
+                const value = node[key];
+
+                if (value && typeof value === "object" && "Data" in value && key === entryName) {
+                    value.Data = newValue;
+                    return true;
+                } else if (updateData(value)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    return updateData(Updated_GPCRome_WheelDict); // ← Use the updated copy
+}
+
+
+
+// Init the table with names from the GPCRome structure
+const receptorNames = extractReceptorNames(GPCRome_WheelDict);
+renderGPCRTable(receptorNames, 20);  // or auto-size based on clipboard content
+
+function handleReceptorClick(receptorName) {
+    // Get all select elements in the table
+    const selects = document.querySelectorAll("#gpcr-table select");
+
+    // Check if this receptor is already selected
+    const alreadySelected = Array.from(selects).some(select => select.value === receptorName);
+    if (alreadySelected) {
+        console.log(`${receptorName} is already selected`);
+        return;
+    }
+
+    // Find the first dropdown with an empty value
+    for (const select of selects) {
+        if (select.value === "") {
+            // Add the receptor name to the dropdown if it's not present
+            const exists = Array.from(select.options).some(opt => opt.value === receptorName);
+            if (!exists) {
+                const opt = document.createElement("option");
+                opt.value = receptorName;
+                opt.innerHTML = receptorName;
+                select.appendChild(opt);
+            }
+
+            // Set its value and trigger the change
+            select.value = receptorName;
+            select.dispatchEvent(new Event("change"));
+            break;
+        }
+    }
+}
+
+document.querySelector("#gpcr-table").addEventListener("paste", (event) => {
+    const clipboard = event.clipboardData || window.clipboardData;
+    const pasteText = clipboard.getData("text");
+
+    const rows = pasteText.trim().split("\n");
+    const hasTabs = rows.some(row => row.includes("\t")); // Check if any line has tabs
+
+    event.preventDefault();
+
+    const selects = document.querySelectorAll("#gpcr-table select");
+    const inputs = document.querySelectorAll("#gpcr-table input");
+
+    rows.forEach((line, rowIndex) => {
+        const select = selects[rowIndex];
+        const input = inputs[rowIndex];
+        if (!select || !input) return;
+
+        if (hasTabs) {
+            // Paste format: Receptor Name \t Value
+            const [name, val] = line.split("\t");
+
+            if (!Array.from(select.options).some(opt => opt.value === name)) {
+                const opt = document.createElement("option");
+                opt.value = name;
+                opt.innerHTML = name;
+                select.appendChild(opt);
+            }
+
+            select.value = name;
+            input.value = val;
+            select.dispatchEvent(new Event("change"));
+            input.dispatchEvent(new Event("change"));
+        } else {
+            // Paste format: Values only (single column)
+            const val = line.trim();
+            if (!isNaN(parseFloat(val))) {
+                input.value = val;
+                input.dispatchEvent(new Event("change"));
+            }
+        }
+    });
+});
+
+</script>
+
+
+
+
+{% endblock %}

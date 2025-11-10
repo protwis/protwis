@@ -70,7 +70,7 @@ class Command(BaseCommand):
             ['build_arrestin_structures'],
             ['build_structure_extra_proteins'],
             ['build_structure_model_rmsd'],
-            ['build_af_models', {'proc': safe_proc_num}],
+            ['build_gain_domain'],
             ['build_blast_database']
         ]
         phase2 = [
@@ -88,8 +88,16 @@ class Command(BaseCommand):
             ['build_mammalian_representative'],
             ['upload_excel_bias_pathways'],
             ['build_receptor_similarity'],
+            ['build_ligand_search'],
             ['build_text'],
             ['build_release_notes'],
+        ]
+        phase3 = [
+            ['build_af_complex_models'],
+            # build_homology_models --alphafold -r {active pdbs} -p
+            ['build_homology_models_zip'], 
+            ['build_homology_models_zip', {'c': True}],
+            ['foldseek_db'],
         ]
 
         if options['phase']:
@@ -97,8 +105,10 @@ class Command(BaseCommand):
                 commands = phase1
             elif options['phase']==2:
                 commands = phase2
+            elif options['phase']==3:
+                commands = phase3
         else:
-            commands = phase1+phase2
+            commands = phase1+phase2+phase3
 
         for c in commands:
             print('{} Running {}'.format(

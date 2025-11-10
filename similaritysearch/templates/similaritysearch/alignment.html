@@ -1,9 +1,31 @@
 {% extends "alignment/alignment.html" %}
 {% load static %}
 
+{% block addon_css %}
+<link href="{% static 'home/css/alignment.css' %}" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'home/css/BusyLoad.css' %}" type="text/css">
+
+<style type="text/css">
+#Init_loader {
+    margin-left: 45%;
+    top: 40%;
+    position: absolute;
+    display: none;
+}
+.busy-load-container {
+    width: 80%; /* Set this to your desired width, e.g., 80% of the screen width */
+    max-width: 1000px; /* Optional: Set a maximum width */
+    text-align: center; /* Center the text */
+}
+.custom-loader-text {
+    white-space: nowrap; /* Prevent text from wrapping to the next line */
+}
+</style>
+{% endblock %}
+
 {% block buttons %}
 <!-- Download button -->
-<div class="btn-group">
+<div class="btn-group" id="alignment-buttons" style="display:none;">
   <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true"
     aria-expanded="false">
     <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
@@ -16,120 +38,164 @@
 
 {% block scores %}
         <!-- similarity score column -->
-        <td>
-            <!-- stats column -->
-            <div class="ali-first-scroll-div"></div>
-            <div class="ali-first-col-div">
-                <table>
-                    <!-- segment line -->
-                    <tr>
-                        <td colspan="3" class="ali-td ali-td-first-col"></td>
-                    </tr>
+        <td id="score-cell">
+            <div class="ali-score-container">
+                <!-- stats column -->
+                <div class="ali-first-scroll-div"></div>
+                <div class="ali-first-col-div">
+                    <table>
+                        <!-- segment line -->
+                        <tr>
+                            <td colspan="3" class="ali-td ali-td-first-col"></td>
+                        </tr>
 
-                    <!-- numbering scheme lines -->
-                    {% for ns in a.numbering_schemes %}
-                    <tr>
-                        <td colspan="3" class="ali-td-generic-num ali-td-first-col">
-                        </td>
-                    </tr>
-                    {% endfor %}
+                        <!-- numbering scheme lines -->
+                        {% for ns in a.numbering_schemes %}
+                        <tr class="gn-score-section-row">
+                            <td colspan="3" class="ali-td-generic-num ali-td-first-col"> <br> <br> <br>
+                            </td>
+                        </tr>
+                        {% endfor %}
 
-                    <!-- protein lines -->
-                    {% for p in a.proteins %}
-                    <tr>
-                        {% if forloop.counter == 1 %}
-                        <td class="ali-td ali-td-first-col">
-                            %I
-                        </td>
-                        <td class="ali-td ali-td-first-col">
-                            %S
-                        </td>
-                        <td class="ali-td ali-td-first-col">
-                            S
-                        </td>
-                        {% else %}
-                        <td class="ali-td ali-td-first-col">
-                            {{ p.identity }}
-                        </td>
-                        <td class="ali-td ali-td-first-col">
-                            {{ p.similarity }}
-                        </td>
-                        <td class="ali-td ali-td-first-col">
-                            {{ p.similarity_score }}
-                        </td>
+                        <!-- protein lines -->
+                        {% for p in a.proteins %}
+                        <tr>
+                            {% if forloop.counter == 1 %}
+                            <td class="ali-td ali-td-first-col">
+                                %I
+                            </td>
+                            <td class="ali-td ali-td-first-col">
+                                %S
+                            </td>
+                            <td class="ali-td ali-td-first-col">
+                                S
+                            </td>
+                            {% else %}
+                            <td class="ali-td ali-td-first-col">
+                                {{ p.identity }}
+                            </td>
+                            <td class="ali-td ali-td-first-col">
+                                {{ p.similarity }}
+                            </td>
+                            <td class="ali-td ali-td-first-col">
+                                {{ p.similarity_score }}
+                            </td>
+                            {% endif %}
+                        </tr>
+                        {% endfor %}
+
+                        <!-- numbering scheme lines -->
+                        {% for ns in a.numbering_schemes %}
+                        <tr>
+                            <td colspan="3" class="ali-td-generic-num ali-td-first-col">
+                            </td>
+                        </tr>
+                        {% endfor %}
+
+                        {% if a.consensus %}
+                        <!-- consensus sequence -->
+                        <tr>
+                            <td colspan="3" class="ali-td ali-td-first-col">
+                            </td>
+                        </tr>
+
+                        <!-- feature consensus -->
+                        <tr>
+                            <td colspan="3" class="ali-td ali-td-first-col">
+                            </td>
+                        </tr>
+                        <!-- Length -->
+                        <tr>
+                            <td colspan="3" class="ali-td ali-td-first-col">
+                            </td>
+                        </tr>
+                        <!-- feature frequency -->
+                        <tr>
+                            <td colspan="3" class="ali-td ali-td-first-col">
+                            </td>
+                        </tr>
+                        {% for feature in a.features_combo %}
+                        <tr>
+                            <td class="ali-td ali-td-first-col">
+                            </td>
+                        </tr>
+                        {% endfor %}
+
+                        <!-- Z-scales -->
+                        <tr>
+                            <td colspan="3" class="ali-td ali-td-first-col">
+                            </td>
+                        </tr>
+                        {% for scale in a.zscales %}
+                        <tr>
+                            <td class="ali-td ali-td-first-col">
+                            </td>
+                        </tr>
+                        {% endfor %}
+
+                        <!-- numbering scheme lines -->
+                        {% for ns in a.numbering_schemes %}
+                        <tr>
+                            <td colspan="3" class="ali-td-generic-num ali-td-first-col">
+                            </td>
+                        </tr>
+                        <!-- amino acid frequency -->
+                        {% comment %}<tr>
+                            <td colspan="3" class="ali-td ali-td-first-col">
+                            </td>
+                        </tr>
+                        {% for aa in a.amino_acids %}
+                        <tr>
+                            <td class="ali-td ali-td-first-col">
+                            </td>
+                        </tr> {% endcomment %}
+                        {% endfor %}
                         {% endif %}
-                    </tr>
-                    {% endfor %}
 
-                    <!-- numbering scheme lines -->
-                    {% for ns in a.numbering_schemes %}
-                    <tr>
-                        <td colspan="3" class="ali-td-generic-num ali-td-first-col">
-                        </td>
-                    </tr>
-                    {% endfor %}
-
-                    {% if a.consensus %}
-                    <!-- consensus sequence -->
-                    <tr>
-                        <td colspan="3" class="ali-td ali-td-first-col">
-                        </td>
-                    </tr>
-
-                    <!-- feature consensus -->
-                    <tr>
-                        <td colspan="3" class="ali-td ali-td-first-col">
-                        </td>
-                    </tr>
-                    <!-- Length -->
-                    <tr>
-                        <td colspan="3" class="ali-td ali-td-first-col">
-                        </td>
-                    </tr>
-                    <!-- feature frequency -->
-                    <tr>
-                        <td colspan="3" class="ali-td ali-td-first-col">
-                        </td>
-                    </tr>
-                    {% for feature in a.features_combo %}
-                    <tr>
-                        <td class="ali-td ali-td-first-col">
-                        </td>
-                    </tr>
-                    {% endfor %}
-
-                    <!-- Z-scales -->
-                    <tr>
-                        <td colspan="3" class="ali-td ali-td-first-col">
-                        </td>
-                    </tr>
-                    {% for scale in a.zscales %}
-                    <tr>
-                        <td class="ali-td ali-td-first-col">
-                        </td>
-                    </tr>
-                    {% endfor %}
-
-                    <!-- numbering scheme lines -->
-                    {% for ns in a.numbering_schemes %}
-                    <tr>
-                        <td colspan="3" class="ali-td-generic-num ali-td-first-col">
-                        </td>
-                    </tr>
-                    <!-- amino acid frequency -->
-                    {% comment %}<tr>
-                        <td colspan="3" class="ali-td ali-td-first-col">
-                        </td>
-                    </tr>
-                    {% for aa in a.amino_acids %}
-                    <tr>
-                        <td class="ali-td ali-td-first-col">
-                        </td>
-                    </tr> {% endcomment %}
-                    {% endfor %}
-                    {% endif %}
-
-                </table>
+                    </table>
+                </div>
             </div>
         </td>
+{% endblock %}
+
+{% block addon_js %}
+<script src="{% static 'home/js/alignment.js' %}"></script>
+<script src="{% static 'home/js/BusyLoad.js' %}"></script>
+<!-- increase browser drawing performance for displaying (larger) alignments -->
+<script>
+// ###############################
+// ### Initialization loader   ###
+// ###############################
+
+$("#Init_loader").show();
+$("#Init_loader").busyLoad("show", { 
+    spinner: "accordion", 
+    text: "Loading data...", 
+    fontSize: "2.5rem",
+    textClass: "custom-loader-text", // Ensures easy access for text changes
+    textPosition: "top",
+    textMargin: "-6rem",
+    color: "black",
+    background: "white",
+});
+
+$(document).ready(function () {
+    $('.displayTableAfterLoad').css("display", "table");
+
+    $("#Init_loader").busyLoad("hide");
+    $("#Init_loader").hide();
+    $("#alignment-buttons").show();
+    $('#alignment-div').show();
+
+    $('.internal-scroll-div').css('width', $('.ali-main-div').outerWidth() );
+    $('.ali-scroll-container').css('width', $('#navbar').outerWidth() - $('.ali-first-container').outerWidth() - $('.ali-score-container').outerWidth());
+    setTimeout(function(){
+        $( window ).on( "resize", function() {
+            $('.ali-scroll-container').css('width', $('#navbar').outerWidth() - $('.ali-first-container').outerWidth() - $('.ali-score-container').outerWidth());
+        });
+    },5);
+    $('.gn-score-section-row').css('height', $('.gn-first-section-row').height());
+    $('#score-cell').css('width', $('.ali-score-container').outerWidth());
+});
+</script>
 {% endblock %}

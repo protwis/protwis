@@ -1,25 +1,22 @@
-from django.shortcuts import get_object_or_404, render, redirect
-from django.views import generic
+from django.shortcuts import render, redirect
 from django.http import JsonResponse, HttpResponse
-from django.db.models import Q, F, Func, Value, Prefetch
+from django.db.models import Q, F, Func, Value
 from django.core.cache import cache
 from django.views.decorators.cache import cache_page
 from django.urls import reverse
 
 from protein.models import Protein, ProteinConformation, ProteinAlias, ProteinFamily, Gene, ProteinSegment
 from residue.models import Residue
-from structure.models import Structure, StructureModel, StructureExtraProteins
-# from structure.views import StructureBrowser
-from interaction.models import ResidueFragmentInteraction,StructureLigandInteraction
+from structure.models import Structure, StructureModel
 from mutation.models import MutationExperiment
 from common.selection import Selection
 from common.views import AbsBrowseSelection
 from ligand.models import Ligand, LigandID
+from drugs.models import Drugs
 
 import json
 from copy import deepcopy
 from collections import OrderedDict
-
 
 class BrowseSelection(AbsBrowseSelection):
     title = 'SELECT A RECEPTOR (FAMILY)'
@@ -28,7 +25,6 @@ class BrowseSelection(AbsBrowseSelection):
                   + ' the right.'
     docs = 'receptors.html'
     target_input=False
-
 
 @cache_page(60 * 60 * 24 * 7)
 def detail(request, slug):
@@ -58,7 +54,6 @@ def detail(request, slug):
         except:
             context = {'protein_no_found': slug}
             return render(request, 'protein/protein_detail.html', context)
-
 
     if p.family.slug.startswith('100') or p.family.slug.startswith('200'):
         # If this protein is a gprotein, redirect to that page.
@@ -135,13 +130,212 @@ def detail(request, slug):
 
     homology_models = StructureModel.objects.filter(protein=p)
 
-    context = {'p': p, 'families': families, 'r_chunks': r_chunks, 'chunk_size': chunk_size, 'aliases': aliases,
-               'gene': gene, 'alt_genes': alt_genes, 'structures': structures, 'mutations': mutations, 'protein_links': protein_links,'homology_models': homology_models}
+    context = {'p': p, 'families': families, 'r_chunks': r_chunks, 'chunk_size': chunk_size,
+               'aliases': aliases, 'gene': gene, 'alt_genes': alt_genes, 'structures': structures,
+               'mutations': mutations, 'protein_links': protein_links,'homology_models': homology_models,
+               }
 
     # sb = StructureBrowser()
     # sb_context = sb.get_context_data(protein=p)
     # context['structures'] = sb_context['structures']
     return render(request, 'protein/protein_detail.html', context)
+
+def get_sankey_data(entry_name):
+    """
+    Helper function to get the sankey data for a given protein.entry_name, to improve code reusability.
+    Based on protein/views.py detail() function.
+    """
+    if entry_name is None:
+        return (None, None, None)
+
+    indication_data = Drugs.objects.filter(target__entry_name=entry_name).prefetch_related('ligand',
+                                                                                         'target',
+                                                                                         'indication')
+
+    sankey = {"nodes": [],
+              "links": []}
+    caches = {'indication':[],
+              'level_0': [],
+              'ligands': [],
+              'targets': [],
+              'entries': []}
+
+    node_counter = 0
+    # Initialize the path source matrix
+    path_matrix = []
+    link_id = 0  # Unique identifier for each link
+    row_id = 0
+    for record in indication_data:
+        # Assess the values for indication/ligand/protein
+        indication_name = record.indication.title.capitalize()
+        indication_code = record.indication.code
+        indication_0 = record.indication.get_level_0().title
+        uri = record.indication.uri.index if record.indication.uri else ""
+        ligand_name = record.ligand.name.capitalize()
+        ligand_id = record.ligand.id
+        protein_name = record.target.name
+        target_name = record.target.entry_name
+
+        # Add nodes if not already added, then get their assigned node index
+        if indication_name not in caches['indication']:
+            sankey['nodes'].append({"node": node_counter, "name": indication_name, "url": '/drugs/indication/'+indication_code,"column":"x4"})
+            node_counter += 1
+            caches['indication'].append(indication_name)
+        indi_node = next((item['node'] for item in sankey['nodes'] if item['name'] == indication_name), None)
+
+        if indication_0 not in caches['level_0']:
+            sankey['nodes'].append({"node": node_counter, "name": indication_0, "url": 'https://icd.who.int/browse/2024-01/mms/en#'+uri,"column":"x3"})
+            node_counter += 1
+            caches['level_0'].append(indication_0)
+        level_0_node = next((item['node'] for item in sankey['nodes'] if item['name'] == indication_0), None)
+
+        if [ligand_name, ligand_id] not in caches['ligands']:
+            sankey['nodes'].append({"node": node_counter, "name": ligand_name, "url": '/ligand/'+str(ligand_id)+'/info',"column":"x2"})
+            node_counter += 1
+            caches['ligands'].append([ligand_name, ligand_id])
+        lig_node = next((item['node'] for item in sankey['nodes'] if item['name'] == ligand_name), None)
+
+        if protein_name not in caches['targets']:
+            sankey['nodes'].append({"node": node_counter, "name": protein_name, "url": '/protein/'+str(target_name),"column":"x1"})
+            node_counter += 1
+            caches['targets'].append(protein_name)
+            caches['entries'].append(target_name)
+        prot_node = next((item['node'] for item in sankey['nodes'] if item['name'] == protein_name), None)
+
+        # Append connections (note: order of links can be adjusted as needed)
+        # sankey['links'].append({"source": prot_node, "target": lig_node, "value": 1, "ligtrace": ligand_name, "prottrace": None})
+        # sankey['links'].append({"source": lig_node, "target": level_0_node, "value": 1, "ligtrace": ligand_name, "prottrace": indication_name})
+        # sankey['links'].append({"source": level_0_node, "target": indi_node, "value": 1, "ligtrace": ligand_name, "prottrace": indication_name})
+         # create matrix row
+        row = {
+            'row_id': row_id,
+            'x1': prot_node,
+            'x2': lig_node,
+            'x3': level_0_node,
+            'x4': indi_node,
+            'x1_name': protein_name,
+            'x2_name': ligand_name,
+            'x3_name': indication_0,
+            'x4_name': indication_name
+        }
+
+        sankey['links'].append({"source": prot_node, "target": lig_node, "value": 1, "ligtrace": protein_name, "prottrace": indication_name, "linkage_key": "primary","link_identifier": link_id})  # x1 -> x2 (Protein → Ligand)
+        link_id += 1
+        sankey['links'].append({"source": lig_node, "target": level_0_node, "value": 1, "ligtrace": protein_name, "prottrace": indication_0, "linkage_key": "primary","link_identifier": link_id})  # x2 -> x3 (Ligand → Level 0)
+        link_id += 1
+        sankey['links'].append({"source": level_0_node, "target": indi_node, "value": 1, "ligtrace": protein_name, "prottrace": indication_name, "linkage_key": "primary","link_identifier": link_id})  # x3 -> x4 (Level 0 → Indication)
+        link_id += 1
+        #print("** Debug record:", record.id, record.ligand.name, record.target.name, record.indication.title)
+        path_matrix.append(row)
+        row_id += 1
+
+    # Fixing redundancy in sankey['links']
+    unique_combinations = {}
+    for d in sankey['links']:
+        key = (d['source'], d['target'])
+        if key in unique_combinations:
+            unique_combinations[key]['value'] += d['value']
+        else:
+            unique_combinations[key] = d
+    sankey['links'] = list(unique_combinations.values())
+
+    # --- New Cleanup: Remove unused nodes and reindex ---
+    # Identify all node indices that are actually referenced in links.
+    used_nodes = set()
+    for link in sankey['links']:
+        used_nodes.add(link['source'])
+        used_nodes.add(link['target'])
+
+    # Build a new nodes list and create a mapping from old to new node indices.
+    old_to_new = {}
+    new_nodes = []
+    new_index = 0
+    for node_dict in sankey['nodes']:
+        old_idx = node_dict["node"]
+        if old_idx in used_nodes:
+            new_node_dict = {
+                "node": new_index,
+                "name": node_dict["name"],
+                "url": node_dict["url"],
+                "column": node_dict['column']
+            }
+            new_nodes.append(new_node_dict)
+            old_to_new[old_idx] = new_index
+            new_index += 1
+
+    # Update the source and target indices in the links.
+    for link in sankey['links']:
+        link["source"] = old_to_new[link["source"]]
+        link["target"] = old_to_new[link["target"]]
+
+    # Replace the nodes list with the new one.
+    sankey['nodes'] = new_nodes
+    # --- End of Cleanup ---
+
+    # Will be needed for future implementation of the sankey (matrix solution)
+    # def update_max_paths(sankey_nodes, path_matrix):
+
+    #     # Function to count unique paths leading **to** the node
+    #     def count_unique_paths_to(previous_col, current_col, node_name):
+    #         unique_paths = set()
+    #         # Filter rows to include only those leading to the current node
+    #         filtered_rows = [row for row in path_matrix if row[current_col + '_name'] == node_name]
+    #         for row in filtered_rows:
+    #             from_node = row[previous_col]
+    #             to_node = row[current_col]
+    #             unique_paths.add((from_node, to_node))
+    #         return len(unique_paths)
+
+    #     # Function to count unique paths leading **from** the node
+    #     def count_unique_paths_from(current_col, next_col, node_name):
+    #         unique_paths = set()
+    #         # Filter rows to include only those originating from the current node
+    #         filtered_rows = [row for row in path_matrix if row[current_col + '_name'] == node_name]
+    #         for row in filtered_rows:
+    #             from_node = row[current_col]
+    #             to_node = row[next_col]
+    #             unique_paths.add((from_node, to_node))
+    #         return len(unique_paths)
+
+    #     # Iterate over all nodes and calculate max_paths
+    #     for node in sankey_nodes:
+    #         node_name = node['name']
+    #         node_column = node['column']
+
+    #         # Determine which transition to calculate based on column
+    #         if node_column == 'x1':
+    #             # Only count outgoing paths
+    #             node['max_paths'] = count_unique_paths_from('x1', 'x2', node_name)
+    #         elif node_column == 'x2':
+    #             # Count both incoming and outgoing paths
+    #             node['max_paths'] = max(
+    #                 count_unique_paths_to('x1', 'x2', node_name),  # x1 -> x2
+    #                 count_unique_paths_from('x2', 'x3', node_name) # x2 -> x3
+    #             )
+    #         elif node_column == 'x3':
+    #             # Count both incoming and outgoing paths
+    #             node['max_paths'] = max(
+    #                 count_unique_paths_to('x2', 'x3', node_name),  # x2 -> x3
+    #                 count_unique_paths_from('x3', 'x4', node_name) # x3 -> x4
+    #             )
+    #         elif node_column == 'x4':
+    #             # Only count incoming paths
+    #             node['max_paths'] = count_unique_paths_to('x3', 'x4', node_name)
+
+    # # Call the function to update max_paths
+    # update_max_paths(sankey['nodes'], path_matrix)
+
+    total_points = len(caches['indication']) + len(caches['ligands']) + 1
+    nodes_nr = len(caches['ligands']) if len(caches['ligands']) > len(caches['indication']) else len(caches['indication'])
+
+    sankey_data = {
+        'sankey': sankey,
+        'total_points': total_points,
+        'nodes_nr': nodes_nr,
+        'path_matrix': path_matrix
+    }
+
+    return sankey_data
 
 def SelectionAutocomplete(request):
 

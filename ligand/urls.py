@@ -17,12 +17,10 @@ urlpatterns = [
     path('targets_compact', views.CachedTargetDetailsCompact, name='ligand_target_detail_compact'),
     url(r'^targets_purchasable', views.TargetPurchasabilityDetails, name='ligand_target_detail_purchasable'),
     url(r'^(?P<ligand_id>[-\w]+)/details$', views.LigandDetails, name='ligand_detail'),
-    url(r'^coverage', cache_page(3600*24*7)(views.LigandStatistics.as_view()), name='ligand_statistics'),
-    # url(r'^statistics', views.LigandStatistics.as_view(), name='ligand_statistics'),
+    url(r'^coverage', views.LigandStatistics.as_view(), name='ligand_statistics'),
 
     # BIASED LIGANDS
     url(r'^bias_coverage', cache_page(3600*24*7)(views.LigandStatistics.as_view(page='ligand_bias')), name='ligand_statistics'),
-    # url(r'^bias_coverage', views.LigandStatistics.as_view(page='ligand_bias'), name='ligand_statistics'),
     path('bias_rank_order_selection', views.BiasedSignallingSelection.as_view(way='BiasRankOrder'), name='bias_ro_selection'),
     path('bias_rankorder', views.BiasedSignallingOnTheFlyCalculation.as_view(label='bias'), name='biased_rank_order'),
     path('bias_rankorder_path_bias', views.BiasedSignallingOnTheFlyCalculation.as_view(label='bias', balanced=True), name='biased_rank_order'),

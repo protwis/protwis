@@ -45,20 +45,3 @@ class PTMs(models.Model):
 #
 #     class Meta():
 #         db_table = 'residue_ptm_types'
-
-class NHSPrescribings(models.Model):
-
-    drugname = models.ForeignKey('drugs.Drugs', on_delete=models.CASCADE)
-    date = models.DateField()
-    quantity = models.IntegerField()
-    items = models.IntegerField()
-    actual_cost = models.DecimalField(max_digits=12,decimal_places=2)
-    drugCode = models.CharField(max_length=10)
-    op_name = models.CharField(max_length=40)
-    bnf_section = models.CharField(max_length=50) # make hierachy system
-
-    def __str__(self):
-        return self.drugname.name + '; ' + self.op_name + '; ' + self.bnf_section
-
-    class Meta():
-        db_table = 'drugs_nhs'

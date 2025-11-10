@@ -2,7 +2,7 @@
 A set of functions for generating statistics trees.
 Annotates crystalized targets and number of ligands/target available in ChEMBL.
 """
-from django.db.models import Count
+from django.db.models import Count, Q
 
 from interaction.models import ResidueFragmentInteraction, StructureLigandInteraction
 from ligand.models import AssayExperiment, BiasedData
@@ -233,7 +233,7 @@ class PhylogeneticTreeGenerator(object):
         self.map_family_colors()
 
         self.proteins = Protein.objects.filter(
-            family__slug__startswith="00",
+            Q(family__slug__startswith="00") | Q(family__slug__startswith="010"),
             source__name='SWISSPROT'
             ).prefetch_related(
                 'family',

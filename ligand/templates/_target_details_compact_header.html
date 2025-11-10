@@ -1,0 +1,92 @@
+{# Header for COMPACT mode tables #}
+{# Expects 'ligand_query' and 'ligand_similarity' context variables #}
+<thead>
+    <tr class="header-spans" style="font-size: 14px; white-space: nowrap;">
+      <th style="text-align:center" colspan="1" data-dt-order="disable"></th>
+
+      {# Ligands Colspan #}
+      {% if ligand_similarity %}
+          <th style="text-align:center" colspan="6" data-dt-order="disable">Ligands</th>
+      {% else %}
+          <th style="text-align:center" colspan="5" data-dt-order="disable">Ligands</th>
+      {% endif %}
+  
+      {# Receptor Colspan #}
+      {% if ligand_query %}
+          <th style="text-align:center; border-left: 1px solid #cccccc;" colspan="5" data-dt-order="disable">Receptor</th>
+      {% else %}
+          <th style="text-align:center; border-left: 1px solid #cccccc;" colspan="1" data-dt-order="disable">Receptor</th>
+      {% endif %}
+  
+      {# Activity Colspan (Fixed) #}
+      <th style="text-align:center; border-left: 1px solid #cccccc;" colspan="9" data-dt-order="disable">Activity</th>
+  
+      {# Chemical Info Colspan (Fixed) #}
+      <th style="text-align:center; border-left: 1px solid #cccccc;" colspan="6" data-dt-order="disable">Chemical information</th>
+    </tr>
+  
+    {# Main Header Row #}
+    <tr>
+       {# Checkbox Header #}
+       <th style="width: 30px; text-align:center;"><input type="checkbox" class="select-all-checkbox" title="Select/Deselect All Rows"></th>
+
+       {# Ligands Block (5 or 6 columns) #}
+       {% if ligand_similarity %}
+       <th>Similar-<br />ity</th>
+       {% endif %}
+       <th>Common<br />name</th>
+       <th>GPCRdb<br />ID</th>
+       <th>Type<br /><br /></th>
+       <th>Reference<br />ligand</th>
+       <th>Vendors<br /><br /></th>
+  
+       {# Receptor Block (1 or 5 columns) #}
+       <th class="border-left">Species<br /><br /></th>
+       {% if ligand_query %}
+       <th>Protein<br />name</th>
+       <th>Gene<br />name</th>
+       <th>Class<br /><br /></th>
+       <th>Family<br /><br /></th>
+       {% endif %}
+  
+       {# Activity Block (9 columns) #}
+       <th class="border-left">Assay<br>Type</th>
+       <th>Parameter</th>
+       <th>No.<br />records</th>
+       <th>Min<br /><br /></th>
+       <th>Avg<br /><br /></th>
+       <th>Max<br /><br /></th>
+       <th>Fold<br />selectivity</th>
+       <th>Tested<br />GPCRs</th>
+       <th>Source<br /><br /></th>
+  
+       {# Chemical Info Block (6 columns) #}
+       <th class="border-left">Mol<br />weight</th>
+       <th>Rot<br />Bonds</th>
+       <th>H don<br /><br /></th>
+       <th>H acc<br /><br /></th>
+       <th>LogP<br /><br /></th>
+       <th>Smiles<br /><br /></th>
+    </tr>
+    {# Filter Row #}
+    <tr>
+        {# Checkbox Filter #}
+        <td data-dt-order="disable"></td>
+
+        {# Ligands Block #}
+        {% if ligand_similarity %}<td data-dt-order="disable"></td>{% endif %}
+        <td data-dt-order="disable"></td><td data-dt-order="disable"></td><td data-dt-order="disable"></td><td data-dt-order="disable"></td><td data-dt-order="disable"></td>
+
+        {# Receptor Block #}
+        <td class="border-left" data-dt-order="disable"></td>
+        {% if ligand_query %}
+        <td data-dt-order="disable"></td><td data-dt-order="disable"></td><td data-dt-order="disable"></td><td data-dt-order="disable"></td>
+        {% endif %}
+
+        {# Activity Block #}
+        <td class="border-left" data-dt-order="disable"></td><td data-dt-order="disable"></td><td data-dt-order="disable"></td><td data-dt-order="disable"></td><td data-dt-order="disable"></td><td data-dt-order="disable"></td><td data-dt-order="disable"></td><td data-dt-order="disable"></td><td data-dt-order="disable"></td>
+
+        {# Chemical Info Block #}
+        <td class="border-left" data-dt-order="disable"></td><td data-dt-order="disable"></td><td data-dt-order="disable"></td><td data-dt-order="disable"></td><td data-dt-order="disable"></td><td data-dt-order="disable"></td>
+    </tr>
+  </thead>

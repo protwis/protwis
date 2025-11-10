@@ -328,6 +328,8 @@
 {% endblock %}
 {% block addon_js %}
 
+<script src="{% static 'home/js/selection.js' %}"> </script>
+
 <script>
   $(document).ready(function() {
 
@@ -358,7 +360,6 @@
 <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
 <script src="{% static 'home/js/dataTables.tableTools.min.js' %}"> </script>
 <script src="{% static 'home/js/jquery.dataTables.columnFilter.js' %}"> </script>
-<script src="{% static 'home/js/selection.js' %}"> </script>
 <script src="{% static 'home/js/table2csv.js' %}"> </script>
 <script src="{% static 'home/js/phylo_tree.js' %}"></script>
 <script src="{% static 'home/js/lodash.min.js' %}"></script>

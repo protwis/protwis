@@ -644,7 +644,7 @@ class Alignment:
             self.sort_generic_numbers()
             self.merge_generic_numbers()
             self.clear_empty_positions()
-            # self.clear_empty_segments()
+            self.clear_empty_segments()
 
             if self.number_of_residues_total >= 2500:
                 self.calculate_statistics()
@@ -1257,8 +1257,8 @@ class Alignment:
         # format the calculated values
         #if identityscore and similarityscore:
         if totalcount:
-            identity = "{:10.0f}".format(identityscore / totalcount * 100)
-            similarity = "{:10.0f}".format(similarityscore / totalcount * 100)
+            identity = round(identityscore / totalcount * 100, 1) #"{:10.0f}".format(identityscore / totalcount * 100)
+            similarity = round(similarityscore / totalcount * 100, 1) #"{:10.0f}".format(similarityscore / totalcount * 100)
             similarity_score = totalsimilarity
 
             return identity, similarity, similarity_score

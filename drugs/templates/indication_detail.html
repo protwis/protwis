@@ -1,0 +1,113 @@
+{% extends "home/base.html" %}
+{% load static %}
+{% load structure_extras %}
+{% block addon_css %}
+<style>
+  .link {
+    fill: none;
+    stroke: #969696;
+    stroke-opacity: .1;
+  }
+  .link:hover {
+    stroke-opacity: .3;
+  }
+</style>
+{% endblock %}
+{% block content %}
+<div class="row text-success">
+    <div class="text-center">
+        <h2>{{indication}}</h2>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-2 text-right text-info">
+        <h4>ONTOLOGY PAGE</h4>
+    </div>
+    <div class="col-md-10">
+      <a href="https://icd.who.int/browse/2024-01/mms/en#{{indication_uri}}" target="_blank">{{indication_code}}</a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-2 text-right text-info">
+        <h4>SANKEY PLOT</h4>
+    </div>
+    <div class="col-md-10">
+      <!-- Create a div where the graph will take place -->
+      <div id="sankey_plot" style="width: 100%; display: flex; justify-content: center;"></div>
+      <p>
+        <div class="btn-group">
+          <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+          aria-haspopup="true" aria-expanded="false">
+          <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+          </button>
+          <ul class="dropdown-menu">
+            <li><a href="javascript:saveSankeySvgAsSVG(document.getElementById('sankey'), 'sankey.svg');">SVG</a></li>
+            <li><a href="javascript:saveSankeySvgAsPng(document.getElementById('sankey'), 'sankey.png');">PNG</a></li>
+            <li><a href="javascript:saveSankeySvgAsJpg(document.getElementById('sankey'),'sankey.jpg');">JPG</a></li>
+        </ul>
+      </div>
+    </p>
+  </div>
+</div>
+
+<div class="row">
+    <div class="col-md-2 text-right text-info">
+        <h4>PROTEIN TARGETS</h4>
+    </div>
+    <div class="col-md-10">
+      {% for prot in targets %}
+          <p style="display: inline;"><a href="/protein/{{ prot }}" target="_blank">{{ prot }}</a>{% if forloop.last %} {% else %}, {% endif %}</p>
+      {% endfor %}
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-2 text-right text-info">
+        <h4>DRUGS</h4>
+    </div>
+    <div class="col-md-10">
+      {% for pair in ligands %}
+          <p style="display: inline;"><a href="/ligand/{{ pair.1 }}/info" target="_blank">{{ pair.0|safe }}</a>{% if forloop.last %} {% else %}, {% endif %}</p>
+      {% endfor %}
+    </div>
+</div>
+{% endblock %}
+{% block addon_js %}
+  <script src="{% static 'home/js/d3.min.js' %}"></script>
+  <script src="{% static 'home/js/nv.d3.min.js' %}"></script>
+  <script src="{% static 'home/js/d3.v4.min.js' %}"></script>
+  <script src="{% static 'home/js/sankey.js' %}"></script>
+  <script src="{% static 'home/js/saveSankeySvgAsPng.js' %}"></script> <!-- For Saving Sankey plot -->
+
+  <script type="text/javascript">
+    document.addEventListener('DOMContentLoaded', function() {
+    var sankey_data = JSON.parse('{{ sankey|safe }}');
+    var pathMatrix = JSON.parse('{{ path_matrix|safe }}');
+    var top_nodes = '{{ nodes_nr|safe }}';
+    var totalPoints = '{{ points }}';
+    var Sankey_location = 'sankey_plot';
+
+    // Function to initialize or redraw the Sankey plot
+    function initializeSankeyPlot() {
+        var containerWidth = document.getElementById(Sankey_location).offsetWidth;
+        
+        // Check if the container has a width greater than 0
+        if (containerWidth > 0) {
+            // Remove the existing plot to avoid duplication
+            d3v4.select('#' + Sankey_location).select('svg').remove();
+            
+            // Draw the Sankey plot with the current container width
+            SankeyPlot(sankey_data, Sankey_location, top_nodes, totalPoints, containerWidth, pathMatrix);
+        }
+    }
+
+    // Event listener for window resize to make the plot responsive
+    window.addEventListener('resize', function() {
+        initializeSankeyPlot();
+    });
+    initializeSankeyPlot();
+    });
+  </script>
+{% endblock %}

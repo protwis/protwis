@@ -7,11 +7,13 @@ from django.conf import settings
 from django.db.models import Count, Case, When, Min, Q
 from django.core.cache import cache
 from django.contrib.postgres.aggregates import ArrayAgg
+from django.views.decorators.http import require_GET
 
 from common import definitions
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 
 from common.selection import SimpleSelection, Selection, SelectionItem
+from common.models import Publication
 from ligand.models import AssayExperiment, BiasedData, BalancedLigands
 from structure.models import Structure, StructureModel, StructureComplexModel
 from protein.models import Protein, ProteinFamily, ProteinSegment, Species, ProteinSource, ProteinSet, ProteinCouplings
@@ -131,16 +133,12 @@ def getLigandCountTable():
         )
         # Acquired slugs
         # entry_names = [ p.entry_name for p in proteins ]
-        drugtargets_approved = list(Protein.objects.filter(drugs__status="approved").values("entry_name").annotate(num_ligands=Count("drugs__name", distinct=True)))
+        drugtargets_approved = list(Protein.objects.filter(drugs__drug_status="Approved").values("entry_name").annotate(num_ligands=Count("drugs__ligand", distinct=True)))
         # drugtargets_approved = list(Protein.objects.filter(drugs__status="approved").values_list("entry_name", flat=True))
         approved = {}
         for entry in drugtargets_approved:
             approved[entry['entry_name']] = entry['num_ligands']
-        drugtargets_trials = list(Protein.objects.filter(drugs__status__in=["in trial"],
-                                                         drugs__clinicalstatus__in=["completed", "not open yet",
-                                                                                    "ongoing", "recruiting",
-                                                                                    "suspended"]).values(
-            "entry_name").annotate(num_ligands=Count("drugs__name", distinct=True)))
+        drugtargets_trials = list(Protein.objects.filter(drugs__drug_status="Active").values("entry_name").annotate(num_ligands=Count("drugs__ligand", distinct=True)))
 
         trials = {}
         for entry in drugtargets_trials:
@@ -287,12 +285,8 @@ def getTargetTable():
             else:
                 allpdbs[pdb[1]].append(pdb[0])
 
-        drugtargets_approved = list(Protein.objects.filter(drugs__status="approved").values_list("entry_name", flat=True))
-        drugtargets_trials = list(Protein.objects.filter(drugs__status__in=["in trial"],
-                                                         drugs__clinicalstatus__in=["completed", "not open yet",
-                                                                                    "ongoing", "recruiting",
-                                                                                    "suspended"]).values_list(
-            "entry_name", flat=True))
+        drugtargets_approved = list(Protein.objects.filter(drugs__drug_status="Approved").values_list("entry_name", flat=True).distinct())
+        drugtargets_trials = list(Protein.objects.filter(drugs__drug_status="Active").values_list("entry_name", flat=True).distinct())
 
         ligand_set = list(AssayExperiment.objects.values("protein__family__slug")\
             .annotate(num_ligands=Count("ligand", distinct=True)))
@@ -737,7 +731,7 @@ class AbsReferenceSelectionTable(TemplateView):
         selection = Selection()
 
         # on the first page of a workflow, clear the selection (or dont' import from the session)
-        if self.step is not 1:
+        if self.step != 1:
             if simple_selection:
                 selection.importer(simple_selection)
 
@@ -855,7 +849,7 @@ class AbsTargetSelectionTable(TemplateView):
         selection = Selection()
 
         # on the first page of a workflow, clear the selection (or dont' import from the session)
-        if self.step is not 1:
+        if self.step != 1:
             if simple_selection:
                 selection.importer(simple_selection)
 
@@ -974,7 +968,7 @@ class AbsTargetSelection(TemplateView):
         selection = Selection()
 
         # on the first page of a workflow, clear the selection (or dont' import from the session)
-        if self.step is not 1:
+        if self.step != 1:
             if simple_selection:
                 selection.importer(simple_selection)
 
@@ -1170,7 +1164,7 @@ class AbsMiscSelection(TemplateView):
         selection = Selection()
 
         # on the first page of a workflow, clear the selection (or dont' import from the session)
-        if self.step is not 1:
+        if self.step != 1:
             if simple_selection:
                 selection.importer(simple_selection)
 
@@ -2903,3 +2897,24 @@ def TargetTableData(request):
     """
 
     return HttpResponse(getTargetTable())
+
+@require_GET
+def get_reference(request):
+    ''' View of the getReference() ajax function that returns a formatted html content with publication reference(s)
+    '''
+    keys = request.GET.get('keys').split('|')  # get the keys and splits on | if there are multiple
+
+    # Publication db query on the web_link index field, reverse ordered by year
+    pubs = Publication.objects.filter(web_link__index__in=keys).order_by('-year').prefetch_related('web_link', 'web_link__web_resource', 'journal')
+
+    # preparing formatted html content of references
+    html_content = ""
+    for pub in pubs:
+        url = pub.web_link.web_resource.url.replace("$index", pub.web_link.index)
+        html_content += f'<p style="text-align:left;"><b>{pub.title}</b><br>{pub.authors}<br><a href="{url}" target="_blank">{pub.journal.name}, {pub.year}</a></p>'
+
+    # returning with JsonResponse
+    return JsonResponse({
+        'html': html_content,
+        'message': f"Data received for keys: {keys}"
+    }, safe=False)

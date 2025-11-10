@@ -1,0 +1,688 @@
+{% extends "home/base.html" %}
+{% load static %}
+{% load humanize %}
+{% block addon_css %}
+<link rel="stylesheet" href="{% static 'home/css/nv.d3.min.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/nvd3-update.css' %}" type="text/css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+<!-- <link rel="stylesheet" href="{% static 'home/css/Awesomefonts_all.min.css' %}" type="text/css" /> -->
+<link href="{% static 'home/css/bootstrap-responsive.css' %}" rel="stylesheet" media="screen">
+
+<style>
+  /* added by soren - start*/
+  .wide-modal {
+    max-width: 80% !important; /* Adjust as necessary */
+    width: 60% !important; /* Add explicit width */
+  }
+
+  .plot-item {
+    display: flex;
+    align-items: center;
+  }
+
+  .plot-status {
+      margin-left: auto;
+  }
+  .right-content {
+    margin-left: auto;
+}
+
+  /* added by soren - End */
+</style>
+<style>
+
+.expand-image img:hover {
+  transform: scale(1.1); /* Scales the image up on hover */
+  opacity: 1; /* Full opacity on hover */
+  transition: transform 0.3s ease, opacity 0.3s ease; /* Smooth transition */
+}
+
+  /* added by soren - start */
+  .expandable_partially_success, .expandable_failed {
+    cursor: pointer;
+}
+
+.hidden {
+    display: none;
+}
+
+.dropdown-icon {
+    transition: transform 0.3s ease;
+}
+
+.dropdown-icon.expanded {
+    transform: rotate(90deg);
+}
+
+.my-icon-check {
+  /* text-shadow: -1px 0 #000, 0 1px #000, 1px 0 #000, 0 -1px #000; */
+  font-size: 1.1em;
+  vertical-align: middle; 
+  position: relative;
+  /* top: 2px; */
+  color: black;
+}
+
+.my-icon-minus {
+  font-size: 0.9em;
+  vertical-align: middle; 
+  position: relative;
+  color: grey;
+}
+
+.separator-row td {
+  border: none !important;
+  background: transparent !important;
+}
+
+.second-table-header th {
+  border: none !important; 
+}
+
+.second-table-header th:first-child {
+  border-right: 1px solid #ccc !important;  
+}
+
+.section-title {
+  font-size: 1.2em; /* Adjust for larger text */
+  font-weight: bold; /* Makes it stand out */
+  display: inline-block; /* Ensures line break works */
+  text-align: center; /* Centers the text */
+  line-height: 1.4; /* Adds a little spacing */
+  padding-left: 15px;
+}
+
+.title-header {
+  font-size: 16px;
+  padding-bottom: 10px;
+  /* text-decoration: underline; */
+  display: inline-block; /* Ensures padding-bottom works properly */
+}
+
+.left-column {
+  font-size: 13px;
+  padding-left: 38px;
+  /* text-decoration: underline; */
+  display: inline-block; /* Ensures padding-bottom works properly */
+}
+
+  /* added by soren - end */
+</style>
+<style>
+    .root { fill: red; }
+    .sub { fill: black; }
+    text { font-family: sans-serif; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class='col-md-12'>
+  <div class="row" style="text-align: center; margin: 20px 0px 30px 0px;">
+    <div class="col-md-12">
+      <h3 style="display: inline-block; margin-right: 15px;"><strong>Data Mapper - Numeric data</strong></h3>
+      <a href="/mapper/DataMapperHomeText"
+        class="btn btn-primary"
+        style="display: inline-block; position: relative; top: -3px;">
+        <i class="fas fa-exchange-alt" style="margin-right: 5px;"></i>Text
+      </a>
+    </div>
+  </div>
+  <table class="table text-center" style="border-collapse: collapse; width: 100%; text-align: center;">
+    <thead>
+      <tr>
+        <!-- First header cell: only right border -->
+        <th style="border-right: 1px solid #ccc;  text-align: left;vertical-align: middle;">
+          <span class="section-title">1) Choose a plot</span>
+        </th>
+        <!-- Other header cells: no borders (or set whatever you want) -->
+        <th style="text-align: center;">
+          <span class="title-header">GPCRome Wheel</span>
+          <br>
+          <img src="{% static 'home/images/DataMapper/GPCRome_icon.png' %}" 
+               width="140" height="140" alt="GPCRome" style="margin-bottom: 5px;"/>
+          <br>
+          <button type="button" class="btn btn-warning" data-toggle="modal" data-target="#GPCRomeModal" style="margin-top: 5px;">
+            More info
+          </button>
+        </th>
+        <th style="text-align: center;">
+          <span class="title-header">Tree</span>
+          <br>
+          <img src="{% static 'home/images/DataMapper/Tree_icon.png' %}" 
+               width="140" height="140" alt="Tree" style="margin-bottom: 5px;"/>
+          <br>
+          <button type="button" class="btn btn-warning" data-toggle="modal" data-target="#phyloTreeModal" style="margin-top: 5px;">
+            More info
+          </button>
+        </th>
+        <th style="text-align: center;">
+          <span class="title-header">Cluster</span>
+          <br>
+          <img src="{% static 'home/images/DataMapper/Cluster_icon.png' %}" 
+               width="140" height="140" alt="Cluster" style="margin-bottom: 5px;"/>
+          <br>
+          <button type="button" class="btn btn-warning" data-toggle="modal" data-target="#ClusterModal" style="margin-top: 5px;">
+            More info
+          </button>
+        </th>
+        <th style="text-align: center;">
+          <span class="title-header">List</span>
+          <br>
+          <img src="{% static 'home/images/DataMapper/List_icon.png' %}" 
+               width="140" height="140" alt="List" style="margin-bottom: 5px;"/>
+          <br>
+          <button type="button" class="btn btn-warning" data-toggle="modal" data-target="#ListModal" style="margin-top: 5px;">
+            More info
+          </button>
+        </th>
+        <th style="text-align: center;">
+          <span class="title-header">Heatmap</span>
+          <br>
+          <img src="{% static 'home/images/DataMapper/Heatmap_icon.png' %}" 
+               width="140" height="140" alt="Heatmap" style="margin-bottom: 5px;"/>
+          <br>
+          <button type="button" class="btn btn-warning" data-toggle="modal" data-target="#HeatmapModal" style="margin-top: 5px;">
+            More info
+          </button>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <!-- First cell in the body row: match the right border to keep consistency -->
+        <th style="border-right: 1px solid #ccc; text-align: left;">
+          <span class="left-column">Max no. GPCRs</span>
+        </th>
+        <!-- Other cells: no border, or any style you’d like -->
+        <td ><strong>398</strong></td>
+        <td ><strong>200</strong></td>
+        <td ><strong>805</strong></td>
+        <td ><strong>805</strong></td>
+        <td ><strong>50</strong></td>
+      </tr>
+      <tr>
+        <!-- First cell in the body row: match the right border to keep consistency -->
+        <th style="border-right: 1px solid #ccc; text-align: left;">
+          <span class="left-column">Max no. of datasets</span>
+        </th>
+        <!-- Other cells: no border, or any style you’d like -->
+        <td ><strong>1</strong></td>
+        <td ><strong>6</strong></td>
+        <td ><strong>1</strong></td>
+        <td ><strong>4</strong></td>
+        <td ><strong>5</strong></td>
+      </tr>
+      <tr>
+        <!-- First cell in the body row: match the right border to keep consistency -->
+        <th style="border-right: 1px solid #ccc; text-align: left;">
+          <span class="left-column">Color gradient</span>
+        </th>
+        <!-- Other cells: no border, or any style you’d like -->
+        <td><i class="fas fa-check my-icon-check"></i></td>
+        <td><i class="fas fa-check my-icon-check"></i></td>
+        <td><i class="fas fa-check my-icon-check"></i></td>
+        <td><i class="fas fa-check my-icon-check"></i></td>
+        <td><i class="fas fa-check my-icon-check"></i></td>
+      </tr>
+      <tr>
+        <!-- First cell in the body row: match the right border to keep consistency -->
+        <th style="border-right: 1px solid #ccc; text-align: left;">
+          <span class="left-column">Shapes</span>
+        </th>
+        <!-- Other cells: no border, or any style you’d like -->
+        <td><i class="fas fa-minus my-icon-minus"></i></td>
+        <td><i class="fas fa-minus my-icon-minus"></i></td>
+        <td><i class="fas fa-minus my-icon-minus"></i></td>
+        <td><i class="fas fa-check my-icon-check"></i></td>
+        <td><i class="fas fa-minus my-icon-minus"></i></td>
+      </tr>
+      <tr>
+        <!-- First cell in the body row: match the right border to keep consistency -->
+        <th style="border-right: 1px solid #ccc; text-align: left;">
+          <span class="left-column">Sizes</span>
+        </th>
+        <!-- Other cells: no border, or any style you’d like -->
+        <td><i class="fas fa-minus my-icon-minus"></i></td>
+        <td><i class="fas fa-check my-icon-check"></i></td>
+        <td><i class="fas fa-check my-icon-check"></i></td>
+        <td><i class="fas fa-minus my-icon-minus"></i></td>
+        <td><i class="fas fa-minus my-icon-minus"></i></td>
+      </tr>
+      <tr>
+        <!-- First cell in the body row: match the right border to keep consistency -->
+        <th style="border-right: 1px solid #ccc; text-align: left;">
+          <span class="left-column">Spacial position</span>
+        </th>
+        <!-- Other cells: no border, or any style you’d like -->
+        <td><i class="fas fa-minus my-icon-minus"></i></td>
+        <td><i class="fas fa-minus my-icon-minus"></i></td>
+        <td><i class="fas fa-check my-icon-check"></i></td>
+        <td><i class="fas fa-minus my-icon-minus"></i></td>
+        <td><i class="fas fa-minus my-icon-minus"></i></td>
+      </tr>
+
+    <!-- Separator row (no borders). Spans all 6 columns. -->
+    <tr class="separator-row">
+      <td colspan="6" style="height: 30px;"></td>
+    </tr>
+
+    <!-- Second table -->
+    <tr class="second-table-header">
+      <th style="text-align: left; vertical-align: middle;">
+        <span class="section-title">2) Download template</span>
+        <!-- <h4>2) Download template</h4> -->
+      </th>
+
+      <!-- 5 more columns to keep the total at 6 -->
+      <th style="text-align: center;">GPCRome Wheel</th>
+      <th style="text-align: center;">Tree</th>
+      <th style="text-align: center;">Cluster</th>
+      <th style="text-align: center;">List</th>
+      <th style="text-align: center;">Heatmap</th>
+    </tr>
+
+    <!-- Second "section" rows -->
+    <tr>
+      <th style="border-right: 1px solid #ccc; text-align: left; vertical-align: middle;">
+        <span class="left-column">For numeric data</span>
+      </th>
+      <td><div class="img-container expand-image" style="text-align:center;"><a href="{% static 'Files/Template - GPCRome wheel - Numeric.xlsx' %}" download="Template - GPCRome wheel - Numeric.xlsx"><img src="{% static 'home/images/DataMapper/Mapper_Download.png' %}" width="70" height="70" style="cursor:pointer;"></a></div></td>
+      <td><div class="img-container expand-image" style="text-align:center;"><a href="{% static 'Files/Template - Tree - Numeric.xlsx' %}" download="Template - Tree - Numeric.xlsx"><img src="{% static 'home/images/DataMapper/Mapper_Download.png' %}" width="70" height="70" style="cursor:pointer;"></a></div></td>
+      <td><div class="img-container expand-image" style="text-align:center;"><a href="{% static 'Files/Template - Cluster - Numeric.xlsx' %}" download="Template - Cluster - Numeric.xlsx"><img src="{% static 'home/images/DataMapper/Mapper_Download.png' %}" width="70" height="70" style="cursor:pointer;"></a></div></td>
+      <td><div class="img-container expand-image" style="text-align:center;"><a href="{% static 'Files/Template - List - Numeric.xlsx' %}" download="Template - List - Numeric.xlsx"><img src="{% static 'home/images/DataMapper/Mapper_Download.png' %}" width="70" height="70" style="cursor:pointer;"></a></div></td>
+      <td><div class="img-container expand-image" style="text-align:center;"><a href="{% static 'Files/Template - Heatmap - Numeric.xlsx' %}" download="Template - Heatmap - Numeric.xlsx"><img src="{% static 'home/images/DataMapper/Mapper_Download.png' %}" width="70" height="70" style="cursor:pointer;"></a></div></td>
+    </tr>
+
+     <!-- Separator row (no borders). Spans all 6 columns. -->
+     <tr style="border-bottom: 2px solid white;">
+      <td colspan="6" style="border: none; height: 30px;"></td>
+    </tr>
+
+    <!-- Second table -->
+    <tr>
+      <th style="border-right: 1px solid #ccc; text-align: left; vertical-align: middle;">
+        <!-- <h4>3) Upload your data</h4> -->
+        <span class="section-title">3) Upload your data</span>
+      </th>
+      <!-- 5 more columns to keep the total at 6 -->
+      <th style="text-align: center;"></th>
+      <th style="text-align: center;"></th>
+      <th style="text-align: center;"></th>
+      <th style="text-align: center;"></th>
+      <th style="text-align: center;"></th>
+    </tr>
+
+    <!-- Second "section" rows -->
+    <tr>
+      <th style="border-right: 1px solid #ccc; text-align: left;vertical-align: middle;">
+        <span class="left-column">Your data in<br>a template file</span>
+      </th>
+      <td colspan="5">
+        <form id="upload-file" name="upload-file" enctype="multipart/form-data" method="POST" action="{% url 'DataMapperHome' page='Numeric' %}" class="expand-image">
+          {% csrf_token %}
+          <!-- Hidden field to persist 'page' in POST requests -->
+          <input type="hidden" name="page" value="Numeric">
+          <!-- Hidden file input -->
+          <input id="file-input" type="file" name="file" style="display:none;" accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+          <!-- Image selector -- Upload  -->
+          <img id="file-trigger" src="{% if upload_status == 'Success' %}{% static 'home/images/DataMapper/Mapper_Upload_Success.png' %}
+          {% elif upload_status == 'Failed' %}{% static 'home/images/DataMapper/Mapper_Upload_Failed.png' %}
+          {% else %}
+          {% static 'home/images/DataMapper/Mapper_Upload.png' %}
+          {% endif %}" alt="file" width="80" height="80" style="cursor:pointer;">
+          <br>
+        </form>
+      </td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ######################## -->
+<!-- ###### MODALS ! ######## -->
+<!-- ######################## -->
+
+<!-- ################################### -->
+<!-- ## Failed to submit correct file ## -->
+<!-- ################################### -->
+
+<div class="modal fade" id="uploadFailedModal" tabindex="-1" role="dialog" aria-labelledby="uploadFailedModalLabel">
+  <div class="modal-dialog" role="document">
+      <div class="modal-content">
+          <div class="modal-header">
+              <h5 class="modal-title" id="uploadFailedModalLabel">Upload Failed</h5>
+              <!-- <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+              </button> -->
+          </div>
+          <div class="modal-body">
+              {{Error_message}}
+          </div>
+          <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          </div>
+      </div>
+  </div>
+</div>
+
+<!-- ##################### -->
+<!-- ## Report Success! ## -->
+<!-- ##################### -->
+
+<div class="modal fade" id="Report_modal_success" tabindex="-1" role="dialog" aria-labelledby="Report-modal-label">
+  <div class="modal-dialog" role="document">
+      <div class="modal-content">
+          <div class="modal-header">
+            <span class="modal-title" id="Report-modal-label" style="font-size: 26px; font-weight: bold;">{{plot_name}} ({{plot_type}})</span>
+            <br>
+            <span class="modal-title" id="Report-modal-label" style="font-size: 26px;">Report: Successful</span> 
+            <!-- <h3 class="modal-title" id="Report-modal-label">Report: Successful</h3> -->
+          </div>
+          <div class="modal-body">
+            <h4 class="plot-item">
+              <img src="{% static 'home/images/DataMapper/Mapper_success_image.png' %}" width="20" height="20" style="vertical-align: middle; margin-right: 5px;">
+              {{ plot_name }}
+              <span class="plot-status">Click "Continue" to generate</span>
+            </h4>
+          </div>
+          <div class="modal-footer" style="display: flex; justify-content: space-between;">
+              <button type="button" class="btn btn-primary" onclick="window.location.href=window.location.href;">Back</button>
+              <form method="POST" 
+                  action="{% if plot_name == 'GPCRome wheel' %}{% url 'DataMapperGPCRome' %}
+                          {% elif plot_name == 'Tree' %}{% url 'DataMapperTree' %}
+                          {% elif plot_name == 'Cluster' %}{% url 'DataMapperCluster' %}
+                          {% elif plot_name == 'List' %}{% url 'DataMapperList' %}
+                          {% elif plot_name == 'Heatmap' %}{% url 'DataMapperHeatmap' %}
+                          {% endif %}">
+                  {% csrf_token %}
+                  <input type="hidden" name="Data" value="{{ Data }}">
+                  <input type="hidden" name="PlotType" value="{{ plot_type }}">
+                  <button type="submit" class="btn btn-primary">Continue</button>
+              </form>
+          </div>
+      </div>
+  </div>
+</div>
+
+<!-- ############################# -->
+<!-- ## Partially success report ! ## -->
+<!-- ############################# -->
+
+<div class="modal fade" id="Report_modal_empty" tabindex="-1" role="dialog" aria-labelledby="NoReport-modal-label">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span class="modal-title" id="Report-modal-label" style="font-size: 26px; font-weight: bold;">{{plot_name}} ({{plot_type}})</span>
+        <br>
+        <span class="modal-title" id="Report-modal-label" style="font-size: 26px;">Report: No data</span> 
+        <!-- <h3 class="modal-title" id="Report-modal-label">Report: Successful</h3> -->
+      </div>
+      <div class="modal-body">
+        <h4 class="plot-item">
+          <img src="{% static 'home/images/DataMapper/Mapper_NoData_image.png' %}" width="20" height="20" style="vertical-align: middle; margin-right: 5px;">
+          {{ plot_name }}
+          <span class="plot-status">No data detected</span>
+        </h4>
+      </div>
+      <div class="modal-footer" style="display: flex; justify-content: space-between;">
+          <button type="button" class="btn btn-primary" onclick="window.location.href=window.location.href;">Go back and fix</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ############################# -->
+<!-- ## Report Failed ! ## -->
+<!-- ############################# -->
+
+<div class="modal fade" id="Report_modal_failed" tabindex="-1" role="dialog" aria-labelledby="NoReport-modal-label">
+  <div class="modal-dialog" role="document">
+      <div class="modal-content">
+          <div class="modal-header">
+            <span class="modal-title" id="Report-modal-label" style="font-size: 26px; font-weight: bold;">{{plot_name}} ({{plot_type}})</span>
+            <br>
+            <span class="modal-title" id="Report-modal-label" style="font-size: 26px;">Report: Failed</span> 
+          </div>
+          <div class="modal-body">
+            <h4 class="plot-item">
+              <img src="{% static 'home/images/DataMapper/Mapper_Failed_image.png' %}" width="20" height="20" style="vertical-align: middle; margin-right: 5px;">
+              {{ plot_name }}
+              <span class="plot-status">Incorrect data</span>
+            </h4>
+            {% if Incorrect_data_json %}
+            <ul>
+              {% for category, errors in Incorrect_data_json.items %}
+              <li>
+                {{ category }}  <!-- Header item (e.g., GPCRs, GPCR Value (Column B)) -->
+                <ul>  <!-- Nested <ul> must be inside <li> -->
+                  {% for key, value in errors.items %}
+                    <li>Row {{ key }}: {{ value }}</li>  <!-- Sub-items -->
+                  {% endfor %}
+                </ul>
+              </li> <!-- Closing <li> correctly -->
+            {% endfor %}
+            </ul>
+          {% else %}
+            <p>No incorrect data found.</p>
+          {% endif %}
+          </div>
+          <div class="modal-footer" style="display: flex; justify-content: space-between;">
+              <button type="button" class="btn btn-primary" onclick="window.location.href=window.location.href;">Go back and fix</button>
+              <!-- <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button> -->
+          </div>
+      </div>
+  </div>
+</div>
+
+<!-- ######################## -->
+<!-- # Plot options section # -->
+<!-- ######################## -->
+
+<!-- Phylogenetic Tree Modal -->
+<div class="modal fade" id="phyloTreeModal" tabindex="-1" role="dialog" aria-labelledby="phyloTreeModalLabel">
+  <div class="modal-dialog wide-modal" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title" id="phyloTreeModalLabel">Tree</h3>
+      </div>
+      <div class="modal-body">
+        <div class="img-container" style="text-align: center;">
+          <img src="{% static 'home/images/DataMapper/Tree_icon.png' %}" width="50%" style='margin-top: 10px;text-align: center;'>
+        </div>
+        <div style="margin-top: 20px;font-size: 15px;">
+          <span>The Tree plot presents the data as a classification tree, with branches progressing from receptor class through ligand type and receptor family, ultimately ending at individual receptors. Uniquely, this plot supports up to six data points per receptor. Dataset 1 is displayed inside the branch structure, while datasets 2 through 6 are placed outside, starting closest to the receptor and extending outward.
+            The Tree plot is customizable after rendering. Available customization options include text and color scaling, placement and sizing of data circles, receptor name display format, and legend bar configuration. The Tree plot is one of three visualizations that can accommodate both numeric and text based data.
+          </span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Cluster analysis Modal -->
+<div class="modal fade" id="ClusterModal" tabindex="-1" role="dialog" aria-labelledby="ClusterModalLabel">
+  <div class="modal-dialog wide-modal" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title" id="ClusterModalLabel">Cluster</h3>
+      </div>
+      <div class="modal-body" style="text-align: center;">
+        <div class="img-container">
+          <img src="{% static 'home/images/DataMapper/Cluster_icon.png' %}" width="50%" height="40%" style='margin-top: 10px'>
+        </div>
+        <div style="margin-top: 10px;font-size: 15px;">
+          <span>The Cluster plot clusters user-uploaded receptors based on their <i>sequence similarity</i> across their shared
+            segments, the transmembrane helices 1-7 and helix 8. Alternatively, users can replace the sequence similarity
+            to instead cluster receptors based on own data type, which is entered in the “<b>Spatial positioning”</b>
+            column in the data template for uploads. The number of clusters can be adjusted to group receptors into fewer,
+            larger or more, smaller clusters. The data points can be alternative shapes, and their color can be by
+            cluster (default) or defined in the data upload.
+          </span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- List plot Modal -->
+<div class="modal fade" id="ListModal" tabindex="-1" role="dialog" aria-labelledby="ListModalLabel">
+  <div class="modal-dialog wide-modal" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title" id="ListModalLabel">List</h3>
+      </div>
+      <div class="modal-body">
+        <div class="img-container" style="text-align: center;">
+          <img src="{% static 'home/images/DataMapper/List_icon.png' %}" width="60%" height="30%" style='margin-top: 10px'>
+        </div>
+        <div style="margin-top: 10px;font-size: 15px;">
+          <span>
+          The List plot lists receptors grouped by headings for the class, ligand type, and/or receptor family
+          (default is set to class and receptor family). Uniquely for this plot, the grouping can be changed by
+          omitting any of the classification levels. Data are mapped to up to four dots, or other shapes (circle,
+          star, triangle, square, diamond). The user has the option to change the layout (number and size of columns),
+          text-styling for each category separately, and dynamically change the coloring of continuous data input.
+          </span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Heatmap Modal -->
+<div class="modal fade" id="HeatmapModal" tabindex="-1" role="dialog" aria-labelledby="HeatmapModalLabel">
+  <div class="modal-dialog wide-modal" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title" id="HeatmapModalLabel">Heatmap</h3>
+      </div>
+      <div class="modal-body">
+        <div class="img-container" style="text-align: center;">
+          <img src="{% static 'home/images/DataMapper/Heatmap_icon.png' %}" width="60%" height="30%" style='margin-top: 10px'>
+        </div>
+        <div style="margin-top: 10px;font-size: 15px;">
+          <span>
+            The Heatmap plot maps data to cells (max 250) instead of dots. The cells highlight data by applying a
+            color gradient (default from blue to red) based on the user-supplied values. The heatmap can be styled
+            in various ways to best fit the users preference by moving or rotating the data labels, showing/hidden
+            borders or data values, or resizing the font size of receptors, data labels or data values.
+          </span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- GPCRome Modal -->
+<div class="modal fade" id="GPCRomeModal" tabindex="-1" role="dialog" aria-labelledby="GPCRomeModalLabel">
+  <div class="modal-dialog wide-modal" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title" id="GPCRomeModalLabel">GPCRome wheel</h3>
+      </div>
+      <div class="modal-body">
+        <div class="img-container" style="text-align: center;">
+          <img src="{% static 'home/images/DataMapper/gpcrome_modal.png' %}" width="60%" height="40%" style='margin-top: 10px'>
+        </div>
+        <div style="margin-top: 10px;font-size: 15px;">
+          <span>The GPCRome wheel plot spans the non-odorant human GPCRome in a single data mapping visualization.
+            The outer to inner layers list receptors by their class, as follows: <b>class A</b> with known physiological ligands,
+              <b>class A orphans</b> (have unknown physiological ligands),
+              <b>class B</b> (B1/Secretin and B2/Adhesion families), <i>class C</i>,
+              <b>class T2</b> and <b>class F</b>.
+              In each class, receptors are listed alphabetically, first by their <i>receptor family</i> (not shown) and secondly,
+              by the <i>receptor name</i>. Data is mapped to a circular band divided in sections next to the name of the receptors
+              for the subset of those that was uploaded by the user, as shown in the above image. Data can be submitted either as numberic or text based.
+          </span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block addon_js %}
+<script src="{% static 'home/js/d3.min.js' %}"></script>
+<script src="{% static 'home/js/nv.d3.min.js' %}"></script>
+<script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
+<script src="{% static 'home/js/saveSvg.js' %}"></script>
+<script src="{% static 'home/js/phylo_tree.js' %}"></script>
+<script src="{% static 'home/js/datamapper.js' %}"></script>
+
+<script>
+$(document).ready(function() {
+    $(".expandable_partially_success").click(function() {
+        var targetId = $(this).data("target");
+        $("#" + targetId).toggleClass("hidden");
+
+        var icon = $(this).find(".dropdown-icon");
+        icon.toggleClass("expanded");
+    });
+
+    $(".expandable_failed").click(function() {
+        var targetId = $(this).data("target");
+        $("#" + targetId).toggleClass("hidden");
+
+        var icon = $(this).find(".dropdown-icon");
+        icon.toggleClass("expanded");
+    });
+});
+
+  // Function to handle file selection
+  function handleFileSelect(event) {
+    var fileInput = document.getElementById('file-input');
+    fileInput.addEventListener('change', function(event) {
+        var form = document.getElementById('upload-file');
+
+        // Ensure page parameter is included before submitting
+        let hiddenPageInput = document.createElement("input");
+        hiddenPageInput.type = "hidden";
+        hiddenPageInput.name = "page";
+        hiddenPageInput.value = "Numeric";  // Or dynamically set this value
+        form.appendChild(hiddenPageInput);
+
+        // Now submit the form
+        form.submit();
+    });
+
+    // Open file dialog
+    fileInput.click();
+}
+
+  // Add click event listener to the image to trigger file selection
+  document.getElementById('file-trigger').addEventListener('click', handleFileSelect);
+
+  // Check upload status after form submission
+  document.addEventListener('DOMContentLoaded', function() {
+      // Check if upload was successful
+      if ("{{ upload_status }}" === "Success") {
+        // Check if report generation was successful
+        if ("{{ Plot_parser }}" === "Success") {
+          $('#Report_modal_success').modal('show');
+        } else if ("{{ Plot_parser }}" === "Empty sheet") {
+          $('#Report_modal_empty').modal('show');
+        } else if ("{{ Plot_parser }}" === "Failed") {
+          $('#Report_modal_failed').modal('show');
+        }
+      } else if ("{{ upload_status }}" === "Failed") {
+        // Show the upload failed modal
+        $('#uploadFailedModal').modal('show');
+      }
+  });
+</script>
+
+{% endblock %}

@@ -19,10 +19,8 @@ from collections import OrderedDict
 import pprint
 from datetime import datetime
 from urllib.request import urlopen
-import json
 from copy import deepcopy
 import shutil
-
 
 
 starttime = datetime.now()
@@ -360,8 +358,8 @@ class Command(BaseCommand):
 
                         if data['protein'] not in self.gpcr_sequences:
                             self.add_sequence(data['protein'], True)
-                            
-                        structure = Bio.PDB.PDBParser(QUIET=True).get_structure(s, self.pdb_path)
+
+                        structure = PDBParser(QUIET=True).get_structure(s, self.pdb_path)
                         parent_protein = Protein.objects.get(entry_name=data['protein'])
                         parent_residues = Residue.objects.filter(protein_conformation__protein=parent_protein)
                         parent_seq = parent_protein.sequence
@@ -609,6 +607,9 @@ class Command(BaseCommand):
                             elif s in ['9C1P','9C2F'] and i==3:
                                 start = 673
                                 end = 698
+                            elif s=='8X9T' and i==6:
+                                start = 753
+                                end = 780
 
                             if i<8 and (start=='-' or end=='-'):
                                 print('WARNING: helix {} for {} {} has missing annotation'.format(i, s, parent_protein))

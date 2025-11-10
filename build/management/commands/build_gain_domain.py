@@ -53,8 +53,10 @@ class Command(BaseBuild):
 
     def handle(self, *args, **options):
         self.parse_csv()
-        gn_scheme_parent, _ = ResidueNumberingScheme.objects.get_or_create(slug='gain', short_name='GAIN', name='GAIN', parent=None)
-        gn_scheme, _ = ResidueNumberingScheme.objects.get_or_create(slug='gpcrdbgain', short_name='GPCRdb(GAIN)', name='GPCRdb(GAIN)', parent=gn_scheme_parent)
+        gn_scheme_parent = ResidueNumberingScheme.objects.get(slug='gpcrdbb')
+        gn_scheme, _ = ResidueNumberingScheme.objects.get_or_create(slug='gpcrdbgain', short_name='GPCRdb(GAIN)', name='GPCRdb (GAIN)', parent=gn_scheme_parent)
+        gn_scheme_eq = ResidueNumberingScheme.objects.get(slug='gpcrdb')
+
         for protein, ends in self.annotation_dict.items():
             residues = Residue.objects.filter(protein_conformation__protein=protein, protein_segment__slug='N-term')
             tm1_start_pos = Residue.objects.filter(protein_conformation__protein=protein, protein_segment__slug='TM1')[0].sequence_number
@@ -78,6 +80,8 @@ class Command(BaseBuild):
                     if seg.slug=='B.GPS':
                         for gpsgn in ['B.GPS-2','B.GPS-1','B.GPS+1']:
                             gn, _ = ResidueGenericNumber.objects.get_or_create(label=gpsgn, protein_segment=seg, scheme=gn_scheme)
+                            gna, _ = ResidueGenericNumber.objects.get_or_create(label=gpsgn, protein_segment=seg, scheme=gn_scheme_eq)
+                            gneq, _ = ResidueGenericNumberEquivalent.objects.get_or_create(label=gpsgn, default_generic_number=gna, scheme=gn_scheme)
                             seqnum = int(ends[gpsgn])
                             res = residues.get(sequence_number=seqnum)
                             res.display_generic_number = gn
@@ -116,6 +120,8 @@ class Command(BaseBuild):
                         ### Start
                         for num in range(start, x50+1):
                             gn, _ = ResidueGenericNumber.objects.get_or_create(label=seg.slug+'.'+str(50-start_lab), protein_segment=seg, scheme=gn_scheme)
+                            gna, _ = ResidueGenericNumber.objects.get_or_create(label=seg.slug+'.'+str(50-start_lab), protein_segment=seg, scheme=gn_scheme_eq)
+                            gneq, _ = ResidueGenericNumberEquivalent.objects.get_or_create(label=seg.slug+'.'+str(50-start_lab), default_generic_number=gna, scheme=gn_scheme)
                             print(num, seg.slug+'.'+str(50-start_lab), gn, _)
                             res = residues.get(sequence_number=num)
                             res.display_generic_number = gn
@@ -128,6 +134,8 @@ class Command(BaseBuild):
                         end_lab = 51
                         for num in range(x50+1,end+1):
                             gn, _ = ResidueGenericNumber.objects.get_or_create(label=seg.slug+'.'+str(end_lab), protein_segment=seg, scheme=gn_scheme)
+                            gna, _ = ResidueGenericNumber.objects.get_or_create(label=seg.slug+'.'+str(end_lab), protein_segment=seg, scheme=gn_scheme_eq)
+                            gneq, _ = ResidueGenericNumberEquivalent.objects.get_or_create(label=seg.slug+'.'+str(end_lab), default_generic_number=gna, scheme=gn_scheme)
                             # print(num, seg.slug+'.'+str(end_lab), gn, _)
                             try:
                                 res = residues.get(sequence_number=num)

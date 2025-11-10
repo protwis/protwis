@@ -102,7 +102,7 @@ class Command(BuildHumanProteins):
             ###GP - class D addition - just temporary - FIXME
             construct_entry_names = construct_entry_names+['a0a0w0dd93_cangb', 'q8wzm9_sorma', 'b1gvb8_pench', 'mam2_schpo', 'q4wyu8_aspfu', 'q8nir1_neucs', 'ste2_lackl', 'q6fly8_canga', 'g2ye05_botf4', 's6exb4_zygb2', 'c5dx97_zygrc']
             # added seq with no human ortholog
-            construct_entry_names = construct_entry_names+['5ht5b_mouse', '5ht5b_rat', 'taar4_mouse', 'taar4_rat', 'taa7f_mouse', 'q9ert2_mouse']+['f1nu85_chick','b3xzf5_chick','a0a8j0qrx8_xentr','h2u5s9_takru', 'e7fee5_danre', 'a0a0n9n9h8_danre','q5sbp8_pladu','q868g4_brabe','q764p5_letca','r9r6d2_oryla','a0a1e1g6x5_takru','a0a1e1g6y2_danre','q8ji05_takru','q1l4c8_utast','q95p33_cioin','a0a0k0ybe3_pladu','r9r6c6_oryla','w5n9z3_lepoc','a0a1e1g6y8_oncmy','w5j8f8_anoda']+['q76sf8_hhv8','e7fel0_danre','w5qed6_sheep']
+            construct_entry_names = construct_entry_names+['5ht5b_mouse', '5ht5b_rat', 'taar4_mouse', 'taar4_rat', 'taa7f_mouse', 'q9ert2_mouse']+['f1nu85_chick','b3xzf5_chick','a0a8j0qrx8_xentr','h2u5s9_takru', 'e7fee5_danre', 'a0a0n9n9h8_danre','q5sbp8_pladu','q868g4_brabe','q764p5_letca','r9r6d2_oryla','a0a1e1g6x5_takru','a0a1e1g6y2_danre','q8ji05_takru','q1l4c8_utast','q95p33_cioin','a0a0k0ybe3_pladu','r9r6c6_oryla','w5n9z3_lepoc','a0a1e1g6y8_oncmy','w5j8f8_anoda']+['q76sf8_hhv8','gpr4_danre','aa3r_sheep','a0a9l0jpp9_equas']
             # custom family mapping for these entries
             non_human_family_entries = ['5ht5b_mouse', '5ht5b_rat', 'taar4_mouse', 'taar4_rat', 'taa7f_mouse', 'q9ert2_mouse']+['h2u5s9_takru', 'e7fee5_danre', 'a0a0n9n9h8_danre','q5sbp8_pladu','q868g4_brabe','q764p5_letca','r9r6d2_oryla','a0a1e1g6x5_takru','a0a1e1g6y2_danre','q8ji05_takru','q1l4c8_utast','q95p33_cioin','a0a0k0ybe3_pladu','r9r6c6_oryla','w5n9z3_lepoc','a0a1e1g6y8_oncmy','w5j8f8_anoda','f1nu85_chick']
 
@@ -201,6 +201,9 @@ class Command(BuildHumanProteins):
                         # use first hit from BLAST as template for reference positions
                         try:
                             p = Protein.objects.get(pk=blast_out[0][0])
+                            if up['entry_name']=='a0a9l0jpp9_equas':
+                                p = Protein.objects.get(entry_name='mrgre_human')
+                                ortholog = True
                             if up['entry_name']=='q3ksp2_ebvg':
                                 p = Protein.objects.get(entry_name='gpr55_human')
                             # class D exception
