@@ -82,21 +82,21 @@ class Command(BaseCommand):
         col_i = 0
         collision_test_hash = None
         col_sequence = None
-        while True:
+        while True: # Run in batches of max_buffer_size to be memory efficient
             q_results = list(q[i:max_buffer_size+i])
             if not q_results:
                 break
             if options['verbose']: print('Parsing from '+str(i+1)+' to '+str(i+len(q_results)))
             for q_result in q_results:    
-                hash = base64.b32encode(hashlib.md5(q_result['sequence'].encode()).digest()).decode().strip('=')
+                my_hash = base64.b32encode(hashlib.md5(q_result['sequence'].encode()).digest()).decode().strip('=')
                 q_result['gpcrdb_pk'] = q_result['id']
                 q_result['id'] = None
-                q_result['sequence_hash'] = hash
+                q_result['sequence_hash'] = my_hash
                 q_result['sequence_hash_col'] = '0'
                 q_result['sequence_dup'] = 0
                 q_result['sequence_hash_and_col_main'] = 1
 
-            # collision test
+            # collision test for development
             if options['collision_test']:
                 q_result_n_1 = copy.deepcopy(q_results[-1])
                 
@@ -122,31 +122,33 @@ class Command(BaseCommand):
                 del q_result_n_1_dup
                 del q_result_n_1
                 print('Test collision on hash: '+collision_test_hash)   
-            # Try to save in SQLlite DB the hashes
+            # Try to save the hashes in SQLlite DB 
             cur = con.cursor()
             try:
                 _insert_into_table_bulk_sqlite(con,cur,TABLE_NAME,update_fields,q_results)
                 cur.close()
 
             except IntegrityError as e:
+                # This runs on duplicates or collisions
                 con.rollback()
                 cur.close()
                 sequence_hashes_dict = {}
                 
                 dup_sequence_hashes_set = set()
                 for q_result in q_results:
-                    hash = q_result['sequence_hash']
-                    if hash in sequence_hashes_dict:
-                        dup_sequence_hashes_set.add(hash)
-                        if hash not in sequence_hashes_dict:
-                            sequence_hashes_dict[hash] = []
-                        sequence_hashes_dict[hash].append(q_result)
+                    my_hash = q_result['sequence_hash']
+                    if my_hash in sequence_hashes_dict:
+                        dup_sequence_hashes_set.add(my_hash)
+                        if my_hash not in sequence_hashes_dict:
+                            sequence_hashes_dict[my_hash] = []
+                        sequence_hashes_dict[my_hash].append(q_result)
                     else:
-                        sequence_hashes_dict[hash] = [q_result]
+                        sequence_hashes_dict[my_hash] = [q_result]
 
                 list_of_unique_hashes = list(sequence_hashes_dict.keys())
                 q_num_col = con.cursor()
 
+                # This SQL query returns a table with sequence hashes, hash collision ID and the number of duplicates 
                 sql_query = 'SELECT "table_name_0"."sequence_hash", COUNT("table_name_0"."id") AS "num_col" '+ \
                             'FROM "%s" AS "table_name_0"' % (TABLE_NAME)  + \
                             'WHERE "table_name_0"."sequence_dup" = (' + \
@@ -220,27 +222,28 @@ class Command(BaseCommand):
                     for raw_r in q_col:
                         fields = ['id']+update_fields
                         r = { fields[j] : r_val for j, r_val in enumerate(raw_r)}
-                        hash = r['sequence_hash']
-                        if hash not in q_col_or_dup_hash_seq_dict:
-                            q_col_or_dup_hash_seq_dict[hash] = {}
-                        q_col_or_dup_hash_seq_dict[hash][r['sequence']] = r
+                        my_hash = r['sequence_hash']
+                        if my_hash not in q_col_or_dup_hash_seq_dict:
+                            q_col_or_dup_hash_seq_dict[my_hash] = {}
+                        q_col_or_dup_hash_seq_dict[my_hash][r['sequence']] = r
                     del q_col
 
-                    for hash, seq_dict in q_col_or_dup_hash_seq_dict.items():
+                    for my_hash, seq_dict in q_col_or_dup_hash_seq_dict.items():
                         # hash_cols is an hexadecimal number written from right to left
                         hash_cols_decimal_max = max([int(r['sequence_hash_col'][::-1],16) for r in seq_dict.values()]\
                                                       +[0])
                         
                             
-                        db_col_dup_count_dict = {}
-                        new_col_dup_count_dict = {}
-                        new_col_count = 0
-                        new_col_sequences_dict = {}
+                        db_col_dup_count_dict = {}  # duplicate count for sequences already in SQLlite DB
+                        new_col_dup_count_dict = {} # duplicate count for new collisions not in SQLlite DB
+                        new_col_count = 0           # hash collision count for new collisions not in SQLlite DB
+                        new_col_sequences_dict = {} # sequences that have new hash collisions not in SQLlite DB
                         sequences = list(seq_dict.keys())
                         sequences_num = len(sequences)
-                        for q_result in sequence_hashes_dict[hash]:
+                        for q_result in sequence_hashes_dict[my_hash]:
                             # check if it is a duplicate
                             if  q_result['sequence'] in seq_dict:
+                                # It is a duplicate of a hash already stored in the SQLlite DB
                                 r = seq_dict[q_result['sequence']]
                                 hash_col = r['sequence_hash_col']
                                 q_result['sequence_hash_col'] = hash_col
@@ -253,6 +256,7 @@ class Command(BaseCommand):
 
 
                             elif q_result['sequence'] in new_col_sequences_dict:
+                                # It is a duplicate of a hash of a new hash collisions not in SQLlite DB
                                 hash_col = new_col_sequences_dict[q_result['sequence']]
                                 q_result['sequence_hash_col'] = hash_col
                                 if new_col_count not in new_col_dup_count_dict:
@@ -261,15 +265,15 @@ class Command(BaseCommand):
                                 q_result['sequence_dup'] = new_col_dup_count_dict[new_col_count]
                                 q_result['sequence_hash_and_col_main'] = False
                             else:
+                                # It is a collision
                                 new_col_count += 1
-
                                 hash_col = hex(hash_cols_decimal_max + new_col_count)[2:][::-1]
                                 q_result['sequence_hash_col'] = hash_col
                                 q_result['sequence_hash_and_col_main'] = True
                                 q_result['sequence_dup'] = 0
                                 new_col_sequences_dict[q_result['sequence']] = hash_col
                         if hash_cols_decimal_max == 0:
-                            
+                            # Update, in SQL lite DB, hash colision IDs values that were empty
                             if sequences_num > 1:
                                 msg = "build_ligand_sequence_hash: sequence hash %s " % (sequence_hash) + \
                                       "had collisions and sequence_hash_col field is empty."
@@ -281,27 +285,29 @@ class Command(BaseCommand):
                                 q_result['sequence_hash_col'] = '0'
                                 records_to_update.append(q_result)
                             
-                        fixed_dup_or_col_hashes.add(hash)
+                        fixed_dup_or_col_hashes.add(my_hash)
                         
                 cur = con.cursor()
                 _update_table_bulk_sqlite(con,cur,TABLE_NAME,['id'],update_fields,records_to_update)
                 cur.close()
                 dup_or_col_hashes_not_in_db = dup_sequence_hashes_set - fixed_dup_or_col_hashes  
                 
-                # Assign duplicated hashes/collisions IDs
-                for hash in list(dup_or_col_hashes_not_in_db):
-                    dup_col_objs = sequence_hashes_dict[hash]
+                # Assign duplicated hashes/collisions IDs for hashes no it the SQL lite DB
+                for my_hash in list(dup_or_col_hashes_not_in_db):
+                    dup_col_objs = sequence_hashes_dict[my_hash]
                     new_col_dup_count_dict = {0:0}
                     new_col_count = 0
                     new_col_sequences_dict = {}
                     for q_result in dup_col_objs:
                         if q_result['sequence'] in new_col_sequences_dict:
+                            # It is a duplicate
                             hash_col = new_col_sequences_dict[q_result['sequence']]
                             q_result['sequence_hash_col'] = hash_col
                             new_col_dup_count_dict[new_col_count] += 1
                             q_result['sequence_dup'] = new_col_dup_count_dict[new_col_count]
                             q_result['sequence_hash_and_col_main'] = False
                         else:
+                            # It is a collision
                             hash_col = hex(new_col_count)[2:][::-1]
                             q_result['sequence_hash_col'] = hash_col
                             q_result['sequence_hash_and_col_main'] = True
@@ -310,9 +316,10 @@ class Command(BaseCommand):
                             new_col_count += 1
                             new_col_dup_count_dict[new_col_count] = 0
                     if len(new_col_sequences_dict.keys()) < 2:
+                        # Update hash colision IDs values that were empty
                         for q_result in dup_col_objs:
                             q_result['sequence_hash_col'] = '0'
-
+                            
                 # Convert into a list the dict() with a list of Ligand objects with duplicated hashes/collisions
                 q_results = []
                 for v in sequence_hashes_dict.values():
