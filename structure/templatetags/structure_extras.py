@@ -196,3 +196,7 @@ def receptor_short ( objs ):
     if not objs.startswith('mGlu'):
         objs = objs[0].upper()+objs[1:]
     return objs.replace(" receptor","").replace("-adrenoceptor","")
+
+@register.filter
+def keyvalue(dict, key):    
+    return dict[key]
