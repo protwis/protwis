@@ -242,3 +242,7 @@ def format_class_header(class_code):
         "Other GPCRs": "Class U<br>(Unclassified)"
     }
     return class_names.get(class_code, class_code)
+
+@register.filter
+def keyvalue(dict, key):    
+    return dict[key]

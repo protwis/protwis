@@ -18,7 +18,7 @@ import csv
 import copy
 
 TABLE_NAME = 'ligand' #cannot be "U0"
-db_file_path = os.path.join(settings.DATA_DIR,"structure_data","ligand_sequence_hash.sqlite3")
+db_file_path_default = os.path.join(settings.DATA_DIR,"structure_data","ligand_sequence_hash.sqlite3")
 max_buffer_size = 1000
 
 
@@ -36,6 +36,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         super(Command, self).add_arguments(parser=parser)
+        parser.add_argument('--output', default=db_file_path_default, action='store', help='Output path of the sqlite3 file.')
         parser.add_argument('--verbose', default=False, action='store_true', help='Print progress in stdout.')
         parser.add_argument('--collision-test', default=False, action='store_true', help='Only for code testing.')
         parser.add_argument('--debug-csv', default=False, action='store_true', help='Creates a debug CSV file.')
@@ -45,6 +46,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):    
         error = None
+        db_file_path = options['output']
         if options['verbose']: print('Building ligand sequence hashes...')
         
         con = sqlite3.connect(db_file_path)

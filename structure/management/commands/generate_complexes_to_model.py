@@ -27,7 +27,7 @@ from Bio import SeqIO
 
 
 TABLE_NAME = 'ligand' #cannot be "U0"
-db_file_path = os.path.join(settings.DATA_DIR,"structure_data","ligand_sequence_hash.sqlite3")
+db_file_default_path = os.path.join(settings.DATA_DIR,"structure_data","ligand_sequence_hash.sqlite3")
 csv_cleaned_seq_filename = "cleaned_seqs.csv"
 af_scripts_csv_filename = "af_scripts_csv.csv"
 hash_names_csv_filename = "hash_names.csv"
@@ -385,6 +385,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         super(Command, self).add_arguments(parser=parser)
+        parser.add_argument('--db_file_path', default=db_file_default_path, action='store', help='Path to the SQlite3 database file. Default: {}'.format(db_file_default_path))
         parser.add_argument('--output', default=False, action='store', help='Output directory. If --primary-transducers-complete-csv is used' \
         ' this is the path of the newly created CSV.')
         parser.add_argument('--overwrite', default=False, action='store_true', help='Overwrite output directory.')
@@ -400,10 +401,10 @@ class Command(BaseCommand):
     logger = logging.getLogger(__name__)
 
 
-    def handle(self, *args, **options):    
+    def handle(self, *args, **options):
+        db_file_path = options['db_file_path']
         output_root_path = options['output']
         overwrite = options['overwrite']
-
         
 
         if options['verbose']: print('Generating alphafold inputs...')
