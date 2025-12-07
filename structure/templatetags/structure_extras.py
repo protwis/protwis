@@ -197,7 +197,6 @@ def receptor_short ( objs ):
         objs = objs[0].upper()+objs[1:]
     return objs.replace(" receptor","").replace("-adrenoceptor","")
 
-
 @register.filter
 def br_after_class_code ( objs ):
     objs = objs.strip()
@@ -242,3 +241,7 @@ def format_class_header(class_code):
         "Other GPCRs": "Class U<br>(Unclassified)"
     }
     return class_names.get(class_code, class_code)
+
+@register.filter
+def keyvalue(dict, key):
+    return dict[key]
