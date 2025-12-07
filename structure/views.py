@@ -30,7 +30,7 @@ from common.alignment import Alignment, GProteinAlignment
 from residue.models import Residue, ResidueNumberingScheme, ResiduePositionSet
 from contactnetwork.models import Interaction
 from mapper.views import DataMapperHome
-from ligand.models import LigandPeptideStructure
+from ligand.models import LigandPeptideStructure, Endogenous_GTP
 from ligand.functions import standardize_smiles
 
 # ── Postgres aggregates that do the heavy string/array work ─────
@@ -3860,7 +3860,10 @@ def prepare_lig_complex_download(mod, scores_obj=None, refined=False):
             scores_text = "pae_7tm,plddt_mean\n,\n"
     else:
         # Use fields for 'af-signprot-peptide' and others
-        gprot_entry = mod.signprot_complex.protein.entry_name
+        if structure_type_slug == 'af-signprot-peptide':
+            gprot_entry = mod.signprot_complex.protein.entry_name
+        else:
+            gprot_entry = ''
         pipeline_used = 'AF2'
         if scores_obj:
             scores_text = """ptm,iptm,pae_mean
@@ -4852,7 +4855,7 @@ class LigandComplexModels(TemplateView):
 
             # Get the structure models along with prefetching ligands and related data
             structures = Structure.objects.filter(
-                structure_type__slug__in=['af-signprot-peptide', 'af-rfaa-sm']
+                structure_type__slug__in=['af-signprot-peptide', 'af-rfaa-sm', 'af-peptide']
             ).prefetch_related(
                 "protein_conformation__protein__family",
                 "protein_conformation__protein",
@@ -4916,6 +4919,17 @@ class LigandComplexModels(TemplateView):
                         ligand.picture = picture_flag
 
             context['structure_model'] = structures
+
+            is_ligand_physiological_dict = {}
+            for structure in structures:
+                receptor = structure.protein_conformation.protein
+                ligand = structure.prefetch_ligands[0].ligand
+                print(structure.id)
+                is_ligand_physiological_dict[structure.id] = Endogenous_GTP.objects.filter(ligand=ligand,receptor=receptor).exists()
+            context['is_ligand_physiological_dict'] = is_ligand_physiological_dict
+            print(context['is_ligand_physiological_dict'] )
+
+
 
         except Structure.DoesNotExist as e:
             # Optionally log the exception
@@ -5006,6 +5020,9 @@ def LigandComplexDetails(request, header, refined=False):
     model_plddt = StructureModelpLDDT.objects.filter(structure=model).order_by('residue__protein_conformation__protein__id').prefetch_related('residue','residue__protein_conformation__protein','residue__protein_segment')
     avg_plddt = model_plddt.aggregate(Avg('pLDDT'))
     ligand = LigandPeptideStructure.objects.filter(structure__pdb_code__index=model).prefetch_related('ligand').first()
+    
+    is_ligand_physiological = Endogenous_GTP.objects.filter(ligand=ligand.ligand,receptor=model.protein_conformation.protein).exists()
+
     residues_plddt = {}
     for item in model_plddt:
         if item.residue.protein_conformation.protein not in residues_plddt:
@@ -5022,7 +5039,7 @@ def LigandComplexDetails(request, header, refined=False):
     #  ) = complex_interactions(model)
 
     ### Keep old coloring for refined structures
-    if model.structure_type.slug.startswith('af-signprot-peptide'):
+    if model.structure_type.slug.startswith('af-signprot-peptide') or model.structure_type.slug.startswith('af-peptide'):
         scores = StructureAFScores.objects.get(structure=model)
         chains = ['A', 'B', 'C', 'D', 'E']
         small_molecule = None
@@ -5043,6 +5060,7 @@ def LigandComplexDetails(request, header, refined=False):
                                                             'pdbname': header,
                                                             'scores': scores,
                                                             'ligand_object': ligand,
+                                                            'is_ligand_physiological': is_ligand_physiological, 
                                                             'small_molecule': json.dumps(small_molecule),
                                                             # 'outer': json.dumps(gpcr_aminoacids),
                                                             # 'inner': json.dumps(gprot_aminoacids),

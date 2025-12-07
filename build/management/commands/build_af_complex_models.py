@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.utils.text import slugify
 from django.db import IntegrityError
+from django.core.exceptions import FieldError
 
 from build.management.commands.base_build import Command as BaseBuild
 from protein.models import (Protein, ProteinConformation, ProteinState, ProteinSegment)
@@ -10,6 +11,7 @@ from common.tools import test_model_updates
 from common.definitions import G_PROTEIN_DISPLAY_NAME as g_prot_dict
 from structure.models import Structure, StructureType, PdbData, Rotamer, Fragment, StructureExtraProteins, StructureAFScores, StructureModelpLDDT
 from construct.functions import *
+from structure.management.commands.generate_complexes_to_model import get_stimulatory_peptide_like_ligand_AssayExperiment_obj, get_inhibitory_peptide_like_ligand_AssayExperiment_obj
 
 from contactnetwork.models import *
 from contactnetwork.cube import compute_interactions
@@ -85,6 +87,10 @@ class Command(BaseBuild):
             dest='incremental',
             default=False,
             help='Incremental update to structures for small live update')
+        parser.add_argument('--cleaned-seq-csv',
+            action='store',
+            default=False,
+            help='Load cleaned sequences from CSV')
 
     tracker = {}
     all_models = django.apps.apps.get_models()[6:]
@@ -141,7 +147,11 @@ class Command(BaseBuild):
         else:
             self.run_contactnetwork=True
 
-        self.parsed_structures = ParseAFComplexModels()
+
+
+        peptide_effects = self.get_peptide_ligand_effect_data()
+        self.parsed_structures = ParseAFComplexModels(cleaned_seq_csv=options['cleaned_seq_csv'],
+                                    peptide_effects=peptide_effects,logger=self.logger)
 
         if options['structure']:
             filtered_set = {}
@@ -647,7 +657,11 @@ class Command(BaseBuild):
 
     def build_contact_network(self, location, receptor, signprot):
         # try:
-            compute_interactions(location, protein=receptor, signprot=signprot, do_complexes=True, save_to_db=True, file_input=True) # add do_complexes
+            if signprot:
+                do_complexes = True
+            else:
+                do_complexes = False
+            compute_interactions(location, protein=receptor, signprot=signprot, do_complexes=do_complexes, save_to_db=True, file_input=True) # add do_complexes
         # except:
         #     print('Error with computing interactions (%s)' % (location))
         #     self.logger.error('Error with computing interactions (%s)' % (location))
@@ -655,18 +669,46 @@ class Command(BaseBuild):
 
     def purge_structures(self):
         models = Structure.objects.filter(structure_type__slug__startswith='af-signprot')
+        models |= Structure.objects.filter(structure_type__slug__startswith='af-peptide')
+
         for m in models:
             PdbData.objects.filter(pdb=m.pdb_data.pdb).delete()
             WebLink.objects.filter(index=m.pdb_code.index).delete()
         models.delete()
-        ResidueFragmentInteraction.objects.filter(structure_ligand_pair__structure__structure_type__slug__startswith='af-signprot').delete()
+        rfi = ResidueFragmentInteraction.objects.filter(structure_ligand_pair__structure__structure_type__slug__startswith='af-signprot')
+        rfi |= ResidueFragmentInteraction.objects.filter(structure_ligand_pair__structure__structure_type__slug__startswith='af-peptide')
+        rfi.delete()
         # ResidueFragmentInteractionType.objects.all().delete()
-        StructureLigandInteraction.objects.filter(structure__structure_type__slug__startswith='af-signprot').delete()
+        sli = StructureLigandInteraction.objects.filter(structure__structure_type__slug__startswith='af-signprot')
+        sli |= StructureLigandInteraction.objects.filter(structure__structure_type__slug__startswith='af-peptide')
+        sli.delete()
         #Remove previous Rotamers/Residues to prepare repopulate
-        Fragment.objects.filter(structure__structure_type__slug__startswith='af-signprot').delete()
-        Rotamer.objects.filter(structure__structure_type__slug__startswith='af-signprot').delete()
+        f = Fragment.objects.filter(structure__structure_type__slug__startswith='af-signprot')
+        f = f | Fragment.objects.filter(structure__structure_type__slug__startswith='af-peptide')
+        f.delete()
+        r = Rotamer.objects.filter(structure__structure_type__slug__startswith='af-signprot')
+        r = r | Rotamer.objects.filter(structure__structure_type__slug__startswith='af-peptide')
+        r.delete()
         # PdbData.objects.all().delete()
 
+
+    @staticmethod
+    def get_peptide_ligand_effect_data():
+        stimulatory_peptides = get_stimulatory_peptide_like_ligand_AssayExperiment_obj()
+        inhibitory_peptides = get_inhibitory_peptide_like_ligand_AssayExperiment_obj()
+
+        peptide_effects_dict = {}
+        for effect,peptides in zip(['stimulatory', 'inhibitory'],[stimulatory_peptides, inhibitory_peptides]):
+            peptide_effects_dict[effect] = {}
+            for ep in peptides:
+                if ep.ligand.sequence not in peptide_effects_dict[effect]:
+                    peptide_effects_dict[effect][ep.ligand.sequence] = []
+                try:
+                    peptide_effects_dict[effect][ep.ligand.sequence].append(ep.ligand.gpcrdbid)
+                except AttributeError:
+                    peptide_effects_dict[effect][ep.ligand.sequence].append(ep.ligand.id)
+        return peptide_effects_dict
+    
     @staticmethod
     def parsecalculation(sd, data, molecule, ignore_ligand_preset=False):
         module_dir = '/tmp/interactions/'
@@ -777,7 +819,10 @@ class Command(BaseBuild):
 
             # get the PDB file and save to DB
             if 'peptide' in sd['model']:
-                sd['pdb'] = f'AFM_{sd["receptor"].upper()}_{sd["peptide"].replace("-","").upper()}_{sd["signprot"].upper()}'
+                if sd["signprot"]:
+                    sd['pdb'] = f'AFM_{sd["receptor"].upper()}_{sd["peptide"].replace("-","").upper()}_{sd["signprot"].upper()}'
+                else:
+                    sd['pdb'] = f'AFM_{sd["receptor"].upper()}_{sd["peptide"].replace("-","").upper()}'
             else:
                 sd['pdb'] = 'AFM_' + sd['receptor'].upper() + '_' + sd['signprot'].upper()
 
@@ -906,29 +951,57 @@ class Command(BaseBuild):
 
             if 'peptide' in sd['model']:
                 try:
-
-                    # Get the Ligand object based on the chain E sequence
-                    ligand = Ligand.objects.filter(sequence=sd['chain_e_sequence'])
-                    if len(ligand)>0:
-                        ligand = ligand[0]
-
-                    print(ligand)
-
-                    # Try to get existing LigandPeptideStructure or create a new one
-                    ligand_peptide_structure, created = LigandPeptideStructure.objects.get_or_create(
-                        structure=struct,
-                        ligand=ligand,
-                        chain='E',
-                        defaults={'model': None}  # Set model to None
-                    )
-                    
-                    if created:
-                        print(f"Created new LigandPeptideStructure for structure {struct.pdb_code.index} and ligand {ligand.name}")
+                    if sd['peptide_gpcrdb_ids'] is not None:
+                        try:
+                            ligands = Ligand.objects.filter(gpcrdb_id__in=sd['peptide_gpcrdb_ids'])
+                        except FieldError:
+                            ligands = Ligand.objects.filter(id__in=sd['peptide_gpcrdb_ids'])
                     else:
-                        print(f"Found existing LigandPeptideStructure for structure {struct.pdb_code.index} and ligand {ligand.name}")
+
+                        print(ligand)
+
+                        # Get the Ligand object based on the chain E sequence
+                        try:
+                            ligand = Ligand.objects.filter(sequence=sd['chain_e_sequence']).select_related('parent')
+                            ligand = list(ligand)
+                        except:
+                            ligand = Ligand.objects.filter(sequence=sd['chain_e_sequence'])
+                        if len(ligand) > 0:
+                            ligand = [ligand[0]]
+                        
+                        peptide_gpcrdb_ids_dict = OrderedDict()
+
+                        if len(ligand)>0:
+                            for l in ligand:
+                                try:
+                                    if l.parent_id is not None:
+                                        ligand = l.parent
+                                except AttributeError:
+                                        ligand = l
+                            try:
+                                peptide_gpcrdb_ids_dict[ligand.gpcrdb_id] = True
+                            except AttributeError:
+                                peptide_gpcrdb_ids_dict[ligand.id] = True
+
+                        ligands = list(peptide_gpcrdb_ids_dict.keys())
+                    for ligand in ligands:
+                        print(ligand)
+
+                        # Try to get existing LigandPeptideStructure or create a new one
+                        ligand_peptide_structure, created = LigandPeptideStructure.objects.get_or_create(
+                            structure=struct,
+                            ligand=ligand,
+                            chain='E',
+                            defaults={'model': None}  # Set model to None
+                        )
+                        
+                        if created:
+                            print(f"Created new LigandPeptideStructure for structure {struct.pdb_code.index} and ligand {ligand.name}")
+                        else:
+                            print(f"Found existing LigandPeptideStructure for structure {struct.pdb_code.index} and ligand {ligand.name}")
                 
                 except Exception as e:
-                    print(f"Error creating LigandPeptideStructure: {str(e)} {ligand}")
+                    print(f"Error creating LigandPeptideStructure(s): {str(e)} {ligands}")
 
 
 
@@ -961,17 +1034,21 @@ class Command(BaseBuild):
 
             ##### SIGNPROT
             beta_gamma = sd['beta_gamma']
-            signprot = Protein.objects.get(entry_name=sd['signprot'])
-            signprot_conf = ProteinConformation.objects.get(protein=signprot)
-            if beta_gamma:
-                beta_protconf = ProteinConformation.objects.get(protein__entry_name='gbb1_human')
-                gamma_protconf = ProteinConformation.objects.get(protein__entry_name='gbg2_human')
-                sc = SignprotComplex.objects.get_or_create(alpha='B', protein=signprot, structure=struct,
-                                                           beta_chain='C', gamma_chain='D', beta_protein=beta_protconf.protein, gamma_protein=gamma_protconf.protein)
+            if sd['signprot']:
+                signprot = Protein.objects.get(entry_name=sd['signprot'])
+                signprot_conf = ProteinConformation.objects.get(protein=signprot)
+                if beta_gamma:
+                    beta_protconf = ProteinConformation.objects.get(protein__entry_name='gbb1_human')
+                    gamma_protconf = ProteinConformation.objects.get(protein__entry_name='gbg2_human')
+                    sc = SignprotComplex.objects.get_or_create(alpha='B', protein=signprot, structure=struct,
+                                                            beta_chain='C', gamma_chain='D', beta_protein=beta_protconf.protein, gamma_protein=gamma_protconf.protein)
+                else:
+                    sc = SignprotComplex.objects.get_or_create(alpha='B', protein=signprot, structure=struct,
+                                                            beta_chain=None, gamma_chain=None, beta_protein=None, gamma_protein=None)
+                struct.signprot_complex = sc[0]
             else:
-                sc = SignprotComplex.objects.get_or_create(alpha='B', protein=signprot, structure=struct,
-                                                           beta_chain=None, gamma_chain=None, beta_protein=None, gamma_protein=None)
-            struct.signprot_complex = sc[0]
+                struct.signprot_complex = None
+                signprot = None
             struct.save()
 
             #### Adding metrics to StructureAFScores
@@ -988,8 +1065,9 @@ class Command(BaseBuild):
             metrics.save()
 
             ##### StructureExtraProteins
-            g_prot_dict[signprot.entry_name.split('_')[0].upper()]
-            sep = StructureExtraProteins.objects.get_or_create(display_name=g_prot_dict[signprot.entry_name.split('_')[0].upper()], note=None, chain='B', category='G alpha', wt_coverage=100, protein_conformation=signprot_conf, structure=struct, wt_protein=signprot)
+            if signprot:
+                g_prot_dict[signprot.entry_name.split('_')[0].upper()]
+                sep = StructureExtraProteins.objects.get_or_create(display_name=g_prot_dict[signprot.entry_name.split('_')[0].upper()], note=None, chain='B', category='G alpha', wt_coverage=100, protein_conformation=signprot_conf, structure=struct, wt_protein=signprot)
             if beta_gamma:
                 sep_beta = StructureExtraProteins.objects.get_or_create(display_name='G&beta;1', note=None, chain='C', category='G beta', wt_coverage=100, protein_conformation=beta_protconf, structure=struct, wt_protein=beta_protconf.protein)
                 sep_beta = StructureExtraProteins.objects.get_or_create(display_name='G&gamma;2', note=None, chain='D', category='G gamma', wt_coverage=100, protein_conformation=gamma_protconf, structure=struct, wt_protein=gamma_protconf.protein)

@@ -177,10 +177,22 @@
                         }
                     },
 
+                    {
+                        column_number : 4,
+                        filter_type: "multi_select",
+                        select_type: "select2",
+                        filter_default_label: "Physiological",
+                        filter_match_mode : "exact",
+                        filter_reset_button_text: false,
+                        select_type_options: {
+                            width: "40px",
+                        }
+                    },
+
                     // Receptor
 
                     {
-                        column_number: 4,
+                        column_number: 5,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         filter_default_label: "Gene name",
@@ -190,7 +202,7 @@
                         }
                     },
                     {
-                        column_number : 5,
+                        column_number : 6,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         filter_default_label: "Protein name",
@@ -201,7 +213,7 @@
                         }
                     },
                     {
-                        column_number : 6,
+                        column_number : 7,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         filter_default_label: "Family",
@@ -211,7 +223,7 @@
                         }
                     },
                     {
-                        column_number : 7,
+                        column_number : 8,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         filter_default_label: "Class",
@@ -221,7 +233,7 @@
                         }
                     },
                     {
-                        column_number : 8,
+                        column_number : 9,
                         filter_type: "range_number",
                         select_type: 'select2',
                         filter_default_label: ["From", "To"],
@@ -231,7 +243,7 @@
                         }
                     },
                     {
-                        column_number : 9,
+                        column_number : 10,
                         filter_type: "range_number",
                         select_type: 'select2',
                         filter_default_label: ["From", "To"],
@@ -241,7 +253,7 @@
                         }
                     },
                     {
-                        column_number : 10,
+                        column_number : 11,
                         filter_type: "range_date",
                         date_format: "yyyy-mm-dd",
                         select_type: 'select2',
@@ -413,7 +425,7 @@
                 <tr class='over_header' style='max-height: 20px'>
                     <th colspan=1 class="over_header rightborder"></th> 
                     <th colspan=1 class="over_header rightborder">   MODEL   </th>
-                    <th colspan=2 class="over_header rightborder" style="text-align: left;">LIGAND</th>
+                    <th colspan=3 class="over_header rightborder" style="text-align: left;">LIGAND</th>
                     <th colspan=4 class="over_header rightborder" style="text-align: left;">RECEPTOR</th>
                     <th colspan=2 class="over_header rightborder" style="text-align: left;">LIGAND MODEL SCORE</th>
                     <th colspan=1 class="over_header">Date</th>
@@ -431,6 +443,8 @@
                     <th>Name</th>
                     <!-- ligand type 8-->
                     <th>Type</th>
+                    <!-- ligand physiological-->
+                    <th>Physiological</th>
 
                    
                    <!--                     Receptor                -->
@@ -501,15 +515,27 @@
                         </a>
                         {% endif %}
                     </td>
+                  
+                    <!-- ligand type 8 -->
 
-                                        <!-- ligand type 8 -->
                     {% if ligand_obj.ligand_type.slug == "small-molecule" %}
                         <td>Small mol</td>
                     {% elif ligand_obj.ligand_type.slug == "peptide" %}
                         <td>Peptide</td>
                     {% else %}
-                        <td> {{ ligand_obj.ligand_type.name|default:ligand_obj.ligand_type.slug|title|default:"N/A" }} </td>
+                        <td>{{ ligand_obj.ligand_type.name|default:ligand_obj.ligand_type.slug|title|default:"N/A" }}</td>
                     {% endif %}
+                    <!-- ligand type 9 -->
+
+
+                    {% with model_pk=model.id %}
+                    {% if is_ligand_physiological_dict|keyvalue:model_pk %}
+                        <td>Yes</td>
+                    {% else %}
+                        <td>No</td>
+                    {% endif %}
+                    {% endwith %}
+                    
                     
                                         <!--               RECEPTOR            -->
                     <!-- Gene name 3 -->
@@ -538,7 +564,7 @@
                     {% endif %}
 
                     <!--                         DATE                           -->
-                     <td> {{ model.publication_date }} </td>
+                     <td> {{ model.publication_date|date:"Y-m-d" }} </td>
 
                      <!-- Hidden -->
                      <td style='display:none;'>{{ model }}</td>

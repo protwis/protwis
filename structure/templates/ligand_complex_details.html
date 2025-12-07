@@ -98,7 +98,7 @@ canvas {
 <div class="row text-success">
     <div class="text-center">
         <div style="display: inline;">
-          {% if structure_type == "af-signprot-peptide" %}
+          {% if structure_type == "af-signprot-peptide" or structure_type == "af-peptide" %}
               <h2> <a href="/ligand/{{ ligand_object.ligand.id }}/info">
                 {% if ligand_object.ligand.name|length >= 6 %}
                     {{ ligand_object.ligand.name | capfirst | safe }}
@@ -106,8 +106,10 @@ canvas {
                     {{ ligand_object.ligand.name | upper | safe }}
                 {% endif %}
             </a> -
-                  <a href="/protein/{{ model.protein_conformation.protein.entry_name }}" target="_blank">{{ model.protein_conformation.protein.name|safe }}</a> -
-                  <a href="/protein/{{ model.signprot_complex.protein.entry_name }}" target="_blank">G<sub>{{ model.signprot_complex.protein.family.name|gprot_short|slice:"1:" }}</sub></a> complex model
+                  <a href="/protein/{{ model.protein_conformation.protein.entry_name }}" target="_blank">{{ model.protein_conformation.protein.name|safe }}</a>
+                  {% if structure_type == "af-signprot-peptide" %}
+                    - <a href="/protein/{{ model.signprot_complex.protein.entry_name }}" target="_blank">G<sub>{{ model.signprot_complex.protein.family.name|gprot_short|slice:"1:" }}</sub></a>
+                  {% endif %} complex model
           {% else %}
               <h2>(<a href="/ligand/{{ ligand_object.ligand.id }}/info">
                 {% if ligand_object.ligand.name|length >= 6 %}
@@ -169,10 +171,10 @@ canvas {
 
 <div class="row">
     <div class="col-md-6 text-right text-info">
-        <h4 style="color: black;">PHYSIOLOGICAL LIGAND</h4>
+        <h4 style="color: black;">LIGAND</h4>
     </div>
     <div class="col-md-6">
-        {{ ligand_object.ligand.name | capfirst | safe}}
+        <a href="/ligand/{{ ligand_object.ligand.id }}/info">{{ ligand_object.ligand.name | capfirst | safe}}</a>{% if is_ligand_physiological %} (Physiological){% endif %}
     </div>
 </div>
 
@@ -224,7 +226,7 @@ canvas {
         </div>
         <br>
         <div>
-        {% if structure_type == "af-signprot-peptide" %}
+        {% if structure_type == "af-signprot-peptide" or structure_type == "af-peptide" %}
           <h5>PTM Score: <b>{{ scores.ptm|floatformat:1 }}</b>
             <span class="fa fa-info-circle simple-popover" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="bottom" data-content="<b>Predicted TM-score </b>:<br /> Confidence assessment of the overall fold and topology"></span>
           </h5>
@@ -324,7 +326,7 @@ Confidence assessment of the relative positioning of protein chains at the inter
             // Structure type as serialized variable
             var structureType = JSON.parse(document.getElementById('structure-type').textContent);
 
-            if (structureType === "af-signprot-peptide") {
+            if (structureType === "af-signprot-peptide" || structureType === "af-peptide") {
                 var x = null
                 ptm = Number({{ scores.ptm }});
                 iptm = Number({{ scores.iptm }});

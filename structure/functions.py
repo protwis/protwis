@@ -19,7 +19,9 @@ from residue.functions import dgn
 from residue.models import Residue, ResidueGenericNumberEquivalent
 from structure.models import Structure, Rotamer, PdbData, StructureStabilizingAgent, StructureType
 from signprot.models import SignprotStructure
-from ligand.models import Endogenous_GTP
+from ligand.models import Endogenous_GTP, Ligand
+
+from django.core.exceptions import FieldError
 
 from subprocess import Popen, PIPE
 from io import StringIO
@@ -39,6 +41,7 @@ import json
 import yaml
 from urllib.request import urlopen, Request
 import re
+import fileinput
 
 
 logger = logging.getLogger("protwis")
@@ -1177,12 +1180,28 @@ class ParseAFComplexModels():
         'SER': 'S', 'THR': 'T', 'VAL': 'V', 'TRP': 'W', 'TYR': 'Y'
     }
 
-    def __init__(self):
+    __re_hashseq = re.compile(r'hashedseq\[([^\]]+)\]')
+
+    def __init__(self, cleaned_seq_csv=None,peptide_effects=None, logger=None):
         self.data_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'AlphaFold_multimer'])
         self.filedirs = os.listdir(self.data_dir)
         self.complexes = {}
+        self.cleaned_seq_csv = cleaned_seq_csv
+        self.peptide_effects = peptide_effects
+        self.logger = logger
+        self.old_seqs_dict = {}
+
+        if self.cleaned_seq_csv:
+            df_cleaned_seqs = pd.read_csv(self.cleaned_seq_csv)
+            df_cleaned_seqs['backwards_hex_cleaned_seq_hash_col'] = df_cleaned_seqs['cleaned_seq_hash_col'].apply(lambda x: hex(x)[2:][::-1])
+            df_cleaned_seqs['pdb_file_hashseq'] = df_cleaned_seqs['cleaned_seq_hash'] + df_cleaned_seqs['backwards_hex_cleaned_seq_hash_col']
+            self.old_seqs_dict = {k:v for k,v in zip(df_cleaned_seqs['pdb_file_hashseq'],df_cleaned_seqs['old_sequence'])}
+
 
         for f in self.filedirs:
+            if f.startswith('.'):
+                continue
+            print(os.sep.join([self.data_dir, f, f+'_metrics.csv']))
             metrics_file = os.sep.join([self.data_dir, f, f+'_metrics.csv'])
             if not os.path.exists(metrics_file):
                 metrics_file = os.sep.join([self.data_dir, f, f+'.csv'])
@@ -1191,13 +1210,33 @@ class ParseAFComplexModels():
 
             parts = f.split('-')
             receptor = parts[0]
+            peptide_gpcrdb_ids = None
+            peptide_hash_col = None
             if len(parts) == 3:  # Case with peptide
-                peptide_id = parts[1]
-                peptide = "-" + peptide_id
-                signprot = parts[2]
-                model = 'af-signprot-peptide'
-                chain_e_sequence = self.get_ligand_sequence(location, 'E')
+                peptide_part = parts[1]
+                if parts[1].startswith('hashedseq['):
+                    peptide_hash_col = self.__re_hashseq.match(parts[1]).group(1)
+                    peptide = '-hashedseq['+peptide_hash_col + ']'
+                    signprot = parts[2]
+                    model = 'af-signprot-peptide'
+                    chain_e_sequence = self.get_ligand_sequence(location, 'E')
+                else:
+                    peptide_id = parts[1]
+                    peptide = "-" + peptide_id
+                    signprot = parts[2]
+                    model = 'af-signprot-peptide'
+                    chain_e_sequence = self.get_ligand_sequence(location, 'E')
 
+            elif len(parts) == 2: # Case with peptide, but no transducers
+                model = 'af-peptide'
+                if parts[1].startswith('hashedseq['):
+                    peptide_hash_col = self.__re_hashseq.match(parts[1]).group(1)
+                    peptide = '-hashedseq['+peptide_hash_col + ']'
+                    signprot = None
+                    rename_pdb_file_chain_id_inplace(location, "B", "E")
+                    chain_e_sequence = self.get_ligand_sequence(location, 'E')
+                else:
+                    raise NotImplementedError('Parsing models with no transducers and no hashedseq not implemented yet.')
             else:  # Case without peptide
                 peptide = None
                 signprot = parts[1]
@@ -1205,6 +1244,7 @@ class ParseAFComplexModels():
                 chain_e_sequence = None
 
             # Grab model date/version from pdb file
+            print(location)
             with open(location, 'r') as model_file:
                 line = model_file.readlines()[0]
                 date_re = re.search('HEADER[A-Z\S\D]+(\d{4}-\d{2}-\d{2})', line)
@@ -1216,6 +1256,68 @@ class ParseAFComplexModels():
                 beta_gamma = True
             else:
                 beta_gamma = False
+
+
+            peptide_gpcrdb_ids_dict = OrderedDict()
+
+            if peptide_hash_col is not None:
+                chain_e_sequence =  self.old_seqs_dict.get(peptide_hash_col, chain_e_sequence)
+                # Check if ligand is stimulatory or inhibitory
+                if model == 'af-signprot-peptide':
+                    if chain_e_sequence in self.peptide_effects['stimulatory']:
+                        peptide_gpcrdb_ids = self.peptide_effects['stimulatory'][chain_e_sequence]
+                elif model == 'af-peptide':
+                    if chain_e_sequence in self.peptide_effects['inhibitory']:
+                        peptide_gpcrdb_ids = self.peptide_effects['inhibitory'][chain_e_sequence]
+
+                # Remove duplicated ligand GPCRDB IDs
+                for ligand_gpcrdb_id in peptide_gpcrdb_ids:
+                    peptide_gpcrdb_ids_dict[ligand_gpcrdb_id] = True
+
+                peptide_gpcrdb_ids = list(peptide_gpcrdb_ids_dict.keys())
+
+                try:
+                    ligand = Ligand.objects.filter(gpcrdb_id__in=peptide_gpcrdb_ids).select_related('parent')
+                    ligand = list(ligand)
+                except:
+                    try:
+                        ligand = Ligand.objects.filter(gpcrdb_id__in=peptide_gpcrdb_ids)
+                        ligand = list(ligand)
+                    except FieldError:
+                        try:
+                            ligand = Ligand.objects.filter(id__in=peptide_gpcrdb_ids).select_related('parent')
+                            ligand = list(ligand)
+                        except:
+                            ligand = Ligand.objects.filter(id__in=peptide_gpcrdb_ids)
+                 
+            else:
+                # Get the Ligand object based on the chain E sequence
+                try:
+                    ligand = Ligand.objects.filter(sequence=chain_e_sequence).select_related('parent')
+                    ligand = list(ligand)
+                except:
+                    ligand = Ligand.objects.filter(sequence=chain_e_sequence)
+                if len(ligand) > 0:
+                    ligand = [ligand[0]]
+                
+            peptide_gpcrdb_ids_dict = OrderedDict()
+
+            if len(ligand)>0:
+                for l in ligand:
+                    try:
+                        if l.parent_id is not None:
+                            ligand = l.parent
+                    except AttributeError:
+                            ligand = l
+                try:
+                    peptide_gpcrdb_ids_dict[ligand.gpcrdb_id] = True
+                except AttributeError:
+                    peptide_gpcrdb_ids_dict[ligand.id] = True
+            else:
+                if self.logger:
+                    self.logger.warning(f'Could not find peptidic ligand for model {f}.')
+                continue
+            peptide_gpcrdb_ids = list(peptide_gpcrdb_ids_dict.keys())
 
             self.complexes[f'{receptor}{peptide}-{signprot}'] = {
                 'receptor': receptor,
@@ -1229,7 +1331,8 @@ class ParseAFComplexModels():
                 'PTM': metrics['ptm'],
                 'iPTM': metrics['iptm'],
                 'PAE_mean': metrics['pae_mean'],
-                'chain_e_sequence': chain_e_sequence
+                'chain_e_sequence': chain_e_sequence,
+                'peptide_gpcrdb_ids': peptide_gpcrdb_ids
             }
 
     def get_ligand_sequence(self, pdb_file, chain_id):
@@ -1830,3 +1933,10 @@ def atoms_to_dict(atom_list):
             atom_resis[a.get_parent().get_id()[1]].append(a)
         prev_res = a.get_parent().get_id()[1]
     return atom_resis
+
+def rename_pdb_file_chain_id_inplace(pdb_file, old_chain_id, new_chain_id):
+    for line in fileinput.input(pdb_file, inplace=True):
+        if line.startswith(("ATOM", "HETATM","TER")) and len(line) > 21:
+            if line[21] == old_chain_id:
+                line = line[:21] + new_chain_id + line[22:]
+        sys.stdout.write(line)
