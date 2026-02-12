@@ -105,7 +105,7 @@ function citation_tool(url, cite_id) {
 			else if (filter_for==="arrestindb" && data[i][11]==="ArrestinDb") {
 				data[i][5] = "The arrestin database, ArrestinDb";
 				data[i][6] = "Jimmy Caroli, Gáspár Pándy-Szekeres, Alexander S. Hauser, György M. Keserű, Albert J. Kooistra and David E. Gloriam";
-				data[i][7] = 2022;
+				data[i][7] = "";
 				data[i][8] = "";
 				data[i][9] = "Manuscript";
 				data[i][10] = "";
@@ -220,7 +220,14 @@ function citation_tool(url, cite_id) {
 
 			// Link
 			var a = document.createElement("a");
-			a.innerHTML = articles[key]['journal'].italics() + ", " + articles[key]['year'] + ", " + articles[key]['reference'];
+			a.innerHTML = articles[key]['journal'].italics()
+			if (articles[key]['year']) {
+				a.innerHTML += ", " + articles[key]['year']
+			}
+			if (articles[key]['reference']) {
+				a.innerHTML += articles[key]['reference'];
+			}
+			a.innerHTML += "."
   			a.title = key;
   			a.href = "https://doi.org/"+articles[key]['doi'];
   			a.target = "_blank";

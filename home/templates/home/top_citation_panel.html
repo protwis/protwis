@@ -1,0 +1,60 @@
+{% load static %}
+<script type="text/javascript" src="{% static 'home/js/gpcrdbCitations.js' %}"></script>
+<div style="height: 40px;" class="top-citation-panel-margin-fixer">
+    <div class="top-citation-panel" id="top_citation_panel">
+        <div class="container">
+            <div class="text-right">
+                <span class="collapse-toggle" role="button" aria-expanded="false"  data-toggle="collapse" aria-controls="top_citation_panel_collapsible" data-target="#top_citation_panel_collapsible"><span style="font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;color:#1d3557">Citation&nbsp;</span></i></span>
+            
+            </div>
+            <div class="collapse" id="top_citation_panel_collapsible">
+                <div class="top-citation-panel-collapsible-content"><div id="top_citation_panel_content"><p>No citations</p></div></div>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+    $(document).ready(function () {
+        $(document).on("click", function(event) {
+            var $top_citation_panel = $("#top_citation_panel");
+            var $top_citation_panel_content = $("#top_citation_panel_content");
+
+                if (!($(event.target).is($top_citation_panel) || $($top_citation_panel).has($(event.target)).length > 0)) {
+                    $("#top_citation_panel_collapsible").collapse('hide');
+                } 
+                else if (!($(event.target).is($top_citation_panel_content) || $($top_citation_panel_content).has($(event.target)).length > 0)) {
+                    $("#top_citation_panel_collapsible").collapse('toggle');
+                }
+        });
+
+        getCitationByUrl(window.location.href, function(html, no_citation, data) {
+            if (no_citation) {return};
+
+            if (!(html === "" || html == null)) {
+                $("body nav:first").css("margin-bottom", "0px");
+                $(".top-citation-panel").fadeIn(1000);
+                //$(".top-citation-panel-margin-fixer").css("height", "auto"); // uncomment for pushing down content
+                                                                               // instead of overlaying it
+                $("#top_citation_panel_content").html(html);
+            }
+        },settings={});
+    });
+
+    var ticking = false;
+    var offset = $('#top_citation_panel').offset().top + 60;
+
+    $(window).on('scroll', function() {
+        if (!ticking) {
+            window.requestAnimationFrame(function() {
+            var scroll = $(window).scrollTop();
+            var $tcp = $('#top_citation_panel');
+
+            if (scroll > offset && !$tcp.hasClass('fixed-nav')) $tcp.addClass('fixed-nav');
+            else if (scroll <= offset && $tcp.hasClass('fixed-nav')) $tcp.removeClass('fixed-nav');
+
+            ticking = false;
+            });
+            ticking = true;
+        }
+    });
+</script>

@@ -1,0 +1,53 @@
+
+.top-citation-panel {
+    background-color: #EDE7F6;
+    border-bottom-color: #080808;
+    border-bottom-style: solid;
+    border-bottom-width: 1px;
+    margin-bottom: 20px;
+    display: none;
+    cursor: pointer;
+    position: relative;
+    z-index: 9998; /* important */
+}
+
+.top-citation-panel-collapsible-content {
+    border: 1px solid transparent;
+    border-radius: 4px;
+    color: #31708f;
+    background-color: #d9edf7;
+    border-color: black;
+    margin-bottom: 20px;
+    padding: 5px;
+    cursor: auto;
+}
+
+.collapse-toggle::after {
+    content: "+";
+    font-family: monospace;
+    float: right;
+    font-weight: bold;
+    transition: transform 0.2s, content 0.2s;
+}
+
+/* When the collapse is open */
+.collapse-toggle[aria-expanded="true"]::after {
+    content: "–";
+    font-family: monospace;
+}
+
+#top_citation_panel_collapsible {
+  transform: translateZ(0); /* important */
+  will-change: height; /* important */
+  overflow: hidden; /* important */
+}
+
+.top-citation-panel.fixed-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1030;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    transition: all 0.3s ease-in-out;
+}
