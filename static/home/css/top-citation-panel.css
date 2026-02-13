@@ -1,0 +1,39 @@
+
+.top-citation-panel {
+    background-color: #e7fef7;
+    border-bottom-color: #080808;
+    border-bottom-style: solid;
+    border-bottom-width: 1px;
+    margin-bottom: 20px;
+    display: none;
+    cursor: pointer;
+    position: relative;
+    z-index: 9998; /* important */
+}
+
+.top-citation-panel-collapsible-content {
+    border: 1px solid transparent;
+    border-radius: 4px;
+    color: #31708f;
+    background-color: #d9edf7;
+    border-color: black;
+    margin-bottom: 20px;
+    padding: 5px;
+    cursor: auto;
+}
+
+.collapse-toggle .bi {
+    display: inline-block;           /* important */
+    transition: transform 0.2s ease-in-out;
+}
+
+.collapse-toggle[aria-expanded="true"] .bi {
+    transform: rotate(90deg); /* Rotate arrow when expanded */
+} 
+
+#top_citation_panel_collapsible {
+  transform: translateZ(0); /* important */
+  will-change: height; /* important */
+  overflow: hidden; /* important */
+}
+

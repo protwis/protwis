@@ -17,16 +17,18 @@ function select_all(e) {
 /**
  * Default Bootstrap alert function that can be used on all GPCRdb pages
  */
-function showAlert(message, alerttype) {
+function showAlert(message, alerttype,timeout=4000) {
   // Alerttype: success, info, warning, danger
   // See https://getbootstrap.com/docs/3.3/components/#alerts
   $("#gpcrdb_alert_placeholder").append('<div id="gpcrdb_alert" class="alert alert-' +
     alerttype + '"><button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>' +
     message + "</div>");
 
-  setTimeout(function() {
-    $("#gpcrdb_alert").remove();
-  }, 4000);
+  if (timeout !== false) {
+    setTimeout(function() {
+      $("#gpcrdb_alert").remove();
+    }, timeout);
+  }
 }
 
 /**
@@ -278,6 +280,27 @@ function getReference(keys, callback) {
       callback("");  // still call back with empty string on error
     }
   });
+}
+
+function removeQuery(url) {
+    if (typeof URL === "function") {
+        // Modern browsers
+        try {
+            let urlObj = new URL(url, window.location.origin); // base fallback for relative URLs
+            urlObj.search = ""; // strip query
+            return urlObj.toString();
+        } catch (e) {
+            // In case URL parsing fails, fallback
+        }
+    }
+    // Fallback for old browsers
+    var parts = url.split("?");
+    var noQuery = parts[0];
+    if (url.indexOf("#") !== -1) {
+        var hash = url.split("#")[1];
+        noQuery += "#" + hash;
+    }
+    return noQuery;
 }
 
 (function (global) {
