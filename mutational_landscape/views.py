@@ -7,14 +7,13 @@ try:
 except:
     cache_variation = cache
 
-from django.db.models import Count, Sum, Avg, Q
-from django.views.decorators.cache import cache_page
+from django.db.models import Q
 
 import hashlib
 
-from protein.models import Protein, ProteinConformation, ProteinFamily, Gene
+from protein.models import Protein, ProteinConformation
 from residue.models import Residue, ResiduePositionSet
-from mutational_landscape.models import NaturalMutations, PTMs, NHSPrescribings
+from mutational_landscape.models import NaturalMutations, PTMs
 
 from common.diagrams_gpcr import DrawHelixBox, DrawSnakePlot
 
@@ -30,12 +29,9 @@ from common.views import AbsTargetSelectionTable
 from family.views import linear_gradient
 
 import json
-import numpy as np
-from copy import deepcopy
 
 from io import BytesIO
 import unicodedata
-import urllib
 import xlsxwriter #sudo pip3 install XlsxWriter
 import string
 
@@ -58,26 +54,6 @@ class TargetSelection(AbsTargetSelectionTable):
             "color": "success",
         },
     }
-
-# class TargetSelection(AbsTargetSelectionTable):
-#     step = 1
-#     number_of_steps = 1
-#     filters = False
-#     psets = False
-#     # docs = 'mutations.html#mutation-browser'
-#     selection_boxes = OrderedDict([
-#         ('reference', False),
-#         ('targets', True),
-#         ('segments', False),
-#     ])
-#     buttons = {
-#         'continue': {
-#             'label': 'Show missense variants',
-#             'url': '/mutational_landscape/render',
-#             'color': 'success',
-#         },
-#     }
-#     default_species = False
 
 #@cache_page(60*60*24*21)
 def render_variants(request, protein=None, family=None, download=None, receptor_class=None, gn=None, aa=None, **response_kwargs):
@@ -216,7 +192,6 @@ def render_variants(request, protein=None, family=None, download=None, receptor_
             NM.functional_annotation = functional_annotation
             # print(NM.functional_annotation)
             jsondata[SN] = [NM.amino_acid, NM.allele_frequency, NM.allele_count, NM.allele_number, NM.number_homozygotes, NM.type, effect, color, functional_annotation]
-
 
         natural_mutation_list = {}
         max_snp_pos = 1
@@ -428,7 +403,6 @@ def ajaxPTMs(request, slug, **response_kwargs):
 
     return HttpResponse(jsondata, **response_kwargs)
 
-
 def mutant_extract(request):
     import pandas as pd
     mutations = MutationExperiment.objects.all().prefetch_related('residue__display_generic_number','protein__family','exp_func','exp_type','ligand','ligand_role','refs','mutation')
@@ -477,125 +451,6 @@ def mutant_extract(request):
     temp.to_csv('170125_GPCRdb_mutation.csv')
         # jsondata[mutation.residue.sequence_number].append([mutation.foldchange,ligand,qual])
     # print(jsondata)
-
-@cache_page(60*60*24*21)
-def statistics(request):
-
-    context = dict()
-
-    families = ProteinFamily.objects.all()
-    lookup = {}
-    for f in families:
-        lookup[f.slug] = f.name.replace("receptors","").replace(" receptor","").replace(" hormone","").replace("/neuropeptide","/").replace(" (G protein-coupled)","").replace(" factor","").replace(" (LPA)","").replace(" (S1P)","").replace("GPR18, GPR55 and GPR119","GPR18/55/119").replace("-releasing","").replace(" peptide","").replace(" and oxytocin","/Oxytocin").replace("Adhesion class orphans","Adhesion orphans").replace("muscarinic","musc.").replace("-concentrating","-conc.")
-
-    class_proteins = Protein.objects.filter(family__slug__startswith="00",source__name='SWISSPROT', species_id=1).prefetch_related('family').order_by('family__slug')
-
-    temp = OrderedDict([
-                    ('name',''),
-                    ('number_of_variants', 0),
-                    ('number_of_children', 0),
-                    ('receptor_t',0),
-                    ('density_of_variants', 0),
-                    ('children', OrderedDict())
-                    ])
-
-    coverage = OrderedDict()
-
-    # Make the scaffold
-    for p in class_proteins:
-        #print(p,p.family.slug)
-        fid = p.family.slug.split("_")
-        if fid[0] not in coverage:
-            coverage[fid[0]] = deepcopy(temp)
-            coverage[fid[0]]['name'] = lookup[fid[0]]
-        if fid[1] not in coverage[fid[0]]['children']:
-            coverage[fid[0]]['children'][fid[1]] = deepcopy(temp)
-            coverage[fid[0]]['children'][fid[1]]['name'] = lookup[fid[0]+"_"+fid[1]]
-        if fid[2] not in coverage[fid[0]]['children'][fid[1]]['children']:
-            coverage[fid[0]]['children'][fid[1]]['children'][fid[2]] = deepcopy(temp)
-            coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['name'] = lookup[fid[0]+"_"+fid[1]+"_"+fid[2]][:28]
-        if fid[3] not in coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children']:
-            coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]] = deepcopy(temp)
-            coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['name'] = p.entry_name.split("_")[0] #[:10]
-            coverage[fid[0]]['receptor_t'] += 1
-            coverage[fid[0]]['children'][fid[1]]['receptor_t'] += 1
-            coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['receptor_t'] += 1
-            coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['receptor_t'] = 1
-    # # POULATE WITH DATA
-    variants_target = Protein.objects.filter(family__slug__startswith="00", entry_name__icontains='_human').values('family_id__slug').annotate(value=Count('naturalmutations__residue_id', distinct = True))
-    protein_lengths = Protein.objects.filter(family__slug__startswith="00", entry_name__icontains='_human').values('family_id__slug','sequence')
-    protein_lengths_dict = {}
-    for i in protein_lengths:
-        protein_lengths_dict[i['family_id__slug']] =  i['sequence']
-    for i in variants_target:
-        # print(i)
-        fid = i['family_id__slug'].split("_")
-        coverage[fid[0]]['number_of_variants'] += i['value']
-        coverage[fid[0]]['children'][fid[1]]['number_of_variants'] += i['value']
-        coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['number_of_variants'] += i['value']
-        coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['number_of_variants'] += i['value']
-        density = float(i['value'])/len(protein_lengths_dict[i['family_id__slug']])
-        coverage[fid[0]]['density_of_variants'] += round(density,2)
-        coverage[fid[0]]['children'][fid[1]]['density_of_variants'] += round(density,2)
-        coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['density_of_variants'] += round(density,2)
-        coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['density_of_variants'] += round(density,2)
-        coverage[fid[0]]['number_of_children'] += 1
-        coverage[fid[0]]['children'][fid[1]]['number_of_children'] += 1
-        coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['number_of_children'] += 1
-        coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['number_of_children'] += 1
-
-    # MAKE THE TREE
-    tree = OrderedDict({'name':'GPCRs','children':[]})
-    i = 0
-    n = 0
-    for c,c_v in coverage.items():
-        c_v['name'] = c_v['name'].split("(")[0]
-        if c_v['name'].strip() in ['Other GPCRs']:
-            # i += 1
-            continue
-            # pass
-        children = []
-        for lt,lt_v in c_v['children'].items():
-            if lt_v['name'].strip() == 'Orphan' and c_v['name'].strip()=="Class A":
-                # $pass
-                continue
-            children_rf = []
-            for rf,rf_v in lt_v['children'].items():
-                rf_v['name'] = rf_v['name'].split("<")[0]
-                children_r = []
-                for r,r_v in rf_v['children'].items():
-                    r_v['sort'] = n
-                    children_r.append(r_v)
-                    n += 1
-                rf_v['children'] = children_r
-                rf_v['sort'] = n
-                children_rf.append(rf_v)
-            lt_v['children'] = children_rf
-            lt_v['sort'] = n
-            children.append(lt_v)
-        c_v['children'] = children
-        c_v['sort'] = n
-        tree['children'].append(c_v)
-        #tree = c_v
-        #break
-        i += 1
-
-    context['tree'] = json.dumps(tree)
-
-    ## Overview statistics
-    total_receptors = NaturalMutations.objects.filter(type='missense').values('protein_id').distinct().count()
-    total_mv = len(NaturalMutations.objects.filter(type='missense'))
-    total_lof = len(NaturalMutations.objects.exclude(type='missense'))
-    if total_receptors > 0:
-        total_av_rv = round(len(NaturalMutations.objects.filter(type='missense', allele_frequency__lt=0.001))/ total_receptors,1)
-        total_av_cv = round(len(NaturalMutations.objects.filter(type='missense', allele_frequency__gte=0.001))/ total_receptors,1)
-    else:
-        total_av_rv = 0
-        total_av_cv = 0
-
-    context['stats'] = {'total_mv':total_mv,'total_lof':total_lof,'total_av_rv':total_av_rv, 'total_av_cv':total_av_cv}
-
-    return render(request, 'variation_statistics.html', context)
 
 def get_functional_sites(protein):
 
@@ -655,55 +510,5 @@ def clean_filename(filename, replace=' '):
         print("Warning, filename truncated because it was over {}. Filenames may no longer be unique".format(char_limit))
     return cleaned_filename[:char_limit]
 
-@cache_page(60*60*24*21)
-def economicburden(request):
-    economic_data = [{'values': [{'y': 0, 'x': 'known-homozygous'}, {'y': 0, 'x': 'known-all variants'}, {'y': 29574708, 'x': 'putative-homozygous'}, {'y': 186577951, 'x': 'putative-all variants'}], 'key': 'Analgesics'}, {'values': [{'y': 0, 'x': 'known-homozygous'}, {'y': 0, 'x': 'known-all variants'}, {'y': 0, 'x': 'putative-homozygous'}, {'y': 14101883, 'x': 'putative-all variants'}], 'key': 'Antidepressant Drugs'}, {'values': [{'y': 0, 'x': 'known-homozygous'}, {'y': 0, 'x': 'known-all variants'}, {'y': 0, 'x': 'putative-homozygous'}, {'y': 10637449, 'x': 'putative-all variants'}], 'key': 'Antihist, Hyposensit & Allergic Emergen'}, {'values': [{'y': 0, 'x': 'known-homozygous'}, {'y': 0, 'x': 'known-all variants'}, {'y': 0, 'x': 'putative-homozygous'}, {'y': 6633692, 'x': 'putative-all variants'}], 'key': 'Antispasmod.&Other Drgs Alt.Gut Motility'}, {'values': [{'y': 0, 'x': 'known-homozygous'}, {'y': 0, 'x': 'known-all variants'}, {'y': 8575714, 'x': 'putative-homozygous'}, {'y': 27008513, 'x': 'putative-all variants'}], 'key': 'Beta-Adrenoceptor Blocking Drugs'}, {'values': [{'y': 0, 'x': 'known-homozygous'}, {'y': 10108322, 'x': 'known-all variants'}, {'y': 25187489, 'x': 'putative-homozygous'}, {'y': 89224667, 'x': 'putative-all variants'}], 'key': 'Bronchodilators'}, {'values': [{'y': 0, 'x': 'known-homozygous'}, {'y': 5466184, 'x': 'known-all variants'}, {'y': 0, 'x': 'putative-homozygous'}, {'y': 10313279, 'x': 'putative-all variants'}], 'key': 'Drugs For Genito-Urinary Disorders'}, {'values': [{'y': 13015487, 'x': 'known-homozygous'}, {'y': 44334808, 'x': 'known-all variants'}, {'y': 13015487, 'x': 'putative-homozygous'}, {'y': 45130626, 'x': 'putative-all variants'}], 'key': 'Drugs Used In Diabetes'}, {'values': [{'y': 0, 'x': 'known-homozygous'}, {'y': 0, 'x': 'known-all variants'}, {'y': 0, 'x': 'putative-homozygous'}, {'y': 12168533, 'x': 'putative-all variants'}], 'key': "Drugs Used In Park'ism/Related Disorders"}, {'values': [{'y': 0, 'x': 'known-homozygous'}, {'y': 0, 'x': 'known-all variants'}, {'y': 0, 'x': 'putative-homozygous'}, {'y': 28670250, 'x': 'putative-all variants'}], 'key': 'Drugs Used In Psychoses & Rel.Disorders'}, {'values': [{'y': 0, 'x': 'known-homozygous'}, {'y': 0, 'x': 'known-all variants'}, {'y': 0, 'x': 'putative-homozygous'}, {'y': 11069531, 'x': 'putative-all variants'}], 'key': 'Drugs Used In Substance Dependence'}, {'values': [{'y': 0, 'x': 'known-homozygous'}, {'y': 0, 'x': 'known-all variants'}, {'y': 0, 'x': 'putative-homozygous'}, {'y': 8694786, 'x': 'putative-all variants'}], 'key': 'Hypothalamic&Pituitary Hormones&Antioest'}, {'values': [{'y': 0, 'x': 'known-homozygous'}, {'y': 0, 'x': 'known-all variants'}, {'y': 0, 'x': 'putative-homozygous'}, {'y': 9855456, 'x': 'putative-all variants'}], 'key': 'Sex Hormones & Antag In Malig Disease'}, {'values': [{'y': 0, 'x': 'known-homozygous'}, {'y': 0, 'x': 'known-all variants'}, {'y': 7848808, 'x': 'putative-homozygous'}, {'y': 25446045, 'x': 'putative-all variants'}], 'key': 'Treatment Of Glaucoma'}, {'values': [{'y': 864112, 'x': 'known-homozygous'}, {'y': 6107013, 'x': 'known-all variants'}, {'y': 19047162, 'x': 'putative-homozygous'}, {'y': 15754588, 'x': 'putative-all variants'}], 'key': 'other'}]
-
-    ### PER DRUG TABLE
-
-    ## drug data
-    nhs_sections = NHSPrescribings.objects.all().values("drugname__name", "bnf_section").distinct()
-    section_dict = {}
-    for drug in nhs_sections:
-        if drug['drugname__name'] in section_dict:
-            section_dict[drug['drugname__name']].append(drug['bnf_section'])
-        else:
-            section_dict[drug['drugname__name']] = [drug['bnf_section']]
-
-    nhs_data = NHSPrescribings.objects.all().values('drugname__name').annotate(Avg('actual_cost'), Avg('items'), Avg('quantity'))
-
-    drug_data = []
-    temp = {}
-    for i in nhs_data:
-        ## druginformation
-        drugname = i['drugname__name']
-        average_cost = int(i['actual_cost__avg'])
-        average_quantity = int(i['quantity__avg'])
-        average_items = int(i['items__avg'])
-        section = section_dict[drugname]
-
-        if average_items > 0:
-            item_cost= round(float(average_cost)/average_items,1)
-        else:
-            item_cost = 0
-
-        ## get target information
-        protein_targets = Protein.objects.filter(drugs__name=drugname).distinct()
-        targets = [p.entry_name.split('_human')[0].upper() for p in list(protein_targets)]
-
-        known_functional = 0
-        for target in protein_targets:
-            if target.entry_name in temp:
-                known_functional += temp[target.entry_name]
-            else:
-                function_sites = get_functional_sites(target)
-                known_functional += function_sites
-                temp[target.entry_name] = function_sites
-
-        putative_func = len(NaturalMutations.objects.filter(Q(protein__in=protein_targets), Q(sift_score__lte=0.05) | Q(polyphen_score__gte=0.1)).annotate(count_putative_func=Count('id')))
-
-        jsondata = {'drugname':drugname, 'targets': targets, 'average_cost': average_cost, 'average_quantity': average_quantity, 'average_items':average_items, 'item_cost':item_cost, 'known_func': known_functional, 'putative_func':putative_func, 'section':section}
-        drug_data.append(jsondata)
-
-
-    return render(request, 'economicburden.html', {'data':economic_data, 'drug_data':drug_data})
+def pgxdb_redirect(request):
+    return render(request, 'pgxdb_redirect.html')

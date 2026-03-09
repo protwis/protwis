@@ -27,6 +27,11 @@ class Command(BaseCommand):
             default=False,
             action='store_true',
             help='Debug mode')
+        parser.add_argument('--custom',
+            default=False,
+            dest='custom',
+            help='Add custom structure based on yaml input',
+            nargs='+')
 
     def handle(self, *args, **options):
         self.options = options
@@ -35,10 +40,23 @@ class Command(BaseCommand):
             SignprotComplex.objects.all().delete()
             self.tracker = {}
             test_model_updates(self.all_models, self.tracker, initialize=True)
-            
-        self.create_signprot_complex()
+        
+        if self.options['custom']:
+            filename = self.options['custom']
+            print(filename)
+            with open(filename, 'r') as signprot_file:
+                signprot = yaml.load(signprot_file)
+            structure = Structure.objects.get(pdb_code__index=signprot['pdb'])
+            signprot_complex, created = SignprotComplex.objects.get_or_create(protein=Protein.objects.get(entry_name=signprot['alpha_uniprot']), 
+                                                                              structure=structure,
+                                                                              alpha=signprot['alpha'], beta_chain=signprot['beta'], gamma_chain=signprot['gamma'],
+                                                                              beta_protein=Protein.objects.get(entry_name=signprot['beta_uniprot']), 
+                                                                              gamma_protein=Protein.objects.get(entry_name=signprot['gamma_uniprot']))
+            structure.signprot_complex = signprot_complex
+            structure.save()
+        else:
+            self.create_signprot_complex()
         test_model_updates(self.all_models, self.tracker, check=True)
-        print(self.tracker)
 
     def create_signprot_complex(self):
         psc = ParseStructureCSV()

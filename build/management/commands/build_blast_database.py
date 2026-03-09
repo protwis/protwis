@@ -28,7 +28,7 @@ class Command(BaseCommand):
         self.build_database(proteins, "protwis_blastdb")
 
         # BLAST database all GPCR sequences
-        proteins = Protein.objects.filter(sequence_type__slug="wt", family__slug__startswith="00")
+        proteins = Protein.objects.filter(sequence_type__slug="wt", family__slug__startswith="0")
         self.build_database(proteins, "protwis_gpcr_blastdb")
 
         # BLAST database only human sequences
@@ -36,11 +36,11 @@ class Command(BaseCommand):
         self.build_database(proteins, "protwis_human_blastdb")
 
         # BLAST database only human GPCR sequences
-        proteins = Protein.objects.filter(sequence_type__slug="wt", species__common_name="Human", family__slug__startswith="00")
+        proteins = Protein.objects.filter(sequence_type__slug="wt", species__common_name="Human", family__slug__startswith="0")
         self.build_database(proteins, "protwis_human_gpcr_blastdb")
 
         # BLAST database only human GPCR sequences for 7TM bundle
-        proteins = Protein.objects.filter(sequence_type__slug="wt", species__common_name="Human", family__slug__startswith="00")
+        proteins = Protein.objects.filter(sequence_type__slug="wt", species__common_name="Human", family__slug__startswith="0")
 
         c = 0
         for protein in proteins:

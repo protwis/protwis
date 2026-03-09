@@ -130,11 +130,27 @@
   overflow-x: scroll;
 }
 
+.ali-first-container {
+  /* position: relative;
+  top: 0px; */
+  /* position: absolute;
+  width: 250px; */
+}
+
+.ali-score-container {
+  position: absolute;
+  top: 0;
+}
+
+.ali-scroll-container {
+  position: absolute; 
+  top: 0;
+}
+
 .ali-scroll-div,
 .ali-main-div {
   overflow-x: auto;
   overflow-y: hidden;
-  width: 920px;
 }
 
 .ali-scroll-div,
@@ -144,6 +160,7 @@
 
 .dynamic-div {
   display: inline-block;
+  width:100%;
 }
 
 ::-webkit-scrollbar {

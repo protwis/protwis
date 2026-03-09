@@ -10,6 +10,7 @@ from contactnetwork.models import InteractionPeptide, Interaction
 
 
 class ProteinSerializer(serializers.ModelSerializer):
+    receptor_class = receptor_class = serializers.ReadOnlyField(source='family.parent.parent.parent.name')
     family = serializers.SlugRelatedField(read_only=True, slug_field='slug')
     species = serializers.StringRelatedField(read_only=True)
     source = serializers.StringRelatedField(read_only=True)
@@ -17,7 +18,7 @@ class ProteinSerializer(serializers.ModelSerializer):
     genes = serializers.StringRelatedField(many=True)
     class Meta:
         model = Protein
-        fields = ('entry_name', 'name', 'accession', 'family', 'species', 'source', 'residue_numbering_scheme',
+        fields = ('entry_name', 'name', 'accession', 'receptor_class', 'family', 'species', 'source', 'residue_numbering_scheme',
             'sequence','genes')
 
 
@@ -57,7 +58,7 @@ class ReceptorListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Protein
-        fields = ('entry_name', 'name', 'accession', 'receptor_class', 'receptor_family', 'ligand_type', 'subfamily', 'receptor_class', 'endogenous_ligands', 'species')
+        fields = ('entry_name', 'name', 'accession', 'receptor_class', 'receptor_family', 'ligand_type', 'subfamily', 'receptor_class', 'endogenous_ligands', 'species', 'sequence')
 
 
 class SpeciesSerializer(serializers.ModelSerializer):

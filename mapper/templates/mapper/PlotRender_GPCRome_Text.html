@@ -1,0 +1,389 @@
+{% extends "home/base.html" %}
+{% load static %}
+{% load humanize %}
+{% block addon_css %}
+<link rel="stylesheet" href="{% static 'home/css/nv.d3.min.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/nvd3-update.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/structure_browser.css' %}" type="text/css">
+<link rel="stylesheet" href="{% static 'home/css/NewDrugsBrowser_datatables.min.css' %}" type="text/css"/>
+<link rel="stylesheet" href="{% static 'home/css/select2_4.1.0-rc.0._full.css' %}" type="text/css">
+
+<style type="text/css">
+.select2-container--default .select2-selection--single {
+    height: 38px;
+    padding: 6px 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    line-height: 24px;
+    font-size: 14px;
+}
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+    line-height: 24px;
+    padding-left: 0;
+    text-align: center;
+    width: 100%;
+}
+.select2-container--default .select2-results__option {
+    text-align: center;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div style="padding-top: 10px; font-size: 11px; white-space: nowrap;">
+   <div class="col-md-12" style="margin-bottom: 20px;">
+  <div style="display: flex; justify-content: center; align-items: center; gap: 15px; flex-wrap: nowrap;">
+    
+    <!-- Receptor names dropdown -->
+    <div class="dropdown" style="position: relative;">
+      <button class="btn btn-primary dropdown-toggle" type="button" id="GPCRome_LabelType_Button"
+              data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        Receptor names
+      </button>
+      <div class="dropdown-menu p-2"
+           style="min-width: 160px; padding: 10px 15px; left: 100%; top: 50%; margin-left: 5px; position: absolute; transform: translateY(-30%);">
+        <button type="button" class="btn btn-outline-primary btn-block mb-1 GPCRome-label-btn" data-value="Protein">Protein</button>
+        <button type="button" class="btn btn-outline-primary btn-block mb-1 GPCRome-label-btn" data-value="Entrez">Gene</button>
+        <button type="button" class="btn btn-outline-primary btn-block GPCRome-label-btn" data-value="Uniprot">UniProt</button>
+      </div>
+    </div>
+
+    <!-- Graphical legend dropdown -->
+    <div class="dropdown" style="position: relative;">
+      <button class="btn btn-primary dropdown-toggle" type="button" id="GraphicalLegend_Button"
+              data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          Graphical legend
+      </button>
+      <div class="dropdown-menu p-2 text-center"
+          style="min-width: 200px; padding: 10px 15px; left: 100%; top: 50%; margin-left: 5px;
+                  position: absolute; transform: translateY(-25%);">
+          
+          <div style="display: flex; justify-content: center; align-items: center; gap: 10px; padding: 20px 0;">
+            <label for="toggleIcon" style="margin: 0; font-size: 14px;">Top-left:</label>
+            <button id="toggleIcon" class="btn btn-success" style="min-width: 60px;">Shown</button>
+          </div>
+          <hr style="margin: -10px 0px -10px 0px">
+          <div style="display: flex; justify-content: center; align-items: center; gap: 10px; padding: 20px 0;">
+            <label for="toggleLegend" style="margin: 0; font-size: 14px;">Bottom:</label>
+            <button id="toggleLegend" class="btn btn-success" style="min-width: 60px;">Shown</button>
+          </div>
+      </div>
+    </div>
+
+    <div class="dropdown">
+      <button class="btn btn-primary dropdown-toggle" type="button" id="Legend_Layout_Menu" data-toggle="dropdown">
+        Data labels
+      </button>
+      <div class="dropdown-menu p-3" style="width: 250px; left: 100%; top: 50%; margin-left: 5px; position: absolute; transform: translateY(-27%);">
+        
+        <!-- Layout row -->
+        <div style="display: flex; align-items: center; margin: 15px 0px 25px 0px;">
+          <div style="flex: 0 0 20%; text-align: center; padding-left: 20px;">
+            <label for="legend-layout-select" style="margin: 0px -10px; line-height: 1.5; font-weight: bold;font-size: 15px;">Layout</label>
+          </div>
+          <div style="flex: 0 0 80%; display: flex; justify-content: center;">
+            <select id="legend-layout-select" style="width: 70%;">
+              <option value="row">Continous text</option>
+              <option value="columns-1">1 column</option>
+              <option value="columns-2">2 columns</option>
+              <option value="columns-3">3 columns</option>
+              <option value="columns-4">4 columns</option>
+            </select>
+          </div>
+        </div>
+
+        <hr style="margin: -10px auto 10px auto; width: 80%; border-top: 1px solid #ddd; margin-left: 20px;">
+
+        <!-- Sorting row -->
+        <div style="display: flex; align-items: center; margin: 20px 0px 15px 0px;">
+          <div style="flex: 0 0 20%; text-align: center; padding-left: 20px;">
+            <label for="toggleLegendSorting" style="margin: 0px -10px; line-height: 1.5; font-size: 15px;">Sorting</label>
+          </div>
+          <div style="flex: 0 0 80%; display: flex; justify-content: center;">
+            <button id="toggleLegendSorting" class="btn btn-primary" style="width: 70%;">Vertically</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Download dropdown -->
+    <div class="dropdown" style="position: relative;">
+      <button type="button" class="btn btn-primary dropdown-toggle"
+            id="DownloadDropdownToggle" style="font-size: 14px;">
+        <span class="glyphicon glyphicon-download" style="vertical-align: top; line-height: 1.3;"></span>
+        Download <span class="caret"></span>
+      </button>
+
+      <div class="dropdown-menu"
+          style="min-width: 160px; padding: 10px 15px; left: 100%; top: 50%;
+                  margin-left: 5px; position: absolute; transform: translateY(-25%); display: none;">
+        <button type="button" class="btn btn-primary btn-block"
+                onclick="saveSvg(document.getElementById('GPCRome_plot_svg'), 'GPCRome_plot.svg');">
+          SVG
+        </button>
+        <button type="button" class="btn btn-primary btn-block"
+                onclick="saveSvgAsPng(document.getElementById('GPCRome_plot_svg'), 'GPCRome_plot.png');">
+          PNG
+        </button>
+        <button type="button" class="btn btn-primary btn-block"
+                onclick="saveSvgAsJpg(document.getElementById('GPCRome_plot_svg'), 'GPCRome_plot.jpg');">
+          JPG
+        </button>
+        <button type="button" class="btn btn-primary btn-block"
+                onclick="saveSvgAsTiff(document.getElementById('GPCRome_plot_svg'), 'GPCRome_plot.tiff');">
+          TIFF
+        </button>
+      </div>
+    </div>
+    <div>
+      <a href="/mapper/DataMapperHomeText" class="btn btn-primary" style="display: inline-flex; align-items: center;">
+        <span style="line-height: 1; margin-right: 6px; vertical-align: middle;">&#8592;</span>
+        <span style="vertical-align: middle;">Return to plot selection</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<div id="image-container" data-image-url="{% static 'home/images/DataMapper/DataMapper_GPCRome_icon_legend.png' %}"></div>
+<div class="col-md-12" style="margin-top: 0px;margin-bottom: 30px;">
+    <div id="GPCRome_plot" class="text-center"></div>
+</div>
+</div>
+{% endblock %}
+
+{% block addon_js %}
+<script src="{% static 'home/js/d3.min.js' %}"></script>
+<script src="{% static 'home/js/nv.d3.min.js' %}"></script>
+<script src="{% static 'home/js/d3.v4.min.js' %}"></script>
+<script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
+<script src="{% static 'home/js/saveSvg.js' %}"></script>
+<script src="{% static 'home/js/datamapper.js' %}"></script>
+<script src="{% static 'home/js/NewDrugsBrowser_datatables.min.js' %}"></script>
+<script src="{% static 'home/js/select2_4.1.0-rc.0_full.js' %}"></script>
+
+<!-- Universal scripts -->
+<script>
+$('.dropdown-menu').on('click', function(event){
+    event.stopPropagation();
+});
+</script>
+<script>
+// Load the data
+var GPCRome_WheelDict = {{ GPCRomeData|safe }};
+var PlotType = "{{ PlotType }}";
+var GPCRomes_styling = {
+    DataType: "Text",
+    FontStyle: "Arial",
+    FontsizeGlobal: "11px",
+    FontsizeClass: "20px",
+    showIcon: true,
+    LabelType: "Protein",
+    ShowLegend: true,
+    LegendLayout: { "mode": "row", "columns": "1", "sorted": "Vertically" }
+};
+
+let GPCRome_location = "GPCRome_plot";
+DrawGPCRomeWheel(GPCRome_WheelDict, GPCRome_location, GPCRomes_styling);
+
+// Recursively extract all "Data" values from a nested object
+function extractDataValues(obj) {
+    let values = [];
+
+    function findData(node) {
+        if (typeof node === "object" && node !== null) {
+            for (const key in node) {
+                const value = node[key];
+
+                if (value && typeof value === "object" && "Data" in value) {
+                    const dataValue = Number(value.Data);
+                    if (!isNaN(dataValue)) {
+                        values.push(dataValue);
+                    }
+                } else {
+                    findData(value); // keep digging
+                }
+            }
+        }
+    }
+
+    findData(obj);
+    return values;
+}
+
+function updateGPCRome() {
+  // Remove current
+  d3.select("#" + GPCRome_location).select("svg").remove();
+  // Redraw the GPCRome wheel plot
+  DrawGPCRomeWheel(GPCRome_WheelDict, GPCRome_location, GPCRomes_styling); // ← Use the updated copy
+}
+
+// Attach click handler to dropdown items for receptor names
+document.addEventListener('DOMContentLoaded', function () {
+  const labelButton = document.getElementById('GPCRome_LabelType_Button');
+  const labelButtons = document.querySelectorAll('.GPCRome-label-btn');
+
+  // Set initial button label
+  // labelButton.textContent = GPCRomes_styling.LabelType || 'Protein';
+
+  labelButtons.forEach(btn => {
+    // Highlight the active label on load
+    if (btn.getAttribute('data-value') === GPCRomes_styling.LabelType) {
+      btn.classList.remove('btn-outline-primary');
+      btn.classList.add('btn-primary');
+    }
+
+    btn.addEventListener('click', function () {
+      const selectedValue = this.getAttribute('data-value');
+
+      // Update GPCRomes_styling
+      GPCRomes_styling.LabelType = selectedValue;
+      updateGPCRome();
+
+      // Highlight selected button
+      labelButtons.forEach(b => {
+        b.classList.remove('btn-primary');
+        b.classList.add('btn-outline-primary');
+      });
+      this.classList.remove('btn-outline-primary');
+      this.classList.add('btn-primary');
+    });
+  });
+});
+
+document.addEventListener('DOMContentLoaded', function () {
+  const iconBtn = document.getElementById('toggleIcon');
+  const legendBtn = document.getElementById('toggleLegend');
+
+  function updateToggleButton(button, isActive, label) {
+    button.textContent = `${isActive ? 'Shown' : 'Hidden'}`;
+    button.classList.toggle('btn-primary', isActive);
+    button.classList.toggle('btn-danger', !isActive);
+  }
+
+  // Initial state
+  updateToggleButton(iconBtn, GPCRomes_styling.showIcon, 'Top-left');
+  updateToggleButton(legendBtn, GPCRomes_styling.ShowLegend, 'Bottom');
+
+  iconBtn.addEventListener('click', function () {
+    GPCRomes_styling.showIcon = !GPCRomes_styling.showIcon;
+    updateToggleButton(iconBtn, GPCRomes_styling.showIcon, 'Top-left');
+    updateGPCRome();
+  });
+
+  legendBtn.addEventListener('click', function () {
+    GPCRomes_styling.ShowLegend = !GPCRomes_styling.ShowLegend;
+    updateToggleButton(legendBtn, GPCRomes_styling.ShowLegend, 'Bottom');
+    updateGPCRome();
+  });
+});
+
+document.addEventListener('DOMContentLoaded', function () {
+  const sortBtn = document.getElementById('toggleLegendSorting');
+
+  function updateSortButton(button, value) {
+    button.textContent = value;
+    button.classList.toggle(value === 'Vertically');
+    button.classList.toggle(value === 'Horizontally');
+  }
+
+  // Set initial button state from GPCRomes_styling
+  updateSortButton(sortBtn, GPCRomes_styling.LegendLayout.sorted);
+
+  sortBtn.addEventListener('click', function () {
+    const current = GPCRomes_styling.LegendLayout.sorted;
+    const next = current === 'Vertically' ? 'Horizontally' : 'Vertically';
+
+    // Update config
+    GPCRomes_styling.LegendLayout.sorted = next;
+
+    // Update button
+    updateSortButton(sortBtn, next);
+
+    // Redraw
+    updateGPCRome();
+  });
+});
+
+document.addEventListener('DOMContentLoaded', function () {
+  const downloadBtn = document.querySelector('#DownloadDropdownToggle');
+  const downloadMenu = downloadBtn?.nextElementSibling;
+
+  if (downloadBtn && downloadMenu) {
+    downloadBtn.addEventListener('click', function (e) {
+      e.stopPropagation(); // prevent bubbling
+      downloadMenu.style.display = (downloadMenu.style.display === 'block') ? 'none' : 'block';
+    });
+
+    // Close it when clicking anywhere else
+    document.addEventListener('click', function () {
+      downloadMenu.style.display = 'none';
+    });
+
+    // Prevent menu itself from closing if clicked inside
+    downloadMenu.addEventListener('click', function (e) {
+      e.stopPropagation();
+    });
+  }
+});
+
+function setLegendLayout(mode, cols = 1) {
+  GPCRomes_styling.LegendLayout = { mode: mode, columns: cols };
+  updateGPCRome();
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  const select = $('#legend-layout-select');
+  const sortBtn = document.getElementById('toggleLegendSorting');
+
+  function updateSortButton(button, value) {
+    button.textContent = value;
+    button.classList.toggle(value === 'Vertically');
+    button.classList.toggle(value === 'Horizontally');
+  }
+
+  select.select2({
+    minimumResultsForSearch: Infinity, // hide search
+    dropdownAutoWidth: true
+  });
+
+  // Helper to update logic based on layout
+  function handleLegendLayoutChange(value) {
+    if (value === 'Continous text') {
+      setLegendLayout('row');
+      sortBtn.disabled = true;
+    } else if (value === 'columns-1') {
+      setLegendLayout('columns', 1);
+      sortBtn.disabled = true;
+    } else if (value.startsWith('columns')) {
+      const colNum = parseInt(value.split('-')[1]);
+      setLegendLayout('columns', colNum);
+
+      // Enable button + default to vertically sorted if not already
+      sortBtn.disabled = false;
+      if (GPCRomes_styling.LegendLayout.sorted !== 'Vertically') {
+        GPCRomes_styling.LegendLayout.sorted = 'Vertically';
+        updateSortButton(sortBtn, 'Vertically');
+      }
+    }
+  }
+
+  // Initial selection
+  if (GPCRomes_styling.LegendLayout.mode === 'row') {
+    select.val('row').trigger('change');
+    sortBtn.disabled = true;
+  } else if (GPCRomes_styling.LegendLayout.mode === 'columns') {
+    const currentVal = `columns-${GPCRomes_styling.LegendLayout.columns}`;
+    select.val(currentVal).trigger('change');
+    sortBtn.disabled = GPCRomes_styling.LegendLayout.columns === 1;
+  }
+
+  // Change event
+  select.on('change', function () {
+    handleLegendLayoutChange(this.value);
+    updateGPCRome();
+  });
+});
+</script>
+{% endblock %}

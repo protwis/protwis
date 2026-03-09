@@ -140,7 +140,7 @@ class GenericNumbering(object):
                             segment = db_res.protein_segment.slug
                             self.residues[chain][resn].add_segment(segment)
 
-                        if db_res.display_generic_number:
+                        if db_res.display_generic_number and db_res.protein_segment.domain!='GAIN':
                             num = db_res.display_generic_number.label
                             bw, gpcrdb = num.split('x')
                             # Handle non-numerical GNs - still add segment number

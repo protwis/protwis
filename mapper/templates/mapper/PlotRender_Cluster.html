@@ -1,0 +1,537 @@
+{% extends "home/base.html" %}
+{% load static %}
+{% load humanize %}
+{% block addon_css %}
+<link rel="stylesheet" href="{% static 'home/css/nv.d3.min.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/nvd3-update.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/Spectrum_1_8_1.css' %}" type="text/css" />
+{% endblock %}
+
+{% block content %}
+<div style="padding-top: 10px; font-size: 14px; white-space: nowrap;">
+  <div class="col-md-12" style="margin-top: 20px; margin-bottom: 30px;">
+    <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; align-items: center;">
+      
+      <!-- Labels Toggle -->
+      <div style="width: 180px; text-align: center; flex-shrink: 0;">
+          <button id="labelVisibilityToggle" class="btn btn-primary" style="width: 100%;">Plot type: Dot</button>
+      </div>
+      <!-- Receptor names dropdown -->
+      <div class="dropdown" style="position: relative; display: none;">
+        <button class="btn btn-primary dropdown-toggle" type="button" id="Cluster_LabelType_Button"
+                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          Receptor names
+        </button>
+        <div class="dropdown-menu p-2"
+             style="min-width: 160px; padding: 10px 15px; left: 100%; top: 50%; margin-left: 5px; position: absolute; transform: translateY(-45%);">
+          <button type="button" class="btn btn-primary btn-block mb-1 cluster-label-btn" data-value="IUPHAR">Protein</button>
+          <button type="button" class="btn btn-outline-primary btn-block mb-1 cluster-label-btn" data-value="Entrez">Gene</button>
+          <button type="button" class="btn btn-outline-primary btn-block cluster-label-btn" data-value="UniProt">UniProt</button>
+        </div>
+      </div>
+
+      <!-- Data Styling Dropdown -->
+      <div class="dropdown" style="display: none;">
+        <button class="btn btn-primary dropdown-toggle" type="button" id="clusteringMenu_datastyling_labels" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          Labels
+        </button>
+            <div class="dropdown-menu p-3" aria-labelledby="clusteringMenu_datastyling" style="min-width: 250px; padding: 10px 15px; left: 100%; top: 50%; margin-left: 5px; position: absolute; transform: translateY(-30%);">
+            
+            <!-- Labels color -->
+            <div style="display: flex; justify-content: center; align-items: center; gap: 10px; padding: 5px 0px;margin-top: 15px;">
+              <label for="textColorToggleButton" style="margin: 0; font-size: 14px;font-weight: normal;">Text color:</label>
+              <button id="textColorToggleButton" class="btn btn-success" style="min-width: 60px;">Shown</button>
+            </div>
+            <hr>
+            <div class="text-center" style="margin-bottom: 20px;">
+              <label for="cluster_labelFontSizeSlider" style="font-size: 14px;font-weight: normal;">Label font size</label>
+              <input type="range" class="form-range" min="5" max="25" value="14" id="cluster_labelFontSizeSlider">
+              <div style="margin-top: 5px;"><span id="cluster_labelFontSizeValue">14</span> px</div>
+            </div>
+        </div>
+      </div>
+
+      <!-- Data Styling Dropdown -->
+      <div class="dropdown">
+        <button class="btn btn-primary dropdown-toggle" type="button" id="clusteringMenu_datastyling" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          Dots
+        </button>
+            <div class="dropdown-menu p-3" aria-labelledby="clusteringMenu_datastyling" style="min-width: 250px; padding: 10px 15px; left: 100%; top: 50%; margin-left: 5px; position: absolute; transform: translateY(-40%);">
+
+          <!-- Marker Size Slider -->
+          <div class="col-md-12" style="text-align: center;">
+            <label for="cluster_markerSizeSlider" id="cluster_markerSizeLabel" class="form-label">Size</label>
+          </div>
+          <div class="col-md-12" style="margin-bottom: 10px;">
+            <input type="range" class="form-range" min="5" max="20" value="10" id="cluster_markerSizeSlider">
+            <div style="text-align: center;">
+              <span id="cluster_markerSizeValue">10</span>px
+            </div>
+          </div>
+
+          <!-- Stroke Width Slider -->
+          <div class="col-md-12" style="text-align: center;">
+            <label for="cluster_strokeWidthSlider" id="cluster_strokeWidthLabel" class="form-label">Stroke width</label>
+          </div>
+          <div class="col-md-12" style="margin-bottom: 10px;">
+            <input type="range" class="form-range" min="0" max="2" value="0.5" step="0.1" id="cluster_strokeWidthSlider">
+            <div style="text-align: center;">
+              <span id="cluster_strokeWidthValue">0.5</span>px
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Clustering Options Dropdown -->
+      <div class="dropdown">
+        <button class="btn btn-primary dropdown-toggle" type="button" id="clusteringMenu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          Clustering
+        </button>
+        <div class="dropdown-menu dropdown-menu-listplot p-3" aria-labelledby="clusteringMenu" style="min-width: 250px; padding: 10px 15px; left: 100%; top: 50%; margin-left: 5px; position: absolute; transform: translateY(-50%);">
+          <!-- Number of Clusters Slider -->
+          <div class="col-md-12" style="text-align: center;">
+            <label for="clusterSlider" id="clusterSliderLabel" class="form-label">Number of clusters</label>
+          </div>
+          <div class="col-md-12" style="margin-bottom: 10px;">
+            <input type="range" class="form-range" min="1" max="20" value="5" id="clusterSlider">
+            <div style="text-align: center;">
+              <span id="clusterSliderValue">5</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Color By Dropdown -->
+      <div class="dropdown">
+        <button class="btn btn-primary dropdown-toggle" type="button" id="ColorBy_Menu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          Colors
+        </button>
+        <div class="dropdown-menu p-2 text-center" style="min-width: 160px; padding: 10px 15px; left: 100%; top: 50%; margin-left: 5px; position: absolute; transform: translateY(-30%);">
+          <button id="colorByCluster" class="btn btn-primary btn-block mb-1">Cluster</button>
+          <button id="colorByGradient" class="btn btn-outline-primary btn-block mb-1">Gradient</button>
+          <button id="colorByClass" class="btn btn-outline-primary btn-block mb-1">Class</button>
+          <button id="colorByLigandType" class="btn btn-outline-primary btn-block mb-1">Ligand type</button>
+          <button id="colorByReceptorFamily" class="btn btn-outline-primary btn-block">Receptor family</button>
+        </div>
+      </div>
+
+      <!-- Download Dropdown -->
+      <div class="dropdown" style="position: relative;">
+        <button type="button" class="btn btn-primary dropdown-toggle"
+              id="DownloadDropdownToggle" style="font-size: 14px;">
+          <span class="glyphicon glyphicon-download" style="vertical-align: top; line-height: 1.3;"></span>
+          Download <span class="caret"></span>
+        </button>
+        <div class="dropdown-menu"
+            style="min-width: 160px; padding: 10px 15px; left: 100%; top: 50%;
+                    margin-left: 5px; position: absolute; transform: translateY(-38%); display: none;">
+          <button type="button" class="btn btn-primary btn-block" onclick="downloadPlot('jpg');">JPG</button>
+          <button type="button" class="btn btn-primary btn-block" onclick="downloadPlot('png');">PNG</button>
+          <button type="button" class="btn btn-primary btn-block" onclick="downloadPlot('svg');">SVG</button>
+          <button type="button" class="btn btn-primary btn-block" onclick="downloadPlot('tiff');">TIFF</button>
+        </div>
+      </div>
+      <div>
+        <a href="/mapper/DataMapperHomeNumeric" class="btn btn-primary" style="display: inline-flex; align-items: center;">
+          <span style="line-height: 1; margin-right: 6px; vertical-align: middle;">&#8592;</span>
+          <span style="vertical-align: middle;">Return to plot selection</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cluster Plot Container -->
+  <div class="col-md-12" style="padding-top: 20px;">
+    <div id="plotContainer_cluster" style="width: 1200px; height: 700px;"></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block addon_js %}
+<script src="{% static 'home/js/d3.min.js' %}"></script>
+<script src="{% static 'home/js/nv.d3.min.js' %}"></script>
+<script src="{% static 'home/js/d3.v4.min.js' %}"></script>
+<script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
+<script src="{% static 'home/js/saveSvg.js' %}"></script>
+<script src="{% static 'home/js/datamapper.js' %}"></script>
+<script src="{% static 'home/js/spectrum_v1_8_1.js' %}"></script>
+<script src="{% static 'home/js/ml.js' %}"></script>
+<script src="{% static 'home/js/plotly_v1_58_5.js' %}"></script>
+
+<!-- Universal scripts -->
+<script>
+$('.dropdown-menu').on('click', function(event){
+    event.stopPropagation();
+});
+</script>
+<script>
+// Global variables for cluster data
+var cluster_data_seq = {{ cluster_data_seq|safe }};
+var Label_converter = {{ Label_converter|safe }};
+
+var currentClusterData = cluster_data_seq; // Default to cluster_data_seq
+var labelDict_IUPHAR = Label_converter.UniProt_to_IUPHAR_converter;
+var labelDict_Gene = Label_converter.UniProt_to_Gene_converter;
+
+currentClusterData.forEach(point => {
+    point.original_label = point.label;  // Save original UniProt label
+});
+
+let labelsVisible = false;
+
+// Predefined 20-color palette
+const colorPalette = [
+    '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd',
+    '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf',
+    '#393b79', '#e7969c', '#17becf', '#98df8a', '#ffbb78',
+    '#9edae5', '#c5b0d5', '#f7b6d2', '#dbdb8d', '#c49c94'
+];
+
+// Data styling object to store current values
+const cluster_DataStyling = {
+    labelFontSize: 14,
+    markerSize: 10,
+    strokeWidth: 0.5,
+    borderOn: true,
+    textColorEnabled: true
+};
+
+// Function to download the plot
+function downloadPlot(format) {
+  const plotElement = document.getElementById('plotContainer_cluster');
+
+  // Use correct format values for Plotly
+  const actualFormat = (format === 'tiff') ? 'png' :
+                        (format === 'jpg')  ? 'jpeg' :
+                        format;
+
+  Plotly.toImage(plotElement, {
+      format: actualFormat,
+      height: 700,
+      width: 1200,
+      scale: 3
+  }).then(function (dataUrl) {
+      const link = document.createElement('a');
+      link.href = dataUrl;
+      link.download = `Cluster.${format}`;  // Force extension as user requested
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+  }).catch(function (error) {
+      console.error('Error exporting plot:', error);
+  });
+}
+
+// Document ready function
+$(document).ready(function() {
+
+  // Enhanced Color By button logic with visual toggle
+  const colorButtons = document.querySelectorAll('#ColorBy_Menu ~ .dropdown-menu .btn');
+
+  colorButtons.forEach(btn => {
+    btn.addEventListener('click', function () {
+      const selectedId = this.id;
+
+      // Reset all buttons
+      colorButtons.forEach(b => {
+        b.classList.remove('active', 'btn-primary');
+        b.classList.add('btn-outline-primary');
+      });
+
+      // Activate the clicked one
+      this.classList.add('active', 'btn-primary');
+      this.classList.remove('btn-outline-primary');
+
+      // Update functionality
+      setActiveButton(selectedId);
+      updatePlotWithAnnotations();
+    });
+  });
+
+  const labelToggleBtn = document.getElementById('labelVisibilityToggle');
+
+  labelToggleBtn.addEventListener('click', () => {
+      labelsVisible = !labelsVisible;
+
+      // Show/hide UI controls depending on plot type
+      const labelMenu = document.getElementById('clusteringMenu_datastyling_labels'); // Labels menu
+      const markerMenu = document.getElementById('clusteringMenu_datastyling');       // Markers menu
+      const receptorDropdown = document.getElementById('Cluster_LabelType_Button');   // Receptor name dropdown button
+
+      if (labelsVisible) {
+          labelToggleBtn.textContent = 'Plot type: Text';
+          // Show label-related controls
+          if (labelMenu) labelMenu.parentElement.style.display = '';
+          if (receptorDropdown) receptorDropdown.parentElement.style.display = '';
+          if (markerMenu) markerMenu.parentElement.style.display = 'none';
+      } else {
+          labelToggleBtn.textContent = 'Plot type: Dot';
+          // Show marker-related controls
+          if (labelMenu) labelMenu.parentElement.style.display = 'none';
+          if (receptorDropdown) receptorDropdown.parentElement.style.display = 'none';
+          if (markerMenu) markerMenu.parentElement.style.display = '';
+      }
+
+      updatePlotWithAnnotations();  // Reflect change
+  });
+
+  // Clustering options
+  const clusterSlider = document.getElementById('clusterSlider');
+  const clusterSliderValue = document.getElementById('clusterSliderValue');
+
+  // Set max value of the slider to dataPointsCount - 1
+  const dataPointsCount = currentClusterData.length; // Get the number of data points
+  clusterSlider.max = Math.min(20, dataPointsCount - 1); // Max 20 clusters or dataPoints - 1
+
+  // Update the displayed value of the slider
+  clusterSliderValue.textContent = clusterSlider.value;
+
+  // Add an event listener for the slider input event to dynamically render clustering
+  clusterSlider.addEventListener('input', function() {
+      // Update the number next to the slider dynamically
+      clusterSliderValue.textContent = clusterSlider.value;
+
+      // Perform dynamic clustering based on the current value of the slider
+      const numClusters = parseInt(clusterSlider.value, 10);
+      performClustering(numClusters);
+  });
+
+  // Update label font size slider
+  $('#cluster_labelFontSizeSlider').on('input', function() {
+          const fontSize = $(this).val();
+          $('#cluster_labelFontSizeValue').text(fontSize);
+          cluster_DataStyling.labelFontSize = parseInt(fontSize, 10);  // Update the data styling object
+          updatePlotWithAnnotations();  // Dynamically update the plot
+      });
+
+      // Update marker size slider
+      $('#cluster_markerSizeSlider').on('input', function() {
+          const markerSize = $(this).val();
+          $('#cluster_markerSizeValue').text(markerSize);
+          cluster_DataStyling.markerSize = parseInt(markerSize, 10);  // Update the data styling object
+          updatePlotWithAnnotations();  // Dynamically update the plot
+      });
+
+      // Update stroke width slider
+      $('#cluster_strokeWidthSlider').on('input', function() {
+          const strokeWidth = $(this).val();
+          $('#cluster_strokeWidthValue').text(strokeWidth);
+          cluster_DataStyling.strokeWidth = parseFloat(strokeWidth);  // Update the data styling object
+          updatePlotWithAnnotations();  // Dynamically update the plot
+      });
+
+  // Initial state for border toggle
+  cluster_DataStyling.borderOn = true;  // Default to true (border on)
+
+
+  // Initial state for text color
+  cluster_DataStyling.textColorEnabled = true;  // Default to true (text color on)
+
+  // Get the button element
+  const textColorToggleButton = document.getElementById('textColorToggleButton');
+
+  // Add click event listener to the button
+  textColorToggleButton.addEventListener('click', () => {
+      // Toggle the textColorEnabled state
+      cluster_DataStyling.textColorEnabled = !cluster_DataStyling.textColorEnabled;
+
+      // Update the button text and styling based on the state
+      if (cluster_DataStyling.textColorEnabled) {
+          textColorToggleButton.textContent = 'Shown';
+          textColorToggleButton.classList.add('btn-primary');
+          textColorToggleButton.classList.remove('btn-danger');
+      } else {
+          textColorToggleButton.textContent = 'Hidden';
+          textColorToggleButton.classList.remove('btn-primary');
+          textColorToggleButton.classList.add('btn-danger');
+      }
+
+      // Update the plot with the new text color setting
+      updatePlotWithAnnotations();  // Call the function to re-render the plot
+  });
+
+  // Set initial button state to "Text Color: Yes" with primary button styling
+  textColorToggleButton.textContent = 'Shown';
+  textColorToggleButton.classList.add('btn-primary');
+
+  // Initial plot rendering on page load
+  renderInitialPlot();
+});
+
+
+// Function to set the active button and deactivate others
+function setActiveButton(activeButtonId) {
+  const colorOptions = [
+    "colorByCluster",
+    "colorByGradient",
+    "colorByClass",
+    "colorByLigandType",
+    "colorByReceptorFamily"
+  ];
+
+  colorOptions.forEach(function(option) {
+    const btn = document.getElementById(option);
+    if (btn) {
+      if (option === activeButtonId) {
+        btn.classList.add("active", "btn-primary");
+        btn.classList.remove("btn-outline-primary");
+      } else {
+        btn.classList.remove("active", "btn-primary");
+        btn.classList.add("btn-outline-primary");
+      }
+    }
+  });
+}
+
+// Function to get the active color option
+function getActiveColorOption() {
+    if (document.getElementById('colorByCluster').classList.contains('active')) {
+        return 'cluster';
+    } else if (document.getElementById('colorByGradient').classList.contains('active')) {
+        return 'gradient';
+    } else if (document.getElementById('colorByClass').classList.contains('active')) {
+        return 'Class';
+    } else if (document.getElementById('colorByLigandType').classList.contains('active')) {
+        return 'Ligand type';
+    } else if (document.getElementById('colorByReceptorFamily').classList.contains('active')) {
+        return 'Receptor family';
+    }
+    return 'cluster'; // Default to 'cluster' if no option is active
+}
+
+// Function to render the initial plot
+function renderInitialPlot() {
+    const colorOption = getActiveColorOption(); // Get the initially selected color option
+
+    // Set max value of the slider to dataPointsCount - 1
+    const dataPointsCountInit = currentClusterData.length; // Get the number of data points
+    clusteringNum = Math.min(5, dataPointsCountInit - 1); // Max 20 clusters or dataPoints - 1
+
+    performClustering(clusteringNum); // Perform initial clustering with 5 clusters
+
+    updatePlotWithAnnotations(); // Use the updated function to render the plot with annotations
+
+    // Perform autoscale after the initial plot is rendered
+    const plotElement = document.getElementById('plotContainer_cluster');
+
+    // Autoscale the axes after the plot is initially rendered
+    Plotly.relayout(plotElement, {
+        'xaxis.autorange': true,
+        'yaxis.autorange': true
+    });
+}
+
+// Function to perform clustering
+function performClustering(numClusters) {
+  const data = currentClusterData;
+  const coordinates = data.map(d => [d.x, d.y]);
+
+  if (typeof ML.KMeans === 'function') {
+      const options = {
+          maxIterations: 100,
+          tolerance: 1e-6,
+          initialization: 'kmeans++'
+      };
+
+      const result = ML.KMeans(coordinates, numClusters, options);
+
+      data.forEach((point, idx) => {
+          point.cluster = result.clusters[idx]; // Update only the cluster value
+      });
+
+      currentClusterData = data; // Update cluster_data
+      setActiveButton("colorByCluster");
+      updatePlotWithAnnotations();  // Pass 'cluster' as the color option
+  } else {
+      console.error('kmeans-js library not loaded correctly.');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  const downloadBtn = document.querySelector('#DownloadDropdownToggle');
+  const downloadMenu = downloadBtn?.nextElementSibling;
+
+  if (downloadBtn && downloadMenu) {
+    downloadBtn.addEventListener('click', function (e) {
+      e.stopPropagation(); // prevent bubbling
+      downloadMenu.style.display = (downloadMenu.style.display === 'block') ? 'none' : 'block';
+    });
+
+    // Close it when clicking anywhere else
+    document.addEventListener('click', function () {
+      downloadMenu.style.display = 'none';
+    });
+
+    // Prevent menu itself from closing if clicked inside
+    downloadMenu.addEventListener('click', function (e) {
+      e.stopPropagation();
+    });
+  }
+});
+
+// Handle label type dropdown logic
+document.addEventListener('DOMContentLoaded', function () {
+  const labelTypeButton = document.getElementById('Cluster_LabelType_Button');
+  const labelButtons = document.querySelectorAll('.cluster-label-btn');
+
+  // Optional: Set initial label text on dropdown button (not necessary if fixed label)
+  // labelTypeButton.textContent = 'Receptor names';
+
+  labelButtons.forEach(btn => {
+    btn.addEventListener('click', function () {
+      const selectedValue = this.getAttribute('data-value');
+
+      // Update plot labels accordingly
+      switchClusterLabels(selectedValue);
+
+      // Update button styles
+      labelButtons.forEach(b => {
+        b.classList.remove('btn-primary');
+        b.classList.add('btn-outline-primary');
+      });
+      this.classList.remove('btn-outline-primary');
+      this.classList.add('btn-primary');
+    });
+  });
+});
+
+function switchClusterLabels(labelType) {
+    // Always reset labels to UniProt first
+    // Reset to original UniProt labels using .original_label
+    currentClusterData.forEach((point) => {
+        point.label = point.original_label.toUpperCase();
+    });
+    // Select which dictionary to use
+    let dict = null;
+    if (labelType === "IUPHAR") {
+        dict = labelDict_IUPHAR;
+    } else if (labelType === "Entrez") {
+        dict = labelDict_Gene;
+    }
+
+    // Update labels if a dictionary is selected
+    if (dict) {
+        currentClusterData.forEach((point) => {
+            let key = point.original_label.toLowerCase() + "_human";  // Match dictionary key format
+            if (dict[key]) {
+                point.label = dict[key];  // dict[key] is already a string, no [0] needed
+            }
+        });
+    }
+    updatePlotWithAnnotations();
+}
+
+function getInitialLabelTypeFromUI() {
+    const activeButton = document.querySelector('.cluster-label-btn.btn-primary');
+    return activeButton ? activeButton.getAttribute('data-value') : "IUPHAR"; // Fallback
+}
+
+// Attach the plotly_relayout event listener for zoom handling using jQuery
+$('#plotContainer_cluster').on('plotly_relayout', function(eventdata) {
+
+  let labelType = getInitialLabelTypeFromUI();
+  switchClusterLabels(labelType);
+});
+
+</script>
+{% endblock %}

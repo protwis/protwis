@@ -22,7 +22,8 @@ class Command(BaseCommand):
             p = []
             for i in sbc.missing_seg:
                 print("Error: Missing segment {} {} has no residue objects. Should have {} to {}".format(i[0],i[1],i[2],i[3]))
-                p.append(str(i[0]))
+                if str(i[0]) not in p:
+                    p.append(str(i[0]))
             print(' '.join(p))
             print("Very short helix segments: ", len(sbc.helix_length_error))
             for i in sbc.helix_length_error:

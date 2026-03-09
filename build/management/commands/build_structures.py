@@ -3,6 +3,10 @@ from django.conf import settings
 from django.db import connection
 from django.utils.text import slugify
 from django.db import IntegrityError
+from django.core.management import call_command
+
+# for automatic alignment fixes using space information from the pdb
+from build.management.commands.PDB_sequence_helper import *
 
 from build.management.commands.base_build import Command as BaseBuild
 from build.management.commands.build_ligand_functions import get_or_create_ligand, match_id_via_unichem
@@ -22,7 +26,7 @@ from Bio.PDB import PDBParser, PPBuilder, Polypeptide
 from Bio import pairwise2
 
 from structure.assign_generic_numbers_gpcr import GenericNumbering
-from structure.functions import StructureBuildCheck, ParseStructureCSV
+from structure.functions import StructureBuildCheck, AbsParseStructureCSV, ParseStructureCSV
 from ligand.models import Ligand, LigandType, LigandRole, LigandPeptideStructure
 from interaction.models import *
 from interaction.views import runcalculation_2022, regexaa, check_residue, extract_fragment_rotamer
@@ -96,6 +100,11 @@ class Command(BaseBuild):
             dest='debug',
             default=False,
             help='Print info for debugging')
+        parser.add_argument('--custom',
+            default = False,
+            dest='custom',
+            help='Add custom structure based on json input',
+            nargs='+')
 
     tracker = {}
     all_models = django.apps.apps.get_models()[6:]
@@ -151,12 +160,18 @@ class Command(BaseBuild):
 
         self.construct_errors, self.rotamer_errors, self.contactnetwork_errors, self.interaction_errors = [],[],[],[]
 
-        self.parsed_structures = ParseStructureCSV()
-        self.parsed_structures.parse_ligands()
-        self.parsed_structures.parse_nanobodies()
-        self.parsed_structures.parse_fusion_proteins()
-        self.parsed_structures.parse_ramp()
-        self.parsed_structures.parse_grk()
+        if options['custom']:
+            self.custom = options['custom']
+            self.parsed_structures = AbsParseStructureCSV()
+            self.parsed_structures.parse_files(options['custom'])
+            self.xtal_seg_ends = self.parsed_structures.xtal_seg_ends
+        else:
+            self.parsed_structures = ParseStructureCSV()
+            self.parsed_structures.parse_ligands()
+            self.parsed_structures.parse_nanobodies()
+            self.parsed_structures.parse_fusion_proteins()
+            self.parsed_structures.parse_ramp()
+            self.parsed_structures.parse_grk()
 
         if options['structure']:
             self.parsed_structures.pdb_ids = [i for i in self.parsed_structures.pdb_ids if i in options['structure'] or i.lower() in options['structure']]
@@ -401,6 +416,17 @@ class Command(BaseBuild):
             print('parent_seq-pdb_seq length',len(parent_seq),'pdb_seq',len(seq))
             print(parent_seq)
             print(seq)
+
+        # =================================================================================
+        # === START OF ALIGNMENT SECTION ==================================================
+        # =================================================================================
+
+        # ---------------------------------------------------------------------------------
+        # --- [LEGACY PIPELINE] Current alignment method using pairwise2 and manual fixes -
+        # ---------------------------------------------------------------------------------
+        # NOTE FOR FUTURE REFACTORING: This entire block can be replaced by the 
+        # "NEW AUTOMATED PIPELINE" block below.
+        
         #align WT with structure seq -- make gaps penalties big, so to avoid too much overfitting
 
         if structure.pdb_code.index=='6U1N':
@@ -410,7 +436,7 @@ class Command(BaseBuild):
         elif structure.pdb_code.index=='8WU1':
             seq = seq[:-13]
         if structure.pdb_code.index in ['6NBI','6NBF','6NBH','6U1N','6M1H','6PWC','7JVR','7SHF','7EJ0','7EJ8','7EJA','7EJK','7VVJ','7TS0','7W6P','7W7E','8IRS',
-                                        '8FLQ','8FLR','8FLS','8FLU','8FU6','8IRU','7Y35','7Y36','8TB7','8SZI','8TZQ','8U02','8W8Q','8W8R','8W8S']:
+                                        '8FLQ','8FLR','8FLS','8FLU','8FU6','8IRU','7Y35','7Y36','8TB7','8SZI','8TZQ','8U02','8W8Q','8W8R','8W8S','8YN2']:
             pw2 = pairwise2.align.localms(parent_seq, seq, 3, -4, -3, -1)
         elif structure.pdb_code.index in ['6KUX','6KUY','6KUW','7SRS']:
             pw2 = pairwise2.align.localms(parent_seq, seq, 3, -4, -4, -1.5)
@@ -697,12 +723,99 @@ class Command(BaseBuild):
         elif structure.pdb_code.index=='8YW5':
             temp_seq = temp_seq[:20]+'L'+temp_seq[20:29]+temp_seq[30:]
         elif structure.pdb_code.index=='8ZFJ':
-            temp_seq = temp_seq[:262]+'C--'+temp_seq[265:]
+            temp_seq = temp_seq[:263]+'C--'+temp_seq[266:]
         elif structure.pdb_code.index=='8ZSJ':
             temp_seq = temp_seq[:228]+'K'+temp_seq[228:243]+temp_seq[244:]
         elif structure.pdb_code.index=='9AVL':
             temp_seq = temp_seq[:123]+'N'+temp_seq[123:129]+temp_seq[130:]
+        elif structure.pdb_code.index=='8UXY':
+            ref_seq = ref_seq[:90]+ref_seq[92:108]+ref_seq[109:151]+ref_seq[152:200]+ref_seq[201:213]+ref_seq[214:]
+            temp_seq = temp_seq[:84]+'I'+temp_seq[87:105]+temp_seq[106:149]+temp_seq[150:202]+temp_seq[203:211]+temp_seq[212:271]+'-YS'+temp_seq[274:]
+        elif structure.pdb_code.index=='8UXV':
+            ref_seq = ref_seq[:144]+ref_seq[145:210]+ref_seq[211:266]+ref_seq[267:]
+            temp_seq = temp_seq[:146]+temp_seq[147:208]+temp_seq[209:268]+temp_seq[269:]
+        elif structure.pdb_code.index=='8WVV':
+            temp_seq = temp_seq[:542]+'S---'+temp_seq[546:673]+'P-----'+temp_seq[679:]
+        elif structure.pdb_code.index in ['8XWP','8XWQ']:
+            temp_seq = temp_seq[:235]+'L'+temp_seq[235:245]+temp_seq[246:]
+        elif structure.pdb_code.index=='8YN4':
+            temp_seq = temp_seq[:215]+'I'+temp_seq[215:226]+temp_seq[227:]
+        elif structure.pdb_code.index in ['9JR2']:
+            temp_seq = temp_seq[:5]+temp_seq[58:81]+temp_seq[5:58]+temp_seq[81:]
+        elif structure.pdb_code.index in ['9JR3']:
+            temp_seq = temp_seq[:4]+temp_seq[57:81]+temp_seq[4:57]+temp_seq[81:]
+        elif structure.pdb_code.index in ['8S4D']:
+            temp_seq = temp_seq[:48]+'R------'+temp_seq[55:]
+        elif structure.pdb_code.index in ['8XWQ']:
+            temp_seq = temp_seq[:235]+'L'+temp_seq[235:245]+temp_seq[246:]
+        elif structure.pdb_code.index in ['8Y69']:
+            ref_seq = ref_seq[:567]+ref_seq[568:]
+            temp_seq = temp_seq[:565]+temp_seq[566:]
+        elif structure.pdb_code.index=='9IVM':
+            temp_seq = temp_seq[:105]+'S'+temp_seq[105:111]+temp_seq[112:]
 
+        # --- [END OF LEGACY PIPELINE] ---
+
+        # ---------------------------------------------------------------------------------
+        # --- [NEW AUTOMATED PIPELINE] - Future replacement for the legacy block above ---
+        # ---------------------------------------------------------------------------------
+        # TO ENABLE THIS NEW PIPELINE:
+        #   1. UNCOMMENT this entire block.
+        #   2. COMMENT OUT or DELETE the entire "[LEGACY PIPELINE]" block above,
+        #      which includes all `pairwise2` calls and the large `if/elif` chain
+        #      of manual fixes.
+        # ---------------------------------------------------------------------------------
+        
+        # # New code block for automatic alignment fixes using space information from the pdb, starts here
+        # # parent_seq is the wt_seq from the context of this method.
+        
+        # # ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
+
+        # pdb_code = structure.pdb_code.index
+        # wt_seq = parent_seq  # Use the already prepared WT sequence
+        # pdb_text = structure.pdb_data.pdb
+
+        # # 'removed' list (for fusion proteins) is already calculated above.
+        # # We pass it to our helper to get a clean PDB sequence.
+        # pdb_seq, distances = generate_seq_and_distances_from_pdb_text(
+        #     pdb_text, preferred_chain, residues_to_remove=removed
+        # )
+
+        # # Get initial alignment and residue mapping
+        # initial_ref_seq, initial_temp_seq, pdb_map = run_pairwisealigner(
+        #     pdb_code, wt_seq, pdb_seq
+        # )
+
+        # # Find outliers which might indicate misalignments
+        # outlier_indexes = distances_stats(distances)
+
+        # # Attempt to automatically fix misalignments based on outliers and gaps
+        # # The function returns the final, corrected alignment string for the PDB sequence.
+        # fixed_temp_seq = detect_alignment_mistakes_and_reposition(
+        #     pdb_code,
+        #     wt_seq,
+        #     pdb_seq,
+        #     initial_ref_seq,
+        #     initial_temp_seq,
+        #     pdb_map,
+        #     distances,
+        #     outlier_indexes,
+        #     aanumber=3,
+        # )
+
+        # # Assign the final, corrected alignment strings to be used by the rest of the function.
+        # ref_seq = initial_ref_seq
+        # temp_seq = fixed_temp_seq
+
+
+        # # ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
+        # # New code block for automatic alignment fixes using space information from the pdb, ends here
+        # # --- [END OF NEW AUTOMATED PIPELINE] ---
+
+        
+        # =================================================================================
+        # === END OF ALIGNMENT SECTION ====================================================
+        # =================================================================================
 
 
         for i, r in enumerate(ref_seq, 1): #loop over alignment to create lookups (track pos)
@@ -830,7 +943,7 @@ class Command(BaseBuild):
                                     elif residue.sequence_number!=wt_r.sequence_number:
                                         # print('WT pos not same pos, mismatch',residue.sequence_number,residue.amino_acid,wt_r.sequence_number,wt_r.amino_acid)
                                         wt_pdb_lookup.append(OrderedDict([('WT_POS',wt_r.sequence_number), ('PDB_POS',residue.sequence_number), ('AA',wt_r.amino_acid)]))
-                                        if structure.pdb_code.index not in ['4GBR','6C1R','6C1Q','7XBX','7F1Q','7ZLY','8JWY','8JWZ','8JMT','8TB7','8ITM','9D3G']:
+                                        if structure.pdb_code.index not in ['4GBR','6C1R','6C1Q','7XBX','7F1Q','7ZLY','8JWY','8JWZ','8JMT','8TB7','8ITM','9D3G','9D3E','8YNS','8YNT']:
                                             if residue.sequence_number in unmapped_ref:
                                                 # print('residue.sequence_number',residue.sequence_number,'not mapped though')
                                                 if residue.amino_acid == wt_lookup[residue.sequence_number].amino_acid:
@@ -1246,7 +1359,15 @@ class Command(BaseBuild):
                 structure.save()
 
             protein = structure.protein_conformation
-            lig_key = list(data.keys())[0]
+            lig_keys = list(data.keys())
+            if len(lig_keys)>1:
+                for l in lig_keys:
+                    if l==ligand_name:
+                        lig_key = l
+                    elif len(ligand_name)==5 and ligand_name[:3]==l:
+                        lig_key = l
+            else:
+                lig_key = list(data.keys())[0]
 
             f = module_dir + "/results/" + pdb_id + "/interaction" + "/" + pdb_id + "_" + lig_key + ".pdb"
             if os.path.isfile(f):
@@ -1259,6 +1380,8 @@ class Command(BaseBuild):
             lig_db_key = lig_key
             if lig_key!=ligand_name and len(lig_key)==3 and len(ligand_name)==5:
                 lig_db_key = ligand_name
+                if '.' in lig_db_key:
+                    lig_db_key = lig_db_key.split('.')[0]
             struct_lig_interactions = StructureLigandInteraction.objects.filter(pdb_reference=lig_db_key, structure=structure, annotated=True) #, pdb_file=None
             if struct_lig_interactions.exists():  # if the annotated exists
                 try:
@@ -1343,9 +1466,13 @@ class Command(BaseBuild):
             try:
                 con = Protein.objects.get(entry_name=sd['name'].lower())
             except Protein.DoesNotExist:
-                print('BIG ERROR Construct {} does not exists, skipping!'.format(sd['name'].lower()))
-                self.logger.error('Construct {} does not exists, skipping!'.format(sd['name'].lower()))
-                continue
+                if self.custom:
+                    call_command('build_construct_proteins', custom=self.custom)
+                    con = Protein.objects.get(entry_name=sd['name'].lower())
+                else:
+                    print('BIG ERROR Construct {} does not exists, skipping!'.format(sd['name'].lower()))
+                    self.logger.error('Construct {} does not exists, skipping!'.format(sd['name'].lower()))
+                    continue
 
             # create a structure record
             try:
@@ -1407,7 +1534,11 @@ class Command(BaseBuild):
             if not os.path.exists(self.pdb_data_dir):
                 os.makedirs(self.pdb_data_dir)
 
-            pdb_path = os.sep.join([self.pdb_data_dir, sd['pdb'] + '.pdb'])
+            if self.custom:
+                pdb_path = sd['pdb_path']
+            else:
+                pdb_path = os.sep.join([self.pdb_data_dir, sd['pdb'] + '.pdb'])
+
             if not os.path.isfile(pdb_path):
                 self.logger.info('Fetching PDB file {}'.format(sd['pdb']))
                 url = 'http://www.rcsb.org/pdb/files/%s.pdb' % sd['pdb']

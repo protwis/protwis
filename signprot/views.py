@@ -312,11 +312,6 @@ class CouplingBrowser(TemplateView):
             if len(gproteindb_fam)==0:
                 if 'GtoPdb' in vals['sets']:
                     gproteindb = deepcopy(vals['sets']['GtoPdb'])
-                    try:
-                        if prot.entry_name=='acthr_human':
-                            print(vals['sets']['GtoPdb'])
-                    except:
-                        pass
                 else:
                     continue
             else:
@@ -369,7 +364,7 @@ class CouplingBrowser(TemplateView):
         proteins_links = Protein.objects.filter(entry_name__in=coupling_receptors, sequence_type__slug='wt',
                                           family__slug__startswith='0', web_links__web_resource__slug='gtop').prefetch_related(
                                           'family', 'family__parent__parent__parent', 'web_links').values_list(
-                                          'id', 'web_links__web_resource__url').distinct()
+                                          'id', 'web_links__web_resource__url', 'web_links__index').distinct()
 
         couplings = ProteinCouplings.objects.filter(source="GuideToPharma").values_list('protein__entry_name',
                                                                                            'g_protein__name',
@@ -378,7 +373,7 @@ class CouplingBrowser(TemplateView):
         links = {}
         for item in proteins_links:
             if item[0] not in links.keys():
-                links[item[0]] = item[1].replace('$index', str(item[0]))
+                links[item[0]] = item[1].replace('$index', str(item[2]))
 
         signaling_data = {}
         for pairing in couplings:

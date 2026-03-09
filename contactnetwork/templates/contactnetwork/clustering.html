@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block content %}
-
+<div id="structure-clustering-page">
       <div class="tab-content clearfix">
             <!-- BEGIN SINGLE CRYSTAL GROUP TAB -->
             <div class="tab-pane active" id="single-crystal-group-tab">
@@ -24,7 +24,7 @@
                         <div class="row nav-row"><div class="btn btn-success pull-left go-button">Go</div></div>
                         <!-- <div class="row nav-row"><div class="btn btn-success pull-left go-button">Go (distance pairs)</div></div>
                         <div class="row nav-row"><div class="btn btn-success pull-left go-button">Go (distance pairs - normalized)</div></div>
-                        <!-- <div class="row nav-row"><div class="btn btn-success pull-left go-button">Go (distance to 7TM axis)</div></div>
+                        <div class="row nav-row"><div class="btn btn-success pull-left go-button">Go (distance to 7TM axis)</div></div>
                         <div class="row nav-row"><div class="btn btn-success pull-left go-button">Go (distance to membrane mid)</div></div>
                         <div class="row nav-row"><div class="btn btn-success pull-left go-button">Go (distance to 7TM axis and membrane mid)</div></div>
                         <div class="row nav-row"><div class="btn btn-success pull-left go-button">Go (distance to "origin")</div></div>
@@ -231,6 +231,7 @@
     <div class="alert alert_pdb alert-warning fade out" id="bsalert">
       Please select at least two structures to compare
     </div>
+</div>
 {% endblock %}
 {% block addon_js %}
     <script type="text/javascript">
@@ -509,23 +510,23 @@
         .tree-widget {
         }
 
-        .btn{
+        #structure-clustering-page .btn {
             color: #fff;
             background-color: #337ab7;
             border-color: #204d74;
         }
 
-        .btn:hover{
-            color: white;
+        #structure-clustering-page .btn:hover {
+            color: #fff;
             background-color: #204d74;
             border-color: #204d74;
         }
 
-        .btn-default.active, .btn-default.active:hover{
-            color: white;
+        #structure-clustering-page .btn-default.active,
+        #structure-clustering-page .btn-default.active:hover {
+            color: #fff;
             background-color: #204d74;
             border-color: #204d74;
-
         }
 
         .class_band_radial{

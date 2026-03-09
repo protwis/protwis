@@ -106,6 +106,7 @@ class Command(BaseBuild):
         parser.add_argument('--alphafold', help='Run the alphafold pipeline.', default=False, action='store_true')
         parser.add_argument('--exclude_structures', help='Exclude structures as templates', default=False, type=str, nargs='+')
         parser.add_argument('--skip_existing', help='Skip model builds present in the homology_models_zip folder', default=False, action='store_true')
+        parser.add_argument('--input_folder', help='Provide input folder for custom main structure template', default=False)
 
 
     def handle(self, *args, **options):
@@ -136,6 +137,7 @@ class Command(BaseBuild):
         self.added_mutations = options['mutations']
         self.alphafold = options['alphafold']
         self.exclude_structures = options['exclude_structures']
+        self.input_folder = options['input_folder']
 
         if options['mutations']:
             mutations = options['mutations']
@@ -302,7 +304,8 @@ class Command(BaseBuild):
             mod_startTime = datetime.now()
             logger.info('Generating model for  \'{}\' ({})... ({} out of {}) (processor:{} count:{})'.format(receptor[0].entry_name, receptor[1],count.value, len(self.receptor_list),processor_id,i))
             chm = CallHomologyModeling(receptor[0].entry_name, receptor[1], iterations=self.modeller_iterations, debug=self.debug,
-                                       update=self.update, complex_model=self.complex, signprot=self.signprot, force_main_temp=self.force_main_temp, keep_hetatoms=self.keep_hetatoms, mutations=self.added_mutations, alphafold=self.alphafold, exclude_structures=self.exclude_structures)
+                                       update=self.update, complex_model=self.complex, signprot=self.signprot, force_main_temp=self.force_main_temp, keep_hetatoms=self.keep_hetatoms, mutations=self.added_mutations, alphafold=self.alphafold, 
+                                       exclude_structures=self.exclude_structures, input_folder=self.input_folder)
             chm.run(fast_refinement=self.fast_refinement)
             logger.info('Model finished for  \'{}\' ({})... (processor:{} count:{}) (Time: {})'.format(receptor[0].entry_name, receptor[1],processor_id,i,datetime.now() - mod_startTime))
 
@@ -333,7 +336,7 @@ class Command(BaseBuild):
 
 
 class CallHomologyModeling():
-    def __init__(self, receptor, state, iterations=1, debug=False, update=False, complex_model=False, signprot=False, force_main_temp=False, keep_hetatoms=False, no_remodeling=False, mutations=False, alphafold=False, exclude_structures=False):
+    def __init__(self, receptor, state, iterations=1, debug=False, update=False, complex_model=False, signprot=False, force_main_temp=False, keep_hetatoms=False, no_remodeling=False, mutations=False, alphafold=False, exclude_structures=False, input_folder=False):
         self.receptor = receptor
         self.state = state
         self.modeller_iterations = iterations
@@ -350,6 +353,7 @@ class CallHomologyModeling():
         self.alphafold_refined_data_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'AlphaFold_refined'])
         self.alphafold_multimer_data_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'AlphaFold_multimer'])
         self.exclude_structures = exclude_structures
+        self.input_folder = input_folder
 
 
     def run(self, import_receptor=False, fast_refinement=False):
@@ -816,6 +820,8 @@ class CallHomologyModeling():
             elif self.alphafold and Homology_model.revise_xtal:
                 ### structure
                 Homology_model.main_structure = Structure.objects.get(protein_conformation__protein=Homology_model.reference_protein)
+                Homology_model.input_folder = self.input_folder
+
                 if Homology_model.complex:
                     target_residues = Residue.objects.filter(protein_conformation__protein__entry_name__in=[Homology_model.reference_protein.parent.entry_name, Homology_model.signprot]).order_by('protein_conformation__protein__family__slug', 'sequence_number')
                     alpha_protobj = Protein.objects.get(entry_name=Homology_model.reference_protein.entry_name+'_a')
@@ -839,6 +845,7 @@ class CallHomologyModeling():
                     if not os.path.exists(af_path):
                         af_path = os.sep.join([self.alphafold_multimer_data_dir, complex_name+'_gbb1_human_gbg2_human', complex_name+'_gbb1_human_gbg2_human.pdb'])
                         if not os.path.exists(af_path):
+                            print(f'Error: AlphaFold template file {complex_name}_gbb1_human_gbg2_human not in {self.alphafold_multimer_data_dir}')
                             return 0
                 else:
                     af_path = os.sep.join([self.alphafold_refined_data_dir, Homology_model.main_structure.pdb_code.index+'_refined.pdb'])
@@ -1185,8 +1192,8 @@ class CallHomologyModeling():
                                 if pos[0]=='ICL3':
                                     icl3_positions.append(e)
                             if len(icl3_positions)>0:
-                                start = icl3_positions[7]
-                                end = icl3_positions[-7]
+                                start = icl3_positions[5]
+                                end = icl3_positions[-5]
                                 i = i[:start]+i[end:]
 
                         orig_residues1 = parse.fetch_residues_from_array(main_pdb_array[first_seg], minus_gns)
@@ -1492,7 +1499,7 @@ class HomologyModeling(object):
                       45:'ECL2'}
 
     def __init__(self, reference_entry_name, state, query_states, iterations=1, complex_model=False, signprot=False, debug=False,
-                 force_main_temp=False, fast_refinement=False, keep_hetatoms=False, mutations=False, alphafold=False):
+                 force_main_temp=False, fast_refinement=False, keep_hetatoms=False, mutations=False, alphafold=False, input_folder=False):
         self.debug = debug
         self.complex = complex_model
         self.modelname = ''
@@ -1521,6 +1528,7 @@ class HomologyModeling(object):
         self.icl3_delete = OrderedDict()
         self.changes_on_db = False
         self.alphafold = alphafold
+        self.input_folder = input_folder
         if len(self.reference_entry_name)==4:
             self.prot_conf = ProteinConformation.objects.get(protein=self.reference_protein.parent)
             self.uniprot_id = self.reference_protein.parent.accession
@@ -3049,7 +3057,11 @@ class HomologyModeling(object):
             pdb = PDB.PDBList()
             self.alternate_water_positions = OrderedDict()
             last_seqnum = list(Residue.objects.filter(protein_conformation__protein=self.reference_protein.parent))[-1].sequence_number
-            with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'pdbs', str(self.main_structure)+'.pdb']), 'r') as f:
+            if not self.input_folder:
+                main_structure_temp_path = os.sep.join([settings.DATA_DIR, 'structure_data', 'pdbs', str(self.main_structure)+'.pdb'])
+            else:
+                main_structure_temp_path = os.sep.join([self.input_folder, str(self.main_structure)+'.pdb'])
+            with open(main_structure_temp_path, 'r') as f:
                 lines = f.readlines()
             with open(post_file, 'r') as model_read:
                 model_lines = model_read.readlines()

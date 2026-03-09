@@ -376,6 +376,7 @@ function submitSelection(url, minimum = 1, maximum = 0) {
     } else {
       showAlert("Please select at least "+minimum+" targets.", "warning");
     }
+    setTimeout(function(){ $("#selection-button").removeClass("active"); }, 1000);
   }
 }
 

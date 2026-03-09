@@ -1,8 +1,32 @@
 /*global showAlert*/
 
+
+function resetButtonState() {
+    $('.has-spinner.active').removeClass('active').prop('disabled', false);
+}
+
+$(document).ready(function() {
+    resetButtonState();
+    updateSegmentAvailability();  // sync GAIN + D1 state with current targets on load
+    syncSegmentButtonSelectionState();
+});
+
+window.addEventListener('pageshow', function(event) {
+    if (event.persisted) {
+        resetButtonState();
+    }
+});
+
+
+
 $(function () {
-    $('#selection-button').click(function () {
-        toggleButtonClass('selection-button');
+
+    $('.has-spinner').on('click', function(e) {
+        if ($(this).is('[disabled]')) {
+            e.preventDefault();
+            return;
+        }
+        $(this).toggleClass('active');
     });
 });
 
@@ -30,6 +54,8 @@ function AddToSelection(selection_type, selection_subtype, selection_id) {
         'async': false,
         'success': function(data) {
             $("#selection-" + selection_type).html(data);
+            updateSegmentAvailability();
+            syncSegmentButtonSelectionState();
         },
     });
 }
@@ -45,6 +71,8 @@ function RemoveFromSelection(selection_type, selection_subtype, selection_id) {
         'type': 'GET',
         'success': function(data) {
             $("#selection-" + selection_type).html(data);
+            updateSegmentAvailability();
+            syncSegmentButtonSelectionState();
         }
     });
 }
@@ -59,6 +87,8 @@ function ClearSelection(selection_type) {
         'async': false,
         'success': function (data) {
             $("#selection-" + selection_type).html(data);
+            updateSegmentAvailability();
+            syncSegmentButtonSelectionState();
         }
     });
 }
@@ -89,6 +119,8 @@ function SelectFullSequence(selection_type) {
         'type': 'GET',
         'success': function(data) {
             $("#selection-" + selection_type).html(data);
+            updateSegmentAvailability();
+            syncSegmentButtonSelectionState();
         },
     });
 }
@@ -144,9 +176,12 @@ function SelectAlignableResidues(selection_type) {
         'type': 'GET',
         'success': function(data) {
             $("#selection-" + selection_type).html(data);
+            updateSegmentAvailability();
+            syncSegmentButtonSelectionState();
         },
     });
 }
+
 
 function ToggleFamilyTreeNode(action, type_of_selection, node_id, tree_indent_level) {
     $.ajax({
@@ -472,8 +507,182 @@ function VerifyMinSegmentSelection() {
     if ($("#selection-segments .target-selection").length === 0){
       showAlert("Please select at least 1 segment item to continue", "danger");
       // Remove active button class => stop spinner after short timeout
-      setTimeout(function(){ $("#selection-button").removeClass("active"); }, 1000);
+      setTimeout(function(){ $(".has-spinner.active").removeClass("active"); }, 1000);
       return false;
     }
     return true;
+}
+
+function ToggleSubGroup(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+
+    // Toggle visibility
+    var isHidden = (el.style.display === 'none' || !el.style.display);
+    el.style.display = isHidden ? 'block' : 'none';
+
+    // Find the arrow icon inside the toggle button
+    // `event.currentTarget` is the <a> element that was clicked
+    var arrow = event.currentTarget.querySelector('.glyphicon');
+
+    if (arrow) {
+        if (isHidden) {
+            // Now opened → show arrow up
+            arrow.classList.remove('glyphicon-arrow-down');
+            arrow.classList.add('glyphicon-arrow-up');
+        } else {
+            // Now closed → show arrow down
+            arrow.classList.remove('glyphicon-arrow-up');
+            arrow.classList.add('glyphicon-arrow-down');
+        }
+    }
+}
+
+function updateSegmentAvailability() {
+    $.ajax({
+        url: '/common/checkselectionstatus/',
+        type: 'GET',
+        success: function(data) {
+
+            let hasB2 = data.has_class_b2;
+            let hasD1 = data.has_class_d1;
+
+            // ============================
+            //      GAIN DOMAIN (B2)
+            // ============================
+            let gainHeading = $("#gain-heading");              // make sure you added this id in HTML
+            let gainButtons = $("#gain-container .gain-segment");
+
+            if (hasB2) {
+                // enable buttons
+                gainButtons.removeClass("segment-disabled");
+
+                // restore normal heading
+                if (gainHeading.length) {
+                    gainHeading.text("Class B2 – GAIN domain");
+                }
+
+            } else {
+                // disable buttons
+                gainButtons.addClass("segment-disabled");
+
+                // show info in heading
+                if (gainHeading.length) {
+                    gainHeading.text("Class B2 – GAIN domain (No Class B2 in selection)");
+                }
+
+                // remove any selected GAIN segments on the right side
+                removeGainSegmentsFromSelection();
+            }
+
+
+            // ============================
+            //      CLASS D1 DOMAIN
+            // ============================
+            var d1Buttons = $("[data-segment-domain='D1']");
+
+            if (!hasD1) {
+                d1Buttons.addClass("segment-disabled");
+                removeD1SegmentsFromSelection();
+            } else {
+                d1Buttons.removeClass("segment-disabled");
+            }
+
+
+            // ==========================================
+            //   WHOLE "CLASS-SPECIFIC SEGMENTS" DROPDOWN
+            // ==========================================
+            let classBtn   = $("#class-specific-toggle");
+            let classPanel = $("#class-specific");
+
+            let hasAnyClassSpecific = hasB2 || hasD1;
+
+            if (!hasAnyClassSpecific) {
+                // Disable the toggle and close the panel
+                classBtn.addClass("sub-dropdown-disabled disabled");
+                classPanel.hide();
+
+                // Replace label with info message
+                classBtn.html(
+                    'Class-specific segments ' +
+                    '<span style="font-size:85%;">(no class-specific targets in selection)</span>' +
+                    '<span class="glyphicon glyphicon-arrow-down pull-right"></span>'
+                );
+
+            } else {
+                // Enable the toggle
+                classBtn.removeClass("sub-dropdown-disabled disabled");
+
+                // Restore normal label (don’t auto-open)
+                classBtn.html(
+                    'Class-specific segments ' +
+                    '<span class="glyphicon glyphicon-arrow-down pull-right"></span>'
+                );
+            }
+        }
+    });
+}
+
+
+
+function removeGainSegmentsFromSelection() {
+    $("#selection-segments .target-selection[data-segment-domain='GAIN']").each(function() {
+        RemoveFromSelection('segments',
+            $(this).data("selection-subtype"),
+            $(this).data("segment-id"));
+    });
+}
+
+function removeD1SegmentsFromSelection() {
+    $("#selection-segments .target-selection[data-segment-domain='D1']").each(function() {
+        RemoveFromSelection('segments',
+            $(this).data("selection-subtype"),
+            $(this).data("segment-id"));
+    });
+}
+
+// Toggle a segment when clicking its left-hand button
+function ToggleSegmentSelection(btn) {
+    var $btn    = $(btn);
+    var segId   = $btn.data("segment-id");
+    var domain  = $btn.data("segment-domain");
+    var subtype = $btn.data("selection-subtype");   // e.g. helix/loop/terminus
+
+    // Check if this segment is already selected (exists on the right side)
+    var $existing = $("#selection-segments .target-selection[data-segment-id='" + segId + "'][data-segment-domain='" + domain + "']");
+
+    if ($existing.length) {
+        // Already selected -> remove it
+        var existingSubtype = $existing.data("selection-subtype") || subtype || 'segment';
+        RemoveFromSelection('segments', existingSubtype, segId);
+    } else {
+        // Not yet selected -> add it
+        AddToSelection('segments', subtype, segId);
+    }
+}
+
+// Sync the "selected" outline on left buttons with the right-hand selection list
+function syncSegmentButtonSelectionState() {
+    // Reset previous selection state
+    $(".segment-btn").removeClass("segment-selected");
+    $(".btn-group").removeClass("segment-group-selected");
+
+    // For each selected item on the right side
+    $("#selection-segments .target-selection[data-segment-id]").each(function() {
+        var segId  = $(this).data("segment-id");
+        var domain = $(this).data("segment-domain");
+
+        // Find label button on left
+        var selector = ".segment-btn[data-segment-id='" + segId + "'][data-segment-domain='" + domain + "']";
+
+        var $labelBtn = $(selector).not(".arrow-btn");
+
+        if ($labelBtn.length) {
+            // add highlight FOR THE WHOLE BUTTON GROUP
+            $labelBtn.closest(".btn-group").addClass("segment-group-selected");
+
+            // (optional) still mark the label button as "selected"
+            $labelBtn.addClass("segment-selected");
+        }
+    });
 }

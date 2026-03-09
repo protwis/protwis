@@ -14,9 +14,6 @@ from residue.models import (Residue, ResidueDataPoint, ResidueDataType,
 # Remove in the future
 from common.definitions import _BEFORE_NAR2025_CLASSLESS_PARENT_GPCR_SLUGS_DICT, _AFTER_NAR2025_CLASSLESS_PARENT_GPCR_SLUGS
 
-
-
-
 class_prefix_re = re.compile(r'^(Class)\s+', flags=re.I)
 
 class Protein(models.Model):
@@ -31,6 +28,7 @@ class Protein(models.Model):
     entry_name = models.SlugField(max_length=100, unique=True)
     accession = models.CharField(max_length=100, db_index=True, null=True)
     name = models.CharField(max_length=200)
+    cancer = models.ManyToManyField('CancerExpression')
     sequence = models.TextField()
 
     def entry_short(self):
@@ -74,9 +72,13 @@ class Protein(models.Model):
         residuelist = Residue.objects.filter(protein_conformation__protein__entry_name=str(self)).prefetch_related('protein_segment','display_generic_number','generic_number')
         return DrawHelixBox(residuelist,self.get_protein_class(),str(self))
 
-    def get_snake_plot(self):
+    def get_snake_plot(self, domain=None):
         residuelist = Residue.objects.filter(protein_conformation__protein__entry_name=str(self)).prefetch_related('protein_segment','display_generic_number','generic_number')
-        return DrawSnakePlot(residuelist,self.get_protein_class(),str(self))
+        return DrawSnakePlot(residuelist,self.get_protein_class(),str(self), domain=domain)
+
+    def get_snake_plot_GAIN(self):
+        residuelist = Residue.objects.filter(protein_conformation__protein__entry_name=str(self)).prefetch_related('protein_segment','display_generic_number','generic_number')
+        return DrawSnakePlot(residuelist,self.get_protein_class(),str(self), domain='GAIN')
 
     def get_helical_box_no_buttons(self):
         residuelist = Residue.objects.filter(protein_conformation__protein__entry_name=str(self)).prefetch_related('protein_segment','display_generic_number','generic_number')
@@ -121,6 +123,55 @@ class Protein(models.Model):
             tmp = tmp.parent
         return tmp.name
 
+class CancerType(models.Model):
+    slug = models.SlugField(max_length=100, unique=True)
+    name = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.name
+
+    class Meta():
+        db_table = 'cancer'
+
+class ExpressionValue(models.Model):
+    max_expression = models.CharField(max_length=30)
+
+    def __str__(self):
+        return self.max_expression
+
+    class Meta():
+        db_table = 'expression'
+
+class CancerExpression(models.Model):
+    cancer = models.ForeignKey('CancerType', on_delete=models.CASCADE)
+    expression = models.ForeignKey('ExpressionValue', on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.cancer.slug
+
+    class Meta():
+        db_table = 'cancer_expression'
+
+class Tissues(models.Model):
+    slug = models.SlugField(max_length=100, unique=True)
+    name = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.name
+
+    class Meta():
+        db_table = 'tissues'
+
+class TissueExpression(models.Model):
+    protein = models.ForeignKey('Protein', null=True, on_delete=models.CASCADE)
+    tissue = models.ForeignKey('Tissues', null=True, on_delete=models.CASCADE)
+    value = models.FloatField(null=True, blank=True)
+
+    def __str__(self):
+        return self.tissue.slug
+
+    class Meta():
+        db_table = "tissue_expression"
 
 class ProteinConformation(models.Model):
     protein = models.ForeignKey('Protein', on_delete=models.CASCADE)
@@ -172,12 +223,10 @@ class ProteinConformation(models.Model):
         ordering = ('id', )
         db_table = "protein_conformation"
 
-
 class IdentifiedSites(models.Model):
     protein_conformation = models.ForeignKey('protein.ProteinConformation', related_name='site_protein_conformation', on_delete=models.CASCADE)
     site = models.ForeignKey('Site', on_delete=models.CASCADE)
     residues = models.ManyToManyField('residue.Residue', related_name='site_residue')
-
 
 class Site(models.Model):
     slug = models.CharField(max_length=20)
@@ -194,7 +243,6 @@ class ProteinState(models.Model):
     class Meta():
         db_table = "protein_state"
 
-
 class Gene(models.Model):
     proteins = models.ManyToManyField('Protein', related_name='genes')
     species = models.ForeignKey('Species', on_delete=models.CASCADE)
@@ -209,7 +257,6 @@ class Gene(models.Model):
         unique_together = ('name', 'species','position')
         db_table = 'gene'
 
-
 class Species(models.Model):
     latin_name = models.CharField(max_length=100, unique=True)
     common_name = models.CharField(max_length=100, blank=True)
@@ -219,7 +266,6 @@ class Species(models.Model):
 
     class Meta():
         db_table = 'species'
-
 
 class ProteinAlias(models.Model):
     protein = models.ForeignKey('Protein', on_delete=models.CASCADE)
@@ -233,7 +279,6 @@ class ProteinAlias(models.Model):
         ordering = ('position', )
         db_table = 'protein_alias'
 
-
 class ProteinSet(models.Model):
     proteins = models.ManyToManyField('Protein')
     name = models.CharField(max_length=50, unique=True)
@@ -244,7 +289,6 @@ class ProteinSet(models.Model):
     class Meta():
         db_table = 'protein_set'
 
-
 class ProteinSegment(models.Model):
     slug = models.SlugField(max_length=100)
     name = models.CharField(max_length=50)
@@ -252,6 +296,7 @@ class ProteinSegment(models.Model):
     fully_aligned = models.BooleanField(default=False)
     partial = models.BooleanField(default=False)
     proteinfamily = models.CharField(max_length=20)
+    domain = models.CharField(max_length=20, null=True)
 
     def __str__(self):
         return self.slug
@@ -261,7 +306,6 @@ class ProteinSegment(models.Model):
         db_table = 'protein_segment'
         unique_together = ('slug', 'proteinfamily')
 
-
 class ProteinSource(models.Model):
     name = models.CharField(max_length=20, unique=True)
 
@@ -270,7 +314,6 @@ class ProteinSource(models.Model):
 
     class Meta():
         db_table = 'protein_source'
-
 
 class ProteinFamily(models.Model):
     parent = models.ForeignKey('self', null=True, on_delete=models.CASCADE)
@@ -311,7 +354,6 @@ class ProteinSequenceType(models.Model):
     class Meta():
         db_table = 'protein_sequence_type'
 
-
 class ProteinAnomaly(models.Model):
     anomaly_type = models.ForeignKey('ProteinAnomalyType', on_delete=models.CASCADE)
     generic_number = models.ForeignKey('residue.ResidueGenericNumber', on_delete=models.CASCADE)
@@ -324,7 +366,6 @@ class ProteinAnomaly(models.Model):
         db_table = 'protein_anomaly'
         unique_together = ('anomaly_type', 'generic_number')
 
-
 class ProteinAnomalyType(models.Model):
     slug = models.SlugField(max_length=20, unique=True)
     name = models.CharField(max_length=100)
@@ -334,7 +375,6 @@ class ProteinAnomalyType(models.Model):
 
     class Meta():
         db_table = 'protein_anomaly_type'
-
 
 class ProteinAnomalyRuleSet(models.Model):
     protein_anomaly = models.ForeignKey('ProteinAnomaly', related_name='rulesets', on_delete=models.CASCADE)
@@ -346,7 +386,6 @@ class ProteinAnomalyRuleSet(models.Model):
     class Meta():
         db_table = 'protein_anomaly_rule_set'
         ordering = ('id', )
-
 
 class ProteinAnomalyRule(models.Model):
     rule_set = models.ForeignKey('ProteinAnomalyRuleSet', related_name='rules', on_delete=models.CASCADE)
@@ -360,7 +399,6 @@ class ProteinAnomalyRule(models.Model):
     class Meta():
         db_table = 'protein_anomaly_rule'
 
-
 class ProteinConformationTemplateStructure(models.Model):
     protein_conformation = models.ForeignKey('ProteinConformation', on_delete=models.CASCADE)
     protein_segment = models.ForeignKey('ProteinSegment', on_delete=models.CASCADE)
@@ -372,7 +410,6 @@ class ProteinConformationTemplateStructure(models.Model):
 
     class Meta():
         db_table = 'protein_conformation_template_structure'
-
 
 class ProteinCouplings(models.Model):
     protein = models.ForeignKey('Protein', on_delete=models.CASCADE)
@@ -407,7 +444,6 @@ class ProteinCouplings(models.Model):
     class Meta():
         db_table = 'protein_couplings'
 
-
 class Biosensor(models.Model):
     name = models.TextField()
     downstream_steps = models.IntegerField()
@@ -418,7 +454,6 @@ class Biosensor(models.Model):
 
     class Meta():
         db_table = 'protein_couplings_biosensor'
-
 
 def dgn(gn, protein_conformation):
     """Convert generic number to display generic number."""

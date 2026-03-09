@@ -7,7 +7,7 @@ from common.tools import test_model_updates
 from build.management.commands.base_build import Command as BaseBuild
 from protein.models import (Protein, ProteinConformation, ProteinState, ProteinSequenceType, ProteinSegment, ProteinSource)
 from residue.models import Residue
-from structure.functions import ParseStructureCSV
+from structure.functions import AbsParseStructureCSV, ParseStructureCSV
 
 import os
 import logging
@@ -38,6 +38,10 @@ class Command(BaseBuild):
             dest='purge',
             default=False,
             help='Purge existing construct records')
+        parser.add_argument('--custom',
+            dest='custom',
+            help='Add custom structure based on json input',
+            nargs='+')
 
     def handle(self, *args, **options):
         # delete any existing construct data
@@ -49,7 +53,11 @@ class Command(BaseBuild):
             except Exception as msg:
                 print(msg)
                 self.logger.error(msg)
-        self.parsed_structures = ParseStructureCSV()
+        if options['custom']:
+            self.parsed_structures = AbsParseStructureCSV()
+            self.parsed_structures.parse_files(options['custom'])
+        else:
+            self.parsed_structures = ParseStructureCSV()
 
         # where pdb ids specified?
         if options['construct']:

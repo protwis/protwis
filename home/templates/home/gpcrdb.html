@@ -1,4 +1,6 @@
 {% load static %}
+{% load menu_extras %}
+
 <!-- RECEPTORS -->
 <li class="dropdown gpcr {% if current_site == 'gpcr' %}highlight_menu{% endif %}" id="gpcrdb_menu">
 
@@ -7,9 +9,10 @@
         </a>
         <ul class="dropdown-menu" role="menu">
             <!-- <li><a role="button" id='cite_gpcrdb'>Citing GPCRdb</a></li> -->
-            <li><a href="{{ hosts.gpcr }}/cite_gpcrdb">Citing GPCRdb</a></li>
+            <li><a href="{{ hosts.gpcr }}/cite_us/gpcrdb">Citing GPCRdb</a></li>
             <li class="divider"></li>
             <li><a href="{{ hosts.gpcr }}/protein">Receptor page
+                <button type="button" class="refLink pull-right btn btn-xs btn-default" keys="10.1093/nar/gkt1255"><span class="glyphicon glyphicon-book"></span></button>
                 <button mp4="https://files.gpcrdb.org/video/receptors1.mp4"
                         class="videoLink pull-right btn btn-xs btn-default">
                     <span class="glyphicon glyphicon-film"></span>
@@ -17,37 +20,34 @@
             </a></li>
             <!-- SEQUENCES -->
             <li class="divider"></li>
-            <li>
-              <a href="{{ hosts.gpcr }}/mapper">Data Mapper
-              </a>
+            <li class="dropdown-submenu">
+                <a tabindex="0" href="#">Data Mapper <button type="button" class="refLink pull-right btn btn-xs btn-default" keys="10.1093/nar/gkae1065"><span class="glyphicon glyphicon-book"></span></button></a>
+                <ul class="dropdown-menu">
+                  <li><a href="{{ hosts.gpcr }}/mapper/DataMapperHomeNumeric">Numeric data</a></li>
+                  <li><a href="{{ hosts.gpcr }}/mapper/DataMapperHomeText">Text data</a></li>
+                </ul>
             </li>
             <!-- SEQUENCES -->
             <li class="divider"></li>
             <li class="nav-header disabled text-left"><a>SEQUENCES</a></li>
             <li>
               <a href="{{ hosts.gpcr }}/alignment/targetselection">Sequence alignments
+                <button type="button" class="refLink pull-right btn btn-xs btn-default" keys="10.1093/nar/gkaa1080|10.1093/nar/gkv1178"><span class="glyphicon glyphicon-book"></span></button>
                 <button mp4="https://files.gpcrdb.org/video/sequences1.mp4" type="button"
                         class="videoLink pull-right btn btn-xs btn-default">
                     <span class="glyphicon glyphicon-film"></span>
                 </button>
               </a>
             </li>
-            <li><a href="{{ hosts.gpcr }}/residue/residuetable">Generic residue number tables</a></li>
-            <li class="dropdown-submenu">
-                <a tabindex="0" href="#">Genetic variants</a>
-                <ul class="dropdown-menu">
-                  <li><a href="{{ hosts.gpcr }}/mutational_landscape/statistics">Variation coverage</a></li>
-                  <li><a href="{{ hosts.gpcr }}/mutational_landscape">Receptor variants</a></li>
-                  <li><a href="{{ hosts.gpcr }}/mutational_landscape/economicburden">Estimated economic burden</a></li>
-                </ul>
-            </li>
-            <li><a href="{{ hosts.gpcr }}/protein/isoforms">Isoforms</a></li>
+            <li><a href="{{ hosts.gpcr }}/residue/residuetable">Generic residue number tables <button type="button" class="refLink pull-right btn btn-xs btn-default" keys="10.1016/j.tips.2014.11.001"><span class="glyphicon glyphicon-book"></span></button></a></li>
+            <li><a href="{{ hosts.gpcr }}/mutational_landscape/pgxdb">Genetic variants</a></li>
+            <li><a href="{{ hosts.gpcr }}/protein/isoforms">Isoforms <button type="button" class="refLink pull-right btn btn-xs btn-default" keys="10.1038/s41586-020-2839-z"><span class="glyphicon glyphicon-book"></span></button></a></li>
 
             <!-- SEQUENCE COMPARISON -->
             <li class="divider"></li>
             <li class="nav-header disabled text-left"><a>SEQUENCE ANALYSIS</a></li>
             <li class="dropdown-submenu">
-                <a tabindex="0" href="#">Receptor similarity</a>
+                <a tabindex="0" href="#">Receptor similarity <button type="button" class="refLink pull-right btn btn-xs btn-default" keys="10.1093/nar/gkv1178"><span class="glyphicon glyphicon-book"></span></button></a>
                 <ul class="dropdown-menu">
                     <li><a href="{{ hosts.gpcr }}/similaritysearch/referenceselection">BLAST (GPCRdb alignment)
                         <button mp4="https://files.gpcrdb.org/video/sequences2.mp4" type="button"
@@ -61,20 +61,21 @@
                     <li><a href="{{ hosts.gpcr }}/similaritymatrix/targetselection">Similarity matrix (all-to-all)</a></li>
                 </ul>
             </li>
-            <li><a href="{{ hosts.gpcr }}/sitesearch/targetselection">Site search (by seq. motif)</a></li>
+            <li><a href="{{ hosts.gpcr }}/sitesearch/targetselection">Site search (by seq. motif) <button type="button" class="refLink pull-right btn btn-xs btn-default" keys="10.1093/nar/gkv1178"><span class="glyphicon glyphicon-book"></span></button></a></li>
 
             <!-- STRUCTURES -->
             <li class="divider"></li>
             <li class="nav-header disabled text-left"><a>STRUCTURES</a></li>
             <li><a href="{{ hosts.gpcr }}/structure/statistics">Structure coverage
+                <button type="button" class="refLink pull-right btn btn-xs btn-default" keys="10.1093/nar/gkv1178"><span class="glyphicon glyphicon-book"></span></button>
                 <button mp4="https://files.gpcrdb.org/video/structures1.mp4" type="button"
                         class="videoLink pull-right btn btn-xs btn-default">
                     <span class="glyphicon glyphicon-film"></span>
                 </button>
             </a></li>
-            <li><a href="{{ hosts.gpcr }}/structure">Structures</a></li>
-            <li><a href="{{ hosts.gpcr }}/structure/homology_models">Structure models (receptor)</a></li>
-            <li><a href="{{ host.gpcr }}/structure/ligand_complex_models">Structure models (ligand complexes)</a></li>
+            <li><a href="{{ hosts.gpcr }}/structure">Structures <button type="button" class="refLink pull-right btn btn-xs btn-default" keys="10.1093/nar/gkt1255|10.1093/nar/gkaa1080"><span class="glyphicon glyphicon-book"></span></button></a></li>
+            <li><a href="{{ hosts.gpcr }}/structure/homology_models">Structure models (receptor) <button type="button" class="refLink pull-right btn btn-xs btn-default" keys="10.1093/nar/gkae1065|10.1093/nar/gkac1013"><span style="color:blueviolet" class="glyphicon glyphicon-book"></span></button></a></li>
+            <li><a href="{{ host.gpcr }}/structure/ligand_complex_models">Structure models (ligand complexes) <button type="button" class="refLink pull-right btn btn-xs btn-default" keys="10.1093/nar/gkae1065"><span style="color:blueviolet" class="glyphicon glyphicon-book"></span></button></a></li>
             <!-- <li><a href="{{ hosts.gpcr }}/structure/model_statistics">Structure model validation</a></li> -->
             {#  DEPRECATED FOR NOW #}
             {#  <li><a href="{{ hosts.gpcr }}/structure/template_selection">Template selection</a></li> #}
@@ -82,16 +83,16 @@
             <!-- STRUCTURE COMPARISON -->
             <li class="divider"></li>
             <li class="nav-header disabled text-left"><a>STRUCTURE ANALYSIS</a></li>
-            <li><a href="{{ hosts.gpcr }}/structure_comparison/comparative_analysis">Structure comparison tool</a></li>
-            <li><a href="{{ hosts.gpcr }}/structure_comparison/structure_clustering">Structure similarity trees</a></li>
-            <li><a href="{{ hosts.gpcr }}/structure/superposition_workflow_index/true">Structure superposition</a></li>
+            <li><a href="{{ hosts.gpcr }}/structure_comparison/comparative_analysis">Structure comparison tool <button type="button" class="refLink pull-right btn btn-xs btn-default" keys="10.1038/s41594-021-00675-6"><span class="glyphicon glyphicon-book"></span></button></a></li>
+            <li><a href="{{ hosts.gpcr }}/structure_comparison/structure_clustering">Structure similarity trees <button type="button" class="refLink pull-right btn btn-xs btn-default" keys="10.1038/s41594-021-00675-6"><span class="glyphicon glyphicon-book"></span></button></a></li>
+            <li><a href="{{ hosts.gpcr }}/structure/superposition_workflow_index/true">Structure superposition <button type="button" class="refLink pull-right btn btn-xs btn-default" keys="10.1093/nar/gkv1178"><span class="glyphicon glyphicon-book"></span></button></a></li>
             {#  NOTE: we need the spacing here to keep all elements including icons in a single line #}
-            <li><a href="{{ hosts.gpcr }}/structure/generic_numbering_index">Generic residue numbering (PDB)&nbsp;&nbsp;&nbsp;&nbsp;</a></li>
-            <li><a href="{{ host.gpcr }}/structure/structure_similarity_search">Structure similarity search</a></li>
+            <li><a href="{{ hosts.gpcr }}/structure/generic_numbering_index">Generic residue numbering (PDB) <button type="button" class="refLink pull-right btn btn-xs btn-default" keys="10.1093/nar/gkv1178|10.1016/j.tips.2014.11.001"><span class="glyphicon glyphicon-book"></span></button></a></li>
+            <li><a href="{{ host.gpcr }}/structure/structure_similarity_search">Structure similarity search <button type="button" class="refLink pull-right btn btn-xs btn-default" keys="10.1093/nar/gkae1065"><span class="glyphicon glyphicon-book"></span></button></a></li>
 
             <!-- STRUCTURE CONSTRUCTS -->
             <li class="divider"></li>
-            <li class="nav-header disabled text-left"><a>STRUCTURE CONSTRUCTS</a></li>
+            <li class="nav-header disabled text-left"><a>STRUCTURE CONSTRUCTS  <button type="button" class="refLink pull-right btn btn-xs btn-default" keys="10.1038/s41592-018-0292-4"><span class="glyphicon glyphicon-book"></span></button></a></li>
             <li class="dropdown-submenu">
                 <a tabindex="0" href="#">Construct/Experiment design</a>
                 <ul class="dropdown-menu">
@@ -125,8 +126,8 @@
             <!-- DETERMINANTS & MUTATIONS -->
             <li class="divider"></li>
             <li class="nav-header disabled text-left"><a>DETERMINANTS & MUTATIONS</a></li>
-            <li><a href="{{ hosts.gpcr }}/seqsign">Sequence signature tool</a></li>
-            <li><a href="{{ hosts.gpcr }}/mutations/state_stabilizing">State stabilizing mutation design</a></li>
+            <li><a href="{{ hosts.gpcr }}/seqsign">Sequence signature tool <button type="button" class="refLink pull-right btn btn-xs btn-default" keys="10.1093/nar/gkaa1080"><span class="glyphicon glyphicon-book"></span></button></a></a></li>
+            <li><a href="{{ hosts.gpcr }}/mutations/state_stabilizing">State stabilizing mutation design <button type="button" class="refLink pull-right btn btn-xs btn-default" keys="10.1038/s41594-021-00636-y"><span class="glyphicon glyphicon-book"></span></button></a></li>
         </ul>
 </li>
 
@@ -156,27 +157,64 @@
     </a>
     <ul class="dropdown-menu" role="menu">
         <li class="nav-header disabled"><a>LIGANDS & BIOACTIVITIES</a></li>
-        <li><a href="{{ hosts.gpcr }}/ligand/coverage">Ligand coverage</a></li>
+        <li><a href="{{ hosts.gpcr }}/ligand/coverage">Ligand coverage <button type="button" class="refLink pull-right btn btn-xs btn-default" keys="10.1093/nar/gkac1013|10.1093/nar/gkx1109"><span class="glyphicon glyphicon-book"></span></button></a></li>
         <!-- <li><a href="{{ hosts.gpcr }}/ligand">Ligands (ChEMBL, GtP, Ki db)<a/></li> -->
         <li class="dropdown-submenu">
             <a tabindex="0" href="#">Ligands (ChEMBL, GtP, Ki db)</a>
             <ul class="dropdown-menu">
-                <li><a href="{{ hosts.gpcr }}/ligand">Ligands (by receptor query)</a></li>
-                <li><a href="{{ hosts.gpcr }}/ligand/ligand_by_name">Ligands (by ligand query)</a></li>
+                <li><a href="{{ hosts.gpcr }}/ligand">Ligands (by receptor query) <button type="button" class="refLink pull-right btn btn-xs btn-default" keys="10.1093/nar/gkac1013|10.1093/nar/gkx1109"><span class="glyphicon glyphicon-book"></span></button></a></li>
+                <li><a href="{{ hosts.gpcr }}/ligand/ligand_by_name">Ligands (by ligand query) <button type="button" class="refLink pull-right btn btn-xs btn-default" keys="10.1093/nar/gkae1065"><span class="glyphicon glyphicon-book"></span></button></a></li>
                 {% comment %} <li><a href="{{ hosts.gpcr }}/ligand/ligand_by_smiles">Similarity and substructure search</a></li> {% endcomment %}
                 <!-- <li><a href="{{ hosts.gpcr }}/ligand/ligand_by_structure">Ligands (by structure)</a></li> -->
             </ul>
         </li>
         <li class="divider"></li>
         <li class="nav-header disabled"><a>PHYSIOLOGICAL LIGANDS</a></li>
-        <li><a href="{{ hosts.gpcr }}/ligand/physiological_ligands">Physiological ligands (GtP)</a></li>
+        <li><a href="{{ hosts.gpcr }}/ligand/physiological_ligands">Physiological ligands (GtP) <button type="button" class="refLink pull-right btn btn-xs btn-default" keys="10.1093/nar/gkac1013"><span class="glyphicon glyphicon-book"></span></button></a></li>
         <li class="divider"></li>
-        <li class="nav-header disabled"><a>DRUGS & AGENTS IN TRIAL</a></li>
-        <li><a href="{{ hosts.gpcr }}/drugs/drugbrowser">Drugs, targets <span>&#38;</span> indications</a></li>
+        <li class="nav-header disabled"><a>DRUGS & AGENTS IN TRIAL  <span class="new-menu-item">New</span> <button type="button" class="refLink pull-right btn btn-xs btn-default" keys="10.1038/S44386-025-00010-9"><span class="glyphicon glyphicon-book"></span></button></a></li>
+
+        <li class="dropdown-submenu">
+            <a tabindex="0" href="#">Agents/drugs</a>
+            <ul class="dropdown-menu">
+                <li><a href="{{ hosts.gpcr }}/drugs/drug_selection">Agent/drug page</a></li>
+                <li><a href="{{ hosts.gpcr }}/drugs/drugs_venn">Agents/drugs by phase I-IV</a></li>
+            </ul>
+        </li>
+        <li class="dropdown-submenu">
+            <a tabindex="0" href="#">Targets</a>
+            <ul class="dropdown-menu">
+                <li><a href="{{ hosts.gpcr }}/drugs/target_selection">Target page</a></li>
+                <li><a href="{{ hosts.gpcr }}/drugs/targets_venn">Targets by phase I-IV</a></li>
+                <li><a href="{{ hosts.gpcr }}/drugs/overview">The drugged GPCRome</a></li>
+                <li><a href="{{ hosts.gpcr }}/drugs/TargetSelectionTool">Target selection tool</a></li>
+            </ul>
+        </li>
+        <li class="dropdown-submenu">
+            <a tabindex="0" href="#">Diseases</a>
+            <ul class="dropdown-menu">
+                <li><a href="{{ hosts.gpcr }}/drugs/indication_selection">Disease page</a></li>
+                <li><a href="{{ hosts.gpcr }}/drugs/disease_overview">Disease overview</a></li>
+            </ul>
+        </li>
+        <li class="divider"></li>
+        <!-- <li><a href="{{ hosts.gpcr }}/drugs/drugbrowser">Drugs, targets <span>&#38;</span> indications</a></li>
         <li><a href="{{ hosts.gpcr }}/drugs/drugmapping">Drug target tree</a></li>
         <li><a href="{{ hosts.gpcr }}/drugs/drugstatistics">Drug statistics</a></li>
         <li class="divider"></li>
+        <li class="nav-header disabled"><a>New Drugs tabs</a></li>
 
+        <li class="dropdown-submenu">
+            <a tabindex="0" href="#">Drugs, Indications & Targets</a>
+            <ul class="dropdown-menu">
+                <li><a href="{{ hosts.gpcr }}/drugs/DrugsIndicationsTargets">Drugs, Indications & Targets</a></li>
+                <li><a href="{{ hosts.gpcr }}/drugs/Drugs">Drugs</a></li>
+                <li><a href="{{ hosts.gpcr }}/drugs/Indications">Indications</a></li>
+                <li><a href="{{ hosts.gpcr }}/drugs/Targets">Targets</a></li>
+            </ul>
+        </li>
+        <li><a href="{{ hosts.gpcr }}/drugs/TargetSelectionTool">Target Selection Tool</a></li>
+        <li class="divider"></li> -->
         <!-- DEPRECATED FUNCTION
           <li class="nav-header disabled text-left"><a>Structures</a></li>
           <li>
@@ -193,6 +231,7 @@
         <li class="nav-header disabled text-left"><a>LIGAND SITES</a></li>
 
         <li><a href="{{ hosts.gpcr }}/interaction">GPCR-ligand interactions
+            <button type="button" class="refLink pull-right btn btn-xs btn-default" keys="10.1093/nar/gkv1178|10.1016/j.coph.2016.07.007"><span class="glyphicon glyphicon-book"></span></button>
             <button mp4="https://files.gpcrdb.org/video/interactions1.mp4" type="button"
                     class="videoLink pull-right btn btn-xs btn-default">
                 <span class="glyphicon glyphicon-film"></span>
@@ -200,9 +239,9 @@
         </a></li>
 
         <li class="dropdown-submenu">
-            <a tabindex="0" href="#">Site search</a>
+            <a tabindex="0" href="#">Site search <button type="button" class="refLink pull-right btn btn-xs btn-default" keys="10.1093/nar/gkv1178"><span class="glyphicon glyphicon-book"></span></button></a>
             <ul class="dropdown-menu">
-              <li><a href="{{ hosts.gpcr }}/sitesearch/targetselection">Site search (by seq. motif)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</a></li>
+              <li><a href="{{ hosts.gpcr }}/sitesearch/targetselection">Site search (by seq. motif)</a></li>
               <li><a href="{{ hosts.gpcr }}/sitesearch/targetselectionpdb">Site search (by ligand complex)
                   <button mp4="https://files.gpcrdb.org/video/interactions2.mp4" type="button"
                           class="videoLink pull-right btn btn-xs btn-default">
@@ -214,7 +253,7 @@
 
         <!-- MUTATIONS -->
         <li class="divider"></li>
-        <li class="nav-header disabled text-left"><a>LIGAND SITE MUTATIONS</a></li>
+        <li class="nav-header disabled text-left"><a>LIGAND SITE MUTATIONS <button type="button" class="refLink pull-right btn btn-xs btn-default" keys="10.1016/j.coph.2016.07.007"><span class="glyphicon glyphicon-book"></span></button></a></li>
         <li><a href="{{ hosts.gpcr }}/mutations/statistics">Mutation coverage</a></li>
         <li><a href="{{ hosts.gpcr }}/mutations">Mutations
             <button mp4="https://files.gpcrdb.org/video/mutations1.mp4" type="button"

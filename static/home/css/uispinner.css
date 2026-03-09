@@ -1,0 +1,85 @@
+﻿/* uispinner.css — generic “busy button” styles */
+
+/* Defaults (override these in your own theme if you want) */
+:root {
+  --ui-spinner-size: 16px;
+  --ui-spinner-border: 2px;
+  --ui-spinner-track: rgba(0, 0, 0, 0.25);
+  --ui-spinner-head: rgba(0, 0, 0, 0.7);
+  --ui-spinner-speed: 0.8s;
+  --ui-spinner-dim: 0.45; /* how much to fade the label while busy */
+}
+
+/* Any element that can host a spinner should get `.has-spinner` */
+.has-spinner { position: relative; }
+
+/* The spinner element itself. It’s added/removed by JS (or you can inline it). */
+.btn-spinner {
+  display: none;
+  width: var(--ui-spinner-size);
+  height: var(--ui-spinner-size);
+  border: var(--ui-spinner-border) solid var(--ui-spinner-track);
+  border-top-color: var(--ui-spinner-head);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 1;
+  animation: uiSpin var(--ui-spinner-speed) linear infinite;
+  position: absolute; /* positioning defaults to centered overlay; variants below */
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* Busy state */
+.has-spinner.is-busy > .btn-spinner { display: inline-block; }
+
+/* Dim any direct child that is *not* the spinner while busy */
+.has-spinner.is-busy > *:not(.btn-spinner) { opacity: var(--ui-spinner-dim); }
+
+/* Position variants (opt-in via data attributes) */
+
+/* Right aligned (e.g., in Bootstrap buttons) */
+.has-spinner[data-spinner-pos="right"] > .btn-spinner {
+  right: 8px;
+  left: auto;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* Inline (takes flow space next to text) */
+.has-spinner[data-spinner-pos="inline"] > .btn-spinner {
+  position: static;
+  margin-left: .5em;
+  transform: none;
+}
+
+/* Size variants (opt-in) */
+.has-spinner[data-spinner-size="sm"]  {
+  --ui-spinner-size: 12px;
+  --ui-spinner-border: 2px;
+}
+
+.has-spinner[data-spinner-size="lg"]  {
+  --ui-spinner-size: 20px;
+  --ui-spinner-border: 3px;
+}
+
+.has-spinner[data-spinner-size="xl"]  {
+  --ui-spinner-size: 24px;
+  --ui-spinner-border: 3px;
+}
+
+/* Dark theme variant (optional) */
+.has-spinner[data-spinner-theme="light"] {
+  --ui-spinner-track: rgba(255, 255, 255, 0.35);
+  --ui-spinner-head:  rgba(255, 255, 255, 0.95);
+}
+
+@keyframes uiSpin { 
+  to { transform: translate(-50%, -50%) rotate(360deg); } 
+}
+
+/* ---- Friendly defaults for DataTables buttons ---- */
+.dt-button {
+  position: relative;
+}

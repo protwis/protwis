@@ -384,7 +384,7 @@ def get_sdf_ligand_from_cache(comp_id):
         comp_id = pdb_refs[comp_id]
     url = 'https://files.rcsb.org/ligands/download/$index'
     cache_dir = ["pdbe", 'sdf_models']
-    comp_id += '_model.sdf'
+    comp_id += '_ideal.sdf'
     data = fetch_from_web_api(url, comp_id, cache_dir, raw=True)
     mol = AllChem.MolFromMolBlock(data)
     # AllChem.AssignStereochemistryFrom3D(mol) #FOR PYTHON 3

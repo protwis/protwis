@@ -77,59 +77,63 @@
         -> generic numbers
 
  -->
+<div style="position: absolute; left: 0px;">
 <table id='test'>
     <tr>
         <!-- static column -->
-        <td>
-            <div class="ali-first-scroll-div"></div>
-            <div class="ali-first-col-div">
-                <table>
-                    <tr>
-                        <td class="ali-td ali-td-first-col" width='260px'>{% include 'signature_left_panel.html' %}</td>
-                    </tr>
-                    <tr>
-                        <td class="ali-td ali-td-first-col" width='260px'>{% include 'signature_aln_pos_left_panel.html' %}</td>
-                    </tr>
-                    <tr>
-                        <td class="ali-td ali-td-first-col" width='260px'>{% include 'signature_aln_neg_left_panel.html' %}</td>
-                    </tr>
-                    <tr>
-                        <td class="ali-td ali-td-first-col" width='260px'>{% include 'signature_zscores_left_panel.html' %}</td>
-                    </tr>
-                </table>
-            </div>
-        </td>
-
-        <!-- scrollable column -->
-        <td>
-            <div class="ali-scroll-div">
-                <div class="internal-scroll-div">
-                    &nbsp;
-                </div>
-            </div>
-            <div class="ali-main-div">
-                <div class="dynamic-div">
-                    <table class="displayTableAfterLoad">
+        <td style="position:relative;">
+            <div class="ali-first-container">
+                <div class="ali-first-scroll-div"></div>
+                <div class="ali-first-col-div">
+                    <table>
                         <tr>
-                            <td>{% include 'signature_right_panel.html' %}</td>
+                            <td class="ali-td ali-td-first-col">{% include 'signature_left_panel.html' %}</td>
                         </tr>
                         <tr>
-                            <td>{% include 'signature_aln_pos_right_panel.html' %}</td>
+                            <td class="ali-td ali-td-first-col">{% include 'signature_aln_pos_left_panel.html' %}</td>
                         </tr>
                         <tr>
-                            <td>{% include 'signature_aln_neg_right_panel.html' %}</td>
+                            <td class="ali-td ali-td-first-col">{% include 'signature_aln_neg_left_panel.html' %}</td>
                         </tr>
                         <tr>
-                            <td>{% include 'signature_zscores_right_panel.html' %}</td>
+                            <td class="ali-td ali-td-first-col">{% include 'signature_zscores_left_panel.html' %}</td>
                         </tr>
                     </table>
                 </div>
             </div>
+        </td>
 
+        <!-- scrollable column -->
+        <td style="position:relative;">
+            <div class="ali-scroll-container"">
+                <div class="ali-scroll-div">
+                    <div class="internal-scroll-div">
+                        &nbsp;
+                    </div>
+                </div>
+                <div class="ali-main-div">
+                    <div class="dynamic-div">
+                        <table class="displayTableAfterLoad">
+                            <tr>
+                                <td>{% include 'signature_right_panel.html' %}</td>
+                            </tr>
+                            <tr>
+                                <td>{% include 'signature_aln_pos_right_panel.html' %}</td>
+                            </tr>
+                            <tr>
+                                <td>{% include 'signature_aln_neg_right_panel.html' %}</td>
+                            </tr>
+                            <tr>
+                                <td>{% include 'signature_zscores_right_panel.html' %}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </td>
     </tr>
 </table>
-
+</div>
 
 <!-- sequence alignment ends -->
 {% endblock %}
@@ -161,13 +165,26 @@
 
     <!-- increase browser drawing performance for displaying (larger) alignments -->
     <script>
-      $(document).ready(function () {
-        $('.displayTableAfterLoad').css("display", "table");
-        $('.internal-scroll-div').css('width', $('.dynamic-div').outerWidth() );
-      });
+        $(document).ready(function () {
+            $('.displayTableAfterLoad').css("display", "table");
+            $('.internal-scroll-div').css('width', $('.ali-main-div').outerWidth()-2*($('.ali-first-container').outerWidth()));
+            $('.ali-scroll-container').css('width', $('#navbar').outerWidth() - $('.ali-first-container').outerWidth());
+            $( window ).on( "resize", function() {
+                $('.ali-scroll-container').css('width', $('#navbar').outerWidth() - $('.ali-first-container').outerWidth());
+            });
+            $('#cutoff-apply').on("click", function() {
+                setTimeout(function(){
+                    $('.internal-scroll-div').css('width', $('#signature-table').outerWidth());
+                    console.log($('#signature-table').outerWidth());
+                }, 10);
+            });
+            $('#cutoff-val').on("keypress", function() {
+                setTimeout(function(){
+                    $('.internal-scroll-div').css('width', $('#signature-table').outerWidth());
+                }, 10);
+            });
+            ApplyCutoff(40);
+        });
 
-      $(window).on("load", function () {
-          ApplyCutoff(40);
-      });
     </script>
 {% endblock %}

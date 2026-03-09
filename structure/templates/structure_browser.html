@@ -3,428 +3,166 @@
 {% load structure_extras %}
 
 {% block addon_css %}
-    <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
-    <link rel="stylesheet" href="{% static 'home/css/construct_browser.css' %}" type="text/css" />
-    <link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css" />
-    <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
-    <link rel="stylesheet" href="{% static 'home/css/structure_browser.css' %}" type="text/css" />
-    <link href="{% static 'home/css/construct_alignment.css' %}" rel="stylesheet">
-    <link href="{% static 'home/css/sequenceviewer.css' %}" rel="stylesheet">
-    <link href="{% static 'home/css/modal.css' %}" rel="stylesheet">
-    <link rel="stylesheet" type="text/css" href="{% static 'home/css/jquery.powertip.css' %}" />
-    <style>
-      /*Structure preview in tooltip*/
-      pre {
-          display: block;
-          font: 100% "Courier New", Courier, monospace;
-          padding: 10px;
-          border: 1px solid #bae2f0;
-          background: #e3f4f9;
-          margin: .5em 0;
-          overflow: auto;
-          width: 800px;
-      }
+  <link rel="stylesheet" href="{% static 'home/css/construct_browser.css' %}" type="text/css" />
+  <link rel="stylesheet" href="{% static 'home/css/structure_browser.css' %}" type="text/css" />
+  <link href="{% static 'home/css/sequenceviewer.css' %}" rel="stylesheet">
+  <link href="{% static 'home/css/modal.css' %}" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="{% static 'home/css/jquery.powertip.css' %}" />
+  <link rel="stylesheet" href="{% static 'home/css/NewDrugsBrowser_datatables.min.css' %}" type="text/css"/>
+  <link rel="stylesheet" href="{% static 'home/css/select2_4.1.0-rc.0._full.css' %}" type="text/css">
+  <link rel="stylesheet" href="{% static 'home/css/BusyLoad.css' %}" type="text/css">
+  <link rel="stylesheet" href="{% static 'home/css/structure_browser_modern.css' %}" type="text/css">
+{% endblock %}
 
-      #struct {
-          display: none;
-          position: absolute;
-          z-index: 100;
-          border: 1px;
-          background-color: white;
-          border-style: solid;
-          border-width: 1px;
-          padding: 3px;
-      }
-    </style>
+{% block content %}
+<div id="browser">
+  <div class="container" id="StructureBrowserContainer" style="margin-top: 15px; position: absolute; left: 0px; width: 100%;">
+    <div id="Init_loader"></div>
+
+    <div class="col-md-12" id="StructureBrowserTableContainer" style="display: none">
+      <div>
+        <table width="100%" class="display compact" id="StructureBrowserTable">
+          <thead>
+            <!-- Dummy Header Row for Complex Header Fix -->
+            <tr>
+              <th colspan="33" style="text-align: center" data-dt-order="disable"></th>
+            </tr>
+
+            <!-- Super Header Row -->
+            <tr style="padding-top: 10px; font-size: 14px; white-space: nowrap;">
+              <th colspan="6" style="text-align:Left;" data-dt-order="disable">RECEPTOR</th>
+              <th colspan="3" style="text-align:Left;border-left: 1px solid #cccccc;" data-dt-order="disable">CLASSIFICATION</th>
+              <th colspan="8" style="text-align:Left;border-left: 1px solid #cccccc;" data-dt-order="disable">STRUCTURE</th>
+              <th colspan="4" style="text-align:Left;border-left: 1px solid #cccccc;" data-dt-order="disable">SIGNAL PROTEIN</th>
+              <th colspan="2" style="text-align:Left;border-left: 1px solid #cccccc;" data-dt-order="disable">AUXILIARY PROTEIN</th>
+              <th colspan="3" style="text-align:Left;border-left: 1px solid #cccccc;" data-dt-order="disable">STRUCTURE LIGAND</th>
+              <th colspan="2" style="text-align:Left;border-left: 1px solid #cccccc;min-width: 220px;" data-dt-order="disable">PHYSIOLOGICAL LIGAND</th>
+              <th colspan="2" style="text-align:Left;border-left: 1px solid #cccccc;" data-dt-order="disable">SODIUM ION SITE</th>
+              <th colspan="3" style="text-align:Left;border-left: 1px solid #cccccc;" data-dt-order="disable">REFERENCE</th>
+            </tr>
+
+            <!-- Titles Row -->
+            <tr>
+              <th style="text-align: center;" data-dt-order="disable"><input type="checkbox" id="select-all"></th>
+              <th class="gpcrdb-col text-center" data-dt-order="disable">GPCRdb</th>
+              <th style="text-align: center;">Gene</th>
+              <th style="text-align: center;">
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 2px;">
+                  <div>UniProt</div>
+                  <div><button class="icon-button" type="button" id="uniprot_copy"><i class="glyphicon glyphicon-export uniprot-export"></i></button></div>
+                </div>
+              </th>
+              <th style="text-align: center;">IUPHAR</th>
+              <th style="text-align: center;">ID</th>
+
+              <th style="text-align: center;">Receptor family</th>
+              <th style="text-align: center;">Class</th>
+              <th style="text-align: center;">Species</th>
+
+              <th style="text-align: center;">Method</th>
+              <th style="text-align: center;">
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 2px;">
+                  <div>PDB</div>
+                  <div><button class="icon-button" type="button" id="pdb_copy"><i class="glyphicon glyphicon-export pdb-export"></i></button></div>
+                </div>
+              </th>
+              <th style="text-align: center;">Refined<br>structure <a href="https://docs.gpcrdb.org/structures.html#refined-structures" target="_blank" class="icon-button" title="Read more"><i class="glyphicon glyphicon-book"></i></a></th>
+              <th style="text-align: center;">Resolution</th>
+              <th style="text-align: center;">Preferred<br>chain</th>
+              <th style="text-align: center;">State<br>
+                <span class="glyphicon glyphicon-info-sign"
+                      data-html="true" data-toggle="popover" data-trigger="hover" data-placement="bottom"
+                      data-content="<b>GPCR structure state classification</b><br>GPCRdb calculates a ‘degree active’ percent value for each structure. Fully inactive state structures (0% active) are defined based on a maximum Cα atom distance between class-specific residue pairs A: 11.9Å between 2x46 and 6x37, B1: 13.0Å between 2x53 and 6x42, C: 14.5Å between 2x43 and 6x39, and F: 13.0Å between 2x43 and 6x30. These distance cut-offs were defined based on the best correlation with structures reported as inactive in their publications. Fully active state structures (100% active) are defined as G protein or arrestin bound. These fully inactive and active state reference structures are used to measure the conformational similarity of and to classify all other structures into the same categories or to an intermediate state category for classes A and B1 (classes C and F have no intermediate state structures). The conformational similarity measure is based on all-to-all Cα atom distances between class-specific generic residue pairs. A few outlier structures that have a very low similarity to both inactive and active state reference structures are classified as 'Other' e.g., the structure of the platelet-activating receptor binding the antagonist foropafant."></span>
+                <a href="https://docs.gpcrdb.org/structures.html#structure-descriptors" target="_blank"><span class="glyphicon glyphicon-book icon-button"></span></a>
+              </th>
+              <th style="text-align: center;">Degree<br>active (%) <a href="https://docs.gpcrdb.org/structures.html#structure-descriptors" target="_blank" class="icon-button" title="Read more"><i class="glyphicon glyphicon-book"></i></a></th>
+              <th style="text-align: center;">% of Seq</th>
+
+              <th style="text-align: center;">Family</th>
+              <th style="text-align: center;">Subtype</th>
+              <th style="text-align: center;">Note</th>
+              <th style="text-align: center;">% of Seq</th>
+
+              <th style="text-align: center;">Fusion</th>
+              <th style="text-align: center;">Antibodies</th>
+
+              <th style="text-align: center;">Name</th>
+              <th style="text-align: center;">Type</th>
+              <th style="text-align: center;">Modality</th>
+
+              <th style="text-align: center;">Name</th>
+              <th style="text-align: center;">Type</th>
+
+              <th style="text-align: center;">D2x50<br>S3x39</th>
+              <th style="text-align: center;">Sodium in<br>structure</th>
+
+              <th style="text-align: center;">Authors</th>
+              <th style="text-align: center;">Reference</th>
+              <th style="text-align: center;">Publication date</th>
+            </tr>
+
+            <!-- Filter Row (empty; filled by filter builder) -->
+            <tr>
+                <!-- 33 empty <th> cells -->
+                <th data-dt-order="disable"></th><th data-dt-order="disable"></th><th data-dt-order="disable"></th>
+                <th data-dt-order="disable"></th><th data-dt-order="disable"></th><th data-dt-order="disable"></th>
+                <th data-dt-order="disable"></th><th data-dt-order="disable"></th><th data-dt-order="disable"></th>
+                <th data-dt-order="disable"></th><th data-dt-order="disable"></th><th data-dt-order="disable"></th>
+                <th data-dt-order="disable"></th><th data-dt-order="disable"></th><th data-dt-order="disable"></th>
+                <th data-dt-order="disable"></th><th data-dt-order="disable"></th><th data-dt-order="disable"></th>
+                <th data-dt-order="disable"></th><th data-dt-order="disable"></th><th data-dt-order="disable"></th>
+                <th data-dt-order="disable"></th><th data-dt-order="disable"></th>
+                <th data-dt-order="disable"></th><th data-dt-order="disable"></th><th data-dt-order="disable"></th>
+                <th data-dt-order="disable"></th><th data-dt-order="disable"></th>
+                <th data-dt-order="disable"></th><th data-dt-order="disable"></th>
+                <th data-dt-order="disable"></th><th data-dt-order="disable"></th><th data-dt-order="disable"></th>
+                </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="superposition-modal" class="modal">
+  <div class="modal-content">
+    <button id="close_superposition_modal" style="float:right;display:inline;" aria-hidden="true" aria-label="Close" class="close" data-dismiss="superposition-modal">&times;</button>
+    <h3>Pick reference from selection</h3>
+    <p>Superpositions structures selected in the browser to the reference checked in this table</p>
+    <br>
+    <table id="superposition_modal_table" class="display compact" width="100%">
+      <thead>
+        <tr>
+          <th></th>
+          <th>PDB</th>
+          <th>UniProt</th>
+          <th>IUPHAR</th>
+          <th>Rec. family</th>
+          <th>Class</th>
+          <th>Species</th>
+          <th>State</th>
+          <th>PDB Date</th>
+        </tr>
+      </thead>
+      <tbody><!-- populated by JS --></tbody>
+    </table>
+  </div>
+</div>
 {% endblock %}
 
 {% block addon_js %}
-    <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
-    <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
-    <script src="{% static 'home/js/select2.js' %}"> </script>
-    <script src="{% static 'home/js/gpcrdb.js' %}"></script>
-    <script src="{% static 'home/js/alignment.js' %}"> </script>
-    <script src="{% static 'home/js/browser_functions.js' %}"> </script>
-    <script src="{% static 'home/js/structure_browser.js' %}"> </script> <!-- Structure browser -->
-    <script src="{% static 'home/js/jquery.powertip.js' %}"></script>
-    <script src="{% static 'home/js/xlsx.full.min.js' %}"></script>  
+  <!-- vendor deps -->
+  <script src="{% static 'home/js/gpcrdb.js' %}"></script>
+  <script src="{% static 'home/js/alignment.js' %}"></script>
+  <script src="{% static 'home/js/browser_functions.js' %}"></script>
+  <script src="{% static 'home/js/jquery.powertip.js' %}"></script>
+  <script src="{% static 'home/js/xlsx.full.min.js' %}"></script>
+  <script src="{% static 'home/js/select2_4.1.0-rc.0_full.js' %}"></script>
+  <script src="{% static 'home/js/NewDrugsBrowser_datatables.min.js' %}"></script>
+  <script src="{% static 'home/js/NorgesDTFilterBuilder.js' %}"></script>
+  <script src="{% static 'home/js/BusyLoad.js' %}"></script>
 
-<script type="text/javascript" charset="utf-8">
-  this.compoundPreview = function () {
-
-      //Define position of the tooltip in relation to the cursor
-      xOffset = 30;
-      yOffset = -10;
-
-      $("a.struct").hover(function (e) {
-          this.t = this.title;
-          this.title = "";
-          var c = (this.t != "") ? "<br/>" + this.t : "";
-          $("body").append("<p id='struct'><img style='max-width: 200px; height: auto' src='" + this.rel + "'/>" + c + "</p>");
-          $("#struct")
-              .css("top", (e.pageY - yOffset) + "px")
-              .css("left", (e.pageX + xOffset) + "px")
-              .fadeIn("fast");
-      },
-          function () {
-              this.title = this.t;
-              $("#struct").remove();
-          });
-      $("a.struct").mousemove(function (e) {
-          $("#struct")
-              .css("top", (e.pageY - yOffset) + "px")
-              .css("left", (e.pageX + xOffset) + "px");
-      });
-  };
-    $(document).ready(function() {
-        structurebrowser();
-
-        // Activate popovers from Bootstrap
-        $("[data-toggle='popover']").popover({
-          container: 'body'
-        });
-    });
-</script>
-
-<script>
-  window.addEventListener("hashchange", updateSuperpositionButtonConfiguration, false);
-
-  // Call this function on page load to set the initial configuration
-  document.addEventListener("DOMContentLoaded", updateSuperpositionButtonConfiguration);
-
-</script>
-{% endblock %}
-
-
-{% block content %}
-
-<div id="browser">
-    <div style='width:100%; display:inline;'>
-        <div class="btn-group">
-            <a id="dlink"  style="display:none;"></a>
-            <div id="excel_table"  style2="display:none;"></div>
-            <input class="btn btn-default btn-s" type="button" id="toggle_columns_btn" value="Show hidden columns" href="javascript:void(0)">
-            <input class="btn btn-default btn-s" type="button" id="representative_btn" value="Representative structures (state & receptor)" href="javascript:void(0)" data-toggle="buttons"></input>
-        </div>
-        <div class="btn-group" style='padding-left:10px;'>
-            <label class="btn btn-default btn-s" id="align_btn" href="javascript:void(0)">
-                Align seqs
-            </label>
-            <label class="btn btn-default btn-s" id="download_btn" href="javascript:void(0)">
-                Download PDBs
-            </label>
-            <label class="btn btn-default btn-s" id="superpose_template_btn" href="javascript:void(0)">
-                Superposition
-            </label>
-            <input class="btn btn-default btn-s" type="button" onclick="GlobalTableToExcel('structures_scrollable', 'Structure data', 'GPCRdb_structures.xls')" value="Export Excel"></input>
-        </div>
-    </div>
-    <br />
-
-    <div style="padding-top: 0px; font-size: 15px; white-space: nowrap;" id="loading_div">
-    <br>Loading...
-    </div>
-
-    <!-- scrollable column -->
-    <div style='padding-top: 0px; font-size: 10px; white-space: nowrap; width:100%; overflow-y:hidden; display:inline-block;'>
-        <div id='structures_scrollable_div'>
-            <table class="display compact text-nowrap" id='structures_scrollable'>
-                <thead>
-                    <tr class='over_header over_header_row'>
-                        <th colspan=6 class="over_header">
-                            <div>
-                                <div class='overhead_text'>RECEPTOR</div>
-                            </div>
-                        </th>
-                        <th colspan=8 class="over_header flexible_over_header" id='structure_over_header' >
-                            <div>
-                                <div class='overhead_text'>STRUCTURE</div>
-                                <div class='overhead_close'>
-                                    <button type="button" class="close hide_columns" columns="6,7,8,9,10,11,12,13"  aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                                </div>
-                            </div>
-                        </th>
-                        <th colspan=4 class="over_header flexible_over_header" id='sign_prot_over_header'>
-                            <div>
-                                <div class='overhead_text'>SIGNAL PROTEIN</div>
-                                <div class='overhead_close'>
-                                    <button type="button" class="close hide_columns" columns="14,15,16,17" style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                                </div>
-                            </div>
-                        </th>
-                        <th colspan=2 class="over_header flexible_over_header" id='aux_prot_over_header'>
-                            <div>
-                                <div class='overhead_text'>AUXILIARY PROTEIN</div>
-                                <div class='overhead_close'>
-                                    <button type="button" class="close hide_columns" columns="18,19" style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                                </div>
-                            </div>
-                        </th>
-                        <th colspan=3 class="over_header flexible_over_header" id='structure_ligand_over_header'>
-                            <div>
-                                <div class='overhead_text'>STRUCTURE LIGAND</div>
-                                <div class='overhead_close'>
-                                    <button type="button" class="close hide_columns" columns="20,21,22" style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                                </div>
-                            </div>
-                        </th>
-                        <th colspan=2 class="over_header flexible_over_header" id='endo_ligand_over_header'>
-                            <div>
-                                <div class='overhead_text'>PHYSIOLOGICAL LIGAND</div>
-                                <div class='overhead_close'>
-                                    <button type="button" class="close hide_columns" columns="23,24" style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                                </div>
-                            </div>
-                        </th>
-                        <th colspan=2 class="over_header flexible_over_header" id='sodium_over_header'>
-                            <div>
-                                <div class='overhead_text'>SODIUM ION SITE</div>
-                                <div class='overhead_close'>
-                                    <button type="button" class="close hide_columns" columns="25,26" style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                                </div>
-                            </div>
-                        </th>
-                        <th colspan=3 class="over_header flexible_over_header" id='reference_over_header'>
-                            <div>
-                                <div class='overhead_text'>REFERENCE</div>
-                                <div class='overhead_close'>
-                                    <button type="button" class="close hide_columns" columns="27,28,29" style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                                </div>
-                            </div>
-                        </th>
-                        <th colspan=1 class="over_header flexible_over_header" id='annotated_over_header'>
-                            <div>
-                                <div class='overhead_text'>ANNOTATED</div>
-                                <div class='overhead_close'>
-                                    <button type="button" class="close hide_columns" columns="30," style="float:right;display:inline;" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                                </div>
-                            </div>
-                        </th>
-                    </tr>
-                    <tr class='over_header centered-header'>
-                        <th></th>
-                        <th>
-                            <div>
-                                <div>UniProt</div>
-                                <div><button class='icon-button' type='button'><i id='uniprot_copy' class="glyphicon glyphicon-export uniprot-export"></i></button></div>
-                            </div>
-                        </th>
-                        <th>IUPHAR</th>
-                        <th>Receptor family</th>
-                        <th>Cl.</th>
-                        <th class="rightborder">Species</th>
-                        <th>Method</th>
-                        <th>
-                            <div>
-                                <div>PDB</div>
-                                <div><button class='icon-button' type='button'><i id='pdb_copy' class="glyphicon glyphicon-export pdb-export"></i></button></div>
-                            </div>
-                        </th>
-                        <th>Refined<br>structure<br><a href="https://docs.gpcrdb.org/structures.html#refined-structures" target="_blank"><span class="glyphicon glyphicon-book icon-button"></span></a></th>
-                        <th>Resolution</th>
-                        <th>Preferred<br>chain</th>
-                        <th>State<br><span class="glyphicon glyphicon-info-sign" data-html="true" data-toggle="popover" data-trigger="hover" data-placement="bottom" data-content="<b>GPCR structure state classification</b><br>GPCRdb calculates a ‘degree active’ percent value for each structure. Fully inactive state structures (0% active) are defined based on a maximum Cα atom distance between class-specific residue pairs A: 11.9Å between 2x46 and 6x37, B1: 13.0Å between 2x53 and 6x42, C: 14.5Å between 2x43 and 6x39, and F: 13.0Å between 2x43 and 6x30. These distance cut-offs were defined based on the best correlation with structures reported as inactive in their publications. Fully active state structures (100% active) are defined as G protein or arrestin bound. These fully inactive and active state reference structures are used to measure the conformational similarity of and to classify all other structures into the same categories or to an intermediate state category for classes A and B1 (classes C and F have no intermediate state structures). The conformational similarity measure is based on all-to-all Cα atom distances between class-specific generic residue pairs. A few outlier structures that have a very low similarity to both inactive and active state reference structures are classified as 'Other' e.g., the structure of the platelet-activating receptor binding the antagonist foropafant."></span><a href="https://docs.gpcrdb.org/structures.html#structure-descriptors" target="_blank"><span class="glyphicon glyphicon-book icon-button"></span></a></th>
-                        <th>Degree<br>active (%)<br><a href="https://docs.gpcrdb.org/structures.html#structure-descriptors" target="_blank"><span class="glyphicon glyphicon-book icon-button"></span></a></th>
-                        <th class="rightborder">% of Seq</th>
-                        <th>Family</th>
-                        <th>Subtype</th>
-                        <th>Note</th>
-                        <th class="rightborder">% of Seq</th>
-                        <th>Fusion</th>
-                        <th class='rightborder'>Antibodies</th>
-                        <th>Name</th>
-                        <th>Type</th>
-                        <th class="rightborder">Modality</th>
-                        <th>Name</th>
-                        <th class="rightborder">Type</th>
-                        <th>D2x50<br>S3x39</th>
-                        <th class="rightborder">Sodium in<br>structure</th>
-                        <th>Authors</th>
-                        <th>Reference</th>
-                        <th class="rightborder">PDB Date</th>
-                        <th class="rightborder"></th>
-                    </tr>
-                    <tr>
-                        <th class='no-sort checkbox_tr'><input class="select-all" type="checkbox" onclick="select_all(this)"></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th class='rightborder'></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th class='rightborder'></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th class='rightborder'></th>
-                        <th></th>
-                        <th class='rightborder'></th>
-                        <th></th>
-                        <th></th>
-                        <th class='rightborder'></th>
-                        <th></th>
-                        <th class='rightborder'></th>
-                        <th></th>
-                        <th class='rightborder'></th>
-                        <th></th>
-                        <th></th>
-                        <th class='rightborder'></th>
-                        <th class='rightborder'></th>
-                    </tr>
-
-                </thead>
-                <tbody>
-                {% for structure, coverage in structures %}
-                    {% if structure.representative %}
-                        <tr class="repr-st" model_id='{{structure.pk}}'>
-                    {% else %}
-                        <tr model_id='{{structure.pk}}'>
-                    {% endif %}
-                        <!-- Receptor -->
-                        <td class="text-center"><input class="alt" type="checkbox" id="{{ structure.pk }}"></td>
-                        <td><span><a target='_blank' href="http://www.uniprot.org/uniprot/{{ structure.protein_conformation.protein.parent.accession }}">{{ structure.protein_conformation.protein.parent.entry_short|safe }}</a></span></td>
-                        <td class='uniprot'><a target='_blank' href="/protein/{{ structure.protein_conformation.protein.parent.entry_name }}">{{ structure.protein_conformation.protein.parent.short|safe }}</a></td>
-                        <td class="expand"><span>{{ structure.protein_conformation.protein.family.parent.short|safe }}</span></td>
-                        <td class="expand" style="max-width: 30px;">{{ structure.protein_conformation.protein.family.parent.parent.parent.shorter|safe }}</td>
-                        <td class="expand">{{ structure.protein_conformation.protein.species.common_name }}</td>
-                        <!-- Structure -->
-                        <td>
-                            {{ structure.structure_type.type_short|escape }}
-                        </td>
-                        <td class="pdb text-left">
-                            <a target='_blank' href="{{ structure.pdb_code.index}}">{{ structure.pdb_code.index}}</a>
-                        </td>
-                        <td>
-                            {% if structure.refined %}
-                                <a target='_blank' href="refined/{{ structure.pdb_code.index|upper }}">{{structure.pdb_code.index}}_refined</a>
-                            {% else %}
-                            -
-                            {% endif %}
-                        </td>
-                        <td class="text-center">{{ structure.resolution|floatformat:"1" }}</td>
-                        <td class="text-center">{{ structure.preferred_chain }}</td>
-                        <td>{{ structure.state.name }}</td>
-                        <td class="text-center">{{ structure.gprot_bound_likeness|floatformat|dashwhenempty }}</td>
-                        <td class="text-center">{{ coverage }}</td>
-                        <!-- Signal protein -->
-                        <td>{{ structure.extra_proteins.all|only_one_subunit:"Alpha-Arrestin,family"|safe }}</td>
-                        {% if structure.extra_proteins.all|only_one_subunit:'Alpha-Arrestin,entry_name' in '-,None' %}
-                            <td>-</td>
-                        {% else %}
-                            <td><a target='_blank' href="/signprot/{{ structure.extra_proteins.all|only_one_subunit:'Alpha-Arrestin,entry_name' }}">{{ structure.extra_proteins.all|only_one_subunit:"Alpha-Arrestin,name"|safe }}</a></td>
-                        {% endif %}
-                        <td class='expand'>
-                            {{ structure.extra_proteins.all|only_one_subunit:"Alpha-Arrestin,note"|safe }}
-                        </td>
-                        <td>{{ structure.extra_proteins.all|only_one_subunit:"Alpha-Arrestin,coverage"|safe }}</td>
-                        <!-- Auxiliary protein -->
-                        <td class="expand">{{ structure.stabilizing_agents.all|only_fusions|linebreaksbr }}</td>
-                        <td class="expand">{{ structure.stabilizing_agents.all|only_antibodies|linebreaksbr }}</td>
-                        <!-- Structure ligand -->
-                        <td class='expand'>
-                            {% for ligand in structure.ligands.all|dictsort:"ligand_role.name" %}
-                                  {% if ligand.ligand.ambiguous_alias %}
-                                    {{ ligand.ligand.name|safe }}
-                                  {% else %}
-                                    <a class="struct" rel="http://www.ebi.ac.uk/chembl/api/data/image/{{ligand.ligand.id}}" href="/ligand/{{ligand.ligand.id}}/info" target="_blank">{{ ligand.ligand.name|safe }}</a>
-                                    <!-- {% for link in ligand.ligand.ids.all %}
-                                        <a class="external_link" href="{{ link}}" target="_blank">{{link.web_resource.name}}</a>
-                                    {% endfor %} -->
-                                  {% endif %}
-                                  <br>
-                            {% empty %}
-                            -
-                            {% endfor %}
-                        </td>
-                        <td>{{ structure.ligands.all|ligandtype|linebreaksbr }}</td>
-                        <td>{{ structure.ligands.all|ligandrole|linebreaksbr }}</td>
-                        <!-- Physiological ligand -->
-                        <td class='expand'>
-                            {% autoescape off %}
-                              {{ structure.protein_conformation.protein.parent.endogenous_gtp_set.all | endo_format }}
-                            {% endautoescape %}
-                        </td>
-                        <td>{{ structure.protein_conformation.protein.parent.endogenous_gtp_set.all.0.ligand.ligand_type|dashwhenempty }}</td>
-                        <!-- Sodium ion site -->
-                        <td>
-                            {% if structure.protein_conformation.is_sodium %}
-                            Yes
-                            {% else %}
-                            No
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if structure.sodium %}
-                            Yes
-                            {% else %}
-                            No
-                            {% endif %}
-                        </td>
-                        <!-- Reference -->
-                        <td class='expand'>
-                            {% if structure.publication.authors %}
-                            {{ structure.publication.authors}}
-                            {% else %}
-                            -
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if structure.publication %}
-                            <a target='_blank'  href="{{ structure.publication.web_link }}">
-                            {{ structure.publication.web_link.index }}
-                            </a>
-                            {% else %}
-                            -
-                            {% endif %}
-                        </td>
-                        <td>{{ structure.publication_date|date:"Y-m-d" }}</td>
-                        <!-- Annotated -->
-                        <td>
-                            {% if structure.annotated %}
-                            Yes
-                            {% else %}
-                            No
-                            {% endif %}
-                        </td>
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-    <!-- </div> -->
-</div>
-<div id="superposition-modal" class="modal">
-  <!-- Modal content -->
-    <div class="modal-content">
-        <button id="close_superposition_modal" style="float:right;display:inline;" aria-hidden="true" aria-label="Close" class="close" data-dismiss="superposition-modal">&times;</button>
-        <h3>Pick reference from selection</h3>
-        <p>Superpositions structures selected in the browser to the reference checked in this table</p>
-        <br>
-        <table id="superposition_modal_table" class="display compact" width="100%">
-            <thead>
-                <tr>
-                    <th></th>
-                    <th>PDB</th>
-                    <th>UniProt</th>
-                    <th>IUPHAR</th>
-                    <th>Rec. family</th>
-                    <th>Class</th>
-                    <th>Species</th>
-                    <th>State</th>
-                    <th>PDB Date</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- Javascript populates the table from selected rows -->
-            </tbody>
-        </table>
-    </div>
-</div>
+  <!-- our page logic (everything moved here) -->
+  <script src="{% static 'home/js/structure_browser_modern.js' %}"></script>
 {% endblock %}

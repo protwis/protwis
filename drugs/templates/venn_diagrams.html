@@ -1,0 +1,1251 @@
+{% extends "home/base.html" %}
+{% load static %}
+{% load structure_extras %}
+{% block addon_css %}
+<link rel="stylesheet" href="{% static 'home/css/select2_4.1.0-rc.0._full.css' %}" type="text/css">
+<link rel="stylesheet" href="{% static 'home/css/structure_browser.css' %}" type="text/css">
+<link rel="stylesheet" href="{% static 'home/css/NewDrugsBrowser_datatables.min.css' %}" type="text/css"/>
+<link rel="stylesheet" href="{% static 'home/css/struct_tooltip.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/uispinner.css' %}">
+<style type="text/css">
+  textarea {
+    resize: none;
+    overflow: hidden;
+  }
+  canvas#test-canvas {
+    display: none;
+  }
+  .venn-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+  }
+  #jvenn-container {
+    min-height: 300px;         /* Adjust height based on your Venn diagram size */
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    margin-left: 18%; /* Moves the container 20px to the right */
+  }
+  .border-left {
+    border-left: 1px solid #cccccc !important; /* Adjust the width and color as needed */
+  }
+  /* Centered */
+  th .dt-column-order {
+    margin-right: -12px; /* Shift the sort arrow to the right */
+  }
+  th .dt-column-title {
+    /* padding-left: 24px; */
+    display: inline-block; /* Ensure the text behaves like a block element */
+    margin-left: 24px;
+  }
+  .select2-search__field::placeholder{
+    text-align:center;
+  }
+  .select2-container--default .select2-selection--multiple{
+    overflow: hidden !important;
+  }
+  .row-count-info {
+    display: inline-block;
+    font-weight: bold;
+    color: #333;
+  }
+  .popover {
+    z-index: 9999 !important;
+  }
+  .overflow-visible {
+    overflow: visible !important;
+  }
+
+  /* Styling for tooltip */
+  .d3-tip {
+        font-family: Arial;
+        background: #eef8ff;
+        padding: 9px;
+        border: 1px;
+        border-radius: 10px;
+        color: black;
+        z-index: 5070;
+        position: absolute;
+        pointer-events: none;
+    }
+</style>
+{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="row">
+    <div class="col-md-12 text-center">
+      {% if layout == "drugs" %}
+      <p>Click a Venn number to retrieve the agents/drugs with the given clinical phase profile.</p>
+      {% else %}
+      <p>Click a Venn number to retrieve the receptors with the given clinical phase profile.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Centered Venn Diagram Row -->
+  <div class="row justify-content-center venn-row">
+    <div class="col-md-6 d-flex justify-content-center align-items-center">
+      <div id="jvenn-container">
+        <!-- Venn diagram content will render here -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Table Row (Unaffected by Flex) -->
+  <div style="font-size: 11px; white-space: nowrap; display: none;" id="table-container">
+    <div class="row mt-4">
+      <div class="col-md-12" style="margin-bottom: 50px;">
+        <table width="100%" class="display compact" id="receptor_table">
+          <thead>
+            <tr>
+              <td colspan="18" style="text-align: center" data-dt-order="disable"></td>
+            </tr>
+            <tr>
+              {% if layout == "drugs" %}
+              <th colspan="8" style="text-align:center">
+                Agents/drugs
+                <span class="glyphicon glyphicon-info-sign"
+                      data-html="true"
+                      data-toggle="popover"
+                      data-trigger="hover"
+                      data-placement="right"
+                      data-content="The three ATC columns are shown if relevant data is available."
+                      style="font-size: 14px; margin-left: 8px;">
+                </span>
+              </th>
+              <th colspan="5" style="text-align:center;border-left: 1px solid #cccccc;">Targets</th>
+              <th colspan="5" style="text-align:center;border-left: 1px solid #cccccc;">Diseases</th>
+              {% else %}
+              <th colspan="5" style="text-align:center;">Targets</th>
+              <th colspan="8" style="text-align:center">
+                Agents/drugs
+                <span class="glyphicon glyphicon-info-sign"
+                      data-html="true"
+                      data-toggle="popover"
+                      data-trigger="hover"
+                      data-placement="right"
+                      data-content="The three ATC columns are shown if relevant data is available."
+                      style="font-size: 14px; margin-left: 8px;">
+                </span>
+              </th>
+              <th colspan="5" style="text-align:center;border-left: 1px solid #cccccc;">Diseases</th>
+              {% endif %}
+            </tr>
+            <tr>
+              {% if layout == "drugs" %}
+              <th style="text-align: center;">Name</th>
+              <th style="text-align: center;">Type</th>
+              <th style="text-align: center;">Modality</th>
+              <th style="text-align: center;min-width: 130px;width: 130px;max-width: 130px;">Indication area<br>(ATC)</th>
+              <th style="text-align: center;">Indication<br>(ATC)</th>
+              <th style="text-align: center;">Indication code<br>(ATC)</th>
+              <th style="text-align: center;">
+                <div style="display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                  <span>In<br>trial</span>
+                  <span class="glyphicon glyphicon-info-sign"
+                    data-html="true"
+                    data-toggle="popover"
+                    data-trigger="hover"
+                    data-placement="right"
+                    data-content="A agent/drug is classified as in trial if it is currently undergoing clinical trials (phases I–III). If it is also listed as approved (see adjacent column), it is being repurposed."
+                    style="font-size: 14px;">
+                  </span>
+                </div>
+              </th>
+              <th style="text-align: center;">
+                <div style="display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                  <span>Approved</span>
+                  <span class="glyphicon glyphicon-info-sign"
+                    data-html="true"
+                    data-toggle="popover"
+                    data-trigger="hover"
+                    data-placement="right"
+                    data-content="A 'Yes' means the drug is approved by a regulatory agency (e.g., FDA, EMA, PMDA)."
+                    style="font-size: 14px;">
+                  </span>
+                </div>
+              </th>
+              <th style="text-align: center;border-left: 1px solid #cccccc;">Gene</th>
+              <th style="text-align: center; min-width: 90px;width: 90px;max-width: 90px;">Protein</th>
+              <th style="text-align: center;">Receptor<br>family</th>
+              <th style="text-align: center;">Ligand<br>type</th>
+              <th style="text-align: center;">Class</th>
+              <th style="text-align: center;border-left: 1px solid #cccccc">Disease area<br>(ICD11)</th>
+              <th style="text-align: center;">Disease<br>(ICD11)</th>
+              <th style="text-align: center;">Disease code<br>(ICD11)</th>
+              <th style="text-align: center;">Max<br>phase</th>
+              <th style="text-align: center;">Assoc.<br>score</th>
+              {% else %}
+              <th style="text-align: center;">Gene</th>
+              <th style="text-align: center;">Protein</th>
+              <th style="text-align: center;">Receptor<br>family</th>
+              <th style="text-align: center;">Ligand<br>type</th>
+              <th style="text-align: center;">Class</th>
+              <th style="text-align: center;border-left: 1px solid #cccccc;">Name</th>
+              <th style="text-align: center;">Type</th>
+              <th style="text-align: center;">Modality</th>
+              <th style="text-align: center;">Indication area<br>(ATC)</th>
+              <th style="text-align: center;">Indication<br>(ATC)</th>
+              <th style="text-align: center;">Indication code<br>(ATC)</th>
+              <th style="text-align: center;">
+                <div style="display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                  <span>In<br>trial</span>
+                  <span class="glyphicon glyphicon-info-sign"
+                    data-html="true"
+                    data-toggle="popover"
+                    data-trigger="hover"
+                    data-placement="right"
+                    data-content="A agent/drug is classified as in trial if it is currently undergoing clinical trials (phases I–III). If it is also listed as approved (see adjacent column), it is being repurposed."
+                    style="font-size: 14px;">
+                  </span>
+                </div>
+              </th>
+              <th style="text-align: center;">
+                <div style="display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                  <span>Approved</span>
+                  <span class="glyphicon glyphicon-info-sign"
+                    data-html="true"
+                    data-toggle="popover"
+                    data-trigger="hover"
+                    data-placement="right"
+                    data-content="A 'Yes' means the drug is approved by a regulatory agency (e.g., FDA, EMA, PMDA)."
+                    style="font-size: 14px;">
+                  </span>
+                </div>
+              </th>
+              <th style="text-align: center;border-left: 1px solid #cccccc">Disease area<br>(ICD11)</th>
+              <th style="text-align: center;">Disease<br>(ICD11)</th>
+              <th style="text-align: center;">Disease code<br>(ICD11)</th>
+              <th style="text-align: center;">Max<br>phase</th>
+              <th style="text-align: center;">Assoc.<br>score</th>
+              {% endif %}
+            </tr>
+            <tr class="filter-row">
+              {% if layout == "drugs" %}
+              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <th class="expand" style="text-align: center;border-left: 1px solid #cccccc;" data-dt-order="disable"></th>
+              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <th class="expand" style="text-align: center;border-left: 1px solid #cccccc;" data-dt-order="disable"></th>
+              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              {% else %}
+              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <th class="expand" style="text-align: center;border-left: 1px solid #cccccc;" data-dt-order="disable"></th>
+              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <th class="expand" style="text-align: center;border-left: 1px solid #cccccc;" data-dt-order="disable"></th>
+              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              {% endif %}
+            </tr>
+          </thead>
+        </table>
+        <canvas id="test-canvas"></canvas>
+      </div>
+    </div>
+  </div>
+</div> 
+{% endblock %}
+{% block addon_js %}
+<script src="{% static 'home/js/d3.min.js' %}"></script>
+<script src="{% static 'home/js/paper-full.min.js' %}"></script>
+<script src="{% static 'home/js/canvas2svg.js' %}"></script>
+<script src="{% static 'home/js/jvenn.js' %}"></script>
+<script src="{% static 'home/js/nv.d3.min.js' %}"></script>
+<script src="{% static 'home/js/select2_4.1.0-rc.0_full.js' %}"></script>
+<script src="{% static 'home/js/NewDrugsBrowser_datatables.min.js' %}"></script>
+<script src="{% static 'home/js/NorgesDTFilterBuilder.js' %}"></script>
+<script src="{% static 'home/js/selection.js' %}"></script>
+<script src="{% static 'home/js/compoundPreviewTooltip.js' %}"></script> <!-- Needed for the hover display of ligands-->
+<script src="{% static 'home/js/openchemlib-full.js' %}"></script> <!-- Dependency for the hover display of ligands-->
+<script src="{% static 'home/js/PeptideLayoutEngine.js' %}"></script>
+<script src="{% static 'home/js/xlsx.full.min.js' %}"></script>
+<script src="{% static 'home/js/uiSpinner.js' %}"></script>
+
+<script>
+  ! function($) {
+    $(function() {
+      window.prettyPrint && prettyPrint()
+    })
+  }(window.jQuery)
+</script>
+
+<script type="text/javascript">
+  window.NO_IMAGE_URL = "{% static 'home/images/No_image_available.svg' %}";
+</script>
+
+<script type="text/javascript" charset="utf-8">
+  $(document).ready(function(){
+    paper.install(window);
+    $('[data-toggle="popover"]').popover({
+      trigger: 'hover',
+      html: true,
+      container: 'body',
+      delay: { show: 100, hide: 300 } // Makes it less twitchy
+    });
+  });
+</script>
+
+<script language="Javascript">
+//   //creating a dictionary for the path translation
+  const trackTranslate = {
+    '0123': "resultC111100",  '023': "resultC101100",  '123': "resultC011100",
+    '012': "resultC111000",  '02': "resultC101000",  '12': "resultC011000",
+    '013': "resultC110100",  '03': "resultC100100",  '13': "resultC010100",
+    '01': "resultC110000",  '0': "resultC100000",  '1': "resultC010000",
+    '23': "resultC001100", '2': "resultC001000", '3': "resultC000100"
+  };
+
+$(document).ready(function () {
+  var colorDefault = ["#5a9bd4", "#f15a60", "#808080", "#006600"],
+  displayMode  = "classic",
+  displaySwitch = false,
+  displayStat  = false,
+  shortNumber  = true,
+  fontSize     = "16px",
+  fontFamily   = "Arial";
+
+  var gdata = {{ phases_dict|safe }};
+  var gprotein_ID = {{ phases_dict_keys|safe }};
+  var fullData = {{ Full_data|safe }};
+  const layout = "{{ layout|escapejs }}";
+
+  function getArrayFromData(gprotein) {
+    var lines = gdata[gprotein].split("\n");
+    var table = new Array();
+    for (var lindex in lines) {
+      table.push(lines[lindex].trim());
+    } return (table);
+  }
+
+  // Define the `table` variable globally so it's accessible in the `toggleGroupVisibility` function
+  let table;
+
+  function initializeDataTable(tableId, data, hideColumns = false, vennUniqueCount = null) {
+    
+    let uniqueCount = vennUniqueCount;
+    // Add common column definitions
+    var drugsColumnDefs = [
+      { 
+          className: "dt-head-center dt-center dt-body-center", 
+          targets: "_all" 
+      },
+      { 
+          targets: "_all",
+          createdCell: function (cell) {
+              // Add the 'expand' class to only td elements
+              $(cell).addClass('expand');
+          }
+      },
+      { className: 'border-left', targets: [8, 13] }
+    ];
+
+    var targetsColumnDefs = [
+      { className: "dt-head-center dt-center dt-body-center", targets: "_all" },
+      { 
+          targets: "_all",
+          createdCell: function (cell) {
+              // Add the 'expand' class to only td elements
+              $(cell).addClass('expand');
+          }
+      },
+      { className: 'border-left', targets: [5, 13] }
+    ];
+
+    // Select columns based on layout
+    const columnDefs = layout === "drugs" ? drugsColumnDefs : targetsColumnDefs;
+
+    // Define column configurations for "drugs" and "targets"
+    const drugsColumns = [
+          {
+            data: "Ligand name", name: "Name", width: "7%", render: function (data, type, row, meta) {
+                if (type === 'display') {
+                    if (row && row.LigandID) {
+                        const smilesVal = row.smiles_for_image || ""; 
+                        const picVal    = row.picture || "Not_available";
+                        const ligID     = row.LigandID;
+                        const sequenceValue = row.sequence || "";
+                        if (row['Drug type'] && typeof row['Drug type'] === 'string' && row['Drug type'].toLowerCase() === 'peptide') {
+                            if (!sequenceValue) {
+                                console.warn("Venn Peptide ligand " + data + " (LigandID: " + ligID + ") has no sequence!");
+                            }
+                            return `
+                                <a class="struct" data-ligand-type="peptide" data-sequence="${sequenceValue}" href="/ligand/${ligID}/info?tab=agent_drug" target="_blank">
+                                ${data}
+                                </a>
+                                `;
+                        } else { 
+                            return `
+                                <a class="struct"
+                                    href="/ligand/${ligID}/info?tab=agent_drug"
+                                    target="_blank"
+                                    data-smiles="${smilesVal}"
+                                    rel="${picVal}"
+                                >
+                                ${data}
+                                </a>
+                            `;
+                        }
+                    } else {
+                        return data || '';
+                    }
+                }
+                return data;
+            }
+        },
+        { data: "Drug type", name: "Type" },
+        { data: "Modality", name: "Modality" },
+        { data: 'ATC Parent Name', name: 'Indication area (ATC)', visible: !hideColumns },
+        { data: "ATC Name", name: "Indication (ATC)", visible: !hideColumns},
+        { data: 'ATC Code', name: 'Indication code (ATC)', visible: !hideColumns },
+        { data: "In trial", name: "In trial" },
+        { data: "Approved", name: "Approved" },
+        { data: "Gene name", name: "Gene", render: function (data, type, row, meta) {
+            if (type === 'display') {
+                const originalData = data; 
+                const transformedData = data.replace('_human', '').toUpperCase(); 
+                return '<a href="/protein/' + originalData + '/" target="_blank">' + transformedData + '</a>';
+            } else if (type === 'filter') {
+                return data.replace('_human', '').toUpperCase();
+            }
+            return data;
+        }},
+        { data: "Protein name", name: "Protein", width: "125px", render: function (data) { return data.replace(' receptor', ''); }},
+        {data: "Receptor family", name: "Receptor family", width: "150px", render: function (data) { return data.replace('receptors', ''); }},
+        { data: "Ligand type", name: "Ligand type", render: function (data) { return data.replace('receptors', ''); }},
+        { data: "Class", name: "Class", render: function (data) { return data.split(' (')[0].replace(/^Class /i, '').trim(); }},
+        { data: "Master Indication", name: "Disease area (ICD11)" },
+        { data: "Indication name", name: "Disease (ICD11)", render: function (data, type, row, meta) {
+            if (type === 'display') {
+                if (row && row.ICD11) {
+                    const transformedData = data || 'Unknown'; 
+                    const link = '/drugs/indication/' + row.ICD11 + '/';
+                    return '<a href="' + link + '" target="_blank">' + transformedData + '</a>';
+                } else {
+                    return data || '';
+                }
+            } else if (type === 'filter') {
+                return data || 'Unknown';
+            }
+            return data;
+        }},
+        { data: 'ICD11', name: 'Disease code (ICD11)' },
+        { data: "Phase", name: "Max phase" },
+        { data: 'Association score', name: "Association score", render: function (data) { return data === "" || data === null ? data : parseFloat(data).toFixed(4); }}
+    ];
+
+    const targetsColumns = [
+        { data: "Gene name", name: "Gene", render: function (data, type, row, meta) {
+            if (type === 'display') {
+                const originalData = data; 
+                const transformedData = data.replace('_human', '').toUpperCase(); 
+                return '<a href="/protein/' + originalData + '/" target="_blank">' + transformedData + '</a>';
+            } else if (type === 'filter') {
+                return data.replace('_human', '').toUpperCase();
+            }
+            return data;
+        }},
+        { data: "Protein name", name: "Protein" },
+        { data: "Receptor family", name: "Receptor family" },
+        { data: "Ligand type", name: "Ligand type" },
+        { data: "Class", name: "Class", render: function (data) { return data.split(' (')[0]; }},
+        {
+          data: "Ligand name", name: "Name", render: function (data, type, row, meta) {
+              if (type === 'display') {
+                  if (row && row.LigandID) {
+                      const smilesVal = row.smiles_for_image || "";
+                      const picVal    = row.picture || "Not_available";
+                      const ligID     = row.LigandID;
+                      const sequenceValue = row.sequence || "";
+                      if (row['Drug type'] && typeof row['Drug type'] === 'string' && row['Drug type'].toLowerCase() === 'peptide') {
+                           if (!sequenceValue) {
+                              console.warn("Venn Peptide ligand " + data + " (LigandID: " + ligID + ") has no sequence!");
+                          }
+                          return `
+                              <a class="struct" data-ligand-type="peptide" data-sequence="${sequenceValue}" href="/ligand/${ligID}/info?tab=agent_drug" target="_blank">
+                              ${data}
+                              </a>
+                              `;
+                      } else {
+                          return `
+                              <a class="struct"
+                                  href="/ligand/${ligID}/info?tab=agent_drug"
+                                  target="_blank"
+                                  data-smiles="${smilesVal}"
+                                  rel="${picVal}"
+                              >
+                              ${data}
+                              </a>
+                          `;
+                      }
+                  } else {
+                      return data || '';
+                  }
+              }
+              return data;
+          }
+      },
+        { data: "Drug type", name: "Type" },
+        { data: "Modality", name: "Modality" },
+        { data: 'ATC Parent Name', name: 'Indication area (ATC)', visible: !hideColumns },
+        { data: "ATC Name", name: "Indication (ATC)", visible: !hideColumns},
+        { data: 'ATC Code', name: 'Indication code (ATC)', visible: !hideColumns },
+        { data: "In trial", name: "In trial" },
+        { data: "Approved", name: "Approved" },
+        { data: "Master Indication", name: "Disease area (ICD11)" },
+        { data: "Indication name", name: "Disease (ICD11)", render: function (data, type, row, meta) {
+            if (type === 'display') {
+                if (row && row.ICD11) {
+                    const transformedData = data || 'Unknown'; 
+                    const link = '/drugs/indication/' + row.ICD11 + '/';
+                    return '<a href="' + link + '" target="_blank">' + transformedData + '</a>';
+                } else {
+                    return data || '';
+                }
+            } else if (type === 'filter') {
+                return data || 'Unknown';
+            }
+            return data;
+        }},
+        { data: 'ICD11', name: 'Disease code (ICD11)' },
+        { data: "Phase", name: "Max pahse" },
+        { data: 'Association score', name: "Association score", render: function (data) { return data === "" || data === null ? data : parseFloat(data).toFixed(4); }}
+    ];
+
+    // Select columns based on layout
+    const columns = layout === "drugs" ? drugsColumns : targetsColumns;
+
+    function getToggleButtons() {
+        const toggleCompoundsButton = {
+            text: '<span class="dt-button-check"></span> Toggle Agents/drugs',
+            className: 'dt-button-active', // Mark as active initially
+            action: function (e, dt, node, config) {
+                const indices = layout === "drugs"
+                    ? (hideColumns ? [1, 2, 6, 7] : [1, 2, 3, 4, 5, 6, 7]) // Indices for drugs layout
+                    : (hideColumns ? [6, 7, 11, 12] : [6, 7, 8, 9, 10, 11, 12]); // Indices for targets layout
+                toggleGroupVisibility(indices, $(node));
+            }
+        };
+
+        const toggleTargetsButton = {
+            text: '<span class="dt-button-check"></span> Toggle Targets',
+            className: 'dt-button-active', // Mark as active initially
+            action: function (e, dt, node, config) {
+                const indices = layout === "drugs"
+                    ? [9, 10, 11, 12] // Indices for drugs layout
+                    : [1, 2, 3, 4]; // Indices for targets layout
+                toggleGroupVisibility(indices, $(node));
+            }
+        };
+
+        // Reorder buttons dynamically based on the layout
+        if (layout === "drugs") {
+            return [toggleCompoundsButton, toggleTargetsButton];
+        } else {
+            return [toggleTargetsButton, toggleCompoundsButton];
+        }
+    }
+
+    function createSingleButtons(layout, hideColumns) {
+      const drugsGroups = {
+          'Agents/drugs': [
+              { index: 0, name: "Name" },
+              { index: 1, name: "Type" },
+              { index: 2, name: "Modality" },
+              ...(hideColumns
+                  ? [] // Exclude these columns if hideColumns is true
+                  : [
+                        { index: 3, name: "Indication area (ATC)" },
+                        { index: 4, name: "Indication (ATC)" },
+                        { index: 5, name: "Indication code (ATC)" }
+                    ]),
+              { index: 6, name: "In trial" },
+              { index: 7, name: "Approved" }
+          ],
+          Targets: [
+              { index: 8, name: "Gene" },
+              { index: 9, name: "Protein" },
+              { index: 10, name: "Receptor family" },
+              { index: 11, name: "Ligand type" },
+              { index: 12, name: "Class" }
+          ],
+          Diseases: [
+              { index: 13, name: "Disease area (ICD11)" },
+              { index: 14, name: "Disease (ICD11)" },
+              { index: 15, name: "Disease code (ICD11)" },
+              { index: 16, name: "Max phase" },
+              { index: 17, name: "Assoc. score" }
+          ]
+      };
+
+      const targetsGroups = {
+          Targets: [
+              { index: 0, name: "Gene" },
+              { index: 1, name: "Protein" },
+              { index: 2, name: "Receptor family" },
+              { index: 3, name: "Ligand type" },
+              { index: 4, name: "Class" }
+          ],
+          'Agents/drugs': [
+              { index: 5, name: "Name" },
+              { index: 6, name: "Type" },
+              { index: 7, name: "Modality" },
+              ...(hideColumns
+                  ? [] // Exclude these columns if hideColumns is true
+                  : [
+                        { index: 8, name: "Indication area (ATC)" },
+                        { index: 9, name: "Indication (ATC)" },
+                        { index: 10, name: "Indication code (ATC)" }
+                    ]),
+              { index: 11, name: "In trial" },
+              { index: 12, name: "Approved" }
+          ],
+          Diseases: [
+              { index: 13, name: "Disease area (ICD11)" },
+              { index: 14, name: "Disease (ICD11)" },
+              { index: 15, name: "Disease code (ICD11)" },
+              { index: 16, name: "Max phase" },
+              { index: 17, name: "Assoc. score" }
+          ]
+      };
+      let placeholderCounts;
+      // Define placeholder counts for each group
+      if (layout === "drugs") {
+        placeholderCounts = {
+            'Agents/drugs': (hideColumns ? 4 : 10),
+            Targets: (hideColumns ? 0 : 0),
+            Diseases: (hideColumns ? 0 : 6)
+        };
+      } else {
+        placeholderCounts = {
+            'Agents/drugs': (hideColumns ? 0 : 6),
+            Targets: (hideColumns ? 4 : 10),
+            Diseases: (hideColumns ? 0 : 6)
+        };
+      }
+      // Select the appropriate groups and placeholder counts based on the layout
+      const groups = layout === "drugs" ? drugsGroups : targetsGroups;
+
+      const buttons = [];
+
+      for (const [group, columns] of Object.entries(groups)) {
+
+        // Add the specified number of placeholders for the group
+        if (group !== "Diseases" || layout === 'drugs') {
+          const placeholdersToAdd = placeholderCounts[group] || 0; // Default to 0 if not defined
+          for (let i = 0; i < placeholdersToAdd; i++) {
+              buttons.push({
+                  text: '', // Empty button for spacing
+                  className: 'dt-placeholder',
+                  action: function () { /* No action for placeholder */ }
+              });
+          }
+        }
+        // Add a header button for the group
+        buttons.push({
+            text: `<span style="font-weight: bold; text-align: center; display: block;">${group}</span>`,
+            className: 'dt-group-header',
+            action: function () { /* No action for group headers */ }
+        });
+
+        // Add column toggle buttons for the group
+        columns.forEach(({ index, name }) => {
+            buttons.push({
+                text: name,
+                extend: 'columnToggle',
+                columns: index
+            });
+        });
+
+        // Add the specified number of placeholders for the group
+        if (group === "Diseases") {
+          const placeholdersToAdd = placeholderCounts[group] || 0; // Default to 0 if not defined
+          for (let i = 0; i < placeholdersToAdd; i++) {
+              buttons.push({
+                  text: '', // Empty button for spacing
+                  className: 'dt-placeholder',
+                  action: function () { /* No action for placeholder */ }
+              });
+          }
+        }
+      }
+      return buttons;
+    }
+    function controlTableButton(layout, hideColumns) {
+        // Define the button logic for the control table
+        return {
+            extend: 'colvis',
+            text: 'Table Control',
+            collectionLayout: 'four-column',
+            collectionTitle: 'Column Visibility',
+            buttons: [
+                ...getToggleButtons(layout, hideColumns), // Dynamic group toggle buttons (Compounds, Targets)
+                {
+                    text: '<span class="dt-button-check"></span> Toggle Diseases',
+                    action: function (e, dt, node, config) {
+                        const indices = layout === "drugs" ? [13, 15, 16, 17] : [13, 15, 16, 17];
+                        toggleGroupVisibility(indices, $(node));
+                    },
+                    className: 'dt-button-active', // Mark as active initially
+                },
+                {
+                    text: 'Restore visibility',
+                    action: function () {
+                        const excludeIndices = layout === "drugs"
+                            ? (hideColumns ? [3, 4, 5] : []) // Exclude ATC columns for drugs layout if hideColumns is true
+                            : (hideColumns ? [8, 9, 10] : []); // Exclude ATC columns for targets layout if hideColumns is true
+                        
+                        // Make all columns visible except excluded ones
+                        table.columns().every(function (index) {
+                            if (!excludeIndices.includes(index)) {
+                                this.visible(true);
+                            } else {
+                                this.visible(false);
+                            }
+                        });
+                    },
+                },
+                ...createSingleButtons(layout, hideColumns), // Include single-column toggle buttons
+            ],
+        };
+    }
+
+    const buttonsArray = [
+      {
+        text: 'Reset filters',
+        action: function (e, dt, node) {
+          UiSpinner.runWithButtonSpinner(node, () => reset_all(), { hideDelayMs: 150 });
+        }
+      },
+      controlTableButton(layout, hideColumns),
+      {
+        text: 'Export Excel',
+        name: 'exportExcel', // keep this so the helper can find the DT button
+        action: function (e, dt /*, node */) {
+          UiSpinner.runWithDtButtonSpinner(
+            dt,
+            'exportExcel:name',
+            () => ExportDataTablesToXlsx('#receptor_table', 'Targets', layout === "drugs" ? "GPCRdb_DrugsVenn.xlsx" : "GPCRdb_TargetsVenn.xlsx"),
+            { hideDelayMs: 150 }
+          );
+        }
+      }
+    ];
+
+    // Initialize or reinitialize DataTable
+    if ($.fn.DataTable.isDataTable(tableId)) {
+      const table = $(tableId).DataTable();
+
+      // Update visibility of columns if necessary
+      const atcColumnIndexes = layout === "drugs" ? [3, 4, 5] : [8, 9, 10];
+      atcColumnIndexes.forEach((index) => table.column(index).visible(!hideColumns));
+
+      // Clear existing data and add new data
+      table.clear(); // Clear all rows from the table
+      table.rows.add(data); // Add new data to the table
+      table.draw(); // Redraw the table with the new data
+
+      // Reinitialize buttons if the container exists
+      if ($('.dt-btn').length) {
+              table.buttons().destroy(); // Destroy existing buttons
+              const newButtons = new $.fn.dataTable.Buttons(table, { buttons: buttonsArray });
+              newButtons.container().appendTo('.dt-btn'); // Append new buttons
+          }
+
+      // Update the row count information
+      const totalRows = table.rows().count();
+      const rowCountText = layout === "targets"
+          ? `${uniqueCount} unique target(s) with ${totalRows} Target–agent/drug–disease rows`
+          : `${uniqueCount} unique compound(s) with ${totalRows} Agent/drug–target–disease rows`;
+      $('.row-count-info').html(`<span class="row-count">${rowCountText}</span>`);
+      // create compound preview
+      compoundPreview("a.struct");
+    } else {
+      table = $(tableId).DataTable({
+        dom: "<'row align-items-center justify-content-between overflow-visible'<'col-sm-3 dt-btn'B><'col-sm-6 text-center row-count-info'><'col-sm-3 text-end'f>>" + 
+              "<'row'<'col-sm-12'tr>>" + 
+              "<'row'<'col-sm-12'ip>>",
+          order: [0, "asc"],
+          pageLength: 20,
+          lengthMenu: [10, 20, { label: 'All', value: -1 }],
+          data: data,
+          columns: columns,
+          columnDefs: columnDefs,
+          autoWidth: false,     // Disable automatic column width calculation
+          processing: false,
+          deferRender: true,
+          paging: true,
+          scrollX: true,        // Enable horizontal scrolling
+          scrollY: "60vh",      // Enable vertical scrolling with a height of 50% of the viewport
+          scrollCollapse: true, // Allow the table to collapse vertically if data is less than `scrollY`
+          buttons: buttonsArray,
+          initComplete: function() {
+              // Use `this.api()` to get the table instance inside initComplete
+              const api = this.api(); // Access the DataTable API
+              const totalRows = api.rows().count(); // Use the API to get row count
+              const rowCountText = layout === "targets"
+                ? `${uniqueCount} unique target(s) with ${totalRows} Target–agent/drug–disease rows`
+                : `${uniqueCount} unique agent(s)/drug(s) with ${totalRows} Agent/drug–target–disease rows`;
+              $('.row-count-info').html(`<span class="row-count">${rowCountText}</span>`);
+              // create compound preview
+              compoundPreview("a.struct");
+          },
+          drawCallback: function(settings) {
+            compoundPreview("a.struct");
+          }
+      });
+    }
+    var column_filters = [];
+    const Table_selector = $(tableId).DataTable();
+    // CreateColumnFilters --> CreateColumnFilters(datatable_selector,column_number, column_range, filter_type)
+        column_filters = column_filters.concat(CreateColumnFilters(Table_selector,0,16,"Multi-select-exact"));
+        column_filters = column_filters.concat(CreateColumnFilters(Table_selector,16,2,"Range-float-vertical"));
+    // Create the filteres
+    createDropdownFilters(Table_selector,column_filters);
+  }
+
+  function reset_all() {
+    $('.select2').val(null).trigger('change');
+  }
+
+  // Define the toggleGroupVisibility function
+  function toggleGroupVisibility(indices, button) {
+    const table = $('#receptor_table').DataTable(); // Access the table instance
+    let allVisible = indices.every(index => table.column(index).visible());
+    // Toggle the visibility of all columns in the group
+    indices.forEach(index => {
+        table.column(index).visible(!allVisible);
+    });
+    // Update the checkmark for the group button
+    if (button) {
+        if (allVisible) {
+            button.removeClass('dt-button-active');
+        } else {
+            button.addClass('dt-button-active');
+        }
+    }
+  }
+
+  function updateJvenn(gprotein_ID) {
+    displaySwitch = false;
+    var seriesTable = new Array();
+    var num = 0;
+    for(var i=1; i<=gprotein_ID.length; i++) {
+      seriesTable.push({
+        name: gprotein_ID[i-1],
+        data: getArrayFromData(gprotein_ID[i-1])
+      });
+    }
+
+    var vennColors = [
+      "#f5bcbf",    // Bright Red for first circle
+      "#f17270",    // Darker Red for second circle
+      "#dd2628",    // Even darker Red for third circle
+      "#2c87c8"     // Blue for the last circle
+    ];
+    $("#jvenn-container").jvenn({
+      series: seriesTable,
+      colors: vennColors,
+      fontSize: fontSize,
+      fontFamily: fontFamily,
+      searchInput: $("#search-field"),
+      searchStatus: $("#search-status"),
+      displayMode: displayMode,
+      shortNumber: shortNumber,
+      displaySwitch: displaySwitch,
+      displayStat: displayStat,
+      exporting: true,
+      fnClickCallback: function(event) {
+        // Get the ID of the clicked element
+        const clickedId = event.target.id; // The ID of the clicked element
+        // List of IDs where columns should not be hidden
+        const filter_id_list = [
+          "resultC001100", "resultC011100", "resultC111100", "resultC101100",
+          "resultC000100", "resultC010100", "resultC110100", "resultC100100"
+        ];
+        // Check if clickedId is in the filter_id_list
+        const shouldHideATCColumns = !filter_id_list.includes(clickedId); // If not in the list, hide the columns
+        // Define the column to filter by and the values to match in that column
+        // Set filterColumn based on the layout value
+        const filterColumn = layout === "targets" ? "Gene name" : "Ligand name";
+        // set filter values
+        const filterValues = this.list;
+        // Filter the data based on the specified column and values
+        const selectedData = fullData.filter(row => filterValues.includes(row[filterColumn]));
+        // Show the table only after the search is clicked
+        $('#table-container').show();
+        // reset filters
+        reset_all();
+        // 1) Get unique count based on `this.list`
+        const uniqueFilterValues = new Set(filterValues);
+        const vennUniqueCount = uniqueFilterValues.size;
+        // Pass selected data to initializeDataTable function
+        initializeDataTable("#receptor_table", selectedData, shouldHideATCColumns,vennUniqueCount);
+      }
+    });
+
+    // Helper function to convert HEX to RGB
+    function hexToRgb(hex) {
+      // Remove the hash at the start if it's there
+      hex = hex.replace(/^#/, '');
+
+      // Parse the r, g, b values
+      var bigint = parseInt(hex, 16);
+      var r = (bigint >> 16) & 255;
+      var g = (bigint >> 8) & 255;
+      var b = bigint & 255;
+
+      return [r, g, b];
+    }
+
+    // Function to blend colors from the 'included' list
+    function blendColors(included) {
+      var totalColors = included.length;
+      var avgR = 0, avgG = 0, avgB = 0;
+
+      // Sum up the RGB components of all included colors
+      included.forEach(function(index) {
+        var [r, g, b] = hexToRgb(vennColors[index]);
+        avgR += r / totalColors;
+        avgG += g / totalColors;
+        avgB += b / totalColors;
+      });
+
+      // Ensure values are integers
+      avgR = Math.round(avgR);
+      avgG = Math.round(avgG);
+      avgB = Math.round(avgB);
+
+      // Return the blended color as an RGB string
+      return `rgb(${avgR},${avgG},${avgB})`;
+    }
+
+    var totalCount = 0;
+    $(".number-black").each(function() {
+      totalCount = totalCount + parseInt($(this).text());
+    });
+
+    var paper_paths = [];
+    paper.setup("test-canvas");
+
+    // Setup paths and apply the fill opacity for blending
+    $("#canvasEllipse svg g g").each(function(index) {
+      var transform = this.getAttribute("transform").parseTransform();
+      paper_paths[index] = new paper.Path(this.firstChild.getAttribute("d"));
+      paper_paths[index].scale(transform.scale.x, transform.scale.y);
+      paper_paths[index].translate(transform.translate.x, transform.translate.y);
+      paper_paths[index].rotate(transform.rotate.a);
+
+      // Apply solid colors initially (if needed)
+      paper_paths[index].fillColor = vennColors[index] || '#000000';
+    });
+
+    // Handle all possible combinations and overlaps
+    var sets = Array.from(Array(paper_paths.length).keys());
+    var combinations = getCombinations([...sets]);
+
+    for (var i = 0; i < combinations.length; i++) {
+      var included = combinations[i];
+      track = trackTranslate[included.join('')];
+      if (included.length > 0) {
+        var excluded = sets.filter(value => !included.includes(value));
+        var result = paper_paths[included[0]];
+
+        for (var j = 1; j < included.length; j++) {
+          result = result.intersect(paper_paths[included[j]]);
+        }
+
+        for (var j = 0; j < excluded.length; j++) {
+          result = result.subtract(paper_paths[excluded[j]]);
+        }
+
+        var svgPathElement = result.exportSVG();
+        var dPath = svgPathElement.getAttribute('d');
+
+        // Blend the colors of the overlapping circles
+        var blendedColor = blendColors(included);
+        let g = $("#canvasEllipse svg g").get(0);
+        var newElement = document.createElementNS("http://www.w3.org/2000/svg", 'path');
+        newElement.setAttribute("d", dPath);
+        newElement.setAttribute("fill-opacity", 0.5); // Adjust opacity for blending
+        newElement.style.fill = blendedColor;
+        g.appendChild(newElement);
+      }
+    }
+
+    // Update the content of labels to split into two lines
+    // Dynamically set up the labels
+    gprotein_ID.forEach((label, index) => {
+      // Split the label into the main part and the count
+      const parts = label.split(" ");
+      const mainText = parts.slice(0, -1).join(" "); // Join all except the last part
+      const count = parts[parts.length - 1]; // The last part is the count
+
+      // Dynamically set the label's HTML
+      $(`#label${index + 1}`).html(`${mainText}<br><span class="clickable-part">${count}</span>`);
+    });
+
+    // Base styles for all labels
+    const labelBaseStyles = {
+      "font-weight": "bold",
+      "text-decoration": "none", // Remove underline for the main text
+      "font-size": "18px",
+      "opacity": "1",
+      "cursor": "default", // Only the numbers are clickable
+      "transition": "color 0.3s, text-decoration 0.3s, background-color 0.3s", // Smooth transitions
+      "text-align": "center", // Center-align text
+      "line-height": "1", // Compact line spacing
+      "margin-bottom": "0", // Remove extra spacing after each element
+      "padding-bottom": "0", // Remove padding
+      // "text-shadow": "-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000" // Thin black outline
+    };
+
+    // Apply individual label styles (color and margin)
+    $("#label1").css({
+      ...labelBaseStyles,
+      "color": "#f5bcbf", // Bright Red
+      "margin-left": "-20px" // Move to the left
+    });
+
+    $("#label2").css({
+      ...labelBaseStyles,
+      "color": "#f17270", // Darker Red
+      "margin-left": "-40px" // Move further to the left
+    });
+
+    $("#label3").css({
+      ...labelBaseStyles,
+      "color": "#dd2628", // Even darker Red
+      "margin-left": "40px" // Move to the right
+    });
+
+    $("#label4").css({
+      ...labelBaseStyles,
+      "color": "#2c87c8", // Blue
+      "margin-left": "20px" // Move slightly to the right
+    });
+
+    // Style the clickable part (numbers in parentheses)
+    $(".clickable-part").css({
+      "text-decoration": "underline",
+      "text-underline-offset": "3px", // Adjust the offset to move the underline further down
+      "cursor": "pointer", // Make it look clickable
+      "font-size": "16px", // Slightly smaller font size
+      "display": "block", // Display as a block element for stacking
+      "margin-top": "5px", // Add spacing between the lines
+      "color": "black", // Set the default color to black
+    });
+
+    // Add hover effects to the clickable part, temporarily changing color and reverting to black
+    $(".clickable-part")
+      .off("mouseenter mouseleave") // Remove previous bindings
+      .on("mouseenter", function () {
+        $(this).css({
+          "color": "#0056b3", // Hover color
+          "text-decoration": "underline", // Keep underline
+        });
+      })
+      .on("mouseleave", function () {
+        $(this).css({
+          "color": "black", // Revert to black
+          "text-decoration": "underline", // Keep underline
+        });
+      });
+
+    // Attach click event to the clickable part
+    $(".clickable-part").on("click", function () {
+      // Get the phase text from the parent label, excluding the count
+      const phaseText = $(this).closest("div").clone() // Clone the element to avoid modifying the original
+          .children(".clickable-part") // Remove the count part
+          .remove()
+          .end()
+          .text()
+          .trim(); // Extract text without the count
+      const phaseCount = $(this).text().trim(); // e.g., "(XXX)"
+      // Concatenate phaseText and phaseCount to form the full phase label
+      const phaseLabel = `${phaseText} ${phaseCount}`; // e.g., "Phase I (XXXX)"
+      // Use gdata to get the newline-separated list for the phase
+      const filterValues = gdata[phaseLabel].split("\n").map((item) => item.trim());
+      // Define the column to filter by based on layout
+      const filterColumn = layout === "targets" ? "Gene name" : "Ligand name";
+      // Filter the fullData based on the selected phase's filter values
+      const selectedData = fullData.filter((row) =>
+        filterValues.includes(row[filterColumn])
+      );
+      // Determine whether to hide the ATC columns
+      const shouldHideATCColumns = phaseText !== "Phase IV";
+      // 1) Get unique count based on `this.list`
+      const uniqueFilterValues = new Set(filterValues);
+      const vennUniqueCount = uniqueFilterValues.size;
+      // Show the filtered table
+      $("#table-container").show();
+      // Reset filters
+      reset_all();
+      // Pass the filtered data to initializeDataTable function
+      initializeDataTable("#receptor_table", selectedData, shouldHideATCColumns,vennUniqueCount);
+    });
+
+    // Apply base styles to the labels
+    $(".number-black").css({
+      "font-weight": "bold",
+      "text-decoration": "underline", 
+      "text-underline-offset": "3px",/* Underline the text */
+      "font-size": "19px",
+      "opacity": "1",
+      "cursor": "pointer", // Makes the labels look clickable
+      "transition": "color 0.3s, text-decoration 0.3s, background-color 0.3s" // Smooth transitions
+    });
+
+    // Add hover effects dynamically
+    $(".number-black").off("mouseenter mouseleave") // Remove previous bindings
+      .on("mouseenter", function () {
+        $(this).css({
+          "color": "#0056b3", /* Darker blue on hover */
+          "text-decoration": "underline", 
+          "text-underline-offset": "3px",// Keep underline
+        });
+      })
+      .on("mouseleave", function () {
+        $(this).css({
+          "color": "Black", /* Reset to original blue */
+          "text-decoration": "underline", 
+          "text-underline-offset": "3px",// Keep underline
+        });
+      });
+
+    $("#label4").css({
+      "width": "auto", // This ensures the div resizes automatically based on the text length
+      "white-space": "nowrap" // Prevents the text from breaking into multiple lines
+    });
+
+    $(".number-empty").html("-");
+  }
+  // Run the update function as last part of the document ready
+  updateJvenn(gprotein_ID)
+}); // end of $(document).ready()
+
+// Transform parser
+String.prototype.parseTransform = function() {
+  	var prop = ['translate', 'matrix', 'rotate', 'skewX', 'skewY', 'scale'];
+  	var val = this.match(/(translate|matrix|rotate|skewX|skewY|scale)\(.*?\)/g);
+  	var obj = {};
+  	if (val) {
+  		for (var i = 0, length = val.length; i < length; i++) {
+  			var item = val[i];
+  			var index = item.indexOf('(');
+  			var v = item.substring(index + 1, item.length - 1).split(/\,|\s/);
+  			var n = item.substring(0, index);
+  			obj[n] = {};
+  			switch (n) {
+  				case 'translate':
+  				case 'scale':
+  					obj[n].x = +v[0] || 0;
+  					obj[n].y = +v[1] || 0;
+  					break;
+  				case 'rotate':
+  					obj[n].a = +v[0] || 0;
+  					obj[n].x = +v[1] || 0;
+  					obj[n].y = +v[2] || 0;
+  					break;
+  				case 'skewX':
+  				case 'skewY':
+  					obj[n].a = +v[0];
+  					break;
+  				case 'matrix':
+  					obj[n].a = +v[0] || 0;
+  					obj[n].b = +v[1] || 0;
+  					obj[n].c = +v[2] || 0;
+  					obj[n].d = +v[3] || 0;
+  					obj[n].e = +v[4] || 0;
+  					obj[n].f = +v[5] || 0;
+  					break;
+  			}
+  		}
+  	}
+
+  	obj.toString = function() {
+  		var builder = [];
+  		for (var i = 0, length = prop.length; i < length; i++) {
+  			var n = prop[i];
+  			var o = this[n];
+  			if (!o)
+  				continue;
+  			switch (n) {
+  				case 'translate':
+  				case 'scale':
+  					builder.push(n + '(' + o.x + ',' + o.y + ')');
+  					break;
+  				case 'rotate':
+  					builder.push(n + '(' + o.a + ' ' + o.x + ' ' + o.y + ')');
+  					break;
+  				case 'skewX':
+  				case 'skewY':
+  					builder.push(n + '(' + o.a + ')');
+  					break;
+  				case 'matrix':
+  					builder.push(n + '(' + o.a + ',' + o.b + ',' + o.c + ',' + o.d + ',' + o.e + ',' + o.f + ')');
+  					break;
+  			}
+  		}
+  		return builder.join(' ');
+  	};
+  	return obj;
+  };
+
+  function getCombinations(array) {
+    function iter(temp, index) {
+      if (index >= array.length) {
+        result.push(temp);
+        return;
+      }
+
+    iter([...temp, array[index]], index + 1);
+    iter(temp, index + 1);
+    }
+
+    var result = [];
+    iter([], 0);
+    return result;
+  }
+
+  function componentToHex(c) {
+    var hex = c.toString(16);
+    return hex.length == 1 ? "0" + hex : hex;
+  }
+  function highlightBG(element, color) {
+      element.style.backgroundColor = color;
+  }
+  function linkLikeClick(element, color) {
+      element.style.color = color;
+      // element.style.textDecoration = 'underline';
+  }
+
+</script>
+{% endblock %}

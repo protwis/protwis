@@ -84,12 +84,11 @@ h4 {
 
 .selection-tree-box {
   width: 330px;
-  height: 350px;
   overflow-x: scroll;
 }
 
 .selection-tree-box.selection_table {
-  max-height: 190px;
+  max-height: 235px;
 }
 
 #copyboxTargets {
@@ -188,7 +187,7 @@ input.form-control {
 
 /* Dropdown settings */
 .dropdown-menu {
-  min-width: 260px;
+  min-width: 300px;
 }
 
 .dropdown-submenu {
@@ -221,6 +220,13 @@ input.form-control {
   border-left-color: #000;
   margin-top: 5px;
   margin-right: -10px;
+}
+
+.dropdown-submenu > a::after {
+  position: absolute;
+  right: 5%;    /* stick to the far right */
+  top: 20%;
+  transform: translateY(-20%);
 }
 
 .dropdown-submenu:hover > a::after {
@@ -309,4 +315,45 @@ ul.nav-tabs li a {
 
 a.external_link:link, a.external_link:visited, a.external_link:hover, a.external_link:active {
   color: #036;
+}
+
+.new-menu-item {
+  color: red;
+  border: solid;
+  border-color: red;
+  border-radius: 4px;
+  font-size: 12px;
+  font-family:monospace;
+  padding: 0px 2px 0px 2px;
+  text-transform: capitalize;
+}
+
+#ref-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+#ref-modal-content {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    position: relative;
+    width: 60%;
+}
+
+#ref-modal-close-btn {
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    font-size: 24px;
+    cursor: pointer;
 }

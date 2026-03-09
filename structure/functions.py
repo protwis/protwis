@@ -1280,11 +1280,30 @@ class ParseRFAAModels():
                 }
 
 
-class ParseStructureCSV():
+class AbsParseStructureCSV():
     def __init__(self):
         self.pdb_ids = []
         self.structures = {}
         self.parent_segends = {}
+        self.fusion_proteins = []
+        self.xtal_seg_ends = {}
+
+    def parse_files(self, files):
+        for custom_input in files:
+            print(custom_input)
+            with open(custom_input, 'r') as custom_file:
+                custom_info = json.load(custom_file)
+                s = custom_info['name']
+                self.pdb_ids.append(s)
+                self.structures[s] = custom_info
+            with open(custom_input.replace('.json','.yaml'), 'r') as custom_segend_file:
+                segends = yaml.safe_load(custom_segend_file)
+                self.xtal_seg_ends[s] = segends
+
+
+class ParseStructureCSV(AbsParseStructureCSV):
+    def __init__(self):
+        AbsParseStructureCSV.__init__(self)
         with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'structures.csv']), newline='') as csvfile:
             structures = csv.reader(csvfile, delimiter='\t')
             next(structures, None)
@@ -1294,7 +1313,6 @@ class ParseStructureCSV():
                 if '.' in s[5]:
                     s[5] = s[5][0]
                 self.structures[s[0]]= {'protein':s[1], 'name':s[0].lower(), 'state':s[4], 'preferred_chain':s[5], 'resolution':s[3], 'date_from_file':s[7], 'method_from_file':s[2]}
-        self.fusion_proteins = []
 
     def __str__(self):
         return '<ParsedStructures: {} entries>'.format(len(self.pdb_ids))
@@ -1508,11 +1526,12 @@ class ModelRotamer(object):
 class X50Finder():
     '''Find corresponding x50 positions based on best BLAST hit in db
     '''
-    def __init__(self, uniprot_file):
+    def __init__(self, uniprot_file, debug=False):
         self.uniprot_file = uniprot_file
         p = PDBParser()
         self.biopdb = p.get_structure('structure', self.uniprot_file)
         self.top_hit = None
+        self.debug = debug
 
     def get_sequence_from_structure(self):
         structure_seq = {}
@@ -1550,6 +1569,9 @@ class X50Finder():
                 print('ERROR: no good pairwise alignment for {}'.format(self.uniprot_file.split('/')[-1]))
 
             ref_seq, temp_seq = str(pw2[0][0]), str(pw2[0][1])
+            if self.debug:
+                for r, t in zip(ref_seq, temp_seq):
+                    print(r,t)
 
             x50s = Residue.objects.filter(protein_conformation__protein=ref, display_generic_number__label__endswith='x50')
             indeces = {}

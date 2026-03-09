@@ -1,34 +1,40 @@
 from django.shortcuts import render
 from django.conf import settings
 from django.views.generic import TemplateView, View
-from django.http import HttpResponse, HttpResponseRedirect
-from django.db.models import Count, Q, Prefetch, TextField, Avg, Case, When, IntegerField, F, Value, CharField, Subquery, OuterRef, Exists
-from django.db.models.functions import Concat
+from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
+from django.db.models import Count, Q, Prefetch, TextField, Avg, Case, When, IntegerField, F, Value, CharField, Subquery, OuterRef, Exists, FloatField, BooleanField, ExpressionWrapper
+from django.db.models.functions import Concat, Length, Round, Coalesce, Cast
 from django import forms
+from time import perf_counter          # used for quick dev profiling
 
+from django.core.serializers.json import DjangoJSONEncoder
 from django.shortcuts import redirect
 
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from protein.models import ProteinSegment
-from structure.models import Structure, StructureModel, StructureComplexModel, StructureExtraProteins, StructureVectors, StructureModelRMSD, StructureModelpLDDT, StructureAFScores, StructureRFAAScores
+from structure.models import Structure, StructureModel, StructureComplexModel, StructureExtraProteins, StructureVectors, StructureModelRMSD, StructureModelpLDDT, StructureAFScores, StructureRFAAScores, StructureStabilizingAgent
 from structure.functions import CASelector, SelectionParser, GenericNumbersSelector, SubstructureSelector, ModelRotamer
 from structure.assign_generic_numbers_gpcr import GenericNumbering, GenericNumberingFromDB
 from structure.structural_superposition import ProteinSuperpose, FragmentSuperpose, ConvertSuperpose
 from structure.forms import *
 from signprot.models import SignprotComplex, SignprotStructure, SignprotStructureExtraProteins
 from interaction.models import ResidueFragmentInteraction,StructureLigandInteraction
-from protein.models import Protein, ProteinFamily, ProteinCouplings, Gene
+from protein.models import Protein, ProteinFamily, ProteinCouplings, Gene, IdentifiedSites
 from construct.models import Construct
 from construct.functions import convert_ordered_to_disordered_annotation,add_construct
 from common.views import AbsSegmentSelection,AbsReferenceSelection
 from common.selection import Selection, SelectionItem
 from common.extensions import MultiFileField
-from common.models import ReleaseNotes
+from common.models import ReleaseNotes, WebLink
 from common.alignment import Alignment, GProteinAlignment
 from residue.models import Residue, ResidueNumberingScheme, ResiduePositionSet
 from contactnetwork.models import Interaction
-from mapper.views import LandingPage
+from mapper.views import DataMapperHome
 from ligand.models import LigandPeptideStructure
+from ligand.functions import standardize_smiles
+
+# ── Postgres aggregates that do the heavy string/array work ─────
+from django.contrib.postgres.aggregates import StringAgg, ArrayAgg
 
 import io
 import numpy as np
@@ -45,6 +51,7 @@ import json
 import statistics
 import re
 from math import atan2, cos, sin, pi
+import traceback
 
 from copy import deepcopy
 from io import StringIO, BytesIO
@@ -67,54 +74,231 @@ import signal
 from contextlib import contextmanager
 
 
+
 class_dict = {'001':'A','002':'B1','003':'B2','004':'C','005':'D1','006':'F','007':'O1','008':'O2','009':'T2','010':'O'}
 
 class StructureBrowser(TemplateView):
     """
-    Fetching Structure data for browser
+    Lightweight view that just renders the structure browser template.
+    The actual data is fetched asynchronously from StructureDataJsonView.
     """
     template_name = "structure_browser.html"
 
-    def get_context_data (self, **kwargs):
-
-        context = super(StructureBrowser, self).get_context_data(**kwargs)
-        try:
-            structures = Structure.objects.all().exclude(structure_type__slug__startswith='af-').select_related(
-                "state",
-                "structure_type",
-                "pdb_code__web_resource",
-                "protein_conformation__protein__species",
-                "protein_conformation__protein__source",
-                "protein_conformation__protein__family__parent__parent__parent",
-                "publication__web_link__web_resource").prefetch_related(
-                "stabilizing_agents", "construct__crystallization__crystal_method",
-                "protein_conformation__protein__parent__endogenous_gtp_set__ligand__ligand_type",
-                "protein_conformation__site_protein_conformation__site","structure_type",
-                Prefetch("ligands", queryset=StructureLigandInteraction.objects.filter(
-                annotated=True).exclude(structure__structure_type__slug__startswith='af-').prefetch_related('ligand__ligand_type', 'ligand_role','ligand__ids__web_resource')),
-                Prefetch("extra_proteins", queryset=StructureExtraProteins.objects.all().prefetch_related(
-                    'protein_conformation','wt_protein')),
-                Prefetch("signprotcomplex_set", queryset=SignprotComplex.objects.all().prefetch_related('protein')))
-        except Structure.DoesNotExist as e:
-            pass
-
-        residue_counts = Residue.objects.values("protein_conformation").filter(protein_segment__isnull=False).order_by("protein_conformation").annotate(Count=Count("protein_conformation"))
-        structure_residues = {}
-        for pair in residue_counts:
-            if pair['protein_conformation'] not in structure_residues.keys():
-                structure_residues[pair['protein_conformation']] =  pair['Count']
-
-        structs_and_coverage = []
-        for s in structures:
-            # structure_residues = Residue.objects.filter(protein_conformation=s.protein_conformation, protein_segment__isnull=False)
-            residue_num = structure_residues[s.protein_conformation.id]
-            # coverage = round((len(structure_residues) / len(s.protein_conformation.protein.parent.sequence))*100)
-            coverage = round((residue_num / len(s.protein_conformation.protein.parent.sequence))*100)
-            structs_and_coverage.append([s, coverage])
-        context['structures'] = structs_and_coverage
-
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
         return context
 
+class StructureDataJsonView(View):
+    """Fast JSON endpoint for the structure browser."""
+
+    FUSION_RE = (
+        r".*thase.*|PGS|BRIL|.*Lysozyme|.*b562.*|TrxA|Flavodoxin|Rubredoxin|"
+        r"Sialidase|.*Thioredoxin.*|Endolysin|.*cytochrome.*|.*DARPin.*"
+    )
+    ANTIBODY_RE = (
+        r".*bod.*|.*Ab.*|.*scFv.*|.*Fab.*|.*activity.*|.*RAMP.*|.*GRK.*|"
+        r"Unidentified peptide|.*CD4.*|.*IgG.*|.*NB.*|.*Fv.*"
+    )
+    fusion_pat   = re.compile(FUSION_RE,   re.I)
+    antibody_pat = re.compile(ANTIBODY_RE, re.I)
+
+    def get(self, request, *args, **kwargs):
+        try:
+            # t0 = perf_counter()
+
+            structures = (
+                Structure.objects
+                .exclude(structure_type__slug__startswith="af-")
+                .select_related(
+                    "state", "structure_type", "pdb_code",
+                    "publication__web_link__web_resource",
+                    "protein_conformation__protein__species",
+                    "protein_conformation__protein__source",
+                    "protein_conformation__protein__parent",
+                    "protein_conformation__protein__family__parent__parent__parent",
+                )
+                .prefetch_related(
+                    Prefetch(
+                        "protein_conformation__protein__parent__genes",
+                        queryset=Gene.objects.filter(position=0),
+                        to_attr="filtered_genes",
+                    ),
+                    Prefetch(
+                        "extra_proteins",
+                        queryset=StructureExtraProteins.objects.select_related(
+                            "wt_protein__family__parent"),
+                        to_attr="prefetched_extras",
+                    ),
+                    Prefetch(
+                        "protein_conformation__site_protein_conformation",
+                        queryset=IdentifiedSites.objects.select_related("site"),
+                        to_attr="prefetched_sites",
+                    ),
+                    Prefetch(                          # ligands for Python loop
+                        "ligands",
+                        queryset=StructureLigandInteraction.objects.select_related(
+                            "ligand", "ligand_role", "ligand__ligand_type"),
+                        to_attr="prefetched_ligands",
+                    ),
+                    Prefetch(
+                        "protein_conformation__protein__parent__web_links",
+                        queryset=WebLink.objects
+                            .select_related("web_resource")
+                            .filter(web_resource__slug="gtop"),   # or .filter(web_resource_id=5)
+                        to_attr="prefetched_gtop_links",
+                    ),
+                    "stabilizing_agents",              # regex filter
+                    "protein_conformation__protein__parent__endogenous_gtp_set__ligand__ligand_type",
+                )
+                .annotate(
+                    coverage_pct=ExpressionWrapper(
+                        Cast(Count("protein_conformation__residue", distinct=True),
+                             FloatField()) * 100.0 /
+                        Coalesce(
+                            Length("protein_conformation__protein__parent__sequence"),
+                            Value(1.0)
+                        ),
+                        output_field=IntegerField(),
+                    ),
+                    has_sodium_site=Exists(
+                        IdentifiedSites.objects.filter(
+                            protein_conformation=OuterRef("protein_conformation_id"),
+                            site__slug="sodium_pocket")
+                    ),
+                )
+            )
+
+            # t1 = perf_counter()
+
+            # ── Python loop ─────────────────────────────────────────────────
+            out = []
+            for s in structures:
+                p, pp = s.protein_conformation.protein, s.protein_conformation.protein.parent
+                pub   = s.publication
+
+                gene_name = (pp.filtered_genes[0].name
+                             if getattr(pp, "filtered_genes", []) else "-")
+
+                # arrestin / Gα
+                arrestin = next(
+                    (ep for ep in getattr(s, "prefetched_extras", [])
+                     if ep.category in {"G alpha", "Arrestin"}), None
+                )
+                arr_family = arrestin.wt_protein.family.parent.name if arrestin and arrestin.wt_protein else "-"
+                arr_name   = (f"&alpha;{arrestin.display_name[1:]}"
+                              if arrestin and arrestin.display_name.startswith("G")
+                              else (arrestin.display_name if arrestin else "-"))
+                arr_entry  = arrestin.wt_protein.entry_name if arrestin and arrestin.wt_protein else "-"
+                arr_note   = arrestin.note or "-" if arrestin else "-"
+                arr_cov    = arrestin.wt_coverage or "-" if arrestin else "-"
+
+
+                # stabilising agents – tiny regex pass
+                fusions = "<br>".join(a.name for a in s.stabilizing_agents.all()
+                                      if self.fusion_pat.match(a.name)) or "-"
+                antibodies = "<br>".join(a.name for a in s.stabilizing_agents.all()
+                                         if self.antibody_pat.match(a.name)) or "-"
+
+                # ligands – build names/types/roles here
+                lig_list, lig_types, lig_roles = [], set(), set()
+                for li in getattr(s, "prefetched_ligands", []):
+                    if not li.ligand:
+                        continue
+                    lig_list.append({"id": li.ligand.id, "name": li.ligand.name})
+                    if li.ligand.ligand_type:
+                        lig_types.add(li.ligand.ligand_type.name)
+                    if li.ligand_role:
+                        lig_roles.add(li.ligand_role.name)
+
+                # Get endogenous ligands from parent protein
+                endos = getattr(pp, 'endogenous_gtp_set', []).all() if hasattr(pp, 'endogenous_gtp_set') else []
+                endo_list, seen = [], set()
+                for e in endos:
+                    lig = getattr(e, "ligand", None)
+                    if not lig:
+                        continue
+                    key = getattr(lig, "id", None) or lig.name
+                    if key in seen:
+                        continue
+                    seen.add(key)
+                    endo_list.append({"id": lig.id, "name": lig.name})
+
+                pdb_code = s.pdb_code.index if s.pdb_code else "-"
+
+                if pub and pub.web_link and pub.web_link.web_resource:
+                    pub_ref  = pub.web_link.index
+                    pub_link = pub.web_link.web_resource.url.replace("$index", pub_ref)
+                else:
+                    pub_ref, pub_link = "-", "#"
+                
+                # GPCRdb internal link (rename your existing field)
+                gpcrdb_link = f"/protein/{pp.entry_name}"
+
+                # IUPHAR / GToP link
+                iuphar_link = "-"
+                iuphar_index = None
+                wl = next(iter(getattr(pp, "prefetched_gtop_links", [])), None)
+                if wl and wl.web_resource and wl.index:
+                    iuphar_index = wl.index
+                    # web_resource.url should contain "$index"
+                    iuphar_link = wl.web_resource.url.replace("$index", str(wl.index))
+
+                out.append({
+                    "id": s.id,
+                    "uniprot_link": f"http://www.uniprot.org/uniprot/{pp.accession}",
+                    "Gene": gene_name,
+                    "entry_name": pp.entry_name,
+                    "gpcrdb_link": gpcrdb_link,
+                    "iuphar_link": iuphar_link,
+                    "iuphar_index": iuphar_index,
+                    "iuphar_name": pp.name.replace("receptor", '').replace("-adrenoceptor", '').replace("<i>", "").replace("</i>", "").strip(),
+                    "family": p.family.parent.short(),
+                    "class":  p.family.parent.parent.parent.shorter(),
+                    "species": p.species.common_name,
+                    "method":  s.structure_type.type_short(),
+                    "rep": 1 if s.representative else 0,
+                    "pdb":     pdb_code,
+                    "refined": f"refined/{pdb_code.upper()}" if s.refined and pdb_code != "-" else "-",
+                    "resolution":     s.resolution,
+                    "preferred_chain": s.preferred_chain,
+                    "state":          s.state.name if s.state else "-",
+                    "active_pct":     s.gprot_bound_likeness,
+                    "coverage":       int(s.coverage_pct),
+
+                    "arrestin_family":   arr_family,
+                    "arrestin_name":     arr_name,
+                    "arrestin_entry":    arr_entry,
+                    "arrestin_note":     arr_note,
+                    "arrestin_coverage": arr_cov,
+
+                    "fusions":    fusions,
+                    "antibodies": antibodies,
+
+                    "ligands":      lig_list,
+                    "ligand_type":  "<br>".join(map(str, sorted(lig_types))) or "-",
+                    "ligand_role":  "<br>".join(map(str, sorted(lig_roles))) or "-",
+
+                    "endo_ligands": endo_list,
+                    "endo_type": "<br>".join(sorted({e.ligand.ligand_type.name for e in endos if e.ligand and e.ligand.ligand_type})) or "-",
+                    "sodium_site":  "Yes" if s.has_sodium_site else "No",
+                    "sodium":       "Yes" if s.sodium else "No",
+
+                    "authors": pub.authors if pub and pub.authors else "-",
+                    "reference": (f'<a target="_blank" href="{pub_link}">{pub_ref}</a>'
+                                  if pub_ref != "-" else "-"),
+                    "pub_date":  (s.publication_date.strftime("%Y-%m-%d")
+                                  if s.publication_date else "-")
+                })
+
+            # t2 = perf_counter()
+            # print(f"query {t1-t0:5.2f}s  |  python {t2-t1:5.2f}s  "
+            #       f"(rows={len(structures)})")
+
+            return JsonResponse(out, safe=False, encoder=DjangoJSONEncoder)
+
+        except Exception as exc:
+            traceback.print_exc()
+            return JsonResponse({"error": str(exc)}, status=500)
 
 class EffectorStructureBrowser(TemplateView):
     """
@@ -1727,40 +1911,27 @@ class StructureStatistics(TemplateView):
                 # RIGHT NOW THE DATA IS SMALL SO WE CAN GET AWAY WITH THIS
                 result_dict = {k: v[0] for k, v in result_dict.items()}
 
-                proteins = list(Protein.objects.filter(entry_name__in=result_dict.keys()
-                ).values('entry_name', 'name').order_by('entry_name'))
+                # Mapping for Value2
+                status_color_map = {
+                    'ARRB1': 'orange',
+                    'ARRB2': 'purple',
+                    'ARRC': "mediumturquoise",
+                    'ARRS': 'cornflowerblue'
+                }
 
-                names_conversion_dict = {item['entry_name']: item['name'] for item in proteins}
+                # Creating the new dictionary
+                results_updated_dict = {
+                    key: {
+                        'Value1': value,
+                        'Value2': status_color_map.get(value, '#FFFFFF')  # Default to black if key not found
+                    }
+                    for key, value in result_dict.items()
+                }
 
-                names = list(names_conversion_dict.values())
+                gpcr_data = DataMapperHome.GenerateGPCRomeDataStructure(data_type="Classic")
+                updated_data = DataMapperHome.update_nested_GPCRome_data(gpcr_data["Data"], results_updated_dict)
 
-                IUPHAR_to_uniprot_dict = {item['name']: item['entry_name'] for item in proteins}
-
-                families = ProteinFamily.objects.all()
-                datatree = {}
-                conversion = {}
-
-                for item in families:
-                    if len(item.slug) == 3 and item.slug not in datatree.keys():
-                        datatree[item.slug] = {}
-                        conversion[item.slug] = item.name
-                    if len(item.slug) == 7 and item.slug not in datatree[item.slug[:3]].keys():
-                        datatree[item.slug[:3]][item.slug[:7]] = {}
-                        conversion[item.slug] = item.name
-                    if len(item.slug) == 11 and item.slug not in datatree[item.slug[:3]][item.slug[:7]].keys():
-                        datatree[item.slug[:3]][item.slug[:7]][item.slug[:11]] = []
-                        conversion[item.slug] = item.name
-                    if len(item.slug) == 15 and item.slug not in datatree[item.slug[:3]][item.slug[:7]][item.slug[:11]]:
-                        datatree[item.slug[:3]][item.slug[:7]][item.slug[:11]].append(item.name)
-
-                datatree2 = LandingPage.convert_keys(datatree, conversion)
-                datatree2.pop('Parent family', None)
-                datatree3 = LandingPage.filter_dict(datatree2, names)
-                data_converted = {names_conversion_dict[key]: {'Value1':value} for key, value in result_dict.items()}
-                data_full = {"NameList": datatree3, "DataPoints": data_converted, "LabelConversionDict":IUPHAR_to_uniprot_dict}
-                context['GPCRome_Arrestin_data'] = json.dumps(data_full["NameList"])
-                context['GPCRome_Arrestin_data_variables'] = json.dumps(data_full['DataPoints'])
-                context['GPCRome_Arrestin_Label_Conversion'] = json.dumps(data_full['LabelConversionDict'])
+                context['GPCRome_data'] = json.dumps(updated_data)
 
             else:
                 #Adjust call to exclude odorants
@@ -1802,47 +1973,33 @@ class StructureStatistics(TemplateView):
                         elif 'active' in result_dict[key]['states']:
                             result_dict[key]['status'] = 'Active'
                         elif 'inactive' in result_dict[key]['states']:
-                            result_dict[key]['status'] = 'Inactive'
+                            result_dict[key]['status'] = 'Inactive'                
 
                 # Optionally, reduce to key-status dictionary
                 result_dict = {k: v['status'] for k, v in result_dict.items()}
 
-                proteins = list(Protein.objects.filter(entry_name__in=result_dict.keys()
-                ).values('entry_name', 'name').order_by('entry_name'))
+                # Mapping for Value2
+                status_color_map = {
+                    'Both': 'blue',
+                    'Inactive': 'red',
+                    'Active': 'forestgreen'
+                }
 
-                names_conversion_dict = {item['entry_name']: item['name'] for item in proteins}
+                # Creating the new dictionary
+                results_updated_dict = {
+                    key: {
+                        'Value1': value,
+                        'Value2': status_color_map.get(value, '#FFFFFF')  # Default to black if key not found
+                    }
+                    for key, value in result_dict.items()
+                }
 
-                data = list(names_conversion_dict.keys())
-                names = list(names_conversion_dict.values())
+                gpcr_data = DataMapperHome.GenerateGPCRomeDataStructure(data_type="Classic")
+                updated_data = DataMapperHome.update_nested_GPCRome_data(gpcr_data["Data"], results_updated_dict)
 
-                IUPHAR_to_uniprot_dict = {item['name']: item['entry_name'] for item in proteins}
+                context['GPCRome_data'] = json.dumps(updated_data)
 
-                families = ProteinFamily.objects.all()
-                datatree = {}
-                conversion = {}
-
-                for item in families:
-                    if len(item.slug) == 3 and item.slug not in datatree.keys():
-                        datatree[item.slug] = {}
-                        conversion[item.slug] = item.name
-                    if len(item.slug) == 7 and item.slug not in datatree[item.slug[:3]].keys():
-                        datatree[item.slug[:3]][item.slug[:7]] = {}
-                        conversion[item.slug] = item.name
-                    if len(item.slug) == 11 and item.slug not in datatree[item.slug[:3]][item.slug[:7]].keys():
-                        datatree[item.slug[:3]][item.slug[:7]][item.slug[:11]] = []
-                        conversion[item.slug] = item.name
-                    if len(item.slug) == 15 and item.slug not in datatree[item.slug[:3]][item.slug[:7]][item.slug[:11]]:
-                        datatree[item.slug[:3]][item.slug[:7]][item.slug[:11]].append(item.name)
-
-                datatree2 = LandingPage.convert_keys(datatree, conversion)
-                datatree2.pop('Parent family', None)
-                datatree3 = LandingPage.filter_dict(datatree2, names)
-                data_converted = {names_conversion_dict[key]: {'Value1':value} for key, value in result_dict.items()}
-                data_full = {"NameList": datatree3, "DataPoints": data_converted, "LabelConversionDict":IUPHAR_to_uniprot_dict}
-                context['GPCRome_data'] = json.dumps(data_full["NameList"])
-                context['GPCRome_data_variables'] = json.dumps(data_full['DataPoints'])
-                context['GPCRome_Label_Conversion'] = json.dumps(data_full['LabelConversionDict'])
-
+                # fetech the Complexes data
                 complexes_count = StructureLigandInteraction.objects.filter(annotated=True).exclude(
                         structure__structure_type__slug__startswith='af-').values(
                             'structure_id__protein_conformation_id__protein__parent__entry_name'
@@ -1863,44 +2020,22 @@ class StructureStatistics(TemplateView):
                 for a in complexes_list:
                     complexes_dict[a['structure_id__protein_conformation_id__protein__parent__entry_name']] = a['c']
 
-                complexes_proteins = list(Protein.objects.filter(entry_name__in=complexes_dict.keys()
-                ).values('entry_name', 'name').order_by('entry_name'))
+                # Creating the new dictionary
+                complexes_updated_dict = {
+                    key: {
+                        'Value1': value,
+                    }
+                    for key, value in complexes_dict.items()
+                }
 
-                names_complexes_dict = {item['entry_name']: item['name'] for item in complexes_proteins}
+                gpcr_data_complexes = DataMapperHome.GenerateGPCRomeDataStructure(data_type="Classic")
+                complexes_updated_data = DataMapperHome.update_nested_GPCRome_data(gpcr_data_complexes["Data"], complexes_updated_dict)
 
-                names_complexes = list(names_complexes_dict.values())
-
-                IUPHAR_to_uniprot_complexes = {item['name']: item['entry_name'] for item in complexes_proteins}
-                datatree4 = LandingPage.filter_dict(datatree2, names_complexes)
-                data_complexes = {names_complexes_dict[key]: {'Value1':value} for key, value in complexes_dict.items()}
-                complexes_full = {"NameList": datatree4, "DataPoints": data_complexes, "LabelConversionDict":IUPHAR_to_uniprot_complexes}
-                context['GPCRome_data_variables_complexes'] = json.dumps(complexes_full['DataPoints'])
-
+                context['GPCRome_data_complexes'] = json.dumps(complexes_updated_data)
 
                 ### TESTING GPCROME FOR ODORANTS
                 all_odorant = Protein.objects.filter(species_id=1, parent_id__isnull=True, accession__isnull=False
                                                     ).filter(Q(family_id__slug__startswith='007') | Q(family_id__slug__startswith='008'))
-                odorant_names = list(Protein.objects.filter(species_id=1, parent_id__isnull=True, accession__isnull=False
-                                                    ).filter(Q(family_id__slug__startswith='007') | Q(family_id__slug__startswith='008')).values(
-                                                    'entry_name', 'name').order_by('entry_name'))
-                odorant_families = ProteinFamily.objects.filter(Q(slug__startswith='007') | Q(slug__startswith='008'))
-
-                odoranttree = {}
-                conversion = {}
-
-                for item in odorant_families:
-                    if len(item.slug) == 3 and item.slug not in odoranttree.keys():
-                        odoranttree[item.slug] = {}
-                        conversion[item.slug] = item.name
-                    if len(item.slug) == 7 and item.slug not in odoranttree[item.slug[:3]].keys():
-                        odoranttree[item.slug[:3]][item.slug[:7]] = {}
-                        conversion[item.slug] = item.name
-                    if len(item.slug) == 11 and item.slug not in odoranttree[item.slug[:3]][item.slug[:7]].keys():
-                        odoranttree[item.slug[:3]][item.slug[:7]][item.slug[:11]] = []
-                        conversion[item.slug] = item.name
-                    if len(item.slug) == 15 and item.slug not in odoranttree[item.slug[:3]][item.slug[:7]][item.slug[:11]]:
-                        odoranttree[item.slug[:3]][item.slug[:7]][item.slug[:11]].append(item.name)
-
                 odorant_struct = Structure.objects.filter(Q(protein_conformation__protein__family_id__slug__startswith='007') | Q(protein_conformation__protein__family_id__slug__startswith='008')).values(
                                                         'protein_conformation__protein__parent__entry_name'
                                                     ).annotate(
@@ -1916,37 +2051,16 @@ class StructureStatistics(TemplateView):
 
                 odorant_struct_dict.pop(None)
 
-                odorant_conversion_dict = {item['entry_name']: item['name'] for item in odorant_names}
-                odoranttree2 = LandingPage.convert_keys(odoranttree, conversion)
-                names_odorant = list(odorant_conversion_dict.values())
-                odoranttree3 = LandingPage.filter_dict(odoranttree2, names_odorant)
+                updated_odorant_struct_dict = {
+                    key: {
+                        'Value1': value,
+                    }
+                    for key, value in odorant_struct_dict.items()
+                }
 
-                # Splitting the families into three dictionaries
-                odorant_receptors = odoranttree3['Class O2 (tetrapod specific odorant)']['Odorant receptors']
-                # Families 1 to 4
-                families_1_to_4 = {key: odorant_receptors[key] for key in odorant_receptors if key[-2:] in [' 1', ' 2', ' 3', ' 4',]}
-                # Families 5 to 10
-                families_5_to_9 = {key: odorant_receptors[key] for key in odorant_receptors if key[-2:] in [' 5', ' 6', ' 7', ' 8', ' 9']}
-                # Families 11 to 14
-                families_10_to_14 = {key: odorant_receptors[key] for key in odorant_receptors if key.endswith(('10', '11', '12', '13', '14'))}
-
-                odoranttree4 = {}
-                odoranttree4['Class O1 (fish-like odorant)'] = odoranttree3['Class O1 (fish-like odorant)']
-                odoranttree4['Class O2 (tetrapod specific odorant) EXT'] = {'Odorant receptors' : families_1_to_4}
-                odoranttree4['Class O2 (tetrapod specific odorant) MID'] = {'Odorant receptors' : families_5_to_9}
-                odoranttree4['Class O2 (tetrapod specific odorant) INT'] = {'Odorant receptors' : families_10_to_14}
-
-                odorant_data = {odorant_conversion_dict[key]: {'Value1':value} for key, value in odorant_struct_dict.items()}
-
-                odorant_proteins = list(Protein.objects.filter(entry_name__in=odorant_struct_dict.keys()
-                ).values('entry_name', 'name').order_by('entry_name'))
-
-                odorant_IUPHAR_to_Uniprot = {item['name']: item['entry_name'] for item in odorant_proteins}
-
-                odorant_full = {"NameList": odoranttree4, "DataPoints": odorant_data, "LabelConversionDict":odorant_IUPHAR_to_Uniprot}
-                context['GPCRome_odorant_data'] = json.dumps(odorant_full["NameList"])
-                context['GPCRome_odorant_data_variables'] = json.dumps(odorant_full['DataPoints'])
-                context['GPCRome_odorant_Label_Conversion'] = json.dumps(odorant_full['LabelConversionDict'])
+                gpcr_data_odorant = DataMapperHome.GenerateGPCRomeDataStructure(data_type="Odorant")
+                Odorant_updated_data = DataMapperHome.update_nested_GPCRome_data(gpcr_data_odorant["Data"], updated_odorant_struct_dict)
+                context['GPCRome_data_odorant'] = json.dumps(Odorant_updated_data)
 
         return context
 
@@ -4728,15 +4842,16 @@ class StructureBlastView(View):
 
 class LigandComplexModels(TemplateView):
     template_name = "ligand_complex_models.html"
+
     def get_context_data(self, **kwargs):
         context = super(LigandComplexModels, self).get_context_data(**kwargs)
         try:
             subquery_gene = Gene.objects.filter(
                 proteins=OuterRef('protein_conformation__protein__pk')
             ).values('name')[:1]
-            
-            # Annotate the main queryset with an Exists subquery
-            context['structure_model'] = Structure.objects.filter(
+
+            # Get the structure models along with prefetching ligands and related data
+            structures = Structure.objects.filter(
                 structure_type__slug__in=['af-signprot-peptide', 'af-rfaa-sm']
             ).prefetch_related(
                 "protein_conformation__protein__family",
@@ -4747,14 +4862,14 @@ class LigandComplexModels(TemplateView):
                 "protein_conformation__protein__parent__family",
                 "pdb_code",
                 Prefetch(
-                "structureafscores_set",
-                queryset=StructureAFScores.objects.all(),
-                to_attr='prefetch_af_scores'
+                    "structureafscores_set",
+                    queryset=StructureAFScores.objects.all(),
+                    to_attr='prefetch_af_scores'
                 ),
                 Prefetch(
-                "structurerfaascores_set",
-                queryset=StructureRFAAScores.objects.all(),
-                to_attr='prefetch_rfaa_scores'
+                    "structurerfaascores_set",
+                    queryset=StructureRFAAScores.objects.all(),
+                    to_attr='prefetch_rfaa_scores'
                 ),
                 Prefetch(
                     "ligandpeptidestructure_set",
@@ -4766,7 +4881,6 @@ class LigandComplexModels(TemplateView):
                 )
             ).annotate(
                 gene_name=Subquery(subquery_gene),
-                # Annotate with the existence of a matching experimental PDB
                 experimental_pdb_exists=Exists(
                     StructureLigandInteraction.objects.filter(
                         structure__structure_type__slug__in=[
@@ -4785,7 +4899,26 @@ class LigandComplexModels(TemplateView):
             ).exclude(
                 experimental_pdb_exists=True
             )
+
+            # Process each ligand using standardize_smiles
+            # We assume that each structure has a prefetch_ligands list with at least one element.
+            for structure in structures:
+                if hasattr(structure, 'prefetch_ligands'):
+                    for ligand_struct in structure.prefetch_ligands:
+                        ligand = ligand_struct.ligand
+                        # Get the raw SMILES and molecular weight (adjust attribute names as needed)
+                        raw_smiles = getattr(ligand, 'smiles', None)
+                        mw = getattr(ligand, 'mw', None)
+                        # Process the SMILES using your function
+                        canonical_smiles, smiles_for_image, picture_flag = standardize_smiles(raw_smiles, mw)
+                        # Attach these values to the ligand instance so that your template can access them
+                        ligand.smiles_for_image = smiles_for_image
+                        ligand.picture = picture_flag
+
+            context['structure_model'] = structures
+
         except Structure.DoesNotExist as e:
+            # Optionally log the exception
             pass
 
         return context

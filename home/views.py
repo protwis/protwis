@@ -122,19 +122,6 @@ def citations_json(request):
     response = JsonResponse(list(citations_q), safe=False)
     return response
 
-
-class citeGPCRdb(TemplateView):
-    template_name = 'home/cite_gpcrdb.html'
-
-    def get_context_data(self, **kwargs):
-
-        context = super().get_context_data(**kwargs)
-        return context
-
-class citeGproteinDb(TemplateView):
-    template_name = 'home/cite_gproteindb.html'
-
-    def get_context_data(self, **kwargs):
-
-        context = super().get_context_data(**kwargs)
-        return context
+def cite_us(request, site):
+    context = {'site': site}
+    return render(request, 'home/cite_us.html', context)

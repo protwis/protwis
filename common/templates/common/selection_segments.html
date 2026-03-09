@@ -1,3 +1,132 @@
+<style>
+  /* Style for full Sequence Segments outer container */
+  #sequence_segments {
+      border: 1px solid #c9d8e2;        /* soft grey/blue */
+      background-color: #f9fcff;        /* very light blue */
+      border-radius: 6px;
+      padding: 15px 12px;
+      margin-top: 10px;
+  }
+
+  /* Center the "Read residue positions" button */
+  .centered-file-button {
+      text-align: center;
+      width: 100%;
+      margin-top: 10px;
+      margin-bottom: 10px;
+  }
+
+  /* Reduce width and center sub-menu toggles */
+  .sub-dropdown-toggle {
+      width: 90%;
+      margin: 5px auto;
+      font-size: 90%;
+  }
+
+  /* Panel under each sub dropdown (GAIN / TM / Terminus) */
+  .sub-dropdown-panel {
+      border: 1px solid #d9edf7;
+      background-color: #f7fbff;
+      padding: 8px 10px 10px;
+      margin: 5px auto 10px;
+      width: 95%;
+      border-radius: 4px;
+  }
+
+  .sub-dropdown-panel h5 {
+      margin-top: 5px;
+      margin-bottom: 5px;
+      font-weight: 600;
+  }
+
+  .sub-dropdown-panel .btn-group {
+      margin: 2px 2px 4px 0;
+  }
+  .sub-dropdown-disabled {
+    pointer-events:none;
+    opacity:0.75;
+    background-color:#e0e0e0 !important;
+    border-color:#c8c8c8 !important;
+    color:#555 !important;
+}
+  .segment-disabled {
+      pointer-events: none;
+      opacity: 0.75;
+      background-color: #e0e0e0 !important;
+      border-color: #c8c8c8 !important;
+      color: #555 !important;
+  }
+
+  /* Base for all segment buttons */
+  
+    .segment-btn.arrow-btn {
+        padding-left: 4px;
+        padding-right: 4px;
+    }
+
+  /* N-term & C-term: dark blue */
+  .btn.seg-nterm,
+  .btn.seg-cterm {
+      background-color: #0b3c6f;
+      border-color: #0b3c6f;
+      color: #ffffff;
+  }
+
+  /* Extracellular loops: mid blue */
+  .btn.seg-ecl {
+      background-color: #1f78b4;
+      border-color: #1f78b4;
+      color: #ffffff;
+  }
+
+  /* Intracellular loops: light blue */
+  .btn.seg-icl {
+      background-color: #a6cee3;
+      border-color: #a6cee3;
+      color: #003049;
+  }
+
+  /* Transmembrane helices: light green */
+  .btn.seg-tm {
+      background-color: #4daf4a;
+      border-color: #4daf4a;
+      color: #ffffff;
+  }
+
+  /* Helix 8: darker green */
+  .btn.seg-h8 {
+      background-color: #006d2c;
+      border-color: #006d2c;
+      color: #ffffff;
+  }
+
+  /* Default fallback */
+  .btn.seg-default {
+      /* falls back roughly to Bootstrap primary */
+      background-color: #337ab7;
+      border-color: #2e6da4;
+      color: #ffffff;
+  }
+
+  /* Your existing disabled style still wins (note the !important) */
+  .segment-disabled {
+      pointer-events: none;
+      opacity: 0.75;
+      background-color: #e0e0e0 !important;
+      border-color: #c8c8c8 !important;
+      color: #555 !important;
+  }
+  
+  /* Highlight selected segment buttons (only the label buttons, not arrows) */
+    .segment-group-selected {
+        box-shadow: 0 0 0 3px #000000;
+        border-radius: 6px;       /* smooth outline corners */
+        padding: 2px;             /* creates spacing between buttons and outline */
+        background-color: transparent;
+    }
+
+</style>
+
 <h4>Sequence segment selection</h4> <hr>
         <a href="javascript:void(0)" onclick="SelectAlignableResidues('segments')"
         class="btn btn-primary btn-md  btn-block selection_buttons">
@@ -10,52 +139,147 @@
 
 <hr>
 
-<a href="javascript:void(0)" onclick="ToggleSegments()" class="btn btn-info btn-md btn-block selection_buttons"> Sequence Segments <span class="glyphicon glyphicon-arrow-down pull-right"></span></a>
+<a href="javascript:void(0)" onclick="ToggleSegments()" class="btn btn-info btn-md btn-block selection_buttons"> Sequence segments <span class="glyphicon glyphicon-arrow-down pull-right"></span></a>
 
-<div id="sequence_segments" style="display: none">
-{% for ss_cat in ss_cats %}
-    <h5>
-    {% if ss_cat.0.title == 'Helix' %}
-        Transmembrane (TM) helices and H8
-    {% elif s_cat.0.title == 'Loop' %}
-        Loops
-    {% elif s_cat.0.title == 'Terminus' %}
-        Termini
-    {% else %} 
-        {{ ss_cat.0.title }}
-    {% endif %} 
+<div id="sequence_segments" style="display:none">
+
+    <!-- ========================= -->
+    <!--     ALL-GPCR SEGMENTS     -->
+    <!-- ========================= -->
+    <h5 style="text-align:center; font-weight:600; margin-top:0; margin-bottom:10px;">
+        All-GPCR segments
     </h5>
-    {% for s in ss %}
-        {% if s.category == ss_cat.0 %}
+
+    <div id="all-gpcr" class="sub-dropdown-panel">
+
+        {% for s in all_gpcr_segments %}
         <div class="btn-group" role="group">
-            <a href="javascript:void(0)" onclick="AddToSelection('segments', '{{ s.category }}', '{{ s.id }}')"
-            class="btn btn-primary btn-sm">
+
+            <!-- main button: TOGGLE -->
+            <a href="javascript:void(0)"
+               onclick="ToggleSegmentSelection(this)"
+               class="btn btn-xs segment-btn {{ s.ui_color_class }}"
+               data-segment-id="{{ s.id }}"
+               data-segment-domain="{{ s.domain }}"
+               data-selection-subtype="{{ s.category }}">
                 {{ s.slug }}
             </a>
+
+            <!-- expand arrow -->
             {% if not ignore_residue_selection and s.generic_numbers.all %}
-            <a href="javascript:void(0)" onclick="ExpandSegment('{{ s.id }}', '{{ position_type }}')"
-            class="btn btn-primary btn-sm">
+            <a href="javascript:void(0)"
+               onclick="ExpandSegment('{{ s.id }}', '{{ position_type }}')"
+               class="btn btn-xs segment-btn arrow-btn {{ s.ui_color_class }}"
+               data-segment-id="{{ s.id }}"
+               data-segment-domain="{{ s.domain }}">
                 <span class="glyphicon glyphicon-arrow-down"></span>
             </a>
             {% endif %}
+
         </div>
-        {% endif %}
-    {% endfor %}
-{% endfor %}
-<p>
+        {% endfor %}
 
-<div id='segment-generic-numbers'>
-</div>
+    </div>
 
-</p>
-{% if not ignore_residue_selection %}
-<p>
-    <a data-toggle="modal" data-target="#PositionsFileSelector"
-        class="btn btn-primary btn-xs">
-        <span class="glyphicon glyphicon-plus"></span> Read residue positions from a file
+    <hr>
+
+    <!-- =============================== -->
+    <!--     CLASS-SPECIFIC SEGMENTS     -->
+    <!-- =============================== -->
+    <a href="javascript:void(0)"
+       id="class-specific-toggle"
+       onclick="ToggleSubGroup('class-specific')"
+       class="btn btn-info btn-sm btn-block selection_buttons sub-dropdown-toggle">
+        Class-specific segments
+        <span class="glyphicon glyphicon-arrow-down pull-right"></span>
     </a>
-</p>
-{% endif %}
+
+    <div id="class-specific" class="sub-dropdown-panel" style="display:none">
+
+        <!-- ============================== -->
+        <!--        GAIN DOMAIN (B2)        -->
+        <!-- ============================== -->
+        <h5 id="gain-heading">Class B2 – GAIN domain</h5>
+
+        <div id="gain-container">
+        {% for s in gain_segments %}
+            <div class="btn-group" role="group">
+
+                <a href="javascript:void(0)"
+                   onclick="ToggleSegmentSelection(this)"
+                   class="btn btn-xs segment-btn gain-segment {{ s.ui_color_class }}{% if not has_gain_segments %} segment-disabled{% endif %}"
+                   data-segment-id="{{ s.id }}"
+                   data-segment-domain="GAIN"
+                   data-selection-subtype="{{ s.category }}">
+                    {{ s.slug }}
+                </a>
+
+                {% if not ignore_residue_selection and s.generic_numbers.all %}
+                <a href="javascript:void(0)"
+                   onclick="ExpandSegment('{{ s.id }}', '{{ position_type }}')"
+                   class="btn btn-xs segment-btn arrow-btn gain-segment {{ s.ui_color_class }}{% if not has_gain_segments %} segment-disabled{% endif %}"
+                   data-segment-id="{{ s.id }}"
+                   data-segment-domain="GAIN">
+                    <span class="glyphicon glyphicon-arrow-down"></span>
+                </a>
+                {% endif %}
+
+            </div>
+        {% endfor %}
+        </div>
+
+        <hr>
+
+        <!-- ============================== -->
+        <!--       D1 DOMAIN (Class D1)     -->
+        <!-- ============================== -->
+        <h5>Class D1 – Sheets & Turn</h5>
+
+        <div id="d1-container">
+        {% for s in d1_segments %}
+            <div class="btn-group" role="group">
+
+                <a href="javascript:void(0)"
+                   onclick="ToggleSegmentSelection(this)"
+                   class="btn btn-xs segment-btn {{ s.ui_color_class }}{% if not has_class_d1_target %} segment-disabled{% endif %}"
+                   data-segment-id="{{ s.id }}"
+                   data-segment-domain="D1"
+                   data-selection-subtype="{{ s.category }}">
+                    {{ s.slug }}
+                </a>
+
+                {% if not ignore_residue_selection and s.generic_numbers.all %}
+                <a href="javascript:void(0)"
+                   onclick="ExpandSegment('{{ s.id }}', '{{ position_type }}')"
+                   class="btn btn-xs segment-btn arrow-btn {{ s.ui_color_class }}{% if not has_class_d1_target %} segment-disabled{% endif %}"
+                   data-segment-id="{{ s.id }}"
+                   data-segment-domain="D1">
+                    <span class="glyphicon glyphicon-arrow-down"></span>
+                </a>
+                {% endif %}
+
+            </div>
+        {% endfor %}
+        </div>
+
+    </div>
+
+    <!-- ========================= -->
+    <!--   GENERIC NUMBER PANEL   -->
+    <!-- ========================= -->
+
+    <p><div id="segment-generic-numbers"></div></p>
+
+    {% if not ignore_residue_selection %}
+    <hr>
+    <p class="centered-file-button">
+        <a data-toggle="modal" data-target="#PositionsFileSelector"
+           class="btn btn-primary btn-xs">
+            <span class="glyphicon glyphicon-plus"></span> Read residue positions from a file
+        </a>
+    </p>
+    {% endif %}
+
 </div>
 
 {% if not ignore_residue_selection %}

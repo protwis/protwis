@@ -719,6 +719,8 @@ def fetch_pdb_info(pdbname, protein ,new_xtal=False, ignore_gasper_annotation=Fa
 
                 if not chain_over_ride:
                     if not receptor and pos:
+                        if  pdbname in ['8YNS','8YNT'] and chain!='R':
+                            continue
                         if pos in pos_in_wt and uniprot_seq[pos-1]==pdb_aa:
                             # if uniprot receptor aa hasnt been found already and aa matches
                             if int(pos)<prev_pos:
@@ -754,6 +756,8 @@ def fetch_pdb_info(pdbname, protein ,new_xtal=False, ignore_gasper_annotation=Fa
                                 continue
                             elif uniprot_pos>=363:
                                 uniprot_pos = uniprot_pos-112
+                        if pdbname=='9D3E' and uniprot_pos>374:
+                            continue
 
                         wt_aa = d['wt_seq'][uniprot_pos-1]
                         prev_receptor = True
@@ -1818,7 +1822,7 @@ def construct_structure_annotation_override(pdb_code, removed, deletions):
     ### make deletions and removed empty
     elif pdb_code in ['7SF7','7SF8','7EB2','7X1T','7X1U','7SRS','7UL2','7UL3','7UL5','7XBX','7XWO','8G2Y','7XJJ','7YM8','8IY5','8IRU',
                       '8JMT','8W8Q','8W8R','8W8S','8I9L','8ITL','8I9A','8I95','8ITM','8HTI','8YZK','8ZSV','8IKL','8IYH','8J24','8JHN',
-                      '8T3S','8ZR5','8ZQE','8K4O','8GTI','8TRC','8TRD','8WU1','8J9N']:
+                      '8T3S','8ZR5','8ZQE','8K4O','8GTI','8TRC','8TRD','8WU1','8J9N','8UXY','8UXV','8K4S','8Y69','8KIG']:
         deletions, removed = [], []
     elif pdb_code in ['7ZLY']:
         deletions = []
@@ -1833,6 +1837,18 @@ def construct_structure_annotation_override(pdb_code, removed, deletions):
         deletions = []
     elif pdb_code=='8RLN':
         removed.append(1106)
+    elif pdb_code=='9D3E':
+        removed = list(range(242,363))
+    elif pdb_code in ['9B9Z','9B9Y','9BA0']:
+        removed = list(range(1001,1197))
+    elif pdb_code in ['8YNS','8YNT']:
+        removed = list(range(305,409))
+        deletions = []
+    elif pdb_code in ['8S4D']:
+        removed = [1001]+removed
+        deletions.append(229)
+    elif pdb_code=='9EAH':
+        removed = list(range(227,1234))
 
 
     return removed, deletions

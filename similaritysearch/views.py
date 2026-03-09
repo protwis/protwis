@@ -115,6 +115,7 @@ def render_alignment(request):
 
     num_of_sequences = len(a.proteins)
     num_residue_columns = len(a.positions) + len(a.segments)
+    # segment_headers_to_hide = [seg for seg, posis in a.segments.items() if len(posis)==0]
 
     return render(request, 'similaritysearch/alignment.html', {'a': a, 'num_of_sequences': num_of_sequences,
         'num_residue_columns': num_residue_columns})

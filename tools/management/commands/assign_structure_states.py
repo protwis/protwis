@@ -194,7 +194,7 @@ class Command(BaseCommand):
                         structure_state = "inactive"
                         if score < 55 and slug[0] == "001": # above this score always inactive structure
                             structure_state = "active"
-                            if slug[0] == "001" and score > -15:
+                            if slug[0] == "001" and score > -14.9:
                                 structure_state = "intermediate"
                         elif score < -10 and slug[0] == "004": # above this score always inactive structure
                             structure_state = "active"

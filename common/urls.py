@@ -4,8 +4,9 @@ from common import views
 
 
 urlpatterns = [
+    url(r'^checkselectionstatus/$', views.check_selection_status, name='check_selection_status'),
     url(r'^addtoselection', views.AddToSelection, name='addtoselection'),
-    url(r'^checkselection', views.CheckSelection, name='checkselection'),
+    url(r'^checkselection/$', views.CheckSelection, name='checkselection'),
     url(r'^removefromselection', views.RemoveFromSelection, name='removefromselection'),
     url(r'^clearselection', views.ClearSelection, name='clearselection'),
     url(r'^importtargetselection', views.ImportTargetSelection, name='importtargetselection'),
@@ -39,4 +40,5 @@ urlpatterns = [
     url(r'^importexcel$', views.ImportExcel, name='importexcel'),
     url(r'^convertsvg$', views.ConvertSVG, name='convertsvg'),
     url(r'^targettabledata', views.TargetTableData, name='targettabledata'),
+    url(r'^getreference', views.get_reference, name='get_reference'),
 ]

@@ -1,0 +1,354 @@
+/* ==========================================================================
+   Structure Browser – Page-specific styles & DT overrides
+   ========================================================================== */
+
+/* --- Tooltip structure preview ------------------------------------------------ */
+pre {
+  display: block;
+  font: 100% "Courier New", Courier, monospace;
+  padding: 10px;
+  border: 1px solid #bae2f0;
+  background: #e3f4f9;
+  margin: .5em 0;
+  overflow: auto;
+  width: 800px;
+}
+
+#struct {
+  display: none;
+  position: absolute;
+  z-index: 100;
+  background: #fff;
+  border: 1px solid #ccc;
+  padding: 3px;
+}
+
+/* --- Init loader -------------------------------------------------------------- */
+#Init_loader {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 60vh;
+}
+
+/* --- Checkbox in header ------------------------------------------------------- */
+#select-all {
+  transform: scale(1.2);
+  display: inline-block;
+  margin: 0 auto;
+  vertical-align: middle;
+  overflow: visible;
+}
+
+/* --- Utility borders (used by JS to mark group boundaries) ------------------- */
+.border-left {
+  border-left: 1px solid #ccc !important;
+}
+
+/* --- DataTables header layout tweaks ----------------------------------------- */
+th .dt-column-order {
+  margin-right: -12px; /* shift sort arrow to right */
+}
+
+/* default: center titles (except first col = checkbox) */
+th:not(:first-child) .dt-column-title {
+  display: inline-block; /* keep arrow beside */
+  text-align: center;
+  padding-left: 24px;     /* space for sort arrow */
+  margin: 0;
+  line-height: 1.2em;
+  white-space: normal;
+}
+
+/* GPCRdb logo col: no left padding */
+th.gpcrdb-col .dt-column-title {
+  padding-left: 0 !important;
+}
+
+/* ensure checkbox column width */
+th:first-child {
+  min-width: 45px;
+  text-align: center;
+}
+
+/* --- ColVis "collection" as a modal grid ------------------------------------- */
+div.dt-button-collection.columns-8 {
+  position: fixed !important;
+  inset: 0 !important;
+  margin: auto !important;
+  width: 90vw !important;
+  max-width: 1400px;
+  height: auto !important;
+  max-height: 65vh !important;
+  z-index: 9999;
+  border-radius: 8px;
+  box-shadow: 0 12px 32px rgba(0,0,0,.25);
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+}
+
+/* inner menu is the scroll area */
+div.dt-button-collection.columns-8 > div[role="menu"].cv-columns {
+  flex: 1 1 auto;
+  max-height: calc(65vh - 56px);
+  height: auto !important;
+  overflow-y: auto !important;
+  overflow-x: auto !important;
+  padding: 8px 12px;
+  display: grid !important;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 10px;
+  align-items: start;
+}
+
+/* Dimmed backdrop */
+div.dt-button-background {
+  background: rgba(0,0,0,.35) !important;
+  opacity: 1 !important;
+}
+
+/* column wrapper in colvis */
+div.dt-button-collection.columns-8 .cv-col {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+/* buttons wrapping nicely */
+div.dt-button-collection.columns-8 .cv-col > button.dt-button {
+  max-width: 100%;
+  white-space: normal !important;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  line-height: 1.25;
+  padding-right: 1.8em; /* space for ✓ */
+}
+
+/* ensure span inside can wrap */
+div.dt-button-collection.columns-8 .cv-col > button.dt-button span {
+  white-space: normal !important;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+/* Don't break section headings in the ColVis grid */
+div.dt-button-collection.columns-8 .cv-col .dt-colvis-heading span {
+  white-space: nowrap !important;
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+}
+
+/* title across full grid width */
+div.dt-button-collection.columns-8 .dt-button-collection-title {
+  grid-column: 1 / -1;
+  margin-bottom: 6px;
+}
+
+/* group headings look like buttons, centered */
+div.dt-button-collection.columns-8 .cv-col .dt-colvis-heading {
+  cursor: pointer;
+  white-space: normal;
+  line-height: 1.2;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.6em;
+  margin: 0 0 6px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #eee;
+  font-weight: 600;
+}
+
+/* footer area inside colvis */
+div.dt-button-collection.columns-8 .cv-footer {
+  border-top: 1px solid #eee;
+  padding: 8px 12px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* --- Sticky superheader & first columns -------------------------------------- */
+
+/* Superheader: make RECEPTOR cell sticky so divider runs through it */
+table thead tr:nth-child(2) th:nth-child(1) {
+  position: sticky;
+  left: 0;
+  z-index: 6;
+  background: #fff;
+}
+
+/* Col 1: checkbox */
+table thead tr:nth-child(3) th:nth-child(1),
+table thead tr:nth-child(4) th:nth-child(1),
+#StructureBrowserTable tbody td:nth-child(1) {
+  position: sticky; left: 0;
+  width: 45px; min-width: 45px; max-width: 45px;
+  z-index: 5; background: #fff;
+}
+
+/* Col 2: GPCRdb */
+table thead tr:nth-child(3) th:nth-child(2),
+table thead tr:nth-child(4) th:nth-child(2),
+#StructureBrowserTable tbody td:nth-child(2) {
+  position: sticky; left: 45px;
+  width: 70px; min-width: 70px; max-width: 70px;
+  z-index: 5; background: #fff;
+}
+
+/* Col 3: Gene */
+table thead tr:nth-child(3) th:nth-child(3),
+table thead tr:nth-child(4) th:nth-child(3),
+#StructureBrowserTable tbody td:nth-child(3) {
+  position: sticky; left: 115px;
+  width: 100px; min-width: 100px; max-width: 100px;
+  z-index: 5; background: #fff;
+}
+
+/* Col 4: UniProt */
+table thead tr:nth-child(3) th:nth-child(4),
+table thead tr:nth-child(4) th:nth-child(4),
+#StructureBrowserTable tbody td:nth-child(4) {
+  position: sticky; left: 215px;
+  width: 100px; min-width: 100px; max-width: 100px;
+  z-index: 5; background: #fff;
+}
+
+/* Col 5: Protein */
+table thead tr:nth-child(3) th:nth-child(5),
+table thead tr:nth-child(4) th:nth-child(5),
+#StructureBrowserTable tbody td:nth-child(5) {
+  position: sticky; left: 315px;
+  width: 100px; min-width: 100px; max-width: 100px;
+  z-index: 5; background: #fff;
+}
+
+/* Vertical divider at boundary RECEPTOR → CLASSIFICATION (and through titles/filters/body) */
+table thead tr:nth-child(2) th:nth-child(1)::after,
+table thead tr:nth-child(3) th:nth-child(5)::after,
+table thead tr:nth-child(4) th:nth-child(5)::after,
+#StructureBrowserTable tbody td:nth-child(5)::after {
+  content: "";
+  position: absolute; top: 0; right: 0; width: 1px; height: 100%;
+  background-color: #ccc; pointer-events: none;
+}
+
+/* --- Compact list cells: collapse to first line, expand on hover ------------- */
+td.expand_1line {
+  max-width: 100px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  position: relative;
+}
+
+td.expand_1line .expanded { 
+  display: none; 
+  white-space: normal; 
+}
+
+td.expand_1line:hover { 
+  overflow: visible; 
+  white-space: normal; 
+}
+
+td.expand_1line:hover .collapsed { 
+  display: none; 
+}
+
+td.expand_1line:hover .expanded { 
+  display: inline;
+}
+
+/* --- Selection styling -------------------------------------------------------- */
+:root{
+  --sel-bg: var(--bs-primary-bg-subtle, #e7f1ff);
+  --sel-border: var(--bs-primary-border-subtle, #9ec5fe);
+}
+
+#StructureBrowserTable tbody tr { 
+  cursor: pointer;
+}
+
+#StructureBrowserTable tbody tr.row-selected td {
+  background-color: var(--sel-bg) !important;
+}
+
+/* --- Icon/button helpers ------------------------------------------------------ */
+.icon-button {
+  background: none;
+  border: none;
+  padding: 0;
+  margin-left: 4px;
+  cursor: pointer;
+  position: relative;
+  z-index: 4;
+  display: inline-flex;
+  align-items: center;
+}
+
+th.sticky-uniprot .icon-button { 
+  z-index: 6;
+}
+
+.icon-button i { 
+  font-size: 14px;
+  color: #444;
+  pointer-events: auto; 
+}
+.icon-button:hover i { color: #007bff; }
+
+/* --- Popovers ----------------------------------------------------------------- */
+.popover.popover-wide {
+  max-width: 600px;
+  white-space: normal;
+  word-wrap: break-word;
+  z-index: 99999;
+}
+
+.popover.popover-wide .popover-content {
+  font-size: 14px;
+  line-height: 1.5;
+  padding: 10px 14px;
+}
+
+/* --- Busy spinner on DT buttons ---------------------------------------------- */
+.dt-button { 
+  position: relative;
+}
+
+.dt-button > .btn-spinner {
+  display: none;
+  position: absolute; left: 50%; top: 50%;
+  transform: translate(-50%, -50%) rotate(0deg);
+  width: 16px; height: 16px;
+  border: 2px solid rgba(0,0,0,.25);
+  border-top-color: rgba(0,0,0,.7);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 1;
+  animation: btnSpin .8s linear infinite;
+}
+
+@keyframes btnSpin { to { transform: translate(-50%, -50%) rotate(360deg); } }
+.dt-button.is-busy > .btn-spinner { display: inline-block; }
+.dt-button.is-busy > span { opacity: .45; }
+
+/* --- GPCRdb logo monochrome hover -------------------------------------------- */
+.gpcrdb-link { filter: grayscale(100%); }
+.gpcrdb-link:hover { filter: grayscale(0%); }
+
+/* --- Button spacing cluster tweaks ------------------------------------------- */
+.dt-buttons .dt-button { margin-right: 5px !important; }
+.dt-buttons .dt-button.cluster-sep { margin-left: 35px !important; }
+.dt-buttons .dt-button > span { padding: 5px 5px !important; }
+
+/* Active/blue state for the Superposition button */
+.dt-button.active-superpose {
+  background-color: #007bff !important;
+  color: #fff !important;
+  border: 1px solid #007bff !important;
+}
