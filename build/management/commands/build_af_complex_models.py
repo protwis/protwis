@@ -93,45 +93,48 @@ class Command(BaseBuild):
             action='store',
             default=False,
             help='Load cleaned sequences from CSV')
+        
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
-    tracker = {}
-    all_models = django.apps.apps.get_models()[6:]
-    test_model_updates(all_models, tracker, initialize=True)
+        self.tracker = {}
+        self.all_models = django.apps.apps.get_models()[6:]
+        test_model_updates(self.all_models, self.tracker, initialize=True)
 
-    # source file directory
-    pdb_data_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'pdbs'])
+        # source file directory
+        self.pdb_data_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'pdbs'])
 
-    ### USE below to fix seg ends
-    xtal_seg_end_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'mod_xtal_segends.yaml'])
-    with open(xtal_seg_end_file, 'r') as f:
-        xtal_seg_ends = yaml.load(f, Loader=yaml.Loader)
+        ### USE below to fix seg ends
+        xtal_seg_end_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'mod_xtal_segends.yaml'])
+        with open(xtal_seg_end_file, 'r') as f:
+            self.xtal_seg_ends = yaml.load(f, Loader=yaml.Loader)
 
-    xtal_anomalies_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'all_anomalies.yaml'])
-    with open(xtal_anomalies_file, 'r') as f2:
-        xtal_anomalies = yaml.load(f2, Loader=yaml.Loader)
+        xtal_anomalies_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'all_anomalies.yaml'])
+        with open(xtal_anomalies_file, 'r') as f2:
+            self.xtal_anomalies = yaml.load(f2, Loader=yaml.Loader)
 
-    xtal_representatives = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'xtal_representatives.yaml'])
-    with open(xtal_representatives, 'r') as f3:
-        xtal_representatives = yaml.load(f3, Loader=yaml.Loader)
+        xtal_representatives_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'xtal_representatives.yaml'])
+        with open(xtal_representatives_file, 'r') as f3:
+            self.xtal_representatives = yaml.load(f3, Loader=yaml.Loader)
 
-    non_xtal_seg_end_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'non_xtal_segends.yaml'])
-    with open(non_xtal_seg_end_file, 'r') as f:
-        non_xtal_seg_ends = yaml.load(f, Loader=yaml.Loader)
+        non_xtal_seg_end_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'non_xtal_segends.yaml'])
+        with open(non_xtal_seg_end_file, 'r') as f:
+            self.non_xtal_seg_ends = yaml.load(f, Loader=yaml.Loader)
 
-    s = ProteinSegment.objects.all()
-    segments = {}
-    for segment in s:
-        segments[segment.slug] = segment
+        self.s = ProteinSegment.objects.all()
+        self.segments = {}
+        for segment in self.s:
+            self.segments[segment.slug] = segment
 
-    parsed_pdb = None
+        self.parsed_pdb = None
 
-    construct_errors, rotamer_errors, contactnetwork_errors, interaction_errors = [],[],[],[]
+        self.construct_errors, self.rotamer_errors, self.contactnetwork_errors, self.interaction_errors = [],[],[],[]
 
-    with open(os.sep.join([settings.DATA_DIR, 'residue_data', 'unnatural_amino_acids.yaml']), 'r') as f_yaml:
-        raw_uaa = yaml.safe_load(f_yaml)
-        unnatural_amino_acids = {}
-        for i, j in raw_uaa.items():
-            unnatural_amino_acids[i] = j
+        with open(os.sep.join([settings.DATA_DIR, 'residue_data', 'unnatural_amino_acids.yaml']), 'r') as f_yaml:
+            raw_uaa = yaml.safe_load(f_yaml)
+            self.unnatural_amino_acids = {}
+            for i, j in raw_uaa.items():
+                self.unnatural_amino_acids[i] = j
 
     def handle(self, *args, **options):
         # delete any existing structure data
@@ -144,12 +147,7 @@ class Command(BaseBuild):
                 print(msg)
                 self.logger.error(msg)
 
-        if options['skip_cn']:
-            self.run_contactnetwork=False
-        else:
-            self.run_contactnetwork=True
-
-
+        self.run_contactnetwork = not options['skip_cn']
 
         peptide_effects = self.get_peptide_ligand_effect_data()
         self.parsed_structures = ParseAFComplexModels(cleaned_seq_csv=options['cleaned_seq_csv'],
@@ -163,10 +161,7 @@ class Command(BaseBuild):
             self.parsed_structures.complexes = filtered_set
             # self.parsed_structures.complexes = [i for i in self.parsed_structures.complexes if i in options['structure'] or i.lower() in options['structure']]
 
-        if options['incremental']:
-            self.incremental_mode = True
-        else:
-            self.incremental_mode = False
+        self.incremental_mode = options['incremental']        
 
         try:
             self.logger.info('CREATING STRUCTURES')
@@ -1035,11 +1030,11 @@ class Command(BaseBuild):
             except:
                 pass
 
-            ##### SIGNPROT
-            beta_gamma = sd['beta_gamma']
+            ##### SIGNPROT            
             if sd['signprot']:
                 signprot = Protein.objects.get(entry_name=sd['signprot'])
                 signprot_conf = ProteinConformation.objects.get(protein=signprot)
+                beta_gamma = sd['beta_gamma']
                 if beta_gamma:
                     beta_protconf = ProteinConformation.objects.get(protein__entry_name='gbb1_human')
                     gamma_protconf = ProteinConformation.objects.get(protein__entry_name='gbg2_human')
@@ -1068,19 +1063,20 @@ class Command(BaseBuild):
             metrics.save()
 
             ##### StructureExtraProteins
-            try:
-                display_name = g_prot_dict[signprot.entry_name.split('_')[0].upper()]
-                cat = 'G alpha'
-            except:
-                display_name = arr_dict[signprot.entry_name]
-                cat = 'Arrestin'
+            if signprot:        
+                try:
+                    display_name = g_prot_dict[signprot.entry_name.split('_')[0].upper()]
+                    cat = 'G alpha'
+                except:
+                    display_name = arr_dict[signprot.entry_name]
+                    cat = 'Arrestin'
 
-            sep = StructureExtraProteins.objects.get_or_create(display_name=display_name, note=None, chain='B', category=cat, wt_coverage=100, protein_conformation=signprot_conf, structure=struct, wt_protein=signprot)
-            if beta_gamma:
-                sep_beta = StructureExtraProteins.objects.get_or_create(display_name='G&beta;1', note=None, chain='C', category='G beta', wt_coverage=100, protein_conformation=beta_protconf, structure=struct, wt_protein=beta_protconf.protein)
-                sep_beta = StructureExtraProteins.objects.get_or_create(display_name='G&gamma;2', note=None, chain='D', category='G gamma', wt_coverage=100, protein_conformation=gamma_protconf, structure=struct, wt_protein=gamma_protconf.protein)
-            # g beta - TO BE ADDED
-            # g gamma - TO BE ADDED
+                sep = StructureExtraProteins.objects.get_or_create(display_name=display_name, note=None, chain='B', category=cat, wt_coverage=100, protein_conformation=signprot_conf, structure=struct, wt_protein=signprot)
+                if beta_gamma:
+                    sep_beta = StructureExtraProteins.objects.get_or_create(display_name='G&beta;1', note=None, chain='C', category='G beta', wt_coverage=100, protein_conformation=beta_protconf, structure=struct, wt_protein=beta_protconf.protein)
+                    sep_beta = StructureExtraProteins.objects.get_or_create(display_name='G&gamma;2', note=None, chain='D', category='G gamma', wt_coverage=100, protein_conformation=gamma_protconf, structure=struct, wt_protein=gamma_protconf.protein)
+                # g beta - TO BE ADDED
+                # g gamma - TO BE ADDED
 
             #Adding plDDT for rendering
             resis = []
@@ -1090,7 +1086,7 @@ class Command(BaseBuild):
                     try:
                         if chain.get_id()=='A':
                             res_obj = Residue.objects.get(protein_conformation__protein=con, sequence_number=res.get_id()[1])
-                        elif chain.get_id()=='B':
+                        elif chain.get_id()=='B' and signprot:
                             res_obj = Residue.objects.get(protein_conformation__protein=signprot, sequence_number=res.get_id()[1])
                         elif chain.get_id()=='C':
                             res_obj = Residue.objects.get(protein_conformation__protein=beta_protconf.protein, sequence_number=res.get_id()[1])
