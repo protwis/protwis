@@ -1195,7 +1195,8 @@ class ParseAFComplexModels():
 
     def __init__(self, cleaned_seq_csv=None,peptide_effects=None, logger=None):
         self.data_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'AlphaFold_multimer'])
-        self.filedirs = os.listdir(self.data_dir)
+        self.filedirs = list(filter(os.path.isdir, [os.path.join(self.data_dir, f) for f in os.listdir(self.data_dir)])) #Get directories only
+        self.filedirs = [os.path.basename(f) for f in self.filedirs] #Strip path to get only directory names
         self.complexes = {}
         self.cleaned_seq_csv = cleaned_seq_csv
         self.peptide_effects = peptide_effects
@@ -1210,8 +1211,6 @@ class ParseAFComplexModels():
 
 
         for f in self.filedirs:
-            if f.startswith('.'):
-                continue
             print(os.sep.join([self.data_dir, f, f+'_metrics.csv']))
             metrics_file = os.sep.join([self.data_dir, f, f+'_metrics.csv'])
             if not os.path.exists(metrics_file):
@@ -1266,7 +1265,7 @@ class ParseAFComplexModels():
 
             # Check signprot type
 
-            if signprot.startswith('gna'):
+            if signprot and signprot.startswith('gna'):
 
                 # Check if model has full heterotrimer
                 if 'gbb1_human' in f:
@@ -1346,7 +1345,7 @@ class ParseAFComplexModels():
                 'signprot': signprot,
                 'publication_date': model_date,
                 'location': location,
-                'model': 'af-signprot',
+                'model': model,
                 'preferred_chain': 'A',
                 'PTM': metrics['ptm'],
                 'iPTM': metrics['iptm'],
@@ -1356,18 +1355,19 @@ class ParseAFComplexModels():
             }
 
             # Check for type of signprot
-            if signprot.startswith('gna'):
-                # Check if model has full heterotrimer
-                if 'gbb1_human' in f:
-                    signprot = signprot.split('_')[0] + '_human'
-                    beta_gamma = True
+            if signprot:
+                if signprot.startswith('gna'):
+                    # Check if model has full heterotrimer
+                    if 'gbb1_human' in f:
+                        signprot = signprot.split('_')[0] + '_human'
+                        beta_gamma = True
+                    else:
+                        beta_gamma = False
                 else:
+                    self.complexes[f'{receptor}{peptide}-{signprot}']['model'] = 'af-arrestin'
                     beta_gamma = False
-            else:
-                self.complexes[f'{receptor}{peptide}-{signprot}']['model'] = 'af-arrestin'
-                beta_gamma = False
 
-            self.complexes[f'{receptor}{peptide}-{signprot}']['beta_gamma'] = beta_gamma
+                self.complexes[f'{receptor}{peptide}-{signprot}']['beta_gamma'] = beta_gamma            
 
             # self.complexes[f'{receptor}{peptide}-{signprot}'] = complex_info
 
@@ -1378,6 +1378,8 @@ class ParseAFComplexModels():
                 if line.startswith("ATOM") and line[21] == chain_id:
                     residue = line[17:20]
                     res_seq = int(line[22:26])
+                    # Only add if the sequence length (i.e. current position) is less than the residue sequence number (i.e residue positon) to
+                    # avoid duplicates in case of multiple lines/atoms for the same residue
                     if len(sequence) < res_seq:
                         sequence += self.residue_to_one_letter.get(residue, 'X')
         return sequence

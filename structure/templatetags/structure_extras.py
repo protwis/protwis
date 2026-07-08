@@ -199,4 +199,4 @@ def receptor_short ( objs ):
 
 @register.filter
 def keyvalue(dict, key):    
-    return dict[key]
+    return dict.get(key, None)
