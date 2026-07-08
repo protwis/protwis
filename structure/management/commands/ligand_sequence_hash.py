@@ -19,7 +19,7 @@ import copy
 
 TABLE_NAME = 'ligand' #cannot be "U0"
 db_file_path_default = os.path.join(settings.DATA_DIR,"structure_data","ligand_sequence_hash.sqlite3")
-max_buffer_size = 1000
+max_batch_size = 1000
 
 
 def _insert_into_table_bulk_sqlite(connection,cursor,table_name,update_fields,qvalues):
@@ -31,25 +31,8 @@ def _update_table_bulk_sqlite(connection,cursor,table_name,query_fields,update_f
     sql_query_insert_into = "UPDATE %s SET %s WHERE %s" % (table_name,', '.join([f+' = ?' for f in update_fields]),', '.join([f+' = ?' for f in query_fields]))
     cursor.executemany(sql_query_insert_into,[[qvalue[f] for f in update_fields+query_fields] for qvalue in qvalues])
     connection.commit()
-class Command(BaseCommand):
-    help = 'Build ligand sequence hash. '
 
-    def add_arguments(self, parser):
-        super(Command, self).add_arguments(parser=parser)
-        parser.add_argument('--output', default=db_file_path_default, action='store', help='Output path of the sqlite3 file.')
-        parser.add_argument('--verbose', default=False, action='store_true', help='Print progress in stdout.')
-        parser.add_argument('--collision-test', default=False, action='store_true', help='Only for code testing.')
-        parser.add_argument('--debug-csv', default=False, action='store_true', help='Creates a debug CSV file.')
-
-    logger = logging.getLogger(__name__)
-
-
-    def handle(self, *args, **options):    
-        error = None
-        db_file_path = options['output']
-        if options['verbose']: print('Building ligand sequence hashes...')
-        
-        con = sqlite3.connect(db_file_path)
+def _initialize_db_table(con):
         cur = con.cursor()
         cur.execute(
             "DROP TABLE IF EXISTS %s"  % (TABLE_NAME)
@@ -70,25 +53,82 @@ class Command(BaseCommand):
         )# "UNIQUE (sequence_hash, sequence_hash_col, sequence_dup)"
         cur.close()
 
-
         cur = con.cursor()
         cur.execute("CREATE INDEX IF NOT EXISTS sequence_hash_index ON %s (sequence_hash)" % (TABLE_NAME))
         cur.execute("CREATE INDEX IF NOT EXISTS sequence_hash_sequence_hash_col_index ON %s (sequence_hash,sequence_hash_col)" % (TABLE_NAME))
         cur.close()
 
+def _create_artificial_collision(q_results, current_batch_start):
+    col_i = 0
+    q_result_n_1 = copy.deepcopy(q_results[-1])
+    
+    if current_batch_start == 0:
+        collision_test_hash = q_result_n_1['sequence_hash'] = q_results[-2]['sequence_hash']
+        col_sequence = q_result_n_1['sequence']
+    else:
+        # make sure sequence is different
+        if col_sequence == q_result_n_1['sequence']:
+            for q_result in q_results:
+                if  q_result['sequence'] != col_sequence:
+                    col_sequence = q_result_n_1['sequence'] = q_result['sequence']
+
+        q_result_n_1['sequence_hash'] = collision_test_hash
+    q_result_n_1['gpcrdb_pk'] = 2147483647 - col_i
+    col_i += 1
+    q_results.append(q_result_n_1)
+    for j in range(0,3):
+        q_result_n_1_dup = copy.deepcopy(q_result_n_1)
+        q_result_n_1_dup['gpcrdb_pk'] = 2147483647 - col_i
+        col_i += 1
+        q_results.append(q_result_n_1_dup)
+    del q_result_n_1_dup
+    del q_result_n_1
+    print('Test collision on hash: '+collision_test_hash)  
+
+def _result_set_to_hash_keyed_dict(query_result_set):
+    """Create a dictionary that uses sequence hashes as keys and a list of Ligand objects with the same hash as values"""
+    sequence_hashes_dict = {}
+    for q_result in query_result_set:
+        my_hash = q_result['sequence_hash']
+        if my_hash in sequence_hashes_dict:            
+            sequence_hashes_dict[my_hash].append(q_result)
+        else:
+            sequence_hashes_dict[my_hash] = [q_result]
+    return sequence_hashes_dict
+
+class Command(BaseCommand):
+    help = 'Build ligand sequence hash. '
+
+    def add_arguments(self, parser):
+        super(Command, self).add_arguments(parser=parser)
+        parser.add_argument('--output', default=db_file_path_default, action='store', help='Output path of the sqlite3 file.')
+        parser.add_argument('--verbose', default=False, action='store_true', help='Print progress in stdout.')
+        parser.add_argument('--collision-test', default=False, action='store_true', help='Only for code testing.')
+        parser.add_argument('--debug-csv', default=False, action='store_true', help='Creates a debug CSV file.')
+
+    logger = logging.getLogger(__name__)
+
+
+    def handle(self, *args, **options):    
+        error = None
+        db_file_path = options['output']
+        if options['verbose']: print('Building ligand sequence hashes...')
+        
+        con = sqlite3.connect(db_file_path)
+
+        _initialize_db_table(con)
 
         query_fields = ['id','sequence']
         update_fields = ['gpcrdb_pk','sequence','sequence_hash','sequence_hash_col','sequence_dup','sequence_hash_and_col_main']
         q = Ligand.objects.exclude(sequence=None).order_by('id').values(*query_fields)
-        i = 0
-        col_i = 0
+        current_batch_start = 0        
         collision_test_hash = None
         col_sequence = None
-        while True: # Run in batches of max_buffer_size to be memory efficient
-            q_results = list(q[i:max_buffer_size+i])
+        while True: # Run in batches of batch_size to be memory efficient
+            q_results = list(q[current_batch_start:current_batch_start + max_batch_size])
             if not q_results:
                 break
-            if options['verbose']: print('Parsing from '+str(i+1)+' to '+str(i+len(q_results)))
+            if options['verbose']: print('Parsing from '+str(current_batch_start+1)+' to '+str(current_batch_start+len(q_results)))
             for q_result in q_results:    
                 my_hash = base64.b32encode(hashlib.md5(q_result['sequence'].encode()).digest()).decode().strip('=')
                 q_result['gpcrdb_pk'] = q_result['id']
@@ -100,30 +140,8 @@ class Command(BaseCommand):
 
             # collision test for development
             if options['collision_test']:
-                q_result_n_1 = copy.deepcopy(q_results[-1])
-                
-                if i == 0:
-                    collision_test_hash = q_result_n_1['sequence_hash'] = q_results[-2]['sequence_hash']
-                    col_sequence = q_result_n_1['sequence']
-                else:
-                    # make sure sequence is different
-                    if col_sequence == q_result_n_1['sequence']:
-                        for q_result in q_results:
-                            if  q_result['sequence'] != col_sequence:
-                                col_sequence = q_result_n_1['sequence'] = q_result['sequence']
-
-                    q_result_n_1['sequence_hash'] = collision_test_hash
-                q_result_n_1['gpcrdb_pk'] = 2147483647 - col_i
-                col_i += 1
-                q_results.append(q_result_n_1)
-                for j in range(0,3):
-                    q_result_n_1_dup = copy.deepcopy(q_result_n_1)
-                    q_result_n_1_dup['gpcrdb_pk'] = 2147483647 - col_i
-                    col_i += 1
-                    q_results.append(q_result_n_1_dup)
-                del q_result_n_1_dup
-                del q_result_n_1
-                print('Test collision on hash: '+collision_test_hash)   
+                _create_artificial_collision(q_results, current_batch_start)
+            
             # Try to save the hashes in SQLlite DB 
             cur = con.cursor()
             try:
@@ -133,27 +151,20 @@ class Command(BaseCommand):
             except IntegrityError as e:
                 # This runs on duplicates or collisions
                 con.rollback()
-                cur.close()
-                sequence_hashes_dict = {}
+                cur.close()                
                 
-                dup_sequence_hashes_set = set()
-                for q_result in q_results:
-                    my_hash = q_result['sequence_hash']
-                    if my_hash in sequence_hashes_dict:
-                        dup_sequence_hashes_set.add(my_hash)
-                        if my_hash not in sequence_hashes_dict:
-                            sequence_hashes_dict[my_hash] = []
-                        sequence_hashes_dict[my_hash].append(q_result)
-                    else:
-                        sequence_hashes_dict[my_hash] = [q_result]
+                sequence_hashes_dict = _result_set_to_hash_keyed_dict(q_results)
+                
+                #extract the sequence hashes that have duplicates/collisions
+                dup_sequence_hashes_set = set([key for key, value in sequence_hashes_dict.items() if len(value) > 1])
 
                 list_of_unique_hashes = list(sequence_hashes_dict.keys())
                 q_num_col = con.cursor()
 
                 # This SQL query returns a table with sequence hashes, hash collision ID and the number of duplicates 
-                sql_query = 'SELECT "table_name_0"."sequence_hash", COUNT("table_name_0"."id") AS "num_col" '+ \
-                            'FROM "%s" AS "table_name_0"' % (TABLE_NAME)  + \
-                            'WHERE "table_name_0"."sequence_dup" = (' + \
+                sql_query = 'SELECT "table_name_0"."sequence_hash", COUNT("table_name_0"."id") AS "num_col"'+ \
+                            ' FROM "%s" AS "table_name_0"' % (TABLE_NAME)  + \
+                            ' WHERE "table_name_0"."sequence_dup" = (' + \
                                 'SELECT MAX(U0."sequence_dup") AS "max_sequence_dup" ' + \
                                 'FROM "%s" U0 ' % (TABLE_NAME) + \
                                 'WHERE (' + \
@@ -165,7 +176,7 @@ class Command(BaseCommand):
                             ') GROUP BY "table_name_0"."sequence_hash"'
                 q_num_col.execute(sql_query,list_of_unique_hashes)
                 
-                # Make a list of batches of sequence hashes than will return a query with a number of records < max_buffer_size
+                # Make a list of batches of sequence hashes than will return a query with a number of records < batch_size
                 # The following code does not preserve the order of the sequence hashes
                 col_batch_list = []
                 overrun_buffer_hashes_list = []
@@ -174,11 +185,11 @@ class Command(BaseCommand):
                 for row in q_num_col:
                     num_col = row[1]
                     sequence_hash = row[0]
-                    if num_col > max_buffer_size:
+                    if num_col > max_batch_size:
                         
                         # Remove this warning if the code already takes care of this
                         msg = "build_ligand_sequence_hash: Number of " + \
-                                            "hash collisions larger than %d for %s." % (max_buffer_size, sequence_hash) + \
+                                            "hash collisions larger than %d for %s." % (max_batch_size, sequence_hash) + \
                                             "This might cause RAM memory overrun during building with the current " + \
                                             "implementation."
                         self.logger.warning(msg)
@@ -187,7 +198,7 @@ class Command(BaseCommand):
                         continue
                     
                     current_batch_size += num_col
-                    if current_batch_size > max_buffer_size:
+                    if current_batch_size > max_batch_size:
                         col_batch_list.append(batch)
                         batch = []
                         current_batch_size = num_col
@@ -329,7 +340,7 @@ class Command(BaseCommand):
                        
                 del sequence_hashes_dict
                 if options['debug_csv']:
-                    with open(db_file_path+'_'+str(i)+'.csv', 'w', newline='') as csvfile:
+                    with open(db_file_path+'_'+str(current_batch_start)+'.csv', 'w', newline='') as csvfile:
                         fieldnames = ['id']+update_fields
                         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
                         writer.writeheader()
@@ -341,7 +352,7 @@ class Command(BaseCommand):
 
 
 
-            i += max_buffer_size
+            current_batch_start += max_batch_size
             
         con.close()
         self.logger.info('Ligand sequence hashes built.')
