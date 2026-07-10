@@ -30,6 +30,7 @@ import structure.assign_generic_numbers_gpcr as as_gn
 import django.apps
 import logging
 import os
+import sys
 import yaml
 import time
 import gc
@@ -171,7 +172,6 @@ class Command(BaseBuild):
             test_model_updates(self.all_models, self.tracker, check=True)
             self.logger.info('COMPLETED CREATING STRUCTURES')
         except Exception as msg:
-            print(msg)
             self.logger.error(msg)
 
     @staticmethod
@@ -664,27 +664,31 @@ class Command(BaseBuild):
         #     return
 
     def purge_structures(self):
-        alphafold_models_filter =  Q(structure_ligand_pair__structure__structure_type__slug__startswith='af-signprot') | \
+        
+        alphafold_models_filter1 =  Q(structure__structure_type__slug__startswith='af-signprot') | \
+                                   Q(structure__structure_type__slug__startswith='af-peptide') | \
+                                   Q(structure__structure_type__slug__startswith='af-arrestin')
+        
+        alphafold_models_filter2 =  Q(structure_ligand_pair__structure__structure_type__slug__startswith='af-signprot') | \
                                    Q(structure_ligand_pair__structure__structure_type__slug__startswith='af-peptide') | \
-                                   Q(structure_ligand_pair__structure__structure_type__slug__startswith='af-arrestin')
-               
+                                   Q(structure_ligand_pair__structure__structure_type__slug__startswith='af-arrestin')               
 
-        models = Structure.objects.filter(alphafold_models_filter)
+        models = Structure.objects.filter(alphafold_models_filter1)
 
         for m in models:
             PdbData.objects.filter(pdb=m.pdb_data.pdb).delete()
             WebLink.objects.filter(index=m.pdb_code.index).delete()
         models.delete()
         
-        rfi = ResidueFragmentInteraction.objects.filter(alphafold_models_filter)
+        rfi = ResidueFragmentInteraction.objects.filter(alphafold_models_filter2)
         rfi.delete()
         # ResidueFragmentInteractionType.objects.all().delete()
-        sli = StructureLigandInteraction.objects.filter(alphafold_models_filter)
+        sli = StructureLigandInteraction.objects.filter(alphafold_models_filter1)
         sli.delete()
         #Remove previous Rotamers/Residues to prepare repopulate
-        f = Fragment.objects.filter(alphafold_models_filter)
+        f = Fragment.objects.filter(alphafold_models_filter1)
         f.delete()
-        r = Rotamer.objects.filter(alphafold_models_filter)
+        r = Rotamer.objects.filter(alphafold_models_filter1)
         r.delete()
         # PdbData.objects.all().delete()
 
@@ -954,9 +958,6 @@ class Command(BaseBuild):
                         except FieldError:
                             ligands = Ligand.objects.filter(id__in=sd['peptide_gpcrdb_ids'])
                     else:
-
-                        print(ligand)
-
                         # Get the Ligand object based on the chain E sequence
                         try:
                             ligand = Ligand.objects.filter(sequence=sd['chain_e_sequence']).select_related('parent')
@@ -980,9 +981,8 @@ class Command(BaseBuild):
                             except AttributeError:
                                 peptide_gpcrdb_ids_dict[ligand.id] = True
 
-                        ligands = list(peptide_gpcrdb_ids_dict.keys())
+                        ligands = Ligand.objects.filter(id__in=peptide_gpcrdb_ids_dict.keys())
                     for ligand in ligands:
-                        print(ligand)
 
                         # Try to get existing LigandPeptideStructure or create a new one
                         ligand_peptide_structure, created = LigandPeptideStructure.objects.get_or_create(
@@ -993,12 +993,12 @@ class Command(BaseBuild):
                         )
                         
                         if created:
-                            print(f"Created new LigandPeptideStructure for structure {struct.pdb_code.index} and ligand {ligand.name}")
+                            self.logger.info(f"Created new LigandPeptideStructure for structure {struct.pdb_code.index} and ligand {ligand.name}")
                         else:
-                            print(f"Found existing LigandPeptideStructure for structure {struct.pdb_code.index} and ligand {ligand.name}")
-                
+                            self.logger.info(f"Found existing LigandPeptideStructure for structure {struct.pdb_code.index} and ligand {ligand.name}")
+
                 except Exception as e:
-                    print(f"Error creating LigandPeptideStructure(s): {str(e)} {ligands}")
+                    self.logger.error(f"Error creating LigandPeptideStructure(s): {str(e)} {ligands}")
 
 
 

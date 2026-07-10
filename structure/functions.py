@@ -134,7 +134,7 @@ class BlastSearchOnline(object):
             return page[1].strip().lower()
 
         except urllib.HTTPError as error:
-            print(error)
+            logger.error(error)
             return ''
 
 #==============================================================================
@@ -718,10 +718,8 @@ class HSExposureCB(AbstractPropertyMap):
                 if check_knots:
                     for knot in knot_resis:
                         if knot[0][1]==pp1[i].get_id()[1] and knot[0][0]==pp1[i].get_parent().get_id():
-                            # print(pp1[i].get_parent().get_id(),pp1[i]) #print reference
                             for r in residue_up:
                                 if r.get_parent().get_id()==knot[1][0] and r.get_id()[1] in knot[1][1]:
-                                    # print('close: ', r.get_parent().get_id(),r) #print res within radius
                                     resi_range = [knot[1][1][0], knot[1][1][-1]]
                                     if knot[1][0] not in self.remodel_resis:
                                         self.remodel_resis[knot[1][0]] = [resi_range]
@@ -986,7 +984,7 @@ class PdbStateIdentifier():
         if self.parent_prot_conf.protein.family.slug.startswith('001') or self.parent_prot_conf.protein.family.slug.startswith('007'):
             tm6 = self.get_residue_distance(self.tm2_gn, self.tm6_gn)
             tm7 = self.get_residue_distance(self.tm3_gn, self.tm7_gn)
-            print(tm6, tm7, tm6-tm7)
+            
             if tm6 is not False and tm7 is not False:
                 self.activation_value = tm6-tm7
                 if self.activation_value<self.inactive_cutoff:
@@ -1049,7 +1047,7 @@ class PdbStateIdentifier():
                 elif self.activation_value>2:
                     self.state = ProteinState.objects.get(slug='active')
         else:
-            print('{} is not class A,B,C,F'.format(self.structure))
+            logger.info('{} is not class A,B,C,F'.format(self.structure))
         if self.structure_type=='structure':
             ssno.seq_num_overwrite('pdb')
 
@@ -1057,7 +1055,7 @@ class PdbStateIdentifier():
         try:
             res1 = Residue.objects.get(protein_conformation__protein=self.structure.protein_conformation.protein.parent, display_generic_number__label=dgn(residue1, self.parent_prot_conf))
             res2 = Residue.objects.get(protein_conformation__protein=self.structure.protein_conformation.protein.parent, display_generic_number__label=dgn(residue2, self.parent_prot_conf))
-            print(res1, res1.id, res2, res2.id)
+            
             try:
                 rota1 = Rotamer.objects.filter(structure=self.structure, residue__sequence_number=res1.sequence_number)
                 if len(rota1)==0:
@@ -1080,7 +1078,6 @@ class PdbStateIdentifier():
 
             for chain1, chain2 in zip(rota_struct1, rota_struct2):
                 for r1, r2 in zip(chain1, chain2):
-                    # print(self.structure, r1.get_id()[1], r2.get_id()[1], self.calculate_CA_distance(r1, r2), self.structure.state.name)
                     line = '{},{},{},{},{}\n'.format(self.structure, self.structure.state.name, round(self.calculate_CA_distance(r1, r2), 2), r1.get_id()[1], r2.get_id()[1])
                     self.line = line
                     return self.calculate_CA_distance(r1, r2)
@@ -1097,13 +1094,12 @@ class PdbStateIdentifier():
                 for chain in struct:
                     r1 = chain[res1.sequence_number]
                     r2 = chain[res2.sequence_number]
-                    print(self.structure, r1.get_id()[1], r2.get_id()[1], self.calculate_CA_distance(r1, r2), self.structure.state.name)
                     line = '{},{},{},{},{}\n'.format(self.structure, self.structure.state.name, round(self.calculate_CA_distance(r1, r2), 2), r1.get_id()[1], r2.get_id()[1])
                     self.line = line
                     return self.calculate_CA_distance(r1, r2)
 
             except:
-                print('Error: {} no matching rotamers ({}, {})'.format(self.structure.pdb_code.index, residue1, residue2))
+                logger.error('Error: {} no matching rotamers ({}, {})'.format(self.structure.pdb_code.index, residue1, residue2))
                 return False
 
     def calculate_CA_distance(self, residue1, residue2):
@@ -1180,7 +1176,7 @@ class ParseAFModelsCSV():
                                  'gpcrdb id': gpcrdb_id,
                                  'in_structure': True})
             except IndexError:
-                print('Cannot find information for complex {}'.format(complex))
+                self.logger.info('Cannot find information for complex {}'.format(complex))
 
 class ParseAFComplexModels():
 
@@ -1211,7 +1207,6 @@ class ParseAFComplexModels():
 
 
         for f in self.filedirs:
-            print(os.sep.join([self.data_dir, f, f+'_metrics.csv']))
             metrics_file = os.sep.join([self.data_dir, f, f+'_metrics.csv'])
             if not os.path.exists(metrics_file):
                 metrics_file = os.sep.join([self.data_dir, f, f+'.csv'])
@@ -1253,7 +1248,6 @@ class ParseAFComplexModels():
                 chain_e_sequence = None
 
             # Grab model date/version from pdb file
-            print(location)
             with open(location, 'r') as model_file:
                 line = model_file.readlines()[0]
                 date_re = re.search('HEADER[A-Z\S\D]+(\d{4}-\d{2}-\d{2})', line)
@@ -1281,14 +1275,13 @@ class ParseAFComplexModels():
             peptide_gpcrdb_ids_dict = OrderedDict()
 
             if peptide_hash_col is not None:
-                chain_e_sequence =  self.old_seqs_dict.get(peptide_hash_col, chain_e_sequence)
-                # Check if ligand is stimulatory or inhibitory
-                if model == 'af-signprot-peptide':
-                    if chain_e_sequence in self.peptide_effects['stimulatory']:
-                        peptide_gpcrdb_ids = self.peptide_effects['stimulatory'][chain_e_sequence]
-                elif model == 'af-peptide':
-                    if chain_e_sequence in self.peptide_effects['inhibitory']:
-                        peptide_gpcrdb_ids = self.peptide_effects['inhibitory'][chain_e_sequence]
+                chain_e_sequence = self.old_seqs_dict.get(peptide_hash_col, chain_e_sequence)
+                peptide_gpcrdb_ids = []
+                if self.peptide_effects:
+                    if model == 'af-signprot-peptide':
+                        peptide_gpcrdb_ids = self.peptide_effects.get('stimulatory', {}).get(chain_e_sequence, [])
+                    elif model == 'af-peptide':
+                        peptide_gpcrdb_ids = self.peptide_effects.get('inhibitory', {}).get(chain_e_sequence, [])
 
                 # Remove duplicated ligand GPCRDB IDs
                 for ligand_gpcrdb_id in peptide_gpcrdb_ids:
@@ -1430,7 +1423,6 @@ class AbsParseStructureCSV():
 
     def parse_files(self, files):
         for custom_input in files:
-            print(custom_input)
             with open(custom_input, 'r') as custom_file:
                 custom_info = json.load(custom_file)
                 s = custom_info['name']
@@ -1543,7 +1535,7 @@ class StructureBuildCheck():
             try:
                 Structure.objects.get(pdb_code__index=pdb)
             except Structure.DoesNotExist:
-                print('Error: {} Structure object has not been built'.format(pdb))
+                logger.error('Error: {} Structure object has not been built'.format(pdb))
 
     def check_duplicate_residues(self, structs, check_on='sequence_number'):
         for s in structs:
@@ -1634,7 +1626,7 @@ class StructureBuildCheck():
                             else:
                                 self.end_error.append([structure, seg, seg_resis.reverse()[0].sequence_number, anno_e])
         else:
-            print('Warning: {} not annotated'.format(key))
+            logger.warning('Warning: {} not annotated'.format(key))
 
     def check_signprot_struct_residues(self, signprot_complex):
         pdb = PDBParser(PERMISSIVE=True, QUIET=True).get_structure('struct', StringIO(str(signprot_complex.structure.pdb_data.pdb)))[0]
@@ -1654,7 +1646,7 @@ class StructureBuildCheck():
             return 0
         ### Print structures where residues were not built
         if len(seq)!=len(resis):
-            print(signprot_complex.structure, len(pdb[signprot_complex.alpha]), len(resis))
+            logger.info('Some residues were not built in Structure: {}, PDB Chains: {}, Residues: {}'.format(signprot_complex.structure, len(pdb[signprot_complex.alpha]), len(resis)))
 
 
 class ModelRotamer(object):
@@ -1706,7 +1698,7 @@ class X50Finder():
             self.top_hit = ref
 
             if not found_good_match:
-                print('ERROR: no good pairwise alignment for {}'.format(self.uniprot_file.split('/')[-1]))
+                logger.error('ERROR: no good pairwise alignment for {}'.format(self.uniprot_file.split('/')[-1]))
 
             ref_seq, temp_seq = str(pw2[0][0]), str(pw2[0][1])
             if self.debug:

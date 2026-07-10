@@ -378,6 +378,8 @@ class Command(BaseCommand):
         parser.add_argument('--output', default=False, action='store', help='Output file.')
         parser.add_argument('--overwrite', default=False, action='store_true', help='Overwrite output directory.')
         parser.add_argument('--verbose', default=False, action='store_true', help='Print progress in stdout.')
+        parser.add_argument('--primary-transducers', default=False, action='store_true', help='Print primary transducers.')
+        parser.add_argument('--primary-transducers-dict', default=False, action='store_true', help='Print primary transducers dict.')
 
 
 

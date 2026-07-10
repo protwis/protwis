@@ -58,7 +58,7 @@ def _initialize_db_table(con):
         cur.execute("CREATE INDEX IF NOT EXISTS sequence_hash_sequence_hash_col_index ON %s (sequence_hash,sequence_hash_col)" % (TABLE_NAME))
         cur.close()
 
-def _create_artificial_collision(q_results, current_batch_start):
+def _create_artificial_collision(q_results, current_batch_start, col_sequence, collision_test_hash):
     col_i = 0
     q_result_n_1 = copy.deepcopy(q_results[-1])
     
@@ -84,6 +84,7 @@ def _create_artificial_collision(q_results, current_batch_start):
     del q_result_n_1_dup
     del q_result_n_1
     print('Test collision on hash: '+collision_test_hash)  
+    return (collision_test_hash, col_sequence)
 
 def _result_set_to_hash_keyed_dict(query_result_set):
     """Create a dictionary that uses sequence hashes as keys and a list of Ligand objects with the same hash as values"""
@@ -140,7 +141,7 @@ class Command(BaseCommand):
 
             # collision test for development
             if options['collision_test']:
-                _create_artificial_collision(q_results, current_batch_start)
+               collision_test_hash, col_sequence = _create_artificial_collision(q_results, current_batch_start, collision_test_hash, col_sequence)
             
             # Try to save the hashes in SQLlite DB 
             cur = con.cursor()
