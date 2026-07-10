@@ -68,7 +68,9 @@ class Protein(models.Model):
         if short:
             return class_prefix_re.sub(r'',f.name.replace('<i>','').replace('</i>',''))
         if very_short:
-            return class_very_short_re.match(f.name).group(1).replace('<i>','').replace('</i>','')
+            m = class_very_short_re.match(f.name)
+            if m:
+                return m.group(1).replace('<i>','').replace('</i>','')
         return f.name
 
     def get_helical_box(self):

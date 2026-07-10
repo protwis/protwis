@@ -5059,12 +5059,12 @@ class LigandComplexModels(TemplateView):
 
             is_ligand_physiological_dict = {}
             for structure in structures:
-                receptor = structure.protein_conformation.protein
-                ligand = structure.prefetch_ligands[0].ligand
-                print(structure.id)
-                is_ligand_physiological_dict[structure.id] = Endogenous_GTP.objects.filter(ligand=ligand,receptor=receptor).exists()
-            context['is_ligand_physiological_dict'] = is_ligand_physiological_dict
-            print(context['is_ligand_physiological_dict'] )
+                receptor_id = structure.protein_conformation.protein_id
+                ligand_id = None
+                if getattr(structure, 'prefetch_ligands', None):
+                    ligand_id = structure.prefetch_ligands[0].ligand_id
+                is_ligand_physiological_dict[structure.id] = bool(ligand_id) and Endogenous_GTP.objects.filter(ligand_id=ligand_id, receptor_id=receptor_id).exists()
+            context['is_ligand_physiological_dict'] = is_ligand_physiological_dict            
 
 
 
@@ -5158,7 +5158,9 @@ def LigandComplexDetails(request, header, refined=False):
     avg_plddt = model_plddt.aggregate(Avg('pLDDT'))
     ligand = LigandPeptideStructure.objects.filter(structure__pdb_code__index=model).prefetch_related('ligand').first()
     
-    is_ligand_physiological = Endogenous_GTP.objects.filter(ligand=ligand.ligand,receptor=model.protein_conformation.protein).exists()
+    is_ligand_physiological = False
+    if ligand and ligand.ligand_id:
+        is_ligand_physiological = Endogenous_GTP.objects.filter(ligand=ligand.ligand, receptor=model.protein_conformation.protein).exists()
 
     residues_plddt = {}
     for item in model_plddt:
