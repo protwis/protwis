@@ -1,3 +1,5 @@
+from html import parser
+
 from django.conf import settings
 from django.utils.text import slugify
 from django.db import IntegrityError
@@ -10,7 +12,7 @@ from residue.models import Residue
 from common.models import WebLink, WebResource, Publication
 from common.tools import test_model_updates
 from common.definitions import G_PROTEIN_DISPLAY_NAME as g_prot_dict, ARRESTIN_DISPLAY_NAME as arr_dict
-from structure.models import Structure, StructureType, PdbData, Rotamer, Fragment, StructureExtraProteins, StructureAFScores, StructureModelpLDDT
+from structure.models import Structure, StructureType, PdbData, Rotamer, Fragment, StructureExtraProteins, StructureModelScores, StructureModelpLDDT
 from construct.functions import *
 from structure.management.commands.generate_complexes_to_model import get_stimulatory_peptide_like_ligand_AssayExperiment_obj, get_inhibitory_peptide_like_ligand_AssayExperiment_obj
 
@@ -28,7 +30,8 @@ from signprot.models import SignprotComplex
 import structure.assign_generic_numbers_gpcr as as_gn
 
 from structure.model_parsers.boltz_two import BoltzTwoModel, BoltzTwoModelParserConfig, BoltzTwoModelParser
-from structure.model_parsers.alphafold_complex import AlphaFoldTwoComplexModelParser, AlphaFoldTwoComplexModelParserConfig, tester as af_complex_tester
+from structure.model_parsers.alphafold_complex import AlphaFoldTwoComplexModelParser, AlphaFoldTwoComplexModelParserConfig
+from structure.model_parsers.logging import ParserVerbosity
 
 import django.apps
 import logging
@@ -83,17 +86,22 @@ class Command(BaseBuild):
             dest='purge',
             default=False,
             help='Purge existing records')
-        parser.add_argument('-p', '--parser',
+        parser.add_argument('-m', '--model_set_name',
+            dest='model_set_name',
+            required=True,
+            help='The name of the model set to process (i.e folder name in structure_data folder)')
+        parser.add_argument('-r', '--parser',
             dest='parser',
             required=True,
             help='The parser to use for the model set (BoltzTwo or AlphafoldComplex)')
         parser.add_argument('--cleaned-seq-csv',
             action='store',
             default=False,
-            help='Load cleaned sequences from CSV')
-        
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+            help='Load cleaned sequences from CSV'),
+        parser.add_argument('-y', '--parser_verbosity',
+            choices=['silent', 'basic', 'everything'],
+            default="basic",
+            help='Set the verbosity level for the parser')
 
         self.tracker = {}
         self.all_models = django.apps.apps.get_models()[6:]
@@ -135,6 +143,8 @@ class Command(BaseBuild):
                 self.unnatural_amino_acids[i] = j
 
     def handle(self, *args, **options):
+        verbosity_level = ParserVerbosity.from_string_map.get(options['parser_verbosity'], ParserVerbosity.BASIC)
+
         # delete any existing structure data
         if options['purge']:
             try:
@@ -152,31 +162,33 @@ class Command(BaseBuild):
                                                         cleaned_seq_csv=options['cleaned_seq_csv'],
                                                         model_receptor_state="Active",
                                                         pdb_preferred_chain="A",
-                                                        error_handling="raise")
-            
+                                                        error_handling="log_then_raise",
+                                                        verbosity=verbosity_level)
+
             self.model_parser = AlphaFoldTwoComplexModelParser(config)
-            self.model_parser.load_models()
+            self.model_parser.get_model_directories()
         elif options['parser'] == "BoltzTwo":
             config = BoltzTwoModelParserConfig(model_set_name=options['model_set_name'],
                                                         model_receptor_state="Active",
                                                         pdb_preferred_chain="A",
-                                                        error_handling="raise")            
+                                                        error_handling="log_then_raise",
+                                                        verbosity=verbosity_level)            
             self.model_parser = BoltzTwoModelParser(config)
-            self.model_parser.load_models()
+            self.model_parser.get_model_directories()
 
         if options['structure']:
             filtered_set = []
-            for model in self.model_parser.models:
-                if model.model_name in options['structure']:
-                    filtered_set.append(model)
-            self.model_parser.models = filtered_set
+            for model_dir in self.model_parser.model_dirs:
+                if model_dir in options['structure']:
+                    filtered_set.append(model_dir)
+            self.model_parser.model_dirs = filtered_set
             # self.parsed_structures.complexes = [i for i in self.parsed_structures.complexes if i in options['structure'] or i.lower() in options['structure']]
 
         # self.incremental_mode = options['incremental']        
 
         try:
             self.logger.info('CREATING STRUCTURES')
-            self.prepare_input(options['proc'], self.model_parser.models)
+            self.prepare_input(options['proc'], self.model_parser.model_dirs)
             test_model_updates(self.all_models, self.tracker, check=True)
             self.logger.info('COMPLETED CREATING STRUCTURES')
         except Exception as msg:
@@ -801,15 +813,5 @@ class Command(BaseBuild):
     #         pass
 
     def main_func(self, positions, iteration, count, lock):
-        # setting up processes
-        offset_start = positions[0]
-        offset_end = positions[1]
-        working_models = self.model_parser.models[offset_start:offset_end]
-        # complexes = complexes[730:]
-        for model in working_models:
-            self.logger.info(f"Processing model: {model.model_name}")
-            try:
-                model.write()
-            except Exception as e:
-                self.logger.error(f"Error processing model {model.model_name}: {str(e)}")
+        self.model_parser.process_models(write = True, low_memory = True, offset_start = positions[0], offset_end = positions[1])
             

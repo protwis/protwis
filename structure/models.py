@@ -118,15 +118,6 @@ class StructureVectors(models.Model):
     class Meta():
         db_table = 'structure_vectors'
 
-class StructureAFScores(models.Model):
-    structure = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
-    ptm = models.DecimalField(max_digits=4, decimal_places=2)
-    iptm = models.DecimalField(max_digits=4, decimal_places=2)
-    pae_mean = models.DecimalField(max_digits=4, decimal_places=2)
-
-    class Meta():
-        db_table = 'structure_af_scores'
-
 class StructureRFAAScores(models.Model):
     structure = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
     pae_7tm = models.DecimalField(max_digits=4, decimal_places=2)
@@ -134,6 +125,13 @@ class StructureRFAAScores(models.Model):
 
     class Meta():
         db_table = 'structure_rfaa_scores'
+
+class StructureModelScores(models.Model):
+    structure = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
+    metrics_json = models.TextField(null=True)
+
+    class Meta():
+        db_table = 'structure_model_scores'
 
 class StructureModel(models.Model):
     protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE)

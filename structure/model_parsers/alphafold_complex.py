@@ -7,7 +7,10 @@ from django.db import transaction
 import pandas as pd
 from collections import OrderedDict
 from django.conf import settings
-from Bio.PDB import PDBParser, PDBIO
+from Bio.PDB import PDBParser, PDBIO, Polypeptide
+
+import logging
+from structure.model_parsers.logging import ParserVerbosity, conditional_log
 
 from structure.model_parsers.error_handling import log_or_raise
 
@@ -16,9 +19,11 @@ from structure.model_parsers.base import BaseModel, BaseModelMetrics, BaseModelP
 from common.models import WebLink, WebResource
 from ligand.models import Ligand, LigandPeptideStructure
 import structure.assign_generic_numbers_gpcr as generic_number_assigner
-from structure.models import Structure, PdbData, StructureType, StructureAFScores, StructureExtraProteins, StructureModelpLDDT
+from structure.models import Structure, PdbData, StructureType, StructureModelScores, StructureExtraProteins, StructureModelpLDDT
 from protein.models import Protein, ProteinConformation, ProteinState, Residue
 from signprot.models import SignprotComplex
+
+import json as JSON
 
 from common.definitions import G_PROTEIN_DISPLAY_NAME as g_prot_dict, ARRESTIN_DISPLAY_NAME as arr_dict
 from contactnetwork.cube import compute_interactions
@@ -27,16 +32,35 @@ class AlphaFoldTwoComplexModelMetrics(BaseModelMetrics):
     
     """Represents the metrics associated with a AlphaFoldTwoComplexModel"""
 
+    def __init__(self, data_dir, model_name, error_handling="log", verbosity=ParserVerbosity.SILENT):
+        path_type_1 = os.sep.join([data_dir, model_name + '_metrics.csv'])
+        path_type_2 = os.sep.join([data_dir, model_name + '.csv'])
+
+        metrics_file_path = None
+        if os.path.exists(path_type_1):
+            metrics_file_path = path_type_1
+        elif os.path.exists(path_type_2):
+            metrics_file_path = path_type_2
+        else:
+            self.logger = logging.getLogger('build')   
+            log_or_raise(self.logger, f"Metrics file not found for model {model_name}.", FileNotFoundError, error_handling)
+
+        super().__init__(metrics_file_path, error_handling=error_handling, verbosity=verbosity)
+        
+        conditional_log(self, f"Parsed metrics from {self.metrics_file_path}: {JSON.dumps(self.metrics)} for model {model_name}", logging.INFO, ParserVerbosity.EVERYTHING)
+
     def save(self, struct):
+        self.metrics.pop("complex", None) #Remove complex name present in metrics file from metrics list before recording.
         try:
-            metrics = StructureAFScores.objects.get(structure=struct)
-        except StructureAFScores.DoesNotExist:
-            metrics = StructureAFScores()
-            metrics.structure = struct
-            metrics.ptm = self.metrics['ptm']
-            metrics.iptm = self.metrics['iptm']
-            metrics.pae_mean = self.metrics['pae_mean']
-            metrics.save()
+            metrics = StructureModelScores.objects.get(structure=struct)
+            metrics.metrics_json = JSON.dumps(self.metrics) #Update existing metrics
+        except StructureModelScores.DoesNotExist:
+            metrics = StructureModelScores()
+            metrics.structure = struct            
+            metrics.metrics_json = JSON.dumps(self.metrics)
+        metrics.save()
+
+        return metrics
 
 
 class AlphaFoldTwoComplexModel(BaseModel):
@@ -44,13 +68,15 @@ class AlphaFoldTwoComplexModel(BaseModel):
     """Defines a AlphaFoldTwoComplex model, containing its PDB structure and associated metrics."""
 
     def __init__(self, data_dir, parser_config):
-        super().__init__(data_dir, error_handling=parser_config.error_handling)
+        super().__init__(data_dir, error_handling=parser_config.error_handling, verbosity=parser_config.verbosity)        
 
         self.model_name = os.path.basename(self.data_dir)
         self.pdb_file_path = os.sep.join([self.data_dir, 
                                           self.model_name + '.pdb'])
         
         self.receptor, self.ligand, self.signprot = self.unpack_model_name()
+        if self.signprot:
+            self.signprot_subunits = self.unpack_signprot_units()
 
         self.model_structure_type_name = 'Model (AF2)'
         self.model_structure_type_slug = 'af-signprot-peptide' if self.signprot else 'af-peptide'
@@ -58,11 +84,10 @@ class AlphaFoldTwoComplexModel(BaseModel):
         self.pdb_raw = self.fetch_pdb_content()
         self.pdb_structure = self.fetch_pdb_structure(parser_config)
         
-        self.metrics = self.parse_metrics(parser_config)
+        self.metrics = AlphaFoldTwoComplexModelMetrics(data_dir, self.model_name, error_handling=parser_config.error_handling, verbosity=parser_config.verbosity)
         
         self.annotate_ligand_sequence(parser_config)
-        self.model_date = self.parse_model_date_from_pdb_header()
-        self.beta_gamma = self.has_beta_gamma_complex()
+        self.model_date = self.parse_model_date_from_pdb_header()        
 
         if parser_config.model_receptor_state:
             self.receptor_state = parser_config.model_receptor_state
@@ -74,33 +99,56 @@ class AlphaFoldTwoComplexModel(BaseModel):
         else:
             log_or_raise(self.logger, "Model PDB preferred chain must be specified in the parser configuration.", ValueError, self.error_handling)
 
+    def unpack_signprot_units(self):
+        """Unpack the signprot attribute into its subunits (alpha, beta, gamma) if applicable."""
+        return_subunits = {}
+        signprot_re = re.compile(r'([^_]+_[^_]+)')
+        subunit_uniprot = signprot_re.findall(self.signprot)
+        if subunit_uniprot:
+            db_subunits = Protein.objects.filter(entry_name__in=[subunit.lower() for subunit in subunit_uniprot])
+            for su in db_subunits:
+                try:
+                    if su.family.parent.parent.name == "Alpha":
+                        return_subunits['alpha'] = su
+                    elif su.family.parent.name == "Beta":
+                        return_subunits['beta'] = su
+                    elif su.family.parent.name == "Gamma":
+                        return_subunits['gamma'] = su
+                except Exception as e:
+                    log_or_raise(self.logger, f"Error determining subunit type for {su.entry_name}: {e}", Exception, self.error_handling, parent_exception=e)
+        return return_subunits
+
 
     def has_beta_gamma_complex(self):
-        """Determine if the model has a beta-gamma complex based on the signprot attribute."""
+        """Cehck if the model has a beta-gamma complex based on the signprot attribute and subunit list."""
         if self.signprot:
-            if self.signprot.startswith('gna'):
-                # Check if the model has a full heterotrimer by looking for 'gbb1_human' in the model name
-                return 'gbb1_human' in self.model_name
-            else: 
-                log_or_raise(self.logger, f"Unexpected signprot format: {self.signprot}. " + 
-                            "Expected to start with 'gna' for G-protein complexes. " + 
-                            "Support for Arrestins is not implemented yet.", ValueError, self.error_handling)
-        return False
+            if self.signprot_subunits.get('beta') and self.signprot_subunits.get('gamma'):
+                return True
+            else:                
+                return False
+        else:             
+            return False
 
     def parse_model_date_from_pdb_header(self):
         """Extract the model date from the PDB header."""
         if self.pdb_structure.header and 'deposition_date' in self.pdb_structure.header:
             if self.pdb_structure.header['deposition_date'] != '1909-01-08':
-                return self.pdb_structure.header['deposition_date']
+                date = self.pdb_structure.header['deposition_date']
+                conditional_log(self, f"Model date found in deposition date ({date}) field for model {self.model_name}.", logging.INFO, ParserVerbosity.EVERYTHING)
+                return date
         
         if self.pdb_structure.header and 'release_date' in self.pdb_structure.header:
             if self.pdb_structure.header['release_date'] != '1909-01-08':
-                return self.pdb_structure.header['release_date']
+                date = self.pdb_structure.header['release_date']
+                conditional_log(self, f"Model date found in release date ({date}) field for model {self.model_name}.", logging.INFO, ParserVerbosity.EVERYTHING)
+                return date
 
-        if self.pdb_structure.header['head']:
+        if self.pdb_structure.header and 'head' in self.pdb_structure.header:
             match = re.match(r'.+\s+(\d{4}-\d{2}-\d{2})', self.pdb_structure.header['head'])
             if match:
-                return match.group(1)
+                date = match.group(1)
+                conditional_log(self, f"Model date found in head ({date}) field for model {self.model_name}.", logging.INFO, ParserVerbosity.EVERYTHING)
+                return date
 
         log_or_raise(self.logger, f"Could not parse model date from PDB header for model {self.model_name}." + 
                      "Amend the PDB header or provide a pdb_header_override in the parser configuration.", ValueError, self.error_handling)
@@ -110,6 +158,7 @@ class AlphaFoldTwoComplexModel(BaseModel):
         self.ligand["pdb_chain_id"] = 'E' if self.signprot else 'B'  
         self.ligand["sequence_pdb"] = self.get_ligand_sequence_from_pdb()
         self.ligand["sequence_original"] = parser_config.old_seqs_dict.get(self.ligand.get("hash"), self.ligand["sequence_pdb"])
+        conditional_log(self, f"Annotated ligand sequences for model {self.model_name}. Original sequence: {self.ligand['sequence_original']}. PDB sequence: {self.ligand['sequence_pdb']}", logging.INFO, ParserVerbosity.EVERYTHING)
 
     def get_ligand_sequence_from_pdb(self):
         """Extract the ligand sequence from the PDB structure based on the ligand's chain ID."""
@@ -123,7 +172,10 @@ class AlphaFoldTwoComplexModel(BaseModel):
                 if chain.id == chain_id:
                     for residue in chain:
                         resname = residue.get_resname()
-                        one_letter = self.residue_to_one_letter.get(resname, 'X')
+                        try:
+                            one_letter = Polypeptide.protein_letters_3to1[resname]
+                        except: 
+                            one_letter = 'X'
                         sequence += one_letter
         return sequence
 
@@ -134,46 +186,26 @@ class AlphaFoldTwoComplexModel(BaseModel):
         ligand_temp = parts[1] if len(parts) > 1 else None
         signprot = parts[2] if len(parts) > 2 else None
 
-        ligand_component = re.match(r'hashedseq\[(.+)\]', ligand_temp)
-        ligand = None
-        if ligand_component:
-            ligand = {'hash': ligand_component.group(1)}
+        if ligand_temp is None:
+            ligand = None
+        else:
+            ligand_component = re.match(r'hashedseq\[(.+)\]', ligand_temp)
+            ligand = None
+            if ligand_component:
+                ligand = {'hash': ligand_component.group(1)}
 
         if not receptor or not ligand:
             log_or_raise(self.logger, f"Invalid model name format: {self.model_name}. Expected format: receptor-hashedseq[ligand_hash]-signprot (signprot is optional).", ValueError, self.error_handling)
 
         return receptor, ligand, signprot
 
-    def get_preferred_model_version_number(self, model_name, parser_config):
-        
-        """Get the index of the model to use based on the parser configuration
-        
-        If no override is specified, return the default model version number. If no default model is specified, return '1' as the default model version number.
-        """
-
-        if parser_config.default_model_version:
-            if model_name in parser_config.default_model_version.get("override", {}):
-                return parser_config.default_model_version["override"][model_name]       
-            return parser_config.default_model_version.get("default_version_number", "1")
-        return "1"  # Default to model version number '1' if no default model is specified
-
-    def parse_metrics(self, parser_config):
-        path_type_1 = os.sep.join([self.data_dir, self.model_name + '_metrics.csv'])
-        path_type_2 = os.sep.join([self.data_dir, self.model_name + '.csv'])
-        
-        if os.path.exists(path_type_1):
-            metrics_file_path = path_type_1
-        elif os.path.exists(path_type_2):
-            metrics_file_path = path_type_2
-        else:   
-            log_or_raise(self.logger, f"Metrics file not found for model {self.model_name}.", FileNotFoundError, self.error_handling)
-        return AlphaFoldTwoComplexModelMetrics(metrics_file_path, error_handling=self.error_handling)
-
     def protein_from_entry_name(self):
-        db_protein = Protein.objects.get(entry_name=self.receptor.lower())
-        if not db_protein:
+        try:
+            db_protein = Protein.objects.get(entry_name=self.receptor.lower())
+            conditional_log(self, f"Fetched receptor object for model {self.model_name} from database with entry name {db_protein.entry_name} and id {db_protein.id}.", logging.INFO, ParserVerbosity.EVERYTHING)
+            return db_protein
+        except Protein.DoesNotExist:
             log_or_raise(self.logger, f"Protein object not found for entry name: {self.receptor}", ValueError, self.error_handling)
-        return db_protein
 
     def format_pdb_index(self):
         if 'peptide' in self.model_structure_type_slug:
@@ -213,8 +245,9 @@ class AlphaFoldTwoComplexModel(BaseModel):
 
             try:
                 struct.protein_conformation.generate_sites()
-            except:
-                pass
+            except Exception as e:
+                ERROR_HANDLING_OVERRIDE = "log" #Override until we fix generate_sites.
+                log_or_raise(self.logger, f"Failed to generate sites for structure {self.model_name}: {e}", Exception, ERROR_HANDLING_OVERRIDE, parent_exception=e)
 
         return struct
 
@@ -222,7 +255,7 @@ class AlphaFoldTwoComplexModel(BaseModel):
         try:
             ps, created = ProteinState.objects.get_or_create(slug=self.receptor_state.lower(), defaults={'name': self.receptor_state})
             if created:
-                self.logger.info('Created protein state {}'.format(ps.name))
+                conditional_log(self, f"Created protein state {self.receptor_state} with slug {self.receptor_state.lower()}.", logging.INFO, ParserVerbosity.BASIC)
         except Exception as e:
             log_or_raise(self.logger, f"Failed to get or create protein state {self.receptor_state}: {e}", Exception, self.error_handling, parent_exception=e)
 
@@ -255,6 +288,8 @@ class AlphaFoldTwoComplexModel(BaseModel):
     def write_pdb_with_generic_numbers(self, pdb_with_generic_numbers):
         try:
             pdbdata, created = PdbData.objects.get_or_create(pdb=pdb_with_generic_numbers)
+            if created:
+                conditional_log(self, f"Created PdbData object for model {self.model_name}.", logging.INFO, ParserVerbosity.EVERYTHING)
             return pdbdata
         except Exception as e:
             log_or_raise(self.logger, f"Failed to create PdbData object for {self.model_name}: {e}", Exception, self.error_handling, parent_exception=e )
@@ -262,16 +297,19 @@ class AlphaFoldTwoComplexModel(BaseModel):
     def write_pdb_code_weblink(self, struct):
         try:
             web_resource = WebResource.objects.get(slug='pdb')
-            pdb_code_weblink, created = WebLink.objects.get_or_create(index=self.format_pdb_index(), web_resource=web_resource)
+            pdb_code = self.format_pdb_index()
+            pdb_code_weblink, created = WebLink.objects.get_or_create(index=pdb_code, web_resource=web_resource)
+            if created:
+                conditional_log(self, f"Created WebLink object for model {self.model_name} with PDB code {pdb_code}.", logging.INFO, ParserVerbosity.EVERYTHING)                
             return pdb_code_weblink
         except Exception as e:
-            log_or_raise(self.logger, f"Failed to create WebLink object for PDB code {self.format_pdb_index()}: {e}", Exception, self.error_handling, parent_exception=e)
+            log_or_raise(self.logger, f"Failed to create WebLink object for PDB code {pdb_code}: {e}", Exception, self.error_handling, parent_exception=e)
 
     def get_or_create_structure_type(self):
         try:
             structure_type, created = StructureType.objects.get_or_create(slug=self.model_structure_type_slug, defaults={'name': self.model_structure_type_name})
             if created:
-                self.logger.info('Created structure type {}'.format(structure_type))
+                conditional_log(self, f"Created structure type {self.model_structure_type_name} with slug {self.model_structure_type_slug}.", logging.INFO, ParserVerbosity.BASIC)
             return structure_type
         except Exception as e:
             log_or_raise(self.logger, f"Failed to get or create structure type {self.model_structure_type_slug}: {e}", Exception, self.error_handling, parent_exception=e)
@@ -280,7 +318,8 @@ class AlphaFoldTwoComplexModel(BaseModel):
         ligands = None
         if self.ligand.get("name", None):
             try:
-                ligands = Ligand.objects.filter(name=self.ligand["name"]).first()
+                ligands = Ligand.objects.filter(name=self.ligand["name"])
+                conditional_log(self, f"Fetched ligands by name ({self.ligand['name']}) from database. Returned {len(ligands)}.", logging.INFO, ParserVerbosity.EVERYTHING)
                 if ligands:                    
                     return ligands
             except Exception as e:
@@ -289,6 +328,7 @@ class AlphaFoldTwoComplexModel(BaseModel):
         if self.ligand.get("sequence_original", None):
             try:
                 ligands = Ligand.objects.filter(sequence=self.ligand["sequence_original"])
+                conditional_log(self, f"Fetched ligands with sequence {self.ligand['sequence_original']} from database. Returned {len(ligands)}.", logging.INFO, ParserVerbosity.EVERYTHING)
                 if ligands:
                     return ligands
             except Exception as e:
@@ -306,6 +346,8 @@ class AlphaFoldTwoComplexModel(BaseModel):
                     chain=self.ligand.get("pdb_chain_id", None),
                     defaults={'model': None} 
                 )
+                if created:
+                    conditional_log(self, f"Created LigandPeptideStructure for ligand {ligand.name} in model {self.model_name}.", logging.INFO, ParserVerbosity.EVERYTHING)                
             except Exception as e:
                 log_or_raise(self.logger, f"Error creating LigandPeptideStructure(s) for ligand {ligand.name} in model {self.model_name}: {str(e)} ", Exception, self.error_handling, parent_exception=e)
 
@@ -316,19 +358,34 @@ class AlphaFoldTwoComplexModel(BaseModel):
         gamma_protconf = None
 
         if self.signprot:
-            signprot = Protein.objects.get(entry_name=self.signprot.lower())
-            signprot_conf = ProteinConformation.objects.get(protein=signprot)
-            if self.beta_gamma:
-                beta_protconf = ProteinConformation.objects.get(protein__entry_name='gbb1_human')
-                gamma_protconf = ProteinConformation.objects.get(protein__entry_name='gbg2_human')
-                sc = SignprotComplex.objects.get_or_create(alpha='B', protein=signprot, structure=struct,
-                                                        beta_chain='C', gamma_chain='D', beta_protein=beta_protconf.protein, gamma_protein=gamma_protconf.protein).first()
+            if self.signprot_subunits.get('alpha'):
+                signprot = self.signprot_subunits['alpha']
             else:
-                sc = SignprotComplex.objects.get_or_create(alpha='B', protein=signprot, structure=struct,
-                                                        beta_chain=None, gamma_chain=None, beta_protein=None, gamma_protein=None).first()
+                try:
+                    signprot = Protein.objects.get(entry_name=self.signprot)
+                except Protein.DoesNotExist as e:
+                    log_or_raise(self.logger, f"Failed to fetch SignProt protein object for {self.model_name}: {str(e)}", ValueError, self.error_handling, parent_exception=e)
+
+            signprot_conf = ProteinConformation.objects.get(protein=signprot)
+
+            conditional_log(self, f"Fetched Signprot protein and conformation for model {self.model_name} with entry name {signprot.entry_name} and state {signprot_conf.state}.", logging.INFO, ParserVerbosity.EVERYTHING)
+
+            if self.has_beta_gamma_complex():
+                beta_protconf = ProteinConformation.objects.get(protein__entry_name=self.signprot_subunits['beta'].entry_name)
+                gamma_protconf = ProteinConformation.objects.get(protein__entry_name=self.signprot_subunits['gamma'].entry_name)
+                sc, created = SignprotComplex.objects.get_or_create(alpha='B', protein=signprot, structure=struct,
+                                                        beta_chain='C', gamma_chain='D', beta_protein=beta_protconf.protein, gamma_protein=gamma_protconf.protein)
+                if created:
+                    conditional_log(self, f"Created SignprotComplex for model {self.model_name} with signprot {signprot.entry_name}, beta {beta_protconf.protein.entry_name}, and gamma {gamma_protconf.protein.entry_name}.", logging.INFO, ParserVerbosity.EVERYTHING)
+            else:
+                sc, created = SignprotComplex.objects.get_or_create(alpha='B', protein=signprot, structure=struct,
+                                                        beta_chain=None, gamma_chain=None, beta_protein=None, gamma_protein=None)
+                if created:
+                    conditional_log(self, f"Created SignprotComplex for model {self.model_name} with signprot {signprot.entry_name}.", logging.INFO, ParserVerbosity.EVERYTHING)
 
             struct.signprot_complex = sc
             struct.save()         
+            conditional_log(self, f"Updated SignprotComplex on structure record for model {self.model_name} with signprot {signprot.entry_name}.", logging.INFO, ParserVerbosity.EVERYTHING)
         else:            
             signprot = None
 
@@ -337,6 +394,7 @@ class AlphaFoldTwoComplexModel(BaseModel):
     def create_extra_proteins(self, struct, signprot, signprot_conf, beta_protconf, gamma_protconf):
         sep = None
         sep_beta = None
+        sep_gamma = None
         if signprot:        
             try:
                 display_name = g_prot_dict[signprot.entry_name.split('_')[0].upper()]
@@ -345,13 +403,18 @@ class AlphaFoldTwoComplexModel(BaseModel):
                 display_name = arr_dict[signprot.entry_name]
                 cat = 'Arrestin'
 
-            sep = StructureExtraProteins.objects.get_or_create(display_name=display_name, note=None, chain='B', category=cat, wt_coverage=100, protein_conformation=signprot_conf, structure=struct, wt_protein=signprot)
-            if self.beta_gamma:
-                sep_beta = StructureExtraProteins.objects.get_or_create(display_name='G&beta;1', note=None, chain='C', category='G beta', wt_coverage=100, protein_conformation=beta_protconf, structure=struct, wt_protein=beta_protconf.protein)
-                sep_beta = StructureExtraProteins.objects.get_or_create(display_name='G&gamma;2', note=None, chain='D', category='G gamma', wt_coverage=100, protein_conformation=gamma_protconf, structure=struct, wt_protein=gamma_protconf.protein)
-            # g beta - TO BE ADDED
-            # g gamma - TO BE ADDED
-        return sep, sep_beta
+            sep, created = StructureExtraProteins.objects.get_or_create(display_name=display_name, note=None, chain='B', category=cat, wt_coverage=100, protein_conformation=signprot_conf, structure=struct, wt_protein=signprot)
+            if created:
+                conditional_log(self, f"Created StructureExtraProteins for signprot {signprot.entry_name} in model {self.model_name}.", logging.INFO, ParserVerbosity.EVERYTHING)
+            if self.has_beta_gamma_complex():
+                sep_beta, created_beta = StructureExtraProteins.objects.get_or_create(display_name='G&beta;1', note=None, chain='C', category='G beta', wt_coverage=100, protein_conformation=beta_protconf, structure=struct, wt_protein=beta_protconf.protein)
+                sep_gamma, created_gamma = StructureExtraProteins.objects.get_or_create(display_name='G&gamma;2', note=None, chain='D', category='G gamma', wt_coverage=100, protein_conformation=gamma_protconf, structure=struct, wt_protein=gamma_protconf.protein)
+                if created_beta:
+                    conditional_log(self, f"Created StructureExtraProteins for G-beta {beta_protconf.protein.entry_name} in model {self.model_name}.", logging.INFO, ParserVerbosity.EVERYTHING)
+                if created_gamma:
+                    conditional_log(self, f"Created StructureExtraProteins for G-gamma {gamma_protconf.protein.entry_name} in model {self.model_name}.", logging.INFO, ParserVerbosity.EVERYTHING)
+
+        return sep, sep_beta, sep_gamma
 
     def store_plddt(self, struct, receptor_protein, signprot, beta_protconf, gamma_protconf):
         #Adding plDDT for rendering
@@ -374,6 +437,7 @@ class AlphaFoldTwoComplexModel(BaseModel):
                     continue
         try:
             StructureModelpLDDT.objects.bulk_create(resis)
+            conditional_log(self, f"Stored pLDDT values for model {self.model_name}.", logging.INFO, ParserVerbosity.EVERYTHING)
         except Exception as e:
             log_or_raise(self.logger, f"Error storing pLDDT values for model {self.model_name}: {str(e)}", Exception, self.error_handling, parent_exception=e)
 
@@ -385,7 +449,7 @@ class AlphaFoldTwoComplexModel(BaseModel):
         compute_interactions(self.pdb_file_path, protein=receptor, signprot=signprot, do_complexes=do_complexes, save_to_db=True, file_input=True) # add do_complexes
 
     def write(self):
-
+        conditional_log(self, f"Starting to write model {self.model_name} to database.", logging.INFO, ParserVerbosity.BASIC)
         try:
             with transaction.atomic():
         
@@ -411,6 +475,8 @@ class AlphaFoldTwoComplexModel(BaseModel):
 
                 self.build_contact_network(struct, signprot)
 
+            conditional_log(self, f"Successfully wrote model {self.model_name} to database.", logging.INFO, ParserVerbosity.BASIC)
+
         except Exception as e:
             log_or_raise(self.logger, f"Error writing model {self.model_name} to database: {str(e)}", Exception, self.error_handling, parent_exception=e)
    
@@ -418,8 +484,8 @@ class AlphaFoldTwoComplexModelParserConfig(BaseModelParserConfig):
 
     """Configuration class for AlphaFoldTwoComplexModelParser"""
     
-    def __init__(self, model_set_name, data_dir=None, cleaned_seq_csv=None, pdb_header_override=None, model_receptor_state=None, pdb_preferred_chain='A', error_handling="log"):
-        super().__init__(model_set_name, data_dir=data_dir, pdb_header_override=pdb_header_override, error_handling=error_handling)
+    def __init__(self, model_set_name, data_dir=None, cleaned_seq_csv=None, pdb_header_override=None, model_receptor_state=None, pdb_preferred_chain='A', error_handling="log", verbosity=ParserVerbosity.SILENT):
+        super().__init__(model_set_name, data_dir=data_dir, pdb_header_override=pdb_header_override, error_handling=error_handling, verbosity=verbosity)
 
         self.cleaned_seq_csv = cleaned_seq_csv
         self.model_receptor_state = model_receptor_state
@@ -447,42 +513,45 @@ class AlphaFoldTwoComplexModelParser(BaseModelParser):
         """Initialize the parser with a configuration object."""
         super().__init__(config)
         self.config = config
+        self.model_dirs = []
         self.models = []
-        
-    def load_models(self):
-        """Process each model directory in the model set directory and return a list of AlphaFoldTwoComplexModel instances."""
+
+    def get_model_directories(self):
+        """Get a list of model directories in the model set directory."""
         try:
-            model_dirs = list(filter(os.path.isdir, [os.path.join(self.config.data_dir, f) for f in os.listdir(self.config.data_dir)])) #/structure_data/{model_set_name}/[*]
-            models = []
-            for model_path in model_dirs:
-                models.append(AlphaFoldTwoComplexModel(model_path, self.config))
-            self.models = models
+            self.model_dirs = list(filter(os.path.isdir, [os.path.join(self.config.data_dir, f) for f in os.listdir(self.config.data_dir)])) #/structure_data/{model_set_name}/[*]
+            self.model_dirs = sorted(self.model_dirs, key=lambda x: os.path.basename(x))  # Sort the model directories by name in case OS returns them in a different order
+            conditional_log(self, f"Found {len(self.model_dirs)} model directories in {self.config.data_dir}.", logging.INFO, ParserVerbosity.BASIC)
+        except Exception as e:
+            log_or_raise(self.logger, f"Error accessing model directories in {self.config.data_dir}: {e}", Exception, self.error_handling, parent_exception=e)
+
+    def process_models(self, write = True, low_memory=True, offset_start=0, offset_end=None):
+        """Process each model directory in the model set directory and return a list of AlphaFoldTwoComplexModel instances.
+        
+        Args:
+            write (bool): Whether to write the models to the database. Default is True.
+            low_memory (bool): Flag indicating whether to discard models from memory after writing. Default is True. False means models will be stored in the models array (uses a lot of memory).
+            offset_start (int): The starting index of the model directories to process. Default is 0.
+            offset_end (int): The ending index of the model directories to process. Default is None, which means process all directories from offset_start to the end.
+        """
+        try:
+            if low_memory and not write:
+                raise ValueError("Cannot set low_memory to True when write is False. This would result in models being discarded from memory without being written to the database.")
+
+            conditional_log(self, f"Processing models from {self.config.data_dir} with offset_start={offset_start} and offset_end={offset_end}.", logging.INFO, ParserVerbosity.BASIC)
+            
+            if len(self.model_dirs) == 0:
+                self.get_model_directories()
+            if len(self.model_dirs) == 0:
+                log_or_raise(self.logger, f"No model directories found in {self.config.data_dir}.", FileNotFoundError, self.error_handling)            
+
+            models_to_process = self.model_dirs[offset_start:offset_end] if offset_end else self.model_dirs[offset_start:]
+
+            for model_path in models_to_process:
+                model = AlphaFoldTwoComplexModel(model_path, self.config)
+                if not low_memory:
+                    self.models.append(model)
+                if write:
+                    model.write()
         except Exception as e:
             log_or_raise(self.logger, f"Error processing models: {str(e)}", Exception, self.error_handling, parent_exception=e)
-
-    def write_models(self):
-        """Write each model to the database."""
-        for model in self.models:
-            model.write()
-    
-
-#DEBUG
-# sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
-# class settings:
-#     DATA_DIR = "/home/rnd457/gpcr"
-
-
-def tester():
-
-    config = AlphaFoldTwoComplexModelParserConfig(model_set_name="AlphaFold_multimer",
-                                                  cleaned_seq_csv="/home/rnd457/gpcr/structure_data/AlphaFold_multimer/cleaned_seqs.csv",
-                                                  model_receptor_state="Active",
-                                                  pdb_preferred_chain="A",
-                                                  error_handling="raise")
-    af_parser = AlphaFoldTwoComplexModelParser(config)
-    af_parser.load_models()
-    af_parser.write_models()
-
-
-tester()
-#DEBUG
