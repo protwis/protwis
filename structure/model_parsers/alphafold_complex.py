@@ -25,6 +25,14 @@ class AlphaFoldTwoComplexModelMetrics(BaseModelMetrics):
     """Represents the metrics associated with a AlphaFoldTwoComplexModel"""
 
     def __init__(self, data_dir, model_name, error_handling="log", verbosity=ParserVerbosity.SILENT):
+        """Locate the metrics file for the given model (trying both known naming conventions) and initialize the base metrics parser.
+
+        Args:
+            data_dir: Data directory of the model containing the metrics file.
+            model_name: Name of the model.
+            error_handling: Error handling strategy (e.g. log, raise, etc.).
+            verbosity: Verbosity level for logging (ParserVerbosity.SILENT, ParserVerbosity.BASIC, ParserVerbosity.EVERYTHING).
+        """
         path_type_1 = os.sep.join([data_dir, model_name + '_metrics.csv'])
         path_type_2 = os.sep.join([data_dir, model_name + '.csv'])
 
@@ -41,6 +49,11 @@ class AlphaFoldTwoComplexModelMetrics(BaseModelMetrics):
         
 
     def save(self, struct):
+        """Persist the parsed metrics to the StructureModelScores record associated with the given structure, creating it if it does not already exist.
+
+        Args:
+            struct: A structure.models.Structure instance to which the metrics should be associated.
+        """
         self.metrics.pop("complex", None) #Remove complex name present in metrics file from metrics list before recording.
         try:
             metrics = StructureModelScores.objects.get(structure=struct)
@@ -56,12 +69,19 @@ class AlphaFoldTwoComplexModelMetrics(BaseModelMetrics):
 
 class AlphaFoldTwoComplexModel(BaseModel):
 
-    """Defines a AlphaFoldTwoComplex model, containing its PDB structure and associated metrics."""
+    """Defines an object representing and AlphaFold2 model of a GPCR-ligand complex to contain its protein members, PDB structure, and associated metrics during parsing."""
 
     def __init__(self, data_dir, parser_config):
-        super().__init__(data_dir, parser_config)        
+        """Initialize the model with its source data directory and parser configuration.
+
+        Args:
+            data_dir: The directory containing data for the model.
+            parser_config: An instance of an AlphaFoldTwoComplexModelParserConfig object.
+        """
+        super().__init__(data_dir, parser_config)
 
     def load(self):
+        """Populate the model's attributes (name, receptor/ligand/signprot, PDB structure, metrics, ligand sequence, and metadata) from the files in its data directory."""
         self.model_name = os.path.basename(self.data_dir)
         self.pdb_file_path = os.sep.join([self.data_dir, 
                                             self.model_name + '.pdb'])
@@ -93,14 +113,19 @@ class AlphaFoldTwoComplexModel(BaseModel):
             log_or_raise(self.logger, "Model PDB preferred chain must be specified in the parser configuration.", ValueError, self.error_handling)
 
     def annotate_ligand_sequence(self):
+        """Assign the ligand's PDB chain id and populate both its original sequence and the 'cleaned' sequence with only standard amino acids"""
         # Default to 'E' for complexes with a signprot, otherwise default to 'B' for complexes without a signprot
-        self.ligand.pdb_chain_id = 'E' if self.signprot else 'B'  
+        self.ligand.pdb_chain_id = 'E' if self.signprot else 'B'
         self.ligand.sequence_standard_aa_only = self.ligand.get_sequence_from_pdb(self.pdb_structure)
         self.ligand.sequence = self.parser_config.old_seqs_dict.get(self.ligand.hashed_sequence, self.ligand.sequence_standard_aa_only)
         conditional_log(self, f"Annotated ligand sequences for model {self.model_name}. Original sequence: {self.ligand.sequence}. PDB sequence: {self.ligand.sequence_standard_aa_only}", logging.INFO, ParserVerbosity.EVERYTHING)
 
     def unpack_model_name(self):
-        """Unpack the model name into receptor, ligand, and signprot components."""
+        """Unpack the model name into receptor, ligand, and signprot components.
+
+        Returns:
+            Tuple - (receptor, ligand, signprot) parsed from the model directory name. signprot is None when not present.
+        """
         parts = self.model_name.split('-')
         receptor = parts[0] if len(parts) > 0 else None
         ligand_temp = parts[1] if len(parts) > 1 else None
@@ -121,6 +146,11 @@ class AlphaFoldTwoComplexModel(BaseModel):
         return receptor, ligand, signprot
 
     def format_pdb_index(self):
+        """Return the PDB index string for this model, built from the receptor, ligand, and (if present) signalling protein names.
+
+        Returns:
+            String - The PDB index string for the model.
+        """
         if 'peptide' in self.model_structure_type_slug:
             if self.signprot:
                 return f'AFM_{self.receptor.upper()}_hashedseq[{self.ligand.hashed_sequence.upper()}]_{self.signprot.upper()}'
@@ -130,6 +160,7 @@ class AlphaFoldTwoComplexModel(BaseModel):
             return 'AFM_' + self.receptor.upper() + '_' + self.signprot.upper()    
 
     def write(self):
+        """Write the loaded model, its metrics, and related records (protein, structure, ligands, extra proteins, pLDDT, contact network) to the database inside a single transaction."""
         conditional_log(self, f"Starting to write model {self.model_name} to database.", logging.INFO, ParserVerbosity.BASIC)
         try:
             with transaction.atomic():
@@ -166,6 +197,18 @@ class AlphaFoldTwoComplexModelParserConfig(BaseModelParserConfig):
     """Configuration class for AlphaFoldTwoComplexModelParser"""
     
     def __init__(self, model_set_name, data_dir=None, cleaned_seq_csv=None, pdb_header_override=None, model_receptor_state=None, pdb_preferred_chain='A', error_handling="log", verbosity=ParserVerbosity.SILENT):
+        """Initialize the configuration for the AlphaFoldTwoComplex model parser.
+
+        Args:
+            model_set_name: The name of the model set (also the directory name in data_dir).
+            data_dir: The base data directory in which the directory named {model_set_name} is located (defaults to the structure_data directory via BaseModelParserConfig).
+            cleaned_seq_csv: Path to a CSV file mapping cleaned (hashed) sequences back to their original sequences.
+            pdb_header_override: A dictionary of fields and values to override in the PDB header.
+            model_receptor_state: The state of the receptor for the model.
+            pdb_preferred_chain: The preferred chain for the PDB file.
+            error_handling: Error handling strategy (e.g. log, raise, etc.).
+            verbosity: Verbosity level for logging (ParserVerbosity.SILENT, ParserVerbosity.BASIC, ParserVerbosity.EVERYTHING).
+        """
         super().__init__(model_set_name, data_dir=data_dir, pdb_header_override=pdb_header_override, error_handling=error_handling, verbosity=verbosity)
 
         self.cleaned_seq_csv = cleaned_seq_csv
@@ -177,6 +220,11 @@ class AlphaFoldTwoComplexModelParserConfig(BaseModelParserConfig):
             log_or_raise(self.logger, f"Cleaned sequence CSV file not found at {cleaned_seq_csv}.", FileNotFoundError, self.error_handling)
 
     def generate_original_seq_lookup(self):
+        """Build a lookup mapping the hashed sequence identifier found in PDB filenames to the corresponding original (pre-cleaning) sequence.
+
+        Returns:
+            Dict - Mapping of {pdb_file_hashseq: old_sequence} built from the cleaned sequence CSV.
+        """
         df_cleaned_seqs = pd.read_csv(self.cleaned_seq_csv)
         df_cleaned_seqs['backwards_hex_cleaned_seq_hash_col'] = df_cleaned_seqs['cleaned_seq_hash_col'].apply(lambda x: hex(x)[2:][::-1])
         df_cleaned_seqs['pdb_file_hashseq'] = df_cleaned_seqs['cleaned_seq_hash'] + df_cleaned_seqs['backwards_hex_cleaned_seq_hash_col']
@@ -187,7 +235,8 @@ class AlphaFoldTwoComplexModelParser(BaseModelParser):
     """Parses a directory of AlphaFoldTwoComplex models organized by model set name and model name
     
     The expected directory structure is as follows:
-    /structure_data/{model_set_name}/{receptor}-{ligand}-{signprot}(optional)/model_{model_version_number}.pdb and metrics_{model_version_number}.csv
+        /structure_data/{model_set_name}/{model_name}/
+        where model_name is structured as {receptor}-{ligand}-{signprot(optional)}
     """
 
     def __init__(self, config):
@@ -196,16 +245,7 @@ class AlphaFoldTwoComplexModelParser(BaseModelParser):
         self.config = config
         self.model_dirs = []
         self.models = []
-
-    def get_model_directories(self):
-        """Get a list of model directories in the model set directory."""
-        try:
-            self.model_dirs = list(filter(os.path.isdir, [os.path.join(self.config.data_dir, f) for f in os.listdir(self.config.data_dir)])) #/structure_data/{model_set_name}/[*]
-            self.model_dirs = sorted(self.model_dirs, key=lambda x: os.path.basename(x))  # Sort the model directories by name in case OS returns them in a different order
-            conditional_log(self, f"Found {len(self.model_dirs)} model directories in {self.config.data_dir}.", logging.INFO, ParserVerbosity.BASIC)
-        except Exception as e:
-            log_or_raise(self.logger, f"Error accessing model directories in {self.config.data_dir}: {e}", Exception, self.error_handling, parent_exception=e)
-
+    
     def process_models(self, write = True, low_memory=True, offset_start=0, offset_end=None):
         """Process each model directory in the model set directory and return a list of AlphaFoldTwoComplexModel instances.
         

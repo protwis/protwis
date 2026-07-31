@@ -29,10 +29,26 @@ class BoltzTwoComplexModelMetrics(BaseModelMetrics):
     """Represents the metrics associated with a BoltzTwoComplexModel"""
 
     def __init__(self, data_dir, model_name, metrics_file_prefix, model_version_number, error_handling="log", verbosity=ParserVerbosity.SILENT):
+        """Build the metrics file path from the given directory, prefix, and version, then initialize the base metrics parser.
+
+        Args:
+            data_dir: Data directory of the model containing the metrics file.
+            model_name: Name of the model.
+            metrics_file_prefix: Prefix for the metrics file.
+            model_version_number: Version number of the model (e.g. {prefix}_{version}.pdb).
+            error_handling: Error handling strategy (e.g. log, raise, etc.).
+            verbosity: Verbosity level for logging (ParserVerbosity.SILENT, ParserVerbosity.BASIC, ParserVerbosity.EVERYTHING).
+
+        """
         metrics_file_path = os.sep.join([data_dir, metrics_file_prefix + '_' + model_version_number + '.csv'])
         super().__init__(metrics_file_path, error_handling=error_handling, verbosity=verbosity)
 
     def save(self, struct):
+        """Persist the parsed metrics to the StructureModelScores record associated with the given structure, creating it if it does not already exist.
+
+        Args:
+            struct: A structure.models.Structure instance to which the metrics should be associated.
+        """
         #Remove extra fields present in metrics file from metrics list before recording.
         self.metrics.pop("model_rank", None) 
         self.metrics.pop("original_model_num", None)
@@ -58,9 +74,16 @@ class BoltzTwoComplexModel(BaseModel):
     """Defines a BoltzTwoComplex model, containing its PDB structure and associated metrics."""
 
     def __init__(self, data_dir, parser_config):
+        """Initialize the model with its source data directory and parser configuration.
+
+        Args:
+            data_dir: The data directory of the model.
+            parser_config: An instance of a BoltzTwoComplexParserConfig object.
+        """
         super().__init__(data_dir, parser_config)
 
     def load(self):
+        """Populate the model's attributes (identifiers, ligand, PDB structure, metrics, and metadata) from the files in its data directory."""
         self.populate_identifiers_from_manifest()
 
         self.ligand.type = self.ligand.get_type()
@@ -95,6 +118,7 @@ class BoltzTwoComplexModel(BaseModel):
             log_or_raise(self.logger, "Model PDB preferred chain must be specified in the parser configuration.", ValueError, self.error_handling)    
 
     def populate_identifiers_from_manifest(self):
+        """Read the identifiers.csv manifest file for this model and populate the receptor, ligand, and signalling protein identifiers from it."""
         try:
             manifest_file_path = os.sep.join([self.data_dir, 'identifiers.csv'])
             identifiers = csv_to_dict(manifest_file_path)
@@ -118,10 +142,13 @@ class BoltzTwoComplexModel(BaseModel):
         except Exception as e:
             log_or_raise(self.logger, f"Error reading identifiers manifest file {manifest_file_path}: {e}", Exception, self.error_handling, parent_exception=e)        
 
-    def get_preferred_model_version_number(self):        
-        """Get the index of the model to use based on the parser configuration
-        
+    def get_preferred_model_version_number(self):
+        """Get the index of the model to use based on the parser configuration.
+
         If no override is specified, return the default model version number. If no default model is specified, return '1' as the default model version number.
+
+        Returns:
+            String - The preferred model version number.
         """
         if self.parser_config.default_model_version:
             if self.model_name in self.parser_config.default_model_version.get("override", {}):
@@ -130,12 +157,18 @@ class BoltzTwoComplexModel(BaseModel):
         return "1"  # Default to model version number '1' if no default model is specified
     
     def format_pdb_index(self):
+        """Return the PDB index string for this model, built from the receptor, ligand, and (if present) signalling protein names.
+
+        Returns:
+            String - The PDB index string for the model.
+        """
         if self.signprot:
             return f'B2M_{self.receptor.upper()}_{self.ligand.name.upper()}_{self.signprot.upper()}'
         else:
             return f'B2M_{self.receptor.upper()}_{self.ligand.name.upper()}'
 
     def write(self):
+        """Write the loaded model, its metrics, and related records (protein, structure, ligands, extra proteins, pLDDT, contact network) to the database inside a single transaction."""
         conditional_log(self, f"Starting to write model {self.model_name} to database.", logging.INFO, ParserVerbosity.BASIC)
         try:
             with transaction.atomic():
@@ -172,14 +205,27 @@ class BoltzTwoComplexModelParserConfig(BaseModelParserConfig):
 
     """Configuration class for BoltzTwoComplexModelParser"""
     
-    def __init__(self, model_set_name, data_dir=None, cleaned_seq_csv=None, 
+    def __init__(self, model_set_name, data_dir=None, 
                  default_model_version={'default_version_number': '1', 'override': {}}, pdb_file_prefix="model", 
                  metrics_file_prefix="metrics", pdb_header_override=None, 
                  model_receptor_state=None, pdb_preferred_chain='A', 
                  error_handling="log", verbosity=ParserVerbosity.SILENT):
+        """Initialize the parser configuration with file-naming, model-version-selection, and receptor/chain settings for BoltzTwoComplex models.
+
+        Args:
+            model_set_name: The name of the model set (also the directory name in data_dir).
+            data_dir: The base data directory in which the directory named {model_set_name} is located (defaults to the structure_data directory via BaseModelParserConfig).
+            default_model_version: A dictionary specifying the default model version to use (Key: default_version_number) and any specific edge cases to override (Key: override, format: { model_name : version_number }) .
+            pdb_file_prefix: The prefix for the PDB files (e.g. {prefix}_{version_number}.pdb).
+            metrics_file_prefix: The prefix for the metrics files (e.g. {prefix}_{version_number}.csv).
+            pdb_header_override: A dictionary of fields and values to override in the PDB header.
+            model_receptor_state: The state of the receptor for the model.
+            pdb_preferred_chain: The preferred chain for the PDB file.
+            error_handling: Error handling strategy (e.g. log, raise, etc.).
+            verbosity: Verbosity level for logging (ParserVerbosity.SILENT, ParserVerbosity.BASIC, ParserVerbosity.EVERYTHING).
+        """
         super().__init__(model_set_name, data_dir=data_dir, pdb_header_override=pdb_header_override, error_handling=error_handling, verbosity=verbosity)
 
-        self.cleaned_seq_csv = cleaned_seq_csv
         self.pdb_file_prefix = pdb_file_prefix
         self.model_receptor_state = model_receptor_state
         self.metrics_file_prefix = metrics_file_prefix
@@ -188,14 +234,19 @@ class BoltzTwoComplexModelParserConfig(BaseModelParserConfig):
 
 class BoltzTwoComplexModelParser(BaseModelParser):   
     
-    """Parses a directory of BoltzTwoComplex models organized by model set name and model name
+    """Parses a directory of BoltzTwoComplex models organized by model-set-name and model-name
     
     The expected directory structure is as follows:
-    /structure_data/{model_set_name}/{receptor}-{ligand}-{signprot}(optional)/model_{model_version_number}.pdb and metrics_{model_version_number}.csv
+    /structure_data/{model_set_name}/{model_name}/model_{model_version_number}.pdb and metrics_{model_version_number}.csv
+    where model_name is structured as {receptor}-{ligand}-{signprot(optional)}
     """
 
     def __init__(self, config):
-        """Initialize the parser with a configuration object."""
+        """Initialize the parser with a configuration object.
+
+        Args:
+            config: An instance of a BoltzTwoComplexModelParserConfig object.
+        """
         super().__init__(config)
         self.config = config
         self.model_dirs = []
