@@ -14,7 +14,7 @@ from django.core.cache import cache
 from protwis.context_processors import current_site
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from protein.models import ProteinSegment
-from structure.models import Structure, StructureModel, StructureComplexModel, StructureExtraProteins, StructureVectors, StructureModelRMSD, StructureModelpLDDT, StructureAFScores, StructureRFAAScores
+from structure.models import Structure, StructureModel, StructureComplexModel, StructureExtraProteins, StructureVectors, StructureModelRMSD, StructureModelpLDDT, StructureModelScores, StructureRFAAScores
 from structure.functions import CASelector, SelectionParser, GenericNumbersSelector, SubstructureSelector, ModelRotamer
 from structure.assign_generic_numbers_gpcr import GenericNumbering, GenericNumberingFromDB
 from structure.structural_superposition import ProteinSuperpose, FragmentSuperpose, ConvertSuperpose
@@ -827,7 +827,7 @@ def ComplexModelDetails(request, header, refined=False):
         header = header.upper()+'_refined'
     model = Structure.objects.get(pdb_code__index=header)
     if not refined:
-        scores = StructureAFScores.objects.get(structure=model)
+        scores = StructureModelScores.objects.get(structure=model)
         #Need to build the plDDT colors
         model_plddt = StructureModelpLDDT.objects.filter(structure=model).order_by('residue__protein_conformation__protein__id').prefetch_related('residue','residue__protein_conformation__protein','residue__protein_segment')
         chain_scores = model_plddt.values('residue__protein_conformation__protein__name').annotate(average_score=Avg('pLDDT'))
@@ -923,7 +923,7 @@ def ComplexModelDetails(request, header, refined=False):
                                                              'bb_alt2': bb_alt2, 'bb_none2': bb_none2,
                                                              'sc_alt2': sc_alt2, 'sc_none2': sc_none2,
                                                              'template_list': template_list, 'model_main_template': main_template, 'state': None, 'plddt_avg': None,
-                                                             'signprot_color_residues': json.dumps(segments_out2), 'pdbname': header, 'scores': StructureAFScores(),
+                                                             'signprot_color_residues': json.dumps(segments_out2), 'pdbname': header, 'scores': StructureModelScores(),
                                                              'refined': json.dumps(True), 'outer': json.dumps(gpcr_aminoacids), 'inner': json.dumps(gprot_aminoacids), 'structure_type': model.structure_type,
                                                              'interactions': json.dumps(protein_interactions),
                                                              'outer_strict': json.dumps(gpcr_aminoacids_strict),
@@ -3904,7 +3904,7 @@ def ComplexmodDownload(request):
     pks = request.GET['ids'].split(',')
 
     models = Structure.objects.filter(pk__in=pks).prefetch_related('protein_conformation__protein','protein_conformation__protein__family','main_template__pdb_code','signprot_complex__protein','pdb_data','pdb_code')
-    scores = StructureAFScores.objects.filter(structure__pk__in=models)
+    scores = StructureModelScores.objects.filter(structure__pk__in=models)
 
     zip_io = BytesIO()
     with zipfile.ZipFile(zip_io, mode='w', compression=zipfile.ZIP_DEFLATED) as backup_zip:
@@ -3950,15 +3950,15 @@ def LigComplexmodDownload(request):
         scores = StructureRFAAScores.objects.filter(structure__in=models)
         scores_dict = {score.structure: score for score in scores}
     elif 'af-rfaa-sm' not in structure_typeslugs:
-        # None are 'rfaa-sm'; use StructureAFScores
-        scores = StructureAFScores.objects.filter(structure__in=models)
+        # None are 'rfaa-sm'; use StructureModelScores
+        scores = StructureModelScores.objects.filter(structure__in=models)
         scores_dict = {score.structure: score for score in scores}
     else:
         # Mixed types; fetch both types of scores
         models_rfaa = [mod for mod in models if mod.structure_type.slug == 'af-rfaa-sm']
         models_af = [mod for mod in models if mod.structure_type.slug != 'af-rfaa-sm']
         scores_rfaa = StructureRFAAScores.objects.filter(structure__in=models_rfaa)
-        scores_af = StructureAFScores.objects.filter(structure__in=models_af)
+        scores_af = StructureModelScores.objects.filter(structure__in=models_af)
         # Combine both score dictionaries
         scores_dict.update({score.structure: score for score in scores_rfaa})
         scores_dict.update({score.structure: score for score in scores_af})
@@ -4074,7 +4074,7 @@ def SingleLigComplexModelDownload(request, modelname, csv=False):
     if modelname.startswith('RFAA_'):
         scores_obj = StructureRFAAScores.objects.get(structure=mod)
     else:
-        scores_obj = StructureAFScores.objects.get(structure=mod)
+        scores_obj = StructureModelScores.objects.get(structure=mod)
 
     mod_name, scores_name, pdb_io, scores_io = prepare_lig_complex_download(mod, scores_obj, False)
 
@@ -4194,7 +4194,7 @@ def SingleComplexModelDownload(request, modelname, csv=False):
     if refined:
         mod_name, scores_name, pdb_io, scores_io = prepare_AF_complex_download(mod, None, True)
     else:
-        scores_obj = StructureAFScores.objects.get(structure=mod)
+        scores_obj = StructureModelScores.objects.get(structure=mod)
         mod_name, scores_name, pdb_io, scores_io = prepare_AF_complex_download(mod, scores_obj, False)
 
     with zipfile.ZipFile(zip_io, mode='w', compression=zipfile.ZIP_DEFLATED) as backup_zip:
@@ -5002,9 +5002,9 @@ class LigandComplexModels(TemplateView):
                 "protein_conformation__protein__parent__family",
                 "pdb_code",
                 Prefetch(
-                    "structureafscores_set",
-                    queryset=StructureAFScores.objects.all(),
-                    to_attr='prefetch_af_scores'
+                    "structuremodelscores_set",
+                    queryset=StructureModelScores.objects.all(),
+                    to_attr='prefetch_model_scores'
                 ),
                 Prefetch(
                     "structurerfaascores_set",
@@ -5179,7 +5179,7 @@ def LigandComplexDetails(request, header, refined=False):
 
     ### Keep old coloring for refined structures
     if model.structure_type.slug.startswith('af-signprot-peptide') or model.structure_type.slug.startswith('af-peptide'):
-        scores = StructureAFScores.objects.get(structure=model)
+        scores = StructureModelScores.objects.get(structure=model)
         chains = ['A', 'B', 'C', 'D', 'E']
         small_molecule = None
 

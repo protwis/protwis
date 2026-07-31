@@ -8,7 +8,7 @@ from django.conf import settings
 from interaction.models import ResidueFragmentInteraction, StructureLigandInteraction, ResidueFragmentInteractionType
 from interaction.forms import PDBform
 from ligand.models import Ligand, LigandType, LigandRole
-from structure.models import Structure, PdbData, Rotamer, Fragment, StructureModel, StructureComplexModel, StructureExtraProteins, StructureVectors, StructureModelRMSD, StructureModelpLDDT, StructureAFScores
+from structure.models import Structure, PdbData, Rotamer, Fragment, StructureModel, StructureComplexModel, StructureExtraProteins, StructureVectors, StructureModelRMSD, StructureModelpLDDT, StructureModelScores
 from structure.assign_generic_numbers_gpcr import GenericNumbering
 from protein.models import Protein, ProteinSegment
 from residue.models import Residue, ResidueGenericNumberEquivalent, ResidueNumberingScheme
@@ -1600,9 +1600,9 @@ def ComplexDetails(request, pdbname):
     ### Implementing same code for calculating the interactions plot
     model = Structure.objects.get(pdb_code__index=pdbname)
     if model.structure_type.slug == 'af-signprot':
-        scores = StructureAFScores.objects.get(structure=model)
+        scores = StructureModelScores.objects.get(structure=model)
     else:
-        scores = StructureAFScores()
+        scores = StructureModelScores()
     #Need to build the plDDT colors
     model_plddt = StructureModelpLDDT.objects.filter(structure=model)
     residues_plddt = {}

@@ -6,6 +6,8 @@ from Bio.PDB import PDBIO
 import re
 from protein.models import ProteinCouplings
 
+import json as JSON
+
 class Structure(models.Model):
     # linked onto the Xtal ProteinConformation, which is linked to the Xtal protein
     protein_conformation = models.ForeignKey('protein.ProteinConformation', on_delete=models.CASCADE)
@@ -132,6 +134,22 @@ class StructureModelScores(models.Model):
 
     class Meta():
         db_table = 'structure_model_scores'
+
+    def assign_metrics_as_properties(self):
+        """Assign the metrics present in the JSON to properties on the model"""
+        json_dict = JSON.loads(self.metrics_json)
+        for key, value in json_dict.items():
+            key = key.replace(".", "p") if '.' in key else key
+            setattr(self, key, value)
+
+    @classmethod
+    def from_db(cls, db, field_names, values):
+        """Data initialisation/processing method that runs as data is loaded from the database"""
+        instance = super().from_db(db, field_names, values)
+        if 'metrics_json' in field_names and instance.metrics_json:
+            instance.assign_metrics_as_properties()
+        return instance
+
 
 class StructureModel(models.Model):
     protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE)
