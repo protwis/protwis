@@ -9,8 +9,9 @@ from django.conf import settings
 from Bio.PDB import PDBParser, PDBIO, Polypeptide
 
 import logging
+from interaction.views import ligand
 from structure.model_parsers.logging import ParserVerbosity, conditional_log
-
+from structure.model_parsers.helpers import csv_to_dict
 from structure.model_parsers.error_handling import log_or_raise
 
 from structure.model_parsers.base import BaseModel, BaseModelMetrics, BaseModelParser, BaseModelParserConfig, ModelGProtienComplex, ModelLigand
@@ -20,28 +21,26 @@ from protein.models import Protein, ProteinConformation, ProteinState, Residue
 
 import json as JSON
 
-class AlphaFoldTwoComplexModelMetrics(BaseModelMetrics):
+
+from contactnetwork.cube import compute_interactions
+
+class BoltzTwoComplexModelMetrics(BaseModelMetrics):
     
-    """Represents the metrics associated with a AlphaFoldTwoComplexModel"""
+    """Represents the metrics associated with a BoltzTwoComplexModel"""
 
-    def __init__(self, data_dir, model_name, error_handling="log", verbosity=ParserVerbosity.SILENT):
-        path_type_1 = os.sep.join([data_dir, model_name + '_metrics.csv'])
-        path_type_2 = os.sep.join([data_dir, model_name + '.csv'])
-
-        metrics_file_path = None
-        if os.path.exists(path_type_1):
-            metrics_file_path = path_type_1
-        elif os.path.exists(path_type_2):
-            metrics_file_path = path_type_2
-        else:
-            self.logger = logging.getLogger('build')   
-            log_or_raise(self.logger, f"Metrics file not found for model {model_name}.", FileNotFoundError, error_handling)
-
-        super().__init__(metrics_file_path, error_handling=error_handling, verbosity=verbosity)        
-        
+    def __init__(self, data_dir, model_name, metrics_file_prefix, model_version_number, error_handling="log", verbosity=ParserVerbosity.SILENT):
+        metrics_file_path = os.sep.join([data_dir, metrics_file_prefix + '_' + model_version_number + '.csv'])
+        super().__init__(metrics_file_path, error_handling=error_handling, verbosity=verbosity)
 
     def save(self, struct):
-        self.metrics.pop("complex", None) #Remove complex name present in metrics file from metrics list before recording.
+        #Remove extra fields present in metrics file from metrics list before recording.
+        self.metrics.pop("model_rank", None) 
+        self.metrics.pop("original_model_num", None)
+        self.metrics.pop("is_best_ligand_iptm", None)
+        self.metrics.pop("pass_ligand_iptm_0.93", None)
+        self.metrics.pop("pass_ligand_plddt_0.90", None)
+        self.metrics.pop("pass_vicinity_0.70", None)
+
         try:
             metrics = StructureModelScores.objects.get(structure=struct)
             metrics.metrics_json = JSON.dumps(self.metrics) #Update existing metrics
@@ -54,32 +53,35 @@ class AlphaFoldTwoComplexModelMetrics(BaseModelMetrics):
         return metrics
 
 
-class AlphaFoldTwoComplexModel(BaseModel):
+class BoltzTwoComplexModel(BaseModel):
 
-    """Defines a AlphaFoldTwoComplex model, containing its PDB structure and associated metrics."""
+    """Defines a BoltzTwoComplex model, containing its PDB structure and associated metrics."""
 
     def __init__(self, data_dir, parser_config):
-        super().__init__(data_dir, parser_config)        
+        super().__init__(data_dir, parser_config)
 
     def load(self):
-        self.model_name = os.path.basename(self.data_dir)
-        self.pdb_file_path = os.sep.join([self.data_dir, 
-                                            self.model_name + '.pdb'])
-        
-        self.receptor, self.ligand, self.signprot = self.unpack_model_name()
-        if self.signprot:
-            self.signprot_subunits = self.populate_signprot_subunits()
+        self.populate_identifiers_from_manifest()
 
-        self.model_structure_type_name = 'Model (AF2)'
-        self.model_structure_type_slug = 'af-signprot-peptide' if self.signprot else 'af-peptide'
+        self.ligand.type = self.ligand.get_type()
+        
+        self.model_name = os.path.basename(self.data_dir)
+        self.model_version = self.get_preferred_model_version_number()
+        self.pdb_file_path = os.sep.join([self.data_dir, 
+                                            self.parser_config.pdb_file_prefix + "_" + self.model_version + '.pdb'])
+        
+        if self.signprot:
+            self.signprot_subunits = self.populate_signprot_subunits()        
+        
+        self.model_structure_type_name = 'Model (Boltz2)'
+        self.model_structure_type_slug = f'b2{ "-signprot" if self.signprot else "" }{ "-" + self.ligand.type.replace("-", "") if self.ligand.type else "" }'
 
         self.pdb_raw = self.fetch_pdb_content()
         self.pdb_structure = self.fetch_pdb_structure()
         
-        self.metrics = AlphaFoldTwoComplexModelMetrics(self.data_dir, self.model_name, error_handling=self.parser_config.error_handling, verbosity=self.parser_config.verbosity)
+        self.metrics = BoltzTwoComplexModelMetrics(self.data_dir, self.model_name, self.parser_config.metrics_file_prefix, self.model_version, error_handling=self.parser_config.error_handling, verbosity=self.parser_config.verbosity)
         self.metrics.load()
-        
-        self.annotate_ligand_sequence()
+
         self.model_date = self.parse_model_date_from_pdb_header()        
 
         if self.parser_config.model_receptor_state:
@@ -90,44 +92,48 @@ class AlphaFoldTwoComplexModel(BaseModel):
         if self.parser_config.pdb_preferred_chain:
                     self.pdb_preferred_chain = self.parser_config.pdb_preferred_chain
         else:
-            log_or_raise(self.logger, "Model PDB preferred chain must be specified in the parser configuration.", ValueError, self.error_handling)
+            log_or_raise(self.logger, "Model PDB preferred chain must be specified in the parser configuration.", ValueError, self.error_handling)    
 
-    def annotate_ligand_sequence(self):
-        # Default to 'E' for complexes with a signprot, otherwise default to 'B' for complexes without a signprot
-        self.ligand.pdb_chain_id = 'E' if self.signprot else 'B'  
-        self.ligand.sequence_standard_aa_only = self.ligand.get_sequence_from_pdb(self.pdb_structure)
-        self.ligand.sequence = self.parser_config.old_seqs_dict.get(self.ligand.hashed_sequence, self.ligand.sequence_standard_aa_only)
-        conditional_log(self, f"Annotated ligand sequences for model {self.model_name}. Original sequence: {self.ligand.sequence}. PDB sequence: {self.ligand.sequence_standard_aa_only}", logging.INFO, ParserVerbosity.EVERYTHING)
+    def populate_identifiers_from_manifest(self):
+        try:
+            manifest_file_path = os.sep.join([self.data_dir, 'identifiers.csv'])
+            identifiers = csv_to_dict(manifest_file_path)
 
-    def unpack_model_name(self):
-        """Unpack the model name into receptor, ligand, and signprot components."""
-        parts = self.model_name.split('-')
-        receptor = parts[0] if len(parts) > 0 else None
-        ligand_temp = parts[1] if len(parts) > 1 else None
-        signprot = parts[2] if len(parts) > 2 else None
+            self.receptor = identifiers.get("receptor", "") + "_" + identifiers.get("species", "")
 
-        if ligand_temp is None:
-            ligand = None
-        else:
-            ligand_component = re.match(r'hashedseq\[(.+)\]', ligand_temp)
-            ligand = None
-            if ligand_component:
-                ligand = ModelLigand(self.error_handling, self.verbosity)
-                ligand.hashed_sequence = ligand_component.group(1)
+            self.ligand = ModelLigand(error_handling=self.error_handling, verbosity=self.verbosity)                
+            self.ligand.name = identifiers.get("ligand_name", "")            
+            self.ligand.pubchemcid = identifiers.get("PubChemCID", "")
+            self.ligand.smiles = identifiers.get("SMILES", "")
+            self.ligand.inchikey = identifiers.get("InChIKey", "")
+            self.ligand.pdb_chain_id = "C"  
 
-        if not receptor or not ligand:
-            log_or_raise(self.logger, f"Invalid model name format: {self.model_name}. Expected format: receptor-hashedseq[ligand_hash]-signprot (signprot is optional).", ValueError, self.error_handling)
+            self.signprot = None
+            has_g = identifiers.get("G_protein", "") == "with_miniG"
+            if has_g:
+                self.signprot = identifiers.get("mini_g_entry", None)
 
-        return receptor, ligand, signprot
+            self.identifiers = identifiers
+            
+        except Exception as e:
+            log_or_raise(self.logger, f"Error reading identifiers manifest file {manifest_file_path}: {e}", Exception, self.error_handling, parent_exception=e)        
 
+    def get_preferred_model_version_number(self):        
+        """Get the index of the model to use based on the parser configuration
+        
+        If no override is specified, return the default model version number. If no default model is specified, return '1' as the default model version number.
+        """
+        if self.parser_config.default_model_version:
+            if self.model_name in self.parser_config.default_model_version.get("override", {}):
+                return self.parser_config.default_model_version["override"][self.model_name]       
+            return self.parser_config.default_model_version.get("default_version_number", "1")
+        return "1"  # Default to model version number '1' if no default model is specified
+    
     def format_pdb_index(self):
-        if 'peptide' in self.model_structure_type_slug:
-            if self.signprot:
-                return f'AFM_{self.receptor.upper()}_hashedseq[{self.ligand.hashed_sequence.upper()}]_{self.signprot.upper()}'
-            else:
-                return f'AFM_{self.receptor.upper()}_hashedseq[{self.ligand.hashed_sequence.upper()}]'
+        if self.signprot:
+            return f'B2M_{self.receptor.upper()}_{self.ligand.name.upper()}_{self.signprot.upper()}'
         else:
-            return 'AFM_' + self.receptor.upper() + '_' + self.signprot.upper()    
+            return f'B2M_{self.receptor.upper()}_{self.ligand.name.upper()}'
 
     def write(self):
         conditional_log(self, f"Starting to write model {self.model_name} to database.", logging.INFO, ParserVerbosity.BASIC)
@@ -146,11 +152,12 @@ class AlphaFoldTwoComplexModel(BaseModel):
 
                 ligands_db = self.ligand.fetch_db_entities()
 
-                self.create_ligand_peptide_structure(struct, ligands_db)
+                if any([ligand.ligand_type.name in ['peptide', 'protein'] for ligand in ligands_db]):
+                    self.create_ligand_peptide_structure(struct, ligands_db)
 
                 self.metrics.save(struct)
 
-                self.create_extra_proteins(struct, signprot, signprot_conf, beta_protconf, gamma_protconf)
+                self.create_extra_proteins(struct, signprot, signprot_conf, beta_protconf, gamma_protconf, alpha_note=self.identifiers.get("mini_gprot_construct",))
 
                 self.store_plddt(struct, receptor_protein, signprot, beta_protconf, gamma_protconf)
 
@@ -160,31 +167,28 @@ class AlphaFoldTwoComplexModel(BaseModel):
 
         except Exception as e:
             log_or_raise(self.logger, f"Error writing model {self.model_name} to database: {str(e)}", Exception, self.error_handling, parent_exception=e)
-   
-class AlphaFoldTwoComplexModelParserConfig(BaseModelParserConfig):
 
-    """Configuration class for AlphaFoldTwoComplexModelParser"""
+class BoltzTwoComplexModelParserConfig(BaseModelParserConfig):
+
+    """Configuration class for BoltzTwoComplexModelParser"""
     
-    def __init__(self, model_set_name, data_dir=None, cleaned_seq_csv=None, pdb_header_override=None, model_receptor_state=None, pdb_preferred_chain='A', error_handling="log", verbosity=ParserVerbosity.SILENT):
+    def __init__(self, model_set_name, data_dir=None, cleaned_seq_csv=None, 
+                 default_model_version={'default_version_number': '1', 'override': {}}, pdb_file_prefix="model", 
+                 metrics_file_prefix="metrics", pdb_header_override=None, 
+                 model_receptor_state=None, pdb_preferred_chain='A', 
+                 error_handling="log", verbosity=ParserVerbosity.SILENT):
         super().__init__(model_set_name, data_dir=data_dir, pdb_header_override=pdb_header_override, error_handling=error_handling, verbosity=verbosity)
 
         self.cleaned_seq_csv = cleaned_seq_csv
+        self.pdb_file_prefix = pdb_file_prefix
         self.model_receptor_state = model_receptor_state
+        self.metrics_file_prefix = metrics_file_prefix
         self.pdb_preferred_chain = pdb_preferred_chain
-        if cleaned_seq_csv and os.path.exists(cleaned_seq_csv):
-            self.old_seqs_dict = self.generate_original_seq_lookup()
-        else:
-            log_or_raise(self.logger, f"Cleaned sequence CSV file not found at {cleaned_seq_csv}.", FileNotFoundError, self.error_handling)
+        self.default_model_version = default_model_version        
 
-    def generate_original_seq_lookup(self):
-        df_cleaned_seqs = pd.read_csv(self.cleaned_seq_csv)
-        df_cleaned_seqs['backwards_hex_cleaned_seq_hash_col'] = df_cleaned_seqs['cleaned_seq_hash_col'].apply(lambda x: hex(x)[2:][::-1])
-        df_cleaned_seqs['pdb_file_hashseq'] = df_cleaned_seqs['cleaned_seq_hash'] + df_cleaned_seqs['backwards_hex_cleaned_seq_hash_col']
-        return {k:v for k,v in zip(df_cleaned_seqs['pdb_file_hashseq'],df_cleaned_seqs['old_sequence'])}
-
-class AlphaFoldTwoComplexModelParser(BaseModelParser):   
+class BoltzTwoComplexModelParser(BaseModelParser):   
     
-    """Parses a directory of AlphaFoldTwoComplex models organized by model set name and model name
+    """Parses a directory of BoltzTwoComplex models organized by model set name and model name
     
     The expected directory structure is as follows:
     /structure_data/{model_set_name}/{receptor}-{ligand}-{signprot}(optional)/model_{model_version_number}.pdb and metrics_{model_version_number}.csv
@@ -207,7 +211,7 @@ class AlphaFoldTwoComplexModelParser(BaseModelParser):
             log_or_raise(self.logger, f"Error accessing model directories in {self.config.data_dir}: {e}", Exception, self.error_handling, parent_exception=e)
 
     def process_models(self, write = True, low_memory=True, offset_start=0, offset_end=None):
-        """Process each model directory in the model set directory and return a list of AlphaFoldTwoComplexModel instances.
+        """Process each model directory in the model set directory and return a list of BoltzTwoComplexModel instances.
         
         Args:
             write (bool): Whether to write the models to the database. Default is True.
@@ -229,7 +233,7 @@ class AlphaFoldTwoComplexModelParser(BaseModelParser):
             models_to_process = self.model_dirs[offset_start:offset_end] if offset_end else self.model_dirs[offset_start:]
 
             for model_path in models_to_process:
-                model = AlphaFoldTwoComplexModel(model_path, self.config)
+                model = BoltzTwoComplexModel(model_path, self.config)
                 model.load()
                 if not low_memory:
                     self.models.append(model)
