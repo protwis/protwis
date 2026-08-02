@@ -101,6 +101,10 @@ class Command(BaseBuild):
 
 
     def handle(self, *args, **options):
+        tracker = {}
+        all_models = django.apps.apps.get_models()[6:]
+        test_model_updates(all_models, tracker, initialize=True)
+
         # Set verbosity level from integer enumeration based on command-line argument
         verbosity_level = ParserVerbosity.from_string_map.get(options['parser_verbosity'], ParserVerbosity.BASIC)
 
@@ -130,7 +134,7 @@ class Command(BaseBuild):
         try:
             self.logger.info('CREATING STRUCTURES')
             self.prepare_input(options['proc'], self.model_parser.model_dirs)
-            test_model_updates(self.all_models, self.tracker, check=True)
+            test_model_updates(all_models, tracker, check=True)
             self.logger.info('COMPLETED CREATING STRUCTURES')
         except Exception as msg:
             self.logger.error(msg)
