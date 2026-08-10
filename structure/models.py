@@ -150,6 +150,14 @@ class StructureModelScores(models.Model):
             instance.assign_metrics_as_properties()
         return instance
 
+class StructureAFScores(models.Model):
+    structure = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
+    ptm = models.DecimalField(max_digits=4, decimal_places=2)
+    iptm = models.DecimalField(max_digits=4, decimal_places=2)
+    pae_mean = models.DecimalField(max_digits=4, decimal_places=2)
+
+    class Meta():
+        db_table = 'structure_af_scores'
 
 class StructureModel(models.Model):
     protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE)
