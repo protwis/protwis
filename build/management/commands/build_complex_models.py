@@ -29,6 +29,7 @@ from interaction.views import regexaa, check_residue, extract_fragment_rotamer
 from signprot.models import SignprotComplex
 import structure.assign_generic_numbers_gpcr as as_gn
 
+from structure.model_parsers.base import LigandMultiMatchHandling
 from structure.model_parsers.boltz_two import BoltzTwoComplexModelParserConfig, BoltzTwoComplexModelParser
 from structure.model_parsers.alphafold_complex import AlphaFoldTwoComplexModelParser, AlphaFoldTwoComplexModelParserConfig
 from structure.model_parsers.logging import ParserVerbosity
@@ -111,10 +112,15 @@ class Command(BaseBuild):
         if options['parser'] == "alphafoldcomplex":
             if not options['cleaned_seq_csv']:
                 raise ValueError("The --cleaned_seq_csv argument is required for the 'alphafoldcomplex' parser.")
+            
+            if not os.path.exists(options['cleaned_seq_csv']):
+                raise FileNotFoundError(f"Cleaned sequence CSV file not found at {options['cleaned_seq_csv']}.")
+
             config = AlphaFoldTwoComplexModelParserConfig(model_set_name=options['model_set_name'],
                                                         cleaned_seq_csv=options['cleaned_seq_csv'],
                                                         model_receptor_state="Active",
                                                         pdb_preferred_chain="A",
+                                                        ligand_multimatch_handling=LigandMultiMatchHandling.KEEP_FIRST,
                                                         error_handling=options['error_handling'],
                                                         verbosity=verbosity_level)
 
@@ -126,6 +132,7 @@ class Command(BaseBuild):
                                                         pdb_header_override={'deposition_date': '2026-03-01', 'release_date': '2026-03-01'},
                                                         default_model_version= {'default_version_number': '1', 'override': {'drd1_human-"zuclopenthixol"[5311507]': '2'}},
                                                         pdb_preferred_chain="A",
+                                                        ligand_multimatch_handling=LigandMultiMatchHandling.KEEP_FIRST,
                                                         error_handling=options['error_handling'],
                                                         verbosity=verbosity_level)            
             self.model_parser = BoltzTwoComplexModelParser(config)
