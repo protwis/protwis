@@ -396,8 +396,6 @@ class BaseModel():
             log_or_raise(self.logger, f"Ligand chain ID is not defined for in model {self.model_name}.", ValueError, self.error_handling)
 
         for ligand_db in ligands_db:
-            if ligand_db.ligand_type.name not in ['peptide', 'protein']:
-                continue  # Skip non-peptide ligands
 
             try:
                 ligand_peptide_structure, created = LigandPeptideStructure.objects.get_or_create(

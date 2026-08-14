@@ -179,7 +179,6 @@ class BoltzTwoComplexModel(BaseModel):
 
                 ligands_db = self.ligand.fetch_db_entities()
 
-                #if any([ligand.ligand_type.name in ['peptide', 'protein'] for ligand in ligands_db]):
                 self.create_ligand_peptide_structure(struct, ligands_db)
 
                 self.metrics.save(struct)
