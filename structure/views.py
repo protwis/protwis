@@ -3988,13 +3988,11 @@ def prepare_lig_complex_download(mod, scores_obj=None, refined=False):
         gprot_entry = ''
         pipeline_used = 'RFAA'
         if scores_obj:
-            scores_text = """pae_7tm,plddt_mean
-{},{}
-""".format(scores_obj.pae_7tm, scores_obj.plddt_mean)
+            scores_text = f'pae_7tm,plddt_mean\n{scores_obj.pae_7tm},{scores_obj.plddt_mean}'
         else:
             # Handle missing scores
             scores_text = "pae_7tm,plddt_mean\n,\n"
-    else:
+    elif structure_type_slug in ['af-signprot-peptide', "af-signprot"]:
         # Use fields for 'af-signprot-peptide' and others
         if structure_type_slug == 'af-signprot-peptide':
             gprot_entry = mod.signprot_complex.protein.entry_name
@@ -4002,12 +4000,24 @@ def prepare_lig_complex_download(mod, scores_obj=None, refined=False):
             gprot_entry = ''
         pipeline_used = 'AF2'
         if scores_obj:
-            scores_text = """ptm,iptm,pae_mean
-{},{},{}
-""".format(scores_obj.ptm, scores_obj.iptm, scores_obj.pae_mean)
+            scores_text = f"ptm,iptm,pae_mean\n{scores_obj.ptm},{scores_obj.iptm},{scores_obj.pae_mean}"
         else:
             # Handle missing scores
             scores_text = "ptm,iptm,pae_mean\n,,\n"
+    elif "b2-" in structure_type_slug:
+        # Use fields for 'af-signprot-peptide' and others
+        if "-signprot" in structure_type_slug:
+            gprot_entry = mod.signprot_complex.protein.entry_name
+        else:
+            gprot_entry = ''
+        pipeline_used = 'Boltz2'
+        if scores_obj:
+            scores_text = f"ptm,iptm\n{scores_obj.ptm},{scores_obj.iptm}"
+        else:
+            # Handle missing scores
+            scores_text = "ptm,iptm,pae_mean\n,,\n"
+    else:
+        raise ValueError(f"Unknown structure type slug: {structure_type_slug}")
 
     # Get ligand name(s)
     ligand_names = [lps.ligand.name for lps in getattr(mod, 'ligandpeptide_structures', [])]
@@ -4038,9 +4048,7 @@ def prepare_AF_complex_download(mod, scores_obj=None, refined=False):
     if refined:
         scores_text = mod.stats_text.stats_text
     else:
-        scores_text = """ptm,iptm,pae_mean
-{},{},{}
-""".format(scores_obj.ptm, scores_obj.iptm, scores_obj.pae_mean)
+        scores_text = f"ptm,iptm,pae_mean\n{scores_obj.ptm},{scores_obj.iptm},{scores_obj.pae_mean}"
     scores_io = StringIO(scores_text)
     classname = class_dict[mod.protein_conformation.protein.family.slug[:3]]
     gpcr_entry = mod.protein_conformation.protein.entry_name
@@ -4992,7 +5000,7 @@ class LigandComplexModels(TemplateView):
 
             # Get the structure models along with prefetching ligands and related data
             structures = Structure.objects.filter(
-                structure_type__slug__in=['af-signprot-peptide', 'af-rfaa-sm', 'af-peptide']
+                structure_type__slug__in=['af-signprot-peptide', 'af-rfaa-sm', 'af-peptide', 'b2-signprot-smallmolecule', 'b2-smallmolecule', 'b2-signprot-peptide', 'b2-signprot-protein', 'b2-peptide', 'b2-protein']
             ).prefetch_related(
                 "protein_conformation__protein__family",
                 "protein_conformation__protein",
@@ -5075,7 +5083,7 @@ class LigandComplexModels(TemplateView):
         return context
 
 # This may be momentarily
-def chain_e_and_lg1_coloring(structure):
+def ligand_coloring(structure, ligand_chain, ligand_type):
     """
     Creates color segments for chain E and atoms of residue LG1 based on the PDB data in the structure object,
     using scores (B-factors) to determine colors.
@@ -5092,8 +5100,8 @@ def chain_e_and_lg1_coloring(structure):
     pdb_content = structure.pdb_data.pdb
     pdb_lines = pdb_content.split('\n')
 
-    chain_e_residues = {}
-    lg1_atoms = {}
+    peptide_residues = {}
+    smallmolecule_atoms = {}
 
     for line in pdb_lines:
         if line.startswith('ATOM') or line.startswith('HETATM'):
@@ -5103,47 +5111,62 @@ def chain_e_and_lg1_coloring(structure):
             atom_name = line[12:16].strip()
             b_factor = float(line[60:66].strip())
 
-            if chain == 'E':
-                chain_e_residues[residue_number] = b_factor
-            elif residue_name == 'LG1':
-                lg1_atoms[f"{residue_number}:{atom_name}"] = b_factor
+            if ligand_type == 'peptide':
+                peptide_residues[residue_number] = b_factor
+            elif ligand_type == 'small-molecule':
+                smallmolecule_atoms[f"{residue_number}:{atom_name}"] = b_factor
 
-    if not chain_e_residues and not lg1_atoms:
-        print("No residues found for chain E or LG1.")
+    if not peptide_residues and not smallmolecule_atoms:
+        print(f"No residues found for chain {ligand_chain}.")
         return segments_out
 
-    # Process chain E
-    color_groups = {}
-    for residue, score in chain_e_residues.items():
-        color = from_score_to_color(score, hex_colors)
-        if color not in color_groups:
-            color_groups[color] = []
-        color_groups[color].append(residue)
+    if ligand_type == 'peptide':
+        color_groups = {}
+        for residue, score in peptide_residues.items():
+            color = from_score_to_color(score, hex_colors)
+            if color not in color_groups:
+                color_groups[color] = []
+            color_groups[color].append(residue)
 
-    for color, residues in color_groups.items():
-        segments = []
-        sorted_residues = sorted(residues)
-        start = sorted_residues[0]
-        prev = start
-        for residue in sorted_residues[1:] + [None]:
-            if residue != prev + 1:
-                if start == prev:
-                    segments.append(str(start))
-                else:
-                    segments.append(f"{start}-{prev}")
-                start = residue
-            prev = residue
-        segment_string = f":E and ({' or '.join(segments)})"
-        segments_out.append([color, segment_string])
+        for color, residues in color_groups.items():
+            segments = []
+            sorted_residues = sorted(residues)
+            start = sorted_residues[0]
+            prev = start
+            for residue in sorted_residues[1:] + [None]:
+                if residue != prev + 1:
+                    if start == prev:
+                        segments.append(str(start))
+                    else:
+                        segments.append(f"{start}-{prev}")
+                    start = residue
+                prev = residue
+            segment_string = f":E and ({' or '.join(segments)})"
+            segments_out.append([color, segment_string])
 
-    # Process LG1 residue
-    for atom, score in lg1_atoms.items():
-        color = from_score_to_color(score, hex_colors)
-        residue_number, atom_name = atom.split(':')
-        segment_string = f":B and LG1 and .{atom_name}"
-        segments_out.append([color, segment_string])
+    elif ligand_type == 'small-molecule':
+        # Process small molecule atoms
+        for atom, score in smallmolecule_atoms.items():
+            color = from_score_to_color(score, hex_colors)
+            residue_number, atom_name = atom.split(':')
+            segment_string = f":{ligand_chain} and .{atom_name}"
+            segments_out.append([color, segment_string])
 
     return segments_out
+
+def get_chain_list(pdb_string):
+    """
+    Extracts a list of unique chain identifiers from the PDB data.
+    :param pdb_data: The PDB data as a string
+    :return: List of unique chain identifiers
+    """
+    chains = set()
+    for line in pdb_string.splitlines():
+        if line.startswith('ATOM') or line.startswith('HETATM'):
+            chain_id = line[21:22].strip()
+            if chain_id:
+                chains.add(chain_id)
+    return sorted(chains)
 
 def LigandComplexDetails(request, header, refined=False):
     """
@@ -5178,20 +5201,23 @@ def LigandComplexDetails(request, header, refined=False):
     #  ) = complex_interactions(model)
 
     ### Keep old coloring for refined structures
-    if model.structure_type.slug.startswith('af-signprot-peptide') or model.structure_type.slug.startswith('af-peptide'):
+    if model.structure_type.slug.startswith('af-signprot-peptide') or model.structure_type.slug.startswith('af-peptide') or model.structure_type.slug.startswith('b2-'):
         scores = StructureModelScores.objects.get(structure=model)
-        chains = ['A', 'B', 'C', 'D', 'E']
-        small_molecule = None
+        chains = get_chain_list(model.pdb_data.pdb)
+        if "smallmolecule" in model.structure_type.slug:
+            small_molecule = True
+        else:
+            small_molecule = None
 
     else:
         scores = StructureRFAAScores.objects.get(structure=model)
-        chains = ['A', 'B']
+        chains = get_chain_list(model.pdb_data.pdb)
         small_molecule = True
 
     segments_out = af_model_coloring(residues_plddt, chains)
-    ligand_segments = chain_e_and_lg1_coloring(model)
+    ligand_segments = ligand_coloring(model, ligand.chain, 'small-molecule' if ligand.ligand.ligand_type.name == 'small-molecule' else 'peptide')
     segments_out.extend(ligand_segments)
-    print(ligand_segments)
+    
 
 
     return render(request,'ligand_complex_details.html',{'model': model,
@@ -5199,6 +5225,7 @@ def LigandComplexDetails(request, header, refined=False):
                                                             'pdbname': header,
                                                             'scores': scores,
                                                             'ligand_object': ligand,
+                                                            'ligand_chain': ligand.chain if ligand else None,
                                                             'is_ligand_physiological': is_ligand_physiological, 
                                                             'small_molecule': json.dumps(small_molecule),
                                                             # 'outer': json.dumps(gpcr_aminoacids),
