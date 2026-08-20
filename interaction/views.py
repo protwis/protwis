@@ -1470,7 +1470,7 @@ def ComplexDetails(request, pdbname):
     resn_list = ''
 
     crystal = Structure.objects.get(pdb_code__index=pdbname)
-    if crystal.structure_type.slug.startswith('af-'):
+    if crystal.structure_type.origin in ['model', 'experiment_model_refined']:
         p = Protein.objects.get(id=crystal.protein_conformation.protein.id)
     else:
         p = Protein.objects.get(protein=crystal.protein_conformation.protein)

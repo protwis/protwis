@@ -37,8 +37,9 @@ class Command(BaseCommand):
             print("Processing class {}".format(slug[0]))
 
             # grab all PDB-codes for this class
-            structure_ids = list(Structure.objects.filter(protein_conformation__protein__family__slug__startswith=slug[0]) \
-                                .exclude(structure_type__slug__startswith='af-').values_list("pdb_code__index"))
+            structure_ids = list(Structure.objects.filter(protein_conformation__protein__family__slug__startswith=slug[0],
+                                                          structure_type__origin='experiment') \
+                                                  .values_list("pdb_code__index"))
 
             structure_ids = [x[0] for x in structure_ids]
 
@@ -279,12 +280,14 @@ class Command(BaseCommand):
             self.logger.info("ASSIGNING the \"representative\" tag for unique structure-state complexes")
 
             # Set the representative state of all GPCR structure to False
-            Structure.objects.filter(protein_conformation__protein__family__slug__startswith="00").exclude(structure_type__slug__startswith='af-').update(representative=False)
+            Structure.objects.filter(protein_conformation__protein__family__slug__startswith="00", structure_type__origin='experiment').update(representative=False)
 
 
             # Select all GPCR structures and get unique slug-state combinations
-            struct_combs = list(Structure.objects.filter(protein_conformation__protein__family__slug__startswith="00") \
-                                .exclude(structure_type__slug__startswith='af-').values_list("protein_conformation__protein__family__slug", "state", "pk", "resolution", "protein_conformation__pk", "protein_conformation__protein__parent__pk"))
+            struct_combs = list(Structure.objects.filter(protein_conformation__protein__family__slug__startswith="00", 
+                                                         structure_type__origin='experiment') \
+                                                 .values_list("protein_conformation__protein__family__slug", "state", "pk", "resolution", 
+                                                              "protein_conformation__pk", "protein_conformation__protein__parent__pk"))
 
             # Grab protein conformations IDs and receptor slugs
             struct_conf_pks = [struct[4] for struct in struct_combs]

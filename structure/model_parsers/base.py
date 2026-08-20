@@ -378,7 +378,7 @@ class BaseModel():
             structure.models.StructureType - The existing or newly created structure type.
         """
         try:
-            structure_type, created = StructureType.objects.get_or_create(slug=self.model_structure_type_slug, defaults={'name': self.model_structure_type_name})
+            structure_type, created = StructureType.objects.get_or_create(slug=self.model_structure_type_slug, defaults={'name': self.model_structure_type_name, 'origin': self.structure_origin})
             if created:
                 conditional_log(self, f"Created structure type {self.model_structure_type_name} with slug {self.model_structure_type_slug}.", logging.INFO, ParserVerbosity.BASIC)
             return structure_type

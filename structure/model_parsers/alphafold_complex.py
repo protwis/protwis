@@ -78,6 +78,7 @@ class AlphaFoldTwoComplexModel(BaseModel):
 
     def load(self):
         """Populate the model's attributes (name, receptor/ligand/signprot, PDB structure, metrics, ligand sequence, and metadata) from the files in its data directory."""
+        self.structure_origin = 'model'
         self.model_name = os.path.basename(self.data_dir)
         self.pdb_file_path = os.sep.join([self.data_dir,
                                             self.model_name + '.pdb'])

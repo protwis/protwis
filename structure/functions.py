@@ -501,20 +501,21 @@ def get_segment_template (protein, segments=['TM1', 'TM2', 'TM3', 'TM4','TM5','T
     a.load_reference_protein(protein)
     #You are so gonna love it...
     if state:
-        a.load_proteins([x.protein_conformation.protein.parent for x in list(Structure.objects.order_by('protein_conformation__protein__parent','resolution').exclude(protein_conformation__protein=protein.id, protein_conformation__state=state, structure_type__slug__startswith='af-'))])
+        a.load_proteins([x.protein_conformation.protein.parent for x in list(Structure.objects \
+                                                                             .order_by('protein_conformation__protein__parent','resolution') \
+                                                                             .exclude(protein_conformation__protein=protein.id, 
+                                                                                      protein_conformation__state=state,
+                                                                                      structure_type__origin__in=['model', 'experiment_model_refined']))])
     else:
-        a.load_proteins([x.protein_conformation.protein.parent for x in list(Structure.objects.order_by('protein_conformation__protein__parent','resolution').exclude(protein_conformation__protein=protein.id, structure_type__slug__startswith='af-'))])
+        a.load_proteins([x.protein_conformation.protein.parent for x in list(Structure.objects \
+                                                                             .order_by('protein_conformation__protein__parent','resolution') \
+                                                                             .exclude(protein_conformation__protein=protein.id,
+                                                                                      structure_type__origin__in=['model', 'experiment_model_refined']))])
     a.load_segments(ProteinSegment.objects.filter(slug__in=segments))
     a.build_alignment()
     a.calculate_similarity()
 
     return a.proteins[1]
-
-
-#==============================================================================
-def fetch_template_structure (template_protein):
-
-    return Structure.objects.get(protein_conformation__protein__parent=template_protein.entry_name).exclude(structure_type__slug__startswith='af-')
 
 
 #==============================================================================
@@ -1840,6 +1841,7 @@ def fetch_signprot_data(pdb, protein, beta_uniprots=[], gamma_uniprots=[]):
     else:
         data["pubmedId"] = None
 
+    data["origin"] = "experiment"
     data["release_date"] = json_data["rcsb_accession_info"]["initial_release_date"][:10]
     data["resolution"] = json_data["rcsb_entry_info"]["resolution_combined"][0]
     entities_num = len(json_data["rcsb_entry_container_identifiers"]["polymer_entity_ids"])
@@ -1893,7 +1895,7 @@ def build_signprot_struct(protein, pdb, data):
     try:
         structure_type = StructureType.objects.get(slug=structure_type_slug)
     except StructureType.DoesNotExist as e:
-        structure_type, c = StructureType.objects.get_or_create(slug=structure_type_slug, name=data["method"])
+        structure_type, c = StructureType.objects.get_or_create(slug=structure_type_slug, name=data["method"], origin=data["origin"])
         # self.logger.info("Created StructureType:"+str(structure_type))
 
     # Publication

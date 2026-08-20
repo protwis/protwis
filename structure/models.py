@@ -279,6 +279,7 @@ class StructureModelRMSD(models.Model):
 class StructureType(models.Model):
     slug = models.SlugField(max_length=25, unique=True)
     name = models.CharField(max_length=100)
+    origin = models.CharField(max_length=100, null=True)
 
     def type_short(self):
         if self.name=="X-ray diffraction":

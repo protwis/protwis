@@ -113,7 +113,7 @@ class StructureDataJsonView(View):
 
             structures = (
                 Structure.objects
-                .exclude(structure_type__slug__startswith="af-")
+                .filter(structure_type__origin='experiment')
                 .select_related(
                     "state", "structure_type", "pdb_code",
                     "publication__web_link__web_resource",
@@ -353,25 +353,35 @@ class EffectorStructureBrowser(TemplateView):
             slug_start = '200'
 
         context = super(EffectorStructureBrowser, self).get_context_data(**kwargs)
-        complexstructs = SignprotComplex.objects.filter(protein__family__slug__startswith=slug_start).exclude(structure__structure_type__slug__startswith='af-')
+        complexstructs = SignprotComplex.objects.filter(protein__family__slug__startswith=slug_start, structure__structure_type__origin='experiment')
         try:
-            context['structures'] = Structure.objects.filter(id__in=complexstructs.values_list('structure', flat=True)).select_related(
-                "state",
-                "structure_type",
-                "pdb_code__web_resource",
-                "protein_conformation__protein__species",
-                "protein_conformation__protein__source",
-                "protein_conformation__protein__family__parent__parent__parent",
-                "publication__web_link__web_resource").prefetch_related(
-                "stabilizing_agents", "construct__crystallization__crystal_method", "structure_type",
-                "protein_conformation__protein__parent__endogenous_gtp_set__ligand__ligand_type",
-                "protein_conformation__site_protein_conformation__site",
-                Prefetch("ligands", queryset=StructureLigandInteraction.objects.filter(
-                annotated=True).exclude(structure__structure_type__slug__startswith='af-').prefetch_related('ligand__ligand_type', 'ligand_role','ligand__ids__web_resource')),
-                Prefetch("extra_proteins", queryset=StructureExtraProteins.objects.all().prefetch_related(
-                    'protein_conformation','wt_protein', 'wt_protein__species', 'wt_protein__family', 'wt_protein__family__parent')),
-                Prefetch("signprot_complex", queryset=SignprotComplex.objects.all().prefetch_related(
-                'protein', 'protein__family', 'protein__family__parent', 'protein__species')))
+            context['structures'] = Structure.objects \
+                .filter(id__in=complexstructs.values_list('structure', flat=True)) \
+                    .select_related(
+                        "state",
+                        "structure_type",
+                        "pdb_code__web_resource",
+                        "protein_conformation__protein__species",
+                        "protein_conformation__protein__source",
+                        "protein_conformation__protein__family__parent__parent__parent",
+                        "publication__web_link__web_resource") \
+                    .prefetch_related(
+                        "stabilizing_agents", "construct__crystallization__crystal_method", "structure_type",
+                        "protein_conformation__protein__parent__endogenous_gtp_set__ligand__ligand_type",
+                        "protein_conformation__site_protein_conformation__site",
+                        Prefetch("ligands", 
+                                 queryset=StructureLigandInteraction.objects \
+                                    .filter(annotated=True, 
+                                            structure__structure_type__origin='experiment') \
+                                    .prefetch_related('ligand__ligand_type', 'ligand_role','ligand__ids__web_resource')),
+                        Prefetch("extra_proteins", 
+                                 queryset=StructureExtraProteins.objects.all() \
+                                    .prefetch_related('protein_conformation','wt_protein', 'wt_protein__species', 
+                                                      'wt_protein__family', 'wt_protein__family__parent')),
+                        Prefetch("signprot_complex", 
+                                 queryset=SignprotComplex.objects.all() \
+                                    .prefetch_related('protein', 'protein__family', 'protein__family__parent', 'protein__species'))
+                    )
         except Structure.DoesNotExist as e:
             pass
         # Fetch non-complex g prot structures and filter for overlaps preferring SignprotComplex
@@ -1749,17 +1759,21 @@ class StructureStatistics(TemplateView):
         for f in families:
             lookup[f.slug] = f.name
         #GENERIC
-        all_structs = Structure.objects.all().exclude(structure_type__slug__startswith='af-').prefetch_related('protein_conformation__protein__family')
+        all_structs = Structure.objects.filter(structure_type__origin='experiment').prefetch_related('protein_conformation__protein__family')
         all_complexes = all_structs.exclude(ligands=None)
-        unique_structs = Structure.objects.exclude(structure_type__slug__startswith='af-').order_by('protein_conformation__protein__family__name', 'state',
-            'publication_date', 'resolution').distinct('protein_conformation__protein__family__name').prefetch_related('protein_conformation__protein__family')
-        unique_complexes = StructureLigandInteraction.objects.filter(annotated=True).exclude(structure__structure_type__slug__startswith='af-').distinct('ligand', 'structure__protein_conformation__protein__family').prefetch_related('structure', 'structure__protein_conformation', 'structure__protein_conformation__protein', 'structure__protein_conformation__protein__family')
+        unique_structs = Structure.objects.filter(structure_type__origin='experiment') \
+                                          .order_by('protein_conformation__protein__family__name', 'state', 'publication_date', 'resolution') \
+                                          .distinct('protein_conformation__protein__family__name').prefetch_related('protein_conformation__protein__family')
+        unique_complexes = StructureLigandInteraction.objects.filter(annotated=True, structure__structure_type__origin='experiment') \
+                                                             .distinct('ligand', 'structure__protein_conformation__protein__family') \
+                                                             .prefetch_related('structure', 'structure__protein_conformation', 'structure__protein_conformation__protein', 
+                                                                               'structure__protein_conformation__protein__family')
         all_active = all_structs.filter(protein_conformation__state__slug = 'active')
         years = self.get_years_range(list(set([x.publication_date.year for x in all_structs])))
         unique_active = unique_structs.filter(protein_conformation__state__slug = 'active')
         #Stats
         # struct_count = Structure.objects.all().annotate(Count('id'))
-        struct_lig_count = Structure.objects.exclude(ligands=None).exclude(structure_type__slug__startswith='af-')
+        struct_lig_count = Structure.objects.exclude(ligands=None).filter(structure_type__origin='experiment')
         context['all_structures'] = len(all_structs)
         context['all_structures_by_class'] = self.count_by_class(all_structs, lookup)
         context['all_complexes'] = len(all_complexes)
@@ -1773,7 +1787,7 @@ class StructureStatistics(TemplateView):
         context['unique_active'] = len(unique_active)
         context['unique_active_by_class'] = self.count_by_class(unique_active, lookup)
         context['release_notes'] = ReleaseNotes.objects.all()[0]
-        context['latest_structure'] = Structure.objects.exclude(structure_type__slug__startswith='af-').latest('publication_date').publication_date
+        context['latest_structure'] = Structure.objects.filter(structure_type__origin='experiment').latest('publication_date').publication_date
         context['chartdata'] = self.get_per_family_cumulative_data_series(years, unique_structs, lookup)
         context['chartdata_y'] = self.get_per_family_data_series(years, unique_structs, lookup)
         context['chartdata_all'] = self.get_per_family_cumulative_data_series(years, all_structs, lookup)
@@ -1783,7 +1797,7 @@ class StructureStatistics(TemplateView):
         context['chartdata_class_all'] = self.get_per_class_cumulative_data_series(years, all_structs, lookup)
 
         # GPROT Complex information
-        all_gprots = StructureExtraProteins.objects.filter(category='G alpha').exclude(structure__structure_type__slug__startswith='af-').prefetch_related("wt_protein","wt_protein__family", "wt_protein__family__parent", "structure__protein_conformation__protein__family")
+        all_gprots = StructureExtraProteins.objects.filter(category='G alpha').filter(structure__structure_type__origin='experiment').prefetch_related("wt_protein","wt_protein__family", "wt_protein__family__parent", "structure__protein_conformation__protein__family")
         # all_gprots = all_structs.filter(id__in=SignprotComplex.objects.filter(protein__family__slug__startswith='100').values_list("structure__id", flat=True))
         ###### these are query sets for G-Prot Structure Statistics
         if self.origin != 'arrestin':
@@ -1796,7 +1810,7 @@ class StructureStatistics(TemplateView):
             all_g_T2_complexes = all_gprots.filter(structure__protein_conformation__protein__family__slug__startswith='009')
             # unique_gprots = unique_structs.filter(id__in=SignprotComplex.objects.filter(protein__family__slug__startswith='100').values_list("structure__id", flat=True))
             # unique_gprots = unique_structs.filter(id__in=StructureExtraProteins.objects.filter(category='G alpha').values_list("structure__id", flat=True))
-            unique_gprots = StructureExtraProteins.objects.filter(category='G alpha').exclude(structure__structure_type__slug__startswith='af-').prefetch_related("wt_protein", "wt_protein__family", "wt_protein__family__parent", "structure__protein_conformation__protein__family").distinct('structure__protein_conformation__protein__family__name')
+            unique_gprots = StructureExtraProteins.objects.filter(category='G alpha').filter(structure__structure_type__origin='experiment').prefetch_related("wt_protein", "wt_protein__family", "wt_protein__family__parent", "structure__protein_conformation__protein__family").distinct('structure__protein_conformation__protein__family__name')
             unique_g_A_complexes = all_g_A_complexes.annotate(distinct_name=Concat('wt_protein__family__name', 'structure__protein_conformation__protein__family__name', output_field=TextField())).order_by('distinct_name').distinct('distinct_name')
             unique_g_B1_complexes = all_g_B1_complexes.annotate(distinct_name=Concat('wt_protein__family__name', 'structure__protein_conformation__protein__family__name', output_field=TextField())).order_by('distinct_name').distinct('distinct_name')
             unique_g_B2_complexes = all_g_B2_complexes.annotate(distinct_name=Concat('wt_protein__family__name', 'structure__protein_conformation__protein__family__name', output_field=TextField())).order_by('distinct_name').distinct('distinct_name')
@@ -1834,7 +1848,7 @@ class StructureStatistics(TemplateView):
 
             #GPROT
             if self.origin == 'gprotein':
-                noncomplex_gprots = SignprotStructure.objects.filter(protein__family__slug__startswith='100').exclude(structure_type__slug__startswith='af-').prefetch_related("protein")
+                noncomplex_gprots = SignprotStructure.objects.filter(protein__family__slug__startswith='100', structure_type__origin='experiment').prefetch_related("protein")
                 context['noncomplex_gprots_by_gclass'] = self.count_by_effector_class(noncomplex_gprots, lookup, nc=True)
                 context['noncomplex_gprots'] = len(noncomplex_gprots)
                 circle_data = all_gprots.values_list(
@@ -1853,8 +1867,8 @@ class StructureStatistics(TemplateView):
 
         #ARRESTIN
         else:
-            all_arrestins = StructureExtraProteins.objects.filter(category='Arrestin').exclude(structure__structure_type__slug__startswith='af-').prefetch_related("wt_protein","wt_protein__family", "wt_protein__family__parent", "structure__protein_conformation__protein__family")
-            noncomplex_arrestins = SignprotStructure.objects.filter(protein__family__slug__startswith='200').exclude(structure_type__slug__startswith='af-').prefetch_related("protein")
+            all_arrestins = StructureExtraProteins.objects.filter(category='Arrestin', structure__structure_type__origin='experiment').prefetch_related("wt_protein","wt_protein__family", "wt_protein__family__parent", "structure__protein_conformation__protein__family")
+            noncomplex_arrestins = SignprotStructure.objects.filter(protein__family__slug__startswith='200', structure_type__origin='experiment').prefetch_related("protein")
             ###### these are query sets for Arrestin Structure Statistics
             all_arr_A_complexes = all_arrestins.filter(structure__protein_conformation__protein__family__slug__startswith='001')
             all_arr_B1_complexes = all_arrestins.filter(structure__protein_conformation__protein__family__slug__startswith='002')
@@ -1864,7 +1878,7 @@ class StructureStatistics(TemplateView):
             all_arr_F_complexes = all_arrestins.filter(structure__protein_conformation__protein__family__slug__startswith='006')
             all_arr_T2_complexes = all_arrestins.filter(structure__protein_conformation__protein__family__slug__startswith='009')
             # unique_arrestins = unique_structs.filter(id__in=StructureExtraProteins.objects.filter(category='Arrestin').values_list("structure__id", flat=True))
-            unique_arrestins = StructureExtraProteins.objects.filter(category='Arrestin').exclude(structure__structure_type__slug__startswith='af-').prefetch_related("wt_protein", "structure__protein_conformation__protein__family").distinct('structure__protein_conformation__protein__family__name')
+            unique_arrestins = StructureExtraProteins.objects.filter(category='Arrestin', structure__structure_type__origin='experiment').prefetch_related("wt_protein", "structure__protein_conformation__protein__family").distinct('structure__protein_conformation__protein__family__name')
             unique_arr_A_complexes = all_arr_A_complexes.annotate(distinct_name=Concat('wt_protein__family__name', 'structure__protein_conformation__protein__family__name', output_field=TextField())).order_by('distinct_name').distinct('distinct_name')
             unique_arr_B1_complexes = all_arr_B1_complexes.annotate(distinct_name=Concat('wt_protein__family__name', 'structure__protein_conformation__protein__family__name', output_field=TextField())).order_by('distinct_name').distinct('distinct_name')
             unique_arr_B2_complexes = all_arr_B2_complexes.annotate(distinct_name=Concat('wt_protein__family__name', 'structure__protein_conformation__protein__family__name', output_field=TextField())).order_by('distinct_name').distinct('distinct_name')
@@ -2011,7 +2025,9 @@ class StructureStatistics(TemplateView):
                                                 ).exclude(
                                                     family_id__slug__startswith='008'
                                                 )
-                all_arrestins = StructureExtraProteins.objects.filter(category='Arrestin').exclude(structure__structure_type__slug__startswith='af-').prefetch_related("wt_protein","wt_protein__family", "wt_protein__family__parent", "structure__protein_conformation__protein__family")
+                all_arrestins = StructureExtraProteins.objects \
+                    .filter(category='Arrestin', structure__structure_type__origin='experiment') \
+                    .prefetch_related("wt_protein","wt_protein__family", "wt_protein__family__parent", "structure__protein_conformation__protein__family")
 
                 circle_data = all_arrestins.values_list(
                               "wt_protein__family__name", "structure__protein_conformation__protein__parent__entry_name").order_by(
@@ -2072,7 +2088,7 @@ class StructureStatistics(TemplateView):
                                                 ).exclude(
                                                     family_id__slug__startswith='008'
                                                 )
-                all_structs = Structure.objects.all().exclude(structure_type__slug__startswith='af-').prefetch_related('protein_conformation__protein__family')
+                all_structs = Structure.objects.filter(structure_type__origin='experiment').prefetch_related('protein_conformation__protein__family')
                 circle_data = all_structs.values_list(
                               "state_id__slug", "protein_conformation__protein__parent__entry_name").order_by(
                               "state_id__slug", "protein_conformation__protein__parent__entry_name").distinct(
@@ -2132,12 +2148,11 @@ class StructureStatistics(TemplateView):
                 context['GPCRome_data'] = json.dumps(updated_data)
 
                 # fetech the Complexes data
-                complexes_count = StructureLigandInteraction.objects.filter(annotated=True).exclude(
-                        structure__structure_type__slug__startswith='af-').values(
-                            'structure_id__protein_conformation_id__protein__parent__entry_name'
-                        ).annotate(
-                            c=Count('id', distinct=True)
-                        )
+                complexes_count = StructureLigandInteraction.objects \
+                    .filter(annotated=True, 
+                            structure__structure_type__origin='experiment') \
+                    .values('structure_id__protein_conformation_id__protein__parent__entry_name') \
+                    .annotate(c=Count('id', distinct=True))
                 complexes_dict = {}
 
                 complexes_list = list(complexes_count)
@@ -2484,8 +2499,10 @@ class StructureStatistics(TemplateView):
         score_copy = {'score': {'a':0,'i':0,'i_weight':0,'m':0,'m_weight':0,'s':0,'s_weight':0} , 'interaction' : {},'mutation': {}}
 
         # Replace above as fractions etc is not required and it was missing xtals that didnt have interactions.
-        unique_structs = list(Structure.objects.exclude(structure_type__slug__startswith='af-').order_by('protein_conformation__protein__parent', 'state',
-            'publication_date', 'resolution').distinct('protein_conformation__protein__parent').prefetch_related('protein_conformation__protein__family'))
+        unique_structs = list(Structure.objects.filter(structure_type__origin='experiment') \
+                                               .order_by('protein_conformation__protein__parent', 'state', 'publication_date', 'resolution') \
+                                               .distinct('protein_conformation__protein__parent') \
+                                               .prefetch_related('protein_conformation__protein__family'))
 
         for s in unique_structs:
             fid = s.protein_conformation.protein.family.slug.split("_")
@@ -2538,7 +2555,7 @@ class StructureStatistics(TemplateView):
         Prepare data for coverage diagram.
         """
 
-        crystal_proteins = [x.protein_conformation.protein.parent for x in Structure.objects.exclude(structure_type__slug__startswith='af-').order_by('protein_conformation__protein__parent', 'state',
+        crystal_proteins = [x.protein_conformation.protein.parent for x in Structure.objects.filter(structure_type__origin='experiment').order_by('protein_conformation__protein__parent', 'state',
             'publication_date', 'resolution').distinct('protein_conformation__protein__parent').prefetch_related('protein_conformation__protein__parent__family')]
 
         families = []
@@ -2597,7 +2614,7 @@ class StructureStatistics(TemplateView):
         score_copy = {'score': {'a':0,'i':0,'i_weight':0,'m':0,'m_weight':0,'s':0,'s_weight':0} , 'interaction' : {},'mutation': {}}
 
         # Replace above as fractions etc is not required and it was missing xtals that didnt have interactions.
-        unique_structs = list(Structure.objects.exclude(structure_type__slug__startswith='af-').order_by('protein_conformation__protein__family__name', 'state',
+        unique_structs = list(Structure.objects.filter(structure_type__origin='experiment').order_by('protein_conformation__protein__family__name', 'state',
             'publication_date', 'resolution').distinct('protein_conformation__protein__family__name').prefetch_related('protein_conformation__protein__family'))
 
         for s in unique_structs:
@@ -3148,7 +3165,7 @@ class SuperpositionWorkflowResults(TemplateView):
             alt_file_names = [x.name for x in self.request.session['alt_files']]
         for x in selection.targets:
             if x.type=='structure':
-                if x.item.structure_type.slug.startswith('af-'):
+                if x.item.structure_type.origin in ['model','experiment_model_refined']:
                     alt_file_names.append('{}.pdb'.format(x.item.pdb_code.index))
                 elif not hasattr(x.item, 'protein_conformation'):
                     alt_file_names.append('{}_{}.pdb'.format(x.item.protein.entry_name, x.item.pdb_code.index))
@@ -3218,7 +3235,7 @@ class SuperpositionWorkflowDownload(View):
                 gn_assigner.assign_generic_numbers()
                 self.ref_substructure_mapping = gn_assigner.get_substructure_mapping_dict()
             if selection.reference[0].type=='structure':
-                if selection.reference[0].item.structure_type.slug.startswith('af-'):
+                if selection.reference[0].item.structure_type.origin in ['model','experiment_model_refined']:
                     ref_name = '{}_ref.pdb'.format(selection.reference[0].item.pdb_code.index)
                 else:
                     if not hasattr(selection.reference[0].item, 'protein_conformation'):
@@ -3511,16 +3528,21 @@ class TemplateBrowser(TemplateView):
         a.load_reference_protein_from_selection(simple_selection)
 
         # fetch
-        qs = Structure.objects.all().exclude(structure_type__slug__startswith='af-').select_related(
-            "pdb_code__web_resource",
-            "protein_conformation__protein__species",
-            "protein_conformation__protein__source",
-            "protein_conformation__protein__family__parent__parent__parent",
-            "publication__web_link__web_resource").prefetch_related(
-            "stabilizing_agents",
-            "protein_conformation__protein__parent__endogenous_gtp_set__ligand__ligand_type",
-            Prefetch("ligands", queryset=StructureLigandInteraction.objects.filter(
-            annotated=True).exclude(structure__structure_type__slug__startswith='af-').prefetch_related('ligand__ligand_type', 'ligand_role')))
+        qs = Structure.objects.filter(structure_type__origin='experiment')\
+                              .select_related(
+                                "pdb_code__web_resource",
+                                "protein_conformation__protein__species",
+                                "protein_conformation__protein__source",
+                                "protein_conformation__protein__family__parent__parent__parent",
+                                "publication__web_link__web_resource").prefetch_related(
+                                "stabilizing_agents",
+                                "protein_conformation__protein__parent__endogenous_gtp_set__ligand__ligand_type",
+                                Prefetch("ligands", 
+                                         queryset=StructureLigandInteraction.objects.filter(annotated=True, 
+                                                                                            structure__structure_type__origin='experiment') \
+                                                                                    .prefetch_related('ligand__ligand_type', 'ligand_role')
+                                        )
+                              )
 
         # Dirty but fast
         qsd = {}

@@ -487,13 +487,13 @@ class StructureList(views.APIView):
             structures = Structure.objects.filter(pdb_code__index=pdb_code)
         elif entry_name and representative:
             structures = Structure.objects.filter(protein_conformation__protein__parent__entry_name=entry_name,
-                representative=True).exclude(structure_type__slug__startswith='af-')
+                representative=True, structure_type__origin='experiment')
         elif entry_name:
-            structures = Structure.objects.filter(protein_conformation__protein__parent__entry_name=entry_name).exclude(structure_type__slug__startswith='af-')
+            structures = Structure.objects.filter(protein_conformation__protein__parent__entry_name=entry_name, structure_type__origin='experiment')
         elif representative:
-            structures = Structure.objects.filter(representative=True).exclude(structure_type__slug__startswith='af-')
+            structures = Structure.objects.filter(representative=True, structure_type__origin='experiment')
         else:
-            structures = Structure.objects.all().exclude(structure_type__slug__startswith='af-')
+            structures = Structure.objects.all().filter(structure_type__origin='experiment')
 
         structures = structures.prefetch_related('protein_conformation__protein__parent__species', 'pdb_code',
             'protein_conformation__protein__parent__family', 'protein_conformation__protein__parent__species',
@@ -578,7 +578,7 @@ class StructureList(views.APIView):
         return Response(s)
 
     def get_structures(self, pdb_code=None, representative=None):
-        return Structure.objects.all().exclude(structure_type__slug__startswith='af-')
+        return Structure.objects.filter(structure_type__origin='experiment')
 
 class RepresentativeStructureList(StructureList):
 
@@ -622,8 +622,11 @@ class StructureAccessionHuman(views.APIView):
     """
 
     def get(self, request):
-        unique_slugs = list(Structure.objects.filter(protein_conformation__protein__family__slug__startswith="0").exclude(structure_type__slug__startswith='af-')\
-            .order_by('protein_conformation__protein__family__slug').values_list('protein_conformation__protein__family__slug', flat=True).distinct())
+        unique_slugs = list(Structure.objects.filter(protein_conformation__protein__family__slug__startswith="0", 
+                                                     structure_type__origin='experiment') \
+                                             .order_by('protein_conformation__protein__family__slug') \
+                                             .values_list('protein_conformation__protein__family__slug', flat=True) \
+                                             .distinct())
         accession_codes = list(Protein.objects.filter(family__slug__in=unique_slugs, sequence_type__slug='wt', species__latin_name='Homo sapiens')\
                             .values_list('entry_name', flat=True))
         accessions = [x.split("_")[0].upper() for x in accession_codes]

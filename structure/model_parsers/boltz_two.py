@@ -73,6 +73,7 @@ class BoltzTwoComplexModel(BaseModel):
 
     def load(self):
         """Populate the model's attributes (identifiers, ligand, PDB structure, metrics, and metadata) from the files in its data directory."""
+        self.structure_origin = 'model'
         self.populate_identifiers_from_manifest()
 
         self.ligand.type = self.ligand.get_type()

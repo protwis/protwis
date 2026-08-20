@@ -868,7 +868,7 @@ class Command(BaseBuild):
                 structure_type = sd['structure_method'].capitalize()
                 structure_type_slug = slugify(sd['structure_method'])
                 try:
-                    st, created = StructureType.objects.get_or_create(slug=structure_type_slug, defaults={'name': structure_type})
+                    st, created = StructureType.objects.get_or_create(slug=structure_type_slug, defaults={'name': structure_type, 'origin': 'model'})
                     if created:
                         self.logger.info('Created structure type {}'.format(st))
                 except IntegrityError:

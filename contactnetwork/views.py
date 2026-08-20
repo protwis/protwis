@@ -146,7 +146,7 @@ def ShowDistances(request):
     return render(request, 'contactnetwork/distances.html', template_data)
 
 def PdbTreeData(request):
-    data = Structure.objects.exclude(structure_type__slug__startswith='af-').values(
+    data = Structure.objects.filter(structure_type__origin='experiment').values(
         'representative',
         'pdb_code__index',
         'protein_conformation__protein__parent__family__parent__parent__parent__name',
@@ -252,22 +252,29 @@ def PdbTableData(request):
                             ).order_by().annotate(coverage = Max('wt_coverage'))
         ep = {s['structure__pdb_code__index']:s for s in signal_ps}
     else:
-        data = Structure.objects.all().exclude(structure_type__slug__startswith='af-').prefetch_related(
-                "pdb_code",
-                "state",
-                "stabilizing_agents",
-                "structureligandinteraction_set__ligand__ligand_type",
-                "structureligandinteraction_set__ligand_role",
-                "structure_type",
-                "protein_conformation__protein__parent__parent__parent",
-                "protein_conformation__protein__parent__family__parent",
-                "protein_conformation__protein__parent__family__parent__parent__parent",
-                "protein_conformation__protein__parent",
-                "protein_conformation__protein__parent__parent",
-                "protein_conformation__protein__family__parent",
-                "protein_conformation__protein__family__parent__parent__parent",
-                "protein_conformation__protein__species",Prefetch("ligands", queryset=StructureLigandInteraction.objects.filter(
-                annotated=True).exclude(structure__structure_type__slug__startswith='af-').prefetch_related('ligand', 'ligand__ligand_type', 'ligand_role')))
+        data = Structure.objects.filter(structure_type__origin='experiment') \
+                                .prefetch_related(
+                                    "pdb_code",
+                                    "state",
+                                    "stabilizing_agents",
+                                    "structureligandinteraction_set__ligand__ligand_type",
+                                    "structureligandinteraction_set__ligand_role",
+                                    "structure_type",
+                                    "protein_conformation__protein__parent__parent__parent",
+                                    "protein_conformation__protein__parent__family__parent",
+                                    "protein_conformation__protein__parent__family__parent__parent__parent",
+                                    "protein_conformation__protein__parent",
+                                    "protein_conformation__protein__parent__parent",
+                                    "protein_conformation__protein__family__parent",
+                                    "protein_conformation__protein__family__parent__parent__parent",
+                                    "protein_conformation__protein__species",
+                                    Prefetch("ligands", 
+                                             queryset=StructureLigandInteraction.objects.filter(annotated=True, 
+                                                                                                structure__structure_type__origin='experiment') \
+                                                                                        .prefetch_related('ligand', 'ligand__ligand_type', 'ligand_role')
+                                    )
+                                )
+        
         data = data.prefetch_related('extra_proteins__protein_conformation','extra_proteins__wt_protein').order_by(
         'extra_proteins__protein_conformation__protein__parent','state').annotate(
         res_count = Sum(Case(When(extra_proteins__protein_conformation__residue__generic_number=None, then=0), default=1, output_field=IntegerField())))
@@ -282,8 +289,8 @@ def PdbTableData(request):
         data = data.filter(id__in=complex_structure_ids)
 
     # get a gn residue count for all WT proteins
-    proteins_pks = Structure.objects.all().exclude(structure_type__slug__startswith='af-').values_list("protein_conformation__protein__parent__pk", flat=True).distinct()
-    proteins_af_pks = Structure.objects.all().filter(structure_type__slug__startswith='af-').values_list("protein_conformation__protein__pk", flat=True).distinct()
+    proteins_pks = Structure.objects.filter(structure_type__origin='experiment').values_list("protein_conformation__protein__parent__pk", flat=True).distinct()
+    proteins_af_pks = Structure.objects.all().filter(structure_type__origin__in=['model','experiment_model_refined']).values_list("protein_conformation__protein__pk", flat=True).distinct()
     if effector:
         proteins_pks = list(proteins_pks) + list(proteins_af_pks)
     residue_counts = ProteinConformation.objects.filter(protein__pk__in=proteins_pks).values('protein__pk').annotate(res_count = Sum(Case(When(residue__generic_number=None, then=0), default=1, output_field=IntegerField())))
@@ -296,7 +303,7 @@ def PdbTableData(request):
     if effector:
         resolutions = Structure.objects.all().values('protein_conformation__protein__parent','state__name').order_by().annotate(res = Min('resolution'))
     else:
-        resolutions = Structure.objects.all().exclude(structure_type__slug__startswith='af-').values('protein_conformation__protein__parent','state__name').order_by().annotate(res = Min('resolution'))
+        resolutions = Structure.objects.filter(structure_type__origin='experiment').values('protein_conformation__protein__parent','state__name').order_by().annotate(res = Min('resolution'))
     best_resolutions = {}
     for r in resolutions:
         key = '{}_{}'.format(r['protein_conformation__protein__parent'], r['state__name'])
@@ -1096,7 +1103,7 @@ def InteractionBrowserData(request):
                 all_interaction_residues.add(i[1])
             all_interaction_residues = sorted(list(all_interaction_residues), key=functools.cmp_to_key(gpcrdb_number_comparator))
 
-            all_pdbs = list(Structure.objects.all().exclude(structure_type__slug__startswith='af-').values_list('pdb_code__index', flat=True))
+            all_pdbs = list(Structure.objects.filter(structure_type__origin='experiment').values_list('pdb_code__index', flat=True))
             all_pdbs = [x.lower() for x in all_pdbs]
             #generic_number__label__in=all_interaction_residues)
             residues = Residue.objects.filter(protein_conformation__protein__entry_name__in=all_pdbs).exclude(generic_number=None).values(
@@ -2954,7 +2961,7 @@ def ClusteringData(request):
                     signaling_proteins[ps["structure__pdb_code__index"]] = ps['display_name']
 
         # Check for GRK complexes
-        grk_complexes = list(Structure.objects.filter(stabilizing_agents__name__contains="GRK").exclude(structure_type__slug__startswith='af-').values_list("pdb_code__index", flat = True))
+        grk_complexes = list(Structure.objects.filter(stabilizing_agents__name__contains="GRK", structure_type__origin='experiment').values_list("pdb_code__index", flat = True))
         for pdb in grk_complexes:
             if not pdb in signaling_proteins:
                 signaling_proteins[pdb] = "GRK"

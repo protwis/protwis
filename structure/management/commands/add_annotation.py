@@ -687,7 +687,7 @@ class Command(BaseCommand):
 
                         if self.debug:
                             pprint.pprint(segends[s])
-                        proteins_in_db = Structure.objects.filter(protein_conformation__protein__parent=parent_protein).exclude(structure_type__slug__startswith='af-')
+                        proteins_in_db = Structure.objects.filter(protein_conformation__protein__parent=parent_protein, structure_type__origin='experiment')
                         if len(proteins_in_db)==0:
                             if parent_protein not in new_unique_receptor_structures:
                                 new_unique_receptor_structures[parent_protein] = [s]
