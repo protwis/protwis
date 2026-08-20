@@ -86,7 +86,8 @@ class BoltzTwoComplexModel(BaseModel):
             self.signprot_subunits = self.populate_signprot_subunits()
 
         self.model_structure_type_name = 'Model (Boltz2)'
-        self.model_structure_type_slug = f'b2{ "-signprot" if self.signprot else "" }{ "-" + self.ligand.type.replace("-", "") if self.ligand.type else "" }'
+        slug_ligand = "smallmolecule" if self.ligand.type == "small-molecule" else "peptide"
+        self.model_structure_type_slug = f'b2{ "-signprot" if self.signprot else "" }{ "-" + slug_ligand if self.ligand.type else "" }'
 
         # Load the PDB structure and remap the ligand chain ID to 'E' for consistency with other model types
         self.pdb_raw = self.fetch_pdb_content()
