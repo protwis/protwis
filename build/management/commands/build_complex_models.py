@@ -110,10 +110,7 @@ class Command(BaseBuild):
         verbosity_level = ParserVerbosity.from_string_map.get(options['parser_verbosity'], ParserVerbosity.BASIC)
 
         if options['parser'] == "alphafoldcomplex":
-            if not options['cleaned_seq_csv']:
-                raise ValueError("The --cleaned_seq_csv argument is required for the 'alphafoldcomplex' parser.")
-            
-            if not os.path.exists(options['cleaned_seq_csv']):
+            if options['cleaned_seq_csv'] and not os.path.exists(options['cleaned_seq_csv']):
                 raise FileNotFoundError(f"Cleaned sequence CSV file not found at {options['cleaned_seq_csv']}.")
 
             config = AlphaFoldTwoComplexModelParserConfig(model_set_name=options['model_set_name'],

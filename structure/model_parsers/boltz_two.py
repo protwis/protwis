@@ -90,12 +90,9 @@ class BoltzTwoComplexModel(BaseModel):
         slug_ligand = "smallmolecule" if self.ligand.type == "small-molecule" else "peptide"
         self.model_structure_type_slug = f'b2{ "-signprot" if self.signprot else "" }{ "-" + slug_ligand if self.ligand.type else "" }'
 
-        # Load the PDB structure and remap the ligand chain ID to 'E' for consistency with other model types
+        # Load the PDB structure
         self.pdb_raw = self.fetch_pdb_content()
         self.pdb_structure = self.fetch_pdb_structure()
-        self.pdb_raw = self.remap_chain_ids(self.pdb_raw, mapping_dict={self.ligand.pdb_chain_id:"E"})
-        self.pdb_structure = self.remap_chain_ids(self.pdb_structure, mapping_dict={self.ligand.pdb_chain_id:"E"})
-        self.ligand.pdb_chain_id = "E"
 
         #Load the metrics for the model
         self.metrics = BoltzTwoComplexModelMetrics(self.data_dir, self.model_name, self.parser_config.metrics_file_prefix, self.model_version, error_handling=self.parser_config.error_handling, verbosity=self.parser_config.verbosity)

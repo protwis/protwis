@@ -88,21 +88,17 @@ class AlphaFoldTwoComplexModel(BaseModel):
             self.signprot_subunits = self.populate_signprot_subunits()
 
         self.model_structure_type_name = 'Model (AF2)'
-        self.model_structure_type_slug = 'af-signprot-peptide' if self.signprot else 'af-peptide'
+        self.model_structure_type_slug = self.generate_structure_type_slug()
 
         self.pdb_raw = self.fetch_pdb_content()
         self.pdb_structure = self.fetch_pdb_structure()
 
-        if not self.signprot: #ligand is on chain B in the PDB file for models without a signprot, but on chain E for models with a signprot. Remap chain B to E for consistency.
-            self.pdb_raw = self.remap_chain_ids(self.pdb_raw, mapping_dict={"B":"E"})
-            self.pdb_structure = self.remap_chain_ids(self.pdb_structure, mapping_dict={"B":"E"})
-
-        self.ligand.pdb_chain_id = 'E'
-
         self.metrics = AlphaFoldTwoComplexModelMetrics(self.data_dir, self.model_name, error_handling=self.parser_config.error_handling, verbosity=self.parser_config.verbosity)
         self.metrics.load()
 
-        self.annotate_ligand_sequence()
+        if self.ligand:
+            self.annotate_ligand_sequence()
+
         self.model_date = self.parse_model_date_from_pdb_header()
 
         if self.parser_config.model_receptor_state:
@@ -115,11 +111,83 @@ class AlphaFoldTwoComplexModel(BaseModel):
         else:
             log_or_raise(self.logger, "Model PDB preferred chain must be specified in the parser configuration.", ValueError, self.error_handling)
 
+    def generate_structure_type_slug(self):
+        if self.ligand:
+            if self.signprot:
+                return 'af-signprot-peptide'
+            else: 
+                return 'af-peptide'
+        else:
+            if self.signprot:
+                return 'af-signprot'
+            else:
+                log_or_raise(self.logger, 
+                             f"Unknown model feature combination for model {self.model_name} when creating structure type slug. Expected either a ligand or a signalling protein to be present in the model.", 
+                             ValueError, 
+                             self.error_handling)
+
     def annotate_ligand_sequence(self):
         """Assign the ligand's PDB chain id and populate both its original sequence and the 'cleaned' sequence with only standard amino acids"""
         self.ligand.sequence_standard_aa_only = self.ligand.get_sequence_from_pdb(self.pdb_structure)
-        self.ligand.sequence = self.parser_config.old_seqs_dict.get(self.ligand.hashed_sequence, self.ligand.sequence_standard_aa_only)
+
+        if self.parser_config.old_seqs_dict: #Models using the hashed ligand system with a cleaned sequence CSV provided
+            self.ligand.sequence = self.parser_config.old_seqs_dict.get(self.ligand.hashed_sequence, self.ligand.sequence_standard_aa_only)
+        else: #Models not using the hashed ligand system
+            self.ligand.sequence = self.ligand.sequence_standard_aa_only
+
         conditional_log(self, f"Annotated ligand sequences for model {self.model_name}. Original sequence: {self.ligand.sequence}. PDB sequence: {self.ligand.sequence_standard_aa_only}", logging.INFO, ParserVerbosity.EVERYTHING)
+
+    def detect_model_type_from_name(self):
+        parts = self.model_name.split('-')
+
+        if len(parts) < 2 or len(parts) > 3:
+            log_or_raise(self.logger, f"Invalid model name format: {self.model_name}. Expected format: receptor-ligand or receptor-signprot or receptor-ligand-signprot.", ValueError, self.error_handling)
+
+        if len(parts) == 2:
+            if re.match(r'^gna[1iloqstz][1-5]?_', parts[1]):
+                return 'receptor-signprot'
+            else:
+                return 'receptor-ligand'
+
+        return 'receptor-ligand-signprot'
+
+    def get_ligand_name_format(self, ligand_segment):
+        """Determine the format of the ligand name segment in the model name.
+
+        Args:
+            ligand_segment: A string containing the segment of model name with ligand information.
+
+        Returns:
+            Dict - A dictionary containing the format and relevant identifiers.
+        """
+        m = re.match(r'hashedseq\[(.+)\]', ligand_segment)
+        if m:
+            return {'format': 'hashedseq', 'hash': m.group(1)}
+
+        m = re.match(r'(.+)\[([0-9]+)\]', ligand_segment)
+        if m:
+            return {'format': 'name_and_legacyid', 'name': m.group(1), 'legacy_id': m.group(2)}
+
+        raise ValueError(f"Invalid ligand format: {ligand_segment}. Expected format: hashedseq[ligand_hash] or name[legacy_id].")
+
+    def assign_ligand_chain(self, model_type):
+        """Assign the ligand's PDB chain id based on the model type and ligand name format.
+
+        Args:
+            model_type: The type of the model (receptor-ligand, receptor-signprot, receptor-ligand-signprot).
+            ligand_name_format: The name format of the ligand (hashedseq or name_and_legacyid).
+
+        Returns:
+            String - The PDB chain id for the ligand.
+        """
+        if model_type == 'receptor-ligand':
+            conditional_log(self, f"Assigning ligand chain 'B' for model {self.model_name} model type {model_type}.", logging.INFO, ParserVerbosity.EVERYTHING)
+            return 'B'
+        elif model_type == 'receptor-ligand-signprot':
+            conditional_log(self, f"Assigning ligand chain 'E' for model {self.model_name} model type {model_type}.", logging.INFO, ParserVerbosity.EVERYTHING)
+            return 'E'
+        else:
+            raise ValueError(f"Unknown model type when assigning ligand chain: {model_type}")
 
     def unpack_model_name(self):
         """Unpack the model name into receptor, ligand, and signprot components.
@@ -127,36 +195,55 @@ class AlphaFoldTwoComplexModel(BaseModel):
         Returns:
             Tuple - (receptor, ligand, signprot) parsed from the model directory name. signprot is None when not present.
         """
+        model_type = self.detect_model_type_from_name()
+
         parts = self.model_name.split('-')
-        receptor = parts[0] if len(parts) > 0 else None
-        ligand_temp = parts[1] if len(parts) > 1 else None
-        signprot = parts[2] if len(parts) > 2 else None
+        receptor = parts[0]
+        ligand_raw = None
+        ligand = None
+        signprot = None
 
-        if ligand_temp is None:
-            ligand = None
-        else:
-            ligand_component = re.match(r'hashedseq\[(.+)\]', ligand_temp)
-            ligand = None
-            if ligand_component:
-                ligand = ModelLigand(self.error_handling, self.verbosity, self.parser_config.ligand_multimatch_handling)
-                ligand.hashed_sequence = ligand_component.group(1)
+        if model_type == 'receptor-ligand':
+            ligand_raw = parts[1]
 
-        if not receptor or not ligand:
-            log_or_raise(self.logger, f"Invalid model name format: {self.model_name}. Expected format: receptor-hashedseq[ligand_hash]-signprot (signprot is optional).", ValueError, self.error_handling)
+        if model_type == 'receptor-ligand-signprot':
+            ligand_raw = parts[1]
+
+        if model_type == 'receptor-signprot':
+            signprot = parts[1]
+
+        if model_type == 'receptor-ligand-signprot':
+            signprot = parts[2]
+
+        if ligand_raw is not None:
+            ligand = ModelLigand(self.error_handling, self.verbosity, self.parser_config.ligand_multimatch_handling)
+            ligand_name_format = self.get_ligand_name_format(ligand_raw)
+            if ligand_name_format['format'] == 'hashedseq':
+                ligand.hashed_sequence = ligand_name_format['hash']
+            elif ligand_name_format['format'] == 'name_and_legacyid':
+                ligand.name = ligand_name_format['name']
+
+            ligand.pdb_chain_id = self.assign_ligand_chain(model_type)
 
         return receptor, ligand, signprot
 
     def format_pdb_index(self):
-        """Return the PDB index string for this model, built from the receptor, ligand, and (if present) signalling protein names.
+        """Return the PDB index string for this model, built from the receptor, ligand (if present), and signalling protein (if present) names.
 
         Returns:
             String - The PDB index string for the model.
         """
-        if 'peptide' in self.model_structure_type_slug:
+        if self.ligand:
             if self.signprot:
-                return f'AFM_{self.receptor.upper()}_hashedseq[{self.ligand.hashed_sequence.upper()}]_{self.signprot.upper()}'
+                if self.ligand.hashed_sequence:
+                    return f'AFM_{self.receptor.upper()}_hashedseq[{self.ligand.hashed_sequence.upper()}]_{self.signprot.upper()}'
+                else:
+                    return f'AFM_{self.receptor.upper()}_{self.ligand.name.upper()}_{self.signprot.upper()}'                
             else:
-                return f'AFM_{self.receptor.upper()}_hashedseq[{self.ligand.hashed_sequence.upper()}]'
+                if self.ligand.hashed_sequence:
+                    return f'AFM_{self.receptor.upper()}_hashedseq[{self.ligand.hashed_sequence.upper()}]'
+                else:
+                    return f'AFM_{self.receptor.upper()}_{self.ligand.name.upper()}'                
         else:
             return 'AFM_' + self.receptor.upper() + '_' + self.signprot.upper()
 
@@ -176,9 +263,9 @@ class AlphaFoldTwoComplexModel(BaseModel):
 
                 signprot, signprot_conf, beta_protconf, gamma_protconf = self.get_signprot_and_conformations(struct)
 
-                ligands_db = self.ligand.fetch_db_entities()
-
-                self.create_ligand_peptide_structure(struct, ligands_db)
+                if self.ligand:
+                    ligands_db = self.ligand.fetch_db_entities()
+                    self.create_ligand_peptide_structure(struct, ligands_db)
 
                 self.metrics.save(struct)
 
@@ -211,17 +298,20 @@ class AlphaFoldTwoComplexModelParserConfig(BaseModelParserConfig):
             verbosity: Verbosity level for logging (ParserVerbosity.SILENT, ParserVerbosity.BASIC, ParserVerbosity.EVERYTHING).
             ligand_multimatch_handling: Strategy for handling multimatch cases for ligands (e.g. keep first, keep all, etc.).
         """
-        super().__init__(model_set_name, data_dir=data_dir, pdb_header_override=pdb_header_override, 
-                         error_handling=error_handling, verbosity=verbosity, 
+        super().__init__(model_set_name, data_dir=data_dir, pdb_header_override=pdb_header_override,
+                         error_handling=error_handling, verbosity=verbosity,
                          ligand_multimatch_handling=ligand_multimatch_handling)
 
         self.cleaned_seq_csv = cleaned_seq_csv
         self.model_receptor_state = model_receptor_state
         self.pdb_preferred_chain = pdb_preferred_chain
-        if cleaned_seq_csv and os.path.exists(cleaned_seq_csv):
-            self.old_seqs_dict = self.generate_original_seq_lookup()
+        if cleaned_seq_csv:
+            if os.path.exists(cleaned_seq_csv):
+                self.old_seqs_dict = self.generate_original_seq_lookup()
+            else:
+                log_or_raise(self.logger, f"Cleaned sequence CSV file not found at {cleaned_seq_csv}.", FileNotFoundError, self.error_handling)
         else:
-            log_or_raise(self.logger, f"Cleaned sequence CSV file not found at {cleaned_seq_csv}.", FileNotFoundError, self.error_handling)
+            self.old_seqs_dict = {}
 
     def generate_original_seq_lookup(self):
         """Build a lookup mapping the hashed sequence identifier found in PDB filenames to the corresponding original (pre-cleaning) sequence.
