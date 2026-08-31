@@ -1602,7 +1602,7 @@ class Command(BaseBuild):
 
                 try:
                     st, created = StructureType.objects.get_or_create(slug=structure_type_slug,
-                        defaults={'name': structure_type})
+                        defaults={'name': structure_type, 'origin': 'experiment'})
                     if created:
                         self.logger.info('Created structure type {}'.format(st))
                 except IntegrityError:

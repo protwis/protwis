@@ -24,7 +24,7 @@ class Command(BaseBuild):
         parser.add_argument('--verbose', help='Print specific outliers', default=False, action='store_true')
 
     def handle(self, *args, **options):
-        structures = Structure.objects.all().exclude(structure_type__slug__startswith='af-').prefetch_related('protein_conformation__protein__parent','pdb_code').annotate(dc=Count('distances'))
+        structures = Structure.objects.filter(structure_type__origin='experiment').prefetch_related('protein_conformation__protein__parent','pdb_code').annotate(dc=Count('distances'))
         structures_with_issue = []
         missing_helices = {}
         segments_query_obj = ProteinSegment.objects.filter(proteinfamily="GPCR")

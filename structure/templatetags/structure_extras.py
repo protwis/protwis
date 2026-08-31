@@ -244,4 +244,5 @@ def format_class_header(class_code):
 
 @register.filter
 def keyvalue(dict, key):
+def keyvalue(dict, key):    
     return dict.get(key, None)

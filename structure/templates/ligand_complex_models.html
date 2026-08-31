@@ -562,8 +562,8 @@
 
                     <!--                         Scores                           -->
 
-                    {% if model.prefetch_af_scores %}
-                        <td>{{ model.prefetch_af_scores.0.pae_mean }} </td>
+                    {% if model.prefetch_model_scores %}
+                        <td>{{ model.prefetch_model_scores.0.pae_mean }} </td>
                     {% else %}
                         <td> - </td>
                     {% endif %}
