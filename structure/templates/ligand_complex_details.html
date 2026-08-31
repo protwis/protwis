@@ -188,6 +188,15 @@ canvas {
 </div>
 
 <div class="row">
+    <div class="col-md-6 text-right text-info">
+        <h4 style="color: black;">ORIGIN</h4>
+    </div>
+    <div class="col-md-6">
+    {{ model.structure_type.name }}
+    </div>
+</div>
+
+<div class="row">
     <!-- Viewport Column -->
     <div class="col-lg-9 col-md-8 col-sm-12">
       <div id="viewport-container" style="width: 100%; background-color: white;">
@@ -256,6 +265,40 @@ canvas {
             </div>
             <div id="iPTM_location"></div>
         {% endif %}
+        {% if "b2-" in structure_type %}
+            <div>
+                <h5>Ligand pLDDT Score: <b>{{ scores.ligand_plddt|floatformat:1 }}</b>
+                    <span class="fa fa-info-circle simple-popover" 
+                          data-html="true" 
+                          data-toggle="popover" 
+                          data-trigger="hover"
+                          data-placement="bottom"
+                          data-content="<b>Ligand predicted-LDDT</b>:<br /> Mean of the confidence scores for the the placement of each ligand atom">
+                    </span>
+                </h5>
+            </div>
+            <div id="ligand_pLDDT_location"></div>
+            <div>
+                <h5>Vicinity pLDDT (5Å): <b>{{ scores.vicinity_plddt_5A |floatformat:1 }}</b>
+                    <span class="fa fa-info-circle simple-popover" 
+                          data-html="true" 
+                          data-toggle="popover" 
+                          data-trigger="hover"
+                          data-placement="bottom"
+                          data-content="<b>Vicinity pLDDT (5Å)</b>:<br /> Mean pLDDT of protein residues/atoms within 5 Å of the ligand">
+                    </span>
+                </h5>
+            </div>
+            <div id="vicinity_plddt_5A_location"></div>
+            <div>
+                <h5>Ligand iPTM Score: <b>{{ scores.ligand_iptm|floatformat:1 }}</b>
+                    <span class="fa fa-info-circle simple-popover" data-html="true" data-toggle="popover" data-trigger="hover"
+                        data-placement="bottom" data-content="<b>Ligand interface predicted TM-score</b>:<br />
+            Confidence assessment of the relative positioning of ligand and receptor chains at the interface."></span>
+                </h5>
+            </div>
+            <div id="ligand_iPTM_location"></div>
+        {% endif %}
         {% if structure_type == "af-signprot-peptide" or structure_type == "af-peptide" %}
             <div>
                 <h5>PAE mean: <b>{{ scores.pae_mean|floatformat:1 }}</b>
@@ -274,7 +317,7 @@ canvas {
                       data-toggle="popover" 
                       data-trigger="hover" 
                       data-placement="bottom" 
-                      data-content="<b>The mean of thte predicted alignment errors on the 7TM domains </b>:<br /> Confidence assessment of the relative positioning of residue pairs in the receptor 7TM domain.">
+                      data-content="<b>The mean of the predicted alignment errors on the 7TM domains </b>:<br /> Confidence assessment of the relative positioning of residue pairs in the receptor 7TM domain.">
                 </span>
               </h5>
             </div>
@@ -362,6 +405,14 @@ canvas {
                 iptm = Number({{ scores.iptm }});
                 draw_model_scores('PTM_location', 'PTM_divider', 'PTM',  0, 1, ptm, 0.5);
                 draw_model_scores('iPTM_location', 'iPTM_divider', 'iPTM',  0, 1, iptm, 0.5);
+            }
+            if (structureType.includes("b2-")) {
+                ligand_plddt = Number({{ scores.ligand_plddt }});
+                ligand_iptm = Number({{ scores.ligand_iptm }});
+                vicinity_plddt_5A = Number({{ scores.vicinity_plddt_5A }});
+                draw_model_scores('ligand_pLDDT_location', 'ligand_pLDDT_divider', 'LigandpLDDT',  0, 1, ligand_plddt, 0.5);
+                draw_model_scores('vicinity_plddt_5A_location', 'vicinity_plddt_5A_divider', 'VicinitypLDDT5A',  0, 1, vicinity_plddt_5A, 0.5);
+                draw_model_scores('ligand_iPTM_location', 'ligand_iPTM_divider', 'LigandiPTM',  0, 1, ligand_iptm, 0.5);
             }
             if (structureType === "af-signprot-peptide" || structureType === "af-peptide") {
                 pae = Number({{ scores.pae_mean }});
