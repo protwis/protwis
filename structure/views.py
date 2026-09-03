@@ -1787,14 +1787,13 @@ class StructureStatistics(TemplateView):
 
         gpcr_structure_queries = self.initialise_gpcr_query_data_structure()
 
-        q = Structure.objects.all() \
-                .exclude(structure_type__slug__startswith='af-') \
+        q = Structure.objects.filter(structure_type__origin='experiment') \
                 .prefetch_related('protein_conformation__protein__family')
         gpcr_structure_queries['redundant']['complexed_or_not']['all_states'] = q
 
         gpcr_structure_queries['redundant']['complexed_ligand']['all_states'] = q.exclude(ligands=None)
 
-        q = Structure.objects.exclude(structure_type__slug__startswith='af-') \
+        q = Structure.objects.filter(structure_type__origin='experiment') \
                 .order_by('protein_conformation__protein__family__name',
                           'state',
                           'publication_date',
@@ -1803,8 +1802,8 @@ class StructureStatistics(TemplateView):
                 .prefetch_related('protein_conformation__protein__family')
         gpcr_structure_queries['distinct']['complexed_or_not']['all_states'] = q
 
-        q = StructureLigandInteraction.objects.filter(annotated=True) \
-                .exclude(structure__structure_type__slug__startswith='af-') \
+        q = StructureLigandInteraction.objects.filter(annotated=True,
+                                                      structure__structure_type__origin='experiment') \
                 .distinct('ligand',
                           'structure__protein_conformation__protein__family') \
                 .prefetch_related('structure', 'structure__protein_conformation',
@@ -1840,24 +1839,24 @@ class StructureStatistics(TemplateView):
 
         sigprot_structure_queries = OrderedDict([('distinct', {"complexed": {}, "receptor_only": {} }), ('redundant', {"complexed": {}, "receptor_only": {} })])
 
-        q1 = StructureExtraProteins.objects.filter(category=sig_cat) \
-                .exclude(structure__structure_type__slug__startswith='af-') \
+        q1 = StructureExtraProteins.objects.filter(category=sig_cat,
+                                                   structure__structure_type__origin='experiment') \
                 .prefetch_related("wt_protein","wt_protein__family", "wt_protein__family__parent", "structure__protein_conformation__protein__family")
         sigprot_structure_queries['redundant']['complexed']['all_classes'] = q1
 
-        q2 = StructureExtraProteins.objects.filter(category=sig_cat) \
-                .exclude(structure__structure_type__slug__startswith='af-') \
+        q2 = StructureExtraProteins.objects.filter(category=sig_cat,
+                                                   structure__structure_type__origin='experiment') \
                 .prefetch_related("wt_protein", "structure__protein_conformation__protein__family") \
                 .distinct('structure__protein_conformation__protein__family__name')
         sigprot_structure_queries['distinct']['complexed']['all_classes'] = q2
 
-        q3 = SignprotStructure.objects.filter(protein__family__slug__startswith=family_slug) \
-                .exclude(structure_type__slug__startswith='af-') \
+        q3 = SignprotStructure.objects.filter(protein__family__slug__startswith=family_slug,
+                                              structure_type__origin='experiment') \
                 .prefetch_related("protein")
         sigprot_structure_queries['redundant']['receptor_only']['all_classes'] = q3
 
-        q4 = SignprotStructure.objects.filter(protein__family__slug__startswith=family_slug) \
-                .exclude(structure_type__slug__startswith='af-') \
+        q4 = SignprotStructure.objects.filter(protein__family__slug__startswith=family_slug,
+                                              structure_type__origin='experiment') \
                 .prefetch_related("protein") \
                 .distinct('protein__family__name')
         sigprot_structure_queries['distinct']['receptor_only']['all_classes'] = q4
@@ -2020,7 +2019,8 @@ class StructureStatistics(TemplateView):
         gpcr_structure_queries = self.initialise_gpcr_structure_queries()
         gprot_structure_queries = self.initialise_sigprot_structure_queries(sigprot='gprot')
 
-        context['latest_structure'] = Structure.objects.exclude(structure_type__slug__startswith='af-').latest('publication_date').publication_date
+        context['latest_structure'] = Structure.objects.filter(structure_type__origin='experiment') \
+            .latest('publication_date').publication_date
 
         if self.origin == 'gpcr':
             #GPCR Stat table data
@@ -5079,7 +5079,9 @@ class LigandComplexModels(TemplateView):
 
             # Get the structure models along with prefetching ligands and related data
             structures = Structure.objects.filter(
-                structure_type__slug__in=['af-signprot-peptide', 'af-rfaa-sm', 'af-peptide', 'b2-signprot-smallmolecule', 'b2-smallmolecule', 'b2-signprot-peptide', 'b2-signprot-protein', 'b2-peptide', 'b2-protein']
+                structure_type__origin="model", 
+            ).exclude(
+                structure_type__slug__in=['af-signprot']
             ).prefetch_related(
                 "protein_conformation__protein__family",
                 "protein_conformation__protein",

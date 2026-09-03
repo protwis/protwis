@@ -241,9 +241,18 @@
                         select_type_options: {
                             width: '50px',
                         }
+                    },                                        {
+                        column_number : 10,
+                        filter_type: "range_number",
+                        select_type: 'select2',
+                        filter_default_label: ["From", "To"],
+                        filter_reset_button_text: false,
+                        select_type_options: {
+                            width: '50px',
+                        }
                     },
                     {
-                        column_number : 10,
+                        column_number : 11,
                         filter_type: "range_number",
                         select_type: 'select2',
                         filter_default_label: ["From", "To"],
@@ -253,7 +262,7 @@
                         }
                     },
                     {
-                        column_number : 11,
+                        column_number : 12,
                         filter_type: "range_date",
                         date_format: "yyyy-mm-dd",
                         select_type: 'select2',
@@ -308,8 +317,8 @@
                 var checked_data = oTable.rows('.alt_selected').data();
                 ClearSelection('targets');
                 for (i = 0; i < checked_data.length; i++) {
-                    console.log(checked_data[i][11])
-                    AddToSelection('targets', 'structure',  checked_data[i][11]);
+                    console.log(checked_data[i][13])
+                    AddToSelection('targets', 'structure',  checked_data[i][13]);
 
                 }
                 window.location.href = '/structure/selection_convert';
@@ -427,7 +436,7 @@
                     <th colspan=1 class="over_header rightborder">   MODEL   </th>
                     <th colspan=3 class="over_header rightborder" style="text-align: left;">LIGAND</th>
                     <th colspan=4 class="over_header rightborder" style="text-align: left;">RECEPTOR</th>
-                    <th colspan=2 class="over_header rightborder" style="text-align: left;">LIGAND MODEL SCORE</th>
+                    <th colspan=3 class="over_header rightborder" style="text-align: left;">LIGAND MODEL SCORE</th>
                     <th colspan=1 class="over_header">Date</th>
                     <th style='display:none;'></th>
                 </tr>
@@ -462,6 +471,7 @@
                 
                     <!--                    SCORES                  -->
                     <th>AF2 <br>(PAE mean)</th>
+                    <th>Boltz2 <br>(Ligand pLDDT)</th>
                     <th>RFAA <br>(pLDDT mean)</th>
 
 
@@ -562,8 +572,21 @@
 
                     <!--                         Scores                           -->
 
-                    {% if model.prefetch_model_scores %}
-                        <td>{{ model.prefetch_model_scores.0.pae_mean }} </td>
+                    {% if model.structure_type.name == "Model (AF2)" %}
+                        {% if model.prefetch_model_scores.0.pae_mean %}
+                            <td>{{ model.prefetch_model_scores.0.pae_mean | floatformat:2 }} </td>
+                        {% else %}
+                            <td> - </td>
+                        {% endif %}
+                    {% else %}
+                        <td> - </td>
+                    {% endif %}
+                    {% if model.structure_type.name == "Model (Boltz2)" %}
+                        {% if model.prefetch_model_scores.0.ligand_plddt %}
+                            <td>{{ model.prefetch_model_scores.0.ligand_plddt | floatformat:2 }} </td>
+                        {% else %}
+                            <td> - </td>
+                        {% endif %}
                     {% else %}
                         <td> - </td>
                     {% endif %}
