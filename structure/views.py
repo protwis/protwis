@@ -5229,7 +5229,7 @@ def ligand_coloring(structure, ligand_chain, ligand_type):
                         segments.append(f"{start}-{prev}")
                     start = residue
                 prev = residue
-            segment_string = f":E and ({' or '.join(segments)})"
+            segment_string = f":{ligand_chain} and ({' or '.join(segments)})"
             segments_out.append([color, segment_string])
 
     elif ligand_type == 'small-molecule':

@@ -14,29 +14,39 @@ from structure.models import StructureModelScores
 import json as JSON
 
 class BoltzTwoComplexModelMetrics(BaseModelMetrics):
-
-    """Represents the metrics associated with a BoltzTwoComplexModel"""
+    """Represents the metrics associated with a BoltzTwoComplexModel."""
 
     def __init__(self, data_dir, model_name, metrics_file_prefix, model_version_number, error_handling="log", verbosity=ParserVerbosity.SILENT):
-        """Build the metrics file path from the given directory, prefix, and version, then initialize the base metrics parser.
+        """
+        Build the metrics file path from the given directory, prefix, and version, then initialize the base metrics parser.
 
-        Args:
-            data_dir: Data directory of the model containing the metrics file.
-            model_name: Name of the model.
-            metrics_file_prefix: Prefix for the metrics file.
-            model_version_number: Version number of the model (e.g. {prefix}_{version}.pdb).
-            error_handling: Error handling strategy (e.g. log, raise, etc.).
-            verbosity: Verbosity level for logging (ParserVerbosity.SILENT, ParserVerbosity.BASIC, ParserVerbosity.EVERYTHING).
+        Parameters
+        ----------
+        data_dir: string
+            Data directory of the model containing the metrics file.
+        model_name: string
+            Name of the model.
+        metrics_file_prefix: string
+            Prefix for the metrics file (for file naming convention {prefix}_{version}.csv).
+        model_version_number: string
+            Version number of the model (for file naming convention {prefix}_{version}.csv).
+        error_handling: string, optional
+            Error handling strategy (e.g. log, raise, etc.). Default is "log".
+        verbosity: ParserVerbosity, optional
+            Verbosity level for logging (ParserVerbosity.SILENT, ParserVerbosity.BASIC, ParserVerbosity.EVERYTHING). Default is ParserVerbosity.SILENT.
 
         """
         metrics_file_path = os.sep.join([data_dir, metrics_file_prefix + '_' + model_version_number + '.csv'])
         super().__init__(metrics_file_path, error_handling=error_handling, verbosity=verbosity)
 
     def save(self, struct):
-        """Persist the parsed metrics to the StructureModelScores record associated with the given structure, creating it if it does not already exist.
+        """
+        Persist the parsed metrics to the StructureModelScores record associated with the given structure, creating it if it does not already exist.
 
-        Args:
-            struct: A structure.models.Structure instance to which the metrics should be associated.
+        Parameters
+        ----------
+        struct: structure.models.Structure
+            A Structure instance to which the metrics should be associated
         """
         #Remove extra fields present in metrics file from metrics list before recording.
         self.metrics.pop("model_rank", None)
@@ -59,15 +69,18 @@ class BoltzTwoComplexModelMetrics(BaseModelMetrics):
 
 
 class BoltzTwoComplexModel(BaseModel):
-
     """Defines a BoltzTwoComplex model, containing its PDB structure and associated metrics."""
 
     def __init__(self, data_dir, parser_config):
-        """Initialize the model with its source data directory and parser configuration.
+        """
+        Initialize the model with its source data directory and parser configuration.
 
-        Args:
-            data_dir: The data directory of the model.
-            parser_config: An instance of a BoltzTwoComplexParserConfig object.
+        Parameters
+        ----------
+        data_dir: string
+            The data directory of the model.
+        parser_config: BoltzTwoComplexParserConfig
+            Parser configuration object.
         """
         super().__init__(data_dir, parser_config)
 
@@ -136,12 +149,15 @@ class BoltzTwoComplexModel(BaseModel):
             log_or_raise(self.logger, f"Error reading identifiers manifest file {manifest_file_path}: {e}", Exception, self.error_handling, parent_exception=e)
 
     def get_preferred_model_version_number(self):
-        """Get the index of the model to use based on the parser configuration.
+        """
+        Get the index of the model to use based on the parser configuration.
 
         If no override is specified, return the default model version number. If no default model is specified, return '1' as the default model version number.
 
-        Returns:
-            String - The preferred model version number.
+        Returns
+        -------
+        string
+            The preferred model version number
         """
         if self.parser_config.default_model_version:
             if self.model_name in self.parser_config.default_model_version.get("override", {}):
@@ -150,10 +166,13 @@ class BoltzTwoComplexModel(BaseModel):
         return "1"  # Default to model version number '1' if no default model is specified
 
     def format_pdb_index(self):
-        """Return the PDB index string for this model, built from the receptor, ligand, and (if present) signalling protein names.
+        """
+        Return the PDB index string for this model, built from the receptor, ligand, and (if present) signalling protein names.
 
-        Returns:
-            String - The PDB index string for the model.
+        Returns
+        -------
+        string
+            The PDB index string for the model.
         """
         if self.signprot:
             return f'B2M_{self.receptor.upper()}_{self.ligand.name.upper()}_{self.signprot.upper()}'
@@ -194,8 +213,7 @@ class BoltzTwoComplexModel(BaseModel):
             log_or_raise(self.logger, f"Error writing model {self.model_name} to database: {str(e)}", Exception, self.error_handling, parent_exception=e)
 
 class BoltzTwoComplexModelParserConfig(BaseModelParserConfig):
-
-    """Configuration class for BoltzTwoComplexModelParser"""
+    """Configuration class for BoltzTwoComplexModelParser."""
 
     def __init__(self, model_set_name, data_dir=None,
                  default_model_version={'default_version_number': '1', 'override': {}}, pdb_file_prefix="model",
@@ -203,19 +221,31 @@ class BoltzTwoComplexModelParserConfig(BaseModelParserConfig):
                  model_receptor_state=None, pdb_preferred_chain='A',
                  error_handling="log", verbosity=ParserVerbosity.SILENT,
                  ligand_multimatch_handling=LigandMultiMatchHandling.KEEP_FIRST):
-        """Initialize the parser configuration with file-naming, model-version-selection, and receptor/chain settings for BoltzTwoComplex models.
+        """
+        Initialize the parser configuration with file-naming, model-version-selection, and receptor/chain settings for BoltzTwoComplex models.
 
-        Args:
-            model_set_name: The name of the model set (also the directory name in data_dir).
-            data_dir: The base data directory in which the directory named {model_set_name} is located (defaults to the structure_data directory via BaseModelParserConfig).
-            default_model_version: A dictionary specifying the default model version to use (Key: default_version_number) and any specific edge cases to override (Key: override, format: { model_name : version_number }) .
-            pdb_file_prefix: The prefix for the PDB files (e.g. {prefix}_{version_number}.pdb).
-            metrics_file_prefix: The prefix for the metrics files (e.g. {prefix}_{version_number}.csv).
-            pdb_header_override: A dictionary of fields and values to override in the PDB header.
-            model_receptor_state: The state of the receptor for the model.
-            pdb_preferred_chain: The preferred chain for the PDB file.
-            error_handling: Error handling strategy (e.g. log, raise, etc.).
-            verbosity: Verbosity level for logging (ParserVerbosity.SILENT, ParserVerbosity.BASIC, ParserVerbosity.EVERYTHING).
+        Parameters
+        ----------
+        model_set_name: string
+            The name of the model set (also the directory name in data_dir).
+        data_dir: string, optional
+            The base data directory in which the directory named {model_set_name} is located (defaults to the structure_data directory via BaseModelParserConfig).
+        default_model_version: dictionary
+            A dictionary specifying the default model version to use (Key: default_version_number) and any specific edge cases to override (Key: override, format: { model_name : version_number }) .
+        pdb_file_prefix: string
+            The prefix for the PDB files (e.g. {prefix}_{version_number}.pdb).
+        metrics_file_prefix: string
+            The prefix for the metrics files (e.g. {prefix}_{version_number}.csv).
+        pdb_header_override: dictionary
+            A dictionary of fields and values to override in the PDB header.
+        model_receptor_state: string
+            The state of the receptor for the model.
+        pdb_preferred_chain: string
+            The preferred chain for the PDB file.
+        error_handling: string
+            Error handling strategy (e.g. log, raise, etc.).
+        verbosity: int enum (ParserVerbosity)
+            Verbosity level for logging (ParserVerbosity.SILENT, ParserVerbosity.BASIC, ParserVerbosity.EVERYTHING).
         """
         super().__init__(model_set_name, data_dir=data_dir, pdb_header_override=pdb_header_override, error_handling=error_handling, verbosity=verbosity)
 
@@ -227,8 +257,8 @@ class BoltzTwoComplexModelParserConfig(BaseModelParserConfig):
         self.ligand_multimatch_handling = ligand_multimatch_handling
 
 class BoltzTwoComplexModelParser(BaseModelParser):
-
-    """Parses a directory of BoltzTwoComplex models organized by model-set-name and model-name
+    """
+    Parses a directory of BoltzTwoComplex models organized by model-set-name and model-name.
 
     The expected directory structure is as follows:
     /structure_data/{model_set_name}/{model_name}/model_{model_version_number}.pdb and metrics_{model_version_number}.csv
@@ -236,10 +266,13 @@ class BoltzTwoComplexModelParser(BaseModelParser):
     """
 
     def __init__(self, config):
-        """Initialize the parser with a configuration object.
+        """
+        Initialize the parser with a configuration object.
 
-        Args:
-            config: An instance of a BoltzTwoComplexModelParserConfig object.
+        Parameters
+        ----------
+        config: BoltzTwoComplexModelParserConfig
+            Parser configuration object containing settings for file prefixes, model version selection, receptor state, and error handling.            
         """
         super().__init__(config)
         self.config = config
@@ -247,13 +280,19 @@ class BoltzTwoComplexModelParser(BaseModelParser):
         self.models = []
 
     def process_models(self, write = True, low_memory=True, offset_start=0, offset_end=None):
-        """Process each model directory in the model set directory and return a list of BoltzTwoComplexModel instances.
+        """
+        Process each model directory in the model set directory and return a list of BoltzTwoComplexModel instances.
 
-        Args:
-            write (bool): Whether to write the models to the database. Default is True.
-            low_memory (bool): Flag indicating whether to discard models from memory after writing. Default is True. False means models will be stored in the models array (uses a lot of memory).
-            offset_start (int): The starting index of the model directories to process. Default is 0.
-            offset_end (int): The ending index of the model directories to process. Default is False, which means process all directories from offset_start to the end.
+        Parameters
+        ----------
+        write: bool
+            Whether to write the models to the database. Default is True.
+        low_memory: bool
+            Flag indicating whether to discard models from memory after writing. Default is True. False means models will be stored in the models array (uses a lot of memory).
+        offset_start: int
+            The starting index of the model directories to process. Default is 0.
+        offset_end: int
+            The ending index of the model directories to process. Default is None, which means process all directories from offset_start to the end.
         """
         try:
             if low_memory and not write:

@@ -90,7 +90,7 @@ class Command(BaseBuild):
         parser.add_argument('--cleaned_seq_csv',
             action='store',
             default=False,
-            help='Load cleaned sequences from CSV (required for AlphafoldComplex parser)'),
+            help='Load cleaned sequences from CSV (required for AlphafoldComplex parser)')
         parser.add_argument('-y', '--parser_verbosity',
             choices=['silent', 'basic', 'everything'],
             default="basic",

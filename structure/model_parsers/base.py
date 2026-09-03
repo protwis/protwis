@@ -36,16 +36,20 @@ class LigandMultiMatchHandling:
     }
 
 class BaseModelMetrics():
-
-    """Represents the metrics associated with a structure model"""
+    """Represents the metrics associated with a structure model."""
 
     def __init__(self, metrics_file_path, error_handling="log", verbosity=ParserVerbosity.SILENT):
-        """Store the metrics file path and parsing configuration, ready for load() to populate the metrics.
+        """
+        Store the metrics file path and parsing configuration, ready for load() to populate the metrics.
 
-        Args:
-            metrics_file_path: Path to the CSV file containing the model's metrics.
-            error_handling: Error handling strategy (e.g. log, raise, etc.).
-            verbosity: Verbosity level for logging (ParserVerbosity.SILENT, ParserVerbosity.BASIC, ParserVerbosity.EVERYTHING).
+        Parameters
+        ----------
+        metrics_file_path: string
+            Path to the CSV file containing the model's metrics.
+        error_handling: string
+            Error handling strategy (e.g. log, raise, etc.).
+        verbosity: int enum (ParserVerbosity)
+            Verbosity level for logging (ParserVerbosity.SILENT, ParserVerbosity.BASIC, ParserVerbosity.EVERYTHING).
         """
         self.metrics_file_path = metrics_file_path
         self.logger = logging.getLogger('build')
@@ -54,7 +58,7 @@ class BaseModelMetrics():
         self.metrics = {}
 
     def load(self):
-        """Read the metrics CSV file at metrics_file_path into the metrics dict"""
+        """Read the metrics CSV file at metrics_file_path into the metrics dict."""
         if self.metrics_file_path and os.path.exists(self.metrics_file_path):
             try:
                self.metrics = csv_to_dict(self.metrics_file_path)
@@ -65,15 +69,18 @@ class BaseModelMetrics():
             log_or_raise(self.logger, f"Metrics file {self.metrics_file_path} not found.", FileNotFoundError, self.error_handling)
 
 class BaseModel():
-
     """Defines a base class for a structure model"""
 
     def __init__(self, data_dir, parser_config):
-        """Initialize common model state (config, logger, data directory) shared by all model subclasses.
+        """
+        Initialize common model state (config, logger, data directory) shared by all model subclasses.
 
-        Args:
-            data_dir: The data directory of the model.
-            parser_config: An instance of a BaseModelParserConfig (or subclass) object.
+        Parameters
+        ----------
+        data_dir: string
+            The data directory of the model.
+        parser_config: BaseModelParserConfig
+            Parser configuration as an instance of BaseModelParserConfig (or subclass).
         """
         self.parser_config = parser_config
         self.logger = logging.getLogger('build')
@@ -87,10 +94,13 @@ class BaseModel():
         self.pdb_file_path = None  # Initialize pdb_file_path to None; subclasses should set this if needed
 
     def fetch_pdb_structure(self):
-        """Parse the model's PDB file into a Bio.PDB Structure object, applying any configured PDB header override.
+        """
+        Parse the model's PDB file into a Bio.PDB Structure object, applying any configured PDB header override.
 
-        Returns:
-            Bio.PDB.Structure.Structure - The parsed PDB structure for the model.
+        Returns
+        -------
+        Bio.PDB.Structure.Structure
+            The parsed PDB structure for the model.
         """
         conditional_log(self, f"Reading PDB content as PDBStructure object for model {self.model_name}.", logging.INFO, ParserVerbosity.EVERYTHING)
         s = PDBParser(PERMISSIVE=False, get_header=True, QUIET=True) \
@@ -101,10 +111,13 @@ class BaseModel():
         return s
 
     def fetch_pdb_content(self):
-        """Read the model's PDB file and return its raw text content.
+        """
+        Read the model's PDB file and return its raw text content.
 
-        Returns:
-            String - The raw contents of the PDB file.
+        Returns
+        -------
+        string
+            The raw contents of the PDB file.
         """
         conditional_log(self, f"Reading PDB content as text for model {self.model_name}.", logging.INFO, ParserVerbosity.EVERYTHING)
         if os.path.exists(self.pdb_file_path):
@@ -114,13 +127,19 @@ class BaseModel():
             log_or_raise(self.logger, f"PDB file {self.pdb_file_path} not found for model {self.model_name}.", FileNotFoundError, self.error_handling)
 
     def remap_chain_ids(self, pdb_data, mapping_dict):
-        """Remap chain IDs in the PDB data according to the provided mapping dictionary.
+        """
+        Remap chain IDs in the PDB data according to the provided mapping dictionary.
 
-        Args:
-            pdb_data: The PDB data (either raw text or a Bio.PDB structure object).
-            mapping_dict: A dictionary mapping old chain IDs to new chain IDs.
+        Parameters
+        ----------
+        pdb_data: string or Bio.PDB object
+            The PDB data
+        mapping_dict: dict
+            A dictionary mapping old chain IDs to new chain IDs.
 
-        Returns:
+        Returns
+        -------
+        string or Bio.PDB object
             The PDB data with chain IDs remapped.
         """
         if isinstance(pdb_data, str):
@@ -146,10 +165,13 @@ class BaseModel():
         return pdb_data
 
     def has_beta_gamma_complex(self):
-        """Check if the model has a beta-gamma complex based on the signprot attribute and subunit list.
+        """
+        Check if the model has a beta-gamma complex based on the signprot attribute and subunit list.
 
-        Returns:
-            Boolean - True if the model has a signalling protein with both beta and gamma subunits, otherwise False.
+        Returns
+        -------
+        Boolean
+            True if the model has a signalling protein with both beta and gamma subunits, otherwise False.
         """
         if self.signprot:
             if self.signprot_subunits.beta and self.signprot_subunits.gamma:
@@ -160,10 +182,13 @@ class BaseModel():
             return False
 
     def protein_from_entry_name(self):
-        """Fetch the receptor Protein database object matching this model's receptor entry name.
+        """
+        Fetch the receptor Protein database object matching this model's receptor entry name.
 
-        Returns:
-            protein.models.Protein - The receptor protein object.
+        Returns
+        -------
+        protein.models.Protein
+            The receptor protein object.
         """
         try:
             db_protein = Protein.objects.get(entry_name=self.receptor.lower())
@@ -173,10 +198,13 @@ class BaseModel():
             log_or_raise(self.logger, f"Protein object not found for entry name: {self.receptor}", ValueError, self.error_handling)
 
     def populate_signprot_subunits(self):
-        """Parse the signprot component of the model name to determine the signalling protein subunits present (alpha, beta, gamma).
+        """
+        Parse the signprot component of the model name to determine the signalling protein subunits present (alpha, beta, gamma).
 
-        Returns:
-            ModelGProtienComplex - Object with alpha/beta/gamma Protein objects populated where found.
+        Returns
+        -------
+        ModelGProtienComplex
+            ModelGProtienComplex object with alpha/beta/gamma Protein objects populated where found.
         """
         return_subunits = ModelGProtienComplex()
         signprot_re = re.compile(r'([^_]+_[^_]+)')
@@ -196,10 +224,13 @@ class BaseModel():
         return return_subunits
 
     def parse_model_date_from_pdb_header(self):
-        """Extract the model date from the PDB header.
+        """
+        Extract the model date from the PDB header.
 
-        Returns:
-            String - The model date parsed from the deposition date, release date, or head field of the PDB header.
+        Returns
+        -------
+        String
+            The model date parsed from the deposition date, release date, or head field of the PDB header.
         """
         if self.pdb_structure.header and 'deposition_date' in self.pdb_structure.header:
             if self.pdb_structure.header['deposition_date'] != '1909-01-08':
@@ -224,15 +255,22 @@ class BaseModel():
                      "Amend the PDB header or provide a pdb_header_override in the parser configuration.", ValueError, self.error_handling)
 
     def get_or_initialise_structure(self, receptor_protein, protein_state, protein_conformation):
-        """Fetch the existing Structure record for this model, or create and save a new one (with generic numbers assigned) if none exists.
+        """
+        Fetch the existing Structure record for this model, or create and save a new one (with generic numbers assigned) if none exists.
 
-        Args:
-            receptor_protein: The receptor protein.models.Protein object.
-            protein_state: The protein.models.ProteinState object for the model.
-            protein_conformation: The protein.models.ProteinConformation object for the receptor.
+        Parameters
+        ----------
+        receptor_protein: protein.models.Protein
+            The receptor protein.models.Protein object.
+        protein_state: protein.models.ProteinState
+            The protein.models.ProteinState object for the model.
+        protein_conformation: protein.models.ProteinConformation
+            The protein.models.ProteinConformation object for the receptor.
 
-        Returns:
-            structure.models.Structure - The existing or newly created Structure object.
+        Returns
+        -------
+        structure.models.Structure
+            The existing or newly created Structure object.
         """
         struct = None
         try:
@@ -278,10 +316,13 @@ class BaseModel():
         return struct
 
     def get_or_create_protein_state(self):
-        """Fetch or create the ProteinState record matching this model's receptor_state.
+        """
+        Fetch or create the ProteinState record matching this model's receptor_state.
 
-        Returns:
-            protein.models.ProteinState - The existing or newly created protein state.
+        Returns
+        -------
+        protein.models.ProteinState
+            The existing or newly created protein state.
         """
         try:
             ps, created = ProteinState.objects.get_or_create(slug=self.receptor_state.lower(), defaults={'name': self.receptor_state})
@@ -293,13 +334,18 @@ class BaseModel():
         return ps
 
     def get_protein_conformation(self, receptor_protein):
-        """Fetch the ProteinConformation record for the given receptor protein.
+        """
+        Fetch the ProteinConformation record for the given receptor protein.
 
-        Args:
-            receptor_protein: The receptor protein.models.Protein object.
+        Parameters
+        ----------
+        receptor_protein: protein.models.Protein
+            The receptor for which to fetch the conformation.
 
-        Returns:
-            protein.models.ProteinConformation - The protein conformation for the receptor.
+        Returns
+        -------
+        protein.models.ProteinConformation
+            The protein conformation for the receptor.
         """
         try:
             return ProteinConformation.objects.get(protein=receptor_protein)
@@ -307,10 +353,13 @@ class BaseModel():
             log_or_raise(self.logger, f"Protein conformation for construct {receptor_protein.entry_name} does not exist", ValueError, self.error_handling)
 
     def assign_generic_numbers_to_pdb(self):
-        """Run GPCR generic residue numbering over the model's raw PDB content and return the annotated PDB text.
+        """
+        Run GPCR generic residue numbering over the model's raw PDB content and return the annotated PDB text.
 
-        Returns:
-            String - The PDB header line followed by the PDB content with generic numbers assigned.
+        Returns
+        -------
+        string
+            The PDB header line followed by the PDB content with generic numbers assigned.
         """
         try:
             pdb_struct = StringIO(self.pdb_raw)
@@ -329,13 +378,18 @@ class BaseModel():
             log_or_raise(self.logger, f"GN assignment failed for {self.model_name}.", Exception, self.error_handling, parent_exception=e)
 
     def write_pdb_with_generic_numbers(self, pdb_with_generic_numbers):
-        """Fetch or create the PdbData record holding the given generically-numbered PDB content.
+        """
+        Fetch or create the PdbData record holding the given generically-numbered PDB content.
 
-        Args:
-            pdb_with_generic_numbers: PDB text (with generic numbers assigned) to store.
+        Parameters
+        ----------
+        pdb_with_generic_numbers: string
+            PDB text (with generic numbers assigned) to store.            
 
-        Returns:
-            structure.models.PdbData - The existing or newly created PdbData object.
+        Returns
+        -------
+        structure.models.PdbData
+            The existing or newly created PdbData object.
         """
         try:
             pdbdata, created = PdbData.objects.get_or_create(pdb=pdb_with_generic_numbers)
@@ -346,13 +400,18 @@ class BaseModel():
             log_or_raise(self.logger, f"Failed to create PdbData object for {self.model_name}: {e}", Exception, self.error_handling, parent_exception=e )
 
     def write_pdb_code_weblink(self, struct):
-        """Fetch or create the WebLink record for this model's PDB index code under the 'pdb' web resource.
+        """
+        Fetch or create the WebLink record for this model's PDB index code under the 'pdb' web resource.
 
-        Args:
-            struct: The structure.models.Structure object the weblink will be attached to.
+        Parameters
+        ----------
+        struct: structure.models.Structure
+            The Structure object the weblink will be attached to.
 
-        Returns:
-            common.models.WebLink - The existing or newly created WebLink object.
+        Returns
+        -------
+        common.models.WebLink
+            The existing or newly created WebLink object.
         """
         try:
             pdb_code = self.format_pdb_index()
@@ -372,10 +431,13 @@ class BaseModel():
         raise NotImplementedError("Subclasses must implement the format_pdb_index method.")
 
     def get_or_create_structure_type(self):
-        """Fetch or create the StructureType record matching this model's structure type slug/name.
+        """
+        Fetch or create the StructureType record matching this model's structure type slug/name.
 
-        Returns:
-            structure.models.StructureType - The existing or newly created structure type.
+        Returns
+        -------
+        structure.models.StructureType
+            The existing or newly created structure type.
         """
         try:
             structure_type, created = StructureType.objects.get_or_create(slug=self.model_structure_type_slug, defaults={'name': self.model_structure_type_name, 'origin': self.structure_origin})
@@ -386,11 +448,15 @@ class BaseModel():
             log_or_raise(self.logger, f"Failed to get or create structure type {self.model_structure_type_slug}: {e}", Exception, self.error_handling, parent_exception=e)
 
     def create_ligand_peptide_structure(self, struct, ligands_db):
-        """Fetch or create a LigandPeptideStructure record linking each peptide/protein ligand to the given structure.
+        """
+        Fetch or create a LigandPeptideStructure record linking each peptide/protein ligand to the given structure.
 
-        Args:
-            struct: The structure.models.Structure object the ligand(s) belong to.
-            ligands_db: Iterable of ligand.models.Ligand objects to link, non-peptide/protein ligands are skipped.
+        Parameters
+        ----------
+        struct: structure.models.Structure
+            The Structure object the ligand(s) belongs to.
+        ligands_db: Iterable collection of ligand.models.Ligand objects
+            Ligand objects to link
         """
         if not self.ligand.pdb_chain_id:
             log_or_raise(self.logger, f"Ligand chain ID is not defined for in model {self.model_name}.", ValueError, self.error_handling)
@@ -410,13 +476,18 @@ class BaseModel():
                 log_or_raise(self.logger, f"Error creating LigandPeptideStructure(s) for ligand {ligand_db.name} in model {self.model_name}: {str(e)} ", Exception, self.error_handling, parent_exception=e)
 
     def get_signprot_and_conformations(self, struct):
-        """Resolve the model's signalling protein and its conformation(s) (including beta/gamma subunits) and record the SignprotComplex against the given structure.
+        """
+        Resolve the model's signalling protein and its conformation(s) (including beta/gamma subunits) and record the SignprotComplex against the given structure.
 
-        Args:
-            struct: The structure.models.Structure object to associate the signalling protein complex with.
+        Parameters
+        ----------
+        struct: structure.models.Structure
+            The Structure object to associate the signalling protein complex with.
 
-        Returns:
-            Tuple - (signprot-alpha, signprot-alpha_conformation, signprot-beta_conformation, signprot-gamma_conformation), each None when the model has no signalling protein or subunit.
+        Returns
+        -------
+        Tuple
+            (signprot-alpha, signprot-alpha_conformation, signprot-beta_conformation, signprot-gamma_conformation), each None when the model has no signalling protein or subunit.
         """
         signprot = None
         signprot_conf = None
@@ -461,19 +532,30 @@ class BaseModel():
         return signprot, signprot_conf, beta_protconf, gamma_protconf
 
     def create_extra_proteins(self, struct_db, signprot_db, signprot_conf_db, beta_protconf_db, gamma_protconf_db, alpha_note=None, beta_note=None, gamma_note=None):
-        """Fetch or create StructureExtraProteins records for the model's signalling protein alpha subunit, and its beta/gamma subunits if present.
+        """
+        Fetch or create StructureExtraProteins records for the model's signalling protein alpha subunit, and its beta/gamma subunits if present.
 
-        Args:
-            struct_db: The structure.models.Structure object the extra proteins belong to.
-            signprot_db: The signalling protein (alpha subunit) protein.models.Protein object, or None.
-            signprot_conf_db: The ProteinConformation for the signalling protein alpha subunit.
-            beta_protconf_db: The ProteinConformation for the beta subunit, if any.
-            gamma_protconf_db: The ProteinConformation for the gamma subunit, if any.
-            alpha_note: Optional note to store on the alpha subunit's StructureExtraProteins record.
-            beta_note: Optional note to store on the beta subunit's StructureExtraProteins record.
-            gamma_note: Optional note to store on the gamma subunit's StructureExtraProteins record.
+        Parameters:
+        ----------
+        struct_db: structure.models.Structure 
+            The Structure object the extra proteins belong to.
+        signprot_db: protein.models.Protein
+            The signalling protein (alpha subunit) Protein object, or None.
+        signprot_conf_db: protein.models.ProteinConformation
+            The ProteinConformation for the signalling protein alpha subunit.
+        beta_protconf_db: protein.models.ProteinConformation
+            The ProteinConformation for the beta subunit, if any.
+        gamma_protconf_db: protein.models.ProteinConformation
+            The ProteinConformation for the gamma subunit, if any.
+        alpha_note: string
+            Optional note to store on the alpha subunit's StructureExtraProteins record.
+        beta_note: string
+            Optional note to store on the beta subunit's StructureExtraProteins record.
+        gamma_note: string
+            Optional note to store on the gamma subunit's StructureExtraProteins record.
 
-        Returns:
+        Returns
+        -------
             Tuple - (sep, sep_beta, sep_gamma) StructureExtraProteins objects, each None when not applicable.
         """
         sep = None
@@ -505,14 +587,21 @@ class BaseModel():
         return sep, sep_beta, sep_gamma
 
     def store_plddt(self, struct, receptor_protein, signprot, beta_protconf, gamma_protconf):
-        """Extract per-residue pLDDT values from the PDB structure's B-factor column and bulk-create StructureModelpLDDT records for the receptor and any signalling protein chains.
+        """
+        Extract per-residue pLDDT values from the PDB structure's B-factor column and bulk-create StructureModelpLDDT records for the receptor and any signalling protein chains.
 
-        Args:
-            struct: The structure.models.Structure object the pLDDT values belong to.
-            receptor_protein: The receptor protein.models.Protein object (default: chain A), or None to skip.
-            signprot: The signalling protein.models.Protein object (default: chain B), or None to skip.
-            beta_protconf: The ProteinConformation for the beta subunit (default: chain C), or None to skip.
-            gamma_protconf: The ProteinConformation for the gamma subunit (default: chain D), or None to skip.
+        Parameters
+        ----------
+        struct: structure.models.Structure
+            The Structure object the pLDDT values belong to.
+        receptor_protein: protein.models.Protein
+            The receptor Protein object (default: chain A), or None to skip.
+        signprot: protein.models.Protein
+            The signalling Protein object (default: chain B), or None to skip.
+        beta_protconf: protein.models.ProteinConformation
+            The ProteinConformation for the beta subunit (default: chain C), or None to skip.
+        gamma_protconf: protein.models.ProteinConformation
+            The ProteinConformation for the gamma subunit (default: chain D), or None to skip.
         """
         #Adding plDDT for rendering
         resis = []
@@ -555,11 +644,15 @@ class BaseModel():
             log_or_raise(self.logger, f"Error storing pLDDT values for model {self.model_name}: {str(e)}", Exception, self.error_handling, parent_exception=e)
 
     def build_contact_network(self, model_structure, signprot):
-        """Compute and store the residue-residue contact network for the model's PDB file.
+        """
+        Compute and store the residue-residue contact network for the model's PDB file.
 
-        Args:
-            model_structure: A django model of structure object (structure.models.Structure) for the receptor/ligand model.
-            signprot: A django model of signalling protein object (protein.models.Protein), or None if the model has no signalling protein complex.
+        Parameters
+        ----------
+        model_structure: structure.models.Structure
+            Structure object for the receptor/ligand model.
+        signprot: protein.models.Protein
+            Signalling protein object, or None if the model has no signalling protein complex.
         """
         if signprot:
             do_complexes = True
@@ -569,15 +662,16 @@ class BaseModel():
 
 
 class BaseModelParser():
-
-    """Base class for parsing models organized by model set name and model name
-    """
+    """Base class for parsing models organized by model set name and model name."""
 
     def __init__(self, config):
-        """Initialize the parser with a configuration object.
+        """
+        Initialize the parser with a configuration object.
 
-        Args:
-            config: An instance of a BaseModelParserConfig (or subclass) object.
+        Parameters
+        ----------
+        config: BaseModelParserConfig
+            Parser configuration object.
         """
         self.config = config
         self.logger = logging.getLogger('build')
@@ -598,18 +692,25 @@ class BaseModelParser():
         raise NotImplementedError("Subclasses must implement the process_models method to process models based on the configuration.")
 
 class BaseModelParserConfig():
-    """Configuration class for BaseModelParser"""
+    """Configuration class for BaseModelParser."""
 
     def __init__(self, model_set_name, data_dir=None, pdb_header_override=None, error_handling="log", verbosity=ParserVerbosity.SILENT, ligand_multimatch_handling=LigandMultiMatchHandling.KEEP_FIRST,
                  pdb_receptor_chain='A', pdb_g_alpha_chain='B', pdb_g_beta_chain='C', pdb_g_gamma_chain='D'):
-        """Initialize the base parser configuration shared by all model parser configs.
+        """
+        Initialize the base parser configuration shared by all model parser configs.
 
-        Args:
-            model_set_name: The name of the model set (also the directory name in data_dir).
-            data_dir: The base data directory in which the directory named {model_set_name} is located (defaults to the structure_data directory).
-            pdb_header_override: A dictionary of fields and values to override in the PDB header.
-            error_handling: Error handling strategy (e.g. log, raise, etc.).
-            verbosity: Verbosity level for logging (ParserVerbosity.SILENT, ParserVerbosity.BASIC, ParserVerbosity.EVERYTHING).
+        Parameters
+        ----------
+        model_set_name: string
+            The name of the model set (also the directory name in data_dir).
+        data_dir: string
+            The base data directory in which the directory named {model_set_name} is located (defaults to the structure_data directory).
+        pdb_header_override: dict
+            A dictionary of fields and values to override in the PDB header.
+        error_handling: string
+            Error handling strategy (e.g. log, raise, etc.).
+        verbosity: int enum (ParserVerbosity)
+            Verbosity level for logging (ParserVerbosity.SILENT, ParserVerbosity.BASIC, ParserVerbosity.EVERYTHING).
         """
         self.model_set_name = model_set_name
         self.data_dir = data_dir if data_dir else os.sep.join([settings.DATA_DIR, 'structure_data', model_set_name])
@@ -634,15 +735,20 @@ class ModelGProtienComplex():
         self.gamma = None
 
 class ModelLigand():
-    """Represents a model's ligand and its identifying attributes"""
+    """Represents a model's ligand and its identifying attributes."""
 
     def __init__(self, error_handling="log", verbosity=ParserVerbosity.SILENT, ligand_multimatch_handling=LigandMultiMatchHandling.KEEP_FIRST):
-        """Initialize the ligand's identifying attributes.
+        """
+        Initialize the ligand's identifying attributes.
 
-        Args:
-            error_handling: Error handling strategy (e.g. log, raise, etc.).
-            verbosity: Verbosity level for logging (ParserVerbosity.SILENT, ParserVerbosity.BASIC, ParserVerbosity.EVERYTHING).
-            ligand_multimatch_handling: Strategy for handling multiple matching ligands in the database (LigandMultiMatchHandling.KEEP_FIRST, LigandMultiMatchHandling.KEEP_ALL, LigandMultiMatchHandling.RAISE_ERROR).
+        Parameters
+        ----------
+        error_handling: string
+            Error handling strategy (e.g. log, raise, etc.).
+        verbosity: int enum (ParserVerbosity)
+            Verbosity level for logging (ParserVerbosity.SILENT, ParserVerbosity.BASIC, ParserVerbosity.EVERYTHING).
+        ligand_multimatch_handling: int enum (LigandMultiMatchHandling)
+            Strategy for handling multiple matching ligands in the database (LigandMultiMatchHandling.KEEP_FIRST, LigandMultiMatchHandling.KEEP_ALL, LigandMultiMatchHandling.RAISE_ERROR).
         """
         self.name = None
         self.type = None
@@ -662,11 +768,15 @@ class ModelLigand():
     def get_sequence_from_pdb(self, pdb_structure):
         """Extract the ligand sequence from the PDB structure based on the ligand's chain ID.
 
-        Args:
-            pdb_structure: A Bio.PDB Structure object to read the ligand's chain from.
+        Parameters
+        ----------
+        pdb_structure: Bio.PDB Structure
+            A PDB from which to read the ligand's chain.
 
-        Returns:
-            String - The one-letter amino acid sequence for the ligand's chain (non-standard residues are represented as 'X').
+        Returns
+        -------
+        String
+            The one-letter amino acid sequence for the ligand's chain (non-standard residues are represented as 'X').
         """
         if not self.pdb_chain_id:
             log_or_raise(self.logger, f"Ligand chain ID is not defined.", ValueError, self.error_handling)
@@ -685,13 +795,17 @@ class ModelLigand():
         return sequence
 
     def multi_match_handling(self, ligands):
-        """Handle multiple matching ligands based on the specified strategy.
+        """
+        Handle multiple matching ligands based on the specified strategy.
 
-        Args:
-            ligands: A QuerySet of matching ligand.models.Ligand objects.            
+        Parameters:
+        ----------
+        ligands: QuerySet(ligand.models.Ligand)
+            A collection of matching Ligand objects from the database.
 
         Returns:
-            QuerySet or single Ligand object based on the handling strategy.
+        -------
+        QuerySet or single Ligand object based on the handling strategy.
         """
         if self.ligand_multimatch_handling == LigandMultiMatchHandling.KEEP_FIRST:
             return [ligands.first()] #Maintain list structure for consistent input for iterators, even if only one ligand is returned.
@@ -704,10 +818,13 @@ class ModelLigand():
 
 
     def fetch_db_entities(self):
-        """Look up matching Ligand database entities, trying InChIKey, SMILES, sequence, and name in turn until a match is found.
+        """
+        Look up matching Ligand database entities, trying InChIKey, SMILES, sequence, and name in turn until a match is found.
 
-        Returns:
-            QuerySet - Matching ligand.models.Ligand objects, or None if no identifier matched any ligand.
+        Returns
+        -------
+        QuerySet(ligand.models.Ligand)
+            A collection of matching Ligand objects, or None if no identifier matched a ligand.
         """
         ligands = None
 
@@ -753,10 +870,13 @@ class ModelLigand():
             return None
 
     def get_type(self):
-        """Determine the ligand's type by looking up its matching database entity.
+        """
+        Determine the ligand's type by looking up its matching database entity.
 
-        Returns:
-            String - The ligand type name (e.g. 'small molecule', 'peptide', 'protein'), or None if no matching ligand was found.
+        Returns
+        -------
+        String
+            The ligand type name (e.g. 'small molecule', 'peptide', 'protein'), or None if no matching ligand was found.
         """
         ligands_db = self.fetch_db_entities()
 
