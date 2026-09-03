@@ -5153,14 +5153,18 @@ class LigandComplexModels(TemplateView):
 
             context['structure_model'] = structures
 
-            is_ligand_physiological_dict = {}
-            for structure in structures:
-                receptor_id = structure.protein_conformation.protein_id
-                ligand_id = None
-                if getattr(structure, 'prefetch_ligands', None):
-                    ligand_id = structure.prefetch_ligands[0].ligand_id
-                is_ligand_physiological_dict[structure.id] = bool(ligand_id) and Endogenous_GTP.objects.filter(ligand_id=ligand_id, receptor_id=receptor_id).exists()
-            context['is_ligand_physiological_dict'] = is_ligand_physiological_dict            
+            receptor_ids = [s.protein_conformation.protein_id for s in structures]
+            ligand_ids = [s.prefetch_ligands[0].ligand_id for s in structures if getattr(s, 'prefetch_ligands', None)]
+            physiological_pairs = set(
+                 Endogenous_GTP.objects.filter(ligand_id__in=ligand_ids, receptor_id__in=receptor_ids)
+                 .values_list('ligand_id', 'receptor_id')
+            )
+            is_ligand_physiological_dict = {
+                 s.id: (getattr(s, 'prefetch_ligands', None) and (s.prefetch_ligands[0].ligand_id, s.protein_conformation.protein_id) 
+                        in physiological_pairs)
+                 for s in structures
+             }
+            context['is_ligand_physiological_dict'] = is_ligand_physiological_dict    
 
 
 
