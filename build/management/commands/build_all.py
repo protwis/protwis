@@ -94,8 +94,9 @@ class Command(BaseCommand):
             ['build_text'],
         ]
         phase3 = [
-            ['build_complex_models', {'proc': options['proc'], 'parser' : 'boltztwocomplex', 'model_set_name' : 'boltz2_complex'}],
             ['build_complex_models', {'proc': options['proc'], 'parser' : 'alphafoldcomplex', 'model_set_name' : 'AlphaFold_multimer', 'cleaned_seq_csv' : os.sep.join([settings.DATA_DIR, 'structure_data', 'AlphaFold_multimer', 'cleaned_seqs.csv']) }],
+            ['build_complex_models', {'proc': options['proc'], 'parser' : 'alphafoldcomplex', 'model_set_name' : 'Arrestins_AF_models', "deposition_date": '2024-06-01'}],
+            ['build_complex_models', {'proc': options['proc'], 'parser' : 'boltztwocomplex', 'model_set_name' : 'boltz2_complex', "deposition_date": '2026-03-01'}],
             ['build_rfaa_models'],
             ### build_homology_models --alphafold -r {active pdbs} -p ### build refined structures for new G prot coupled structures
             ['build_homology_models_zip'], 

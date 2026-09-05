@@ -126,6 +126,20 @@ class BaseModel():
         else:
             log_or_raise(self.logger, f"PDB file {self.pdb_file_path} not found for model {self.model_name}.", FileNotFoundError, self.error_handling)
 
+    def pdb_has_header(self):
+        """
+        Check if the model's PDB file has a header.
+
+        Returns
+        -------
+        bool
+            True if the PDB file has a header, False otherwise.
+        """
+        if self.pdb_raw.startswith("HEADER"):
+            return True
+        else:
+            return False
+
     def remap_chain_ids(self, pdb_data, mapping_dict):
         """
         Remap chain IDs in the PDB data according to the provided mapping dictionary.
@@ -203,17 +217,17 @@ class BaseModel():
 
         Returns
         -------
-        ModelGProtienComplex
-            ModelGProtienComplex object with alpha/beta/gamma Protein objects populated where found.
+        ModelSignProtComplex
+            ModelSignProtComplex object with alpha/beta/gamma Protein objects populated where found.
         """
-        return_subunits = ModelGProtienComplex()
+        return_subunits = ModelSignProtComplex()
         signprot_re = re.compile(r'([^_]+_[^_]+)')
         subunit_uniprot = signprot_re.findall(self.signprot)
         if subunit_uniprot:
             db_subunits = Protein.objects.filter(entry_name__in=[subunit.lower() for subunit in subunit_uniprot])
             for su in db_subunits:
                 try:
-                    if su.family.parent.parent.name == "Alpha":
+                    if su.family.parent.parent.name == "Alpha" or su.family.parent.parent.name == "Arrestin":
                         return_subunits.alpha = su
                     elif su.family.parent.name == "Beta":
                         return_subunits.beta = su
@@ -232,27 +246,33 @@ class BaseModel():
         String
             The model date parsed from the deposition date, release date, or head field of the PDB header.
         """
-        if self.pdb_structure.header and 'deposition_date' in self.pdb_structure.header:
-            if self.pdb_structure.header['deposition_date'] != '1909-01-08':
-                date = self.pdb_structure.header['deposition_date']
-                conditional_log(self, f"Model date found in deposition date ({date}) field for model {self.model_name}.", logging.INFO, ParserVerbosity.EVERYTHING)
-                return date
+        if self.pdb_has_header():
+            if self.pdb_structure.header and 'deposition_date' in self.pdb_structure.header:
+                if self.pdb_structure.header['deposition_date'] != '1909-01-08':
+                    date = self.pdb_structure.header['deposition_date']
+                    conditional_log(self, f"Model date found in deposition date ({date}) field for model {self.model_name}.", logging.INFO, ParserVerbosity.EVERYTHING)
+                    return date
 
-        if self.pdb_structure.header and 'release_date' in self.pdb_structure.header:
-            if self.pdb_structure.header['release_date'] != '1909-01-08':
-                date = self.pdb_structure.header['release_date']
-                conditional_log(self, f"Model date found in release date ({date}) field for model {self.model_name}.", logging.INFO, ParserVerbosity.EVERYTHING)
-                return date
+            if self.pdb_structure.header and 'release_date' in self.pdb_structure.header:
+                if self.pdb_structure.header['release_date'] != '1909-01-08':
+                    date = self.pdb_structure.header['release_date']
+                    conditional_log(self, f"Model date found in release date ({date}) field for model {self.model_name}.", logging.INFO, ParserVerbosity.EVERYTHING)
+                    return date
 
-        if self.pdb_structure.header and 'head' in self.pdb_structure.header:
-            match = re.match(r'.+\s+(\d{4}-\d{2}-\d{2})', self.pdb_structure.header['head'])
-            if match:
-                date = match.group(1)
-                conditional_log(self, f"Model date found in head ({date}) field for model {self.model_name}.", logging.INFO, ParserVerbosity.EVERYTHING)
+            if self.pdb_structure.header and 'head' in self.pdb_structure.header:
+                match = re.match(r'.+\s+(\d{4}-\d{2}-\d{2})', self.pdb_structure.header['head'])
+                if match:
+                    date = match.group(1)
+                    conditional_log(self, f"Model date found in head ({date}) field for model {self.model_name}.", logging.INFO, ParserVerbosity.EVERYTHING)
+                    return date
+        else:
+            if self.parser_config.pdb_header_override and 'deposition_date' in self.parser_config.pdb_header_override:
+                date = self.parser_config.pdb_header_override['deposition_date']
+                conditional_log(self, f"Using model date found in pdb_header_override deposition_date ({date}) for model {self.model_name}.", logging.INFO, ParserVerbosity.EVERYTHING)
                 return date
 
         log_or_raise(self.logger, f"Could not parse model date from PDB header for model {self.model_name}." +
-                     "Amend the PDB header or provide a pdb_header_override in the parser configuration.", ValueError, self.error_handling)
+                     "Amend the PDB header or provide 'deposition_date' in the pdb_header_override in the parser configuration.", ValueError, self.error_handling)
 
     def get_or_initialise_structure(self, receptor_protein, protein_state, protein_conformation):
         """
@@ -725,8 +745,8 @@ class BaseModelParserConfig():
         self.error_handling = error_handling
         self.verbosity = verbosity
 
-class ModelGProtienComplex():
-    """Holds the alpha, beta, and gamma subunit Protein objects of a signalling protein complex."""
+class ModelSignProtComplex():
+    """Holds the alpha, beta, and gamma subunit Protein objects of a signalling protein complex. Only alpha is occupied for Arrestins"""
 
     def __init__(self):
         """Initialize the alpha, beta, and gamma subunit attributes to None."""

@@ -95,9 +95,11 @@ class Command(BaseBuild):
             choices=['silent', 'basic', 'everything'],
             default="basic",
             help='Set the verbosity level for the parser'),
+        parser.add_argument('-d', '--deposition_date',
+            help='Set the deposition date for the models (format: YYYY-MM-DD). If not provided, the parser will attempt to extract the date from the PDB header.'),
         parser.add_argument('-e', '--error_handling',
             choices=["log", "raise", "log_then_raise", "log_with_trace", "log_with_trace_then_raise"],
-            default="log_then_raise",
+            default="log_with_trace",
             help='Set the error handling strategy for the parser. "raise" will raise exceptions, "log" will log errors but suppress them, "log_then_raise" will log and then raise exceptions, "log_with_trace" will log errors with stack trace but suppress them, and "log_with_trace_then_raise" will log errors with stack trace and then raise exceptions.')
 
 
@@ -109,6 +111,13 @@ class Command(BaseBuild):
         # Set verbosity level from integer enumeration based on command-line argument
         verbosity_level = ParserVerbosity.from_string_map.get(options['parser_verbosity'], ParserVerbosity.BASIC)
 
+        pdb_header_override = None
+        if options['deposition_date']:
+            date_provided = options['deposition_date']            
+            if not re.match(r'^\d{4}-\d{2}-\d{2}$', date_provided): # Validate the date format (YYYY-MM-DD)
+                raise ValueError(f"Invalid date format for deposition_date: {date_provided}. Expected format: YYYY-MM-DD.")
+            pdb_header_override = {'deposition_date': date_provided, 'release_date': date_provided}
+
         if options['parser'] == "alphafoldcomplex":
             if options['cleaned_seq_csv'] and not os.path.exists(options['cleaned_seq_csv']):
                 raise FileNotFoundError(f"Cleaned sequence CSV file not found at {options['cleaned_seq_csv']}.")
@@ -117,6 +126,7 @@ class Command(BaseBuild):
                                                         cleaned_seq_csv=options['cleaned_seq_csv'],
                                                         model_receptor_state="Active",
                                                         pdb_preferred_chain="A",
+                                                        pdb_header_override=pdb_header_override,
                                                         ligand_multimatch_handling=LigandMultiMatchHandling.KEEP_FIRST,
                                                         error_handling=options['error_handling'],
                                                         verbosity=verbosity_level)
@@ -126,7 +136,7 @@ class Command(BaseBuild):
         elif options['parser'] == "boltztwocomplex":
             config = BoltzTwoComplexModelParserConfig(model_set_name=options['model_set_name'],
                                                         model_receptor_state="Active",
-                                                        pdb_header_override={'deposition_date': '2026-03-01', 'release_date': '2026-03-01'},
+                                                        pdb_header_override=pdb_header_override,
                                                         default_model_version= {'default_version_number': '1', 'override': {'drd1_human-"zuclopenthixol"[5311507]': '2'}},
                                                         pdb_preferred_chain="A",
                                                         ligand_multimatch_handling=LigandMultiMatchHandling.KEEP_FIRST,

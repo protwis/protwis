@@ -156,7 +156,7 @@ class AlphaFoldTwoComplexModel(BaseModel):
             log_or_raise(self.logger, f"Invalid model name format: {self.model_name}. Expected format: receptor-ligand or receptor-signprot or receptor-ligand-signprot.", ValueError, self.error_handling)
 
         if len(parts) == 2:
-            if re.match(r'^gna[1iloqstz][1-5]?_', parts[1]):
+            if re.match(r'^(arr|gna)[1iloqstzbc][1-5]?_', parts[1]):
                 return 'receptor-signprot'
             else:
                 return 'receptor-ligand'
