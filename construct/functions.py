@@ -1105,10 +1105,6 @@ def fetch_pdb_info(pdbname, protein ,new_xtal=False, ignore_gasper_annotation=Fa
                 # print('\t',pdbname.lower(),'Protein in PDB, not part of receptor chain',seg_uniprot_ids,'chain',chain)
                 logger.warning('{} Protein in structure, but not part of receptor chain {} {}'.format(pdbname.lower(),seg_uniprot_ids,chain))
 
-        # Custom fix for 6PT2
-        if pdbname in ['6PT2','6PT3']:
-            del d['auxiliary']['aux1']
-
         # print(sorted(pdb_resid_total))
         # print(sorted(pdb_resid_total_accounted))
         non_accounted = sorted(list(set(pdb_resid_total) - set(pdb_resid_total_accounted)))
@@ -1162,11 +1158,6 @@ def fetch_pdb_info(pdbname, protein ,new_xtal=False, ignore_gasper_annotation=Fa
             logger.warning('{} over 90% of WT ({}/{}) flagged as deleted, likely a parsing error - clearing deletions/removed'.format(pdbname.lower(), deletions_flat, len(d['wt_seq'])))
             d['deletions'] = []
             d['removed'] = []
-
-        # Custom fix for 6PT2
-        if pdbname in ['6PT2','6PT3']:
-            d['construct_sequences']['Soluble cytochrome b562'] = d['construct_sequences']['N/A']
-            del d['construct_sequences']['N/A']
 
         for i,v in d['construct_sequences'].items():
             d['construct_sequences'][i]['ranges'] = []
