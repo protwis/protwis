@@ -1204,7 +1204,9 @@ class Command(BaseBuild):
                                 #print('inserted',residue.sequence_number) #sanity check
                                 # residue.save()
                                 residues_bulk.append(residue)
-                                rotamer_data, created = PdbData.objects.get_or_create(pdb=temp)
+                                rotamer_data = PdbData.objects.filter(pdb=temp).first()
+                                if rotamer_data is None:
+                                    rotamer_data = PdbData.objects.create(pdb=temp)
                                 #rotamer_data_bulk.append(PdbData(pdb=temp))
                                 missing_atoms = False
                                 if rotamer_data.pdb.startswith('COMPND'):
@@ -1441,7 +1443,10 @@ class Command(BaseBuild):
             if structure.pdb_data is None:
                 f = module_dir + "/pdbs/" + pdb_id + ".pdb"
                 if os.path.isfile(f):
-                    pdbdata, created = PdbData.objects.get_or_create(pdb=open(f, 'r').read())  # does this close the file?
+                    pdbdata_text = open(f, 'r').read()  # does this close the file?
+                    pdbdata = PdbData.objects.filter(pdb=pdbdata_text).first()
+                    if pdbdata is None:
+                        pdbdata = PdbData.objects.create(pdb=pdbdata_text)
                 else:
                     print('quitting due to no pdb in filesystem')
                     quit()
@@ -1461,7 +1466,10 @@ class Command(BaseBuild):
 
             f = module_dir + "/results/" + pdb_id + "/interaction" + "/" + pdb_id + "_" + lig_key + ".pdb"
             if os.path.isfile(f):
-                pdbdata, created = PdbData.objects.get_or_create(pdb=open(f, 'r').read())  # does this close the file?
+                pdbdata_text = open(f, 'r').read()  # does this close the file?
+                pdbdata = PdbData.objects.filter(pdb=pdbdata_text).first()
+                if pdbdata is None:
+                    pdbdata = PdbData.objects.create(pdb=pdbdata_text)
                 print("Found file" + f)
             else:
                 print('quitting due to no pdb for fragment in filesystem', f)
@@ -1653,7 +1661,9 @@ class Command(BaseBuild):
                 with open(pdb_path, 'r') as pdb_file:
                     pdbdata_raw = pdb_file.read()
 
-            pdbdata, created = PdbData.objects.get_or_create(pdb=pdbdata_raw)
+            pdbdata = PdbData.objects.filter(pdb=pdbdata_raw).first()
+            if pdbdata is None:
+                pdbdata = PdbData.objects.create(pdb=pdbdata_raw)
             s.pdb_data = pdbdata
 
             self.parsed_pdb = PDBParser(PERMISSIVE=True, QUIET=True).get_structure('ref', pdb_path)[0]
@@ -1912,7 +1922,7 @@ class Command(BaseBuild):
                                 continue
                             ids['sequence'] = seq
 
-                        l = get_or_create_ligand(ligand_title, ids, ligand['type'],
+                        l = get_or_create_ligand(ligand_title, ids, ligand['type'], source='PDB',
                                                   seq_and_name_lookup=(ligand['type'] in ['peptide', 'protein']))
                         # Create LigandPeptideStructure object to store chain ID for peptide ligands - supposed to b TEMP
                         if ligand['type'] in ['peptide','protein']:
