@@ -39,6 +39,7 @@ external_sources = ["pubchem", "gtoplig", "chembl_ligand", "chembl_peptide", "dr
 _LIGAND_TYPE_CACHE: dict = {}
 _WEB_RESOURCE_CACHE: dict = {}
 _PDBE_MAX_LEN = Ligand._meta.get_field("pdbe").max_length
+APO_NO_LIGAND_NAME = "Apo (no ligand)"
 
 # Set once per worker process (see build_structures.main_func) to the shared
 # multiprocessing.Lock used to serialize the DB-touching part of ligand
@@ -438,6 +439,18 @@ def _resolve_ligand_entries(entries, source=None, lig_type="small-molecule", ext
                         .select_related("ligand", "ligand__parent")):
                 existing_by_source_id[(src_slug, lid.index, lid.ligand.radioactive)] = lid.ligand
 
+    # ── Step D.4: direct name match for the "Apo (no ligand)" sentinel ───────
+    # These entries carry no identifying data at all (no pdbe/sequence/source
+    # ids), so every occurrence across every structure would otherwise create
+    # its own duplicate child under the shared ambiguous parent. Exact (not
+    # iexact) match, so it can never be confused with a real ligand.
+    existing_apo_child = None
+    if any(e.get("name") == APO_NO_LIGAND_NAME for e in entries):
+        existing_apo_child = (Ligand.objects
+                               .filter(name=APO_NO_LIGAND_NAME, parent__isnull=False)
+                               .order_by("gpcrdb_id")
+                               .first())
+
     # ── Step D.5: batch pdbe lookup ──────────────────────────────────────────
     # Checked ahead of every other identifier below (Step E) - a PDB
     # chemical-component code is a strong, unambiguous match on its own.
@@ -500,11 +513,18 @@ def _resolve_ligand_entries(entries, source=None, lig_type="small-molecule", ext
         # distinguish different radioactive variants — rely on source-ID only.
         _skip_structural = (entry_radioactive_label == "Yes")
 
-        # PDBe match? — checked ahead of every other identifier below
         found_child = None
-        raw_pdbe = entry.get("raw_pdbe")
-        if raw_pdbe:
-            found_child = existing_by_pdbe.get(raw_pdbe)
+        if entry.get("name") == APO_NO_LIGAND_NAME:
+            # No identifying data exists for this sentinel (no pdbe/sequence/
+            # source ids), so every other mechanism below would be a no-op
+            # anyway; match/reuse the single existing child directly by exact
+            # name instead of creating a duplicate for every apo structure.
+            found_child = existing_apo_child
+        else:
+            # PDBe match? — checked ahead of every other identifier below
+            raw_pdbe = entry.get("raw_pdbe")
+            if raw_pdbe:
+                found_child = existing_by_pdbe.get(raw_pdbe)
 
         # Sequence / iexact-name match? (opt-in, for entries with no pdbe id)
         if found_child is None and entry.get("seq_and_name_lookup"):
