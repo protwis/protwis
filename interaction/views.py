@@ -1909,13 +1909,17 @@ def extract_fragment_rotamer(f, residue, structure, ligand):
                 rotamer_pdb += line
         f_in.close()
 
-        rotamer_data, created = PdbData.objects.get_or_create(pdb=rotamer_pdb)
+        rotamer_data = PdbData.objects.filter(pdb=rotamer_pdb).first()
+        if rotamer_data is None:
+            rotamer_data = PdbData.objects.create(pdb=rotamer_pdb)
         try:
             rotamer = Rotamer.objects.get(residue=residue, structure=structure)
         except Rotamer.DoesNotExist:
             rotamer, _ = Rotamer.objects.get_or_create(residue=residue, structure=structure, pdbdata=rotamer_data)
 
-        fragment_data, _ = PdbData.objects.get_or_create(pdb=fragment_pdb)
+        fragment_data = PdbData.objects.filter(pdb=fragment_pdb).first()
+        if fragment_data is None:
+            fragment_data = PdbData.objects.create(pdb=fragment_pdb)
         fragment, created = Fragment.objects.get_or_create(ligand=ligand, structure=structure, pdbdata=fragment_data, residue=residue)
     else:
         #quit("Could not find " + residue)
