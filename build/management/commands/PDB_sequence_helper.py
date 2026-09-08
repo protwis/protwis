@@ -316,6 +316,47 @@ def find_chain_breaks(distances, threshold=4.5, resnums=None):
     return sorted(breaks)
 
 
+# Author residue number after which a real construct-level deletion exists but
+# was renumbered continuously by the depositor (no numbering jump) across a
+# normal ~3.8 A CA-CA bond -- the one case `find_chain_breaks` cannot detect on
+# its own (see its docstring). Confirmed by aligning each PDB code's sequence
+# against its WT reference: the initial alignment already places the flanking
+# residues correctly on either side of a real gap, but `consolidate_structural_islands`
+# then merges them into one "island" for lack of a detected break, destroying
+# that correct alignment. Forcing the break here lets it recognize the two
+# sides as separate, already-correctly-aligned islands and leave them alone.
+MANUAL_CHAIN_BREAK_AFTER_RESNUM = {
+    "9JQZ": 214,
+    "9JQY": 214,
+}
+
+
+def manual_chain_break_indexes(resnums, pdb_code):
+    """
+    Extra `find_chain_breaks`-style break indexes for a real construct
+    deletion that a depositor renumbered straight through, based on
+    `MANUAL_CHAIN_BREAK_AFTER_RESNUM`.
+
+    Parameters
+    ----------
+    resnums : list of int
+        Author (PDB) residue sequence numbers, parallel to `pdb_seq`.
+    pdb_code : str
+        The PDB code, used to look up a manual break point.
+
+    Returns
+    -------
+    list of int
+        Indexes into `resnums`/`pdb_seq` where a break should be forced
+        (index i means the break falls between residue i-1 and i), suitable
+        for merging into `find_chain_breaks`'s output.
+    """
+    after_resnum = MANUAL_CHAIN_BREAK_AFTER_RESNUM.get(pdb_code)
+    if after_resnum is None:
+        return []
+    return [i for i in range(1, len(resnums)) if resnums[i - 1] == after_resnum]
+
+
 def pre_align_modifications(pdb_code, seq):
     # this function is used to modify the extracted sequence before alignment
     # only for old pairwise2 alignment, not for pairwise aligner
@@ -393,7 +434,7 @@ def decide_penalty(pdb_code):
         "9UAZ"
     ]:
         return 3, -4, -3, -1
-    elif pdb_code in ["5VEW", "5VEX"]:
+    elif pdb_code in ["5VEW","5VEX","6LN2","6KJV","6KK7","6KK1","8HN8","8HOC"]:
         # 5VEW's engineered disulfide (I317C/G361C, see structures.tsv) puts two
         # point mutations one residue apart. With cheap gaps (open<=-5), the
         # aligner "wobbles" -- opens a 1-residue gap on each side right next to
@@ -452,7 +493,7 @@ def run_pairwisealigner(pdb_code, wt_seq, pdb_seq):
             if ch != "-":
                 pdb_map[pdb_idx] = aln_idx
                 pdb_idx += 1
-        return ref_seq, temp_seq, pdb_map
+        return ref_seq, temp_seq, pdb_map, True
 
     a1, a2, a3, a4 = decide_penalty(pdb_code)
     aligner = PairwiseAligner()
@@ -468,7 +509,7 @@ def run_pairwisealigner(pdb_code, wt_seq, pdb_seq):
         wt_seq, pdb_seq, best
     )
 
-    return ref_seq, temp_seq, pdb_map
+    return ref_seq, temp_seq, pdb_map, False
 
 
 def format_local_alignment_pairwise2_blocks(

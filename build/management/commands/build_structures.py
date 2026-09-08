@@ -780,42 +780,46 @@ class Command(BaseBuild):
         )
 
         # Get initial alignment and residue mapping
-        initial_ref_seq, initial_temp_seq, pdb_map = run_pairwisealigner(
+        initial_ref_seq, initial_temp_seq, pdb_map, custom_mapping = run_pairwisealigner(
             pdb_code, wt_seq, pdb_seq
         )
 
-        # Find outliers which might indicate misalignments
-        outlier_indexes = distances_stats(distances, debug=self.debug)
+        if not custom_mapping:
+            # Find outliers which might indicate misalignments
+            outlier_indexes = distances_stats(distances, debug=self.debug)
 
-        # Attempt to automatically fix misalignments based on outliers and gaps
-        # The function returns the final, corrected alignment string for the PDB sequence.
-        fixed_temp_seq = detect_alignment_mistakes_and_reposition(
-            pdb_code,
-            wt_seq,
-            pdb_seq,
-            initial_ref_seq,
-            initial_temp_seq,
-            pdb_map,
-            distances,
-            outlier_indexes,
-            aanumber=3,
-            debug=self.debug,
-        )
+            # Attempt to automatically fix misalignments based on outliers and gaps
+            # The function returns the final, corrected alignment string for the PDB sequence.
+            fixed_temp_seq = detect_alignment_mistakes_and_reposition(
+                pdb_code,
+                wt_seq,
+                pdb_seq,
+                initial_ref_seq,
+                initial_temp_seq,
+                pdb_map,
+                distances,
+                outlier_indexes,
+                aanumber=3,
+                debug=self.debug,
+            )
 
-        # Collapse any physically-bonded PDB residues (no real chain break between
-        # them) that ended up scattered across a gap by coincidental letter matches.
-        # Uses an absolute CA-CA distance threshold rather than distances_stats'
-        # whole-structure relative outlier test, which can miss a real break if the
-        # rest of the structure's distances already have enough natural spread.
-        chain_breaks = find_chain_breaks(distances, resnums=resnums)
-        fixed_temp_seq = consolidate_structural_islands(
-            pdb_seq, fixed_temp_seq, chain_breaks
-        )
+            # Collapse any physically-bonded PDB residues (no real chain break between
+            # them) that ended up scattered across a gap by coincidental letter matches.
+            # Uses an absolute CA-CA distance threshold rather than distances_stats'
+            # whole-structure relative outlier test, which can miss a real break if the
+            # rest of the structure's distances already have enough natural spread.
+            chain_breaks = sorted(set(find_chain_breaks(distances, resnums=resnums))
+                                | set(manual_chain_break_indexes(resnums, pdb_code)))
+            fixed_temp_seq = consolidate_structural_islands(
+                pdb_seq, fixed_temp_seq, chain_breaks
+            )
 
-        # Assign the final, corrected alignment strings to be used by the rest of the function.
-        ref_seq = initial_ref_seq
-        temp_seq = fixed_temp_seq
-
+            # Assign the final, corrected alignment strings to be used by the rest of the function.
+            ref_seq = initial_ref_seq
+            temp_seq = fixed_temp_seq
+        else:
+            ref_seq = initial_ref_seq
+            temp_seq = initial_temp_seq
 
         # # ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
         # # New code block for automatic alignment fixes using space information from the pdb, ends here

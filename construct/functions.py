@@ -1862,10 +1862,12 @@ def construct_structure_annotation_override(pdb_code, removed, deletions):
         if 243 in deletions:
             deletions.remove(243)
         deletions.append(271)
-    elif pdb_code=='6W2Y':
+    elif pdb_code in ['6W2Y']:
         for i in range(845,862):
             if i in deletions:
                 deletions.remove(i)
+    elif pdb_code=='6W2X':
+        deletions = []
     elif pdb_code in ['4Z34','4Z35','4Z36']:
         if 327 in removed:
             removed.remove(327)
@@ -1988,14 +1990,15 @@ def construct_structure_annotation_override(pdb_code, removed, deletions):
         removed = list(range(231,340))
     elif pdb_code=='8HN1':
         removed = list(range(214,229))
-    elif pdb_code in ['8J46','8W77']:
+    elif pdb_code in ['8J46']:
         removed = list(range(996,1114))
-        deletions = list(range(226,236))
+        deletions = []
     ### make deletions and removed empty
     elif pdb_code in ['7SF7','7SF8','7EB2','7X1T','7X1U','7SRS','7UL2','7UL3','7UL5','7XBX','7XWO','8G2Y','7XJJ','7YM8','8IY5','8IRU',
                       '8JMT','8W8Q','8W8R','8W8S','8I9L','8ITL','8I9A','8I95','8ITM','8HTI','8YZK','8ZSV','8IKL','8IYH','8J24','8JHN',
                       '8T3S','8ZR5','8ZQE','8K4O','8GTI','8TRC','8TRD','8WU1','8J9N','8UXY','8UXV','8K4S','8Y69','8KIG','8ZD1','8WSS',
-                      '8YH5','8YH6','9LE0','9P1S','9WEY','9XQB','9P1T']:
+                      '8YH5','8YH6','9LE0','9LE1','9LE2','9P1S','9WEY','9XQB','9P1T','8UY0','7V9L','8YFS','9LDX','8UYQ','9LDW','9LDV',
+                      '9LDZ','8W77','9UST','9WPM']:
         deletions, removed = [], []
     elif pdb_code in ['7ZLY','6YVR']:
         deletions = []
@@ -2073,9 +2076,8 @@ def construct_structure_annotation_override(pdb_code, removed, deletions):
         removed = list(range(205,235))
     elif pdb_code=='9UAZ':
         removed = list(range(214,369))
-
-    
-
-
+    elif pdb_code in ['9EAI','9EAJ']:
+        removed = list(range(227,341))
+        deletions = []
 
     return removed, deletions
