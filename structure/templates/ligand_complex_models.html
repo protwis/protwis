@@ -478,7 +478,7 @@
                     <td>
                         {% if ligand_obj.ligand_type.slug == "peptide" %}
                         <a class="struct"
-                           href="/ligand/{{ ligand_obj.id }}/info"
+                           href="/ligand/{{ ligand_obj.id }}/group"
                            data-ligand-type="peptide"
                            data-sequence="{{ ligand_obj.sequence|default_if_none:''|escapejs }}">
                             {% if ligand_obj.name|length >= 6 %}
@@ -489,7 +489,7 @@
                         </a>
                         {% else %} {# Assume small molecule or other, use SMILES/picture #}
                         <a class="struct"
-                           href="/ligand/{{ ligand_obj.id }}/info"
+                           href="/ligand/{{ ligand_obj.id }}/group"
                            data-ligand-type="{{ ligand_obj.ligand_type.slug|default_if_none:'other'|slugify }}"
                            data-smiles="{{ ligand_obj.smiles_for_image|default_if_none:''|escapejs }}"
                            rel="{{ ligand_obj.picture|default_if_none:'Not_available' }}">

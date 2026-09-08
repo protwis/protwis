@@ -276,10 +276,11 @@
 
                         <!-- ligand block -->
                         <td style="text-align:left" class="expand">
+
                             {% with ligand_name_val=value.7 ligand_id_val=value.21 molecule_type_val=value.11 sequence_s_val=value.28 smiles_s_val=value.26 picture_s_val=value.27 %}
                                 {% if molecule_type_val and molecule_type_val|lower == 'peptide' %}
                                     <a class="struct"
-                                       href='/ligand/{{ ligand_id_val }}/info'  {# Use the Ligand ID from value.21 #}
+                                       href='/ligand/{{ ligand_id_val }}/group'  {# Use the Ligand ID from value.21 #}
                                        target='_blank'
                                        data-ligand-type="peptide"
                                        data-sequence="{{ sequence_s_val|default_if_none:''|escapejs }}">
@@ -287,7 +288,7 @@
                                     </a>
                                 {% else %}
                                     <a class="struct"
-                                       href='/ligand/{{ ligand_id_val }}/info'  {# Use the Ligand ID from value.21 #}
+                                       href='/ligand/{{ ligand_id_val }}/group'  {# Use the Ligand ID from value.21 #}
                                        target='_blank'
                                        data-smiles="{{ smiles_s_val|default_if_none:''|escapejs }}"
                                        rel="{{ picture_s_val|default_if_none:'Not_available' }}">

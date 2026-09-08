@@ -54,6 +54,8 @@ class StructureLigandInteraction(models.Model):
     pdb_reference = models.CharField(max_length=5, null=True)
     pdb_file = models.ForeignKey('structure.PdbData', null=True, on_delete=models.CASCADE)
     annotated = models.BooleanField(default=False)
+    site = models.ForeignKey('protein.Site', on_delete=models.CASCADE, null=True)
+    chain_res = models.CharField(max_length=100, null=True)
 
     def __str__(self):
         return "{} {}".format(self.structure.pdb_code, self.ligand.name)

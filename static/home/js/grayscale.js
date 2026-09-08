@@ -185,24 +185,13 @@ function rgbToHex(r, g, b) {
  *  @scale: values relation to set, preferably normalized
  */
 function getColor(value, scale, reverse = false) {
-  var color;
-  var offset;
-  if (reverse) {
-    scale = 1 - scale;
-  }
-  color = {
-    r: 255,
-    g: 255,
-    b: 255
-  };
+  if (reverse) scale = 1 - scale;
 
-  color = {
-    r: Math.round(255 - (255 - 153) * scale),
-    g: Math.round(255 - (255 - 153) * scale),
-    b: Math.round(255 - (255 - 153) * scale)
-  }; //gray
+  const light = 240;
+  const dark = 80;
+  const gray = Math.round(light - (light - dark) * scale);
 
-  return color;
+  return { r: gray, g: gray, b: gray };
 }
 
 /*
@@ -275,16 +264,22 @@ function gray_scale_table(table, colorSetIds = []) {
       cols[parseInt(j,10)] = cols[j] || [];
       var colored = false;
       if (cell.innerText !== "-" && cell.innerText !== "Full Bias" && cell.classList.contains("color-column")) {
-        cols[j].push(cell.innerText);
+        const num = parseFloat(cell.textContent.replace(/,/g, '').trim());
+        if (!isNaN(num)) {
+          cols[j].push(num);
+        }
         colored = true;
       } else {
         for (let k = 0; k < colorSetIds.length; k++) {
           if (cell.classList.contains(colorSetIds[k])) {
             if (cell.innerText !== "-" && cell.innerText !== "Full Bias") {
-              sets[String(colorSetIds[k])].push(cell.innerText);
+              const num = parseFloat(cell.textContent.replace(/,/g, '').trim());
+              if (!isNaN(num)) {
+                sets[String(colorSetIds[k])].push(num);
+              }
             }
-            if (i === 0) {
-              colIdColorSet[parseInt(j,10)] = colorSetIds[k];
+            if (!(j in colIdColorSet)) {
+              colIdColorSet[j] = colorSetIds[k];
             }
             colored = true;
             break;
@@ -347,13 +342,13 @@ function gray_scale_table(table, colorSetIds = []) {
       if (cell.classList.contains("color-column")) {
         c_maxmin = maxmin[j];
         calculate_color = true;
-      } else if (cell.classList.contains(colIdColorSet[j])) {
+      } else if (colIdColorSet[j] && cell.classList.contains(colIdColorSet[j])) {
         c_maxmin = setsmaxmin[colIdColorSet[j]];
         calculate_color = true;
       }
       // Assign color to cell
       if (calculate_color) {
-        value = parseFloat(cell.innerText);
+        value = parseFloat(cell.innerText.replace(/,/g, '').trim());
         if (cell.classList.contains("color-reverse")) {
           reverse = true;
         }
@@ -368,7 +363,9 @@ function gray_scale_table(table, colorSetIds = []) {
 
         if (!(isNaN(value) || isNaN(c_maxmin[0]) || isNaN(c_maxmin[1]))) {
           // Normalize data to get in-set color extremes
-          scale = (value - c_maxmin[1]) / (c_maxmin[0] - c_maxmin[1]);
+          var range = c_maxmin[0] - c_maxmin[1];
+          scale = range === 0 ? .5 : (value - c_maxmin[1]) / range;
+          scale = Math.max(0, Math.min(1, scale));
           // Calculate color
           if (Array.isArray(gradient)) {
             if (gradient.length === 2){
@@ -380,8 +377,9 @@ function gray_scale_table(table, colorSetIds = []) {
             color = getColor(value, scale, reverse);
           }
           hex = rgbToHex(color.r, color.g, color.b);
-          cell.setAttribute("bgcolor", hex);
           cell.style.backgroundColor = hex;
+          const brightness = (color.r * 299 + color.g * 587 + color.b * 114) / 1000;
+          cell.style.color = brightness < 140 ? "#ffffff" : "#000000";
         }
         // Non-numeric cells get colored white
         else {
@@ -391,8 +389,9 @@ function gray_scale_table(table, colorSetIds = []) {
             b: 255
           };
           hex = rgbToHex(color.r, color.g, color.b);
-          cell.setAttribute("bgcolor", hex);
           cell.style.backgroundColor = hex;
+          const brightness = (color.r * 299 + color.g * 587 + color.b * 114) / 1000;
+          cell.style.color = brightness < 140 ? "#ffffff" : "#000000";
         }
       }
     }

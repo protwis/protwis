@@ -3,7 +3,6 @@ from django.conf import settings
 
 from protein.models import Protein
 from residue.models import Residue
-from structure.models import Structure
 from structure.functions import ParseStructureCSV, X50Finder
 from tools.management.commands.build_structure_angles import NonHetSelect
 from contactnetwork.interaction import InteractingPair
@@ -21,8 +20,11 @@ from collections import OrderedDict
 import pprint
 from datetime import datetime
 from urllib.request import urlopen
+from urllib.error import HTTPError
 from copy import deepcopy
 import shutil
+import json
+import gemmi
 
 
 starttime = datetime.now()
@@ -41,6 +43,8 @@ class Command(BaseCommand):
     anomalies_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'all_anomalies.yaml'])
     with open(anomalies_file, 'r') as f2:
         anomalies = yaml.load(f2, Loader=yaml.FullLoader)
+    with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'custom_mappings.json'])) as cm:
+        custom_mappings = json.load(cm)
     pdb_data_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'pdbs'])
 
     sequence_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'sequences.yaml'])
@@ -71,6 +75,11 @@ class Command(BaseCommand):
             dest='structure',
             help='Structure to annotate',
             nargs='+')
+        parser.add_argument('-f', '--force',
+            action='store_true',
+            dest='force',
+            default=False,
+            help='Force re-annotation of structures listed in -s even if already annotated')
         parser.add_argument('--alphafold',
             action='store_true',
             dest='alphafold',
@@ -80,6 +89,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         self.debug = options['debug']
         self.save_annotation = options['no_save']
+        self.force = options['force']
 
         with open(self.nonxtal_seg_end_file, 'r') as f:
             self.nonxtal_seg_ends = yaml.load(f, Loader=yaml.FullLoader)
@@ -99,12 +109,12 @@ class Command(BaseCommand):
 
                     for m in models:
                         c+=1
-                        print(m,c)
+                        print(m,c, flush=True)
                         dssp = None
                         res_dict = OrderedDict()
                         accession = m.split('.')[0]
                         up = deepcopy(parse_uniprot_file(accession, logger=self.logger, local_uniprot_dir=self.local_uniprot_dir))
-
+                        print(up)
                         ### Running x50 finder
                         if up['entry_name'] not in self.nonxtal_seg_ends:
                             x = X50Finder(os.sep.join([path_to_models, m]), self.debug)
@@ -333,16 +343,20 @@ class Command(BaseCommand):
 
             segends = OrderedDict()
             # mismatches = {}
-            new_unique_receptor_structures = {}
             missing_ligand_info = []
 
             errors = {}
 
-            for s, data in self.parsed_structures.structures.items():
+            if self.structures_to_annotate:
+                structures_to_process = self.structures_to_annotate
+            else:
+                structures_to_process = [s for s in self.parsed_structures.structures if s not in self.xtal_seg_ends]
+
+            total = len(structures_to_process)
+            for i, s in enumerate(structures_to_process, 1):
                 try:
-                    ### New structures
-                    if len(self.structures_to_annotate)>0 and s not in self.structures_to_annotate:
-                        continue
+                    data = self.parsed_structures.structures[s]
+                    print('[{}/{}] {}'.format(i, total, s), flush=True)
                     ### Warnings for missing data
                     if 'ligand' not in self.parsed_structures.structures[s]:
                         print('WARNING: {} missing ligand annotation'.format(s))
@@ -353,8 +367,7 @@ class Command(BaseCommand):
                                 print('WARNING: {} {} peptide ligand missing chain ID'.format(s, l['title']))
                             if l['role']=='':
                                 print('WARNING: {} {} ligand missing modality'.format(s, l['title']))
-                    if s not in self.xtal_seg_ends or s in self.structures_to_annotate:
-                        print(s)
+                    if s not in self.xtal_seg_ends or (self.force and s in self.structures_to_annotate):
                         segends[s] = deepcopy(self.default_segends)
 
                         self.download_pdb(s)
@@ -385,16 +398,7 @@ class Command(BaseCommand):
                                             for i in range(del_range['start'],del_range['end']+1):
                                                 deletions.append(i)
                                         #print("Annotation missing WT residues",d['deletions'])
-                                    ## Remove segments that arent receptor (tags, fusion etc)
-                                    if 'xml_segments' in d:
-                                        for seg in d['xml_segments']:
-                                            if seg[1]:
-                                                # Odd rules to fit everything..
-                                                # print(seg[1][0], entry_name)
-                                                if seg[1][0]!=data['protein'] and seg[-1]!=True and seg[1][0]!='Uncharacterized protein' and 'receptor' not in seg[1][0]:
-                                                    if seg[0].split("_")[1]==data['preferred_chain']:
-                                                        for i in seg[6]:
-                                                            removed.append(i)
+                                    removed = d.get('removed', [])
 
                                     removed, deletions = construct_structure_annotation_override(s, removed, deletions)
 
@@ -440,19 +444,25 @@ class Command(BaseCommand):
                             seq = seq[:-5]
                         elif s in ['8JD1','8JD2','8JD3','8JD4','8JD5','8IZB','8WPG','8WPU','8WRB']:
                             seq = seq[:-1]
+                        elif s=='9IJR':
+                            seq = seq[:-7]
 
                         if self.debug:
                             print(seq)
 
                         dssp = self.dssp(s, structure[0][data['preferred_chain']], structure)
 
-                        if fusion_present or s in ['7V68','7V69','7V6A','7W6P','7W7E','8E9W','8E9X','8E9Y','8E9Z','8EA0','7T8X','7T90','7T94','7T96',
-                                                   '7TRK','7TRP','7TRQ','7TRS','8IRU','8FX5','8W8R','8W8S','7V9L','8TZQ','8U02','8YN2']:
-                            pw2 = Bio.pairwise2.align.localms(parent_seq, seq, 3, -3, -3.5, -1)
+                        if s in self.custom_mappings:
+                            ref_seq, temp_seq = self.custom_mappings[s]
                         else:
-                            pw2 = Bio.pairwise2.align.localms(parent_seq, seq, 3, -4, -5, -2)
+                            if fusion_present or s in ['7V68','7V69','7V6A','7W6P','7W7E','8E9W','8E9X','8E9Y','8E9Z','8EA0','7T8X','7T90','7T94','7T96',
+                                                    '7TRK','7TRP','7TRQ','7TRS','8IRU','8FX5','8W8R','8W8S','7V9L','8TZQ','8U02','8YN2','9EK0','9N09','9N29',
+                                                    '9LRB','9LRD','9EJZ','9PLN','9PLO','9PQD']:
+                                pw2 = Bio.pairwise2.align.localms(parent_seq, seq, 3, -3, -3.5, -1)
+                            else:
+                                pw2 = Bio.pairwise2.align.localms(parent_seq, seq, 3, -4, -5, -2)
 
-                        ref_seq, temp_seq = str(pw2[0][0]), str(pw2[0][1])
+                            ref_seq, temp_seq = str(pw2[0][0]), str(pw2[0][1])
                         ref_i, temp_i = 0, 0
                         res_dict = OrderedDict()
                         wt_pdb_lookup = {}
@@ -508,6 +518,11 @@ class Command(BaseCommand):
                                 parent_segends[prefix+'x'] = x50
                                 parent_segends[prefix+'e'] = e
 
+                            if '8b' not in parent_segends:
+                                parent_segends['8b'] = '-'
+                                parent_segends['8x'] = '-'
+                                parent_segends['8e'] = '-'
+
                         if self.debug:
                             for i,j in res_dict.items():
                                 print(i,j)
@@ -515,6 +530,7 @@ class Command(BaseCommand):
 
                         ### Helices
                         for i in range(1,9):
+
                             if i==8 and parent_segends[str(i)+'x']=='-':
                                 print('WARNING: no H8 annotated for wt {}'.format(parent_protein))
                                 continue
@@ -613,6 +629,33 @@ class Command(BaseCommand):
                             elif s=='8X9T' and i==6:
                                 start = 753
                                 end = 780
+                            elif s=='9B5Y' and i==6:
+                                start = 402
+                                end = 425
+                            elif s in ['9LZ1','9LZ2'] and i==6:
+                                start = 400
+                                end = 425
+                            elif s=='25NX' and i==6:
+                                start = 398
+                                end = 425
+                            elif s=='9N1P' and i==6:
+                                start = 345
+                                end = 367
+                            elif s=='9P94' and i==6:
+                                start = 347
+                                end = 369
+                            elif s=='9XQB' and i==5:
+                                start = 180
+                                end = 189
+                            elif s=='8YNF' and i==3:
+                                start = 125
+                                end = 154
+                            elif s=='9DGI' and i==3:
+                                start = 187
+                                end = 220
+                            elif s=='9MBC' and i==3:
+                                start = 650
+                                end = 666
 
                             if i<8 and (start=='-' or end=='-'):
                                 print('WARNING: helix {} for {} {} has missing annotation'.format(i, s, parent_protein))
@@ -687,13 +730,6 @@ class Command(BaseCommand):
 
                         if self.debug:
                             pprint.pprint(segends[s])
-                        proteins_in_db = Structure.objects.filter(protein_conformation__protein__parent=parent_protein).exclude(structure_type__slug__startswith='af-')
-                        if len(proteins_in_db)==0:
-                            if parent_protein not in new_unique_receptor_structures:
-                                new_unique_receptor_structures[parent_protein] = [s]
-                            else:
-                                new_unique_receptor_structures[parent_protein].append(s)
-                        # print(new_unique_receptor_structures)
 
                         ### Check with done structures
                         # for seg, val in segends[s].items():
@@ -724,8 +760,6 @@ class Command(BaseCommand):
             print('Missing ligand info:')
             print(missing_ligand_info)
             # pprint.pprint(segends)
-            print('New unique receptor structures')
-            pprint.pprint(new_unique_receptor_structures)
 
             print('ERRORS:')
             pprint.pprint(errors)
@@ -794,9 +828,25 @@ class Command(BaseCommand):
         if not os.path.isfile(self.pdb_path):
             self.logger.info('Fetching PDB file {}'.format(pdb_code))
             url = 'http://www.rcsb.org/pdb/files/%s.pdb' % pdb_code
-            pdbdata_raw = urlopen(url).read().decode('utf-8')
-            with open(self.pdb_path, 'w') as f:
-                f.write(pdbdata_raw)
+            try:
+                pdbdata_raw = urlopen(url).read().decode('utf-8')
+                with open(self.pdb_path, 'w') as f:
+                    f.write(pdbdata_raw)
+            except HTTPError as e:
+                if e.code != 404:
+                    raise
+                self.logger.info('PDB file not found for {}, fetching CIF file instead'.format(pdb_code))
+                cif_path = os.sep.join([self.pdb_data_dir, pdb_code + '.cif'])
+                cif_url = 'https://files.rcsb.org/download/%s.cif' % pdb_code
+                cifdata_raw = urlopen(cif_url).read().decode('utf-8')
+                with open(cif_path, 'w') as f:
+                    f.write(cifdata_raw)
+                doc = gemmi.cif.read(cif_path)
+                block = doc.sole_block()
+                structure = gemmi.make_structure_from_block(block)
+                structure.setup_entities()
+                structure.write_pdb(self.pdb_path)
+                os.remove(cif_path)
         else:
             with open(self.pdb_path, 'r') as pdb_file:
                 pdbdata_raw = pdb_file.read()

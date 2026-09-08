@@ -69,7 +69,7 @@
     </div>
     <div class="col-md-10">
       {% for pair in ligands %}
-          <p style="display: inline;"><a href="/ligand/{{ pair.1 }}/info" target="_blank">{{ pair.0|safe }}</a>{% if forloop.last %} {% else %}, {% endif %}</p>
+          <p style="display: inline;"><a href="/ligand/{{ pair.1 }}/group" target="_blank">{{ pair.0|safe }}</a>{% if forloop.last %} {% else %}, {% endif %}</p>
       {% endfor %}
     </div>
 </div>

@@ -43,6 +43,10 @@ class Command(BaseBuild):
             dest='proc',
             default=1,
             help='Number of processes to run')
+        parser.add_argument('-r', '--receptor',
+            dest='receptor',
+            default=None,
+            help='Limit annotation to a single receptor by UniProt entry_name')
 
     logger = logging.getLogger(__name__)
 
@@ -87,6 +91,9 @@ class Command(BaseBuild):
     def handle(self, *args, **options):
         try:
             self.logger.info('CREATING RESIDUES')
+
+            if options['receptor']:
+                self.pconfs = [p for p in self.pconfs if p.protein.entry_name == options['receptor']]
 
             self.prepare_input(options['proc'], self.pconfs)
 
@@ -327,6 +334,8 @@ class Command(BaseBuild):
                         human_ortholog = Protein.objects.filter(entry_name='taar9_human')
                     elif entry_name in ['q764p5_letca','a0a1e1g6x5_takru','a0a1e1g6y2_danre','h2u5s9_takru','w5n9z3_lepoc','a0a1e1g6y8_oncmy','a0a0n9n9h8_danre','r9r6d2_oryla','f1nu85_chick','r9r6c6_oryla','w5j8f8_anoda','q8ji05_takru','q868g4_brabe','q95p33_cioin','q5sbp8_pladu','q1l4c8_utast','e7fee5_danre','a0a0k0ybe3_pladu']:
                         human_ortholog = Protein.objects.filter(entry_name='opn5_human')
+                    elif entry_name in ['b6f0y5_carra']:
+                        human_ortholog = Protein.objects.filter(entry_name='opsx_human')
                     ###
                     if human_ortholog.exists():
                         human_ortholog = human_ortholog.get()

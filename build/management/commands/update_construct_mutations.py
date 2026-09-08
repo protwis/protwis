@@ -5,7 +5,7 @@ from django.core.management import call_command
 from django.conf import settings
 from django.db import connection
 from django.core.cache import cache
-from common.tools import test_model_updates
+from common.tools import test_model_updates, find_role
 from build.management.commands.build_ligand_functions import get_or_create_ligand
 
 from structure.models import Structure
@@ -313,13 +313,14 @@ class Command(BaseCommand):
             if pdb in xtal_ligands_list:
                 l = xtal_ligands_list[pdb][0]
                 ligand = get_or_create_ligand(l[2])
+                lr = find_role(l[3])[0]
                 # ligand = get_or_create_ligand(l[7],l[6],l[2])
-                role_slug = slugify(l[3])
-                try:
-                    lr, created = LigandRole.objects.get_or_create(slug=role_slug,
-                    defaults={'name': l[3]})
-                except IntegrityError:
-                    lr = LigandRole.objects.get(slug=role_slug)
+                # role_slug = slugify(l[3])
+                # try:
+                #     lr, created = LigandRole.objects.get_or_create(slug=role_slug,
+                #     defaults={'name': l[3]})
+                # except IntegrityError:
+                #     lr = LigandRole.objects.get(slug=role_slug)
                 if ligand:
                     ligand_c = CrystallizationLigandConc()
                     ligand_c.construct_crystallization = c

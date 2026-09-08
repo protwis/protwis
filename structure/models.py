@@ -301,6 +301,19 @@ class StructureStabilizingAgent(models.Model):
         db_table = "structure_stabilizing_agent"
 
 
+class StructureAuxiliarySmallMolecule(models.Model):
+    structure = models.ForeignKey('Structure', on_delete=models.CASCADE, related_name='auxiliary_small_molecules')
+    name = models.CharField(max_length=10)
+    title = models.CharField(max_length=200, null=True, blank=True)
+    type = models.CharField(max_length=20)
+    function = models.CharField(max_length=50, null=True, blank=True)
+    chain = models.CharField(max_length=5)
+    residue_seq_id = models.IntegerField()
+
+    class Meta:
+        db_table = 'structure_auxiliary_small_molecule'
+
+
 class PdbData(models.Model):
     pdb = models.TextField()
 

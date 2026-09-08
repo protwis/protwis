@@ -83,10 +83,13 @@ class Command(BaseCommand):
                         g_chain = data['g_protein']['gamma_chain']
 
 
-                    signprot_complex, created = SignprotComplex.objects.get_or_create(protein=Protein.objects.get(entry_name=data['g_protein']['alpha_uniprot']),
+                    alpha5_id = data['g_protein']['alpha_alpha5_identity']
+                    alpha_entry = alpha5_id if alpha5_id and alpha5_id != 'unknown' else data['g_protein']['alpha_uniprot']
+                    signprot_complex, created = SignprotComplex.objects.get_or_create(protein=Protein.objects.get(entry_name=alpha_entry),
                                                                                       structure=structure,
                                                                                       alpha=data['g_protein']['alpha_chain'], beta_chain=b_chain, gamma_chain=g_chain,
-                                                                                      beta_protein=b_protein, gamma_protein=g_protein)
+                                                                                      beta_protein=b_protein, gamma_protein=g_protein,
+                                                                                      alpha_backbone=Protein.objects.get(entry_name=data['g_protein']['alpha_backbone']))
                 if 'arrestin' in data:
                     signprot_complex, created = SignprotComplex.objects.get_or_create(protein=Protein.objects.get(entry_name=data['arrestin']['protein']), structure=structure,
                                                                                       alpha=data['arrestin']['chain'])

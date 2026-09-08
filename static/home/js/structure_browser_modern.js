@@ -74,7 +74,7 @@
 
     const first = arr[0];
     const firstHref = (first.id != null && first.id !== '-' && first.id !== '')
-      ? (hrefBuilder ? hrefBuilder(first.id, first) : `https://gpcrdb.org/ligand/${first.id}/info`)
+      ? (hrefBuilder ? hrefBuilder(first.id, first) : `/ligand/${first.id}/group`)
       : null;
 
     const collapsed = firstHref
@@ -87,7 +87,7 @@
     const expanded = arr.map(x => {
       const nm = x.name || '';
       if (x.id == null || x.id === '' || x.id === '-') return nm;
-      const href = hrefBuilder ? hrefBuilder(x.id, x) : `https://gpcrdb.org/ligand/${x.id}/info`;
+      const href = hrefBuilder ? hrefBuilder(x.id, x) : `/ligand/${x.id}/group`;
       return `<a href="${href}" target="_blank" rel="noopener">${nm}</a>`;
     }).join('<br>');
 
@@ -639,7 +639,7 @@
   function exportToXlsx(mode) {
     const table    = $('#StructureBrowserTable').DataTable();
     const settings = table.settings()[0];
-    const REFINED_BASE  = 'https://gpcrdb.org/structure/';
+    const REFINED_BASE  = '/structure/';
 
     const visibleCols = table.columns(':visible').indexes().toArray()
       .filter(i => EXCLUDE_EXPORT_COLS.indexOf(i) === -1);
@@ -670,7 +670,7 @@
       if (!href) return '';
       if (/^https?:\/\//i.test(href)) return href;
       const t = href.replace(/^\/+/, '');
-      if (/^structure\//i.test(t)) return 'https://gpcrdb.org/' + t;
+      if (/^structure\//i.test(t)) return '/' + t;
       if (/^refined\//i.test(t))   return REFINED_BASE + t;
       return REFINED_BASE + t;
     };

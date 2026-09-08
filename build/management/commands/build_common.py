@@ -1,10 +1,12 @@
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
+from django.utils.text import slugify
+from common import definitions
 from common.models import WebResource, WebLink, PublicationJournal, Publication
 from common.tools import test_model_updates
 from protein.models import (ProteinSegment, ProteinAnomaly, ProteinAnomalyType, ProteinAnomalyRuleSet,
     ProteinAnomalyRule, Site)
-from ligand.models import Ligand, LigandType, LigandRole
+from ligand.models import Ligand, LigandType, LigandRole, LigandEffect, AssayClassification
 from residue.models import ResidueGenericNumber, ResidueNumberingScheme
 from news.models import News
 
@@ -13,6 +15,7 @@ import logging
 import shlex
 import os
 import yaml
+import csv
 
 class Command(BaseCommand):
     help = 'Reads source data and creates common database tables'
@@ -25,6 +28,7 @@ class Command(BaseCommand):
     residue_number_scheme_source_file = os.sep.join([settings.DATA_DIR, 'residue_data', 'generic_numbers',
         'schemes.txt'])
     anomaly_source_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'anomalies'])
+    assay_classification_file = os.sep.join([settings.DATA_DIR, 'ligand_data', 'assay_data', 'assay_classification.csv'])
     #Setting the variables for the test tracking of the model upadates
     tracker = {}
     all_models = django.apps.apps.get_models()[6:]
@@ -33,8 +37,12 @@ class Command(BaseCommand):
         functions = [
             'create_resources',
             'create_protein_segments',
+            'create_protein_sites',
             'create_residue_numbering_schemes',
             'create_anomalies',
+            'create_ligand_roles',
+            'create_ligand_types',
+            'create_assay_classification',
         ]
 
         # execute functions
@@ -231,3 +239,55 @@ class Command(BaseCommand):
                                         source_file))
         test_model_updates(self.all_models, self.tracker, check=True)
         self.logger.info('COMPLETED CREATING PROTEIN ANOMALIES')
+
+    def create_ligand_roles(self):
+        self.logger.info('CREATING LIGAND ROLES')
+        role_dict = definitions.ROLE_DICTIONARY
+        ligand_roles = []
+        LigandEffect.objects.get_or_create(slug='binding', name='Binding')
+
+        for key in role_dict.keys():
+            for sub_key in role_dict[key].keys():
+                # Determine the effect based on the sub_key value
+                if sub_key in ['Agonist', 'Agonist (partial)', 'Inverse agonist', 'PAM', 'Allosteric agonist', 'Allosteric inverse agonist', 'Ago-PAM']:
+                    effect = LigandEffect.objects.get_or_create(slug='stimulatory', name='Stimulatory')
+                elif sub_key in ['Antagonist', 'NAM', 'Allosteric antagonist']:
+                    effect = LigandEffect.objects.get_or_create(slug='inhibitory', name='Inhibitory')
+                elif sub_key in ['Cofactor', 'Stabilizing ligand']:
+                    effect = LigandEffect.objects.get_or_create(slug='stabilizer', name='Stabilizer')
+                else:
+                    effect = LigandEffect.objects.get_or_create(slug='unknown', name='Unknown')
+
+                # Append a new instance to the list
+                ligand_roles.append(LigandRole(
+                    slug=slugify(sub_key),
+                    name=sub_key,
+                    type=key,
+                    effect=effect[0]
+                ))
+
+        LigandRole.objects.bulk_create(ligand_roles)
+        test_model_updates(self.all_models, self.tracker, check=True)
+        self.logger.info('COMPLETED CREATING LIGAND ROLES')
+
+    def create_ligand_types(self):
+        SMALL_MOLECULE, _ = LigandType.objects.get_or_create(slug='small-molecule', name='Small molecule')
+        PEPTIDE, _        = LigandType.objects.get_or_create(slug='peptide', name='Peptide')
+        PROTEIN, _        = LigandType.objects.get_or_create(slug='protein', name='Protein')
+        UNKNOWN, _        = LigandType.objects.get_or_create(slug='na', name='Unknown')
+        NONE, _        = LigandType.objects.get_or_create(slug='none', name='None')
+        ION, _        = LigandType.objects.get_or_create(slug='ion', name='Ion')
+        AMINOACID, _        = LigandType.objects.get_or_create(slug='amino-acid', name='Amino-Acid')
+        LIPID, _        = LigandType.objects.get_or_create(slug='lipid', name='Lipid')
+
+        test_model_updates(self.all_models, self.tracker, check=True)
+        self.logger.info('COMPLETED CREATING LIGAND TYPES')
+
+    def create_assay_classification(self):
+        self.logger.info('CREATE ASSAY CLASSIFICATION')
+        with open(self.assay_classification_file, newline='') as csvfile:
+            csvreader = csv.DictReader(csvfile, delimiter=',')
+            for row in csvreader:
+                AssayClassification.objects.get_or_create(unit=row['unit'], assay_type=row['assay_type'], parameter_class=row['parameter_class'], modality=row['modality'])
+        test_model_updates(self.all_models, self.tracker, check=True)
+        self.logger.info('COMPLETED CREATING ASSAY CLASSIFICATION')

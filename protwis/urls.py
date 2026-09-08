@@ -27,8 +27,8 @@ urlpatterns = [
     url(r'^sitesearch/',include('sitesearch.urls')),
     url(r'^drugs/',include('drugs.urls')),
     url(r'^signprot/',include('signprot.urls')),
-    url(r'^ligand/',include('ligand.urls')),
     url(r'^biased_signalling/', include('ligand.urls')), # Remapping this url to the ligand
+    url(r'^ligand/',include('ligand.urls')),
     url(r'^mutational_landscape/',include('mutational_landscape.urls')),
     url(r'^contactnetwork/', include('contactnetwork.urls')),
     url(r'^structure_comparison/', include('contactnetwork.urls')), # Remapping this url to the contact network
