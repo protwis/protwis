@@ -29,7 +29,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
-        for s in Structure.objects.all().exclude(structure_type__slug__startswith='af-'):
+        for s in Structure.objects.filter(structure_type__origin='experiment'):
             slug = str(s)
             # if slug != '5N2R':
             #     continue

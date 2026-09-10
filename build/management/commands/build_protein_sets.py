@@ -35,7 +35,7 @@ class Command(BaseCommand):
         ProteinSet.objects.all().delete()
 
         # proteins with a structure
-        structures = Structure.objects.exclude(structure_type__slug__startswith='af-').order_by('protein_conformation__protein__parent__entry_name').distinct(
+        structures = Structure.objects.filter(structure_type__origin='experiment').order_by('protein_conformation__protein__parent__entry_name').distinct(
             'protein_conformation__protein__parent__entry_name')
         if structures:
             ps = ProteinSet.objects.create(name='All') # David's request
