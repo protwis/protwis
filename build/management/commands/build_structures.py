@@ -1927,6 +1927,7 @@ class Command(BaseBuild):
                             ids['sequence'] = seq
 
                         l = get_or_create_ligand(ligand_title, ids, ligand['type'], source='PDB',
+                                                  helm=ligand.get('helm') or None,
                                                   seq_and_name_lookup=(ligand['type'] in ['peptide', 'protein']))
                         # Create LigandPeptideStructure object to store chain ID for peptide ligands - supposed to b TEMP
                         if ligand['type'] in ['peptide','protein']:

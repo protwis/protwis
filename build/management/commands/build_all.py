@@ -24,6 +24,11 @@ class Command(BaseCommand):
         #                     dest='hommod',
         #                     default=False,
         #                     help='Include build of homology models')
+        parser.add_argument('--no_reload',
+                            action='store_true',
+                            dest='no_reload',
+                            default=False,
+                            help='Skip ligand dump reload scripts')
         parser.add_argument('--phase',
                             type=int,
                             action='store',
@@ -34,11 +39,6 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         if options['test']:
             print('Running in test mode')
-
-        if options['proc']>4:
-            safe_proc_num = 4
-        else:
-            safe_proc_num = options['proc']
 
         phase1 = [
             ['clear_cache'],
@@ -51,14 +51,14 @@ class Command(BaseCommand):
             ['build_blast_database'],
             ['build_links'],
             ['build_construct_proteins'],
-            ['build_experimental_data_light', {'test_run': options['test']}],
+            ['build_experimental_data_light', {'test_run': options['test'], 'no_reload': options['no_reload']}],
             # ['build_all_gtp_ligands', {'test_run': options['test']}],
             # ['build_endogenous_data_from_gtp_source', {'test_run': options['test']}],
             ['build_bias_preprocess_data', {'test_run': options['test']}],
             #['build_balanced_ligands', {'test_run': options['test']}],
             # ['build_chembl_data', {'test_run': options['test']}],
             ['build_mutant_data', {'test_run': options['test']}],
-            ['build_structures', {'proc': safe_proc_num, 'skip_cn': options['test']}],
+            ['build_structures', {'proc': options['proc'], 'skip_cn': options['test']}],
             ['build_consensus_sequences', {'proc': options['proc']}],
             ['build_g_proteins'],
             ['build_consensus_sequences', {'proc': options['proc'], 'signprot': 'Alpha'}],
@@ -75,7 +75,7 @@ class Command(BaseCommand):
         ]
         phase2 = [
             ['build_structure_angles', {'proc': options['proc']}],
-            ['build_construct_data'],
+            ['build_construct_data', {'proc': options['proc']}],
             ['update_construct_mutations'],
             ['build_protein_sets'],
             ['build_drugs_updated'],

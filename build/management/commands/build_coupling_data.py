@@ -548,8 +548,8 @@ class Command(BaseCommand):
                         for key in vals:
                             if key in couplings[header]:
                                 vals[key] = couplings[header][key]
-                                print(f'HEADERS: {couplings[header]}')
-                                print(f'Couplings: {key}: {couplings[header][key]}')
+                                # print(f'HEADERS: {couplings[header]}')
+                                # print(f'Couplings: {key}: {couplings[header][key]}')
                         # print(p,g,gp,l,source,vals)
                         gpair = ProteinCouplings(protein=p, g_protein=g, g_protein_subunit=gp, ligand=l, source=source, physiological_ligand=lig_phys_surr,
                                                  variant=vals['variant'],

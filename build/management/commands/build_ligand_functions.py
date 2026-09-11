@@ -2,6 +2,7 @@
 #from django.db import IntegrityError
 from django.db.models import Q, Count, Max
 from django.utils.text import slugify
+from django.utils.functional import SimpleLazyObject
 from django.db import transaction, IntegrityError
 
 from ligand.models import Ligand, LigandID, LigandType, LigandRole
@@ -526,40 +527,6 @@ def _resolve_ligand_entries(entries, source=None, lig_type="small-molecule", ext
             if raw_pdbe:
                 found_child = existing_by_pdbe.get(raw_pdbe)
 
-        # Sequence / iexact-name match? (opt-in, for entries with no pdbe id)
-        if found_child is None and entry.get("seq_and_name_lookup"):
-            raw_seq = entry.get("raw_sequence")
-            if raw_seq and "X" not in raw_seq:
-                found_child = existing_by_seq_lookup.get(raw_seq)
-
-            if found_child is None and entry.get("name"):
-                _name_matches = list(
-                    Ligand.objects.filter(name__iexact=entry["name"].strip(), parent__isnull=False)
-                )
-                name_hit = None
-                if len(_name_matches) == 1:
-                    name_hit = _name_matches[0]
-                elif len(_name_matches) > 1:
-                    _exact = [c for c in _name_matches if c.name == entry["name"].strip()]
-                    name_hit = _exact[0] if _exact else _name_matches[0]
-
-                if name_hit is not None:
-                    if not name_hit.sequence:
-                        # Nothing on file contradicts the name match — accept it,
-                        # and back-fill the sequence for future lookups.
-                        if raw_seq:
-                            name_hit.sequence = raw_seq
-                            name_hit.save(update_fields=["sequence"])
-                        found_child = name_hit
-                    elif raw_seq and raw_seq == name_hit.sequence and "X" not in raw_seq:
-                        found_child = name_hit
-                    else:
-                        # Same name, different molecule (sequences differ, or either
-                        # side is ambiguous) — not a match, but keep it in the family:
-                        # a new child will be created under this ligand's parent
-                        # instead of via generic parent resolution below.
-                        entry["_resolved_parent"] = name_hit.parent
-
         # Source ID match?
         _source_id_that_found: Optional[tuple] = None
         if found_child is None:
@@ -666,6 +633,43 @@ def _resolve_ligand_entries(entries, source=None, lig_type="small-molecule", ext
                     )[:1])
                     if candidates and _props_compatible(entry_props, candidates[0]):
                         found_child = candidates[0]
+
+        # Sequence / iexact-name match? (opt-in, for entries with no pdbe id) —
+        # last-resort fallback, tried only after every identifier-based route
+        # above (source ID, InChIKey, SMILES, HELM, achiral short-circuit) has
+        # failed to find a match.
+        if found_child is None and entry.get("seq_and_name_lookup"):
+            raw_seq = entry.get("raw_sequence")
+            if raw_seq and "X" not in raw_seq:
+                found_child = existing_by_seq_lookup.get(raw_seq)
+
+            if found_child is None and entry.get("name"):
+                _name_matches = list(
+                    Ligand.objects.filter(name__iexact=entry["name"].strip(), parent__isnull=False)
+                )
+                name_hit = None
+                if len(_name_matches) == 1:
+                    name_hit = _name_matches[0]
+                elif len(_name_matches) > 1:
+                    _exact = [c for c in _name_matches if c.name == entry["name"].strip()]
+                    name_hit = _exact[0] if _exact else _name_matches[0]
+
+                if name_hit is not None:
+                    if not name_hit.sequence:
+                        # Nothing on file contradicts the name match — accept it,
+                        # and back-fill the sequence for future lookups.
+                        if raw_seq:
+                            name_hit.sequence = raw_seq
+                            name_hit.save(update_fields=["sequence"])
+                        found_child = name_hit
+                    elif raw_seq and raw_seq == name_hit.sequence and "X" not in raw_seq:
+                        found_child = name_hit
+                    else:
+                        # Same name, different molecule (sequences differ, or either
+                        # side is ambiguous) — not a match, but keep it in the family:
+                        # a new child will be created under this ligand's parent
+                        # instead of via generic parent resolution below.
+                        entry["_resolved_parent"] = name_hit.parent
 
         if found_child is not None:
             # Reassignment check
@@ -1575,11 +1579,11 @@ def update_parent(parent, child):
 #### Block for fixing mismatched LigandType assignment in Ligand model
 
 # map LigandType IDs:
-SMALL_MOLECULE = LigandType.objects.get(slug='small-molecule')
-PEPTIDE        = LigandType.objects.get(slug='peptide')
-PROTEIN        = LigandType.objects.get(slug='protein')
-UNKNOWN        = LigandType.objects.get(slug='na')
-LIPID          = LigandType.objects.get(slug='lipid')
+SMALL_MOLECULE = SimpleLazyObject(lambda: LigandType.objects.get(slug='small-molecule'))
+PEPTIDE        = SimpleLazyObject(lambda: LigandType.objects.get(slug='peptide'))
+PROTEIN        = SimpleLazyObject(lambda: LigandType.objects.get(slug='protein'))
+UNKNOWN        = SimpleLazyObject(lambda: LigandType.objects.get(slug='na'))
+LIPID          = SimpleLazyObject(lambda: LigandType.objects.get(slug='lipid'))
 
 from rdkit import Chem as _RDChem
 from rdkit.Chem import Descriptors as _RDDesc

@@ -1,4 +1,3 @@
-from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 from django.utils.text import slugify
 from django.db import IntegrityError
@@ -9,7 +8,9 @@ from structure.models import Structure
 from construct.models import (Construct,Crystallization,CrystallizationLigandConc,ChemicalType,Chemical,ChemicalConc,ChemicalList,
 CrystallizationMethods,CrystallizationTypes,ChemicalListName,ContributorInfo,ConstructMutation,ConstructInsertion,ConstructInsertionType,
 ConstructDeletion,ConstructModification,CrystalInfo,ExpressionSystem,Solubilization,PurificationStep,Purification)
-from construct.functions import add_construct, fetch_pdb_info
+from construct.functions import add_construct, fetch_pdb_info, set_construct_lock
+from build.management.commands.base_build import Command as BaseBuild
+from build.management.commands.build_ligand_functions import set_ligand_lock
 
 from ligand.models import Ligand, LigandType, LigandRole
 
@@ -19,12 +20,17 @@ import csv
 import os
 import json
 import datetime
-import django.apps
 
-class Command(BaseCommand):
+class Command(BaseBuild):
     help = 'Build construct data'
 
     def add_arguments(self, parser):
+        parser.add_argument('-p', '--proc',
+            type=int,
+            action='store',
+            dest='proc',
+            default=1,
+            help='Number of processes to run')
         parser.add_argument('--filename', action='append', dest='filename',
             help='Filename to import. Can be used multiple times')
         parser.add_argument('--local', action='store_true', dest='local', default=False,
@@ -38,7 +44,11 @@ class Command(BaseCommand):
     construct_data_local_dir = "../files/construct_data"
 
     tracker = {}
-    all_models = django.apps.apps.get_models()[6:]
+    # only track models this command actually writes to, instead of every
+    # registered Django model - avoids ~100+ unrelated COUNT(*) queries per run
+    all_models = [Construct,Crystallization,CrystallizationLigandConc,ChemicalType,Chemical,ChemicalConc,ChemicalList,
+        CrystallizationMethods,CrystallizationTypes,ChemicalListName,ContributorInfo,ConstructMutation,ConstructInsertion,ConstructInsertionType,
+        ConstructDeletion,ConstructModification,CrystalInfo,ExpressionSystem,Solubilization,PurificationStep,Purification]
     test_model_updates(all_models, tracker, initialize=True)
 
     def handle(self, *args, **options):
@@ -58,7 +68,7 @@ class Command(BaseCommand):
             test_model_updates(self.all_models, self.tracker, initialize=True)
 
         if not local_fill:
-            self.create_construct_data(filenames)
+            self.create_construct_data(filenames, options['proc'])
             test_model_updates(self.all_models, self.tracker, check=True)
         else:
             self.create_construct_local_data()
@@ -137,7 +147,7 @@ class Command(BaseCommand):
     #             except:
     #                 print(pdbname,'failed')
 
-    def create_construct_data(self, filenames=False):
+    def create_construct_data(self, filenames=False, proc=1):
         self.logger.info('ADDING EXPERIMENTAL CONSTRUCT DATA')
 
         # read source files
@@ -158,20 +168,33 @@ class Command(BaseCommand):
                     add_construct(d)
 
         if do_all:
-            structures = Structure.objects.all().exclude(structure_type__slug__startswith='af-')
-            for s in structures:
-                pdbname = str(s)
-                try:
-                    exists = Construct.objects.filter(structure__pdb_code__index=pdbname).exists()
-                    if not exists:
-                        # print(pdbname)
-                        protein = Protein.objects.filter(entry_name=pdbname.lower()).get()
-                        d = fetch_pdb_info(pdbname,protein)
-                        add_construct(d)
-                    else:
-                        # pass
-                        print("Entry for",pdbname,"already there")
-                except:
-                    print(pdbname,'failed')
+            structures = Structure.objects.all().exclude(structure_type__slug__startswith='af-').select_related('protein_conformation', 'pdb_code', 'pdb_data')
+            self.pdbnames = [str(s) for s in structures]
+            self.prepare_input(proc, self.pdbnames)
 
         self.logger.info('COMPLETED CREATING EXPERIMENTAL CONSTRUCT DATA')
+
+    def main_func(self, positions, iterations, count, lock):
+        # DB-touching reference-table/ligand lookups lock internally on this
+        # shared lock; only the counter increment below still locks explicitly
+        # here. Mirrors build_structures.py's main_func.
+        set_ligand_lock(lock)
+        set_construct_lock(lock)
+        pdbnames = self.pdbnames
+        while count.value < len(pdbnames):
+            with lock:
+                pdbname = pdbnames[count.value]
+                count.value += 1
+
+            try:
+                exists = Construct.objects.filter(structure__pdb_code__index=pdbname).exists()
+                if not exists:
+                    # print(pdbname)
+                    protein = Protein.objects.filter(entry_name=pdbname.lower()).get()
+                    d = fetch_pdb_info(pdbname,protein)
+                    add_construct(d)
+                else:
+                    # pass
+                    print("Entry for",pdbname,"already there")
+            except:
+                print(pdbname,'failed')
