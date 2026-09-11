@@ -2,6 +2,7 @@
 #from django.db import IntegrityError
 from django.db.models import Q, Count, Max
 from django.utils.text import slugify
+from django.utils.functional import SimpleLazyObject
 from django.db import transaction, IntegrityError
 
 from ligand.models import Ligand, LigandID, LigandType, LigandRole
@@ -1578,11 +1579,11 @@ def update_parent(parent, child):
 #### Block for fixing mismatched LigandType assignment in Ligand model
 
 # map LigandType IDs:
-SMALL_MOLECULE = LigandType.objects.get(slug='small-molecule')
-PEPTIDE        = LigandType.objects.get(slug='peptide')
-PROTEIN        = LigandType.objects.get(slug='protein')
-UNKNOWN        = LigandType.objects.get(slug='na')
-LIPID          = LigandType.objects.get(slug='lipid')
+SMALL_MOLECULE = SimpleLazyObject(lambda: LigandType.objects.get(slug='small-molecule'))
+PEPTIDE        = SimpleLazyObject(lambda: LigandType.objects.get(slug='peptide'))
+PROTEIN        = SimpleLazyObject(lambda: LigandType.objects.get(slug='protein'))
+UNKNOWN        = SimpleLazyObject(lambda: LigandType.objects.get(slug='na'))
+LIPID          = SimpleLazyObject(lambda: LigandType.objects.get(slug='lipid'))
 
 from rdkit import Chem as _RDChem
 from rdkit.Chem import Descriptors as _RDDesc
