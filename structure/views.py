@@ -2321,7 +2321,9 @@ class StructureStatistics(TemplateView):
                 for a in olfactory_struct:
                     olfactory_struct_dict[a['protein_conformation__protein__parent__entry_name']] = a['c']
 
-                olfactory_struct_dict.pop(None)
+
+                if None in olfactory_struct_dict:
+                    olfactory_struct_dict.pop(None)
 
                 updated_olfactory_struct_dict = {
                     key: {
