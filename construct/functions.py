@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.utils.text import slugify
-from django.db import IntegrityError, connection
+from django.db import IntegrityError, connection, transaction
 from protein.models import Protein, ProteinConformation
 from residue.models import Residue
 from structure.models import Structure
@@ -9,6 +9,7 @@ from construct.models import *
 from ligand.models import Ligand, LigandType, LigandRole
 
 from common.tools import fetch_from_web_api, find_role
+from build.management.commands.build_ligand_functions import get_or_create_ligand
 from urllib.parse import quote
 from string import Template
 from urllib.request import urlopen
@@ -21,6 +22,7 @@ from collections import OrderedDict
 import pickle
 import logging
 import os
+import contextlib
 from datetime import datetime
 from Bio import pairwise2
 
@@ -35,6 +37,22 @@ uniprot_convert_table = {
     'CRFR2_HUMAN': 'CRHR2_HUMAN',
 }
 starttime = datetime.now()
+
+_uniprot_mapping_cache = None
+
+def _get_uniprot_mapping():
+    global _uniprot_mapping_cache
+    if _uniprot_mapping_cache is None:
+        with open(os.sep.join([settings.DATA_DIR, 'protein_data', 'uniprot_mapping.txt']), 'r') as f:
+            uniprot_mapping = f.read()
+        rows = ( line.split(' ') for line in uniprot_mapping.split('\n') )
+        uniprot_mapping = { row[0]:row[1:] for row in rows }
+
+        #errors, fix it.
+        uniprot_mapping['P08483'] = ['acm3_rat']
+        uniprot_mapping['P42866'] = ['oprm_mouse']
+        _uniprot_mapping_cache = uniprot_mapping
+    return _uniprot_mapping_cache
 
 
 def _sifts_segment_chain(elem, ns):
@@ -139,8 +157,9 @@ def fetch_pdb_info(pdbname, protein ,new_xtal=False, ignore_gasper_annotation=Fa
             with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'pdbs', '{}.pdb'.format(pdbname)]), 'r') as pdbcustom:
                 pdbdata_raw = pdbcustom.read()
         else:
-            url = 'https://www.rcsb.org/pdb/files/%s.pdb' % pdbname
-            pdbdata_raw = urlopen(url).read().decode('utf-8')
+            pdbdata_raw = fetch_from_web_api('https://www.rcsb.org/pdb/files/$index.pdb', pdbname, raw=True)
+            if pdbdata_raw is False:
+                raise Exception('Failed to fetch PDB file for {}'.format(pdbname))
         # figure out what protein this is
         for line in pdbdata_raw.split('\n'):
             if line.startswith('DBREF'):
@@ -222,8 +241,9 @@ def fetch_pdb_info(pdbname, protein ,new_xtal=False, ignore_gasper_annotation=Fa
         else:
             pdb_path = os.sep.join([pdb_data_dir, pdbname + '.pdb'])
         if not os.path.isfile(pdb_path):
-            url = 'https://www.rcsb.org/pdb/files/%s.pdb' % pdbname
-            pdbdata_raw = urlopen(url).read().decode('utf-8')
+            pdbdata_raw = fetch_from_web_api('https://www.rcsb.org/pdb/files/$index.pdb', pdbname, raw=True)
+            if pdbdata_raw is False:
+                raise Exception('Failed to fetch PDB file for {}'.format(pdbname))
             with open(pdb_path, 'w') as f:
                 f.write(pdbdata_raw)
         else:
@@ -520,15 +540,7 @@ def fetch_pdb_info(pdbname, protein ,new_xtal=False, ignore_gasper_annotation=Fa
     # req = urlopen(url)
     # uniprot_mapping = req.read().decode('UTF-8')
 
-    with open(os.sep.join([settings.DATA_DIR, 'protein_data', 'uniprot_mapping.txt']), 'r') as f:
-        uniprot_mapping = f.read()
-    rows = ( line.split(' ') for line in uniprot_mapping.split('\n') )
-    uniprot_mapping = { row[0]:row[1:] for row in rows }
-        # cache.set('gpcrdb_uniprot_mapping',uniprot_mapping,60*60*24)
-
-    #errors, fix it.
-    uniprot_mapping['P08483'] = ['acm3_rat']
-    uniprot_mapping['P42866'] = ['oprm_mouse']
+    uniprot_mapping = _get_uniprot_mapping()
 
     variants_mapping = {}
     cache_dir = ['sifts', 'xml']
@@ -1366,6 +1378,37 @@ def fetch_pdb_info(pdbname, protein ,new_xtal=False, ignore_gasper_annotation=Fa
     return d
 
 
+_construct_lookup_cache = {}
+
+# Set once per worker process (see build_construct_data.main_func) to the shared
+# multiprocessing.Lock used to serialize the DB-touching part of the reference-
+# table lookups below across parallel build workers. Left None (no locking)
+# outside a parallel build context, e.g. single-process call sites/tests.
+# Mirrors set_ligand_lock/_ligand_lock_cm in build_ligand_functions.py.
+_construct_lock = None
+
+def set_construct_lock(lock):
+    global _construct_lock
+    _construct_lock = lock
+
+def _construct_lock_cm():
+    return _construct_lock if _construct_lock is not None else contextlib.nullcontext()
+
+def _cached_get_or_create(model, **kwargs):
+    # these reference/lookup tables hold a small, effectively fixed vocabulary
+    # of rows that get re-queried identically for every construct in a run -
+    # cache them in-process instead of re-hitting the DB every time. Several of
+    # them have no DB-level uniqueness constraint, so under parallel workers two
+    # processes could otherwise both cache-miss and both insert - the lock below
+    # serializes the check-then-insert across workers to prevent that.
+    cache_key = (model, tuple(sorted(kwargs.items())))
+    if cache_key not in _construct_lookup_cache:
+        with _construct_lock_cm():
+            obj, created = model.objects.get_or_create(**kwargs)
+        _construct_lookup_cache[cache_key] = obj
+    return _construct_lookup_cache[cache_key]
+
+@transaction.atomic
 def add_construct(d):
 
     #delete if already name there
@@ -1392,7 +1435,7 @@ def add_construct(d):
 
     #Contact INFO
     if 'contact_info' in d:
-        construct.contributor, created = ContributorInfo.objects.get_or_create(name = d['contact_info']['name_cont'],
+        construct.contributor = _cached_get_or_create(ContributorInfo, name = d['contact_info']['name_cont'],
                                                        pi_email = d['contact_info']['pi_email'],
                                                        pi_name = d['contact_info']['pi_name'],
                                                        urls = d['contact_info']['url'],
@@ -1401,6 +1444,11 @@ def add_construct(d):
 
     construct.save()
     #MUTATIONS
+    residues_by_position = {
+        r.sequence_number: r for r in Residue.objects.filter(
+            protein_conformation__protein=protein_conformation.protein.parent,
+            sequence_number__in=[mutation['pos'] for mutation in d['mutations']])
+    }
     for mutation in d['mutations']:
 
         if 'type' not in mutation:
@@ -1409,11 +1457,11 @@ def add_construct(d):
         if 'remark' not in mutation:
             mutation['remark'] = ''
 
-        res_wt = Residue.objects.get(protein_conformation__protein=protein_conformation.protein.parent, sequence_number=mutation['pos'])
+        res_wt = residues_by_position[mutation['pos']]
         # if res_wt.amino_acid != mutation['wt']:
         #     print('aa dont match',construct,mutation['pos'],"annotated wt:", mutation['wt'], "DB wt:",res_wt.amino_acid, "Annotated Mut",mutation['mut'])
 
-        mutation_type, created = ConstructMutationType.objects.get_or_create(slug=slugify(mutation['type']),name=mutation['type'], effect=None)
+        mutation_type = _cached_get_or_create(ConstructMutationType, slug=slugify(mutation['type']),name=mutation['type'], effect=None)
 
         #construct=construct, TODO: create a unique one for each mutation per construct to avoid unambiguity
         mut = ConstructMutation.objects.create(construct=construct, sequence_number=mutation['pos'],wild_type_amino_acid=mutation['wt'],mutated_amino_acid=mutation['mut'],remark=mutation['remark'], residue=res_wt)
@@ -1447,10 +1495,13 @@ def add_construct(d):
             # if a 'deletion' is a single type and of non-user origin, assume its an insert and the pos is not actually deleted (3odu)
             dele = False
             if 'start' in deletion:
-                dele, created = ConstructDeletion.objects.get_or_create(construct=construct, start=deletion['start'],end=deletion['end'])
+                # construct is a brand-new row (any same-named one was just deleted
+                # above), so this can never match an existing ConstructDeletion -
+                # skip the redundant get_or_create SELECT.
+                dele = ConstructDeletion.objects.create(construct=construct, start=deletion['start'],end=deletion['end'])
             else:
                 if deletion['origin']=='user':
-                    dele, created = ConstructDeletion.objects.get_or_create(construct=construct, start=deletion['pos'],end=deletion['pos'])
+                    dele = ConstructDeletion.objects.create(construct=construct, start=deletion['pos'],end=deletion['pos'])
             # if dele:
             #     construct.deletions.add(dele)
             if deletion['origin']!='user':
@@ -1464,7 +1515,7 @@ def add_construct(d):
     #INSERTIONS (AUX)
     for name,aux in d['auxiliary'].items():
         id = name.replace('aux','')
-        aux_type, created = ConstructInsertionType.objects.get_or_create(name=aux['type'],subtype=aux['subtype'])
+        aux_type = _cached_get_or_create(ConstructInsertionType, name=aux['type'],subtype=aux['subtype'])
         insert = ConstructInsertion.objects.create(construct=construct, insert_type=aux_type,presence=aux['presence'],position=aux['position']+"_"+id)
 
         if insert.presence == 'YES' and insert.position.startswith('Within Receptor'):
@@ -1486,7 +1537,9 @@ def add_construct(d):
     #MODIFICATIONS
     if 'modifications' in d:
         for modification in d['modifications']:
-            mod, created = ConstructModification.objects.get_or_create(construct=construct, modification=modification['type'],position_type=modification['position'][0],
+            # construct is a brand-new row, so this can never match an existing
+            # ConstructModification - skip the redundant get_or_create SELECT.
+            mod = ConstructModification.objects.create(construct=construct, modification=modification['type'],position_type=modification['position'][0],
                                                        pos_start=modification['position'][1][0],
                                                        pos_end=modification['position'][1][1],remark=modification['remark'] )
             # construct.modifications.add(mod)
@@ -1507,7 +1560,7 @@ def add_construct(d):
             if d['expression']['expr_method'] == 'Other [In case of E.Coli or Yeast recombinant expression]':
                 d['expression']['expr_method'] = d['expression']['expr_other']
 
-            construct.expression,created = ExpressionSystem.objects.get_or_create(expression_method=d['expression']['expr_method'],
+            construct.expression = _cached_get_or_create(ExpressionSystem, expression_method=d['expression']['expr_method'],
                                                             host_cell_type=d['expression']['host_cell_type'],
                                                             host_cell=d['expression']['host_cell'],
                                                             remarks=d['expression']['expr_remark'])
@@ -1518,7 +1571,7 @@ def add_construct(d):
     if 'solubilization' in d:
         if 'deterg_type' in d['solubilization']:
             c_list = ChemicalList()
-            list_name,created  = ChemicalListName.objects.get_or_create(name='Solubilization')
+            list_name = _cached_get_or_create(ChemicalListName, name='Solubilization')
             c_list.name = list_name
             c_list.save()
             for item,value in d['solubilization'].items():
@@ -1530,16 +1583,16 @@ def add_construct(d):
                     if value == 'other [See next field]':
                         value = d['raw_data']['other_deterg_type'+ d_id]
 
-                    ct, created = ChemicalType.objects.get_or_create(name='detergent')
-                    chem, created = Chemical.objects.get_or_create(name=value, chemical_type=ct)
+                    ct = _cached_get_or_create(ChemicalType, name='detergent')
+                    chem = _cached_get_or_create(Chemical, name=value, chemical_type=ct)
                     if 'deterg_concentr' + d_id in d['solubilization']:
                         cc, created = ChemicalConc.objects.get_or_create(concentration=d['solubilization']['deterg_concentr' + d_id], concentration_unit=d['solubilization']['deterg_concentr_unit' + d_id], chemical=chem)
                     else: #if no concentr is dictionary, then it was inputted before caputring concentration for additinal chemicals
                         cc, created = ChemicalConc.objects.get_or_create(concentration='', concentration_unit='',chemical=chem)
                     c_list.chemicals.add(cc)
 
-            ct, created = ChemicalType.objects.get_or_create(name='additive')
-            chem, created = Chemical.objects.get_or_create(name=d['solubilization']['solub_additive'], chemical_type=ct)
+            ct = _cached_get_or_create(ChemicalType, name='additive')
+            chem = _cached_get_or_create(Chemical, name=d['solubilization']['solub_additive'], chemical_type=ct)
             cc, created = ChemicalConc.objects.get_or_create(concentration=d['solubilization']['additive_concentr'], concentration_unit=d['solubilization']['addit_concentr_unit'], chemical=chem)
             c_list.chemicals.add(cc)
 
@@ -1558,7 +1611,7 @@ def add_construct(d):
                         continue #there will be sol_remark instead
                     if step == 'None':
                         continue #dont put in none step
-                    s,created = PurificationStep.objects.get_or_create(name=step)
+                    s = _cached_get_or_create(PurificationStep, name=step)
                     purification.steps.add(s)
             construct.purification = purification
     construct.save()
@@ -1576,8 +1629,8 @@ def add_construct(d):
                 d['crystallization']['crystal_type'] = d['raw_data']['other_crystal_type']
 
             sub_name = "" if 'lcp_lipid' not in d['crystallization'] else d['crystallization']['lcp_lipid']
-            c_type, created = CrystallizationTypes.objects.get_or_create(name=d['crystallization']['crystal_type'], sub_name=sub_name)
-            c_method, created = CrystallizationMethods.objects.get_or_create(name=d['crystallization']['crystal_method'])
+            c_type = _cached_get_or_create(CrystallizationTypes, name=d['crystallization']['crystal_type'], sub_name=sub_name)
+            c_method = _cached_get_or_create(CrystallizationMethods, name=d['crystallization']['crystal_method'])
 
             c.crystal_type = c_type
             c.crystal_method = c_method
@@ -1600,15 +1653,15 @@ def add_construct(d):
 
             #MAKE LISTS
             c_list = ChemicalList()
-            list_name,created  = ChemicalListName.objects.get_or_create(name='Additional')
+            list_name = _cached_get_or_create(ChemicalListName, name='Additional')
             c_list.name = list_name
             c_list.save()
             if 'chemical_components' in d['crystallization']:
                 for chemical in d['crystallization']['chemical_components']:
                     if 'type' not in chemical: #to fix legacy json files
                         chemical['type'] = 'unknown'
-                    ct, created = ChemicalType.objects.get_or_create(name=chemical['type'])
-                    chem, created = Chemical.objects.get_or_create(name=chemical['component'], chemical_type=ct)
+                    ct = _cached_get_or_create(ChemicalType, name=chemical['type'])
+                    chem = _cached_get_or_create(Chemical, name=chemical['component'], chemical_type=ct)
                     cc, created = ChemicalConc.objects.get_or_create(concentration=chemical['value'], concentration_unit=chemical['unit'], chemical=chem)
                     c_list.chemicals.add(cc)
                 c.chemical_lists.add(c_list)
@@ -1616,11 +1669,11 @@ def add_construct(d):
             if d['crystallization']['crystal_type']=='lipidic cubic phase': #make list of LCP stuff
                 c_list = ChemicalList()
                 # c_list.name = d['crystallization']['lcp_lipid']
-                list_name,created  = ChemicalListName.objects.get_or_create(name='LCP')
+                list_name = _cached_get_or_create(ChemicalListName, name='LCP')
                 c_list.name = list_name
                 c_list.save()
-                ct, created = ChemicalType.objects.get_or_create(name='LCP Lipid additive')
-                chem, created = Chemical.objects.get_or_create(name=d['crystallization']['lcp_add'], chemical_type=ct)
+                ct = _cached_get_or_create(ChemicalType, name='LCP Lipid additive')
+                chem = _cached_get_or_create(Chemical, name=d['crystallization']['lcp_add'], chemical_type=ct)
                 cc, created = ChemicalConc.objects.get_or_create(concentration=d['crystallization']['lcp_conc'], concentration_unit=d['crystallization']['lcp_conc_unit'], chemical=chem)
                 c_list.chemicals.add(cc)
                 c.chemical_lists.add(c_list)
@@ -1628,11 +1681,11 @@ def add_construct(d):
             #DETERGENT
             if 'detergent' in d['crystallization']:
                 c_list = ChemicalList()
-                list_name,created  = ChemicalListName.objects.get_or_create(name='Detergent')
+                list_name = _cached_get_or_create(ChemicalListName, name='Detergent')
                 c_list.name = list_name
                 c_list.save()
-                ct, created = ChemicalType.objects.get_or_create(name='detergent')
-                chem, created = Chemical.objects.get_or_create(name=d['crystallization']['detergent'], chemical_type=ct)
+                ct = _cached_get_or_create(ChemicalType, name='detergent')
+                chem = _cached_get_or_create(Chemical, name=d['crystallization']['detergent'], chemical_type=ct)
                 cc, created = ChemicalConc.objects.get_or_create(concentration=d['crystallization']['deterg_conc'], concentration_unit=d['crystallization']['deterg_conc_unit'], chemical=chem)
                 c_list.chemicals.add(cc)
                 c.chemical_lists.add(c_list)
@@ -1640,11 +1693,11 @@ def add_construct(d):
             #LIPID
             if 'lipid' in d['crystallization']:
                 c_list = ChemicalList()
-                list_name,created  = ChemicalListName.objects.get_or_create(name='Lipid')
+                list_name = _cached_get_or_create(ChemicalListName, name='Lipid')
                 c_list.name = list_name
                 c_list.save()
-                ct, created = ChemicalType.objects.get_or_create(name='lipid')
-                chem, created = Chemical.objects.get_or_create(name=d['crystallization']['lipid'], chemical_type=ct)
+                ct = _cached_get_or_create(ChemicalType, name='lipid')
+                chem = _cached_get_or_create(Chemical, name=d['crystallization']['lipid'], chemical_type=ct)
                 cc, created = ChemicalConc.objects.get_or_create(concentration=d['crystallization']['lipid_concentr'], concentration_unit=d['crystallization']['lipid_concentr_unit'], chemical=chem)
                 c_list.chemicals.add(cc)
                 c.chemical_lists.add(c_list)
@@ -1652,11 +1705,12 @@ def add_construct(d):
 
 
             #Use ligand function to get ligand if it exists or otherwise create. Lots of checks for inchi/smiles/name
-            ligand = get_or_make_ligand(d['construct_crystal']['ligand_id'],d['construct_crystal']['ligand_id_type'],d['construct_crystal']['ligand_name'])
+            ligand_ids = {d['construct_crystal']['ligand_id_type']: d['construct_crystal']['ligand_id']}
+            ligand = get_or_create_ligand(d['construct_crystal']['ligand_name'], ligand_ids)
             if 'ligand_activity' not in d['construct_crystal']:
                 d['construct_crystal']['ligand_activity'] = 'unknown'
             if ligand and 'ligand_activity' in d['construct_crystal']:
-                lr = find_role(d['construct_crystal']['ligand_activity'])
+                lr = find_role(d['construct_crystal']['ligand_activity'])[0]
                 # role_slug = slugify(d['construct_crystal']['ligand_activity'])
                 # try:
                 #     lr, created = LigandRole.objects.get_or_create(slug=role_slug,
