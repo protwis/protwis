@@ -1362,7 +1362,7 @@ class ParseStructureCSV(AbsParseStructureCSV):
                 in_structure = True
                 if ligand[8]!='':
                     in_structure = False
-                self.structures[ligand[0]]['ligand'].append({'chain':ligand[1], 'name':ligand[2], 'pubchemId':ligand[3], 'role':ligand[4], 'title':ligand[5], 'type': ligand[6], 'in_structure': in_structure, 'label_asym_id':ligand[9], 'smiles':ligand[10], 'inchikey':ligand[11], 'sequence':ligand[12], 'is_endogenous':ligand[13], 'site':ligand[14], 'residue_seq_id':ligand[15]})
+                self.structures[ligand[0]]['ligand'].append({'chain':ligand[1], 'name':ligand[2], 'pubchemId':ligand[3], 'role':ligand[4], 'title':ligand[5], 'type': ligand[6], 'in_structure': in_structure, 'label_asym_id':ligand[9], 'smiles':ligand[10], 'inchikey':ligand[11], 'sequence':ligand[12], 'is_endogenous':ligand[13], 'site':ligand[14], 'residue_seq_id':ligand[15], 'helm': ligand[16] if len(ligand) > 16 else ''})
 
     def parse_nanobodies(self):
         self.parse_aux_file('nanobodies.tsv')
