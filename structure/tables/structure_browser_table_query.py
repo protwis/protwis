@@ -6,7 +6,7 @@ from django.db.models import (
 )
 from django.db.models.functions import Length, Coalesce, Cast
 
-from structure.models import Structure, StructureExtraProteins
+from structure.models import Structure, StructureExtraProteins, StructureAuxiliarySmallMolecule
 from interaction.models import StructureLigandInteraction, ResidueFragmentInteraction
 from protein.models import Gene, IdentifiedSites
 from common.models import WebLink
@@ -81,6 +81,11 @@ def StructureBrowserTableRows():
                 to_attr="prefetched_ligands",
             ),
             Prefetch(
+                "auxiliary_small_molecules",
+                queryset=StructureAuxiliarySmallMolecule.objects.all(),
+                to_attr="prefetched_aux_small_molecules",
+            ),
+            Prefetch(
                 "protein_conformation__protein__parent__web_links",
                 queryset=WebLink.objects
                     .select_related("web_resource")
@@ -132,6 +137,19 @@ def StructureBrowserTableRows():
         antibodies = "<br>".join(a.name for a in s.stabilizing_agents.all()
                                  if antibody_pat.match(a.name)) or "-"
 
+        # auxiliary small molecules – dedupe by title for the Name list,
+        # distinct sorted sets for Type/Function (same shape as fusions/antibodies)
+        aux_names, aux_types, aux_functions, seen_aux = [], set(), set(), set()
+        for am in getattr(s, "prefetched_aux_small_molecules", []):
+            title = am.title or am.name
+            if title and title not in seen_aux:
+                seen_aux.add(title)
+                aux_names.append(title)
+            if am.type:
+                aux_types.add(am.type)
+            if am.function:
+                aux_functions.add(am.function)
+
         # ligands – build names/types/roles here
         lig_list, lig_types, lig_roles = [], set(), set()
         for li in getattr(s, "prefetched_ligands", []):
@@ -178,6 +196,10 @@ def StructureBrowserTableRows():
 
             "fusions": fusions,
             "antibodies": antibodies,
+
+            "auxiliary_molecules": "<br>".join(aux_names) or "-",
+            "auxiliary_molecule_type": "<br>".join(sorted(aux_types)) or "-",
+            "auxiliary_molecule_function": "<br>".join(sorted(aux_functions)) or "-",
 
             "ligands": lig_list,
             "ligand_type": "<br>".join(map(str, sorted(lig_types))) or "-",

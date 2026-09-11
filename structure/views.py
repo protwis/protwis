@@ -174,6 +174,10 @@ class StructureDataJsonView(View):
                     "fusions":    row.fusions,
                     "antibodies": row.antibodies,
 
+                    "auxiliary_molecules":          row.auxiliary_molecules,
+                    "auxiliary_molecule_type":       row.auxiliary_molecule_type,
+                    "auxiliary_molecule_function":   row.auxiliary_molecule_function,
+
                     "ligands":      row.ligands,
                     "ligand_type":  row.ligand_type,
                     "ligand_role":  row.ligand_role,
@@ -187,7 +191,9 @@ class StructureDataJsonView(View):
                     "reference": (f'<a target="_blank" href="{pub_link}">{pub_ref}</a>'
                                   if pub_ref != "-" else "-"),
                     "pub_date":  (s.publication_date.strftime("%Y-%m-%d")
-                                  if s.publication_date else "-")
+                                  if s.publication_date else "-"),
+
+                    "has_ligand_interactions": bool(row.has_ligand_interactions),
                 })
 
             return JsonResponse(out, safe=False, encoder=DjangoJSONEncoder)

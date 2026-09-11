@@ -155,6 +155,10 @@ class GpcrStructureBrowserTable(models.Model):
     fusions = models.TextField(null=True)
     antibodies = models.TextField(null=True)
 
+    auxiliary_molecules = models.TextField(null=True)
+    auxiliary_molecule_type = models.TextField(null=True)
+    auxiliary_molecule_function = models.TextField(null=True)
+
     ligands = JSONField(default=list)
     ligand_type = models.TextField(null=True)
     ligand_role = models.TextField(null=True)

@@ -46,12 +46,15 @@ pre {
 }
 
 /* --- DataTables header layout tweaks ----------------------------------------- */
-th .dt-column-order {
+/* Scoped to :not([data-dt-order="disable"]) — the dummy/super-header/filter rows
+   all carry that attribute, so without this scope these sort-arrow-spacing rules
+   also apply to them, pushing their (non-sortable) text a few px off-center. */
+th:not([data-dt-order="disable"]) .dt-column-order {
   margin-right: -12px; /* shift sort arrow to right */
 }
 
 /* default: center titles (except first col = checkbox) */
-th:not(:first-child) .dt-column-title {
+th:not(:first-child):not([data-dt-order="disable"]) .dt-column-title {
   display: inline-block; /* keep arrow beside */
   text-align: center;
   padding-left: 24px;     /* space for sort arrow */

@@ -290,6 +290,26 @@ class StructureExtraProteins(models.Model):
         db_table = "extra_proteins"
 
 
+class StructureAuxiliarySmallMolecule(models.Model):
+    """Maps the existing `structure_auxiliary_small_molecule` table (small-molecule
+    cofactors/detergents/lipids/ions resolved in a structure, distinct from the
+    annotated ligand(s)). managed=False: the table predates this model."""
+    structure = models.ForeignKey('structure.Structure', on_delete=models.CASCADE, related_name='auxiliary_small_molecules')
+    name = models.CharField(max_length=10)
+    title = models.CharField(max_length=200, null=True)
+    type = models.CharField(max_length=20)
+    function = models.CharField(max_length=50, null=True)
+    chain = models.CharField(max_length=5)
+    residue_seq_id = models.IntegerField()
+
+    def __str__(self):
+        return self.title or self.name
+
+    class Meta():
+        db_table = "structure_auxiliary_small_molecule"
+        managed = False
+
+
 class StructureStabilizingAgent(models.Model):
     slug = models.SlugField(max_length=75, unique=True)
     name = models.CharField(max_length=100)

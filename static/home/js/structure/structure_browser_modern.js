@@ -232,18 +232,6 @@
   { data: "arrestin_note", name: "Note" },
   { data: "arrestin_coverage", name: "% of Seq" },
 
-  // AUXILIARY PROTEIN
-  {
-    data: "fusions",
-    name: "Fusion",
-    render: (d, t) => expand1LineRender(d, t),
-  },
-  {
-    data: "antibodies",
-    name: "Antibodies",
-    render: (d, t) => expand1LineRender(d, t),
-  },
-
   // STRUCTURE LIGAND
   {
     data: "ligands",
@@ -267,7 +255,36 @@
     render: (d, t) => expand1LineRender(d, t),
   },
 
-  // PHYSIOLOGICAL LIGAND
+  // AUXILIARY PROTEIN
+  {
+    data: "fusions",
+    name: "Fusion",
+    render: (d, t) => expand1LineRender(d, t),
+  },
+  {
+    data: "antibodies",
+    name: "Antibodies",
+    render: (d, t) => expand1LineRender(d, t),
+  },
+
+  // AUXILIARY SMALL-MOLECULES
+  {
+    data: "auxiliary_molecules",
+    name: "Name",
+    render: (d, t) => expand1LineRender(d, t),
+  },
+  {
+    data: "auxiliary_molecule_type",
+    name: "Type",
+    render: (d, t) => expand1LineRender(d, t),
+  },
+  {
+    data: "auxiliary_molecule_function",
+    name: "Function",
+    render: (d, t) => expand1LineRender(d, t),
+  },
+
+  // NATURAL LIGANDS (physiological ligand)
   {
     data: "endo_ligands",
     name: "Name",
@@ -323,14 +340,15 @@
     $menu.empty();
 
     const G = [
-      { label: 'CLASSIFICATION', items: [ { i:6,t:'Receptor family' }, { i:7,t:'Class' }, { i:8,t:'Species' } ] },
-      { label: 'STRUCTURE',      items: [ { i:9,t:'Method' },{ i:10,t:'PDB' },{ i:11,t:'Refined structure' },{ i:12,t:'Resolution' },{ i:13,t:'Preferred chain' },{ i:14,t:'State' },{ i:15,t:'Degree active (%)' },{ i:16,t:'% of Seq' } ] },
-      { label: 'SIGNAL PROTEIN', items: [ { i:17,t:'Family' },{ i:18,t:'Subtype' },{ i:19,t:'Note' },{ i:20,t:'% of Seq' } ] },
-      { label: 'AUXILIARY PROTEIN', items: [ { i:21,t:'Fusion' },{ i:22,t:'Antibodies' } ] },
-      { label: 'STRUCTURE LIGAND', items: [ { i:23,t:'Name' },{ i:24,t:'Type' },{ i:25,t:'Modality' } ] },
-      { label: 'PHYSIOLOGICAL LIGAND', items: [ { i:26,t:'Name' },{ i:27,t:'Type' } ] },
-      { label: 'SODIUM ION SITE', items: [ { i:28,t:'D2x50 S3x39' },{ i:29,t:'Sodium in structure' } ] },
-      { label: 'REFERENCE', items: [ { i:30,t:'Authors' },{ i:31,t:'Reference' },{ i:32,t:'Publication date' } ] }
+      { label: 'CLASSIFICATIONS', items: [ { i:6,t:'Receptor family' }, { i:7,t:'Class' }, { i:8,t:'Species' } ] },
+      { label: 'STRUCTURES',      items: [ { i:9,t:'Method' },{ i:10,t:'PDB' },{ i:11,t:'Refined structure' },{ i:12,t:'Resolution' },{ i:13,t:'Preferred chain' },{ i:14,t:'State' },{ i:15,t:'Degree active (%)' },{ i:16,t:'% of Seq' } ] },
+      { label: 'SIGNAL PROTEINS', items: [ { i:17,t:'Family' },{ i:18,t:'Subtype' },{ i:19,t:'Note' },{ i:20,t:'% of Seq' } ] },
+      { label: 'STRUCTURE LIGANDS', items: [ { i:21,t:'Name' },{ i:22,t:'Type' },{ i:23,t:'Modality' } ] },
+      { label: 'AUXILIARY PROTEINS', items: [ { i:24,t:'Fusion' },{ i:25,t:'Antibodies' } ] },
+      { label: 'AUXILIARY SMALL-MOLECULES', items: [ { i:26,t:'Name' },{ i:27,t:'Type' },{ i:28,t:'Function' } ] },
+      { label: 'NATURAL LIGANDS', items: [ { i:29,t:'Name' },{ i:30,t:'Type' } ] },
+      { label: 'SODIUM ION SITES', items: [ { i:31,t:'D2x50 S3x39' },{ i:32,t:'Sodium in structure' } ] },
+      { label: 'REFERENCES', items: [ { i:33,t:'Authors' },{ i:34,t:'Reference' },{ i:35,t:'Publication date' } ] }
     ];
 
     const headings = [];
@@ -439,14 +457,15 @@
 
   // ===== 4) GROUP BORDERS (left divider at group starts) ======================
   const BORDER_GROUPS = {
-    CLASSIFICATION:         [6,7,8],
-    STRUCTURE:              [9,10,11,12,13,14,15,16],
-    "SIGNAL PROTEIN":       [17,18,19,20],
-    "AUXILIARY PROTEIN":    [21,22],
-    "STRUCTURE LIGAND":     [23,24,25],
-    "PHYSIOLOGICAL LIGAND": [26,27],
-    "SODIUM ION SITE":      [28,29],
-    REFERENCE:              [30,31,32]
+    CLASSIFICATIONS:              [6,7,8],
+    STRUCTURES:                   [9,10,11,12,13,14,15,16],
+    "SIGNAL PROTEINS":            [17,18,19,20],
+    "STRUCTURE LIGANDS":          [21,22,23],
+    "AUXILIARY PROTEINS":         [24,25],
+    "AUXILIARY SMALL-MOLECULES":  [26,27,28],
+    "NATURAL LIGANDS":            [29,30],
+    "SODIUM ION SITES":           [31,32],
+    REFERENCES:                   [33,34,35]
   };
 
   function applyGroupBorders(table) {
@@ -599,28 +618,29 @@
     column_filters = column_filters.concat(CreateColumnFilters(dt, 15, 2,"Range-float-vertical"));
     column_filters = column_filters.concat(CreateColumnFilters(dt, 17, 3,"Multi-select-exact"));
     column_filters = column_filters.concat(CreateColumnFilters(dt, 20, 1,"Range-float-vertical"));
-    column_filters = column_filters.concat(CreateColumnFilters(dt, 21, 7,"Multi-select-exact-filter"));
-    column_filters = column_filters.concat(CreateColumnFilters(dt, 28, 2,"Multi-select-exact"));
-    column_filters = column_filters.concat(CreateColumnFilters(dt, 30, 2,"Multi-select-unspecific"));
-    column_filters = column_filters.concat(CreateColumnFilters(dt, 32, 1,"Range-select-vertical"));
+    column_filters = column_filters.concat(CreateColumnFilters(dt, 21,10,"Multi-select-exact-filter"));
+    column_filters = column_filters.concat(CreateColumnFilters(dt, 31, 2,"Multi-select-exact"));
+    column_filters = column_filters.concat(CreateColumnFilters(dt, 33, 2,"Multi-select-unspecific"));
+    column_filters = column_filters.concat(CreateColumnFilters(dt, 35, 1,"Range-select-vertical"));
     createDropdownFilters(dt, column_filters);
   }
 
   // ===== 7) EXPORT TO EXCEL ===================================================
   const EXCLUDE_EXPORT_COLS = [0, 1, 5]; // checkbox, GPCRdb, hidden ID
   const SUPER_GROUPS = [
-    { label: 'RECEPTOR',             idxs: [2,3,4] },
-    { label: 'CLASSIFICATION',       idxs: [6,7,8] },
-    { label: 'STRUCTURE',            idxs: [9,10,11,12,13,14,15,16] },
-    { label: 'SIGNAL PROTEIN',       idxs: [17,18,19,20] },
-    { label: 'AUXILIARY PROTEIN',    idxs: [21,22] },
-    { label: 'STRUCTURE LIGAND',     idxs: [23,24,25] },
-    { label: 'PHYSIOLOGICAL LIGAND', idxs: [26,27] },
-    { label: 'SODIUM ION SITE',      idxs: [28,29] },
-    { label: 'REFERENCE',            idxs: [30,31,32] }
+    { label: 'RECEPTORS',                   idxs: [2,3,4] },
+    { label: 'CLASSIFICATIONS',             idxs: [6,7,8] },
+    { label: 'STRUCTURES',                  idxs: [9,10,11,12,13,14,15,16] },
+    { label: 'SIGNAL PROTEINS',             idxs: [17,18,19,20] },
+    { label: 'STRUCTURE LIGANDS',           idxs: [21,22,23] },
+    { label: 'AUXILIARY PROTEINS',          idxs: [24,25] },
+    { label: 'AUXILIARY SMALL-MOLECULES',   idxs: [26,27,28] },
+    { label: 'NATURAL LIGANDS',             idxs: [29,30] },
+    { label: 'SODIUM ION SITES',            idxs: [31,32] },
+    { label: 'REFERENCES',                  idxs: [33,34,35] }
   ];
   const REFINED_COL   = 11;
-  const REFERENCE_COL = 31;
+  const REFERENCE_COL = 34;
 
   function buildGroupRowAndMerges(visibleCols) {
     const row = Array(visibleCols.length).fill(null);
