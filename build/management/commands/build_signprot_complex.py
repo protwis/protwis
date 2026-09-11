@@ -66,7 +66,11 @@ class Command(BaseCommand):
             if self.options['debug']:
                 print(pdb,data)
             if 'arrestin' in data or 'g_protein' in data:
-                structure = Structure.objects.get(pdb_code__index=pdb)
+                try:
+                    structure = Structure.objects.get(pdb_code__index=pdb)
+                except Structure.DoesNotExist:
+                    print(f'WARNING: Skipping {pdb} - structure not in db')
+                    continue
 
                 if 'g_protein' in data:
                     if data['g_protein']['beta_uniprot']=='':
@@ -84,14 +88,17 @@ class Command(BaseCommand):
 
 
                     alpha5_id = data['g_protein']['alpha_alpha5_identity']
+                    alphab = data['g_protein']['alpha_backbone']
                     alpha_entry = alpha5_id if alpha5_id and alpha5_id != 'unknown' else data['g_protein']['alpha_uniprot']
-                    signprot_complex, created = SignprotComplex.objects.get_or_create(protein=Protein.objects.get(entry_name=alpha_entry),
+                    alpha = Protein.objects.get(entry_name=alpha_entry) if alpha_entry!='' else None
+                    alpha_backbone = Protein.objects.get(entry_name=alphab) if alphab and alphab != 'unknown' else None
+                    signprot_complex, _ = SignprotComplex.objects.get_or_create(protein=alpha,
                                                                                       structure=structure,
                                                                                       alpha=data['g_protein']['alpha_chain'], beta_chain=b_chain, gamma_chain=g_chain,
                                                                                       beta_protein=b_protein, gamma_protein=g_protein,
-                                                                                      alpha_backbone=Protein.objects.get(entry_name=data['g_protein']['alpha_backbone']))
+                                                                                      alpha_backbone=alpha_backbone)
                 if 'arrestin' in data:
-                    signprot_complex, created = SignprotComplex.objects.get_or_create(protein=Protein.objects.get(entry_name=data['arrestin']['protein']), structure=structure,
+                    signprot_complex, _ = SignprotComplex.objects.get_or_create(protein=Protein.objects.get(entry_name=data['arrestin']['protein']), structure=structure,
                                                                                       alpha=data['arrestin']['chain'])
                 structure.signprot_complex = signprot_complex
                 structure.save()

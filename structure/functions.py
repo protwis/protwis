@@ -1413,14 +1413,14 @@ class ParseStructureCSV(AbsParseStructureCSV):
             g_proteins = csv.reader(csvfile, delimiter='\t')
             next(g_proteins, None)
             for g in g_proteins:
-                self.structures[g[0]]['g_protein'] = {'alpha_uniprot': g[1], 'alpha_chain': g[2], 'beta_uniprot': g[3], 'beta_chain': g[4], 'gamma_uniprot': g[5], 'gamma_chain': g[6], 'note': g[7], 'alpha_label_asym_id': g[8], 'beta_label_asym_id': g[9], 'gamma_label_asym_id': g[10], 'alpha_alpha5_identity': g[11], 'alpha_backbone': g[12]}
+                self.structures[g[0]]['g_protein'] = {'alpha_uniprot': g[1], 'alpha_chain': g[2], 'beta_uniprot': g[3], 'beta_chain': g[4], 'gamma_uniprot': g[5], 'gamma_chain': g[6], 'note_verbose': g[7], 'note': g[8], 'alpha_label_asym_id': g[9], 'beta_label_asym_id': g[10], 'gamma_label_asym_id': g[11], 'alpha_alpha5_identity': g[12], 'alpha_backbone': g[13]}
 
     def parse_arrestins(self):
         with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'arrestins.tsv']), newline='') as csvfile:
             arrestins = csv.reader(csvfile, delimiter='\t')
             next(arrestins, None)
             for a in arrestins:
-                self.structures[a[0]]['arrestin'] = {'protein': a[1], 'chain': a[2], 'note': a[3], 'label_asym_id': a[4]}
+                self.structures[a[0]]['arrestin'] = {'protein': a[1], 'chain': a[2], 'note_verbose': a[3], 'note': a[4], 'label_asym_id': a[5]}
 
     def parse_aux_file(self, aux_csv):
         with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', aux_csv]), newline='') as csvfile:
@@ -1487,6 +1487,9 @@ class StructureBuildCheck():
             if hasattr(s, 'protein_conformation'):
                 resis = Residue.objects.filter(protein_conformation=s.protein_conformation)
             else:
+                if not s.protein:
+                    print(f'Warning: {s} does not have alpha protein assigned')
+                    continue
                 if s.protein.family.slug.startswith('100'):
                     tag = '_a'
                 elif s.protein.family.slug.startswith('200'):
@@ -1655,6 +1658,9 @@ class StructureBuildCheck():
 
     def check_signprot_struct_residues(self, signprot_complex):
         pdb = PDBParser(PERMISSIVE=True, QUIET=True).get_structure('struct', StringIO(str(signprot_complex.structure.pdb_data.pdb)))[0]
+        if not signprot_complex.protein:
+            print(f'Warning: no alpha protein for {signprot_complex.structure.pdb_code.index}')
+            return 0
         if signprot_complex.protein.family.slug.startswith('100'):
             resis = Residue.objects.filter(protein_conformation=ProteinConformation.objects.get(protein__entry_name=signprot_complex.structure.pdb_code.index.lower()+'_a'))
             H5 = resis.filter(protein_segment__slug='G.H5')
@@ -1671,7 +1677,7 @@ class StructureBuildCheck():
             return 0
         ### Print structures where residues were not built
         if len(seq)!=len(resis):
-            print(signprot_complex.structure, len(pdb[signprot_complex.alpha]), len(resis))
+            print(signprot_complex.protein.entry_name, signprot_complex.structure, len(pdb[signprot_complex.alpha]), len(resis))
 
 
 class ModelRotamer(object):
@@ -1834,17 +1840,35 @@ def get_pdb_ids(uniprot_id):
     return pdb_list
 
 
-def create_structure_rotamer(PDB_residue, residue_object, structure):
+def build_rotamer_data(PDB_residue):
     atom_num_dict = {'E':9, 'S':6, 'Y':12, 'G':4, 'A':5, 'V':7, 'M':8, 'L':8, 'I':8, 'T':7, 'F':11, 'H':10, 'K':9,
                  'D':8, 'C':6, 'R':11, 'P':7, 'Q':9, 'N':8, 'W':14, '-':0}
     out_stream = StringIO()
     io = PDBIO()
     io.set_structure(PDB_residue)
     io.save(out_stream)
-    pdbdata = PdbData.objects.get_or_create(pdb=out_stream.getvalue())[0]
     missing_atoms = atom_num_dict[polypeptide.three_to_one(PDB_residue.get_resname())] > len(PDB_residue.get_unpacked_list())
+    return out_stream.getvalue(), missing_atoms
+
+def create_structure_rotamer(PDB_residue, residue_object, structure):
+    pdb_text, missing_atoms = build_rotamer_data(PDB_residue)
+    pdbdata = PdbData.objects.create(pdb=pdb_text)
     rot = Rotamer(missing_atoms=missing_atoms, pdbdata=pdbdata, residue=residue_object, structure=structure)
     return rot
+
+def delete_orphaned_pdbdata(pdbdata_ids):
+    if not pdbdata_ids:
+        return
+    PdbData.objects.filter(pk__in=pdbdata_ids).filter(
+        rotamer__isnull=True,
+        fragment__isnull=True,
+        structure__isnull=True,
+        structuremodel__isnull=True,
+        structurecomplexmodel__isnull=True,
+        signprotstructure__isnull=True,
+        structureligandinteraction__isnull=True,
+        crystalinfo__isnull=True,
+    ).delete()
 
 def fetch_signprot_data(pdb, protein, beta_uniprots=[], gamma_uniprots=[]):
     data = {}

@@ -2272,9 +2272,13 @@ G_PROTEIN_DISPLAY_NAME = { # Alpha
                            'F6VL43':'Gi3',
                            # Beta
                            'G(I)/G(S)/G(T) subunit beta-1':'G&beta;1',
-                           'BJ4_G0051350.mRNA.1.CDS.1':'STE4 isoform 1',
+                           'G(I)/G(S)/G(T) subunit beta-2':'G&beta;2',
+                           'G(I)/G(S)/G(T) subunit beta-3':'G&beta;3',
+                           'subunit beta':'STE4 isoform 1',
                            # Gamma
-                           'G(T) subunit gamma-T1':'G&gamma;T1', 'G(I)/G(S)/G(O) subunit gamma-2':'G&gamma;2',
+                           'G(T) subunit gamma-T1':'G&gamma;T1', 
+                           'G(I)/G(S)/G(O) subunit gamma-2':'G&gamma;2',
+                           'G(I)/G(S)/G(O) subunit gamma-13':'G&gamma;13',
                            'subunit gamma':'G&gamma;'}
 
 ARRESTIN_DISPLAY_NAME = {'arrc_human': 'Arrestin-C',
