@@ -4076,7 +4076,7 @@ def prepare_lig_complex_download(mod, scores_obj=None, refined=False):
         else:
             # Handle missing scores
             scores_text = "pae_7tm,plddt_mean\n,\n"
-    elif structure_type_slug in ['af-signprot-peptide', "af-signprot"]:
+    elif structure_type_slug in ['af-signprot-peptide', "af-signprot", 'af-peptide']:
         # Use fields for 'af-signprot-peptide' and others
         if structure_type_slug == 'af-signprot-peptide':
             gprot_entry = mod.signprot_complex.protein.entry_name
