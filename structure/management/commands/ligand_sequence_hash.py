@@ -141,7 +141,7 @@ class Command(BaseCommand):
 
             # collision test for development
             if options['collision_test']:
-               collision_test_hash, col_sequence = _create_artificial_collision(q_results, current_batch_start, collision_test_hash, col_sequence)
+               collision_test_hash, col_sequence = _create_artificial_collision(q_results, current_batch_start, col_sequence, collision_test_hash)
             
             # Try to save the hashes in SQLlite DB 
             cur = con.cursor()

@@ -40,7 +40,7 @@ class Command(BaseCommand):
         lock = ctx.Lock()
 
         if not num_items:
-            return False
+            return True
 
         # make sure not to use more jobs than proteins (chunk size will be 0, which is not good)
         if proc > num_items:
@@ -61,3 +61,10 @@ class Command(BaseCommand):
 
         for p in procs:
             p.join()
+
+        failed_procs = [p for p in procs if p.exitcode]
+        if failed_procs:
+            self.logger.error(f"{len(failed_procs)}/{len(procs)} worker process(es) exited with an error (exit code(s): {[p.exitcode for p in failed_procs]}). See the log above for details.")
+            return False
+
+        return True

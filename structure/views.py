@@ -5309,7 +5309,7 @@ def LigandComplexDetails(request, header, refined=False):
         small_molecule = True
 
     segments_out = af_model_coloring(residues_plddt, chains)
-    ligand_segments = ligand_coloring(model, ligand.chain, 'small-molecule' if ligand.ligand.ligand_type.name == 'small-molecule' else 'peptide')
+    ligand_segments = ligand_coloring(model, ligand.chain, 'small-molecule' if ligand.ligand.ligand_type.slug == 'small-molecule' else 'peptide')
     segments_out.extend(ligand_segments)
     
 

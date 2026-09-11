@@ -130,7 +130,12 @@ class AlphaFoldTwoComplexModel(BaseModel):
                 return 'af-peptide'
         else:
             if self.signprot:
-                return 'af-signprot'
+                if self.signprot_subunits.alpha.family.parent.parent.name == "Alpha":
+                    return 'af-signprot'
+                elif self.signprot_subunits.alpha.family.parent.parent.name == "Arrestin":
+                    return 'af-arrestin'
+                else:
+                    raise ValueError(f"Unknown signalling protein type for model {self.model_name} when creating structure type slug. Expected either a G protein (Alpha) or an Arrestin, but got {self.signprot_subunits.alpha.family.parent.parent.name}.")
             else:
                 log_or_raise(self.logger, 
                              f"Unknown model feature combination for model {self.model_name} when creating structure type slug. Expected either a ligand or a signalling protein to be present in the model.", 
@@ -245,6 +250,7 @@ class AlphaFoldTwoComplexModel(BaseModel):
                 ligand.hashed_sequence = ligand_name_format['hash']
             elif ligand_name_format['format'] == 'name_and_legacyid':
                 ligand.name = ligand_name_format['name']
+                ligand.legacy_id = ligand_name_format['legacy_id']
 
             ligand.pdb_chain_id = self.assign_ligand_chain(model_type)
 
@@ -263,11 +269,15 @@ class AlphaFoldTwoComplexModel(BaseModel):
             if self.signprot:
                 if self.ligand.hashed_sequence:
                     return f'AFM_{self.receptor.upper()}_hashedseq[{self.ligand.hashed_sequence.upper()}]_{self.signprot.upper()}'
+                elif self.ligand.legacy_id:
+                    return f'AFM_{self.receptor.upper()}_{self.ligand.name.upper()}[{self.ligand.legacy_id}]_{self.signprot.upper()}'
                 else:
                     return f'AFM_{self.receptor.upper()}_{self.ligand.name.upper()}_{self.signprot.upper()}'                
             else:
                 if self.ligand.hashed_sequence:
                     return f'AFM_{self.receptor.upper()}_hashedseq[{self.ligand.hashed_sequence.upper()}]'
+                elif self.ligand.legacy_id:
+                    return f'AFM_{self.receptor.upper()}_{self.ligand.name.upper()}[{self.ligand.legacy_id}]'
                 else:
                     return f'AFM_{self.receptor.upper()}_{self.ligand.name.upper()}'                
         else:
@@ -393,7 +403,13 @@ class AlphaFoldTwoComplexModelParser(BaseModelParser):
             The starting index of the model directories to process. Default is 0.
         offset_end : int
             The ending index of the model directories to process. Default is None, which means process all directories from offset_start to the end.
+
+        Returns
+        -------
+        int
+            The number of models that failed to process (a failure in one model does not prevent the remaining models from being processed).
         """
+        failed_count = 0
         try:
             if low_memory and not write:
                 raise ValueError("Cannot set low_memory to True when write is False. This would result in models being discarded from memory without being written to the database.")
@@ -408,11 +424,26 @@ class AlphaFoldTwoComplexModelParser(BaseModelParser):
             models_to_process = self.model_dirs[offset_start:offset_end] if offset_end else self.model_dirs[offset_start:]
 
             for model_path in models_to_process:
-                model = AlphaFoldTwoComplexModel(model_path, self.config)
-                model.load()
-                if not low_memory:
-                    self.models.append(model)
-                if write:
-                    model.write()
+                try:
+                    model = AlphaFoldTwoComplexModel(model_path, self.config)
+                    model.load()
+                    if not low_memory:
+                        self.models.append(model)
+                    if write:
+                        model.write()
+                except Exception as e:
+                    failed_count += 1
+                    # Always log-and-continue here regardless of self.error_handling: this catch exists to
+                    # isolate one model's failure from the rest of the batch, so it must never re-raise (a
+                    # raising error_handling mode already aborted this model's own load()/write() above; letting
+                    # that same mode re-raise again here would escape the loop and abort the whole batch).
+                    error_handling_override = "log" if self.config.error_handling in ["raise", "log_then_raise", "log_with_trace_then_raise"] else self.config.error_handling
+                    log_or_raise(self.logger, f"Error processing model {os.path.basename(model_path)}: {str(e)}", Exception, error_handling_override, parent_exception=e)
+
+
+            if failed_count:
+                self.logger.error(f"Failed to process {failed_count}/{len(models_to_process)} model(s) in {self.config.data_dir} (offset_start={offset_start}, offset_end={offset_end}).")
         except Exception as e:
             log_or_raise(self.logger, f"Error processing models: {str(e)}", Exception, self.error_handling, parent_exception=e)
+
+        return failed_count

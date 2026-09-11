@@ -75,7 +75,7 @@ class Command(BaseCommand):
                 sc_qs = sc_qs.filter(structure__pdb_code__index__in=pdb_filter)
             for sc in sc_qs:
                 sbc.check_signprot_struct_residues(sc)
-            scs = SignprotComplex.objects.filter(structure__structure_type__origin='experiment')
+            scs = sc_qs.filter(structure__structure_type__origin='experiment')
             for i in sbc.missing_seg:
                 print("Error: Missing segment {} {} has {} residue objects.".format(i[0],i[1],i[2]))
             sbc.check_duplicate_residues(scs)

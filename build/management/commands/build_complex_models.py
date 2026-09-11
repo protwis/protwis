@@ -99,8 +99,8 @@ class Command(BaseBuild):
             help='Set the deposition date for the models (format: YYYY-MM-DD). If not provided, the parser will attempt to extract the date from the PDB header.'),
         parser.add_argument('-e', '--error_handling',
             choices=["log", "raise", "log_then_raise", "log_with_trace", "log_with_trace_then_raise"],
-            default="log_with_trace",
-            help='Set the error handling strategy for the parser. "raise" will raise exceptions, "log" will log errors but suppress them, "log_then_raise" will log and then raise exceptions, "log_with_trace" will log errors with stack trace but suppress them, and "log_with_trace_then_raise" will log errors with stack trace and then raise exceptions.')
+            default="log_with_trace_then_raise",
+            help='Set the error handling strategy for the parser. "raise" will raise exceptions, "log" will log errors but suppress them, "log_then_raise" will log and then raise exceptions, "log_with_trace" will log errors with stack trace but suppress them, and "log_with_trace_then_raise" will log errors with stack trace and then raise exceptions. Non-raising modes ("log", "log_with_trace") suppress the exception that process_models\' per-model failure count relies on, so a failed model is only guaranteed to be counted (and skipped) when the mode also raises.')
 
 
     def handle(self, *args, **options):
@@ -147,9 +147,12 @@ class Command(BaseBuild):
 
         try:
             self.logger.info('CREATING STRUCTURES')
-            self.prepare_input(options['proc'], self.model_parser.model_dirs)
+            success = self.prepare_input(options['proc'], self.model_parser.model_dirs)
             test_model_updates(all_models, tracker, check=True)
-            self.logger.info('COMPLETED CREATING STRUCTURES')
+            if success:
+                self.logger.info('COMPLETED CREATING STRUCTURES')
+            else:
+                self.logger.error('COMPLETED CREATING STRUCTURES WITH ERRORS - some models were not processed successfully. See the log above for details.')
         except Exception as msg:
             self.logger.error(msg)
 
@@ -171,5 +174,7 @@ class Command(BaseBuild):
         return peptide_effects_dict  
 
     def main_func(self, positions, iteration, count, lock):
-        self.model_parser.process_models(write = True, low_memory = True, offset_start = positions[0], offset_end = positions[1])
+        failed_count = self.model_parser.process_models(write = True, low_memory = True, offset_start = positions[0], offset_end = positions[1])
+        if failed_count:
+            raise RuntimeError(f"{failed_count} model(s) failed to process in this worker chunk (offset_start={positions[0]}, offset_end={positions[1]}); see the build log above for details.")
             

@@ -383,8 +383,11 @@ class BaseModel():
         """
         try:
             pdb_struct = StringIO(self.pdb_raw)
-            header = pdb_struct.readline()
-            pdb_struct.seek(0)  # Reset the pointer to the beginning of the StringIO object
+            if self.pdb_has_header():
+                header = pdb_struct.readline()
+                pdb_struct.seek(0)  # Reset the pointer to the beginning of the StringIO object
+            else:
+                header = ''
             assign_gn = generic_number_assigner.GenericNumbering(pdb_file=pdb_struct, blastdb=os.sep.join([settings.STATICFILES_DIRS[0], 'blast', 'protwis_human_blastdb']), sequence_parser=True)
             pdb_struct = assign_gn.assign_generic_numbers_with_sequence_parser()
 
@@ -779,6 +782,7 @@ class ModelLigand():
         self.sequence = None
         self.hashed_sequence = None
         self.pdb_chain_id = None
+        self.legacy_id = None
         self.ligand_multimatch_handling = ligand_multimatch_handling
 
         self.logger = logging.getLogger('build')
@@ -896,7 +900,7 @@ class ModelLigand():
         Returns
         -------
         String
-            The ligand type name (e.g. 'small molecule', 'peptide', 'protein'), or None if no matching ligand was found.
+            The ligand type slug (e.g. 'small-molecule', 'peptide', 'protein'), or None if no matching ligand was found.
         """
         ligands_db = self.fetch_db_entities()
 
@@ -904,6 +908,6 @@ class ModelLigand():
             return None
 
         try:
-            return ligands_db[0].ligand_type.name
+            return ligands_db[0].ligand_type.slug
         except Exception as e:
             log_or_raise(self.logger, f"Unable to determine ligand type.", ValueError, self.error_handling, parent_exception=e)
