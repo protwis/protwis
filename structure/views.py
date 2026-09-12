@@ -5262,6 +5262,19 @@ def get_chain_list(pdb_string):
                 chains.add(chain_id)
     return sorted(chains)
 
+def ligand_has_hetatm(pdb_data, ligand_chain):
+    """Check if the ligand chain contains HETATM entries"""
+    try:
+        pdb_io = StringIO(pdb_data)
+        line = pdb_io.readline()
+        while line[21] != ligand_chain:
+            line = pdb_io.readline()
+        if line.startswith("HETATM"):
+            return True
+        return False
+    except:
+        return False 
+
 def LigandComplexDetails(request, header, refined=False):
     """
     Show complex homology models details
@@ -5298,7 +5311,7 @@ def LigandComplexDetails(request, header, refined=False):
     if model.structure_type.slug.startswith('af-signprot-peptide') or model.structure_type.slug.startswith('af-peptide') or model.structure_type.slug.startswith('b2-'):
         scores = StructureModelScores.objects.get(structure=model)
         chains = get_chain_list(model.pdb_data.pdb)
-        if "smallmolecule" in model.structure_type.slug:
+        if "smallmolecule" in model.structure_type.slug or ligand_has_hetatm(model.pdb_data.pdb, ligand.chain):
             small_molecule = True
         else:
             small_molecule = None
