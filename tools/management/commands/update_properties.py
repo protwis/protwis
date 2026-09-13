@@ -134,7 +134,10 @@ class Command(BaseCommand):
         failed = []
 
         # get preferred chain for PDB-code
-        references = Structure.objects.filter(protein_conformation__protein__family__slug__startswith="001").exclude(structure_type__slug__startswith='af-').prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state').order_by('protein_conformation__protein')
+        references = Structure.objects.filter(protein_conformation__protein__family__slug__startswith="001", 
+                                              structure_type__origin='experiment') \
+                                      .prefetch_related('pdb_code','pdb_data','protein_conformation__protein','protein_conformation__state') \
+                                      .order_by('protein_conformation__protein')
         references = list(references)
 
         pids = [ref.protein_conformation.protein.id for ref in references]

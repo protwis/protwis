@@ -1,279 +1,180 @@
-from build.management.commands.base_build import Command as BaseBuild
-from build.management.commands.build_homology_models_zip import Command as UploadModel
-from build.management.commands.build_homology_models import CallHomologyModeling
-from django.db.models import Q
+from html import parser
+
 from django.conf import settings
+from django.utils.text import slugify
+from django.db import IntegrityError
+from django.db.models import Q
+from django.core.exceptions import FieldError
 
-from protein.models import Protein, ProteinConformation, ProteinAnomaly, ProteinState, ProteinSegment
+from build.management.commands.base_build import Command as BaseBuild
+from protein.models import (Protein, ProteinConformation, ProteinState, ProteinSegment)
 from residue.models import Residue
-from residue.functions import dgn, ggn
-from structure.models import *
-from structure.functions import HSExposureCB, PdbStateIdentifier, update_template_source
-from common.alignment import AlignedReferenceTemplate, GProteinAlignment
-from common.definitions import *
-from common.models import WebLink
+from common.models import WebLink, WebResource, Publication
+from common.tools import test_model_updates
+from common.definitions import G_PROTEIN_DISPLAY_NAME as g_prot_dict, ARRESTIN_DISPLAY_NAME as arr_dict
+from structure.models import Structure, StructureType, PdbData, Rotamer, Fragment, StructureExtraProteins, StructureModelScores, StructureModelpLDDT
+from construct.functions import *
+from structure.management.commands.generate_complexes_to_model import get_stimulatory_peptide_like_ligand_AssayExperiment_obj, get_inhibitory_peptide_like_ligand_AssayExperiment_obj
+
+from contactnetwork.models import *
+from contactnetwork.cube import compute_interactions
+
+from Bio.PDB import PDBParser, PPBuilder, PDBIO
+from Bio import pairwise2
+
+from structure.functions import ParseAFComplexModels
+from ligand.models import Ligand, LigandPeptideStructure
+from interaction.models import *
+from interaction.views import regexaa, check_residue, extract_fragment_rotamer
 from signprot.models import SignprotComplex
-import structure.structural_superposition as sp
 import structure.assign_generic_numbers_gpcr as as_gn
-import structure.homology_models_tests as tests
-from structure.signprot_modeling import SignprotModeling 
-from structure.homology_modeling_functions import SignprotFunctions, GPCRDBParsingPDB, ImportHomologyModel, Remodeling
 
-import Bio.PDB as PDB
-from modeller import *
-from modeller.automodel import *
-from collections import OrderedDict
-import os
-import shlex
+from structure.model_parsers.base import LigandMultiMatchHandling
+from structure.model_parsers.boltz_two import BoltzTwoComplexModelParserConfig, BoltzTwoComplexModelParser
+from structure.model_parsers.alphafold_complex import AlphaFoldTwoComplexModelParser, AlphaFoldTwoComplexModelParserConfig
+from structure.model_parsers.logging import ParserVerbosity
+
+import django.apps
 import logging
-import pprint
-from io import StringIO, BytesIO
+import os
 import sys
-import re
-import zipfile
-import shutil
-import math
-from copy import deepcopy
-from datetime import datetime, date
 import yaml
-import traceback
-import subprocess
-import pprint
+import time
+import gc
+from collections import OrderedDict
+from datetime import datetime, date
+import json
+from io import StringIO
+from Bio.PDB.Selection import *
+import re
 
+# import traceback
 
-startTime = datetime.now()
-logger = logging.getLogger('homology_modeling')
-hdlr = logging.FileHandler('./logs/homology_modeling.log')
-formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
-hdlr.setFormatter(formatter)
-logger.addHandler(hdlr) 
-logger.setLevel(logging.INFO)
-structure_path = './structure/'
-pir_path = os.sep.join([structure_path, 'PIR'])
+_mapping_tag = yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG
+def dict_constructor(loader, node):
+    return OrderedDict(loader.construct_pairs(node))
 
-build_date = date.today()
+def represent_ordereddict(dumper, data):
+    value = []
 
-import warnings
-warnings.filterwarnings("ignore")
+    for item_key, item_value in data.items():
+        node_key = dumper.represent_data(item_key)
+        node_value = dumper.represent_data(item_value)
 
-class Command(BaseBuild):  
-    help = 'Build automated chimeric GPCR homology models'
-    class_code = {'A':'Class A (Rhodopsin)', 'B1':'Class B1 (Secretin)', 'F':'Class F (Frizzled)'}
-    
+        value.append((node_key, node_value))
+
+    return yaml.nodes.MappingNode(u'tag:yaml.org,2002:map', value)
+
+yaml.add_representer(OrderedDict, represent_ordereddict)
+yaml.add_constructor(_mapping_tag, dict_constructor)
+
+class Command(BaseBuild):
+    help = 'Reads source data and creates pdb structure records'
+
     def add_arguments(self, parser):
-        super(Command, self).add_arguments(parser=parser)
-        parser.add_argument('--update', help='Upload models to GPCRdb, overwrites existing entry', default=False, 
-                            action='store_true')
-        parser.add_argument('-r', help='''Run program for specific receptor(s) by giving UniProt common name as 
-                                          argument (e.g. 5ht2a_human)''', 
-                            default=False, type=str, nargs='+')
-        parser.add_argument('-c', help='''Run for only specific receptor class''', default=False, type=str, nargs='+')
-        parser.add_argument('--purge', help='Purge all existing db records', default=False, action='store_true')
-        parser.add_argument('--purge_zips', help='Purge all existing local model zips', default=False, action='store_true')
-        parser.add_argument('--test_run', action='store_true', help='Build only one complex model', default=False)
-        parser.add_argument('--debug', help='Debugging mode', default=False, action='store_true')
-        parser.add_argument('--signprot', help='Specify signaling protein with UniProt name', default=False, type=str, nargs='+')
-        parser.add_argument('--force_main_temp', help='Build model using this xtal as main template', default=False, type=str)
-        parser.add_argument('--no_remodeling', help='Do not allow for remodeling loop knots', default=False, action='store_true')
-        parser.add_argument('--skip_existing', help='Skip rebuilding models already in protwis/structure/complex_models_zip/', 
-                            default=False, action='store_true')
-        parser.add_argument('-z', help='Create zip file of complex model directory containing all built complex models', default=False,
-                            action='store_true')
-        
+        parser.add_argument('-p', '--proc',
+            type=int,
+            action='store',
+            dest='proc',
+            default=1,
+            help='Number of processes to run')
+        parser.add_argument('-m', '--model_set_name',
+            dest='model_set_name',
+            required=True,
+            help='The name of the model set to process (i.e folder name in structure_data folder)')
+        parser.add_argument('-r', '--parser',
+            dest='parser',
+            choices=['boltztwocomplex', 'alphafoldcomplex'],
+            required=True,
+            help='The parser to use for the model set (BoltzTwoComplex or AlphafoldComplex)')
+        parser.add_argument('--cleaned_seq_csv',
+            action='store',
+            default=False,
+            help='Load cleaned sequences from CSV (required for AlphafoldComplex parser)')
+        parser.add_argument('-y', '--parser_verbosity',
+            choices=['silent', 'basic', 'everything'],
+            default="basic",
+            help='Set the verbosity level for the parser'),
+        parser.add_argument('-d', '--deposition_date',
+            help='Set the deposition date for the models (format: YYYY-MM-DD). If not provided, the parser will attempt to extract the date from the PDB header.'),
+        parser.add_argument('-e', '--error_handling',
+            choices=["log", "raise", "log_then_raise", "log_with_trace", "log_with_trace_then_raise"],
+            default="log_with_trace_then_raise",
+            help='Set the error handling strategy for the parser. "raise" will raise exceptions, "log" will log errors but suppress them, "log_then_raise" will log and then raise exceptions, "log_with_trace" will log errors with stack trace but suppress them, and "log_with_trace_then_raise" will log errors with stack trace and then raise exceptions. Non-raising modes ("log", "log_with_trace") suppress the exception that process_models\' per-model failure count relies on, so a failed model is only guaranteed to be counted (and skipped) when the mode also raises.')
+
+
     def handle(self, *args, **options):
-        if options['purge']:
-            print("Delete existing db entries")
-            self.purge_complex_entries()
-        if options['purge_zips']:
-            print("Delete existing local zips")
-            complex_zip_path = './structure/complex_models_zip/'
-            if os.path.exists(complex_zip_path):
-                files = os.listdir(complex_zip_path)
-                for f in files:
-                    try:
-                        os.unlink(complex_zip_path+f)
-                    except:
-                        shutil.rmtree(complex_zip_path+f)
+        tracker = {}
+        all_models = django.apps.apps.get_models()[6:]
+        test_model_updates(all_models, tracker, initialize=True)
 
-        self.debug = options['debug']
-        if not os.path.exists('./structure/homology_models/'):
-            os.mkdir('./structure/homology_models')
-        if not os.path.exists('./structure/PIR/'):
-            os.mkdir('./structure/PIR')
-        if not os.path.exists('./static/homology_models'):
-            os.mkdir('./static/homology_models')
-        if not os.path.exists('./structure/complex_models_zip/'):
-            os.mkdir('./structure/complex_models_zip/')
-        open('./structure/homology_models/done_models.txt','w').close()
+        # Set verbosity level from integer enumeration based on command-line argument
+        verbosity_level = ParserVerbosity.from_string_map.get(options['parser_verbosity'], ParserVerbosity.BASIC)
 
-        self.update = options['update']
-        self.complex = True
-        self.signprot = options['signprot']
-        self.force_main_temp = options['force_main_temp']
-        self.no_remodeling = options['no_remodeling']
-        self.skip_existing = options['skip_existing']
-        self.existing_list = []
-        if self.skip_existing:
-            existing = os.listdir('./structure/complex_models_zip/')
-            for f in existing:
-                if f.endswith('zip'):
-                    split = f.split('_')
-                    self.existing_list.append(split[1]+'_'+split[2]+'_'+split[3])
+        pdb_header_override = None
+        if options['deposition_date']:
+            date_provided = options['deposition_date']            
+            if not re.match(r'^\d{4}-\d{2}-\d{2}$', date_provided): # Validate the date format (YYYY-MM-DD)
+                raise ValueError(f"Invalid date format for deposition_date: {date_provided}. Expected format: YYYY-MM-DD.")
+            pdb_header_override = {'deposition_date': date_provided, 'release_date': date_provided}
 
-        sf = SignprotFunctions()
-        receptor_families = sf.get_receptor_families_with_templates()
-        if options['c']:
-            classes_to_do = []
-            for c in options['c']:
-                if c in self.class_code:
-                    classes_to_do.append(self.class_code[c])
-                elif c in receptor_families:
-                    classes_to_do.append(c)
-                else:
-                    raise AssertionError('{} is not a viable class name for -c'.format(c))
-            receptor_families = classes_to_do
+        if options['parser'] == "alphafoldcomplex":
+            if options['cleaned_seq_csv'] and not os.path.exists(options['cleaned_seq_csv']):
+                raise FileNotFoundError(f"Cleaned sequence CSV file not found at {options['cleaned_seq_csv']}.")
 
-        if options['r']:
-            self.receptor_list = Protein.objects.filter(entry_name__in=options['r'])
-        else:
-            self.receptor_list = Protein.objects.filter(parent__isnull=True, accession__isnull=False, species__common_name='Human', 
-                                                        family__parent__parent__parent__name__in=receptor_families)
-        self.gprotein_targets = OrderedDict()
-        for rf in receptor_families:
-            subfams = sf.get_subfamilies_with_templates(rf)
-            self.gprotein_targets[rf] = sf.get_subfam_subtype_dict(subfams, rf)
-        if self.signprot:
-            for s in self.signprot:
-                new_targets = OrderedDict()
-                signprot = Protein.objects.get(entry_name=s)
-                for recfam, targetfams in self.gprotein_targets.items():
-                    new_targets[recfam] = {}
-                    for gprotfam, gprots in targetfams.items():
-                        if s in gprots and gprotfam not in new_targets[recfam]:
-                            new_targets[recfam][gprotfam] = [s]
-                        elif s in gprots and gprotfam in new_targets[recfam]:
-                            new_targets[recfam][gprotfam].append(s)
-            self.gprotein_targets = new_targets
+            config = AlphaFoldTwoComplexModelParserConfig(model_set_name=options['model_set_name'],
+                                                        cleaned_seq_csv=options['cleaned_seq_csv'],
+                                                        model_receptor_state="Active",
+                                                        pdb_preferred_chain="A",
+                                                        pdb_header_override=pdb_header_override,
+                                                        ligand_multimatch_handling=LigandMultiMatchHandling.KEEP_FIRST,
+                                                        error_handling=options['error_handling'],
+                                                        verbosity=verbosity_level)
 
-        if options['test_run']:
-            break_loop = False
-            for receptor in self.receptor_list:
-                for i,j in self.gprotein_targets[receptor.get_protein_class()].items():
-                    for target in j:
-                        if len(SignprotComplex.objects.filter(structure__protein_conformation__protein__parent__entry_name=receptor.entry_name, protein__entry_name=target))==0:
-                            self.receptor_list = [receptor]
-                            self.gprotein_targets = {receptor.get_protein_class():{i:[target]}}
-                            break_loop = True
-                            break
-                    if break_loop: break
-                if break_loop: break
+            self.model_parser = AlphaFoldTwoComplexModelParser(config)
+            self.model_parser.get_model_directories()
+        elif options['parser'] == "boltztwocomplex":
+            config = BoltzTwoComplexModelParserConfig(model_set_name=options['model_set_name'],
+                                                        model_receptor_state="Active",
+                                                        pdb_header_override=pdb_header_override,
+                                                        default_model_version= {'default_version_number': '1', 'override': {'drd1_human-"zuclopenthixol"[5311507]': '2'}},
+                                                        pdb_preferred_chain="A",
+                                                        ligand_multimatch_handling=LigandMultiMatchHandling.KEEP_FIRST,
+                                                        error_handling=options['error_handling'],
+                                                        verbosity=verbosity_level)            
+            self.model_parser = BoltzTwoComplexModelParser(config)
+            self.model_parser.get_model_directories()
 
-        ###
-        # Customize here
-        # del self.gprotein_targets['Class F (Frizzled)']
-        ###
-
-        models_to_run = OrderedDict()
-        for i,j in self.gprotein_targets.items():
-            subtype_count = 0
-            for k,l in j.items():
-                subtype_count+=len(l)
-            models_to_run[i] = [0, subtype_count]
-        for r in self.receptor_list:
-            r_fam = r.get_protein_class()
-            if r_fam in self.gprotein_targets:
-                models_to_run[r_fam][0]+=1
-        count = 0
-        for i,j in models_to_run.items():
-            count+=j[0]*j[1]
-
-        print('Receptors to model: {}'.format(len(self.receptor_list)))
-        print('G protein targets: {}'.format(self.gprotein_targets))
-        print('Approx num models to build in total: {}'.format(count))
-        
-        self.processors = options['proc']
-        self.prepare_input(self.processors, self.receptor_list)
-
-        # delete unzipped folders in complex_models_zip
-        for i in os.listdir('./structure/complex_models_zip/'):
-            if i.startswith('Class') and not i.endswith('.zip'):
-                shutil.rmtree('./structure/complex_models_zip/'+i)
-        
-        #create master zip for archive
-        if options['z']:
-            os.chdir('./structure/')
-            zipf = zipfile.ZipFile('../static/homology_models/GPCRdb_complex_homology_models_{}.zip'.format(str(build_date)),'w',zipfile.ZIP_DEFLATED)
-            for root, dirs, files in os.walk('complex_models_zip'):
-                for f in files:
-                    zipf.write(os.path.join(root, f))
-            zipf.close()
-
-    def main_func(self, positions, itearation, count, lock):
-        processor_id = round(self.processors*positions[0]/len(self.receptor_list))+1
-        i = 0
-        while count.value<len(self.receptor_list):
-            i += 1
-            with lock:
-                receptor = self.receptor_list[count.value]
-                logger.info('Generating complex model for  \'{}\' ... ({} out of {}) (processor:{} count:{})'.format(receptor.entry_name, 
-                            count.value+1, len(self.receptor_list),processor_id,i))
-                count.value +=1 
-
-            mod_startTime = datetime.now()
-            self.build_all_complex_models_for_receptor(receptor, count, i, processor_id)
-            logger.info('Complex model finished for  \'{}\' ... (processor:{} count:{}) (Time: {})'.format(receptor.entry_name, 
-                                                                                                    processor_id,i,datetime.now() - mod_startTime))
-
-    def build_all_complex_models_for_receptor(self, receptor, count, i, processor_id):
-        for gprotein_subfam, targets in self.gprotein_targets[receptor.get_protein_class()].items():
-            first_in_subfam = True
-            # print(gprotein_subfam, targets)
-            for target in targets:
-                # Only build gnat models with opsins
-                if receptor.family.parent.name!='Opsin (sight) receptors' and target in ['gnat1_human','gnat2_human','gnat3_human']:
-                    continue
-                # print(receptor, target)
-                import_receptor = False
-                if len(SignprotComplex.objects.filter(structure__protein_conformation__protein__parent__entry_name=receptor.entry_name, protein__entry_name=target))>0:
-                    continue
-                # Skip models already in './structure/complex_models_zip/'
-                if receptor.entry_name+'-'+target in self.existing_list:
-                    continue
-                else:
-                    if first_in_subfam:
-                        if self.debug:
-                            print('First in subfam: {} {}'.format(target, receptor))
-                        mod = CallHomologyModeling(receptor.entry_name, 'Active', debug=self.debug, update=self.update, complex_model=True, signprot=target, 
-                                                   force_main_temp=self.force_main_temp, no_remodeling=self.no_remodeling)
-                        mod.run(fast_refinement=True)
-                        first_in_subfam = False
-                    else:
-                        ihm = ImportHomologyModel(receptor.entry_name, target)
-                        if ihm.find_files()!=None:
-                            mod = CallHomologyModeling(receptor.entry_name, 'Active', debug=self.debug, update=self.update, complex_model=True, signprot=target,
-                                                       force_main_temp=self.force_main_temp, no_remodeling=self.no_remodeling)
-                            mod.run(import_receptor=True, fast_refinement=True)
-                            import_receptor = True
-                        else:
-                            mod = CallHomologyModeling(receptor.entry_name, 'Active', debug=self.debug, update=self.update, complex_model=True, signprot=target,
-                                                       force_main_temp=self.force_main_temp, no_remodeling=self.no_remodeling)
-                            mod.run(fast_refinement=True)
-
-
-    def purge_complex_entries(self):
-        if os.path.exists('./structure/complex_models_zip/'):
-            for i in os.listdir('./structure/complex_models_zip/'):
-                os.remove('./structure/complex_models_zip/'+i)
         try:
-            StructureComplexModelSeqSim.objects.all().delete()
-        except:
-            self.logger.warning('StructureComplexModelSeqSim data cannot be deleted')
-        try:
-            StructureComplexModelStatsRotamer.objects.all().delete()
-        except:
-            self.logger.warning('StructureComplexModelStatsRotamer data cannot be deleted')
-        try:
-            StructureComplexModel.objects.all().delete()
-        except:
-            self.logger.warning('StructureComplexModel data cannot be deleted')
-        
+            self.logger.info('CREATING STRUCTURES')
+            success = self.prepare_input(options['proc'], self.model_parser.model_dirs)
+            test_model_updates(all_models, tracker, check=True)
+            if success:
+                self.logger.info('COMPLETED CREATING STRUCTURES')
+            else:
+                self.logger.error('COMPLETED CREATING STRUCTURES WITH ERRORS - some models were not processed successfully. See the log above for details.')
+        except Exception as msg:
+            self.logger.error(msg)
+
+    @staticmethod
+    def get_peptide_ligand_effect_data():
+        stimulatory_peptides = get_stimulatory_peptide_like_ligand_AssayExperiment_obj()
+        inhibitory_peptides = get_inhibitory_peptide_like_ligand_AssayExperiment_obj()
+
+        peptide_effects_dict = {}
+        for effect,peptides in zip(['stimulatory', 'inhibitory'],[stimulatory_peptides, inhibitory_peptides]):
+            peptide_effects_dict[effect] = {}
+            for ep in peptides:
+                if ep.ligand.sequence not in peptide_effects_dict[effect]:
+                    peptide_effects_dict[effect][ep.ligand.sequence] = []
+                try:
+                    peptide_effects_dict[effect][ep.ligand.sequence].append(ep.ligand.gpcrdbid)
+                except AttributeError:
+                    peptide_effects_dict[effect][ep.ligand.sequence].append(ep.ligand.id)
+        return peptide_effects_dict  
+
+    def main_func(self, positions, iteration, count, lock):
+        failed_count = self.model_parser.process_models(write = True, low_memory = True, offset_start = positions[0], offset_end = positions[1])
+        if failed_count:
+            raise RuntimeError(f"{failed_count} model(s) failed to process in this worker chunk (offset_start={positions[0]}, offset_end={positions[1]}); see the build log above for details.")
+            

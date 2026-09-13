@@ -15,6 +15,7 @@ from residue.models import (Residue, ResidueDataPoint, ResidueDataType,
 from common.definitions import _BEFORE_NAR2025_CLASSLESS_PARENT_GPCR_SLUGS_DICT, _AFTER_NAR2025_CLASSLESS_PARENT_GPCR_SLUGS
 
 class_prefix_re = re.compile(r'^(Class)\s+', flags=re.I)
+class_very_short_re = re.compile(r'^Class\s+(.*?)\s+', flags=re.I)
 
 class Protein(models.Model):
     parent = models.ForeignKey('self', null=True, on_delete=models.CASCADE)
@@ -56,7 +57,7 @@ class Protein(models.Model):
             tmp = tmp.parent
         return tmp.name
 
-    def get_protein_class_from_slug(self,slug=None,short=False):
+    def get_protein_class_from_slug(self,slug=None,short=False,very_short=False):
         if slug is None:
             slug = self.family.slug
         class_slug = slug.split('_')[0]
@@ -66,6 +67,10 @@ class Protein(models.Model):
             f = ProteinFamily.objects.get(slug=class_slug)
         if short:
             return class_prefix_re.sub(r'',f.name.replace('<i>','').replace('</i>',''))
+        if very_short:
+            m = class_very_short_re.match(f.name)
+            if m:
+                return m.group(1).replace('<i>','').replace('</i>','')
         return f.name
 
     def get_helical_box(self):

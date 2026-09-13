@@ -83,7 +83,7 @@ def detail(request, slug):
         alt_genes = genes[1:]
 
     # get structures of this protein
-    structures = Structure.objects.filter(protein_conformation__protein__parent=p).exclude(structure_type__slug__startswith='af-')
+    structures = Structure.objects.filter(protein_conformation__protein__parent=p, structure_type__origin='experiment')
 
     # get residues
     residues = Residue.objects.filter(protein_conformation=pc).order_by('sequence_number').prefetch_related(
