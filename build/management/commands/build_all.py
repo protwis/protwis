@@ -76,7 +76,7 @@ class Command(BaseCommand):
         phase2 = [
             ['build_structure_angles', {'proc': options['proc']}],
             ['build_construct_data', {'proc': options['proc']}],
-            ['update_construct_mutations'],
+            ['update_construct_mutations', {'proc': options['proc']}],
             ['build_protein_sets'],
             ['build_drugs_updated'],
             ['build_mutational_landscape'],
