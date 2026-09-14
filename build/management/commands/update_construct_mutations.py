@@ -184,8 +184,10 @@ class Command(BaseBuild):
         today = datetime.datetime.strptime(time.strftime('%m/%d/%Y'), '%m/%d/%Y').strftime('%Y-%m-%d')
         pdbnames = self.all_pdbs
         total = len(pdbnames)
-        while count.value < total:
+        while True:
             with lock:
+                if count.value >= total:
+                    break
                 pdbname = pdbnames[count.value]
                 count.value += 1
                 idx = count.value

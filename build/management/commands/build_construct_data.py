@@ -178,8 +178,11 @@ class Command(BaseBuild):
         set_ligand_lock(lock)
         set_construct_lock(lock)
         pdbnames = self.pdbnames
-        while count.value < len(pdbnames):
+        total = len(pdbnames)
+        while True:
             with lock:
+                if count.value >= total:
+                    break
                 pdbname = pdbnames[count.value]
                 count.value += 1
 
