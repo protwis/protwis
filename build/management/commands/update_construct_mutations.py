@@ -30,6 +30,9 @@ import time
 from collections import OrderedDict
 
 
+starttime = datetime.datetime.now()
+
+
 class Command(BaseBuild):
     help = 'Update construct mutations from excel file'
 
@@ -50,6 +53,16 @@ class Command(BaseBuild):
     test_model_updates(all_models, tracker, initialize=True)
 
     _excel_cache = {}
+    _stage = None
+
+    def _run_stage(self, label, func, *args, **kwargs):
+        print('[{}] START {} (elapsed {})'.format(
+            datetime.datetime.now().strftime('%H:%M:%S'), label, datetime.datetime.now()-starttime), flush=True)
+        t0 = time.time()
+        result = func(*args, **kwargs)
+        print('[{}] DONE {} ({} seconds)'.format(
+            datetime.datetime.now().strftime('%H:%M:%S'), label, round(time.time()-t0, 1)), flush=True)
+        return result
 
     def parse_excel_cached(self, path, sheet=None):
         # parse_excel() re-opens and re-parses the whole workbook on every
@@ -77,21 +90,23 @@ class Command(BaseBuild):
         self.all_pdbs = []
 
         # Restart constructs
-        self.rebuild_constructs(options['proc'])
+        self._run_stage('rebuild_constructs', self.rebuild_constructs, options['proc'])
+
+        self._run_stage('prefetch_pdb_info', self.prefetch_pdb_info, options['proc'])
 
         ## MUST HAVE ##
         self.excel_mutations = self.parse_excel_cached(self.path,'Mutation_Data')
-        self.check_mutations()
+        self._run_stage('check_mutations', self.check_mutations)
         # changes deletions to match PDB
         # Custom rules exist in the function
-        self.replace_deletions()
+        self._run_stage('replace_deletions', self.replace_deletions)
 
         ## IMPORTS ###
-        self.import_inserts()
-        self.import_expression()
-        self.import_solub()
-        self.import_puri()
-        self.import_xtal()
+        self._run_stage('import_inserts', self.import_inserts)
+        self._run_stage('import_expression', self.import_expression)
+        self._run_stage('import_solub', self.import_solub)
+        self._run_stage('import_puri', self.import_puri)
+        self._run_stage('import_xtal', self.import_xtal)
         test_model_updates(self.all_models, self.tracker, check=True)
 
     def purge_construct_data(self):
@@ -121,7 +136,45 @@ class Command(BaseBuild):
         self.purge_construct_data()
         structures = Structure.objects.all().exclude(structure_type__slug__startswith='af-').select_related('protein_conformation', 'pdb_code', 'pdb_data')
         self.all_pdbs = [str(s) for s in structures]
+
+        today = datetime.datetime.strptime(time.strftime('%m/%d/%Y'), '%m/%d/%Y').strftime('%Y-%m-%d')
+        _cached_get_or_create(ContributorInfo, name='gpcrdb',
+                               pi_email='info@gpcrdb.org',
+                               pi_name='gpcrdb',
+                               urls='gpcrdb.org',
+                               date=today,
+                               address='')
+
+        self._stage = 'rebuild'
         self.prepare_input(proc, self.all_pdbs)
+
+    def prefetch_pdb_info(self, proc=1):
+        self._stage = 'prefetch'
+        self.prepare_input(proc, self.all_pdbs)
+
+    def _prefetch_one_pdb(self, pdbname):
+        # populate the shared _auto_d cache entry for this pdb, if it isn't
+        # already - lets the serial check_mutations()/replace_deletions()
+        # phases that follow hit cache.get() instead of re-running
+        # fetch_pdb_info() one at a time on a single core.
+        if cache.get(pdbname+"_auto_d"):
+            return
+        t0 = time.time()
+        try:
+            structure = Structure.objects.get(pdb_code__index=pdbname)
+            protein = Protein.objects.filter(entry_name=pdbname.lower()).get()
+            d = fetch_pdb_info(pdbname, protein, ignore_gasper_annotation=True, preferred_chain=structure.preferred_chain)
+            cache.set(pdbname+"_auto_d", d, 60*60*24)
+        except Exception as e:
+            print(pdbname, 'prefetch failed', str(e))
+        # flag slow items individually - fetch_from_web_api retries up to 5x
+        # with a 30s timeout each, so a single failing/slow sub-fetch inside
+        # fetch_pdb_info can cost up to ~160s; surfacing outliers here (rather
+        # than only the periodic [i/total] checkpoint) shows which specific
+        # pdbs are dragging the whole parallel stage out.
+        diff = round(time.time() - t0, 1)
+        if diff > 10:
+            print('[SLOW prefetch] {} took {} seconds'.format(pdbname, diff), flush=True)
 
     def main_func(self, positions, iterations, count, lock):
         # reference-table lookups (_cached_get_or_create) lock internally on
@@ -130,10 +183,19 @@ class Command(BaseBuild):
         set_construct_lock(lock)
         today = datetime.datetime.strptime(time.strftime('%m/%d/%Y'), '%m/%d/%Y').strftime('%Y-%m-%d')
         pdbnames = self.all_pdbs
-        while count.value < len(pdbnames):
+        total = len(pdbnames)
+        while count.value < total:
             with lock:
                 pdbname = pdbnames[count.value]
                 count.value += 1
+                idx = count.value
+
+            if idx % 100 == 0 or idx == total:
+                print('[{}/{}] {} {}'.format(idx, total, self._stage, pdbname), flush=True)
+
+            if self._stage == 'prefetch':
+                self._prefetch_one_pdb(pdbname)
+                continue
 
             with transaction.atomic():
                 s = Structure.objects.select_related('protein_conformation', 'pdb_code', 'pdb_data').get(pdb_code__index=pdbname)
@@ -178,7 +240,10 @@ class Command(BaseBuild):
         for construct in Construct.objects.filter(structure__pdb_code__index__in=list(exp_list.keys())).select_related('structure__pdb_code'):
             constructs_by_pdb.setdefault(construct.structure.pdb_code.index, []).append(construct)
 
-        for pdb, rows in exp_list.items():
+        total_exp = len(exp_list)
+        for i, (pdb, rows) in enumerate(exp_list.items()):
+            if i % 50 == 0 or i == total_exp-1:
+                print('[{}/{}] import_expression {}'.format(i+1, total_exp, pdb), flush=True)
             with transaction.atomic():
                 for construct in constructs_by_pdb.get(pdb, []):
                     for e in rows:
@@ -204,7 +269,10 @@ class Command(BaseBuild):
             if s[1] not in solub_list:
                 solub_list[s[1]] = []
             solub_list[s[1]].append(s)
-        for pdb,chems in solub_list.items():
+        total_solub = len(solub_list)
+        for i, (pdb,chems) in enumerate(solub_list.items()):
+            if i % 50 == 0 or i == total_solub-1:
+                print('[{}/{}] import_solub {}'.format(i+1, total_solub, pdb), flush=True)
             with transaction.atomic():
                 c_list = ChemicalList()
                 list_name = _cached_get_or_create(ChemicalListName, name='Solubilization')
@@ -237,7 +305,10 @@ class Command(BaseBuild):
                 puri_list[p[1]] = []
             puri_list[p[1]].append(p)
 
-        for pdb,treat in puri_list.items():
+        total_puri = len(puri_list)
+        for i, (pdb,treat) in enumerate(puri_list.items()):
+            if i % 50 == 0 or i == total_puri-1:
+                print('[{}/{}] import_puri {}'.format(i+1, total_puri, pdb), flush=True)
             try:
                 construct = Construct.objects.get(structure__pdb_code__index=pdb.upper())
             except:
@@ -288,7 +359,10 @@ class Command(BaseBuild):
         missing = list(set(self.all_pdbs) - set(xtal_ligands_list.keys()))
         print(sorted(missing)," do not have any PDB-ligand-complex annotated -- add them to sheet with NONE if they have none")
 
-        for pdb,x in xtals_list.items():
+        total_xtal = len(xtals_list)
+        for i, (pdb,x) in enumerate(xtals_list.items()):
+            if i % 50 == 0 or i == total_xtal-1:
+                print('[{}/{}] import_xtal {}'.format(i+1, total_xtal, pdb), flush=True)
             try:
                 construct = Construct.objects.get(structure__pdb_code__index=pdb.upper())
             except:
@@ -376,7 +450,11 @@ class Command(BaseBuild):
         inserts = self.parse_excel_cached(self.annotation_file,'inserts')
 
         tracked_pdbs = []
-        for i in inserts:
+        total_inserts = len(inserts)
+        for row_idx, i in enumerate(inserts):
+
+            if row_idx % 100 == 0 or row_idx == total_inserts-1:
+                print('[{}/{}] import_inserts'.format(row_idx+1, total_inserts), flush=True)
 
             if i[1] not in tracked_pdbs:
                 tracked_pdbs.append(i[1])
@@ -821,9 +899,13 @@ class Command(BaseBuild):
             p.entry_name: p for p in Protein.objects.filter(
                 entry_name__in=[c.structure.pdb_code.index.lower() for c in constructs])
         }
-        for c in constructs:
+        total_constructs = len(constructs)
+        for i, c in enumerate(constructs):
 
             pdbname = c.structure.pdb_code.index
+
+            if i % 200 == 0 or i == total_constructs-1:
+                print('[{}/{}] replace_deletions {}'.format(i+1, total_constructs, pdbname), flush=True)
 
             # if not pdbname in ['5F8U','2VT4']:
             #     continue
@@ -992,9 +1074,10 @@ class Command(BaseBuild):
         track_annotated_mutations = []
         cached_mutations = {}
         mut_pdb_list = {}
+        total_muts = len(self.excel_mutations)
         for i,mut in enumerate(self.excel_mutations):
-            # print("Progress ",i,len(self.excel_mutations))
-            # continue
+            if i % 10 == 0 or i == total_muts-1:
+                print('[{}/{}] check_mutations'.format(i+1, total_muts), flush=True)
             #print(mut)
             m = {}
             m['gn'] = mut[8]

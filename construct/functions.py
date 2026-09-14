@@ -116,7 +116,7 @@ def filter_removed_against_wt(removed, pdb_range, dbref_found, wt_seq, pdb_file,
         if seq_by_pos:
             positions = list(seq_by_pos.keys())
             chain_seq = ''.join(seq_by_pos.values())
-            alignments = pairwise2.align.localms(wt_seq, chain_seq, 3, -4, -5, -2)
+            alignments = pairwise2.align.localms(wt_seq, chain_seq, 3, -4, -5, -2, one_alignment_only=True)
             if alignments:
                 aln = alignments[0]
                 aligned_wt, aligned_chain = aln.seqA, aln.seqB

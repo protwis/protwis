@@ -175,9 +175,6 @@ class Command(BaseBuild):
         self.logger.info('COMPLETED CREATING EXPERIMENTAL CONSTRUCT DATA')
 
     def main_func(self, positions, iterations, count, lock):
-        # DB-touching reference-table/ligand lookups lock internally on this
-        # shared lock; only the counter increment below still locks explicitly
-        # here. Mirrors build_structures.py's main_func.
         set_ligand_lock(lock)
         set_construct_lock(lock)
         pdbnames = self.pdbnames
@@ -192,7 +189,8 @@ class Command(BaseBuild):
                     # print(pdbname)
                     protein = Protein.objects.filter(entry_name=pdbname.lower()).get()
                     d = fetch_pdb_info(pdbname,protein)
-                    add_construct(d)
+                    with lock:
+                        add_construct(d)
                 else:
                     # pass
                     print("Entry for",pdbname,"already there")
