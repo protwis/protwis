@@ -1318,6 +1318,42 @@ def create_ligand_from_id(name, type, id, lig_type, radioactive=False):
         # Ligand could not be created
         return None
 
+def resolve_ligand_ambiguity(queryset, name, inchikey):
+    """
+    Disambiguate multiple Ligand rows sharing an inchikey. Two layers:
+    1) Prefer the candidate matching the radioactive isotope implied by `name`
+       (or the non-radioactive candidate when `name` has no isotope tag) -
+       handles compound/radiolabeled-variant pairs.
+    2) Among remaining candidates, prefer the one whose `clean_inchikey`
+       exactly equals the queried `inchikey` - this is the fully
+       stereo-specified sibling, matching what the source InChIKey describes,
+       as opposed to a sibling whose clean_inchikey was flattened to the
+       parent's less-specific structure. Handles same-parent siblings that
+       are legitimately distinct stereo/connectivity variants, not
+       radiolabeled pairs (e.g. guanabenz: ChEMBL_sm vs DrugBank;
+       setmelanotide: GuideToPharma vs ChEMBL_peptide).
+    Falls back to name matching, then first(), if still ambiguous.
+    """
+    candidates = list(queryset)
+
+    isotopes = get_radioactive_info(name or '', '')
+    if isotopes:
+        matches = [l for l in candidates if l.radioactive and any(iso in l.radioactive for iso in isotopes)]
+    else:
+        matches = [l for l in candidates if not l.radioactive]
+    if not matches:
+        matches = candidates
+
+    if len(matches) > 1:
+        exact = [l for l in matches if l.clean_inchikey == inchikey]
+        if len(exact) == 1:
+            return exact[0]
+
+    if len(matches) == 1:
+        return matches[0]
+
+    return filter_ligand_more_on_name(Ligand.objects.filter(pk__in=[m.pk for m in matches]), name)
+
 def get_ligand_by_inchikey(inchikey, name=None):
     if not inchikey:
         return None
