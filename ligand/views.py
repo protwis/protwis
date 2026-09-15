@@ -3239,7 +3239,7 @@ class AbsLigand(TemplateView):
 
     @staticmethod
     def get_related_ligands(ligand_id):
-        _assay_count = Count(Concat('assayexperiment__protein_id', Value('|'), 'assayexperiment__source', Value('|'), 'assayexperiment__value_type', output_field=CharField()), distinct=True, filter=~Q(assayexperiment__value_type='-'))
+        _assay_count = Count(Concat('assayexperiment__protein_id', Value('|'), 'assayexperiment__source', Value('|'), 'assayexperiment__value_type', output_field=CharField()), distinct=True, filter=Q(assayexperiment__isnull=False) & ~Q(assayexperiment__value_type='-'))
         this_ligand = Ligand.objects.filter(gpcrdb_id=ligand_id).prefetch_related('ligand_type').annotate(assay_count=_assay_count, structure_count=Count('structureligandinteraction'))
         if this_ligand[0].parent:
             parent_ligand = Ligand.objects.filter(id=this_ligand[0].parent.id).prefetch_related('ligand_type').annotate(assay_count=_assay_count, structure_count=Count('structureligandinteraction'))[0]
