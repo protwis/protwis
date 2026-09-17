@@ -239,7 +239,7 @@ class Command(BaseBuild):
             elif parent_struct.structure_type.slug=='electron-crystallography':
                 refined_type_slug = 'af-signprot-refined-med'
                 refined_type_name = 'Refined MED'
-            signprotrefined, _ = StructureType.objects.get_or_create(slug=refined_type_slug, name=refined_type_name)
+            signprotrefined, _ = StructureType.objects.get_or_create(slug=refined_type_slug, name=refined_type_name, defaults={'origin': 'experiment_model_refined'})
             webresource = WebResource.objects.get(slug='pdb')
             weblink, _ = WebLink.objects.get_or_create(index='{}_refined'.format(main_structure), web_resource=webresource)
             struct_obj, _ = Structure.objects.get_or_create(preferred_chain=parent_struct.preferred_chain, publication_date=build_date, pdb_data=pdb, pdb_code=weblink, build_check=True,

@@ -1,5 +1,7 @@
 from django.core.management.base import BaseCommand, CommandError
 from django.core.management import call_command
+import os
+from django.conf import settings
 
 import datetime
 
@@ -24,6 +26,11 @@ class Command(BaseCommand):
         #                     dest='hommod',
         #                     default=False,
         #                     help='Include build of homology models')
+        parser.add_argument('--no_reload',
+                            action='store_true',
+                            dest='no_reload',
+                            default=False,
+                            help='Skip ligand dump reload scripts')
         parser.add_argument('--phase',
                             type=int,
                             action='store',
@@ -34,11 +41,6 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         if options['test']:
             print('Running in test mode')
-
-        if options['proc']>4:
-            safe_proc_num = 4
-        else:
-            safe_proc_num = options['proc']
 
         phase1 = [
             ['clear_cache'],
@@ -52,14 +54,14 @@ class Command(BaseCommand):
             ['build_blast_database'],
             ['build_links'],
             ['build_construct_proteins'],
-            ['build_experimental_data_light', {'test_run': options['test']}],
+            ['build_experimental_data_light', {'test_run': options['test'], 'no_reload': options['no_reload']}],
             # ['build_all_gtp_ligands', {'test_run': options['test']}],
             # ['build_endogenous_data_from_gtp_source', {'test_run': options['test']}],
             ['build_bias_preprocess_data', {'test_run': options['test']}],
             #['build_balanced_ligands', {'test_run': options['test']}],
             # ['build_chembl_data', {'test_run': options['test']}],
             ['build_mutant_data', {'test_run': options['test']}],
-            ['build_structures', {'proc': safe_proc_num, 'skip_cn': options['test']}],
+            ['build_structures', {'proc': options['proc'], 'skip_cn': options['test']}],
             ['build_consensus_sequences', {'proc': options['proc']}],
             ['build_g_proteins'],
             ['build_consensus_sequences', {'proc': options['proc'], 'signprot': 'Alpha'}],
@@ -76,8 +78,8 @@ class Command(BaseCommand):
         ]
         phase2 = [
             ['build_structure_angles', {'proc': options['proc']}],
-            ['build_construct_data'],
-            ['update_construct_mutations'],
+            ['build_construct_data', {'proc': options['proc']}],
+            ['update_construct_mutations', {'proc': options['proc']}],
             ['build_protein_sets'],
             ['build_drugs_updated'],
             ['build_mutational_landscape'],
@@ -91,9 +93,12 @@ class Command(BaseCommand):
             ['build_receptor_similarity'],
             ['build_ligand_search'],
             ['build_text'],
+            ['build_structure_browser_table'],
         ]
         phase3 = [
-            ['build_af_complex_models'],
+            ['build_complex_models', {'proc': options['proc'], 'parser' : 'alphafoldcomplex', 'model_set_name' : 'AlphaFold_multimer', 'cleaned_seq_csv' : os.sep.join([settings.DATA_DIR, 'structure_data', 'AlphaFold_multimer', 'cleaned_seqs.csv']) }],
+            ['build_complex_models', {'proc': options['proc'], 'parser' : 'alphafoldcomplex', 'model_set_name' : 'Arrestins_AF_models', "deposition_date": '2024-06-01'}],
+            ['build_complex_models', {'proc': options['proc'], 'parser' : 'boltztwocomplex', 'model_set_name' : 'boltz2_complex', "deposition_date": '2026-03-01'}],
             ['build_rfaa_models'],
             ### build_homology_models --alphafold -r {active pdbs} -p ### build refined structures for new G prot coupled structures
             ['build_homology_models_zip'], 

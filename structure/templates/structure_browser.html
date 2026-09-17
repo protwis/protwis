@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="{% static 'home/css/NewDrugsBrowser_datatables.min.css' %}" type="text/css"/>
   <link rel="stylesheet" href="{% static 'home/css/select2_4.1.0-rc.0._full.css' %}" type="text/css">
   <link rel="stylesheet" href="{% static 'home/css/BusyLoad.css' %}" type="text/css">
-  <link rel="stylesheet" href="{% static 'home/css/structure_browser_modern.css' %}" type="text/css">
+  <link rel="stylesheet" href="{% static 'home/css/structure/structure_browser_modern.css' %}" type="text/css">
 {% endblock %}
 
 {% block content %}
@@ -25,20 +25,21 @@
           <thead>
             <!-- Dummy Header Row for Complex Header Fix -->
             <tr>
-              <th colspan="33" style="text-align: center" data-dt-order="disable"></th>
+              <th colspan="36" style="text-align: center" data-dt-order="disable"></th>
             </tr>
 
             <!-- Super Header Row -->
             <tr style="padding-top: 10px; font-size: 14px; white-space: nowrap;">
-              <th colspan="6" style="text-align:Left;" data-dt-order="disable">RECEPTOR</th>
-              <th colspan="3" style="text-align:Left;border-left: 1px solid #cccccc;" data-dt-order="disable">CLASSIFICATION</th>
-              <th colspan="8" style="text-align:Left;border-left: 1px solid #cccccc;" data-dt-order="disable">STRUCTURE</th>
-              <th colspan="4" style="text-align:Left;border-left: 1px solid #cccccc;" data-dt-order="disable">SIGNAL PROTEIN</th>
-              <th colspan="2" style="text-align:Left;border-left: 1px solid #cccccc;" data-dt-order="disable">AUXILIARY PROTEIN</th>
-              <th colspan="3" style="text-align:Left;border-left: 1px solid #cccccc;" data-dt-order="disable">STRUCTURE LIGAND</th>
-              <th colspan="2" style="text-align:Left;border-left: 1px solid #cccccc;min-width: 220px;" data-dt-order="disable">PHYSIOLOGICAL LIGAND</th>
-              <th colspan="2" style="text-align:Left;border-left: 1px solid #cccccc;" data-dt-order="disable">SODIUM ION SITE</th>
-              <th colspan="3" style="text-align:Left;border-left: 1px solid #cccccc;" data-dt-order="disable">REFERENCE</th>
+              <th colspan="6" style="text-align:center;" data-dt-order="disable">RECEPTORS</th>
+              <th colspan="3" style="text-align:center;border-left: 1px solid #cccccc;" data-dt-order="disable">CLASSIFICATIONS</th>
+              <th colspan="8" style="text-align:center;border-left: 1px solid #cccccc;" data-dt-order="disable">STRUCTURES</th>
+              <th colspan="4" style="text-align:center;border-left: 1px solid #cccccc;" data-dt-order="disable">SIGNAL PROTEINS</th>
+              <th colspan="3" style="text-align:center;border-left: 1px solid #cccccc;" data-dt-order="disable">STRUCTURE LIGANDS</th>
+              <th colspan="2" style="text-align:center;border-left: 1px solid #cccccc;" data-dt-order="disable">AUXILIARY PROTEINS</th>
+              <th colspan="3" style="text-align:center;border-left: 1px solid #cccccc;" data-dt-order="disable">AUXILIARY SMALL-MOLECULES</th>
+              <th colspan="2" style="text-align:center;border-left: 1px solid #cccccc;min-width: 220px;" data-dt-order="disable">NATURAL LIGANDS</th>
+              <th colspan="2" style="text-align:center;border-left: 1px solid #cccccc;" data-dt-order="disable">SODIUM ION SITES</th>
+              <th colspan="3" style="text-align:center;border-left: 1px solid #cccccc;" data-dt-order="disable">REFERENCES</th>
             </tr>
 
             <!-- Titles Row -->
@@ -67,7 +68,7 @@
                 </div>
               </th>
               <th style="text-align: center;">Refined<br>structure <a href="https://docs.gpcrdb.org/structures.html#refined-structures" target="_blank" class="icon-button" title="Read more"><i class="glyphicon glyphicon-book"></i></a></th>
-              <th style="text-align: center;">Resolution</th>
+              <th style="text-align: center;">Res <br>(Å)</th>
               <th style="text-align: center;">Preferred<br>chain</th>
               <th style="text-align: center;">State<br>
                 <span class="glyphicon glyphicon-info-sign"
@@ -83,12 +84,16 @@
               <th style="text-align: center;">Note</th>
               <th style="text-align: center;">% of Seq</th>
 
+              <th style="text-align: center;">Name</th>
+              <th style="text-align: center;">Type</th>
+              <th style="text-align: center;">Modality</th>
+
               <th style="text-align: center;">Fusion</th>
               <th style="text-align: center;">Antibodies</th>
 
               <th style="text-align: center;">Name</th>
               <th style="text-align: center;">Type</th>
-              <th style="text-align: center;">Modality</th>
+              <th style="text-align: center;">Function</th>
 
               <th style="text-align: center;">Name</th>
               <th style="text-align: center;">Type</th>
@@ -103,7 +108,7 @@
 
             <!-- Filter Row (empty; filled by filter builder) -->
             <tr>
-                <!-- 33 empty <th> cells -->
+                <!-- 36 empty <th> cells -->
                 <th data-dt-order="disable"></th><th data-dt-order="disable"></th><th data-dt-order="disable"></th>
                 <th data-dt-order="disable"></th><th data-dt-order="disable"></th><th data-dt-order="disable"></th>
                 <th data-dt-order="disable"></th><th data-dt-order="disable"></th><th data-dt-order="disable"></th>
@@ -111,10 +116,10 @@
                 <th data-dt-order="disable"></th><th data-dt-order="disable"></th><th data-dt-order="disable"></th>
                 <th data-dt-order="disable"></th><th data-dt-order="disable"></th><th data-dt-order="disable"></th>
                 <th data-dt-order="disable"></th><th data-dt-order="disable"></th><th data-dt-order="disable"></th>
-                <th data-dt-order="disable"></th><th data-dt-order="disable"></th>
                 <th data-dt-order="disable"></th><th data-dt-order="disable"></th><th data-dt-order="disable"></th>
-                <th data-dt-order="disable"></th><th data-dt-order="disable"></th>
-                <th data-dt-order="disable"></th><th data-dt-order="disable"></th>
+                <th data-dt-order="disable"></th><th data-dt-order="disable"></th><th data-dt-order="disable"></th>
+                <th data-dt-order="disable"></th><th data-dt-order="disable"></th><th data-dt-order="disable"></th>
+                <th data-dt-order="disable"></th><th data-dt-order="disable"></th><th data-dt-order="disable"></th>
                 <th data-dt-order="disable"></th><th data-dt-order="disable"></th><th data-dt-order="disable"></th>
                 </tr>
           </thead>
@@ -158,12 +163,13 @@
   <script src="{% static 'home/js/alignment.js' %}"></script>
   <script src="{% static 'home/js/browser_functions.js' %}"></script>
   <script src="{% static 'home/js/jquery.powertip.js' %}"></script>
-  <script src="{% static 'home/js/xlsx.full.min.js' %}"></script>
+  <!-- xlsx.full.min.js (~930KB) is loaded lazily on first Export-Excel click, see structure_browser_modern.js -->
+  <script>window.XLSX_STATIC_URL = "{% static 'home/js/xlsx.full.min.js' %}";</script>
   <script src="{% static 'home/js/select2_4.1.0-rc.0_full.js' %}"></script>
   <script src="{% static 'home/js/NewDrugsBrowser_datatables.min.js' %}"></script>
   <script src="{% static 'home/js/NorgesDTFilterBuilder.js' %}"></script>
   <script src="{% static 'home/js/BusyLoad.js' %}"></script>
 
   <!-- our page logic (everything moved here) -->
-  <script src="{% static 'home/js/structure_browser_modern.js' %}"></script>
+  <script src="{% static 'home/js/structure/structure_browser_modern.js' %}"></script>
 {% endblock %}

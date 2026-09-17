@@ -2,7 +2,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 from django.db import IntegrityError
 from django.utils.text import slugify
-from build.management.commands.build_ligand_functions import get_ligand_by_id, match_id_via_unichem, get_or_create_ligand, is_float, standardize_smiles, generate_parent, try_get_parent
+from build.management.commands.build_ligand_functions import get_ligand_by_id, match_id_via_unichem, get_or_create_ligand, is_float, resolve_ligand_ambiguity
 
 from common.models import WebResource, WebLink, Publication
 from protein.models import Protein, TissueExpression, CancerType, CancerExpression, Tissues, ExpressionValue
@@ -400,6 +400,9 @@ class Command(BaseCommand):
                 try:
                     check = Ligand.objects.get(inchikey=inchi, parent__isnull=False)
                     return check
+                except Ligand.MultipleObjectsReturned:
+                    return resolve_ligand_ambiguity(
+                        Ligand.objects.filter(inchikey=inchi, parent__isnull=False), row['Name'], inchi)
                 except Ligand.DoesNotExist:
                     for key, values in mapper.items():
                         for code in values:
@@ -416,6 +419,9 @@ class Command(BaseCommand):
             try:
                 check = Ligand.objects.get(inchikey=inchi_list[0], parent__isnull=False)
                 return check
+            except Ligand.MultipleObjectsReturned:
+                return resolve_ligand_ambiguity(
+                    Ligand.objects.filter(inchikey=inchi_list[0], parent__isnull=False), row['Name'], inchi_list[0])
             except Ligand.DoesNotExist:
                 for key, values in mapper.items():
                     for code in values:
@@ -439,55 +445,22 @@ class Command(BaseCommand):
                 except Ligand.DoesNotExist:
                     pass
 
-            type = Command.fetch_type(row['Drug_Type'])
-            #TODO: adjust the length of float numbers
             ids = {}
             if pd.notna(row['SMILES']):
                 ids['smiles'] = row['SMILES']
-            if inchi_list[0] !='NOT AVAILABLE':
+            if inchi_list[0] != 'NOT AVAILABLE':
                 ids['inchikey'] = inchi_list[0]
-
-            # Identify the parent and or create one
-            parent = None
-
-            # Attempt using SMILES if available
-            if "smiles" in ids:
-                std_smiles = standardize_smiles(ids["smiles"])
-                if std_smiles:
-                    parent = try_get_parent({"smiles": std_smiles, "parent__isnull": True})
-
-            # Attempt using InChIKey if parent not yet found
-            if not parent and "inchikey" in ids:
-                head_inchi = ids["inchikey"].split('-')[0]
-                parent = try_get_parent({"clean_inchikey": head_inchi, "parent__isnull": True})
-
-            # Attempt using name if still not found
-            if not parent:
-                parent = try_get_parent({"name": row['Name'], "parent__isnull": True})
-
-            # Finally, generate a parent if none was found
-            if not parent:
-                parent = generate_parent(row['Name'], ids, 'small molecule')
-
-            check, _ = Ligand.objects.get_or_create(name=row['ligand_name'],
-                                                    ambiguous_alias=False,
-                                                    hacc=row['HBondAceptorCount'] if pd.notna(row['HBondAceptorCount']) else None,
-                                                    hdon=row['HBondDonorCount'] if pd.notna(row['HBondDonorCount']) else None,
-                                                    inchikey=inchi_list[0] if inchi_list[0] !='NOT AVAILABLE' else None,
-                                                    ligand_type=type,
-                                                    logp=row['XLogP'] if pd.notna(row['XLogP']) else None,
-                                                    mw=row['MolecularWeight'] if pd.notna(row['MolecularWeight']) else None,
-                                                    rotatable_bonds=row['RotableBondCount'] if pd.notna(row['RotableBondCount']) else None,
-                                                    smiles=row['SMILES'] if pd.notna(row['SMILES']) else None,
-                                                    parent=parent,
-                                                    source = 'Drug Data')
-
-            # add the mapper items to the LigandID model so we have matching info next time we encounter this ligand
             for id_type, values in mapper.items():
-                for code in values:
-                    if code != 'nan':
-                        wr = WebResource.objects.get(slug=id_type)
-                        wl, created = LigandID.objects.get_or_create(ligand=check, index=code, web_resource=wr)
+                values = [v for v in values if v != 'nan']
+                if values:
+                    ids[id_type] = values
+
+            check = get_or_create_ligand(
+                name=row['ligand_name'],
+                ids=ids,
+                lig_type=Command.fetch_type(row['Drug_Type']).slug,
+                source='Drug Data',
+            )
         return check
 
     @staticmethod

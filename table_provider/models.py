@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.postgres.fields import JSONField
 
 class GpcrStructureStatisticsTable(models.Model):
     """Model representing the structure statistics table for GPCRs generated from the data retrieved by GpcrStructureCoverageStatisticsQuery"""
@@ -128,5 +129,59 @@ class GpcrStructureStatisticsTable(models.Model):
                 models.Index(fields=["limod_nam_c"], name="gsst_limod_nam_c_idx"),
                 models.Index(fields=["limod_pam_c"], name="gsst_limod_pam_c_idx"),
                 models.Index(fields=["limod_unk_c"], name="gsst_limod_unk_c_idx"),
+        ]
+
+
+class GpcrStructureBrowserTable(models.Model):
+    """Flat, per-structure table backing the structure browser (and, from round 2,
+    the ligand-interaction PDB selection page). Built by
+    `manage.py build_structure_browser_table` from structure.tables.structure_browser_table_query.
+
+    Only fields that need real per-row computation (regex classification, picking
+    the arrestin/G-alpha row, list-building, subqueries) are stored here — plain
+    FK-chain scalars (family, class, species, state, pdb, resolution, ...) are read
+    live via select_related off `structure` at request time instead, since a join
+    over this table's row count (a few thousand) is effectively free.
+    """
+
+    structure = models.OneToOneField('structure.Structure', on_delete=models.CASCADE,
+                                      primary_key=True, related_name='browser_row')
+    arrestin_extra_protein = models.ForeignKey('structure.StructureExtraProteins', null=True,
+                                                on_delete=models.SET_NULL, related_name='+')
+
+    coverage = models.IntegerField(null=True)
+    sodium_site = models.BooleanField(default=False)
+
+    fusions = models.TextField(null=True)
+    antibodies = models.TextField(null=True)
+
+    auxiliary_molecules = models.TextField(null=True)
+    auxiliary_molecule_type = models.TextField(null=True)
+    auxiliary_molecule_function = models.TextField(null=True)
+
+    ligands = JSONField(default=list)
+    ligand_type = models.TextField(null=True)
+    ligand_role = models.TextField(null=True)
+
+    endo_ligands = JSONField(default=list)
+    endo_type = models.TextField(null=True)
+
+    gene_name = models.CharField(max_length=100, null=True)
+    gene_entrez_url = models.TextField(null=True)
+    iuphar_link = models.TextField(null=True)
+    iuphar_index = models.CharField(max_length=50, null=True)
+
+    # forward-looking, for the round-2 ligand-interaction selection page
+    has_ligand_interactions = models.BooleanField(default=False)
+    num_annotated_ligands = models.IntegerField(default=0)
+    num_interactions = models.IntegerField(default=0)
+
+    def __str__(self):
+        return "{}".format(self.structure_id)
+
+    class Meta:
+        db_table = "table_gpcr_structure_browser"
+        indexes = [
+            models.Index(fields=["has_ligand_interactions"], name="gsbt_has_li_idx"),
         ]
 

@@ -64,7 +64,7 @@ def stage_a_coverage():
 
 
 def build_highest_resolution_pool():
-    all_qs = Structure.objects.filter(refined=False).exclude(structure_type__slug__startswith='af-')
+    all_qs = Structure.objects.filter(refined=False, structure_type__origin='experiment')
     best_by_protein = {}
     for s in all_qs.select_related('protein_conformation__protein__parent').order_by('resolution'):
         pid = s.protein_conformation.protein.parent_id

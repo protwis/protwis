@@ -97,6 +97,8 @@ class ConstructStatistics(TemplateView):
                 track_anamalities[entry_name] = {}
             if helix not in track_anamalities[entry_name]:
                 track_anamalities[entry_name][helix] = [0,0]
+            if entry_name not in x50s or helix+"x50" not in x50s[entry_name]:
+                continue
             x50 = x50s[entry_name][helix+"x50"]
             gn_start = int(pc['GN2'][-2:])
             gn_end  = int(pc['GN'][-2:])
@@ -241,7 +243,7 @@ class ConstructStatistics(TemplateView):
                 pdb_code = c.crystal.pdb_code
                 entry_name_pdb = entry_name+ "_"+ pdb_code
                 state = c.structure.state.slug
-                if state=='other':
+                if state=='other' or state=='unknown':
                     continue
                 entry_name_pdb_state = entry_name+ "_"+ pdb_code + "_" +state
                 crystal_p = c.structure.protein_conformation.protein.parent.entry_name
@@ -1514,10 +1516,12 @@ def stabilisation_browser(request):
     class_interactions_list = {}
     for c in gpcr_class:
         class_interactions = ResidueFragmentInteraction.objects.filter(
-            structure_ligand_pair__structure__protein_conformation__protein__family__slug__startswith=c, structure_ligand_pair__annotated=True).exclude(
-            structure_ligand_pair__structure__structure_type__slug__startswith='af-').exclude(interaction_type__slug='acc').prefetch_related(
-            'rotamer__residue__generic_number','interaction_type',
-            'rotamer__residue__protein_conformation__protein__parent__family')
+                                                                        structure_ligand_pair__structure__protein_conformation__protein__family__slug__startswith=c, 
+                                                                        structure_ligand_pair__annotated=True, 
+                                                                        structure_ligand_pair__structure__structure_type__origin='experiment') \
+                                                               .exclude(interaction_type__slug='acc') \
+                                                               .prefetch_related('rotamer__residue__generic_number','interaction_type',
+                                                                                 'rotamer__residue__protein_conformation__protein__parent__family')
 
         generic = {}
         for i in class_interactions:
@@ -2263,8 +2267,9 @@ class ExperimentBrowser(TemplateView):
                 "crystallization__crystal_method", "crystallization__crystal_type",
                 "crystallization__chemical_lists", "crystallization__chemical_lists__chemicals__chemical__chemical_type",
                 "protein__species","structure__pdb_code","structure__publication__web_link", "contributor",
-                Prefetch("structure__ligands", queryset=StructureLigandInteraction.objects.filter(
-                annotated=True).exclude(structure__structure_type__slug__startswith='af-').prefetch_related('ligand__ligand_type', 'ligand_role','ligand__ids__web_resource'))
+                Prefetch("structure__ligands", 
+                         queryset=StructureLigandInteraction.objects.filter(annotated=True, structure__structure_type__origin='experiment') \
+                                                                    .prefetch_related('ligand__ligand_type', 'ligand_role','ligand__ids__web_resource'))
                 ).annotate(pur_count = Count('purification__steps')).annotate(sub_count = Count('solubilization__chemical_list__chemicals'))
             #context['constructs'] = cache.get('construct_browser')
             #if context['constructs']==None:

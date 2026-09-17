@@ -19,9 +19,7 @@ class Command(BaseCommand):
             if pdb_filter:
                 sbc.pdbs = [p for p in sbc.pdbs if p in pdb_filter]
             sbc.check_structures()
-            structs = Structure.objects.all().exclude(structure_type__slug__startswith='af-')
-            if pdb_filter:
-                structs = structs.filter(pdb_code__index__in=pdb_filter)
+            structs = Structure.objects.filter(structure_type__origin='experiment')
             sbc.check_duplicate_residues(structs)
             for s in structs:
                 sbc.check_segment_ends(s)
@@ -77,7 +75,7 @@ class Command(BaseCommand):
                 sc_qs = sc_qs.filter(structure__pdb_code__index__in=pdb_filter)
             for sc in sc_qs:
                 sbc.check_signprot_struct_residues(sc)
-            scs = sc_qs.exclude(structure__structure_type__slug__startswith='af-')
+            scs = sc_qs.filter(structure__structure_type__origin='experiment')
             for i in sbc.missing_seg:
                 print("Error: Missing segment {} {} has {} residue objects.".format(i[0],i[1],i[2]))
             sbc.check_duplicate_residues(scs)

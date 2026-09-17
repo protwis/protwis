@@ -370,7 +370,7 @@ def getTargetTable():
             )
             proteins = proteins | missing[:1]
 
-        pdbids = list(Structure.objects.all().exclude(structure_type__slug__startswith='af-').values_list("pdb_code__index", "protein_conformation__protein__family_id"))
+        pdbids = list(Structure.objects.filter(structure_type__origin='experiment').values_list("pdb_code__index", "protein_conformation__protein__family_id"))
 
         allpdbs = {}
         for pdb in pdbids:
