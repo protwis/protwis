@@ -1,6 +1,12 @@
 """
 Django settings for protwis project.
 """
+# Force a non-interactive matplotlib backend before any app imports pyplot.
+# Prevents matplotlib from opening a TkAgg/X11 connection, which multiprocessing
+# workers (forked from management commands) would otherwise inherit and corrupt.
+import matplotlib
+matplotlib.use('Agg')
+
 # Import local settings
 # by default, local settings are in protwis/settings_local_development.py
 # you can override these settings by creating a protwis/settings_local.py file (or copying settings_local_development)

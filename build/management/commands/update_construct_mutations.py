@@ -134,7 +134,7 @@ class Command(BaseBuild):
 
     def rebuild_constructs(self, proc=1):
         self.purge_construct_data()
-        structures = Structure.objects.all().exclude(structure_type__slug__startswith='af-').select_related('protein_conformation', 'pdb_code', 'pdb_data')
+        structures = Structure.objects.filter(structure_type__origin='experiment').select_related('protein_conformation', 'pdb_code', 'pdb_data')
         self.all_pdbs = [str(s) for s in structures]
 
         today = datetime.datetime.strptime(time.strftime('%m/%d/%Y'), '%m/%d/%Y').strftime('%Y-%m-%d')

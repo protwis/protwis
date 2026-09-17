@@ -24,7 +24,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
-        strucs = Structure.objects.all().exclude(structure_type__slug__startswith='af-').prefetch_related('pdb_code')[:100]
+        strucs = Structure.objects.filter(structure_type__origin='experiment').prefetch_related('pdb_code')[:100]
         ss = []
         for s in strucs:
             ss.append(s.pdb_code.index)

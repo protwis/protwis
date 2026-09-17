@@ -52,7 +52,7 @@ class Command(BaseBuild):
 
 	def handle(self, *args, **options):
 		if options['a']:
-			structures = Structure.objects.all().exclude(structure_type__slug__startswith='af-').filter(protein_conformation__protein__family__parent__parent__parent__slug='001')
+			structures = Structure.objects.filter(structure_type__origin='experiment').filter(protein_conformation__protein__family__parent__parent__parent__slug='001')
 			for s in structures:
 				sar = StructureAnomalyRecognition(s)
 				sar.run_recog()

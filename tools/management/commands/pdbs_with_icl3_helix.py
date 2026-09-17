@@ -32,7 +32,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
-        for s in Structure.objects.all().exclude(structure_type__slug__startswith='af-').order_by('protein_conformation__protein__parent__entry_name'):
+        for s in Structure.objects.filter(structure_type__origin='experiment').order_by('protein_conformation__protein__parent__entry_name'):
             slug = str(s)
             pc = ProteinConformation.objects.filter(protein__entry_name=slug.lower()).get()
             rs = pc.residue_set.filter(generic_number__label='34x50')
