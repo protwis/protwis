@@ -933,6 +933,8 @@ class CallHomologyModeling():
                 ### Custom fixes
                 if Homology_model.main_structure.pdb_code.index in ['2YCW','2YCZ']:
                     distorted_residues['TM6']+=['6x22','6x23']
+                elif Homology_model.main_structure.pdb_code.index in ['9LL7','9LL8']:
+                    distorted_residues['G.H1']+=['G.H1.10','G.H1.11','G.H1.12']
 
                 ### build alignment_dict
                 alignment_dict = OrderedDict()
