@@ -8,7 +8,7 @@ from construct.models import *
 
 from ligand.models import Ligand, LigandType, LigandRole
 
-from common.tools import fetch_from_web_api
+from common.tools import fetch_from_web_api, find_role
 from urllib.parse import quote
 from string import Template
 from urllib.request import urlopen
@@ -22,14 +22,112 @@ import pickle
 import logging
 import os
 from datetime import datetime
+from Bio import pairwise2
 
 AA_three = {'CYS': 'C', 'ASP': 'D', 'SER': 'S', 'GLN': 'Q', 'LYS': 'K',
      'ILE': 'I', 'PRO': 'P', 'THR': 'T', 'PHE': 'F', 'ASN': 'N',
      'GLY': 'G', 'HIS': 'H', 'LEU': 'L', 'ARG': 'R', 'TRP': 'W',
      'ALA': 'A', 'VAL':'V', 'GLU': 'E', 'TYR': 'Y', 'MET': 'M'}
 # to override some faulty PDB DBREF entries
-uniprot_convert_table = {'Q548Y0_HUMAN':'OX2R_HUMAN'}
+uniprot_convert_table = {
+    'Q548Y0_HUMAN': 'OX2R_HUMAN',
+    'CRFR1_HUMAN': 'CRHR1_HUMAN',
+    'CRFR2_HUMAN': 'CRHR2_HUMAN',
+}
 starttime = datetime.now()
+
+
+def _sifts_segment_chain(elem, ns):
+    """Resolve the real author chain ID for a SIFTS <segment> from its own
+    residue-level PDB crossRefDb entries (dbChainId), instead of assuming
+    the letter embedded in segId matches the author chain. SIFTS numbers
+    segId internally per polymer entity starting at 'A'; when the real
+    deposited chain lettering doesn't also start at 'A' (common in
+    multi-chain cryo-EM complexes, e.g. 8YYW's B,C,D,E,F), segId's letter
+    is offset from the true chain and silently misattributes residues.
+    """
+    for res in elem[0]:
+        for node in res:
+            if node.tag == '{'+ns+'}crossRefDb' and node.attrib.get('dbSource') == 'PDB':
+                chain_id = node.attrib.get('dbChainId')
+                if chain_id:
+                    return chain_id
+    return elem.attrib['segId'].split('_')[1]  # fallback, old behavior
+
+
+def _int_pdb_seqnum(s):
+    """Parse a DBREF seqBegin/seqEnd that may carry a trailing PDB insertion
+    code (e.g. '229B') glued onto the digits by whitespace-splitting."""
+    while s and s[-1].isalpha():
+        s = s[:-1]
+    return int(s)
+
+
+def _receptor_chain_sequence(pdb_file, preferred_chain):
+    """(resnum -> one-letter aa) for preferred_chain, parsed directly from
+    ATOM records — independent of SIFTS/DBREF chain-letter mapping."""
+    seq_by_pos = OrderedDict()
+    for line in pdb_file.split('\n'):
+        if line.startswith('ATOM') and line[21:22].strip() == preferred_chain:
+            resnum = int(line[22:26])
+            resname = line[17:20].strip()
+            if resnum not in seq_by_pos and resname in AA_three:
+                seq_by_pos[resnum] = AA_three[resname]
+    return seq_by_pos
+
+
+def filter_removed_against_wt(removed, pdb_range, dbref_found, wt_seq, pdb_file, preferred_chain, pdbname, logger):
+    """Drop 'removed' residues that are actually WT receptor sequence —
+    caught by chain misattribution rather than a real fusion/tag.
+    Tier 1: DBREF says this residue number is the receptor's own sequence.
+    Tier 2 (fallback for structures with no/sparse DBREF): the residue
+    aligns to WT within a contiguous run in a direct chain-vs-WT alignment.
+    Neither tier depends on how many residues are involved, so genuine
+    100+ residue fusions (BRIL, T4L, etc.) are left untouched.
+    """
+    if not removed:
+        return removed
+
+    contradicted = set()
+    if dbref_found and pdb_range:
+        contradicted |= (set(removed) & set(pdb_range))
+
+    remaining = [r for r in removed if r not in contradicted]
+    if remaining and preferred_chain:
+        seq_by_pos = _receptor_chain_sequence(pdb_file, preferred_chain)
+        if seq_by_pos:
+            positions = list(seq_by_pos.keys())
+            chain_seq = ''.join(seq_by_pos.values())
+            alignments = pairwise2.align.localms(wt_seq, chain_seq, 3, -4, -5, -2)
+            if alignments:
+                aln = alignments[0]
+                aligned_wt, aligned_chain = aln.seqA, aln.seqB
+                # Only [aln.start, aln.end) is the real local match - pairwise2 pads
+                # the rest with the unaligned leftover of the longer sequence shoved
+                # adjacent to the true window, not placed at its real position, so
+                # scanning past the window picks up coincidental matches against
+                # unrelated sequence. Non-gap chars before aln.start are still in
+                # chain_seq's original order, so counting them gives the correct
+                # starting offset into positions[].
+                chain_i = len(aligned_chain[:aln.start].replace('-', ''))
+                run = 0
+                MIN_RUN = 5  # tune against real examples during implementation
+                for idx in range(aln.start, aln.end):
+                    wt_c, ch_c = aligned_wt[idx], aligned_chain[idx]
+                    if ch_c != '-':
+                        pos = positions[chain_i]
+                        if wt_c == ch_c:
+                            run += 1
+                            if run >= MIN_RUN and pos in remaining:
+                                contradicted.add(pos)
+                        else:
+                            run = 0
+                        chain_i += 1
+
+    if contradicted:
+        logger.warning('{} {} "removed" residues contradicted by WT identity evidence, excluding: {}'.format(
+            pdbname.lower(), len(contradicted), sorted(contradicted)))
+    return [r for r in removed if r not in contradicted]
 
 # def look_for_value(d,k):
 #     ### look for a value in dict if found, give back, otherwise None
@@ -147,7 +245,11 @@ def fetch_pdb_info(pdbname, protein ,new_xtal=False, ignore_gasper_annotation=Fa
     else:
         pdb_file = pdbdata_raw
     pdb_range = []
+    pdb_range_pdbnum = []  # same positions, but in the chain's own author/PDB numbering
     uniprot_code = ''
+    # preferred_chain may be a comma-joined multi-chain string (e.g. 'A,B'),
+    # so match membership rather than equality against a single DBREF chain letter
+    pref_chains = set(c for c in preferred_chain.split(',') if c) if preferred_chain else set()
 
     # do uniprot_code check to see if they only label with PDB code
     for line in pdb_file.split('\n'):
@@ -176,10 +278,35 @@ def fetch_pdb_info(pdbname, protein ,new_xtal=False, ignore_gasper_annotation=Fa
             start = line[8]
             end = line[9]
             # print(line,uniprot,d['construct_crystal']['uniprot'].upper()) #show DBREF
-            if uniprot == d['construct_crystal']['uniprot'].upper() or (uniprot==pdbname.upper() and uniprot_code==''):
+            # Self-referencing (PDB-type) DBREF records echo the PDB code itself as
+            # the "uniprot" name for every chain lacking a real UniProt link - with
+            # multiple such chains in one file (e.g. receptor + mini-G protein +
+            # nanobody complexes), the first one in file order would otherwise win
+            # and permanently block the real receptor chain's own DBREF line from
+            # ever being picked up. Require a chain-letter match against the
+            # caller's preferred_chain(s) to disambiguate when that's available.
+            is_self_ref_match = uniprot==pdbname.upper() and uniprot_code=='' and (not pref_chains or line[2] in pref_chains)
+            if uniprot == d['construct_crystal']['uniprot'].upper() or is_self_ref_match:
                 uniprot_code = line[6]
                 # print(line)
-                pdb_range += range(int(start),int(end)+1)
+                if is_self_ref_match and pref_chains:
+                    # No real UniProt link, so the declared start/end can't represent
+                    # internal numbering gaps (e.g. an ICL3-truncated construct never
+                    # expresses that span at all) - use the residues actually present
+                    # in this chain's own ATOM records instead of a naive full range.
+                    observed = _receptor_chain_sequence(pdb_file, line[2])
+                    this_range = list(observed.keys()) if observed else range(_int_pdb_seqnum(start),_int_pdb_seqnum(end)+1)
+                    pdb_range += this_range
+                    pdb_range_pdbnum += this_range  # self-ref records have no separate UniProt numbering
+                else:
+                    pdb_range += range(_int_pdb_seqnum(start),_int_pdb_seqnum(end)+1)
+                    # Real UNP DBREF gives both pairs separately: line[3]/line[4] are this
+                    # chain's own author numbers, line[8]/line[9] (start/end) are UniProt
+                    # numbers - keep both, since they can diverge once a fusion protein
+                    # inserted between two UniProt-mapped segments of the same chain shifts
+                    # the author numbering of everything downstream of it. Author numbers
+                    # (unlike UniProt numbers) can carry a PDB insertion-code suffix.
+                    pdb_range_pdbnum += range(_int_pdb_seqnum(line[3]),_int_pdb_seqnum(line[4])+1)
         elif line.startswith('SEQADV'):
             line = line.split()
             # if it is relevant to correct uniprot
@@ -369,6 +496,11 @@ def fetch_pdb_info(pdbname, protein ,new_xtal=False, ignore_gasper_annotation=Fa
         dbref_found = False
     # print("pos_in_wt",pos_in_wt)
 
+    # Snapshot before SIFTS parsing mutates pdb_range (residues get .remove()d below) -
+    # needed later to cross-check 'removed' segments against DBREF's own receptor range.
+    pdb_range_orig = list(pdb_range)
+    pdb_range_pdbnum_orig = list(pdb_range_pdbnum)
+
     # To prevent the otherwise overrides from faulty SIFTS
     chain_over_ride = None
     if pdbname=='3SN6':
@@ -402,34 +534,35 @@ def fetch_pdb_info(pdbname, protein ,new_xtal=False, ignore_gasper_annotation=Fa
     cache_dir = ['sifts', 'xml']
     url = 'http://www.uniprot.org/uniprot/$index.xml'
     insert_info = fetch_from_web_api(url, d['construct_crystal']['uniprot'], cache_dir, xml = True)
-    for elm in insert_info.findall('.//{http://uniprot.org/uniprot}feature'):
-        if elm.attrib['type']=="sequence variant":
-            if 'description' in elm.attrib:
-                desc = elm.attrib['description']
-            else:
-                desc = ''
-            if 'id' in elm.attrib:
-                var_id = elm.attrib['id']
-            else :
-                var_id = None
-           #  print(desc,var_id)
-            try:
-                ori = elm.find('{http://uniprot.org/uniprot}original').text
-                var = elm.find('{http://uniprot.org/uniprot}variation').text
-                pos = elm.find('{http://uniprot.org/uniprot}location')[0].attrib['position']
-                if pos not in variants_mapping:
-                    variants_mapping[pos] = {}
-                if var not in variants_mapping[pos]:
-                    variants_mapping[pos][var] = []
-                variants_mapping[pos][var].append([desc,var_id])
-            except:
-                pass
-    for elm in insert_info.findall('.//{http://uniprot.org/uniprot}sequence'):
-        uniprot_seq = elm.text
-        if uniprot_seq:
-            import re
-            uniprot_seq = re.sub('[\s+]', '', uniprot_seq)
-            # print(uniprot_seq)
+    if insert_info:
+        for elm in insert_info.findall('.//{http://uniprot.org/uniprot}feature'):
+            if elm.attrib['type']=="sequence variant":
+                if 'description' in elm.attrib:
+                    desc = elm.attrib['description']
+                else:
+                    desc = ''
+                if 'id' in elm.attrib:
+                    var_id = elm.attrib['id']
+                else :
+                    var_id = None
+               #  print(desc,var_id)
+                try:
+                    ori = elm.find('{http://uniprot.org/uniprot}original').text
+                    var = elm.find('{http://uniprot.org/uniprot}variation').text
+                    pos = elm.find('{http://uniprot.org/uniprot}location')[0].attrib['position']
+                    if pos not in variants_mapping:
+                        variants_mapping[pos] = {}
+                    if var not in variants_mapping[pos]:
+                        variants_mapping[pos][var] = []
+                    variants_mapping[pos][var].append([desc,var_id])
+                except:
+                    pass
+        for elm in insert_info.findall('.//{http://uniprot.org/uniprot}sequence'):
+            uniprot_seq = elm.text
+            if uniprot_seq:
+                import re
+                uniprot_seq = re.sub('[\s+]', '', uniprot_seq)
+                # print(uniprot_seq)
     # print(variants_mapping)
     # if len(uniprot_seq)!=len(d['wt_seq']): print("gpcrdb seq",len(d['wt_seq']),'uniport len',len(uniprot_seq))
 
@@ -464,7 +597,7 @@ def fetch_pdb_info(pdbname, protein ,new_xtal=False, ignore_gasper_annotation=Fa
 
         for elem in sifts.findall('.//{'+sfits_https+'://www.ebi.ac.uk/pdbe/docs/sifts/eFamily.xsd}segment'):
             receptor = False
-            chain = elem.attrib['segId'].split('_')[1]
+            chain = _sifts_segment_chain(elem, sfits_https+'://www.ebi.ac.uk/pdbe/docs/sifts/eFamily.xsd')
             for res in elem[0]: #first element is residuelist
                 if receptor_chain!='':
                     break #break if found
@@ -501,7 +634,7 @@ def fetch_pdb_info(pdbname, protein ,new_xtal=False, ignore_gasper_annotation=Fa
             pos = None
             receptor = False
             u_id_source = 'N/A'
-            chain = elem.attrib['segId'].split('_')[1]
+            chain = _sifts_segment_chain(elem, sfits_https+'://www.ebi.ac.uk/pdbe/docs/sifts/eFamily.xsd')
             seg_resid_list = []
             elem_seq = ""
             prev_raw_u_id = ""
@@ -510,8 +643,6 @@ def fetch_pdb_info(pdbname, protein ,new_xtal=False, ignore_gasper_annotation=Fa
             prev_receptor = False
             seg_had_receptor = False
 
-            if (chain=="A" or chain=="B") and pdbname.lower()=="4k5y":
-                continue
             # print(chain,'chain')
             for res in elem[0]: #first element is residuelist
                 u_id = 'N/A'
@@ -548,31 +679,34 @@ def fetch_pdb_info(pdbname, protein ,new_xtal=False, ignore_gasper_annotation=Fa
                                     url = 'http://www.uniprot.org/uniprot/$index.xml'
                                     insert_info = fetch_from_web_api(url, raw_u_id, cache_dir, xml = True)
                                     found_u_id = None
-                                    for elm in insert_info.findall('.//{http://uniprot.org/uniprot}feature'):
-                                        # GRAB NON RECEPTOR VARIANTS
-                                        try:
-                                            if elm.attrib['type']=="sequence variant":
-                                                desc = elm.attrib['description']
-                                                ori = elm.find('{http://uniprot.org/uniprot}original').text
-                                                var = elm.find('{http://uniprot.org/uniprot}variation').text
-                                                pos = elm.find('{http://uniprot.org/uniprot}location')[0].attrib['position']
-                                                # print(raw_u_id,desc,ori,var,pos)
-                                        except:
-                                            pass
+                                    if insert_info:
+                                        for elm in insert_info.findall('.//{http://uniprot.org/uniprot}feature'):
+                                            # GRAB NON RECEPTOR VARIANTS
+                                            try:
+                                                if elm.attrib['type']=="sequence variant":
+                                                    desc = elm.attrib['description']
+                                                    ori = elm.find('{http://uniprot.org/uniprot}original').text
+                                                    var = elm.find('{http://uniprot.org/uniprot}variation').text
+                                                    pos = elm.find('{http://uniprot.org/uniprot}location')[0].attrib['position']
+                                                    # print(raw_u_id,desc,ori,var,pos)
+                                            except:
+                                                pass
 
-                                    for elm in insert_info.findall('.//{http://uniprot.org/uniprot}recommendedName'):
-                                        new_u_id = elm.find('{http://uniprot.org/uniprot}fullName').text
-                                        uniprot_to_name[raw_u_id] = new_u_id
-                                        u_id = new_u_id
-                                        found_u_id = True
-                                        break #no need to continue looking
-                                    if not found_u_id:
-                                        for elm in insert_info.findall('.//{http://uniprot.org/uniprot}submittedName'):
+                                        for elm in insert_info.findall('.//{http://uniprot.org/uniprot}recommendedName'):
                                             new_u_id = elm.find('{http://uniprot.org/uniprot}fullName').text
                                             uniprot_to_name[raw_u_id] = new_u_id
                                             u_id = new_u_id
                                             found_u_id = True
                                             break #no need to continue looking
+                                        if not found_u_id:
+                                            for elm in insert_info.findall('.//{http://uniprot.org/uniprot}submittedName'):
+                                                new_u_id = elm.find('{http://uniprot.org/uniprot}fullName').text
+                                                uniprot_to_name[raw_u_id] = new_u_id
+                                                u_id = new_u_id
+                                                found_u_id = True
+                                                break #no need to continue looking
+                                    if not found_u_id:
+                                        u_id = raw_u_id
 
                             if u_id not in seg_uniprot_ids:
                                 seg_uniprot_ids.append(u_id)
@@ -759,8 +893,19 @@ def fetch_pdb_info(pdbname, protein ,new_xtal=False, ignore_gasper_annotation=Fa
                         if pdbname=='9D3E' and uniprot_pos>374:
                             continue
 
-                        wt_aa = d['wt_seq'][uniprot_pos-1]
-                        prev_receptor = True
+                        if not uniprot_pos or not (0 < uniprot_pos <= len(d['wt_seq'])):
+                            # uniprot_pos fell back to a raw PDB residue number (via a stale
+                            # receptor flag carried over from a previous residue in this same
+                            # SIFTS segment - e.g. a de novo/foreign insert with no UniProt
+                            # crossref of its own) that doesn't correspond to any real WT
+                            # position - treat as non-receptor instead of indexing out of bounds.
+                            logger.warning('{} uniprot_pos {} out of range for WT length {} (pdb pos {}), treating as non-receptor'.format(
+                                pdbname.lower(), uniprot_pos, len(d['wt_seq']), pos))
+                            receptor = False
+                            uniprot_pos = None
+                        else:
+                            wt_aa = d['wt_seq'][uniprot_pos-1]
+                            prev_receptor = True
                             # if pos==250 or uniprot_pos==250:
                             #     print(pos,uniprot_pos,pdb_aa,d['wt_seq'][uniprot_pos-1],d['wt_seq'][pos-1])
                     # if receptor and uniprot_pos==None :
@@ -932,12 +1077,12 @@ def fetch_pdb_info(pdbname, protein ,new_xtal=False, ignore_gasper_annotation=Fa
             if pdbname in ['6U1N'] and chain=='A' and min_pos==487:
                 seg_uniprot_ids = ['v2r_human']
 
-            # print([elem.attrib['segId'],seg_uniprot_ids,min_pos,max_pos,ranges,insert_position,seg_resid_list,mutations,seg_had_receptor])
-            d['xml_segments'].append([elem.attrib['segId'],seg_uniprot_ids,min_pos,max_pos,ranges,insert_position,seg_resid_list,mutations,seg_had_receptor])
+            # print([elem.attrib['segId'],seg_uniprot_ids,min_pos,max_pos,ranges,insert_position,seg_resid_list,mutations,chain,seg_had_receptor])
+            d['xml_segments'].append([elem.attrib['segId'],seg_uniprot_ids,min_pos,max_pos,ranges,insert_position,seg_resid_list,mutations,chain,seg_had_receptor])
 
             # print("end of segment",elem.attrib['segId'],seg_uniprot_ids,max_pos)
-            if [elem.attrib['segId'],seg_uniprot_ids,min_pos,max_pos,ranges,insert_position,seg_resid_list,mutations,seg_had_receptor] not in d['xml_segments']:
-                d['xml_segments'].append([elem.attrib['segId'],seg_uniprot_ids,min_pos,max_pos,ranges,insert_position,seg_resid_list,mutations,seg_had_receptor])
+            if [elem.attrib['segId'],seg_uniprot_ids,min_pos,max_pos,ranges,insert_position,seg_resid_list,mutations,chain,seg_had_receptor] not in d['xml_segments']:
+                d['xml_segments'].append([elem.attrib['segId'],seg_uniprot_ids,min_pos,max_pos,ranges,insert_position,seg_resid_list,mutations,chain,seg_had_receptor])
 
             if receptor == False and receptor_chain==chain: #not receptor, but is in same chain
                 if len(seg_uniprot_ids):
@@ -960,10 +1105,6 @@ def fetch_pdb_info(pdbname, protein ,new_xtal=False, ignore_gasper_annotation=Fa
                 # print('\t',pdbname.lower(),'Protein in PDB, not part of receptor chain',seg_uniprot_ids,'chain',chain)
                 logger.warning('{} Protein in structure, but not part of receptor chain {} {}'.format(pdbname.lower(),seg_uniprot_ids,chain))
 
-        # Custom fix for 6PT2
-        if pdbname in ['6PT2','6PT3']:
-            del d['auxiliary']['aux1']
-
         # print(sorted(pdb_resid_total))
         # print(sorted(pdb_resid_total_accounted))
         non_accounted = sorted(list(set(pdb_resid_total) - set(pdb_resid_total_accounted)))
@@ -977,17 +1118,46 @@ def fetch_pdb_info(pdbname, protein ,new_xtal=False, ignore_gasper_annotation=Fa
         for k, g in groupby(enumerate(pos_in_wt), lambda x:x[0]-x[1]):
             group = list(map(itemgetter(1), g))
             d['deletions'].append({'start':group[0], 'end':group[-1], 'origin':'user'})
+        if len(set(pos_in_wt)) == len(d['wt_seq']):
+            # entire WT sequence flagged as deleted is a parsing failure, not a real deletion
+            logger.warning('{} entire sequence (1-{}) flagged as deleted, likely a parsing error - clearing deletions'.format(pdbname.lower(), len(d['wt_seq'])))
+            d['deletions'] = []
         d['not_observed'] = []
         if len(d['xml_not_observed']):
             # print(d['xml_not_observed'])
             for k, g in groupby(enumerate(sorted(d['xml_not_observed'])), lambda x:x[0]-x[1]):
                 group = list(map(itemgetter(1), g))
                 d['not_observed'].append((group[0], group[-1]))
+        if len(set(d['xml_not_observed'])) == len(d['wt_seq']):
+            # entire WT sequence flagged as not observed is a parsing failure, not a real finding
+            logger.warning('{} entire sequence (1-{}) flagged as not observed, likely a parsing error - clearing not_observed'.format(pdbname.lower(), len(d['wt_seq'])))
+            d['not_observed'] = []
 
-        # Custom fix for 6PT2
-        if pdbname in ['6PT2','6PT3']:
-            d['construct_sequences']['Soluble cytochrome b562'] = d['construct_sequences']['N/A']
-            del d['construct_sequences']['N/A']
+        # Assemble 'removed' (non-receptor segments physically present in the receptor's own
+        # chain - tags/fusions) here, once, instead of duplicating this in every caller, since
+        # the identity-based guard below needs data (pdb_range_orig, dbref_found, pdb_file) that
+        # is only available inside fetch_pdb_info.
+        d['removed'] = []
+        entry_name = d['construct_crystal']['uniprot']
+        for seg in d['xml_segments']:
+            if seg[1]:
+                if seg[1][0]!=entry_name and seg[-1]!=True and seg[1][0]!='Uncharacterized protein' and 'receptor' not in seg[1][0]:
+                    if seg[-2]==preferred_chain:
+                        for i in seg[6]:
+                            d['removed'].append(i)
+        # 'removed' is author/PDB-numbered (from SIFTS dbResNum), so it must be
+        # cross-checked against the author-numbered range, not the UniProt-numbered
+        # pdb_range_orig used for WT-position pruning - the two can diverge when a
+        # fusion protein spliced between two UniProt-mapped segments of the same
+        # chain shifts the author numbering of everything downstream of it.
+        d['removed'] = filter_removed_against_wt(d['removed'], pdb_range_pdbnum_orig, dbref_found, d['wt_seq'], pdb_file, preferred_chain, pdbname, logger)
+
+        deletions_flat = sum(rng['end']-rng['start']+1 for rng in d['deletions'])
+        if deletions_flat > len(d['wt_seq'])*0.9:
+            # if too many deletions, it's more likely a parsing failure than a real construct
+            logger.warning('{} over 90% of WT ({}/{}) flagged as deleted, likely a parsing error - clearing deletions/removed'.format(pdbname.lower(), deletions_flat, len(d['wt_seq'])))
+            d['deletions'] = []
+            d['removed'] = []
 
         for i,v in d['construct_sequences'].items():
             d['construct_sequences'][i]['ranges'] = []
@@ -1486,12 +1656,13 @@ def add_construct(d):
             if 'ligand_activity' not in d['construct_crystal']:
                 d['construct_crystal']['ligand_activity'] = 'unknown'
             if ligand and 'ligand_activity' in d['construct_crystal']:
-                role_slug = slugify(d['construct_crystal']['ligand_activity'])
-                try:
-                    lr, created = LigandRole.objects.get_or_create(slug=role_slug,
-                    defaults={'name': d['construct_crystal']['ligand_activity']})
-                except IntegrityError:
-                    lr = LigandRole.objects.get(slug=role_slug)
+                lr = find_role(d['construct_crystal']['ligand_activity'])
+                # role_slug = slugify(d['construct_crystal']['ligand_activity'])
+                # try:
+                #     lr, created = LigandRole.objects.get_or_create(slug=role_slug,
+                #     defaults={'name': d['construct_crystal']['ligand_activity']})
+                # except IntegrityError:
+                #     lr = LigandRole.objects.get(slug=role_slug)
             if ligand:
                 ligand_c = CrystallizationLigandConc()
                 ligand_c.construct_crystallization = c
@@ -1600,6 +1771,7 @@ def construct_structure_annotation_override(pdb_code, removed, deletions):
         removed = list(range(1001,1473))+list(range(255,260))
     elif pdb_code in ['6KUX', '6KUY']:
         deletions = list(range(1,20))
+        removed = list(range(1000,1107))
     elif pdb_code=='7BZ2':
         deletions = list(range(240,265))
     elif pdb_code=='7C6A':
@@ -1690,10 +1862,12 @@ def construct_structure_annotation_override(pdb_code, removed, deletions):
         if 243 in deletions:
             deletions.remove(243)
         deletions.append(271)
-    elif pdb_code=='6W2Y':
+    elif pdb_code in ['6W2Y']:
         for i in range(845,862):
             if i in deletions:
                 deletions.remove(i)
+    elif pdb_code=='6W2X':
+        deletions = []
     elif pdb_code in ['4Z34','4Z35','4Z36']:
         if 327 in removed:
             removed.remove(327)
@@ -1731,7 +1905,7 @@ def construct_structure_annotation_override(pdb_code, removed, deletions):
         deletions = list(range(314,400))
         removed = list(range(1,128))+list(range(188,192))
     elif pdb_code=='7F1Q':
-        removed = list(range(1,113))+list(range(318,350))
+        removed = list(range(1,69))
     elif pdb_code in ['7EPE','7EPF']:
         removed, deletions = list(range(1000,1148)), list(range(1000,1148))
     elif pdb_code in ['7EZM','7EZK','7EZH']:
@@ -1816,15 +1990,17 @@ def construct_structure_annotation_override(pdb_code, removed, deletions):
         removed = list(range(231,340))
     elif pdb_code=='8HN1':
         removed = list(range(214,229))
-    elif pdb_code in ['8J46','8W77']:
+    elif pdb_code in ['8J46']:
         removed = list(range(996,1114))
-        deletions = list(range(226,236))
+        deletions = []
     ### make deletions and removed empty
     elif pdb_code in ['7SF7','7SF8','7EB2','7X1T','7X1U','7SRS','7UL2','7UL3','7UL5','7XBX','7XWO','8G2Y','7XJJ','7YM8','8IY5','8IRU',
                       '8JMT','8W8Q','8W8R','8W8S','8I9L','8ITL','8I9A','8I95','8ITM','8HTI','8YZK','8ZSV','8IKL','8IYH','8J24','8JHN',
-                      '8T3S','8ZR5','8ZQE','8K4O','8GTI','8TRC','8TRD','8WU1','8J9N','8UXY','8UXV','8K4S','8Y69','8KIG']:
+                      '8T3S','8ZR5','8ZQE','8K4O','8GTI','8TRC','8TRD','8WU1','8J9N','8UXY','8UXV','8K4S','8Y69','8KIG','8ZD1','8WSS',
+                      '8YH5','8YH6','9LE0','9LE1','9LE2','9P1S','9WEY','9XQB','9P1T','8UY0','7V9L','8YFS','9LDX','8UYQ','9LDW','9LDV',
+                      '9LDZ','8W77','9UST','9WPM']:
         deletions, removed = [], []
-    elif pdb_code in ['7ZLY']:
+    elif pdb_code in ['7ZLY','6YVR']:
         deletions = []
     elif pdb_code in ['8TH3','8TH4']:
         deletions = []
@@ -1849,6 +2025,59 @@ def construct_structure_annotation_override(pdb_code, removed, deletions):
         deletions.append(229)
     elif pdb_code=='9EAH':
         removed = list(range(227,1234))
-
+    elif pdb_code=='9JG0':
+        removed = list(range(246,364))
+        deletions = []
+    elif pdb_code=='9XQN':
+        removed = list(range(597,716))
+        deletions = []
+    elif pdb_code=='9JGK':
+        removed = list(range(242,395))
+        deletions = []
+    elif pdb_code=='9JEA':
+        removed = list(range(214,366))
+        deletions = []
+    elif pdb_code in ['9KDF','9KDG']:
+        removed = list(range(304,463))+list(range(1001,1346))
+        deletions = []
+    elif pdb_code=='9UVY':
+        removed = list(range(237,623))
+        deletions = []
+    elif pdb_code=='9UVZ':
+        removed = list(range(220,602))
+    elif pdb_code=='9PEE':
+        removed = list(range(236,363))
+    elif pdb_code=='5WB1':
+        removed = list(range(997,1121))
+        deletions = []
+    elif pdb_code=='5WB2':
+        removed = list(range(997,1124))
+    elif pdb_code in ['9UAP','9UCP']:
+        removed = list(range(216,320))
+        deletions = []
+    elif pdb_code in ['9EHS','9JFY','9LLI','6WIV']:
+        deletions = []
+    elif pdb_code=='9LMP':
+        removed+=list(range(288,298))
+    elif pdb_code=='6GPX':
+        # Rubredoxin fusion embedded in ICL3 of chain A (the preferred_chain per
+        # structures.tsv). Chain A matches WT 1:1 through residue 231, the fusion
+        # + a short disordered linker occupy raw residues 232-290, and the real
+        # receptor sequence resumes at 291 offset by +51 relative to WT (confirmed
+        # residue-by-residue against the WT sequence).
+        removed = list(range(232,291))
+        deletions = []
+    elif pdb_code in ['9RKF','9RKH']:
+        for i in range(394,414):
+            deletions.remove(i)
+    elif pdb_code=='8FYN':
+        removed.append(1106)
+    elif pdb_code=='7YMJ':
+        removed = list(range(205,235))
+    elif pdb_code=='9UAZ':
+        removed = list(range(214,369))
+    elif pdb_code in ['9EAI','9EAJ']:
+        removed = list(range(227,341))
+        deletions = []
 
     return removed, deletions

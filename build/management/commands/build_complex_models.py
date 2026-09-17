@@ -230,7 +230,7 @@ class Command(BaseBuild):
             # print(gprotein_subfam, targets)
             for target in targets:
                 # Only build gnat models with opsins
-                if receptor.family.parent.name!='Opsins' and target in ['gnat1_human','gnat2_human','gnat3_human']:
+                if receptor.family.parent.name!='Opsin (sight) receptors' and target in ['gnat1_human','gnat2_human','gnat3_human']:
                     continue
                 # print(receptor, target)
                 import_receptor = False

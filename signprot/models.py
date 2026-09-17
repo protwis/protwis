@@ -87,6 +87,7 @@ class SignprotComplex(models.Model):
     beta_protein = models.ForeignKey('protein.Protein', related_name='beta_protein', on_delete=models.CASCADE, null=True)
     gamma_chain = models.CharField(max_length=1, null=True)
     gamma_protein = models.ForeignKey('protein.Protein', related_name='gamma_protein', on_delete=models.CASCADE, null=True)
+    alpha_backbone = models.ForeignKey('protein.Protein', related_name='alpha_backbone_complex', on_delete=models.SET_NULL, null=True, blank=True)
 
     def __str__(self):
         return '<SignprotComplex: {} {}>'.format(self.protein.entry_name, self.structure.pdb_code.index)

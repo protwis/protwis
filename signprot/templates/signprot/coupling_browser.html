@@ -267,7 +267,7 @@
                         {% endif %}
                         <td class="text-left expand">
                             {% if cvals.ligand_name != None and cvals.lab != "GtoPdb" %}
-                            <a href="/ligand/{{ cvals.ligand_id }}/info" target="_blank"><span>{{ cvals.ligand_name|safe }}</span></a>
+                            <a href="/ligand/{{ cvals.ligand_id }}/group" target="_blank"><span>{{ cvals.ligand_name|safe }}</span></a>
                             {% elif cvals.lab == "GtoPdb" or cvals.lab == "GproteinDb" %}
                             <span>-</span>
                             {% else %}

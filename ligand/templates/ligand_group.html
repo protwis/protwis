@@ -1,0 +1,142 @@
+{% extends "home/base.html" %}
+{% load static %}
+
+{% block addon_css %}
+<link rel="stylesheet" href="{% static 'home/css/button_spinner.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/select2_4.1.0-rc.0._full.css' %}" type="text/css">
+<link rel="stylesheet" href="{% static 'home/css/structure_browser.css' %}" type="text/css">
+<!-- <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" /> -->
+<!-- <link rel="stylesheet" href="{% static 'home/css/construct_browser.css' %}" type="text/css" /> -->
+<link rel="stylesheet" href="{% static 'home/css/NewDrugsBrowser_datatables.min.css' %}" type="text/css"/>
+<!-- <link href="{% static 'home/css/construct_alignment.css' %}" rel="stylesheet"> -->
+<!-- <link href="{% static 'home/css/sequenceviewer.css' %}" rel="stylesheet"> -->
+<!-- <link rel="stylesheet" type="text/css" href="{% static 'home/css/jquery.powertip.css' %}" /> -->
+<link rel="stylesheet" href="{% static 'home/css/bootstrap2-toggle.min.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/modal.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/struct_tooltip.css' %}" type="text/css" />
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
+
+{% endblock %}
+{% block content %}
+{% autoescape off %}
+    <div>
+        <p><h4><b>{{this_ligand.name}}</b> and related ligand objects. Pick one to view based on the number of datapoints available.<h4></p>
+    </div>
+    <div id="ligand_group">
+        <table width="70%" class="display compact" id="LigandGroupTable">
+            <thead>
+                <!-- Dummy Header Row for Complex Header Fix -->
+                <tr>
+                    <td colspan="9" style="text-align: center" data-dt-order="disable"></td>
+                </tr>
+                <!-- Super Header Row -->
+                <!-- <tr style="padding-top: 10px; font-size: 14px; white-space: nowrap;">
+                    <th colspan="5" style="text-align:center">Receptor</th>
+                    <th colspan="4" style="text-align:center;border-left: 1px solid #cccccc;">Activity</th>
+                    <th colspan="1" style="text-align:center;border-left: 1px solid #cccccc;">Source</th>
+                </tr> -->
+                <!-- Header Row -->
+                <tr>
+                    <th style="text-align: center;">Ligand</th>
+                    <th style="text-align: center;">GPCRdb ID</th>
+                    <th style="text-align: center;">Chemical<br>identifiers</th>
+                    <th style="text-align: center;">Chemical<br>properties</th>
+                    <th style="text-align: center;">Bioactivities</th>
+                    <th style="text-align: center;">Drug<br>indications</th>
+                    <th style="text-align: center;">Structures</th>
+                    <th style="text-align: center;">Mutations</th>
+                    <th style="text-align: center;">Database<br>connections</th>
+                </tr>
+                <!-- Filter Row for header -->
+                <tr>
+                    <td style="text-align: right;" data-dt-order="disable"></td>
+                    <td style="text-align: center;" data-dt-order="disable"></td>
+                    <td style="text-align: center;" data-dt-order="disable"></td>
+                    <td style="text-align: center;" data-dt-order="disable"></td>
+                    <td style="text-align: center;" data-dt-order="disable"></td>
+                    <td style="text-align: center;" data-dt-order="disable"></td>
+                    <td style="text-align: center;" data-dt-order="disable"></td>
+                    <td style="text-align: center;" data-dt-order="disable"></td>
+                    <td style="text-align: center;" data-dt-order="disable"></td>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Data will be populated via DataTables -->
+            </tbody>
+        </table>
+    </div>
+{% endautoescape %}
+{% endblock %}
+
+{% block addon_js %}
+<script src="{% static 'home/js/select2_4.1.0-rc.0_full.js' %}"></script>
+<script src="{% static 'home/js/NewDrugsBrowser_datatables.min.js' %}"></script>
+<script src="{% static 'home/js/NorgesDTFilterBuilder.js' %}"></script>
+<script src="{% static 'home/js/dataTables.buttons.min.js' %}"></script>
+<script src="{% static 'home/js/openchemlib-full.js' %}"></script> <!-- for rendering ligand images -->
+<script src="{% static 'home/js/PeptideLayoutEngine.js' %}"></script> <!-- For rendering peptide structures -->
+<script src="{% static 'home/js/compoundPreviewTooltip.js' %}"></script>
+<script src="{% static 'home/js/grayscale.js' %}"> </script>
+
+<script type="text/javascript">
+    window.NO_IMAGE_URL = "{% static 'home/images/No_image_available.svg' %}";
+</script>
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        var ligand_data = JSON.parse('{{ ligands|escapejs }}');
+
+        var columnDefs = [{ className: "dt-head-center dt-center dt-body-center expand", "targets": "_all" },
+                          { className: "color-column", "targets": [2,3,4,5,6,7,8]},
+                          { className: "dt-body-right", "targets": [0]}]
+        var columns = [
+			{data: "ligand_object", name: "ligand", width: "5%"},
+			{data: "gpcrdb_id", name: "gpcrdb_id", width: "5%"},
+			{data: "chemical_identifiers", name: "ch_id", width: "5%", render: function(data) { return data ? data : "-"; }},
+			{data: "chemical_properties", name: "ch_prop", width: "5%", render: function(data) { return data ? data : "-"; }},
+			{data: "bioactivities", name: "bio", width: "5%", render: function(data) { return data ? data : "-"; }},
+			{data: "drug_indications", name: "drug", width: "5%", render: function(data) { return data ? data : "-"; }},
+			{data: "structures", name: "structs", width: "5%", render: function(data) { return data ? data : "-"; }},
+			{data: "mutations", name: "muts", width: "5%", render: function(data) { return data ? data : "-"; }},
+			{data: "db_ids", name: "dbs", width: "5%", render: function(data) { return data ? data : "-"; }}
+		];
+        var table = $("#LigandGroupTable").DataTable({
+			data: ligand_data,
+			columns: columns,
+			columnDefs: columnDefs,
+			dom: "",
+			paging: false,
+            searching: false,
+            info: false,
+			lengthMenu: [
+				[10, 20, -1],           // values
+				[10, 20, "All"]         // labels (shown to user)
+				],
+			scrollCollapse: true,
+			autoWidth: true,
+        })
+        var column_filters = [];
+		column_filters = column_filters.concat(CreateColumnFilters(table, 0, 2, "Multi-select-exact"));
+		column_filters = column_filters.concat(CreateColumnFilters(table, 2, 7, "Range-float-vertical"));
+		createDropdownFilters(table, column_filters);
+        compoundPreview("a.struct");
+
+        $('[data-toggle="popover"]').popover({
+            container: 'body',
+            html: true,
+            sanitize: false,
+            template:
+                '<div class="popover popover-wide" role="tooltip">' +
+                '<div class="arrow"></div>' +
+                '<h3 class="popover-title"></h3>' +
+                '<div class="popover-content"></div>' +
+                '</div>'
+        });
+        gray_scale_table($('#LigandGroupTable'));
+    })
+    $(document).on('shown.bs.popover', function () {
+        $('.popover').last().addClass('popover-wide');
+    });
+</script>
+{% endblock %}

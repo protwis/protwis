@@ -11,9 +11,10 @@ from protein.models import (Protein, ProteinConformation, ProteinState, ProteinA
     ProteinSegment)
 from residue.models import ResidueGenericNumber, ResidueNumberingScheme, Residue, ResidueGenericNumberEquivalent
 from common.models import WebLink, WebResource, Publication
-from common.tools import test_model_updates
+from common.tools import test_model_updates, find_role
 from structure.models import Structure, StructureType, StructureStabilizingAgent,PdbData, Rotamer, Fragment
 from construct.functions import *
+from common import definitions
 
 from contactnetwork.models import *
 import contactnetwork.interaction as ci
@@ -39,6 +40,8 @@ import gc
 import pandas as pd
 from collections import OrderedDict
 from datetime import datetime, date
+import re
+from difflib import get_close_matches
 import json
 from urllib.request import urlopen
 from Bio.PDB import parse_pdb_header
@@ -880,7 +883,7 @@ class Command(BaseBuild):
             try:
                 if 'ligand' in sd and sd['ligand'] and sd['ligand']!='None':
                     ligand = sd['ligand'][0]
-                    l = Ligand.objects.get(id=ligand['gpcrdb id'])
+                    l = Ligand.objects.get(gpcrdb_id=ligand['gpcrdb id'])
                 else:
                     l = None
                     print('No ligand inserted in the complex {}.'.format(sd['protein'].lower()))
@@ -943,7 +946,7 @@ class Command(BaseBuild):
                         else:
                             ligand_title = ligand['name']
 
-                        l = Ligand.objects.get(id=ligand['gpcrdb id'])
+                        l = Ligand.objects.get(gpcrdb_id=ligand['gpcrdb id'])
 
                         # Create LigandPeptideStructure object to store chain ID for peptide ligands - supposed to b TEMP
                         if ligand['type'] in ['peptide','protein']:
@@ -953,14 +956,15 @@ class Command(BaseBuild):
 
                     # structure-ligand interaction
                     if l and ligand['role']:
-                        role_slug = slugify(ligand['role'])
-                        try:
-                            lr, created = LigandRole.objects.get_or_create(slug=role_slug,
-                            defaults={'name': ligand['role']})
-                            if created:
-                                self.logger.info('Created ligand role {}'.format(ligand['role']))
-                        except IntegrityError:
-                            lr = LigandRole.objects.get(slug=role_slug)
+                        lr = find_role(ligand['role'])
+                        # role_slug = slugify(ligand['role'])
+                        # try:
+                        #     lr, created = LigandRole.objects.get_or_create(slug=role_slug,
+                        #     defaults={'name': ligand['role']})
+                        #     if created:
+                        #         self.logger.info('Created ligand role {}'.format(ligand['role']))
+                        # except IntegrityError:
+                        #     lr = LigandRole.objects.get(slug=role_slug)
                         i, created = StructureLigandInteraction.objects.get_or_create(ligand=l, ligand_role=lr, structure=struct, pdb_file=pdbdata, annotated=True, defaults={'pdb_reference': 'pep'})
                         if i.pdb_reference != pdb_reference:
                             i.pdb_reference = pdb_reference

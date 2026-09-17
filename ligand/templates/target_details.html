@@ -169,19 +169,20 @@
 
 	
     /* Specific styling for range filter inputs in the third row's <td> */
-    #affinity_table_wrapper .dt-scroll-headInner > table > thead tr:nth-child(3) td input.select2[id$="min"],
-    #affinity_table_wrapper .dt-scroll-headInner > table > thead tr:nth-child(3) td input.select2[id$="max"],
-    #potency_table_wrapper .dt-scroll-headInner > table > thead tr:nth-child(3) td input.select2[id$="min"],
-    #potency_table_wrapper .dt-scroll-headInner > table > thead tr:nth-child(3) td input.select2[id$="max"] {
-        width: 35px !important; /* Ensure this takes precedence if needed */
-        text-align: center !important;
-    }
-    #affinity_table_wrapper .dt-scroll-headInner > table > thead tr:nth-child(3) td input.select2[id$="min"] {
-        margin-top: 5px !important;
-    }
-    #potency_table_wrapper .dt-scroll-headInner > table > thead tr:nth-child(3) td input.select2[id$="min"] {
-        margin-top: 5px !important;
-    }
+        #affinity_table_wrapper .dt-scroll-headInner > table > thead tr:nth-child(3) td input.select2[id$="min"],
+        #affinity_table_wrapper .dt-scroll-headInner > table > thead tr:nth-child(3) td input.select2[id$="max"],
+        #potency_table_wrapper .dt-scroll-headInner > table > thead tr:nth-child(3) td input.select2[id$="min"],
+        #potency_table_wrapper .dt-scroll-headInner > table > thead tr:nth-child(3) td input.select2[id$="max"],
+        #qualitative_table_wrapper .dt-scroll-headInner > table > thead tr:nth-child(3) td input.select2[id$="min"],
+        #qualitative_table_wrapper .dt-scroll-headInner > table > thead tr:nth-child(3) td input.select2[id$="max"] {
+            width: 35px !important; /* Ensure this takes precedence if needed */
+            text-align: center !important;
+        }
+        #affinity_table_wrapper .dt-scroll-headInner > table > thead tr:nth-child(3) td input.select2[id$="min"],
+        #potency_table_wrapper .dt-scroll-headInner > table > thead tr:nth-child(3) td input.select2[id$="min"],
+        #qualitative_table_wrapper .dt-scroll-headInner > table > thead tr:nth-child(3) td input.select2[id$="min"] {
+            margin-top: 5px !important;
+        }
     
     
 
@@ -266,10 +267,11 @@
         margin-left: auto; /* For centering if the cell is wider */
         margin-right: auto; /* For centering */
     }
-    #affinity_table_wrapper .dt-scroll-headInner > table > thead {
-        border-top: 2px solid #ccc;
-    }
-    #potency_table_wrapper .dt-scroll-headInner > table > thead {
+
+    /* Top border for all three tables */
+    #affinity_table_wrapper .dt-scroll-headInner > table > thead,
+    #potency_table_wrapper .dt-scroll-headInner > table > thead,
+    #qualitative_table_wrapper .dt-scroll-headInner > table > thead {
         border-top: 2px solid #ccc;
     }
 
@@ -350,13 +352,16 @@
   var dataTables = {};
   var affinity_data; 
   var potency_data;  
+  var qualitative_data;
 
   var selectedRowsAffinity = new Set();
   var selectedRowsPotency = new Set();
+  var selectedRowsQualitative = new Set();
 
   var jsMode, jsLigandQuery, jsLigandSimilarity; 
   var affinityTableId = '#affinity_table';
   var potencyTableId = '#potency_table';
+  var qualitativeTableId = '#qualitative_table';
 
   function updateLoaderText(newText) {
       $(".custom-loader-text").text(newText);
@@ -468,23 +473,36 @@ function reset_all() {
     return columnName;
   }
 
-   function customizeExcelExport(xlsx, mode, ligandQuery, ligandSimilarity) {
+   function customizeExcelExport(xlsx, mode, ligandQuery, ligandSimilarity, tableType) { // Add 'tableType' parameter.
     const sheet = xlsx.xl.worksheets['sheet1.xml'];
     const $sheetData = $('sheetData', sheet);
     let mainHeaders = [];
-    if (mode === 'extended') {
-        mainHeaders = [
-            "Common name", "GPCRdb ID", "Reference ligand", "Vendors", "Species",
-            "Assay Type", "Activity Type", "Activity Relation", "Activity Value", "p-value (-log)", "Fold selectivity", "Tested GPCRs", "Assay Description", "Source",
-            "Mol weight", "Rot Bonds", "H don", "H acc", "LogP", "Smiles", "DOI"
-        ];
-    } else { 
-        if (ligandSimilarity) mainHeaders.push("Similarity");
-        mainHeaders.push("Common name", "GPCRdb ID", "Type", "Reference ligand", "Vendors");
-        mainHeaders.push("Species");
-        if (ligandQuery) mainHeaders.push("Protein name", "Gene name", "Class", "Family");
-        mainHeaders.push("Assay Type", "Parameter", "No. records", "Min", "Avg", "Max", "Fold selectivity", "Tested GPCRs", "Source");
-        mainHeaders.push("Mol weight", "Rot Bonds", "H don", "H acc", "LogP", "Smiles");
+
+    // Add logic branch for the qualitative table export headers.
+    if (tableType === 'qualitative') {
+        if (mode === 'extended') {
+            mainHeaders = ["Common name", "GPCRdb ID", "Reference ligand", "Vendors", "Species", "Assay Type", "Qualitative Information", "Source"];
+        } else { // compact mode for qualitative
+            if (ligandSimilarity) mainHeaders.push("Similarity");
+            mainHeaders.push("Common name", "GPCRdb ID", "Type", "Reference ligand", "Vendors", "Species");
+            if (ligandQuery) mainHeaders.push("Protein name", "Gene name", "Class", "Family");
+            mainHeaders.push("Assay Type", "Qualitative Information", "Source");
+        }
+    } else { // Existing logic for Affinity and Potency tables.
+        if (mode === 'extended') {
+            mainHeaders = [
+                "Common name", "GPCRdb ID", "Reference ligand", "Vendors", "Species",
+                "Assay Type", "Activity Type", "Activity Relation", "Activity Value", "p-value (-log)", "Fold selectivity", "Tested GPCRs", "Assay Description", "Source",
+                "Mol weight", "Rot Bonds", "H don", "H acc", "LogP", "Smiles", "DOI"
+            ];
+        } else { 
+            if (ligandSimilarity) mainHeaders.push("Similarity");
+            mainHeaders.push("Common name", "GPCRdb ID", "Type", "Reference ligand", "Vendors");
+            mainHeaders.push("Species");
+            if (ligandQuery) mainHeaders.push("Protein name", "Gene name", "Class", "Family");
+            mainHeaders.push("Assay Type", "Parameter", "No. records", "Min", "Avg", "Max", "Fold selectivity", "Tested GPCRs", "Source");
+            mainHeaders.push("Mol weight", "Rot Bonds", "H don", "H acc", "LogP", "Smiles");
+        }
     }
     $('row', $sheetData).slice(0, 2).remove(); 
     let mainHeadersXml = '<row r="1">';
@@ -551,7 +569,7 @@ function reset_all() {
                     if (ligandType === 'Peptide' && sequence) {
 
                         return `<a class="${tableSpecificClass}" 
-                                href="/ligand/${ligId}/info" 
+                                href="/ligand/${ligId}/group" 
                                 target="_blank"
                                 data-ligand-type="peptide"
                                 data-sequence="${sequence}">
@@ -567,7 +585,7 @@ function reset_all() {
                                 rel="${pictureRel}" 
                                 data-smiles="${smiles}"
                                 data-ligand-type="smiles"
-                                href="/ligand/${ligId}/info" 
+                                href="/ligand/${ligId}/group" 
                                 target="_blank">
                                 ${displayName}
                                 </a>`;
@@ -582,84 +600,169 @@ function reset_all() {
         
         
         let originalColumns = [];
-        if (mode === 'extended') {
-            originalColumns = [
-                { 
-                    data: "ligand__name", 
-                    name: "common_name", 
-                    width: commonColumnWidths.common_name, 
-                    render: renderLigandName 
-                },
-                { data: "ligand__id", name: "gpcrdb_id", width: commonColumnWidths.gpcrdb_id, render: function(data) { return data ? data : "-"; } },
-                { data: "reference_ligand", name: "reference_ligand", width: commonColumnWidths.reference_ligand, render: function(data) { return data ? data : "None"; } },
-                { data: "purchasability", name: "vendors", width: commonColumnWidths.vendors, render: function(data) { return data ? data : "0"; } },
-                { data: "protein__species__common_name", name: "species", width: commonColumnWidths.species, render: function(data) { return data ? data : "-"; } },
-                { data: "assay_type", name: "assay_type", width: commonColumnWidths.assay_type, render: function(data) { if (data === "B") return "Binding"; if (data === "F") return "Functional"; return data ? data : "-"; }},
-                { data: "value_type", name: "activity_type", width: commonColumnWidths.activity_type_extended, render: function(data) { return data ? data : "-"; } },
-                { data: "standard_relation", name: "activity_relation", width: commonColumnWidths.activity_relation_extended, render: function(data) { return data ? data : "="; } },
-                { data: "standard_activity_value", name: "activity_value", width: commonColumnWidths.activity_value_extended, render: function(data) { if (data === null || data === undefined || data === "") return "-"; const num = parseFloat(data); return !isNaN(num) ? num.toFixed(digit_fixed) : "-"; }},
-                { data: "p_activity_value", name: "p_value", width: commonColumnWidths.p_value_extended, render: function(data) { if (data === null || data === undefined || data === "") return "-"; const num = parseFloat(data); return !isNaN(num) ? num.toFixed(digit_fixed) : "-"; }},
-                { data: foldSelectivityDataSource, name: "fold_selectivity", width: commonColumnWidths.fold_selectivity, render: function(data) { return data !== null && data !== undefined ? data : "-"; } },
-                { data: "total_tested_gpcrs", name: "tested_gpcrs", width: commonColumnWidths.tested_gpcrs, render: function(data) { return data ? data : "-"; } },
-                { data: "assay_description", name: "assay_description", width: commonColumnWidths.assay_description_extended, render: function(data) { return data ? data : "-"; } },
-                { data: "source", name: "source", width: commonColumnWidths.source, render: function(data) { return data ? data : "-"; } },
-                { data: "ligand__mw", name: "mol_weight", width: commonColumnWidths.mol_weight, render: function(data) { if (data === null || data === undefined || data === "") return "-"; const num = parseFloat(data); return !isNaN(num) ? num.toFixed(1) : "-"; }},
-                { data: "ligand__rotatable_bonds", name: "rot_bonds", width: commonColumnWidths.rot_bonds, render: function(data) { return data !== null ? data : "-"; } },
-                { data: "ligand__hdon", name: "h_don", width: commonColumnWidths.h_don, render: function(data) { return data !== null ? data : "-"; } },
-                { data: "ligand__hacc", name: "h_acc", width: commonColumnWidths.h_acc, render: function(data) { return data !== null ? data : "-"; } },
-                { data: "ligand__logp", name: "logp", width: commonColumnWidths.logp, render: function(data) { if (data === null || data === undefined || data === "") return "-"; const num = parseFloat(data); return !isNaN(num) ? num.toFixed(digit_fixed) : "-"; }},
-                { data: "ligand__smiles", name: "smiles", width: commonColumnWidths.smiles, render: function(data, type, row){ if (type === 'display' && row && row.canonical_smiles) { return row.canonical_smiles; } return data ? data : "-"; }},
-                { data: "publication__web_link__index", name: "doi", width: commonColumnWidths.doi_extended, render: function(data_for_text, type, row, meta) { let processed_doi_text; if (data_for_text === null || data_for_text === undefined) { processed_doi_text = "-"; } else if (typeof data_for_text === 'string') { const trimmed_text = data_for_text.trim(); if (trimmed_text === '' || trimmed_text.toLowerCase() === 'nan' || trimmed_text.toLowerCase() === 'none') { processed_doi_text = "-"; } else { processed_doi_text = trimmed_text; } } else { processed_doi_text = "-"; } const fullLinkUrl = (row && typeof row.link === 'string') ? row.link.trim() : ''; const isFullLinkActuallyProblematic = (fullLinkUrl === '' || fullLinkUrl === '#' || fullLinkUrl.toLowerCase().includes('nan') || fullLinkUrl.toLowerCase().includes('none')); let isLikelyNorgesDtForOptions = (type === 'display' && (!meta || !meta.settings || !row || !row.link || isFullLinkActuallyProblematic)); if (isLikelyNorgesDtForOptions || type === 'filter' || type === 'sort' || type === 'type') { return processed_doi_text; } if (type === 'display') { if (!isFullLinkActuallyProblematic) { return `<a href="${fullLinkUrl}" target="_blank">${fullLinkUrl}</a>`; } else { return "-"; }} return processed_doi_text; }}
-            ];
-            columns = [checkboxColumnDef, ...originalColumns];
-        } else { // mode === 'compact'
-            if (ligandSimilarity) { originalColumns.push({ data: "similarity_score", name: "similarity", width: commonColumnWidths.similarity, defaultContent: "-", render: function ( data, type, row ){ if (type === 'display' && data !== null && data !== undefined && !isNaN(parseFloat(data))) { return parseFloat(data).toFixed(2); } return data; }}); }
-            
-            originalColumns.push({ 
-                data: "ligand_name", name: "common_name", width: commonColumnWidths.common_name, defaultContent: "-", 
-                render: renderLigandName 
-            });
-
-            originalColumns.push({ data: "lig_id", name: "gpcrdb_id", width: commonColumnWidths.gpcrdb_id, defaultContent: "-" });
-            originalColumns.push({ data: "ligand_type", name: "ligand_type", width: commonColumnWidths.ligand_type_compact, defaultContent: "-" });
-            originalColumns.push({ data: "reference", name: "reference_ligand", width: commonColumnWidths.reference_ligand, defaultContent: "None" });
-            originalColumns.push({ data: "purchasability", name: "vendors", width: commonColumnWidths.vendors, defaultContent: "0" });
-            originalColumns.push({ data: "species", name: "species", width: commonColumnWidths.species, defaultContent: "-" });
-            if (ligandQuery) {
-                originalColumns.push({ data: "protein_name", name: "protein_name", width: commonColumnWidths.protein_name_compact, defaultContent: "-" });
-                originalColumns.push({ data: "entry_name", name: "gene_name", width: commonColumnWidths.gene_name_compact, defaultContent: "-", render: function (data, type, row) { if (data && typeof data === 'string' && data.includes('_')) { const shortName = data.split('_')[0]; if (type === 'display' || type === 'filter' || type === 'sort') { return shortName; } return shortName; } return data; }});
-                originalColumns.push({ data: "class", name: "class", width: commonColumnWidths.class_compact, defaultContent: "-" });
-                originalColumns.push({ data: "family", name: "family", width: commonColumnWidths.family_compact, defaultContent: "-" });
+        if (foldSelectivityDataSource === 'qualitative') {
+            if (mode === 'extended') {
+                originalColumns = [
+                    { data: "ligand__name", name: "common_name", width: commonColumnWidths.common_name, render: renderLigandName },
+                    { data: "ligand__id", name: "gpcrdb_id", width: commonColumnWidths.gpcrdb_id, render: function(data) { return data ? data : "-"; } },
+                    { data: "reference_ligand", name: "reference_ligand", width: commonColumnWidths.reference_ligand, render: function(data) { return data ? data : "None"; } },
+                    { data: "purchasability", name: "vendors", width: commonColumnWidths.vendors, render: function(data) { return data ? data : "0"; } },
+                    { data: "protein__species__common_name", name: "species", width: commonColumnWidths.species, render: function(data) { return data ? data : "-"; } },
+                    { data: "assay_type", name: "assay_type", width: commonColumnWidths.assay_type, render: function(data) { if (data === "B") return "Binding"; if (data === "F") return "Functional"; return data ? data : "-"; }},
+                    // MODIFICATION: Add the new columns
+                    { data: "value_type", name: "activity_type", width: commonColumnWidths.activity_type_extended, render: function(data) { return data ? data : "-"; } },
+                    { data: "assay_description", name: "assay_description", width: commonColumnWidths.assay_description_extended, render: function(data) { return data ? data : "-"; } },
+                    { data: "qualitative_activity", name: "qualitative_information", width: "250px", render: function(data) { return data ? data : "-"; } },
+                    { data: "source", name: "source", width: commonColumnWidths.source, render: function(data) { return data ? data : "-"; } },
+                ];
+            } else { // 'compact' mode for qualitative
+                if (ligandSimilarity) { originalColumns.push({ data: "similarity_score", name: "similarity", width: commonColumnWidths.similarity, defaultContent: "-", render: function ( data, type, row ){ if (type === 'display' && data !== null && data !== undefined && !isNaN(parseFloat(data))) { return parseFloat(data).toFixed(2); } return data; }}); }
+                originalColumns.push({ data: "ligand_name", name: "common_name", width: commonColumnWidths.common_name, defaultContent: "-", render: renderLigandName });
+                originalColumns.push({ data: "lig_id", name: "gpcrdb_id", width: commonColumnWidths.gpcrdb_id, defaultContent: "-" });
+                originalColumns.push({ data: "ligand_type", name: "ligand_type", width: commonColumnWidths.ligand_type_compact, defaultContent: "-" });
+                originalColumns.push({ data: "reference", name: "reference_ligand", width: commonColumnWidths.reference_ligand, defaultContent: "None" });
+                originalColumns.push({ data: "purchasability", name: "vendors", width: commonColumnWidths.vendors, defaultContent: "0" });
+                originalColumns.push({ data: "species", name: "species", width: commonColumnWidths.species, defaultContent: "-" });
+                if (ligandQuery) {
+                    originalColumns.push({ data: "protein_name", name: "protein_name", width: commonColumnWidths.protein_name_compact, defaultContent: "-" });
+                    originalColumns.push({ data: "entry_name", name: "gene_name", width: commonColumnWidths.gene_name_compact, defaultContent: "-", render: function (data, type, row) { if (data && typeof data === 'string' && data.includes('_')) { const shortName = data.split('_')[0]; if (type === 'display' || type === 'filter' || type === 'sort') { return shortName; } return shortName; } return data; }});
+                    originalColumns.push({ data: "class", name: "class", width: commonColumnWidths.class_compact, defaultContent: "-" });
+                    originalColumns.push({ data: "family", name: "family", width: commonColumnWidths.family_compact, defaultContent: "-" });
+                }
+                originalColumns.push({ data: "assay_type", name: "assay_type", width: commonColumnWidths.assay_type, render: function(data) { if (data === "B") return "Binding"; if (data === "F") return "Functional"; return data ? data : "-"; }});
+                // MODIFICATION: Add the new columns
+                originalColumns.push({ data: "value_type", name: "parameter", width: commonColumnWidths.parameter_compact, defaultContent: "-" });
+                originalColumns.push({ data: "record_count", name: "no_records", width: commonColumnWidths.no_records_compact, defaultContent: "-" });
+                originalColumns.push({ data: "qualitative_activity", name: "qualitative_information", width: "250px", defaultContent: "-" });
+                originalColumns.push({ data: "source", name: "source", width: commonColumnWidths.source, defaultContent: "-" });
             }
-            originalColumns.push({ data: "assay_type", name: "assay_type", width: commonColumnWidths.assay_type, render: function(data) { if (data === "B") return "Binding"; if (data === "F") return "Functional"; return data ? data : "-"; }});
-            originalColumns.push({ data: "value_type", name: "parameter", width: commonColumnWidths.parameter_compact, defaultContent: "-" });
-            originalColumns.push({ data: "record_count", name: "no_records", width: commonColumnWidths.no_records_compact, defaultContent: "-" });
-            originalColumns.push({ data: "low_value", name: "min_value", width: commonColumnWidths.min_compact, render: function(data) { if (data === null || data === undefined || data === "") return "-"; const num = parseFloat(data); return !isNaN(num) ? num.toFixed(digit_fixed) : "-"; } });
-            originalColumns.push({ data: "average_value", name: "avg_value", width: commonColumnWidths.avg_compact, render: function(data) { if (data === null || data === undefined || data === "") return "-"; const num = parseFloat(data); return !isNaN(num) ? num.toFixed(digit_fixed) : "-"; } });
-            originalColumns.push({ data: "high_value", name: "max_value", width: commonColumnWidths.max_compact, render: function(data) { if (data === null || data === undefined || data === "") return "-"; const num = parseFloat(data); return !isNaN(num) ? num.toFixed(digit_fixed) : "-"; } });
-            originalColumns.push({ data: foldSelectivityDataSource, name: "fold_selectivity", width: commonColumnWidths.fold_selectivity, render: function(data) { return data !== null && data !== undefined ? data : "-"; }});
-            let testedGpcrKey = `${foldSelectivityDataSource}_tested`;
-            originalColumns.push({ data: testedGpcrKey, name: "tested_gpcrs", width: commonColumnWidths.tested_gpcrs, defaultContent: "-" });
-            originalColumns.push({ data: "source", name: "source", width: commonColumnWidths.source, defaultContent: "-" });
-            originalColumns.push({ data: "mw", name: "mol_weight", width: commonColumnWidths.mol_weight, render: function(data) { if (data === null || data === undefined || data === "") return "-"; const num = parseFloat(data); return !isNaN(num) ? num.toFixed(1) : "-"; } });
-            originalColumns.push({ data: "rotatable_bonds", name: "rot_bonds", width: commonColumnWidths.rot_bonds, defaultContent: "-" });
-            originalColumns.push({ data: "hdon", name: "h_don", width: commonColumnWidths.h_don, defaultContent: "-" });
-            originalColumns.push({ data: "hacc", name: "h_acc", width: commonColumnWidths.h_acc, defaultContent: "-" });
-            originalColumns.push({ data: "logp", name: "logp", width: commonColumnWidths.logp, render: function(data) { if (data === null || data === undefined || data === "") return "-"; const num = parseFloat(data); return !isNaN(num) ? num.toFixed(digit_fixed) : "-"; } });
-            originalColumns.push({ data: "smiles", name: "smiles", width: commonColumnWidths.smiles, defaultContent: "-" });
-            columns = [checkboxColumnDef, ...originalColumns];
+        } else {
+            if (mode === 'extended') {
+                originalColumns = [
+                    { data: "ligand__name", name: "common_name", width: commonColumnWidths.common_name, render: renderLigandName },
+                    { data: "ligand__id", name: "gpcrdb_id", width: commonColumnWidths.gpcrdb_id, render: function(data) { return data ? data : "-"; } },
+                    { data: "reference_ligand", name: "reference_ligand", width: commonColumnWidths.reference_ligand, render: function(data) { return data ? data : "None"; } },
+                    { data: "purchasability", name: "vendors", width: commonColumnWidths.vendors, render: function(data) { return data ? data : "0"; } },
+                    { data: "protein__species__common_name", name: "species", width: commonColumnWidths.species, render: function(data) { return data ? data : "-"; } },
+                    { data: "assay_type", name: "assay_type", width: commonColumnWidths.assay_type, render: function(data) { if (data === "B") return "Binding"; if (data === "F") return "Functional"; return data ? data : "-"; }},
+                    { data: "value_type", name: "activity_type", width: commonColumnWidths.activity_type_extended, render: function(data) { return data ? data : "-"; } },
+                    { data: "standard_relation", name: "activity_relation", width: commonColumnWidths.activity_relation_extended, render: function(data) { return data ? data : "="; } },
+                    { data: "standard_activity_value", name: "activity_value", width: commonColumnWidths.activity_value_extended, render: function(data) { if (data === null || data === undefined || data === "") return "-"; const num = parseFloat(data); return !isNaN(num) ? num.toFixed(digit_fixed) : "-"; }},
+                    { data: "p_activity_value", name: "p_value", width: commonColumnWidths.p_value_extended, render: function(data) { if (data === null || data === undefined || data === "") return "-"; const num = parseFloat(data); return !isNaN(num) ? num.toFixed(digit_fixed) : "-"; }},
+                    { data: foldSelectivityDataSource, name: "fold_selectivity", width: commonColumnWidths.fold_selectivity, render: function(data) { return data !== null && data !== undefined ? data : "-"; } },
+                    { data: "total_tested_gpcrs", name: "tested_gpcrs", width: commonColumnWidths.tested_gpcrs, render: function(data) { return data ? data : "-"; } },
+                    { data: "assay_description", name: "assay_description", width: commonColumnWidths.assay_description_extended, render: function(data) { return data ? data : "-"; } },
+                    { data: "source", name: "source", width: commonColumnWidths.source, render: function(data) { return data ? data : "-"; } },
+                    { data: "ligand__mw", name: "mol_weight", width: commonColumnWidths.mol_weight, render: function(data) { if (data === null || data === undefined || data === "") return "-"; const num = parseFloat(data); return !isNaN(num) ? num.toFixed(1) : "-"; }},
+                    { data: "ligand__rotatable_bonds", name: "rot_bonds", width: commonColumnWidths.rot_bonds, render: function(data) { return data !== null ? data : "-"; } },
+                    { data: "ligand__hdon", name: "h_don", width: commonColumnWidths.h_don, render: function(data) { return data !== null ? data : "-"; } },
+                    { data: "ligand__hacc", name: "h_acc", width: commonColumnWidths.h_acc, render: function(data) { return data !== null ? data : "-"; } },
+                    { data: "ligand__logp", name: "logp", width: commonColumnWidths.logp, render: function(data) { if (data === null || data === undefined || data === "") return "-"; const num = parseFloat(data); return !isNaN(num) ? num.toFixed(digit_fixed) : "-"; }},
+                    { data: "ligand__smiles", name: "smiles", width: commonColumnWidths.smiles, render: function(data, type, row){ if (type === 'display' && row && row.canonical_smiles) { return row.canonical_smiles; } return data ? data : "-"; }},
+                    { data: "publication__web_link__index", name: "doi", width: commonColumnWidths.doi_extended, render: function(data_for_text, type, row, meta) { let processed_doi_text; if (data_for_text === null || data_for_text === undefined) { processed_doi_text = "-"; } else if (typeof data_for_text === 'string') { const trimmed_text = data_for_text.trim(); if (trimmed_text === '' || trimmed_text.toLowerCase() === 'nan' || trimmed_text.toLowerCase() === 'none') { processed_doi_text = "-"; } else { processed_doi_text = trimmed_text; } } else { processed_doi_text = "-"; } const fullLinkUrl = (row && typeof row.link === 'string') ? row.link.trim() : ''; const isFullLinkActuallyProblematic = (fullLinkUrl === '' || fullLinkUrl === '#' || fullLinkUrl.toLowerCase().includes('nan') || fullLinkUrl.toLowerCase().includes('none')); let isLikelyNorgesDtForOptions = (type === 'display' && (!meta || !meta.settings || !row || !row.link || isFullLinkActuallyProblematic)); if (isLikelyNorgesDtForOptions || type === 'filter' || type === 'sort' || type === 'type') { return processed_doi_text; } if (type === 'display') { if (!isFullLinkActuallyProblematic) { return `<a href="${fullLinkUrl}" target="_blank">${fullLinkUrl}</a>`; } else { return "-"; }} return processed_doi_text; }}
+                ];
+            } else { // 'compact' mode
+                if (ligandSimilarity) { originalColumns.push({ data: "similarity_score", name: "similarity", width: commonColumnWidths.similarity, defaultContent: "-", render: function ( data, type, row ){ if (type === 'display' && data !== null && data !== undefined && !isNaN(parseFloat(data))) { return parseFloat(data).toFixed(2); } return data; }}); }
+                originalColumns.push({ data: "ligand_name", name: "common_name", width: commonColumnWidths.common_name, defaultContent: "-", render: renderLigandName });
+                originalColumns.push({ data: "lig_id", name: "gpcrdb_id", width: commonColumnWidths.gpcrdb_id, defaultContent: "-" });
+                originalColumns.push({ data: "ligand_type", name: "ligand_type", width: commonColumnWidths.ligand_type_compact, defaultContent: "-" });
+                originalColumns.push({ data: "reference", name: "reference_ligand", width: commonColumnWidths.reference_ligand, defaultContent: "None" });
+                originalColumns.push({ data: "purchasability", name: "vendors", width: commonColumnWidths.vendors, defaultContent: "0" });
+                originalColumns.push({ data: "species", name: "species", width: commonColumnWidths.species, defaultContent: "-" });
+                if (ligandQuery) {
+                    originalColumns.push({ data: "protein_name", name: "protein_name", width: commonColumnWidths.protein_name_compact, defaultContent: "-" });
+                    originalColumns.push({ data: "entry_name", name: "gene_name", width: commonColumnWidths.gene_name_compact, defaultContent: "-", render: function (data, type, row) { if (data && typeof data === 'string' && data.includes('_')) { const shortName = data.split('_')[0]; if (type === 'display' || type === 'filter' || type === 'sort') { return shortName; } return shortName; } return data; }});
+                    originalColumns.push({ data: "class", name: "class", width: commonColumnWidths.class_compact, defaultContent: "-" });
+                    originalColumns.push({ data: "family", name: "family", width: commonColumnWidths.family_compact, defaultContent: "-" });
+                }
+                originalColumns.push({ data: "assay_type", name: "assay_type", width: commonColumnWidths.assay_type, render: function(data) { if (data === "B") return "Binding"; if (data === "F") return "Functional"; return data ? data : "-"; }});
+                originalColumns.push({ data: "value_type", name: "parameter", width: commonColumnWidths.parameter_compact, defaultContent: "-" });
+                originalColumns.push({ data: "record_count", name: "no_records", width: commonColumnWidths.no_records_compact, defaultContent: "-" });
+                originalColumns.push({ data: "low_value", name: "min_value", width: commonColumnWidths.min_compact, render: function(data) { if (data === null || data === undefined || data === "") return "-"; const num = parseFloat(data); return !isNaN(num) ? num.toFixed(digit_fixed) : "-"; } });
+                originalColumns.push({ data: "average_value", name: "avg_value", width: commonColumnWidths.avg_compact, render: function(data) { if (data === null || data === undefined || data === "") return "-"; const num = parseFloat(data); return !isNaN(num) ? num.toFixed(digit_fixed) : "-"; } });
+                originalColumns.push({ data: "high_value", name: "max_value", width: commonColumnWidths.max_compact, render: function(data) { if (data === null || data === undefined || data === "") return "-"; const num = parseFloat(data); return !isNaN(num) ? num.toFixed(digit_fixed) : "-"; } });
+                originalColumns.push({ data: foldSelectivityDataSource, name: "fold_selectivity", width: commonColumnWidths.fold_selectivity, render: function(data) { return data !== null && data !== undefined ? data : "-"; }});
+                let testedGpcrKey = `${foldSelectivityDataSource}_tested`;
+                originalColumns.push({ data: testedGpcrKey, name: "tested_gpcrs", width: commonColumnWidths.tested_gpcrs, defaultContent: "-" });
+                originalColumns.push({ data: "source", name: "source", width: commonColumnWidths.source, defaultContent: "-" });
+                originalColumns.push({ data: "mw", name: "mol_weight", width: commonColumnWidths.mol_weight, render: function(data) { if (data === null || data === undefined || data === "") return "-"; const num = parseFloat(data); return !isNaN(num) ? num.toFixed(1) : "-"; } });
+                originalColumns.push({ data: "rotatable_bonds", name: "rot_bonds", width: commonColumnWidths.rot_bonds, defaultContent: "-" });
+                originalColumns.push({ data: "hdon", name: "h_don", width: commonColumnWidths.h_don, defaultContent: "-" });
+                originalColumns.push({ data: "hacc", name: "h_acc", width: commonColumnWidths.h_acc, defaultContent: "-" });
+                originalColumns.push({ data: "logp", name: "logp", width: commonColumnWidths.logp, render: function(data) { if (data === null || data === undefined || data === "") return "-"; const num = parseFloat(data); return !isNaN(num) ? num.toFixed(digit_fixed) : "-"; } });
+                originalColumns.push({ data: "smiles", name: "smiles", width: commonColumnWidths.smiles, defaultContent: "-" });
+            }
         }
+    columns = [checkboxColumnDef, ...originalColumns];
         let columnDefs = [];
         if (mode === 'extended') {
-            columnDefs = [ { targets: "_all", className: "dt-head-center dt-body-center" }, { targets: [13, 20], className: "dt-head-center dt-body-left" }, { targets: [5, 6, 15], className: 'border-left' } ];
-        } else { // mode === 'compact'
-            columnDefs = [ { targets: "_all", className: "dt-head-center dt-body-center" }, { targets: (ligandSimilarity ? 7 : 6), className: 'border-left' }, { targets: (ligandSimilarity ? 7 : 6) + (ligandQuery ? 5 : 1), className: 'border-left' }, { targets: (ligandSimilarity ? 7 : 6) + (ligandQuery ? 5 : 1) + 9, className: 'border-left' }, ];
+            if (foldSelectivityDataSource === 'qualitative') {
+                // Correct columnDefs for the 9-column qualitative extended table.
+                columnDefs = [
+                    { targets: "_all", className: "dt-head-center dt-body-center" },
+                    { targets: [7], className: "dt-head-center dt-body-left" }, // Align 'Qualitative Information' to the left.
+                    { targets: [5, 6], className: "border-left" }               // Add borders before 'Species' and 'Assay Type'.
+                ];
+            } else {
+                // Original logic for Affinity/Potency extended tables.
+                columnDefs = [
+                    { targets: "_all", className: "dt-head-center dt-body-center" },
+                    { targets: [13, 20], className: "dt-head-center dt-body-left" },
+                    { targets: [5, 6, 15], className: "border-left" }
+                ];
+            }
+        } else { // 'compact' mode
+            if (foldSelectivityDataSource === 'qualitative') {
+                // This robust logic dynamically calculates border positions for the qualitative compact table.
+                
+                // Helper function to find column index by its 'name' property.
+                const byName = name => columns.findIndex(c => c.name === name);
+        
+                // Define targets by name for robustness.
+                const speciesTarget = byName('species');
+                const assayTypeTarget = byName('assay_type');
+                const proteinNameTarget = ligandQuery ? byName('protein_name') : -1;
+                const qualitativeInfoTarget = byName('qualitative_information');
+        
+                columnDefs = [
+                    { targets: "_all", className: "dt-head-center dt-body-center" },
+                    { targets: [qualitativeInfoTarget], className: "dt-head-center dt-body-left" }, // Align text left
+                ];
+        
+                // Add borders based on found column indices.
+                if (speciesTarget !== -1) {
+                    columnDefs.push({ targets: [speciesTarget], className: 'border-left' });
+                }
+                if (assayTypeTarget !== -1) {
+                    columnDefs.push({ targets: [assayTypeTarget], className: 'border-left' });
+                }
+                // This is a more robust way than the previous calculation.
+                // It separates the Receptor block visually if it exists.
+                // Note: The original header template already puts a border on 'Species', 
+                // but this ensures consistency if the template changes.
+        
+            } else {
+                // Original logic for Affinity/Potency compact tables.
+                columnDefs = [
+                    { targets: "_all", className: "dt-head-center dt-body-center" },
+                    { targets: (ligandSimilarity ? 7 : 6), className: "border-left" },
+                    { targets: (ligandSimilarity ? 7 : 6) + (ligandQuery ? 5 : 1), className: "border-left" },
+                    { targets: (ligandSimilarity ? 7 : 6) + (ligandQuery ? 5 : 1) + 9, className: "border-left" }
+                ];
+            }
         }
 
         let dtButtons = [
             { extend: 'pageLength', className: 'btn btn-info' },
             { text: 'Reset All Filters', className: 'btn btn-primary', action: function () { reset_all(); } },
-            { extend: 'excelHtml5', text: 'Export to Excel', className: 'btn btn-success', exportOptions: { columns: ':visible:not(.checkbox-cell)', format: { header: function (data, columnIdx) { return data.replace(/<br\s*\/?>/ig, " ").replace(/<\/?[^>]+(>|$)/g, "").trim(); }}}, action: function (e, dt, node, config) { if (selectedRowsSet.size > 0) { config.exportOptions.rows = function (idx, data, Pnode) { const originalRowIndex = dt.row(Pnode).index(); return selectedRowsSet.has(originalRowIndex); }; } else { config.exportOptions.rows = null; } $.fn.dataTable.ext.buttons.excelHtml5.action.call(this, e, dt, node, config); }, customize: function (xlsx) { customizeExcelExport(xlsx, jsMode, jsLigandQuery, jsLigandSimilarity); }}
+            { 
+                extend: 'excelHtml5', text: 'Export to Excel', className: 'btn btn-success', 
+                exportOptions: { columns: ':visible:not(.checkbox-cell)', format: { header: function (data, columnIdx) { return data.replace(/<br\s*\/?>/ig, " ").replace(/<\/?[^>]+(>|$)/g, "").trim(); }}}, 
+                action: function (e, dt, node, config) { if (selectedRowsSet.size > 0) { config.exportOptions.rows = function (idx, data, Pnode) { const originalRowIndex = dt.row(Pnode).index(); return selectedRowsSet.has(originalRowIndex); }; } else { config.exportOptions.rows = null; } $.fn.dataTable.ext.buttons.excelHtml5.action.call(this, e, dt, node, config); }, 
+                customize: function (xlsx) { 
+                    customizeExcelExport(xlsx, jsMode, jsLigandQuery, jsLigandSimilarity, foldSelectivityDataSource); 
+                }
+            }
         ];
 
         if (!ligandQuery) { 
@@ -686,24 +789,62 @@ function reset_all() {
                 const filter_col_idx_offset = 1;
       
                 try {
-                    if (mode === 'extended') {
-                        column_filters_config = [].concat(CreateColumnFilters(api, filter_col_idx_offset + 0, 1, "Multi-select-exact")).concat(CreateColumnFilters(api, filter_col_idx_offset + 1, 1, "Multi-select-exact")).concat(CreateColumnFilters(api, filter_col_idx_offset + 2, 1, "Multi-select-exact")).concat(CreateColumnFilters(api, filter_col_idx_offset + 3, 1, "Range-float-vertical")).concat(CreateColumnFilters(api, filter_col_idx_offset + 4, 1, "Multi-select-exact")).concat(CreateColumnFilters(api, filter_col_idx_offset + 5, 1, "Multi-select-exact")).concat(CreateColumnFilters(api, filter_col_idx_offset + 6, 1, "Multi-select-exact")).concat(CreateColumnFilters(api, filter_col_idx_offset + 7, 1, "Multi-select-exact")).concat(CreateColumnFilters(api, filter_col_idx_offset + 8, 1, "Range-float-vertical")).concat(CreateColumnFilters(api, filter_col_idx_offset + 9, 1, "Range-float-vertical")).concat(CreateColumnFilters(api, filter_col_idx_offset + 10, 1, "Range-float-vertical")).concat(CreateColumnFilters(api, filter_col_idx_offset + 11, 1, "Range-float-vertical")).concat(CreateColumnFilters(api, filter_col_idx_offset + 12, 1, "Multi-select-exact")).concat(CreateColumnFilters(api, filter_col_idx_offset + 13, 1, "Multi-select-exact")).concat(CreateColumnFilters(api, filter_col_idx_offset + 14, 1, "Range-float-vertical")).concat(CreateColumnFilters(api, filter_col_idx_offset + 15, 1, "Range-float-vertical")).concat(CreateColumnFilters(api, filter_col_idx_offset + 16, 1, "Range-float-vertical")).concat(CreateColumnFilters(api, filter_col_idx_offset + 17, 1, "Range-float-vertical")).concat(CreateColumnFilters(api, filter_col_idx_offset + 18, 1, "Range-float-vertical")).concat(CreateColumnFilters(api, filter_col_idx_offset + 19, 1, "Multi-select-exact")).concat(CreateColumnFilters(api, filter_col_idx_offset + 20, 1, "Multi-select-exact")); 
-                    } else { 
-                       column_filters_config = []; let current_data_col_seq = 0; 
-                       if (ligandSimilarity) { column_filters_config = column_filters_config.concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Range-float-vertical"));}
-                       column_filters_config = column_filters_config.concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Multi-select-exact")).concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Multi-select-exact")).concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Multi-select-exact")).concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Multi-select-exact")).concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Range-float-vertical")).concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Multi-select-exact")); 
-                       if (ligandQuery) { column_filters_config = column_filters_config.concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Multi-select-exact")).concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Multi-select-exact")).concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Multi-select-exact")).concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Multi-select-exact")); }
-                       column_filters_config = column_filters_config.concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Multi-select-exact")).concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Multi-select-exact")).concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Range-float-vertical")).concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Range-float-vertical")).concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Range-float-vertical")).concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Range-float-vertical")).concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Range-float-vertical")).concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Range-float-vertical")).concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Multi-select-exact")).concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Range-float-vertical")).concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Range-float-vertical")).concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Range-float-vertical")).concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Range-float-vertical")).concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Range-float-vertical")).concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Multi-select-exact")); 
+                    if (foldSelectivityDataSource === 'qualitative') {
+                        if (mode === 'extended') {
+                            // MODIFICATION: Update filter count for new columns
+                            column_filters_config = [].concat(
+                                CreateColumnFilters(api, filter_col_idx_offset + 0, 1, "Multi-select-exact"), // Common name
+                                CreateColumnFilters(api, filter_col_idx_offset + 1, 1, "Multi-select-exact"), // GPCRdb ID
+                                CreateColumnFilters(api, filter_col_idx_offset + 2, 1, "Multi-select-exact"), // Reference
+                                CreateColumnFilters(api, filter_col_idx_offset + 3, 1, "Range-float-vertical"),// Vendors
+                                CreateColumnFilters(api, filter_col_idx_offset + 4, 1, "Multi-select-exact"), // Species
+                                CreateColumnFilters(api, filter_col_idx_offset + 5, 1, "Multi-select-exact"), // Assay Type
+                                CreateColumnFilters(api, filter_col_idx_offset + 6, 1, "Multi-select-exact"), // Activity Type
+                                CreateColumnFilters(api, filter_col_idx_offset + 7, 1, "Multi-select-exact"), // Assay Desc
+                                CreateColumnFilters(api, filter_col_idx_offset + 8, 1, "Multi-select-exact"), // Qualitative Info
+                                CreateColumnFilters(api, filter_col_idx_offset + 9, 1, "Multi-select-exact")  // Source
+                            );
+                        } else { // 'compact' mode for qualitative
+                        column_filters_config = []; let current_data_col_seq = 0; 
+                        if (ligandSimilarity) { column_filters_config = column_filters_config.concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Range-float-vertical"));}
+                        column_filters_config = column_filters_config.concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Multi-select-exact")); // Common Name
+                        column_filters_config = column_filters_config.concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Multi-select-exact")); // GPCRdb ID
+                        column_filters_config = column_filters_config.concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Multi-select-exact")); // Type
+                        column_filters_config = column_filters_config.concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Multi-select-exact")); // Reference
+                        column_filters_config = column_filters_config.concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Range-float-vertical")); // Vendors
+                        column_filters_config = column_filters_config.concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Multi-select-exact")); // Species
+                        if (ligandQuery) { 
+                            column_filters_config = column_filters_config.concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Multi-select-exact")); // Protein
+                            column_filters_config = column_filters_config.concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Multi-select-exact")); // Gene
+                            column_filters_config = column_filters_config.concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Multi-select-exact")); // Class
+                            column_filters_config = column_filters_config.concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Multi-select-exact")); // Family
+                            }
+                            // MODIFICATION: Update filter count for new columns
+                            column_filters_config = column_filters_config.concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Multi-select-exact")); // Assay Type
+                            column_filters_config = column_filters_config.concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Multi-select-exact")); // Parameter
+                            column_filters_config = column_filters_config.concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Range-float-vertical")); // No. records
+                        column_filters_config = column_filters_config.concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Multi-select-exact")); // Qualitative Info
+                        column_filters_config = column_filters_config.concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Multi-select-exact")); // Source
+                        }
+                    } else { // Original logic for 'affinity' and 'potency'
+                        if (mode === 'extended') {
+                            column_filters_config = [].concat(CreateColumnFilters(api, filter_col_idx_offset + 0, 1, "Multi-select-exact")).concat(CreateColumnFilters(api, filter_col_idx_offset + 1, 1, "Multi-select-exact")).concat(CreateColumnFilters(api, filter_col_idx_offset + 2, 1, "Multi-select-exact")).concat(CreateColumnFilters(api, filter_col_idx_offset + 3, 1, "Range-float-vertical")).concat(CreateColumnFilters(api, filter_col_idx_offset + 4, 1, "Multi-select-exact")).concat(CreateColumnFilters(api, filter_col_idx_offset + 5, 1, "Multi-select-exact")).concat(CreateColumnFilters(api, filter_col_idx_offset + 6, 1, "Multi-select-exact")).concat(CreateColumnFilters(api, filter_col_idx_offset + 7, 1, "Multi-select-exact")).concat(CreateColumnFilters(api, filter_col_idx_offset + 8, 1, "Range-float-vertical")).concat(CreateColumnFilters(api, filter_col_idx_offset + 9, 1, "Range-float-vertical")).concat(CreateColumnFilters(api, filter_col_idx_offset + 10, 1, "Range-float-vertical")).concat(CreateColumnFilters(api, filter_col_idx_offset + 11, 1, "Range-float-vertical")).concat(CreateColumnFilters(api, filter_col_idx_offset + 12, 1, "Multi-select-exact")).concat(CreateColumnFilters(api, filter_col_idx_offset + 13, 1, "Multi-select-exact")).concat(CreateColumnFilters(api, filter_col_idx_offset + 14, 1, "Range-float-vertical")).concat(CreateColumnFilters(api, filter_col_idx_offset + 15, 1, "Range-float-vertical")).concat(CreateColumnFilters(api, filter_col_idx_offset + 16, 1, "Range-float-vertical")).concat(CreateColumnFilters(api, filter_col_idx_offset + 17, 1, "Range-float-vertical")).concat(CreateColumnFilters(api, filter_col_idx_offset + 18, 1, "Range-float-vertical")).concat(CreateColumnFilters(api, filter_col_idx_offset + 19, 1, "Multi-select-exact")).concat(CreateColumnFilters(api, filter_col_idx_offset + 20, 1, "Multi-select-exact")); 
+                        } else { 
+                        column_filters_config = []; let current_data_col_seq = 0; 
+                        if (ligandSimilarity) { column_filters_config = column_filters_config.concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Range-float-vertical"));}
+                        column_filters_config = column_filters_config.concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Multi-select-exact")).concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Multi-select-exact")).concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Multi-select-exact")).concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Multi-select-exact")).concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Range-float-vertical")).concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Multi-select-exact")); 
+                        if (ligandQuery) { column_filters_config = column_filters_config.concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Multi-select-exact")).concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Multi-select-exact")).concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Multi-select-exact")).concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Multi-select-exact")); }
+                        column_filters_config = column_filters_config.concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Multi-select-exact")).concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Multi-select-exact")).concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Range-float-vertical")).concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Range-float-vertical")).concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Range-float-vertical")).concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Range-float-vertical")).concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Range-float-vertical")).concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Range-float-vertical")).concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Multi-select-exact")).concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Range-float-vertical")).concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Range-float-vertical")).concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Range-float-vertical")).concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Range-float-vertical")).concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Range-float-vertical")).concat(CreateColumnFilters(api, filter_col_idx_offset + current_data_col_seq++, 1, "Multi-select-exact")); 
+                        }
                     }
-    
-                  if (column_filters_config && column_filters_config.length > 0) {
+                if (column_filters_config && column_filters_config.length > 0) {
                     createDropdownFilters(api, column_filters_config);
-                  }
-                  let tooltipSelectorInit = `${tableId} a.struct`;
-                  if (typeof compoundPreview === 'function') { compoundPreview(tooltipSelectorInit); }
-              } catch (e) {
-                  console.error("Error during initComplete filter setup for " + tableId + ":", e); 
-              }
+                }
+                let tooltipSelectorInit = `${tableId} a.struct`;
+                if (typeof compoundPreview === 'function') { compoundPreview(tooltipSelectorInit); }
+                } catch (e) {
+                    console.error("Error during initComplete filter setup for " + tableId + ":", e); 
+                }
 
                 updateSelectAllCheckboxState(this.api(), tableId, selectedRowsSet);
                 this.api().columns.adjust();
@@ -797,36 +938,58 @@ function reset_all() {
                     return;
                 }
 
-                let tablesInitializedCount = 0;
-                const totalTablesToInitialize = 2;
-    
-                const onSingleTableInitComplete = function() {
-                    // console.log("[Debug] onSingleTableInitComplete called. tablesInitializedCount before increment:", tablesInitializedCount); 
-                    tablesInitializedCount++;
-                    // console.log("[Debug] onSingleTableInitComplete. tablesInitializedCount after increment:", tablesInitializedCount);
-                    if (tablesInitializedCount >= totalTablesToInitialize) {
-                        // console.log("[Debug] All tables initialized. Setting myTasksCompleted = true.");
-                        console.log("Event triggered: All my custom tasks are complete."); 
-                        myTasksCompleted = true;
-                        showPageContent();
-                    }
-                };
-    
-                updateLoaderText("Initializing affinity table...");
                 setTimeout(() => {
-                    var affinityTable = initializeTargetDetailsTable(
-                        affinityTableId, affinity_data, jsMode, jsLigandQuery, jsLigandSimilarity, 
-                        'affinity', selectedRowsAffinity, onSingleTableInitComplete
-                    );
-                    dataTables['affinity_table'] = affinityTable;
-            
-                    updateLoaderText("Initializing potency table...");
+                    // console.log("[Debug] setTimeout for qualitative_data parsing.");
+                    try {
+                        qualitative_data = JSON.parse('{{ qualitative_data_json|escapejs }}');
+                        // console.log("[Debug] qualitative_data parsed successfully.");
+                    } catch (e) {
+                        console.error("[Debug] Error parsing qualitative_data_json:", e);
+                        $("#page_loader_placeholder").busyLoad("hide").hide();
+                        $("#main_content_wrapper").html("<p style='color:red; text-align:center;'>Error loading page data (qualitative). Please try refreshing.</p>").show();
+                        return;
+                    }
+
+                    let tablesInitializedCount = 0;
+                    const totalTablesToInitialize = 3;
+
+                    const onSingleTableInitComplete = function() {
+                        // console.log("[Debug] onSingleTableInitComplete called. tablesInitializedCount before increment:", tablesInitializedCount); 
+                        tablesInitializedCount++;
+                        // console.log("[Debug] onSingleTableInitComplete. tablesInitializedCount after increment:", tablesInitializedCount);
+                        if (tablesInitializedCount >= totalTablesToInitialize) {
+                            // console.log("[Debug] All tables initialized. Setting myTasksCompleted = true.");
+                            console.log("Event triggered: All my custom tasks are complete."); 
+                            myTasksCompleted = true;
+                            showPageContent();
+                        }
+                    };
+                    
+                    updateLoaderText("Initializing affinity table...");
                     setTimeout(() => {
-                        var potencyTable = initializeTargetDetailsTable(
-                            potencyTableId, potency_data, jsMode, jsLigandQuery, jsLigandSimilarity, 
-                            'potency', selectedRowsPotency, onSingleTableInitComplete
+                        var affinityTable = initializeTargetDetailsTable(
+                            affinityTableId, affinity_data, jsMode, jsLigandQuery, jsLigandSimilarity, 
+                            'affinity', selectedRowsAffinity, onSingleTableInitComplete
                         );
-                        dataTables['potency_table'] = potencyTable;
+                        dataTables['affinity_table'] = affinityTable;
+                
+                        updateLoaderText("Initializing potency table...");
+                        setTimeout(() => {
+                            var potencyTable = initializeTargetDetailsTable(
+                                potencyTableId, potency_data, jsMode, jsLigandQuery, jsLigandSimilarity, 
+                                'potency', selectedRowsPotency, onSingleTableInitComplete
+                            );
+                            dataTables['potency_table'] = potencyTable;
+
+                            updateLoaderText("Initializing qualitative table...");
+                            setTimeout(() => {
+                                var qualitativeTable = initializeTargetDetailsTable(
+                                    qualitativeTableId, qualitative_data, jsMode, jsLigandQuery, jsLigandSimilarity, 
+                                    'qualitative', selectedRowsQualitative, onSingleTableInitComplete
+                                );
+                                dataTables['qualitative_table'] = qualitativeTable;
+                            }, 0);
+                        }, 0);
                     }, 0);
                 }, 0);
             }, 0);
@@ -865,6 +1028,9 @@ function reset_all() {
             <li class="nav-item">
               <a class="nav-link" data-toggle="tab" href="#potency">Potency</a>
             </li>
+            <li class="nav-item">
+                <a class="nav-link" data-toggle="tab" href="#qualitative">Qualitative</a>
+            </li>
           </ul>
           <div class="tab-content" style="margin-top: 20px;">
             <div class="tab-pane container active" id="affinity">
@@ -878,6 +1044,12 @@ function reset_all() {
                    {% include '_target_details_table_header.html' %}
                   <tbody></tbody>
               </table>
+            </div>
+            <div class="tab-pane container" id="qualitative">
+                <table width="100%" class="display compact nowrap" id="qualitative_table">
+                    {% include '_target_details_qualitative_header.html' %}
+                   <tbody></tbody>
+               </table>
             </div>
           </div>
       
@@ -898,6 +1070,9 @@ function reset_all() {
            <li class="nav-item">
              <a class="nav-link" data-toggle="tab" href="#potency">Potency</a>
            </li>
+           <li class="nav-item">
+            <a class="nav-link" data-toggle="tab" href="#qualitative">Qualitative</a>
+          </li>
           </ul>
           <div class="tab-content" style="margin-top: 20px;">
            <div class="tab-pane container active" id="affinity">
@@ -912,6 +1087,12 @@ function reset_all() {
                 <tbody></tbody>
               </table>
            </div>
+           <div class="tab-pane container" id="qualitative">
+            <table width="100%" class="display compact nowrap" id="qualitative_table">
+              {% include '_target_details_qualitative_compact_header.html' with ligand_query=ligand_query ligand_similarity=ligand_similarity %}
+              <tbody></tbody>
+            </table>
+         </div>
           </div>
         {% endif %}
       </div>

@@ -1,0 +1,54 @@
+{# File: ligand/templates/_target_details_qualitative_compact_header.html #}
+{# Header for COMPACT Qualitative table. #}
+<thead>
+    <tr class="header-spans" style="font-size: 14px; white-space: nowrap;">
+      <th style="text-align:center" colspan="1" data-dt-order="disable"></th>
+
+      {% if ligand_similarity %}
+        <th style="text-align:center" colspan="6" data-dt-order="disable">Ligands</th>
+      {% else %}
+        <th style="text-align:center" colspan="5" data-dt-order="disable">Ligands</th>
+      {% endif %}
+    
+      {% if ligand_query %}
+        <th style="text-align:center; border-left: 1px solid #cccccc;" colspan="5" data-dt-order="disable">Receptor</th>
+      {% else %}
+        <th style="text-align:center; border-left: 1px solid #cccccc;" colspan="1" data-dt-order="disable">Receptor</th>
+      {% endif %}
+
+      <th style="text-align:center; border-left: 1px solid #cccccc;" colspan="5" data-dt-order="disable">Activity</th>
+    </tr>
+    <tr>
+       <th style="width: 30px; text-align:center;"><input type="checkbox" class="select-all-checkbox" title="Select/Deselect All Rows"></th>
+       {% if ligand_similarity %}<th>Similar-<br />ity</th>{% endif %}
+       <th>Common<br />name</th>
+       <th>GPCRdb<br />ID</th>
+       <th>Type<br /><br /></th>
+       <th>Reference<br />ligand</th>
+       <th>Vendors<br /><br /></th>
+       <th class="border-left">Species<br /><br /></th>
+       {% if ligand_query %}
+       <th>Protein<br />name</th>
+       <th>Gene<br />name</th>
+       <th>Class<br /><br /></th>
+       <th>Family<br /><br /></th>
+       {% endif %}
+       <th class="border-left">Assay<br>Type</th>
+       <th>Parameter</th>
+       <th>No.<br />records</th>
+       <th>Qualitative<br />Information</th>
+       <th>Source<br /><br /></th>
+    </tr>
+    <tr>
+        <td data-dt-order="disable"></td>
+        {% if ligand_similarity %}<td data-dt-order="disable"></td>{% endif %}
+        <td data-dt-order="disable"></td><td data-dt-order="disable"></td><td data-dt-order="disable"></td><td data-dt-order="disable"></td><td data-dt-order="disable"></td>
+        <td class="border-left" data-dt-order="disable"></td>
+        {% if ligand_query %}
+        <td data-dt-order="disable"></td><td data-dt-order="disable"></td><td data-dt-order="disable"></td><td data-dt-order="disable"></td>
+        {% endif %}
+        <td class="border-left" data-dt-order="disable"></td>
+        <td data-dt-order="disable"></td><td data-dt-order="disable"></td>
+        <td data-dt-order="disable"></td><td data-dt-order="disable"></td>
+    </tr>
+</thead>

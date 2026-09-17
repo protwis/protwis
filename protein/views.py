@@ -190,7 +190,7 @@ def get_sankey_data(entry_name):
         level_0_node = next((item['node'] for item in sankey['nodes'] if item['name'] == indication_0), None)
 
         if [ligand_name, ligand_id] not in caches['ligands']:
-            sankey['nodes'].append({"node": node_counter, "name": ligand_name, "url": '/ligand/'+str(ligand_id)+'/info',"column":"x2"})
+            sankey['nodes'].append({"node": node_counter, "name": ligand_name, "url": '/ligand/'+str(ligand_id)+'/group',"column":"x2"})
             node_counter += 1
             caches['ligands'].append([ligand_name, ligand_id])
         lig_node = next((item['node'] for item in sankey['nodes'] if item['name'] == ligand_name), None)
@@ -729,7 +729,7 @@ def AlignIsoformWildtype(request):
     from common.tools import fetch_from_web_api
     from Bio import pairwise2
     from Bio.pairwise2 import format_alignment
-    from Bio.SubsMat import MatrixInfo as matlist
+    from Bio.Align import substitution_matrices as matlist
     from Bio.Align.Applications import ClustalOmegaCommandline
     from Bio import AlignIO
     cache_dir = ['ensembl', 'isoform']

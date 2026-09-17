@@ -515,7 +515,7 @@ def getTargetTable():
             <td>{t["class"]}</td> 
             <td>{t["ligandtype"]}</td> 
             <td>{t["family"]}</td> 
-            <td><span class="expand">{t["uniprot"]}</span></td> 
+            <td><span>{t["uniprot"]}</span></td>
             <td><span>{t['gene_display']}</span></td> 
             <td><span class="expand">{t["iuphar"]}</span></td> 
             <td>{t["ligand_count"]}</td> 

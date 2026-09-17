@@ -2148,7 +2148,7 @@ def indication_detail(request, code):
         level_0_node = next((item['node'] for item in sankey['nodes'] if item['name'] == indication_0), None)
 
         if [ligand_name, ligand_id] not in caches['ligands']:
-            sankey['nodes'].append({"node": node_counter, "name": ligand_name, "url":'/ligand/'+str(ligand_id)+'/info',"column":"x2"})
+            sankey['nodes'].append({"node": node_counter, "name": ligand_name, "url":'/ligand/'+str(ligand_id)+'/group',"column":"x2"})
             node_counter += 1
             caches['ligands'].append([ligand_name, ligand_id])
         lig_node = next((item['node'] for item in sankey['nodes'] if item['name'] == ligand_name), None)
@@ -2369,7 +2369,7 @@ def get_sankey_indi_data(code):
         level_0_node = next((item['node'] for item in sankey['nodes'] if item['name'] == indication_0), None)
 
         if [ligand_name, ligand_id] not in caches['ligands']:
-            sankey['nodes'].append({"node": node_counter, "name": ligand_name, "url":'/ligand/'+str(ligand_id)+'/info',"column":"x2"})
+            sankey['nodes'].append({"node": node_counter, "name": ligand_name, "url":'/ligand/'+str(ligand_id)+'/group',"column":"x2"})
             node_counter += 1
             caches['ligands'].append([ligand_name, ligand_id])
         lig_node = next((item['node'] for item in sankey['nodes'] if item['name'] == ligand_name), None)

@@ -2298,3 +2298,60 @@ _AFTER_NAR2025_CLASSLESS_PARENT_GPCR_SLUGS = {'010'}
 # protein.models fixes 'CLASSLESS_PARENT_GPCR_SLUGS' in case of changes in its definition
 # Uncomment next line in the future
 # CLASSLESS_PARENT_GPCR_SLUGS = {'010'}
+
+ROLE_DICTIONARY = {'Agonist':{
+                                'Agonist': [
+                                            'Agonist',
+                                            'agonist peptide',
+                                            'Full agonist',
+                                            'Synthetic full agonist',
+                                            'G protein-biased selective agonist'],
+                                 'Agonist (partial)': [
+                                                        'Partial agonist', 'Agonist (partial)'],
+                                 'Inverse agonist': [
+                                                        'Inverse agonist', 'Inverse agonist (partial)']
+                              },
+                   'Antagonist':{
+                                 'Antagonist': [
+                                                'Antagonist',
+                                                'Antagonist (neutral/silent)',
+                                                'inhibitor/antagonist',
+                                                'Antagonist (selective)',
+                                                'Antagonist dual',
+                                                'dual Antagonist',
+                                                'Antagonist antibody',
+                                                'orthosteric antagonist',
+                                                'AZ7188 is a weak PAR2 antagonist',
+                                                'AT2R-selective ligand',
+                                                'AT1R/AT2R dual ligand']
+                                },
+                    'Allosteric modulator':{
+                                             'Allosteric agonist': [
+                                                                    'Allosteric agonist'],
+                                             'Allosteric inverse agonist': [
+                                                                    'Allosteric inverse agonist'],
+                                             'Allosteric antagonist': [
+                                                                    'Allosteric antagonist'],
+                                             'NAM': [
+                                                     'NAM',
+                                                     'NAM (Negative allosteric modulator)',
+                                                     'Negative allosteric modulator - noncompetitive antagonist'],
+                                             'PAM': [
+                                                     'PAM',
+                                                     'Positive allosteric modulator',
+                                                     'Positive ago-allosteric modulator'],
+                                             'Ago-PAM': [
+                                                         'Ago-PAM']
+                                            },
+                    'Other':{
+                             'Unknown': [
+                                            'Binding - unknown pharmacological activity',
+                                            '',
+                                            'unknown',
+                                            'NA'],
+                             'Cofactor': [
+                                            'Cofactor'],
+                             'Stabilizing ligand': [
+                                            'Stabilizing ligand', 'covalent bound nanobody']
+                            }
+                    }

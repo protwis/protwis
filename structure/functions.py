@@ -19,7 +19,9 @@ from residue.functions import dgn
 from residue.models import Residue, ResidueGenericNumberEquivalent
 from structure.models import Structure, Rotamer, PdbData, StructureStabilizingAgent, StructureType
 from signprot.models import SignprotStructure
-from ligand.models import Endogenous_GTP
+from ligand.models import Endogenous_GTP, LigandPeptideStructure
+from interaction.models import StructureLigandInteraction, ResidueFragmentInteraction
+from contactnetwork.models import InteractingPeptideResiduePair
 
 from subprocess import Popen, PIPE
 from io import StringIO
@@ -1337,7 +1339,7 @@ class AbsParseStructureCSV():
 class ParseStructureCSV(AbsParseStructureCSV):
     def __init__(self):
         AbsParseStructureCSV.__init__(self)
-        with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'structures.csv']), newline='') as csvfile:
+        with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'structures.tsv']), newline='') as csvfile:
             structures = csv.reader(csvfile, delimiter='\t')
             next(structures, None)
             for s in structures:
@@ -1345,13 +1347,13 @@ class ParseStructureCSV(AbsParseStructureCSV):
                 # Chain ID format check - remove .0 from number type chain ID e.g. 8JCU
                 if '.' in s[5]:
                     s[5] = s[5][0]
-                self.structures[s[0]]= {'protein':s[1], 'name':s[0].lower(), 'state':s[4], 'preferred_chain':s[5], 'resolution':s[3], 'date_from_file':s[7], 'method_from_file':s[2]}
+                self.structures[s[0]]= {'protein':s[1], 'name':s[0].lower(), 'state':s[4], 'preferred_chain':s[5], 'resolution':s[3], 'date_from_file':s[7], 'method_from_file':s[2], 'label_asym_id':s[8], 'partner_uniprot':s[9], 'partner_chain':s[10]}
 
     def __str__(self):
         return '<ParsedStructures: {} entries>'.format(len(self.pdb_ids))
 
     def parse_ligands(self):
-        with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'ligands.csv']), newline='') as csvfile:
+        with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'ligands.tsv']), newline='') as csvfile:
             ligands = csv.reader(csvfile, delimiter='\t')
             next(ligands, None)
             for ligand in ligands:
@@ -1360,33 +1362,65 @@ class ParseStructureCSV(AbsParseStructureCSV):
                 in_structure = True
                 if ligand[8]!='':
                     in_structure = False
-                self.structures[ligand[0]]['ligand'].append({'chain':ligand[1], 'name':ligand[2], 'pubchemId':ligand[3], 'role':ligand[4], 'title':ligand[5], 'type': ligand[6], 'in_structure': in_structure})
+                self.structures[ligand[0]]['ligand'].append({'chain':ligand[1], 'name':ligand[2], 'pubchemId':ligand[3], 'role':ligand[4], 'title':ligand[5], 'type': ligand[6], 'in_structure': in_structure, 'label_asym_id':ligand[9], 'smiles':ligand[10], 'inchikey':ligand[11], 'sequence':ligand[12], 'is_endogenous':ligand[13], 'site':ligand[14], 'residue_seq_id':ligand[15]})
 
     def parse_nanobodies(self):
-        self.parse_aux_file('nanobodies.csv')
+        self.parse_aux_file('nanobodies.tsv')
 
     def parse_fusion_proteins(self):
-        self.parse_aux_file('fusion_proteins.csv')
+        self.parse_aux_file('fusion_proteins.tsv')
 
     def parse_ramp(self):
-        self.parse_aux_file('ramp.csv')
+        self.parse_aux_file('ramp.tsv')
 
     def parse_grk(self):
-        self.parse_aux_file('grk.csv')
+        self.parse_aux_file('grk.tsv')
+
+    def parse_antibodies(self):
+        self.parse_aux_file('antibodies.tsv')
+
+    def parse_scfv(self):
+        self.parse_aux_file('scfv.tsv')
+
+    def parse_other_aux_proteins(self):
+        self.parse_aux_file('other_aux_proteins.tsv')
+
+    def parse_auxiliary_small_molecules(self):
+        with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'auxiliary_small_molecules.tsv']), newline='') as csvfile:
+            reader = csv.reader(csvfile, delimiter='\t')
+            next(reader)
+            for row in reader:
+                pdb = row[0]
+                if pdb not in self.structures:
+                    continue
+                name = row[2]
+                title = row[3] if row[3] else None
+                mol_type = row[4]
+                function = row[5] if row[5] else None
+                residue_seq_ids = [r.strip() for r in row[7].split(',')]
+                if 'auxiliary_small_molecules' not in self.structures[pdb]:
+                    self.structures[pdb]['auxiliary_small_molecules'] = []
+                self.structures[pdb]['auxiliary_small_molecules'].append({
+                    'name': name,
+                    'title': title,
+                    'type': mol_type,
+                    'function': function,
+                    'residue_seq_ids': residue_seq_ids,
+                })
 
     def parse_g_proteins(self):
-        with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'g_proteins.csv']), newline='') as csvfile:
+        with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'g_proteins.tsv']), newline='') as csvfile:
             g_proteins = csv.reader(csvfile, delimiter='\t')
             next(g_proteins, None)
             for g in g_proteins:
-                self.structures[g[0]]['g_protein'] = {'alpha_uniprot': g[1], 'alpha_chain': g[2], 'beta_uniprot': g[3], 'beta_chain': g[4], 'gamma_uniprot': g[5], 'gamma_chain': g[6], 'note': g[7]}
+                self.structures[g[0]]['g_protein'] = {'alpha_uniprot': g[1], 'alpha_chain': g[2], 'beta_uniprot': g[3], 'beta_chain': g[4], 'gamma_uniprot': g[5], 'gamma_chain': g[6], 'note': g[7], 'alpha_label_asym_id': g[8], 'beta_label_asym_id': g[9], 'gamma_label_asym_id': g[10], 'alpha_alpha5_identity': g[11], 'alpha_backbone': g[12]}
 
     def parse_arrestins(self):
-        with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'arrestins.csv']), newline='') as csvfile:
+        with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'arrestins.tsv']), newline='') as csvfile:
             arrestins = csv.reader(csvfile, delimiter='\t')
             next(arrestins, None)
             for a in arrestins:
-                self.structures[a[0]]['arrestin'] = {'protein': a[1], 'chain': a[2], 'note': a[3]}
+                self.structures[a[0]]['arrestin'] = {'protein': a[1], 'chain': a[2], 'note': a[3], 'label_asym_id': a[4]}
 
     def parse_aux_file(self, aux_csv):
         with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', aux_csv]), newline='') as csvfile:
@@ -1396,7 +1430,7 @@ class ParseStructureCSV(AbsParseStructureCSV):
                 if 'auxiliary_protein' not in self.structures[a[0]]:
                     self.structures[a[0]]['auxiliary_protein'] = []
                 self.structures[a[0]]['auxiliary_protein'].append(a[1])
-                if aux_csv=='fusion_proteins.csv':
+                if aux_csv=='fusion_proteins.tsv':
                     if a[1] not in self.fusion_proteins:
                         self.fusion_proteins.append(a[1])
 
@@ -1421,10 +1455,20 @@ class StructureBuildCheck():
         self.pdbs = ParseStructureCSV().pdb_ids
         self.wt_pdb_lookup_files = [i.split('.')[0] for i in os.listdir(self.local_wt_pdb_lookup_dir)]
         self.missing_seg = []
+        self.missing_parent_seg = []
         self.start_error = []
         self.end_error = []
         self.helix_length_error = []
         self.duplicate_residue_error = {}
+        self.residue_mismatch_structures = []
+        self.residue_mismatch_data = {}
+        psc = ParseStructureCSV()
+        psc.parse_ligands()
+        self.ligand_data = psc.structures
+        self.ligand_count_error = []
+        self.missing_ligand_interaction = []
+        self.peptide_count_error = []
+        self.missing_peptide_residue_pair = []
         self.g_protein_chimeras = SeqIO.to_dict(SeqIO.parse(open(self.local_g_protein_chimeras_gapped), "fasta"))
         self.g_prot_test_exceptions = {}
         for i, j in self.g_protein_chimeras.items():
@@ -1488,6 +1532,9 @@ class StructureBuildCheck():
                     if len(seg_resis)==0:
                         self.missing_seg.append([structure, seg, anno_b, anno_e])
                         continue
+                    if len(parent_seg_resis)==0:
+                        self.missing_parent_seg.append([structure, seg])
+                        continue
                     if i<8 and len(seg_resis)<5:
                         self.helix_length_error.append([structure, seg, len(seg_resis)])
                     if seg_resis[0].sequence_number!=anno_b:
@@ -1528,6 +1575,83 @@ class StructureBuildCheck():
                                 self.end_error.append([structure, seg, seg_resis.reverse()[0].sequence_number, anno_e])
         else:
             print('Warning: {} not annotated'.format(key))
+
+    def check_residue_mismatches(self, structure, min_consecutive_mismatches=10):
+        parent = structure.protein_conformation.protein.parent
+        parent_residues = Residue.objects.filter(protein_conformation__protein=parent) \
+            .exclude(generic_number=None).select_related('generic_number')
+        structure_residues = Residue.objects.filter(protein_conformation=structure.protein_conformation) \
+            .exclude(generic_number=None).select_related('generic_number', 'protein_segment')
+
+        parent_by_gn = {r.generic_number.label: r for r in parent_residues}
+
+        max_streak = 0
+        current_streak = 0
+        for r in structure_residues:
+            wt_r = parent_by_gn.get(r.generic_number.label)
+            if wt_r is None:
+                continue
+            if r.amino_acid != wt_r.amino_acid:
+                current_streak += 1
+                max_streak = max(max_streak, current_streak)
+            else:
+                current_streak = 0
+
+        if max_streak > min_consecutive_mismatches:
+            self.residue_mismatch_structures.append(structure)
+            self.residue_mismatch_data[structure] = (structure_residues, parent_by_gn, max_streak)
+
+    def print_residue_mismatch_alignment(self, structure, structure_residues, parent_by_gn, max_streak):
+        print("=== Residue mismatch alignment for {}: longest run of {} consecutive mismatches ===".format(structure, max_streak))
+        current_segment = None
+        gns, struct_aas, parent_aas, marks = [], [], [], []
+
+        def flush():
+            if not gns:
+                return
+            print("--- {} ---".format(current_segment))
+            print("GN:    " + ' '.join(gns))
+            print("Struct:" + ' '.join(struct_aas))
+            print("Parent:" + ' '.join(parent_aas))
+            print("       " + ' '.join(marks))
+
+        for r in structure_residues:
+            if r.generic_number is None or r.generic_number.label not in parent_by_gn:
+                continue
+            if r.protein_segment.slug != current_segment:
+                flush()
+                current_segment = r.protein_segment.slug
+                gns, struct_aas, parent_aas, marks = [], [], [], []
+            wt_r = parent_by_gn[r.generic_number.label]
+            gns.append(r.generic_number.label)
+            struct_aas.append(r.amino_acid)
+            parent_aas.append(wt_r.amino_acid)
+            marks.append(' ' if r.amino_acid == wt_r.amino_acid else '*')
+        flush()
+
+    def check_ligand_interactions(self, structure):
+        key = structure.pdb_code.index
+        tsv_ligands = self.ligand_data.get(key, {}).get('ligand', [])
+        named_ligands = [l for l in tsv_ligands if l['name'] and l['name'] != 'None']
+
+        sli_qs = StructureLigandInteraction.objects.filter(structure=structure)
+        if len(named_ligands) != sli_qs.count():
+            self.ligand_count_error.append([structure, len(named_ligands), sli_qs.count()])
+
+        for sli in sli_qs:
+            if sli.ligand.name == "Apo (no ligand)":
+                continue
+            if not ResidueFragmentInteraction.objects.filter(structure_ligand_pair=sli).exists():
+                self.missing_ligand_interaction.append([structure, sli.ligand])
+
+        peptide_ligands = [l for l in named_ligands if l['type'].lower().strip() in ['peptide', 'protein']]
+        lps_qs = LigandPeptideStructure.objects.filter(structure=structure)
+        if len(peptide_ligands) != lps_qs.count():
+            self.peptide_count_error.append([structure, len(peptide_ligands), lps_qs.count()])
+
+        for lps in lps_qs:
+            if not InteractingPeptideResiduePair.objects.filter(peptide=lps).exists():
+                self.missing_peptide_residue_pair.append([structure, lps.ligand])
 
     def check_signprot_struct_residues(self, signprot_complex):
         pdb = PDBParser(PERMISSIVE=True, QUIET=True).get_structure('struct', StringIO(str(signprot_complex.structure.pdb_data.pdb)))[0]
