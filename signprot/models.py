@@ -80,9 +80,9 @@ class SignprotBarcode(models.Model):
 
 
 class SignprotComplex(models.Model):
-    protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE)
+    protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE, null=True)
     structure = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
-    alpha = models.CharField(max_length=1)
+    alpha = models.CharField(max_length=1, null=True)
     beta_chain = models.CharField(max_length=1, null=True)
     beta_protein = models.ForeignKey('protein.Protein', related_name='beta_protein', on_delete=models.CASCADE, null=True)
     gamma_chain = models.CharField(max_length=1, null=True)
@@ -90,7 +90,7 @@ class SignprotComplex(models.Model):
     alpha_backbone = models.ForeignKey('protein.Protein', related_name='alpha_backbone_complex', on_delete=models.SET_NULL, null=True, blank=True)
 
     def __str__(self):
-        return '<SignprotComplex: {} {}>'.format(self.protein.entry_name, self.structure.pdb_code.index)
+        return '<SignprotComplex: {} {}>'.format(self.protein, self.structure.pdb_code.index)
 
     class Meta():
         db_table = 'signprot_complex'

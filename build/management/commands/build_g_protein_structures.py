@@ -10,11 +10,12 @@ from residue.models import (ResidueNumberingScheme, ResidueGenericNumber, Residu
 from signprot.models import SignprotComplex, SignprotStructure, SignprotStructureExtraProteins
 from common.models import WebResource, WebLink, Publication
 from structure.models import StructureType, StructureStabilizingAgent, PdbData, Rotamer
-from structure.functions import get_pdb_ids, create_structure_rotamer, fetch_signprot_data, build_signprot_struct
+from structure.functions import get_pdb_ids, create_structure_rotamer, build_rotamer_data, delete_orphaned_pdbdata, fetch_signprot_data, build_signprot_struct
 from common.tools import test_model_updates
 from protein.management.commands.blastp import CustomBlast
 
 import re
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from Bio import pairwise2, SeqIO
 from collections import OrderedDict
 import logging
@@ -64,9 +65,14 @@ class Command(BaseBuild):
         startTime = datetime.datetime.now()
         self.options = options
         if self.options["purge_complex"]:
+            stale_pdbdata_ids = list(Rotamer.objects.filter(
+                residue__protein_conformation__protein__entry_name__endswith="_a",
+                residue__protein_conformation__protein__family__parent__parent__name="Alpha"
+            ).values_list('pdbdata_id', flat=True))
             Residue.objects.filter(protein_conformation__protein__entry_name__endswith="_a", protein_conformation__protein__family__parent__parent__name="Alpha").delete()
             ProteinConformation.objects.filter(protein__entry_name__endswith="_a", protein__family__parent__parent__name="Alpha").delete()
             Protein.objects.filter(entry_name__endswith="_a", family__parent__parent__name="Alpha").delete()
+            delete_orphaned_pdbdata(stale_pdbdata_ids)
             self.tracker = {}
             test_model_updates(self.all_models, self.tracker, initialize=True)
         if self.options["purge_non_complex"]:
@@ -84,23 +90,46 @@ class Command(BaseBuild):
             test_model_updates(self.all_models, self.tracker, check=True)
         if not self.options["s"]:
             ### Build SignprotStructure objects from non-complex signprots
-            g_prot_alphas = Protein.objects.filter(family__slug__startswith="100_001", accession__isnull=False)#.filter(entry_name="gnai1_human")
-            complex_structures = SignprotComplex.objects.filter(protein__family__slug__startswith="100_001").values_list("structure__pdb_code__index", flat=True)
-            latest = complex_structures.order_by('-structure__publication_date').values_list('structure__publication_date',flat=True)[0]
-            for a in g_prot_alphas:
-                pdb_list = get_pdb_ids(a.accession)
-                for pdb in pdb_list:
-                    if pdb not in complex_structures:
-                        try:
-                            data = fetch_signprot_data(pdb, a, os.listdir(self.local_uniprot_beta_dir), os.listdir(self.local_uniprot_gamma_dir))
-                            if data:
-                                ### Only add entries that aren't newer than the latest annotated complex structure to avoid non-annotated complexes
-                                if 'release_date' in data:
-                                    if datetime.date.fromisoformat(data['release_date'])<=latest:
-                                        ss = build_signprot_struct(a, pdb, data)
-                                        self.build_gprot_extra_proteins(a, ss, data)
-                        except Exception as msg:
-                            self.logger.error("SignprotStructure of {} {} failed\n{}: {}".format(a.entry_name, pdb, type(msg), msg))
+            g_prot_alphas = list(Protein.objects.filter(family__slug__startswith="100_001", accession__isnull=False))#.filter(entry_name="gnai1_human")
+            complex_structures_qs = SignprotComplex.objects.filter(protein__family__slug__startswith="100_001")
+            latest = complex_structures_qs.order_by('-structure__publication_date').values_list('structure__publication_date',flat=True)[0]
+            complex_structures = set(complex_structures_qs.values_list("structure__pdb_code__index", flat=True))
+            beta_uniprots = os.listdir(self.local_uniprot_beta_dir)
+            gamma_uniprots = os.listdir(self.local_uniprot_gamma_dir)
+            num_workers = max(self.options['proc'], 1)
+
+            # Stage 1: fetch each alpha's PDB id list concurrently (network-bound)
+            alpha_pdb_pairs = []
+            with ThreadPoolExecutor(max_workers=num_workers) as pool:
+                future_to_alpha = {pool.submit(get_pdb_ids, a.accession): a for a in g_prot_alphas}
+                for future in as_completed(future_to_alpha):
+                    a = future_to_alpha[future]
+                    try:
+                        pdb_list = future.result()
+                    except Exception as msg:
+                        self.logger.error("get_pdb_ids failed for {}: {}: {}".format(a.entry_name, type(msg), msg))
+                        continue
+                    for pdb in pdb_list:
+                        if pdb not in complex_structures:
+                            alpha_pdb_pairs.append((a, pdb))
+
+            # Stage 2: fetch and build each SignprotStructure concurrently (network-bound)
+            def process_pdb(a, pdb):
+                try:
+                    data = fetch_signprot_data(pdb, a, beta_uniprots, gamma_uniprots)
+                    if data:
+                        ### Only add entries that aren't newer than the latest annotated complex structure to avoid non-annotated complexes
+                        if 'release_date' in data:
+                            if datetime.date.fromisoformat(data['release_date'])<=latest:
+                                ss = build_signprot_struct(a, pdb, data)
+                                self.build_gprot_extra_proteins(a, ss, data)
+                except Exception as msg:
+                    self.logger.error("SignprotStructure of {} {} failed\n{}: {}".format(a.entry_name, pdb, type(msg), msg))
+
+            with ThreadPoolExecutor(max_workers=num_workers) as pool:
+                futures = [pool.submit(process_pdb, a, pdb) for a, pdb in alpha_pdb_pairs]
+                for future in as_completed(futures):
+                    future.result()
             test_model_updates(self.all_models, self.tracker, check=True)
         if self.options["debug"]:
             print(datetime.datetime.now() - startTime)
@@ -146,7 +175,9 @@ class Command(BaseBuild):
                     alpha_protconf.save()
 
                 ### Delete existing residues
+                stale_pdbdata_ids = list(Rotamer.objects.filter(residue__protein_conformation=alpha_protconf).values_list('pdbdata_id', flat=True))
                 Residue.objects.filter(protein_conformation=alpha_protconf).delete()
+                delete_orphaned_pdbdata(stale_pdbdata_ids)
 
                 pdbp = PDBParser(PERMISSIVE=True, QUIET=True)
                 s = pdbp.get_structure("struct", StringIO(sc.structure.pdb_data.pdb))
@@ -172,46 +203,57 @@ class Command(BaseBuild):
                 temp_seq2 = ""
                 pdb_num_dict = OrderedDict()
                 # Create first alignment based on sequence numbers
+                def compute_nr(n):
+                    if sc.structure.pdb_code.index=="6OIJ" and n<30:
+                        return n+6
+                    elif sc.structure.pdb_code.index in ['7MBY', '7F9Y', '7F9Z'] and n>58:
+                        return n-35
+                    elif sc.structure.pdb_code.index in ['7EIB', '7F2O']:
+                        return n-2
+                    elif sc.structure.pdb_code.index in ['7P00'] and n>52:
+                        return n-18
+                    elif sc.structure.pdb_code.index=='7RYC':
+                        return n-994
+                    elif sc.structure.pdb_code.index in ['7W53','7W55','7W56','7W57','7WKD']:
+                        return n-2
+                    elif sc.structure.pdb_code.index=='7X9Y' and n>58:
+                        return n-408
+                    elif sc.structure.pdb_code.index in ['7WXU','7WY5'] and n>63:
+                        return n-35
+                    elif sc.structure.pdb_code.index=='7WY0':
+                        if n<67:
+                            return n+8
+                        elif n>66:
+                            return n-1
+                    elif sc.structure.pdb_code.index=='7XW9' and n>52:
+                        return n-50
+                    elif sc.structure.pdb_code.index=='8H8J':
+                        return n-3
+                    else:
+                        return n
+
+                out_of_range = set()
                 try:
                     for n in nums:
-                        if sc.structure.pdb_code.index=="6OIJ" and n<30:
-                            nr = n+6
-                        elif sc.structure.pdb_code.index in ['7MBY', '7F9Y', '7F9Z'] and n>58:
-                            nr = n-35
-                        elif sc.structure.pdb_code.index in ['7EIB', '7F2O']:
-                            nr = n-2
-                        elif sc.structure.pdb_code.index in ['7P00'] and n>52:
-                            nr = n-18
-                        elif sc.structure.pdb_code.index=='7RYC':
-                            nr = n-994
-                        elif sc.structure.pdb_code.index in ['7W53','7W55','7W56','7W57','7WKD']:
-                            nr = n-2
-                        elif sc.structure.pdb_code.index=='7X9Y' and n>58:
-                            nr = n-408
-                        elif sc.structure.pdb_code.index in ['7WXU','7WY5'] and n>63:
-                            nr = n-35
-                        elif sc.structure.pdb_code.index=='7WY0':
-                            if n<67:
-                                nr = n+8
-                            elif n>66:
-                                nr = n-1
-                        elif sc.structure.pdb_code.index=='7XW9' and n>52:
-                            nr = n-50
-                        elif sc.structure.pdb_code.index=='8H8J':
-                            nr = n-3
-                        else:
-                            nr = n
-                        pdb_num_dict[n] = [chain[n], resis.get(sequence_number=nr)]
+                        pdb_num_dict[n] = [chain[n], resis.get(sequence_number=compute_nr(n))]
                 except Residue.DoesNotExist:
-                    nr = resis[0].sequence_number
+                    pdb_num_dict = OrderedDict()
+                    resis_min, resis_max = resis[0].sequence_number, resis.last().sequence_number
                     for n in nums:
-                        nr = n-(n-nr)
+                        raw_nr = compute_nr(n)
+                        nr = min(max(raw_nr, resis_min), resis_max)
+                        if nr!=raw_nr:
+                            # n has no real corresponding residue in this protein's own
+                            # numbering; the clamped guess is a placeholder, not a real
+                            # mapping, so it must be treated as a mismatch below even if
+                            # it happens to share an amino acid with the boundary residue.
+                            out_of_range.add(n)
                         pdb_num_dict[n] = [chain[n], resis.get(sequence_number=nr)]
 
                 # Find mismatches
                 mismatches = []
                 for n, res in pdb_num_dict.items():
-                    if AA[res[0].get_resname()]!=res[1].amino_acid:
+                    if AA[res[0].get_resname()]!=res[1].amino_acid or n in out_of_range:
                         mismatches.append(res)
 
                 pdb_lines = sc.structure.pdb_data.pdb.split("\n")
@@ -340,31 +382,37 @@ class Command(BaseBuild):
                     ### Chimera mapping to wt ###
                     good_enough_matches = []
                     if len(alignment_fragments)>0:
-                        chimeras = SeqIO.to_dict(SeqIO.parse(open(os.sep.join([settings.DATA_DIR, 'g_protein_data', 'g_protein_chimeras.fasta'])), "fasta"))
+                        if not hasattr(self, '_chimeras'):
+                            self._chimeras = SeqIO.to_dict(SeqIO.parse(open(os.sep.join([settings.DATA_DIR, 'g_protein_data', 'g_protein_chimeras.fasta'])), "fasta"))
+                        chimeras = self._chimeras
 
                         # blast chimeras to find best chimera match
                         cb = CustomBlast(os.sep.join([settings.STATICFILES_DIRS[0], 'blast', 'g_protein_chimeras']))
-                        blast_output = cb.run(temp_seq)
+                        blast_output = cb.run(seq)
                         if self.options['debug']:
                             print(blast_output)
-                        chimera_lengths = {}
-                        # Entry is not in the blast db, the top 5 hits are checked. WT protein has to be the same, then the longest is picked
-                        for i, b in enumerate(blast_output):
+                        chimera_hits = []  # (key, length, blast_rank)
+                        MAX_CHIMERA_HITS = 10
+                        # Top N hits are checked. WT protein name is preferred first, then BLAST's
+                        # own rank (best match first), and chimera length only breaks remaining ties.
+                        for i, b in enumerate(blast_output[:MAX_CHIMERA_HITS]):
                             if i==0:
                                 gprot_key, pdb_id = b[0].split('|')
                                 gprot_key = gprot_key.split('_')[0]
-                                chimera_lengths[b[0]] = len(chimeras[b[0]])
+                                chimera_hits.append((b[0], len(chimeras[b[0]]), i))
                                 if pdb_id==sc.structure.pdb_code.index:
                                     break
                             elif b[0].startswith(sc.protein.entry_name):
-                                chimera_lengths[b[0]] = len(chimeras[b[0]])
+                                chimera_hits.append((b[0], len(chimeras[b[0]]), i))
 
-                        matched_chimeras = sorted(chimera_lengths.items(), key=lambda x: (-x[1]))
+                        chimera_hits.sort(key=lambda h: (h[0].split('|')[0]!=sc.protein.entry_name, h[2], -h[1]))
+                        matched_chimeras = [(key, length) for key, length, rank in chimera_hits]
                         if self.options['debug']:
                             print(matched_chimeras)
 
                         # parsing gapped chimera fasta
-                        self.chimeras_gapped = SeqIO.to_dict(SeqIO.parse(open(os.sep.join([settings.DATA_DIR, 'g_protein_data', 'g_protein_chimeras_gapped.fasta'])), "fasta"))
+                        if not hasattr(self, 'chimeras_gapped'):
+                            self.chimeras_gapped = SeqIO.to_dict(SeqIO.parse(open(os.sep.join([settings.DATA_DIR, 'g_protein_data', 'g_protein_chimeras_gapped.fasta'])), "fasta"))
                         for chimera_key in matched_chimeras:
                             ref_seq_chim, temp_seq, identity, identity_strict, chimera_wt_key = self.chimera_pairwise(chimera_key[0], seq)
 
@@ -380,10 +428,15 @@ class Command(BaseBuild):
                             # Check on seq length: if there are no gaps introduced during chimera pairwise, seq could be mapped to wt
                             if identity_strict==100:
                                 break
+                            if identity>94 or identity_strict>95:
+                                break
                             if len(ref_seq)==len(temp_seq) and len(ref_seq)==len(self.chimeras_gapped[chimera_wt_key].seq):
                                 print('breaking on matching length', len(ref_seq_chim), len(temp_seq))
                                 break
-                        ref_seq = self.chimeras_gapped[chimera_wt_key].seq
+                        if matched_chimeras:
+                            ref_seq = self.chimeras_gapped[chimera_wt_key].seq
+                        else:
+                            print('WARNING: no chimera BLAST/name-match candidates found for {}, falling back to direct reference alignment'.format(sc.structure.pdb_code.index))
 
                     ##############################
 
@@ -470,7 +523,8 @@ class Command(BaseBuild):
                         elif sc.structure.pdb_code.index in ['7F9Y','7F9Z','7MBY']:
                             pdb_num_dict[289][1] = Residue.objects.get(protein_conformation__protein=sc.protein, sequence_number=271)
 
-                bulked_rotamers = []
+                bulked_pdbdata = []
+                pending_rotamers = []
                 for key, val in pdb_num_dict.items():
                     # print(key, val) # sanity check
                     if not isinstance(val[1], int):
@@ -482,17 +536,23 @@ class Command(BaseBuild):
                         res_obj.protein_conformation = alpha_protconf
                         res_obj.protein_segment = val[1].protein_segment
                         res_obj.save()
-                        rot = create_structure_rotamer(val[0], res_obj, sc.structure)
-                        bulked_rotamers.append(rot)
+                        pdb_text, missing_atoms = build_rotamer_data(val[0])
+                        bulked_pdbdata.append(PdbData(pdb=pdb_text))
+                        pending_rotamers.append((res_obj, missing_atoms))
                     else:
                         self.logger.info("Skipped {} as no annotation was present, while building for alpha subunit of {}".format(val[1], sc))
                 if self.options["debug"]:
                     pprint.pprint(pdb_num_dict)
+                PdbData.objects.bulk_create(bulked_pdbdata)
+                bulked_rotamers = [
+                    Rotamer(missing_atoms=ma, pdbdata=pd, residue=r, structure=sc.structure)
+                    for (r, ma), pd in zip(pending_rotamers, bulked_pdbdata)
+                ]
                 Rotamer.objects.bulk_create(bulked_rotamers)
                 self.logger.info("Protein, ProteinConformation and Residue build for alpha subunit of {} is finished".format(sc))
             except Exception as msg:
                 if self.options["debug"]:
-                    print(sc.protein.entry_name)
+                    print(f'>{sc.protein.entry_name}|{sc.structure.pdb_code.index}')
                     print(structure_seq)
                     print("Error: ", sc, msg)
                 self.logger.info("Protein, ProteinConformation and Residue build for alpha subunit of {} has failed".format(sc))

@@ -97,6 +97,8 @@ class ConstructStatistics(TemplateView):
                 track_anamalities[entry_name] = {}
             if helix not in track_anamalities[entry_name]:
                 track_anamalities[entry_name][helix] = [0,0]
+            if entry_name not in x50s or helix+"x50" not in x50s[entry_name]:
+                continue
             x50 = x50s[entry_name][helix+"x50"]
             gn_start = int(pc['GN2'][-2:])
             gn_end  = int(pc['GN'][-2:])
@@ -241,7 +243,7 @@ class ConstructStatistics(TemplateView):
                 pdb_code = c.crystal.pdb_code
                 entry_name_pdb = entry_name+ "_"+ pdb_code
                 state = c.structure.state.slug
-                if state=='other':
+                if state=='other' or state=='unknown':
                     continue
                 entry_name_pdb_state = entry_name+ "_"+ pdb_code + "_" +state
                 crystal_p = c.structure.protein_conformation.protein.parent.entry_name

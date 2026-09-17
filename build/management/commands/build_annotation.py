@@ -47,6 +47,10 @@ class Command(BaseBuild):
             dest='receptor',
             default=None,
             help='Limit annotation to a single receptor by UniProt entry_name')
+        parser.add_argument('-f', '--force',
+            default=False,
+            action='store_true',
+            help='Force deletion of existing residues before regenerating (use with -r)')
 
     logger = logging.getLogger(__name__)
 
@@ -92,8 +96,14 @@ class Command(BaseBuild):
         try:
             self.logger.info('CREATING RESIDUES')
 
+            if options['force'] and not options['receptor']:
+                raise CommandError('-f/--force requires -r/--receptor to be set')
+
             if options['receptor']:
                 self.pconfs = [p for p in self.pconfs if p.protein.entry_name == options['receptor']]
+
+            if options['force']:
+                Residue.objects.filter(protein_conformation__in=self.pconfs).delete()
 
             self.prepare_input(options['proc'], self.pconfs)
 
