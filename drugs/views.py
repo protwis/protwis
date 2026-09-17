@@ -1429,16 +1429,15 @@ class TargetSelectionTool(TemplateView):
         target_ids = df['Target ID'].unique()
 
         # Fetch only relevant `Structure` data for matching `target_ids`
-        structure_data = Structure.objects.filter(
-            protein_conformation__protein__parent__id__in=target_ids
-        ).exclude(structure_type__slug__startswith='af-').values(
-            'protein_conformation__protein__parent__id'
-        ).annotate(
-            Inactive=Count(Case(When(state_id=1, then=1), output_field=IntegerField())),
-            Active=Count(Case(When(state_id=2, then=1), output_field=IntegerField())),
-            Intermediate=Count(Case(When(state_id=3, then=1), output_field=IntegerField())),
-            Total=Count('id')
-        ).order_by('protein_conformation__protein__parent__id')
+        structure_data = Structure.objects \
+            .filter(protein_conformation__protein__parent__id__in=target_ids,
+                    structure_type__origin='experiment') \
+            .values('protein_conformation__protein__parent__id') \
+            .annotate(Inactive=Count(Case(When(state_id=1, then=1), output_field=IntegerField())),
+                      Active=Count(Case(When(state_id=2, then=1), output_field=IntegerField())),
+                      Intermediate=Count(Case(When(state_id=3, then=1), output_field=IntegerField())),
+                      Total=Count('id')) \
+            .order_by('protein_conformation__protein__parent__id')
 
         # Convert structure data to a DataFrame
         structure_df = pd.DataFrame(list(structure_data))

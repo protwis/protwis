@@ -168,7 +168,7 @@ class Command(BaseBuild):
                     add_construct(d)
 
         if do_all:
-            structures = Structure.objects.all().exclude(structure_type__slug__startswith='af-').select_related('protein_conformation', 'pdb_code', 'pdb_data')
+            structures = Structure.objects.filter(structure_type__origin='experiment').select_related('protein_conformation', 'pdb_code', 'pdb_data')
             self.pdbnames = [str(s) for s in structures]
             self.prepare_input(proc, self.pdbnames)
 

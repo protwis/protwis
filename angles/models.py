@@ -47,8 +47,8 @@ def get_snake_plot_distance_lookup(protein):
     protein's experimental structures by sequence_number (ResidueAngle.residue is FK'd to
     each structure's own protein_conformation, not the snake plot's reference conformation).
     """
-    structures = list(Structure.objects.filter(protein_conformation__protein__parent=protein
-                ).exclude(structure_type__slug__startswith='af-').order_by('resolution'))
+    structures = list(Structure.objects.filter(protein_conformation__protein__parent=protein,
+                                               structure_type__origin='experiment').order_by('resolution'))
     if not structures:
         return {}
 

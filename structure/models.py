@@ -6,6 +6,8 @@ from Bio.PDB import PDBIO
 import re
 from protein.models import ProteinCouplings
 
+import json as JSON
+
 class Structure(models.Model):
     # linked onto the Xtal ProteinConformation, which is linked to the Xtal protein
     protein_conformation = models.ForeignKey('protein.ProteinConformation', on_delete=models.CASCADE)
@@ -118,6 +120,36 @@ class StructureVectors(models.Model):
     class Meta():
         db_table = 'structure_vectors'
 
+class StructureRFAAScores(models.Model):
+    structure = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
+    pae_7tm = models.DecimalField(max_digits=4, decimal_places=2)
+    plddt_mean = models.DecimalField(max_digits=4, decimal_places=2)
+
+    class Meta():
+        db_table = 'structure_rfaa_scores'
+
+class StructureModelScores(models.Model):
+    structure = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
+    metrics_json = models.TextField(null=True)
+
+    class Meta():
+        db_table = 'structure_model_scores'
+
+    def assign_metrics_as_properties(self):
+        """Assign the metrics present in the JSON to properties on the model"""
+        json_dict = JSON.loads(self.metrics_json)
+        for key, value in json_dict.items():
+            key = key.replace(".", "p") if '.' in key else key
+            setattr(self, key, value)
+
+    @classmethod
+    def from_db(cls, db, field_names, values):
+        """Data initialisation/processing method that runs as data is loaded from the database"""
+        instance = super().from_db(db, field_names, values)
+        if 'metrics_json' in field_names and instance.metrics_json:
+            instance.assign_metrics_as_properties()
+        return instance
+
 class StructureAFScores(models.Model):
     structure = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
     ptm = models.DecimalField(max_digits=4, decimal_places=2)
@@ -126,14 +158,6 @@ class StructureAFScores(models.Model):
 
     class Meta():
         db_table = 'structure_af_scores'
-
-class StructureRFAAScores(models.Model):
-    structure = models.ForeignKey('structure.Structure', on_delete=models.CASCADE)
-    pae_7tm = models.DecimalField(max_digits=4, decimal_places=2)
-    plddt_mean = models.DecimalField(max_digits=4, decimal_places=2)
-
-    class Meta():
-        db_table = 'structure_rfaa_scores'
 
 class StructureModel(models.Model):
     protein = models.ForeignKey('protein.Protein', on_delete=models.CASCADE)
@@ -255,6 +279,7 @@ class StructureModelRMSD(models.Model):
 class StructureType(models.Model):
     slug = models.SlugField(max_length=25, unique=True)
     name = models.CharField(max_length=100)
+    origin = models.CharField(max_length=100, null=True)
 
     def type_short(self):
         if self.name=="X-ray diffraction":

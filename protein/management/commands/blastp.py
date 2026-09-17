@@ -35,7 +35,7 @@ class Command(BaseBuild):
                     fasta = ''
                     ### xtal preset
                     if options['make_db']==['xtal']:
-                        structs = Structure.objects.all().exclude(structure_type__slug__startswith='af-')
+                        structs = Structure.objects.filter(structure_type__origin='experiment')
                         for i in structs:
                             if i.protein_conformation.protein.parent not in prots:
                                 prots.append(i.protein_conformation.protein.parent)
