@@ -978,6 +978,8 @@ class Classification(ClassificationVisualizationMixin, TemplateView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
 
+        ctx["gpcr_rows"] = json.dumps(_build_gpcr_browser_rows())
+
         slug_to_key = self.class_slug_to_key_map()
         rows = [
             dict(row, class_symbol=slug_to_key.get(row["class_slug"]))
@@ -1303,40 +1305,34 @@ class Classification_tree(ClassificationVisualizationMixin):
             "tree_locked_selection": requested_selection if tree_locked else "",
         }
 
-class GPCRBrowser(TemplateView):
-    template_name = "classification/GPCRBrowser.html"
+def _strip_tags(s):
+    if not s:
+        return ""
+    return re.sub(r"<[^>]+>", "", str(s)).strip()
 
-    @staticmethod
-    def _strip_tags(s):
-        if not s:
-            return ""
-        return re.sub(r"<[^>]+>", "", str(s)).strip()
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-
-        rows = [
-            {
-                "uniprot": row["uniprot"],
-                "entry_name": row["entry_name"],
-                "gene": row["gene"],
-                "protein_name_html": row["protein_name"],
-                "protein_name_text": self._strip_tags(row["protein_name"]),
-                "class": row["class_family_name"],
-                "family": row["receptor_family"],
-                "modality": row["modality"],
-                "chemotype": row["chemotype"],
-                "sense": row["sense"],
-                "sequence": row["sequence"],
-            }
-            for row in sorted(
-                classification_db.get_primary_classification_rows(),
-                key=lambda r: str(r["uniprot"]).lower(),
-            )
-        ]
-
-        context["gpcr_rows"] = json.dumps(rows)
-        return context
+def _build_gpcr_browser_rows():
+    """Flat, per-receptor row list backing the "GPCR list" tab on the
+    Classification overview page (classification/Classification.html)."""
+    return [
+        {
+            "uniprot": row["uniprot"],
+            "entry_name": row["entry_name"],
+            "gene": row["gene"],
+            "protein_name_html": row["protein_name"],
+            "protein_name_text": _strip_tags(row["protein_name"]),
+            "class": row["class_family_name"],
+            "family": row["receptor_family"],
+            "modality": row["modality"],
+            "chemotype": row["chemotype"],
+            "sense": row["sense"],
+            "sequence": row["sequence"],
+        }
+        for row in sorted(
+            classification_db.get_primary_classification_rows(),
+            key=lambda r: str(r["uniprot"]).lower(),
+        )
+    ]
 
 
 

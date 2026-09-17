@@ -16,7 +16,16 @@ urlpatterns = [
     ),
 
     # Canonical URLs
-    url(r'^GPCRBrowser[/]?$', views.GPCRBrowser.as_view(), name='classification-gpcrbrowser'),
+    # GPCRBrowser was merged into Classification as its first tab ("GPCR list");
+    # keep the old address working as a redirect for existing bookmarks/links.
+    url(
+        r'^GPCRBrowser[/]?$',
+        RedirectView.as_view(
+            url='/classification/Classification',
+            permanent=False,
+        ),
+        name='classification-gpcrbrowser',
+    ),
     url(r'^Classification[/]?$', views.Classification.as_view(), name='classification-classification'),
     url(r'^visualizations[/]?$', views.ClassificationVisualizationsLanding.as_view(), name='classification-visualizations'),
     url(

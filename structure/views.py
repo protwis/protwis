@@ -110,9 +110,8 @@ class StructureDataJsonView(View):
         try:
             # t0 = perf_counter()
 
-            structures = (
-                Structure.objects
-                .filter(structure_type__origin='experiment')
+            rows = (
+                GpcrStructureBrowserTable.objects
                 .select_related(
                     "structure__state", "structure__structure_type", "structure__pdb_code",
                     "structure__publication__web_link__web_resource",
