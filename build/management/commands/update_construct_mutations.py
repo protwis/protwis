@@ -1,5 +1,5 @@
 from django.utils.text import slugify
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from django.core.management.base import BaseCommand, CommandError
 from django.core.management import call_command
 from django.conf import settings
@@ -7,9 +7,10 @@ from django.db import connection
 from django.core.cache import cache
 from common.tools import test_model_updates, find_role
 from build.management.commands.build_ligand_functions import get_or_create_ligand
+from build.management.commands.base_build import Command as BaseBuild
 
 from structure.models import Structure
-from construct.functions import  fetch_pdb_info
+from construct.functions import fetch_pdb_info, _cached_get_or_create, set_construct_lock
 from construct.models import *
 from residue.models import Residue
 
@@ -29,8 +30,19 @@ import time
 from collections import OrderedDict
 
 
-class Command(BaseCommand):
+starttime = datetime.datetime.now()
+
+
+class Command(BaseBuild):
     help = 'Update construct mutations from excel file'
+
+    def add_arguments(self, parser):
+        parser.add_argument('-p', '--proc',
+            type=int,
+            action='store',
+            dest='proc',
+            default=1,
+            help='Number of processes to run')
 
     logger = logging.getLogger(__name__)
 
@@ -39,6 +51,27 @@ class Command(BaseCommand):
     tracker = {}
     all_models = django.apps.apps.get_models()[6:]
     test_model_updates(all_models, tracker, initialize=True)
+
+    _excel_cache = {}
+    _stage = None
+
+    def _run_stage(self, label, func, *args, **kwargs):
+        print('[{}] START {} (elapsed {})'.format(
+            datetime.datetime.now().strftime('%H:%M:%S'), label, datetime.datetime.now()-starttime), flush=True)
+        t0 = time.time()
+        result = func(*args, **kwargs)
+        print('[{}] DONE {} ({} seconds)'.format(
+            datetime.datetime.now().strftime('%H:%M:%S'), label, round(time.time()-t0, 1)), flush=True)
+        return result
+
+    def parse_excel_cached(self, path, sheet=None):
+        # parse_excel() re-opens and re-parses the whole workbook on every
+        # call - construct_annotations.xlsx is loaded 6+ times per run for
+        # different sheets, so cache the parsed rows per (path, sheet).
+        cache_key = (path, sheet)
+        if cache_key not in self._excel_cache:
+            self._excel_cache[cache_key] = self.parse_excel(path, sheet)
+        return self._excel_cache[cache_key]
 
     def handle(self, *args, **options):
 
@@ -57,21 +90,23 @@ class Command(BaseCommand):
         self.all_pdbs = []
 
         # Restart constructs
-        self.rebuild_constructs()
+        self._run_stage('rebuild_constructs', self.rebuild_constructs, options['proc'])
+
+        self._run_stage('prefetch_pdb_info', self.prefetch_pdb_info, options['proc'])
 
         ## MUST HAVE ##
-        self.excel_mutations = self.parse_excel(self.path,'Mutation_Data')
-        self.check_mutations()
+        self.excel_mutations = self.parse_excel_cached(self.path,'Mutation_Data')
+        self._run_stage('check_mutations', self.check_mutations)
         # changes deletions to match PDB
         # Custom rules exist in the function
-        self.replace_deletions()
+        self._run_stage('replace_deletions', self.replace_deletions)
 
         ## IMPORTS ###
-        self.import_inserts()
-        self.import_expression()
-        self.import_solub()
-        self.import_puri()
-        self.import_xtal()
+        self._run_stage('import_inserts', self.import_inserts)
+        self._run_stage('import_expression', self.import_expression)
+        self._run_stage('import_solub', self.import_solub)
+        self._run_stage('import_puri', self.import_puri)
+        self._run_stage('import_xtal', self.import_xtal)
         test_model_updates(self.all_models, self.tracker, check=True)
 
     def purge_construct_data(self):
@@ -97,112 +132,174 @@ class Command(BaseCommand):
         Purification.objects.all().delete()
         PurificationStep.objects.all().delete()
 
-    def rebuild_constructs(self):
+    def rebuild_constructs(self, proc=1):
         self.purge_construct_data()
-        structures = Structure.objects.all().exclude(structure_type__slug__startswith='af-')
-        for s in structures:
-            pdbname = str(s)
-            cache.delete(pdbname+"_auto_d")
-            self.all_pdbs.append(pdbname)
-            protein_conformation = s.protein_conformation
+        structures = Structure.objects.all().exclude(structure_type__slug__startswith='af-').select_related('protein_conformation', 'pdb_code', 'pdb_data')
+        self.all_pdbs = [str(s) for s in structures]
 
-            construct = Construct()
-            construct.protein = protein_conformation.protein.parent
-            construct.name = pdbname
-            construct.json = ''
-            construct.structure = s
+        today = datetime.datetime.strptime(time.strftime('%m/%d/%Y'), '%m/%d/%Y').strftime('%Y-%m-%d')
+        _cached_get_or_create(ContributorInfo, name='gpcrdb',
+                               pi_email='info@gpcrdb.org',
+                               pi_name='gpcrdb',
+                               urls='gpcrdb.org',
+                               date=today,
+                               address='')
 
-            #CrystalInfo
-            crystal = CrystalInfo()
-            crystal.resolution = s.resolution
-            crystal.pdb_data = s.pdb_data
-            crystal.pdb_code = s.pdb_code.index
-            crystal.save()
+        self._stage = 'rebuild'
+        self.prepare_input(proc, self.all_pdbs)
 
-            construct.crystal = crystal
+    def prefetch_pdb_info(self, proc=1):
+        self._stage = 'prefetch'
+        self.prepare_input(proc, self.all_pdbs)
 
-            d = {}
-            d['contact_info'] = {}
-            d['contact_info']['name_cont'] = 'gpcrdb'
-            d['contact_info']['pi_email'] = 'info@gpcrdb.org'
-            d['contact_info']['pi_name'] = 'gpcrdb'
-            d['contact_info']['url'] = 'gpcrdb.org'
-            d['contact_info']['date'] = time.strftime('%m/%d/%Y')
-            d['contact_info']['address'] = ''
-            construct.contributor, created = ContributorInfo.objects.get_or_create(name = d['contact_info']['name_cont'],
-                                                       pi_email = d['contact_info']['pi_email'],
-                                                       pi_name = d['contact_info']['pi_name'],
-                                                       urls = d['contact_info']['url'],
-                                                       date = datetime.datetime.strptime(d['contact_info']['date'], '%m/%d/%Y').strftime('%Y-%m-%d'),
-                                                       address = d['contact_info']['address'])
+    def _prefetch_one_pdb(self, pdbname):
+        # populate the shared _auto_d cache entry for this pdb, if it isn't
+        # already - lets the serial check_mutations()/replace_deletions()
+        # phases that follow hit cache.get() instead of re-running
+        # fetch_pdb_info() one at a time on a single core.
+        if cache.get(pdbname+"_auto_d"):
+            return
+        t0 = time.time()
+        try:
+            structure = Structure.objects.get(pdb_code__index=pdbname)
+            protein = Protein.objects.filter(entry_name=pdbname.lower()).get()
+            d = fetch_pdb_info(pdbname, protein, ignore_gasper_annotation=True, preferred_chain=structure.preferred_chain)
+            cache.set(pdbname+"_auto_d", d, 60*60*24)
+        except Exception as e:
+            print(pdbname, 'prefetch failed', str(e))
+        # flag slow items individually - fetch_from_web_api retries up to 5x
+        # with a 30s timeout each, so a single failing/slow sub-fetch inside
+        # fetch_pdb_info can cost up to ~160s; surfacing outliers here (rather
+        # than only the periodic [i/total] checkpoint) shows which specific
+        # pdbs are dragging the whole parallel stage out.
+        diff = round(time.time() - t0, 1)
+        if diff > 10:
+            print('[SLOW prefetch] {} took {} seconds'.format(pdbname, diff), flush=True)
 
-            construct.save()
+    def main_func(self, positions, iterations, count, lock):
+        # reference-table lookups (_cached_get_or_create) lock internally on
+        # this shared lock; only the counter increment below still locks
+        # explicitly here. Mirrors build_construct_data.py's main_func.
+        set_construct_lock(lock)
+        today = datetime.datetime.strptime(time.strftime('%m/%d/%Y'), '%m/%d/%Y').strftime('%Y-%m-%d')
+        pdbnames = self.all_pdbs
+        total = len(pdbnames)
+        while True:
+            with lock:
+                if count.value >= total:
+                    break
+                pdbname = pdbnames[count.value]
+                count.value += 1
+                idx = count.value
+
+            if idx % 100 == 0 or idx == total:
+                print('[{}/{}] {} {}'.format(idx, total, self._stage, pdbname), flush=True)
+
+            if self._stage == 'prefetch':
+                self._prefetch_one_pdb(pdbname)
+                continue
+
+            with transaction.atomic():
+                s = Structure.objects.select_related('protein_conformation', 'pdb_code', 'pdb_data').get(pdb_code__index=pdbname)
+                cache.delete(pdbname+"_auto_d")
+                protein_conformation = s.protein_conformation
+
+                construct = Construct()
+                construct.protein = protein_conformation.protein.parent
+                construct.name = pdbname
+                construct.json = ''
+                construct.structure = s
+
+                #CrystalInfo
+                crystal = CrystalInfo()
+                crystal.resolution = s.resolution
+                crystal.pdb_data = s.pdb_data
+                crystal.pdb_code = s.pdb_code.index
+                crystal.save()
+
+                construct.crystal = crystal
+
+                construct.contributor = _cached_get_or_create(ContributorInfo, name='gpcrdb',
+                                                           pi_email='info@gpcrdb.org',
+                                                           pi_name='gpcrdb',
+                                                           urls='gpcrdb.org',
+                                                           date=today,
+                                                           address='')
+
+                construct.save()
 
     def import_expression(self):
-        expressions = self.parse_excel(self.annotation_file,'Expression')
+        expressions = self.parse_excel_cached(self.annotation_file,'Expression')
         exp_list = {}
         for e in expressions:
             if e[1] not in exp_list:
                 exp_list[e[1]] = []
             exp_list[e[1]].append(e)
-            # print("#####",e[1])
-            for construct in Construct.objects.filter(structure__pdb_code__index=e[1]).all():
-                ce = construct.expression
-                 #print(construct.name)
-                # if ce:
-                #     print(ce.expression_method,ce.host_cell_type,ce.host_cell,ce.expression_time,ce.remarks)
-                #     print(e)
 
-                new_e = ExpressionSystem()
-                new_e.expression_method = e[4]
-                new_e.host_cell_type = e[2]
-                new_e.host_cell = e[3]
-                new_e.expression_time = e[5]
-                new_e.remarks = e[6]
+        # group first, then resolve every referenced pdb's constructs in one
+        # bulk query instead of one Construct query per excel row
+        constructs_by_pdb = {}
+        for construct in Construct.objects.filter(structure__pdb_code__index__in=list(exp_list.keys())).select_related('structure__pdb_code'):
+            constructs_by_pdb.setdefault(construct.structure.pdb_code.index, []).append(construct)
 
-                # if ce:
-                #     ce.delete()
+        total_exp = len(exp_list)
+        for i, (pdb, rows) in enumerate(exp_list.items()):
+            if i % 50 == 0 or i == total_exp-1:
+                print('[{}/{}] import_expression {}'.format(i+1, total_exp, pdb), flush=True)
+            with transaction.atomic():
+                for construct in constructs_by_pdb.get(pdb, []):
+                    for e in rows:
+                        new_e = ExpressionSystem()
+                        new_e.expression_method = e[4]
+                        new_e.host_cell_type = e[2]
+                        new_e.host_cell = e[3]
+                        new_e.expression_time = e[5]
+                        new_e.remarks = e[6]
 
-                new_e.save()
-                construct.expression = new_e
-                construct.save()
+                        new_e.save()
+                        construct.expression = new_e
+                        construct.save()
 
         missing = list(set(self.all_pdbs) - set(exp_list.keys()))
         print(sorted(missing)," do not have any Expression annotated -- add them to sheet with NONE if they have none")
 
 
     def import_solub(self):
-        solubs = self.parse_excel(self.annotation_file,'Solubzn-Detergent')
+        solubs = self.parse_excel_cached(self.annotation_file,'Solubzn-Detergent')
         solub_list = {}
         for s in solubs:
             if s[1] not in solub_list:
                 solub_list[s[1]] = []
             solub_list[s[1]].append(s)
-        for pdb,chems in solub_list.items():
-            c_list = ChemicalList()
-            list_name,created  = ChemicalListName.objects.get_or_create(name='Solubilization')
-            c_list.name = list_name
-            c_list.save()
-            for c in chems:
-                ct, created = ChemicalType.objects.get_or_create(name=c[3])
-                chem, created = Chemical.objects.get_or_create(name=c[2], chemical_type=ct)
-                cc, created = ChemicalConc.objects.get_or_create(concentration=c[4], concentration_unit=c[5], chemical=chem)
-                c_list.chemicals.add(cc)
+        total_solub = len(solub_list)
+        for i, (pdb,chems) in enumerate(solub_list.items()):
+            if i % 50 == 0 or i == total_solub-1:
+                print('[{}/{}] import_solub {}'.format(i+1, total_solub, pdb), flush=True)
+            with transaction.atomic():
+                c_list = ChemicalList()
+                list_name = _cached_get_or_create(ChemicalListName, name='Solubilization')
+                c_list.name = list_name
+                c_list.save()
+                for c in chems:
+                    ct = _cached_get_or_create(ChemicalType, name=c[3])
+                    chem = _cached_get_or_create(Chemical, name=c[2], chemical_type=ct)
+                    cc, created = ChemicalConc.objects.get_or_create(concentration=c[4], concentration_unit=c[5], chemical=chem)
+                    c_list.chemicals.add(cc)
 
-            solubilization = Solubilization.objects.create(chemical_list = c_list)
-            try:
-                construct = Construct.objects.get(structure__pdb_code__index=c[1].upper())
-                construct.solubilization = solubilization
-                construct.save()
-            except:
-                print(c[1],'cannot find pdb construct')
+                solubilization = Solubilization.objects.create(chemical_list = c_list)
+                try:
+                    construct = Construct.objects.get(structure__pdb_code__index=c[1].upper())
+                    construct.solubilization = solubilization
+                    construct.save()
+                except:
+                    print(c[1],'cannot find pdb construct')
 
         missing = list(set(self.all_pdbs) - set(solub_list.keys()))
         print(sorted(missing)," do not have any Solubzn-Detergent annotated -- add them to sheet with NONE if they have none")
 
 
     def import_puri(self):
-        puris = self.parse_excel(self.annotation_file,'Purification-Treatment')
+        puris = self.parse_excel_cached(self.annotation_file,'Purification-Treatment')
         puri_list = {}
 
         for p in puris:
@@ -210,42 +307,46 @@ class Command(BaseCommand):
                 puri_list[p[1]] = []
             puri_list[p[1]].append(p)
 
-        for pdb,treat in puri_list.items():
+        total_puri = len(puri_list)
+        for i, (pdb,treat) in enumerate(puri_list.items()):
+            if i % 50 == 0 or i == total_puri-1:
+                print('[{}/{}] import_puri {}'.format(i+1, total_puri, pdb), flush=True)
             try:
                 construct = Construct.objects.get(structure__pdb_code__index=pdb.upper())
             except:
                 print(pdb,'cannot find pdb construct')
                 continue
 
-            purification = Purification.objects.create()
-            # print('purification made')
-            for t in treat:
-                s,created = PurificationStep.objects.get_or_create(name=t[2])
-                # print(t,s,c)
-                purification.steps.add(s)
+            with transaction.atomic():
+                purification = Purification.objects.create()
+                # print('purification made')
+                for t in treat:
+                    s = _cached_get_or_create(PurificationStep, name=t[2])
+                    # print(t,s,c)
+                    purification.steps.add(s)
 
-            construct.purification = purification
-            construct.save()
+                construct.purification = purification
+                construct.save()
 
         missing = list(set(self.all_pdbs) - set(puri_list.keys()))
         print(sorted(missing)," do not have any Purification-Treatment annotated -- add them to sheet with NONE if they have none")
 
     def import_xtal(self):
-        xtals = self.parse_excel(self.annotation_file,'Xtal-methods')
+        xtals = self.parse_excel_cached(self.annotation_file,'Xtal-methods')
         xtals_list = {}
         for x in xtals:
             if x[1] in xtals_list:
                 print('pdbcode duplicate?',x[1])
             xtals_list[x[1]] = x
 
-        xtal_chems = self.parse_excel(self.annotation_file,'Xtal-Chemicals')
+        xtal_chems = self.parse_excel_cached(self.annotation_file,'Xtal-Chemicals')
         xtals_chems_list = {}
         for x in xtal_chems:
             if x[1] not in xtals_chems_list:
                 xtals_chems_list[x[1]] = []
             xtals_chems_list[x[1]].append(x)
 
-        xtal_ligands = self.parse_excel(self.annotation_file,'PDB-ligand-complex')
+        xtal_ligands = self.parse_excel_cached(self.annotation_file,'PDB-ligand-complex')
         xtal_ligands_list = {}
         for x in xtal_ligands:
             if x[1] not in xtal_ligands_list:
@@ -260,83 +361,87 @@ class Command(BaseCommand):
         missing = list(set(self.all_pdbs) - set(xtal_ligands_list.keys()))
         print(sorted(missing)," do not have any PDB-ligand-complex annotated -- add them to sheet with NONE if they have none")
 
-        for pdb,x in xtals_list.items():
+        total_xtal = len(xtals_list)
+        for i, (pdb,x) in enumerate(xtals_list.items()):
+            if i % 50 == 0 or i == total_xtal-1:
+                print('[{}/{}] import_xtal {}'.format(i+1, total_xtal, pdb), flush=True)
             try:
                 construct = Construct.objects.get(structure__pdb_code__index=pdb.upper())
             except:
                 print(pdb,'cannot find pdb construct')
                 continue
-            c = Crystallization()
-            c_type, created = CrystallizationTypes.objects.get_or_create(name=x[3], sub_name=x[4])
-            c_method, created = CrystallizationMethods.objects.get_or_create(name=x[2])
+            with transaction.atomic():
+                c = Crystallization()
+                c_type = _cached_get_or_create(CrystallizationTypes, name=x[3], sub_name=x[4])
+                c_method = _cached_get_or_create(CrystallizationMethods, name=x[2])
 
-            c.crystal_type = c_type
-            c.crystal_method = c_method
-            c.remarks = x[10]
-            c.temp = x[7]
+                c.crystal_type = c_type
+                c.crystal_method = c_method
+                c.remarks = x[10]
+                c.temp = x[7]
 
-            # Some entries have it wrong here
-            try:
-                c.ph_start = float(x[8])
-                c.ph_end = float(x[9])
-            except:
-                c.ph_start = 0
-                c.ph_end = 0
+                # Some entries have it wrong here
+                try:
+                    c.ph_start = float(x[8])
+                    c.ph_end = float(x[9])
+                except:
+                    c.ph_start = 0
+                    c.ph_end = 0
 
-            c.protein_conc = x[5]
-            c.protein_conc_unit = x[6]
-            c.save()
+                c.protein_conc = x[5]
+                c.protein_conc_unit = x[6]
+                c.save()
 
-            if pdb in xtals_chems_list:
-                chems = xtals_chems_list[pdb]
-                chem_types = {}
-                for chem in chems:
-                    ctype = chem[2]
-                    if ctype not in chem_types:
-                        chem_types[ctype] = []
-                    chem_types[ctype].append(chem)
+                if pdb in xtals_chems_list:
+                    chems = xtals_chems_list[pdb]
+                    chem_types = {}
+                    for chem in chems:
+                        ctype = chem[2]
+                        if ctype not in chem_types:
+                            chem_types[ctype] = []
+                        chem_types[ctype].append(chem)
 
-                for ctype,chems in chem_types.items():
-                    c_list = ChemicalList()
-                    list_name,created  = ChemicalListName.objects.get_or_create(name=ctype)
-                    c_list.name = list_name
-                    c_list.save()
-                    for ch in chems:
-                        ct, created = ChemicalType.objects.get_or_create(name=ch[4])
-                        chem, created = Chemical.objects.get_or_create(name=ch[3], chemical_type=ct)
-                        cc, created = ChemicalConc.objects.get_or_create(concentration=ch[5], concentration_unit=ch[6], chemical=chem)
-                        c_list.chemicals.add(cc)
-                    c.chemical_lists.add(c_list)
-            else:
-                print('no chems for ',pdb)
+                    for ctype,chems in chem_types.items():
+                        c_list = ChemicalList()
+                        list_name = _cached_get_or_create(ChemicalListName, name=ctype)
+                        c_list.name = list_name
+                        c_list.save()
+                        for ch in chems:
+                            ct = _cached_get_or_create(ChemicalType, name=ch[4])
+                            chem = _cached_get_or_create(Chemical, name=ch[3], chemical_type=ct)
+                            cc, created = ChemicalConc.objects.get_or_create(concentration=ch[5], concentration_unit=ch[6], chemical=chem)
+                            c_list.chemicals.add(cc)
+                        c.chemical_lists.add(c_list)
+                else:
+                    print('no chems for ',pdb)
 
-            if pdb in xtal_ligands_list:
-                l = xtal_ligands_list[pdb][0]
-                ligand = get_or_create_ligand(l[2])
-                lr = find_role(l[3])[0]
-                # ligand = get_or_create_ligand(l[7],l[6],l[2])
-                # role_slug = slugify(l[3])
-                # try:
-                #     lr, created = LigandRole.objects.get_or_create(slug=role_slug,
-                #     defaults={'name': l[3]})
-                # except IntegrityError:
-                #     lr = LigandRole.objects.get(slug=role_slug)
-                if ligand:
-                    ligand_c = CrystallizationLigandConc()
-                    ligand_c.construct_crystallization = c
-                    ligand_c.ligand = ligand
-                    if lr:
-                        ligand_c.ligand_role = lr
-                    if l[4]:
-                        ligand_c.ligand_conc = l[4]
-                    if l[5]:
-                        ligand_c.ligand_conc_unit = l[5]
-                    ligand_c.save()
+                if pdb in xtal_ligands_list:
+                    l = xtal_ligands_list[pdb][0]
+                    ligand = get_or_create_ligand(l[2])
+                    lr = find_role(l[3])[0]
+                    # ligand = get_or_create_ligand(l[7],l[6],l[2])
+                    # role_slug = slugify(l[3])
+                    # try:
+                    #     lr, created = LigandRole.objects.get_or_create(slug=role_slug,
+                    #     defaults={'name': l[3]})
+                    # except IntegrityError:
+                    #     lr = LigandRole.objects.get(slug=role_slug)
+                    if ligand:
+                        ligand_c = CrystallizationLigandConc()
+                        ligand_c.construct_crystallization = c
+                        ligand_c.ligand = ligand
+                        if lr:
+                            ligand_c.ligand_role = lr
+                        if l[4]:
+                            ligand_c.ligand_conc = l[4]
+                        if l[5]:
+                            ligand_c.ligand_conc_unit = l[5]
+                        ligand_c.save()
 
-                    c.ligands.add(ligand_c)
+                        c.ligands.add(ligand_c)
 
-            construct.crystallization = c
-            construct.save()
+                construct.crystallization = c
+                construct.save()
 
 
     def import_inserts(self):
@@ -344,10 +449,14 @@ class Command(BaseCommand):
         # Delete current
         ConstructInsertion.objects.all().delete()
 
-        inserts = self.parse_excel(self.annotation_file,'inserts')
+        inserts = self.parse_excel_cached(self.annotation_file,'inserts')
 
         tracked_pdbs = []
-        for i in inserts:
+        total_inserts = len(inserts)
+        for row_idx, i in enumerate(inserts):
+
+            if row_idx % 100 == 0 or row_idx == total_inserts-1:
+                print('[{}/{}] import_inserts'.format(row_idx+1, total_inserts), flush=True)
 
             if i[1] not in tracked_pdbs:
                 tracked_pdbs.append(i[1])
@@ -358,25 +467,26 @@ class Command(BaseCommand):
             if i[3]=='?':
                 continue
             print(i)
-            aux_type, created = ConstructInsertionType.objects.get_or_create(name=i[5],subtype=i[6])
-            for construct in Construct.objects.filter(structure__pdb_code__index=i[1].upper()):
-                try:
-                    if i[3]=='':
-                        i[3] = 0
-                    insert = ConstructInsertion.objects.create(construct=construct, insert_type=aux_type,presence=i[7],position=i[2]+"_"+str(int(i[3])))
-                except Exception as e:
-                    print('Error with insert! FIXIT',i,str(e))
-                if i[4]:
-                    i[4] = str(i[4])
-                    #if position information add that
-                    if len(i[4].split(":"))>1:
-                        insert.start = i[4].split(":")[0]
-                        insert.end = i[4].split(":")[1]
-                    else:
-                        insert.start = int(i[4].split('.')[0])
-                        insert.end = int(i[4].split('.')[0])
-                insert.save()
-                construct.invalidate_schematics()
+            aux_type = _cached_get_or_create(ConstructInsertionType, name=i[5],subtype=i[6])
+            with transaction.atomic():
+                for construct in Construct.objects.filter(structure__pdb_code__index=i[1].upper()):
+                    try:
+                        if i[3]=='':
+                            i[3] = 0
+                        insert = ConstructInsertion.objects.create(construct=construct, insert_type=aux_type,presence=i[7],position=i[2]+"_"+str(int(i[3])))
+                    except Exception as e:
+                        print('Error with insert! FIXIT',i,str(e))
+                    if i[4]:
+                        i[4] = str(i[4])
+                        #if position information add that
+                        if len(i[4].split(":"))>1:
+                            insert.start = i[4].split(":")[0]
+                            insert.end = i[4].split(":")[1]
+                        else:
+                            insert.start = int(i[4].split('.')[0])
+                            insert.end = int(i[4].split('.')[0])
+                    insert.save()
+                    construct.invalidate_schematics()
 
         missing = list(set(self.all_pdbs) - set(tracked_pdbs))
         print(sorted(missing)," do not have any inserts annotated -- add them to sheet with NONE if they have none")
@@ -751,7 +861,7 @@ class Command(BaseCommand):
             d = cache.get(pdbname+"_auto_d")
             # d = None
             if not d:
-                d = fetch_pdb_info(c_pdb,protein,ignore_gasper_annotation=True,preferred_chain=c.structure.preferred_chain)
+                d = fetch_pdb_info(pdbname,protein,ignore_gasper_annotation=True,preferred_chain=c.structure.preferred_chain)
                 cache.set(pdbname+"_auto_d",d,60*60*24)
             pdb_deletions = []
             for d in d['deletions']:
@@ -786,9 +896,18 @@ class Command(BaseCommand):
     def replace_deletions(self):
         # delete alle deletions
         # ConstructDeletion.objects.all().delete()
-        for c in Construct.objects.all():
+        constructs = list(Construct.objects.all().select_related('structure__pdb_code'))
+        proteins_by_entry_name = {
+            p.entry_name: p for p in Protein.objects.filter(
+                entry_name__in=[c.structure.pdb_code.index.lower() for c in constructs])
+        }
+        total_constructs = len(constructs)
+        for i, c in enumerate(constructs):
 
             pdbname = c.structure.pdb_code.index
+
+            if i % 200 == 0 or i == total_constructs-1:
+                print('[{}/{}] replace_deletions {}'.format(i+1, total_constructs, pdbname), flush=True)
 
             # if not pdbname in ['5F8U','2VT4']:
             #     continue
@@ -801,14 +920,16 @@ class Command(BaseCommand):
 
             c.deletions.all().delete()
 
-            pdbname = c.structure.pdb_code.index
             cname = c.name
-            protein = Protein.objects.filter(entry_name=pdbname.lower()).get()
+            protein = proteins_by_entry_name.get(pdbname.lower())
+            if not protein:
+                print(pdbname, 'cannot find protein')
+                continue
             uniprot = protein.parent.entry_name
             d = cache.get(pdbname+"_auto_d")
             # d = None
             if d == None or (not d and 'deletions' in d):
-                d = fetch_pdb_info(c_pdb,protein,ignore_gasper_annotation=True,preferred_chain=c.structure.preferred_chain)
+                d = fetch_pdb_info(pdbname,protein,ignore_gasper_annotation=True,preferred_chain=c.structure.preferred_chain)
                 cache.set(pdbname+"_auto_d",d,60*60*24)
             if 'deletions' in d:
                 for d in d['deletions']:
@@ -867,7 +988,7 @@ class Command(BaseCommand):
             d = cache.get(pdbname+"_auto_d")
             # d = None
             if not d:
-                d = fetch_pdb_info(c_pdb,protein,ignore_gasper_annotation=True,preferred_chain=c.structure.preferred_chain)
+                d = fetch_pdb_info(pdbname,protein,ignore_gasper_annotation=True,preferred_chain=c.structure.preferred_chain)
                 cache.set(pdbname+"_auto_d",d,60*60*24)
             # print('pdb',d['mutations'])
             cons_muts = ConstructMutation.objects.filter(construct = c)
@@ -955,9 +1076,10 @@ class Command(BaseCommand):
         track_annotated_mutations = []
         cached_mutations = {}
         mut_pdb_list = {}
+        total_muts = len(self.excel_mutations)
         for i,mut in enumerate(self.excel_mutations):
-            # print("Progress ",i,len(self.excel_mutations))
-            # continue
+            if i % 10 == 0 or i == total_muts-1:
+                print('[{}/{}] check_mutations'.format(i+1, total_muts), flush=True)
             #print(mut)
             m = {}
             m['gn'] = mut[8]
@@ -1017,58 +1139,63 @@ class Command(BaseCommand):
                         cache.set(c_pdb+"_auto_d",d,60*60*24)
                     cached_mutations[c_pdb] = d
                 # Find construct mutation
-                cons_muts = ConstructMutation.objects.filter(construct=c, sequence_number = m['pos'], mutated_amino_acid = m['mut_aa'], wild_type_amino_acid = m['wt_aa'])
+                cons_muts = list(ConstructMutation.objects.filter(construct=c, sequence_number = m['pos'], mutated_amino_acid = m['mut_aa'], wild_type_amino_acid = m['wt_aa']))
 
-                if not cons_muts.exists() and m['other_effect']!='Non-receptor' and m['other_effect']!='Wrong annotation - remove!':
-                    # If no hits something is odd
-                    # print(c.structure.pdb_code.index,' do not have following mutation:',mut)
-                    found = False
-                    for pdb_m in d['mutations']:
-                        if int(pdb_m['pos']) == m['pos']:
-                            found = True
-                            break
-                    if found:
-                        # print('It was however found in pdb! ADDING')
-                        res_wt = Residue.objects.get(protein_conformation__protein=protein.parent, sequence_number=m['pos'])
-                        mut = ConstructMutation.objects.create(construct=c, sequence_number=m['pos'],wild_type_amino_acid= m['wt_aa'],mutated_amino_acid=m['mut_aa'], residue=res_wt)
-                        pdbs_has.append(c_pdb)
+                with transaction.atomic():
+                    if not cons_muts and m['other_effect']!='Non-receptor' and m['other_effect']!='Wrong annotation - remove!':
+                        # If no hits something is odd
+                        # print(c.structure.pdb_code.index,' do not have following mutation:',mut)
+                        found = False
+                        for pdb_m in d['mutations']:
+                            if int(pdb_m['pos']) == m['pos']:
+                                found = True
+                                break
+                        if found:
+                            # print('It was however found in pdb! ADDING')
+                            res_wt = Residue.objects.get(protein_conformation__protein=protein.parent, sequence_number=m['pos'])
+                            new_mut = ConstructMutation.objects.create(construct=c, sequence_number=m['pos'],wild_type_amino_acid= m['wt_aa'],mutated_amino_acid=m['mut_aa'], residue=res_wt)
+                            pdbs_has.append(c_pdb)
+                            # the row we just created is the current state - no need to re-query for it
+                            cons_muts = [new_mut]
+                        else:
+                            # print('Was also not found in pdb!')
+                            pdbs_hasnot.append("%"+c_pdb)
+                            cons_muts_odd = ConstructMutation.objects.filter(construct=c, sequence_number = m['pos'])
+                            for cons_mut in cons_muts_odd:
+                                print(c_pdb,cons_mut)
+                            cons_muts = []
                     else:
-                        # print('Was also not found in pdb!')
-                        pdbs_hasnot.append("%"+c_pdb)
-                        cons_muts_odd = ConstructMutation.objects.filter(construct=c, sequence_number = m['pos'])
-                        for cons_mut in cons_muts_odd:
-                            print(c_pdb,cons_mut)
-                else:
-                    # print(c.structure.pdb_code.index,' HAS following mutation:',mut)
-                    pdbs_has.append(c_pdb)
+                        # print(c.structure.pdb_code.index,' HAS following mutation:',mut)
+                        pdbs_has.append(c_pdb)
+                        # cons_muts already holds the current matching rows fetched above -
+                        # nothing was created/deleted since, so no need to re-query them
 
-                cons_muts = ConstructMutation.objects.filter(construct=c, sequence_number = m['pos'], mutated_amino_acid = m['mut_aa'], wild_type_amino_acid = m['wt_aa'])
-                for cons_mut in cons_muts:
-                    if m['other_effect']=='Non-receptor' or m['other_effect']=='Wrong annotation - remove!':
-                        # print('Delete!',cons_mut.construct.structure.pdb_code.index,cons_mut)
-                        cons_mut.delete()
-                        continue
-                    # Clear existing to replace with current
-                    cons_mut.effects.clear()
+                    for cons_mut in cons_muts:
+                        if m['other_effect']=='Non-receptor' or m['other_effect']=='Wrong annotation - remove!':
+                            # print('Delete!',cons_mut.construct.structure.pdb_code.index,cons_mut)
+                            cons_mut.delete()
+                            continue
+                        # Clear existing to replace with current
+                        cons_mut.effects.clear()
 
-                    if m['thermo_effect']:
-                        mutation_type, created = ConstructMutationType.objects.get_or_create(slug=slugify('Thermostabilising'),name='Thermostabilising', effect=m['thermo_effect'])
-                        cons_mut.effects.add(mutation_type)
+                        if m['thermo_effect']:
+                            mutation_type = _cached_get_or_create(ConstructMutationType, slug=slugify('Thermostabilising'),name='Thermostabilising', effect=m['thermo_effect'])
+                            cons_mut.effects.add(mutation_type)
 
-                    if m['expression_effect']:
-                        mutation_type, created = ConstructMutationType.objects.get_or_create(slug=slugify('Receptor Expression'),name='Receptor Expression', effect=m['expression_effect'])
-                        cons_mut.effects.add(mutation_type)
+                        if m['expression_effect']:
+                            mutation_type = _cached_get_or_create(ConstructMutationType, slug=slugify('Receptor Expression'),name='Receptor Expression', effect=m['expression_effect'])
+                            cons_mut.effects.add(mutation_type)
 
-                    if m['site_effect']:
-                        mutation_type, created = ConstructMutationType.objects.get_or_create(slug=slugify(m['site_effect']),name=m['site_effect'], effect=m['site_effect_type'])
-                        cons_mut.effects.add(mutation_type)
+                        if m['site_effect']:
+                            mutation_type = _cached_get_or_create(ConstructMutationType, slug=slugify(m['site_effect']),name=m['site_effect'], effect=m['site_effect_type'])
+                            cons_mut.effects.add(mutation_type)
 
-                    if m['other_effect']:
-                        # print(m['other_effect'])
-                        mutation_type, created = ConstructMutationType.objects.get_or_create(slug=slugify('Other effect'),name='Other effect', effect=m['other_effect'])
-                        cons_mut.effects.add(mutation_type)
+                        if m['other_effect']:
+                            # print(m['other_effect'])
+                            mutation_type = _cached_get_or_create(ConstructMutationType, slug=slugify('Other effect'),name='Other effect', effect=m['other_effect'])
+                            cons_mut.effects.add(mutation_type)
 
-                    track_annotated_mutations.append(cons_mut.pk)
+                        track_annotated_mutations.append(cons_mut.pk)
             # if not m['pdb'] and len(pdbs_hasnot) and len(pdbs_has):
             #     print(m['entry_name'],m['wt_aa']+str(m['pos'])+m['mut_aa'])
             #     print("has",",".join(pdbs_has))

@@ -3,8 +3,8 @@ from build.management.commands.base_build import Command as BaseBuild
 from protein.models import Protein, ProteinConformation, ProteinSequenceType, ProteinSource, ProteinState
 from residue.models import Residue, ResidueNumberingScheme
 from signprot.models import SignprotComplex
-from structure.functions import create_structure_rotamer, get_pdb_ids, fetch_signprot_data, build_signprot_struct
-from structure.models import Rotamer
+from structure.functions import create_structure_rotamer, build_rotamer_data, get_pdb_ids, fetch_signprot_data, build_signprot_struct
+from structure.models import Rotamer, PdbData
 from common.tools import test_model_updates
 from Bio.PDB import PDBParser, PPBuilder, PDBIO, Polypeptide
 from io import StringIO
@@ -38,8 +38,12 @@ class Command(BaseBuild):
             test_model_updates(self.all_models, self.tracker, initialize=True)
 
         # Complex structures
-        self.scs = SignprotComplex.objects.filter(protein__family__slug__startswith="200")
+        if options['s']:
+            self.scs = SignprotComplex.objects.filter(structure__pdb_code__index__in=[i.upper() for i in options['s']])
+        else:
+            self.scs = SignprotComplex.objects.filter(protein__family__slug__startswith="200")
         for sc in self.scs:
+            print(sc.structure)
             pdbp = PDBParser(PERMISSIVE=True, QUIET=True)
             s = pdbp.get_structure("struct", StringIO(sc.structure.pdb_data.pdb))
             chain = s[0][sc.alpha]
@@ -55,6 +59,9 @@ class Command(BaseBuild):
                             continue
                     elif sc.structure.pdb_code.index=='4ZWJ':
                         if not 2012<=res.get_id()[1]<=2361:
+                            continue
+                    elif sc.structure.pdb_code.index in ('9KUV', '9KUW', '9KUX'):
+                        if not 1<=res.get_id()[1]<=368:
                             continue
                     nums.append(res.get_id()[1])
                     structure_seq+=Polypeptide.three_to_one(res.get_resname())
@@ -77,7 +84,8 @@ class Command(BaseBuild):
 
             parent_residues = Residue.objects.filter(protein_conformation__protein=protein.parent)
 
-            bulked_rotamers = []
+            bulked_pdbdata = []
+            pending_rotamers = []
             r_c, s_c = 0, 0
             for r, t in zip(ref_seq, temp_seq):
                 if options['debug']:
@@ -91,29 +99,36 @@ class Command(BaseBuild):
                     res.protein_conformation = protconf
                     res.protein_segment = parent_residues[r_c].protein_segment
                     res.save()
-                    rot = create_structure_rotamer(chain[nums[s_c]], res, sc.structure)
-                    bulked_rotamers.append(rot)
+                    pdb_text, missing_atoms = build_rotamer_data(chain[nums[s_c]])
+                    bulked_pdbdata.append(PdbData(pdb=pdb_text))
+                    pending_rotamers.append((res, missing_atoms))
                     s_c+=1
                 r_c+=1
+            PdbData.objects.bulk_create(bulked_pdbdata)
+            bulked_rotamers = [
+                Rotamer(missing_atoms=ma, pdbdata=pd, residue=r, structure=sc.structure)
+                for (r, ma), pd in zip(pending_rotamers, bulked_pdbdata)
+            ]
             Rotamer.objects.bulk_create(bulked_rotamers)
 
-        # Non-complex arrestin structures
-        arrestin_proteins = Protein.objects.filter(family__slug__startswith="200", accession__isnull=False)
-        complex_structures = self.scs.values_list("structure__pdb_code__index", flat=True)
-        latest = self.scs.order_by('-structure__publication_date').values_list('structure__publication_date',flat=True)[0]
-        for a in arrestin_proteins:
-            pdb_list = get_pdb_ids(a.accession)
-            for pdb in pdb_list:
-                if pdb not in complex_structures:
-                    try:
-                        data = fetch_signprot_data(pdb, a)
-                        if data:
-                            ### Only add entries that aren't newer than the latest annotated complex structure to avoid non-annotated complexes
-                            if 'release_date' in data:
-                                if datetime.date.fromisoformat(data['release_date'])<=latest:
-                                    build_signprot_struct(a, pdb, data)
-                    except Exception as msg:
-                        self.logger.error("SignprotStructure of {} {} failed\n{}: {}".format(a.entry_name, pdb, type(msg), msg))
+        if not options['s']:
+            # Non-complex arrestin structures
+            arrestin_proteins = Protein.objects.filter(family__slug__startswith="200", accession__isnull=False)
+            complex_structures = self.scs.values_list("structure__pdb_code__index", flat=True)
+            latest = self.scs.order_by('-structure__publication_date').values_list('structure__publication_date',flat=True)[0]
+            for a in arrestin_proteins:
+                pdb_list = get_pdb_ids(a.accession)
+                for pdb in pdb_list:
+                    if pdb not in complex_structures:
+                        try:
+                            data = fetch_signprot_data(pdb, a)
+                            if data:
+                                ### Only add entries that aren't newer than the latest annotated complex structure to avoid non-annotated complexes
+                                if 'release_date' in data:
+                                    if datetime.date.fromisoformat(data['release_date'])<=latest:
+                                        build_signprot_struct(a, pdb, data)
+                        except Exception as msg:
+                            self.logger.error("SignprotStructure of {} {} failed\n{}: {}".format(a.entry_name, pdb, type(msg), msg))
         if options["debug"]:
             print(datetime.datetime.now() - startTime)
 

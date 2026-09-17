@@ -259,7 +259,7 @@ def save_to_cache(path, file_id, data):
     os.close(fd)
     try:
         with gzip.open(tmp_path, 'wt') as cache_file:
-            yaml.dump(data, cache_file, default_flow_style=False)
+            yaml.dump(data, cache_file, default_flow_style=False, Dumper=yaml.CDumper)
         os.replace(tmp_path, cache_file_path)
     except Exception:
         if os.path.isfile(tmp_path):
@@ -273,14 +273,14 @@ def fetch_from_cache(path, file_id):
     if os.path.isfile(cache_file_path):
         try:
             with gzip.open(cache_file_path, 'rt') as cache_file:
-                return yaml.load(cache_file, Loader=yaml.Loader)
+                return yaml.load(cache_file, Loader=yaml.CLoader)
         except (TypeError, OSError, EOFError, zlib.error, yaml.YAMLError) as msg:
             print('WARNING: cannot properly open {} with error: {}'.format(cache_file_path, msg))
             return None
     elif os.path.isfile(legacy_file_path):
         try:
             with open(legacy_file_path) as cache_file:
-                return yaml.load(cache_file, Loader=yaml.Loader)
+                return yaml.load(cache_file, Loader=yaml.CLoader)
         except (TypeError, yaml.YAMLError) as msg:
             print('WARNING: cannot properly open {} with error: {}'.format(legacy_file_path, msg))
             return None
