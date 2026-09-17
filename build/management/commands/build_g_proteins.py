@@ -840,7 +840,7 @@ class Command(BaseCommand):
         #             structure.save()
 
     def signprot_struct_ids(self):
-        structs = Structure.objects.exclude(structure_type__slug__startswith='af-').count()
+        structs = Structure.objects.filter(structure_type__origin='experiment').count()
         s_structs = SignprotStructure.objects.count()
         offset = 1000
         if s_structs == None:
