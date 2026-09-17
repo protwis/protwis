@@ -20,16 +20,32 @@
   display: flex;
   gap: 8px;
   flex-shrink: 0;
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 12px;
 }
 
 .interaction-header-buttons .btn {
   font-size: 24px;
 }
 
-/* --- Inactive (no row selected) button state + hover tooltip ------------- */
+/* --- Inactive (no row selected) button state + hover tooltip -------------
+   Dimming via a translucent ::before wash rather than `opacity` on the
+   button itself — `opacity` would also cap the ::after tooltip below,
+   which is a descendant of this same element and needs to stay fully
+   readable on hover regardless of the button's own dimmed state. */
 .interaction-header-buttons .btn.btn-inactive {
   cursor: not-allowed;
   position: relative;
+}
+
+.interaction-header-buttons .btn.btn-inactive::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.45);
+  border-radius: inherit;
+  pointer-events: none;
 }
 
 .interaction-header-buttons .btn.btn-inactive::after {

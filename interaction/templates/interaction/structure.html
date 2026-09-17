@@ -181,6 +181,16 @@ canvas {
     #panel-table table {
       margin: 0 auto;
     }
+    .ligand-switcher {
+      width: 50%;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .ligand-switch-btn.btn-default {
+      background-color: #e0e0e0;
+      border-color: #ccc;
+      color: #555;
+    }
 </style>
 {% endblock %}
 {% block content %}
@@ -222,7 +232,7 @@ canvas {
                     <div class="text-info stat-label">{% if ligands|length == 1 %}Ligand{% else %}Ligands{% endif %}</div>
                     <div class="stat-value">
                         {% for ligand in ligands %}
-                        <div class="expand">{{ ligand.name }}</div>
+                        <div class="expand">{{ ligand.name|safe }}</div>
                         {% endfor %}
                     </div>
                 </div>
@@ -248,9 +258,9 @@ canvas {
 {{ page_data|json_script:"structure-page-data" }}
 
 {% if ligands|length > 1 %}
-<div class="btn-group btn-group-justified ligand-switcher" style="margin-bottom:20px; display:flex;" role="group">
+<div class="btn-group ligand-switcher" style="margin-bottom:20px; display:flex;" role="group">
     {% for ligand in ligands %}
-    <a href="#" class="btn ligand-switch-btn {% if forloop.first %}btn-primary active{% else %}btn-default{% endif %}" data-ligand-id="{{ ligand.id }}" style="flex:1;">{{ ligand.name }}</a>
+    <a href="#" class="btn ligand-switch-btn {% if forloop.first %}btn-success active{% else %}btn-default{% endif %}" data-ligand-id="{{ ligand.id }}" style="flex:1;">{{ ligand.name|safe }}</a>
     {% endfor %}
 </div>
 {% endif %}
@@ -329,7 +339,7 @@ canvas {
                     </thead>
                     {% for residue in residues %}
                     <tr data-ligand-id="{{ residue.ligand_id }}">
-                    <td class="expand"><a class="struct" {% if residue.ligand_type == 'peptide' and residue.ligand_sequence %}data-ligand-type="peptide" data-sequence="{{ residue.ligand_sequence }}"{% else %}rel="Generate_from_SMILES" data-ligand-type="smiles" data-smiles="{{ residue.ligand_smiles }}"{% endif %} href="/ligand/{{ residue.ligand_id }}/info" target="_blank">{{residue.ligand}}</a></td>
+                    <td class="expand"><a class="struct" {% if residue.ligand_type == 'peptide' and residue.ligand_sequence %}data-ligand-type="peptide" data-sequence="{{ residue.ligand_sequence }}"{% else %}rel="Generate_from_SMILES" data-ligand-type="smiles" data-smiles="{{ residue.ligand_smiles }}"{% endif %} href="/ligand/{{ residue.ligand_id }}/info" target="_blank">{{residue.ligand|safe}}</a></td>
                     <td>{{residue.aa}}{{residue.pos}}</td>
                     <td>{{residue.gpcrdb}}</td>
                     <td>{{residue.segment}}</td>
@@ -352,7 +362,7 @@ canvas {
             <div class="col-md-10 col-md-offset-1 text-info">
                 <div style="display:flex; align-items:center; justify-content:center;">
                     <div style="width:50%; min-width:0; text-align:center; overflow-wrap:break-word; word-break:break-word;">
-                        <h4><a href="/ligand/{{ ligand.id }}/info" target="_blank">{{ligand.name}}</a></h4>
+                        <h4><a href="/ligand/{{ ligand.id }}/info" target="_blank">{{ligand.name|safe}}</a></h4>
                     </div>
                     <div style="width:50%; min-width:0; text-align:center;">
                         <div class="ligand-structure-preview" data-smiles="{{ ligand.smiles }}" data-sequence="{{ ligand.sequence }}" data-ligand-type="{{ ligand.ligand_type }}"></div>
@@ -554,7 +564,7 @@ canvas {
                 var smiles = $el.data('smiles');
                 var sequence = $el.data('sequence');
                 var ligandType = $el.data('ligand-type');
-                if (ligandType === 'peptide' && sequence && typeof PeptideLayoutEngine !== 'undefined') {
+                if (String(ligandType).toLowerCase() === 'peptide' && sequence && typeof PeptideLayoutEngine !== 'undefined') {
                     try {
                         var peptideDrawer = new PeptideLayoutEngine({
                             fixedWidth: 220, fixedHeight: 220,
@@ -672,8 +682,8 @@ canvas {
 
               setActiveLigand = function(id) {
                   activeLigandId = id;
-                  $('.ligand-switch-btn').removeClass('active btn-primary').addClass('btn-default');
-                  $('.ligand-switch-btn[data-ligand-id="' + id + '"]').addClass('active btn-primary').removeClass('btn-default');
+                  $('.ligand-switch-btn').removeClass('active btn-success').addClass('btn-default');
+                  $('.ligand-switch-btn[data-ligand-id="' + id + '"]').addClass('active btn-success').removeClass('btn-default');
                   applyDiagramColoring('snakeplot');
                   applyDiagramColoring('helixbox');
                   filterResidueTableByLigand();

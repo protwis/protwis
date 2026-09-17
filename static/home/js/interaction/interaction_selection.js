@@ -235,7 +235,7 @@
       dom:
         "<'row'<'col-sm-12'tr>>" +
         "<'row'<'col-sm-12'ip>>",
-      order: [[13, "asc"]],
+      order: [[2, "asc"]],
       pageLength: 25,
       data,
       columns,
