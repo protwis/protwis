@@ -1777,12 +1777,7 @@ class StructureBuildCheck():
             return 0
         ### Print structures where residues were not built
         if len(seq)!=len(resis):
-<<<<<<< HEAD
             print(signprot_complex.protein.entry_name, signprot_complex.structure, len(pdb[signprot_complex.alpha]), len(resis))
-=======
-            logger.info('Some residues were not built in Structure: {}, PDB Chains: {}, Residues: {}'.format(signprot_complex.structure, len(pdb[signprot_complex.alpha]), len(resis)))
->>>>>>> 2b072a97e7e43b0cd7862946850b444fac6f2605
-
 
 class ModelRotamer(object):
     def __init__(self):
