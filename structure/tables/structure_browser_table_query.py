@@ -61,7 +61,7 @@ def StructureBrowserTableRows():
     """
     structures = (
         Structure.objects
-        .exclude(structure_type__slug__startswith="af-")
+        .filter(structure_type__origin='experiment')
         .prefetch_related(
             Prefetch(
                 "protein_conformation__protein__parent__genes",
