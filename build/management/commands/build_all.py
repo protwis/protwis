@@ -92,6 +92,7 @@ class Command(BaseCommand):
             ['build_receptor_similarity'],
             ['build_ligand_search'],
             ['build_text'],
+            ['build_structure_browser_table'],
         ]
         phase3 = [
             ['build_complex_models', {'proc': options['proc'], 'parser' : 'alphafoldcomplex', 'model_set_name' : 'AlphaFold_multimer', 'cleaned_seq_csv' : os.sep.join([settings.DATA_DIR, 'structure_data', 'AlphaFold_multimer', 'cleaned_seqs.csv']) }],

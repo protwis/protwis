@@ -35,6 +35,7 @@ from contactnetwork.models import Interaction
 from mapper.views import DataMapperHome
 from ligand.models import LigandPeptideStructure, Endogenous_GTP
 from ligand.functions import standardize_smiles
+from table_provider.models import GpcrStructureBrowserTable
 
 # ── Postgres aggregates that do the heavy string/array work ─────
 from django.contrib.postgres.aggregates import StringAgg, ArrayAgg
@@ -94,18 +95,16 @@ class StructureBrowser(TemplateView):
 
 
 class StructureDataJsonView(View):
-    """Fast JSON endpoint for the structure browser."""
+    """Fast JSON endpoint for the structure browser.
 
-    FUSION_RE = (
-        r".*thase.*|PGS|BRIL|.*Lysozyme|.*b562.*|TrxA|Flavodoxin|Rubredoxin|"
-        r"Sialidase|.*Thioredoxin.*|Endolysin|.*cytochrome.*|.*DARPin.*"
-    )
-    ANTIBODY_RE = (
-        r".*bod.*|.*Ab.*|.*scFv.*|.*Fab.*|.*activity.*|.*RAMP.*|.*GRK.*|"
-        r"Unidentified peptide|.*CD4.*|.*IgG.*|.*NB.*|.*Fv.*"
-    )
-    fusion_pat   = re.compile(FUSION_RE,   re.I)
-    antibody_pat = re.compile(ANTIBODY_RE, re.I)
+    Reads table_provider.GpcrStructureBrowserTable (built by
+    `manage.py build_structure_browser_table`) instead of assembling this data
+    from Structure at request time. Fields that are a plain FK-chain scalar
+    (family, class, species, state, pdb, resolution, ...) are read live here via
+    select_related — a join over this table's row count is negligible — while
+    fields that needed real per-row work (regex classification, picking the
+    arrestin/G-alpha row, list-building, subqueries) come pre-built from the row.
+    """
 
     def get(self, request, *args, **kwargs):
         try:
@@ -115,84 +114,22 @@ class StructureDataJsonView(View):
                 Structure.objects
                 .filter(structure_type__origin='experiment')
                 .select_related(
-                    "state", "structure_type", "pdb_code",
-                    "publication__web_link__web_resource",
-                    "protein_conformation__protein__species",
-                    "protein_conformation__protein__source",
-                    "protein_conformation__protein__parent",
-                    "protein_conformation__protein__family__parent__parent__parent",
-                )
-                .prefetch_related(
-                    Prefetch(
-                        "protein_conformation__protein__parent__genes",
-                        queryset=Gene.objects.filter(position=0).select_related("entrez_weblink"),
-                        to_attr="filtered_genes",
-                    ),
-                    Prefetch(
-                        "extra_proteins",
-                        queryset=StructureExtraProteins.objects.select_related(
-                            "wt_protein__family__parent"),
-                        to_attr="prefetched_extras",
-                    ),
-                    Prefetch(
-                        "protein_conformation__site_protein_conformation",
-                        queryset=IdentifiedSites.objects.select_related("site"),
-                        to_attr="prefetched_sites",
-                    ),
-                    Prefetch(                          # ligands for Python loop
-                        "ligands",
-                        queryset=StructureLigandInteraction.objects.select_related(
-                            "ligand", "ligand_role", "ligand__ligand_type"),
-                        to_attr="prefetched_ligands",
-                    ),
-                    Prefetch(
-                        "protein_conformation__protein__parent__web_links",
-                        queryset=WebLink.objects
-                            .select_related("web_resource")
-                            .filter(web_resource__slug="gtop"),   # or .filter(web_resource_id=5)
-                        to_attr="prefetched_gtop_links",
-                    ),
-                    "stabilizing_agents",              # regex filter
-                    "protein_conformation__protein__parent__endogenous_gtp_set__ligand__ligand_type",
-                )
-                .annotate(
-                    coverage_pct=ExpressionWrapper(
-                        Cast(Count("protein_conformation__residue", distinct=True),
-                             FloatField()) * 100.0 /
-                        Coalesce(
-                            Length("protein_conformation__protein__parent__sequence"),
-                            Value(1.0)
-                        ),
-                        output_field=IntegerField(),
-                    ),
-                    has_sodium_site=Exists(
-                        IdentifiedSites.objects.filter(
-                            protein_conformation=OuterRef("protein_conformation_id"),
-                            site__slug="sodium_pocket")
-                    ),
+                    "structure__state", "structure__structure_type", "structure__pdb_code",
+                    "structure__publication__web_link__web_resource",
+                    "structure__protein_conformation__protein__species",
+                    "structure__protein_conformation__protein__parent",
+                    "structure__protein_conformation__protein__family__parent__parent__parent",
+                    "arrestin_extra_protein__wt_protein__family__parent",
                 )
             )
 
-            # t1 = perf_counter()
-
-            # ── Python loop ─────────────────────────────────────────────────
             out = []
-            for s in structures:
+            for row in rows:
+                s = row.structure
                 p, pp = s.protein_conformation.protein, s.protein_conformation.protein.parent
-                pub   = s.publication
+                pub = s.publication
+                arrestin = row.arrestin_extra_protein
 
-                gene_name = (pp.filtered_genes[0].name
-                             if getattr(pp, "filtered_genes", []) else "-")
-
-                gene_href = (str(pp.filtered_genes[0].entrez_weblink)
-                             if getattr(pp, "filtered_genes", []) and
-                             pp.filtered_genes[0].entrez_weblink else "-")
-
-                # arrestin / Gα
-                arrestin = next(
-                    (ep for ep in getattr(s, "prefetched_extras", [])
-                     if ep.category in {"G alpha", "Arrestin"}), None
-                )
                 arr_family = arrestin.wt_protein.family.parent.name if arrestin and arrestin.wt_protein else "-"
                 arr_name   = (f"&alpha;{arrestin.display_name[1:]}"
                               if arrestin and arrestin.display_name.startswith("G")
@@ -200,37 +137,6 @@ class StructureDataJsonView(View):
                 arr_entry  = arrestin.wt_protein.entry_name if arrestin and arrestin.wt_protein else "-"
                 arr_note   = arrestin.note or "-" if arrestin else "-"
                 arr_cov    = arrestin.wt_coverage or "-" if arrestin else "-"
-
-
-                # stabilising agents – tiny regex pass
-                fusions = "<br>".join(a.name for a in s.stabilizing_agents.all()
-                                      if self.fusion_pat.match(a.name)) or "-"
-                antibodies = "<br>".join(a.name for a in s.stabilizing_agents.all()
-                                         if self.antibody_pat.match(a.name)) or "-"
-
-                # ligands – build names/types/roles here
-                lig_list, lig_types, lig_roles = [], set(), set()
-                for li in getattr(s, "prefetched_ligands", []):
-                    if not li.ligand:
-                        continue
-                    lig_list.append({"id": li.ligand.id, "name": li.ligand.name})
-                    if li.ligand.ligand_type:
-                        lig_types.add(li.ligand.ligand_type.name)
-                    if li.ligand_role:
-                        lig_roles.add(li.ligand_role.name)
-
-                # Get endogenous ligands from parent protein
-                endos = getattr(pp, 'endogenous_gtp_set', []).all() if hasattr(pp, 'endogenous_gtp_set') else []
-                endo_list, seen = [], set()
-                for e in endos:
-                    lig = getattr(e, "ligand", None)
-                    if not lig:
-                        continue
-                    key = getattr(lig, "id", None) or lig.name
-                    if key in seen:
-                        continue
-                    seen.add(key)
-                    endo_list.append({"id": lig.id, "name": lig.name})
 
                 pdb_code = s.pdb_code.index if s.pdb_code else "-"
 
@@ -240,26 +146,14 @@ class StructureDataJsonView(View):
                 else:
                     pub_ref, pub_link = "-", "#"
 
-                # GPCRdb internal link (rename your existing field)
-                gpcrdb_link = f"/protein/{pp.entry_name}"
-
-                # IUPHAR / GToP link
-                iuphar_link = "-"
-                iuphar_index = None
-                wl = next(iter(getattr(pp, "prefetched_gtop_links", [])), None)
-                if wl and wl.web_resource and wl.index:
-                    iuphar_index = wl.index
-                    # web_resource.url should contain "$index"
-                    iuphar_link = wl.web_resource.url.replace("$index", str(wl.index))
-
                 out.append({
                     "id": s.id,
                     "uniprot_link": f"http://www.uniprot.org/uniprot/{pp.accession}",
-                    "gene": { "name": gene_name, "entrez_url": gene_href },
+                    "gene": {"name": row.gene_name or "-", "entrez_url": row.gene_entrez_url or "-"},
                     "entry_name": pp.entry_name,
-                    "gpcrdb_link": gpcrdb_link,
-                    "iuphar_link": iuphar_link,
-                    "iuphar_index": iuphar_index,
+                    "gpcrdb_link": f"/protein/{pp.entry_name}",
+                    "iuphar_link": row.iuphar_link or "-",
+                    "iuphar_index": row.iuphar_index,
                     "iuphar_name": pp.name.replace("receptor", '').replace("-adrenoceptor", '').replace("<i>", "").replace("</i>", "").strip(),
                     "family": p.family.parent.short(),
                     "class":  p.family.parent.parent.parent.shorter(),
@@ -272,7 +166,7 @@ class StructureDataJsonView(View):
                     "preferred_chain": s.preferred_chain,
                     "state":          s.state.name if s.state else "-",
                     "active_pct":     s.gprot_bound_likeness,
-                    "coverage":       int(s.coverage_pct),
+                    "coverage":       row.coverage,
 
                     "arrestin_family":   arr_family,
                     "arrestin_name":     arr_name,
@@ -280,28 +174,30 @@ class StructureDataJsonView(View):
                     "arrestin_note":     arr_note,
                     "arrestin_coverage": arr_cov,
 
-                    "fusions":    fusions,
-                    "antibodies": antibodies,
+                    "fusions":    row.fusions,
+                    "antibodies": row.antibodies,
 
-                    "ligands":      lig_list,
-                    "ligand_type":  "<br>".join(map(str, sorted(lig_types))) or "-",
-                    "ligand_role":  "<br>".join(map(str, sorted(lig_roles))) or "-",
+                    "auxiliary_molecules":          row.auxiliary_molecules,
+                    "auxiliary_molecule_type":       row.auxiliary_molecule_type,
+                    "auxiliary_molecule_function":   row.auxiliary_molecule_function,
 
-                    "endo_ligands": endo_list,
-                    "endo_type": "<br>".join(sorted({e.ligand.ligand_type.name for e in endos if e.ligand and e.ligand.ligand_type})) or "-",
-                    "sodium_site":  "Yes" if s.has_sodium_site else "No",
+                    "ligands":      row.ligands,
+                    "ligand_type":  row.ligand_type,
+                    "ligand_role":  row.ligand_role,
+
+                    "endo_ligands": row.endo_ligands,
+                    "endo_type": row.endo_type,
+                    "sodium_site":  "Yes" if row.sodium_site else "No",
                     "sodium":       "Yes" if s.sodium else "No",
 
                     "authors": pub.authors if pub and pub.authors else "-",
                     "reference": (f'<a target="_blank" href="{pub_link}">{pub_ref}</a>'
                                   if pub_ref != "-" else "-"),
                     "pub_date":  (s.publication_date.strftime("%Y-%m-%d")
-                                  if s.publication_date else "-")
-                })
+                                  if s.publication_date else "-"),
 
-            # t2 = perf_counter()
-            # print(f"query {t1-t0:5.2f}s  |  python {t2-t1:5.2f}s  "
-            #       f"(rows={len(structures)})")
+                    "has_ligand_interactions": bool(row.has_ligand_interactions),
+                })
 
             return JsonResponse(out, safe=False, encoder=DjangoJSONEncoder)
 

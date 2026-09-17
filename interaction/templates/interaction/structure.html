@@ -4,6 +4,7 @@
 <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
 <link rel="stylesheet" href="{% static 'home/css/structure_browser.css' %}" type="text/css" />
 <link href="{% static 'home/css/residue_table.css' %}" rel="stylesheet">
+<link href="{% static 'home/css/struct_tooltip.css' %}" rel="stylesheet">
 <style>
 canvas {
     border: 1px solid #888888;
@@ -69,184 +70,316 @@ canvas {
     .checkbox-item:last-child {
       margin-right: 0;  /* Remove right margin for the last item */
     }
+    .info-card-body {
+      padding-top: 8px;
+      padding-bottom: 8px;
+    }
+    .stat-sections {
+      display: grid;
+      grid-template-columns: auto auto auto auto;
+      justify-content: center;
+      align-items: stretch;
+      gap: 15px 55px;
+      padding: 4px 20px 4px 10px;
+      overflow-x: auto;
+    }
+    .stat-section {
+      display: flex;
+      flex-wrap: wrap;
+      align-content: flex-start;
+      gap: 12px;
+      position: relative;
+    }
+    .stat-section:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      top: 15%;
+      bottom: 15%;
+      right: -28px;
+      width: 1px;
+      background-color: #ddd;
+    }
+    .stat-section.ligand-section {
+      gap: 12px 30px;
+      min-width: 90px;
+    }
+    .ligand-section .stat-col,
+    .ligand-section .stat-value {
+      min-width: 0;
+    }
+    .ligand-name-col .stat-value {
+      white-space: nowrap;
+      overflow-wrap: normal;
+      word-break: normal;
+    }
+    .ligand-section .function-col {
+      min-width: 90px;
+    }
+    .function-col .stat-value {
+      white-space: nowrap;
+    }
+    .ligand-section .stat-col {
+      padding: 0 6px;
+    }
+    .ligand-name-col .expand {
+      max-width: 190px;
+    }
+    .ligand-name-col .expand:hover {
+      overflow-wrap: break-word;
+      word-break: break-word;
+    }
+    .stat-col {
+      padding: 0 10px;
+      min-width: 110px;
+    }
+    .stat-label {
+      font-size: 12px;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+    .stat-value {
+      font-size: 14px;
+      overflow-wrap: break-word;
+      word-break: break-word;
+    }
+    .stat-value .expand {
+      margin: 0 auto;
+    }
+    .pane-slot {
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 12px 15px;
+      padding-bottom: 24px;
+    }
+    .pane-slot.pane-slot--capped {
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    .pane-slot.pane-slot--capped-tall {
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    #panel-diagrams svg {
+      display: block;
+      margin: 0 auto;
+    }
+    #helixbox {
+      width: 70%;
+      height: auto;
+    }
+    .ligand-structure-preview {
+      display: inline-block;
+      margin-top: 10px;
+      margin-bottom: 10px;
+      border: 1px solid black;
+      padding: 6px;
+    }
+    .ligand-structure-preview svg {
+      display: block;
+      margin: 0 auto;
+    }
+    #panel-table table {
+      margin: 0 auto;
+    }
+    .ligand-switcher {
+      width: 50%;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .ligand-switch-btn.btn-default {
+      background-color: #e0e0e0;
+      border-color: #ccc;
+      color: #555;
+    }
 </style>
 {% endblock %}
 {% block content %}
-<h2>Structure information</h2>
- <script src="http://cdn.jsdelivr.net/3dmol.js/latest/3Dmol-min.js"></script>
- <div class="row">
-    <table width="100%">
-      <tr>
-        <td width="50%" style="border:0px;">
-        <div class="row text-success">
-        <div class="text-center">
-                <h2>{{ crystal.protein_conformation.protein.family.name|safe }}</h2>
+<script src="http://cdn.jsdelivr.net/3dmol.js/latest/3Dmol-min.js"></script>
+
+<div class="panel panel-default">
+    <div class="panel-body info-card-body">
+        <div class="stat-sections">
+            <div class="stat-section">
+                <div class="stat-col text-center">
+                    <div class="text-info stat-label">PDB</div>
+                    <div class="stat-value"><a href="/structure/{{ crystal.pdb_code.index }}" target="_blank">{{ crystal.pdb_code.index }}</a></div>
+                </div>
+                <div class="stat-col text-center">
+                    <div class="text-info stat-label">Resolution</div>
+                    <div class="stat-value">{{ crystal.resolution|floatformat:1 }} &#8491;</div>
+                </div>
+                <div class="stat-col text-center">
+                    <div class="text-info stat-label">Released</div>
+                    <div class="stat-value">{{ crystal.publication_date }}</div>
+                </div>
+            </div>
+            <div class="stat-section">
+                <div class="stat-col text-center">
+                    <div class="text-info stat-label">Receptor</div>
+                    <div class="stat-value"><a href="/protein/{{ protein.entry_name }}/" target="_blank">{{ protein.short|safe }}</a></div>
+                </div>
+                <div class="stat-col text-center">
+                    <div class="text-info stat-label">Class</div>
+                    <div class="stat-value">{{ protein_class_short }}</div>
+                </div>
+                <div class="stat-col text-center">
+                    <div class="text-info stat-label">Species</div>
+                    <div class="stat-value">{{ protein.species.latin_name }}</div>
+                </div>
+            </div>
+            <div class="stat-section ligand-section">
+                <div class="stat-col text-center ligand-name-col">
+                    <div class="text-info stat-label">{% if ligands|length == 1 %}Ligand{% else %}Ligands{% endif %}</div>
+                    <div class="stat-value">
+                        {% for ligand in ligands %}
+                        <div class="expand">{{ ligand.name|safe }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="stat-col text-center function-col">
+                    <div class="text-info stat-label">Function</div>
+                    <div class="stat-value">
+                        {% for ligand in ligands %}
+                        <div>{{ ligand.role }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <div class="stat-section">
+                <div class="stat-col text-center">
+                    <div class="text-info stat-label">Reference</div>
+                    <div class="stat-value">{% if crystal.publication %}<a href="{{ crystal.publication.web_link }}" target="_blank">{{ crystal.publication.web_link.index }}</a>{% else %}&mdash;{% endif %}</div>
+                </div>
             </div>
         </div>
-
-        <div class="row">
-            <div class="col-md-4 text-right text-info">
-                <h4>PROTEIN CLASS</h4>
-            </div>
-            <div class="col-md-6">
-            {{ crystal.protein_conformation.protein.get_protein_class }}
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-md-4 text-right text-info">
-                <h4>PDB CODE</h4>
-            </div>
-            <div class="col-md-6">
-            {{ crystal.pdb_code.index }}
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-md-4 text-right text-info">
-                <h4>SPECIES</h4>
-            </div>
-            <div class="col-md-6">
-            {{ crystal.protein_conformation.protein.species.latin_name }}
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-md-4 text-right text-info">
-                <h4>RESOLUTION</h4>
-            </div>
-            <div class="col-md-6">
-            {{ crystal.resolution}}
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-md-4 text-right text-info">
-                <h4>PREFERRED CHAIN</h4>
-            </div>
-            <div class="col-md-6">
-            {{ crystal.preferred_chain }}
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-md-4 text-right text-info">
-                <h4>REFERENCE</h4>
-            </div>
-            <div class="col-md-6">
-            <a href="{{ crystal.publication.web_link }}">{{ crystal.publication.web_link.index }}</a>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-md-4 text-right text-info">
-                <h4>PUBLICATION DATE</h4>
-            </div>
-            <div class="col-md-6">
-            {{ crystal.publication_date }}
-            </div>
-        </div>
-
-    </td>
-    <td style="border:0px;text-align:left">
-
-       <!--      <div style="height: 300px; width: 500px; position: relative;" class='viewer_3Dmoljs'  data-backgroundcolor='0xffffff' data-href='pdb?pdb={{ pdbname }}' data-type='pdb' data-backgroundcolor='0xffffff' data-labelres2='fontSize:12;opacity:.2;color:black' data-select1='{"hetflag":false}'  data-style1='{"cartoon":{"color":"spectrum"}}' data-select2='{"resn":["test","{{ mainligand}}"]}' data-style2='{"stick":{"colorscheme":"greenCarbon"}}'></div>
-                 -->
-            <div id="viewport_full" style="width:100%; height:300px;">
-            </div>
-            <div style="width:100%; background-color:#eaeaea; border-radius: 0px 0px 5px 5px;">
-                <p style="padding: 2px 0px 2px 5px; font-size: 10px;"><a href="https://github.com/arose/ngl">NGL</a> is a WebGL based 3D viewer powered by <a href="https://mmtf.rcsb.org">MMTF</a>.</p>
-            </div>
-            <button id=fullscreen_full>Full Screen</button>
-             <a href="pdb?pdb={{ pdbname }}">Download PDB file</a>
-    </td>
-    </tr>
-    </table>
-</div>
-<h2>Ligand Interaction Browser</h2>
-<a href="excel/{{pdbname}}">Download list in excel</a>
-<div class="row">
-    <div class="col-md-11 text-center">
-        {% if residues %}
-        <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;">
-            <table width="100%" class="display" id="residues">
-
-                <thead>
-                    <tr>
-                        <th>Ligand</th>
-                        <th>Amino Acid</th>
-                        <th>Generic Number</th>
-                        <th>Segment</th>
-                        <th>Interaction Type</th>
-                    </tr>
-                    <tr>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                    </tr>
-                    <tr>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tfoot>
-                    <tr>
-                        <th>Ligand</th>
-                        <th>Amino Acid</th>
-                        <th>Generic Number</th>
-                        <th>Segment</th>
-                        <th>Interaction Type</th>
-                    </tr>
-                </tfoot>
-                {% for residue in residues %}
-                <tr>
-                <td>{{residue.ligand}}</td>
-                <td>{{residue.aa}}{{residue.pos}}</td>
-                <td>{{residue.gpcrdb}}</td>
-                <td>{{residue.segment}}</td>
-                <td>{{residue.type}}</td>
-                {% endfor %}
-            </table>
-        </div>
-    {% else %}
-        <p> Ooops! There is no data to show here yet. </p>
-    {% endif %}
-
     </div>
 </div>
 
-<br>
+{{ page_data|json_script:"structure-page-data" }}
 
-<h2>Ligands</h2>
+{% if ligands|length > 1 %}
+<div class="btn-group ligand-switcher" style="margin-bottom:20px; display:flex;" role="group">
+    {% for ligand in ligands %}
+    <a href="#" class="btn ligand-switch-btn {% if forloop.first %}btn-success active{% else %}btn-default{% endif %}" data-ligand-id="{{ ligand.id }}" style="flex:1;">{{ ligand.name|safe }}</a>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="row" style="margin-bottom:20px;">
+    <div class="col-md-6">
+        <ul class="nav nav-tabs" data-side="left">
+            <li><a href="#" data-toggle="tab" data-key="ligand">Ligand info</a></li>
+            <li class="active"><a href="#" data-toggle="tab" data-key="structure">3D structure</a></li>
+            <li><a href="#" data-toggle="tab" data-key="browser">Interaction table</a></li>
+            <li><a href="#" data-toggle="tab" data-key="diagrams">Residue 2D plots</a></li>
+            <li><a href="#" data-toggle="tab" data-key="table">Residue table</a></li>
+        </ul>
+        <div id="slot-left" class="pane-slot"></div>
+    </div>
+    <div class="col-md-6">
+        <ul class="nav nav-tabs" data-side="right">
+            <li><a href="#" data-toggle="tab" data-key="ligand">Ligand info</a></li>
+            <li><a href="#" data-toggle="tab" data-key="structure">3D structure</a></li>
+            <li class="active"><a href="#" data-toggle="tab" data-key="browser">Interaction table</a></li>
+            <li><a href="#" data-toggle="tab" data-key="diagrams">Residue 2D plots</a></li>
+            <li><a href="#" data-toggle="tab" data-key="table">Residue table</a></li>
+        </ul>
+        <div id="slot-right" class="pane-slot"></div>
+    </div>
+</div>
+
+<div id="panel-reserve" style="position:absolute; visibility:hidden; width:650px; max-height:0; overflow:hidden;"></div>
+
+<div id="panel-structure">
+    <div style="width:90%; margin:0 auto; padding-top:10px;">
+        <div id="viewport_full" style="width:100%; aspect-ratio: 5 / 4;">
+        </div>
+        <div style="width:100%; background-color:#eaeaea; border-radius: 0px 0px 5px 5px;">
+            <p style="padding: 2px 0px 2px 5px; font-size: 10px;"><a href="https://github.com/arose/ngl">NGL</a> is a WebGL based 3D viewer powered by <a href="https://mmtf.rcsb.org">MMTF</a>.</p>
+        </div>
+        <div style="display:flex; justify-content:center; gap:10px; padding-top:10px;">
+            <button id="fullscreen_full" class="btn btn-primary">Full Screen</button>
+            <a href="pdb?pdb={{ pdbname }}" class="btn btn-primary" target="_blank">Download PDB file</a>
+        </div>
+    </div>
+</div>
+
+<div id="panel-browser">
+    <div style="padding-top:10px;">
+        <a href="excel/{{pdbname}}" class="btn btn-primary">Download list in excel</a>
+    </div>
+    <div class="row">
+        <div style="width:96%; margin:0 auto;" class="text-center">
+            {% if residues %}
+            <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;">
+                <table width="100%" class="display" id="residues">
+
+                    <thead>
+                        <tr>
+                            <th>Ligand</th>
+                            <th>Amino Acid</th>
+                            <th>Generic Number</th>
+                            <th>Segment</th>
+                            <th>Interaction Type</th>
+                        </tr>
+                        <tr>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                        </tr>
+                        <tr>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    {% for residue in residues %}
+                    <tr data-ligand-id="{{ residue.ligand_id }}">
+                    <td class="expand"><a class="struct" {% if residue.ligand_type == 'peptide' and residue.ligand_sequence %}data-ligand-type="peptide" data-sequence="{{ residue.ligand_sequence }}"{% else %}rel="Generate_from_SMILES" data-ligand-type="smiles" data-smiles="{{ residue.ligand_smiles }}"{% endif %} href="/ligand/{{ residue.ligand_id }}/info" target="_blank">{{residue.ligand|safe}}</a></td>
+                    <td>{{residue.aa}}{{residue.pos}}</td>
+                    <td>{{residue.gpcrdb}}</td>
+                    <td>{{residue.segment}}</td>
+                    <td class="expand">{{residue.type}}</td>
+                    {% endfor %}
+                </table>
+            </div>
+        {% else %}
+            <p> Ooops! There is no data to show here yet. </p>
+        {% endif %}
+
+        </div>
+    </div>
+</div>
+
+<div id="panel-ligand">
         {% for ligand in ligands %}
+        <div data-ligand-id="{{ ligand.id }}">
         <div class="row">
-            <div class="col-md-2 text-left text-info">
-                <h4>{{ligand}}</h4>
+            <div class="col-md-10 col-md-offset-1 text-info">
+                <div style="display:flex; align-items:center; justify-content:center;">
+                    <div style="width:50%; min-width:0; text-align:center; overflow-wrap:break-word; word-break:break-word;">
+                        <h4><a href="/ligand/{{ ligand.id }}/info" target="_blank">{{ligand.name|safe}}</a></h4>
+                    </div>
+                    <div style="width:50%; min-width:0; text-align:center;">
+                        <div class="ligand-structure-preview" data-smiles="{{ ligand.smiles }}" data-sequence="{{ ligand.sequence }}" data-ligand-type="{{ ligand.ligand_type }}"></div>
+                    </div>
+                </div>
             </div>
         </div>
         <div class="row">
-            <div class="col-md-5 text-center text-info">
-                3D interaction viewer
-<!--                  <div style="height: 380px; width: 400px; position: relative;" class='viewer_3Dmoljs'  data-backgroundcolor='0xffffff' data-href='download?ligand={{ ligand }}&pdb={{ pdbname }}' data-type='pdb' data-backgroundcolor='0xffffff' data-labelres1='fontSize:10;opacity:1;color:white;backgroundOpacity:0.8' data-select1='{"hetflag":false}' data-style1='stick' data-select2='{"hetflag":true}' data-style2='{"stick":{"colorscheme":"greenCarbon"}}'></div>
- -->
-                 <a href="download?ligand={{ ligand }}&pdb={{ pdbname }}">Download PDB file</a>
-                 {% if multiple_ligands %}
-                 <div id="viewport_{{ forloop.counter }}" style="width:100%; height:300px;"></div>
+            <div class="col-md-10 col-md-offset-1 text-center text-info" style="padding-top:15px;">
+                 <div id="viewport_{{ forloop.counter }}" style="width:100%; height:400px;"></div>
                  <div style="width:100%; background-color:#eaeaea; border-radius: 0px 0px 5px 5px; text-align: left;">
                     <p style="padding: 2px 0px 2px 5px; font-size: 10px;"><a href="https://github.com/arose/ngl">NGL</a><font color='black'> is a WebGL based 3D viewer powered by </font><a href="https://mmtf.rcsb.org">MMTF</a>.</p>
                  </div>
-                 <div> <button id="fullscreen_{{ forloop.counter }}">Full Screen</button></div>
-                 {% else %}
-                 <div id="viewport" style="width:100%; height:300px;"></div>
-                 <div style="width:100%; background-color:#eaeaea; border-radius: 0px 0px 5px 5px; text-align: left;">
-                    <p style="padding: 2px 0px 2px 5px; font-size: 10px;"><a href="https://github.com/arose/ngl">NGL</a><font color='black'> is a WebGL based 3D viewer powered by </font><a href="https://mmtf.rcsb.org">MMTF</a>.</p>
+                 <div style="display:flex; justify-content:center; gap:10px; padding-top:10px;">
+                    <button id="fullscreen_{{ forloop.counter }}" class="btn btn-primary">Full Screen</button>
+                    <a href="download?ligand={{ ligand.name }}&pdb={{ pdbname }}" class="btn btn-primary" target="_blank">Download PDB file</a>
                  </div>
-                 <div> <button id="fullscreen">Full Screen</button></div>
-                 {% endif %}
             </div>
 {% comment %}
               {# PoseView has been pending for years #}
@@ -261,36 +394,43 @@ canvas {
 
               <!-- <button style="width:220px;" onclick="ajaxInteractionsLigand('{{ protein.entry_name }}','{{structure.structure_ligand_pair__ligand__name}}')">Color diagrams with interactions</button><br> -->
 <br>
+        </div>
 {% empty %}
     No structures yet.
 {% endfor %}
+</div>
 
-<h2>Residue Diagrams</h2>
-<div class="row">
-    <div class="col-md-10 text-center">
-        {{ helixbox }}
-        <br>
-        Download:
-        <a href="javascript:saveSvgAsPng(document.getElementById('helixbox'), 'helixbox{{ pdbname }}.png', {scale: 3});">PNG</a> |
-        <a id=helix_svg_link href-lang="image/svg+xml" href="" download="helixbox{{ p.pdbname }}">SVG</a>
+<div id="panel-diagrams">
+    <div class="row">
+    <div class="col-md-10 col-md-offset-1 text-center">
+        <div style="margin-bottom:-10px;">
+            <strong>Snake plot</strong> &mdash; Download:
+            <a href="javascript:saveSvgAsPng(document.getElementById('snakeplot'), 'snake_{{ pdbname }}.png', {scale: 3});">PNG</a> |
+            <a id=snake_svg_link href-lang="image/svg+xml" href="" download="snake_{{ p.pdbname }}">SVG</a>
+        </div>
+        {{ snakeplot }}
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-10 col-md-offset-1 text-center">
+            <strong>Helix box plot</strong> &mdash; Download:
+            <a href="javascript:saveSvgAsPng(document.getElementById('helixbox'), 'helixbox{{ pdbname }}.png', {scale: 3});">PNG</a> |
+            <a id=helix_svg_link href-lang="image/svg+xml" href="" download="helixbox{{ p.pdbname }}">SVG</a>
+            {{ helixbox }}
+        </div>
     </div>
 </div>
 
-<div class="row">
-<div class="col-md-10 text-center">
-    {{ snakeplot }}
-    <br>
-    Download:
-    <a href="javascript:saveSvgAsPng(document.getElementById('snakeplot'), 'snake_{{ pdbname }}.png', {scale: 3});">PNG</a> |
-    <a id=snake_svg_link href-lang="image/svg+xml" href="" download="snake_{{ p.pdbname }}">SVG</a>
+<div id="panel-table">
+    <div class="row">
+        <div style="display:flex; justify-content:center; align-items:center; gap:20px;">
+            <div>
+            {% include "residue/residue_table_only.html" with header=header segments=segments data=data onlymutants=1 %}
+            </div>
+        </div>
     </div>
 </div>
-
-<h2>Residue Table</h2>
-<div class="col-md-10">
-{% include "residue/residue_table_only.html" with header=header segments=segments data=data onlymutants=1 %}
-</div>
-
 
 {% endblock %}
 {% block addon_js %}
@@ -306,6 +446,9 @@ canvas {
 <script src="{% static 'home/js/selection.js' %}"> </script>
 <script src="{% static 'home/js/table2csv.js' %}"> </script>
 <script src="{% static 'home/js/phylo_tree.js' %}"></script>
+<script src="{% static 'home/js/openchemlib-full.js' %}"></script> <!-- For rendering image from SMILES -->
+<script src="{% static 'home/js/compoundPreviewTooltip.js' %}"></script>
+<script src="{% static 'home/js/PeptideLayoutEngine.js' %}"></script> <!-- For rendering peptide/protein ligand structures -->
 <script>
   // Function to download the image
   function downloadSVG(svgElementId, filename, format = 'svg') {
@@ -352,10 +495,22 @@ canvas {
 </script>
 
     <script>
+      // Single source of truth for everything Python hands to this page's JS - see
+      // the json_script tag rendered just above the ligand-switcher markup. Assigned
+      // synchronously here (not inside $(document).ready below) because later inline
+      // <script> tags further down the page run immediately as the parser reaches
+      // them, before any deferred ready()/DOMContentLoaded callback fires.
+      PAGE_DATA = JSON.parse(document.getElementById('structure-page-data').textContent);
+      NUMBER_OF_SCHEMES = PAGE_DATA.number_of_schemes;
+      INTERACTIONS = PAGE_DATA.residues;
+
+      var ACTIVE_LIGAND_COLOR = '#E53935';
+      activeLigandId = PAGE_DATA.ligands.length ? PAGE_DATA.ligands[0].id : null;
+
       $(document).ready(function() {
             var table = $('#residues').DataTable({
                 "scrollX": true,
-                "scrollY": 600,
+                "scrollY": 450,
                 "bScrollCollapse": true,
                 'paging': false,
                 orderCellsTop: true,
@@ -383,12 +538,75 @@ canvas {
             });
 
             $('[data-toggle="tooltip"]').tooltip();
+            compoundPreview("a.struct");
 
-            function ajaxInteractions(plotid) {
-                interactions = {{ residues|safe }};
+            // The helixbox SVG only has width/height attributes, no viewBox - without one,
+            // CSS-resizing it just clips the content instead of scaling it proportionally.
+            // It also draws with a lot of unused canvas (mostly on the right); crop to the
+            // actual rendered content's bounding box instead of the full declared canvas.
+            var $helixbox = $('#helixbox');
+            if ($helixbox.length && !$helixbox.attr('viewBox')) {
+                try {
+                    var bbox = document.getElementById('helixbox').getBBox();
+                    var pad = 10;
+                    $helixbox.attr('viewBox', (bbox.x - pad) + ' ' + (bbox.y - pad) + ' ' + (bbox.width + pad * 2) + ' ' + (bbox.height + pad * 2));
+                } catch (e) {
+                    var hbWidth = $helixbox.attr('width');
+                    var hbHeight = $helixbox.attr('height');
+                    if (hbWidth && hbHeight) {
+                        $helixbox.attr('viewBox', '0 0 ' + hbWidth + ' ' + hbHeight);
+                    }
+                }
+            }
+
+            $('.ligand-structure-preview').each(function(){
+                var $el = $(this);
+                var smiles = $el.data('smiles');
+                var sequence = $el.data('sequence');
+                var ligandType = $el.data('ligand-type');
+                if (String(ligandType).toLowerCase() === 'peptide' && sequence && typeof PeptideLayoutEngine !== 'undefined') {
+                    try {
+                        var peptideDrawer = new PeptideLayoutEngine({
+                            fixedWidth: 220, fixedHeight: 220,
+                            residuesPerRow: 8, rowSpacingFactor: 1.3
+                        });
+                        var cleanedSequence = String(sequence).replace(/\s+/g, '').toUpperCase();
+                        var svgElement = peptideDrawer.generateSvgElement(cleanedSequence);
+                        if (svgElement) $el.html(svgElement.outerHTML);
+                    } catch (e) {
+                        console.error("Peptide structure render error:", e, "sequence:", sequence);
+                    }
+                } else if (smiles && typeof OCL !== 'undefined') {
+                    try {
+                        var mol = OCL.Molecule.fromSmiles(smiles);
+                        mol.inventCoordinates();
+                        var svg = mol.toSVG(200, 200, null, {
+                            autoCrop: true, noStereoProblem: true,
+                            suppressChiralText: true, suppressCIPParity: true, suppressESR: true
+                        });
+                        $el.html(svg);
+                    } catch (e) {
+                        console.error("Ligand structure render error:", e, "SMILES:", smiles);
+                    }
+                }
+            });
+
+            // Positions (by `keyName`, e.g. 'wt_pos' or 'pos') that the given ligand touches.
+            // Declared without `var`/`function` so it's a global, callable from the other
+            // script block (the 3D structure setup) too.
+            positionsForLigand = function(interactions, keyName, ligandId) {
+                var positions = {};
+                interactions.forEach(function(val) {
+                    if (String(val['ligand_id']) === String(ligandId)) positions[val[keyName]] = true;
+                });
+                return positions;
+            };
+
+            function applyDiagramColoring(plotid) {
+                var activePositions = positionsForLigand(INTERACTIONS, 'wt_pos', activeLigandId);
                 count = [];
                 output = [];
-                $.each( interactions, function( index, val ) {
+                $.each( INTERACTIONS, function( index, val ) {
                   key = val['wt_pos'];
 
                   if (key in count) {
@@ -401,9 +619,9 @@ canvas {
 
                     extra = "\n" + String(count[key]) + " interactions | Type: "+ output[key];
 
-
-                    $('#'+plotid).find("#"+key).css("fill", "#E60A0A");
-                    $('#'+plotid).find("#"+key).next().css("fill", "#FDFF7B");
+                    var active = !!activePositions[key];
+                    $('#'+plotid).find("#"+key).css("fill", active ? ACTIVE_LIGAND_COLOR : "");
+                    $('#'+plotid).find("#"+key).next().css("fill", active ? "#FDFF7B" : "");
 
                     original_title = $('#'+plotid).find("#"+key).attr('original_title')
 
@@ -415,8 +633,71 @@ canvas {
                 $("circle").tooltip('fixTitle');
                 $("text").tooltip('fixTitle');
               }
-              ajaxInteractions('snakeplot')
-              ajaxInteractions('helixbox')
+
+              // Hides residue-table rows the active ligand doesn't touch, and hides a
+              // segment's header row too if none of its rows remain visible.
+              function filterResidueTableByLigand() {
+                  var activePositions = positionsForLigand(INTERACTIONS, 'pos', activeLigandId);
+                  var $segmentHeader = null;
+                  var segmentHasVisibleRow = false;
+                  $('#panel-table table > tbody > tr, #panel-table table > tr').each(function() {
+                      var $tr = $(this);
+                      var $lastCell = $tr.find('td:last');
+                      var idMatch = ($lastCell.attr('id') || '').match(/^P\d+R(\d+)$/);
+                      if (idMatch) {
+                          var visible = !!activePositions[idMatch[1]];
+                          $tr.toggle(visible);
+                          $lastCell.css({
+                              'background-color': visible ? ACTIVE_LIGAND_COLOR : '',
+                              'color': visible ? '#ffffff' : ''
+                          });
+                          if (visible) segmentHasVisibleRow = true;
+                      } else if ($tr.find('th.row-header').length) {
+                          if ($segmentHeader) $segmentHeader.toggle(segmentHasVisibleRow);
+                          $segmentHeader = $tr;
+                          segmentHasVisibleRow = false;
+                      }
+                  });
+                  if ($segmentHeader) $segmentHeader.toggle(segmentHasVisibleRow);
+              }
+
+              filterInteractionTable = function() {
+                  if (table) table.draw();
+              };
+
+              filterLigandInfoBlocks = function() {
+                  $('#panel-ligand > [data-ligand-id]').hide();
+                  $('#panel-ligand > [data-ligand-id="' + activeLigandId + '"]').show();
+                  // The just-shown block's NGL viewport was sized while hidden (0px) - it
+                  // needs an explicit resize now that it's actually visible.
+                  if (typeof resizeStages === 'function') resizeStages();
+              };
+
+              $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
+                  if (settings.nTable.id !== 'residues') return true;
+                  var rowNode = table.row(dataIndex).node();
+                  if (!rowNode) return true;
+                  return String($(rowNode).data('ligand-id')) === String(activeLigandId);
+              });
+
+              setActiveLigand = function(id) {
+                  activeLigandId = id;
+                  $('.ligand-switch-btn').removeClass('active btn-success').addClass('btn-default');
+                  $('.ligand-switch-btn[data-ligand-id="' + id + '"]').addClass('active btn-success').removeClass('btn-default');
+                  applyDiagramColoring('snakeplot');
+                  applyDiagramColoring('helixbox');
+                  filterResidueTableByLigand();
+                  filterInteractionTable();
+                  filterLigandInfoBlocks();
+                  if (typeof applyActiveLigandToStructure === 'function') applyActiveLigandToStructure();
+              };
+
+              $('.ligand-switch-btn').on('click', function(e) {
+                  e.preventDefault();
+                  setActiveLigand($(this).data('ligand-id'));
+              });
+
+              if (activeLigandId !== null) setActiveLigand(activeLigandId);
             });
 
     </script>
@@ -425,7 +706,7 @@ canvas {
     // {32: 'T32 1x28', 33: 'V33 1x29', 34: 'S34 1x30', 35: 'Y35 1x31', 36: 'Q36 1x32',
     // 37: 'V37 1x33', 38: 'I38 1x34', 39: 'T39 1x35', 40: 'S40 1x36', 41: 'L41 1x37',
     // 42: 'L42 1x38', 43: 'L43 1x39', 44: 'G44 1x40', 45: 'T45 1x41', 46: 'L46 1x42'}
-    var residues_lookup = {{ residues_lookup|safe }};
+    var residues_lookup = PAGE_DATA.residues_lookup;
 
     function getPickingMessage( d, prefix ){
         var msg;
@@ -461,8 +742,25 @@ canvas {
     }
 
     document.addEventListener( "DOMContentLoaded", function(){
+        var ligandStages = [];
+
+        // Toggles each ligand's own binding-site representations on/off based on
+        // activeLigandId; only populated when there's more than one ligand.
+        applyActiveLigandToStructure = function() {
+            if (typeof ligandRepsByLigandId === 'undefined') return;
+            Object.keys(ligandRepsByLigandId).forEach(function(lid) {
+                var visible = String(lid) === String(activeLigandId);
+                ligandRepsByLigandId[lid].forEach(function(rep) { rep.setVisibility(visible); });
+            });
+            // setVisibility() alone doesn't always trigger an immediate redraw when called
+            // outside NGL's own signal flow - force one explicitly.
+            if (stage_full && stage_full.viewer && stage_full.viewer.requestRender) {
+                stage_full.viewer.requestRender();
+            }
+        };
+
         stage_full = new NGL.Stage( "viewport_full", { backgroundColor: "white" } );
-        stage_full.loadFile( "pdb?pdb={{ pdbname }}", { ext: "pdb" } ).then( function( o ){
+        stage_full.loadFile( "pdb?pdb=" + PAGE_DATA.pdbname, { ext: "pdb", defaultRepresentation: false } ).then( function( o ){
 
             o.addRepresentation( "cartoon", {
                 color: "residueindex", aspectRatio: 4, scale: 0.5
@@ -470,37 +768,47 @@ canvas {
             o.addRepresentation( "rope", {
                 color: "residueindex", visible: false
             } );
-            {% if multiple_ligands %}
-              var pdb_ligs = {{main_ligand|safe}};
-              for (i=0; i<pdb_ligs.length; i++){
-                o.addRepresentation("ball+stick", { sele: pdb_ligs[i], scale: 1, aspectRatio: 1 } );
-                o.addRepresentation("surface", { sele: pdb_ligs[i], opacity: 0.4, useWorker: false } );
-                o.addRepresentation( "licorice", { sele: "({{display_res}}) and sidechainAttached" , scale: 2, aspectRatio: 1});
-                o.addRepresentation( "label", {
-                    sele: "({{display_res}}) and .CB",
-                    color: "#113", scale: 2.0
-                } );
-                o.addRepresentation( "label", {
-                    sele: "[pdb_ligs[i]] and .C1",
-                    color: "#888", scale: 3.0, labelType: "resname"
-                } );
-              }
-            {% else %}
-              {% if main_ligand != 'none' %}
-                o.addRepresentation("ball+stick", { sele: "[{{ main_ligand}}]", scale: 1, aspectRatio: 1 } );
-                o.addRepresentation("surface", { sele: "[{{ main_ligand}}]", opacity: 0.4, useWorker: false } );
-                o.addRepresentation( "licorice", { sele: "({{display_res}}) and sidechainAttached" , scale: 2, aspectRatio: 1});
-                o.addRepresentation( "label", {
-                    sele: "({{display_res}}) and .CB",
-                    color: "#113", scale: 2.0
-                } );
-                o.addRepresentation( "label", {
-                    sele: "[{{ main_ligand}}] and .C1",
-                    color: "#888", scale: 3.0, labelType: "resname"
-                } );
-              {% endif %}
-            {% endif %}
+            // One loop handles 1 ligand or several identically - no need for Django to pick
+            // between two hand-written branches. `[code]` (bracketed) is NGL's residue-name
+            // selection syntax; the old multi-ligand branch used a bare, unbracketed form.
+            // Each ligand is wrapped in its OWN try/catch - a failure building one ligand's
+            // (e.g. a peptide whose pdb_reference code doesn't resolve to a clean selection)
+            // must not abort the forEach and leave later ligands' reps untracked, since an
+            // untracked rep can never be hidden by applyActiveLigandToStructure().
+            ligandRepsByLigandId = {};
+            PAGE_DATA.ligands.forEach(function(ligand) {
+                if (!ligand.pdb_reference) return;
+                try {
+                    var sele = "[" + ligand.pdb_reference + "]";
+                    var ligandPositions = Object.keys(positionsForLigand(INTERACTIONS, 'pos', ligand.id));
+                    var ligandDisplayRes = ligandPositions.join(' or ');
+                    // Set the correct visibility as a creation-time parameter rather than
+                    // relying only on the later setVisibility() call below - an expensive
+                    // representation like `surface` isn't necessarily done building by the
+                    // time addRepresentation() returns, and its own completion can repaint
+                    // it visible regardless of an earlier setVisibility(false).
+                    var isActive = String(ligand.id) === String(activeLigandId);
+                    var reps = [];
+                    reps.push(o.addRepresentation("ball+stick", { sele: sele, scale: 1, aspectRatio: 1, visible: isActive } ));
+                    reps.push(o.addRepresentation("surface", { sele: sele, opacity: 0.4, useWorker: false, visible: isActive } ));
+                    if (ligandDisplayRes) {
+                        reps.push(o.addRepresentation( "licorice", { sele: "(" + ligandDisplayRes + ") and sidechainAttached" , scale: 2, aspectRatio: 1, visible: isActive}));
+                        reps.push(o.addRepresentation( "label", {
+                            sele: "(" + ligandDisplayRes + ") and .CB",
+                            color: "#113", scale: 2.0, visible: isActive
+                        } ));
+                    }
+                    reps.push(o.addRepresentation( "label", {
+                        sele: sele + " and .C1",
+                        color: "#888", scale: 3.0, labelType: "resname", visible: isActive
+                    } ));
+                    ligandRepsByLigandId[ligand.id] = reps;
+                } catch (e) {
+                    console.error("Failed to build 3D representations for ligand", ligand.name, e);
+                }
+            });
             o.centerView();
+            if (typeof setActiveLigand === 'function' && activeLigandId !== null) setActiveLigand(activeLigandId);
         } );
 
         stage_full.signals.clicked.add( function( d ){
@@ -516,82 +824,89 @@ canvas {
             stage_full.toggleFullscreen();
         } );
         // stage_full.setSpin( [ 0, 1, 0 ], 0.005 );
-        // HERE WE NEED TO DIVERISFY
-        {% if multiple_ligands %}
-          var pdb_ligs = {{main_ligand|safe}};
-          var pdb_ligs_full = {{main_ligand_full|safe}};
-          for (i=0; i<pdb_ligs.length; i++){
-              var k = i + 1;
-              stage = new NGL.Stage( "viewport_"+k, { backgroundColor: "white" } );
-              stage.loadFile( "download?ligand="+pdb_ligs_full[i]+"&pdb={{ pdbname }}", { ext: "pdb" }  ).then( function( o ){
+        // Same per-ligand loop as above, used for the small per-ligand viewports on the Ligand info tab.
+        PAGE_DATA.ligands.forEach(function(ligand, index) {
+            if (!ligand.pdb_reference) return;
+            var k = index + 1;
+            var sele = "[" + ligand.pdb_reference + "]";
+            let stage = new NGL.Stage( "viewport_"+k, { backgroundColor: "white" } );
+            ligandStages.push(stage);
+            stage.loadFile( "download?ligand="+ligand.name+"&pdb="+PAGE_DATA.pdbname, { ext: "pdb", defaultRepresentation: false } ).then( function( o ){
 
-                  o.addRepresentation( "ball+stick", { sele: pdb_ligs[i], scale: 1, aspectRatio: 1 } );
-                  // o.addRepresentation( "surface", { sele: pdb_ligs[i], opacity: 0.4, useWorker: false } );
-                  o.addRepresentation( "licorice", { sele: "sidechainAttached and not "+pdb_ligs[i] , scale: 2, aspectRatio: 1});
-                  o.addRepresentation( "label", { sele: ".CB", color: "#113", scale: 2.0} );
-                  // o.addRepresentation( "label", {
-                  //    sele: pdb_ligs[i]+" and .C1",
-                  //    color: "#888", scale: 3.0, labelType: "resname"
-                  // } );
+                o.addRepresentation( "ball+stick", { sele: sele, scale: 1, aspectRatio: 1 } );
+                o.addRepresentation( "licorice", { sele: "sidechainAttached and not "+sele , scale: 2, aspectRatio: 1});
+                o.addRepresentation( "label", { sele: ".CB", color: "#113", scale: 2.0} );
 
-                  o.centerView();
-              } );
+                o.centerView();
+            } );
 
-              // stage.setSpin( [ 0, 1, 0 ], 0.005 );
+            $( "#fullscreen_"+k ).click(function() {
+                stage.toggleFullscreen();
+            });
 
-              $( "#fullscreen_"+k ).click(function() {
-                  stage.toggleFullscreen();
-              });
+            stage.signals.clicked.add( function( d ){
+                $('#clicked_two').html(getPickingMessage( d, "Clicked" ));
+            } );
+            stage.signals.hovered.add( function( d ){
+                $('#hovered_two').html(getPickingMessage( d, "Hovered" ));
+            } );
 
-              stage.signals.clicked.add( function( d ){
-                  $('#clicked_two').html(getPickingMessage( d, "Clicked" ));
-              } );
-              stage.signals.hovered.add( function( d ){
-                  $('#hovered_two').html(getPickingMessage( d, "Hovered" ));
-              } );
+            $('#viewport'+k).find("canvas").after("<div class='overlay'><span id='clicked_two'>&nbsp;</span> | <span id='hovered_two'>&nbsp;</span></div>");
+        });
 
-              $('#viewport'+k).find("canvas").after("<div class='overlay'><span id='clicked_two'>&nbsp;</span> | <span id='hovered_two'>&nbsp;</span></div>");
+        var PANEL_IDS = {structure: 'panel-structure', browser: 'panel-browser', ligand: 'panel-ligand', diagrams: 'panel-diagrams', table: 'panel-table'};
+        var paneState = {left: 'structure', right: 'browser'};
 
-          }
-        {% else %}
-          {% if main_ligand != 'none' %}
-          stage = new NGL.Stage( "viewport", { backgroundColor: "white" } );
-          stage.loadFile( "download?ligand={{ main_ligand_full }}&pdb={{ pdbname }}", { ext: "pdb" }  ).then( function( o ){
+        // Declared without `function`/`var` so it's a global, callable from the other
+        // script block too (e.g. after showing a ligand-info block that was hidden).
+        resizeStages = function(){
+            if (stage_full) stage_full.handleResize();
+            ligandStages.forEach(function(s){ if (s) s.handleResize(); });
+            if ($.fn.dataTable.isDataTable('#residues')) $('#residues').DataTable().columns.adjust();
+        };
 
+        function renderPanes(){
+            ['left', 'right'].forEach(function(side){
+                var key = paneState[side];
+                var $slot = $('#slot-' + side);
+                $('#' + PANEL_IDS[key]).appendTo($slot);
+                $slot.removeClass('pane-slot--capped pane-slot--capped-tall');
+                if (key === 'browser') {
+                    $slot.addClass('pane-slot--capped-tall');
+                } else if (key !== 'diagrams') {
+                    $slot.addClass('pane-slot--capped');
+                }
+                $('.nav-tabs[data-side="' + side + '"] li').removeClass('active');
+                $('.nav-tabs[data-side="' + side + '"] a[data-key="' + key + '"]').parent().addClass('active');
+            });
+            Object.keys(PANEL_IDS).forEach(function(k){
+                if (k !== paneState.left && k !== paneState.right) $('#' + PANEL_IDS[k]).appendTo('#panel-reserve');
+            });
+            resizeStages();
+        }
 
-              o.addRepresentation("ball+stick", { sele: "{{ main_ligand}}", scale: 1, aspectRatio: 1 } );
-              o.addRepresentation("surface", { sele: "{{ main_ligand}}", opacity: 0.4,
-                                              useWorker: false } );
-              o.addRepresentation( "licorice", { sele: "sidechainAttached and not {{ main_ligand}}" , scale: 2, aspectRatio: 1});
-              o.addRepresentation( "label", {
-                  sele: ".CB",
-                  color: "#113", scale: 2.0
-              } );
-              o.addRepresentation( "label", {
-                  sele: "{{ main_ligand}} and .C1",
-                  color: "#888", scale: 3.0, labelType: "resname"
-              } );
+        var resizeDebounceTimer = null;
+        $(window).on('resize', function(){
+            clearTimeout(resizeDebounceTimer);
+            resizeDebounceTimer = setTimeout(resizeStages, 150);
+        });
 
-              o.centerView();
-          } );
+        $('.nav-tabs a[data-toggle="tab"]').on('click', function(e){
+            e.preventDefault();
+            var side = $(this).closest('.nav-tabs').data('side');
+            var other = side === 'left' ? 'right' : 'left';
+            var key = $(this).data('key');
+            if (paneState[other] === key) {
+                var tmp = paneState[side];
+                paneState[side] = key;
+                paneState[other] = tmp;
+            } else {
+                paneState[side] = key;
+            }
+            renderPanes();
+        });
 
-          // stage.setSpin( [ 0, 1, 0 ], 0.005 );
-
-          $( "#fullscreen" ).click(function() {
-              stage.toggleFullscreen();
-          });
-
-          stage.signals.clicked.add( function( d ){
-              $('#clicked_two').html(getPickingMessage( d, "Clicked" ));
-          } );
-          stage.signals.hovered.add( function( d ){
-              $('#hovered_two').html(getPickingMessage( d, "Hovered" ));
-          } );
-
-          $('#viewport').find("canvas").after("<div class='overlay'><span id='clicked_two'>&nbsp;</span> | <span id='hovered_two'>&nbsp;</span></div>");
-
-          {% endif %}
-        {% endif %}
+        renderPanes();
     });
 </script>
   

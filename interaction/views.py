@@ -17,7 +17,6 @@ from common.tools import fetch_from_web_api
 from common.diagrams_gpcr import DrawHelixBox, DrawSnakePlot
 from common.selection import Selection, SelectionItem
 from common import definitions
-from common.views import AbsTargetSelection
 from contactnetwork.models import Interaction
 
 import os
@@ -1230,51 +1229,8 @@ def regexaa(aa):
             return None, None, None
 
 
-class InteractionSelection(AbsTargetSelection):
-
-    # Left panel
-    step = 1
-    number_of_steps = 1
-    docs = 'generic_numbering.html'  # FIXME
-
-    # description = 'Select receptors to index by searching or browsing in the middle column. You can select entire' \
-    #     + ' receptor families and/or individual receptors.\n\nSelected receptors will appear in the right column,' \
-    #     + ' where you can edit the list.\n\nSelect which numbering schemes to use in the middle column.\n\nOnce you' \
-    #     + ' have selected all your receptors, click the green button.'
-
-    description = 'Select the structure of interest by using the dropdown in the middle. The selection if viewed to the right and the interactions will be loaded immediately.'
-
-    # Middle section
-    numbering_schemes = False
-    filters = False
-    search = False
-    title = "Select a structure based on PDB-code"
-
-    template_name = 'interaction/interactionselection.html'
-
-    selection_boxes = OrderedDict([
-        ('reference', False),
-        ('targets', True),
-        ('segments', False),
-    ])
-
-    # Buttons
-    buttons = {
-        'continue': {
-            'label': 'Show interactions',
-            'onclick': 'submitupload()',
-            'color': 'success',
-        }
-    }
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-
-        context['structures'] = ResidueFragmentInteraction.objects.values('structure_ligand_pair__structure__pdb_code__index', 'structure_ligand_pair__structure__protein_conformation__protein__parent__entry_name').annotate(
-            num_ligands=Count('structure_ligand_pair', distinct=True), num_interactions=Count('pk', distinct=True)).order_by('structure_ligand_pair__structure__pdb_code__index')
-        context['structure_groups'] = sorted(set([ structure['structure_ligand_pair__structure__pdb_code__index'][0] for structure in context['structures'] ]))
-        context['form'] = PDBform()
-        return context
+def InteractionSelection(request):
+    return render(request, 'interaction/interactionselection.html')
 
 
 def StructureDetails(request, pdbname):
@@ -1286,12 +1242,12 @@ def StructureDetails(request, pdbname):
         structure_ligand_pair__structure__pdb_code__index=pdbname).annotate(numRes=Count('pk', distinct=True)).order_by('-numRes')
     resn_list = ''
 
-
-    main_ligand = []
+    # Maps ligand name -> PDB chemical-component code, used below to build main_ligand/
+    # resn_list in the same order as `ligands` (see note near the bottom of this function).
+    pdb_reference_by_name = {}
     for structure in structures:
         if structure['structure_ligand_pair__annotated']:
-            resn_list += ",\"" + structure['structure_ligand_pair__pdb_reference'] + "\""
-            main_ligand.append(structure['structure_ligand_pair__pdb_reference'])
+            pdb_reference_by_name[structure['structure_ligand_pair__ligand__name']] = structure['structure_ligand_pair__pdb_reference']
 
     crystal = Structure.objects.get(pdb_code__index=pdbname)
     if pdbname.startswith('AFM'):
@@ -1312,8 +1268,8 @@ def StructureDetails(request, pdbname):
         structure_ligand_pair__structure__pdb_code__index=pdbname, structure_ligand_pair__annotated=True).exclude(interaction_type__type ='hidden').order_by('rotamer__residue__sequence_number')
     residues_browser = []
     ligands = []
+    seen_ligand_names = set()
     display_res = []
-    main_ligand_full = []
     residue_table_list = []
     for residue in residues:
         key = residue.interaction_type.name
@@ -1333,9 +1289,14 @@ def StructureDetails(request, pdbname):
             display = residue.rotamer.residue.display_generic_number.label
         else:
             display = ''
-        ligand = residue.structure_ligand_pair.ligand.name
+        ligand_obj = residue.structure_ligand_pair.ligand
+        ligand = ligand_obj.name
+        ligand_smiles = ligand_obj.smiles or ''
+        ligand_sequence = ligand_obj.sequence or ''
+        ligand_type = ligand_obj.ligand_type.name if ligand_obj.ligand_type_id else ''
         display_res.append(str(pos))
-        residues_browser.append({'type': key, 'aa': aa, 'ligand': ligand,
+        residues_browser.append({'type': key, 'aa': aa, 'ligand': ligand, 'ligand_id': ligand_obj.id,
+                                 'ligand_smiles': ligand_smiles, 'ligand_sequence': ligand_sequence, 'ligand_type': ligand_type,
                                  'pos': pos, 'wt_pos': wt_pos, 'gpcrdb': display, 'segment': segment})
 
         if pos not in residues_lookup:
@@ -1343,9 +1304,11 @@ def StructureDetails(request, pdbname):
         else:
             residues_lookup[pos] += " interaction " + key
 
-        if ligand not in ligands:
-            ligands.append(ligand)
-            main_ligand_full.append(ligand)
+        if ligand not in seen_ligand_names:
+            seen_ligand_names.add(ligand)
+            ligand_role = residue.structure_ligand_pair.ligand_role.name if residue.structure_ligand_pair.ligand_role_id else ''
+            ligands.append({'name': ligand, 'id': ligand_obj.id, 'smiles': ligand_smiles, 'sequence': ligand_sequence,
+                            'ligand_type': ligand_type, 'role': ligand_role})
     display_res = ' or '.join(display_res)
     # RESIDUE TABLE
     segments = ProteinSegment.objects.all().filter().prefetch_related()
@@ -1427,27 +1390,48 @@ def StructureDetails(request, pdbname):
     HelixBox = DrawHelixBox(
                 residuelist, p.get_protein_class(), str(p), nobuttons=1)
     if not pdbname.startswith('AFM'):
+        from angles.models import get_snake_plot_distance_lookup
         SnakePlot = DrawSnakePlot(
-                    residuelist, p.get_protein_class(), str(p), nobuttons=1)
+                    residuelist, p.get_protein_class(), str(p), nobuttons=1,
+                    residue_distance_lookup=get_snake_plot_distance_lookup(p))
     else:
         SnakePlot = []
-    #adjusting main_ligand and main_ligand_full
-    if len(main_ligand) == 0:
-        multiple_ligands = False
-        main_ligand = "None"
-        main_ligand_full = "None"
-    elif len(main_ligand) == 1:
-        multiple_ligands = False
-        main_ligand = main_ligand[0]
-        main_ligand_full = main_ligand_full[0]
-    else:
-        multiple_ligands = True
+    # resn_list built from `ligands` (rather than the separately-ordered `structures`
+    # query above) so it stays in the same order as `ligands` - previously main_ligand/
+    # main_ligand_full were built from two differently-ordered queries and could silently
+    # mismatch on some structures.
+    resn_list = ''.join(',"{}"'.format(pdb_reference_by_name[l['name']])
+                        for l in ligands if l['name'] in pdb_reference_by_name)
+
+    protein_class_short = p.get_protein_class_from_slug(short=True).split(' ')[0]
+
+    # Single JSON payload for the template's <script> blocks (via the json_script filter),
+    # instead of one `{{ x|safe }}` dump per variable - keeps Django template syntax out of
+    # the JavaScript entirely, and produces real JSON rather than a Python-repr-as-JS hack.
+    page_data = {
+        'pdbname': pdbname,
+        'ligands': [
+            {
+                'id': l['id'], 'name': l['name'],
+                'pdb_reference': pdb_reference_by_name.get(l['name'], ''),
+                'smiles': l['smiles'], 'sequence': l['sequence'],
+                'ligand_type': l['ligand_type'], 'role': l['role'],
+            }
+            for l in ligands
+        ],
+        'residues': residues_browser,
+        'residues_lookup': residues_lookup,
+        'display_res': display_res,
+        'number_of_schemes': len(numbering_schemes),
+    }
 
     return render(request, 'interaction/structure.html', {'pdbname': pdbname, 'structures': structures,
                                                           'crystal': crystal, 'protein': p, 'helixbox' : HelixBox, 'snakeplot': SnakePlot, 'residues': residues_browser, 'residues_lookup': residues_lookup, 'display_res': display_res, 'annotated_resn':
-                                                          resn_list, 'ligands': ligands,'main_ligand' : main_ligand,'main_ligand_full' : main_ligand_full, 'data': context['data'],
+                                                          resn_list, 'ligands': ligands, 'page_data': page_data,
+                                                          'protein_class_short': protein_class_short,
+                                                          'data': context['data'],
                                                           'header': context['header'], 'segments': context['segments'],
-                                                          'number_of_schemes': len(numbering_schemes), "multiple_ligands": multiple_ligands})
+                                                          'number_of_schemes': len(numbering_schemes)})
 
 
 def remove_duplicate_dicts(dict_list):
