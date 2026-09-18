@@ -299,50 +299,6 @@
     setHoveredClass(hoveredClassId);
   }
 
-  function setUniformPointDisplay(uniform) {
-    if (!clusterPlotEl || !currentPayload) return;
-    const points = scatterPoints();
-    if (!points.length) return;
-    if (!uniform) {
-      updateSuperfamilyPointHighlight(hoveredClassId);
-      return;
-    }
-    // Publication export: every dot at the "big" size, none singled out.
-    const markerSizes = points.map(function() { return 48; });
-    const markerLineWidths = points.map(function() { return 2.5; });
-    const markerOpacities = points.map(function() { return 1; });
-    const labelSizes = points.map(function() { return 28; });
-    Plotly.restyle(clusterPlotEl, {
-      'marker.size': [markerSizes],
-      'marker.line.width': [markerLineWidths],
-      'marker.opacity': [markerOpacities],
-    }, [0]);
-    Plotly.restyle(clusterPlotEl, {
-      text: [buildBasePlotLabels(points)],
-      'textfont.size': [labelSizes],
-    }, [1]);
-  }
-
-  async function downloadClusterSvg() {
-    if (!clusterPlotEl || typeof Plotly === 'undefined' || !Plotly.downloadImage) return;
-    setUniformPointDisplay(true);
-    try {
-      await Plotly.downloadImage(clusterPlotEl, {
-        format: 'svg',
-        filename: 'GPCR_Superfamily_Cluster',
-        width: clusterPlotEl.clientWidth || 900,
-        height: clusterPlotEl.clientHeight || 520,
-      });
-    } finally {
-      setUniformPointDisplay(false);
-    }
-  }
-
-  const clusterDownloadBtn = document.getElementById('ncct-cluster-download-svg');
-  if (clusterDownloadBtn) {
-    clusterDownloadBtn.addEventListener('click', downloadClusterSvg);
-  }
-
   function renderStatus(payload) {
     const meta = payload.meta || {};
     const notes = [];

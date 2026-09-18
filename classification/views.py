@@ -787,6 +787,8 @@ class ClassificationVisualizationsLanding(ClassificationVisualizationMixin, Temp
         ctx = super().get_context_data(**kwargs)
         class_buttons = []
         for config in self.list_visualization_classes():
+            if config["key"] == "U":
+                continue
             class_buttons.append({
                 "key": config["key"],
                 "label": config["key"],

@@ -94,7 +94,7 @@
 
         <ul class="nav nav-tabs">
           <li class="active"><a href="#GPCRomewheel_classic_tab" data-toggle="tab">GPCRome wheel</a></li>
-          <li><a href="#GPCRomewheel_odorant_tab" data-toggle="tab">Odorant GPCR wheel</a></li>
+          <li><a href="#GPCRomewheel_odorant_tab" data-toggle="tab">Olfactory wheel</a></li>
         </ul>
 
         <div class="tab-content">
@@ -262,11 +262,6 @@
 
       <div role="tabpanel" class="tab-pane" id="cv-superfamily-cluster-tab">
         <div class="container-fluid ncct-page">
-          <div class="ncct-toolbar" style="text-align:center; margin-bottom:8px;">
-            <button id="ncct-cluster-download-svg" type="button" class="btn btn-primary">
-              <span class="glyphicon glyphicon-download"></span> Download SVG
-            </button>
-          </div>
           <div id="ncct-status" class="ncct-status"></div>
           <div class="ncct-superfamily-shell">
             <div class="ncct-superfamily-side">
@@ -304,7 +299,7 @@
                 <li><strong>Green (ID)</strong> = sequence identity (upper triangle).</li>
                 <li><strong>Blue (SIM)</strong> = sequence similarity (lower triangle).</li>
                 <li>Hover any cell to preview pairs; <strong>click</strong> to lock and open detailed <em>flyout</em>.</li>
-                <li>Use the <strong>Download</strong> buttons to export the heatmap or the flyout as JPG/PNG/SVG.</li>
+                <li>Use the <strong>Download</strong> buttons to export the heatmap or the flyout as SVG/PNG.</li>
                 <li>Use <strong>Include unclassified receptors / Exclude unclassified receptors</strong> to toggle whether <em>(Unclassified)</em> items are shown.</li>
                 <li><strong>Human</strong>: the classes and receptors shown on this page are those found in humans.</li>
               </ul>
@@ -345,16 +340,12 @@
                     </div>
 
                     <button type="button" class="btn btn-primary btn-block"
-                            onclick="DataTablesImage.export('#ccsTable','ccs-table',{ format:'jpg', scale:3, filename:'GPCRdb_CrossClass_TableOnly.jpg' })">
-                      JPG
+                            onclick="DataTablesSVG.export('#ccsTable','ccs-table',{ filename:'GPCRdb_CrossClass_TableOnly.svg' })">
+                      SVG
                     </button>
                     <button type="button" class="btn btn-primary btn-block"
                             onclick="DataTablesImage.export('#ccsTable','ccs-table',{ format:'png', scale:3, filename:'GPCRdb_CrossClass_TableOnly.png' })">
                       PNG
-                    </button>
-                    <button type="button" class="btn btn-primary btn-block"
-                            onclick="DataTablesSVG.export('#ccsTable','ccs-table',{ filename:'GPCRdb_CrossClass_TableOnly.svg' })">
-                      SVG
                     </button>
 
                     <div class="dropdown-divider" style="margin: 10px 0;"></div>
@@ -366,16 +357,12 @@
                     </div>
 
                     <button type="button" class="btn btn-primary btn-block"
-                            onclick="CCSDownload.withBadges('jpg', { scale:3, padTop:60, padLeft:60, tableBackground:'#ffffff', background:null, quality:0.95, filename:'GPCRdb_CrossClass_WithBadges.jpg' })">
-                      JPG
+                            onclick="DataTablesSVG.exportWithBadges('.ccs-axis-wrap', '#ccsTable', 'ccs-heatmap', { padTop:60, padLeft:60, gapX:8, gapY:10, badgeTighten:40, background:null, filename:'GPCRdb_CrossClass_WithBadges.svg' })">
+                      SVG
                     </button>
                     <button type="button" class="btn btn-primary btn-block"
                             onclick="CCSDownload.withBadges('png', { scale:3, padTop:60, padLeft:60, tableBackground:'#ffffff', background:null, filename:'GPCRdb_CrossClass_WithBadges.png' })">
                       PNG
-                    </button>
-                    <button type="button" class="btn btn-primary btn-block"
-                            onclick="DataTablesSVG.exportWithBadges('.ccs-axis-wrap', '#ccsTable', 'ccs-heatmap', { padTop:60, padLeft:60, gapX:8, gapY:10, badgeTighten:40, background:null, filename:'GPCRdb_CrossClass_WithBadges.svg' })">
-                      SVG
                     </button>
                   </div>
                 </div>

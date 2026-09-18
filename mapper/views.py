@@ -79,7 +79,7 @@ class DataMapperHome(TemplateView):
     # (e.g. after a slug/family reclassification).
     _CLASS_A_FAMILIES_IN_CIRCLE_1 = 43
 
-    # Class O2 odorant family numbers (parsed out of "Odorant family N" display names) are
+    # Class O2 odorant family numbers (parsed out of "Olfactory family N" display names) are
     # bucketed into 3 circles purely for wheel layout balance. Assumes family numbers currently
     # run 1-14 with no gaps -- a family number outside these ranges is silently dropped from the
     # wheel rather than erroring (see _bucket_odorant_circles).
@@ -95,8 +95,8 @@ class DataMapperHome(TemplateView):
         "Class B2 (Adhesion)": "B2",
         "Class C (Glutamate)": "C",
         "Class F (Frizzled)": "F",
-        "Class O1 (fish-like odorant)": "O1",
-        "Class O2 (tetrapod specific odorant)": "O2",
+        "Class O1 (Olfactory/extra-nasal 1)": "O1",
+        "Class O2 (Olfactory/extra-nasal 2)": "O2",
         "Class T2 (Taste 2)": "T2",
         "Class V (Vomeronasal)": "V",
         "Unclassified": "U",
@@ -275,13 +275,13 @@ class DataMapperHome(TemplateView):
         for Class, ligand_types in GPCRomeStructureDict.items():
             renamed_class = class_rename_map.get(Class, Class)
 
-            if Class == "Class O2 (tetrapod specific odorant)":
+            if Class == "Class O2 (Olfactory/extra-nasal 2)":
                 sorted_families = []
 
                 for Ligand_type, receptor_families in ligand_types.items():
                     for Receptor_Family, receptors in receptor_families.items():
                         try:
-                            family_number = int(Receptor_Family.replace("Odorant family", "").strip())
+                            family_number = int(Receptor_Family.replace("Olfactory family", "").strip())
                         except ValueError:
                             continue
 
@@ -302,7 +302,7 @@ class DataMapperHome(TemplateView):
 
                     GPCRome_dict.setdefault(circle, {}).setdefault(renamed_class, {}).setdefault(Ligand_type, {})[renamed_family] = receptors
 
-            elif Class == "Class O1 (fish-like odorant)":
+            elif Class == "Class O1 (Olfactory/extra-nasal 1)":
                 renamed_ligand_types = {}
 
                 for Ligand_type, receptor_families in ligand_types.items():
@@ -310,7 +310,7 @@ class DataMapperHome(TemplateView):
 
                     for Receptor_Family, receptors in receptor_families.items():
                         try:
-                            family_number = int(Receptor_Family.replace("Odorant family", "").strip())
+                            family_number = int(Receptor_Family.replace("Olfactory family", "").strip())
                             renamed_family = f"Family {family_number}"
                         except ValueError:
                             renamed_family = Receptor_Family  # fallback to original if parsing fails
@@ -341,7 +341,7 @@ class DataMapperHome(TemplateView):
         # e.g. Classic + Odorant back-to-back) -- a week-long cache is the same low-ceremony pattern
         # already used elsewhere in this codebase for slow-changing reference lookups. Bump the
         # "v1" suffix if the skeleton shape ever changes, as a manual invalidation lever.
-        cache_key = f"gpcrome_data_structure_v1_{data_type}"
+        cache_key = f"gpcrome_data_structure_v2_{data_type}"
         cached = cache.get(cache_key)
         if cached is not None:
             return deepcopy(cached)  # callers mutate the returned dict in place -- never hand out the cached object itself

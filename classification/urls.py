@@ -26,7 +26,7 @@ urlpatterns = [
         ),
         name='classification-gpcrbrowser',
     ),
-    url(r'^Classification[/]?$', views.Classification.as_view(), name='classification-classification'),
+    url(r'^overview[/]?$', views.Classification.as_view(), name='classification-classification'),
     url(r'^visualizations[/]?$', views.ClassificationVisualizationsLanding.as_view(), name='classification-visualizations'),
     url(
         r'^visualizations/class/(?P<class_key>[A-Za-z0-9]+)[/]?$',
