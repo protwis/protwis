@@ -168,8 +168,8 @@
                     <span class="glyphicon glyphicon-download"></span> Download
                   </button>
                   <div class="dropdown-menu dropdown-menu-side dropdown-menu-align-download">
-                    <button type="button" class="btn btn-primary btn-block" onclick="saveSvg(document.getElementById('GPCRome_classic_plot_svg'), 'GPCRome_classic.svg');">SVG</button>
-                    <button type="button" class="btn btn-primary btn-block" onclick="saveSvgAsPng(document.getElementById('GPCRome_classic_plot_svg'), 'GPCRome_classic.png');">PNG</button>
+                    <button type="button" class="btn btn-primary btn-block" onclick="GPCRomeSvgExport.downloadSvg(document.getElementById('GPCRome_classic_plot_svg'), 'GPCRome_classic.svg');">SVG</button>
+                    <button type="button" class="btn btn-primary btn-block" onclick="GPCRomeSvgExport.downloadSvgAsPng(document.getElementById('GPCRome_classic_plot_svg'), 'GPCRome_classic.png');">PNG</button>
                   </div>
                 </div>
 
@@ -247,8 +247,8 @@
                     <span class="glyphicon glyphicon-download"></span> Download
                   </button>
                   <div class="dropdown-menu dropdown-menu-side dropdown-menu-align-download">
-                    <button type="button" class="btn btn-primary btn-block" onclick="saveSvg(document.getElementById('GPCRome_odorant_plot_svg'), 'GPCRome_odorant.svg');">SVG</button>
-                    <button type="button" class="btn btn-primary btn-block" onclick="saveSvgAsPng(document.getElementById('GPCRome_odorant_plot_svg'), 'GPCRome_odorant.png');">PNG</button>
+                    <button type="button" class="btn btn-primary btn-block" onclick="GPCRomeSvgExport.downloadSvg(document.getElementById('GPCRome_odorant_plot_svg'), 'GPCRome_odorant.svg');">SVG</button>
+                    <button type="button" class="btn btn-primary btn-block" onclick="GPCRomeSvgExport.downloadSvgAsPng(document.getElementById('GPCRome_odorant_plot_svg'), 'GPCRome_odorant.png');">PNG</button>
                   </div>
                 </div>
 
@@ -446,6 +446,7 @@
 </script>
 
 <script src="{% static 'home/js/classification/core.js' %}"></script>
+<script src="{% static 'home/js/gpcrome_svg_export.js' %}"></script>
 <script src="{% static 'home/js/classification/wheel.js' %}"></script>
 <script src="{% static 'home/js/classification/matrix.js' %}"></script>
 <script src="{% static 'home/js/classification/cluster.js' %}"></script>

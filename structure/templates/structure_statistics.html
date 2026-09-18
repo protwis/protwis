@@ -12,6 +12,10 @@
 <link rel="stylesheet" href="{% static '/home/css/frameworks/datatables/datatables_bundle.min-2.3.8.css' %}">
 <!-- Select2 CSS -->
 <link rel="stylesheet" href="{% static '/home/css/frameworks/select2/4.1.0/select2.min.css' %}">
+<!-- Spectrum color picker CSS -- loaded without this before, so the picker popup never worked -->
+<link rel="stylesheet" href="{% static 'home/css/Spectrum_1_8_1.css' %}" type="text/css" />
+<!-- Dropdown-positioning + customize-colors picker layout, shared with the classification wheel -->
+<link rel="stylesheet" href="{% static 'home/css/classification/wheel.css' %}">
 
 <style>
     .node circle {
@@ -63,22 +67,6 @@
 
     .label--active {
     font-weight: bold;
-    }
-
-    .wheelBox {
-        display: flex;
-        flex-direction: column;
-        flex-wrap: nowrap;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .controlBox {
-        display: flex;
-        flex-direction: row;
-        flex-wrap: nowrap;
-        align-items: center;
-        justify-content: space-between;
     }
 
     h3.subHeader {
@@ -475,177 +463,131 @@
         <!------------------------------->
 
         <div id="structure_coverage_wheel_pane" class="tab-pane fade in active">
-            <div class="wheelBox">
-                <div id="structure_coverage_wheel" style="padding-top: 10px; font-size: 11px; white-space: nowrap;">
-                    <!-- <h3 class="subHeader">All structures</h3> -->
-                    <div class="controlBox">                        
-                        <span >
-                            Receptor names:
-                            <div class="btn-group" role="group" id="gtp_plus">
-                                <button id="GPCRome_Protein" class="btn btn-info active">Protein</button>
-                                <button id="GPCRome_Entrez" class="btn btn-info">Gene</button>
-                                <!-- <button id="GPCRome_Uniprot" class="btn btn-info ">UniProt</button> -->
-                            </div>
-                        </span>
-                        <span style="padding-top: 5px;">
-                            Icon toggle:
-                            <button id="ToggleIcon" class="btn btn-info active">On</button>
-                        </span>
+            <div class="col-md-12" style="margin-bottom:20px; margin-top:20px;">
+              <div style="display:flex; justify-content:center; align-items:center; gap:15px; flex-wrap:wrap;">
 
-                                                <span>
-                        <span style="margin-left: 15px; display: inline-block;" class="text-center">
-                                <b>Structure coverage</b> <br />
-                                <span class="gprot_green">&#9644; <b>Active</b></span>
-                                <span class="gprot_red">&#9644; <b>Inactive</b></span>
-                                <span class="gprot_blue">&#9644; <b>Both</b></span>
-                            </span>
-                        </span>
-
-                        <span style="margin-left: 30px;">
-                            <span class="dropdown">
-                                <button type="button" class="btn btn-primary dropdown-toggle" style="font-size: 14px;"
-                                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                    <span class="glyphicon glyphicon-download"
-                                        style="vertical-align: top;line-height: 1.3">
-                                    </span> Download <span class="caret"></span>
-                                </button>
-                                <div class="dropdown-menu dropdown-menu-right-middle">
-                                    <li><a class="dropdown-item"
-                                            href="javascript:saveSvg(document.getElementById('GPCRome_plot_svg'), 'GPCRome_plot.svg');">SVG</a>
-                                    </li>
-                                    <li><a class="dropdown-item"
-                                            href="javascript:saveSvgAsPng(document.getElementById('GPCRome_plot_svg'), 'GPCRome_plot.png');">PNG</a>
-                                    </li>
-                                    <li><a class="dropdown-item"
-                                            href="javascript:saveSvgAsJpg(document.getElementById('GPCRome_plot_svg'), 'GPCRome_plot.jpg');">JPG</a>
-                                    </li>
-                                    <li><a class="dropdown-item"
-                                            href="javascript:saveSvgAsTiff(document.getElementById('GPCRome_plot_svg'), 'GPCRome_plot.tiff');">TIFF</a>
-                                    </li>
-                                </div>
-                            </span>                            
-                        </span>
-                    </div>
-                    <!-- GPCRome -->
-                    <div style="margin-top: 0px;margin-bottom: 30px;">
-                        <div id="GPCRome_plot" class="text-center"></div>
-                    </div>
+                <!-- Receptor names -->
+                <div class="dropdown">
+                  <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">Receptor names</button>
+                  <div class="dropdown-menu dropdown-menu-side dropdown-menu-align-names">
+                    <button type="button" class="btn btn-outline-primary btn-block mb-1 GPCRomeStats-label-btn" data-wheel="coverage" data-value="Protein">Protein</button>
+                    <button type="button" class="btn btn-outline-primary btn-block GPCRomeStats-label-btn" data-wheel="coverage" data-value="Entrez">Gene</button>
+                  </div>
                 </div>
+
+                <!-- Graphical legend -->
+                <button id="coverage-toggleIcon" class="btn btn-primary" type="button">Graphical legend</button>
+
+                <!-- Colors -->
+                <div class="dropdown">
+                  <button class="btn btn-primary btn-block" type="button" data-toggle="dropdown">Colors</button>
+                  <div class="dropdown-menu dropdown-menu-side p-3 customize-menu dropdown-menu-align-customize">
+                    <div id="coverage-color-pickers"></div>
+                  </div>
+                </div>
+
+                <!-- Download -->
+                <div class="dropdown">
+                  <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">
+                    <span class="glyphicon glyphicon-download"></span> Download
+                  </button>
+                  <div class="dropdown-menu dropdown-menu-side dropdown-menu-align-download">
+                    <button type="button" class="btn btn-primary btn-block" id="coverage-download-svg">SVG</button>
+                    <button type="button" class="btn btn-primary btn-block" id="coverage-download-png">PNG</button>
+                  </div>
+                </div>
+
+              </div>
             </div>
+            <div id="GPCRome_plot" class="text-center" style="padding-top:10px; margin-bottom:30px;"></div>
         </div>
 
         <!------------------------------->
         <!-- WHEELS : LIGAND COMPLEXES -->
         <!------------------------------->
 
-        <div id="receptor_ligand_wheel_pane" class="tab-pane fade in">
-            <div class="wheelBox">
-                <div id="receptor_ligand_wheel" style="padding-top: 10px; font-size: 11px; white-space: nowrap;">
-                <!-- <h3 class="subHeader">Receptor-ligand complexes</h3>-->
-                <div class="controlBox">
-                    <span>
-                        Receptor names:
-                        <div class="btn-group" role="group" id="gtp_plus">
-                            <button id="GPCRome_Complexes_Protein" class="btn btn-info active">Protein</button>
-                            <button id="GPCRome_Complexes_Entrez" class="btn btn-info">Gene</button>
-                            <!-- <button id="GPCRome_Complexes_Uniprot" class="btn btn-info ">UniProt</button> -->
-                        </div>
-                    </span>
-                    <span style="padding-top: 5px;">
-                        Icon toggle:
-                        <button id="ToggleIconComplexes" class="btn btn-info active">On</button>
-                    </span>
+        <div id="receptor_ligand_wheel_pane" class="tab-pane fade">
+            <div class="col-md-12" style="margin-bottom:20px; margin-top:20px;">
+              <div style="display:flex; justify-content:center; align-items:center; gap:15px; flex-wrap:wrap;">
 
-                    <span>
-                        <div class="text-center">
-                            <div class="dropdown">
-                                <button type="button" class="btn btn-primary dropdown-toggle" style="font-size: 14px;"
-                                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                    <span class="glyphicon glyphicon-download"
-                                        style="vertical-align: top;line-height: 1.3"></span> Download <span
-                                        class="caret"></span>
-                                </button>
-                                <div class="dropdown-menu dropdown-menu-right-middle">
-                                    <li><a class="dropdown-item"
-                                            href="javascript:saveSvg(document.getElementById('GPCRome_complexes_plot_svg'), 'GPCRome_complexes_plot.svg');">SVG</a>
-                                    </li>
-                                    <li><a class="dropdown-item"
-                                            href="javascript:saveSvgAsPng(document.getElementById('GPCRome_complexes_plot_svg'), 'GPCRome_complexes_plot.png');">PNG</a>
-                                    </li>
-                                    <li><a class="dropdown-item"
-                                            href="javascript:saveSvgAsJpg(document.getElementById('GPCRome_complexes_plot_svg'), 'GPCRome_complexes_plot.jpg');">JPG</a>
-                                    </li>
-                                    <li><a class="dropdown-item"
-                                            href="javascript:saveSvgAsTiff(document.getElementById('GPCRome_complexes_plot_svg'), 'GPCRome_complexes_plot.tiff');">TIFF</a>
-                                    </li>
-                                </div>
-                            </div>
-                        </div>
-                    </span>
+                <!-- Receptor names -->
+                <div class="dropdown">
+                  <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">Receptor names</button>
+                  <div class="dropdown-menu dropdown-menu-side dropdown-menu-align-names">
+                    <button type="button" class="btn btn-outline-primary btn-block mb-1 GPCRomeStats-label-btn" data-wheel="complexes" data-value="Protein">Protein</button>
+                    <button type="button" class="btn btn-outline-primary btn-block GPCRomeStats-label-btn" data-wheel="complexes" data-value="Entrez">Gene</button>
+                  </div>
                 </div>
-                <!-- GPCRome -->
-                <div style="margin-top: 0px;margin-bottom: 30px;">
-                    <div id="GPCRome_complexes_plot" class="text-center"></div>
+
+                <!-- Graphical legend -->
+                <button id="complexes-toggleIcon" class="btn btn-primary" type="button">Graphical legend</button>
+
+                <!-- Colors -->
+                <div class="dropdown">
+                  <button class="btn btn-primary btn-block" type="button" data-toggle="dropdown">Colors</button>
+                  <div class="dropdown-menu dropdown-menu-side p-3 customize-menu dropdown-menu-align-customize">
+                    <div id="complexes-color-pickers"></div>
+                  </div>
                 </div>
+
+                <!-- Download -->
+                <div class="dropdown">
+                  <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">
+                    <span class="glyphicon glyphicon-download"></span> Download
+                  </button>
+                  <div class="dropdown-menu dropdown-menu-side dropdown-menu-align-download">
+                    <button type="button" class="btn btn-primary btn-block" id="complexes-download-svg">SVG</button>
+                    <button type="button" class="btn btn-primary btn-block" id="complexes-download-png">PNG</button>
+                  </div>
                 </div>
+
+              </div>
             </div>
+            <div id="GPCRome_complexes_plot" class="text-center" style="padding-top:10px; margin-bottom:30px;"></div>
         </div>
 
         <!---------------------------------->
         <!-- WHEELS : OLFACTORY RECEPTORS -->
         <!---------------------------------->
 
-        <div id="olfactory_wheel_pane" class="tab-pane fade in">
-            <div class="wheelBox">
-                <div id="olfactory_wheel" style="padding-top: 10px; font-size: 11px; white-space: nowrap;">
-                    <!-- <h3 class="subHeader">Receptor-ligand complexes (olfactory)</h3> -->
-                    <div class="controlBox">
-                        <span>
-                            Receptor names:
-                            <div class="btn-group" role="group" id="gtp_plus">
-                                <button id="GPCRome_Olfactory_Protein" class="btn btn-info active">Protein</button>
-                                <button id="GPCRome_Olfactory_Entrez" class="btn btn-info">Gene</button>
-                                <!-- <button id="GPCRome_Olfactory_Uniprot" class="btn btn-info ">UniProt</button> -->
-                            </div>
-                        </span>
-                        <span style="padding-top: 5px;">
-                            Icon toggle:
-                            <button id="ToggleIconOlfactory" class="btn btn-info active">On</button>
-                        </span>
+        <div id="olfactory_wheel_pane" class="tab-pane fade">
+            <div class="col-md-12" style="margin-bottom:20px; margin-top:20px;">
+              <div style="display:flex; justify-content:center; align-items:center; gap:15px; flex-wrap:wrap;">
 
-                        <span>
-                            <div class="text-center">
-                                <div class="dropdown">
-                                    <button type="button" class="btn btn-primary dropdown-toggle" style="font-size: 14px;"
-                                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                        <span class="glyphicon glyphicon-download"
-                                            style="vertical-align: top;line-height: 1.3"></span> Download <span
-                                            class="caret"></span>
-                                    </button>
-                                    <div class="dropdown-menu dropdown-menu-right-middle">
-                                        <li><a class="dropdown-item"
-                                                href="javascript:saveSvg(document.getElementById('GPCRome_olfactory_plot_svg'), 'GPCRome_olfactory_plot.svg');">SVG</a>
-                                        </li>
-                                        <li><a class="dropdown-item"
-                                                href="javascript:saveSvgAsPng(document.getElementById('GPCRome_olfactory_plot_svg'), 'GPCRome_olfactory_plot.png');">PNG</a>
-                                        </li>
-                                        <li><a class="dropdown-item"
-                                                href="javascript:saveSvgAsJpg(document.getElementById('GPCRome_olfactory_plot_svg'), 'GPCRome_olfactory_plot.jpg');">JPG</a>
-                                        </li>
-                                        <li><a class="dropdown-item"
-                                                href="javascript:saveSvgAsTiff(document.getElementById('GPCRome_olfactory_plot_svg'), 'GPCRome_olfactory_plot.tiff');">TIFF</a>
-                                        </li>
-                                    </div>
-                                </div>
-                            </div>
-                        </span>
-                    </div>
-                    <!-- GPCRome -->
-                    <div style="margin-top: 0px;margin-bottom: 30px;">
-                        <div id="GPCRome_olfactory_plot" class="text-center"></div>
-                    </div>                    
+                <!-- Receptor names -->
+                <div class="dropdown">
+                  <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">Receptor names</button>
+                  <div class="dropdown-menu dropdown-menu-side dropdown-menu-align-names">
+                    <button type="button" class="btn btn-outline-primary btn-block mb-1 GPCRomeStats-label-btn" data-wheel="olfactory" data-value="Protein">Protein</button>
+                    <button type="button" class="btn btn-outline-primary btn-block GPCRomeStats-label-btn" data-wheel="olfactory" data-value="Entrez">Gene</button>
+                  </div>
                 </div>
+
+                <!-- Graphical legend -->
+                <button id="olfactory-toggleIcon" class="btn btn-primary" type="button">Graphical legend</button>
+
+                <!-- Colors -->
+                <div class="dropdown">
+                  <button class="btn btn-primary btn-block" type="button" data-toggle="dropdown">Colors</button>
+                  <div class="dropdown-menu dropdown-menu-side p-3 customize-menu dropdown-menu-align-customize">
+                    <div id="olfactory-color-pickers"></div>
+                  </div>
+                </div>
+
+                <!-- Download -->
+                <div class="dropdown">
+                  <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">
+                    <span class="glyphicon glyphicon-download"></span> Download
+                  </button>
+                  <div class="dropdown-menu dropdown-menu-side dropdown-menu-align-download">
+                    <button type="button" class="btn btn-primary btn-block" id="olfactory-download-svg">SVG</button>
+                    <button type="button" class="btn btn-primary btn-block" id="olfactory-download-png">PNG</button>
+                  </div>
+                </div>
+
+              </div>
             </div>
+            <div id="GPCRome_olfactory_plot" class="text-center" style="padding-top:10px; margin-bottom:30px;"></div>
         </div>
 
         <!----------------------------------------->
@@ -1359,278 +1301,16 @@
   <script src="{% static '/home/js/select2/4.1.0/select2.min.js' %}"></script> 
 
     <script>
-
-        // Import GPCRome data 
-        var GPCRome_stucture_data = {{ GPCRome_data| safe }};
-        var GPCRome_complexes_data = {{ GPCRome_data_complexes| safe }};
-
-        // == Structure GPCRome ==
-
-        // Set styling
-        var GPCRomes_styling = {
-            DataType: "Text",
-            FontStyle: "Arial",
-            FontsizeGlobal: "11px",
-            FontsizeClass: "20px",
-            Datatype: "Text",
-            showIcon: true,
-            LabelType: "Protein",
-            ShowLegend: false,
-            LegendLayout: { "mode": "row", "columns": "1", "sorted": "Vertically" }
-        };
-
-        // Add location and draw the GPCRome plot
-        let GPCRome_location = "GPCRome_plot";
-        DrawGPCRomeWheel(GPCRome_stucture_data, GPCRome_location, GPCRomes_styling);
-
-
-        // == Complexes GPCRome ===
-
-        // Recursively extract all "Data" values from a nested object
-        function extractDataValues(obj) {
-            let values = [];
-
-            function findData(node) {
-                if (typeof node === "object" && node !== null) {
-                    for (const key in node) {
-                        const value = node[key];
-
-                        if (value && typeof value === "object" && "Data" in value) {
-                            const dataValue = Number(value.Data);
-                            if (!isNaN(dataValue)) {
-                                values.push(dataValue);
-                            }
-                        } else {
-                            findData(value); // keep digging
-                        }
-                    }
-                }
-            }
-
-            findData(obj);
-            return values;
-        }
-
-        // Extract min and max data (for numeric version)
-        const GPCRomeWheelValues = extractDataValues(GPCRome_complexes_data)
-            .filter(value => value !== null && value !== '');
-
-        const GPCRomeMin = GPCRomeWheelValues.length > 0 ? Math.min(...GPCRomeWheelValues) : null;
-        const GPCRomeMax = GPCRomeWheelValues.length > 0 ? Math.max(...GPCRomeWheelValues) : null;
-        const GPCRomeAvg = GPCRomeWheelValues.length > 0 ? (GPCRomeMin + GPCRomeMax) / 2 : null;
-
-        function determineDecimalPlaces(minValue, maxValue) {
-            const allValues = [minValue, maxValue];
-            let maxDecimals = 0;
-
-            allValues.forEach(value => {
-                if (value == null) return; // Ignore nulls
-
-                const valueStr = Math.abs(value).toString();
-
-                if (valueStr.includes('e')) {
-                    // Handle scientific notation separately
-                    const parts = valueStr.split('e-');
-                    if (parts.length === 2) {
-                        const exp = parseInt(parts[1], 10);
-                        maxDecimals = Math.max(maxDecimals, exp);
-                    }
-                } else if (valueStr.includes('.')) {
-                    const decimals = valueStr.split('.')[1].length;
-                    maxDecimals = Math.max(maxDecimals, decimals);
-                }
-            });
-
-            // Cap at maximum 6 digits
-            return Math.min(maxDecimals, 6);
-        }
-
-        var GPCRomes_styling_complexes = {
-            GPCRomeMin: GPCRomeMin,
-            GPCRomeMax: GPCRomeMax,
-            GPCRomeAvg: GPCRomeAvg,
-            LegendbarDigit: determineDecimalPlaces(GPCRomeMin, GPCRomeMax),
-            LegendbarLength: 200,
-            LegendbarFontsize: "11px",
-            FontStyle: "Arial",
-            FontsizeGlobal: "11px",
-            FontsizeClass: "20px",
-            DataType: "Numeric",
-            colorStart: "#FFFFFF",
-            colorAvg: "#FFFFFF",
-            colorEnd: "#000000",
-            ColorSetup: 'One',
-            showIcon: true,
-            LabelType: "Protein",
-            ShowLegend: true,
-            LegendLabel: "Number of receptor-ligand complexes"
-        };
-
-        let GPCRome_complexes_location = "GPCRome_complexes_plot";
-        DrawGPCRomeWheel(GPCRome_complexes_data, GPCRome_complexes_location, GPCRomes_styling_complexes);
-
-        var Olfactory_data = {{ GPCRome_data_olfactory | safe}};
-
-        // Extract min and max data (for numeric version)
-        const GPCRomeWheelValues_olfactory = extractDataValues(Olfactory_data)
-            .filter(value => value !== null && value !== '');
-
-        const GPCRomeMin_Odo = GPCRomeWheelValues_olfactory.length > 0 ? Math.min(...GPCRomeWheelValues_olfactory) : null;
-        const GPCRomeMax_Odo = GPCRomeWheelValues_olfactory.length > 0 ? Math.max(...GPCRomeWheelValues_olfactory) : null;
-        const GPCRomeAvg_Odo = GPCRomeWheelValues_olfactory.length > 0 ? (GPCRomeMin_Odo + GPCRomeMax_Odo) / 2 : null;
-
-        function determineDecimalPlaces(minValue, maxValue) {
-            const allValues = [minValue, maxValue];
-            let maxDecimals = 0;
-
-            allValues.forEach(value => {
-                if (value == null) return; // Ignore nulls
-
-                const valueStr = Math.abs(value).toString();
-
-                if (valueStr.includes('e')) {
-                    // Handle scientific notation separately
-                    const parts = valueStr.split('e-');
-                    if (parts.length === 2) {
-                        const exp = parseInt(parts[1], 10);
-                        maxDecimals = Math.max(maxDecimals, exp);
-                    }
-                } else if (valueStr.includes('.')) {
-                    const decimals = valueStr.split('.')[1].length;
-                    maxDecimals = Math.max(maxDecimals, decimals);
-                }
-            });
-
-            // Cap at maximum 6 digits
-            return Math.min(maxDecimals, 6);
-        }
-
-        var GPCRomes_styling_Olfactory = {
-            GPCRomeMin: GPCRomeMin_Odo,
-            GPCRomeMax: GPCRomeMax_Odo,
-            GPCRomeAvg: GPCRomeAvg_Odo,
-            LegendbarDigit: determineDecimalPlaces(GPCRomeMin_Odo, GPCRomeMax_Odo),
-            LegendbarLength: 200,
-            LegendbarFontsize: "11px",
-            FontStyle: "Arial",
-            FontsizeGlobal: "11px",
-            FontsizeClass: "20px",
-            DataType: "Numeric",
-            colorStart: "FFFFFF",
-            colorAvg: "#FFFFFF",
-            colorEnd: "#000000",
-            ColorSetup: 'One',
-            showIcon: true,
-            LabelType: "Protein",
-            ShowLegend: true,
-            LegendLabel: "Number of structures "
-        };
-
-        let GPCRome_olfactory_location = "GPCRome_olfactory_plot";
-
-        DrawGPCRomeWheel(Olfactory_data, GPCRome_olfactory_location, GPCRomes_styling_Olfactory);
-
-        function setupLabelButtons(groupIdPrefix, structureData, location, styling) {
-            const labelTypes = ["Protein", "Entrez"]; //"Uniprot",
-
-            labelTypes.forEach(label => {
-                const buttonId = `${groupIdPrefix}_${label}`;
-                document.getElementById(buttonId).addEventListener("click", () => {
-                    styling.LabelType = label;
-                    updateGPCRome(structureData, location, styling);
-                    setActiveButton(groupIdPrefix, labelTypes, buttonId);
-                });
-            });
-        }
-
-        function setActiveButton(groupIdPrefix, labelTypes, activeId) {
-            labelTypes.forEach(label => {
-                const btnId = `${groupIdPrefix}_${label}`;
-                document.getElementById(btnId).classList.remove("active");
-            });
-            document.getElementById(activeId).classList.add("active");
-        }
-
-        setupLabelButtons("GPCRome", GPCRome_stucture_data, GPCRome_location, GPCRomes_styling);
-        setupLabelButtons("GPCRome_Complexes", GPCRome_complexes_data, GPCRome_complexes_location, GPCRomes_styling_complexes);
-        setupLabelButtons("GPCRome_Olfactory", Olfactory_data, GPCRome_olfactory_location, GPCRomes_styling_Olfactory);
-
-        // Function to toggle the icon visibility and redraw the GPCRomes
-        function toggleIcon() {
-            const button = d3.select("#ToggleIcon");
-
-            // Toggle the showIcon property in GPCRomes_styling
-            GPCRomes_styling.showIcon = !GPCRomes_styling.showIcon;
-
-            // Update button text and state
-            if (GPCRomes_styling.showIcon) {
-                button.text("On");
-                button.classed("active", true);
-            } else {
-                button.text("Off");
-                button.classed("active", false);
-            }
-
-            // Redraw the GPCRomes with the updated icon state
-            updateGPCRome(GPCRome_stucture_data, GPCRome_location, GPCRomes_styling);
-        }
-
-        // Function to toggle the icon visibility and redraw the GPCRomes
-        function toggleIconComplexes() {
-            const button = d3.select("#ToggleIconComplexes");
-
-            // Toggle the showIcon property in GPCRomes_styling
-            GPCRomes_styling_complexes.showIcon = !GPCRomes_styling_complexes.showIcon;
-
-            // Update button text and state
-            if (GPCRomes_styling_complexes.showIcon) {
-                button.text("On");
-                button.classed("active", true);
-            } else {
-                button.text("Off");
-                button.classed("active", false);
-            }
-
-            // Redraw the GPCRomes with the updated icon state
-            updateGPCRome(GPCRome_complexes_data, GPCRome_complexes_location, GPCRomes_styling_complexes);
-        }
-
-        // Function to toggle the icon visibility and redraw the GPCRomes
-        function toggleIconOlfactory() {
-            const button = d3.select("#ToggleIconOlfactory");
-
-            // Toggle the showIcon property in GPCRomes_styling
-            GPCRomes_styling_Olfactory.showIcon = !GPCRomes_styling_Olfactory.showIcon;
-
-            // Update button text and state
-            if (GPCRomes_styling_Olfactory.showIcon) {
-                button.text("On");
-                button.classed("active", true);
-            } else {
-                button.text("Off");
-                button.classed("active", false);
-            }
-
-            // Redraw the GPCRomes with the updated icon state
-            updateGPCRome(Olfactory_data, GPCRome_olfactory_location, GPCRomes_styling_Olfactory);
-        }
-
-        // Attach event listener to the button
-        d3.select("#ToggleIcon").on("click", toggleIcon);
-        d3.select("#ToggleIconComplexes").on("click", toggleIconComplexes);
-        d3.select("#ToggleIconOlfactory").on("click", toggleIconOlfactory);
-
-        // Function to update and redraw GPCRomes
-        function updateGPCRome(Data, location, styling) {
-
-            // Clear the existing SVG content
-            d3.select("#" + location).select("svg").remove();
-
-            // Redraw the GPCRomes with the updated data
-            DrawGPCRomeWheel(Data, location, styling);
-        }
-
+      window.STRUCTURE_GPCROME_WHEEL_DATA = {
+        coverageData: JSON.parse('{{ GPCRome_data|escapejs }}'),
+        complexesData: JSON.parse('{{ GPCRome_data_complexes|escapejs }}'),
+        complexesStats: JSON.parse('{{ GPCRome_complexes_stats|escapejs }}'),
+        olfactoryData: JSON.parse('{{ GPCRome_data_olfactory|escapejs }}'),
+        olfactoryStats: JSON.parse('{{ GPCRome_olfactory_stats|escapejs }}')
+      };
     </script>
+    <script src="{% static 'home/js/gpcrome_svg_export.js' %}"></script>
+    <script src="{% static 'home/js/structure/statistics_gpcrome_wheels.js' %}"></script>
     <script type="module">
         // Populate structure model statistics table using TableManager
         import { TableManager } from "{% static 'home/js/tablemanager/tablemanager.js' %}";
