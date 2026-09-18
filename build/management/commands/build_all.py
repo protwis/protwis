@@ -102,7 +102,7 @@ class Command(BaseCommand):
             ### build_homology_models --alphafold -r {active pdbs} -p ### build refined structures for new G prot coupled structures
             ['build_homology_models_zip'], 
             ['build_homology_models_zip', {'c': True}],
-            ['foldseek_db'],
+            ['foldseek_db', {'proc': options['proc']}],
             ['build_release_notes'],
         ]
 

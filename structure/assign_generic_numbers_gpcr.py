@@ -25,11 +25,22 @@ class GenericNumbering(object):
     exceptions = {'6GDG':[255, 10]}
 
     def __init__ (self, pdb_file=None, pdb_filename=None, structure=None, pdb_code=None, blast_path='blastp',
-        blastdb=os.sep.join([settings.STATICFILES_DIRS[0], 'blast', 'protwis_gpcr_blastdb']),top_results=1, sequence_parser=False, signprot=False):
+        blastdb=os.sep.join([settings.STATICFILES_DIRS[0], 'blast', 'protwis_gpcr_blastdb']),top_results=1, sequence_parser=False, signprot=False,
+        residue_cache=None):
 
         # pdb_file can be either a name/path or a handle to an open file
         self.pdb_file = pdb_file
         self.pdb_filename = pdb_filename
+
+        # Reference-protein residues (with their generic numbers) fetched in
+        # map_blast_seq() are static for as long as the caller keeps reusing this
+        # cache, but that's only safe for callers who control that lifetime
+        # themselves (e.g. a short-lived batch/worker process reusing one dict
+        # across many GenericNumbering instances for the same run). Long-lived
+        # callers (Django views) never pass residue_cache, so each instance gets
+        # its own throwaway dict here and behaves exactly as before (no risk of
+        # ever serving stale data across requests).
+        self._residue_cache = residue_cache if residue_cache is not None else {}
 
         # if pdb 4 letter code is specified
         self.pdb_code = pdb_code
@@ -112,11 +123,15 @@ class GenericNumbering(object):
         logger.info("{}\n{}".format(hsps.query, hsps.sbjct))
         logger.info("{:d}\t{:d}".format(hsps.query_start, hsps.sbjct_start))
 
-        rs = Residue.objects.prefetch_related('display_generic_number', 'protein_segment').filter(
-            protein_conformation__protein=prot_id)
-        residues = {}
-        for r in rs:
-            residues[r.sequence_number] = r
+        if prot_id in self._residue_cache:
+            residues = self._residue_cache[prot_id]
+        else:
+            rs = Residue.objects.prefetch_related('display_generic_number', 'protein_segment').filter(
+                protein_conformation__protein=prot_id)
+            residues = {}
+            for r in rs:
+                residues[r.sequence_number] = r
+            self._residue_cache[prot_id] = residues
 
         while tmp_seq:
             #skipping position if there is a gap in either of sequences
@@ -223,9 +238,12 @@ class GenericNumbering(object):
             for alignment in alignments[chain]:
                 if alignment == []:
                     continue
+                # alignment[0] (the matched protein id) is constant across all hsps of
+                # this alignment, so look it up once instead of once per hsps.
+                if not Protein.objects.get(id=alignment[0]).family.slug.startswith('00'):
+                    continue
                 for hsps in alignment[1].hsps:
-                    if Protein.objects.get(id=alignment[0]).family.slug.startswith('00'):
-                        self.map_blast_seq(alignment[0], hsps, chain)
+                    self.map_blast_seq(alignment[0], hsps, chain)
 
         return self.get_annotated_structure()
 
