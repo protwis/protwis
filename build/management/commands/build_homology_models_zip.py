@@ -141,16 +141,15 @@ class Command(BaseBuild):
                 zip_mod.close()
                 self.models_to_do.append([modelname,path])
 
-        self.processors = options['proc']
         self.prepare_input(options['proc'], self.models_to_do)
 
     def main_func(self, positions, iteration, count, lock):
-        _ = round(self.processors*positions[0]/len(self.models_to_do))+1
-        while count.value<len(self.models_to_do):
+        while True:
             with lock:
-                if len(self.models_to_do)>count.value:
-                    modelname,path = self.models_to_do[count.value]
-                    count.value +=1
+                if count.value >= len(self.models_to_do):
+                    break
+                modelname, path = self.models_to_do[count.value]
+                count.value += 1
             self.upload_to_db(modelname, path)
             mod_dir = path+modelname
             shutil.rmtree(mod_dir)

@@ -100,8 +100,8 @@ class Command(BaseCommand):
             ['build_complex_models', {'proc': options['proc'], 'parser' : 'boltztwocomplex', 'model_set_name' : 'boltz2_complex', "deposition_date": '2026-03-01'}],
             ['build_rfaa_models'],
             ### build_homology_models --alphafold -r {active pdbs} -p ### build refined structures for new G prot coupled structures
-            ['build_homology_models_zip'], 
-            ['build_homology_models_zip', {'c': True}],
+            ['build_homology_models_zip', {'proc': options['proc']}],
+            ['build_homology_models_zip', {'proc': options['proc'], 'c': True}],
             ['foldseek_db', {'proc': options['proc']}],
             ['build_release_notes'],
         ]
