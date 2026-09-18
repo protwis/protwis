@@ -67,7 +67,7 @@
 
     const first = arr[0];
     const firstHref = (first.id != null && first.id !== '-' && first.id !== '')
-      ? (hrefBuilder ? hrefBuilder(first.id, first) : `https://gpcrdb.org/ligand/${first.id}/info`)
+      ? (hrefBuilder ? hrefBuilder(first.id, first) : `/ligand/${first.id}/info`)
       : null;
 
     const collapsed = firstHref
@@ -80,7 +80,7 @@
     const expanded = arr.map(x => {
       const nm = x.name || '';
       if (x.id == null || x.id === '' || x.id === '-') return nm;
-      const href = hrefBuilder ? hrefBuilder(x.id, x) : `https://gpcrdb.org/ligand/${x.id}/info`;
+      const href = hrefBuilder ? hrefBuilder(x.id, x) : `/ligand/${x.id}/info`;
       return `<a href="${href}" target="_blank" rel="noopener">${nm}</a>`;
     }).join('<br>');
 
@@ -174,7 +174,7 @@
       name: "Name",
       render: (d, t) =>
         expandFirstThenHoverLinkList(
-          d, t, (id) => `https://gpcrdb.org/ligand/${id}/info`, { showCountHint: true },
+          d, t, (id) => `/ligand/${id}/info`, { showCountHint: true },
         ),
     },
     {
@@ -197,7 +197,7 @@
         t !== "display"
           ? d
           : d && d !== "-"
-            ? `<a href="https://gpcrdb.org/structure/${d}" target="_blank" rel="noopener">${d}</a>`
+            ? `<a href="/structure/${d}" target="_blank" rel="noopener">${d}</a>`
             : d,
     },
     {
@@ -221,7 +221,7 @@
         t !== "display"
           ? d
           : r?.arrestin_entry && r.arrestin_entry !== "-"
-            ? `<a href="https://gpcrdb.org/signprot/${r.arrestin_entry}/" target="_blank" rel="noopener">${d}</a>`
+            ? `<a href="/signprot/${r.arrestin_entry}/" target="_blank" rel="noopener">${d}</a>`
             : d,
     },
 

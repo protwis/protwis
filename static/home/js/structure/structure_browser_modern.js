@@ -190,7 +190,7 @@
       t !== "display"
         ? d
         : d && d !== "-"
-          ? `<a href="https://gpcrdb.org/structure/${d}" target="_blank" rel="noopener">${d}</a>`
+          ? `<a href="/structure/${d}" target="_blank" rel="noopener">${d}</a>`
           : d,
   },
   {
@@ -226,7 +226,7 @@
       t !== "display"
         ? d
         : r?.arrestin_entry && r.arrestin_entry !== "-"
-          ? `<a href="https://gpcrdb.org/signprot/${r.arrestin_entry}/" target="_blank" rel="noopener">${d}</a>`
+          ? `<a href="/signprot/${r.arrestin_entry}/" target="_blank" rel="noopener">${d}</a>`
           : d,
   },
   { data: "arrestin_note", name: "Note" },
@@ -240,7 +240,7 @@
       expandFirstThenHoverLinkList(
         d,
         t,
-        (id) => `https://gpcrdb.org/ligand/${id}/info`,
+        (id) => `/ligand/${id}/info`,
         { showCountHint: true },
       ),
   },
@@ -292,7 +292,7 @@
       expandFirstThenHoverLinkList(
         d,
         t,
-        (id) => `https://gpcrdb.org/ligand/${id}/info`,
+        (id) => `/ligand/${id}/info`,
         { showCountHint: true },
       ),
   },

@@ -99,8 +99,10 @@ class Command(BaseCommand):
             ['build_structure_browser_table'],
         ]
         phase3 = [
-            ['build_complex_models', {'proc': options['proc'], 'parser' : 'alphafoldcomplex', 'model_set_name' : 'AlphaFold_multimer', 'cleaned_seq_csv' : os.sep.join([settings.DATA_DIR, 'structure_data', 'AlphaFold_multimer', 'cleaned_seqs.csv']) }],
-            ['build_complex_models', {'proc': options['proc'], 'parser' : 'alphafoldcomplex', 'model_set_name' : 'Arrestins_AF_models', "deposition_date": '2024-06-01'}],
+            ['build_complex_models', {'proc': options['proc'], 'parser' : 'alphafoldcomplex', 'model_set_name' : 'AlphaFold_multimer_non_phys', 'cleaned_seq_csv' : os.sep.join([settings.DATA_DIR, 'structure_data', 'AlphaFold_multimer_non_phys', 'cleaned_seqs.csv']) }],
+            ['build_complex_models', {'proc': options['proc'], 'parser' : 'alphafoldcomplex', 'model_set_name' : 'AlphaFold_multimer_phys' }],
+            ['build_complex_models', {'proc': options['proc'], 'parser' : 'alphafoldcomplex', 'model_set_name' : 'AlphaFold_multimer_G_protein' }],
+            ['build_complex_models', {'proc': options['proc'], 'parser' : 'alphafoldcomplex', 'model_set_name' : 'Arrestins_AF_models', "deposition_date": '2024-10-31'}],
             ['build_complex_models', {'proc': options['proc'], 'parser' : 'boltztwocomplex', 'model_set_name' : 'boltz2_complex', "deposition_date": '2026-03-01'}],
             ['build_rfaa_models'],
             ### build_homology_models --alphafold -r {active pdbs} -p ### build refined structures for new G prot coupled structures
