@@ -175,7 +175,7 @@ const coloringSchemes = {
     "F": CLASS_COLORS_TREE["F"],
     "T2": CLASS_COLORS_TREE["T2"],
     "V": CLASS_COLORS_TREE["V"],
-    "U": CLASS_COLORS_TREE["Unclassified"],
+    "U": CLASS_COLORS_TREE["U"],
   },
   "Chemotype": buildSchemeFromCategories(CLASSIC_CHEMOTYPES, getChemotypeColor),
   "Modality": buildSchemeFromCategories(CLASSIC_MODALITIES, (m) => MODALITY_COLORS_FIXED[m] || stableColorForKey(m, CHEMOTYPE_FALLBACK_PALETTE)),
@@ -193,8 +193,8 @@ const ODORANT_RECEPTOR_FAMILIES = [
 
 const coloringSchemesOdorant = {
   "Class": {
-    "O1": "#9D4EDD",  // purple
-    "O2": "#2A9D8F"   // teal
+    "O1": CLASS_COLORS_TREE["O1"],
+    "O2": CLASS_COLORS_TREE["O2"]
   },
   "Chemotype": buildSchemeFromCategories(ODORANT_CHEMOTYPES, getChemotypeColor),
   "Modality": buildSchemeFromCategories(ODORANT_MODALITIES, (m) => MODALITY_COLORS_FIXED[m] || stableColorForKey(m, CHEMOTYPE_FALLBACK_PALETTE)),

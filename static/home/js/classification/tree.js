@@ -397,14 +397,15 @@ function custom_draw_tree(data, options, stacked_meta, centerLabel) {
             const bb = t.node().getBBox(); // local bbox (ignores transform)
             const pad = labelBoxPadding(d.depth, options.depth);
             const tr = t.attr("transform"); // copy transform so box aligns with text
+            const extraTop = /[A-Z]/.test(String(d.name || "")) ? 1 : 0;
 
             g.insert("rect", "text")
                 .attr("transform", tr || null)
                 .attr("x", bb.x - pad.x)
                 // Some fonts render slightly "high" relative to the bbox; allow tiny manual nudge.
-                .attr("y", bb.y - pad.y + (options.labelBoxDy || 0) + (options.labelBoxTopTrim || 0))
+                .attr("y", bb.y - pad.y + (options.labelBoxDy || 0) + (options.labelBoxTopTrim || 0) - extraTop)
                 .attr("width", bb.width + pad.x * 2)
-                .attr("height", bb.height + pad.y * 2 - (options.labelBoxTopTrim || 0) - (options.labelBoxBottomTrim || 0))
+                .attr("height", bb.height + pad.y * 2 - (options.labelBoxTopTrim || 0) - (options.labelBoxBottomTrim || 0) + extraTop)
                 .attr("rx", 10)
                 .attr("ry", 10)
                 .style("fill", "#FFF")
@@ -436,13 +437,14 @@ function custom_draw_tree(data, options, stacked_meta, centerLabel) {
 
                 const bb = t.node().getBBox();
                 const tr = t.attr("transform"); // copy transform so pill aligns with leaf text
+                const extraTop = /[A-Z]/.test(String(d.name || "")) ? 1 : 0;
 
                 g.insert("rect", "text")
                     .attr("transform", tr || null)
                     .attr("x", bb.x - leafPadX)
-                    .attr("y", bb.y - leafPadY + leafDy + leafTopTrim)
+                    .attr("y", bb.y - leafPadY + leafDy + leafTopTrim - extraTop)
                     .attr("width", bb.width + leafPadX * 2)
-                    .attr("height", bb.height + leafPadY * 2 - leafTopTrim - leafBottomTrim)
+                    .attr("height", bb.height + leafPadY * 2 - leafTopTrim - leafBottomTrim + extraTop)
                     .attr("rx", leafRx)
                     .attr("ry", leafRx)
                     .style("fill", "#fff")
@@ -794,13 +796,14 @@ function custom_draw_dendrogram_curved(data, options, stacked_meta, centerLabel)
             const bb = t.node().getBBox();
             const pad = labelBoxPadding(d.depth, options.depth);
             const tr = t.attr("transform");
+            const extraTop = /[A-Z]/.test(String(d.name || "")) ? 1 : 0;
 
             g.insert("rect", "text")
                 .attr("transform", tr || null)
                 .attr("x", bb.x - pad.x)
-                .attr("y", bb.y - pad.y + (options.labelBoxDy || 0) + (options.labelBoxTopTrim || 0))
+                .attr("y", bb.y - pad.y + (options.labelBoxDy || 0) + (options.labelBoxTopTrim || 0) - extraTop)
                 .attr("width", bb.width + pad.x * 2)
-                .attr("height", bb.height + pad.y * 2 - (options.labelBoxTopTrim || 0) - (options.labelBoxBottomTrim || 0))
+                .attr("height", bb.height + pad.y * 2 - (options.labelBoxTopTrim || 0) - (options.labelBoxBottomTrim || 0) + extraTop)
                 .attr("rx", 10)
                 .attr("ry", 10)
                 .style("fill", "#FFF")
@@ -831,13 +834,14 @@ function custom_draw_dendrogram_curved(data, options, stacked_meta, centerLabel)
 
                 const bb = t.node().getBBox();
                 const tr = t.attr("transform");
+                const extraTop = /[A-Z]/.test(String(d.name || "")) ? 1 : 0;
 
                 g.insert("rect", "text")
                     .attr("transform", tr || null)
                     .attr("x", bb.x - leafPadX)
-                    .attr("y", bb.y - leafPadY + leafDy + leafTopTrim)
+                    .attr("y", bb.y - leafPadY + leafDy + leafTopTrim - extraTop)
                     .attr("width", bb.width + leafPadX * 2)
-                    .attr("height", bb.height + leafPadY * 2 - leafTopTrim - leafBottomTrim)
+                    .attr("height", bb.height + leafPadY * 2 - leafTopTrim - leafBottomTrim + extraTop)
                     .attr("rx", leafRx)
                     .attr("ry", leafRx)
                     .style("fill", "#fff")
@@ -1197,13 +1201,14 @@ function custom_draw_dendrogram_straight(data, options, stacked_meta, centerLabe
             const bb = t.node().getBBox();
             const pad = labelBoxPadding(d.depth, options.depth);
             const tr = t.attr("transform");
+            const extraTop = /[A-Z]/.test(String(d.name || "")) ? 1 : 0;
 
             g.insert("rect", "text")
                 .attr("transform", tr || null)
                 .attr("x", bb.x - pad.x)
-                .attr("y", bb.y - pad.y + (options.labelBoxDy || 0) + (options.labelBoxTopTrim || 0))
+                .attr("y", bb.y - pad.y + (options.labelBoxDy || 0) + (options.labelBoxTopTrim || 0) - extraTop)
                 .attr("width", bb.width + pad.x * 2)
-                .attr("height", bb.height + pad.y * 2 - (options.labelBoxTopTrim || 0) - (options.labelBoxBottomTrim || 0))
+                .attr("height", bb.height + pad.y * 2 - (options.labelBoxTopTrim || 0) - (options.labelBoxBottomTrim || 0) + extraTop)
                 .attr("rx", 10)
                 .attr("ry", 10)
                 .style("fill", "#FFF")
@@ -1234,13 +1239,14 @@ function custom_draw_dendrogram_straight(data, options, stacked_meta, centerLabe
 
                 const bb = t.node().getBBox();
                 const tr = t.attr("transform");
+                const extraTop = /[A-Z]/.test(String(d.name || "")) ? 1 : 0;
 
                 g.insert("rect", "text")
                     .attr("transform", tr || null)
                     .attr("x", bb.x - leafPadX)
-                    .attr("y", bb.y - leafPadY + leafDy + leafTopTrim)
+                    .attr("y", bb.y - leafPadY + leafDy + leafTopTrim - extraTop)
                     .attr("width", bb.width + leafPadX * 2)
-                    .attr("height", bb.height + leafPadY * 2 - leafTopTrim - leafBottomTrim)
+                    .attr("height", bb.height + leafPadY * 2 - leafTopTrim - leafBottomTrim + extraTop)
                     .attr("rx", leafRx)
                     .attr("ry", leafRx)
                     .style("fill", "#fff")
@@ -1364,11 +1370,12 @@ const TREE_LOCKED_SELECTION = TREE_DATA.lockedSelection || "";
 var MANUAL_RADIUS_SCALE = {
     // Class:
     "Class:A": 1.1,
-    "Class:B1": 0.55,
-    "Class:B2": 0.5,
-    "Class:C": 0.45,
-    "Class:F": 0.2,
+    "Class:B1": 0.6,
+    "Class:B2": 0.8,
+    "Class:C": 0.55,
+    "Class:F": 0.24,
     "Class:T2": 0.35,
+    "Class:V": 0.5,
 
     // Modality:
     "Modality:Orphan receptors": 0.8,
@@ -1464,6 +1471,57 @@ function downloadSvgAsPng(svgElement, filename, scale) {
     img.src = url;
 }
 
+// Only for the Class O2 dual-plot layout (see isDualPlot in renderCurrent): stitches the two
+// side-by-side SVGs into one exportable SVG, so "Download" gets both halves instead of just
+// the left one. Every other class/tab has no #tree_plot_secondary_svg, so getActiveExportSvg()
+// below falls straight back to the normal single-plot export for them.
+function combineTwoSvgsSideBySide(svgA, svgB, gap) {
+    gap = gap || 16;
+    const svgNS = "http://www.w3.org/2000/svg";
+    const wA = parseFloat(svgA.getAttribute("width")) || 800;
+    const hA = parseFloat(svgA.getAttribute("height")) || 800;
+    const wB = parseFloat(svgB.getAttribute("width")) || 800;
+    const hB = parseFloat(svgB.getAttribute("height")) || 800;
+    const totalW = wA + gap + wB;
+    const totalH = Math.max(hA, hB);
+
+    const combined = document.createElementNS(svgNS, "svg");
+    combined.setAttribute("xmlns", svgNS);
+    combined.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
+    combined.setAttribute("width", totalW);
+    combined.setAttribute("height", totalH);
+    combined.setAttribute("viewBox", "0 0 " + totalW + " " + totalH);
+
+    const bg = document.createElementNS(svgNS, "rect");
+    bg.setAttribute("width", totalW);
+    bg.setAttribute("height", totalH);
+    bg.setAttribute("fill", "#ffffff");
+    combined.appendChild(bg);
+
+    const cloneA = svgA.cloneNode(true);
+    cloneA.setAttribute("x", 0);
+    cloneA.setAttribute("y", 0);
+    combined.appendChild(cloneA);
+
+    const cloneB = svgB.cloneNode(true);
+    cloneB.setAttribute("x", wA + gap);
+    cloneB.setAttribute("y", 0);
+    combined.appendChild(cloneB);
+
+    return combined;
+}
+
+function getActiveExportSvg() {
+    const primary = document.getElementById("tree_plot_main_svg");
+    const secondary = document.getElementById("tree_plot_secondary_svg");
+    const wrap = document.getElementById("tree_plot_scroll_wrap");
+    const isDualPlotActive = !!(secondary && wrap && wrap.classList.contains("dual-plot"));
+    if (isDualPlotActive && primary) {
+        return combineTwoSvgsSideBySide(primary, secondary, 16);
+    }
+    return primary;
+}
+
 function wireDownloadButton() {
     const pngBtn = document.getElementById("download_png_main");
     const svgBtn = document.getElementById("download_svg_main");
@@ -1474,13 +1532,13 @@ function wireDownloadButton() {
     }
     if (pngBtn) {
         pngBtn.addEventListener("click", function () {
-            const svg = document.getElementById("tree_plot_main_svg");
+            const svg = getActiveExportSvg();
             downloadSvgAsPng(svg, safeTitle() + ".png", 2);
         });
     }
     if (svgBtn) {
         svgBtn.addEventListener("click", function () {
-            const svg = document.getElementById("tree_plot_main_svg");
+            const svg = getActiveExportSvg();
             if (!svg) return;
             const clone = svg.cloneNode(true);
             clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
@@ -1707,6 +1765,7 @@ function applyTreeColors(root, stacked_meta, options) {
             if (hit && hit.value) {
                 let key = String(hit.value).trim();
                 key = key.replace(/^Class\s+/i, '');
+                key = (key.match(/^[A-Za-z0-9]+/) || [""])[0];
                 const c = CLASS_COLORS[key] || "#333";
                 (function walk(n) {
                     if (!n) return;
@@ -1721,6 +1780,7 @@ function applyTreeColors(root, stacked_meta, options) {
             root.children.forEach(function (clsNode) {
                 let key = String(clsNode.name || "").trim();
                 key = key.replace(/^Class\s+/i, '');
+                key = (key.match(/^[A-Za-z0-9]+/) || [""])[0];
                 const c = CLASS_COLORS[key] || "#333";
                 (function walk(n) {
                     if (!n) return;
@@ -1747,7 +1807,9 @@ function renderOrphanLegendPills(svgId, labels, options) {
     const cols = 20;
     const cellW = baseW / cols;
     const rowH = 18;
-    const padTop = 16;
+    const headerH = 14; // room for the "Orphans" header above the pill rows
+    const headerPadLeft = 4;
+    const padTop = headerH + 10; // header sits right after the plot; small gap before the first pill row
     const padBottom = 10;
     const nRows = Math.ceil(labels.length / cols);
     const extraH = padTop + (nRows * rowH) + padBottom;
@@ -1760,6 +1822,18 @@ function renderOrphanLegendPills(svgId, labels, options) {
     const g = svg.append("g")
         .attr("class", "orphan-legend")
         .attr("transform", "translate(0," + (baseH + padTop) + ")");
+
+    g.append("text")
+        .attr("class", "orphan-legend-header")
+        .attr("x", headerPadLeft)
+        .attr("y", -padTop)
+        .attr("dy", "0.8em")
+        .attr("text-anchor", "start")
+        .style("font-family", (options && options.fontFamily) ? options.fontFamily : "'Palatino Linotype', Georgia, 'Times New Roman', serif")
+        .style("font-size", "11px")
+        .style("font-weight", "bold")
+        .style("fill", "#333")
+        .text("Orphans");
 
     // Measure max text bbox so all pills share the same size.
     const padX = 4;
@@ -1851,6 +1925,16 @@ function renderCurrent() {
         const lifted = custom_lift_class_layer(tree_data);
         tree_data = lifted.data;
         centerLabel = lifted.centerLabel || "";
+        // The Class layer (and its color-bearing node name) was just lifted out of tree_data
+        // above, so applyTreeColors's stacked_meta/depth-1 lookups never see it -- resolve the
+        // single class color here instead, from the label custom_lift_class_layer handed back.
+        if (tree_options.colorMode === "class") {
+            const classKey = centerLabel.replace(/^Class\s+/i, '').trim();
+            tree_options = Object.assign({}, tree_options, {
+                colorMode: "fixed",
+                fixedColor: CLASS_COLORS[classKey] || "#333",
+            });
+        }
     }
 
     const collapsed = collapse_singletons(tree_data, meta.collapseLabels || []);
@@ -2080,17 +2164,38 @@ function renderCurrent() {
     const plotKey = type + ":" + String(selectionKey);
     tree_options.radiusScale = getManualRadiusScale(plotKey);
 
-    tree_options.anchor = containerId;
     tree_options.plotType = type; // Pass type to drawing functions for type-specific spacing
 
     // Route to appropriate drawing function based on layout
     const layout = TREE_UI.layout || "Tree - Circular";
-    if (layout === "Tree - Organic") {
-        custom_draw_dendrogram_curved(tree_data, tree_options, collapsed.stacked, centerLabel);
-    } else if (layout === "Tree - Straight") {
-        custom_draw_dendrogram_straight(tree_data, tree_options, collapsed.stacked, centerLabel);
+    const secondaryContainerId = "tree_plot_secondary";
+    const scrollWrap = document.getElementById("tree_plot_scroll_wrap");
+    // Class O2 only: it's too crowded as one plot, so split it into two side-by-side
+    // circular plots -- families 1-4 on the left, the rest on the right.
+    const isDualPlot = (layout === "Tree - Circular" && type === "Class" && selectionKey === "O2");
+
+    if (isDualPlot) {
+        if (scrollWrap) scrollWrap.classList.add("dual-plot");
+        const secondaryEl = document.getElementById(secondaryContainerId);
+        if (secondaryEl) secondaryEl.style.display = "";
+
+        const halves = splitFamilyChildrenForDualPlot(tree_data);
+        custom_draw_tree(halves.left, Object.assign({}, tree_options, { anchor: containerId }), collapsed.stacked, centerLabel);
+        custom_draw_tree(halves.right, Object.assign({}, tree_options, { anchor: secondaryContainerId }), collapsed.stacked, centerLabel);
     } else {
-        custom_draw_tree(tree_data, tree_options, collapsed.stacked, centerLabel);
+        if (scrollWrap) scrollWrap.classList.remove("dual-plot");
+        clearContainer(secondaryContainerId);
+        const secondaryEl = document.getElementById(secondaryContainerId);
+        if (secondaryEl) secondaryEl.style.display = "none";
+
+        tree_options.anchor = containerId;
+        if (layout === "Tree - Organic") {
+            custom_draw_dendrogram_curved(tree_data, tree_options, collapsed.stacked, centerLabel);
+        } else if (layout === "Tree - Straight") {
+            custom_draw_dendrogram_straight(tree_data, tree_options, collapsed.stacked, centerLabel);
+        } else {
+            custom_draw_tree(tree_data, tree_options, collapsed.stacked, centerLabel);
+        }
     }
 
     // Class A only: append orphan pill legend under the SVG (alphabetical, unrotated)
@@ -2099,6 +2204,25 @@ function renderCurrent() {
         renderOrphanLegendPills(containerId + "_svg", meta.orphanLeafLabels, tree_options);
     }
 
+}
+
+// Class O2 dual-plot split: family nodes numbered 1-4 go left, everything else goes right.
+// Works off the trailing number in the family label (e.g. "Olfactory family 3"), so it's
+// resilient to another family-name rewording the way "Odorant family N" -> "Olfactory family N"
+// already happened once.
+function splitFamilyChildrenForDualPlot(tree_data) {
+    const children = (tree_data && tree_data.children) || [];
+    const left = [];
+    const right = [];
+    children.forEach(function (child) {
+        const m = /(\d+)\s*$/.exec(String((child && child.name) || "").trim());
+        const num = m ? parseInt(m[1], 10) : null;
+        (num !== null && num <= 4 ? left : right).push(child);
+    });
+    return {
+        left: Object.assign({}, tree_data, { children: left }),
+        right: Object.assign({}, tree_data, { children: right }),
+    };
 }
 
 $(function () {

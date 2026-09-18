@@ -231,11 +231,12 @@
                 </div>
               </div>
 
-              <!-- Single plot -->
+              <!-- Single plot (dual-plot class, e.g. Class O2, adds a second half here via JS) -->
               <div class="plot-container">
                 <div id="tree_plot_title" class="plot-title"></div>
-                <div class="col-md-12 tree-plot-scroll">
+                <div id="tree_plot_scroll_wrap" class="col-md-12 tree-plot-scroll">
                   <div id="tree_plot_main" class="tree_plot text-center"></div>
+                  <div id="tree_plot_secondary" class="tree_plot text-center" style="display:none;"></div>
                 </div>
               </div>
             {% endif %}

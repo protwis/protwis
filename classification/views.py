@@ -63,13 +63,16 @@ class ClassificationVisualizationMixin:
         ("V", {"label": "Class V", "title": "Class V (Vomeronasal)", "slug": "010"}),
         ("U", {"label": "Unclassified", "title": "Unclassified", "slug": "011"}),
     ])
-    TREE_DISABLED_CLASS_KEYS = {"O1", "O2", "U"}
+    TREE_DISABLED_CLASS_KEYS = {"U"}
     # Chemotypes that don't make sense as a standalone Chemotype-tab dataset.
     TREE_EXCLUDED_CHEMOTYPES = {"odorant receptors", "ion receptors"}
     # Editorial exceptions to the generic Class-tab tree shape -- verified against the DB (Class C
     # genuinely has chemotype annotations, so this can't be derived, only curated).
     CLASS_TREE_OVERRIDES = {
-        "C": {"skip_chemotype_layer": True, "fixed_color": "#d62728"},  # keep in sync with CLASS_COLORS["C"]
+        "A": {"colorMode": "chemotype"},  # kept multi-color on purpose -- flat class color looked worse here
+        "B2": {"skip_chemotype_layer": True},  # 6 sparse chemotypes over 42 receptors -- too crowded as its own ring
+        "C": {"skip_chemotype_layer": True},
+        "O2": {"family_sort": "natural"},  # "Family 1, 2, ..., 14", not "1, 10, 11, ..., 2, ..."
     }
     # Classes whose orphan-tagged receptors are split out into a legend rather than shown in the
     # main tree. Orphan-tagged receptors exist in B2/C/Unclassified too, but generalizing the split
@@ -1214,13 +1217,17 @@ class Classification_tree(ClassificationVisualizationMixin):
             if not class_rows:
                 continue
 
+            color_mode = override.get("colorMode", "class")
+            family_sort_key = self._natural_sort_key if override.get("family_sort") == "natural" else None
             if override.get("skip_chemotype_layer"):
-                children = classification_db.build_grouped_children(class_rows, [FAMILY_GETTER])
-                tree_opts = dict(base_tree_options, colorMode="fixed", fixedColor=override["fixed_color"])
+                sort_keys = {0: family_sort_key} if family_sort_key else None
+                children = classification_db.build_grouped_children(class_rows, [FAMILY_GETTER], sort_keys)
+                tree_opts = dict(base_tree_options, colorMode=color_mode)
                 meta = {"title": label, "liftClassLayer": True, "collapseLabels": ["Family"]}
             else:
-                children = classification_db.build_grouped_children(class_rows, [CHEMOTYPE_GETTER, FAMILY_GETTER])
-                tree_opts = dict(base_tree_options, colorMode="chemotype")
+                sort_keys = {1: family_sort_key} if family_sort_key else None
+                children = classification_db.build_grouped_children(class_rows, [CHEMOTYPE_GETTER, FAMILY_GETTER], sort_keys)
+                tree_opts = dict(base_tree_options, colorMode=color_mode)
                 meta = {"title": label, "liftClassLayer": True, "collapseLabels": ["Chemotype", "Family"]}
 
             if orphan_leaf_labels:

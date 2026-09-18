@@ -38,18 +38,18 @@
       .replace(/'/g, "&#39;");
   }
 
-  // Class-symbol -> color. Both "Unclassified" (wheel data) and "Cl" (tree's
-  // classification-annotation data) refer to the same class, so both keys are kept.
+  // Class-symbol -> color, same symbol used everywhere else (CLASS_VISUALIZATION_CONFIG, etc.).
   const CLASS_COLORS = {
     A: "#1f78b4",
     B1: "#33a02c",
     B2: "#6A3D9A",
     C: "#d62728",
     F: "#FF7F0E",
+    O1: "#9D4EDD",
+    O2: "#2A9D8F",
     T2: "#F7B6D2",
     V: "#B8860B",
-    Unclassified: "#9e9e9e",
-    Cl: "#9e9e9e",
+    U: "#9e9e9e",
   };
 
   // 14-category chemotype colors (ColorBrewer Paired 12 + 2 extras). Shared verbatim
