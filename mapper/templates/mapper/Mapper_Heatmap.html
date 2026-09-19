@@ -1,0 +1,375 @@
+{% extends "home/base.html" %}
+{% load static %}
+{% load humanize %}
+{% block addon_css %}
+<link rel="stylesheet" href="{% static 'home/css/nv.d3.min.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/nvd3-update.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/Spectrum_1_8_1.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/select2_4.1.0-rc.0._full.css' %}" type="text/css">
+<link rel="stylesheet" href="{% static 'home/css/NewDrugsBrowser_datatables.min.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/data_mapper/core.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/data_mapper/heatmap.css' %}" type="text/css" />
+{% endblock %}
+
+{% block content %}
+<div class="mapper-core-wheel-wrap row mapper-heatmap-page mapper-core-booting">
+  <div class="col-xs-12 mapper-core-wheel-primary-col">
+    <div class="mapper-core-wheel-left">
+      <div class="mapper-core-boot-overlay">Loading…</div>
+      <div class="mapper-core-wheel-top-row">
+        <h2 class="mapper-core-wheel-page-title">Heatmap</h2>
+      </div>
+      <div class="mapper-core-wheel-toolbar-stack" style="width:100%;">
+        <div class="mapper-core-wheel-toolbar" aria-label="Mapper heatmap tools" style="justify-content:center;">
+          <button type="button" class="btn btn-default btn-xs" id="mapper-heatmap-howto-btn"
+                  data-toggle="modal" data-target="#mapper-heatmap-howto-modal"
+                  title="How to use the heatmap mapper">
+            How to<span class="mapper-core-howto-mark" aria-hidden="true">?</span>
+          </button>
+          <button type="button" class="btn btn-default btn-xs" id="mapper-heatmap-demo-rows">Demo</button>
+          <button type="button" class="btn btn-default btn-xs" id="mapper-heatmap-species-toggle">Species</button>
+          <button type="button" class="btn btn-primary btn-xs" id="mapper-heatmap-open-picker"
+                  data-toggle="modal" data-target="#mapper-core-gpcrome-picker-modal">Receptor lookup</button>
+          <div class="dropdown" style="position:relative;">
+            <button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown" id="mapper-heatmap-clear-rows">
+              Clear <span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu mapper-core-clear-menu">
+              <li><a href="#" id="mapper-heatmap-clear-whole">Whole table</a></li>
+              <li class="divider"></li>
+              <li><a href="#" data-heatmap-col="val1">Column 1</a></li>
+              <li><a href="#" data-heatmap-col="val2">Column 2</a></li>
+              <li><a href="#" data-heatmap-col="val3">Column 3</a></li>
+              <li><a href="#" data-heatmap-col="val4">Column 4</a></li>
+              <li><a href="#" data-heatmap-col="val5">Column 5</a></li>
+            </ul>
+          </div>
+          <button type="button" class="btn btn-default btn-xs" onclick="mapperHeatmapDownloadTable()" title="Download input table as Excel (.xlsx)"><span class="glyphicon glyphicon-save" aria-hidden="true"></span> Download</button>
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-bordered table-condensed mapper-core-input-table" id="mapper-heatmap-input-table">
+          <thead>
+            <tr>
+              <th class="mapper-core-th-remove" aria-label="Remove row"></th>
+              <th class="mapper-core-th-receptor mapper-core-sortable-head" data-mapper-heatmap-sort-col="receptor" tabindex="0" role="button" aria-sort="none">Receptor <span class="mapper-core-sort-indicator" aria-hidden="true"></span></th>
+              <th class="mapper-heatmap-species-h" style="display:none;">Species</th>
+              <th class="mapper-heatmap-val-h mapper-core-sortable-head" data-mapper-heatmap-sort-col="val1" tabindex="0" role="button" aria-sort="none">Col 1 <span class="mapper-core-sort-indicator" aria-hidden="true"></span></th>
+              <th class="mapper-heatmap-val-h" data-mapper-heatmap-sort-col="val2">Col 2</th>
+              <th class="mapper-heatmap-val-h" data-mapper-heatmap-sort-col="val3">Col 3</th>
+              <th class="mapper-heatmap-val-h" data-mapper-heatmap-sort-col="val4">Col 4</th>
+              <th class="mapper-heatmap-val-h" data-mapper-heatmap-sort-col="val5">Col 5</th>
+            </tr>
+          </thead>
+          <tbody id="mapper-heatmap-input-tbody"></tbody>
+        </table>
+      </div>
+      <p id="mapper-heatmap-messages" role="status" aria-live="polite"></p>
+    </div>
+  </div>
+
+  <div class="col-xs-12 mapper-core-wheel-plot-col">
+    <div class="mapper-core-plot-panel">
+      <div class="mapper-heatmap-plot-toolbar" aria-label="Heatmap plot toolbar">
+
+        <!-- Receptor names -->
+        <div class="dropdown" style="position:relative;">
+          <button type="button" class="btn btn-primary dropdown-toggle btn-sm" data-toggle="dropdown">Receptor names</button>
+          <div class="dropdown-menu p-2" style="min-width:160px; padding:10px 15px; left:100%; top:50%; margin-left:5px; position:absolute; transform:translateY(-30%);">
+            <button type="button" class="btn btn-outline-primary btn-block mb-1 mapper-heatmap-leaf-btn btn-primary active" data-value="IUPHAR">Protein</button>
+            <button type="button" class="btn btn-outline-primary btn-block mb-1 mapper-heatmap-leaf-btn" data-value="Gene">Gene</button>
+            <button type="button" class="btn btn-outline-primary btn-block mapper-heatmap-leaf-btn" data-value="UniProt">UniProt</button>
+          </div>
+        </div>
+
+        <!-- Species names (only when species toggle is on) -->
+        <div id="mapper-heatmap-species-names-wrap" style="display:none; position:relative;" class="dropdown mapper-core-dropdown-anchor-topleft">
+          <button type="button" class="btn btn-primary dropdown-toggle btn-sm" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Species names</button>
+          <div class="dropdown-menu" style="min-width:160px; padding:10px 14px; left:100%; top:50%; margin-left:5px; position:absolute; transform:translateY(-30%); font-size:11px;">
+            <button class="btn btn-primary btn-block mb-1 mapper-heatmap-species-name-btn" data-value="common">Common name</button>
+            <button class="btn btn-outline-primary btn-block mb-1 mapper-heatmap-species-name-btn" data-value="latin">Latin name</button>
+            <button class="btn btn-outline-primary btn-block mapper-heatmap-species-name-btn" data-value="both">Both</button>
+          </div>
+        </div>
+
+        <!-- Colors -->
+        <div class="dropdown mapper-core-dropdown-anchor-topleft" style="position:relative;">
+          <button type="button" class="btn btn-primary dropdown-toggle btn-sm" data-toggle="dropdown">Colors</button>
+          <div class="dropdown-menu dropdown-menu-listplot mapper-core-dropdown-menu-topleft"
+               style="min-width:420px; padding:10px 15px; left:100%; margin-left:5px; position:absolute;">
+            <div style="display:flex; gap:20px; align-items:flex-start; padding:5px 0;">
+              <div>
+                <label style="font-weight:bold; font-size:12px; display:block; margin-bottom:5px;">Number of colors</label>
+                <select id="mapper-heatmap-color-style" class="form-control input-sm" style="width:130px;">
+                  <option value="One">One</option>
+                  <option value="Two">Two</option>
+                  <option value="Three_RWB" selected>Three</option>
+                  <option value="Three_TWM">Three</option>
+                </select>
+              </div>
+              <div>
+                <div class="mapper-heatmap-color-label-row">
+                  <div id="hm-label-min">Min</div>
+                  <div id="hm-label-mid">Mid</div>
+                  <div>Max</div>
+                </div>
+                <div style="display:flex; gap:8px; align-items:center;">
+                  <div id="hm-picker-min-wrap"><input type="text" id="mapper-heatmap-cpicker-min"></div>
+                  <div id="hm-picker-mid-wrap"><input type="text" id="mapper-heatmap-cpicker-mid"></div>
+                  <div><input type="text" id="mapper-heatmap-cpicker-max"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Layout -->
+        <div class="dropdown mapper-core-dropdown-anchor-topleft" style="position:relative;">
+          <button type="button" class="btn btn-primary dropdown-toggle btn-sm" data-toggle="dropdown">Layout</button>
+          <div class="dropdown-menu dropdown-menu-listplot mapper-core-dropdown-menu-topleft"
+               style="min-width:240px; padding:12px 15px; left:100%; margin-left:5px; position:absolute; font-size:12px;">
+            <strong style="display:block; margin-bottom:8px; border-bottom:1px solid #ddd; padding-bottom:5px;">Labels</strong>
+            <div style="display:flex; align-items:center; margin-bottom:8px;">
+              <label style="flex:1; margin:0; font-weight:normal;">Orientation:</label>
+              <button type="button" id="mapper-heatmap-toggle-orient" class="btn btn-primary btn-xs" style="min-width:80px;">Vertical</button>
+            </div>
+            <div style="display:flex; align-items:center; margin-bottom:10px;">
+              <label style="flex:1; margin:0; font-weight:normal;">Position:</label>
+              <button type="button" id="mapper-heatmap-toggle-pos" class="btn btn-primary btn-xs" style="min-width:80px;">Bottom</button>
+            </div>
+            <div class="text-center" style="margin-bottom:8px;">
+              <label class="small" for="mapper-heatmap-label-fontsize">Label font size</label>
+              <input type="range" class="form-control" min="10" max="16" value="12" id="mapper-heatmap-label-fontsize" style="width:90%;">
+              <div class="small"><span id="mapper-heatmap-label-fontsize-val">12</span> px</div>
+            </div>
+            <div class="text-center" style="margin-bottom:10px;">
+              <label class="small" for="mapper-heatmap-receptor-fontsize">Receptor font size</label>
+              <input type="range" class="form-control" min="8" max="15" value="12" id="mapper-heatmap-receptor-fontsize" style="width:90%;">
+              <div class="small"><span id="mapper-heatmap-receptor-fontsize-val">12</span> px</div>
+            </div>
+            <strong style="display:block; margin-bottom:8px; border-bottom:1px solid #ddd; padding-bottom:5px;">Data</strong>
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+              <label style="margin:0; font-weight:normal;">Data labels:</label>
+              <button type="button" id="mapper-heatmap-toggle-datalabels" class="btn btn-success btn-xs" style="min-width:56px;">Shown</button>
+            </div>
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+              <label style="margin:0; font-weight:normal;">Data border:</label>
+              <button type="button" id="mapper-heatmap-toggle-border" class="btn btn-success btn-xs" style="min-width:56px;">Shown</button>
+            </div>
+            <div class="text-center">
+              <label class="small" for="mapper-heatmap-data-fontsize">Data label font size</label>
+              <input type="range" class="form-control" min="8" max="16" value="12" id="mapper-heatmap-data-fontsize" style="width:90%;">
+              <div class="small"><span id="mapper-heatmap-data-fontsize-val">12</span> px</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Labels -->
+        <div class="dropdown mapper-core-dropdown-anchor-topleft" style="position:relative;">
+          <button type="button" class="btn btn-primary dropdown-toggle btn-sm" data-toggle="dropdown">Column labels</button>
+          <div class="dropdown-menu dropdown-menu-listplot mapper-core-dropdown-menu-topleft"
+               style="min-width:280px; padding:10px 14px; right:0; left:auto; position:absolute; font-size:11px;">
+            <div style="font-weight:600; margin-bottom:8px; border-bottom:1px solid #ddd; padding-bottom:5px;">Dataset label text</div>
+            <div style="display:flex; flex-direction:column; gap:5px;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <label style="width:30px; margin:0; flex-shrink:0;">Col 1</label>
+                <input type="text" id="mapper-heatmap-lbl-V1" class="form-control input-sm" maxlength="22" value="Dataset 1">
+              </div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <label style="width:30px; margin:0; flex-shrink:0;">Col 2</label>
+                <input type="text" id="mapper-heatmap-lbl-V2" class="form-control input-sm" maxlength="22" value="Dataset 2">
+              </div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <label style="width:30px; margin:0; flex-shrink:0;">Col 3</label>
+                <input type="text" id="mapper-heatmap-lbl-V3" class="form-control input-sm" maxlength="22" value="Dataset 3">
+              </div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <label style="width:30px; margin:0; flex-shrink:0;">Col 4</label>
+                <input type="text" id="mapper-heatmap-lbl-V4" class="form-control input-sm" maxlength="22" value="Dataset 4">
+              </div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <label style="width:30px; margin:0; flex-shrink:0;">Col 5</label>
+                <input type="text" id="mapper-heatmap-lbl-V5" class="form-control input-sm" maxlength="22" value="Dataset 5">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Download -->
+        <div class="dropdown" style="position:relative;">
+          <button type="button" class="btn btn-primary dropdown-toggle btn-sm" id="mapper-heatmap-download-btn" data-toggle="dropdown">
+            <span class="glyphicon glyphicon-download" style="vertical-align:top; line-height:1.3;"></span>
+            Download <span class="caret"></span>
+          </button>
+          <div class="dropdown-menu p-2" style="min-width:160px; padding:10px 15px; left:100%; top:50%; margin-left:5px; position:absolute; transform:translateY(-25%); display:none;">
+            <button type="button" class="btn btn-primary btn-block mb-1" onclick="saveSvgAsJpg(document.querySelector('#mapper-heatmap-plot svg'), 'Heatmap.jpg');">JPG</button>
+            <button type="button" class="btn btn-primary btn-block mb-1" onclick="saveSvgAsPng(document.querySelector('#mapper-heatmap-plot svg'), 'Heatmap.png');">PNG</button>
+            <button type="button" class="btn btn-primary btn-block mb-1" onclick="saveSvg(document.querySelector('#mapper-heatmap-plot svg'), 'Heatmap.svg');">SVG</button>
+            <button type="button" class="btn btn-primary btn-block"       onclick="saveSvgAsTiff(document.querySelector('#mapper-heatmap-plot svg'), 'Heatmap.tiff');">TIFF</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="mapper-heatmap-plot-wrap">
+        <div id="mapper-heatmap-plot" class="text-center"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- How to modal -->
+<div class="modal fade" id="mapper-heatmap-howto-modal" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+        <h4 class="modal-title">Heatmap mapper</h4>
+      </div>
+      <div class="modal-body">
+        <p>Enter one receptor per row and up to five numerical values (Col 1–Col 5). The heatmap renders a colour-coded grid where each column is a dataset and each row is a receptor.</p>
+        <p>Paste from Excel as receptor + TAB-separated values. Use <strong>Receptor lookup</strong> for searchable selection.</p>
+        <p>Use the right toolbar to control colour gradient, label styling, and data display options.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Receptor lookup modal (shared) -->
+<div class="modal fade" id="mapper-core-gpcrome-picker-modal" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" id="mapper-core-gpcrome-picker-dismiss-x" data-dismiss="modal"><span>&times;</span></button>
+        <h4 class="modal-title">Select receptors</h4>
+      </div>
+      <div class="modal-body">
+        <div style="overflow-x:auto;">
+          <table width="100%" class="display compact" id="mapper-core-gpcrome-picker-table">
+            <thead>
+              <tr>
+                <th data-dt-order="disable"><input type="checkbox" id="mapper-core-gpcrome-picker-select-all" title="Select all filtered rows"></th>
+                <th class="mapper-core-picker-gpcrdb-label" data-dt-order="disable">GPCRdb</th>
+                <th>GtoPdb</th><th>Gene</th><th>UniProt</th><th>family</th><th>class</th>
+              </tr>
+              <tr id="mapper-core-picker-filter-row">
+                <th></th><th></th><th></th><th></th><th></th><th></th><th></th>
+              </tr>
+            </thead>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer" style="display:flex; align-items:center; justify-content:space-between;">
+        <div class="dropdown" style="position:relative;">
+          <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><span class="mapper-core-picker-assign-toggle-label">Assign value: None</span> <span class="caret"></span></button>
+          <div class="dropdown-menu p-2" id="mapper-core-gpcrome-picker-assign-menu" style="min-width:220px; padding:10px 15px; bottom:100%; top:auto;">
+            <div style="font-weight:bold; margin-bottom:4px;">Value</div>
+            <button type="button" class="btn btn-primary btn-block btn-sm mb-1 mapper-core-picker-assign-src" data-src="none">None</button>
+            <button type="button" class="btn btn-outline-primary btn-block btn-sm mb-1 mapper-core-picker-assign-src" data-src="class">Class</button>
+            <button type="button" class="btn btn-outline-primary btn-block btn-sm mb-1 mapper-core-picker-assign-src" data-src="ligandtype">Chemotype</button>
+            <button type="button" class="btn btn-outline-primary btn-block btn-sm mapper-core-picker-assign-src" data-src="family">Receptor family</button>
+          </div>
+        </div>
+        <div>
+          <button type="button" class="btn btn-default" data-dismiss="modal" id="mapper-core-gpcrome-picker-cancel">Cancel</button>
+          <button type="button" class="btn btn-primary" id="mapper-core-gpcrome-picker-add">Add to table</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block addon_js %}
+<script src="{% static 'home/js/d3.min.js' %}"></script>
+<script src="{% static 'home/js/nv.d3.min.js' %}"></script>
+<script src="{% static 'home/js/d3.v4.min.js' %}"></script>
+<script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
+<script src="{% static 'home/js/saveSvg.js' %}"></script>
+<script src="{% static 'home/js/datamapper.js' %}"></script>
+<script src="{% static 'home/js/spectrum_v1_8_1.js' %}"></script>
+<script src="{% static 'home/js/select2_4.1.0-rc.0_full.js' %}"></script>
+<script src="{% static 'home/js/NewDrugsBrowser_datatables.min.js' %}"></script>
+<script src="{% static 'home/js/NorgesDTFilterBuilder.js' %}"></script>
+<script src="{% static 'home/js/data_mapper/data_mapper_modal_table.js' %}"></script>
+<script src="{% static 'home/js/xlsx.full.min.js' %}"></script>
+
+<script>
+$('.dropdown-menu:not(.mapper-core-clear-menu)').on('click', function(e){ e.stopPropagation(); });
+$('.dropdown-menu input[type="range"]').on('mouseenter pointerdown', function() { this.focus(); });
+// Download dropdown manual toggle
+(function(){
+  var btn = document.querySelector('#mapper-heatmap-download-btn');
+  var menu = btn && btn.nextElementSibling;
+  if (!btn || !menu) return;
+  btn.addEventListener('click', function(e){ e.stopPropagation(); menu.style.display = (menu.style.display==='block')?'none':'block'; });
+  document.addEventListener('click', function(){ menu.style.display='none'; });
+  menu.addEventListener('click', function(e){ e.stopPropagation(); });
+})();
+
+var receptorSelect2Data = {{ receptor_select2_json|safe }};
+var MAPPER_CORE_RESOLVE    = {{ gpcrome_resolve_json|safe }};
+var MAPPER_CORE_GPCROME_PICKER_ROWS    = {{ gpcrome_picker_rows_json|safe }};
+window.MAPPER_HEATMAP_SPECIES_DATA  = {{ ortholog_species_json|safe }};
+
+window.MAPPER_CORE_ENTRY_META = {};
+(function(){
+  if (receptorSelect2Data && receptorSelect2Data.length) {
+    receptorSelect2Data.forEach(function(item){
+      var uni = item.uniprot != null ? String(item.uniprot).trim().toUpperCase() : '';
+      if (!uni && item.id && String(item.id).indexOf('_') !== -1) uni = String(item.id).split('_')[0].trim().toUpperCase();
+      else if (!uni && item.id) uni = String(item.id).trim().toUpperCase();
+      window.MAPPER_CORE_ENTRY_META[item.id] = {
+        name_html:  item.name_html  || '',
+        name_plain: item.name_plain || '',
+        text:       item.text       || '',
+        gene:       item.gene != null ? String(item.gene).trim() : '',
+        uniprot:    uni
+      };
+    });
+  }
+})();
+</script>
+<script src="{% static 'home/js/data_mapper/mapper_page_core.js' %}"></script>
+<script src="{% static 'home/js/data_mapper/mapper_heatmap_page.js' %}"></script>
+<script>
+function mapperHeatmapDownloadTable() {
+  var c1Label = ($('#mapper-heatmap-lbl-V1').val() || 'Dataset 1').trim();
+  var c2Label = ($('#mapper-heatmap-lbl-V2').val() || 'Dataset 2').trim();
+  var c3Label = ($('#mapper-heatmap-lbl-V3').val() || 'Dataset 3').trim();
+  var c4Label = ($('#mapper-heatmap-lbl-V4').val() || 'Dataset 4').trim();
+  var c5Label = ($('#mapper-heatmap-lbl-V5').val() || 'Dataset 5').trim();
+  var headers = ['Receptor', c1Label, c2Label, c3Label, c4Label, c5Label];
+  var rows = [headers];
+  $('#mapper-heatmap-input-tbody tr').each(function() {
+    var $tr = $(this);
+    var entryId = ($tr.find('.mapper-core-receptor-entry').val() || '').trim();
+    var unmatched = $tr.data('mapperCoreUnmatchedRaw');
+    var ta = ($tr.find('.mapper-core-in-receptor').val() || '').trim();
+    var receptor = '';
+    if (entryId && window.MAPPER_CORE_ENTRY_META && window.MAPPER_CORE_ENTRY_META[entryId]) {
+      receptor = window.MAPPER_CORE_ENTRY_META[entryId].name_plain || window.MAPPER_CORE_ENTRY_META[entryId].text || entryId;
+    } else if (unmatched != null && String(unmatched).trim()) {
+      receptor = String(unmatched).trim();
+    } else {
+      receptor = ta;
+    }
+    if (!receptor) return;
+    rows.push([
+      receptor,
+      ($tr.find('.mapper-heatmap-val1').val() || '').trim(),
+      ($tr.find('.mapper-heatmap-val2').val() || '').trim(),
+      ($tr.find('.mapper-heatmap-val3').val() || '').trim(),
+      ($tr.find('.mapper-heatmap-val4').val() || '').trim(),
+      ($tr.find('.mapper-heatmap-val5').val() || '').trim()
+    ]);
+  });
+  var wb = XLSX.utils.book_new();
+  var ws = XLSX.utils.aoa_to_sheet(rows);
+  XLSX.utils.book_append_sheet(wb, ws, 'Heatmap');
+  XLSX.writeFile(wb, 'Heatmap_data.xlsx');
+}
+</script>
+{% endblock %}

@@ -1,0 +1,3298 @@
+{% extends "home/base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid ss-page{% if structuresim_embed_mode %} ss-embed-mode{% endif %}{% if structuresim_scope_class %} ss-class-scope{% endif %}">
+  <div id="sim-status" style="display:none;"></div>
+
+  <!-- How-to Modal -->
+  <div id="ssHowToBackdrop" class="ss-modal-backdrop" aria-hidden="true"></div>
+  <div id="ssHowToModal" class="ss-modal" role="dialog" aria-modal="true" aria-labelledby="ssHowToTitle" aria-hidden="true">
+    <header>
+      <h3 id="ssHowToTitle">How to use this page</h3>
+      <button type="button" class="ss-modal-close" aria-label="Close">&times;</button>
+    </header>
+    <div class="ss-modal-body">
+      <p>
+        This page shows a 2D <strong>t-SNE clustering algorithm</strong> embedding of GPCR similarity.
+        Each point is a receptor; nearby points are more similar in the selected dataset.
+      </p>
+      <ul>
+        <li><strong>Dataset</strong>: switch between <strong>Sequence</strong>, <strong>Inactive structures</strong>, and <strong>Active structures</strong>.</li>
+        <li><strong>Human only</strong>: this view contains <strong>human receptors only</strong>.</li>
+        <li><strong>Structure datasets</strong>: include <strong>representative structures only</strong> (active/inactive sets).</li>
+        <li><strong>Colour by</strong>: recolours points by Class/Chemotype/Receptor family/Modality/Sense.</li>
+        {% if not structuresim_scope_class %}
+        <li><strong>Shape by</strong>: toggles marker shapes (None/Class), and the shape legend can be used to hide or isolate classes.</li>
+        {% endif %}
+        <li><strong>Click</strong> any point to see details in the left-side panel.</li>
+        <li><strong>Legend</strong>: click legend items to exclude/include groups in the plot.</li>
+      </ul>
+    </div>
+    <footer>
+      <button type="button" class="btn btn-primary" id="ssHowToOk">Got it</button>
+    </footer>
+  </div>
+
+  <!-- toolbar (Wheel-like dropdown controls in one row) -->
+  <div class="ss-toolbar">
+    <div class="ss-search-wrap">
+      <select id="ssReceptorSearch" class="form-control" style="width: 100%;">
+        <option value="">Search receptor</option>
+      </select>
+    </div>
+
+    <!-- How-to -->
+    <button id="ssHowToBtn" type="button" class="btn btn-primary btn-sm">
+      <span class="glyphicon glyphicon-info-sign" style="vertical-align: top; line-height:1.3;"></span>
+      How to
+    </button>
+
+    <!-- Similarity source -->
+    <div class="dropdown">
+      <button id="ssDatasetDropdownBtn" class="btn btn-primary btn-sm dropdown-toggle" type="button" data-toggle="dropdown">
+        Source <span class="caret"></span>
+      </button>
+      <div class="dropdown-menu" style="min-width: 200px;">
+        <button type="button" class="btn btn-primary btn-block ss-dataset-opt" data-dataset="sequence">Sequence</button>
+        <button type="button" class="btn btn-outline-primary btn-block ss-dataset-opt" data-dataset="inactive">Inactive structures</button>
+        <button type="button" class="btn btn-outline-primary btn-block ss-dataset-opt" data-dataset="active">Active structures</button>
+      </div>
+    </div>
+
+    <!-- Color by -->
+    <div class="dropdown">
+      <button id="ssColorDropdownBtn" class="btn btn-primary btn-sm dropdown-toggle" type="button" data-toggle="dropdown">
+        Color by <span class="caret"></span>
+      </button>
+      <div class="dropdown-menu" style="min-width: 200px;">
+        <button type="button" class="btn btn-primary btn-block ss-colorby-opt" data-key="Class">Class</button>
+        <button type="button" class="btn btn-outline-primary btn-block ss-colorby-opt" data-key="Chemotype">Chemotype</button>
+        <button type="button" class="btn btn-outline-primary btn-block ss-colorby-opt" data-key="Receptor family">Receptor family</button>
+        <button type="button" class="btn btn-outline-primary btn-block ss-colorby-opt" data-key="Modality">Modality</button>
+        <button type="button" class="btn btn-outline-primary btn-block ss-colorby-opt" data-key="Sense">Sense</button>
+      </div>
+    </div>
+
+    <!-- Customize colors -->
+    <div class="dropdown">
+      <button id="ssCustomizeColorsBtn" class="btn btn-primary btn-sm dropdown-toggle" type="button" data-toggle="dropdown">
+        Customize colors <span class="caret"></span>
+      </button>
+      <div class="dropdown-menu p-3 customize-menu">
+        <div class="panel-header">
+          <div class="panel-grid">
+            <div></div>
+            <div class="header-title"><span id="ssCustomizeTitle">Customize colors</span></div>
+            <div style="justify-self:end;">
+              <button type="button" class="btn btn-outline-primary btn-xs" id="ssResetColorsBtn">Reset</button>
+            </div>
+          </div>
+        </div>
+        <div id="ss-color-pickers"></div>
+      </div>
+    </div>
+
+    {% if not structuresim_scope_class %}
+      <!-- Shape by -->
+      <div class="dropdown">
+        <button id="ssShapeDropdownBtn" class="btn btn-primary btn-sm dropdown-toggle" type="button" data-toggle="dropdown">
+          Shape by <span class="caret"></span>
+        </button>
+        <div class="dropdown-menu" style="min-width: 180px;">
+          <button type="button" class="btn btn-primary btn-block ss-shapeby-opt" data-key="None">None</button>
+          <button type="button" class="btn btn-outline-primary btn-block ss-shapeby-opt" data-key="Class">Class</button>
+        </div>
+      </div>
+    {% endif %}
+
+    <!-- Download (Wheel-like) -->
+    <div class="dropdown">
+      <button id="ssDownloadDropdownBtn" class="btn btn-primary btn-sm dropdown-toggle" type="button" data-toggle="dropdown">
+        <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+      </button>
+      <div class="dropdown-menu" style="min-width: 160px;">
+        <button id="ssDownloadSvgBtn" type="button" class="btn btn-primary btn-block">SVG</button>
+        <button id="ssDownloadPngBtn" type="button" class="btn btn-primary btn-block">PNG</button>
+      </div>
+    </div>
+
+  </div>
+
+  <div id="ssLoaderHost" class="ss-loader-host" aria-hidden="true"></div>
+
+  <div class="ss-plot-grid" id="ssPlotGrid" aria-label="Plot and legends" style="display:none;">
+    <div class="ss-left-col">
+      <aside id="ss-legend" class="ss-legend" aria-label="Legend">
+        <div id="ss-legend-body"></div>
+      </aside>
+    </div>
+
+    <div class="ss-plot-wrap">
+      <div id="plot" style="min-height: 540px;"></div>
+    </div>
+
+    <div class="ss-right-col">
+      <div id="ssDetailsPanel" class="ss-static-panel ss-details-panel" aria-label="Receptor details"></div>
+      <aside id="ssSimilarPanel" class="ss-static-panel" aria-label="Most similar receptors"></aside>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block addon_css %}
+<link rel="stylesheet" href="{% static 'home/css/NewDrugsBrowser_datatables.min.css' %}" type="text/css"/>
+<link rel="stylesheet" href="{% static 'home/css/select2_4.1.0-rc.0._full.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/Spectrum_1_8_1.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/BusyLoad.css' %}" type="text/css" />
+<style>
+.ss-embed-mode {
+  padding-top: 8px;
+}
+
+.ss-loader-host{
+  min-height: 620px;
+  position: relative;
+}
+
+#ssLoaderHost .busy-load-container-item{
+  transform: translateY(-25%);
+}
+
+#ssLoaderHost .ss-loader-text{
+  font-size: 2.5rem !important;
+  font-family: 'Source Code Pro', monospace;
+  letter-spacing: 0.02em;
+}
+
+/* Wheel-like outline button (bootstrap3-compatible) */
+.btn-outline-primary{
+  color:#337ab7;
+  background-color:transparent;
+  border:1px solid #337ab7;
+}
+.btn-outline-primary:hover,
+.btn-outline-primary:focus{
+  color:#fff;
+  background-color:#337ab7;
+  border-color:#2e6da4;
+}
+.ss-toolbar .btn[disabled],
+.ss-toolbar .btn.disabled{
+  opacity: 0.55;
+  cursor: not-allowed;
+  pointer-events: auto;
+}
+
+/* --- Control rows (StructureSim) --- */
+.ss-controls-row{
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0;
+}
+.ss-controls-label{
+  display: inline-block;
+  width: 80px; /* aligns button columns across rows */
+  margin: 0;
+}
+.ss-controls-row--nolabel{
+  padding-left: 80px; /* match .ss-controls-label width */
+}
+
+/* Wheel-like toolbar row */
+.ss-toolbar{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+  margin: 10px 0 8px;
+  padding-left: 0;
+}
+.ss-left-col{
+  min-width: 0;
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: flex-end;
+}
+.ss-right-col{
+  min-width: 0;
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow: hidden;
+}
+#ssSimilarPanel{
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+.ss-class-scope .ss-right-col #ssDetailsPanel,
+.ss-class-scope .ss-right-col #ssSimilarPanel{
+  width: calc(100% - 4px);
+}
+.ss-static-panel{
+  border: 1px solid #e6e6e6;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: none;
+  padding: 12px;
+  box-sizing: border-box;
+}
+#ssDetailsPanel{
+  width: 100%;
+}
+#ssDetailsPanel .ss-hover-panel,
+#ssDetailsPanel .ss-similar-panel{
+  font-size: 12px;
+}
+#ssDetailsPanel .ss-hover-panel-kv{
+  margin: 0;
+  line-height: 1.35;
+}
+.ss-detail-compact{
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.ss-detail-compact-row{
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  line-height: 1.35;
+}
+.ss-detail-compact-item{
+  display: inline;
+  white-space: normal;
+}
+.ss-detail-compact-label{
+  font-weight: 700;
+}
+.ss-detail-compact-sep{
+  color: #9a9a9a;
+}
+.ss-toolbar .btn{
+  text-align:center;
+}
+.ss-toolbar .dropdown-toggle{
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ss-toolbar #ssDatasetDropdownBtn{
+  width: 190px;                 /* baseline width */
+}
+.ss-toolbar #ssColorDropdownBtn{
+  width: 175px;                 /* ~20% less than 240 */
+}
+.ss-toolbar #ssShapeDropdownBtn{
+  width: 130px;                 /* ~50% of 240 */
+}
+.ss-toolbar #ssCustomizeColorsBtn{
+  width: 135px;
+}
+.ss-toolbar .dropdown-toggle .caret{
+  margin-left: 6px;
+}
+.ss-toolbar #ssHowToBtn{
+  width: 100px;                 /* keep toolbar stable */
+  white-space: nowrap;
+}
+.ss-toolbar .dropdown-menu{
+  padding: 10px 12px;
+}
+.ss-toolbar .dropdown > .dropdown-menu{
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+}
+.ss-toolbar .btn-block{
+  width: 100%;
+  margin-bottom: 6px;
+}
+.ss-toolbar .btn-block:last-child{
+  margin-bottom: 0;
+}
+.ss-search-wrap{
+  width: 260px;
+  min-width: 220px;
+  max-width: 260px;
+  box-sizing: border-box;
+  margin: 0;
+  font-size: 12px;
+}
+.ss-search-wrap .select2-container,
+.ss-search-wrap .form-control{
+  width: 100% !important;
+  max-width: 100%;
+  box-sizing: border-box;
+  font-size: 12px;
+}
+.ss-search-wrap .select2-selection--single{
+  padding-right: 4px;
+  font-size: 12px;
+}
+.ss-search-wrap .select2-selection__rendered{
+  font-size: 12px;
+}
+.ss-receptor-search-dropdown .select2-results__option{
+  font-size: 12px;
+}
+.ss-receptor-search-dropdown .select2-search--dropdown .select2-search__field{
+  font-size: 12px;
+}
+
+/* =========================
+   Customize colors dropdown (Wheel-like)
+   ========================= */
+.customize-menu{
+  --check-col: 10px;
+  --picker-col: 45px;
+  --gap: 10px;
+
+  width: 320px;
+  max-width: 90vw;
+  max-height: 60vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 12px 16px;
+  -webkit-overflow-scrolling: touch;
+}
+.customize-menu.dropdown-menu{
+  min-width: 0 !important;
+  box-sizing: border-box;
+}
+.customize-menu .panel-header{
+  background: #fff;
+  padding: 4px 0 8px 0;
+  margin: 0 0 8px 0;
+  border-bottom: 1px solid #eee;
+}
+.customize-menu .panel-grid{
+  display: grid;
+  grid-template-columns: var(--check-col) 1fr var(--picker-col);
+  align-items: center;
+  column-gap: var(--gap);
+}
+.customize-menu .header-title{
+  grid-column: 2 / span 1;
+  text-align: center;
+  font-weight: 600;
+}
+.color-grid{ display: block; }
+.color-item{
+  display: grid;
+  grid-template-columns: var(--check-col) 1fr var(--picker-col);
+  align-items: center;
+  column-gap: var(--gap);
+  padding: 4px 0;
+  min-height: 28px;
+  border-bottom: 1px dashed #eee;
+}
+.color-item:last-child{ border-bottom: none; }
+.color-item .color-label{
+  margin: 0;
+  line-height: 1.25;
+  word-break: break-word;
+}
+.color-item .sp-replacer{
+  width: var(--picker-col);
+  box-sizing: border-box;
+  height: 28px;
+  padding: 2px 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 24px;
+}
+.color-item .sp-preview{
+  width: 18px;
+  height: 18px;
+  margin: 0;
+}
+.color-item .sp-replacer .sp-dd{
+  font-size: 10px;
+}
+.sp-container{ z-index: 4000 !important; }
+
+/* --- Plot + custom legend layout --- */
+.ss-page{
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/* left details/legend | plot | right similar table */
+.ss-plot-grid{
+  display: grid;
+  grid-template-columns: minmax(120px, 12%) minmax(480px, 50%) minmax(430px, 38%);
+  align-items: start;
+  column-gap: 14px;
+  margin-top: 14px; /* whitespace between toolbar and plot */
+}
+.ss-class-scope .ss-plot-grid{
+  grid-template-columns: minmax(200px, 13%) minmax(420px, 1fr) minmax(460px, 40%);
+  box-sizing: border-box;
+  padding-right: 8px;
+}
+.ss-hover-panel{
+  position: relative;
+  z-index: 0;
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  background: transparent;
+  color: #111;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+  display: block;
+  box-sizing: border-box;
+  overflow: visible;
+  font-family: 'Source Code Pro', monospace;
+  font-size: 12px;
+}
+.ss-hover-panel.is-expanded{
+  width: 100%;
+  max-width: none;
+}
+.ss-hover-panel-body{
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+.ss-hover-panel-empty{
+  color: #555;
+  line-height: 1.5;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.ss-hover-panel-section{
+  border: 1px solid #e6e6e6;
+  border-radius: 8px;
+  padding: 10px;
+  background: #fff;
+  min-width: 0;
+}
+.ss-similar-panel{
+  width: 100%;
+  font-family: 'Source Code Pro', monospace;
+  font-size: 12px;
+  height: 100%;
+}
+.ss-similar-panel .ss-hover-panel-section{
+  min-height: 220px;
+  height: 100%;
+  box-sizing: border-box;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.ss-hover-panel-title{
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+}
+.ss-hover-panel-kv{
+  margin: 0 0 4px 0;
+  line-height: 1.45;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.ss-hover-panel-kv:last-child{
+  margin-bottom: 0;
+}
+.ss-hover-panel-note{
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.ss-plot-hover{
+  position: fixed;
+  z-index: 2;
+  min-width: 260px;
+  max-width: 420px;
+  background: rgba(255,255,255,.98);
+  color: #111;
+  border: 1px solid #cfcfcf;
+  border-radius: 10px;
+  box-shadow: 0 10px 24px rgba(0,0,0,.18);
+  padding: 10px 12px;
+  display: none;
+  pointer-events: none;
+  box-sizing: border-box;
+  font-family: 'Source Code Pro', monospace;
+  font-size: 12px;
+  line-height: 1.35;
+}
+.ss-plot-hover b{
+  font-weight: 700;
+}
+.ss-hover-panel-table-wrap{
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: auto;
+  overflow-y: auto;
+}
+#ssSimilarTable{
+  width: 100%;
+  border-collapse: collapse;
+}
+#ssSimilarTable thead th,
+#ssSimilarTable tbody td{
+  text-align: center;
+  white-space: nowrap;
+  border: 0.5px solid #000;
+}
+#ssSimilarTable thead th{
+  font-size: 11px;
+  padding: 6px 8px;
+  background: #f7f9fb;
+}
+#ssSimilarTable tbody td{
+  padding: 6px 8px;
+}
+#ssSimilarTable tbody tr:nth-child(odd) td{
+  background: #fafafa;
+}
+#ssSimilarTable tbody tr.ss-hovered td{
+  background: #dff3df !important;
+}
+#ssSimilarTable td.ss-num,
+#ssSimilarTable th.ss-num{
+  text-align: center;
+}
+
+.ss-plot-wrap{
+  border: 1px solid #e6e6e6;
+  border-radius: 10px;
+  background: #fff;
+  padding: 10px; /* whitespace around plot inside border */
+}
+
+/* Plotly container tends to set its own width/height; make it fill our wrap. */
+.ss-plot-wrap #plot{
+  width: 100%;
+}
+
+.ss-legend{
+  width: 100%;
+  flex: initial;
+  align-self: flex-end;
+  font-family: 'Source Code Pro, monospace';
+  font-size: 12px;
+}
+.ss-legend-actions{
+  display:flex;
+  justify-content:flex-end;
+  margin: 0 0 8px 0;
+}
+.ss-legend-actions .btn{
+  font-family: inherit;
+}
+.ss-legend-grid{
+  display:grid;
+  gap: 14px;
+  align-items: start;
+  justify-content: end;
+}
+.ss-legend-col-title{
+  font-weight: 700;
+  margin: 0 0 6px 0;
+}
+.ss-legend-list{
+  border: 1px solid #e6e6e6;
+  border-radius: 8px;
+  padding: 8px;
+  max-height: 520px;
+  overflow:auto;
+}
+.ss-legend-list.ss-legend-list--disabled{
+  background: #fafafa;
+}
+.ss-legend-list.ss-legend-list--shapes{
+  /* Trim right-side whitespace so this box can match the color legend width */
+  padding-right: 0;
+}
+.ss-legend-item{
+  display:flex;
+  align-items:center;
+  gap: 8px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  user-select:none;
+}
+.ss-legend-item:hover{
+  background: #f7f7f7;
+}
+.ss-legend-item.is-off{
+  opacity: 0.35;
+}
+.ss-legend-swatch{
+  width: 22px;
+  height: 8px;
+  border: 1px solid #000;
+  border-radius: 2px;
+  flex: 0 0 22px;
+}
+.ss-legend-shape{
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+}
+.ss-legend-note{
+  color: #666;
+  font-size: 11px;
+  margin-top: 6px;
+}
+.ss-legend-placeholder{
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* Make the Plotly-rendered class legend match left legend typography */
+.ss-class-legend-plot .legend{
+  transform: translateX(-6px);
+  transform-box: fill-box;
+  transform-origin: top left;
+}
+.ss-class-legend-plot .legend text{
+  font-family: 'Source Code Pro', monospace !important;
+  font-size: 12px !important;
+  /* Default; JS will override to grey for "off" items */
+  fill: #111 !important;
+  /* Nudge slightly up to optically center on symbols */
+  transform: translateY(-1.2px);
+}
+.ss-class-legend-plot .legend .traces{
+  cursor: pointer;
+}
+
+/* --- How-to modal (StructureSim) --- */
+.ss-modal-backdrop{
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.45);
+  z-index: 3000; display:none;
+}
+.ss-modal{
+  position: fixed; left: 50%; top: 12%;
+  transform: translateX(-50%);
+  width: min(780px, calc(100% - 40px));
+  background: #fff; color:#111;
+  border:1px solid #cfcfcf; border-radius:10px;
+  box-shadow:0 16px 36px rgba(0,0,0,.25);
+  z-index: 3001; display:none;
+}
+.ss-modal header{
+  padding: 14px 16px; border-bottom:1px solid #e6e6e6;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.ss-modal header h3{ margin:0; font-size:18px; font-weight:600; }
+.ss-modal .ss-modal-close{
+  border:0; background:transparent; font-size:22px; line-height:1;
+  opacity:.65; cursor:pointer;
+}
+.ss-modal .ss-modal-close:hover{ opacity:1; }
+.ss-modal .ss-modal-body{ padding: 14px 16px 18px; max-height: 70vh; overflow:auto; }
+.ss-modal footer{ padding: 10px 16px; border-top:1px solid #e6e6e6; text-align:right; }
+
+</style>
+{% if structuresim_embed_mode %}
+<style>
+body > nav.navbar {
+  display: none !important;
+}
+
+body > #content.container {
+  width: 100%;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+body > #content.container > #gpcrdb_alert_placeholder {
+  display: none !important;
+}
+</style>
+{% endif %}
+{% endblock %}
+
+{% block addon_js %}
+<script src="{% static 'home/js/plotly_v1_58_5.js' %}"></script>
+<script src="{% static 'home/js/spectrum_v1_8_1.js' %}"></script>
+<script src="{% static 'home/js/select2_4.1.0-rc.0_full.js' %}"></script>
+<script src="{% static 'home/js/BusyLoad.js' %}"></script>
+<script>
+(async function () {
+  const isClassScopedVisualization = !!"{{ structuresim_scope_class|escapejs }}";
+  const statusEl    = document.getElementById('sim-status');
+  const loaderHostEl = document.getElementById('ssLoaderHost');
+  const plotGridEl = document.getElementById('ssPlotGrid');
+  const plotDiv     = document.getElementById('plot');
+  const detailsPanelHost = document.getElementById('ssDetailsPanel');
+  const similarPanelHost = document.getElementById('ssSimilarPanel');
+  const legendWrapEl= document.getElementById('ss-legend');
+  const legendEl    = document.getElementById('ss-legend-body');
+  const downloadPngBtn = document.getElementById('ssDownloadPngBtn');
+  const downloadSvgBtn = document.getElementById('ssDownloadSvgBtn');
+  // const downloadBtn = document.getElementById('download-btn');   // NEW (temporarily disabled)
+  const hoverPanelEl = document.createElement('div');
+  hoverPanelEl.className = 'ss-hover-panel';
+  if (detailsPanelHost) detailsPanelHost.appendChild(hoverPanelEl);
+  const similarPanelEl = document.createElement('div');
+  similarPanelEl.className = 'ss-similar-panel';
+  if (similarPanelHost) similarPanelHost.appendChild(similarPanelEl);
+  const plotHoverEl = document.createElement('div');
+  plotHoverEl.className = 'ss-plot-hover';
+  document.body.appendChild(plotHoverEl);
+
+  const EMBED_URL = "{{ embed_url }}";
+
+  /* ---------- colour constants ---------- */
+
+  // Keep these in sync with:
+  // - `classification/templates/classification/ClassificationWheel.html`
+  // - `classification/templates/classification/Classification_tree.html`
+  const CLASS_COLORS_TREE = {
+    "A":  "#1f78b4",
+    "B1": "#33a02c",
+    "B2": "#6A3D9A",
+    "C":  "#d62728",
+    "F":  "#FF7F0E",
+    "T2": "#F7B6D2",
+    "V":  "#B8860B",
+    "Unclassified": "#9e9e9e",
+    // Classification_tree.html uses "Cl" for unclassified.
+    "Cl": "#9e9e9e",
+    "U": "#9e9e9e",
+    // Odorant classes used by wheel
+    "O1": "#9D4EDD",
+    "O2": "#2A9D8F"
+  };
+
+  const CHEMOTYPE_COLORS_TREE = {
+    "Adhesion receptors": "#1F77B4",
+    "Alicarboxylic acid receptors": "#AEC7E8",
+    "Aminergic receptors": "#FF6B6B",
+    "Amino acid receptors": "#98DF8A",
+    "Ion receptors": "#D62728",
+    "Lipid receptors": "#9467BD",
+    "Melatonin receptors": "#DBDB8D",
+    "Nucleotide receptors": "#9EDAE5",
+    "Orphan receptors": "#a0b8ba",
+    "Peptide receptors": "#2CA02C",
+    "Protein receptors": "#FF7F0E",
+    "Retinal receptors": "#FFBB78",
+    "Steroid receptors": "#E377C2",
+    "Tastant receptors": "#F7B6D2",
+  };
+
+  const CHEMOTYPE_FALLBACK_PALETTE = [
+    "#a6cee3","#1f78b4","#b2df8a","#33a02c","#fb9a99","#e31a1c",
+    "#fdbf6f","#ff7f00","#cab2d6","#6a3d9a","#ffff99","#b15928",
+    "#66c2a5","#fc8d62"
+  ];
+
+  const MODALITY_COLORS_FIXED = {
+    "Small molecule receptors": "#1f78b4",
+    "Peptide receptors": "#2CA02C",
+    "Protein receptors": "#FF7F0E",
+    "Orphan receptors": "#a0b8ba",
+  };
+
+  const SENSE_COLORS_FIXED = {
+    "Vision": "#ff7f00",
+    "Taste": "#377eb8",
+    "Odorant": "#4daf4a",
+    "Non-sensory": "#33a02c",
+    "Unknown": "#cccccc",
+  };
+
+  const CLASS_ORDER = ['A','B1','B2','C','F','O1','O2','T2','V','U'];
+
+  function showBusyLoader() {
+    if (statusEl) {
+      statusEl.style.display = 'none';
+      statusEl.textContent = '';
+    }
+    if (plotGridEl) plotGridEl.style.display = 'none';
+    if (!loaderHostEl) return;
+    loaderHostEl.style.display = 'block';
+    if (window.jQuery && jQuery.fn && jQuery.fn.busyLoad) {
+      jQuery(loaderHostEl).show().busyLoad('show', {
+        spinner: 'accordion',
+        text: 'Loading cluster',
+        fontSize: '2.5rem',
+        textClass: 'ss-loader-text',
+        textPosition: 'top',
+        textMargin: '-6rem',
+        color: 'black',
+        background: 'white'
+      });
+    } else {
+      loaderHostEl.textContent = 'Loading cluster...';
+      loaderHostEl.style.display = 'flex';
+      loaderHostEl.style.alignItems = 'center';
+      loaderHostEl.style.justifyContent = 'center';
+      loaderHostEl.style.color = '#3f5368';
+      loaderHostEl.style.fontFamily = 'Source Code Pro, monospace';
+      loaderHostEl.style.fontSize = '2.5rem';
+    }
+  }
+
+  function hideBusyLoader() {
+    if (loaderHostEl && window.jQuery && jQuery.fn && jQuery.fn.busyLoad) {
+      jQuery(loaderHostEl).busyLoad('hide');
+    }
+    if (loaderHostEl) {
+      loaderHostEl.style.display = 'none';
+      loaderHostEl.textContent = '';
+    }
+    if (plotGridEl) plotGridEl.style.display = 'grid';
+  }
+
+  /* ---------- helpers ---------- */
+
+  function normalizeUnknownBucket(raw) {
+    const s = normKey(raw);
+    if (!s) return 'Unknown';
+    if (s.toLowerCase() === 'unknown') return 'Unknown';
+    return s;
+  }
+
+  // Keep receptor-family naming aligned with the wheel preprocessing.
+  const RECEPTOR_FAMILY_RENAME = {
+    "opsins": "Vision receptors",
+    "opsins receptors": "Vision receptors",
+    "class a orphans": "Orphans",
+    "class c orphans": "Orphans",
+    "class c orphans ": "Orphans",
+    "peptide p518 receptors": "QRFP receptors",
+  };
+
+  function normalizeReceptorFamily(raw) {
+    const s = normKey(raw);
+    if (!s) return '';
+    const mapped = RECEPTOR_FAMILY_RENAME[s.toLowerCase()];
+    return mapped || s;
+  }
+
+  function normKey(v) {
+    if (v === undefined || v === null) return "";
+    const s = String(v).trim();
+    if (!s || s.toLowerCase() === "nan") return "";
+    return s;
+  }
+
+  function decodeHtmlEntities(raw) {
+    const s = normKey(raw);
+    if (!s || s.indexOf('&') < 0) return s;
+    try {
+      const el = document.createElement('textarea');
+      el.innerHTML = s;
+      return el.value || s;
+    } catch (e) {
+      return s;
+    }
+  }
+
+  function escapeHtml(raw) {
+    const s = normKey(raw);
+    if (!s) return '';
+    try {
+      const el = document.createElement('div');
+      el.textContent = s;
+      return el.innerHTML || s;
+    } catch (e) {
+      return s;
+    }
+  }
+
+  function fnv1a32(str) {
+    let h = 0x811c9dc5;
+    for (let i = 0; i < str.length; i++) {
+      h ^= str.charCodeAt(i);
+      h = (h + ((h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24))) >>> 0;
+    }
+    return h >>> 0;
+  }
+
+  function stableColorForKey(key, palette) {
+    const k = normKey(key);
+    if (!k) return "#cccccc";
+    const idx = fnv1a32(k.toLowerCase()) % palette.length;
+    return palette[idx];
+  }
+
+  function getChemotypeColor(chemotype) {
+    const k = normKey(chemotype);
+    if (!k) return "#cccccc";
+    if (CHEMOTYPE_COLORS_TREE[k]) return CHEMOTYPE_COLORS_TREE[k];
+    return stableColorForKey(k, CHEMOTYPE_FALLBACK_PALETTE);
+  }
+
+  function generateCategoryColors(categories) {
+    if (!categories || categories.length === 0) return {};
+    const colors = {};
+    const hueStep = 360 / categories.length;
+    categories.forEach((cat, i) => {
+      const hue = (i * hueStep) % 360;
+      colors[cat] = `hsl(${hue}, 70%, 50%)`;
+    });
+    return colors;
+  }
+
+  /* ---------- customize colors state ---------- */
+
+  const COLOR_OVERRIDE_STORAGE_KEY = 'structuresim:colorOverrides:v1';
+  let colorOverrides = {};
+  try {
+    const raw = window.localStorage ? window.localStorage.getItem(COLOR_OVERRIDE_STORAGE_KEY) : null;
+    if (raw) colorOverrides = JSON.parse(raw) || {};
+  } catch (e) {
+    colorOverrides = {};
+  }
+
+  function saveColorOverrides() {
+    try {
+      if (window.localStorage) window.localStorage.setItem(COLOR_OVERRIDE_STORAGE_KEY, JSON.stringify(colorOverrides || {}));
+    } catch (e) {}
+  }
+
+  function normalizedCategoryForKey(colorKey, point) {
+    if (colorKey === 'Class') return normClassCodeFromString(point.Class || '');
+    if (colorKey === 'Modality') return normalizeUnknownBucket(point.Modality);
+    if (colorKey === 'Sense') return normalizeUnknownBucket(point.Sense);
+    if (colorKey === 'Chemotype') return normKey(point.Chemotype) || 'Unknown';
+    if (colorKey === 'Receptor family') return normalizeReceptorFamily(point['Receptor family']) || 'Unknown';
+    return normKey(getCategory(point, colorKey)) || 'Unknown';
+  }
+
+  function getOverride(colorKey, cat) {
+    const k = normKey(colorKey);
+    const c = normKey(cat);
+    if (!k || !c) return null;
+    const m = colorOverrides[k] || {};
+    return m[c] || null;
+  }
+
+  function setOverride(colorKey, cat, hexColor) {
+    const k = normKey(colorKey);
+    const c = normKey(cat);
+    if (!k || !c) return;
+    if (!colorOverrides[k]) colorOverrides[k] = {};
+    colorOverrides[k][c] = String(hexColor || '').trim();
+    saveColorOverrides();
+  }
+
+  function setOverrideInMemory(colorKey, cat, hexColor) {
+    const k = normKey(colorKey);
+    const c = normKey(cat);
+    if (!k || !c) return;
+    if (!colorOverrides[k]) colorOverrides[k] = {};
+    colorOverrides[k][c] = String(hexColor || '').trim();
+  }
+
+  function clearOverridesForKey(colorKey) {
+    const k = normKey(colorKey);
+    if (!k) return;
+    delete colorOverrides[k];
+    saveColorOverrides();
+  }
+
+  function updateCustomizeHeader() {
+    const t = document.getElementById('ssCustomizeTitle');
+    if (!t) return;
+    t.textContent = (colorKey || 'Class');
+  }
+
+  function applyCustomizeMenuWidth() {
+    const menu = document.querySelector('#ss-color-pickers')?.closest('.customize-menu');
+    if (!menu) return;
+    const base = 320; // matches CSS default width
+    const widths = {
+      "Class": Math.round(base * 0.55),
+      "Chemotype": Math.round(base * 0.90),
+      "Receptor family": Math.round(base * 0.90),
+      "Modality": Math.round(base * 0.85),
+      "Sense": Math.round(base * 0.60),
+    };
+    const w = widths[colorKey] || base;
+    menu.style.width = w + 'px';
+  }
+
+  function defaultColorForCategory(key, cat, familyColors) {
+    if (key === 'Class') {
+      const code = normClassCodeFromString(cat);
+      return CLASS_COLORS_TREE[code] || CLASS_COLORS_TREE["Unclassified"] || '#999999';
+    }
+    if (key === 'Modality') {
+      const m = normalizeUnknownBucket(cat);
+      return MODALITY_COLORS_FIXED[m] || stableColorForKey(m, CHEMOTYPE_FALLBACK_PALETTE);
+    }
+    if (key === 'Sense') {
+      const s = normalizeUnknownBucket(cat);
+      return SENSE_COLORS_FIXED[s] || stableColorForKey(s, CHEMOTYPE_FALLBACK_PALETTE);
+    }
+    if (key === 'Chemotype') {
+      return getChemotypeColor(cat);
+    }
+    if (key === 'Receptor family') {
+      const fam = normKey(cat) || "Unknown";
+      return (familyColors && familyColors[fam]) ? familyColors[fam] : "#cccccc";
+    }
+    return '#cccccc';
+  }
+
+  function normClassCodeFromString(cls) {
+    let s = String(cls || '').toUpperCase();
+    if (!s) return 'Unclassified';
+    if (s === 'CL' || s.includes('CLASS CL')) return 'Unclassified';
+    if (s.includes('CLASS B1')) return 'B1';
+    if (s.includes('CLASS B2')) return 'B2';
+    if (s.includes('CLASS O1')) return 'O1';
+    if (s.includes('CLASS O2')) return 'O2';
+    if (s.includes('CLASS T2')) return 'T2';
+    if (s.includes('CLASS C'))  return 'C';
+    if (s.includes('CLASS F'))  return 'F';
+    if (s.includes('CLASS A'))  return 'A';
+    if (s.includes('UNCLASSIFIED') || s.includes('OTHER GPCR')) return 'U';
+    return s; // already a plain code
+  }
+
+  function getCategory(point, key) {
+    if (key === 'Modality')
+      return point.Modality || 'Unknown';
+    if (key === 'Class')
+      return point.Class || 'Unclassified';
+    if (key === 'Chemotype')
+      return point.Chemotype || 'Unknown';
+    if (key === 'Receptor family')
+      return point['Receptor family'] || 'Unknown';
+    if (key === 'Sense')
+      return point.Sense || 'unknown';
+    return 'Unknown';
+  }
+
+  function getShapeCategory(point, shapeKey) {
+    if (shapeKey === 'Class')
+      return normClassCodeFromString(point.Class);
+    // shape-by None
+    return 'None';
+  }
+
+  function getShapeFor(clsCode, shapeKey) {
+    if (shapeKey !== 'Class') {
+      return 'circle';   // all circles when shape-by None
+    }
+    switch (clsCode) {
+      case 'A':  return 'circle';
+      case 'B1': return 'star-triangle-up';
+      case 'B2': return 'star-triangle-down';
+      case 'O1': return 'star-square';
+      case 'O2': return 'star-diamond';
+      case 'C':  return 'pentagon';
+      case 'F':  return 'hexagram';
+      case 'T2': return 'diamond-wide';
+      case 'U':  return 'circle';
+      default:   return 'circle-open';
+    }
+  }
+
+  function colorForCategory(key, cat, point, familyColors) {
+    if (key === 'Class') {
+      const code = normClassCodeFromString(cat);
+      return CLASS_COLORS_TREE[code] || CLASS_COLORS_TREE["Unclassified"] || '#999999';
+    }
+
+    if (key === 'Modality') {
+      const m = normalizeUnknownBucket(cat);
+      return MODALITY_COLORS_FIXED[m] || stableColorForKey(m, CHEMOTYPE_FALLBACK_PALETTE);
+    }
+
+    if (key === 'Sense') {
+      const s = normalizeUnknownBucket(cat);
+      return SENSE_COLORS_FIXED[s] || stableColorForKey(s, CHEMOTYPE_FALLBACK_PALETTE);
+    }
+
+    if (key === 'Chemotype') {
+      return getChemotypeColor(cat);
+    }
+
+    if (key === 'Receptor family') {
+      const fam = normKey(cat) || "Unknown";
+      return (familyColors && familyColors[fam]) ? familyColors[fam] : "#cccccc";
+    }
+
+    return '#cccccc';
+  }
+
+  /*
+  // download plot (SVG) without legend (temporarily disabled)
+  downloadBtn.addEventListener('click', async () => {
+    if (!plotDiv || !plotDiv.data || !plotDiv.data.length) {
+      alert('No plot to download yet.');
+      return;
+    }
+
+    const origText = downloadBtn.textContent;
+    downloadBtn.disabled = true;
+    downloadBtn.textContent = 'Preparing…';
+
+    try {
+      const layout = plotDiv.layout || {};
+      const oldShowLegend = layout.showlegend;
+
+      // hide legend
+      await Plotly.relayout(plotDiv, { showlegend: false });
+
+      // export as SVG (tweak width/height if you want)
+      const url = await Plotly.toImage(plotDiv, {
+        format: 'svg',
+        width:  900,
+        height: 700
+      });
+
+      // restore legend state
+      await Plotly.relayout(plotDiv, { showlegend: oldShowLegend });
+
+      // trigger download
+      const a = document.createElement('a');
+      a.href = url;
+      const baseName = (datasetTitle(currentDataset) || 'tsne')
+        .replace(/\s+/g, '_')
+        .toLowerCase();
+      a.download = baseName + '.svg';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
+    } catch (e) {
+      console.error('Download failed', e);
+      alert('Download failed: ' + e.message);
+    } finally {
+      downloadBtn.disabled = false;
+      downloadBtn.textContent = origText;
+    }
+  });
+  */
+
+  /* ---------- build traces ---------- */
+
+  // Global receptor-family palette: build once from the full, loaded dataset set.
+  // This matches the wheel behavior better than recomputing hues per dataset subset.
+  let receptorFamilyColorsGlobal = null;
+  function rebuildGlobalReceptorFamilyColors() {
+    const set = new Set();
+    Object.keys(datasetsByPlot || {}).forEach(pk => {
+      const byDs = datasetsByPlot[pk] || {};
+      ['sequence', 'inactive', 'active'].forEach(ds => {
+        const pts = byDs[ds] || [];
+        pts.forEach(p => {
+          const fam = normalizeReceptorFamily(p && p['Receptor family']);
+          if (fam) set.add(fam);
+        });
+      });
+    });
+    const cats = Array.from(set).sort((a, b) => a.localeCompare(b));
+    receptorFamilyColorsGlobal = generateCategoryColors(cats);
+  }
+  function getGlobalReceptorFamilyColors() {
+    if (!receptorFamilyColorsGlobal) rebuildGlobalReceptorFamilyColors();
+    return receptorFamilyColorsGlobal || {};
+  }
+
+  function formatNeighborScore(v) {
+    const n = Number(v);
+    if (!isFinite(n)) return '-';
+    return (Math.round(n * 10) / 10).toString();
+  }
+
+  function allowSubsOnly(raw) {
+    return escapeHtml(decodeHtmlEntities(raw || '')).replace(/&lt;(\/?)sub&gt;/gi, '<$1sub>');
+  }
+
+  function buildNeighborReceptorHtml(row) {
+    if (row && row.label) return allowSubsOnly(row.label);
+    return '';
+  }
+
+  function buildNeighborClassText(row) {
+    return normClassCodeFromString((row && row.class_name) || '') || '';
+  }
+
+  function detailItem(label, valueHtml) {
+    const value = normKey(valueHtml);
+    if (!value) return '';
+    return '<span class="ss-detail-compact-item"><span class="ss-detail-compact-label">' + escapeHtml(label) + ':</span> ' + value + '</span>';
+  }
+
+  function buildPointDetailsHtml(p) {
+    const receptorParts = [];
+    if (p && p.label) receptorParts.push(allowSubsOnly(p.label));
+    if (p && p.uniprot) receptorParts.push(escapeHtml(p.uniprot));
+    if (p && p.gene) receptorParts.push(escapeHtml(p.gene));
+    const firstRow = [];
+    if (receptorParts.length) firstRow.push(detailItem('Receptor', receptorParts.join(' | ')));
+    if (p && p.pdb) firstRow.push(detailItem('PDB', escapeHtml(p.pdb)));
+    if (p && p['Receptor family']) firstRow.push(detailItem('Family', escapeHtml(p['Receptor family'])));
+
+    const secondRow = [];
+    if (p && p.Modality) secondRow.push(detailItem('Modality', escapeHtml(p.Modality)));
+    if (p && p.Chemotype) secondRow.push(detailItem('Chemotype', escapeHtml(p.Chemotype)));
+    if (p && p.Sense) secondRow.push(detailItem('Sense', escapeHtml(p.Sense)));
+
+    const rows = [];
+    if (firstRow.length) {
+      rows.push('<div class="ss-detail-compact-row">' + firstRow.join('<span class="ss-detail-compact-sep">|</span>') + '</div>');
+    }
+    if (secondRow.length) {
+      rows.push('<div class="ss-detail-compact-row">' + secondRow.join('<span class="ss-detail-compact-sep">|</span>') + '</div>');
+    }
+    return (
+      '<div class="ss-detail-compact">' +
+        rows.join('') +
+      '</div>'
+    );
+  }
+
+  function buildPlotHoverHtml(p) {
+    const rows = [];
+    const receptorParts = [];
+    if (p && p.pdb) rows.push('<b>PDB</b>: ' + escapeHtml(p.pdb));
+    if (p && p.label) receptorParts.push(allowSubsOnly(p.label));
+    if (p && p.uniprot) receptorParts.push(escapeHtml(p.uniprot));
+    if (p && p.gene) receptorParts.push(escapeHtml(p.gene));
+    if (receptorParts.length) rows.push('<b>Receptor</b>: ' + receptorParts.join(' | '));
+    if (p && p['Receptor family']) rows.push('<b>Receptor family</b>: ' + escapeHtml(p['Receptor family']));
+    if (p && p.Class) rows.push('<b>Class</b>: ' + escapeHtml(p.Class));
+    if (p && p.Modality) rows.push('<b>Modality</b>: ' + escapeHtml(p.Modality));
+    if (p && p.Chemotype) rows.push('<b>Chemotype</b>: ' + escapeHtml(p.Chemotype));
+    if (p && p.Sense) rows.push('<b>Sense</b>: ' + escapeHtml(p.Sense));
+    return rows.join('<br>');
+  }
+
+  function hidePlotHover() {
+    if (!plotHoverEl) return;
+    plotHoverEl.style.display = 'none';
+    plotHoverEl.innerHTML = '';
+  }
+
+  function showPlotHover(html, clientX, clientY) {
+    if (!plotHoverEl || !html) return;
+    plotHoverEl.innerHTML = html;
+    plotHoverEl.style.display = 'block';
+
+    const pad = 14;
+    const rect = plotHoverEl.getBoundingClientRect();
+    let left = Number(clientX || 0) + 18;
+    let top = Number(clientY || 0) + 18;
+
+    if ((left + rect.width + pad) > window.innerWidth) {
+      left = Math.max(pad, window.innerWidth - rect.width - pad);
+    }
+    if ((top + rect.height + pad) > window.innerHeight) {
+      top = Math.max(pad, Number(clientY || 0) - rect.height - 18);
+    }
+
+    plotHoverEl.style.left = left + 'px';
+    plotHoverEl.style.top = top + 'px';
+  }
+
+  function updateHoverPanelWidth(isExpanded) {
+    return;
+  }
+
+  function positionHoverPanel() {
+    return;
+  }
+
+  function syncLegendVerticalPlacement() {
+    if (!legendWrapEl || !detailsPanelHost || !plotDiv) return;
+    if (legendWrapEl.style.display === 'none') {
+      legendWrapEl.style.marginTop = '0px';
+      legendWrapEl.style.maxHeight = '';
+      return;
+    }
+    const plotWrap = plotDiv.closest('.ss-plot-wrap') || plotDiv;
+    legendWrapEl.style.marginTop = '0px';
+    legendWrapEl.style.maxHeight = '';
+    const plotRect = plotWrap.getBoundingClientRect();
+    const legendTop = legendWrapEl.getBoundingClientRect().top;
+    const available = Math.max(0, Math.floor(plotRect.bottom - legendTop - 2));
+    const maxLegendHeight = Math.max(40, available);
+    legendWrapEl.style.maxHeight = maxLegendHeight + 'px';
+    const listEls = legendWrapEl.querySelectorAll('.ss-legend-list');
+    listEls.forEach((el) => {
+      el.style.maxHeight = Math.max(40, maxLegendHeight - 4) + 'px';
+    });
+    legendWrapEl.style.marginTop = '0px';
+  }
+
+  function syncSimilarPanelPlacement() {
+    if (!similarPanelHost || !similarPanelEl || !plotDiv) return;
+    const plotWrap = plotDiv.closest('.ss-plot-wrap') || plotDiv;
+    const plotRect = plotWrap.getBoundingClientRect();
+    const plotHeight = Math.max(220, Math.floor(plotRect.height - 2));
+    const detailsHeight = detailsPanelHost
+      ? Math.ceil(detailsPanelHost.getBoundingClientRect().height)
+      : 0;
+    const availableHeight = Math.max(220, plotHeight - detailsHeight - 10);
+    similarPanelHost.style.height = availableHeight + 'px';
+    similarPanelHost.style.maxHeight = availableHeight + 'px';
+
+    const sectionEl = similarPanelEl.querySelector('.ss-hover-panel-section');
+    if (!sectionEl) return;
+    sectionEl.style.height = availableHeight + 'px';
+    sectionEl.style.maxHeight = availableHeight + 'px';
+    sectionEl.style.overflow = 'hidden';
+
+    const tableWrapEl = similarPanelEl.querySelector('.ss-hover-panel-table-wrap');
+    if (!tableWrapEl) return;
+    tableWrapEl.style.maxHeight = '';
+    tableWrapEl.style.height = 'auto';
+    tableWrapEl.style.overflowY = 'auto';
+  }
+
+  let similarTableDT = null;
+  let hoveredFrozenPointId = null;
+
+  function destroySimilarTable() {
+    if (!window.jQuery || !jQuery.fn || !jQuery.fn.dataTable) {
+      similarTableDT = null;
+      return;
+    }
+    if (similarTableDT) {
+      similarTableDT.destroy();
+      similarTableDT = null;
+    }
+  }
+
+  function applySimilarTableHoverHighlight() {
+    const tableEl = document.getElementById('ssSimilarTable');
+    if (!tableEl) return;
+    const targetId = Number(hoveredFrozenPointId);
+    tableEl.querySelectorAll('tbody tr').forEach(tr => {
+      const rowId = Number(tr.getAttribute('data-point-id'));
+      const isOn = isFinite(targetId) && isFinite(rowId) && rowId === targetId;
+      tr.classList.toggle('ss-hovered', isOn);
+    });
+  }
+
+  function initSimilarTable() {
+    if (!window.jQuery || !jQuery.fn || !jQuery.fn.dataTable) return null;
+    if (similarTableDT) return similarTableDT;
+    similarTableDT = jQuery('#ssSimilarTable').DataTable({
+      dom: 't',
+      paging: false,
+      ordering: true,
+      searching: false,
+      info: false,
+      autoWidth: false,
+      deferRender: true,
+      order: [[0, 'desc'], [1, 'desc'], [2, 'asc']],
+      columns: [
+        { data: 'similarity' },
+        { data: 'identity' },
+        { data: 'receptor_html' },
+        { data: 'receptor_family' }
+      ],
+      columnDefs: [
+        {
+          targets: [0, 1],
+          className: 'ss-num',
+          render: function (data, type) {
+            if (type === 'sort' || type === 'type') {
+              const n = (data === '' || data == null) ? NaN : parseFloat(data);
+              return isNaN(n) ? -Infinity : n;
+            }
+            return data;
+          }
+        },
+        {
+          targets: [2, 3],
+          render: function (data) {
+            return data == null ? '' : data;
+          }
+        }
+      ],
+      createdRow: function (row, data) {
+        if (data && data.id != null) {
+          row.setAttribute('data-point-id', String(data.id));
+        }
+      }
+    });
+    jQuery('#ssSimilarTable').on('draw.dt', function () {
+      applySimilarTableHoverHighlight();
+    });
+    return similarTableDT;
+  }
+
+  function renderSimilarTable(rows) {
+    const tableEl = document.getElementById('ssSimilarTable');
+    if (!tableEl) return;
+    const safeRows = Array.isArray(rows) ? rows : [];
+
+    if (window.jQuery && jQuery.fn && jQuery.fn.dataTable) {
+      const dt = initSimilarTable();
+      if (!dt) return;
+      dt.clear();
+      dt.rows.add(safeRows.map(row => ({
+        id: row && row.id,
+        similarity: formatNeighborScore(row && row.similarity),
+        identity: formatNeighborScore(row && row.identity),
+        receptor_html: buildNeighborReceptorHtml(row) || '-',
+        receptor_family: escapeHtml((row && row.receptor_family) || ''),
+      })));
+      dt.draw();
+      applySimilarTableHoverHighlight();
+      return;
+    }
+
+    const tbody = tableEl.querySelector('tbody');
+    if (!tbody) return;
+    tbody.innerHTML = safeRows.map(row => (
+      '<tr data-point-id="' + escapeHtml(row && row.id) + '">' +
+        '<td class="ss-num">' + escapeHtml(formatNeighborScore(row && row.similarity)) + '</td>' +
+        '<td class="ss-num">' + escapeHtml(formatNeighborScore(row && row.identity)) + '</td>' +
+        '<td>' + (buildNeighborReceptorHtml(row) || '-') + '</td>' +
+        '<td>' + escapeHtml((row && row.receptor_family) || '') + '</td>' +
+      '</tr>'
+    )).join('');
+    applySimilarTableHoverHighlight();
+  }
+
+  function renderSidePanelPlaceholder() {
+    if (!hoverPanelEl) return;
+    destroySimilarTable();
+    hoverPanelEl.className = 'ss-hover-panel';
+    hoverPanelEl.innerHTML = (
+      '<div class="ss-hover-panel-empty">' +
+        'Hover datapoints to view receptor details. Click datapoints to freeze the selection.' +
+      '</div>'
+    );
+    if (similarPanelEl) {
+      similarPanelEl.innerHTML =
+        '<div class="ss-hover-panel-section">' +
+          '<div class="ss-hover-panel-title">Most similar receptors</div>' +
+          '<div class="ss-hover-panel-kv ss-hover-panel-note">' +
+            (supportsNeighborHover(currentDataset)
+              ? 'Hover or click a datapoint to populate the similarity table.'
+              : 'Similarity tables are available for the primary sequence dataset.') +
+          '</div>' +
+        '</div>';
+    }
+    requestAnimationFrame(syncSimilarPanelPlacement);
+    requestAnimationFrame(syncLegendVerticalPlacement);
+  }
+
+  function renderSidePanelSelection(point, neighborRows) {
+    if (!hoverPanelEl || !point) return;
+    const rows = Array.isArray(neighborRows) ? neighborRows : [];
+    const showTable = supportsNeighborHover(currentDataset) && (!!selectedPointData || showTableOnHover);
+    destroySimilarTable();
+    hoverPanelEl.className = 'ss-hover-panel' + (showTable ? ' is-expanded' : '');
+    hoverPanelEl.innerHTML = '<div class="ss-hover-panel-body">' + buildPointDetailsHtml(point) + '</div>';
+
+    if (similarPanelEl) {
+      similarPanelEl.innerHTML = showTable
+        ? (
+            '<div class="ss-hover-panel-section">' +
+              '<div class="ss-hover-panel-title">Most similar receptors</div>' +
+              '<div class="ss-hover-panel-table-wrap">' +
+                '<table id="ssSimilarTable" class="display compact hover nowrap stripe" style="width:100%">' +
+                  '<thead><tr>' +
+                    '<th class="ss-num">SIM</th>' +
+                    '<th class="ss-num">ID</th>' +
+                    '<th>Receptor</th>' +
+                    '<th>Receptor family</th>' +
+                  '</tr></thead>' +
+                  '<tbody></tbody>' +
+                '</table>' +
+              '</div>' +
+            '</div>'
+          )
+        : (
+            '<div class="ss-hover-panel-section">' +
+              '<div class="ss-hover-panel-title">Most similar receptors</div>' +
+              '<div class="ss-hover-panel-kv ss-hover-panel-note">' +
+                (supportsNeighborHover(currentDataset)
+                  ? 'Most similar receptors are shown automatically for the sequence dataset.'
+                  : 'Similarity tables are available for the primary sequence dataset.') +
+              '</div>' +
+            '</div>'
+          );
+    }
+
+    if (showTable) {
+      requestAnimationFrame(() => {
+        renderSimilarTable(rows);
+        syncSimilarPanelPlacement();
+        syncLegendVerticalPlacement();
+      });
+    }
+    requestAnimationFrame(syncSimilarPanelPlacement);
+    requestAnimationFrame(syncLegendVerticalPlacement);
+  }
+
+  function buildTraces(points, colorKey, shapeKey) {
+    let familyColors = null;
+    const frozenActive = hasFrozenSelection();
+    if (colorKey === 'Receptor family') {
+      familyColors = getGlobalReceptorFamilyColors();
+    }
+
+    function makeBuckets(pointsSubset, styleForPoint, opts) {
+      const tracesByCombo = new Map();
+      (pointsSubset || []).forEach(p => {
+        const cCat = normalizedCategoryForKey(colorKey, p);
+        const classCode = normClassCodeFromString(p.Class || '');
+        const override = getOverride(colorKey, cCat);
+        const baseColor = override || defaultColorForCategory(colorKey, cCat, familyColors);
+        const style = styleForPoint(p, { colorCategory: cCat, classCode: classCode, baseColor: baseColor });
+        const key = cCat + '|' + classCode;
+        if (!tracesByCombo.has(key)) {
+          tracesByCombo.set(key, {
+            name: cCat,
+            cls: classCode,
+            color: baseColor,
+            xs: [],
+            ys: [],
+            colors: [],
+            sizes: [],
+            customdata: [],
+          });
+        }
+        const bucket = tracesByCombo.get(key);
+        bucket.xs.push(p.x);
+        bucket.ys.push(p.y);
+        bucket.colors.push(style.color);
+        bucket.sizes.push(style.size);
+        bucket.customdata.push({
+          id: p.id,
+          point: p,
+          top_neighbors: Array.isArray(p.top_neighbors) ? p.top_neighbors : [],
+        });
+      });
+
+      const traces = [];
+      for (const [, b] of tracesByCombo.entries()) {
+        const hidden = isHidden(currentDataset, colorKey, b.name) || isClassHidden(currentDataset, b.cls);
+        traces.push({
+          x: b.xs,
+          y: b.ys,
+          type: 'scatter',
+          mode: 'markers',
+          visible: hidden ? false : true,
+          marker: {
+            size: b.sizes,
+            line: { width: opts.lineWidth, color: opts.lineColor },
+            color: b.colors,
+            opacity: opts.opacity,
+            symbol: getShapeFor(b.cls, shapeKey)
+          },
+          name: b.name,
+          hoverinfo: opts.hoverinfo || 'none',
+          text: [],
+          customdata: b.customdata,
+          showlegend: !!opts.showLegend,
+          _classCode: b.cls,
+          _colorCat: b.name,
+          _legendColor: b.color
+        });
+      }
+      return traces;
+    }
+
+    if (!frozenActive) {
+      return makeBuckets(
+        points,
+        (p, ctx) => ({ color: ctx.baseColor, size: 9 }),
+        { opacity: 1, lineWidth: 0.5, lineColor: '#000', showLegend: true, hoverinfo: 'none' }
+      );
+    }
+
+    const highlightIds = new Set([Number(frozenPointId)]);
+    frozenNeighborIds.forEach(id => highlightIds.add(Number(id)));
+    const backgroundPoints = points;
+    const highlightPoints = points.filter(p => highlightIds.has(Number(p.id)));
+
+    const backgroundTraces = makeBuckets(
+      backgroundPoints,
+      () => ({ color: FROZEN_OTHER_COLOR, size: 8 }),
+      { opacity: 0.25, lineWidth: 0.25, lineColor: '#999', showLegend: true, hoverinfo: 'skip' }
+    );
+
+    const highlightTraces = makeBuckets(
+      highlightPoints,
+      (p) => getFrozenColorSpec(Number(p.id)),
+      { opacity: 1, lineWidth: 0.8, lineColor: '#000', showLegend: false, hoverinfo: 'none' }
+    );
+
+    return backgroundTraces.concat(highlightTraces);
+  }
+
+
+  /* ---------- data + rendering ---------- */
+
+  const emptyDatasets = () => ({ sequence: [], inactive: [], active: [] });
+  let datasetsByPlot = { tsne: emptyDatasets() };
+  let datasets = datasetsByPlot.tsne;
+  let currentDataset = 'sequence';
+  let plotType = 'tsne';
+  let colorKey = 'Class';
+  let shapeKey = 'Class';
+  let frozenPointId = null;
+  let frozenNeighborIds = new Set();
+  let selectedPointData = null;
+  let suppressPlotBackgroundClickUntil = 0;
+  let showTableOnHover = true;
+
+  const FROZEN_SELECTED_COLOR = '#2ca02c';
+  const FROZEN_NEIGHBOR_COLOR = '#d62728';
+  const FROZEN_OTHER_COLOR = '#bfbfbf';
+
+  // Holds the live Plotly div used for the shape legend (when enabled).
+  // Used by export to include the exact Plotly symbols.
+  let shapeLegendPlotDivForExport = null;
+
+  function datasetTitle(ds) {
+    if (ds === 'sequence') return 'Sequence similarity';
+    if (ds === 'inactive') return 'Inactive structures';
+    if (ds === 'active')   return 'Active structures';
+    return '';
+  }
+
+  function datasetButtonLabel(ds) {
+    if (ds === 'sequence') return 'Sequence';
+    if (ds === 'inactive') return 'Inactive structures';
+    if (ds === 'active')   return 'Active structures';
+    return '';
+  }
+
+  function datasetPointCount(ds) {
+    return Array.isArray(datasets[ds]) ? datasets[ds].length : 0;
+  }
+
+  function datasetIsAvailable(ds) {
+    return datasetPointCount(ds) >= 3;
+  }
+
+  function datasetUnavailableReason(ds) {
+    if (datasetIsAvailable(ds)) return '';
+    if (ds === 'inactive' || ds === 'active') {
+      return 'Not enough datapoints for this structure subset. At least 3 receptors are required.';
+    }
+    return 'Not enough datapoints. At least 3 receptors are required.';
+  }
+
+  function firstAvailableDataset() {
+    const preferredOrder = ['sequence', 'inactive', 'active'];
+    for (const ds of preferredOrder) {
+      if (datasetIsAvailable(ds)) return ds;
+    }
+    return 'sequence';
+  }
+
+  function supportsNeighborHover(ds) {
+    return ds === 'sequence';
+  }
+
+  function hasFrozenSelection() {
+    return supportsNeighborHover(currentDataset) && frozenPointId !== null && frozenPointId !== undefined;
+  }
+
+  function clearFrozenSelection() {
+    frozenPointId = null;
+    frozenNeighborIds = new Set();
+    selectedPointData = null;
+    hoveredFrozenPointId = null;
+    hidePlotHover();
+    renderSidePanelPlaceholder();
+    try {
+      if (typeof Plotly !== 'undefined' && Plotly.Fx && plotDiv) Plotly.Fx.unhover(plotDiv);
+    } catch (e) {}
+  }
+
+  function freezePointByProteinId(proteinId) {
+    const pid = Number(proteinId);
+    if (!isFinite(pid)) return;
+    let point = null;
+    let foundDataset = null;
+    for (const ds of ['sequence', 'inactive', 'active']) {
+      const pts = datasets[ds] || [];
+      point = pts.find(p => Number(p && p.id) === pid);
+      if (point) {
+        foundDataset = ds;
+        break;
+      }
+    }
+    if (!point || !foundDataset) return;
+    if (foundDataset !== currentDataset) {
+      clearFrozenSelection();
+      setCurrentDataset(foundDataset);
+    }
+    suppressPlotBackgroundClickUntil = Date.now() + 250;
+    selectedPointData = point;
+    hidePlotHover();
+    if (supportsNeighborHover(currentDataset)) {
+      frozenPointId = pid;
+      frozenNeighborIds = new Set(
+        (Array.isArray(point.top_neighbors) ? point.top_neighbors : [])
+          .map(row => Number(row && row.id))
+          .filter(id => isFinite(id))
+      );
+    } else {
+      frozenPointId = null;
+      frozenNeighborIds = new Set();
+    }
+    renderSidePanelSelection(point, Array.isArray(point.top_neighbors) ? point.top_neighbors : []);
+    render();
+  }
+
+  function initReceptorSearch() {
+    const sel = document.getElementById('ssReceptorSearch');
+    if (!sel || typeof jQuery === 'undefined' || !jQuery.fn.select2) return;
+    const allPoints = [];
+    for (const ds of ['sequence', 'inactive', 'active']) {
+      (datasets[ds] || []).forEach(p => {
+        if (!p || p.id == null) return;
+        const receptorParts = [];
+        if (p.label) receptorParts.push(allowSubsOnly(p.label));
+        if (p.uniprot) receptorParts.push(escapeHtml(p.uniprot));
+        if (p.gene) receptorParts.push(escapeHtml(p.gene));
+        const text = receptorParts.join(' | ') || String(p.id);
+        allPoints.push({ id: p.id, text: text, point: p });
+      });
+    }
+    const seen = new Set();
+    const select2Data = [];
+    allPoints.forEach(item => {
+      if (seen.has(item.id)) return;
+      seen.add(item.id);
+      select2Data.push({ id: item.id, text: item.text });
+    });
+    select2Data.sort((a, b) => (a.text || '').localeCompare(b.text || '', undefined, { sensitivity: 'base' }));
+    jQuery(sel).empty().append(jQuery('<option value="">Search receptor</option>'));
+    select2Data.forEach(item => {
+      jQuery(sel).append(jQuery('<option></option>').attr('value', item.id).text(item.text));
+    });
+    if (jQuery(sel).data('select2')) jQuery(sel).select2('destroy');
+    jQuery(sel).off('select2:select').select2({
+      placeholder: 'Search receptor',
+      allowClear: true,
+      width: '100%',
+      dropdownParent: jQuery(document.body),
+      dropdownCssClass: 'ss-receptor-search-dropdown',
+      escapeMarkup: function (m) { return m; }
+    });
+    jQuery(sel).on('select2:select', function (e) {
+      const val = e.params && e.params.data && e.params.data.id;
+      if (val != null && val !== '') freezePointByProteinId(val);
+    });
+  }
+
+  function buildDefaultRangeForPoints(points) {
+    let xmin = Infinity, xmax = -Infinity, ymin = Infinity, ymax = -Infinity;
+    (points || []).forEach(p => {
+      const x = Number(p && p.x);
+      const y = Number(p && p.y);
+      if (!isFinite(x) || !isFinite(y)) return;
+      if (x < xmin) xmin = x;
+      if (x > xmax) xmax = x;
+      if (y < ymin) ymin = y;
+      if (y > ymax) ymax = y;
+    });
+    if (xmin === Infinity) { xmin = -1; xmax = 1; ymin = -1; ymax = 1; }
+    const xpad = (xmax - xmin) * 0.05 || 1;
+    const ypad = (ymax - ymin) * 0.05 || 1;
+    return {
+      x: [xmin - xpad, xmax + xpad],
+      y: [ymin - ypad, ymax + ypad],
+    };
+  }
+
+  function readAxisRange(axisLayout) {
+    if (!axisLayout) return null;
+    const raw = axisLayout.range;
+    let lo = null;
+    let hi = null;
+    if (Array.isArray(raw) && raw.length >= 2) {
+      lo = Number(raw[0]);
+      hi = Number(raw[1]);
+    } else {
+      lo = Number(axisLayout['range[0]']);
+      hi = Number(axisLayout['range[1]']);
+    }
+    if (!isFinite(lo) || !isFinite(hi)) return null;
+    return [lo, hi];
+  }
+
+  function syncLiveRangeCache() {
+    const renderedDataset = render._renderedDataset;
+    if (!renderedDataset || !plotDiv || !plotDiv.layout) return;
+    const xRange = readAxisRange(plotDiv.layout.xaxis);
+    const yRange = readAxisRange(plotDiv.layout.yaxis);
+    if (!xRange || !yRange) return;
+    const rangeCache = (render._rangeCache = render._rangeCache || {});
+    rangeCache[renderedDataset] = { x: xRange, y: yRange };
+  }
+
+  function getFrozenColorSpec(pointId) {
+    const pid = Number(pointId);
+    const isSelected = pid === Number(frozenPointId);
+    if (isSelected) {
+      return { color: FROZEN_SELECTED_COLOR, size: 12 };
+    }
+    return {
+      color: frozenNeighborIds.has(pid) ? FROZEN_NEIGHBOR_COLOR : FROZEN_OTHER_COLOR,
+      size: frozenNeighborIds.has(pid) ? 10 : 9,
+    };
+  }
+
+  function syncDatasetButtons() {
+    document.querySelectorAll('.ss-dataset-opt').forEach(b => {
+      const k = b.getAttribute('data-dataset') || 'sequence';
+      const available = datasetIsAvailable(k);
+      const isOn = (k === currentDataset);
+      b.disabled = !available;
+      b.classList.toggle('btn-primary', available && isOn);
+      b.classList.toggle('btn-outline-primary', !isOn || !available);
+      if (!available) {
+        b.classList.remove('btn-primary');
+        b.classList.add('btn-outline-primary');
+      }
+      const reason = datasetUnavailableReason(k);
+      if (reason) b.setAttribute('title', reason);
+      else b.removeAttribute('title');
+    });
+  }
+
+  function setCurrentDataset(ds) {
+    if (!datasetIsAvailable(ds)) {
+      ds = firstAvailableDataset();
+    }
+    currentDataset = ds;
+    syncDatasetButtons();
+    if (datasetDropBtn) datasetDropBtn.childNodes[0].nodeValue = 'Source: ' + datasetButtonLabel(ds) + ' ';
+  }
+
+  function syncTableOnHoverButton() {
+    return;
+  }
+
+  // Custom legend visibility state (per dataset + colorKey).
+  // Shape legend is informational only.
+  const legendHidden = {
+    sequence: {},
+    inactive: {},
+    active:   {}
+  };
+
+  // Class (shape) filter state (per dataset)
+  const classHidden = {
+    sequence: {},
+    inactive: {},
+    active:   {}
+  };
+
+  function isHidden(ds, key, cat) {
+    const m = (legendHidden[ds] && legendHidden[ds][key]) || {};
+    return !!m[cat];
+  }
+
+  function toggleHidden(ds, key, cat) {
+    if (!legendHidden[ds]) legendHidden[ds] = {};
+    if (!legendHidden[ds][key]) legendHidden[ds][key] = {};
+    const cur = !!legendHidden[ds][key][cat];
+    if (cur) delete legendHidden[ds][key][cat];
+    else legendHidden[ds][key][cat] = true;
+  }
+
+  function isClassHidden(ds, cls) {
+    const m = (classHidden[ds] || {});
+    return !!m[cls];
+  }
+
+  function toggleClassHidden(ds, cls) {
+    if (!classHidden[ds]) classHidden[ds] = {};
+    const cur = !!classHidden[ds][cls];
+    if (cur) delete classHidden[ds][cls];
+    else classHidden[ds][cls] = true;
+  }
+
+  function setClassHidden(ds, cls, hidden) {
+    if (!classHidden[ds]) classHidden[ds] = {};
+    if (hidden) classHidden[ds][cls] = true;
+    else delete classHidden[ds][cls];
+  }
+
+  function clearAllClassHidden(ds) {
+    classHidden[ds] = {};
+  }
+
+  function setColorLegendHiddenForClass(ds, cls, hidden) {
+    const key = 'Class';
+    if (!legendHidden[ds]) legendHidden[ds] = {};
+    if (!legendHidden[ds][key]) legendHidden[ds][key] = {};
+    if (hidden) legendHidden[ds][key][cls] = true;
+    else delete legendHidden[ds][key][cls];
+  }
+
+  function isClassSyncMode() {
+    return (colorKey === 'Class' && shapeKey === 'Class');
+  }
+
+  function applyPlotlyClassLegendOffStyles(containerEl, classes) {
+    try {
+      if (!containerEl) return;
+      const texts = containerEl.querySelectorAll('.legend text.legendtext');
+      if (!texts || !texts.length) return;
+      (classes || []).forEach((cls, i) => {
+        const el = texts[i];
+        if (!el) return;
+        const off = isClassHidden(currentDataset, cls);
+        const fill = off ? '#9e9e9e' : '#111';
+        el.style.setProperty('fill', fill, 'important');
+      });
+    } catch (e) {}
+  }
+
+  function attachLegendClicks(el, onSingleClick, onDoubleClick) {
+    // Prevent single-click toggle from firing before dblclick
+    let t = null;
+    el.addEventListener('click', (ev) => {
+      if (t) return;
+      t = setTimeout(() => {
+        t = null;
+        onSingleClick(ev);
+      }, 220);
+    });
+    el.addEventListener('dblclick', (ev) => {
+      if (t) { clearTimeout(t); t = null; }
+      onDoubleClick(ev);
+    });
+  }
+
+  function renderPlotlyClassLegend(containerEl, usedClasses) {
+    if (!containerEl || typeof Plotly === 'undefined') return;
+    const classes = (usedClasses || []).map(c => String(c)).filter(Boolean);
+    if (!classes.length) {
+      containerEl.innerHTML = '';
+      return;
+    }
+
+    const traces = classes.map(cls => {
+      const hidden = isClassHidden(currentDataset, cls);
+      return {
+        type: 'scatter',
+        mode: 'markers',
+        x: [0],
+        y: [0],
+        name: cls,
+        legendgroup: 'cls_' + cls,
+          hoverinfo: 'none',
+        marker: {
+          size: 11,
+          symbol: getShapeFor(cls, 'Class'),
+          color: '#000000',
+          opacity: hidden ? 0.25 : 1,
+          line: { width: 1.2, color: '#000000' }
+        }
+      };
+    });
+
+    // Legend-only plot: keep the single point off-canvas.
+    const layout = {
+      dragmode: false,
+      margin: { l: 0, r: 0, t: 0, b: 0, pad: 0 },
+      paper_bgcolor: 'rgba(0,0,0,0)',
+      plot_bgcolor: 'rgba(0,0,0,0)',
+      xaxis: { visible: false, showgrid: false, zeroline: false, fixedrange: true, range: [1, 2] },
+      yaxis: { visible: false, showgrid: false, zeroline: false, fixedrange: true, range: [1, 2] },
+      showlegend: true,
+      legend: {
+        x: 0,
+        y: 1,
+        xanchor: 'left',
+        yanchor: 'top',
+        orientation: 'v',
+        font: { size: 12, color: '#111', family: 'Source Code Pro, monospace' },
+        tracegroupgap: 5.8,
+      },
+      font: { size: 12, color: '#111', family: 'Source Code Pro, monospace' },
+    };
+
+    const config = {
+      displayModeBar: false,
+      responsive: true,
+      scrollZoom: false,
+      doubleClick: false,
+      showTips: false,
+    };
+
+    Plotly.react(containerEl, traces, layout, config).then(() => {
+      // Bind once per container instance.
+      if (containerEl._ssLegendBound) return;
+      containerEl._ssLegendBound = true;
+
+      // Grey out labels for hidden classes.
+      applyPlotlyClassLegendOffStyles(containerEl, classes);
+
+      // Click + double-click using legendclick events (works on whole row).
+      containerEl._ssLegendClickState = { t: null, lastCurve: null, lastAt: 0 };
+      containerEl.on('plotly_legendclick', (ev) => {
+        try {
+          const curve = (ev && ev.curveNumber != null) ? ev.curveNumber : null;
+          if (curve == null) return false;
+          const cls = classes[curve];
+          if (!cls) return;
+
+          const st = containerEl._ssLegendClickState || { t: null, lastCurve: null, lastAt: 0 };
+          const now = Date.now();
+          const isDouble = (st.lastCurve === curve) && (now - (st.lastAt || 0) < 260);
+          st.lastCurve = curve;
+          st.lastAt = now;
+          containerEl._ssLegendClickState = st;
+
+          if (isDouble) {
+            if (st.t) { clearTimeout(st.t); st.t = null; }
+            const ds = currentDataset;
+            const all = classes;
+            const onlyThisVisible = all.every(c => (c === cls) ? !isClassHidden(ds, c) : isClassHidden(ds, c));
+            if (onlyThisVisible) {
+              clearAllClassHidden(ds);
+              if (isClassSyncMode()) {
+                if (legendHidden[ds] && legendHidden[ds]['Class']) legendHidden[ds]['Class'] = {};
+              }
+            } else {
+              classHidden[ds] = {};
+              all.forEach(c => { if (c !== cls) classHidden[ds][c] = true; });
+              if (isClassSyncMode()) {
+                if (!legendHidden[ds]) legendHidden[ds] = {};
+                legendHidden[ds]['Class'] = {};
+                all.forEach(c => { if (c !== cls) legendHidden[ds]['Class'][c] = true; });
+              }
+            }
+            render();
+            return false;
+          }
+
+          if (st.t) return;
+          st.t = setTimeout(() => {
+            st.t = null;
+            toggleClassHidden(currentDataset, cls);
+            if (isClassSyncMode()) {
+              const hiddenNow = isClassHidden(currentDataset, cls);
+              setColorLegendHiddenForClass(currentDataset, cls, hiddenNow);
+            }
+            render();
+          }, 220);
+        } catch (e) {}
+        return false; // prevent Plotly's built-in hide/show
+      });
+
+      // Keep label colors correct even if Plotly reflows the legend.
+      containerEl.on('plotly_afterplot', () => {
+        applyPlotlyClassLegendOffStyles(containerEl, classes);
+      });
+    }).catch(() => {});
+  }
+
+  function syncShapeLegendBoxToColorLegend(leftListEl, rightListEl, holderEl) {
+    try {
+      if (!leftListEl || !rightListEl || !holderEl) return;
+      const rect = leftListEl.getBoundingClientRect();
+      if (!rect || !rect.height) return;
+
+      // Force the right list box to match left box height exactly (border + padding included)
+      const h = Math.round(rect.height);
+      rightListEl.style.height = h + 'px';
+      rightListEl.style.maxHeight = h + 'px';
+      rightListEl.style.overflow = 'hidden';
+
+      // Inner holder should fill the padded area.
+      const cs = window.getComputedStyle(rightListEl);
+      const padT = parseFloat(cs.paddingTop) || 0;
+      const padB = parseFloat(cs.paddingBottom) || 0;
+      const innerH = Math.max(40, h - padT - padB);
+      holderEl.style.height = innerH + 'px';
+    } catch (e) {}
+  }
+
+  function syncShapeLegendBoxToFixedHeight(rightListEl, holderEl, boxH) {
+    try {
+      if (!rightListEl || !holderEl) return;
+      const h = Math.max(40, Math.round(Number(boxH || 0)));
+      rightListEl.style.height = h + 'px';
+      rightListEl.style.maxHeight = h + 'px';
+      rightListEl.style.overflow = 'hidden';
+
+      const cs = window.getComputedStyle(rightListEl);
+      const padT = parseFloat(cs.paddingTop) || 0;
+      const padB = parseFloat(cs.paddingBottom) || 0;
+      const innerH = Math.max(40, h - padT - padB);
+      holderEl.style.height = innerH + 'px';
+    } catch (e) {}
+  }
+
+  function renderLegend(traces) {
+    if (!legendEl) return;
+    const frozenActive = hasFrozenSelection();
+    const hideColorLegend = isClassScopedVisualization && colorKey === 'Class';
+
+    // Legend width can be tuned per Color by key
+    const baseW = 320;
+    const legendWidths = {
+      "Class": Math.round(baseW * 0.25),
+      "Chemotype":  Math.round(baseW * 0.50),
+      "Receptor family": Math.round(baseW * 0.6),
+      "Modality": Math.round(baseW * 0.45),
+      "Sense": Math.round(baseW * 0.40),
+    };
+    const leftW = legendWidths[colorKey] || baseW;
+    const shapeColW = 80;   // match Class color legend width (baseW * 0.25)
+    const gapW = 12;         // matches .ss-legend-grid gap
+    const totalW = leftW + shapeColW + gapW;
+    // NOTE: layout is handled by CSS grid now; do not force widths here.
+
+    // Build category -> {color, traceIndices[]}
+    const catTo = new Map();
+    (traces || []).forEach((t, idx) => {
+      const cat = t && t._colorCat;
+      if (!cat) return;
+      if (!catTo.has(cat)) {
+        const c = t && t._legendColor ? t._legendColor : ((t.marker && t.marker.color) ? t.marker.color : '#999');
+        catTo.set(cat, { color: c, idxs: [] });
+      }
+      catTo.get(cat).idxs.push(idx);
+    });
+
+    const cats = Array.from(catTo.keys()).sort((a, b) => String(a).localeCompare(String(b)));
+
+    if (hideColorLegend) {
+      legendEl.innerHTML = '';
+      if (legendWrapEl) legendWrapEl.style.display = 'none';
+      requestAnimationFrame(syncLegendVerticalPlacement);
+      return;
+    }
+    if (legendWrapEl) legendWrapEl.style.display = '';
+
+    const grid = document.createElement('div');
+    grid.className = 'ss-legend-grid';
+    const showShapesCol = !isClassScopedVisualization && (shapeKey === 'Class');
+    grid.style.gridTemplateColumns = showShapesCol
+      ? (shapeColW + 'px ' + leftW + 'px')
+      : (leftW + 'px');
+
+    // Right-aligned color legend should sit closest to the plot.
+    const colorCol = document.createElement('div');
+    colorCol.style.justifySelf = 'end';
+    const colorList = document.createElement('div');
+    colorList.className = 'ss-legend-list';
+    if (frozenActive) {
+      colorList.classList.add('ss-legend-list--disabled');
+
+      const frozenNote = document.createElement('div');
+      frozenNote.className = 'ss-legend-note';
+      frozenNote.style.marginTop = '0';
+      frozenNote.textContent = 'Color legend disabled while frozen.';
+      colorList.appendChild(frozenNote);
+    } else {
+      cats.forEach(cat => {
+        const rec = catTo.get(cat);
+        const item = document.createElement('div');
+        item.className = 'ss-legend-item';
+        if (isHidden(currentDataset, colorKey, cat)) item.classList.add('is-off');
+
+        const sw = document.createElement('span');
+        sw.className = 'ss-legend-swatch';
+        sw.style.background = rec.color || '#999';
+        item.appendChild(sw);
+
+        const txt = document.createElement('span');
+        txt.textContent = cat;
+        item.appendChild(txt);
+
+        attachLegendClicks(
+          item,
+          () => {
+            toggleHidden(currentDataset, colorKey, cat);
+            if (isClassSyncMode()) {
+              const hiddenNow = isHidden(currentDataset, 'Class', cat);
+              setClassHidden(currentDataset, cat, hiddenNow);
+            }
+            render();
+          },
+          () => {
+            // Isolate on double-click (Plotly-like)
+            const key = colorKey;
+            const ds = currentDataset;
+            const all = cats;
+            const onlyThisVisible = all.every(c => (c === cat) ? !isHidden(ds, key, c) : isHidden(ds, key, c));
+            if (onlyThisVisible) {
+              // reset
+              if (legendHidden[ds] && legendHidden[ds][key]) legendHidden[ds][key] = {};
+              if (isClassSyncMode()) clearAllClassHidden(ds);
+            } else {
+              if (!legendHidden[ds]) legendHidden[ds] = {};
+              legendHidden[ds][key] = {};
+              all.forEach(c => { if (c !== cat) legendHidden[ds][key][c] = true; });
+              if (isClassSyncMode()) {
+                classHidden[ds] = {};
+                all.forEach(c => { if (c !== cat) classHidden[ds][c] = true; });
+              }
+            }
+            render();
+          }
+        );
+
+        colorList.appendChild(item);
+      });
+    }
+    colorCol.appendChild(colorList);
+
+    // Left: shape legend
+    const shapeCol = document.createElement('div');
+    shapeCol.style.justifySelf = 'end';
+    // When Color by != Class, keep the shape legend centered vertically (not top-aligned)
+    // so switching "Color by" doesn't visually drag the shape legend to the top.
+    shapeCol.style.alignSelf = isClassSyncMode() ? 'stretch' : 'center';
+    const shapeList = document.createElement('div');
+    shapeList.className = 'ss-legend-list';
+    shapeCol.appendChild(shapeList);
+
+    let shapeHolder = null;
+    let usedClasses = null;
+    if (showShapesCol) {
+      shapeList.classList.add('ss-legend-list--shapes');
+      // Shape legend (Class) – only show classes present in current dataset
+      const pts = datasets[currentDataset] || [];
+      usedClasses = Array.from(new Set(pts.map(p => normClassCodeFromString(p.Class || ''))))
+        .filter(Boolean)
+        .sort((a, b) => String(a).localeCompare(String(b)));
+
+      shapeHolder = document.createElement('div');
+      shapeHolder.className = 'ss-class-legend-plot';
+      shapeHolder.style.width = '100%';
+      // Temporary height; we will sync to the left box after mount.
+      shapeHolder.style.height = Math.max(40, (usedClasses.length * 24) + 4) + 'px';
+      shapeList.appendChild(shapeHolder);
+    } else {
+      // Keep space, but hide content so left column doesn't expand.
+      shapeCol.classList.add('ss-legend-placeholder');
+      shapeList.appendChild(document.createElement('div'));
+    }
+
+    if (showShapesCol) grid.appendChild(shapeCol);
+    grid.appendChild(colorCol);
+
+    legendEl.innerHTML = '';
+    legendEl.appendChild(grid);
+
+    // After mount, size the shape legend box based ONLY on class count (stable across Color by).
+    if (showShapesCol && shapeHolder && usedClasses) {
+      requestAnimationFrame(() => {
+        // Give Plotly a bit of extra vertical room so it doesn't render its internal legend scrollbar.
+        // In Class sync mode, match the class color legend height exactly.
+        const shapeBoxH = (isClassSyncMode() && !frozenActive)
+          ? Math.round(colorList.getBoundingClientRect().height)
+          : (computeLegendBoxHeight(usedClasses.length) + 14);
+        syncShapeLegendBoxToFixedHeight(shapeList, shapeHolder, shapeBoxH);
+        shapeLegendPlotDivForExport = shapeHolder;
+        renderPlotlyClassLegend(shapeHolder, usedClasses);
+        syncLegendVerticalPlacement();
+      });
+    } else {
+      shapeLegendPlotDivForExport = null;
+      requestAnimationFrame(syncLegendVerticalPlacement);
+    }
+    requestAnimationFrame(syncSimilarPanelPlacement);
+  }
+
+  function bindPlotInteractions() {
+    if (!plotDiv || plotDiv._ssInteractionsBound) return;
+    plotDiv._ssInteractionsBound = true;
+
+    plotDiv.on('plotly_relayout', () => {
+      syncLiveRangeCache();
+    });
+
+    plotDiv.on('plotly_hover', (ev) => {
+      const pt = (ev && ev.points && ev.points[0]) ? ev.points[0] : null;
+      const data = pt && pt.customdata;
+      const point = data && data.point;
+      if (!data || !point) return;
+      if (selectedPointData) {
+        if (!hasFrozenSelection()) return;
+        const pid = Number(data.id);
+        const isHighlighted = pid === Number(frozenPointId) || frozenNeighborIds.has(pid);
+        if (!isHighlighted) {
+          hoveredFrozenPointId = null;
+          applySimilarTableHoverHighlight();
+          hidePlotHover();
+          return;
+        }
+        hoveredFrozenPointId = pid;
+        applySimilarTableHoverHighlight();
+        const mouseEv = ev && ev.event;
+        showPlotHover(buildPlotHoverHtml(point), mouseEv && mouseEv.clientX, mouseEv && mouseEv.clientY);
+        return;
+      }
+      renderSidePanelSelection(point, Array.isArray(data.top_neighbors) ? data.top_neighbors : []);
+    });
+
+    plotDiv.on('plotly_unhover', () => {
+      hoveredFrozenPointId = null;
+      applySimilarTableHoverHighlight();
+      hidePlotHover();
+      if (!selectedPointData) {
+        renderSidePanelPlaceholder();
+      }
+    });
+
+    plotDiv.on('plotly_click', (ev) => {
+      const pt = (ev && ev.points && ev.points[0]) ? ev.points[0] : null;
+      const data = pt && pt.customdata;
+      const point = data && data.point;
+      if (!data || !point || data.id === undefined || data.id === null) return;
+      suppressPlotBackgroundClickUntil = Date.now() + 250;
+      selectedPointData = point;
+      hidePlotHover();
+      if (supportsNeighborHover(currentDataset)) {
+        frozenPointId = Number(data.id);
+        frozenNeighborIds = new Set(
+          (Array.isArray(data.top_neighbors) ? data.top_neighbors : [])
+            .map(row => Number(row && row.id))
+            .filter(id => isFinite(id))
+        );
+      } else {
+        frozenPointId = null;
+        frozenNeighborIds = new Set();
+      }
+      renderSidePanelSelection(point, Array.isArray(data.top_neighbors) ? data.top_neighbors : []);
+      render();
+    });
+
+    plotDiv.addEventListener('click', (ev) => {
+      if (!hasFrozenSelection() && !selectedPointData) return;
+      if (Date.now() < suppressPlotBackgroundClickUntil) return;
+      const target = ev.target;
+      if (!target || !target.closest) return;
+      if (target.closest('.modebar')) return;
+      if (target.closest('.scatterlayer .trace .points path, .scatterlayer .trace .points text')) return;
+      clearFrozenSelection();
+      render();
+    });
+
+    document.addEventListener('keydown', (ev) => {
+      if (ev.key !== 'Escape' || (!hasFrozenSelection() && !selectedPointData)) return;
+      clearFrozenSelection();
+      render();
+    });
+
+    window.addEventListener('scroll', () => {
+      positionHoverPanel();
+      hidePlotHover();
+    }, true);
+  }
+
+  function render() {
+    syncLiveRangeCache();
+    const pts = datasets[currentDataset] || [];
+    if (!pts.length) {
+      if (statusEl) {
+        statusEl.style.display = 'block';
+        statusEl.textContent = 'No data for ' + currentDataset;
+      }
+      return;
+    }
+    if (statusEl) {
+      statusEl.style.display = 'none';
+      statusEl.textContent = '';
+    }
+
+    const traces = buildTraces(pts, colorKey, shapeKey);
+    const layout = {
+      xaxis: { visible: false, showgrid: false, scaleanchor: 'y' },
+      yaxis: { visible: false, showgrid: false },
+      hovermode: 'closest',
+      hoverlabel: { align: 'left' },
+      legend: {
+        x: 1.02,
+        xanchor: 'left',
+        y: 0.5,
+        orientation: 'v',
+        font: { family: 'Source Code Pro, monospace' }
+      },
+      margin: { l: 40, r: 40, t: 10, b: 40 },
+      paper_bgcolor: '#fff',
+      plot_bgcolor: '#fff'
+    };
+
+    // Fix ranges per dataset so toggling legend doesn't autoscale/shift the view.
+    const rangeCache = (render._rangeCache = render._rangeCache || {});
+    if (!rangeCache[currentDataset]) {
+      rangeCache[currentDataset] = buildDefaultRangeForPoints(pts);
+    }
+    layout.xaxis.autorange = false;
+    layout.yaxis.autorange = false;
+    layout.xaxis.range = rangeCache[currentDataset].x;
+    layout.yaxis.range = rangeCache[currentDataset].y;
+
+    layout.showlegend = false;
+    Plotly.react(plotDiv, traces, layout, { displayModeBar: true, responsive: true }).then(() => {
+      render._renderedDataset = currentDataset;
+      bindPlotInteractions();
+      requestAnimationFrame(() => {
+        try { Plotly.Plots.resize(plotDiv); } catch (e) {}
+      });
+    });
+
+    renderLegend(traces);
+  }
+
+  function downloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+  }
+
+  function toBaseName() {
+    return ('structuresim_' + (plotType || 'plot') + '_' + (currentDataset || 'data'))
+      .replace(/\s+/g, '_')
+      .toLowerCase();
+  }
+
+  function legendCssForExport() {
+    // Minimal CSS so the legend renders inside SVG foreignObject.
+    return `
+      .ss-legend{ font-family:'Source Code Pro', monospace; font-size:12px; color:#111; }
+      .ss-legend-grid{ display:grid; gap:14px; }
+      .ss-legend-list{
+        border:1px solid #e6e6e6; border-radius:8px; padding:8px;
+        background:#fff; box-sizing:border-box;
+      }
+      .ss-legend-list.ss-legend-list--disabled{ background:#fafafa; }
+      .ss-legend-list.ss-legend-list--shapes{ padding-right:0; }
+      .ss-legend-item{ display:flex; align-items:center; gap:8px; padding:4px 6px; border-radius:6px; }
+      .ss-legend-item.is-off{ opacity:0.35; }
+      .ss-legend-swatch{ width:22px; height:8px; border:1px solid #000; border-radius:2px; flex:0 0 22px; }
+      .ss-legend-note{ color:#666; font-size:11px; margin-top:6px; }
+      .ss-freeze-scale{ margin-top:10px; }
+      .ss-freeze-scale-title{ font-weight:700; margin:0 0 6px 0; }
+      .ss-freeze-scale-bar{ height:12px; border:1px solid #b9b9b9; border-radius:999px; background:linear-gradient(90deg, #1f4fff 0%, #7a2cff 50%, #ff1a1a 100%); }
+      .ss-freeze-scale-labels{ display:flex; justify-content:space-between; gap:10px; margin-top:4px; color:#555; font-size:11px; }
+      .ss-class-legend-plot .legend{ transform: translateX(-6px); transform-origin: top left; }
+      .ss-class-legend-plot .legend text{ font-family:'Source Code Pro', monospace !important; font-size:12px !important; fill:#111 !important; transform: translateY(-1.2px); }
+    `;
+  }
+
+  function serializeLegendHtmlForExport(widthPx, heightPx) {
+    const body = document.getElementById('ss-legend-body');
+    if (!body) return '';
+    const wrap = document.createElement('div');
+    wrap.className = 'ss-legend';
+    wrap.style.width = widthPx + 'px';
+    wrap.style.height = heightPx + 'px';
+    wrap.style.boxSizing = 'border-box';
+    wrap.innerHTML = body.innerHTML;
+
+    // Export only the COLOR legend column; shape legend is exported as SVG separately.
+    try {
+      const grid = wrap.querySelector('.ss-legend-grid');
+      if (grid && grid.children && grid.children.length >= 2) {
+        // Remove the left-hand column (shape legend) and keep the color legend nearest the plot.
+        grid.removeChild(grid.children[0]);
+        grid.style.gridTemplateColumns = widthPx + 'px';
+      }
+    } catch (e) {}
+
+    return wrap.outerHTML;
+  }
+
+  function extractSvgMarkup(svgData) {
+    const s = String(svgData || '').trim();
+    if (!s) return '';
+    if (s.startsWith('<svg')) return s;
+    if (s.startsWith('data:image/svg+xml')) {
+      const commaIdx = s.indexOf(',');
+      if (commaIdx < 0) return '';
+      const meta = s.slice(0, commaIdx);
+      const payload = s.slice(commaIdx + 1);
+      if (meta.includes(';base64')) {
+        try { return decodeURIComponent(escape(atob(payload))); } catch (e) { try { return atob(payload); } catch (e2) { return ''; } }
+      }
+      try { return decodeURIComponent(payload); } catch (e) { return payload; }
+    }
+    return '';
+  }
+
+  function normalizePlotSvg(svgData, plotW, plotH) {
+    const markup = extractSvgMarkup(svgData);
+    if (!markup) return '';
+    try {
+      const doc = new DOMParser().parseFromString(markup, 'image/svg+xml');
+      const svg = doc.documentElement;
+      if (!svg || svg.nodeName.toLowerCase() !== 'svg') return markup;
+      svg.setAttribute('width', String(plotW));
+      svg.setAttribute('height', String(plotH));
+      if (!svg.getAttribute('viewBox')) svg.setAttribute('viewBox', `0 0 ${plotW} ${plotH}`);
+      return svg.outerHTML;
+    } catch (e) {
+      return markup;
+    }
+  }
+
+  function stripOuterSvg(svgMarkup) {
+    const s = String(svgMarkup || '').trim();
+    if (!s) return '';
+    // Remove XML header if present
+    const noXml = s.replace(/^<\?xml[^>]*>\s*/i, '');
+    // Strip outer <svg ...> ... </svg> to embed inside another svg
+    const open = noXml.match(/^\s*<svg\b[^>]*>/i);
+    const closeIdx = noXml.toLowerCase().lastIndexOf('</svg>');
+    if (open && closeIdx >= 0) {
+      return noXml.slice(open[0].length, closeIdx);
+    }
+    return noXml;
+  }
+
+  function stripXmlHeader(s) {
+    return String(s || '').replace(/^<\?xml[^>]*>\s*/i, '').trim();
+  }
+
+  function buildCompositeSvg({
+    plotSvgString,
+    plotW,
+    plotH,
+    leftLegendW,
+    shapeLegendW,
+    gapW,
+    leftLegendH,
+    leftLegendY,
+    shapeLegendH,
+    shapeLegendY,
+    shapeLegendSvgString
+  }) {
+    const plotSvg = normalizePlotSvg(plotSvgString, plotW, plotH);
+    const legendHtml = serializeLegendHtmlForExport(leftLegendW, leftLegendH);
+    const css = legendCssForExport();
+    const totalW = plotW + leftLegendW + (shapeLegendW ? (gapW + shapeLegendW) : 0);
+    const totalH = Math.max(plotH, leftLegendH || 0, shapeLegendH || 0);
+    const shapeSvgMarkup = shapeLegendSvgString ? normalizePlotSvg(shapeLegendSvgString, shapeLegendW, shapeLegendH) : '';
+    const yLeft = Math.max(0, Number(leftLegendY || 0));
+    const yShape = Math.max(0, Number(shapeLegendY || 0));
+    const shapeX = plotW + leftLegendW + gapW;
+    const shapeClipId = 'ssShapeLegendClip_' + Math.floor(Math.random() * 1e9);
+
+    // NOTE: foreignObject requires XHTML namespace.
+    return `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${totalW}" height="${totalH}" viewBox="0 0 ${totalW} ${totalH}">
+  ${shapeSvgMarkup ? `
+  <defs>
+    <clipPath id="${shapeClipId}">
+      <rect x="0" y="0" width="${shapeLegendW}" height="${shapeLegendH}" rx="8" ry="8"/>
+    </clipPath>
+  </defs>` : ''}
+  <rect x="0" y="0" width="${totalW}" height="${totalH}" fill="#ffffff"/>
+  ${plotSvg ? `<svg x="0" y="0" width="${plotW}" height="${plotH}" viewBox="0 0 ${plotW} ${plotH}">${stripOuterSvg(plotSvg)}</svg>` : ''}
+  <foreignObject x="${plotW}" y="${yLeft}" width="${leftLegendW}" height="${leftLegendH}">
+    <div xmlns="http://www.w3.org/1999/xhtml" style="width:${leftLegendW}px;height:${leftLegendH}px;box-sizing:border-box;">
+      <style>${css}</style>
+      ${legendHtml}
+    </div>
+  </foreignObject>
+  ${shapeSvgMarkup ? `
+  <g transform="translate(${shapeX},${yShape})" clip-path="url(#${shapeClipId})">
+    <rect x="0.5" y="0.5" width="${Math.max(0, shapeLegendW - 1)}" height="${Math.max(0, shapeLegendH - 1)}" rx="8" ry="8"
+          fill="#ffffff" stroke="#e6e6e6" stroke-width="1" shape-rendering="crispEdges"/>
+    ${stripXmlHeader(shapeSvgMarkup)}
+  </g>` : ''}
+</svg>`;
+  }
+
+  function loadImage(src) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error('Failed to load image.'));
+      img.src = src;
+    });
+  }
+
+  function deepCloneJson(obj) {
+    return JSON.parse(JSON.stringify(obj || null));
+  }
+
+  function scalePlotlyForExport(data, layout, factor) {
+    const f = Number(factor || 1);
+    const outData = (data || []).map(t => {
+      const tr = Object.assign({}, t);
+      if (tr.marker) {
+        tr.marker = Object.assign({}, tr.marker);
+        if (typeof tr.marker.size === 'number') tr.marker.size = tr.marker.size * f;
+        if (tr.marker.line) {
+          tr.marker.line = Object.assign({}, tr.marker.line);
+          if (typeof tr.marker.line.width === 'number') tr.marker.line.width = tr.marker.line.width * f;
+        }
+      }
+      return tr;
+    });
+
+    const outLayout = Object.assign({}, layout || {});
+    if (outLayout.margin) {
+      outLayout.margin = Object.assign({}, outLayout.margin);
+      ['l', 'r', 't', 'b', 'pad'].forEach(k => {
+        if (typeof outLayout.margin[k] === 'number') outLayout.margin[k] = outLayout.margin[k] * f;
+      });
+    }
+    if (outLayout.font) {
+      outLayout.font = Object.assign({}, outLayout.font);
+      if (typeof outLayout.font.size === 'number') outLayout.font.size = outLayout.font.size * f;
+    }
+    if (outLayout.legend) {
+      outLayout.legend = Object.assign({}, outLayout.legend);
+      if (outLayout.legend.font) {
+        outLayout.legend.font = Object.assign({}, outLayout.legend.font);
+        if (typeof outLayout.legend.font.size === 'number') outLayout.legend.font.size = outLayout.legend.font.size * f;
+      }
+      if (typeof outLayout.legend.tracegroupgap === 'number') outLayout.legend.tracegroupgap = outLayout.legend.tracegroupgap * f;
+    }
+    return { data: outData, layout: outLayout };
+  }
+
+  async function plotlyToPngScaled(sourceDiv, widthPx, heightPx, scaleFactor) {
+    // Render in a hidden div to avoid mutating the interactive plot.
+    const w = Math.round(Number(widthPx || 0));
+    const h = Math.round(Number(heightPx || 0));
+    if (!w || !h) throw new Error('Invalid export size');
+
+    const srcData = deepCloneJson(sourceDiv && sourceDiv.data ? sourceDiv.data : []);
+    const srcLayout = deepCloneJson(sourceDiv && sourceDiv.layout ? sourceDiv.layout : {});
+    const scaled = scalePlotlyForExport(srcData, srcLayout, scaleFactor);
+    scaled.layout.width = w;
+    scaled.layout.height = h;
+
+    const host = document.createElement('div');
+    host.style.position = 'fixed';
+    host.style.left = '-10000px';
+    host.style.top = '-10000px';
+    host.style.width = w + 'px';
+    host.style.height = h + 'px';
+    host.style.background = '#fff';
+    document.body.appendChild(host);
+
+    try {
+      await Plotly.newPlot(host, scaled.data, scaled.layout, { displayModeBar: false, responsive: false, staticPlot: true });
+      return await Plotly.toImage(host, { format: 'png', width: w, height: h, scale: 1 });
+    } finally {
+      try { Plotly.purge(host); } catch (e) {}
+      try { document.body.removeChild(host); } catch (e) {}
+    }
+  }
+
+  async function plotlyToPngHiDpi(sourceDiv, widthPx, heightPx, scaleFactor) {
+    const w = Math.round(Number(widthPx || 0));
+    const h = Math.round(Number(heightPx || 0));
+    const s = Number(scaleFactor || 1);
+    if (!w || !h) throw new Error('Invalid export size');
+    return await Plotly.toImage(sourceDiv, { format: 'png', width: w, height: h, scale: s });
+  }
+
+  function drawRoundedRect(ctx, x, y, w, h, r) {
+    const rr = Math.max(0, Math.min(r, w / 2, h / 2));
+    ctx.beginPath();
+    ctx.moveTo(x + rr, y);
+    ctx.arcTo(x + w, y, x + w, y + h, rr);
+    ctx.arcTo(x + w, y + h, x, y + h, rr);
+    ctx.arcTo(x, y + h, x, y, rr);
+    ctx.arcTo(x, y, x + w, y, rr);
+    ctx.closePath();
+  }
+
+  function buildExportColorLegendItemsFromPlot() {
+    // Pull categories/colors from the current Plotly traces.
+    const catToColor = new Map();
+    const data = (plotDiv && plotDiv.data) ? plotDiv.data : [];
+    (data || []).forEach(t => {
+      const cat = t && t._colorCat;
+      if (!cat || catToColor.has(cat)) return;
+      const c = (t.marker && t.marker.color) ? t.marker.color : '#999';
+      catToColor.set(cat, c);
+    });
+    const cats = Array.from(catToColor.keys()).sort((a, b) => String(a).localeCompare(String(b)));
+    return cats.map(cat => ({
+      label: cat,
+      color: catToColor.get(cat) || '#999',
+      off: isHidden(currentDataset, colorKey, cat)
+    }));
+  }
+
+  function computeLegendBoxHeight(itemCount) {
+    const pad = 8;
+    const itemH = 24;
+    const n = Math.max(0, Number(itemCount || 0));
+    return Math.max(44, (pad * 2) + (n * itemH) + 2);
+  }
+
+  function drawLegendBox(ctx, x, y, w, h) {
+    ctx.save();
+    ctx.fillStyle = '#ffffff';
+    ctx.strokeStyle = '#e6e6e6';
+    ctx.lineWidth = 1;
+    drawRoundedRect(ctx, x, y, w, h, 8);
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawColorLegendOnCanvas(ctx, x, y, w, h, items) {
+    const pad = 8;
+    const itemPadY = 4;
+    const itemH = 16 + (itemPadY * 2); // roughly matches `.ss-legend-item`
+    const swW = 22;
+    const swH = 8;
+    const gap = 8;
+    const textX = x + pad + swW + gap;
+    const swX = x + pad;
+    let yy = y + pad + itemH / 2;
+
+    drawLegendBox(ctx, x, y, w, h);
+
+    const rows = items || buildExportColorLegendItemsFromPlot();
+    ctx.save();
+    ctx.font = '12px "Source Code Pro", monospace';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#111';
+    rows.forEach(it => {
+      if (yy + itemH / 2 > y + h - pad) return;
+      const alpha = it.off ? 0.35 : 1;
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      // swatch
+      ctx.fillStyle = String(it.color || '#999');
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.rect(swX, yy - (swH / 2), swW, swH);
+      ctx.fill();
+      ctx.stroke();
+      // text
+      ctx.fillStyle = '#111';
+      ctx.fillText(String(it.label || ''), textX, yy);
+      ctx.restore();
+      yy += itemH;
+    });
+    ctx.restore();
+  }
+
+  async function downloadComposite(format) {
+    if (!plotDiv || !plotDiv.data || !plotDiv.data.length) {
+      alert('No plot to download yet.');
+      return;
+    }
+    const btn = (format === 'svg') ? downloadSvgBtn : downloadPngBtn;
+    const oldTxt = btn ? btn.textContent : '';
+    if (btn) { btn.disabled = true; btn.textContent = 'Preparing…'; }
+
+    try {
+      // Render size (plot only) - legend width is taken from current UI.
+      const plotW = 1200;
+      const plotH = 800;
+      const legendH = plotH;
+      const baseW = 320;
+      const legendWidths = {
+        "Class": Math.round(baseW * 0.25),
+        "Chemotype":  Math.round(baseW * 0.50),
+        "Receptor family": Math.round(baseW * 0.6),
+        "Modality": Math.round(baseW * 0.45),
+        "Sense": Math.round(baseW * 0.40),
+      };
+      const leftLegendW = legendWidths[colorKey] || baseW;
+      const shapeLegendW = (shapeKey === 'Class') ? 80 : 0;
+      const gapW = 12;
+      const colorItems = buildExportColorLegendItemsFromPlot();
+      const classCount = (() => {
+        if (!shapeLegendW) return 0;
+        const pts = datasets[currentDataset] || [];
+        return Array.from(new Set(pts.map(p => normClassCodeFromString(p.Class || '')))).filter(Boolean).length;
+      })();
+      const colorBoxH = computeLegendBoxHeight(colorItems.length);
+      const shapeBoxH = computeLegendBoxHeight(classCount);
+      const colorY = Math.max(0, Math.round((plotH - colorBoxH) / 2));
+      const shapeY = Math.max(0, Math.round((plotH - shapeBoxH) / 2));
+
+      const base = toBaseName();
+
+      if (format === 'svg') {
+        const plotSvgString = await Plotly.toImage(plotDiv, { format: 'svg', width: plotW, height: plotH });
+        let shapeLegendSvgString = '';
+        if (shapeLegendW && shapeLegendPlotDivForExport && shapeLegendPlotDivForExport.data) {
+          try {
+            shapeLegendSvgString = await Plotly.toImage(shapeLegendPlotDivForExport, { format: 'svg', width: shapeLegendW, height: shapeBoxH });
+          } catch (e) {
+            // Don't fail the whole SVG export if the shape legend export fails.
+            // (e.g., transient Plotly state while switching options)
+            console.warn('Shape legend SVG export failed; continuing without shape legend.', e);
+            shapeLegendSvgString = '';
+          }
+        }
+        const compositeSvg = buildCompositeSvg({
+          plotSvgString,
+          plotW,
+          plotH,
+          leftLegendW,
+          shapeLegendW,
+          gapW,
+          leftLegendH: colorBoxH,
+          leftLegendY: colorY,
+          shapeLegendH: shapeBoxH,
+          shapeLegendY: shapeY,
+          shapeLegendSvgString
+        });
+        downloadBlob(new Blob([compositeSvg], { type: 'image/svg+xml;charset=utf-8' }), base + '.svg');
+        return;
+      }
+
+      // PNG export: compose without foreignObject (more reliable).
+      // Render a *larger* PNG (more pixels) so zooming in stays crisp.
+      // This is the only way to reduce graininess; "DPI" metadata alone doesn't add detail.
+      const EXPORT_SCALE = 4;
+      const RIGHT_PAD = 10; // tiny whitespace after legends
+      const outW = plotW + leftLegendW + (shapeLegendW ? (gapW + shapeLegendW) : 0) + RIGHT_PAD;
+      const outH = plotH;
+      const canvas = document.createElement('canvas');
+      canvas.width = outW * EXPORT_SCALE;
+      canvas.height = outH * EXPORT_SCALE;
+      const ctx = canvas.getContext('2d');
+      // Draw in "logical" coordinates, scaled up for export pixels.
+      ctx.setTransform(EXPORT_SCALE, 0, 0, EXPORT_SCALE, 0, 0);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, outW, outH);
+
+      // Plot image
+      const plotPngUrl = await plotlyToPngScaled(plotDiv, plotW * EXPORT_SCALE, plotH * EXPORT_SCALE, EXPORT_SCALE);
+      const plotImg = await loadImage(plotPngUrl);
+      ctx.drawImage(plotImg, 0, 0, plotW, plotH);
+
+      // Color legend (left)
+      drawColorLegendOnCanvas(ctx, plotW, colorY, leftLegendW, colorBoxH, colorItems);
+
+      // Shape legend (right) as Plotly-rendered PNG
+      if (shapeLegendW && shapeLegendPlotDivForExport && shapeLegendPlotDivForExport.data) {
+        drawLegendBox(ctx, plotW + leftLegendW + gapW, shapeY, shapeLegendW, shapeBoxH);
+        // For the shape legend, rely on Plotly's built-in HiDPI scaling to keep
+        // the legend's spacing/font exactly the same as on the page.
+        try {
+          const shapePngUrl = await plotlyToPngHiDpi(shapeLegendPlotDivForExport, shapeLegendW, shapeBoxH, EXPORT_SCALE);
+          const shapeImg = await loadImage(shapePngUrl);
+          ctx.drawImage(shapeImg, plotW + leftLegendW + gapW, shapeY, shapeLegendW, shapeBoxH);
+        } catch (e) {
+          console.warn('Shape legend PNG export failed; continuing without shape legend.', e);
+        }
+      }
+
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+      if (blob) downloadBlob(blob, base + '.png');
+    } catch (e) {
+      console.error('Export failed', e);
+      alert('Export failed: ' + (e && e.message ? e.message : String(e)));
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = oldTxt || (format === 'svg' ? 'SVG' : 'PNG'); }
+    }
+  }
+
+  /* ---------- UI wiring ---------- */
+
+  /* ---------- How-to modal ---------- */
+  const howToBtn   = document.getElementById('ssHowToBtn');
+  const howToModal = document.getElementById('ssHowToModal');
+  const howToBack  = document.getElementById('ssHowToBackdrop');
+  const howToClose = howToModal && howToModal.querySelector('.ss-modal-close');
+  const howToOk    = document.getElementById('ssHowToOk');
+
+  function openHowTo() {
+    if (!howToModal || !howToBack) return;
+    howToModal.style.display = 'block';
+    howToBack.style.display  = 'block';
+    howToModal.setAttribute('aria-hidden', 'false');
+    howToBack.setAttribute('aria-hidden', 'false');
+    document.documentElement.style.overflow = 'hidden';
+  }
+
+  function closeHowTo() {
+    if (!howToModal || !howToBack) return;
+    howToModal.style.display = 'none';
+    howToBack.style.display  = 'none';
+    howToModal.setAttribute('aria-hidden', 'true');
+    howToBack.setAttribute('aria-hidden', 'true');
+    document.documentElement.style.overflow = '';
+  }
+
+  if (howToBtn)   howToBtn.addEventListener('click', openHowTo);
+  if (howToBack)  howToBack.addEventListener('click', closeHowTo);
+  if (howToClose) howToClose.addEventListener('click', closeHowTo);
+  if (howToOk)    howToOk.addEventListener('click', closeHowTo);
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && howToModal && howToModal.style.display === 'block') closeHowTo();
+  });
+
+  // Similarity source (dropdown options)
+  const datasetDropBtn = document.getElementById('ssDatasetDropdownBtn');
+  const resetColorsBtn = document.getElementById('ssResetColorsBtn');
+  const pickerContainer = document.getElementById('ss-color-pickers');
+  const customizeDropdown = document.getElementById('ssCustomizeColorsBtn')?.closest?.('.dropdown');
+
+  // Prevent dropdown close on click inside (Wheel behavior)
+  if (typeof window.$ !== 'undefined') {
+    $(document).on('click', '.dropdown-menu', function (e) { e.stopPropagation(); });
+  } else {
+    document.querySelectorAll('.dropdown-menu').forEach(m => {
+      m.addEventListener('click', (e) => e.stopPropagation());
+    });
+  }
+
+  // Keep toolbar dropdowns open on outside clicks (only close via toggle).
+  // Implemented via Bootstrap dropdown hide guard, without blocking event delivery
+  // to widgets like Spectrum (so Cancel/Choose still work).
+  if (typeof window.$ !== 'undefined') {
+    // Mark the dropdown as "allowed to close" only when the toggle is clicked while open.
+    $(document).on('click', '.ss-toolbar .dropdown-toggle', function () {
+      const $dd = $(this).closest('.dropdown');
+      if ($dd.hasClass('open')) {
+        $dd.data('ssAllowHide', true);
+      }
+    });
+
+    $('.ss-toolbar .dropdown').on('hide.bs.dropdown', function (e) {
+      const $dd = $(this);
+      const allow = !!$dd.data('ssAllowHide');
+      if (allow) {
+        $dd.removeData('ssAllowHide');
+        return;
+      }
+      // Prevent Bootstrap from closing due to outside click / mouseup
+      e.preventDefault();
+    });
+  }
+
+  // Spectrum edge-case:
+  // If a drag starts inside the Spectrum popup (sp-container) and the mouse is released outside,
+  // the resulting document click can trigger Bootstrap's "outside click closes dropdown" logic.
+  // We suppress only that specific outside click, without blocking clicks inside the picker
+  // (so Cancel/Choose still work).
+  let spectrumDragArmed = false;
+  document.addEventListener('mousedown', function (e) {
+    if (e && e.target && e.target.closest && e.target.closest('.sp-container')) {
+      spectrumDragArmed = true;
+    }
+  }, true);
+  document.addEventListener('mouseup', function () {
+    if (!spectrumDragArmed) return;
+    // Keep it armed through the ensuing click event (mouseup happens before click).
+    setTimeout(function () { spectrumDragArmed = false; }, 0);
+  }, true);
+  document.addEventListener('click', function (e) {
+    if (!spectrumDragArmed) return;
+    const inPicker = !!(e && e.target && e.target.closest && e.target.closest('.sp-container'));
+    if (inPicker) return;
+    // Outside click caused by picker drag-release; prevent Bootstrap from seeing it.
+    e.stopPropagation();
+    if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+  }, true);
+
+  function buildColorPickerUI() {
+    if (!pickerContainer) return;
+    applyCustomizeMenuWidth();
+    const pts = datasets[currentDataset] || [];
+    const cats = Array.from(new Set(pts.map(p => normalizedCategoryForKey(colorKey, p))))
+      .filter(Boolean)
+      .sort((a, b) => a.localeCompare(b));
+
+    let familyColors = null;
+    if (colorKey === 'Receptor family') {
+      familyColors = getGlobalReceptorFamilyColors();
+    }
+
+    pickerContainer.innerHTML = '';
+    const grid = document.createElement('div');
+    grid.className = 'color-grid';
+    pickerContainer.appendChild(grid);
+
+    function safeId(str) {
+      return 'sscp_' + String(str || '').replace(/[^a-zA-Z0-9_]+/g, '_').slice(0, 70);
+    }
+
+    cats.forEach(cat => {
+      const row = document.createElement('div');
+      row.className = 'color-item';
+
+      row.appendChild(document.createElement('div')); // empty check-col
+
+      const lbl = document.createElement('div');
+      lbl.className = 'color-label';
+      lbl.textContent = cat;
+      row.appendChild(lbl);
+
+      const inp = document.createElement('input');
+      inp.type = 'text';
+      inp.id = safeId(colorKey + '_' + cat);
+      row.appendChild(inp);
+
+      grid.appendChild(row);
+
+      const override = getOverride(colorKey, cat);
+      const base = defaultColorForCategory(colorKey, cat, familyColors);
+      const initial = override || base || '#cccccc';
+
+      if (typeof window.$ !== 'undefined' && typeof $(inp).spectrum === 'function') {
+        const $inp = $(inp);
+        let rafId = null;
+        $inp.spectrum({
+          color: initial,
+          showInput: true,
+          showInitial: true,
+          showButtons: true,
+          showAlpha: false,
+          preferredFormat: 'hex',
+          showPalette: false,
+          appendTo: 'body',
+          show: function () {
+            // Center the picker under the clicked swatch, and keep it on top (not clipped by dropdown)
+            setTimeout(function () {
+              try {
+                const $c = $inp.spectrum('container');
+                // NOTE: spectrum hides the input and renders a replacer swatch; position off the swatch.
+                const $swatch = ($inp.spectrum('replacer') || $inp);
+                const off = $swatch.offset();
+                const iw = $swatch.outerWidth();
+                const ih = $swatch.outerHeight();
+                const cw = $c.outerWidth();
+                let left = off.left + (iw / 2) - (cw / 2);
+                const top = off.top + ih + 6;
+                const pad = 8;
+                const maxLeft = $(window).width() - cw - pad;
+                if (left < pad) left = pad;
+                if (left > maxLeft) left = maxLeft;
+                $c.css({ left: left + 'px', top: top + 'px' });
+              } catch (e) {}
+            }, 0);
+          },
+          move: function (color) {
+            // Live preview while sliding/dragging.
+            const hex = color ? color.toHexString() : '';
+            setOverrideInMemory(colorKey, cat, hex);
+            if (rafId) return;
+            rafId = window.requestAnimationFrame(function () {
+              rafId = null;
+              render();
+            });
+          },
+          change: function (color) {
+            const hex = color ? color.toHexString() : '';
+            setOverride(colorKey, cat, hex);
+            render();
+          }
+        });
+      }
+    });
+  }
+
+  function hideAllSpectrum() {
+    try {
+      if (typeof window.$ !== 'undefined') {
+        $('#ss-color-pickers input').each(function () {
+          try { $(this).spectrum('hide'); } catch (e) {}
+        });
+      }
+    } catch (e) {}
+  }
+
+  if (customizeDropdown && typeof window.$ !== 'undefined') {
+    $(customizeDropdown).on('hide.bs.dropdown', hideAllSpectrum);
+  }
+
+  document.querySelectorAll('.ss-dataset-opt').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const ds = btn.getAttribute('data-dataset');
+      if (!datasetIsAvailable(ds)) return;
+      if (!ds || ds === currentDataset) return;
+      clearFrozenSelection();
+      setCurrentDataset(ds);
+      buildColorPickerUI();
+      render();
+      // Keep Source dropdown open; user closes manually.
+    });
+  });
+
+  // Colour-by (dropdown options)
+  const colorDropBtn = document.getElementById('ssColorDropdownBtn');
+  document.querySelectorAll('.ss-colorby-opt').forEach(btn => {
+    btn.addEventListener('click', () => {
+      clearFrozenSelection();
+      document.querySelectorAll('.ss-colorby-opt').forEach(b => {
+        b.classList.remove('btn-primary');
+        b.classList.add('btn-outline-primary');
+      });
+      btn.classList.remove('btn-outline-primary');
+      btn.classList.add('btn-primary');
+      colorKey = btn.getAttribute('data-key') || 'Class';
+      if (colorDropBtn) colorDropBtn.childNodes[0].nodeValue = 'Color by: ' + colorKey + ' ';
+      updateCustomizeHeader();
+      buildColorPickerUI();
+      render();
+      // Keep Color by dropdown open (Wheel behavior).
+    });
+  });
+
+  // Shape-by (dropdown options)
+  const shapeDropBtn = document.getElementById('ssShapeDropdownBtn');
+  document.querySelectorAll('.ss-shapeby-opt').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const key = btn.getAttribute('data-key') || 'None';
+      if (key === shapeKey) return;
+      clearFrozenSelection();
+      document.querySelectorAll('.ss-shapeby-opt').forEach(b => {
+        b.classList.remove('btn-primary');
+        b.classList.add('btn-outline-primary');
+      });
+      btn.classList.remove('btn-outline-primary');
+      btn.classList.add('btn-primary');
+      shapeKey = key;
+      if (shapeDropBtn) shapeDropBtn.childNodes[0].nodeValue = 'Shape by: ' + shapeKey + ' ';
+      if (shapeKey !== 'Class') {
+        clearAllClassHidden(currentDataset);
+      }
+      render();
+      // Keep Shape dropdown open; user closes manually.
+    });
+  });
+
+  // Initialize dropdown button labels to current state
+  if (datasetDropBtn) datasetDropBtn.childNodes[0].nodeValue = 'Source: ' + datasetButtonLabel(currentDataset) + ' ';
+  if (colorDropBtn) colorDropBtn.childNodes[0].nodeValue = 'Color by: ' + colorKey + ' ';
+  if (shapeDropBtn) shapeDropBtn.childNodes[0].nodeValue = 'Shape by: ' + shapeKey + ' ';
+  updateCustomizeHeader();
+  buildColorPickerUI();
+
+  syncDatasetButtons();
+
+  if (resetColorsBtn) {
+    resetColorsBtn.addEventListener('click', () => {
+      clearFrozenSelection();
+      clearOverridesForKey(colorKey);
+      buildColorPickerUI();
+      render();
+    });
+  }
+
+  window.addEventListener('resize', () => {
+    positionHoverPanel();
+    syncLegendVerticalPlacement();
+    syncSimilarPanelPlacement();
+    try { Plotly.Plots.resize(plotDiv); } catch (e) {}
+  });
+
+  if (downloadPngBtn) downloadPngBtn.addEventListener('click', () => downloadComposite('png'));
+  if (downloadSvgBtn) downloadSvgBtn.addEventListener('click', () => downloadComposite('svg'));
+
+  async function loadData() {
+    try {
+      showBusyLoader();
+      const res = await fetch(EMBED_URL, { headers: { 'Accept': 'application/json' }});
+      if (!res.ok) {
+        let detail = '';
+        try {
+          const errJson = await res.json();
+          if (errJson && errJson.error) detail = String(errJson.error);
+        } catch (e) {}
+        throw new Error('HTTP ' + res.status + (detail ? (': ' + detail) : ''));
+      }
+      const data = await res.json();
+
+      function applyTransforms(dsObj, plotKey) {
+        if (!dsObj) return;
+        const activePts = dsObj.active || [];
+        const inactivePts = dsObj.inactive || [];
+        // Active: no-op (placeholder for manual alignment)
+        activePts.forEach(p => { p.x = p.x; p.y = p.y; });
+        // Inactive: flip horizontally
+        inactivePts.forEach(p => { p.x = -p.x; p.y = p.y; });
+      }
+
+      function applyWheelFamilyRenames(dsObj) {
+        if (!dsObj) return;
+        ['sequence', 'inactive', 'active'].forEach(ds => {
+          const pts = dsObj[ds] || [];
+          pts.forEach(p => {
+            if (!p || typeof p !== 'object') return;
+            if (p['Receptor family']) {
+              p['Receptor family'] = normalizeReceptorFamily(p['Receptor family']);
+            }
+          });
+        });
+      }
+      datasetsByPlot.tsne = {
+        sequence: (data.sequence && data.sequence.points) || [],
+        inactive: (data.structure && data.structure.inactive && data.structure.inactive.points) || [],
+        active:   (data.structure && data.structure.active   && data.structure.active.points)   || [],
+      };
+      applyTransforms(datasetsByPlot.tsne, 'tsne');
+      applyWheelFamilyRenames(datasetsByPlot.tsne);
+
+      // Rebuild global receptor-family palette now that data is loaded.
+      receptorFamilyColorsGlobal = null;
+      rebuildGlobalReceptorFamilyColors();
+
+      datasets = datasetsByPlot.tsne || emptyDatasets();
+      setCurrentDataset(firstAvailableDataset());
+
+      // New embedding => reset fixed axis ranges
+      render._rangeCache = {};
+
+      hideBusyLoader();
+      if (statusEl) {
+        statusEl.style.display = 'none';
+        statusEl.textContent = '';
+      }
+      buildColorPickerUI();
+      renderSidePanelPlaceholder();
+      render();
+      initReceptorSearch();
+    } catch (e) {
+      console.error('Load error:', e);
+      if (loaderHostEl && window.jQuery && jQuery.fn && jQuery.fn.busyLoad) {
+        jQuery(loaderHostEl).busyLoad('hide');
+      }
+      if (loaderHostEl) loaderHostEl.style.display = 'none';
+      if (plotGridEl) plotGridEl.style.display = 'none';
+      if (statusEl) {
+        statusEl.style.display = 'block';
+        statusEl.textContent = 'Failed to load data: ' + (e && e.message ? e.message : String(e));
+      }
+    }
+  }
+
+  /* ---------- initial load (single fetch) ---------- */
+  await loadData();
+
+})();
+
+
+
+</script>
+{% endblock %}

@@ -229,13 +229,132 @@ function renderTree(data) {
     });
 }
 
+/**
+ * Render a phylo tree from Newick string with simple color-by-leaf mapping.
+ * Reuses the same phylotree setup and stylers as renderTree (structure clustering).
+ * Used by NewClassClusterTree and other pages that have Newick + colorBySymbol.
+ */
+function renderTreeFromNewick(newick, colorBySymbol, containerSelector, size) {
+  if (typeof d3 === 'undefined' || !d3.layout.phylotree) return;
+
+  var container = document.querySelector(containerSelector);
+  if (!container) return;
+
+  colorBySymbol = colorBySymbol || {};
+  var classes = Object.keys(colorBySymbol);
+  var colors = classes.map(function(c) { return colorBySymbol[c]; });
+
+  // Build treeAnnotations in format expected by nodeStyler/branchStyler (displayDataInner=5 = GPCR class)
+  treeAnnotations = {};
+  for (var i = 0; i < classes.length; i++) {
+    var row = [0, classes[i], classes[i], classes[i], classes[i], classes[i]];
+    for (var j = 6; j < 14; j++) row.push([]);
+    treeAnnotations[classes[i]] = row;
+  }
+
+  dataClasses = dataClasses || [];
+  colorClasses = colorClasses || [];
+  dataClasses[5] = classes;
+  colorClasses[5] = colors;
+  displayDataInner = 5;
+  displayData = -1;  // no outer markers for simple Newick trees
+  doBranchColoring = true;
+  radialTree = true;
+
+  var svgId = "ncct-clustering-tree";
+  container.innerHTML = '<svg id="' + svgId + '"></svg>';
+  var svgSelector = '#' + svgId;
+
+  var plotsize = size || 580;
+  if (container.offsetWidth > 0) {
+    plotsize = Math.min(container.offsetWidth * 0.95, Math.max(window.innerHeight * 0.7, 580));
+  }
+  plotsize = Math.max(plotsize, 500);
+  plotsize = [plotsize, plotsize];
+
+  phylotree = d3.layout.phylotree()
+    .svg(d3.select(svgSelector))
+    .options({
+      'left-right-spacing': 'fit-to-size',
+      'top-bottom-spacing': 'fit-to-size',
+      'restricted-selectable': 'none',
+      'selectable': false,
+      'collapsible': false,
+      'transitions': false,
+      'show-scale': false,
+      'align-tips': true,
+      'brush': false,
+      'reroot': true,
+      'hide': false,
+      'zoom': false,
+      'inner_spacing': 2
+    })
+    .radial(true)
+    .node_span('equal')
+    .size(plotsize)
+    .separation(function() { return 0.1; });
+
+  phylotree(newick)
+    .style_nodes(nodeStyler)
+    .style_edges(branchStyler)
+    .layout(false);
+
+  phylotree.layout(true);
+
+  phylotree.get_nodes().forEach(function(node) {
+    var pdbs = connectedPDBs(node);
+    if (pdbs.length > 0 && pdbs[0] in treeAnnotations) {
+      node['colorClasses'] = JSON.parse(JSON.stringify(treeAnnotations[pdbs[0]]));
+      for (var i = 1; i < pdbs.length; i++) {
+        var pdb = pdbs[i];
+        if (!(pdb in treeAnnotations)) continue;
+        for (var j = 0; j < node['colorClasses'].length; j++) {
+          if (Array.isArray(node['colorClasses'][j])) {
+            node['colorClasses'][j] = node['colorClasses'][j].filter(function(x) {
+              return treeAnnotations[pdb][j] && treeAnnotations[pdb][j].indexOf ? treeAnnotations[pdb][j].indexOf(x) >= 0 : false;
+            });
+          } else if (node['colorClasses'][j] !== treeAnnotations[pdb][j]) {
+            node['colorClasses'][j] = "-";
+          }
+        }
+      }
+    }
+  });
+
+  if (doBranchColoring) {
+    d3.layout.phylotree.trigger_refresh(phylotree);
+    d3.layout.phylotree.trigger_refresh(phylotree);
+  }
+
+  if (typeof svgPanZoom !== 'undefined') {
+    if (window.zoomCluster[svgSelector] != null && typeof window.zoomCluster[svgSelector].destroy === 'function') {
+      window.zoomCluster[svgSelector].destroy();
+      delete window.zoomCluster[svgSelector];
+    }
+    window.zoomCluster[svgSelector] = svgPanZoom(svgSelector, {
+      zoomEnabled: false,
+      panEnabled: true,
+      controlIconsEnabled: false,
+      fit: true,
+      center: true,
+      minZoom: 0.1,
+      maxZoom: 10,
+      zoomScaleSensitivity: 0.25,
+      dblClickZoomEnabled: false
+    });
+  }
+
+  maximumLeafSize(true, svgSelector);
+}
+
 var maxLeafNodeLenght = -1
-function maximumLeafSize(refresh = true) {
+function maximumLeafSize(refresh = true, svgSelector) {
+  svgSelector = svgSelector || "#clustering-tree";
   // set to 0
   maxLeafNodeLenght = 0;
 
   // Find longest label
-  d3.select("#clustering-tree").selectAll("text")[0].forEach(
+  d3.select(svgSelector).selectAll("text")[0].forEach(
     function(node_label){
       labelSize = node_label.getBBox().width*1.05
       if (labelSize > maxLeafNodeLenght){
@@ -246,7 +365,7 @@ function maximumLeafSize(refresh = true) {
   // redraw labels with new max
   if (refresh){
     d3.layout.phylotree.trigger_refresh(phylotree);
-    resizeTree()
+    resizeTree("", svgSelector)
   }
 }
 
@@ -373,12 +492,16 @@ function toggleTreeType(event){
 }
 
 function windowResize(){
+  var treeContainer = document.getElementById('tree-container');
+  var plot = document.getElementById("clustering-tree");
+  if (!treeContainer || !plot) {
+    return;
+  }
   var plotsize = window.innerHeight*0.9;
   // maximum is window height - resize if available width is less
-  if (document.getElementById('tree-container').offsetWidth*0.9 < plotsize)
-    plotsize = document.getElementById('tree-container').offsetWidth*0.9
+  if (treeContainer.offsetWidth*0.9 < plotsize)
+    plotsize = treeContainer.offsetWidth*0.9
 
-  var plot = document.getElementById("clustering-tree")
   plot.style.height = plotsize + "px"
   plot.style.width = plotsize + "px"
 
@@ -389,19 +512,21 @@ function windowResize(){
   }
 }
 
-async function resizeTree( eval_string = ""){
+async function resizeTree( eval_string = "", zoomKey){
+  zoomKey = zoomKey || "#clustering-tree";
+  if (!window.zoomCluster[zoomKey]) return;
   // Partial workaround for horizontal view
   if (!radialTree){
-    window.zoomCluster["#clustering-tree"].updateBBox()
-    window.zoomCluster["#clustering-tree"].fit()
-    window.zoomCluster["#clustering-tree"].zoom(window.zoomCluster["#clustering-tree"].getZoom()*0.9)
-    window.zoomCluster["#clustering-tree"].center()
+    window.zoomCluster[zoomKey].updateBBox()
+    window.zoomCluster[zoomKey].fit()
+    window.zoomCluster[zoomKey].zoom(window.zoomCluster[zoomKey].getZoom()*0.9)
+    window.zoomCluster[zoomKey].center()
   } else {
     await sleep(100); // slight wait for fully updated SVG
-    window.zoomCluster["#clustering-tree"].updateBBox()
-    window.zoomCluster["#clustering-tree"].fit()
-    window.zoomCluster["#clustering-tree"].zoom(window.zoomCluster["#clustering-tree"].getZoom()*0.99)
-    window.zoomCluster["#clustering-tree"].center()
+    window.zoomCluster[zoomKey].updateBBox()
+    window.zoomCluster[zoomKey].fit()
+    window.zoomCluster[zoomKey].zoom(window.zoomCluster[zoomKey].getZoom()*0.99)
+    window.zoomCluster[zoomKey].center()
   }
   if (eval_string.length > 0){
     await sleep(100); // slight wait for redraw (e.g. in case of download)
