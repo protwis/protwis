@@ -11,7 +11,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('protein', '0021_protein_family_classification'),
+        ('protein', '0024_protein_family_classification'),
         ('structure', '0049_structuremodel_model_type'),
     ]
 

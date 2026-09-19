@@ -7,7 +7,7 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("protein", "0020_auto_20250318_1242"),
+        ("protein", "0023_auto_20260830_0735"),
     ]
 
     operations = [
