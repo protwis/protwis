@@ -94,7 +94,7 @@ class Command(BaseCommand):
             ['GPCR structures GPCRdb', Structure.objects.filter(protein_conformation__protein__family__slug__startswith="0", structure_type__origin='experiment').count(), 'GPCRdb'],
             ['Refined structures GPCRdb', StructureModel.objects.filter(protein__accession__isnull=True, protein__family__slug__startswith="0").count() + Structure.objects.filter(structure_type__slug__startswith="af-signprot-refined").count(), 'GPCRdb'],
             ['GPCR structure models GPCRdb', StructureModel.objects.filter(protein__accession__isnull=False).count(), 'GPCRdb'],
-            ['Physiological ligand-GPCR structure models GPCRdb', Structure.objects.filter(structure_type__slug__in=['af-rfaa-sm','af-signprot-peptide']).count(), 'GPCRdb'],
+            ['Ligand-GPCR structure models GPCRdb', Structure.objects.filter(structure_type__slug__in=['af-rfaa-sm','af-signprot-peptide','b2-smallmolecule','b2-signprot-smallmolecule','b2-peptide','b2-signprot-peptide']).count(), 'GPCRdb'],
             ['Drugs GPCRdb', Drugs.objects.filter(drug_status__iexact='approved').values("ligand_id").distinct().count(), 'GPCRdb'],
             ['Compounds in trial GPCRdb', Drugs.objects.exclude(drug_status__iexact='approved').exclude(drug_status__isnull=True).exclude(drug_status='').values("ligand_id").distinct().count(), 'GPCRdb'],
             ['Drug targets GPCRdb', Drugs.objects.filter(drug_status__iexact='approved').values('target_id').distinct().count(), 'GPCRdb'],
