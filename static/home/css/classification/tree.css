@@ -1,0 +1,107 @@
+/* Classification-tree (D3 dendrogram) styles. Vendor stylesheets it also needs (nv.d3)
+   are loaded directly by the Detail page template, not bundled here. */
+
+.btn-outline-primary {
+  color: #337ab7;
+  background-color: transparent;
+  border: 1px solid #337ab7;
+}
+
+.btn-outline-primary:hover,
+.btn-outline-primary:focus {
+  color: #fff;
+  background-color: #337ab7;
+  border-color: #2e6da4;
+}
+
+/* Scale tree SVG to 95% of page width */
+.tree_plot {
+  width: 95%;
+  max-width: 95%;
+  margin: 0 auto;
+  display: block;
+  position: relative;
+  /* Let the parent scroll container handle overflow; do not clip SVG */
+  overflow: visible;
+  /* Center intrinsic-width SVGs horizontally */
+  text-align: center;
+}
+
+.tree_plot svg {
+  /*
+    IMPORTANT:
+    Do NOT force the SVG to stretch to container width, otherwise text/labels scale
+    when we change radiusScale. We want radiusScale to shrink the plot while keeping
+    label sizes roughly comparable across plots.
+  */
+  width: auto !important;
+  max-width: 100%;
+  height: auto;
+  /* Inline-block lets text-align:center on parent center the SVG */
+  display: inline-block;
+}
+
+.plot-container {
+  margin-bottom: 40px;
+  position: relative;
+}
+
+.plot-title {
+  display: none;
+}
+
+.tree-controls-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #444;
+  margin-bottom: 4px;
+}
+
+.tree-toolbar-group--center {
+  text-align: center;
+}
+
+.tree-toolbar-group--center .tree-controls-label {
+  text-align: center;
+}
+
+.tree-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  align-items: flex-end;
+}
+
+.tree-toolbar .dropdown-menu {
+  padding: 10px 12px;
+  min-width: 150px;
+}
+
+.tree-toolbar .btn-block {
+  width: 100%;
+  margin-bottom: 6px;
+}
+
+.tree-toolbar .btn-block:last-child {
+  margin-bottom: 0;
+}
+
+.tree-plot-scroll {
+  margin-bottom: 30px;
+  overflow: visible;
+}
+
+/* Dual-plot classes (e.g. Class O2's Circular layout) render two side-by-side halves
+   into #tree_plot_main / #tree_plot_secondary instead of the usual single plot. */
+.tree-plot-scroll.dual-plot {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.tree-plot-scroll.dual-plot .tree_plot {
+  flex: 1 1 0;
+  min-width: 0;
+  width: auto;
+  max-width: none;
+}

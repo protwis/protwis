@@ -1,0 +1,238 @@
+/* Matrix tab (receptor x receptor identity/similarity heatmap) for the receptor-family
+   Detail page. */
+
+#cvFamilyMatrixLeafLabelGroup .dropdown-menu {
+  min-width: 160px;
+  padding: 10px 15px;
+}
+
+#cvFamilyMatrixLeafLabelGroup .btn-block {
+  margin-bottom: 6px;
+}
+
+#cvFamilyMatrixLeafLabelGroup .btn-block:last-child {
+  margin-bottom: 0;
+}
+
+.cv-family-matrix-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 13px;
+}
+
+.cv-family-matrix-badge {
+  display: inline-block;
+  padding: 5px 9px;
+  border: 1px solid #bfd0e2;
+  border-radius: 10px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.cv-family-matrix-badge-id {
+  background: #baeec2;
+}
+
+.cv-family-matrix-badge-sim {
+  background: #bad4ee;
+}
+
+.cv-family-matrix-shell {
+  position: relative;
+  min-height: 420px;
+}
+
+.cv-family-matrix-scroll {
+  max-height: min(68vh, 760px);
+  overflow: auto;
+  border: 1px solid #d9e2ef;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.cv-family-matrix-table {
+  width: max-content;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+}
+
+.cv-family-matrix-table th,
+.cv-family-matrix-table td {
+  box-sizing: border-box;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  border-right: 1px solid #dfe7f1;
+  border-bottom: 1px solid #dfe7f1;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.cv-family-matrix-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  height: 104px;
+  background: #fff;
+  border-right: 0;
+  border-bottom: 0;
+  overflow: hidden;
+}
+
+.cv-family-matrix-corner {
+  left: 0;
+  z-index: 5 !important;
+  width: 128px !important;
+  min-width: 128px !important;
+  background: #fff !important;
+  border-right: 0 !important;
+  border-bottom: 0 !important;
+}
+
+.cv-family-matrix-row-label {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  width: 128px !important;
+  min-width: 128px !important;
+  padding: 0 8px;
+  background: #fff;
+  border-right: 0 !important;
+  border-bottom: 0 !important;
+  text-align: right !important;
+  font-size: 12px;
+  line-height: 1.15;
+  color: #1f3347;
+}
+
+.cv-family-matrix-col-label {
+  position: absolute;
+  left: calc(50% + 5px);
+  bottom: 6px;
+  width: 94px;
+  transform: rotate(-90deg);
+  transform-origin: left bottom;
+  text-align: left;
+  font-size: 12px;
+  line-height: 1.1;
+  color: #1f3347;
+}
+
+.cv-family-matrix-cell {
+  padding: 0;
+  font-size: 14px;
+  font-weight: 650;
+  color: #17212b;
+}
+
+.cv-family-matrix-cell.is-identity,
+.cv-family-matrix-cell.is-similarity {
+  cursor: default;
+}
+
+.cv-family-matrix-cell.is-identity:hover,
+.cv-family-matrix-cell.is-similarity:hover {
+  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.45);
+}
+
+.cv-family-matrix-diagonal {
+  background: #eeeeee;
+  color: transparent;
+}
+
+.cv-family-matrix-empty {
+  background: #fff;
+  color: #8a9bad;
+  font-weight: 500;
+}
+
+.cv-family-matrix-hover {
+  position: fixed;
+  z-index: 2500;
+  display: none;
+  width: max-content;
+  min-width: 220px;
+  max-width: min(560px, calc(100vw - 32px));
+  border: 1px solid #cbd8e6;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 12px 28px rgba(31, 60, 90, 0.18);
+  padding: 10px 12px;
+  pointer-events: none;
+}
+
+.cv-family-matrix-hover-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin-bottom: 9px;
+  color: #1f3347;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.cv-family-matrix-hover-title span {
+  color: #71869a;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.cv-family-matrix-hover-title .cv-family-matrix-hover-name {
+  color: #1f3347;
+  font-size: 13px;
+  text-transform: none;
+}
+
+.cv-family-matrix-hover-name sub {
+  font-size: 70%;
+  line-height: 0;
+  vertical-align: -0.25em;
+}
+
+.cv-family-matrix-hover-metrics {
+  display: grid;
+  gap: 7px;
+}
+
+.cv-family-matrix-hover-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 1px solid #dfe7f1;
+  border-radius: 9px;
+  padding: 7px 9px;
+  background: #fbfdff;
+}
+
+.cv-family-matrix-hover-badge {
+  display: inline-block;
+  min-width: 82px;
+  border-radius: 999px;
+  padding: 4px 8px;
+  color: #17212b;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.cv-family-matrix-hover-row.is-identity .cv-family-matrix-hover-badge {
+  background: #baeec2;
+}
+
+.cv-family-matrix-hover-row.is-similarity .cv-family-matrix-hover-badge {
+  background: #bad4ee;
+}
+
+.cv-family-matrix-hover-row strong {
+  font-size: 17px;
+  color: #1f3347;
+}

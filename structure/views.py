@@ -2187,18 +2187,30 @@ class StructureStatistics(TemplateView):
                 for a in complexes_list:
                     complexes_dict[a['structure_id__protein_conformation_id__protein__parent__entry_name']] = a['c']
 
-                # Creating the new dictionary
+                # Creating the new dictionary -- receptors with 0 complexes are left out entirely
+                # (rather than sent as Value1: 0) so they render as blank/uncolored wedges instead
+                # of being pulled into the numeric color scale, and so they don't skew its min/max.
                 complexes_updated_dict = {
                     key: {
                         'Value1': value,
                     }
                     for key, value in complexes_dict.items()
+                    if value > 0
                 }
 
                 gpcr_data_complexes = DataMapperHome.GenerateGPCRomeDataStructure(data_type="Classic")
                 complexes_updated_data = DataMapperHome.update_nested_GPCRome_data(gpcr_data_complexes["Data"], complexes_updated_dict)
 
                 context['GPCRome_data_complexes'] = json.dumps(complexes_updated_data)
+
+                complexes_nonzero_values = [v for v in complexes_dict.values() if v > 0]
+                complexes_min = min(complexes_nonzero_values) if complexes_nonzero_values else 0
+                complexes_max = max(complexes_nonzero_values) if complexes_nonzero_values else 0
+                context['GPCRome_complexes_stats'] = json.dumps({
+                    'min': complexes_min,
+                    'max': complexes_max,
+                    'avg': (complexes_min + complexes_max) / 2,
+                })
 
                 ### TESTING GPCROME FOR ODORANTS
                 all_olfactory = Protein.objects.filter(species_id=1, parent_id__isnull=True, accession__isnull=False
@@ -2220,16 +2232,28 @@ class StructureStatistics(TemplateView):
                 if None in olfactory_struct_dict:
                     olfactory_struct_dict.pop(None)
 
+                # As above: receptors with 0 structures are left out entirely, not sent as
+                # Value1: 0, so they render blank rather than being folded into the color scale.
                 updated_olfactory_struct_dict = {
                     key: {
                         'Value1': value,
                     }
                     for key, value in olfactory_struct_dict.items()
+                    if value > 0
                 }
 
                 gpcr_data_olfactory = DataMapperHome.GenerateGPCRomeDataStructure(data_type="Odorant")
                 Olfactory_updated_data = DataMapperHome.update_nested_GPCRome_data(gpcr_data_olfactory["Data"], updated_olfactory_struct_dict)
                 context['GPCRome_data_olfactory'] = json.dumps(Olfactory_updated_data)
+
+                olfactory_nonzero_values = [v for v in olfactory_struct_dict.values() if v > 0]
+                olfactory_min = min(olfactory_nonzero_values) if olfactory_nonzero_values else 0
+                olfactory_max = max(olfactory_nonzero_values) if olfactory_nonzero_values else 0
+                context['GPCRome_olfactory_stats'] = json.dumps({
+                    'min': olfactory_min,
+                    'max': olfactory_max,
+                    'avg': (olfactory_min + olfactory_max) / 2,
+                })
 
 
         return context

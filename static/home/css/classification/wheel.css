@@ -1,0 +1,147 @@
+/* GPCRome wheel styles. Vendor stylesheets it also needs (nv.d3, select2, Spectrum) are
+   loaded directly by the Detail page template, not bundled here. */
+
+/* =========================
+   Generic dropdown look
+   ========================= */
+.dropdown-menu-side{
+  position: absolute;
+  left: 100%;
+  margin-left: 5px;
+  min-width: 160px;
+  padding: 10px 15px;
+}
+
+/* Per-dropdown vertical alignment (keep your offsets) */
+.dropdown-menu-align-names      { transform: translateY(-34%); }
+.dropdown-menu-align-legend     { transform: translateY(-26%); }
+.dropdown-menu-align-layout     { transform: translateY(-41%); }
+.dropdown-menu-align-colorby    { transform: translateY(-26%); }
+.dropdown-menu-align-customize   { transform: translateY(-14%); } /* note: matches your HTML spelling */
+.dropdown-menu-align-download   { transform: translateY(-48%); }
+
+/* =========================
+   Select2 polish
+   ========================= */
+.select2-container--default .select2-selection--single{
+  height: 38px;
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  line-height: 24px;
+  font-size: 14px;
+}
+.select2-container--default .select2-selection--single .select2-selection__rendered{
+  line-height: 24px;
+  padding-left: 0;
+  text-align: center;
+  width: 100%;
+}
+.select2-container--default .select2-results__option{
+  text-align: center;
+}
+
+/* =========================
+   Customize colors dropdown
+   ========================= */
+.customize-menu{
+  /* column sizes used by header + rows */
+  --check-col: 24px;
+  --picker-col: 45px;
+  --gap: 10px;
+
+  width: 350px;          /* JS will override per scheme */
+  max-width: 90vw;
+  max-height: 60vh;      /* cap height; scroll only when needed */
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 12px 16px;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* allow shrinking below Bootstrap's default min-width */
+.customize-menu.dropdown-menu{
+  min-width: 0 !important;
+  box-sizing: border-box;
+}
+
+/* ---- Header ---- */
+.customize-menu .panel-header{
+  position: static;           /* not sticky */
+  background: #fff;
+  padding: 4px 0 8px 0;
+  margin: 0 0 8px 0;
+  border-bottom: 1px solid #eee;
+}
+
+/* 3-col grid helper (header can use this) */
+.customize-menu .panel-grid{
+  display: grid;
+  grid-template-columns: var(--check-col) 1fr var(--picker-col);
+  align-items: center;
+  column-gap: var(--gap);
+}
+
+/* Title spans name+picker columns and is optically centered
+   despite unequal left/right columns */
+.customize-menu .header-title{
+  grid-column: 2 / span 2;
+  text-align: center;
+  font-weight: 600;
+  transform: translateX(calc((var(--picker-col) - var(--check-col)) / -2));
+}
+
+/* ---- List ---- */
+.color-grid{ display: block; }
+
+/* Row: [checkbox] [label] [picker] */
+.color-item{
+  display: grid;
+  grid-template-columns: var(--check-col) 1fr var(--picker-col);
+  align-items: center;
+  column-gap: var(--gap);
+  padding: 4px 0;
+  min-height: 28px;
+  border-bottom: 1px dashed #eee;
+}
+.color-item:last-child{ border-bottom: none; }
+
+/* Label wraps neatly */
+.color-item .color-label{
+  margin: 0;
+  line-height: 1.25;
+  word-break: break-word;
+}
+
+/* Spectrum trigger (clickable box) */
+.color-item .sp-replacer{
+  width: var(--picker-col);
+  box-sizing: border-box;
+  height: 28px;
+  padding: 2px 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 24px;
+}
+
+/* Small preview square */
+.color-item .sp-preview{
+  width: 18px;
+  height: 18px;
+  margin: 0;
+}
+
+/* Tiny caret text (or hide if preferred) */
+.color-item .sp-replacer .sp-dd{
+  font-size: 10px; /* or: display:none; */
+}
+
+/* Checkbox alignment */
+.color-item input[type="checkbox"]{
+  margin: 2px 0 0 0;
+  justify-self: start;
+}
+
+/* Make Spectrum popup float above the dropdown */
+.sp-container{ z-index: 2000 !important; }

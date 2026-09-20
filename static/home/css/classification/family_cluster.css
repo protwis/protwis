@@ -1,0 +1,242 @@
+/* Cluster tab (sequence-similarity t-SNE scatter + similarity side panel) for the
+   receptor-family Detail page. */
+
+.cv-family-cluster-shell {
+  display: grid;
+  grid-template-columns: 245px minmax(0, 1fr) 300px;
+  gap: 12px;
+  align-items: stretch;
+  min-height: 520px;
+}
+
+.cv-family-cluster-side {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  max-height: 520px;
+  border: 1px solid #e3ebf5;
+  border-radius: 10px;
+  background: #fbfdff;
+  padding: 12px 14px;
+}
+
+.cv-family-cluster-side-title {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #516577;
+  text-align: center;
+}
+
+.cv-family-cluster-side-subtitle,
+.cv-family-cluster-secondary {
+  display: block;
+  color: #607385;
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.cv-family-cluster-labels {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.cv-family-cluster-label {
+  flex: 1 1 0;
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 7fr);
+  align-items: center;
+  column-gap: 10px;
+  border: 1px solid #d9e2ef;
+  border-radius: 10px;
+  background: #fff;
+  padding: 9px 12px;
+  min-height: 62px;
+  color: #33475b;
+}
+
+.cv-family-cluster-label:hover,
+.cv-family-cluster-label:focus {
+  border-color: #89abd3;
+  outline: 0;
+  box-shadow: 0 0 0 2px rgba(31, 120, 180, 0.12);
+}
+
+.cv-family-cluster-label.is-active {
+  border-color: #4f86c6;
+  background: #f3f8fe;
+  box-shadow: 0 0 0 2px rgba(31, 120, 180, 0.14);
+}
+
+.cv-family-cluster-label-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-width: 0;
+  width: 100%;
+  height: 100%;
+  text-align: center;
+}
+
+.cv-family-cluster-label-swatch {
+  width: 13px;
+  height: 13px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  flex: 0 0 auto;
+}
+
+.cv-family-cluster-label-symbol {
+  font-size: 13px;
+  font-weight: 700;
+  color: #213547;
+  line-height: 1;
+}
+
+.cv-family-cluster-label-text {
+  font-size: 13px;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.cv-family-cluster-label-text strong {
+  display: block;
+  color: #1f3347;
+}
+
+.cv-family-cluster-plot-card {
+  border: 1px solid #d9d9d9;
+  border-radius: 8px;
+  background: #fff;
+  padding: 8px 0 6px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.cv-family-cluster-plot-wrap {
+  min-height: 520px;
+  width: 100%;
+}
+
+.cv-family-cluster-plot-wrap .js-plotly-plot,
+.cv-family-cluster-plot-wrap .plot-container,
+.cv-family-cluster-plot-wrap .svg-container {
+  width: 100% !important;
+}
+
+.cv-family-cluster-meta {
+  margin-top: 6px;
+  padding: 0 8px;
+  text-align: center;
+  font-size: 12px;
+  color: #666;
+}
+
+.cv-family-cluster-hover {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.cv-family-cluster-hover-empty {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  color: #607385;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.cv-family-cluster-hover-list {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cv-family-cluster-hover-row {
+  flex: 1 1 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(96px, 0.8fr);
+  gap: 10px;
+  border: 1px solid #dfe7f1;
+  border-radius: 10px;
+  background: #fff;
+  padding: 9px 11px;
+  min-height: 62px;
+  align-items: stretch;
+}
+
+.cv-family-cluster-hover-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-width: 0;
+  height: 100%;
+  text-align: center;
+}
+
+.cv-family-cluster-hover-text {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  font-size: 13px;
+  line-height: 1.35;
+  color: #2d4257;
+  text-align: center;
+  flex-direction: column;
+}
+
+.cv-family-cluster-hover-text strong {
+  color: #1f3347;
+}
+
+.cv-family-cluster-hover-metric {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  text-align: center;
+  padding: 6px 8px;
+}
+
+.cv-family-cluster-hover-metric-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #6d8194;
+  margin-bottom: 2px;
+}
+
+.cv-family-cluster-hover-metric-value {
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+  color: #1f5b96;
+}
+
+.cv-family-plot {
+  min-height: 520px;
+}
+
+@media (max-width: 1199px) {
+  .cv-family-cluster-shell {
+    grid-template-columns: 1fr;
+  }
+}

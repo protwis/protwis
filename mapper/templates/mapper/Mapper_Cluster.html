@@ -1,0 +1,409 @@
+{% extends "home/base.html" %}
+{% load static %}
+{% load humanize %}
+{% block addon_css %}
+<link rel="stylesheet" href="{% static 'home/css/nv.d3.min.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/nvd3-update.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/Spectrum_1_8_1.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/select2_4.1.0-rc.0._full.css' %}" type="text/css">
+<link rel="stylesheet" href="{% static 'home/css/NewDrugsBrowser_datatables.min.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/data_mapper/core.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/data_mapper/cluster.css' %}" type="text/css" />
+{% endblock %}
+
+{% block content %}
+{% csrf_token %}
+<div class="mapper-core-wheel-wrap row mapper-cluster-page mapper-cluster-booting">
+  <div class="col-xs-12 mapper-core-wheel-primary-col">
+    <div class="mapper-core-wheel-left">
+      <div class="mapper-cluster-boot-overlay">Loading…</div>
+      <div class="mapper-core-wheel-top-row">
+        <h2 class="mapper-core-wheel-page-title">Cluster</h2>
+      </div>
+      <div class="mapper-core-wheel-toolbar-stack" style="width:100%;">
+        <!-- Row 1: Input data toggle + Demo -->
+        <div class="mapper-core-wheel-toolbar" aria-label="Mapper cluster input">
+          <div class="mapper-core-input-mode-wrap">
+            <span class="mapper-core-input-mode-label">Input data:</span>
+            <div class="btn-group" role="group" aria-label="Input mode">
+              <button type="button" id="mapper-cluster-numbers" class="btn btn-default btn-xs active">Numbers</button>
+              <button type="button" id="mapper-cluster-categories" class="btn btn-default btn-xs">Categories</button>
+            </div>
+          </div>
+          <button type="button" class="btn btn-default btn-xs" id="mapper-cluster-demo-rows">Demo</button>
+        </div>
+        <!-- Row 2: How to, Receptor lookup, Clear table -->
+        <div class="mapper-core-wheel-toolbar" aria-label="Mapper cluster tools">
+          <button type="button" class="btn btn-default btn-xs" id="mapper-cluster-howto-btn"
+                  data-toggle="modal" data-target="#mapper-cluster-howto-modal"
+                  title="How to use the cluster mapper">
+            How to<span class="mapper-core-howto-mark" aria-hidden="true">?</span>
+          </button>
+          <button type="button" class="btn btn-primary btn-xs" id="mapper-cluster-open-picker"
+                  data-toggle="modal" data-target="#mapper-core-gpcrome-picker-modal">Receptor lookup</button>
+          <div class="dropdown" style="position:relative;">
+            <button type="button" class="btn btn-primary btn-sm dropdown-toggle" data-toggle="dropdown" id="mapper-cluster-clear-rows">
+              Clear <span class="caret"></span>
+            </button>
+            <div class="dropdown-menu mapper-core-clear-menu p-2" style="min-width:185px; padding:8px 10px;">
+              <button type="button" class="btn btn-primary btn-block mb-1" id="mapper-cluster-clear-whole">Whole table</button>
+              <hr style="margin:5px 0;">
+              <button type="button" class="btn btn-primary btn-block mb-1" id="mapper-cluster-clear-mode">Current mode (<span id="mapper-cluster-clear-mode-label">Numbers</span>)</button>
+              <hr style="margin:5px 0;">
+              <button type="button" class="btn btn-primary btn-block mapper-cluster-clear-col-num" id="mapper-cluster-clear-gradient">Gradient</button>
+              <button type="button" class="btn btn-primary btn-block mapper-cluster-clear-col-text" id="mapper-cluster-clear-cat" style="display:none;">Category</button>
+              <hr style="margin:5px 0;">
+              <button type="button" class="btn btn-primary btn-block" id="mapper-cluster-clear-pos">Position column</button>
+            </div>
+          </div>
+          <button type="button" class="btn btn-default btn-xs" onclick="mapperClusterDownloadTable()" title="Download input table as Excel (.xlsx)"><span class="glyphicon glyphicon-save" aria-hidden="true"></span> Download</button>
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-bordered table-condensed mapper-core-input-table" id="mapper-cluster-input-table">
+          <thead>
+            <tr>
+              <th class="mapper-core-th-remove" aria-label="Remove row"></th>
+              <th class="mapper-core-th-receptor">Receptor</th>
+              <th class="mapper-cluster-val-h" id="mapper-cluster-val-header">Gradient</th>
+              <th class="mapper-core-th-swatch" title="Row color (synced with Categories color scheme)">Color</th>
+              <th class="mapper-cluster-val-h" title="Enter a numeric position value for each receptor. When all rows are filled, press Process to recalculate the tSNE layout from pairwise position distances.">Position</th>
+            </tr>
+          </thead>
+          <tbody id="mapper-cluster-input-tbody"></tbody>
+        </table>
+      </div>
+      <p id="mapper-cluster-messages" role="status" aria-live="polite"></p>
+      <div id="cluster-pos-info-box" class="cluster-pos-info-box" style="display:none;">
+        <span id="cluster-pos-fill-msg">Fill all position values to recalculate the layout.</span>
+        <span id="cluster-pos-processing-msg" style="display:none;">
+          <span class="cluster-pos-spinner"></span>
+          Calculating layout&hellip;
+          <button type="button" class="btn btn-xs btn-link" id="cluster-pos-cancel-btn" style="padding:0 2px; color:#a94442;">Cancel</button>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xs-12 mapper-core-wheel-plot-col">
+    <div class="mapper-core-plot-panel">
+      <div class="mapper-cluster-plot-toolbar" aria-label="Cluster plot toolbar">
+
+        <!-- Receptor names -->
+        <div class="dropdown" style="position:relative;">
+          <button type="button" class="btn btn-primary dropdown-toggle btn-sm" data-toggle="dropdown">Receptor names</button>
+          <div class="dropdown-menu p-2" style="min-width:160px; padding:10px 15px; left:100%; top:50%; margin-left:5px; position:absolute; transform:translateY(-45%);">
+            <button type="button" class="btn btn-primary btn-block mb-1 cluster-leaf-btn" data-value="IUPHAR">Protein</button>
+            <button type="button" class="btn btn-outline-primary btn-block mb-1 cluster-leaf-btn" data-value="Entrez">Gene</button>
+            <button type="button" class="btn btn-outline-primary btn-block cluster-leaf-btn" data-value="UniProt">UniProt</button>
+          </div>
+        </div>
+
+        <!-- Plot type toggle -->
+        <button type="button" id="mapper-cluster-plottype-btn" class="btn btn-primary btn-sm">Plot type: Dot</button>
+
+        <!-- Labels (text mode only) -->
+        <div class="dropdown mapper-cluster-text-only" style="position:relative; display:none;">
+          <button class="btn btn-primary dropdown-toggle btn-sm" type="button" data-toggle="dropdown">Labels</button>
+          <div class="dropdown-menu p-3" style="min-width:220px; padding:10px 15px; left:100%; top:50%; margin-left:5px; position:absolute; transform:translateY(-30%);">
+            <div style="display:flex; justify-content:center; align-items:center; gap:10px; padding:5px 0; margin-top:8px;">
+              <label style="margin:0; font-size:14px; font-weight:normal;">Text color:</label>
+              <button id="mapper-cluster-textcolor-btn" class="btn btn-success btn-xs" style="min-width:60px;">Shown</button>
+            </div>
+            <hr>
+            <div class="text-center" style="margin-bottom:10px;">
+              <label style="font-size:14px; font-weight:normal;">Label font size</label>
+              <input type="range" class="form-range" min="5" max="25" value="14" id="mapper-cluster-label-fontsize">
+              <div style="margin-top:5px;"><span id="mapper-cluster-label-fontsize-val">14</span> px</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dots (dot mode only) -->
+        <div class="dropdown mapper-cluster-dot-only" style="position:relative;">
+          <button class="btn btn-primary dropdown-toggle btn-sm" type="button" data-toggle="dropdown">Dots</button>
+          <div class="dropdown-menu p-3" style="min-width:220px; padding:10px 15px; left:100%; top:50%; margin-left:5px; position:absolute; transform:translateY(-40%);">
+            <div class="col-md-12" style="text-align:center;">
+              <label class="form-label">Size</label>
+            </div>
+            <div class="col-md-12" style="margin-bottom:10px;">
+              <input type="range" class="form-range" min="5" max="20" value="10" id="mapper-cluster-marker-size">
+              <div style="text-align:center;"><span id="mapper-cluster-marker-size-val">10</span>px</div>
+            </div>
+            <div class="col-md-12" style="text-align:center;">
+              <label class="form-label">Stroke width</label>
+            </div>
+            <div class="col-md-12" style="margin-bottom:10px;">
+              <input type="range" class="form-range" min="0" max="2" value="0.5" step="0.1" id="mapper-cluster-stroke-width">
+              <div style="text-align:center;"><span id="mapper-cluster-stroke-width-val">0.5</span>px</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Clustering -->
+        <div class="dropdown" style="position:relative;">
+          <button class="btn btn-primary dropdown-toggle btn-sm" type="button" data-toggle="dropdown">Clustering</button>
+          <div class="dropdown-menu p-3" style="min-width:220px; padding:10px 15px; left:100%; top:50%; margin-left:5px; position:absolute; transform:translateY(-50%);">
+            <div class="col-md-12" style="text-align:center;">
+              <label class="form-label">Number of clusters</label>
+            </div>
+            <div class="col-md-12" style="margin-bottom:10px;">
+              <input type="range" class="form-range" min="1" max="20" value="5" id="mapper-cluster-slider">
+              <div style="text-align:center;"><span id="mapper-cluster-slider-val">5</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Color scheme -->
+        <div class="dropdown" style="position:relative;">
+          <button class="btn btn-primary dropdown-toggle btn-sm" type="button" data-toggle="dropdown">Color scheme</button>
+          <div class="dropdown-menu p-2 text-center" id="mapper-cluster-colors-menu"
+               style="min-width:180px; padding:10px 15px; left:100%; top:50%; margin-left:5px; position:absolute; transform:translateY(-30%);">
+            <button id="cluster-colorByCluster" class="btn btn-primary btn-block mb-1">Cluster</button>
+            <button id="cluster-colorByGradient" class="btn btn-outline-primary btn-block mb-1 mapper-cluster-numbers-only">Gradient</button>
+            <button id="cluster-colorByUserCategory" class="btn btn-outline-primary btn-block mb-1 mapper-cluster-categories-only" style="display:none;">Categories</button>
+            <button id="cluster-colorByClass" class="btn btn-outline-primary btn-block mb-1">Class</button>
+            <button id="cluster-colorByLigandType" class="btn btn-outline-primary btn-block mb-1">Chemotype</button>
+            <button id="cluster-colorByReceptorFamily" class="btn btn-outline-primary btn-block">Receptor family</button>
+          </div>
+        </div>
+
+        <!-- Colors button + panel (Wheel-style Bootstrap dropdown, opens below) -->
+        <div class="dropdown mapper-core-colors-dropdown-anchor" style="position:relative;">
+          <button id="cluster-colors-btn" class="btn btn-primary dropdown-toggle btn-sm" type="button"
+                  data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Colors</button>
+          <div id="cluster-colors-panel"
+               class="dropdown-menu dropdown-menu-right mapper-core-colors-panel-wrap mapper-core-colors-show-numeric"
+               aria-labelledby="cluster-colors-btn">
+            <!-- Gradient sub-panel (Wheel layout: Number of colors select + 3 pickers) -->
+            <div id="cluster-cp-gradient" onclick="event.stopPropagation();">
+              <div style="display:flex; gap:15px; align-items:flex-start; margin:10px 0;">
+                <div style="text-align:center; flex-shrink:0;">
+                  <label style="font-weight:bold; font-size:12px; display:block; margin-bottom:5px;">Number of colors</label>
+                  <select id="cluster-grad-num-colors" class="form-control" style="width:100px;">
+                    <option value="1">One</option>
+                    <option value="2">Two</option>
+                    <option value="3" selected>Three</option>
+                  </select>
+                </div>
+                <div>
+                  <div style="display:flex; gap:5px; margin-bottom:3px; font-size:12px;">
+                    <div id="cluster-grad-min-lbl" style="width:80px; text-align:center;">Min</div>
+                    <div id="cluster-grad-mid-lbl" style="width:80px; text-align:center;">Mid</div>
+                    <div style="width:80px; text-align:center;">Max</div>
+                  </div>
+                  <div style="display:flex; gap:5px; align-items:center;">
+                    <div id="cluster-grad-min-wrap" style="width:80px; display:flex; justify-content:center;"><input type="text" id="cluster-grad-min-color"></div>
+                    <div id="cluster-grad-mid-wrap" style="width:80px; display:flex; justify-content:center;"><input type="text" id="cluster-grad-mid-color"></div>
+                    <div style="width:80px; display:flex; justify-content:center;"><input type="text" id="cluster-grad-max-color"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- Categorical sub-panel -->
+            <div id="cluster-cp-labels" class="mapper-core-colors-text-wrap">
+              <div class="customize-menu" onclick="event.stopPropagation();">
+                <div id="cluster-cp-label-list"></div>
+                <div id="cluster-cp-empty" style="color:#999; font-size:11px; text-align:center; padding:4px 0; display:none;">No plot data yet</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Download -->
+        <div class="dropdown" style="position:relative;">
+          <button type="button" class="btn btn-primary dropdown-toggle btn-sm" id="mapper-cluster-download-btn">
+            <span class="glyphicon glyphicon-download" style="vertical-align:top; line-height:1.3;"></span>
+            Download <span class="caret"></span>
+          </button>
+          <div class="dropdown-menu p-2"
+               style="min-width:160px; padding:10px 15px; left:100%; top:50%; margin-left:5px; position:absolute; transform:translateY(-38%); display:none;">
+            <button type="button" class="btn btn-primary btn-block mb-1" onclick="downloadClusterPlot('jpg');">JPG</button>
+            <button type="button" class="btn btn-primary btn-block mb-1" onclick="downloadClusterPlot('png');">PNG</button>
+            <button type="button" class="btn btn-primary btn-block mb-1" onclick="downloadClusterPlot('svg');">SVG</button>
+            <button type="button" class="btn btn-primary btn-block" onclick="downloadClusterPlot('tiff');">TIFF</button>
+          </div>
+        </div>
+
+        <!-- Multi-class warning badge — shown by JS when >1 class in input -->
+        <span id="cluster-multiclass-warning" class="cluster-multiclass-badge" style="display:none;"
+              data-toggle="tooltip" data-placement="bottom" data-container="body"
+              title="Receptors from multiple classes detected. The tSNE layout is computed from pairwise sequence similarity scores across the GPCR superfamily. By the nature of tSNE, the 2D projection preserves local neighbourhood structure but can distort global distances — even within a single class, spatial relationships are a useful approximation rather than a precise measure. Across class boundaries this effect is amplified: inter-class distances can be compressed or stretched unpredictably, so proximity between receptors from different classes should not be taken as evidence of functional or evolutionary relatedness and should be interpreted with particular caution.">
+          <span class="cluster-warn-icon">&#9888;</span> Cross-class caution
+        </span>
+      </div>
+
+      <div class="mapper-cluster-plot-wrap">
+        <div id="plotContainer_cluster"></div>
+        <div id="mapper-cluster-placeholder" class="mapper-cluster-plot-placeholder">
+          <p class="mapper-cluster-plot-placeholder-title">No receptors mapped yet</p>
+          <p class="mapper-cluster-plot-placeholder-hint">Add receptors in the left panel and enter gradient values — the cluster plot renders automatically.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- How to modal -->
+<div class="modal fade" id="mapper-cluster-howto-modal" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+        <h4 class="modal-title">Cluster mapper</h4>
+      </div>
+      <div class="modal-body">
+        <p>Enter one receptor per row and an optional gradient value. The cluster view plots receptors in a 2D space based on receptor sequence similarity (tSNE layout).</p>
+        <p>Use <strong>Numbers</strong> mode to colour dots by a continuous gradient value, or <strong>Categories</strong> mode to colour by user-defined groups.</p>
+        <p>Use the right toolbar to control dot size, stroke, clustering (k-means), colouring options, and plot type (dots vs. text labels).</p>
+        <p>Paste from Excel as receptor + TAB + gradient value. Use <strong>Receptor lookup</strong> for searchable selection.</p>
+        <p>The <strong>Position</strong> column accepts a numeric value per receptor. When all rows are filled, press <strong>Process</strong> to recalculate the tSNE layout from pairwise position distances. Clear the column to return to the default layout.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Receptor lookup modal (shared) -->
+<div class="modal fade" id="mapper-core-gpcrome-picker-modal" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" id="mapper-core-gpcrome-picker-dismiss-x" data-dismiss="modal"><span>&times;</span></button>
+        <h4 class="modal-title">Select receptors</h4>
+      </div>
+      <div class="modal-body">
+        <div style="overflow-x:auto;">
+          <table width="100%" class="display compact" id="mapper-core-gpcrome-picker-table">
+            <thead>
+              <tr>
+                <th data-dt-order="disable"><input type="checkbox" id="mapper-core-gpcrome-picker-select-all" title="Select all filtered rows"></th>
+                <th class="mapper-core-picker-gpcrdb-label" data-dt-order="disable">GPCRdb</th>
+                <th>GtoPdb</th><th>Gene</th><th>UniProt</th><th>family</th><th>class</th>
+              </tr>
+              <tr id="mapper-core-picker-filter-row">
+                <th></th><th></th><th></th><th></th><th></th><th></th><th></th>
+              </tr>
+            </thead>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer" style="display:flex; align-items:center; justify-content:space-between;">
+        <div class="dropdown" style="position:relative;">
+          <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><span class="mapper-core-picker-assign-toggle-label">Assign value: None</span> <span class="caret"></span></button>
+          <div class="dropdown-menu p-2" id="mapper-core-gpcrome-picker-assign-menu" style="min-width:220px; padding:10px 15px; bottom:100%; top:auto;">
+            <div style="font-weight:bold; margin-bottom:4px;">Value</div>
+            <button type="button" class="btn btn-primary btn-block btn-sm mb-1 mapper-core-picker-assign-src" data-src="none">None</button>
+            <button type="button" class="btn btn-outline-primary btn-block btn-sm mb-1 mapper-core-picker-assign-src" data-src="class">Class</button>
+            <button type="button" class="btn btn-outline-primary btn-block btn-sm mb-1 mapper-core-picker-assign-src" data-src="ligandtype">Chemotype</button>
+            <button type="button" class="btn btn-outline-primary btn-block btn-sm mapper-core-picker-assign-src" data-src="family">Receptor family</button>
+          </div>
+        </div>
+        <div>
+          <button type="button" class="btn btn-default" data-dismiss="modal" id="mapper-core-gpcrome-picker-cancel">Cancel</button>
+          <button type="button" class="btn btn-primary" id="mapper-core-gpcrome-picker-add">Add to table</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block addon_js %}
+<script src="{% static 'home/js/d3.min.js' %}"></script>
+<script src="{% static 'home/js/nv.d3.min.js' %}"></script>
+<script src="{% static 'home/js/d3.v4.min.js' %}"></script>
+<script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
+<script src="{% static 'home/js/saveSvg.js' %}"></script>
+<script src="{% static 'home/js/datamapper.js' %}"></script>
+<script src="{% static 'home/js/spectrum_v1_8_1.js' %}"></script>
+<script src="{% static 'home/js/select2_4.1.0-rc.0_full.js' %}"></script>
+<script src="{% static 'home/js/NewDrugsBrowser_datatables.min.js' %}"></script>
+<script src="{% static 'home/js/NorgesDTFilterBuilder.js' %}"></script>
+<script src="{% static 'home/js/ml.js' %}"></script>
+<script src="{% static 'home/js/plotly_v1_58_5.js' %}"></script>
+<script src="{% static 'home/js/data_mapper/data_mapper_modal_table.js' %}"></script>
+<script src="{% static 'home/js/xlsx.full.min.js' %}"></script>
+
+<script>
+$('.dropdown-menu:not(.mapper-core-clear-menu)').on('click', function(e){ e.stopPropagation(); });
+$('.dropdown-menu input[type="range"]').on('mouseenter pointerdown', function() { this.focus(); });
+
+// Download dropdown manual toggle
+(function(){
+  var btn = document.querySelector('#mapper-cluster-download-btn');
+  var menu = btn && btn.nextElementSibling;
+  if (!btn || !menu) return;
+  btn.addEventListener('click', function(e){ e.stopPropagation(); menu.style.display = (menu.style.display==='block')?'none':'block'; });
+  document.addEventListener('click', function(){ menu.style.display='none'; });
+  menu.addEventListener('click', function(e){ e.stopPropagation(); });
+})();
+
+var receptorSelect2Data    = {{ receptor_select2_json|safe }};
+var MAPPER_CORE_RESOLVE       = {{ gpcrome_resolve_json|safe }};
+var MAPPER_CORE_GPCROME_PICKER_ROWS = {{ gpcrome_picker_rows_json|safe }};
+var MAPPER_CLUSTER_ALL_POSITIONS = {{ cluster_all_positions_json|safe }};
+
+// Build entry-id → class lookup for multi-class warning
+var MAPPER_CLUSTER_CLASS_MAP = {};
+(function(){
+  var rows = MAPPER_CORE_GPCROME_PICKER_ROWS || [];
+  rows.forEach(function(r){ if (r.id) MAPPER_CLUSTER_CLASS_MAP[r.id] = r['class'] || ''; });
+})();
+
+window.MAPPER_CORE_ENTRY_META = {};
+(function(){
+  if (receptorSelect2Data && receptorSelect2Data.length) {
+    receptorSelect2Data.forEach(function(item){
+      var uni = item.uniprot != null ? String(item.uniprot).trim().toUpperCase() : '';
+      if (!uni && item.id && String(item.id).indexOf('_') !== -1) uni = String(item.id).split('_')[0].trim().toUpperCase();
+      else if (!uni && item.id) uni = String(item.id).trim().toUpperCase();
+      window.MAPPER_CORE_ENTRY_META[item.id] = {
+        name_html:  item.name_html  || '',
+        name_plain: item.name_plain || '',
+        text:       item.text       || '',
+        gene:       item.gene != null ? String(item.gene).trim() : '',
+        uniprot:    uni
+      };
+    });
+  }
+})();
+</script>
+<script src="{% static 'home/js/data_mapper/mapper_page_core.js' %}"></script>
+<script src="{% static 'home/js/data_mapper/mapper_cluster_page.js' %}"></script>
+<script>
+function mapperClusterDownloadTable() {
+  var isText = $('#mapper-cluster-input-table').hasClass('mapper-core-text-mode');
+  var headers = isText
+    ? ['Receptor', 'Category', 'Position']
+    : ['Receptor', 'Gradient', 'Position'];
+  var rows = [headers];
+  $('#mapper-cluster-input-tbody tr').each(function() {
+    var $tr = $(this);
+    var entryId = ($tr.find('.mapper-core-receptor-entry').val() || '').trim();
+    var unmatched = $tr.data('mapperCoreUnmatchedRaw');
+    var ta = ($tr.find('.mapper-core-in-receptor').val() || '').trim();
+    var receptor = '';
+    if (entryId && window.MAPPER_CORE_ENTRY_META && window.MAPPER_CORE_ENTRY_META[entryId]) {
+      receptor = window.MAPPER_CORE_ENTRY_META[entryId].name_plain || window.MAPPER_CORE_ENTRY_META[entryId].text || entryId;
+    } else if (unmatched != null && String(unmatched).trim()) {
+      receptor = String(unmatched).trim();
+    } else {
+      receptor = ta;
+    }
+    if (!receptor) return;
+    var val = isText
+      ? ($tr.find('.mapper-cluster-cat').val() || '').trim()
+      : ($tr.find('.mapper-cluster-gradient').val() || '').trim();
+    var pos = ($tr.find('.mapper-cluster-pos').val() || '').trim();
+    rows.push([receptor, val, pos]);
+  });
+  var wb = XLSX.utils.book_new();
+  var ws = XLSX.utils.aoa_to_sheet(rows);
+  XLSX.utils.book_append_sheet(wb, ws, 'Cluster');
+  XLSX.writeFile(wb, 'Cluster_data.xlsx');
+}
+</script>
+{% endblock %}

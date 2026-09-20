@@ -26,9 +26,9 @@ function CreateColumnFilters(datatable_selector,column_number, column_range, fil
     // # Array to track the checks for each condition #
     // ################################################
 
-    let array_check = [false,false, false, false, false];  
-    
-    
+    let array_check = [false,false, false, false, false];
+
+
     // ######################################################################
     // #                   Check if the datatable is valid                  #
     // ######################################################################
@@ -49,23 +49,23 @@ function CreateColumnFilters(datatable_selector,column_number, column_range, fil
         // ####################################################################################
         // ## Number of columns in the DataTable (minus 1 to account for index starting at 0 ##
         // ####################################################################################
-        
+
         const column_number_max = datatable_selector.columns().nodes().length;
-        
+
         // ######################################
         // ## Filter type list of valid inputs ##
         // ######################################
 
         const Filter_type_list = ['Multi-select-exact','Multi-select-unspecific','Range-float-vertical','Range-float-horizontal','Range-select-vertical','Range-select-horizontal']
-        
+
         // ######################################################################
         // # Check if column_number is an integer in the range of the DataTable #
         // ######################################################################
 
         if (Number.isInteger(column_number) && column_number >= 0 && column_number <= column_number_max) {
-            
+
             // #################################################################
-            // ## If a correct value for the column number is set, return true # 
+            // ## If a correct value for the column number is set, return true #
             // #################################################################
 
             array_check[1] = true;
@@ -98,12 +98,12 @@ function CreateColumnFilters(datatable_selector,column_number, column_range, fil
 
         if (Number.isInteger(column_range) && column_range >= 1 && column_range <= column_number_max && (column_range + column_number) <= column_number_max) {
             array_check[3] = true;
-            
+
         } else {
             console.log(`Column range ${column_range} is not a valid integer within the range of 0 to ${column_number_max} from the starting point of column number ${column_number}. As it will end at index ${column_number+column_range}`);
         }
-        
-        
+
+
          // #############################################
         // #  Check if width is set and correct value   #
         // ##############################################
@@ -181,7 +181,7 @@ function createDropdownFilters(api,column_filters) {
     DT_pass = false;
     if ($.fn.dataTable.isDataTable(api)) {
         DT_pass = true;
-    } else { 
+    } else {
         console.log("Why did you not pass a valid DataTable? You might have mispelled, no worries, or go read up on $.fn.dataTable.isDataTable() and try again.");
     }
 
@@ -190,7 +190,7 @@ function createDropdownFilters(api,column_filters) {
     // #########################################################
 
     if (filter_pass === true && DT_pass === true) {
-        
+
         const Table_id = api.table().node().id
         const visibility_state = api.columns().visible().toArray();
         api.columns().visible(true); // Temporarily make all columns visible for header access
@@ -210,34 +210,37 @@ function createDropdownFilters(api,column_filters) {
 
             if (filter_type_from_config === 'Multi-select-exact' || filter_type_from_config === 'Multi-select-unspecific') {
                 if (dtColumn.searchable()) {
-                    
-                    var selected_cell_jq;
-                    // The `column_number_from_config` is the index for DataTables columns.
-                    // The `headerRows[2]` is the third TR element.
-                    // `eq(column_number_from_config)` targets the TD at that column index within the third TR.
-                    if (headerRows.length >= 3) { 
-                        selected_cell_jq = $(headerRows[2]).find('td').eq(column_number_from_config);
-                    } else {
-                        console.error(`Table ${Table_id} does not have the expected 3 header rows for filter placement in column ${column_number_from_config}.`);
-                        continue; 
-                    }
 
-                    if (!selected_cell_jq || selected_cell_jq.length === 0) {
-                        console.error(`Could not find filter cell for column ${column_number_from_config} in table ${Table_id}.`);
+                    var selected_cell_jq;
+
+                    // Prefer an explicit filter row if present
+                    var $filterRow = $tableHeader.find('tr.filter-row');
+
+                    if ($filterRow.length) {
+                        // use whatever cells are in the filter row (th or td)
+                        selected_cell_jq = $filterRow.children().eq(column_number_from_config);
+                    } else if (headerRows.length >= 3) {
+                        // fallback to old behaviour: 3rd header row
+                        selected_cell_jq = $(headerRows[2]).children().eq(column_number_from_config);
+                    } else {
+                        console.error(
+                        `Table ${Table_id} has no .filter-row and not enough header rows for filter placement in column ${column_number_from_config}.`
+                        );
                         continue;
                     }
-                    
+
+
                     // Use these captured values in the event handler and for element IDs
-                    var currentColumnAPI_for_multi = dtColumn; 
-                    var currentColIndex_for_multi = dtColumn.index(); 
+                    var currentColumnAPI_for_multi = dtColumn;
+                    var currentColIndex_for_multi = dtColumn.index();
 
                     var select_html = '<select id="' + Table_id + '_Filter' + currentColIndex_for_multi + '" class="select2" style="width: 80%;"></select>';
                     selected_cell_jq.html(select_html);
 
-                    $('#' + Table_id + '_Filter' + currentColIndex_for_multi).on('change', (function(capturedColumnInstance, capturedColumnIndex, capturedFilterType) { 
-                        return function() { 
+                    $('#' + Table_id + '_Filter' + currentColIndex_for_multi).on('change', (function(capturedColumnInstance, capturedColumnIndex, capturedFilterType) {
+                        return function() {
                             var data = $.map($(this).select2('data'), function(value, key) {
-                                if (capturedFilterType === 'Multi-select-exact') { 
+                                if (capturedFilterType === 'Multi-select-exact') {
                                     return value.text ? '^' + $.fn.dataTable.util.escapeRegex(value.text) + '$' : null;
                                 } else if (capturedFilterType === 'Multi-select-unspecific') {
                                     return value.text ? $.fn.dataTable.util.escapeRegex(value.text) : null;
@@ -246,17 +249,17 @@ function createDropdownFilters(api,column_filters) {
 
                             if (data.length === 0) data = [""];
                             var val = data.join('|');
-                            console.log(`Col ${capturedColumnIndex} - Search Value (val):`, val); 
-                            capturedColumnInstance.search(val ? val : '', true, false).draw(); 
+                            console.log(`Col ${capturedColumnIndex} - Search Value (val):`, val);
+                            capturedColumnInstance.search(val ? val : '', true, false).draw();
                         };
                     })(currentColumnAPI_for_multi, currentColIndex_for_multi, filter_type_from_config)); // Pass filter_type too if it's needed inside
 
 
                     $('#' + Table_id + '_Filter' + currentColIndex_for_multi).append('<option>' + '' + '</option>');
-                    
-                    var renderFunction_multi = currentColumnAPI_for_multi.settings()[0].aoColumns[currentColIndex_for_multi].mRender; 
 
-                    currentColumnAPI_for_multi.data().unique().sort().each(function(d_multi) { 
+                    var renderFunction_multi = currentColumnAPI_for_multi.settings()[0].aoColumns[currentColIndex_for_multi].mRender;
+
+                    currentColumnAPI_for_multi.data().unique().sort().each(function(d_multi) {
                          var renderedValue_multi = renderFunction_multi ? renderFunction_multi(d_multi, 'display', undefined, {col: currentColIndex_for_multi, row: -1, settings: currentColumnAPI_for_multi.settings()[0]}) : d_multi;
                          renderedValue_multi = (typeof renderedValue_multi === 'string') ? renderedValue_multi : String(renderedValue_multi);
                         var tempDiv_multi = document.createElement("div");
@@ -272,26 +275,26 @@ function createDropdownFilters(api,column_filters) {
                     if (filter_type_from_config === 'Multi-select-unspecific') {
                          $('#' + Table_id + '_Filter' + currentColIndex_for_multi).select2({
                             multiple: true,
-                            closeOnSelect: true, 
-                            placeholder: "Filter", 
+                            closeOnSelect: true,
+                            placeholder: "Filter",
                             dropdownAutoWidth: true,
                             tags: true,
-                            allowClear: true 
+                            allowClear: true
                         });
                     } else if (filter_type_from_config === 'Multi-select-exact') {
                          $('#' + Table_id + '_Filter' + currentColIndex_for_multi).select2({
                             multiple: true,
-                            closeOnSelect: true, 
-                            placeholder: "Filter", 
+                            closeOnSelect: true,
+                            placeholder: "Filter",
                             dropdownAutoWidth: true,
-                            allowClear: true 
+                            allowClear: true
                         });
                     }
                 }
             }
             else if (filter_type_from_config === "Range-float-vertical" || filter_type_from_config === "Range-float-horizontal") {
                 if (dtColumn.searchable()) {
-                    var currentColIndex_Range = dtColumn.index(); 
+                    var currentColIndex_Range = dtColumn.index();
 
                     var selected_cell_jq_range;
                      if (headerRows.length >= 3) {
@@ -307,7 +310,7 @@ function createDropdownFilters(api,column_filters) {
 
                     var html_input1 = '<input id="' + Table_id + '_Filter' + currentColIndex_Range + 'min" class="select2" placeholder="min" style="width: 35px;text-align:center;margin-top: 5px;"></input>';
                     var html_input2 = '<input id="' + Table_id + '_Filter' + currentColIndex_Range + 'max" class="select2" placeholder="max" style="width: 35px;text-align:center;"></input>';
-                    
+
                     if (filter_type_from_config === "Range-float-vertical") {
                         selected_cell_jq_range.html(html_input2 + '<br>' + html_input1);
                     } else if (filter_type_from_config === "Range-float-horizontal") {
@@ -330,12 +333,12 @@ function createDropdownFilters(api,column_filters) {
                                 var min = min_val_str !== "" ? parseFloat(min_val_str) : NaN;
                                 var max = max_val_str !== "" ? parseFloat(max_val_str) : NaN;
                                 var data_col_val = data[capturedColumnIndexForRange];
-                                
+
                                 var data_range;
                                 if (typeof data_col_val === 'string') {
                                     var clean_data = data_col_val.replace(/<[^>]*>/g, "").trim();
                                     if (clean_data === "-" || clean_data === "None" || clean_data === "" || clean_data.toLowerCase() === "nan" ) {
-                                        data_range = NaN; 
+                                        data_range = NaN;
                                     } else {
                                         data_range = parseFloat(clean_data);
                                     }
@@ -344,7 +347,7 @@ function createDropdownFilters(api,column_filters) {
                                 } else {
                                     data_range = parseFloat(data_col_val);
                                 }
-                                
+
                                 // If both min and max are not set (NaN), then all rows should pass, regardless of data_range
                                 if (isNaN(min) && isNaN(max)) {
                                     return true;
@@ -353,7 +356,7 @@ function createDropdownFilters(api,column_filters) {
                                 // If data_range could not be parsed as a number, it cannot match a numeric range
                                 // (unless both min and max are also NaN, which is handled above)
                                 if (isNaN(data_range)) {
-                                    return false; 
+                                    return false;
                                 }
 
                                 // Now, data_range is a valid number, proceed with standard range checks
@@ -366,9 +369,9 @@ function createDropdownFilters(api,column_filters) {
                             };
                             range_filter_function.name = Table_id + '_range_filter_' + capturedColumnIndexForRange;
                             $.fn.dataTable.ext.search.push(range_filter_function);
-                            api.draw(); 
+                            api.draw();
                         };
-                    })(currentColIndex_Range) ); 
+                    })(currentColIndex_Range) );
                 }
             }
             // NOTE: Range-select-vertical and Range-select-horizontal filter types are not yet updated with explicit closure for event handlers.
@@ -378,7 +381,7 @@ function createDropdownFilters(api,column_filters) {
                 if (this.searchable()) {
                     var that_range_select = this; // Potential closure issue if 'this' is not what's expected in handler
                     var col_range_select = column_number_from_config;
-                    
+
                     var selected_cell_jq_range_select;
                     if (headerRows.length >= 3) {
                         selected_cell_jq_range_select = $(headerRows[2]).find('td').eq(col_range_select);
@@ -403,7 +406,7 @@ function createDropdownFilters(api,column_filters) {
                     }
 
                     // Apply IIFE for closure on col_range_select and that_range_select (DataTables column API instance)
-                    $('#'+Table_id+'_Filter'+col_range_select+'min'+','+'#'+Table_id+'_Filter'+col_range_select+'max').on('select2:select', 
+                    $('#'+Table_id+'_Filter'+col_range_select+'min'+','+'#'+Table_id+'_Filter'+col_range_select+'max').on('select2:select',
                         (function(capturedCol_rs, capturedThat_rs) {
                             return function() {
                                 for (var i = $.fn.dataTable.ext.search.length - 1; i >= 0; i--) {
@@ -413,7 +416,7 @@ function createDropdownFilters(api,column_filters) {
                                 }
                                 var range_select_filter_func = function( settings, data, dataIndex ) {
                                     if ( settings.nTable.id !== Table_id ) return true;
-                                    
+
                                     var min = parseFloat( $('#'+Table_id+'_Filter'+capturedCol_rs+'min').val(), 10 );
                                     var max = parseFloat( $('#'+Table_id+'_Filter'+capturedCol_rs+'max').val(), 10 );
                                     var data_col_val_rs = data[capturedCol_rs];
@@ -450,8 +453,8 @@ function createDropdownFilters(api,column_filters) {
                         })(col_range_select, that_range_select) // Pass current col_range_select and that_range_select
                     );
 
-                    $('#'+Table_id+'_Filter'+col_range_select+'min').append('<option></option>'); 
-                    $('#'+Table_id+'_Filter'+col_range_select+'max').append('<option></option>'); 
+                    $('#'+Table_id+'_Filter'+col_range_select+'min').append('<option></option>');
+                    $('#'+Table_id+'_Filter'+col_range_select+'max').append('<option></option>');
 
                     // Use the captured 'that_range_select' (which is dtColumn for this iteration)
                     that_range_select.data().unique().sort().each(function(d_rs) {
@@ -476,17 +479,17 @@ function createDropdownFilters(api,column_filters) {
                         placeholder: "Max" // Directly set placeholder
                     });
                 }
-            }); 
+            });
         }
     }
 
         // Restore original column visibility
-        api.columns().visible(false); 
+        api.columns().visible(false);
         for (var j = 0; j < visibility_state.length; ++j) {
-             if (visibility_state[j]) { 
-                api.column(j).visible(true, false); 
+             if (visibility_state[j]) {
+                api.column(j).visible(true, false);
             }
         }
-        api.columns.adjust().draw(false); 
+        api.columns.adjust().draw(false);
     }
 }

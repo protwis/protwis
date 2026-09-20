@@ -51,9 +51,20 @@ function citation_tool(url, cite_id) {
     if ((cite_id_missing && env==="biasedsignalingatlas.org") || cite_id==="cite_biasedsignalingatlas") {
     	filter_for = "biasedsignalingatlas";
     }
-    cit_request.open('GET', url.split('/')[0] + '/citations');
+    // Use the current origin; previous splitting logic was fragile (e.g. "http:" + "/citations").
+    cit_request.open('GET', window.location.origin + '/citations');
     cit_request.onload = function() {
-		var data = JSON.parse(cit_request.responseText)
+		if (cit_request.status < 200 || cit_request.status >= 300) {
+			console.warn("Citations request failed:", cit_request.status, cit_request.responseText);
+			return;
+		}
+		let data = [];
+		try {
+			data = JSON.parse(cit_request.responseText);
+		} catch (e) {
+			console.warn("Citations response was not valid JSON:", e, cit_request.responseText);
+			return;
+		}
 		for (let i = 0; i < data.length; i++) {
 			var link = "";
 			if (!domains.includes(env)) {
@@ -333,9 +344,17 @@ function toggle_widget() {
 async function check_for_video(url) {
 	var this_site = parse_url_long(url);
 	var cit_request = new XMLHttpRequest();
-    cit_request.open('GET', url.split('/')[0] + '/citations');
+    cit_request.open('GET', window.location.origin + '/citations');
     cit_request.onload = function() {
-		var data = JSON.parse(cit_request.responseText)
+		if (cit_request.status < 200 || cit_request.status >= 300) {
+			return;
+		}
+		let data = [];
+		try {
+			data = JSON.parse(cit_request.responseText);
+		} catch (e) {
+			return;
+		}
 		var video = false;
 		for (i = 0; i < data.length; i++) {
 			var site = parse_url_long(data[i][0]);

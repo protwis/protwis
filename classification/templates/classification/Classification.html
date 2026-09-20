@@ -1,0 +1,794 @@
+{% extends "home/base.html" %}
+{% load static %}
+
+{% block addon_css %}
+<link rel="stylesheet" href="{% static 'home/css/NewDrugsBrowser_datatables.min.css' %}" type="text/css"/>
+<link rel="stylesheet" href="{% static 'home/css/select2_4.1.0-rc.0._full.css' %}" type="text/css">
+
+<style>
+  .tab-pane { margin-top: 20px; }
+  .dt-center th, .dt-center td { text-align: center; vertical-align: middle; }
+
+  /* Bootstrap tables default to vertical-align: top; override for merged cells */
+  #classesTable.table > tbody > tr > td,
+  #classesTable.table > tbody > tr > th {
+    vertical-align: middle !important;
+  }
+
+  /* Applied by JS: per-column striping that respects rowspans */
+  #classesTable td.classes-col-grey {
+    background-color: rgba(0, 0, 0, 0.03) !important;
+  }
+
+  /* Center headers for all tables (vertical and horizontal) */
+  #classesTable thead th,
+  #ligandTypeTable thead th,
+  #rfNonTable thead th,
+  #rfSensTable thead th,
+  #rfOrphanTable thead th {
+    text-align: center;
+    vertical-align: middle;
+  }
+
+  /* Center filter row cells */
+  .filter-row th {
+    text-align: center;
+  }
+
+  /* Don't center the actual select2 container elements themselves */
+  .filter-row th .select2-container {
+    text-align: left;
+  }
+
+  /* Center placeholder text in select2 search field textarea */
+  .filter-row th .select2-search__field::placeholder {
+    text-align: center !important;
+  }
+
+  /* Also target the textarea itself when it has placeholder */
+  .filter-row th textarea.select2-search__field[placeholder] {
+    text-align: center !important;
+  }
+
+  /* Center placeholder text in select2 dropdowns */
+  .filter-row th .select2-selection__placeholder {
+    text-align: center !important;
+  }
+
+  /* Center placeholder text in regular inputs */
+  .filter-row th input::placeholder {
+    text-align: center !important;
+  }
+
+  /* optional: slightly narrower tables */
+  .class-wrapper, .ligand-wrapper, .rf-wrapper {
+      margin-top: 20px;
+      margin-bottom: 20px;
+  }
+
+  /* ---- GPCR list tab (merged in from the former GPCRBrowser page) ---- */
+  #gpcrListTable thead th { text-align: center; vertical-align: middle; }
+  #gpcrListTable { width: auto !important; table-layout: auto; }
+  .gpcr-table-container { text-align: center; margin-top: 20px; }
+  .gpcr-table-inner { display: inline-block; }
+  #gpcrExportButtons { width: 100%; text-align: right; margin-bottom: 6px; }
+
+  #gpcrListTable thead th:nth-child(5),
+  #gpcrListTable tbody td:nth-child(5) {
+    max-width: 260px;
+    white-space: normal;
+    overflow-wrap: normal;
+    word-break: normal;
+    hyphens: none;
+  }
+
+  #gpcrListTable thead th:nth-child(3),
+  #gpcrListTable tbody td:nth-child(3),
+  #gpcrListTable thead th:nth-child(6),
+  #gpcrListTable tbody td:nth-child(6),
+  #gpcrListTable thead th:nth-child(7),
+  #gpcrListTable tbody td:nth-child(7),
+  #gpcrListTable thead th:nth-child(8),
+  #gpcrListTable tbody td:nth-child(8) {
+    white-space: nowrap;
+    overflow-wrap: normal;
+    word-break: normal;
+    hyphens: none;
+  }
+
+  #gpcrExportButtons .dt-buttons{ float: none; display: inline-block; }
+
+  .unique-count-row th{
+    font-size: 12px;
+    font-weight: normal;
+    color: #666;
+    padding-top: 4px;
+    padding-bottom: 6px;
+  }
+  .unique-count-row .unique-count { cursor: help; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+
+  {% if error %}
+    <div class="alert alert-danger">{{ error }}</div>
+  {% endif %}
+
+  <ul class="nav nav-tabs" role="tablist">
+    <li class="active"><a href="#tab-gpcr-list" data-toggle="tab">GPCR list</a></li>
+    <li><a href="#tab-classes" data-toggle="tab">GPCR classes</a></li>
+    <li><a href="#tab-ligand" data-toggle="tab">Modality and Chemotype</a></li>
+    <li><a href="#tab-families" data-toggle="tab">Receptor families</a></li>
+  </ul>
+
+  <div class="tab-content">
+
+    <!-- ========== 0) GPCR LIST (merged in from the former GPCRBrowser page) ========== -->
+    <div role="tabpanel" class="tab-pane active" id="tab-gpcr-list">
+      <div class="gpcr-table-container">
+      <div class="gpcr-table-inner">
+        <div id="gpcrExportButtons"></div>
+      <table id="gpcrListTable" class="table table-bordered table-striped table-hover dt-center">
+        <thead>
+          <tr>
+            <th>GPCR<br>(UniProt)</th>
+            <th>GPCR<br>(Gene)</th>
+            <th>GPCR<br>(GtoPdb)</th>
+            <th>Class</th>
+            <th>Family</th>
+            <th>Modality</th>
+            <th>Chemotype</th>
+            <th>Sense</th>
+            <th>Sequence</th>
+          </tr>
+          <tr class="unique-count-row">
+            <th data-dt-order="disable"><span class="unique-count" data-col-key="uniprot" data-toggle="tooltip" data-html="true" data-placement="top" title="Unique value count<br>(Total unique unfiltered count)">—</span></th>
+            <th data-dt-order="disable"><span class="unique-count" data-col-key="gene" data-toggle="tooltip" data-html="true" data-placement="top" title="Unique value count<br>(Total unique unfiltered count)">—</span></th>
+            <th data-dt-order="disable"><span class="unique-count" data-col-key="protein_name_text" data-toggle="tooltip" data-html="true" data-placement="top" title="Unique value count<br>(Total unique unfiltered count)">—</span></th>
+            <th data-dt-order="disable"><span class="unique-count" data-col-key="class" data-toggle="tooltip" data-html="true" data-placement="top" title="Unique value count<br>(Total unique unfiltered count)">—</span></th>
+            <th data-dt-order="disable"><span class="unique-count" data-col-key="family" data-toggle="tooltip" data-html="true" data-placement="top" title="Unique value count<br>(Total unique unfiltered count)">—</span></th>
+            <th data-dt-order="disable"><span class="unique-count" data-col-key="modality" data-toggle="tooltip" data-html="true" data-placement="top" title="Unique value count<br>(Total unique unfiltered count)">—</span></th>
+            <th data-dt-order="disable"><span class="unique-count" data-col-key="chemotype" data-toggle="tooltip" data-html="true" data-placement="top" title="Unique value count<br>(Total unique unfiltered count)">—</span></th>
+            <th data-dt-order="disable"><span class="unique-count" data-col-key="sense" data-toggle="tooltip" data-html="true" data-placement="top" title="Unique value count<br>(Total unique unfiltered count)">—</span></th>
+            <th data-dt-order="disable"></th>
+          </tr>
+          <tr class="filter-row">
+            <th data-dt-order="disable"></th>
+            <th data-dt-order="disable"></th>
+            <th data-dt-order="disable"></th>
+            <th data-dt-order="disable"></th>
+            <th data-dt-order="disable"></th>
+            <th data-dt-order="disable"></th>
+            <th data-dt-order="disable"></th>
+            <th data-dt-order="disable"></th>
+            <th data-dt-order="disable"></th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      </div>
+      </div>
+    </div>
+
+    <!-- ========== 1) CLASSES (Static table) ========== -->
+    <div role="tabpanel" class="tab-pane" id="tab-classes">
+      <div class="row class-wrapper">
+        <div class="col-sm-10 col-sm-offset-1">
+          <table id="classesTable" class="table table-bordered dt-center" width="100%">
+            <thead>
+              <tr>
+                <th>Code</th>
+                <th>GRAFS-SOFTV name</th>
+                <th>In human<br>(if not, other species)</th>
+                <th>Non-sensory share</th>
+                <th>Sensory function</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== 2) LIGAND TYPES (DataTable) ========== -->
+    <div role="tabpanel" class="tab-pane" id="tab-ligand">
+      <div class="row ligand-wrapper">
+        <div class="col-sm-10 col-sm-offset-1">
+          <table id="ligandTypeTable" class="table table-bordered table-striped table-hover dt-center" width="100%">
+            <thead>
+              <tr>
+                <th>Modality</th>
+                <th>Chemotype</th>
+                <th>Found in classes</th>
+              </tr>
+              <!-- optional filter row – hook your NorgesDTFilterBuilder here -->
+              <tr class="filter-row">
+                <th data-dt-order="disable"></th>
+                <th data-dt-order="disable"></th>
+                <th data-dt-order="disable"></th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== 3) RECEPTOR FAMILIES (two sub-tabs) ========== -->
+    <div role="tabpanel" class="tab-pane" id="tab-families">
+      <div class="row rf-wrapper">
+        <div class="col-sm-10 col-sm-offset-1">
+
+          <ul class="nav nav-pills" role="tablist">
+            <li class="active"><a href="#rf-non" data-toggle="tab">Non-sensory families</a></li>
+            <li><a href="#rf-sens" data-toggle="tab">Sensory families</a></li>
+            <li><a href="#rf-orphan" data-toggle="tab">Orphan receptor families</a></li>
+          </ul>
+
+          <div class="tab-content" style="margin-top:15px;">
+            <div role="tabpanel" class="tab-pane active" id="rf-non">
+              <table id="rfNonTable" class="table table-bordered table-striped table-hover dt-center" width="100%">
+                <thead>
+                  <tr>
+                    <th>Receptor family</th>
+                    <th>Chemotype</th>
+                    <th>Class</th>
+                  </tr>
+                  <tr class="filter-row">
+                    <th data-dt-order="disable"></th>
+                    <th data-dt-order="disable"></th>
+                    <th data-dt-order="disable"></th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+
+            <div role="tabpanel" class="tab-pane" id="rf-sens">
+              <table id="rfSensTable" class="table table-bordered table-striped table-hover dt-center" width="100%">
+                <thead>
+                  <tr>
+                    <th>Receptor family</th>
+                    <th>Chemotype</th>
+                    <th>Class</th>
+                  </tr>
+                  <tr class="filter-row">
+                    <th data-dt-order="disable"></th>
+                    <th data-dt-order="disable"></th>
+                    <th data-dt-order="disable"></th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+
+            <div role="tabpanel" class="tab-pane" id="rf-orphan">
+              <table id="rfOrphanTable" class="table table-bordered table-striped table-hover dt-center" width="100%">
+                <thead>
+                  <tr>
+                    <th>Receptor family</th>
+                    <th>Chemotype</th>
+                    <th>Class</th>
+                  </tr>
+                  <tr class="filter-row">
+                    <th data-dt-order="disable"></th>
+                    <th data-dt-order="disable"></th>
+                    <th data-dt-order="disable"></th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /.tab-content -->
+</div><!-- /.container -->
+{% endblock %}
+{% block addon_js %}
+{# Needed for the GPCR list tab's DataTables Buttons excelHtml5 export #}
+<script src="{% static 'home/js/FileSaver.min.js' %}"></script>
+<script src="{% static 'home/js/jszip.min.js' %}"></script>
+<script src="{% static 'home/js/NewDrugsBrowser_datatables.min.js' %}"></script>
+<script src="{% static 'home/js/buttons.html5.min.js' %}"></script>
+<script src="{% static 'home/js/select2_4.1.0-rc.0_full.js' %}"></script>
+<script src="{% static 'home/js/NorgesDTFilterBuilder.new.js' %}"></script>
+
+<script>
+  var gpcrRows = JSON.parse("{{ gpcr_rows|escapejs }}");
+
+  $(function () {
+    var COL_KEYS = ['uniprot','gene','protein_name_text','class','family','modality','chemotype','sense'];
+
+    function normalizeValue(v) {
+      if (v === null || v === undefined) return '';
+      return String(v).trim();
+    }
+
+    function uniqueCount(rows, key) {
+      var seen = new Set();
+      for (var i = 0; i < rows.length; i++) {
+        var s = normalizeValue(rows[i] && rows[i][key]);
+        if (!s) continue; // ignore empty/blank values
+        seen.add(s);
+      }
+      return seen.size;
+    }
+
+    var totalUniqueByKey = {};
+    for (var k = 0; k < COL_KEYS.length; k++) {
+      var key = COL_KEYS[k];
+      totalUniqueByKey[key] = uniqueCount(gpcrRows, key);
+    }
+
+    function initUniqueCountTooltips() {
+      // Always keep a native title tooltip; use Bootstrap tooltip if available.
+      if ($.fn.tooltip) {
+        $('.unique-count-row [data-toggle="tooltip"]').tooltip({ container: 'body', html: true });
+      }
+    }
+
+    var dt = $('#gpcrListTable').DataTable({
+      data: gpcrRows,
+      columns: [
+        {
+          data: 'uniprot',
+          render: function(d, type, row){
+            // Note: NorgesDTFilterBuilder calls render() without a row object.
+            if (type === 'display' && row && row.entry_name) {
+              return '<a href="/protein/' + row.entry_name + '">' + (d || '') + '</a>';
+            }
+            return d || '';
+          }
+        },
+        { data: 'gene' },
+        {
+          // Use plain text as the underlying data so filters/export have a stable value,
+          // while display can render the HTML name when the row object is available.
+          data: 'protein_name_text',
+          render: function(d, type, row){
+            // Note: NorgesDTFilterBuilder calls render() without a row object.
+            if (type === 'display' && row && row.protein_name_html) {
+              return row.protein_name_html;
+            }
+            return d || '';
+          }
+        },
+        { data: 'class' },
+        {
+          data: 'family',
+          render: function (d, type) {
+            // Keep hyphenated names on one line in the UI (e.g. α2A‑adrenoceptor, 5‑Hydroxytryptamine),
+            // but preserve the raw text for filtering/sorting/export.
+            var s = d || '';
+            if (type === 'display') {
+              // Replace ASCII hyphen-minus with a non‑breaking hyphen (U+2011)
+              return String(s).replace(/-/g, '&#8209;');
+            }
+            return s;
+          }
+        },
+        { data: 'modality' },
+        { data: 'chemotype' },
+        { data: 'sense' },
+        // Download-only column (hidden in UI)
+        { data: 'sequence', visible: false, searchable: false }
+      ],
+      paging: true,
+      pageLength: 25,
+      searching: true,
+      ordering: true,
+      info: true,
+      autoWidth: true,
+      orderCellsTop: true,
+      dom: 'rtip',
+      buttons: [
+        {
+          extend: 'excelHtml5',
+          text: 'Download (Excel)',
+          title: null,          // do not export a title row into Excel
+          filename: 'GPCR_list',
+          sheetName: 'GPCR_list',
+          exportOptions: {
+            // Export all columns (including hidden Sequence column at idx 8)
+            columns: function (idx) {
+              return idx >= 0 && idx <= 8;
+            },
+            rows: { search: 'applied' },
+            stripHtml: true
+          },
+          customize: function (xlsx) {
+            // Fallback: if a single-cell title row is still present, remove it.
+            try {
+              var sheet = xlsx.xl.worksheets['sheet1.xml'];
+              var $sheet = $(sheet);
+              var $rows = $('row', $sheet);
+              if ($rows.length) {
+                var $firstRow = $rows.eq(0);
+                if ($('c', $firstRow).length === 1) {
+                  $firstRow.remove();
+                }
+              }
+            } catch (e) {
+              // no-op
+            }
+          }
+        }
+      ]
+    });
+
+    // Place export button top-right
+    dt.buttons().container().appendTo('#gpcrExportButtons');
+
+    // Filters: first 3 columns are large lists -> unspecific multi-select (supports typing),
+    // remaining are categorical -> exact multi-select.
+    var config = [];
+    config = config.concat(CreateColumnFilters(dt, 0, 1, 'Multi-select-unspecific'));
+    config = config.concat(CreateColumnFilters(dt, 1, 1, 'Multi-select-unspecific'));
+    config = config.concat(CreateColumnFilters(dt, 2, 1, 'Multi-select-unspecific'));
+    config = config.concat(CreateColumnFilters(dt, 3, 5, 'Multi-select-exact'));
+    createDropdownFilters(dt, config);
+
+    function updateUniqueCounts() {
+      var filteredRows = dt.rows({ search: 'applied' }).data().toArray();
+      for (var i = 0; i < COL_KEYS.length; i++) {
+        var key = COL_KEYS[i];
+        var total = totalUniqueByKey[key] || 0;
+        var filtered = uniqueCount(filteredRows, key);
+        var text = (filtered === total) ? String(total) : (String(filtered) + ' (' + String(total) + ')');
+        $('.unique-count-row .unique-count[data-col-key="' + key + '"]').text(text);
+      }
+    }
+
+    // Center placeholder in filter inputs until a value is chosen
+    function centerFilterPlaceholders() {
+      $('.filter-row .select2-search__field').each(function() {
+        var $field = $(this);
+        function updateAlignment() {
+          if ($field.val() === '' || $field.val() === null) {
+            $field.css('text-align', 'center');
+          } else {
+            $field.css('text-align', 'left');
+          }
+        }
+        updateAlignment();
+        $field.off('input.gpcr').on('input.gpcr change.gpcr keyup.gpcr', updateAlignment);
+      });
+    }
+
+    setTimeout(function () {
+      initUniqueCountTooltips();
+      updateUniqueCounts();
+      centerFilterPlaceholders();
+    }, 150);
+
+    dt.on('draw', function () {
+      updateUniqueCounts();
+      centerFilterPlaceholders();
+    });
+  });
+</script>
+
+{# JSON payloads (avoid Django template syntax inside JS) #}
+<script type="application/json" id="classesRowsJson">{{ classes_rows|safe }}</script>
+<script type="application/json" id="ligandTypeRowsJson">{{ ligand_type_rows|safe }}</script>
+<script type="application/json" id="rfNonRowsJson">{{ rf_non_rows|safe }}</script>
+<script type="application/json" id="rfSensRowsJson">{{ rf_sens_rows|safe }}</script>
+<script type="application/json" id="rfOrphanRowsJson">{{ rf_orphan_rows|safe }}</script>
+
+<script>
+  // backbone data from Django
+  var classesRows     = JSON.parse(document.getElementById('classesRowsJson').textContent || '[]');
+  var ligandTypeRows  = JSON.parse(document.getElementById('ligandTypeRowsJson').textContent || '[]');
+  var rfNonRows       = JSON.parse(document.getElementById('rfNonRowsJson').textContent || '[]');
+  var rfSensRows      = JSON.parse(document.getElementById('rfSensRowsJson').textContent || '[]');
+  var rfOrphanRows    = JSON.parse(document.getElementById('rfOrphanRowsJson').textContent || '[]');
+
+  $(function () {
+
+    // --- 1) DataTables ---
+
+    // Classes table - no sorting, pre-sorted by Code
+    var classesDT = $('#classesTable').DataTable({
+      data: classesRows,
+      columns: [
+        { data: 'code' },
+        { data: 'name' },
+        { data: 'species' },
+        { data: 'non_sensory_share' },
+        { data: 'sensory_function' }
+      ],
+      paging: false,
+      searching: false,
+      ordering: false,  // Disable sorting
+      info: false,
+      autoWidth: false,
+      dom: 't'
+    });
+
+    // Merge consecutive identical (non-empty) cell values across columns
+    function mergeConsecutiveCells($table) {
+      var $tbody = $table.find('tbody');
+      var $rows = $tbody.find('tr');
+      if ($rows.length === 0) return;
+
+      // Reset any previous merging
+      $rows.each(function() {
+        $(this).children('td').each(function() {
+          $(this).attr('rowspan', 1).show();
+        });
+      });
+
+      var colCount = $rows.first().children('td').length;
+      for (var colIdx = 0; colIdx < colCount; colIdx++) {
+        var spanStartIdx = 0;
+        var spanCount = 1;
+
+        function cellText($cell) {
+          return ($cell.text() || '').replace(/\s+/g, ' ').trim();
+        }
+
+        for (var i = 1; i <= $rows.length; i++) {
+          var $prevCell = $rows.eq(i - 1).children('td').eq(colIdx);
+          var prevText = cellText($prevCell);
+
+          var currText = null;
+          if (i < $rows.length) {
+            var $currCell = $rows.eq(i).children('td').eq(colIdx);
+            currText = cellText($currCell);
+          }
+
+          // Only merge non-empty identical text
+          if (i < $rows.length && prevText !== '' && prevText === currText) {
+            spanCount += 1;
+            $rows.eq(i).children('td').eq(colIdx).hide();
+          } else {
+            if (spanCount > 1) {
+              $rows.eq(spanStartIdx).children('td').eq(colIdx).attr('rowspan', spanCount);
+            }
+            spanStartIdx = i;
+            spanCount = 1;
+          }
+        }
+      }
+    }
+
+    // Per-column striping that respects merged cells (rowspans).
+    // Each column starts with grey at its first visible cell, then alternates by visible blocks.
+    function applyPerColumnStriping($table) {
+      var $rows = $table.find('tbody tr');
+      if ($rows.length === 0) return;
+
+      // Clear previous striping
+      $table.find('tbody td').removeClass('classes-col-grey');
+
+      var colCount = $rows.first().children('td').length;
+      for (var colIdx = 0; colIdx < colCount; colIdx++) {
+        var makeGrey = true; // each column starts grey
+
+        $rows.each(function() {
+          var $cell = $(this).children('td').eq(colIdx);
+          if ($cell.length === 0) return;
+
+          // Only stripe the first visible cell of a rowspan block
+          if ($cell.is(':visible')) {
+            if (makeGrey) $cell.addClass('classes-col-grey');
+            makeGrey = !makeGrey;
+          }
+        });
+      }
+    }
+
+    // Apply once after initial render, and again on draw (safety)
+    mergeConsecutiveCells($('#classesTable'));
+    applyPerColumnStriping($('#classesTable'));
+    classesDT.on('draw', function() {
+      mergeConsecutiveCells($('#classesTable'));
+      applyPerColumnStriping($('#classesTable'));
+    });
+
+    var ltDT = $('#ligandTypeTable').DataTable({
+      data: ligandTypeRows,
+      columns: [
+        { data: 'ligand_group' },  // Modality (moved first)
+        { data: 'ligand_type' },   // Chemotype
+        { data: 'classes' }
+      ],
+      paging:false, searching:true, ordering:true, info:false,
+      autoWidth:false, orderCellsTop:true, dom:'t'
+    });
+
+    // --- LigandTypeTable: custom filter for "Found in classes" (token-based) ---
+    var ltSelectedClasses = [];
+    var classOrder = ["A", "B1", "B2", "C", "F", "O1", "O2", "T2", "V", "U"];
+
+    function sortClassSymbols(a, b) {
+      var ia = classOrder.indexOf(a);
+      var ib = classOrder.indexOf(b);
+      ia = ia === -1 ? 999 : ia;
+      ib = ib === -1 ? 999 : ib;
+      if (ia !== ib) return ia - ib;
+      return String(a).localeCompare(String(b));
+    }
+
+    function tokenizeClasses(cellText) {
+      return String(cellText || '')
+        .replace(/<[^>]*>/g, '')
+        .split(',')
+        .map(function(s) { return s.trim(); })
+        .filter(Boolean);
+    }
+
+    function installLtClassesTokenFilter() {
+      // Remove any previous instance (avoid duplicates if this template is re-executed)
+      for (var i = $.fn.dataTable.ext.search.length - 1; i >= 0; i--) {
+        if ($.fn.dataTable.ext.search[i].name === 'ligandTypeTable_class_symbol_filter') {
+          $.fn.dataTable.ext.search.splice(i, 1);
+        }
+      }
+
+      var fn = function(settings, data) {
+        if (settings.nTable.id !== 'ligandTypeTable') return true;
+        if (!ltSelectedClasses || ltSelectedClasses.length === 0) return true;
+
+        var tokens = tokenizeClasses(data[2]);
+        // OR semantics: match any selected symbol
+        for (var j = 0; j < ltSelectedClasses.length; j++) {
+          if (tokens.indexOf(ltSelectedClasses[j]) !== -1) return true;
+        }
+        return false;
+      };
+      fn.name = 'ligandTypeTable_class_symbol_filter';
+      $.fn.dataTable.ext.search.push(fn);
+    }
+
+    function initLtClassesTokenDropdown() {
+      var $filterRow = $('#ligandTypeTable thead tr.filter-row');
+      if (!$filterRow.length) return;
+
+      var $cell = $filterRow.children().eq(2); // "Found in classes" column
+      var selectId = 'ligandTypeTable_ClassSymbolFilter';
+      $cell.html('<select id="' + selectId + '" class="select2" style="width: 80%;"></select>');
+
+      var $sel = $('#' + selectId);
+
+      // Empty option enables placeholder and prevents any implicit default selection
+      $sel.append('<option></option>');
+
+      var set = {};
+      for (var i = 0; i < ligandTypeRows.length; i++) {
+        var row = ligandTypeRows[i] || {};
+        var tokens = tokenizeClasses(row.classes);
+        for (var k = 0; k < tokens.length; k++) set[tokens[k]] = true;
+      }
+
+      var opts = Object.keys(set).sort(sortClassSymbols);
+      for (var o = 0; o < opts.length; o++) {
+        $sel.append('<option>' + opts[o] + '</option>');
+      }
+
+      $sel.attr('multiple', 'multiple');
+      $sel.select2({
+        multiple: true,
+        closeOnSelect: true,
+        placeholder: "Filter",
+        dropdownAutoWidth: true,
+        allowClear: false
+      });
+
+      // Remove the empty option so it doesn't appear as a selectable '' entry
+      $sel.find('option').first().remove();
+
+      // Ensure nothing is selected on page load
+      $sel.val(null).trigger('change.select2');
+
+      $sel.on('change', function() {
+        ltSelectedClasses = $.map($(this).select2('data'), function(v) {
+          return v.text ? v.text.trim() : null;
+        }).filter(Boolean);
+        ltDT.draw();
+      });
+    }
+
+    var rfNonDT = $('#rfNonTable').DataTable({
+      data: rfNonRows,
+      columns: [
+        { data: 'receptor_family' },  // Receptor family first
+        { data: 'ligand_type' },       // Chemotype second
+        { data: 'class_symbol' }     // Class Third
+      ],
+      paging:false, searching:true, ordering:true, info:false,
+      autoWidth:false, orderCellsTop:true, dom:'t'
+    });
+
+    var rfSensDT = $('#rfSensTable').DataTable({
+      data: rfSensRows,
+      columns: [
+        { data: 'receptor_family' },
+        { data: 'ligand_type' },      // Chemotype
+        { data: 'classes' }            // Class (renamed from "Found in classes")
+      ],
+      paging:false, searching:true, ordering:true, info:false,
+      autoWidth:false, orderCellsTop:true, dom:'t'
+    });
+
+    var rfOrphanDT = $('#rfOrphanTable').DataTable({
+      data: rfOrphanRows,
+      columns: [
+        { data: 'receptor_family' },
+        { data: 'ligand_type' },      // Chemotype
+        { data: 'classes' }            // Class
+      ],
+      paging:false, searching:true, ordering:true, info:false,
+      autoWidth:false, orderCellsTop:true, dom:'t'
+    });
+
+    // --- 2) Attach Norges filters (all columns, multi-select) ---
+
+    function attachFilters(dt, excludeCols) {
+      var count  = dt.columns().count();
+      var config = [];
+      config = config.concat(
+        CreateColumnFilters(dt, 0, count, "Multi-select-exact")
+      );
+      if (excludeCols && excludeCols.length) {
+        config = config.filter(function(cfg) {
+          return excludeCols.indexOf(cfg[0]) === -1;
+        });
+      }
+      createDropdownFilters(dt, config);
+    }
+
+    // For ligandTypeTable, we exclude col 2 and add a token-based class symbol filter instead.
+    attachFilters(ltDT, [2]);
+    installLtClassesTokenFilter();
+    initLtClassesTokenDropdown();
+    attachFilters(rfNonDT);
+    attachFilters(rfSensDT);
+    attachFilters(rfOrphanDT);
+
+    // --- 3) Center placeholder text in filter textareas ---
+    function centerFilterPlaceholders() {
+      // Find all select2 search field textareas in filter rows
+      $('.filter-row .select2-search__field').each(function() {
+        var $field = $(this);
+
+        // Center when empty (showing placeholder)
+        function updateAlignment() {
+          if ($field.val() === '' || $field.val() === null) {
+            $field.css('text-align', 'center');
+          } else {
+            $field.css('text-align', 'left');
+          }
+        }
+
+        // Set initial alignment
+        updateAlignment();
+
+        // Update on input/change events
+        $field.on('input change keyup', updateAlignment);
+
+        // Also check when select2 opens/closes
+        $field.closest('.select2-container').on('select2:open select2:close', function() {
+          setTimeout(updateAlignment, 10);
+        });
+      });
+    }
+
+    // Apply after a short delay to ensure Select2 is fully initialized
+    setTimeout(centerFilterPlaceholders, 100);
+
+    // Also apply when tables are redrawn (if needed)
+    ltDT.on('draw', centerFilterPlaceholders);
+    rfNonDT.on('draw', centerFilterPlaceholders);
+    rfSensDT.on('draw', centerFilterPlaceholders);
+    rfOrphanDT.on('draw', centerFilterPlaceholders);
+  });
+</script>
+{% endblock %}

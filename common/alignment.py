@@ -1160,7 +1160,10 @@ class Alignment:
 
                         # store average + stddev + count + display
                         for zscale in ZSCALES:
-                            if len(zscale_position[zscale]) == 1:
+                            if len(zscale_position[zscale]) == 0:
+                                display = tooltip = "-"
+                                self.zscales[zscale][segment][generic_number] = [0, 0, 0, display]
+                            elif len(zscale_position[zscale]) == 1:
                                 display = tooltip = str(round(zscale_position[zscale][0], 2)) + " ± " + str(0) + " (1)"
                                 self.zscales[zscale][segment][generic_number] = [zscale_position[zscale][0], 0, 1, display]
                             else:

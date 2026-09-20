@@ -1,0 +1,259 @@
+/* Tree (phylogenetic) tab for the receptor-family Detail page. The dendrogram itself is drawn
+   by the vendor phylo_library.js/phylotree.js/classification_phylotree.js engine (shared with
+   the phylogenetic_trees app) — these rules only style the tab's toolbar/shell/side-panel. */
+
+.cv-family-tree-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+#cvFamilyTreeLeafLabelGroup .dropdown-menu {
+  min-width: 160px;
+  padding: 10px 15px;
+}
+
+#cvFamilyTreeLeafLabelGroup .btn-block {
+  margin-bottom: 6px;
+}
+
+#cvFamilyTreeLeafLabelGroup .btn-block:last-child {
+  margin-bottom: 0;
+}
+
+.cv-family-tree-status {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.sftree-page.sftree-pending .tree-shell {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.tree-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr);
+  gap: 14px;
+  align-items: stretch;
+  min-height: 520px;
+}
+
+.cv-family-tree-shell {
+  min-height: 560px;
+}
+
+.sftree-plot-wrap,
+.cv-family-tree-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  min-width: 0;
+  min-height: 0;
+}
+
+.sftree-side {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  max-height: 80vh;
+  border: 1px solid #e3ebf5;
+  border-radius: 10px;
+  background: #fbfdff;
+  padding: 12px 14px;
+}
+
+.sftree-side-title {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #516577;
+  text-align: center;
+}
+
+.sftree-hover {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.sftree-hover-empty {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  color: #607385;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.sftree-hover-header {
+  margin-bottom: 10px;
+  border: 1px solid #dfe7f1;
+  border-radius: 10px;
+  background: #fff;
+  padding: 10px 12px;
+  text-align: center;
+}
+
+.sftree-hover-header-name {
+  font-size: 13px;
+  line-height: 1.4;
+  color: #607385;
+}
+
+.sftree-hover-header-name strong {
+  display: block;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #1f3347;
+  margin-bottom: 6px;
+}
+
+.sftree-secondary {
+  display: block;
+  color: #607385;
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.sftree-hover-list {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sftree-hover-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(76px, 0.55fr) minmax(84px, 0.6fr);
+  gap: 10px;
+  border: 1px solid #dfe7f1;
+  border-radius: 10px;
+  background: #fff;
+  padding: 9px 11px;
+  min-height: 62px;
+  align-items: stretch;
+}
+
+.sftree-hover-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 0;
+  height: 100%;
+  text-align: center;
+}
+
+.sftree-hover-swatch {
+  width: 13px;
+  height: 13px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  flex: 0 0 auto;
+}
+
+.sftree-hover-text {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: #1f3347;
+  text-align: center;
+}
+
+.sftree-hover-metrics {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  text-align: center;
+  padding: 6px 8px;
+}
+
+.sftree-hover-metrics.is-similarity {
+  border-left: 1px solid #ebf0f5;
+}
+
+.sftree-hover-metric-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #6d8194;
+  margin-bottom: 2px;
+}
+
+.sftree-hover-distance {
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+  color: #1f5b96;
+}
+
+.sftree-hover-similarity {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1;
+  color: #3c5977;
+}
+
+#tree-container {
+  width: 100%;
+  max-width: 900px;
+  min-width: 420px;
+  min-height: 540px;
+  margin: 0 auto;
+}
+
+#clustering-tree {
+  width: 100%;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
+
+.zoombutton-container .glyphicon {
+  margin-left: 10px;
+  cursor: pointer;
+}
+
+/* phylotree.js's document-ready handler un-hides these on load (see the HTML comment
+   next to the scaffold block in the template); force them back off since none of them
+   is reachable UI (their dropdowns have no toggle button). */
+#submit-group,
+#output-group0,
+#output-group1,
+.tree-toggles,
+.legend_box,
+#single-crystal-group-pdbs-modal-table {
+  display: none !important;
+}
+
+@media (max-width: 1199px) {
+  .tree-shell {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 991px) {
+  #tree-container {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    min-height: 420px;
+  }
+}

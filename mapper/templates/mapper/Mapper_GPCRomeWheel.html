@@ -1,0 +1,349 @@
+{% extends "home/base.html" %}
+{% load static %}
+{% load humanize %}
+{% block addon_css %}
+<link rel="stylesheet" href="{% static 'home/css/nv.d3.min.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/nvd3-update.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/Spectrum_1_8_1.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/select2_4.1.0-rc.0._full.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/NewDrugsBrowser_datatables.min.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/data_mapper/core.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/data_mapper/wheel.css' %}" type="text/css" />
+{% endblock %}
+
+{% block content %}
+<div class="mapper-core-wheel-wrap row mapper-core-booting">
+  <div class="col-xs-12 mapper-core-wheel-primary-col">
+    <div class="mapper-core-wheel-left">
+      <div class="mapper-core-boot-overlay">Loading…</div>
+      <div class="mapper-core-wheel-top-row">
+        <h2 class="mapper-core-wheel-page-title">GPCRome wheel</h2>
+      </div>
+      <div class="mapper-core-wheel-toolbar-stack">
+        <div class="mapper-wheel-toolbar-grid">
+          <div class="mapper-core-wheel-toolbar" aria-label="Mapper tools primary" style="align-items:flex-end;">
+            <div class="mapper-core-input-mode-wrap">
+              <span class="mapper-core-input-mode-label">Input data:</span>
+              <div class="btn-group btn-group-xs" role="group" aria-label="Input mode">
+                <button type="button" class="btn btn-default btn-xs active" id="mapper-wheel-mode-numeric-btn" aria-pressed="true">Numbers</button>
+                <button type="button" class="btn btn-default btn-xs" id="mapper-wheel-mode-labels-btn" aria-pressed="false">Categories</button>
+              </div>
+            </div>
+            <button type="button" class="btn btn-default btn-xs" id="mapper-wheel-demo-rows">Demo</button>
+          </div>
+          <div class="mapper-core-wheel-toolbar" aria-label="Table actions">
+            <button type="button" class="btn btn-default btn-xs" id="mapper-wheel-howto-btn" data-toggle="modal" data-target="#mapper-core-howto-modal" title="How to use the mapper">
+              How to<span class="mapper-core-howto-mark" aria-hidden="true">?</span>
+            </button>
+            <button type="button" class="btn btn-primary btn-xs" id="mapper-wheel-open-gpcrome-picker" data-toggle="modal" data-target="#mapper-core-gpcrome-picker-modal">Receptor lookup</button>
+            <div class="dropdown" style="position:relative;">
+              <button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown" id="mapper-wheel-clear-rows">
+                Clear <span class="caret"></span>
+              </button>
+              <ul class="dropdown-menu mapper-core-clear-menu">
+                <li><a href="#" id="mapper-wheel-clear-whole">Whole table</a></li>
+                <li class="divider"></li>
+                <li><a href="#" id="mapper-wheel-clear-mode">Current mode (<span id="mapper-wheel-clear-mode-label">Numbers</span>)</a></li>
+                <li class="divider"></li>
+                <li class="mapper-wheel-clear-col-num"><a href="#" data-col="val">Number</a></li>
+                <li class="mapper-wheel-clear-col-text" style="display:none;"><a href="#" data-col="val">Category</a></li>
+              </ul>
+            </div>
+            <button type="button" class="btn btn-default btn-xs" onclick="mapperWheelDownloadTable()" title="Download input table as Excel (.xlsx)"><span class="glyphicon glyphicon-save" aria-hidden="true"></span> Download</button>
+          </div>
+        </div>
+      </div>
+      {% csrf_token %}
+      <div class="table-responsive" id="mapper-wheel-paste-zone">
+        <table class="table table-bordered table-condensed mapper-core-input-table" id="mapper-core-input-table">
+          <thead>
+            <tr>
+              <th class="mapper-core-th-remove" aria-label="Remove row"></th>
+              <th class="mapper-core-sortable-head" data-mapper-wheel-sort-col="receptor" tabindex="0" role="button" aria-sort="none">Receptor <span class="mapper-core-sort-indicator" aria-hidden="true"></span></th>
+              <th class="mapper-wheel-th-value mapper-core-sortable-head" data-mapper-wheel-sort-col="value" tabindex="0" role="button" aria-sort="none"><span class="mapper-wheel-value-col-label">Number</span> <span class="mapper-core-sort-indicator" aria-hidden="true"></span></th>
+              <th class="mapper-core-th-swatch" title="Label colour">Color</th>
+            </tr>
+          </thead>
+          <tbody id="mapper-wheel-input-tbody"></tbody>
+        </table>
+      </div>
+      <div class="mapper-core-wheel-errors" id="mapper-core-wheel-errors" role="alert"></div>
+    </div>
+  </div>
+
+  <div class="col-xs-12 mapper-core-wheel-plot-col">
+    <div class="mapper-core-plot-panel">
+      <div class="mapper-core-plot-toolbar">
+    <div class="dropdown" style="position: relative;">
+      <button class="btn btn-primary dropdown-toggle btn-sm" type="button" id="GPCRome_LabelType_Button"
+              data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        Receptor names
+      </button>
+      <div class="dropdown-menu p-2"
+           style="min-width: 160px; padding: 10px 15px; left: 100%; top: 50%; margin-left: 5px; position: absolute; transform: translateY(-30%);">
+        <button type="button" class="btn btn-outline-primary btn-block mb-1 GPCRome-label-btn" data-value="Protein">Protein</button>
+        <button type="button" class="btn btn-outline-primary btn-block mb-1 GPCRome-label-btn" data-value="Entrez">Gene</button>
+        <button type="button" class="btn btn-outline-primary btn-block GPCRome-label-btn" data-value="Uniprot">UniProt</button>
+      </div>
+    </div>
+    <div class="dropdown mapper-core-colors-dropdown-anchor mapper-core-dropdown-anchor-topleft" style="position: relative;">
+      <button class="btn btn-primary dropdown-toggle btn-sm" type="button" id="GPCRome_Color_Styling_Menu"
+              data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        Colors
+      </button>
+      <div id="mapper-wheel-colors-dropdown-menu" class="dropdown-menu dropdown-menu-listplot mapper-core-colors-panel-wrap mapper-core-dropdown-menu-topleft mapper-core-colors-show-numeric"
+          aria-labelledby="GPCRome_Color_Styling_Menu"
+          style="left: 100%; margin-left: 5px; position: absolute;">
+        <div id="mapper-wheel-colors-panel-numeric" class="mapper-wheel-colors-numeric-inner">
+          <div class="col-md-12" style="margin: 15px 0px;">
+            <div class="row">
+              <div class="col-md-5 text-center">
+                <label style="font-weight: bold; font-size: 13px; display: block; margin-bottom: 5px;">Number of colors</label>
+                <div style="width: 100%; margin: -3px auto;">
+                  <select id="GPCRome_color_styling" class="form-control" style="width: 130px;">
+                    <option value="One">One</option>
+                    <option value="Two">Two</option>
+                    <option value="Three_RWB">Three</option>
+                    <option value="Three_TWM">Three</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col-md-7">
+                <div style="display: flex; gap: 5px; justify-content: start; margin-bottom: 3px; font-size: 12px;">
+                  <div id="GPCRome_Color_min_label" style="width: 80px; text-align: center;">Min</div>
+                  <div id="GPCRome_Color_avg_label" style="width: 80px; text-align: center;">Mid</div>
+                  <div style="width: 80px; text-align: center;">Max</div>
+                </div>
+                <div style="display: flex; gap: 5px; align-items: center;">
+                  <div id="GPCRome_Color_min_container" style="width: 80px; display: flex; justify-content: center;">
+                    <input type="text" id="GPCRome_colorPicker_min" />
+                  </div>
+                  <div id="GPCRome_Color_avg_container" style="width: 80px; display: flex; justify-content: center;">
+                    <input type="text" id="GPCRome_colorPicker_avg" />
+                  </div>
+                  <div id="GPCRome_Color_max_container" style="width: 80px; display: flex; justify-content: center;">
+                    <input type="text" id="GPCRome_colorPicker_max" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="mapper-wheel-colors-panel-text" class="mapper-core-colors-text-wrap">
+          <div class="customize-menu mapper-core-colors-text-menu" onclick="event.stopPropagation();">
+            <div id="mapper-wheel-label-color-pickers"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="dropdown mapper-wheel-datalabels-wrap mapper-wheel-hide-when-numeric mapper-core-dropdown-anchor-topleft" id="mapper-wheel-datalabels-wrap" style="position: relative;">
+      <button class="btn btn-primary dropdown-toggle btn-sm" type="button" id="mapper-wheel-legend-layout-btn"
+              data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        Legend layout
+      </button>
+      <div class="dropdown-menu p-2 mapper-core-dropdown-menu-topleft"
+           style="min-width: 250px; padding: 12px 14px; left: 100%; margin-left: 5px; position: absolute;">
+        <div style="display:flex; align-items:center; margin-bottom:12px;">
+          <label style="flex:1; font-weight:bold; font-size:12px; margin:0;">Layout</label>
+          <select id="mapper-wheel-legend-layout-select" class="form-control input-sm" style="width:68%;"></select>
+        </div>
+        <div style="display:flex; align-items:center;">
+          <label style="flex:1; font-size:12px; margin:0;">Sorting</label>
+          <button type="button" id="mapper-wheel-toggle-legend-sorting" class="btn btn-primary btn-sm" style="width:68%;">Vertically</button>
+        </div>
+      </div>
+    </div>
+    <div class="dropdown" style="position: relative;">
+      <button class="btn btn-primary dropdown-toggle btn-sm" type="button" id="GraphicalLegend_Button"
+              data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        Graphical legend
+      </button>
+      <div class="dropdown-menu p-2"
+           style="min-width: 160px; padding: 10px 15px; left: 100%; top: 50%; margin-left: 5px; position: absolute; transform: translateY(-25%);">
+        <button type="button" class="btn btn-outline-primary btn-block mb-1 graphical-legend-option" data-icon="false" data-legend="false">None</button>
+        <button type="button" class="btn btn-outline-primary btn-block mb-1 graphical-legend-option" data-icon="true" data-legend="false">Left</button>
+        <button type="button" class="btn btn-outline-primary btn-block mb-1 graphical-legend-option" data-icon="false" data-legend="true">Right</button>
+        <button type="button" class="btn btn-outline-primary btn-block graphical-legend-option" data-icon="true" data-legend="true">Both</button>
+      </div>
+    </div>
+    <div class="dropdown" style="position: relative;">
+      <button type="button" class="btn btn-primary dropdown-toggle btn-sm"
+            id="DownloadDropdownToggle" style="font-size: 14px;">
+        <span class="glyphicon glyphicon-download" style="vertical-align: top; line-height: 1.3;"></span>
+        Download <span class="caret"></span>
+      </button>
+      <div class="dropdown-menu"
+          style="min-width: 160px; padding: 10px 15px; left: 100%; top: 50%;
+                  margin-left: 5px; position: absolute; transform: translateY(-25%); display: none;">
+        <button type="button" class="btn btn-primary btn-block"
+                onclick="saveSvgAsJpg(document.getElementById('GPCRome_plot_svg'), 'GPCRome_plot.jpg');">
+          JPG
+        </button>
+         <button type="button" class="btn btn-primary btn-block"
+                onclick="saveSvgAsPng(document.getElementById('GPCRome_plot_svg'), 'GPCRome_plot.png');">
+          PNG
+        </button>
+        <button type="button" class="btn btn-primary btn-block"
+                onclick="saveSvg(document.getElementById('GPCRome_plot_svg'), 'GPCRome_plot.svg');">
+          SVG
+        </button>
+        <button type="button" class="btn btn-primary btn-block"
+                onclick="saveSvgAsTiff(document.getElementById('GPCRome_plot_svg'), 'GPCRome_plot.tiff');">
+          TIFF
+        </button>
+      </div>
+    </div>
+      </div>
+      <div id="image-container" data-image-url="{% static 'home/images/DataMapper/DataMapper_GPCRome_icon_legend.png' %}"></div>
+      <div class="mapper-wheel-gpcrome-plot-wrap">
+        <div id="GPCRome_plot"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade mapper-core-howto-modal" id="mapper-core-howto-modal" tabindex="-1" role="dialog" aria-labelledby="mapper-wheel-howto-modal-label">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="mapper-wheel-howto-modal-label">How to use — GPCRome wheel</h4>
+      </div>
+      <div class="modal-body">
+        <p>Each row has a <strong>receptor</strong> cell and a second cell for a <strong>numeric value</strong> (Numeric mode) or a <strong>text label</strong> (Text mode). <strong>Type at least one character</strong> in the receptor cell to open suggestions (formatted GtoPdb-style receptor names with genes); chosen receptors show as formatted names while the plot uses the canonical UniProt entry behind the scenes. Paste multi-line/tab data in the table as before.</p>
+        <p>Use <strong>Numeric</strong> for heatmap colouring by number, or <strong>Text</strong> for text categories shared across receptors (Colours menu lists unique labels once; two identical labels use the same colour). An extra swatch appears beside the label cell in Text mode. Use <strong>Legend layout</strong> (toolbar) to arrange the categorical legend in Text mode.</p>
+        <p>Use <strong>Select from table</strong> for a searchable GPCR list (same set as this wheel): filter columns, tick rows, then <strong>Add to table</strong> to fill receptors in the grid.</p>
+        <p><strong>Paste from Excel:</strong> One column while focused in the <strong>value/label</strong> or <strong>Receptor</strong> column fills that column only from the current row downward (overwrites existing rows; adds rows if needed). Two tab-separated columns update both columns from the focused row the same way; paste with focus outside the grid still appends new rows.</p>
+        <p>Unknown receptors are outlined in red; invalid numbers red on the value cell in Numeric mode. A valid receptor with an empty second cell shows an orange hint (hover): enter a number or a label depending on mode. Duplicate receptors: <strong>last row wins</strong>. Max <strong>500</strong> rows; validation runs locally in your browser.</p>
+        <p>An empty row is kept at the bottom of the table for quick entry.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="mapper-core-gpcrome-picker-modal" tabindex="-1" role="dialog" aria-labelledby="mapper-core-gpcrome-picker-modal-label">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" id="mapper-core-gpcrome-picker-dismiss-x" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="mapper-core-gpcrome-picker-modal-label">Select receptors (GPCRome wheel)</h4>
+      </div>
+      <div class="modal-body">
+        <div style="overflow-x: auto;">
+          <table width="100%" class="display compact" id="mapper-core-gpcrome-picker-table">
+            <thead>
+              <tr>
+                <th data-dt-order="disable"><input type="checkbox" id="mapper-core-gpcrome-picker-select-all" title="Select all rows currently shown by filters"></th>
+                <th class="mapper-core-picker-gpcrdb-label" data-dt-order="disable">GPCRdb</th>
+                <th>GtoPdb</th>
+                <th>Gene</th>
+                <th>UniProt</th>
+                <th>Receptor family</th>
+                <th>Class</th>
+              </tr>
+              <tr id="mapper-core-picker-filter-row">
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer" style="display:flex; align-items:center; justify-content:space-between;">
+        <div class="dropdown" style="position:relative;">
+          <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><span class="mapper-core-picker-assign-toggle-label">Assign value: None</span> <span class="caret"></span></button>
+          <div class="dropdown-menu p-2" id="mapper-core-gpcrome-picker-assign-menu" style="min-width:220px; padding:10px 15px; bottom:100%; top:auto;">
+            <div style="font-weight:bold; margin-bottom:4px;">Value</div>
+            <button type="button" class="btn btn-primary btn-block btn-sm mb-1 mapper-core-picker-assign-src" data-src="none">None</button>
+            <button type="button" class="btn btn-outline-primary btn-block btn-sm mb-1 mapper-core-picker-assign-src" data-src="class">Class</button>
+            <button type="button" class="btn btn-outline-primary btn-block btn-sm mb-1 mapper-core-picker-assign-src" data-src="ligandtype">Chemotype</button>
+            <button type="button" class="btn btn-outline-primary btn-block btn-sm mapper-core-picker-assign-src" data-src="family">Receptor family</button>
+          </div>
+        </div>
+        <div>
+          <button type="button" class="btn btn-default" data-dismiss="modal" id="mapper-core-gpcrome-picker-cancel">Cancel</button>
+          <button type="button" class="btn btn-primary" id="mapper-core-gpcrome-picker-add">Add to table</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block addon_js %}
+<script src="{% static 'home/js/d3.min.js' %}"></script>
+<script src="{% static 'home/js/nv.d3.min.js' %}"></script>
+<script src="{% static 'home/js/d3.v4.min.js' %}"></script>
+<script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
+<script src="{% static 'home/js/saveSvg.js' %}"></script>
+<script src="{% static 'home/js/datamapper.js' %}"></script>
+<script src="{% static 'home/js/spectrum_v1_8_1.js' %}"></script>
+<script src="{% static 'home/js/select2_4.1.0-rc.0_full.js' %}"></script>
+<script src="{% static 'home/js/NewDrugsBrowser_datatables.min.js' %}"></script>
+<script src="{% static 'home/js/NorgesDTFilterBuilder.js' %}"></script>
+<script src="{% static 'home/js/data_mapper/data_mapper_modal_table.js' %}"></script>
+<script src="{% static 'home/js/xlsx.full.min.js' %}"></script>
+
+<script src="{% static 'home/js/data_mapper/mapper_page_core.js' %}"></script>
+<script>
+$('.dropdown-menu:not(.mapper-core-clear-menu)').on('click', function(event){
+  event.stopPropagation();
+});
+$('.dropdown-menu input[type="range"]').on('mouseenter pointerdown', function() { this.focus(); });
+
+var MAPPER_WHEEL_MAX_ROWS = 500;
+/** Hint on the top receptor cell only */
+var MAPPER_WHEEL_FIRST_ROW_RECEPTOR_PLACEHOLDER =
+    'Paste in 1–2 columns of data\nor type';
+/** Tall, wrap-friendly receptor cells until first multi-line/tab grid paste (then compact). Cleared rows restore this. */
+var mapperWheelReceptorTallPlaceholderIntro = true;
+var receptorSelect2Data = {{ receptor_select2_json|safe }};
+var MAPPER_CORE_RESOLVE = {{ gpcrome_resolve_json|safe }};
+var MAPPER_CORE_GPCROME_PICKER_ROWS = {{ gpcrome_picker_rows_json|safe }};
+
+var MAPPER_CORE_ENTRY_META = {};
+(function() {
+  if (receptorSelect2Data && receptorSelect2Data.length) {
+    receptorSelect2Data.forEach(function(item) {
+      var uni = item.uniprot != null ? String(item.uniprot).trim().toUpperCase() : '';
+      if (!uni && item.id && String(item.id).indexOf('_') !== -1) {
+        uni = String(item.id).split('_')[0].trim().toUpperCase();
+      } else if (!uni && item.id) {
+        uni = String(item.id).trim().toUpperCase();
+      }
+      MAPPER_CORE_ENTRY_META[item.id] = {
+        name_html: item.name_html || '',
+        name_plain: item.name_plain || '',
+        text: item.text || '',
+        gene: item.gene != null ? String(item.gene).trim() : '',
+        uniprot: uni
+      };
+    });
+  }
+})();
+
+var MAPPER_WHEEL_TREE_IDS = {};
+(function() {
+  if (receptorSelect2Data && receptorSelect2Data.length) {
+    receptorSelect2Data.forEach(function(item) {
+      MAPPER_WHEEL_TREE_IDS[item.id] = true;
+    });
+  }
+})();
+
+// Data that must come from the Django context — the rest of the wheel's
+// logic (mapper_gpcrome_page.js) is a static file and can't read template tags.
+var GPCRome_WheelDict = {{ GPCRomeData|safe }};
+var PlotType = "{{ PlotType }}";
+</script>
+<script src="{% static 'home/js/data_mapper/mapper_gpcrome_page.js' %}"></script>
+{% endblock %}

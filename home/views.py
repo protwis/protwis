@@ -3,7 +3,9 @@ from django.conf import settings
 from django.views.decorators.cache import cache_page
 from django.http import JsonResponse
 from django.db.models import F, Q
+from django.db.utils import ProgrammingError, OperationalError
 from django.views.generic import TemplateView
+import logging
 
 from protwis.context_processors import site_title
 from news.models import News
@@ -16,6 +18,7 @@ from signprot.models import SignprotComplex, SignprotStructure
 from googleapiclient.discovery import build
 from oauth2client.service_account import ServiceAccountCredentials
 
+logger = logging.getLogger(__name__)
 
 # @cache_page(60 * 60 * 24)
 def index(request):
@@ -103,25 +106,36 @@ def index(request):
 
 @cache_page(60 * 60 * 24 * 7)
 def citations_json(request):
-    citations_q = (
-        Citation.objects.all()
-        .values_list(
-            "url",
-            "video",
-            "docs",
-            "main",
-            "page_name",
-            "publication__title",
-            "publication__authors",
-            "publication__year",
-            "publication__reference",
-            "publication__journal__name",
-            "publication__web_link__index",
+    """
+    Returns a flat list of citation tuples consumed by `static/home/js/citation_tool.js`.
+
+    In dev setups where the `common` app migrations haven't been applied yet, the
+    underlying tables (notably the Citation<->Publication M2M table) may be missing.
+    In that case, degrade gracefully to an empty list to avoid a noisy 500 + JSON
+    parse error in the browser console.
+    """
+    try:
+        citations_q = (
+            Citation.objects.all()
+            .values_list(
+                "url",
+                "video",
+                "docs",
+                "main",
+                "page_name",
+                "publication__title",
+                "publication__authors",
+                "publication__year",
+                "publication__reference",
+                "publication__journal__name",
+                "publication__web_link__index",
+            )
+            .order_by("-publication__year", "page_name")
         )
-        .order_by("-publication__year", "page_name")
-    )
-    response = JsonResponse(list(citations_q), safe=False)
-    return response
+        return JsonResponse(list(citations_q), safe=False)
+    except (ProgrammingError, OperationalError) as e:
+        logger.warning("Citations endpoint unavailable (missing DB tables/migrations?): %s", e)
+        return JsonResponse([], safe=False)
 
 def cite_us(request, site):
     context = {'site': site}
