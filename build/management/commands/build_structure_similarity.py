@@ -80,8 +80,7 @@ class Command(BaseBuild):
 
         qs = (
             Structure.objects
-            .exclude(structure_type__slug__startswith='af-')
-            .filter(representative=True, annotated=True, state__slug=state_slug)
+            .filter(structure_type__origin='experiment', representative=True, annotated=True, state__slug=state_slug)
             .select_related(
                 'pdb_code',
                 'protein_conformation__protein',
