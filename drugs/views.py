@@ -804,7 +804,7 @@ class DruggedGPCRome(TemplateView):
                 #     print(len(unique_entries),sorted(unique_entries))
                 drug_dict[target][key] = len(unique_entries)  # Replace the list with the count
 
-        tree, tree_options, circles, receptors, genes = DataMapperHome.generate_tree_plot(drug_dict)
+        tree, tree_options, circles, receptors, genes = DataMapperHome.GenerateClassificationTreeData(drug_dict)
         #Remove 0 circles
         for key, outer_dict in circles.items():
             circles[key] = {k: v for k, v in outer_dict.items() if v != 0}
@@ -846,7 +846,7 @@ class DruggedGPCRome(TemplateView):
                 else:
                     drug_dict[drug[1]]['Outer1'] += 1
 
-        repurposed_tree, repurposed_tree_options, repurposed_circles, repurposed_receptors, repurposed_genes = DataMapperHome.generate_tree_plot(drug_dict)
+        repurposed_tree, repurposed_tree_options, repurposed_circles, repurposed_receptors, repurposed_genes = DataMapperHome.GenerateClassificationTreeData(drug_dict)
         #Remove 0 circles
         for key, outer_dict in repurposed_circles.items():
             repurposed_circles[key] = {k: v for k, v in outer_dict.items() if v != 0}

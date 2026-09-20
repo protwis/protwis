@@ -15,3 +15,4 @@ static/home/js/package.json
 tsconfig.json
 tags
 signprot/notebooks/*.json
+CLAUDE.md

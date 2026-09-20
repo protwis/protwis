@@ -1,0 +1,197 @@
+/**
+ * Data Mapper -- List page-specific styles.
+ * Shared styling lives in core.css.
+ */
+
+.mapper-list-toolbar-grid {
+  display: flex; flex-direction: column; row-gap: 6px;
+  width: 460px; max-width: 100%;
+}
+.mapper-core-wheel-toolbar #mapper-list-clear-rows:not(.mapper-core-clear-clean):hover {
+  color: #fff; background-color: #a94442; border-color: #843534;
+}
+.mapper-core-wheel-toolbar #mapper-list-clear-rows:focus,
+.mapper-core-wheel-toolbar #mapper-list-clear-rows:active,
+.mapper-core-wheel-toolbar #mapper-list-clear-rows.mapper-core-clear-clean,
+.mapper-core-wheel-toolbar #mapper-list-clear-rows.mapper-core-clear-clean:hover,
+.mapper-core-wheel-toolbar #mapper-list-clear-rows.mapper-core-clear-clean:focus {
+  color: #fff; background-color: #337ab7; border-color: #2e6da4; outline: none;
+}
+.mapper-core-wheel-toolbar #mapper-list-howto-btn {
+  color: #fff; background-color: #f0ad4e; border-color: #eea236;
+  font-weight: 700; padding-left: 7px; padding-right: 7px;
+}
+.mapper-core-wheel-toolbar #mapper-list-howto-btn:hover,
+.mapper-core-wheel-toolbar #mapper-list-howto-btn:focus {
+  color: #fff; background-color: #ec971f; border-color: #d58512;
+}
+.mapper-core-wheel-wrap.mapper-list-page .mapper-core-wheel-primary-col {
+  flex: 0 0 auto; min-width: 0;
+}
+.mapper-core-wheel-wrap.mapper-list-page .mapper-core-wheel-plot-col {
+  flex: 1 1 0; min-width: 0;
+}
+.mapper-core-wheel-wrap.mapper-list-page .mapper-core-wheel-left {
+  display: block; width: 100%;
+  max-width: min(500px, calc(100vw - 48px));
+  box-sizing: border-box;
+}
+.mapper-core-wheel-wrap.mapper-list-page .mapper-core-wheel-left .table-responsive {
+  width: max-content; max-width: 100%;
+  padding-left: 14px; overflow: visible;
+}
+.mapper-core-wheel-wrap.mapper-list-page .mapper-core-wheel-left #mapper-list-input-table {
+  table-layout: fixed; width: 460px; max-width: 100%; border-collapse: collapse;
+}
+.mapper-core-wheel-wrap.mapper-list-page .mapper-core-wheel-left #mapper-list-input-table thead th,
+.mapper-core-wheel-wrap.mapper-list-page .mapper-core-wheel-left #mapper-list-input-table tbody td {
+  box-sizing: border-box; overflow: hidden; word-wrap: break-word; word-break: break-word;
+}
+.mapper-core-wheel-wrap.mapper-list-page .mapper-core-wheel-left #mapper-list-input-table th.mapper-core-th-remove,
+.mapper-core-wheel-wrap.mapper-list-page .mapper-core-wheel-left #mapper-list-input-table td.mapper-core-remove-cell {
+  position: relative; width: 0; max-width: 0; padding: 0 !important;
+  border: 0 !important; background: transparent !important;
+  overflow: visible; text-align: center; vertical-align: middle !important;
+}
+.mapper-core-wheel-wrap.mapper-list-page .mapper-core-wheel-left #mapper-list-input-table th.mapper-list-val-h,
+.mapper-core-wheel-wrap.mapper-list-page .mapper-core-wheel-left #mapper-list-input-table td.mapper-list-val-cell {
+  width: 70px;  /* 4 × 70 = 280px; receptor fills remaining 180px of 460px table */
+}
+.mapper-core-wheel-wrap.mapper-list-page .mapper-core-wheel-left #mapper-list-input-table tbody td.mapper-core-receptor-cell,
+.mapper-core-wheel-wrap.mapper-list-page .mapper-core-wheel-left #mapper-list-input-table tbody td.mapper-core-value-cell {
+  max-width: 0;
+}
+.mapper-core-wheel-wrap.mapper-list-page .mapper-core-wheel-left #mapper-list-input-table tbody td.mapper-core-receptor-cell {
+  vertical-align: top;
+}
+.mapper-core-wheel-wrap.mapper-list-page .mapper-core-wheel-left #mapper-list-input-table tbody td.mapper-core-value-cell {
+  vertical-align: middle;
+}
+.mapper-core-wheel-wrap.mapper-list-page .mapper-core-wheel-left #mapper-list-input-table th.mapper-core-th-receptor,
+.mapper-core-wheel-wrap.mapper-list-page .mapper-core-wheel-left #mapper-list-input-table td.mapper-core-receptor-cell {
+  min-width: 165px;
+}
+.mapper-core-wheel-wrap.mapper-list-page .mapper-core-wheel-left #mapper-list-input-table.mapper-core-text-mode {
+  width: 310px;
+}
+.mapper-core-wheel-wrap.mapper-list-page .mapper-core-wheel-left #mapper-list-input-table.mapper-core-text-mode th.mapper-core-th-receptor,
+.mapper-core-wheel-wrap.mapper-list-page .mapper-core-wheel-left #mapper-list-input-table.mapper-core-text-mode td.mapper-core-receptor-cell {
+  min-width: 165px;
+}
+.mapper-core-wheel-wrap.mapper-list-page .mapper-core-wheel-left #mapper-list-input-table.mapper-core-text-mode th.mapper-list-cat-h,
+.mapper-core-wheel-wrap.mapper-list-page .mapper-core-wheel-left #mapper-list-input-table.mapper-core-text-mode td.mapper-list-cat-cell {
+  width: 108px;
+}
+.mapper-core-wheel-wrap.mapper-list-page .mapper-core-wheel-left #mapper-list-input-table.mapper-core-text-mode th.mapper-list-val-h,
+.mapper-core-wheel-wrap.mapper-list-page .mapper-core-wheel-left #mapper-list-input-table.mapper-core-text-mode td.mapper-list-val-cell {
+  display: none !important; width: 0 !important; padding: 0 !important; border: none !important;
+}
+.mapper-core-wheel-wrap.mapper-list-page .mapper-core-wheel-left #mapper-list-input-table.mapper-core-text-mode th.mapper-core-th-swatch,
+.mapper-core-wheel-wrap.mapper-list-page .mapper-core-wheel-left #mapper-list-input-table.mapper-core-text-mode td.mapper-list-swatch-cell {
+  width: 44px; max-width: 44px; text-align: center; vertical-align: middle !important; padding: 2px !important;
+}
+.mapper-core-wheel-left #mapper-list-input-table:not(.mapper-core-text-mode) .mapper-core-th-swatch,
+.mapper-core-wheel-left #mapper-list-input-table:not(.mapper-core-text-mode) td.mapper-list-swatch-cell {
+  display: none;
+}
+.mapper-core-wheel-left #mapper-list-input-table:not(.mapper-core-text-mode) .mapper-list-cat-h,
+.mapper-core-wheel-left #mapper-list-input-table:not(.mapper-core-text-mode) td.mapper-list-cat-cell {
+  display: none !important;
+}
+#mapper-list-input-table thead th.mapper-list-val-h,
+#mapper-list-input-table thead th.mapper-list-cat-h,
+#mapper-list-input-table thead th.mapper-core-th-swatch { text-align: center !important; }
+#mapper-list-input-table .mapper-list-val,
+#mapper-list-input-table .mapper-list-cat { text-align: center; }
+.mapper-core-wheel-wrap.mapper-list-page .mapper-core-wheel-left #mapper-list-input-table textarea.mapper-core-in-receptor.form-control.input-sm {
+  height: auto; min-height: 44px; max-height: 200px; padding: 4px 6px;
+  font-size: 11px; line-height: 1.38; resize: vertical;
+  overflow-x: hidden; overflow-y: hidden;
+  white-space: pre-wrap; word-wrap: break-word; overflow-wrap: break-word;
+}
+.mapper-core-wheel-wrap.mapper-list-page .mapper-core-wheel-left #mapper-list-input-table.mapper-core-receptors-compact textarea.mapper-core-in-receptor.form-control.input-sm {
+  min-height: 26px; max-height: 26px; height: 26px;
+  padding-top: 2px; padding-bottom: 2px; line-height: 1.3;
+  resize: none; overflow-x: auto; overflow-y: hidden; white-space: nowrap;
+}
+.mapper-core-wheel-wrap.mapper-list-page .mapper-core-wheel-left #mapper-list-input-table.mapper-core-receptors-compact .mapper-core-receptor-html-view {
+  min-height: 26px; max-height: 26px; height: 26px; overflow: hidden;
+}
+.mapper-core-wheel-wrap.mapper-list-page .mapper-core-wheel-left #mapper-list-input-table .form-control.input-sm {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+.mapper-core-wheel-wrap.mapper-list-page .mapper-core-wheel-left #mapper-list-input-table .mapper-list-val.form-control.input-sm,
+.mapper-core-wheel-wrap.mapper-list-page .mapper-core-wheel-left #mapper-list-input-table .mapper-list-cat.form-control.input-sm {
+  height: 26px; padding: 2px 6px; font-size: 11px; line-height: 1.3;
+}
+#mapper-list-input-tbody tr:first-child .mapper-core-receptor-input-wrap.is-empty .mapper-core-in-receptor { border-color: #e0892e !important; }
+#mapper-list-input-table.mapper-core-text-mode tbody td.mapper-list-cat-cell.mapper-list-cat-hint {
+  border: 2px solid #e0892e !important; background-color: rgba(224,137,46,0.08);
+}
+.mapper-core-wheel-left #mapper-list-input-table th.mapper-core-sortable-head {
+  cursor: pointer; position: relative; padding-right: 18px; user-select: none;
+}
+#mapper-list-messages { margin-top: 8px; font-size: 10px; max-height: 160px; overflow: auto; color: #a94442; }
+#mapper-list-messages:empty { display: none; }
+.mapper-list-label-swatch {
+  display: inline-block; width: 18px; height: 18px; border: 1px solid #aaa;
+  border-radius: 3px; box-sizing: border-box; vertical-align: middle;
+  background-color: transparent;
+}
+.mapper-list-label-swatch.mapper-core-row-color-picker { padding: 0; color: transparent; font-size: 0; cursor: pointer; }
+.mapper-list-swatch-cell .mapper-list-row-swatch-replacer.sp-replacer {
+  display: inline-block; width: 18px !important; height: 18px !important;
+  padding: 0; border: 1px solid #aaa; border-radius: 3px; vertical-align: middle; overflow: hidden;
+}
+.mapper-list-swatch-cell .mapper-list-row-swatch-replacer .sp-preview { width: 18px; height: 18px; margin: 0; border: 0; }
+.mapper-list-swatch-cell .mapper-list-row-swatch-replacer .sp-dd { display: none; }
+.mapper-core-wheel-wrap.mapper-list-page.mapper-list-catmode .mapper-core-wheel-left { min-width: 400px; }
+.mapper-core-wheel-wrap.mapper-list-page.mapper-list-catmode .mapper-core-wheel-toolbar-stack { width: 100%; }
+.mapper-core-wheel-wrap.mapper-list-page.mapper-list-catmode .mapper-list-toolbar-grid { width: 100%; }
+.mapper-core-wheel-wrap.mapper-list-page.mapper-list-catmode .mapper-core-wheel-left .table-responsive { width: fit-content; }
+.mapper-core-wheel-wrap.mapper-list-page.mapper-list-catmode .mapper-core-wheel-left #mapper-list-input-table.mapper-core-text-mode {
+  width: 366px; /* 400px wrapper - 20px padding - 14px remove = 366px */
+}
+.mapper-core-wheel-wrap.mapper-list-page.mapper-list-catmode.mapper-list-species-active .mapper-core-wheel-left #mapper-list-input-table.mapper-core-text-mode {
+  width: 454px; /* 366px + 88px species column */
+}
+.mapper-core-wheel-wrap.mapper-list-page #mapper-list-input-table .mapper-list-species-h,
+.mapper-core-wheel-wrap.mapper-list-page #mapper-list-input-table .mapper-list-species-cell {
+  width: 88px; min-width: 88px; max-width: 88px;
+}
+.mapper-core-wheel-wrap.mapper-list-page.mapper-list-species-active .mapper-core-wheel-left {
+  max-width: min(600px, calc(100vw - 48px));
+}
+.mapper-core-wheel-wrap.mapper-list-page.mapper-list-species-active #mapper-list-input-table {
+  width: 548px; /* 460 + 88 */
+}
+.mapper-core-wheel-wrap.mapper-list-page.mapper-list-species-active #mapper-list-input-table.mapper-core-text-mode {
+  width: 398px; /* 310 + 88 */
+}
+#mapper-list-colors-menu.mapper-list-colors-text-mode {
+  width: max-content; min-width: 120px !important; max-width: min(320px, 92vw); padding: 8px !important;
+}
+.mapper-list-color-ring-grid { display: flex; align-items: center; gap: 6px; }
+.mapper-list-color-ring-label { width: 52px; text-align: center; flex-shrink: 0; }
+.mapper-list-color-style-wrap { width: 130px; flex-shrink: 0; }
+.mapper-list-color-picker-wrap { flex: 1; min-width: 0; display: flex; justify-content: center; align-items: center; }
+.mapper-list-plot-toolbar {
+  display: flex; justify-content: center; align-items: center; gap: 12px;
+  flex-wrap: wrap; font-size: 11px; margin-bottom: 8px; padding-top: 8px;
+}
+.mapper-list-plot-toolbar .dropdown-toggle { font-size: 13px; line-height: 1.35; }
+.mapper-list-plot-wrap { margin-top: 8px; width: 100%; max-width: 100%; min-width: 0; overflow-x: auto; overflow-y: hidden; text-align: center; }
+.mapper-list-plot-placeholder {
+  box-sizing: border-box; margin: 0 auto; max-width: 560px;
+  min-height: clamp(240px, 40vh, 480px); padding: 28px 20px;
+  border: 1px dashed rgba(26,43,60,0.18); border-radius: 12px;
+  background: linear-gradient(180deg, #fafcfd 0%, #f5f8fb 100%);
+  color: #4a5f73; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; text-align: center; gap: 10px;
+}
+.mapper-list-plot-placeholder-title { margin: 0; font-size: 14px; font-weight: 600; color: #1a2b3c; }
+.mapper-list-plot-placeholder-hint { margin: 0; font-size: 12px; line-height: 1.45; max-width: 420px; }

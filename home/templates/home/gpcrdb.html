@@ -18,15 +18,23 @@
                     <span class="glyphicon glyphicon-film"></span>
                 </button>
             </a></li>
-            <!-- SEQUENCES -->
-            <li class="divider"></li>
             <li class="dropdown-submenu">
-                <a tabindex="0" href="#">Data Mapper <button type="button" class="refLink pull-right btn btn-xs btn-default" keys="10.1093/nar/gkae1065"><span class="glyphicon glyphicon-book"></span></button></a>
+                <a tabindex="0" href="#">GPCR Classification</a>
                 <ul class="dropdown-menu">
-                  <li><a href="{{ hosts.gpcr }}/mapper/DataMapperHomeNumeric">Numeric data</a></li>
-                  <li><a href="{{ hosts.gpcr }}/mapper/DataMapperHomeText">Text data</a></li>
+                    <!-- Manus 1 -->
+                    <li><a href="{{ hosts.gpcr }}/classification/overview">Overview</a></li>
+                    <li><a href="{{ hosts.gpcr }}/classification/visualizations">Visualizations</a></li>
+                    <!-- Manus 2 -->
+                    <!-- <li><a href="{{ hosts.gpcr }}/alignment/class_similarity/CountByClass"><i class="fa fa-table"></i> GPCR counts by class</a></li> -->
+                    <!-- Manus 3 -->
+                    <!-- <li><a href="{{ hosts.gpcr }}/alignment/class_similarity/OrphanSimilarityExplorer"><i class="fa-solid fa-circle-nodes"></i> Orphan receptor similarity</a></li> -->
+                    <!-- <li><a href="{{ hosts.gpcr }}/alignment/class_similarity_matrix/render">Cross-class similarity</a></li> -->
+                    <!-- <li><a href="{{ hosts.gpcr }}/alignment/class_similarity/ReceptorSimilarityExportExcel">ReceptorSimilarityExportExcel</a></li>  -->
                 </ul>
             </li>
+            <!-- SEQUENCES -->
+            <li class="divider"></li>
+            <li><a href="{{ hosts.gpcr }}/mapper/MapperLandingPage">Data mapper <button type="button" class="refLink pull-right btn btn-xs btn-default" keys="10.1093/nar/gkae1065"><span class="glyphicon glyphicon-book"></span></button></a></li>
             <!-- SEQUENCES -->
             <li class="divider"></li>
             <li class="nav-header disabled text-left"><a>SEQUENCES</a></li>

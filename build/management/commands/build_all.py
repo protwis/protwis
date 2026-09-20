@@ -49,6 +49,7 @@ class Command(BaseCommand):
             ['build_human_proteins'],
             ['build_blast_database'],
             ['build_other_proteins', {'constructs_only': options['test'] ,'proc': options['proc']}], # build only constructs in test mode
+            ['build_classification_annotations'],
             ['build_annotation', {'proc': options['proc']}],
             ['build_blast_database'],
             ['build_links'],
@@ -90,6 +91,9 @@ class Command(BaseCommand):
             ['build_mammalian_representative'],
             ['upload_excel_bias_pathways'],
             ['build_receptor_similarity'],
+            ['build_treenetwork'],
+            ['build_structure_similarity'],
+            ['build_clustercoord'],
             ['build_ligand_search'],
             ['build_text'],
             ['build_structure_browser_table'],

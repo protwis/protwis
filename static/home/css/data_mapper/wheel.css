@@ -1,0 +1,175 @@
+/**
+ * Data Mapper -- Wheel page-specific styles.
+ * Shared styling lives in core.css.
+ */
+
+#mapper-wheel-paste-zone {
+  padding-left: 14px;
+  overflow: visible;
+}
+.mapper-wheel-toolbar-grid {
+  display: flex;
+  flex-direction: column;
+  row-gap: 6px;
+  width: 360px;
+  max-width: 100%;
+}
+.mapper-core-wheel-toolbar #mapper-wheel-clear-rows:not(.mapper-core-clear-clean):hover {
+  color: #fff;
+  background-color: #a94442;
+  border-color: #843534;
+}
+.mapper-core-wheel-toolbar #mapper-wheel-clear-rows:focus,
+.mapper-core-wheel-toolbar #mapper-wheel-clear-rows:active,
+.mapper-core-wheel-toolbar #mapper-wheel-clear-rows.mapper-core-clear-clean,
+.mapper-core-wheel-toolbar #mapper-wheel-clear-rows.mapper-core-clear-clean:hover,
+.mapper-core-wheel-toolbar #mapper-wheel-clear-rows.mapper-core-clear-clean:focus {
+  color: #fff;
+  background-color: #337ab7;
+  border-color: #2e6da4;
+  outline: none;
+}
+.mapper-core-wheel-toolbar #mapper-wheel-howto-btn {
+  color: #fff;
+  background-color: #f0ad4e;
+  border-color: #eea236;
+  font-weight: 700;
+  padding-left: 7px;
+  padding-right: 7px;
+}
+.mapper-core-wheel-toolbar #mapper-wheel-howto-btn:hover,
+.mapper-core-wheel-toolbar #mapper-wheel-howto-btn:focus {
+  color: #fff;
+  background-color: #ec971f;
+  border-color: #d58512;
+}
+.mapper-core-wheel-left .mapper-core-input-table th.mapper-wheel-th-value .mapper-wheel-value-col-label {
+  margin-right: 3px;
+}
+.mapper-core-wheel-left .mapper-core-input-table th.mapper-wheel-th-value,
+.mapper-core-wheel-left .mapper-core-input-table td.mapper-core-value-cell {
+  width: 82px;
+}
+.mapper-core-wheel-left .mapper-core-input-table .mapper-wheel-in-value.form-control.input-sm {
+  height: 26px;
+  padding: 2px 6px;
+  font-size: 11px;
+  line-height: 1.3;
+}
+.mapper-wheel-gpcrome-plot-wrap {
+  margin-top: 8px;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  text-align: center;
+}
+.mapper-wheel-gpcrome-plot-wrap #GPCRome_plot svg[data-gpcrome-datatype="text"] {
+  /* With `height: auto`, a short viewBox + max-width collapses vertical space; categorical wheels need air */
+  min-height: clamp(520px, 82vh, 1120px);
+}
+.mapper-wheel-gpcrome-plot-wrap #GPCRome_plot svg {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+.mapper-core-input-table tbody td.mapper-wheel-cell-hint-error {
+  border: 2px solid #a94442 !important;
+  background-color: rgba(169, 68, 66, 0.06);
+  cursor: help;
+}
+.mapper-core-input-table tbody td.mapper-wheel-cell-hint-warn {
+  border: 2px solid #e0892e !important;
+  background-color: rgba(224, 137, 46, 0.1);
+  cursor: help;
+}
+#mapper-core-gpcrome-picker-modal .mapper-wheel-picker-dt-note {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 10px;
+}
+.mapper-core-wheel-left .mapper-core-input-table.mapper-core-text-mode th.mapper-wheel-th-value,
+.mapper-core-wheel-left .mapper-core-input-table.mapper-core-text-mode td.mapper-core-value-cell {
+  width: 108px;
+}
+.mapper-core-wheel-left .mapper-core-input-table.mapper-core-text-mode th.mapper-core-th-swatch,
+.mapper-core-wheel-left .mapper-core-input-table.mapper-core-text-mode td.mapper-wheel-swatch-cell {
+  width: 44px;
+  max-width: 44px;
+  text-align: center;
+  vertical-align: middle !important;
+  padding: 2px !important;
+}
+.mapper-core-wheel-left .mapper-core-input-table:not(.mapper-core-text-mode) .mapper-core-th-swatch,
+.mapper-core-wheel-left .mapper-core-input-table:not(.mapper-core-text-mode) td.mapper-wheel-swatch-cell {
+  display: none;
+}
+.mapper-wheel-label-swatch,
+.mapper-wheel-swatch-cell .mapper-wheel-row-swatch-replacer.sp-replacer {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 1px solid #aaa;
+  border-radius: 3px;
+  box-sizing: border-box;
+  vertical-align: middle;
+  background-color: transparent;
+}
+.mapper-wheel-label-swatch.mapper-core-row-color-picker {
+  padding: 0;
+  color: transparent;
+  font-size: 0;
+  cursor: pointer;
+}
+.mapper-wheel-swatch-cell .mapper-wheel-row-swatch-replacer.sp-replacer {
+  margin: 0;
+  padding: 0 !important;
+  overflow: hidden;
+}
+.mapper-wheel-swatch-cell .mapper-wheel-row-swatch-replacer .sp-preview {
+  width: 100% !important;
+  height: 100% !important;
+  margin: 0;
+  border: 0;
+}
+.mapper-wheel-swatch-cell .mapper-wheel-row-swatch-replacer .sp-preview-inner {
+  border-radius: 2px;
+}
+.mapper-wheel-swatch-cell .mapper-wheel-row-swatch-replacer .sp-dd {
+  display: none;
+}
+.mapper-wheel-row-swatch-sp-container.sp-container {
+  z-index: 10060 !important;
+}
+#mapper-wheel-colors-dropdown-menu {
+  overflow: visible;
+}
+#mapper-wheel-colors-dropdown-menu.mapper-core-colors-show-text {
+  width: max-content;
+  min-width: 120px;
+  max-width: min(320px, 92vw);
+  padding: 8px 8px !important;
+}
+#mapper-wheel-colors-dropdown-menu.mapper-core-colors-show-numeric {
+  min-width: 420px;
+  padding: 10px 15px !important;
+  box-sizing: border-box;
+}
+#mapper-wheel-colors-panel-text.mapper-core-colors-text-wrap {
+  min-width: 0;
+}
+.mapper-core-plot-toolbar .mapper-wheel-datalabels-wrap.mapper-wheel-hide-when-numeric {
+  display: none;
+}
+.mapper-core-colors-panel-wrap #mapper-wheel-colors-panel-numeric,
+.mapper-core-colors-panel-wrap #mapper-wheel-colors-panel-text {
+  display: none;
+}
+.mapper-core-colors-panel-wrap.mapper-core-colors-show-numeric #mapper-wheel-colors-panel-numeric {
+  display: block;
+}
+.mapper-core-colors-panel-wrap.mapper-core-colors-show-text #mapper-wheel-colors-panel-text {
+  display: block;
+}
