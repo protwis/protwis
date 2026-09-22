@@ -226,7 +226,12 @@ def PdbTableData(request):
     # 'G alpha' = G proteins (all G protein classes starts with G)
     # 'A' = Arrestin
     if effector:
-        data = Structure.objects.all().prefetch_related(
+        af_model_slugs = {'G alpha': 'af-signprot', 'A': 'af-arrestin'}
+        structure_filter = Q(structure_type__origin='experiment')
+        if effector in af_model_slugs:
+            structure_filter |= Q(structure_type__slug=af_model_slugs[effector])
+
+        data = Structure.objects.filter(structure_filter).prefetch_related(
                 "pdb_code",
                 "state",
                 "stabilizing_agents",
@@ -549,8 +554,9 @@ def PdbTableData(request):
         r['g_protein'] = g_protein
         r['arrestin']  = arrestin
         r['fusion'] = fusion
+        r['antibody_full'] = antibody
         if len(antibody) > 20:
-            antibody = "<span title='{}'>{}</span>".format(antibody, antibody[:20] + "..")
+            antibody = antibody[:20] + ".."
         r['antibody'] = antibody
 
         r['ligand'] = "-"
@@ -561,7 +567,8 @@ def PdbTableData(request):
             r['ligand'] = l.ligand.name
             if len(r['ligand'])>20:
                 r['ligand'] = r['ligand'][:20] + ".."
-            r['ligand_function'] = l.ligand_role.name
+            if l.ligand_role != None:
+                r['ligand_function'] = l.ligand_role.name
             if l.ligand.ligand_type != None:
                 r['ligand_type'] = l.ligand.ligand_type.name
 
@@ -601,7 +608,7 @@ def PdbTableData(request):
                         <td>{r['signal_protein_note']}</td>
                         <td><p class='no_margins' style='color:{r['signal_protein_seq_cons_color']}'>{r['signal_protein_seq_cons']}</p></td>
                         <td>{r['fusion']}</td>
-                        <td>{r['antibody']}</td>
+                        <td title='{r['antibody_full']}'>{r['antibody']}</td>
                         <td>{r['ligand']}</td>
                         <td>{r['ligand_function']}</td>
                         </tr> \n'''

@@ -240,7 +240,7 @@ class GenericNumbering(object):
                     continue
                 # alignment[0] (the matched protein id) is constant across all hsps of
                 # this alignment, so look it up once instead of once per hsps.
-                if not Protein.objects.get(id=alignment[0]).family.slug.startswith('00'):
+                if not Protein.objects.get(id=alignment[0]).family.slug.startswith('0'):
                     continue
                 for hsps in alignment[1].hsps:
                     self.map_blast_seq(alignment[0], hsps, chain)

@@ -1937,7 +1937,7 @@ class Command(BaseBuild):
 
                     # structure-ligand interaction
                     if l and ligand['role']:
-                        lr = find_role(ligand['role'])[0]
+                        lr = None if ligand['name'] == 'apo' else find_role(ligand['role'])[0]
                         # role_slug = slugify(ligand['role'])
                         # try:
                         #     lr, created = LigandRole.objects.get_or_create(slug=role_slug,
@@ -2198,7 +2198,7 @@ class Command(BaseBuild):
                         if 'NAG' in data_results:
                             del data_results['NAG']
                         ligand_role = None
-                        if ligand.get('role'):
+                        if ligand.get('role') and ligand['name'] != 'apo':
                             role_qs = find_role(ligand['role'])
                             if role_qs.exists():
                                 ligand_role = role_qs[0]

@@ -72,13 +72,13 @@
                             </td>
                             {% else %}
                             <td class="ali-td ali-td-first-col">
-                                {{ p.identity }}
+                                {{ p.identity|floatformat:-1 }}
                             </td>
                             <td class="ali-td ali-td-first-col">
-                                {{ p.similarity }}
+                                {{ p.similarity|floatformat:-1 }}
                             </td>
                             <td class="ali-td ali-td-first-col">
-                                {{ p.similarity_score }}
+                                {{ p.similarity_score|floatformat:0 }}
                             </td>
                             {% endif %}
                         </tr>
