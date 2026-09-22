@@ -67,6 +67,14 @@
         },
     };
 
+    // Class badges (and their pill backgrounds) are drawn by DrawGPCRomeWheel itself now; this
+    // nudge -- shared by all 3 tabs, which all share the same class set -- preserves the existing
+    // A/Unclassified badge positioning.
+    var CLASS_BADGE_NUDGE = { A: { dx: 0, dy: 1 }, Unclassified: { dx: -15, dy: 0 } };
+    Object.keys(WHEELS).forEach(function (key) {
+        WHEELS[key].styling.badgeNudge = CLASS_BADGE_NUDGE;
+    });
+
     COVERAGE_CATEGORIES.forEach(function (cat) {
         WHEELS.coverage.categoryColors[cat.key] = cat.color;
     });
@@ -92,83 +100,6 @@
         Two: { setup: "Two", colorStart: "#0066ff", colorEnd: "#ff3300" },
     };
     var DEFAULT_NUMERIC_PRESET_KEY = "Two";
-
-    // ---- Class-ring badge pills, ported from data_mapper/mapper_gpcrome_page.js's
-    // mapperWheelAddClassBadgePillsAfterDraw (that page has the exact same need: neutral white
-    // pills behind each class-ring label, since neither page colors "by class"). Kept inline
-    // here rather than a shared file -- it's ~30 lines, not worth a whole module for.
-    function badgeNormKey(code) {
-        if (code === undefined || code === null) return "";
-        var s = String(code).trim();
-        if (!s || s.toLowerCase() === "nan") return "";
-        return s;
-    }
-
-    function classDisplayShortLabel(code) {
-        var k = badgeNormKey(code);
-        if (!k) return "";
-        if (k === "Unclassified") return "U";
-        if (/^(A|B1|B2|C|F|T2|V)$/i.test(k)) return k.toUpperCase();
-        return k;
-    }
-
-    // Per-class cosmetic nudges for the badge pill+text (px, SVG space: +x = right, +y = down).
-    // Purely visual fine-tuning, expected to keep changing by eye.
-    var CLASS_BADGE_NUDGE = {
-        A: { dx: 0, dy: 1 },
-        Unclassified: { dx: -15, dy: 0 },
-    };
-
-    function addClassBadgePills(locationId) {
-        var svg = d3v4.select("#" + locationId + "_svg");
-        if (svg.empty()) return;
-
-        svg.selectAll("text")
-            .filter(function () {
-                var cls = (this.getAttribute && this.getAttribute("class")) ? this.getAttribute("class") : "";
-                // datamapper: class ring labels use `GPCRome-text-{level}-highlight` only
-                return /GPCRome-text-\d+-highlight/.test(cls) && cls.indexOf("GPCRome-family-label") === -1;
-            })
-            .each(function (d) {
-                try {
-                    var txt = d3v4.select(this);
-                    var rawClass = badgeNormKey(d) || badgeNormKey(this.textContent);
-                    if (!rawClass) return;
-
-                    txt.text(classDisplayShortLabel(rawClass));
-                    txt.style("fill", "#000");
-
-                    var node = txt.node();
-                    if (!node) return;
-                    var bb = node.getBBox();
-                    var padX = 3, padY = 1;
-                    var g = node.parentNode;
-                    if (!g || !g.insertBefore) return;
-
-                    var rectNode = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-                    rectNode.setAttribute("x", String(bb.x - padX));
-                    rectNode.setAttribute("y", String(bb.y - padY));
-                    rectNode.setAttribute("width", String(bb.width + padX * 2));
-                    rectNode.setAttribute("height", String(bb.height + padY * 2));
-                    rectNode.setAttribute("rx", "9");
-                    rectNode.setAttribute("ry", "9");
-                    rectNode.setAttribute("fill", "#ffffff");
-                    rectNode.setAttribute("fill-opacity", "1");
-                    rectNode.setAttribute("stroke", "#000");
-                    rectNode.setAttribute("stroke-width", "0.75px");
-                    g.insertBefore(rectNode, node);
-
-                    var nudge = CLASS_BADGE_NUDGE[rawClass];
-                    if (nudge) {
-                        var tPrev = txt.attr("transform") || "";
-                        txt.attr("transform", (tPrev ? (tPrev + " ") : "") + "translate(" + nudge.dx + "," + nudge.dy + ")");
-                        rectNode.setAttribute("transform", "translate(" + nudge.dx + "," + nudge.dy + ")");
-                    }
-                } catch (e) {
-                    // ignore -- purely cosmetic
-                }
-            });
-    }
 
     // ---- Coverage wheel's own legend: top-right corner (blank space above the circular plot),
     // with the "Structure coverage" title restored as part of the drawn legend instead of a
@@ -234,8 +165,6 @@
         if (!wheel || !wheel.data) return;
         d3.select("#" + wheel.locationId).select("svg").remove();
         DrawGPCRomeWheel(wheel.data, wheel.locationId, wheel.styling);
-
-        addClassBadgePills(wheel.locationId);
 
         if (key === "coverage") {
             var legendCategories = COVERAGE_CATEGORIES.map(function (cat) {

@@ -2240,111 +2240,6 @@ function mapperWheelPreprocessClassicWheelData(data) {
   return data;
 }
 
-function mapperWheelWheelBadgeNormKey(code) {
-  if (code === undefined || code === null) {
-    return '';
-  }
-  var s = String(code).trim();
-  if (!s || s.toLowerCase() === 'nan') {
-    return '';
-  }
-  return s;
-}
-
-function mapperWheelWheelClassDisplayShortLabel(code) {
-  var k = mapperWheelWheelBadgeNormKey(code);
-  if (!k) {
-    return '';
-  }
-  if (k === 'Unclassified') {
-    return 'U';
-  }
-  if (/^(A|B1|B2|C|F|T2|V)$/i.test(k)) {
-    return k.toUpperCase();
-  }
-  return k;
-}
-
-function mapperWheelWheelUiD3() {
-  return typeof d3v4 !== 'undefined' ? d3v4 : d3;
-}
-
-function mapperWheelMapperClassBadgeFill(classCode) {
-  /* Class badges stay neutral; Numeric/Text data colours should be the only coloured accents. */
-  return '#ffffff';
-}
-
-function mapperWheelAddClassBadgePillsAfterDraw(locationId) {
-  var d3pick = mapperWheelWheelUiD3();
-  var svgSel = d3pick.select('#' + locationId + '_svg');
-  if (!svgSel || svgSel.empty()) {
-    return;
-  }
-  var UNCLASSIFIED_BADGE_DX = -15;
-
-  svgSel.selectAll('text')
-    .filter(function() {
-      var el = this;
-      var cls = (el.getAttribute && el.getAttribute('class')) ? el.getAttribute('class') : '';
-      /* datamapper: class ring labels use `GPCRome-text-{level}-highlight` only */
-      return /GPCRome-text-\d+-highlight/.test(cls) && cls.indexOf('GPCRome-family-label') === -1;
-    })
-    .each(function(d) {
-      try {
-        var txt = d3pick.select(this);
-        var rawClass = mapperWheelWheelBadgeNormKey(d);
-        if (!rawClass) {
-          rawClass = mapperWheelWheelBadgeNormKey(this.textContent);
-        }
-        if (!rawClass) {
-          return;
-        }
-        var classKey = mapperWheelWheelBadgeNormKey(rawClass);
-        txt.text(mapperWheelWheelClassDisplayShortLabel(rawClass));
-        txt.style('fill', '#000');
-
-        var fill = mapperWheelMapperClassBadgeFill(rawClass);
-        var fillOpacity = 1;
-        var node = txt.node();
-        if (!node) {
-          return;
-        }
-        var bb = node.getBBox();
-        var padX = 3;
-        var padY = 1;
-        var g = node.parentNode;
-        if (!g || !g.insertBefore) {
-          return;
-        }
-        var rectNode = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-        rectNode.setAttribute('x', String(bb.x - padX));
-        rectNode.setAttribute('y', String(bb.y - padY));
-        rectNode.setAttribute('width', String(bb.width + padX * 2));
-        rectNode.setAttribute('height', String(bb.height + padY * 2));
-        rectNode.setAttribute('rx', '9');
-        rectNode.setAttribute('ry', '9');
-        rectNode.setAttribute('fill', fill);
-        rectNode.setAttribute('fill-opacity', String(fillOpacity));
-        rectNode.setAttribute('stroke', '#000');
-        rectNode.setAttribute('stroke-width', '0.75px');
-        g.insertBefore(rectNode, node);
-
-        if (classKey === 'Unclassified') {
-          var tPrev = txt.attr('transform') || '';
-          txt.attr('transform', (tPrev ? (tPrev + ' ') : '') + 'translate(' + UNCLASSIFIED_BADGE_DX + ',0)');
-          rectNode.setAttribute('transform', 'translate(' + UNCLASSIFIED_BADGE_DX + ',0)');
-        }
-      } catch (e) {
-        /* ignore pill layout errors */
-      }
-    });
-}
-
-function mapperWheelDrawGPCRomeWithClassBadges(data, locationId, styling) {
-  DrawGPCRomeWheel(data, locationId, styling);
-  mapperWheelAddClassBadgePillsAfterDraw(locationId);
-}
-
 mapperWheelPreprocessClassicWheelData(GPCRome_WheelDict);
 /** Deep copy of empty wheel JSON; Apply clones this and merges user values without re-fetching. */
 var MAPPER_WHEEL_GPCROME_BASE = JSON.parse(JSON.stringify(GPCRome_WheelDict));
@@ -2563,7 +2458,7 @@ function mapperWheelRecolorExistingWheelNumericValues() {
 
 function updateGPCRome() {
   d3.select("#" + GPCRome_location).select("svg").remove();
-  mapperWheelDrawGPCRomeWithClassBadges(GPCRome_WheelDict, GPCRome_location, GPCRomes_styling);
+  DrawGPCRomeWheel(GPCRome_WheelDict, GPCRome_location, GPCRomes_styling);
 }
 
 if (true) {
@@ -2585,10 +2480,13 @@ if (true) {
     showIcon: true,
     LabelType: "Protein",
     ShowLegend: true,
-    LegendLayout: { mode: 'row', columns: '1', sorted: 'Vertically' }
+    LegendLayout: { mode: 'row', columns: '1', sorted: 'Vertically' },
+    // Class badges (and their pill backgrounds) are drawn by DrawGPCRomeWheel itself; this nudge
+    // preserves the Unclassified badge's existing left-shift.
+    badgeNudge: { Unclassified: { dx: -15, dy: 0 } }
   };
   mapperWheelRecalcNumericStyling();
-  mapperWheelDrawGPCRomeWithClassBadges(GPCRome_WheelDict, GPCRome_location, GPCRomes_styling);
+  DrawGPCRomeWheel(GPCRome_WheelDict, GPCRome_location, GPCRomes_styling);
 }
 
 document.addEventListener('DOMContentLoaded', function () {
