@@ -27,6 +27,7 @@ from django.db.models import Q, Count, Subquery, OuterRef, Value, CharField
 from django.db.models.functions import Coalesce, Concat
 from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import ValidationError
+from django.utils.html import escape
 from django_rdkit.models import *
 from django.core.cache import cache
 
@@ -3243,12 +3244,13 @@ class AbsLigand(TemplateView):
     @staticmethod
     def get_related_ligands(ligand_id):
         _assay_count = Count(Concat('assayexperiment__protein_id', Value('|'), 'assayexperiment__source', Value('|'), 'assayexperiment__value_type', output_field=CharField()), distinct=True, filter=Q(assayexperiment__isnull=False) & ~Q(assayexperiment__value_type='-'))
-        this_ligand = Ligand.objects.filter(gpcrdb_id=ligand_id).prefetch_related('ligand_type').annotate(assay_count=_assay_count, structure_count=Count('structureligandinteraction'))
+        _model_structure_count = Count('ligandpeptidestructure', filter=Q(ligandpeptidestructure__structure__structure_type__origin='model'), distinct=True)
+        this_ligand = Ligand.objects.filter(gpcrdb_id=ligand_id).prefetch_related('ligand_type').annotate(assay_count=_assay_count, structure_count=Count('structureligandinteraction'), model_structure_count=_model_structure_count)
         if this_ligand[0].parent:
-            parent_ligand = Ligand.objects.filter(id=this_ligand[0].parent.id).prefetch_related('ligand_type').annotate(assay_count=_assay_count, structure_count=Count('structureligandinteraction'))[0]
+            parent_ligand = Ligand.objects.filter(id=this_ligand[0].parent.id).prefetch_related('ligand_type').annotate(assay_count=_assay_count, structure_count=Count('structureligandinteraction'), model_structure_count=_model_structure_count)[0]
         else:
             parent_ligand = this_ligand[0]
-        children = Ligand.objects.filter(parent=parent_ligand).prefetch_related('ligand_type').annotate(assay_count=_assay_count, structure_count=Count('structureligandinteraction'))
+        children = Ligand.objects.filter(parent=parent_ligand).prefetch_related('ligand_type').annotate(assay_count=_assay_count, structure_count=Count('structureligandinteraction'), model_structure_count=_model_structure_count)
 
         ### Keeping this line for debugging - shows also parent object on group page
         # ligands = [parent_ligand]+list(children)
@@ -3268,6 +3270,14 @@ class LigandGroup(AbsLigand):
 
         return super().get(request, *args, **kwargs)
 
+    @staticmethod
+    def _attr_line(value, label, max_len=None):
+        if value in (None, '', '-'):
+            return None
+        text = str(value)
+        display = text if not max_len or len(text) <= max_len else text[:max_len] + '…'
+        return f'<div class="lig-attr" title="{escape(text)}"><span class="lig-attr-label">{label}:</span> {escape(display)}</div>'
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
@@ -3277,27 +3287,30 @@ class LigandGroup(AbsLigand):
             mutations = MutationExperiment.objects.filter(ligand=l).count()
             assay_count = l.assay_count
             structure_count = l.structure_count
+            structure_model_count = l.model_structure_count
             drug_indications = l.drugs_set.all().count()
-            lig_dict = {'ligand_object':None, 'chemical_properties':0, 'chemical_identifiers':0, 'bioactivities':assay_count, 
-                        'structures':structure_count, 'sequence':None, 'gpcrdb_id':l.gpcrdb_id, 'db_ids':ids, 'drug_indications':drug_indications, 'mutations':mutations}
-            if l.hacc!=None:
-                lig_dict['chemical_properties']+=1
-            if l.hdon!=None:
-                lig_dict['chemical_properties']+=1
-            if l.logp:
-                lig_dict['chemical_properties']+=1
-            if l.mw:
-                lig_dict['chemical_properties']+=1
-            if l.rotatable_bonds!=None:
-                lig_dict['chemical_properties']+=1
-            if l.stereo_status:
-                lig_dict['chemical_properties']+=1
-            if l.inchikey:
-                lig_dict['chemical_identifiers']+=1
-            if l.smiles:
-                lig_dict['chemical_identifiers']+=1
-            if l.helm:
-                lig_dict['chemical_identifiers']+=1
+            is_peptide_like = l.ligand_type.slug in ['peptide', 'protein'] and bool(l.sequence)
+            lig_dict = {'ligand_object':None, 'chemical_properties':None, 'chemical_identifiers':None, 'bioactivities':assay_count,
+                        'structures':structure_count, 'structure_models':structure_model_count, 'sequence':None, 'gpcrdb_id':l.gpcrdb_id, 'db_ids':ids, 'drug_indications':drug_indications, 'mutations':mutations,
+                        'ligand_type': 'peptide' if is_peptide_like else 'small_molecule'}
+
+            identifier_lines = [self._attr_line(l.inchikey, "InChIKey", max_len=27)]
+            if is_peptide_like:
+                identifier_lines.append(self._attr_line(l.helm, "HELM", max_len=30))
+            else:
+                identifier_lines.append(self._attr_line(l.smiles, "SMILES", max_len=30))
+            identifier_lines = [line for line in identifier_lines if line]
+            lig_dict['chemical_identifiers'] = ''.join(identifier_lines) if identifier_lines else None
+
+            if not is_peptide_like:
+                property_lines = [
+                    self._attr_line(l.logp, "Log P"),
+                    self._attr_line(l.mw, "MW"),
+                    self._attr_line(l.stereo_status, "Stereo"),
+                ]
+                property_lines = [line for line in property_lines if line]
+                lig_dict['chemical_properties'] = ''.join(property_lines) if property_lines else None
+
             if l.sequence:
                 lig_dict['sequence'] = l.sequence
 
@@ -3317,28 +3330,7 @@ class LigandGroup(AbsLigand):
                 icon = '<i class="bi bi-radioactive" style="display: inline-block; width: 1em; height: 1em; line-height: 1; background-color: yellow; border-radius: 50%; font-size: 14px; margin-right: 4px;"data-html="true" data-toggle="popover" data-trigger="hover" data-placement="right" data-content="Radioactive ligand"></i>'
             else:
                 icon = ''
-            if l.ligand_type.slug in ['peptide', 'protein'] and l.sequence:
-                lig_dict['ligand_object'] = f"""{icon}<a class="struct"
-                                                    href='/ligand/{l.gpcrdb_id}/info'
-                                                    data-ligand-type="peptide"
-                                                    data-sequence="{l.sequence}">
-                                                    {l.name}
-                                                </a>"""
-            else:
-                if l.smiles:
-                    lig_dict['ligand_object'] = f"""{icon}<a class="struct"
-                                                        href='/ligand/{l.gpcrdb_id}/info'
-                                                        data-smiles="{smiles_for_image}"
-                                                        rel="{picture_flag}">
-                                                        {l.name}
-                                                    </a>"""
-                else:
-                    lig_dict['ligand_object'] = f"""{icon}<a class="struct"
-                                                        href='/ligand/{l.gpcrdb_id}/info'
-                                                        data-smiles=""
-                                                        rel="Not_available">
-                                                        {l.name}
-                                                    </a>"""
+            lig_dict['ligand_object'] = f"""{icon}{l.name}"""
 
         context.update({'ligands': json.dumps(ligands_parsed)})
         context.update({'this_ligand': self.this_ligand[0]})
@@ -3364,6 +3356,7 @@ class LigandInformationView(AbsLigand):
             'protein__family__parent__parent', 'protein__family', 'protein__species'))
         context = dict()
         structures = LigandInformationView.get_structure(ligand_data)
+        model_structures = LigandInformationView.get_model_structures(ligand_data)
         ligand_data = LigandInformationView.process_ligand(ligand_data, endogenous_ligands)
         assay_data_affinity, assay_data_potency = LigandInformationView.process_assay(assay_data)
         mutations = LigandInformationView.get_mutations(ligand_data)
@@ -3375,6 +3368,7 @@ class LigandInformationView(AbsLigand):
         #     endo_values = LigandInformationView.process_endo(endo_data)
         #     assay_data = assay_data + endo_values
         context.update({'structure': structures})
+        context.update({'model_structures': model_structures})
         context.update({'ligand': ligand_data})
         # Convert assay data to JSON
         if len(assay_data_affinity) > 0:
@@ -3748,6 +3742,21 @@ class LigandInformationView(AbsLigand):
         return return_list
 
     @staticmethod
+    def get_model_structures(ligand):
+        interactions = LigandPeptideStructure.objects.filter(
+            ligand=ligand, structure__structure_type__origin='model'
+        ).select_related('structure__structure_type', 'structure__pdb_code',
+                          'structure__protein_conformation__protein')
+        grouped = dict()
+        for i in interactions:
+            type_name = i.structure.structure_type.name
+            grouped.setdefault(type_name, []).append({
+                'structure_pdb': i.structure.pdb_code.index,
+                'receptor_name': i.structure.protein_conformation.protein.short(),
+            })
+        return grouped
+
+    @staticmethod
     def get_mutations(ligand):
         return_set = set()
         return_list = list()
@@ -3943,7 +3952,7 @@ class LigandInformationView(AbsLigand):
             to_be_sorted = {}
             for i in ligand_data.ids.all():
                 to_be_sorted[i.web_resource.name] = {'name': i.web_resource.name, "link": str(i)}
-            tmp = sorted(to_be_sorted.items(), key=lambda pair: sorted_list.index(pair[0]))
+            tmp = sorted(to_be_sorted.items(), key=lambda pair: sorted_list.index(pair[0]) if pair[0] in sorted_list else len(sorted_list))
             for i in tmp:
                 ld['wl'].append(i[1])
         else:
