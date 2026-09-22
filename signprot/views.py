@@ -2155,14 +2155,19 @@ def InteractionMatrix(request, database='gprotein'):
         'structure__protein_conformation__protein__parent__parent__parent',
         'structure__protein_conformation__protein__family__parent__parent__parent__parent',
         'structure__stabilizing_agents',
-        'structure__signprot_complex__protein__family__parent',
-        'structure__signprot_complex__protein__family__parent__parent__parent__parent',
+        'protein__family__parent',
+        'protein__family__parent__parent__parent__parent',
     )
 
     complex_info = []
-    for s in struc:
+    # Iterate the SignprotComplex rows directly (already filtered to this database's protein
+    # family) -- a structure can have more than one SignprotComplex (e.g. a structure with both a
+    # G-protein and an arrestin bound), so Structure.signprot_complex (a single-valued "primary
+    # complex" pointer) is not guaranteed to be the same row being iterated here and must not be
+    # used in its place.
+    for complex_obj in struc:
         r = {}
-        s = s.structure
+        s = complex_obj.structure
         r['pdb_id'] = s.pdb_code.index
         try:
             r['name'] = s.protein_conformation.protein.parent.short()
@@ -2177,11 +2182,11 @@ def InteractionMatrix(request, database='gprotein'):
         r['conf_id'] = s.protein_conformation.id
         r['organism'] = s.protein_conformation.protein.species.common_name
         if database=='gprotein':
-            r['gprot'] = definitions.G_PROTEIN_DISPLAY_NAME[s.signprot_complex.protein.entry_name.split('_')[0].upper()]#s.get_stab_agents_gproteins()
+            r['gprot'] = definitions.G_PROTEIN_DISPLAY_NAME[complex_obj.protein.entry_name.split('_')[0].upper()]#s.get_stab_agents_gproteins()
         elif database=='arrestin':
-            r['gprot'] = definitions.ARRESTIN_DISPLAY_NAME[s.signprot_complex.protein.entry_name.split('_')[0]]
+            r['gprot'] = definitions.ARRESTIN_DISPLAY_NAME[complex_obj.protein.entry_name.split('_')[0]]
         try:
-            r['gprot_class'] = s.signprot_complex.protein.family.parent.name#s.get_signprot_gprot_family()
+            r['gprot_class'] = complex_obj.protein.family.parent.name#s.get_signprot_gprot_family()
         except Exception:
             r['gprot_class'] = ''
         complex_info.append(r)
