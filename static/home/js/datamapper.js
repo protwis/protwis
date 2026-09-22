@@ -91,6 +91,10 @@ function update_tree_data(data,depth) {
     return data
 }
 
+// Shared pill styling for "badge" labels (class/branch-level text with a rounded background),
+// used by both DrawGPCRomeWheel's drawClassBadges() and draw_tree()'s interior-node labels.
+const BADGE_PILL_STYLE = { padX: 3, padY: 1, rx: 9, ry: 9, stroke: "#000", strokeWidth: "0.75px" };
+
 // Draw the Tree
 function draw_tree(data, options) {
 
@@ -220,12 +224,19 @@ function draw_tree(data, options) {
             else { return "#222"; };
         }).call(getBB);
 
-    node.filter(function (d) { return (d.depth !== options.depth) }).insert("rect", "text")
-        .attr("x", function (d) { return d.x < 180 ? d.bbox.x - 12 : d.bbox.x - d.bbox.width - 12; })
-        .attr("y", function (d) { return d.bbox.y; })
-        .attr("width", function (d) { return d.bbox.width; })
-        .attr("height", function (d) { return d.bbox.height; })
-        .style("fill", "#FFF");
+    // Skip the root (depth 0) and any other node whose label renders empty (e.g. an
+    // options.label_free depth) -- otherwise an empty label's near-zero bbox still gets a pill,
+    // showing up as a stray dot (most visibly at the plot's center, where the branches originate).
+    node.filter(function (d) { return (d.depth !== options.depth) && d.bbox && d.bbox.width > 0 }).insert("rect", "text")
+        .attr("x", function (d) { return (d.x < 180 ? d.bbox.x - 12 : d.bbox.x - d.bbox.width - 12) - BADGE_PILL_STYLE.padX; })
+        .attr("y", function (d) { return d.bbox.y - BADGE_PILL_STYLE.padY; })
+        .attr("width", function (d) { return d.bbox.width + BADGE_PILL_STYLE.padX * 2; })
+        .attr("height", function (d) { return d.bbox.height + BADGE_PILL_STYLE.padY * 2; })
+        .attr("rx", BADGE_PILL_STYLE.rx)
+        .attr("ry", BADGE_PILL_STYLE.ry)
+        .style("fill", "#FFF")
+        .style("stroke", function (d) { return d.color || BADGE_PILL_STYLE.stroke; })
+        .style("stroke-width", BADGE_PILL_STYLE.strokeWidth);
 
     function step(startAngle, startRadius, endAngle, endRadius) {
         var c0 = Math.cos(startAngle = (startAngle - 90) / 180 * Math.PI),
@@ -3970,8 +3981,8 @@ function DrawGPCRomeWheel(Data, location, GPCRome_styling) {
                     try {
                         const node = this;
                         const bb = node.getBBox();
-                        const padX = 3;
-                        const padY = 1;
+                        const padX = BADGE_PILL_STYLE.padX;
+                        const padY = BADGE_PILL_STYLE.padY;
                         const g = node.parentNode;
                         if (!g) return;
 
@@ -3980,12 +3991,12 @@ function DrawGPCRomeWheel(Data, location, GPCRome_styling) {
                         rect.setAttribute("y", bb.y - padY);
                         rect.setAttribute("width", bb.width + padX * 2);
                         rect.setAttribute("height", bb.height + padY * 2);
-                        rect.setAttribute("rx", 9);
-                        rect.setAttribute("ry", 9);
+                        rect.setAttribute("rx", BADGE_PILL_STYLE.rx);
+                        rect.setAttribute("ry", BADGE_PILL_STYLE.ry);
                         rect.setAttribute("fill", badgeFill(d));
                         rect.setAttribute("fill-opacity", badgeFillOpacity(d));
-                        rect.setAttribute("stroke", "#000");
-                        rect.setAttribute("stroke-width", "0.75px");
+                        rect.setAttribute("stroke", BADGE_PILL_STYLE.stroke);
+                        rect.setAttribute("stroke-width", BADGE_PILL_STYLE.strokeWidth);
                         g.insertBefore(rect, node);
 
                         const nudge = badgeNudge[d];
