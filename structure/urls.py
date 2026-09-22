@@ -76,5 +76,6 @@ urlpatterns = [
     ### LEGACY LINKS ###
     url(r'^gprot_statistics$', cache_page(60*60*24)(StructureStatistics.as_view(origin='gprotein')), name='structure_statistics'),
     url(r'^arrestin_statistics$', cache_page(60*60*24)(StructureStatistics.as_view(origin='arrestin')), name='structure_statistics'),
-    url(r'^homology_models/$', cache_page(60*60*24)(ServeHomologyModels.as_view()), name='homology_models')
+    url(r'^homology_models/$', cache_page(60*60*24)(ServeHomologyModels.as_view()), name='homology_models'),
+    url(r'^homology_models/view/(?P<modelname>\w+)_(?P<state>\w+)$', ServeHomModDiagram, name='hommod_serve_view')
 ]
