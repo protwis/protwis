@@ -65,47 +65,6 @@
       margin-top: 20px;
       margin-bottom: 20px;
   }
-
-  /* ---- GPCR list tab (merged in from the former GPCRBrowser page) ---- */
-  #gpcrListTable thead th { text-align: center; vertical-align: middle; }
-  #gpcrListTable { width: auto !important; table-layout: auto; }
-  .gpcr-table-container { text-align: center; margin-top: 20px; }
-  .gpcr-table-inner { display: inline-block; }
-  #gpcrExportButtons { width: 100%; text-align: right; margin-bottom: 6px; }
-
-  #gpcrListTable thead th:nth-child(5),
-  #gpcrListTable tbody td:nth-child(5) {
-    max-width: 260px;
-    white-space: normal;
-    overflow-wrap: normal;
-    word-break: normal;
-    hyphens: none;
-  }
-
-  #gpcrListTable thead th:nth-child(3),
-  #gpcrListTable tbody td:nth-child(3),
-  #gpcrListTable thead th:nth-child(6),
-  #gpcrListTable tbody td:nth-child(6),
-  #gpcrListTable thead th:nth-child(7),
-  #gpcrListTable tbody td:nth-child(7),
-  #gpcrListTable thead th:nth-child(8),
-  #gpcrListTable tbody td:nth-child(8) {
-    white-space: nowrap;
-    overflow-wrap: normal;
-    word-break: normal;
-    hyphens: none;
-  }
-
-  #gpcrExportButtons .dt-buttons{ float: none; display: inline-block; }
-
-  .unique-count-row th{
-    font-size: 12px;
-    font-weight: normal;
-    color: #666;
-    padding-top: 4px;
-    padding-bottom: 6px;
-  }
-  .unique-count-row .unique-count { cursor: help; }
 </style>
 {% endblock %}
 
@@ -117,63 +76,15 @@
   {% endif %}
 
   <ul class="nav nav-tabs" role="tablist">
-    <li class="active"><a href="#tab-gpcr-list" data-toggle="tab">GPCR list</a></li>
-    <li><a href="#tab-classes" data-toggle="tab">GPCR classes</a></li>
+    <li class="active"><a href="#tab-classes" data-toggle="tab">GPCR classes</a></li>
     <li><a href="#tab-ligand" data-toggle="tab">Modality and Chemotype</a></li>
     <li><a href="#tab-families" data-toggle="tab">Receptor families</a></li>
   </ul>
 
   <div class="tab-content">
 
-    <!-- ========== 0) GPCR LIST (merged in from the former GPCRBrowser page) ========== -->
-    <div role="tabpanel" class="tab-pane active" id="tab-gpcr-list">
-      <div class="gpcr-table-container">
-      <div class="gpcr-table-inner">
-        <div id="gpcrExportButtons"></div>
-      <table id="gpcrListTable" class="table table-bordered table-striped table-hover dt-center">
-        <thead>
-          <tr>
-            <th>GPCR<br>(UniProt)</th>
-            <th>GPCR<br>(Gene)</th>
-            <th>GPCR<br>(GtoPdb)</th>
-            <th>Class</th>
-            <th>Family</th>
-            <th>Modality</th>
-            <th>Chemotype</th>
-            <th>Sense</th>
-            <th>Sequence</th>
-          </tr>
-          <tr class="unique-count-row">
-            <th data-dt-order="disable"><span class="unique-count" data-col-key="uniprot" data-toggle="tooltip" data-html="true" data-placement="top" title="Unique value count<br>(Total unique unfiltered count)">—</span></th>
-            <th data-dt-order="disable"><span class="unique-count" data-col-key="gene" data-toggle="tooltip" data-html="true" data-placement="top" title="Unique value count<br>(Total unique unfiltered count)">—</span></th>
-            <th data-dt-order="disable"><span class="unique-count" data-col-key="protein_name_text" data-toggle="tooltip" data-html="true" data-placement="top" title="Unique value count<br>(Total unique unfiltered count)">—</span></th>
-            <th data-dt-order="disable"><span class="unique-count" data-col-key="class" data-toggle="tooltip" data-html="true" data-placement="top" title="Unique value count<br>(Total unique unfiltered count)">—</span></th>
-            <th data-dt-order="disable"><span class="unique-count" data-col-key="family" data-toggle="tooltip" data-html="true" data-placement="top" title="Unique value count<br>(Total unique unfiltered count)">—</span></th>
-            <th data-dt-order="disable"><span class="unique-count" data-col-key="modality" data-toggle="tooltip" data-html="true" data-placement="top" title="Unique value count<br>(Total unique unfiltered count)">—</span></th>
-            <th data-dt-order="disable"><span class="unique-count" data-col-key="chemotype" data-toggle="tooltip" data-html="true" data-placement="top" title="Unique value count<br>(Total unique unfiltered count)">—</span></th>
-            <th data-dt-order="disable"><span class="unique-count" data-col-key="sense" data-toggle="tooltip" data-html="true" data-placement="top" title="Unique value count<br>(Total unique unfiltered count)">—</span></th>
-            <th data-dt-order="disable"></th>
-          </tr>
-          <tr class="filter-row">
-            <th data-dt-order="disable"></th>
-            <th data-dt-order="disable"></th>
-            <th data-dt-order="disable"></th>
-            <th data-dt-order="disable"></th>
-            <th data-dt-order="disable"></th>
-            <th data-dt-order="disable"></th>
-            <th data-dt-order="disable"></th>
-            <th data-dt-order="disable"></th>
-            <th data-dt-order="disable"></th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-      </div>
-      </div>
-    </div>
-
     <!-- ========== 1) CLASSES (Static table) ========== -->
-    <div role="tabpanel" class="tab-pane" id="tab-classes">
+    <div role="tabpanel" class="tab-pane active" id="tab-classes">
       <div class="row class-wrapper">
         <div class="col-sm-10 col-sm-offset-1">
           <table id="classesTable" class="table table-bordered dt-center" width="100%">
@@ -292,188 +203,9 @@
 </div><!-- /.container -->
 {% endblock %}
 {% block addon_js %}
-{# Needed for the GPCR list tab's DataTables Buttons excelHtml5 export #}
-<script src="{% static 'home/js/FileSaver.min.js' %}"></script>
-<script src="{% static 'home/js/jszip.min.js' %}"></script>
 <script src="{% static 'home/js/NewDrugsBrowser_datatables.min.js' %}"></script>
-<script src="{% static 'home/js/buttons.html5.min.js' %}"></script>
 <script src="{% static 'home/js/select2_4.1.0-rc.0_full.js' %}"></script>
 <script src="{% static 'home/js/NorgesDTFilterBuilder.new.js' %}"></script>
-
-<script>
-  var gpcrRows = JSON.parse("{{ gpcr_rows|escapejs }}");
-
-  $(function () {
-    var COL_KEYS = ['uniprot','gene','protein_name_text','class','family','modality','chemotype','sense'];
-
-    function normalizeValue(v) {
-      if (v === null || v === undefined) return '';
-      return String(v).trim();
-    }
-
-    function uniqueCount(rows, key) {
-      var seen = new Set();
-      for (var i = 0; i < rows.length; i++) {
-        var s = normalizeValue(rows[i] && rows[i][key]);
-        if (!s) continue; // ignore empty/blank values
-        seen.add(s);
-      }
-      return seen.size;
-    }
-
-    var totalUniqueByKey = {};
-    for (var k = 0; k < COL_KEYS.length; k++) {
-      var key = COL_KEYS[k];
-      totalUniqueByKey[key] = uniqueCount(gpcrRows, key);
-    }
-
-    function initUniqueCountTooltips() {
-      // Always keep a native title tooltip; use Bootstrap tooltip if available.
-      if ($.fn.tooltip) {
-        $('.unique-count-row [data-toggle="tooltip"]').tooltip({ container: 'body', html: true });
-      }
-    }
-
-    var dt = $('#gpcrListTable').DataTable({
-      data: gpcrRows,
-      columns: [
-        {
-          data: 'uniprot',
-          render: function(d, type, row){
-            // Note: NorgesDTFilterBuilder calls render() without a row object.
-            if (type === 'display' && row && row.entry_name) {
-              return '<a href="/protein/' + row.entry_name + '">' + (d || '') + '</a>';
-            }
-            return d || '';
-          }
-        },
-        { data: 'gene' },
-        {
-          // Use plain text as the underlying data so filters/export have a stable value,
-          // while display can render the HTML name when the row object is available.
-          data: 'protein_name_text',
-          render: function(d, type, row){
-            // Note: NorgesDTFilterBuilder calls render() without a row object.
-            if (type === 'display' && row && row.protein_name_html) {
-              return row.protein_name_html;
-            }
-            return d || '';
-          }
-        },
-        { data: 'class' },
-        {
-          data: 'family',
-          render: function (d, type) {
-            // Keep hyphenated names on one line in the UI (e.g. α2A‑adrenoceptor, 5‑Hydroxytryptamine),
-            // but preserve the raw text for filtering/sorting/export.
-            var s = d || '';
-            if (type === 'display') {
-              // Replace ASCII hyphen-minus with a non‑breaking hyphen (U+2011)
-              return String(s).replace(/-/g, '&#8209;');
-            }
-            return s;
-          }
-        },
-        { data: 'modality' },
-        { data: 'chemotype' },
-        { data: 'sense' },
-        // Download-only column (hidden in UI)
-        { data: 'sequence', visible: false, searchable: false }
-      ],
-      paging: true,
-      pageLength: 25,
-      searching: true,
-      ordering: true,
-      info: true,
-      autoWidth: true,
-      orderCellsTop: true,
-      dom: 'rtip',
-      buttons: [
-        {
-          extend: 'excelHtml5',
-          text: 'Download (Excel)',
-          title: null,          // do not export a title row into Excel
-          filename: 'GPCR_list',
-          sheetName: 'GPCR_list',
-          exportOptions: {
-            // Export all columns (including hidden Sequence column at idx 8)
-            columns: function (idx) {
-              return idx >= 0 && idx <= 8;
-            },
-            rows: { search: 'applied' },
-            stripHtml: true
-          },
-          customize: function (xlsx) {
-            // Fallback: if a single-cell title row is still present, remove it.
-            try {
-              var sheet = xlsx.xl.worksheets['sheet1.xml'];
-              var $sheet = $(sheet);
-              var $rows = $('row', $sheet);
-              if ($rows.length) {
-                var $firstRow = $rows.eq(0);
-                if ($('c', $firstRow).length === 1) {
-                  $firstRow.remove();
-                }
-              }
-            } catch (e) {
-              // no-op
-            }
-          }
-        }
-      ]
-    });
-
-    // Place export button top-right
-    dt.buttons().container().appendTo('#gpcrExportButtons');
-
-    // Filters: first 3 columns are large lists -> unspecific multi-select (supports typing),
-    // remaining are categorical -> exact multi-select.
-    var config = [];
-    config = config.concat(CreateColumnFilters(dt, 0, 1, 'Multi-select-unspecific'));
-    config = config.concat(CreateColumnFilters(dt, 1, 1, 'Multi-select-unspecific'));
-    config = config.concat(CreateColumnFilters(dt, 2, 1, 'Multi-select-unspecific'));
-    config = config.concat(CreateColumnFilters(dt, 3, 5, 'Multi-select-exact'));
-    createDropdownFilters(dt, config);
-
-    function updateUniqueCounts() {
-      var filteredRows = dt.rows({ search: 'applied' }).data().toArray();
-      for (var i = 0; i < COL_KEYS.length; i++) {
-        var key = COL_KEYS[i];
-        var total = totalUniqueByKey[key] || 0;
-        var filtered = uniqueCount(filteredRows, key);
-        var text = (filtered === total) ? String(total) : (String(filtered) + ' (' + String(total) + ')');
-        $('.unique-count-row .unique-count[data-col-key="' + key + '"]').text(text);
-      }
-    }
-
-    // Center placeholder in filter inputs until a value is chosen
-    function centerFilterPlaceholders() {
-      $('.filter-row .select2-search__field').each(function() {
-        var $field = $(this);
-        function updateAlignment() {
-          if ($field.val() === '' || $field.val() === null) {
-            $field.css('text-align', 'center');
-          } else {
-            $field.css('text-align', 'left');
-          }
-        }
-        updateAlignment();
-        $field.off('input.gpcr').on('input.gpcr change.gpcr keyup.gpcr', updateAlignment);
-      });
-    }
-
-    setTimeout(function () {
-      initUniqueCountTooltips();
-      updateUniqueCounts();
-      centerFilterPlaceholders();
-    }, 150);
-
-    dt.on('draw', function () {
-      updateUniqueCounts();
-      centerFilterPlaceholders();
-    });
-  });
-</script>
 
 {# JSON payloads (avoid Django template syntax inside JS) #}
 <script type="application/json" id="classesRowsJson">{{ classes_rows|safe }}</script>

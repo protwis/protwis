@@ -4,6 +4,8 @@ from django.conf import settings
 from protwis import views
 from django.views.generic import TemplateView
 
+from classification import views as classification_views
+
 
 urlpatterns = [
     url(r'^', include('home.urls')),
@@ -26,6 +28,7 @@ urlpatterns = [
     url(r'^construct/',include('construct.urls')),
     url(r'^sitesearch/',include('sitesearch.urls')),
     url(r'^drugs/',include('drugs.urls')),
+    url(r'^allgpcrs[/]?$', classification_views.GPCRList.as_view(), name='classification-gpcr-list'),
     url(r'^classification/', include('classification.urls')),
     url(r'^signprot/',include('signprot.urls')),
     url(r'^biased_signalling/', include('ligand.urls')), # Remapping this url to the ligand

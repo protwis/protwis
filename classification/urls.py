@@ -9,25 +9,26 @@ urlpatterns = [
     url(
         r'^$',
         RedirectView.as_view(
-            url='/classification/Classification',
+            url='/classification/levels_and_terms',
             permanent=False,
         ),
         name='classification-index',
     ),
 
     # Canonical URLs
-    # GPCRBrowser was merged into Classification as its first tab ("GPCR list");
-    # keep the old address working as a redirect for existing bookmarks/links.
+    # GPCRBrowser used to be its own page, then became the "GPCR list" tab on this
+    # page, and now lives at /allgpcrs; keep the old address working as a redirect
+    # for existing bookmarks/links.
     url(
         r'^GPCRBrowser[/]?$',
         RedirectView.as_view(
-            url='/classification/Classification',
+            url='/allgpcrs',
             permanent=False,
         ),
         name='classification-gpcrbrowser',
     ),
-    url(r'^overview[/]?$', views.Classification.as_view(), name='classification-classification'),
-    url(r'^visualizations[/]?$', views.ClassificationVisualizationsLanding.as_view(), name='classification-visualizations'),
+    url(r'^levels_and_terms[/]?$', views.Classification.as_view(), name='classification-classification'),
+    url(r'^figures[/]?$', views.ClassificationVisualizationsLanding.as_view(), name='classification-visualizations'),
     url(
         r'^visualizations/class/(?P<class_key>[A-Za-z0-9]+)[/]?$',
         views.ClassificationVisualizationDetail.as_view(),
