@@ -23,11 +23,13 @@
 
   function titleCaseFragment(value) {
     const normalizedValue = String(value || '').trim().toLowerCase();
-    if (normalizedValue === 'tetrapod-specific olfactory receptors') {
-      return 'Tetrapod-specific olfactory receptors';
+    // Generic per-word title-casing would wrongly capitalize after the "/" and "-" here
+    // ("Extra-Nasal" instead of "extra-nasal"), so these keep the DB's actual casing verbatim.
+    if (normalizedValue === 'olfactory/extra-nasal 1') {
+      return 'Olfactory/extra-nasal 1';
     }
-    if (normalizedValue === 'fish-like olfactory receptors') {
-      return 'Fish-like olfactory receptors';
+    if (normalizedValue === 'olfactory/extra-nasal 2') {
+      return 'Olfactory/extra-nasal 2';
     }
     return String(value || '').replace(/\b([A-Za-z][A-Za-z'-]*)/g, function(match) {
       return match.charAt(0).toUpperCase() + match.slice(1).toLowerCase();
@@ -36,8 +38,8 @@
 
   function normalizeClassName(name) {
     return String(name || '')
-      .replace('Class O1 (fish-like)', 'Class O1 (fish-like olfactory receptors)')
-      .replace('Class O2 (tetrapod specific)', 'Class O2 (tetrapod-specific olfactory receptors)');
+      .replace('Class O1 (fish-like)', 'Class O1 (Olfactory/extra-nasal 1)')
+      .replace('Class O2 (tetrapod specific)', 'Class O2 (Olfactory/extra-nasal 2)');
   }
 
   function formattedClassNameHtml(name) {

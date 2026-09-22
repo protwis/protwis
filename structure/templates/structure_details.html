@@ -441,17 +441,18 @@
         conversion_dict = {{ conversion_dict | safe }};
         conversion_dict_strict = {{ conversion_dict_strict | safe }};
         residue_labels = {{ residue_number_labels | safe }};
+        signalling_protein = "{% if is_arrestin_complex %}af-arrestin{% else %}af-signprot{% endif %}";
 
         ClearSelection('targets');
         ClearSelection('reference');
         // Call the function with your desired values
-        draw_interactions_in_circles('visualization', interactions_strict, inner_data_strict, outer_data_strict, conversion_dict_strict);
+        draw_interactions_in_circles('visualization', interactions_strict, inner_data_strict, outer_data_strict, conversion_dict_strict, signalling_protein);
 
         $("#strict").click(function(){
           $("#strict").addClass("active");
           $("#loose").removeClass("active");
           d3.select("#visualization").selectAll("*").remove();
-          draw_interactions_in_circles('visualization', interactions_strict, inner_data_strict, outer_data_strict, conversion_dict_strict);
+          draw_interactions_in_circles('visualization', interactions_strict, inner_data_strict, outer_data_strict, conversion_dict_strict, signalling_protein);
           d3.selectAll(`.van-der-waals`).attr("stroke-opacity", 0);
         });
 
@@ -459,7 +460,7 @@
           $("#strict").removeClass("active");
           $("#loose").addClass("active");
           d3.select("#visualization").selectAll("*").remove();
-          draw_interactions_in_circles('visualization', interactions, inner_data, outer_data, conversion_dict);
+          draw_interactions_in_circles('visualization', interactions, inner_data, outer_data, conversion_dict, signalling_protein);
           d3.selectAll(`.van-der-waals`).attr("stroke-opacity", 0);
         });
 

@@ -91,6 +91,10 @@ function update_tree_data(data,depth) {
     return data
 }
 
+// Shared pill styling for "badge" labels (class/branch-level text with a rounded background),
+// used by both DrawGPCRomeWheel's drawClassBadges() and draw_tree()'s interior-node labels.
+const BADGE_PILL_STYLE = { padX: 3, padY: 1, rx: 9, ry: 9, stroke: "#000", strokeWidth: "0.75px" };
+
 // Draw the Tree
 function draw_tree(data, options) {
 
@@ -220,12 +224,19 @@ function draw_tree(data, options) {
             else { return "#222"; };
         }).call(getBB);
 
-    node.filter(function (d) { return (d.depth !== options.depth) }).insert("rect", "text")
-        .attr("x", function (d) { return d.x < 180 ? d.bbox.x - 12 : d.bbox.x - d.bbox.width - 12; })
-        .attr("y", function (d) { return d.bbox.y; })
-        .attr("width", function (d) { return d.bbox.width; })
-        .attr("height", function (d) { return d.bbox.height; })
-        .style("fill", "#FFF");
+    // Skip the root (depth 0) and any other node whose label renders empty (e.g. an
+    // options.label_free depth) -- otherwise an empty label's near-zero bbox still gets a pill,
+    // showing up as a stray dot (most visibly at the plot's center, where the branches originate).
+    node.filter(function (d) { return (d.depth !== options.depth) && d.bbox && d.bbox.width > 0 }).insert("rect", "text")
+        .attr("x", function (d) { return (d.x < 180 ? d.bbox.x - 12 : d.bbox.x - d.bbox.width - 12) - BADGE_PILL_STYLE.padX; })
+        .attr("y", function (d) { return d.bbox.y - BADGE_PILL_STYLE.padY; })
+        .attr("width", function (d) { return d.bbox.width + BADGE_PILL_STYLE.padX * 2; })
+        .attr("height", function (d) { return d.bbox.height + BADGE_PILL_STYLE.padY * 2; })
+        .attr("rx", BADGE_PILL_STYLE.rx)
+        .attr("ry", BADGE_PILL_STYLE.ry)
+        .style("fill", "#FFF")
+        .style("stroke", function (d) { return d.color || BADGE_PILL_STYLE.stroke; })
+        .style("stroke-width", BADGE_PILL_STYLE.strokeWidth);
 
     function step(startAngle, startRadius, endAngle, endRadius) {
         var c0 = Math.cos(startAngle = (startAngle - 90) / 180 * Math.PI),
@@ -3396,7 +3407,7 @@ function DrawGPCRomeWheel(Data, location, GPCRome_styling) {
                 let receptorFamilies = Object.keys(circleData[classKey]);
 
                 // Only add receptor families if there are more than one
-                if (!["T2", "Unclassified"].some(f => CircleHeaders.includes(f))) {
+                if (!["T2", "U"].some(f => CircleHeaders.includes(f))) {
                     CircleSubHeaders.push(...receptorFamilies);
                 }
             });
@@ -3908,23 +3919,38 @@ function DrawGPCRomeWheel(Data, location, GPCRome_styling) {
 
         // Class badges ("A", "B1", "T2", ...) are drawn last, as their own annotation pass,
         // centered on each class's reserved gap rather than occupying a slot in contentItems.
-        // Emits the same GPCRome-text-{level}-highlight class the header text used to carry, so
-        // the pill-drawing post-processors in classification/wheel.js and
-        // data_mapper/mapper_gpcrome_page.js keep working unmodified against these nodes.
+        // Emits the same GPCRome-text-{level}-highlight class the header text used to carry.
+        // Each badge also gets a neutral pill background drawn behind it -- this used to be a
+        // page-specific "final touch up" copy-pasted into classification/wheel.js,
+        // data_mapper/mapper_gpcrome_page.js and structure/statistics_gpcrome_wheels.js; it's
+        // pulled in here instead so every caller of DrawGPCRomeWheel gets it for free. A page can
+        // still customize the pill fill (e.g. classification colors it by class) via
+        // GPCRome_styling.badgeFill/badgeFillOpacity, and per-class pixel nudges via
+        // GPCRome_styling.badgeNudge -- both keyed by the raw class code, not the short label.
         function drawClassBadges() {
-            function headerRadius(classKey) {
-                return classKey === "Unclassified" ? (GPCRome_radius - 10) : (GPCRome_radius + 18);
-            }
+            const headerRadius = GPCRome_radius + 18;
 
             function headerX(classKey) {
                 const theta = (Math.PI / 2) - classGapMidAngle[classKey];
-                return width / 2 + Math.cos(theta) * headerRadius(classKey);
+                return width / 2 + Math.cos(theta) * headerRadius;
             }
 
             function headerY(classKey) {
                 const theta = (Math.PI / 2) - classGapMidAngle[classKey];
-                return height / 2 - Math.sin(theta) * headerRadius(classKey);
+                return height / 2 - Math.sin(theta) * headerRadius;
             }
+
+            function classBadgeShortLabel(code) {
+                if (code === undefined || code === null) return "";
+                const k = String(code).trim();
+                if (!k || k.toLowerCase() === "nan") return "";
+                if (/^(A|B1|B2|C|F|O1|O2|T2|U|V)$/i.test(k)) return k.toUpperCase();
+                return k;
+            }
+
+            const badgeFill = GPCRome_styling.badgeFill || (() => "#ffffff");
+            const badgeFillOpacity = GPCRome_styling.badgeFillOpacity || (() => 1);
+            const badgeNudge = GPCRome_styling.badgeNudge || {};
 
             svg.selectAll(null)
                 .data(CircleHeaders)
@@ -3933,21 +3959,48 @@ function DrawGPCRomeWheel(Data, location, GPCRome_styling) {
                 .attr("class", (d) => `GPCRome-text GPCRome-text-${level} GPCRome-text-${level}-highlight`)
                 .attr("x", (d) => headerX(d))
                 .attr("y", (d) => headerY(d))
-                .attr("text-anchor", (d) => {
-                    if (d !== "Unclassified") {
-                        return "middle";
-                    }
-                    const angle = (classGapMidAngle[d] * 180 / Math.PI) - 90;
-                    return (angle >= -90 && angle < 90) ? "start" : "end";
-                })
+                .attr("text-anchor", "middle")
                 // See the receptor-label pass above for why dominant-baseline was dropped.
                 .attr("dy", "0.35em")
                 .attr("transform", (d) => `rotate(0, ${headerX(d)}, ${headerY(d)})`)
-                .html((d) => GPCRome_formatTextWithHTML(d, CircleSubHeaders))
+                .text((d) => classBadgeShortLabel(d))
                 .style("font-size", FontsizeClass)
                 .style("font-family", FontStyle)
                 .style("font-weight", "950")
-                .style("fill", "black");
+                .style("fill", "#000")
+                .each(function (d) {
+                    try {
+                        const node = this;
+                        const bb = node.getBBox();
+                        const padX = BADGE_PILL_STYLE.padX;
+                        const padY = BADGE_PILL_STYLE.padY;
+                        const g = node.parentNode;
+                        if (!g) return;
+
+                        const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                        rect.setAttribute("x", bb.x - padX);
+                        rect.setAttribute("y", bb.y - padY);
+                        rect.setAttribute("width", bb.width + padX * 2);
+                        rect.setAttribute("height", bb.height + padY * 2);
+                        rect.setAttribute("rx", BADGE_PILL_STYLE.rx);
+                        rect.setAttribute("ry", BADGE_PILL_STYLE.ry);
+                        rect.setAttribute("fill", badgeFill(d));
+                        rect.setAttribute("fill-opacity", badgeFillOpacity(d));
+                        rect.setAttribute("stroke", BADGE_PILL_STYLE.stroke);
+                        rect.setAttribute("stroke-width", BADGE_PILL_STYLE.strokeWidth);
+                        g.insertBefore(rect, node);
+
+                        const nudge = badgeNudge[d];
+                        if (nudge) {
+                            const txt = d3v4.select(node);
+                            const tPrev = txt.attr("transform") || "";
+                            txt.attr("transform", (tPrev ? (tPrev + " ") : "") + `translate(${nudge.dx},${nudge.dy})`);
+                            rect.setAttribute("transform", `translate(${nudge.dx},${nudge.dy})`);
+                        }
+                    } catch (e) {
+                        // ignore -- purely cosmetic
+                    }
+                });
         }
 
         drawClassBadges();

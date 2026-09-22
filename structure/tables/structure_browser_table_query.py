@@ -155,10 +155,11 @@ def StructureBrowserTableRows():
         for li in getattr(s, "prefetched_ligands", []):
             if not li.ligand:
                 continue
-            lig_list.append({"id": li.ligand.id, "name": li.ligand.name})
-            if li.ligand.ligand_type:
+            is_apo = li.ligand.name == "Apo (no ligand)"
+            lig_list.append({"id": None if is_apo else li.ligand.id, "name": li.ligand.name})
+            if li.ligand.ligand_type and not is_apo:
                 lig_types.add(li.ligand.ligand_type.name)
-            if li.ligand_role:
+            if li.ligand_role and not is_apo:
                 lig_roles.add(li.ligand_role.name)
 
         # endogenous ligands from parent protein

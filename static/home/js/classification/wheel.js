@@ -467,16 +467,8 @@ function rebuildWheelLegend(locationId, wheelType) {
 }
 
 // =========================================================
-// === Custom wheel wrapper (keeps datamapper.js untouched) ===
+// === Custom wheel wrapper ===
 // =========================================================
-function classDisplayLabel(code) {
-  const k = normKey(code);
-  if (!k) return "";
-  if (k === "Unclassified") return "U";
-  if (/^(A|B1|B2|C|F|O1|O2|T2|V)$/i.test(k)) return k.toUpperCase();
-  return k;
-}
-
 function classStrokeColor(type, classCode) {
   const k = normKey(classCode);
   if (!k) return "#999";
@@ -495,80 +487,30 @@ function classPillFillOpacity(type) {
   return wheelStyling[type].ColorBy === "Class" ? 0.75 : 1;
 }
 
-function addClassPills(locationId, wheelType) {
-  const svg = d3v4.select("#" + locationId + "_svg");
-  if (svg.empty()) return;
-
-  // Per-class cosmetic nudges for the badge pill+text (px, SVG space: +x = right, +y = down).
-  // Purely visual fine-tuning for a few badges that otherwise sit a little awkwardly on their
-  // circle -- expect these to keep changing by eye as the page gets polished.
-  const CLASS_BADGE_NUDGE = {
-    B2: { dx: -10, dy: 5 },
-    F:  { dx: -5,  dy: -10 },
-  };
-
-  // Class headers are tagged with the highlight class in datamapper's wheel renderer.
-  svg.selectAll("text")
-    .filter(function(d) { return d !== undefined && d !== null; })
-    .filter(function(d) {
-      const el = this;
-      const cls = (el.getAttribute && el.getAttribute("class")) ? el.getAttribute("class") : "";
-      // Only the class headers get the highlight marker
-      return cls.indexOf("highlight") !== -1;
-    })
-    .each(function(d) {
-      try {
-        const txt = d3v4.select(this);
-        // Replace header text (and special-case Unclassified).
-        txt.text(classDisplayLabel(d));
-
-        const fill = classPillFillColor(wheelType, d);
-        const fillOpacity = classPillFillOpacity(wheelType);
-
-        // Text styling (keep black text; no outline)
-        txt.style("fill", "#000");
-
-        // Compute bbox after text/style updates for better centering.
-        const bb = this.getBBox();
-        // Tight pill padding (as small as possible without clipping).
-        const padX = 3;
-        const padY = 1;
-
-        // Insert behind text
-        const rect = d3v4.select(this.parentNode).insert("rect", () => this)
-          .attr("x", bb.x - padX)
-          .attr("y", bb.y - padY)
-          .attr("width", bb.width + padX * 2)
-          .attr("height", bb.height + padY * 2)
-          .attr("rx", 9)
-          .attr("ry", 9)
-          .style("fill", fill)
-          .style("fill-opacity", fillOpacity)
-          .style("stroke", "#000")
-          .style("stroke-width", "0.75px");
-
-        const nudge = CLASS_BADGE_NUDGE[normKey(d)];
-        if (nudge) {
-          const tTr = txt.attr("transform") || "";
-          txt.attr("transform", (tTr ? (tTr + " ") : "") + `translate(${nudge.dx},${nudge.dy})`);
-          rect.attr("transform", `translate(${nudge.dx},${nudge.dy})`);
-        }
-      } catch (e) {
-        // ignore
-      }
-    });
-}
+// Per-class cosmetic nudges for the badge pill+text (px, SVG space: +x = right, +y = down).
+// Purely visual fine-tuning for a few badges that otherwise sit a little awkwardly on their
+// circle -- expect these to keep changing by eye as the page gets polished. Keyed by the raw
+// class code (datamapper.js's drawClassBadges() looks these up against its own datum, which is
+// always the raw code -- "Unclassified", not the short "U" label it renders).
+const CLASS_BADGE_NUDGE = {
+  B2: { dx: -10, dy: 5 },
+  F:  { dx: -5,  dy: -10 },
+};
 
 function CustomDrawGPCRomeWheel(Data, locationId, GPCRome_styling) {
   const wheelType = (locationId.indexOf("odorant") !== -1) ? "odorant" : "classic";
   const effectiveStyling = Object.assign({}, GPCRome_styling, {
-    ShowLegend: shouldShowBottomLegend(wheelType)
+    ShowLegend: shouldShowBottomLegend(wheelType),
+    // Class badges are drawn by DrawGPCRomeWheel itself now; classification is the one page that
+    // colors its pills by class (when ColorBy === "Class"), so it supplies these hooks instead
+    // of re-drawing the pills itself afterward.
+    badgeFill: (classCode) => classPillFillColor(wheelType, classCode),
+    badgeFillOpacity: () => classPillFillOpacity(wheelType),
+    badgeNudge: CLASS_BADGE_NUDGE,
   });
 
-  // Use the existing renderer, then extend/patch the output.
   DrawGPCRomeWheel(Data, locationId, effectiveStyling);
 
-  addClassPills(locationId, wheelType);
   rebuildWheelLegend(locationId, wheelType);
 }
 // Tracks enable/disable per wheel and per scheme (Class, Chemotype, etc.)

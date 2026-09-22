@@ -50,7 +50,7 @@ class ResidueFragmentInteractionType(models.Model):
 class StructureLigandInteraction(models.Model):
     structure = models.ForeignKey('structure.Structure', on_delete=models.CASCADE, null=True)
     ligand = models.ForeignKey('ligand.Ligand', on_delete=models.CASCADE)
-    ligand_role = models.ForeignKey('ligand.LigandRole', on_delete=models.CASCADE)
+    ligand_role = models.ForeignKey('ligand.LigandRole', null=True, on_delete=models.CASCADE)
     pdb_reference = models.CharField(max_length=5, null=True)
     pdb_file = models.ForeignKey('structure.PdbData', null=True, on_delete=models.CASCADE)
     annotated = models.BooleanField(default=False)
