@@ -37,11 +37,6 @@
     var complexesStats = DATA.complexesStats || { min: 0, max: 0, avg: 0 };
     var olfactoryStats = DATA.olfactoryStats || { min: 0, max: 0, avg: 0 };
 
-    // Class badges (and their pill backgrounds) are drawn by DrawGPCRomeWheel itself; this
-    // nudge -- shared by all 3 tabs, which all share the same class set -- preserves the existing
-    // A/Unclassified badge positioning.
-    var CLASS_BADGE_NUDGE = { A: { dx: 0, dy: 1 }, Unclassified: { dx: -15, dy: 0 } };
-
     var WHEELS = {
         coverage: {
             data: DATA.coverageData,
@@ -54,7 +49,6 @@
                 DataType: "Text", FontStyle: "Arial", FontsizeGlobal: "11px", FontsizeClass: "20px",
                 showIcon: true, LabelType: "Protein", ShowLegend: false,
                 LegendLayout: { mode: "row", columns: "1", sorted: "Vertically" },
-                badgeNudge: CLASS_BADGE_NUDGE,
             },
             drawn: false,
         },
@@ -69,7 +63,6 @@
                 GPCRomeMin: complexesStats.min, GPCRomeMax: complexesStats.max, GPCRomeAvg: complexesStats.avg,
                 LegendbarDigit: 0, LegendbarLength: 200, LegendbarFontsize: "11px",
                 ShowLegend: true, LegendLabel: "Number of receptor-ligand complexes",
-                badgeNudge: CLASS_BADGE_NUDGE,
             },
             drawn: false,
         },
@@ -84,7 +77,6 @@
                 GPCRomeMin: olfactoryStats.min, GPCRomeMax: olfactoryStats.max, GPCRomeAvg: olfactoryStats.avg,
                 LegendbarDigit: 0, LegendbarLength: 200, LegendbarFontsize: "11px",
                 ShowLegend: true, LegendLabel: "Number of structures",
-                badgeNudge: CLASS_BADGE_NUDGE,
             },
             drawn: false,
         },

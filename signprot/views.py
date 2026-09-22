@@ -228,23 +228,14 @@ class PhosphorylationBrowser(TemplateView):
             queryset=WebLink.objects.filter(web_resource__id__in=[8, 5]).select_related('web_resource'),
             to_attr='links')
 
-        class_names = [
-            "Class A (Rhodopsin)",
-            "Class B1 (Secretin)",
-            "Class B2 (Adhesion)",
-            "Class C (Glutamate)",
-            "Class D1 (Ste2-like fungal pheromone)",
-            "Class F (Frizzled)",
-            "Class O1 (fish-like odorant)",
-            "Class O2 (tetrapod specific odorant)",
-            "Class T2 (Taste 2)",
-            "Other GPCRs",
-        ]
+        # All top-level classes (001-011: A/B1/B2/C/D1/F/O1/O2/T2/V/Unclassified) -- slug-based so
+        # this doesn't silently drop classes again the next time a class display name is renamed.
+        class_slugs = ['001', '002', '003', '004', '005', '006', '007', '008', '009', '010', '011']
 
         prots = (
             Protein.objects
             .filter(
-                family__parent__parent__parent__name__in=class_names,
+                family__parent__parent__parent__slug__in=class_slugs,
                 entry_name__endswith="_human",
             )
             .distinct()
@@ -279,7 +270,7 @@ class PhosphorylationBrowser(TemplateView):
                 'gene': self.get_gene_link(protein),
                 'gtodb': self.get_gtodb_link(protein),
                 'family': parent1.name.replace('receptors', '').replace('Class', '') if parent1 else '',
-                'class': parent3.name.split(' ')[1] if parent3 else '',
+                'class': (parent3.name.split(' ')[1] if ' ' in parent3.name else parent3.name) if parent3 else '',
             }
 
             coupling_data = {

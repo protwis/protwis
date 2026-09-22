@@ -2480,10 +2480,7 @@ if (true) {
     showIcon: true,
     LabelType: "Protein",
     ShowLegend: true,
-    LegendLayout: { mode: 'row', columns: '1', sorted: 'Vertically' },
-    // Class badges (and their pill backgrounds) are drawn by DrawGPCRomeWheel itself; this nudge
-    // preserves the Unclassified badge's existing left-shift.
-    badgeNudge: { Unclassified: { dx: -15, dy: 0 } }
+    LegendLayout: { mode: 'row', columns: '1', sorted: 'Vertically' }
   };
   mapperWheelRecalcNumericStyling();
   DrawGPCRomeWheel(GPCRome_WheelDict, GPCRome_location, GPCRomes_styling);

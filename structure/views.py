@@ -80,7 +80,7 @@ from contextlib import contextmanager
 
 
 
-class_dict = {'001':'A','002':'B1','003':'B2','004':'C','005':'D1','006':'F','007':'O1','008':'O2','009':'T2','010':'O'}
+class_dict = {'001':'A','002':'B1','003':'B2','004':'C','005':'D1','006':'F','007':'O1','008':'O2','009':'T2','010':'V','011':'U'}
 
 class StructureBrowser(TemplateView):
     """
@@ -1949,7 +1949,7 @@ class StructureStatistics(TemplateView):
         if self.origin == 'gprotein':
 
             tree = PhylogeneticTreeGenerator()
-            class_a_data = tree.get_tree_data(ProteinFamily.objects.get(name='Class A (Rhodopsin)'))
+            class_a_data = tree.get_tree_data(ProteinFamily.objects.get(slug='001'))
             context['class_a_options'] = deepcopy(tree.d3_options)
             context['class_a_options']['anchor'] = 'class_a'
             context['class_a_options']['leaf_offset'] = 50
@@ -1962,31 +1962,31 @@ class StructureStatistics(TemplateView):
                     whole_class_a['children'].remove(item)
                     break
             context['class_a'] = json.dumps(whole_class_a)
-            class_b1_data = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class B1 (Secretin)'))
+            class_b1_data = tree.get_tree_data(ProteinFamily.objects.get(slug='002'))
             context['class_b1_options'] = deepcopy(tree.d3_options)
             context['class_b1_options']['anchor'] = 'class_b1'
             context['class_b1_options']['branch_trunc'] = 60
             context['class_b1_options']['label_free'] = [1,]
             context['class_b1'] = json.dumps(class_b1_data.get_nodes_dict('crystals'))
-            class_b2_data = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class B2 (Adhesion)'))
+            class_b2_data = tree.get_tree_data(ProteinFamily.objects.get(slug='003'))
             context['class_b2_options'] = deepcopy(tree.d3_options)
             context['class_b2_options']['anchor'] = 'class_b2'
             context['class_b2_options']['label_free'] = [1,]
             context['class_b2'] = json.dumps(class_b2_data.get_nodes_dict('crystals'))
-            class_c_data = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class C (Glutamate)'))
+            class_c_data = tree.get_tree_data(ProteinFamily.objects.get(slug='004'))
             context['class_c_options'] = deepcopy(tree.d3_options)
             context['class_c_options']['anchor'] = 'class_c'
             context['class_c_options']['branch_trunc'] = 50
             context['class_c_options']['label_free'] = [1,]
             context['class_c'] = json.dumps(class_c_data.get_nodes_dict('crystals'))
-            class_f_data = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class F (Frizzled)'))
+            class_f_data = tree.get_tree_data(ProteinFamily.objects.get(slug='006'))
             context['class_f_options'] = deepcopy(tree.d3_options)
             context['class_f_options']['anchor'] = 'class_f'
             context['class_f_options']['label_free'] = [1,]
             #json.dump(class_f_data.get_nodes_dict('crystalized'), open('tree_test.json', 'w'), indent=4)
             context['class_f'] = json.dumps(class_f_data.get_nodes_dict('crystals'))
 
-            class_t2_data = tree.get_tree_data(ProteinFamily.objects.get(name='Class T2 (Taste 2)'))
+            class_t2_data = tree.get_tree_data(ProteinFamily.objects.get(slug='009'))
 
             context['class_t2_options'] = deepcopy(tree.d3_options)
             context['class_t2_options']['anchor'] = 'class_t2'
@@ -2497,7 +2497,7 @@ class StructureStatistics(TemplateView):
         n = 0
         for c_v in coverage.values():
             c_v['name'] = c_v['name'].split("(")[0]
-            if c_v['name'].strip() == 'Other GPCRs':
+            if c_v['name'].strip() == 'Unclassified':
                 continue
             children = []
             for lt_v in c_v['children'].values():
@@ -2610,7 +2610,7 @@ class StructureStatistics(TemplateView):
         n = 0
         for c,c_v in coverage.items():
             c_v['name'] = c_v['name'].split("(")[0]
-            if c_v['name'].strip() == 'Other GPCRs':
+            if c_v['name'].strip() == 'Unclassified':
                 continue
             children = []
             for lt,lt_v in c_v['children'].items():

@@ -3407,7 +3407,7 @@ function DrawGPCRomeWheel(Data, location, GPCRome_styling) {
                 let receptorFamilies = Object.keys(circleData[classKey]);
 
                 // Only add receptor families if there are more than one
-                if (!["T2", "Unclassified"].some(f => CircleHeaders.includes(f))) {
+                if (!["T2", "U"].some(f => CircleHeaders.includes(f))) {
                     CircleSubHeaders.push(...receptorFamilies);
                 }
             });
@@ -3928,26 +3928,23 @@ function DrawGPCRomeWheel(Data, location, GPCRome_styling) {
         // GPCRome_styling.badgeFill/badgeFillOpacity, and per-class pixel nudges via
         // GPCRome_styling.badgeNudge -- both keyed by the raw class code, not the short label.
         function drawClassBadges() {
-            function headerRadius(classKey) {
-                return classKey === "Unclassified" ? (GPCRome_radius - 10) : (GPCRome_radius + 18);
-            }
+            const headerRadius = GPCRome_radius + 18;
 
             function headerX(classKey) {
                 const theta = (Math.PI / 2) - classGapMidAngle[classKey];
-                return width / 2 + Math.cos(theta) * headerRadius(classKey);
+                return width / 2 + Math.cos(theta) * headerRadius;
             }
 
             function headerY(classKey) {
                 const theta = (Math.PI / 2) - classGapMidAngle[classKey];
-                return height / 2 - Math.sin(theta) * headerRadius(classKey);
+                return height / 2 - Math.sin(theta) * headerRadius;
             }
 
             function classBadgeShortLabel(code) {
                 if (code === undefined || code === null) return "";
                 const k = String(code).trim();
                 if (!k || k.toLowerCase() === "nan") return "";
-                if (k === "Unclassified") return "U";
-                if (/^(A|B1|B2|C|F|O1|O2|T2|V)$/i.test(k)) return k.toUpperCase();
+                if (/^(A|B1|B2|C|F|O1|O2|T2|U|V)$/i.test(k)) return k.toUpperCase();
                 return k;
             }
 
@@ -3962,13 +3959,7 @@ function DrawGPCRomeWheel(Data, location, GPCRome_styling) {
                 .attr("class", (d) => `GPCRome-text GPCRome-text-${level} GPCRome-text-${level}-highlight`)
                 .attr("x", (d) => headerX(d))
                 .attr("y", (d) => headerY(d))
-                .attr("text-anchor", (d) => {
-                    if (d !== "Unclassified") {
-                        return "middle";
-                    }
-                    const angle = (classGapMidAngle[d] * 180 / Math.PI) - 90;
-                    return (angle >= -90 && angle < 90) ? "start" : "end";
-                })
+                .attr("text-anchor", "middle")
                 // See the receptor-label pass above for why dominant-baseline was dropped.
                 .attr("dy", "0.35em")
                 .attr("transform", (d) => `rotate(0, ${headerX(d)}, ${headerY(d)})`)

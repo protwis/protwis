@@ -2730,7 +2730,7 @@ class LigandStatistics(TemplateView):
         context['release_notes'] = ReleaseNotes.objects.all()[0]
 
         tree = PhylogeneticTreeGenerator()
-        class_a_data = tree.get_tree_data(ProteinFamily.objects.get(name='Class A (Rhodopsin)'))
+        class_a_data = tree.get_tree_data(ProteinFamily.objects.get(slug='001'))
         context['class_a_options'] = deepcopy(tree.d3_options)
         context['class_a_options']['anchor'] = 'class_a'
         context['class_a_options']['leaf_offset'] = 50
@@ -2745,7 +2745,7 @@ class LigandStatistics(TemplateView):
                 break
         context['class_a'] = json.dumps(whole_class_a)
         class_b1_data = tree.get_tree_data(
-            ProteinFamily.objects.get(name__startswith='Class B1 (Secretin)'))
+            ProteinFamily.objects.get(slug='002'))
         context['class_b1_options'] = deepcopy(tree.d3_options)
         context['class_b1_options']['anchor'] = 'class_b1'
         context['class_b1_options']['branch_trunc'] = 60
@@ -2753,27 +2753,27 @@ class LigandStatistics(TemplateView):
         context['class_b1'] = json.dumps(
             class_b1_data.get_nodes_dict(self.page))
         class_b2_data = tree.get_tree_data(
-            ProteinFamily.objects.get(name__startswith='Class B2 (Adhesion)'))
+            ProteinFamily.objects.get(slug='003'))
         context['class_b2_options'] = deepcopy(tree.d3_options)
         context['class_b2_options']['anchor'] = 'class_b2'
         context['class_b2_options']['label_free'] = [1, ]
         context['class_b2'] = json.dumps(
             class_b2_data.get_nodes_dict(self.page))
         class_c_data = tree.get_tree_data(
-            ProteinFamily.objects.get(name__startswith='Class C (Glutamate)'))
+            ProteinFamily.objects.get(slug='004'))
         context['class_c_options'] = deepcopy(tree.d3_options)
         context['class_c_options']['anchor'] = 'class_c'
         context['class_c_options']['branch_trunc'] = 50
         context['class_c_options']['label_free'] = [1, ]
         context['class_c'] = json.dumps(class_c_data.get_nodes_dict(self.page))
         class_f_data = tree.get_tree_data(
-            ProteinFamily.objects.get(name__startswith='Class F (Frizzled)'))
+            ProteinFamily.objects.get(slug='006'))
         context['class_f_options'] = deepcopy(tree.d3_options)
         context['class_f_options']['anchor'] = 'class_f'
         context['class_f_options']['label_free'] = [1, ]
         context['class_f'] = json.dumps(class_f_data.get_nodes_dict(self.page))
         class_t2_data = tree.get_tree_data(
-            ProteinFamily.objects.get(name__startswith='Class T2 (Taste 2)'))
+            ProteinFamily.objects.get(slug='009'))
         context['class_t2_options'] = deepcopy(tree.d3_options)
         context['class_t2_options']['anchor'] = 'class_t2'
         context['class_t2_options']['label_free'] = [1, ]
@@ -2802,7 +2802,7 @@ class LigandStatistics(TemplateView):
         #Adding section for addressing the data for tree against balanced reference ONLY for ligand_bias page
         if self.page == 'ligand_bias':
             tree = PhylogeneticTreeGenerator()
-            class_a_data_bal = tree.get_tree_data(ProteinFamily.objects.get(name='Class A (Rhodopsin)'))
+            class_a_data_bal = tree.get_tree_data(ProteinFamily.objects.get(slug='001'))
             context['class_a_options_bal'] = deepcopy(tree.d3_options)
             context['class_a_options_bal']['anchor'] = 'class_a_bal'
             context['class_a_options_bal']['leaf_offset'] = 50
@@ -2817,7 +2817,7 @@ class LigandStatistics(TemplateView):
                     break
             context['class_a_bal'] = json.dumps(whole_class_a_bal)
             class_b1_data_bal = tree.get_tree_data(
-                ProteinFamily.objects.get(name__startswith='Class B1 (Secretin)'))
+                ProteinFamily.objects.get(slug='002'))
             context['class_b1_options_bal'] = deepcopy(tree.d3_options)
             context['class_b1_options_bal']['anchor'] = 'class_b1_bal'
             context['class_b1_options_bal']['branch_trunc'] = 60
@@ -2825,27 +2825,27 @@ class LigandStatistics(TemplateView):
             context['class_b1_bal'] = json.dumps(
                 class_b1_data_bal.get_nodes_dict(self.page+'_bal'))
             class_b2_data_bal = tree.get_tree_data(
-                ProteinFamily.objects.get(name__startswith='Class B2 (Adhesion)'))
+                ProteinFamily.objects.get(slug='003'))
             context['class_b2_options_bal'] = deepcopy(tree.d3_options)
             context['class_b2_options_bal']['anchor'] = 'class_b2_bal'
             context['class_b2_options_bal']['label_free'] = [1, ]
             context['class_b2_bal'] = json.dumps(
                 class_b2_data_bal.get_nodes_dict(self.page+"_bal"))
             class_c_data_bal = tree.get_tree_data(
-                ProteinFamily.objects.get(name__startswith='Class C (Glutamate)'))
+                ProteinFamily.objects.get(slug='004'))
             context['class_c_options_bal'] = deepcopy(tree.d3_options)
             context['class_c_options_bal']['anchor'] = 'class_c_bal'
             context['class_c_options_bal']['branch_trunc'] = 50
             context['class_c_options_bal']['label_free'] = [1, ]
             context['class_c_bal'] = json.dumps(class_c_data_bal.get_nodes_dict(self.page+"_bal"))
             class_f_data_bal = tree.get_tree_data(
-                ProteinFamily.objects.get(name__startswith='Class F (Frizzled)'))
+                ProteinFamily.objects.get(slug='006'))
             context['class_f_options_bal'] = deepcopy(tree.d3_options)
             context['class_f_options_bal']['anchor'] = 'class_f_bal'
             context['class_f_options_bal']['label_free'] = [1, ]
             context['class_f_bal'] = json.dumps(class_f_data_bal.get_nodes_dict(self.page+"_bal"))
             class_t2_data_bal = tree.get_tree_data(
-                ProteinFamily.objects.get(name__startswith='Class T2 (Taste 2)'))
+                ProteinFamily.objects.get(slug='009'))
             context['class_t2_options_bal'] = deepcopy(tree.d3_options)
             context['class_t2_options_bal']['anchor'] = 'class_t2_bal'
             context['class_t2_options_bal']['label_free'] = [1, ]
@@ -3052,8 +3052,8 @@ class LigandStatistics(TemplateView):
                 "Class F (Frizzled)": 'Teal',
                 "Other GPCR orphans": "Grey",
                 "Class T2 (Taste 2)": 'MediumPurple',
-                "Class O1 (fish-like odorant)": "Tomato",
-                "Class O2 (tetrapod specific odorant)": "Peru",
+                "Class O1 (Olfactory/extra-nasal 1)": "Tomato",
+                "Class O2 (Olfactory/extra-nasal 2)": "Peru",
                 "Odorant receptors": "DarkOliveGreen",
                 }
             heatmap_receptors = Protein.objects.filter(family__slug__startswith='0', species_id=1).exclude(
@@ -3062,7 +3062,10 @@ class LigandStatistics(TemplateView):
             MasterDict = {}
             color_cache = {}
             for rec in heatmap_receptors:
-                if 'CONSENSUS' in rec.entry_short():
+                # entry_short() only keeps the part of entry_name before the first "_", so a
+                # "..._NNN-consensus" placeholder's "-consensus" suffix never actually reaches it --
+                # check entry_name directly instead of the always-false 'CONSENSUS' in entry_short().
+                if 'consensus' in rec.entry_name.lower():
                     continue
                 if (rec.entry_short()[0].isdigit()) and (rec.entry_short()[0] != '5'):
                     continue
@@ -3070,15 +3073,15 @@ class LigandStatistics(TemplateView):
                     continue
                 if rec.family.parent.name.startswith('Class'):
                     class_name = rec.family.parent.name.split(' (')[0]
-                    class_color = CSS_COLORS[rec.family.parent.name]
+                    class_color = CSS_COLORS.get(rec.family.parent.name, 'Black')
                     lig_type_color = "NA"
                     lig_type_name = "NA"
                     rec_family_color = "NA"
                     rec_family_name = "NA"
                 if rec.family.parent.parent.name.startswith('Class') or rec.family.parent.parent.name.startswith('Orphan'):
                     class_name = rec.family.parent.parent.name.split(' (')[0]
-                    class_color = CSS_COLORS[rec.family.parent.parent.name]
-                    lig_type_color = CSS_COLORS[rec.family.parent.name]
+                    class_color = CSS_COLORS.get(rec.family.parent.parent.name, 'Black')
+                    lig_type_color = CSS_COLORS.get(rec.family.parent.name, 'Black')
                     lig_type_name = rec.family.parent.name
                     if rec.family.name not in color_cache:
                         color_cache[rec.family.name] = '#%02x%02x%02x' % (BiasedSignallingOnTheFlyCalculation.create_rgb_color(), BiasedSignallingOnTheFlyCalculation.create_rgb_color(), BiasedSignallingOnTheFlyCalculation.create_rgb_color())
@@ -3086,8 +3089,8 @@ class LigandStatistics(TemplateView):
                     rec_family_name = rec.family.name
                 if rec.family.parent.parent.parent.name.startswith('Class'):
                     class_name = rec.family.parent.parent.parent.name.split(' (')[0]
-                    class_color = CSS_COLORS[rec.family.parent.parent.parent.name]
-                    lig_type_color = CSS_COLORS[rec.family.parent.parent.name]
+                    class_color = CSS_COLORS.get(rec.family.parent.parent.parent.name, 'Black')
+                    lig_type_color = CSS_COLORS.get(rec.family.parent.parent.name, 'Black')
                     lig_type_name = rec.family.parent.parent.name
                     if rec.family.parent.name not in color_cache:
                         color_cache[rec.family.parent.name] = '#%02x%02x%02x' % (BiasedSignallingOnTheFlyCalculation.create_rgb_color(), BiasedSignallingOnTheFlyCalculation.create_rgb_color(), BiasedSignallingOnTheFlyCalculation.create_rgb_color())

@@ -35,7 +35,6 @@
                 GPCRomeMin: DATA.min, GPCRomeMax: DATA.max, GPCRomeAvg: DATA.avg,
                 LegendbarDigit: 0, LegendbarLength: 200, LegendbarFontsize: "11px",
                 ShowLegend: true, LegendLabel: "Ligand count",
-                badgeNudge: { A: { dx: 0, dy: 1 }, Unclassified: { dx: -15, dy: 0 } },
             },
             drawn: false,
         },
