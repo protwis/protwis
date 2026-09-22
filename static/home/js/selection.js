@@ -541,6 +541,15 @@ function VerifyMinSegmentSelection() {
       setTimeout(function(){ $(".has-spinner.active").removeClass("active"); }, 1000);
       return false;
     }
+    // Site-search-only check: every selected site residue must have a chemical feature
+    // chosen (its <select id="sel-feature-*"> defaults to value "any" until changed).
+    // This selector only ever matches markup rendered by selection_lists_sitesearch.html,
+    // so it is a no-op for every other app's segment-selection page.
+    if ($("#selection-segments select[id^='sel-feature-']").filter(function(){ return this.value === 'any'; }).length > 0){
+      showAlert("Please select a chemical feature for every selected residue before continuing", "danger");
+      setTimeout(function(){ $(".has-spinner.active").removeClass("active"); }, 1000);
+      return false;
+    }
     return true;
 }
 

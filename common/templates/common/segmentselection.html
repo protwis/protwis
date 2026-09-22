@@ -3,6 +3,13 @@
 
 {% block addon_js %}
     <script src="{% static 'home/js/selection.js' %}"></script>
+    {% if missing_feature_warning %}
+    <script>
+        $(document).ready(function(){
+            showAlert("Please select a chemical feature for every selected residue before continuing", "danger");
+        });
+    </script>
+    {% endif %}
 {% endblock %}
 
 {% comment %}

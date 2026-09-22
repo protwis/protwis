@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.conf import settings
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect
 from django.views.decorators.csrf import csrf_exempt
 
 from common import definitions
@@ -19,6 +19,16 @@ import os
 from collections import OrderedDict
 from io import BytesIO
 import xlsxwriter, xlrd
+
+
+def _missing_site_features(simple_selection):
+    """True if any selected site residue has no chemical feature chosen."""
+    if not simple_selection:
+        return False
+    return any(
+        position.type == 'site_residue' and not position.properties.get('feature')
+        for position in simple_selection.segments
+    )
 
 
 class TargetSelection(AbsTargetSelectionTable):
@@ -93,6 +103,11 @@ class SegmentSelection(AbsSegmentSelection):
         'generic_numbers')
     ss_cats = ss.values_list('category').order_by('category').distinct('category')
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['missing_feature_warning'] = self.request.session.pop('sitesearch_missing_feature', False)
+        return context
+
 
 class TargetSelectionPdb(TargetSelection):
     step = 1
@@ -146,6 +161,11 @@ class SegmentSelectionPdb(SegmentSelection):
 def site_download(request):
 
     simple_selection = request.session.get('selection', False)
+
+    if _missing_site_features(simple_selection):
+        request.session['sitesearch_missing_feature'] = True
+        return HttpResponseRedirect('/sitesearch/segmentselection')
+
     outstream = BytesIO()
     wb = xlsxwriter.Workbook(outstream, {'in_memory': True})
     worksheet = wb.add_worksheet()
@@ -238,6 +258,10 @@ def site_upload(request):
 def render_alignment(request):
     # get the user selection from session
     simple_selection = request.session.get('selection', False)
+
+    if _missing_site_features(simple_selection):
+        request.session['sitesearch_missing_feature'] = True
+        return HttpResponseRedirect('/sitesearch/segmentselection')
 
     # create an alignment object
     a = Alignment()
