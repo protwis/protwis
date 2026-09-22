@@ -6,6 +6,7 @@ from django.db.models import Count, Q, Prefetch, TextField, Avg, Case, When, Int
 from django.db.models.functions import Concat, Length, Round, Coalesce, Cast
 from django import forms
 from time import perf_counter          # used for quick dev profiling
+from django.http import HttpResponseNotFound
 
 from django.core.serializers.json import DjangoJSONEncoder
 
@@ -1107,10 +1108,10 @@ def ServeHomModDiagram(request, modelname, state):
     if model.exists():
         model=model.get()
     else:
-         quit() #quit!
+         return HttpResponseNotFound("Model not found")
 
     if model.pdb_data is None:
-        quit()
+        return HttpResponseNotFound("Model has no PDB data")
 
     response = HttpResponse(model.pdb_data.pdb, content_type='text/plain')
     return response
