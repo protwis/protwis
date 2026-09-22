@@ -6,6 +6,7 @@ from django.db.models import Count, Q, Prefetch, TextField, Avg, Case, When, Int
 from django.db.models.functions import Concat, Length, Round, Coalesce, Cast
 from django import forms
 from time import perf_counter          # used for quick dev profiling
+from django.http import HttpResponseNotFound
 
 from django.core.serializers.json import DjangoJSONEncoder
 
@@ -1107,10 +1108,10 @@ def ServeHomModDiagram(request, modelname, state):
     if model.exists():
         model=model.get()
     else:
-         quit() #quit!
+         return HttpResponseNotFound("Model not found")
 
     if model.pdb_data is None:
-        quit()
+        return HttpResponseNotFound("Model has no PDB data")
 
     response = HttpResponse(model.pdb_data.pdb, content_type='text/plain')
     return response
@@ -1924,7 +1925,11 @@ class StructureStatistics(TemplateView):
 
             #GPCR year-to-year structure data for chart
             context['family_hierarchy'] = self.get_structure_family_hierarchy(gpcr_structure_queries)
-            context['chart_data'] = self.prepare_chart_data(gpcr_structure_queries, lookup)
+            chart_data = cache.get('structure_stats_yearly_chart_data')
+            if not chart_data:
+                chart_data = self.prepare_chart_data(gpcr_structure_queries, lookup)
+                cache.set('structure_stats_yearly_chart_data', chart_data, None)  #Non-expiring cache, as this data is not expected to change often and is expensive to compute
+            context['chart_data'] = chart_data
 
             group_cols = ["state_id__slug", "protein_conformation__protein__parent__entry_name", "pdb_code_id__index"]
             circle_data = gpcr_structure_queries['redundant']['complexed_or_not']['all_states'] \
