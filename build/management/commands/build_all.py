@@ -96,7 +96,7 @@ class Command(BaseCommand):
             ['build_clustercoord'],
             ['build_ligand_search'],
             ['build_text'],
-            ['build_structure_browser_table'],
+            ['build_frontend_table_datasources'],
         ]
         phase3 = [
             ['build_complex_models', {'proc': options['proc'], 'parser' : 'alphafoldcomplex', 'model_set_name' : 'AlphaFold_multimer_non_phys', 'cleaned_seq_csv' : os.sep.join([settings.DATA_DIR, 'structure_data', 'AlphaFold_multimer_non_phys', 'cleaned_seqs.csv']) }],
