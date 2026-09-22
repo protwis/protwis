@@ -204,7 +204,7 @@ function applyMutantColorsToTable(generic_residue_number, data, protein_index) {
       }
       });
       
-      extra = "\n" + String(data[0].length) + " mutations: " +
+      extra = "\n" + String(data.length) + " mutations: " +
       (decreases+bigdecreases) +" increases | " +
       (increases+bigincreases) +" decreases  |  " +
       (unchanged) +" Unchanged | " +
