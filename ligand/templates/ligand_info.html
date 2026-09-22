@@ -397,11 +397,6 @@
                                     {% for ex in ligand.wl %}
                                     <li><a href="{{ ex.link }}" target="_blank">{{ ex.name }}</a></li>
                                     {% endfor %}
-                                    <li><a href="/ligand/{{ ligand.ligand_id }}/group">
-									{% if ligand.related_ids|length > 1 %}
-									GPCRdb related ligands
-									{% endif %}
-									</a></li>
                                 </ul>
                             </td>
                         </tr>
@@ -415,6 +410,18 @@
                             </td>
                         </tr>
                         {% endif %}
+                        {% if model_structures %}
+                        {% for type_name, models in model_structures.items %}
+                        <tr>
+                            <td>{{ type_name }}</td>
+                            <td>
+                                {% for m in models %}
+                                <a href="/structure/ligand_complex_models/{{ m.structure_pdb }}" target="_blank">{{ m.receptor_name|safe }}</a>
+                                {% endfor %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% endif %}
                         {% if mutations %}
                         <tr>
                             <td>Ligand site mutations</td>
@@ -426,6 +433,11 @@
                         </tr>
                         {% endif %}
                     </table>
+                    {% if ligand.related_ids|length > 1 %}
+                    <div class="well well-sm text-center">
+                        <a href="/ligand/{{ ligand.ligand_id }}/group" class="btn btn-primary btn-sm">GPCRdb related ligands</a>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
             <br/>
@@ -609,13 +621,6 @@
                                     {% for ex in ligand.wl %}
                                     <li><a href="{{ ex.link }}" target="_blank">{{ ex.name }}</a></li>
                                     {% endfor %}
-                                    <li><a href="/ligand/{{ ligand.ligand_id }}/group">
-									{% if ligand.related_ids|length > 2 %}
-									GPCRdb related ligands
-									{% else %}
-									GPCRdb
-									{% endif %}
-									</a></li>
                                 </ul>
                             </td>
                         </tr>
@@ -629,6 +634,18 @@
                             </td>
                         </tr>
                         {% endif %}
+                        {% if model_structures %}
+                        {% for type_name, models in model_structures.items %}
+                        <tr>
+                            <td>{{ type_name }}</td>
+                            <td>
+                                {% for m in models %}
+                                <a href="/structure/ligand_complex_models/{{ m.structure_pdb }}" target="_blank">{{ m.receptor_name|safe }}</a>
+                                {% endfor %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% endif %}
                         {% if mutations %}
                         <tr>
                             <td>Ligand site mutations</td>
@@ -640,6 +657,11 @@
                         </tr>
                         {% endif %}
                     </table>
+                    {% if ligand.related_ids|length > 2 %}
+                    <div class="well well-sm text-center">
+                        <a href="/ligand/{{ ligand.ligand_id }}/group" class="btn btn-primary btn-sm">GPCRdb related ligands</a>
+                    </div>
+                    {% endif %}
                 </div>
 			</div>
             <br/>
