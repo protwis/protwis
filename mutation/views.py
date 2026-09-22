@@ -757,16 +757,30 @@ class MutationStatistics(TemplateView):
                 #     # If no human version exists, add this non-human version as is
                 #     aggregated[key] = value
 
+        # Receptors with 0 annotated mutations are left out entirely (rather than sent as
+        # Value1: 0), so they render as blank/uncolored wedges instead of being pulled into the
+        # numeric color scale and dragging its floor down to 0 -- same pattern as
+        # structure/views.py's complexes/olfactory wheels.
         updated_results = {
             key: {
                 'Value1': value,
             }
             for key, value in mut_count_receptor_dict.items()
+            if value > 0
         }
 
         gpcr_data = DataMapperHome.GenerateGPCRomeDataStructure(data_type="Classic")
         updated_data = DataMapperHome.update_nested_GPCRome_data(gpcr_data["Data"], updated_results)
         context['GPCRome_data'] = json.dumps(updated_data)
+
+        mutation_nonzero_values = [v for v in mut_count_receptor_dict.values() if v > 0]
+        mutation_min = min(mutation_nonzero_values) if mutation_nonzero_values else 0
+        mutation_max = max(mutation_nonzero_values) if mutation_nonzero_values else 0
+        context['GPCRome_mutation_stats'] = json.dumps({
+            'min': mutation_min,
+            'max': mutation_max,
+            'avg': (mutation_min + mutation_max) / 2,
+        })
 
         return context
 

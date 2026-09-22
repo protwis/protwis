@@ -1,7 +1,11 @@
 // Drives the 3 GPCRome wheels on /structure/statistics (structure coverage, receptor-ligand
 // complex counts, olfactory complex counts). All 3 share the same underlying D3 renderer
-// (DrawGPCRomeWheel, datamapper.js) the classification wheel page also uses -- this file is
-// this page's own thin control layer around it, not a classification concern.
+// (DrawGPCRomeWheel, datamapper.js) the classification wheel page also uses. The generic
+// dropdown/legend-toggle/colors-panel/download wiring itself lives in the shared
+// gpcrome_wheel_controls.js (also used by /mutations/statistics and /ligand/coverage) -- this
+// file is just this page's own data/config plus the bits that really are page-specific: the
+// coverage tab's categorical status swatches and its own drawn legend, and which tab lazily
+// redraws when shown.
 (function () {
     var DATA = window.STRUCTURE_GPCROME_WHEEL_DATA || {};
 
@@ -20,8 +24,23 @@
         ["#000080"],
     ];
 
+    // Numeric-wheel gradient presets -- only "One"/"Two" (no "Three"/mid-color scheme; this page
+    // doesn't need it). "Two" is blue (low) -> red (high), matching this page's Active/Inactive
+    // categorical colors -- also the default preset shared with /mutations/statistics and
+    // /ligand/coverage's wheels.
+    var NUMERIC_COLOR_PRESETS = {
+        One: { setup: "One", colorStart: "#ffffff", colorEnd: "#707070" },
+        Two: { setup: "Two", colorStart: "#0066ff", colorEnd: "#ff3300" },
+    };
+    var DEFAULT_NUMERIC_PRESET_KEY = "Two";
+
     var complexesStats = DATA.complexesStats || { min: 0, max: 0, avg: 0 };
     var olfactoryStats = DATA.olfactoryStats || { min: 0, max: 0, avg: 0 };
+
+    // Class badges (and their pill backgrounds) are drawn by DrawGPCRomeWheel itself; this
+    // nudge -- shared by all 3 tabs, which all share the same class set -- preserves the existing
+    // A/Unclassified badge positioning.
+    var CLASS_BADGE_NUDGE = { A: { dx: 0, dy: 1 }, Unclassified: { dx: -15, dy: 0 } };
 
     var WHEELS = {
         coverage: {
@@ -29,11 +48,13 @@
             locationId: "GPCRome_plot",
             filenameBase: "GPCRome_plot",
             categorical: true,
+            categories: COVERAGE_CATEGORIES,
             categoryColors: {},
             styling: {
                 DataType: "Text", FontStyle: "Arial", FontsizeGlobal: "11px", FontsizeClass: "20px",
                 showIcon: true, LabelType: "Protein", ShowLegend: false,
                 LegendLayout: { mode: "row", columns: "1", sorted: "Vertically" },
+                badgeNudge: CLASS_BADGE_NUDGE,
             },
             drawn: false,
         },
@@ -48,6 +69,7 @@
                 GPCRomeMin: complexesStats.min, GPCRomeMax: complexesStats.max, GPCRomeAvg: complexesStats.avg,
                 LegendbarDigit: 0, LegendbarLength: 200, LegendbarFontsize: "11px",
                 ShowLegend: true, LegendLabel: "Number of receptor-ligand complexes",
+                badgeNudge: CLASS_BADGE_NUDGE,
             },
             drawn: false,
         },
@@ -62,18 +84,11 @@
                 GPCRomeMin: olfactoryStats.min, GPCRomeMax: olfactoryStats.max, GPCRomeAvg: olfactoryStats.avg,
                 LegendbarDigit: 0, LegendbarLength: 200, LegendbarFontsize: "11px",
                 ShowLegend: true, LegendLabel: "Number of structures",
+                badgeNudge: CLASS_BADGE_NUDGE,
             },
             drawn: false,
         },
     };
-
-    // Class badges (and their pill backgrounds) are drawn by DrawGPCRomeWheel itself now; this
-    // nudge -- shared by all 3 tabs, which all share the same class set -- preserves the existing
-    // A/Unclassified badge positioning.
-    var CLASS_BADGE_NUDGE = { A: { dx: 0, dy: 1 }, Unclassified: { dx: -15, dy: 0 } };
-    Object.keys(WHEELS).forEach(function (key) {
-        WHEELS[key].styling.badgeNudge = CLASS_BADGE_NUDGE;
-    });
 
     COVERAGE_CATEGORIES.forEach(function (cat) {
         WHEELS.coverage.categoryColors[cat.key] = cat.color;
@@ -92,14 +107,16 @@
         });
     }
 
-    // Numeric-wheel gradient presets -- only "One"/"Two" (no "Three"/mid-color scheme; this page
-    // doesn't need it). "Two" is swapped from data_mapper/mapper_gpcrome_page.js's own colors to
-    // blue (low) -> red (high), matching this page's Active/Inactive categorical colors.
-    var NUMERIC_COLOR_PRESETS = {
-        One: { setup: "One", colorStart: "#ffffff", colorEnd: "#707070" },
-        Two: { setup: "Two", colorStart: "#0066ff", colorEnd: "#ff3300" },
-    };
-    var DEFAULT_NUMERIC_PRESET_KEY = "Two";
+    // Recursively find leaf receptor nodes (the skeleton is class -> ... -> receptor family ->
+    // receptor, so a plain nested-object walk works regardless of how many levels deep that is).
+    function walkLeaves(node, callback) {
+        if (!node || typeof node !== "object") return;
+        if (Object.prototype.hasOwnProperty.call(node, "EntryName") && Object.prototype.hasOwnProperty.call(node, "Data")) {
+            callback(node);
+            return;
+        }
+        Object.keys(node).forEach(function (key) { walkLeaves(node[key], callback); });
+    }
 
     // ---- Coverage wheel's own legend: top-right corner (blank space above the circular plot),
     // with the "Structure coverage" title restored as part of the drawn legend instead of a
@@ -160,295 +177,31 @@
         });
     }
 
-    function redraw(key) {
-        var wheel = WHEELS[key];
-        if (!wheel || !wheel.data) return;
-        d3.select("#" + wheel.locationId).select("svg").remove();
-        DrawGPCRomeWheel(wheel.data, wheel.locationId, wheel.styling);
-
-        if (key === "coverage") {
-            var legendCategories = COVERAGE_CATEGORIES.map(function (cat) {
-                return { key: cat.key, label: cat.label, color: wheel.categoryColors[cat.key] };
-            });
-            drawCoverageLegend(wheel.locationId, "Structure coverage", legendCategories, wheel.styling);
-        }
-
-        wheel.drawn = true;
-    }
-
-    // Recursively find leaf receptor nodes (the skeleton is class -> ... -> receptor family ->
-    // receptor, so a plain nested-object walk works regardless of how many levels deep that is).
-    function walkLeaves(node, callback) {
-        if (!node || typeof node !== "object") return;
-        if (Object.prototype.hasOwnProperty.call(node, "EntryName") && Object.prototype.hasOwnProperty.call(node, "Data")) {
-            callback(node);
-            return;
-        }
-        Object.keys(node).forEach(function (key) { walkLeaves(node[key], callback); });
-    }
-
-    function wireLabelButtons(key) {
-        var buttons = document.querySelectorAll('.GPCRomeStats-label-btn[data-wheel="' + key + '"]');
-        buttons.forEach(function (btn) {
-            btn.addEventListener("click", function () {
-                WHEELS[key].styling.LabelType = btn.getAttribute("data-value");
-                buttons.forEach(function (b) {
-                    b.classList.remove("btn-primary");
-                    b.classList.add("btn-outline-primary");
-                });
-                btn.classList.remove("btn-outline-primary");
-                btn.classList.add("btn-primary");
-                redraw(key);
-            });
-        });
-        // Same "sync the matching button to the styling's current value" step
-        // classification/wheel.js's initControls does -- HTML alone can't express "active"
-        // for a state that only exists in JS.
-        var defaultBtn = document.querySelector('.GPCRomeStats-label-btn[data-wheel="' + key + '"][data-value="' + WHEELS[key].styling.LabelType + '"]');
-        if (defaultBtn) {
-            defaultBtn.classList.remove("btn-outline-primary");
-            defaultBtn.classList.add("btn-primary");
-        }
-    }
-
-    function wireLegendToggle(key) {
-        var btn = document.getElementById(key + "-toggleIcon");
-        if (!btn) return;
-        btn.addEventListener("click", function () {
-            var wheel = WHEELS[key];
-            wheel.styling.showIcon = !wheel.styling.showIcon;
-            btn.classList.toggle("btn-primary", wheel.styling.showIcon);
-            btn.classList.toggle("btn-danger", !wheel.styling.showIcon);
-            redraw(key);
-        });
-    }
-
-    function applyCategoryColor(key, categoryKey, colorValue) {
-        var wheel = WHEELS[key];
-        wheel.categoryColors[categoryKey] = colorValue;
-        walkLeaves(wheel.data, function (leaf) {
-            if (leaf.Data === categoryKey) leaf.Color = colorValue;
-        });
-        redraw(key);
-    }
-
-    // No enable/disable checkboxes here -- unlike classification's page (many categories, worth
-    // hiding some), this is a fixed 3-status key, always all shown, so a per-row toggle wouldn't
-    // mean anything.
-    function initCategoricalColorPicker(key) {
-        var wheel = WHEELS[key];
-        var container = document.getElementById(key + "-color-pickers");
-        if (!container) return;
-
-        container.innerHTML =
-            '<div class="panel-header"><div class="header-title">Colors</div></div>' +
-            '<div class="color-grid" id="' + key + '-grid"></div>';
-
-        // Half classification/wheel.css's .customize-menu default (350px) -- only a label and
-        // one swatch per row here, no room needed for anything wider.
-        var menuEl = container.closest(".customize-menu");
-        if (menuEl) {
-            menuEl.style.width = "175px";
-            menuEl.style.minWidth = "175px";
-        }
-
-        var grid = document.getElementById(key + "-grid");
-
-        COVERAGE_CATEGORIES.forEach(function (cat) {
-            var safeId = key + "_picker_" + cat.key;
-
-            var item = document.createElement("div");
-            item.className = "color-item";
-            item.innerHTML =
-                '<span></span>' +
-                '<label class="color-label">' + cat.label + '</label>' +
-                '<input type="text" id="' + safeId + '">';
-            grid.appendChild(item);
-
-            $("#" + safeId).spectrum({
-                color: wheel.categoryColors[cat.key],
-                showPalette: true, showInput: true, showButtons: false, preferredFormat: "hex",
-                appendTo: "body", palette: SPECTRUM_PALETTE,
-                change: function (color) { applyCategoryColor(key, cat.key, color.toHexString()); },
-                move: function (color) { applyCategoryColor(key, cat.key, color.toHexString()); },
-            });
-        });
-    }
-
-    // Same "Number of colors" preset dropdown + Min/Max pickers as
-    // data_mapper/mapper_gpcrome_page.js's UpdateGPCRomeColorPickers/updateGPCRomeVisualization,
-    // ported wheel-for-wheel (ids namespaced by `key` instead of the single "GPCRome_*" ids
-    // that page hardcodes), minus the "Three"/mid-color scheme this page doesn't need.
-    // select2 only treats the return value as markup when it's a jQuery/DOM object -- a plain
-    // string gets escaped and inserted as text (which is exactly what was happening: the
-    // selected-value box was printing the literal "<span...>" source instead of rendering it).
-    // Mapper's own formatColorScheme sidesteps this by using ONE function, always $(...)-wrapped,
-    // for both templateResult and templateSelection -- same fix here.
-    function formatColorPresetOption(opt) {
-        var preset = NUMERIC_COLOR_PRESETS[opt.id];
-        if (!preset) return opt.text;
-        var swatchColors = [preset.setup !== "One" ? preset.colorStart : null, preset.colorEnd];
-        var swatches = swatchColors.map(function (c) {
-            var bg = c || "transparent";
-            var opacity = c ? "" : "opacity:0;";
-            return '<span style="display:inline-block;width:14px;height:14px;margin-left:5px;border:1px solid #ccc;border-radius:2px;background:' + bg + ';' + opacity + '"></span>';
-        }).join("");
-        return $('<span style="display:flex; align-items:center;"><span style="min-width:50px; display:inline-block; text-align:center; padding-right:5px;">' + opt.text + '</span>' + swatches + '</span>');
-    }
-
-    function updateNumericColorPanelVisibility(key) {
-        var wheel = WHEELS[key];
-        var showMin = wheel.styling.ColorSetup !== "One";
-        document.getElementById(key + "_Color_min_container").style.visibility = showMin ? "visible" : "hidden";
-        document.getElementById(key + "_Color_min_label").style.visibility = showMin ? "visible" : "hidden";
-    }
-
-    // Only redraws if this wheel has already been drawn at least once -- called during initial
-    // setup too (to seed wheel.styling before the tab is ever shown), where a redraw would just
-    // be wasted work on a still-hidden plot.
-    function applyNumericColorPreset(key, presetKey) {
-        var wheel = WHEELS[key];
-        var preset = NUMERIC_COLOR_PRESETS[presetKey];
-        if (!preset) return;
-        wheel.styling.ColorSetup = preset.setup;
-        wheel.styling.colorStart = preset.colorStart;
-        wheel.styling.colorEnd = preset.colorEnd;
-        try {
-            $("#" + key + "_colorPicker_min").spectrum("set", preset.colorStart);
-            $("#" + key + "_colorPicker_max").spectrum("set", preset.colorEnd);
-        } catch (e) { /* pickers not initialized yet */ }
-        updateNumericColorPanelVisibility(key);
-        if (wheel.drawn) redraw(key);
-    }
-
-    function syncNumericPickersToStyling(key) {
-        var wheel = WHEELS[key];
-        wheel.styling.colorStart = $("#" + key + "_colorPicker_min").spectrum("get").toHexString();
-        wheel.styling.colorEnd = $("#" + key + "_colorPicker_max").spectrum("get").toHexString();
-        if (wheel.drawn) redraw(key);
-    }
-
-    function initContinuousColorPicker(key, label) {
-        var container = document.getElementById(key + "-color-pickers");
-        if (!container) return;
-
-        // One label row (Number of colors / Min / Max, all the same size/weight), then one
-        // controls row underneath with each control vertically aligned under its own label --
-        // Min and Max sit right next to each other (no reserved space for a mid/avg color,
-        // since "Three" doesn't exist here).
-        var LABEL_STYLE = "font-weight:bold; font-size:12px; display:block; margin-bottom:5px;";
-        container.innerHTML =
-            '<div class="panel-header"><div class="header-title">' + label + '</div></div>' +
-            '<div style="margin:10px 0;">' +
-            '<div style="display:flex; gap:15px;">' +
-            '<div style="width:150px; text-align:center;"><label style="' + LABEL_STYLE + '">Number of colors</label></div>' +
-            '<div style="display:flex; gap:4px;">' +
-            '<div id="' + key + '_Color_min_label" style="width:80px; text-align:center;"><label style="' + LABEL_STYLE + '">Min</label></div>' +
-            '<div style="width:80px; text-align:center;"><label style="' + LABEL_STYLE + '">Max</label></div>' +
-            '</div>' +
-            '</div>' +
-            '<div style="display:flex; gap:15px;">' +
-            '<div style="width:150px; display:flex; justify-content:center;">' +
-            '<select id="' + key + '_color_styling" class="form-control" style="width:150px;">' +
-            '<option value="One">One</option>' +
-            '<option value="Two" selected>Two</option>' +
-            '</select>' +
-            '</div>' +
-            '<div style="display:flex; gap:4px;">' +
-            '<div id="' + key + '_Color_min_container" style="width:80px; display:flex; justify-content:center;"><input type="text" id="' + key + '_colorPicker_min"></div>' +
-            '<div style="width:80px; display:flex; justify-content:center;"><input type="text" id="' + key + '_colorPicker_max"></div>' +
-            '</div>' +
-            '</div>' +
-            '</div>';
-
-        // Mapper's own numeric colors panel (#mapper-wheel-colors-dropdown-menu.mapper-core-
-        // colors-show-numeric in data_mapper/wheel.css) sets min-width:420px on the dropdown-menu
-        // itself for its 3-swatch (Min/Mid/Max) layout -- ours only ever needs 2 swatches now, so
-        // a narrower fixed width fits without the shared classification/wheel.css .customize-menu
-        // default (350px) cramping it.
-        var menuEl = container.closest(".customize-menu");
-        if (menuEl) {
-            menuEl.style.width = "380px";
-            menuEl.style.minWidth = "380px";
-        }
-
-        var defaultPreset = NUMERIC_COLOR_PRESETS[DEFAULT_NUMERIC_PRESET_KEY];
-        function initPicker(elId, startColor) {
-            $("#" + elId).spectrum({
-                color: startColor, showPalette: true, showInput: true, showButtons: false,
-                preferredFormat: "hex", appendTo: "body", palette: SPECTRUM_PALETTE,
-                change: function () { syncNumericPickersToStyling(key); },
-                move: function () { syncNumericPickersToStyling(key); },
-            });
-        }
-        initPicker(key + "_colorPicker_min", defaultPreset.colorStart);
-        initPicker(key + "_colorPicker_max", defaultPreset.colorEnd);
-
-        $("#" + key + "_color_styling").select2({
-            templateResult: formatColorPresetOption,
-            templateSelection: formatColorPresetOption,
-            // "resolve" measures the live-rendered <select> to size itself -- but the
-            // complexes/olfactory tabs are still display:none at this point (lazy-drawn), so it
-            // measures 0 and the widget effectively never renders. "style" reads the inline
-            // width instead, which works regardless of visibility.
-            width: "style",
-        });
-        $("#" + key + "_color_styling").on("change", function () {
-            applyNumericColorPreset(key, $(this).val());
-        });
-
-        applyNumericColorPreset(key, DEFAULT_NUMERIC_PRESET_KEY);
-    }
-
-    function wireDownload(key) {
-        var wheel = WHEELS[key];
-        var svgBtn = document.getElementById(key + "-download-svg");
-        var pngBtn = document.getElementById(key + "-download-png");
-        if (svgBtn) {
-            svgBtn.addEventListener("click", function () {
-                GPCRomeSvgExport.downloadSvg(document.getElementById(wheel.locationId + "_svg"), wheel.filenameBase + ".svg");
-            });
-        }
-        if (pngBtn) {
-            pngBtn.addEventListener("click", function () {
-                GPCRomeSvgExport.downloadSvgAsPng(document.getElementById(wheel.locationId + "_svg"), wheel.filenameBase + ".png", 2);
-            });
-        }
-    }
-
-    function initWheelControls(key) {
-        wireLabelButtons(key);
-        wireLegendToggle(key);
-        wireDownload(key);
-        if (WHEELS[key].categorical) {
-            initCategoricalColorPicker(key);
-        } else {
-            initContinuousColorPicker(key, WHEELS[key].styling.LegendLabel);
-        }
-    }
-
     $(function () {
-        // Same global rule Mapper_GPCRomeWheel.html uses: without it, clicking a swatch/checkbox
-        // inside a dropdown-menu bubbles to Bootstrap's document-level "click outside closes the
-        // dropdown" listener, closing the whole Customize colors panel mid-click. Spectrum's own
-        // popup and select2's own dropdown are both appended straight to <body> (`appendTo:
-        // "body"`), so they're outside .dropdown-menu's DOM subtree and need the same treatment.
-        $(document).on("mousedown click", ".dropdown-menu, .sp-container, .select2-container, .select2-dropdown", function (event) {
-            event.stopPropagation();
+        seedCoverageColors();
+
+        var controls = GPCRomeWheelControls.init({
+            wheels: WHEELS,
+            numericPresets: NUMERIC_COLOR_PRESETS,
+            defaultPresetKey: DEFAULT_NUMERIC_PRESET_KEY,
+            spectrumPalette: SPECTRUM_PALETTE,
+            onAfterRedraw: function (key, wheel) {
+                if (key === "coverage") {
+                    var legendCategories = COVERAGE_CATEGORIES.map(function (cat) {
+                        return { key: cat.key, label: cat.label, color: wheel.categoryColors[cat.key] };
+                    });
+                    drawCoverageLegend(wheel.locationId, "Structure coverage", legendCategories, wheel.styling);
+                }
+            },
         });
 
-        seedCoverageColors();
-        initWheelControls("coverage");
-        initWheelControls("complexes");
-        initWheelControls("olfactory");
-
-        redraw("coverage"); // active tab on load; the other two draw lazily below
+        controls.redraw("coverage"); // active tab on load; the other two draw lazily below
 
         $('a[href="#receptor_ligand_wheel_pane"]').on("shown.bs.tab", function () {
-            if (!WHEELS.complexes.drawn) redraw("complexes");
+            if (!WHEELS.complexes.drawn) controls.redraw("complexes");
         });
         $('a[href="#olfactory_wheel_pane"]').on("shown.bs.tab", function () {
-            if (!WHEELS.olfactory.drawn) redraw("olfactory");
+            if (!WHEELS.olfactory.drawn) controls.redraw("olfactory");
         });
     });
 })();
