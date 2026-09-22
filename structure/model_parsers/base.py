@@ -7,6 +7,7 @@ from io import StringIO
 from Bio.PDB import PDBParser, PDBIO, Polypeptide
 
 from django.conf import settings
+from django.db.models import Case, When, Value, IntegerField
 
 from structure.model_parsers.error_handling import log_or_raise
 from structure.model_parsers.logging import ParserVerbosity, conditional_log
@@ -841,9 +842,20 @@ class ModelLigand():
             log_or_raise(self.logger, f"Unknown ligand multimatch handling strategy: {self.ligand_multimatch_handling}", ValueError, self.error_handling)
 
 
+    @staticmethod
+    def _child_ligand_queryset(**field_lookup):
+        """
+        Query Ligand rows matching the given field lookup, restricted to child/variant ligands
+        (parent__isnull=False) and ordered to prefer non-radioactive ligands over radioactive ones.
+        """
+        return Ligand.objects.filter(parent__isnull=False, **field_lookup).order_by(
+            Case(When(radioactive__isnull=False, then=Value(1)), default=Value(0), output_field=IntegerField())
+        )
+
     def fetch_db_entities(self):
         """
         Look up matching Ligand database entities, trying InChIKey, SMILES, sequence, and name in turn until a match is found.
+        Only matches child/variant ligands (i.e. ligands with a parent), and prefers non-radioactive ligands over radioactive ones.
 
         Returns
         -------
@@ -854,7 +866,7 @@ class ModelLigand():
 
         if self.inchikey:
             try:
-                ligands = Ligand.objects.filter(inchikey=self.inchikey)
+                ligands = self._child_ligand_queryset(inchikey=self.inchikey)
                 conditional_log(self, f"Fetched ligands with InChIKey {self.inchikey} from database. Returned {len(ligands)}.", logging.INFO, ParserVerbosity.EVERYTHING)
                 if ligands:
                     return self.multi_match_handling(ligands)
@@ -863,7 +875,7 @@ class ModelLigand():
 
         if self.smiles:
             try:
-                ligands = Ligand.objects.filter(smiles=self.smiles)
+                ligands = self._child_ligand_queryset(smiles=self.smiles)
                 conditional_log(self, f"Fetched ligands with SMILES {self.smiles} from database. Returned {len(ligands)}.", logging.INFO, ParserVerbosity.EVERYTHING)
                 if ligands:
                     return self.multi_match_handling(ligands)
@@ -872,7 +884,7 @@ class ModelLigand():
 
         if self.sequence:
             try:
-                ligands = Ligand.objects.filter(sequence=self.sequence)
+                ligands = self._child_ligand_queryset(sequence=self.sequence)
                 conditional_log(self, f"Fetched ligands with sequence {self.sequence} from database. Returned {len(ligands)}.", logging.INFO, ParserVerbosity.EVERYTHING)
                 if ligands:
                     return self.multi_match_handling(ligands)
@@ -881,7 +893,7 @@ class ModelLigand():
 
         if self.name:
             try:
-                ligands = Ligand.objects.filter(name=self.name)
+                ligands = self._child_ligand_queryset(name=self.name)
                 conditional_log(self, f"Fetched ligands by name ({self.name}) from database. Returned {len(ligands)}.", logging.INFO, ParserVerbosity.EVERYTHING)
                 if ligands:
                     return self.multi_match_handling(ligands)
