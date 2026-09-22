@@ -5,10 +5,12 @@ DB-driven classification-tree data, replacing the Excel-file-based tree builder 
 rather than per-request) is a family-level, verified-lossless equivalent of the Excel rows.
 """
 from collections import OrderedDict
+from string import Template
 
 from django.core.cache import cache, caches
 from django.db.models import Prefetch
 
+from common.models import WebLink
 from protein.models import Gene, Protein, ProteinFamily, ProteinFamilyClassification
 
 try:
@@ -16,7 +18,7 @@ try:
 except Exception:
     cache_alignment = cache
 
-CLASSIFICATION_ROWS_CACHE_KEY = "classification:tree_rows:db:v2"
+CLASSIFICATION_ROWS_CACHE_KEY = "classification:tree_rows:db:v4"
 CLASSIFICATION_ROWS_CACHE_TIMEOUT = 60 * 60 * 24  # 24h
 
 D3_EMPTY_LABEL = "Other / unknown"
@@ -44,6 +46,8 @@ def get_classification_rows(use_cache=True):
     )
     family_ids = {r.protein_family_id for r in pfc_rows}
 
+    gtop_links_qs = WebLink.objects.select_related('web_resource').filter(web_resource__slug='gtop')
+
     proteins_by_family = {}
     protein_qs = (
         Protein.objects
@@ -52,14 +56,28 @@ def get_classification_rows(use_cache=True):
         .prefetch_related(
             Prefetch(
                 'genes',
-                queryset=Gene.objects.only('name', 'position').order_by('position'),
+                queryset=Gene.objects.select_related('entrez_weblink__web_resource').order_by('position'),
                 to_attr='primary_genes_self',
-            )
+            ),
+            Prefetch(
+                'web_links',
+                queryset=gtop_links_qs,
+                to_attr='gtop_links_self',
+            ),
         )
         .order_by('entry_name')
     )
     for protein in protein_qs:
         proteins_by_family.setdefault(protein.family_id, []).append(protein)
+
+    def gtop_url(protein):
+        wl = protein.gtop_links_self[0] if getattr(protein, 'gtop_links_self', None) else None
+        if not wl:
+            return ""
+        try:
+            return Template(wl.web_resource.url).substitute(index=wl.index)
+        except Exception:
+            return ""
 
     rows = []
     for pfc in pfc_rows:
@@ -68,6 +86,7 @@ def get_classification_rows(use_cache=True):
         receptor_family = fam.parent.name if fam.parent else ""
         for protein in proteins_by_family.get(fam.id, ()):
             genes = getattr(protein, 'primary_genes_self', None) or []
+            gene_entrez_link = str(genes[0].entrez_weblink) if genes and genes[0].entrez_weblink else ""
             try:
                 protein_label = protein.short()
             except Exception:
@@ -87,9 +106,11 @@ def get_classification_rows(use_cache=True):
                 "entry_name": protein.entry_name,
                 "uniprot": protein.entry_name.split('_', 1)[0].upper(),
                 "gene": genes[0].name if genes else "",
+                "gene_entrez_link": gene_entrez_link,
                 "protein_label": protein_label,
                 "protein_name": protein.name or "",
                 "sequence": protein.sequence or "",
+                "gtopdb_link": gtop_url(protein),
             })
 
     if use_cache:
