@@ -174,10 +174,11 @@ def cut_refined ( objs ):
 
 @register.filter
 def cut_classname ( objs ):
-    if objs == "Other GPCRs":
-        return "Other"
-    else:
-        return objs[5:]
+    # Names that don't follow the "Class X (...)" pattern (e.g. "Unclassified") have no prefix
+    # to cut -- return them as-is instead of mangling the first 5 characters off.
+    if not objs.startswith("Class "):
+        return objs
+    return objs[5:]
 
 @register.filter
 def entry_short ( objs ):
@@ -219,10 +220,11 @@ def class_code_to_name(class_code):
         "C": "Class C (Glutamate)",
         "D1": "Class D1 (Ste2-like fungal pheromone)",
         "F": "Class F (Frizzled)",
-        "O1": "Class O1 (Fish-like olfactory)",
-        "O2": "Class O2 (Tetrapod specific olfactory)",
+        "O1": "Class O1 (Olfactory/extra-nasal 1)",
+        "O2": "Class O2 (Olfactory/extra-nasal 2)",
         "T2": "Class T2 (Taste 2)",
-        "O": "Class U (Unclassified)"
+        "V": "Class V (Vomeronasal)",
+        "U": "Class U (Unclassified)"
     }
     return class_names.get(class_code, "Invalid class code")
 
@@ -235,10 +237,11 @@ def format_class_header(class_code):
         "Class C (Glutamate)": "Class C<br>(Glutamate)",
         "Class D1 (Ste2-like fungal pheromone)": "Class D1<br>(Ste2-like fungal pheromone)",
         "Class F (Frizzled)": "Class F<br>(Frizzled)",
-        "Class O1 (fish-like odorant)": "Class O1<br>(Fish-like olfactory)",
-        "Class O2 (tetrapod specific odorant)": "Class O2<br>(Tetrapod specific olfactory)",
+        "Class O1 (Olfactory/extra-nasal 1)": "Class O1<br>(Olfactory/extra-nasal 1)",
+        "Class O2 (Olfactory/extra-nasal 2)": "Class O2<br>(Olfactory/extra-nasal 2)",
         "Class T2 (Taste 2)": "Class T2<br>(Taste&nbsp;2)",
-        "Other GPCRs": "Class U<br>(Unclassified)"
+        "Class V (Vomeronasal)": "Class V<br>(Vomeronasal)",
+        "Unclassified": "Class U<br>(Unclassified)"
     }
     return class_names.get(class_code, class_code)
 

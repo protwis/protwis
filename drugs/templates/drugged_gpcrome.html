@@ -45,6 +45,9 @@
   .color_sensory .square { background-color: #A3D9C8; } /* Sensory */
   .color_repurposed .circle { background-color: #ae5dae; } /* Repurposed */
 </style>
+<!-- Dropdown-positioning layout (Receptor names / Download dropdowns), shared with the
+     classification wheel and the other GPCRome-wheel control panels. -->
+<link rel="stylesheet" href="{% static 'home/css/classification/wheel.css' %}">
 {% endblock %}
 {% block content %}
 <div style="padding-top: 10px; font-size: 11px; white-space: nowrap;">
@@ -67,38 +70,43 @@
         <div style="padding-top: 10px; font-size: 11px; white-space: nowrap;">
           <div class="col-md-12">
             <br>
-            <div class="col-md-3">
-              Receptor names:
-              <div class="btn-group" role="group" id="gtp_plus">
-                <button id="GPCRome_Protein" class="btn btn-info active">Protein</button>
-                  <button id="GPCRome_Entrez" class="btn btn-info">Gene</button>
-                  <button id="GPCRome_Uniprot" class="btn btn-info ">UniProt</button>
-              </div>
-            </div>
+            <div class="text-center" style="white-space: normal;">
+              <div style="display:inline-flex; justify-content:center; align-items:center; gap:15px; flex-wrap:wrap;">
 
-            <div class="col-md-2" style="padding-top: 5px;margin-left: 75px;">
-              Icon toggle:
-              <button id="ToggleIcon" class="btn btn-info active">On</button>
-            </div>
-
-            <div class="col-md-2">
-              <div class="text-center">
+                <!-- Receptor names -->
                 <div class="dropdown">
-                  <button type="button" class="btn btn-primary dropdown-toggle" style="font-size: 14px;" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    <span class="glyphicon glyphicon-download" style="vertical-align: top;line-height: 1.3"></span> Download <span class="caret"></span>
-                  </button>
-                  <div class="dropdown-menu dropdown-menu-right-middle">
-                    <li><a class="dropdown-item" href="javascript:saveSvg(document.getElementById('GPCRome_plot_svg'), 'GPCRome_plot.svg');">SVG</a></li>
-                    <li><a class="dropdown-item" href="javascript:saveSvgAsPng(document.getElementById('GPCRome_plot_svg'), 'GPCRome_plot.png');">PNG</a></li>
-                    <li><a class="dropdown-item" href="javascript:saveSvgAsJpg(document.getElementById('GPCRome_plot_svg'), 'GPCRome_plot.jpg');">JPG</a></li>
-                    <li><a class="dropdown-item" href="javascript:saveSvgAsTiff(document.getElementById('GPCRome_plot_svg'), 'GPCRome_plot.tiff');">TIFF</a></li>
+                  <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">Receptor names</button>
+                  <div class="dropdown-menu dropdown-menu-side dropdown-menu-align-names">
+                    <button type="button" class="btn btn-outline-primary btn-block mb-1 GPCRomeStats-label-btn" data-wheel="drugs" data-value="Protein">Protein</button>
+                    <button type="button" class="btn btn-outline-primary btn-block mb-1 GPCRomeStats-label-btn" data-wheel="drugs" data-value="Entrez">Gene</button>
+                    <button type="button" class="btn btn-outline-primary btn-block GPCRomeStats-label-btn" data-wheel="drugs" data-value="Uniprot">UniProt</button>
                   </div>
                 </div>
+
+                <!-- Graphical legend -->
+                <button id="drugs-toggleIcon" class="btn btn-primary" type="button">Graphical legend</button>
+
+                <!-- Download -->
+                <div class="dropdown">
+                  <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">
+                    <span class="glyphicon glyphicon-download"></span> Download
+                  </button>
+                  <div class="dropdown-menu dropdown-menu-side dropdown-menu-align-download">
+                    <button type="button" class="btn btn-primary btn-block" id="drugs-download-svg">SVG</button>
+                    <button type="button" class="btn btn-primary btn-block" id="drugs-download-png">PNG</button>
+                  </div>
+                </div>
+
               </div>
             </div>
-            <div class="col-md-3"></div>
-            <div class="col-md-1">
-              <div style="margin-bottom: -150px; margin-top: 0px;" class="text-left">
+          <br />
+          <br />
+          <br />
+          <div id="image-container" data-image-url="{% static 'home/images/DataMapper/DataMapper_GPCRome_icon_legend.png' %}"></div>
+          <!-- GPCRome -->
+          <div class="col-md-12" style="margin-top: 0px;margin-bottom: 30px; position: relative;">
+              <div id="GPCRome_plot" class="text-center"></div>
+              <div style="position: absolute; top: 20px; right: 20px;" class="text-left">
                 <span class="color_header"><b><u>Color scheme</u></b><br></span>
                 <span class="color_phase1"><span class="square"></span> <b>Phase I</b></span><br/>
                 <span class="color_phase2"><span class="square"></span> <b>Phase II</b></span><br/>
@@ -106,15 +114,7 @@
                 <span class="color_phase4"><span class="square"></span> <b>Phase IV</b></span><br/>
                 <span class="color_untapped"><span class="square"></span> <b>Untapped targets</b></span><br/>
                 <span class="color_sensory"><span class="square"></span> <b>Sensory</b></span>
-            </div>         
-            </div>
-          <br />
-          <br />
-          <br />
-          <div id="image-container" data-image-url="{% static 'home/images/DataMapper/DataMapper_GPCRome_icon_legend.png' %}"></div>
-          <!-- GPCRome -->
-          <div class="col-md-12" style="margin-top: 0px;margin-bottom: 30px;">
-              <div id="GPCRome_plot" class="text-center"></div>
+              </div>
           </div>
         </div>
       </div>
@@ -233,6 +233,8 @@
 <script src="{% static 'home/js/spectrum_v1_8_1.js' %}"></script>
 <script src="{% static 'home/js/ml.js' %}"></script>
 <script src="{% static 'home/js/d3.tip.js' %}"></script>
+<script src="{% static 'home/js/gpcrome_svg_export.js' %}"></script>
+<script src="{% static 'home/js/gpcrome_wheel_controls.js' %}"></script>
 
 <script>
 
@@ -275,80 +277,33 @@ function updateReceptorData(fullData, receptorData) {
 
 updateReceptorData(GPCRomeWheelData, receptorData);
 
-var GPCRomes_styling = {
-  DataType: "Text",
-  FontStyle: "Arial",
-  FontsizeGlobal: "11px",
-  FontsizeClass: "20px",
-  Datatype: "Text",
-  showIcon: true,
-  LabelType: "Protein",
-  ShowLegend: false,
-  LegendLayout: { "mode": "row", "columns": "1", "sorted": "Vertically" }
+// Label buttons / legend toggle / SVG-PNG download are wired generically by
+// gpcrome_wheel_controls.js (shared with /mutations/statistics, /ligand/coverage and
+// /structure/statistics) -- this page has no numeric/customizable coloring (the categories are
+// explained by the static "Color scheme" key instead), so no #drugs-color-pickers container is
+// present and the picker-building part of initWheelControls() just no-ops for this wheel.
+var DrugsGPCRomeWheels = {
+  drugs: {
+    data: GPCRomeWheelData,
+    locationId: "GPCRome_plot",
+    filenameBase: "GPCRome_plot",
+    categorical: true,
+    styling: {
+      DataType: "Text",
+      FontStyle: "Arial",
+      FontsizeGlobal: "11px",
+      FontsizeClass: "20px",
+      showIcon: true,
+      LabelType: "Protein",
+      ShowLegend: false,
+      LegendLayout: { "mode": "row", "columns": "1", "sorted": "Vertically" }
+    },
+    drawn: false
+  }
 };
 
-// # initial draw
-let GPCRome_location = "GPCRome_plot";
-DrawGPCRomeWheel(GPCRomeWheelData, GPCRome_location, GPCRomes_styling);
-// Draw_GPCRomes(layout_data, fill_data, GPCRome_location, GPCRomes_styling);
-
-// Function to update and redraw GPCRomes
-function updateGPCRome() {
-    // Remove current
-    d3.select("#" + GPCRome_location).select("svg").remove();
-    // Redraw the GPCRome wheel plot
-    DrawGPCRomeWheel(GPCRomeWheelData, GPCRome_location, GPCRomes_styling); // ← Use the updated copy
-}
-
-document.getElementById("GPCRome_Protein").addEventListener("click", () => {
-  GPCRomes_styling.LabelType = "Protein";
-  updateGPCRome();
-  setActiveButton("GPCRome_Protein");
-});
-
-document.getElementById("GPCRome_Uniprot").addEventListener("click", () => {
-    GPCRomes_styling.LabelType = "Uniprot";
-    updateGPCRome();
-    setActiveButton("GPCRome_Uniprot");
-});
-
-document.getElementById("GPCRome_Entrez").addEventListener("click", () => {
-    GPCRomes_styling.LabelType = "Entrez";
-    updateGPCRome();
-    setActiveButton("GPCRome_Entrez");
-});
-
-function setActiveButton(id) {
-    document.getElementById("GPCRome_Protein").classList.remove("active");
-    document.getElementById("GPCRome_Uniprot").classList.remove("active");
-    document.getElementById("GPCRome_Entrez").classList.remove("active");
-    document.getElementById(id).classList.add("active");
-}
-
-  // Function to toggle the icon visibility and redraw the GPCRomes
-  function toggleIcon() {
-      const button = d3.select("#ToggleIcon");
-
-      // Toggle the showIcon property in GPCRomes_styling
-      GPCRomes_styling.showIcon = !GPCRomes_styling.showIcon;
-
-      // Update button text and state
-      if (GPCRomes_styling.showIcon) {
-          button.text("On");
-          button.classed("active", true);
-      } else {
-          button.text("Off");
-          button.classed("active", false);
-      }
-
-      // Redraw the GPCRomes with the updated icon state
-      updateGPCRome();
-  }
-
-  // Attach event listener to the button
-  d3.select("#ToggleIcon").on("click", toggleIcon);
-
-
+var drugsWheelControls = GPCRomeWheelControls.init({ wheels: DrugsGPCRomeWheels });
+drugsWheelControls.redraw("drugs");
 
   // Function to update layout data
   function updateLayoutData(layout_data, conversionDict, labelType) {
@@ -499,15 +454,17 @@ function setActiveButton(id) {
   let Bar_Tree_circles = transformData(Tree_circles);
 
   // setup the variables
-  tree_options.fontSize.class = "18px";
-  tree_options.fontSize.ligandtype = "18px";
-  tree_options.fontSize.receptorfamily = "18px";
-  tree_options.fontSize.receptor = "17px";
+  // Interior and leaf label sizes match the "Approved/Repurposed/New"/"Phase I-IV" static corner
+  // labels (DrawStaticPhaseLabelsRightAlignedViewBox, ~13px) instead of standing out oversized.
+  tree_options.fontSize.class = "13px";
+  tree_options.fontSize.ligandtype = "13px";
+  tree_options.fontSize.receptorfamily = "13px";
+  tree_options.fontSize.receptor = "16px";
 
-  rep_tree_options.fontSize.class = "18px";
-  rep_tree_options.fontSize.ligandtype = "18px";
-  rep_tree_options.fontSize.receptorfamily = "18px";
-  rep_tree_options.fontSize.receptor = "17px";
+  rep_tree_options.fontSize.class = "13px";
+  rep_tree_options.fontSize.ligandtype = "13px";
+  rep_tree_options.fontSize.receptorfamily = "13px";
+  rep_tree_options.fontSize.receptor = "16px";
   rep_tree_options.anchor = "rep_tree_plot";
 
   let maxLeafNodeLength = 0;

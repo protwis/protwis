@@ -150,7 +150,7 @@ class Command(BaseBuild):
                 if self.debug:
                     print('Introducing mutations at: {}'.format(self.added_mutations))
 
-        GPCR_class_codes = {'A':'001', 'B1':'002', 'B2':'003', 'C':'004', 'D1':'005', 'F':'006', 'T':'007'}
+        GPCR_class_codes = {'A':'001', 'B1':'002', 'B2':'003', 'C':'004', 'D1':'005', 'F':'006', 'O1':'007', 'O2':'008', 'T2':'009', 'V':'010'}
         self.modeller_iterations = options['i']
         self.build_all = False
 
@@ -194,7 +194,7 @@ class Command(BaseBuild):
             structs = Structure.objects.filter(annotated=True, structure_type__origin='experiment').order_by('pdb_code__index')
             all_receptors = list(all_receptors)+[i.protein_conformation.protein for i in structs]
         elif options['c'].upper() not in GPCR_class_codes:
-            raise AssertionError('Error: Incorrect class name given. Use argument -c with class name A, B1, B2, D1, C, F or T')
+            raise AssertionError('Error: Incorrect class name given. Use argument -c with class name A, B1, B2, D1, C, F, O1, O2, T2 or V')
         # Build one class
         else:
             all_receptors = Protein.objects.filter(parent__isnull=True, accession__isnull=False, species__common_name='Human',

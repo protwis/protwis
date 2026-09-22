@@ -619,8 +619,8 @@
 
   function normalizeTreeClassName(name) {
     return String(name || "")
-      .replace("Class O1 (fish-like)", "Class O1 (fish-like olfactory receptors)")
-      .replace("Class O2 (tetrapod specific)", "Class O2 (tetrapod-specific olfactory receptors)");
+      .replace("Class O1 (fish-like)", "Class O1 (Olfactory/extra-nasal 1)")
+      .replace("Class O2 (tetrapod specific)", "Class O2 (Olfactory/extra-nasal 2)");
   }
 
   function sentenceCaseFragment(value) {

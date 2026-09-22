@@ -2064,7 +2064,7 @@ def drugmapping(request):
     n = 0
     for c,c_v in coverage.items():
         c_v['name'] = c_v['name'].split("(")[0]
-        if c_v['name'].strip() == 'Other GPCRs':
+        if c_v['name'].strip() == 'Unclassified':
             # i += 1
             continue
             # pass

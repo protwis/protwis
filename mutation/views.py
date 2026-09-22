@@ -735,38 +735,44 @@ class MutationStatistics(TemplateView):
         for a in experimental_mutations:
             mut_count_receptor_dict[a['protein__entry_name']] = a['c']
 
-        #aggregate data for receptor of other organisms into human if available
+        # Fold each non-human ortholog's mutation count into its human entry -- the GPCRome
+        # wheel only ever renders human entries, so a receptor whose data is annotated against
+        # e.g. the rat or bovine structure would otherwise show up as having no mutations at all.
         aggregated = {}
-
         for key, value in mut_count_receptor_dict.items():
             # Split the key into protein name and organism
             base_name, organism = key.rsplit('_', 1)
-            # If it's a human version, initialize or add to it in the result dictionary
-            if organism == 'human':
-                if key not in aggregated:
-                    aggregated[key] = value
-                else:
-                    aggregated[key] += value
-            else:
-                # Check if a human version exists for this protein
-                human_key = f"{base_name}_human"
-                if human_key in mut_count_receptor_dict.keys():
-                    # Add the current organism's value to the human version
-                    aggregated[human_key] += value
-                # else:
-                #     # If no human version exists, add this non-human version as is
-                #     aggregated[key] = value
+            human_key = key if organism == 'human' else f"{base_name}_human"
+            if organism != 'human' and human_key not in mut_count_receptor_dict:
+                # No human ortholog tracked for this species-only entry -- nothing to fold it
+                # into, and it wouldn't render on the (human-only) wheel anyway.
+                continue
+            aggregated[human_key] = aggregated.get(human_key, 0) + value
 
+        # Receptors with 0 total (human + folded-in ortholog) annotated mutations are left out
+        # entirely (rather than sent as Value1: 0), so they render as blank/uncolored wedges
+        # instead of being pulled into the numeric color scale and dragging its floor down to 0
+        # -- same pattern as structure/views.py's complexes/olfactory wheels.
         updated_results = {
             key: {
                 'Value1': value,
             }
-            for key, value in mut_count_receptor_dict.items()
+            for key, value in aggregated.items()
+            if value > 0
         }
 
         gpcr_data = DataMapperHome.GenerateGPCRomeDataStructure(data_type="Classic")
         updated_data = DataMapperHome.update_nested_GPCRome_data(gpcr_data["Data"], updated_results)
         context['GPCRome_data'] = json.dumps(updated_data)
+
+        mutation_nonzero_values = [v for v in aggregated.values() if v > 0]
+        mutation_min = min(mutation_nonzero_values) if mutation_nonzero_values else 0
+        mutation_max = max(mutation_nonzero_values) if mutation_nonzero_values else 0
+        context['GPCRome_mutation_stats'] = json.dumps({
+            'min': mutation_min,
+            'max': mutation_max,
+            'avg': (mutation_min + mutation_max) / 2,
+        })
 
         return context
 

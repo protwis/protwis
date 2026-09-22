@@ -656,7 +656,7 @@ def isoforms(request):
     n = 0
     for c,c_v in coverage.items():
         c_v['name'] = c_v['name'].split("(")[0]
-        if c_v['name'].strip() in ['Other GPCRs']:
+        if c_v['name'].strip() in ['Unclassified']:
             continue
         children = []
         for lt,lt_v in c_v['children'].items():

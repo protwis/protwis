@@ -21,7 +21,7 @@ from structure.structural_superposition import ProteinSuperpose, FragmentSuperpo
 from structure.forms import *
 from signprot.models import SignprotComplex, SignprotStructure, SignprotStructureExtraProteins
 from interaction.models import ResidueFragmentInteraction,StructureLigandInteraction
-from protein.models import Protein, ProteinFamily, ProteinCouplings, Gene, IdentifiedSites
+from protein.models import Protein, ProteinFamily, ProteinCouplings, Gene, IdentifiedSites, ProteinFamilyClassification
 from construct.models import Construct
 from construct.functions import convert_ordered_to_disordered_annotation,add_construct
 from common.views import AbsSegmentSelection,AbsReferenceSelection
@@ -36,6 +36,7 @@ from mapper.views import DataMapperHome
 from ligand.models import LigandPeptideStructure, Endogenous_GTP
 from ligand.functions import standardize_smiles
 from table_provider.models import GpcrStructureBrowserTable
+from drugs.models import Drugs
 
 # ── Postgres aggregates that do the heavy string/array work ─────
 from django.contrib.postgres.aggregates import StringAgg, ArrayAgg
@@ -80,7 +81,7 @@ from contextlib import contextmanager
 
 
 
-class_dict = {'001':'A','002':'B1','003':'B2','004':'C','005':'D1','006':'F','007':'O1','008':'O2','009':'T2','010':'O'}
+class_dict = {'001':'A','002':'B1','003':'B2','004':'C','005':'D1','006':'F','007':'O1','008':'O2','009':'T2','010':'V','011':'U'}
 
 class StructureBrowser(TemplateView):
     """
@@ -1949,7 +1950,7 @@ class StructureStatistics(TemplateView):
         if self.origin == 'gprotein':
 
             tree = PhylogeneticTreeGenerator()
-            class_a_data = tree.get_tree_data(ProteinFamily.objects.get(name='Class A (Rhodopsin)'))
+            class_a_data = tree.get_tree_data(ProteinFamily.objects.get(slug='001'))
             context['class_a_options'] = deepcopy(tree.d3_options)
             context['class_a_options']['anchor'] = 'class_a'
             context['class_a_options']['leaf_offset'] = 50
@@ -1962,31 +1963,31 @@ class StructureStatistics(TemplateView):
                     whole_class_a['children'].remove(item)
                     break
             context['class_a'] = json.dumps(whole_class_a)
-            class_b1_data = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class B1 (Secretin)'))
+            class_b1_data = tree.get_tree_data(ProteinFamily.objects.get(slug='002'))
             context['class_b1_options'] = deepcopy(tree.d3_options)
             context['class_b1_options']['anchor'] = 'class_b1'
             context['class_b1_options']['branch_trunc'] = 60
             context['class_b1_options']['label_free'] = [1,]
             context['class_b1'] = json.dumps(class_b1_data.get_nodes_dict('crystals'))
-            class_b2_data = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class B2 (Adhesion)'))
+            class_b2_data = tree.get_tree_data(ProteinFamily.objects.get(slug='003'))
             context['class_b2_options'] = deepcopy(tree.d3_options)
             context['class_b2_options']['anchor'] = 'class_b2'
             context['class_b2_options']['label_free'] = [1,]
             context['class_b2'] = json.dumps(class_b2_data.get_nodes_dict('crystals'))
-            class_c_data = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class C (Glutamate)'))
+            class_c_data = tree.get_tree_data(ProteinFamily.objects.get(slug='004'))
             context['class_c_options'] = deepcopy(tree.d3_options)
             context['class_c_options']['anchor'] = 'class_c'
             context['class_c_options']['branch_trunc'] = 50
             context['class_c_options']['label_free'] = [1,]
             context['class_c'] = json.dumps(class_c_data.get_nodes_dict('crystals'))
-            class_f_data = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class F (Frizzled)'))
+            class_f_data = tree.get_tree_data(ProteinFamily.objects.get(slug='006'))
             context['class_f_options'] = deepcopy(tree.d3_options)
             context['class_f_options']['anchor'] = 'class_f'
             context['class_f_options']['label_free'] = [1,]
             #json.dump(class_f_data.get_nodes_dict('crystalized'), open('tree_test.json', 'w'), indent=4)
             context['class_f'] = json.dumps(class_f_data.get_nodes_dict('crystals'))
 
-            class_t2_data = tree.get_tree_data(ProteinFamily.objects.get(name='Class T2 (Taste 2)'))
+            class_t2_data = tree.get_tree_data(ProteinFamily.objects.get(slug='009'))
 
             context['class_t2_options'] = deepcopy(tree.d3_options)
             context['class_t2_options']['anchor'] = 'class_t2'
@@ -2497,7 +2498,7 @@ class StructureStatistics(TemplateView):
         n = 0
         for c_v in coverage.values():
             c_v['name'] = c_v['name'].split("(")[0]
-            if c_v['name'].strip() == 'Other GPCRs':
+            if c_v['name'].strip() == 'Unclassified':
                 continue
             children = []
             for lt_v in c_v['children'].values():
@@ -2610,7 +2611,7 @@ class StructureStatistics(TemplateView):
         n = 0
         for c,c_v in coverage.items():
             c_v['name'] = c_v['name'].split("(")[0]
-            if c_v['name'].strip() == 'Other GPCRs':
+            if c_v['name'].strip() == 'Unclassified':
                 continue
             children = []
             for lt,lt_v in c_v['children'].items():
@@ -4992,25 +4993,47 @@ class StructureBlastView(View):
 
 
 class LigandComplexModels(TemplateView):
+    """
+    Lightweight view that just renders the ligand complex models template.
+    The actual data is fetched asynchronously from LigandComplexModelsDataJsonView.
+    """
     template_name = "ligand_complex_models.html"
 
     def get_context_data(self, **kwargs):
         context = super(LigandComplexModels, self).get_context_data(**kwargs)
-        try:
+        return context
 
-            # Get the structure models along with prefetching ligands and related data
-            structures = Structure.objects.filter(
-                structure_type__origin="model", 
+
+class LigandComplexModelsDataJsonView(View):
+    """JSON endpoint for the ligand complex models browser.
+
+    Builds on the same `Structure` queryset `LigandComplexModels` used to
+    server-render the page (structure_type__origin="model", excluding
+    af-signprot-only rows, excluding models superseded by an experimental
+    PDB), plus the extra joins needed for the newer columns:
+      - drugs.Drugs (matched by ligand+target) for Clinical / Pharm. modality
+      - protein.ProteinFamilyClassification (primary/order=1 rows) for
+        receptor Modality / Chemotype
+      - Structure.signprot_complex for the Structure section's signal
+        protein family/subtype (only populated when a G protein/arrestin is
+        part of the model)
+    """
+
+    def get(self, request, *args, **kwargs):
+        try:
+            structures = list(Structure.objects.filter(
+                structure_type__origin="model",
             ).exclude(
                 structure_type__slug__in=['af-signprot']
-            ).prefetch_related(
-                "protein_conformation__protein__family",
-                "protein_conformation__protein",
+            ).select_related(
                 "state",
+                "structure_type",
+                "pdb_code",
                 "protein_conformation__protein__family__parent__parent__parent",
                 "protein_conformation__protein__species",
                 "protein_conformation__protein__parent__family",
-                "pdb_code",
+                "signprot_complex__protein__family__parent__parent__parent",
+            ).prefetch_related(
                 Prefetch(
                     "structuremodelscores_set",
                     queryset=StructureModelScores.objects.all(),
@@ -5030,11 +5053,11 @@ class LigandComplexModels(TemplateView):
                     to_attr="prefetch_ligands"
                 )
             ).annotate(
-            #Fetch single gene name and entrez_id for each target using subqueries, prioritizing lowest entrez_id
-            gene_name=Subquery(
-                Gene.objects.filter(proteins=OuterRef('protein_conformation__protein__pk')).order_by('entrez_id').values('name')[:1]),
-            gene_entrez_id=Subquery(
-                Gene.objects.filter(proteins=OuterRef('protein_conformation__protein__pk')).order_by('entrez_id').values('entrez_id')[:1]),
+                # Fetch single gene name and entrez_id for each target using subqueries, prioritizing lowest entrez_id
+                gene_name=Subquery(
+                    Gene.objects.filter(proteins=OuterRef('protein_conformation__protein__pk')).order_by('entrez_id').values('name')[:1]),
+                gene_entrez_id=Subquery(
+                    Gene.objects.filter(proteins=OuterRef('protein_conformation__protein__pk')).order_by('entrez_id').values('entrez_id')[:1]),
                 experimental_pdb_exists=Exists(
                     StructureLigandInteraction.objects.filter(
                         structure__structure_type__slug__in=[
@@ -5052,48 +5075,148 @@ class LigandComplexModels(TemplateView):
                 )
             ).exclude(
                 experimental_pdb_exists=True
-            )
+            ))
+
+            # Drop rows without a ligand at all -- this page is specifically about ligand complexes
+            # (matches the `{% if model.prefetch_ligands %}` guard the old server-rendered template used).
+            structures = [s for s in structures if getattr(s, 'prefetch_ligands', None)]
 
             entrez_websource = WebResource.objects.get(slug="entrez_gene")
 
-            # Process each ligand using standardize_smiles
-            # We assume that each structure has a prefetch_ligands list with at least one element.
             for structure in structures:
-                if hasattr(structure, 'prefetch_ligands'):
-                    for ligand_struct in structure.prefetch_ligands:
-                        ligand = ligand_struct.ligand
-                        # Get the raw SMILES and molecular weight (adjust attribute names as needed)
-                        raw_smiles = getattr(ligand, 'smiles', None)
-                        mw = getattr(ligand, 'mw', None)
-                        # Process the SMILES using your function
-                        canonical_smiles, smiles_for_image, picture_flag = standardize_smiles(raw_smiles, mw)
-                        # Attach these values to the ligand instance so that your template can access them
-                        ligand.smiles_for_image = smiles_for_image
-                        ligand.picture = picture_flag
-                structure.gene_entrez_weblink = str(WebLink(index=structure.gene_entrez_id, web_resource=entrez_websource)) if structure.gene_entrez_id != "" else None
-
-            context['structure_model'] = structures
+                for ligand_struct in structure.prefetch_ligands:
+                    ligand = ligand_struct.ligand
+                    raw_smiles = getattr(ligand, 'smiles', None)
+                    mw = getattr(ligand, 'mw', None)
+                    canonical_smiles, smiles_for_image, picture_flag = standardize_smiles(raw_smiles, mw)
+                    ligand.smiles_for_image = smiles_for_image
+                    ligand.picture = picture_flag
+                structure.gene_entrez_weblink = str(WebLink(index=structure.gene_entrez_id, web_resource=entrez_websource)) if structure.gene_entrez_id else None
 
             receptor_ids = [s.protein_conformation.protein_id for s in structures]
-            ligand_ids = [s.prefetch_ligands[0].ligand_id for s in structures if getattr(s, 'prefetch_ligands', None)]
+            ligand_ids = [s.prefetch_ligands[0].ligand_id for s in structures]
+
             physiological_pairs = set(
-                 Endogenous_GTP.objects.filter(ligand_id__in=ligand_ids, receptor_id__in=receptor_ids)
-                 .values_list('ligand_id', 'receptor_id')
+                Endogenous_GTP.objects.filter(ligand_id__in=ligand_ids, receptor_id__in=receptor_ids)
+                .values_list('ligand_id', 'receptor_id')
             )
-            is_ligand_physiological_dict = {
-                 s.id: (getattr(s, 'prefetch_ligands', None) and (s.prefetch_ligands[0].ligand_id, s.protein_conformation.protein_id) 
-                        in physiological_pairs)
-                 for s in structures
-             }
-            context['is_ligand_physiological_dict'] = is_ligand_physiological_dict    
 
+            # Drugs, matched by (ligand, receptor target) -- see plan's Clinical/Pharm. modality rules
+            drugs_by_pair = defaultdict(list)
+            for d in Drugs.objects.filter(
+                ligand_id__in=ligand_ids, target_id__in=receptor_ids
+            ).select_related('moa').values('ligand_id', 'target_id', 'drug_status', 'indication_max_phase', 'moa__name'):
+                drugs_by_pair[(d['ligand_id'], d['target_id'])].append(d)
 
+            def clinical_and_pharm_modality(ligand_id, receptor_id):
+                rows = drugs_by_pair.get((ligand_id, receptor_id), [])
+                if not rows:
+                    return "No", "-"
+                approved = [r for r in rows if r['drug_status'] == 'Approved']
+                highest_order_rows = approved if approved else rows
+                moas = sorted({r['moa__name'] for r in highest_order_rows if r['moa__name']})
+                clinical = "Approved drug" if approved else "Agent in trial"
+                return clinical, (" / ".join(moas) if moas else "-")
 
-        except Structure.DoesNotExist as e:
-            # Optionally log the exception
-            pass
+            # ProteinFamilyClassification -- primary (order=1) annotation only
+            family_ids = {s.protein_conformation.protein.family_id for s in structures}
+            pfc_modality = {
+                r.protein_family_id: r.modality.name
+                for r in ProteinFamilyClassification.objects.filter(
+                    protein_family_id__in=family_ids, modality_order=1, modality__isnull=False
+                ).select_related('modality')
+            }
+            pfc_chemotype = {
+                r.protein_family_id: r.chemotype.name
+                for r in ProteinFamilyClassification.objects.filter(
+                    protein_family_id__in=family_ids, chemotype_order=1, chemotype__isnull=False
+                ).select_related('chemotype')
+            }
 
-        return context
+            out = []
+            for structure in structures:
+                p = structure.protein_conformation.protein
+                ligand = structure.prefetch_ligands[0].ligand
+
+                is_physiological = (ligand.id, p.id) in physiological_pairs
+                clinical, pharm_modality = clinical_and_pharm_modality(ligand.id, p.id)
+
+                if ligand.ligand_type and ligand.ligand_type.slug == "small-molecule":
+                    mol_modality = "Small mol"
+                elif ligand.ligand_type and ligand.ligand_type.slug == "peptide":
+                    mol_modality = "Peptide"
+                elif ligand.ligand_type:
+                    mol_modality = (ligand.ligand_type.name or ligand.ligand_type.slug or "N/A").title()
+                else:
+                    mol_modality = "N/A"
+
+                signprot = structure.signprot_complex
+                signal_protein_family = None
+                signal_protein_subtype = None
+                if signprot and signprot.protein and signprot.protein.family and signprot.protein.family.parent:
+                    sp = signprot.protein
+                    bucket = sp.family.parent.parent.name if sp.family.parent.parent else None
+                    subtype_key = sp.entry_name.split('_')[0]
+                    signal_protein_family = sp.family.parent.name
+                    if bucket == "Arrestin":
+                        signal_protein_subtype = ARRESTIN_DISPLAY_NAME.get(subtype_key, sp.entry_name)
+                    else:
+                        signal_protein_subtype = G_PROTEIN_DISPLAY_NAME.get(subtype_key.upper(), sp.family.name)
+
+                af2_score = None
+                boltz2_score = None
+                if structure.structure_type.name == "Model (AF2)" and structure.prefetch_model_scores:
+                    af2_score = structure.prefetch_model_scores[0].pae_mean
+                if structure.structure_type.name == "Model (Boltz2)" and structure.prefetch_model_scores:
+                    boltz2_score = structure.prefetch_model_scores[0].ligand_plddt
+                rfaa_score = structure.prefetch_rfaa_scores[0].plddt_mean if structure.prefetch_rfaa_scores else None
+
+                out.append({
+                    "id": structure.id,
+                    "pdb_code_index": structure.pdb_code.index if structure.pdb_code else None,
+                    "has_signprot": bool(signprot),
+                    "ligand": {
+                        "id": ligand.id,
+                        "name": ligand.name,
+                        "type_slug": ligand.ligand_type.slug if ligand.ligand_type else "other",
+                        "smiles": ligand.smiles_for_image or "",
+                        "picture": ligand.picture or "Not_available",
+                        "sequence": ligand.sequence or "",
+                    },
+                    "mol_modality": mol_modality,
+                    "pharm_modality": pharm_modality,
+                    "physiological": "Yes" if is_physiological else "No",
+                    "clinical": clinical,
+                    # Nested (rather than flat gene_name/protein_name + sibling fields) so that
+                    # each cell's render function is a pure function of its own column data --
+                    # the filter-dropdown builder (NorgesDTFilterBuilder.js) calls render(d, 'display')
+                    # with no row/meta argument when building a filtered column's option list.
+                    "gene": {
+                        "name": structure.gene_name,
+                        "entrez_weblink": structure.gene_entrez_weblink,
+                    } if structure.gene_name else None,
+                    "protein": {
+                        "name": p.name,
+                        "entry_name": p.entry_name,
+                    },
+                    "family": p.family.parent.name,
+                    "class": p.family.parent.parent.parent.name,
+                    "modality": pfc_modality.get(p.family_id, "-"),
+                    "chemotype": pfc_chemotype.get(p.family_id, "-"),
+                    "state": structure.state.name if structure.state else "-",
+                    "signal_protein_family": signal_protein_family,
+                    "signal_protein_subtype": signal_protein_subtype,
+                    "af2_score": af2_score,
+                    "boltz2_score": boltz2_score,
+                    "rfaa_score": rfaa_score,
+                    "publication_date": structure.publication_date.strftime("%Y-%m-%d") if structure.publication_date else None,
+                })
+
+            return JsonResponse(out, safe=False, encoder=DjangoJSONEncoder)
+
+        except Exception as exc:
+            traceback.print_exc()
+            return JsonResponse({"error": str(exc)}, status=500)
 
 # This may be momentarily
 def ligand_coloring(structure, ligand_chain, ligand_type):
