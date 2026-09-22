@@ -905,10 +905,14 @@ def showcalculation(request):
 
     residues = Residue.objects.filter(protein_conformation__protein=context['proteins'][0]).prefetch_related('protein_segment','display_generic_number','generic_number')
 
+    from angles.models import get_snake_plot_distance_lookup
+    distance_lookup = get_snake_plot_distance_lookup(context['proteins'][0])
+
     HelixBox = DrawHelixBox(
                 residues, context['proteins'][0].get_protein_class(), str(p), nobuttons=1)
     SnakePlot = DrawSnakePlot(
-                residues, context['proteins'][0].get_protein_class(), str(p), nobuttons=1)
+                residues, context['proteins'][0].get_protein_class(), str(p), nobuttons=1,
+                residue_distance_lookup=distance_lookup)
 
     lookup = {}
     lookup_with_pos = {}

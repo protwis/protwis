@@ -26,6 +26,15 @@ TM_ANCHOR_CANDIDATES = {
     7: ['7x43', '7x44', '7x42'],  # mean midplane_distance: 7x43: -0.42, 7x44: -0.94, 7x42: +1.81
 }
 
+# Matches diagrams.js's own auto-collapse threshold (numResidues<10 auto-expands a loop,
+# everything else starts hidden behind the '.long' CSS class). A loop at or above this size
+# never renders visibly by default, so its residue positions must not be allowed to inflate
+# the server-rendered SVG's initial bounding box (self.high/self.low) - otherwise a very long
+# family-/consensus-wide loop (which can run into the hundreds of residues) produces a huge
+# initial height/viewBox that only shrinks once the client-side JS runs and re-measures the
+# (now-hidden) visible content.
+LOOP_AUTO_COLLAPSE_THRESHOLD = 10
+
 
 class DrawSnakePlot(Diagram):
 
@@ -223,18 +232,18 @@ class DrawSnakePlot(Diagram):
             missing_tms = [i for i in range(1,8) if self.tm_alignment_status.get(i) == 'missing']
             messages = []
             if not self.residue_distance_lookup:
-                messages.append("No experimental structure is available for this receptor - the "
-                    "transmembrane helix alignment shown is an approximation based on generic conserved "
-                    "positions observed across GPCRs, not measured for this receptor specifically.")
+                messages.append("Transmembrane helix alignment shown here is an approximation based on "
+                    "generic conserved positions observed across GPCRs - it was not calculated from "
+                    "experimental structure data for this diagram.")
             if missing_tms:
                 messages.append("Generic anchor residues could not be found for: {} - alignment for "
                     "these helices is a rough approximation and should be interpreted with care.".format(
                         ', '.join('TM'+str(i) for i in missing_tms)))
             if messages:
                 warning = ' '.join(messages)
-                # anchor near the TM columns' own (always-visible) top, not self.low - self.low also
-                # tracks hidden, collapsed-by-default ".long" loop residues that the client-side resize
-                # JS ignores, which would otherwise leave a large empty gap above the visible plot
+                # anchor near the TM columns' own (always-visible) top, not self.low - self.low can
+                # still include a handful of small/auto-expanded loops, which would otherwise leave
+                # a large empty gap above the visible plot
                 tm_tops = [self.TBCoords[i]['top'][1] for i in range(1,8)
                     if i in self.TBCoords and 'top' in self.TBCoords[i]]
                 warn_x = self.maxX['right'] - 10
@@ -1123,17 +1132,18 @@ class DrawSnakePlot(Diagram):
                     else:
                         if where[1][1]>self.maxY[position]: self.maxY[position] = where[1][1]
 
-                    if where[1][1]>self.high: self.high = where[1][1]
-                    if where[1][1]<self.low: self.low = where[1][1]
+                    if len(rs)<LOOP_AUTO_COLLAPSE_THRESHOLD:
+                        if where[1][1]>self.high: self.high = where[1][1]
+                        if where[1][1]<self.low: self.low = where[1][1]
 
                 box_y = temp_max_y+100*orientation+bend*distance_between_rows*orientation+5*orientation
 
                 self.output += "<rect onclick='toggleLoop(\"."+name+"\",\"long\",false,this);' class='"+name+" long segment' x="+str((x2+x1)/2-18)+" y="+str(box_y-13)+" rx=5 ry=5 width='35' height='20' stroke='black' fill='white' stroke-width='1' style2='fill:red;stroke:black;stroke-width:5;opacity:0.5'/>"
                 self.output += str("<text  onclick='toggleLoop(\"."+name+"\",\"long\",false,this);' class='"+name+" long segment' x="+str((x2+x1)/2)+" y="+str(box_y)+" text-anchor='middle' font-size="+str(font_size)+" font-family='"+font_family+"'>"+name+"</text>")
 
-
-                if box_y>self.high: self.high = box_y
-                if box_y<self.low: self.low = box_y
+                if len(rs)<LOOP_AUTO_COLLAPSE_THRESHOLD:
+                    if box_y>self.high: self.high = box_y
+                    if box_y<self.low: self.low = box_y
 
             else: # make rounded arc
                 points2 = "M "+str(x1)+" "+str(y1)+" Q"+str(boxX)+" "+str(boxY+y_indent)+" "+str(x2)+" "+str(y2)
@@ -1158,8 +1168,9 @@ class DrawSnakePlot(Diagram):
                     self.output += self.DrawResidue(where[1][0],where[1][1],r[1], r[0], r[3], self.residue_radius-1,name+" long")
                     pos += between_residues
 
-                    if where[1][1]>self.high: self.high = where[1][1]
-                    if where[1][1]<self.low: self.low = where[1][1]
+                    if len(rs)<LOOP_AUTO_COLLAPSE_THRESHOLD:
+                        if where[1][1]>self.high: self.high = where[1][1]
+                        if where[1][1]<self.low: self.low = where[1][1]
                     prev_where = where[1][0],where[1][1]
 
                     if orientation==-1:
@@ -1249,8 +1260,9 @@ class DrawSnakePlot(Diagram):
             output_residue = self.DrawResidue(x,y,rs[i][1], rs[i][0], rs[i][3], self.residue_radius,name+" long")
 
             if y>self.maxY['bottom']: self.maxY['bottom'] = y-20
-            if y>self.high: self.high = y
-            if y<self.low: self.low = y
+            if res_num<LOOP_AUTO_COLLAPSE_THRESHOLD:
+                if y>self.high: self.high = y
+                if y<self.low: self.low = y
             row_pos += 1
 
             if y>max_y: #get position for label
