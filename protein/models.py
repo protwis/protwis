@@ -80,16 +80,20 @@ class Protein(models.Model):
         return DrawSnakePlot(residuelist,self.get_protein_class(),str(self), domain=domain, residue_distance_lookup=distance_lookup)
 
     def get_snake_plot_GAIN(self):
+        from angles.models import get_snake_plot_distance_lookup
         residuelist = Residue.objects.filter(protein_conformation__protein__entry_name=str(self)).prefetch_related('protein_segment','display_generic_number','generic_number')
-        return DrawSnakePlot(residuelist,self.get_protein_class(),str(self), domain='GAIN')
+        distance_lookup = get_snake_plot_distance_lookup(self)
+        return DrawSnakePlot(residuelist,self.get_protein_class(),str(self), domain='GAIN', residue_distance_lookup=distance_lookup)
 
     def get_helical_box_no_buttons(self):
         residuelist = Residue.objects.filter(protein_conformation__protein__entry_name=str(self)).prefetch_related('protein_segment','display_generic_number','generic_number')
         return DrawHelixBox(residuelist,self.get_protein_class(),str(self), nobuttons=1)
 
     def get_snake_plot_no_buttons(self):
+        from angles.models import get_snake_plot_distance_lookup
         residuelist = Residue.objects.filter(protein_conformation__protein__entry_name=str(self)).prefetch_related('protein_segment','display_generic_number','generic_number')
-        return DrawSnakePlot(residuelist,self.get_protein_class(),str(self), nobuttons=1)
+        distance_lookup = get_snake_plot_distance_lookup(self)
+        return DrawSnakePlot(residuelist,self.get_protein_class(),str(self), nobuttons=1, residue_distance_lookup=distance_lookup)
 
     def get_gprotein_plot(self):
         residuelist = Residue.objects.filter(protein_conformation__protein__entry_name=str(self)).prefetch_related('protein_segment','display_generic_number','generic_number')
