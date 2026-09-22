@@ -514,7 +514,7 @@ function showPDBtable(element) {
         gprotein_subtype         : { column_number: 18, ...multiselect_defaults, filter_default_label: "Subtype", select_type_options: {width: "70px"}, },
         gprotein_pcntseq         : { column_number: 20, ...range_number_defaults, select_type_options: {width: "50px"}, column_data_type: "html", },
         aux_fusion               : { column_number: 21, ...multiselect_defaults, filter_default_label: "Fusion", },
-        aux_antibody             : { column_number: 22, ...multiselect_defaults, filter_default_label: "Antibody", column_data_type: "html", },
+        aux_antibody             : { column_number: 22, ...multiselect_defaults, filter_default_label: "Antibody", },
         ligand_ligand            : { column_number: 23, ...multiselect_defaults, filter_default_label: "Ligand", },
         ligand_modality          : { column_number: 24, ...multiselect_defaults, filter_default_label: "Modality", },
         }
