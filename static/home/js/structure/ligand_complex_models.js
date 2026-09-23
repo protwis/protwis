@@ -107,7 +107,7 @@
     // ----- RECEPTOR -----
     {
       data: "gene",
-      name: "Gene name",
+      name: "Gene",
       width: "90px",
       render: (d, t) => {
         if (!d) return t === "display" ? "-" : "";
@@ -117,7 +117,7 @@
     },
     {
       data: "protein",
-      name: "Protein name",
+      name: "Protein",
       width: "140px",
       render: (d, t) => {
         if (!d) return "";
@@ -266,8 +266,8 @@
     let column_filters = [];
     column_filters = column_filters.concat(CreateColumnFilters(dt, 2, 1, "Multi-select-exact-filter"));   // Name (html)
     column_filters = column_filters.concat(CreateColumnFilters(dt, 3, 4, "Multi-select-exact"));          // Mol./Pharm. modality, Physiological, Clinical
-    column_filters = column_filters.concat(CreateColumnFilters(dt, 7, 1, "Multi-select-exact"));          // Gene name
-    column_filters = column_filters.concat(CreateColumnFilters(dt, 8, 1, "Multi-select-exact-filter"));   // Protein name (html)
+    column_filters = column_filters.concat(CreateColumnFilters(dt, 7, 1, "Multi-select-exact"));          // Gene
+    column_filters = column_filters.concat(CreateColumnFilters(dt, 8, 1, "Multi-select-exact-filter"));   // Protein (html)
     column_filters = column_filters.concat(CreateColumnFilters(dt, 9, 4, "Multi-select-exact"));          // Family, Class, Modality, Chemotype
     column_filters = column_filters.concat(CreateColumnFilters(dt, 13, 3, "Multi-select-exact"));         // State, Signal protein family/subtype
     column_filters = column_filters.concat(CreateColumnFilters(dt, 16, 3, "Range-float-vertical"));       // Scores
