@@ -3789,14 +3789,26 @@ def ConvertStructuresToProteins(request):
     if simple_selection:
         selection.importer(simple_selection)
     if selection.targets != []:
+        # Only convert 'structure'-typed targets -- anything else (e.g. a 'structure_model'
+        # left behind by an abandoned homology-model-browser visit) is a leftover from an
+        # unrelated flow and is dropped rather than blindly processed, since selection.targets
+        # is one session-wide bucket shared by every browsing page.
+        new_targets = []
         for struct in selection.targets:
+            if struct.type != 'structure':
+                continue
             prot = struct.item.protein_conformation.protein.parent
             if not prot:
                 prot = struct.item.protein_conformation.protein
-            selection.remove('targets', 'structure', struct.item.id)
-            selection.add('targets', 'protein', SelectionItem('protein', prot))
+            new_targets.append(SelectionItem('protein', prot))
         if selection.reference != []:
-            selection.add('targets', 'protein', selection.reference[0])
+            new_targets.append(selection.reference[0])
+            selection.clear('reference')
+        # Replace (not mutate) targets, so anything not explicitly converted above -- for
+        # whatever reason it was sitting there -- can't survive into the alignment selection.
+        selection.clear('targets')
+        for item in new_targets:
+            selection.add('targets', 'protein', item)
     # export simple selection that can be serialized
     simple_selection = selection.exporter()
 
@@ -3813,28 +3825,36 @@ def ConvertStructureModelsToProteins(request):
     if simple_selection:
         selection.importer(simple_selection)
     if selection.targets != []:
+        # Only convert the target types this view actually understands -- anything else
+        # (e.g. a leftover 'structure' from an unrelated superposition/browser visit) is
+        # dropped rather than blindly processed, since selection.targets is one session-wide
+        # bucket shared by every browsing page.
+        new_targets = []
         for struct_mod in selection.targets:
-            if hasattr(struct_mod.item, 'protein'):
+            if struct_mod.type == 'structure_model':
                 if not struct_mod.item.protein.accession:
                     prot = struct_mod.item.protein.parent
                 else:
                     prot = struct_mod.item.protein
-                selection.remove('targets', 'structure_model', struct_mod.item.id)
-                selection.add('targets', 'protein', SelectionItem('protein', prot))
-            elif hasattr(struct_mod.item, 'receptor_protein'):
+                new_targets.append(SelectionItem('protein', prot))
+            elif struct_mod.type == 'structure_complex_receptor':
                 if not struct_mod.item.receptor_protein.accession:
                     prot = struct_mod.item.receptor_protein.parent
                 else:
                     prot = struct_mod.item.receptor_protein
-                selection.remove('targets', 'structure_complex_receptor', struct_mod.item.id)
-                selection.add('targets', 'protein', SelectionItem('protein', prot))
-            elif hasattr(struct_mod.item, 'pdb_code'):
+                new_targets.append(SelectionItem('protein', prot))
+            elif struct_mod.type == 'structure':
                 prot = struct_mod.item.protein_conformation.protein.parent
-                selection.remove('targets', 'structure', struct_mod.item.id)
-                selection.add('targets', 'protein', SelectionItem('protein', prot))
+                new_targets.append(SelectionItem('protein', prot))
 
         if selection.reference != []:
-            selection.add('targets', 'protein', selection.reference[0])
+            new_targets.append(selection.reference[0])
+            selection.clear('reference')
+        # Replace (not mutate) targets, so anything not explicitly converted above -- for
+        # whatever reason it was sitting there -- can't survive into the alignment selection.
+        selection.clear('targets')
+        for item in new_targets:
+            selection.add('targets', 'protein', item)
     # export simple selection that can be serialized
     simple_selection = selection.exporter()
 
@@ -3849,25 +3869,37 @@ def ConvertStructureComplexSignprotToProteins(request):
     selection = Selection()
     if simple_selection:
         selection.importer(simple_selection)
+    prot = None
     if selection.targets != []:
+        # Only convert the target types this view actually understands -- anything else
+        # (e.g. a leftover 'structure_model' from an unrelated browser visit) is dropped
+        # rather than blindly assumed to be a signprot-complex Structure (which previously
+        # crashed with SignprotComplex.DoesNotExist for anything that wasn't), since
+        # selection.targets is one session-wide bucket shared by every browsing page.
+        new_targets = []
         for struct_mod in selection.targets:
-            if hasattr(struct_mod.item, 'sign_protein'):
+            if struct_mod.type == 'structure_complex_signprot':
                 prot = struct_mod.item.sign_protein
-                selection.remove('targets', 'structure_complex_signprot', struct_mod.item.id)
-                selection.add('targets', 'protein', SelectionItem('protein', prot))
-            else:
+                new_targets.append(SelectionItem('protein', prot))
+            elif struct_mod.type == 'structure':
                 prot = SignprotComplex.objects.get(structure=struct_mod.item).protein
-                selection.remove('targets', 'structure', struct_mod.item.id)
-                selection.add('targets', 'protein', SelectionItem('protein', prot))
+                new_targets.append(SelectionItem('protein', prot))
+
         if selection.reference != []:
-            selection.add('targets', 'protein', selection.reference[0])
+            new_targets.append(selection.reference[0])
+            selection.clear('reference')
+        # Replace (not mutate) targets, so anything not explicitly converted above -- for
+        # whatever reason it was sitting there -- can't survive into the alignment selection.
+        selection.clear('targets')
+        for item in new_targets:
+            selection.add('targets', 'protein', item)
     # export simple selection that can be serialized
     simple_selection = selection.exporter()
 
     # add simple selection to session
     request.session['selection'] = simple_selection
 
-    if prot.family.parent.parent.name=='Arrestin':
+    if prot and prot.family.parent.parent.name=='Arrestin':
         return HttpResponseRedirect('/alignment/segmentselectionarrestin')
     else:
         return HttpResponseRedirect('/alignment/segmentselectiongprot')
