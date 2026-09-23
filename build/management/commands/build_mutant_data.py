@@ -7,7 +7,7 @@ from build.management.commands.base_build import Command as BaseBuild
 from build.management.commands.build_ligand_functions import *
 
 from mutation.models import *
-from common.tools import fetch_from_web_api, test_model_updates
+from common.tools import fetch_from_web_api, test_model_updates, find_role
 from residue.models import Residue
 from protein.models import Protein
 from ligand.models import Ligand, LigandRole, LigandType
@@ -576,20 +576,21 @@ class Command(BaseBuild):
                         continue
 
                 if r['ligand_class']:
-                    try:
-                        l_role, created = LigandRole.objects.get_or_create(name=r['ligand_class'],
-                            defaults={'slug': slugify(r['ligand_class'])[:50]}) # FIXME this should not be needed
-                    except Exception as e:
-                        if LigandRole.objects.filter(slug=slugify(r['ligand_class'])[:50]).exists():
-                            l_role = LigandRole.objects.get(slug=slugify(r['ligand_class'])[:50])
-                            if l_role.name == slugify(r['ligand_class'])[:50]:
-                                #if name of role is same as slug, then it was created by constructs script, replace it
-                                l_role.name = r['ligand_class']
-                                l_role.save()
-                        else:
-                            print(e)
-                            print("Error with",r['ligand_class'],slugify(r['ligand_class'])[:50] )
-                            l_role, created = LigandRole.objects.get_or_create(slug=slugify(r['ligand_class'])[:50]) # FIXME this should not be needed
+                    l_role = find_role(r['ligand_class'][:50])[0] #getting from previous code, althought should not be needed
+                    # try:
+                    #     l_role, created = LigandRole.objects.get_or_create(name=r['ligand_class'],
+                    #         defaults={'slug': slugify(r['ligand_class'])[:50]}) # FIXME this should not be needed
+                    # except Exception as e:
+                    #     if LigandRole.objects.filter(slug=slugify(r['ligand_class'])[:50]).exists():
+                    #         l_role = LigandRole.objects.get(slug=slugify(r['ligand_class'])[:50])
+                    #         if l_role.name == slugify(r['ligand_class'])[:50]:
+                    #             #if name of role is same as slug, then it was created by constructs script, replace it
+                    #             l_role.name = r['ligand_class']
+                    #             l_role.save()
+                    #     else:
+                    #         print(e)
+                    #         print("Error with",r['ligand_class'],slugify(r['ligand_class'])[:50] )
+                    #         l_role, created = LigandRole.objects.get_or_create(slug=slugify(r['ligand_class'])[:50]) # FIXME this should not be needed
                 else:
                     l_role = None
 
@@ -714,7 +715,7 @@ class Command(BaseBuild):
             except:
                 print('error with mutation record')
                 traceback.print_exc()
-                exit(0)
+                # exit(0)
 
             #print(diff)
 

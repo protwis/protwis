@@ -1,0 +1,69 @@
+{% load structure_extras %}
+
+{% for data_source, source_data in sigprot_table_data.items %}                
+<div id="sigprot_tables_{{ data_source }}" class="tab-pane fade in {% if forloop.first %}active{% endif %}">
+    <table style="width:75% !important; margin: 0 auto;" class="table table-stripped">
+        <thead class="table_head_emphasis">
+            <tr>
+                <td class="row_title"></td>
+                {% for effector_name, effector_count in source_data.effector_totals.by_effector.items %}
+                <td align="center"><b>{{ effector_name|safe }}</b></td>
+                {% endfor %}
+                <td align="center"><b>Total</b></td>
+            </tr>
+        </thead>
+        <tbody>
+            {% for class_code, class_data in source_data.complexed.by_class.items %}
+            <tr>
+                <td class="row_title">{{ class_code | class_code_to_name | safe }}</td>
+                {% for effector_name, effector_count in class_data.by_effector.items %}
+                <td align="center" style="vertical-align:middle !important">{{ effector_count }}</td>
+                {% endfor %}
+                <td align="center" style="vertical-align:middle !important;font-weight: bold;">{{ class_data.total }}</td>
+            </tr>
+            {% endfor %}
+            {% if source_data.receptor_only %}
+            <tr>
+                <td class="row_title"><b>Total Complexes</b></td>
+                {% for effector_name, effector_count in source_data.complexed.all_classes.by_effector.items %}
+                <td align="center" style="font-weight: bold;">{{ effector_count }}</td>
+                {% endfor %}
+                <td align="center" style="font-weight: bold;">{{ source_data.complexed.all_classes.total }}</td>
+            </tr>
+            <tr>
+                <td class="spacer_cell"></td>
+                {% for i in source_data.receptor_only.all_classes.by_effector.items|length|times %}
+                    <td class="spacer_cell"></td>
+                {% endfor %}
+                <td class="spacer_cell"></td>
+            </tr>
+            <tr>
+                <td class="row_title">Receptor only</td>
+                {% for effector_name, effector_count in source_data.receptor_only.all_classes.by_effector.items %}
+                <td align="center" style="vertical-align:middle !important">{{ effector_count }}</td>
+                {% endfor %}
+                <td align="center" style="vertical-align:middle !important;font-weight: bold;">{{ source_data.receptor_only.all_classes.total }}</td>
+            </tr>
+            <tr>
+                <td class="spacer_cell"></td>
+                {% for i in source_data.receptor_only.all_classes.by_effector.items|length|times %}
+                <td class="spacer_cell"></td>
+                {% endfor %}
+                <td class="spacer_cell"></td>
+            </tr>
+            {% endif %}
+            <tr>
+                <td class="row_title" style="border-bottom: 2px solid #000;">Total</td>
+                {% for effector_name, effector_count in source_data.effector_totals.by_effector.items %}
+                <td align="center" style="font-weight: bold; border-bottom: 2px solid #000;">{{ effector_count }}</td>
+                {% endfor %}
+                <td align="center" style="font-weight: bold; border-bottom: 2px solid #000;">{{ source_data.effector_totals.total }}</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+{% endfor %}
+<p style="width:75%; margin: 0 auto;">
+Specific sets of structures can be downloaded from the <a href="/structure">Structures</a> page.<br />
+The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }}</strong>.
+</p>

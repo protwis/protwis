@@ -275,7 +275,7 @@
     {% comment %} <!-- Displaying the ligand name with empty col-md-8 -->
     <div class="row">
         <div class="col-md-4">
-            <h2>{{ ligand.ligand_name }}</h2>
+            <h2>{{ ligand.ligand_name }} [{{ ligand.ligand_id }}]</h2>
         </div>
         <div class="col-md-8">
             <!-- This column is intentionally left empty to occupy the remaining space -->
@@ -285,7 +285,7 @@
     <!-- Displaying the ligand name -->
     <div class="row">
         <div class="col-md-4">
-            <h2>{{ ligand.ligand_name }}</h2>
+            <h2>{{ ligand.ligand_name }} [{{ ligand.ligand_id }}]</h2>
         </div>
     </div>
     
@@ -337,6 +337,12 @@
                             <td>Sequence</td>
                             <td class="name" style="max-width: 350px">{{ ligand.sequence }}</td>
                         </tr>
+							{% if ligand.helm %}
+							<tr>
+								<td>HELM</td>
+								<td class="name" style="max-width: 350px">{{ ligand.helm }}</td>
+							</tr>
+							{% endif %}
                         {% endif %}
                     </table>
                 </div>
@@ -357,10 +363,26 @@
                             <td>Rotatable bonds</td>
                             <td>{{ ligand.rotatable }}</td>
                         </tr>
+						<tr>
+                            <td>Log P</td>
+                            <td>{{ ligand.logp }}</td>
+                        </tr>
                         <tr>
                             <td>Molecular weight (Da)</td>
-                            <td>{{ ligand.mw|floatformat:1 }}</td>
+                            <td>{{ ligand.mw|default_if_none:"None" }}</td>
                         </tr>
+						{% if ligand.stereo_status %}
+						<tr>
+                            <td>Stereochemistry info</td>
+                            <td>{{ ligand.stereo_status|safe }}</td>
+                        </tr>
+						{% endif %}
+						{% if ligand.radioactive %}
+						<tr>
+                            <td>Radioactive</td>
+                            <td>{{ ligand.radioactive|safe }}</td>
+                        </tr>
+						{% endif %}
                     </table>
                 </div>
                 
@@ -375,7 +397,6 @@
                                     {% for ex in ligand.wl %}
                                     <li><a href="{{ ex.link }}" target="_blank">{{ ex.name }}</a></li>
                                     {% endfor %}
-                                    <li><a href="https://gpcrdb.org/ligand/{{ ligand.ligand_id }}/info" target="_blank">GPCRdb</a></li>
                                 </ul>
                             </td>
                         </tr>
@@ -384,10 +405,22 @@
                             <td>Structure pdb</td>
                             <td>
                                 {% for data in structure %}
-                                <a href="https://gpcrdb.org/interaction/{{ data.structure_pdb }}" target="_blank">{{ data.structure_pdb }}</a>
+                                <a href="/interaction/{{ data.structure_pdb }}" target="_blank">{{ data.structure_pdb }}</a>
                                 {% endfor %}
                             </td>
                         </tr>
+                        {% endif %}
+                        {% if model_structures %}
+                        {% for type_name, models in model_structures.items %}
+                        <tr>
+                            <td>{{ type_name }}</td>
+                            <td>
+                                {% for m in models %}
+                                <a href="/structure/ligand_complex_models/{{ m.structure_pdb }}" target="_blank">{{ m.receptor_name|safe }}</a>
+                                {% endfor %}
+                            </td>
+                        </tr>
+                        {% endfor %}
                         {% endif %}
                         {% if mutations %}
                         <tr>
@@ -400,6 +433,11 @@
                         </tr>
                         {% endif %}
                     </table>
+                    {% if ligand.related_ids|length > 1 %}
+                    <div class="well well-sm text-center">
+                        <a href="/ligand/{{ ligand.ligand_id }}/group" class="btn btn-primary btn-sm">GPCRdb related ligands</a>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
             <br/>
@@ -583,7 +621,6 @@
                                     {% for ex in ligand.wl %}
                                     <li><a href="{{ ex.link }}" target="_blank">{{ ex.name }}</a></li>
                                     {% endfor %}
-                                    <li><a href="https://gpcrdb.org/ligand/{{ ligand.ligand_id }}/info" target="_blank">GPCRdb</a></li>
                                 </ul>
                             </td>
                         </tr>
@@ -592,10 +629,22 @@
                             <td>Structure pdb</td>
                             <td>
                                 {% for data in structure %}
-                                <a href="https://gpcrdb.org/interaction/{{ data.structure_pdb }}" target="_blank">{{ data.structure_pdb }}</a>
+                                <a href="/interaction/{{ data.structure_pdb }}" target="_blank">{{ data.structure_pdb }}</a>
                                 {% endfor %}
                             </td>
                         </tr>
+                        {% endif %}
+                        {% if model_structures %}
+                        {% for type_name, models in model_structures.items %}
+                        <tr>
+                            <td>{{ type_name }}</td>
+                            <td>
+                                {% for m in models %}
+                                <a href="/structure/ligand_complex_models/{{ m.structure_pdb }}" target="_blank">{{ m.receptor_name|safe }}</a>
+                                {% endfor %}
+                            </td>
+                        </tr>
+                        {% endfor %}
                         {% endif %}
                         {% if mutations %}
                         <tr>
@@ -608,6 +657,11 @@
                         </tr>
                         {% endif %}
                     </table>
+                    {% if ligand.related_ids|length > 2 %}
+                    <div class="well well-sm text-center">
+                        <a href="/ligand/{{ ligand.ligand_id }}/group" class="btn btn-primary btn-sm">GPCRdb related ligands</a>
+                    </div>
+                    {% endif %}
                 </div>
 			</div>
             <br/>

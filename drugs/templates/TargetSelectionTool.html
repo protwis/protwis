@@ -135,13 +135,14 @@
         background: white;
         border-right: 1px solid #cccccc; /* Optional for visual separation */
     }
-    /* Sticky column for the 'Gene' header cell in the <thead> */
+    /* Sticky column for the 'Uniprot' header cell in the <thead> */
     table thead tr:nth-child(3) th:first-child {
         position: sticky;
         top: 0;
         left: 0; /* Align with the body sticky column */
         z-index: 2; /* Higher than body cells */
         background: white; /* Match the header background */
+        max-width: 75px;
         border-right: 1px solid #cccccc; /* Optional for visual clarity */
     }
     .popover {
@@ -201,11 +202,11 @@
                 <thead>
                     <!-- Dummy Header Row for Complex Header Fix -->
                     <tr>
-                        <td colspan="97" style="text-align: center" data-dt-order="disable"></td>
+                        <td colspan="98" style="text-align: center" data-dt-order="disable"></td>
                     </tr>
                     <!-- Super Header Row -->
                     <tr style="padding-top: 10px; font-size: 14px; white-space: nowrap;">
-                        <th colspan="6" style="text-align:center;" data-dt-order="disable">Targets</th>
+                        <th colspan="7" style="text-align:center;" data-dt-order="disable">Targets</th>
                         <th colspan="1" style="text-align:center;border-left: 1px solid #cccccc;" data-dt-order="disable">Literature</th>
                         <th colspan="2" style="text-align:center;border-left: 1px solid #cccccc;" data-dt-order="disable">Novelty</th>
                         <th colspan="3" style="text-align:center;border-left: 1px solid #cccccc;" data-dt-order="disable">Structures</th>
@@ -220,7 +221,8 @@
                     <!-- Header Row -->
                     <tr>
                         <th style="text-align: center;">Target ID</th>
-                        <th class="sticky-column" style="text-align: center;">Gene</th>
+                        <th class="sticky-column" style="text-align: center;">Uniprot</th>
+                        <th style="text-align: center;">Gene</th>
                         <th style="text-align: center;">Protein</th>
                         <th style="text-align: center;">Receptor family</th>
                         <th style="text-align: center;">Ligand type</th>
@@ -259,6 +261,7 @@
                     <tr>
                         <td style="text-align: center" data-dt-order="disable"></td>
                         <td class="sticky-column" style="text-align: center;" data-dt-order="disable"></td>
+                        <td style="text-align: center;" data-dt-order="disable"></td>
                         <td style="text-align: center" data-dt-order="disable"></td>
                         <td style="text-align: center" data-dt-order="disable"></td>
                         <td style="text-align: center" data-dt-order="disable"></td>
@@ -297,18 +300,19 @@
                 <thead>
                     <!-- Dummy Header Row for Complex Header Fix -->
                     <tr>
-                        <td colspan="14" style="text-align: center" data-dt-order="disable"></td>
+                        <td colspan="15" style="text-align: center" data-dt-order="disable"></td>
                     </tr>
                     <!-- Super Header Row -->
                     <tr style="padding-top: 10px; font-size: 14px; white-space: nowrap;">
-                        <th colspan="6" style="text-align:center;" data-dt-order="disable">Targets</th>
+                        <th colspan="7" style="text-align:center;" data-dt-order="disable">Targets</th>
                         <th colspan="6" style="text-align:center;border-left: 1px solid #cccccc;" data-dt-order="disable">Diseases</th>
                         <th colspan="2" style="text-align:center;border-left: 1px solid #cccccc;" data-dt-order="disable">Agents/drugs</th>
                     </tr>
                     <!-- Header Row -->
                     <tr>
                         <th style="text-align: center;">Target ID</th>
-                        <th class="sticky-column" style="text-align: center;">Gene</th>
+                        <th class="sticky-column" style="text-align: center;">Uniprot</th>
+                        <th style="text-align: center;">Gene</th>
                         <th style="text-align: center;">Protein</th>
                         <th style="text-align: center;">Receptor family</th>
                         <th style="text-align: center;">Ligand type</th>
@@ -325,6 +329,7 @@
                     <tr>
                         <td style="text-align: center" data-dt-order="disable"></td>
                         <td class="sticky-column" style="text-align: center;" data-dt-order="disable"></td>
+                        <td style="text-align: center;" data-dt-order="disable"></td>
                         <td style="text-align: center" data-dt-order="disable"></td>
                         <td style="text-align: center" data-dt-order="disable"></td>
                         <td style="text-align: center" data-dt-order="disable"></td>
@@ -349,17 +354,18 @@
                 <thead>
                     <!-- Dummy Header Row for Complex Header Fix -->
                     <tr>
-                        <td colspan="9" style="text-align: center" data-dt-order="disable"></td>
+                        <td colspan="10" style="text-align: center" data-dt-order="disable"></td>
                     </tr>
                     <!-- Super Header Row -->
                     <tr style="padding-top: 10px; font-size: 14px; white-space: nowrap;">
-                        <th colspan="6" style="text-align:center;" data-dt-order="disable">Targets</th>
+                        <th colspan="7" style="text-align:center;" data-dt-order="disable">Targets</th>
                         <th colspan="3" style="text-align:center;border-left: 1px solid #cccccc;" data-dt-order="disable">Diseases</th>
                     </tr>
                     <!-- Header Row -->
                     <tr>
                         <th style="text-align: center;">Target ID</th>
-                        <th class="sticky-column" style="text-align: center;">Gene</th>
+                        <th class="sticky-column" style="text-align: center;">Uniprot</th>
+                        <th style="text-align: center;">Gene</th>
                         <th style="text-align: center;">Protein</th>
                         <th style="text-align: center;">Receptor family</th>
                         <th style="text-align: center;">Ligand type</th>
@@ -371,6 +377,7 @@
                     <tr>
                         <td style="text-align: center" data-dt-order="disable"></td>
                         <td class="sticky-column" style="text-align: center;" data-dt-order="disable"></td>
+                        <td style="text-align: center;" data-dt-order="disable"></td>
                         <td style="text-align: center" data-dt-order="disable"></td>
                         <td style="text-align: center" data-dt-order="disable"></td>
                         <td style="text-align: center" data-dt-order="disable"></td>
@@ -470,34 +477,46 @@ $(document).ready(function() {
     // Define columns
     var target_columnDefs = [
         { className: "dt-head-nowrap dt-head-center dt-center dt-body-center expand", targets: "_all" }, 
-        { targets: [6, 7, 9, 12, 16,18, 22,26,76,77], className: 'border-left' },
+        { targets: [7, 8, 10, 13, 17,19, 23,27,77,78], className: 'border-left' },
     ];
 
     var disease_columnDefs = [
         { className: "dt-head-nowrap dt-head-center dt-center dt-body-center expand", targets: "_all" }, 
-        { targets: [6, 12], className: 'border-left' },
+        { targets: [7, 13], className: 'border-left' },
     ]
 
     var untapped_columnDefs = [
         { className: "dt-head-nowrap dt-head-center dt-center dt-body-center expand", targets: "_all" }, 
-        { targets: [6], className: 'border-left' },
+        { targets: [7], className: 'border-left' },
     ];
 
     // Define columns dynamically based on the type
     var target_columns = [
         {data: "Target ID", name: "Target ID", visible: false}, // Hidden Target ID column
-        {data: "Gene name", name: "Gene",width: "125px", className: "sticky-column", render: function (data, type, row, meta) {
-                    if (type === 'display') {
-                        const originalData = data; // Raw data
-                        const transformedData = data.replace('_human', '').toUpperCase(); // Transformed display value
-
-                        return '<a href="/protein/' + originalData + '/" target="_blank">' + transformedData + '</a>';
-                    } else if (type === 'filter') {
-                        // Return transformed data for the filter dropdown
-                        return data.replace('_human', '').toUpperCase();
-                    }
-                    return data; // Raw data for sorting
-                    }},
+        { data: "Uniprot entry", name: "Uniprot", width: "125px", className: "sticky-column", render: function (data, type, row, meta) {
+            if (type === 'display') {
+                const originalData = data; 
+                const transformedData = data.replace('_human', '').toUpperCase(); 
+                return '<a href="/protein/' + originalData + '/" target="_blank">' + transformedData + '</a>';
+            } else if (type === 'filter') {
+                return data.replace('_human', '').toUpperCase();
+            }
+            return data;
+        }},
+        { data: "Gene name", name: "Gene", width: "125px", className: "small-width", render: function (data, type, row, meta) {
+            if (type === 'display') {
+              if (row && row['Gene name']) {
+                if (row['Gene_entrez_weblink'] != ""){
+                  return '<a href="' + row['Gene_entrez_weblink'] + '" target="_blank">' + row['Gene name'] + '</a>';
+                } else {
+                  return row['Gene name'];
+                }
+              }
+            } else if (type === 'filter') {
+                return row['Gene name'];
+            }          
+            return data;
+        }},
         {data: "Protein name", name: "Protein", width: "125px", render: function (data) { return data.replace('receptor', ''); }},
         {data: "Receptor family", name: "Receptor family", width: "150px",className: "receptor-width", render: function (data) { return data.replace('receptors', ''); }},
         {data: "Ligand type", name: "Ligand type", width: "150px"},
@@ -563,18 +582,30 @@ $(document).ready(function() {
     // Define columns dynamically based on the type
     var disease_columns = [
         {data: "Target ID", name: "Target ID", visible: false}, // Hidden Target ID column
-        {data: "Gene name", name: "Gene",width: "125px", className: "sticky-column", render: function (data, type, row, meta) {
-                    if (type === 'display') {
-                        const originalData = data; // Raw data
-                        const transformedData = data.replace('_human', '').toUpperCase(); // Transformed display value
-
-                        return '<a href="/protein/' + originalData + '/" target="_blank">' + transformedData + '</a>';
-                    } else if (type === 'filter') {
-                        // Return transformed data for the filter dropdown
-                        return data.replace('_human', '').toUpperCase();
-                    }
-                    return data; // Raw data for sorting
-                    }},
+        { data: "Uniprot entry", name: "Uniprot", width: "125px", className: "sticky-column", render: function (data, type, row, meta) {
+            if (type === 'display') {
+                const originalData = data; 
+                const transformedData = data.replace('_human', '').toUpperCase(); 
+                return '<a href="/protein/' + originalData + '/" target="_blank">' + transformedData + '</a>';
+            } else if (type === 'filter') {
+                return data.replace('_human', '').toUpperCase();
+            }
+            return data;
+        }},
+        { data: "Gene name", name: "Gene", width: "125px", className: "small-width", render: function (data, type, row, meta) {
+            if (type === 'display') {
+              if (row && row['Gene name']) {
+                if (row['Gene_entrez_weblink'] != ""){
+                  return '<a href="' + row['Gene_entrez_weblink'] + '" target="_blank">' + row['Gene name'] + '</a>';
+                } else {
+                  return row['Gene name'];
+                }
+              }
+            } else if (type === 'filter') {
+                return row['Gene name'];
+            }          
+            return data;
+        }},
         {data: "Protein name", name: "Protein", width: "125px", render: function (data) { return data.replace('receptor', ''); }},
         {data: "Receptor family", name: "Receptor family", width: "150px",className: "receptor-width", render: function (data) { return data.replace('receptors', ''); }},
         {data: "Ligand type", name: "Ligand type", width: "150px"},
@@ -625,18 +656,30 @@ $(document).ready(function() {
     // Define columns dynamically based on the type
     var untapped_columns = [
         {data: "Target ID", name: "Target ID", visible: false}, // Hidden Target ID column
-        {data: "Gene name", name: "Gene", width: "5%", className: "sticky-column", render: function (data, type, row, meta) {
-                    if (type === 'display') {
-                        const originalData = data; // Raw data
-                        const transformedData = data.replace('_human', '').toUpperCase(); // Transformed display value
-
-                        return '<a href="/protein/' + originalData + '/" target="_blank">' + transformedData + '</a>';
-                    } else if (type === 'filter') {
-                        // Return transformed data for the filter dropdown
-                        return data.replace('_human', '').toUpperCase();
-                    }
-                    return data; // Raw data for sorting
-                    }},
+        { data: "Uniprot entry", name: "Uniprot", className: "sticky-column", render: function (data, type, row, meta) {
+            if (type === 'display') {
+                const originalData = data; 
+                const transformedData = data.replace('_human', '').toUpperCase(); 
+                return '<a href="/protein/' + originalData + '/" target="_blank">' + transformedData + '</a>';
+            } else if (type === 'filter') {
+                return data.replace('_human', '').toUpperCase();
+            }
+            return data;
+        }},
+        { data: "Gene name", name: "Gene", className: "small-width", render: function (data, type, row, meta) {
+            if (type === 'display') {
+              if (row && row['Gene name']) {
+                if (row['Gene_entrez_weblink'] != ""){
+                  return '<a href="' + row['Gene_entrez_weblink'] + '" target="_blank">' + row['Gene name'] + '</a>';
+                } else {
+                  return row['Gene name'];
+                }
+              }
+            } else if (type === 'filter') {
+                return row['Gene name'];
+            }          
+            return data;
+        }},
         {data: "Protein name", name: "Protein", width: "10%", render: function (data) { return data.replace('receptor', ''); }},
         {data: "Receptor family", name: "Receptor family", width: "10%",className: "receptor-width", render: function (data) { return data.replace('receptors', ''); }},
         {data: "Ligand type", name: "Ligand type", width: "10%"},
@@ -730,12 +773,12 @@ $(document).ready(function() {
         var column_filters = [];
         const Table_selector = $("#TargetSelectionToolTable").DataTable();
         // CreateColumnFilters --> CreateColumnFilters(datatable_selector,column_number, column_range, filter_type)
-        column_filters = column_filters.concat(CreateColumnFilters(Table_selector,0,6,"Multi-select-exact"));
-        column_filters = column_filters.concat(CreateColumnFilters(Table_selector,6,2,"Range-float-vertical"));
-        column_filters = column_filters.concat(CreateColumnFilters(Table_selector,8,1,"Multi-select-exact"));
-        column_filters = column_filters.concat(CreateColumnFilters(Table_selector,9,17,"Range-float-vertical"));
-        column_filters = column_filters.concat(CreateColumnFilters(Table_selector,26,51,"Range-float-vertical"));
-        column_filters = column_filters.concat(CreateColumnFilters(Table_selector,77,20,"Multi-select-exact"));
+        column_filters = column_filters.concat(CreateColumnFilters(Table_selector,0,7,"Multi-select-exact"));
+        column_filters = column_filters.concat(CreateColumnFilters(Table_selector,7,2,"Range-float-vertical"));
+        column_filters = column_filters.concat(CreateColumnFilters(Table_selector,9,1,"Multi-select-exact"));
+        column_filters = column_filters.concat(CreateColumnFilters(Table_selector,10,17,"Range-float-vertical"));
+        column_filters = column_filters.concat(CreateColumnFilters(Table_selector,27,51,"Range-float-vertical"));
+        column_filters = column_filters.concat(CreateColumnFilters(Table_selector,78,20,"Multi-select-exact"));
         // // Create the filteres
         createDropdownFilters(Table_selector,column_filters);
     }
@@ -744,8 +787,8 @@ $(document).ready(function() {
         var column_filters = [];
         const Table_selector = $("#TargetSelectionToolTable_disease").DataTable();
         // CreateColumnFilters --> CreateColumnFilters(datatable_selector,column_number, column_range, filter_type)
-        column_filters = column_filters.concat(CreateColumnFilters(Table_selector,0,11,"Multi-select-exact"));
-        column_filters = column_filters.concat(CreateColumnFilters(Table_selector,11,3,"Range-float-vertical"));
+        column_filters = column_filters.concat(CreateColumnFilters(Table_selector,0,12,"Multi-select-exact"));
+        column_filters = column_filters.concat(CreateColumnFilters(Table_selector,12,3,"Range-float-vertical"));
         // // Create the filteres
         createDropdownFilters(Table_selector,column_filters);
     }
@@ -755,8 +798,8 @@ $(document).ready(function() {
         var column_filters = [];
         const Table_selector = $("#TargetSelectionToolTable_untapped").DataTable();
         // CreateColumnFilters --> CreateColumnFilters(datatable_selector,column_number, column_range, filter_type)
-        column_filters = column_filters.concat(CreateColumnFilters(Table_selector,0,8,"Multi-select-exact"));
-        column_filters = column_filters.concat(CreateColumnFilters(Table_selector,8,1,"Range-float-vertical"));
+        column_filters = column_filters.concat(CreateColumnFilters(Table_selector,0,9,"Multi-select-exact"));
+        column_filters = column_filters.concat(CreateColumnFilters(Table_selector,9,1,"Range-float-vertical"));
         // // Create the filteres
         createDropdownFilters(Table_selector,column_filters);
     }
@@ -779,12 +822,12 @@ function range(start, end) {
 
 // column visibility configuration for the master button clicks
 const columnVisibilityConfig = {
-    0: [...range(1, 5), ...range(6, 11)], // Characterization
-    1: [...range(1, 5), ...range(12, 25)], // Drugs/Agents/Ligands
-    2: [...range(1, 5)], // Clinically targeted
-    3: [...range(1, 5)], //  Untapped target disease associations
-    4: [...range(1, 5),...range(26,75)], //  Tissue expression 
-    5: [...range(1, 5),...range(76,96)], // Cancer expression
+    0: [...range(1, 6), ...range(7, 12)], // Characterization
+    1: [...range(1, 6), ...range(13, 26)], // Drugs/Agents/Ligands
+    2: [...range(1, 6)], // Clinically targeted
+    3: [...range(1, 6)], //  Untapped target disease associations
+    4: [...range(1, 6),...range(27,76)], //  Tissue expression 
+    5: [...range(1, 6),...range(77,97)], // Cancer expression
 };
 
 let activeTargetIds = []; // Stores globally synchronized IDs

@@ -1119,7 +1119,7 @@ class Alignment:
                 calc_values = self.pairwise_similarity(self.proteins[i], self.proteins[k])
 
                 # Similarity
-                value = calc_values[1].strip()
+                value = round(calc_values[1])
                 if int(value) < 10:
                     color_class = 0
                 else:
@@ -1127,7 +1127,7 @@ class Alignment:
                 self.similarity_matrix[self.proteins[k].protein.entry_name]['values'][i] = [value, color_class]
 
                 # Identity
-                value = calc_values[0].strip()
+                value = round(calc_values[0])
                 if int(value) < 10:
                     color_class = 0
                 else:
@@ -1160,7 +1160,10 @@ class Alignment:
 
                         # store average + stddev + count + display
                         for zscale in ZSCALES:
-                            if len(zscale_position[zscale]) == 1:
+                            if len(zscale_position[zscale]) == 0:
+                                display = tooltip = "-"
+                                self.zscales[zscale][segment][generic_number] = [0, 0, 0, display]
+                            elif len(zscale_position[zscale]) == 1:
                                 display = tooltip = str(round(zscale_position[zscale][0], 2)) + " ± " + str(0) + " (1)"
                                 self.zscales[zscale][segment][generic_number] = [zscale_position[zscale][0], 0, 1, display]
                             else:
@@ -1419,15 +1422,16 @@ class AlignedReferenceTemplate(Alignment):
         if self.reference_protein.family.parent.parent.parent.name == 'Class B2 (Adhesion)':
             self.structures_data = Structure.objects.filter(
                 state__name__in=self.query_states).filter(Q(protein_conformation__protein__parent__family__parent__parent__parent=template_family) |
-                                                          Q(protein_conformation__protein__parent__family__parent__parent__parent=self.reference_protein.family.parent.parent.parent)
-                                                          ).order_by('protein_conformation__protein__parent','resolution').filter(annotated=True
-                                                          ).exclude(structure_type__slug__startswith='af-').distinct()
+                                                          Q(protein_conformation__protein__parent__family__parent__parent__parent=self.reference_protein.family.parent.parent.parent)) \
+                                                  .order_by('protein_conformation__protein__parent','resolution') \
+                                                  .filter(annotated=True, structure_type__origin='experiment') \
+                                                  .distinct()
         else:
-            self.structures_data = Structure.objects.filter(
-                state__name__in=self.query_states, protein_conformation__protein__parent__family__parent__parent__parent=
-                template_family).order_by('protein_conformation__protein__parent',
-                                          'resolution').filter(annotated=True
-                                          ).exclude(structure_type__slug__startswith='af-').distinct()
+            self.structures_data = Structure.objects.filter(state__name__in=self.query_states, 
+                                                            protein_conformation__protein__parent__family__parent__parent__parent=template_family) \
+                                                    .order_by('protein_conformation__protein__parent', 'resolution') \
+                                                    .filter(annotated=True, structure_type__origin='experiment') \
+                                                    .distinct()
         if self.revise_xtal==None:
             if self.force_main_temp:
                 main_st = Structure.objects.get(pdb_code__index=self.force_main_temp.upper())
@@ -1911,15 +1915,19 @@ class ClosestReceptorHomolog():
             return this_structs[0].protein_conformation.protein.parent
         else:
             if p.family.slug[:3]=='008':
-                structures = Structure.objects.all().exclude(structure_type__slug__startswith='af-').exclude(annotated=False).exclude(protein_conformation__protein__parent__entry_name__in=exclusion_list)
+                structures = Structure.objects.filter(structure_type__origin='experiment').exclude(annotated=False).exclude(protein_conformation__protein__parent__entry_name__in=exclusion_list)
             elif isinstance(self.family_mapping[p.family.slug[:3]], list):
                 structures = []
                 for slug in self.family_mapping[p.family.slug[:3]]:
-                    structures+=list(Structure.objects.filter(protein_conformation__protein__parent__family__slug__istartswith=slug).exclude(
-                    annotated=False).exclude(structure_type__slug__startswith='af-').exclude(protein_conformation__protein__parent__entry_name__in=exclusion_list))
+                    structures+=list(Structure.objects.filter(protein_conformation__protein__parent__family__slug__istartswith=slug, 
+                                                              structure_type__origin='experiment') \
+                                                      .exclude(annotated=False) \
+                                                      .exclude(protein_conformation__protein__parent__entry_name__in=exclusion_list))
             else:
-                structures = Structure.objects.filter(protein_conformation__protein__parent__family__slug__istartswith=self.family_mapping[p.family.slug[:3]]).exclude(
-                    annotated=False).exclude(structure_type__slug__startswith='af-').exclude(protein_conformation__protein__parent__entry_name__in=exclusion_list)
+                structures = Structure.objects.filter(protein_conformation__protein__parent__family__slug__istartswith=self.family_mapping[p.family.slug[:3]], 
+                                                       structure_type__origin='experiment') \
+                                              .exclude(annotated=False) \
+                                              .exclude(protein_conformation__protein__parent__entry_name__in=exclusion_list)
             a.load_reference_protein(p)
             structure_proteins = []
             for i in structures:

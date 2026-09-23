@@ -1,6 +1,6 @@
 {% for rset in rsets %}
     {% ifchanged rset.set_type %}
-       {{ rset.set_type }}<br>
+       <h5 style="font-weight:600; margin-top:10px; margin-bottom:6px;">{{ rset.set_type }}</h5>
     {% endifchanged %}
     <a href="javascript:void(0)" onclick="AddToSelection('segments', 'residue_position_set', '{{ rset.id }}')"
         class="btn btn-primary btn-xs btn-block">

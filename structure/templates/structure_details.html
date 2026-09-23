@@ -25,7 +25,14 @@
 <div class="row text-success">
     <div class="text-center">
         <div style="display: inline;">
-            <h2><a href="../protein/{{ crystal.protein_conformation.protein.parent.entry_name }}">{{ crystal.protein_conformation.protein.family.name|safe }}</a> - <a href="../protein/{{ crystal.signprot_complex.protein.entry_name }}">G<sub>{{ crystal.signprot_complex.protein.family.name|gprot_short|slice:"1:" }}</sub></a>
+            <h2>
+              <a href="../protein/{{ crystal.protein_conformation.protein.parent.entry_name }}">{{ crystal.protein_conformation.protein.family.name|safe }}</a>
+              -
+              {% if is_arrestin_complex %}
+                <a href="/signprot/{{ crystal.signprot_complex.protein.entry_name }}">{{ crystal.signprot_complex.protein.name|safe }}</a>
+              {% else %}
+                <a href="../protein/{{ crystal.signprot_complex.protein.entry_name }}">G<sub>{{ crystal.signprot_complex.protein.family.name|gprot_short|slice:"1:" }}</sub></a>
+              {% endif %}
 
             <div style="display: inline;">
               <div class="btn-group">
@@ -69,6 +76,48 @@
   </div>
 </div>
 
+{% if is_arrestin_complex %}
+<div class="row">
+  <div class="col-md-3 text-right text-info">
+    <h4>ARRESTIN (FAMILY)</h4>
+  </div>
+  <div class="col-md-9">
+    {{ crystal.extra_proteins.all|only_one_subunit:"Arrestin,family"|safe }}
+  </div>
+</div>
+<div class="row">
+  <div class="col-md-3 text-right text-info">
+    <h4>ARRESTIN</h4>
+  </div>
+  <div class="col-md-9">
+    <a href="/signprot/{{ crystal.extra_proteins.all|only_one_subunit:'Arrestin,entry_name' }}">{{ crystal.extra_proteins.all|only_one_subunit:"Arrestin,name"|safe }}</a>
+  </div>
+</div>
+<div class="row">
+  <div class="col-md-3 text-right text-info">
+    <h4>ARRESTIN SPECIES</h4>
+  </div>
+  <div class="col-md-9">
+    {{ crystal.extra_proteins.all|only_one_subunit:"Arrestin,species"|safe }}
+  </div>
+</div>
+<div class="row">
+  <div class="col-md-3 text-right text-info">
+    <h4>ARRESTIN CHAIN</h4>
+  </div>
+  <div class="col-md-9">
+    {{ crystal.extra_proteins.all|only_one_subunit:"Arrestin,chain"|safe }}
+  </div>
+</div>
+<div class="row">
+  <div class="col-md-3 text-right text-info">
+    <h4>ARRESTIN COVERAGE</h4>
+  </div>
+  <div class="col-md-9">
+    {{ crystal.extra_proteins.all|only_one_subunit:"Arrestin,coverage"|safe }}
+  </div>
+</div>
+{% else %}
 <div class="row">
   <div class="col-md-3 text-right text-info">
     <h4>G PROTEIN (FAMILY)</h4>
@@ -77,7 +126,6 @@
     {{ crystal.signprot_complex.protein.family.parent.name }}
   </div>
 </div>
-
 <div class="row">
   <div class="col-md-3 text-right text-info">
     <h4>G PROTEIN SPECIES</h4>
@@ -86,6 +134,7 @@
     {{ crystal.signprot_complex.protein.species.latin_name }}
   </div>
 </div>
+{% endif %}
 
 <div class="row">
   <div class="col-md-3 text-right text-info">
@@ -319,7 +368,7 @@
 {% endif %}
 
 <!-- Complex interactions load in -->
-{% if signaling_complex %}
+{% if has_interface_interactions %}
 
   {% include 'complex_interactions.html' %}
 
@@ -351,7 +400,7 @@
   });
 </script>
 
-{% if signaling_complex %}
+{% if has_interface_interactions %}
 <script src="{% static 'home/js/d3.min.js' %}"></script>
 <script src="{% static 'home/js/nv.d3.min.js' %}"></script>
 <script src="{% static 'home/js/d3.v4.min.js' %}"></script>
@@ -392,17 +441,18 @@
         conversion_dict = {{ conversion_dict | safe }};
         conversion_dict_strict = {{ conversion_dict_strict | safe }};
         residue_labels = {{ residue_number_labels | safe }};
+        signalling_protein = "{% if is_arrestin_complex %}af-arrestin{% else %}af-signprot{% endif %}";
 
         ClearSelection('targets');
         ClearSelection('reference');
         // Call the function with your desired values
-        draw_interactions_in_circles('visualization', interactions_strict, inner_data_strict, outer_data_strict, conversion_dict_strict);
+        draw_interactions_in_circles('visualization', interactions_strict, inner_data_strict, outer_data_strict, conversion_dict_strict, signalling_protein);
 
         $("#strict").click(function(){
           $("#strict").addClass("active");
           $("#loose").removeClass("active");
           d3.select("#visualization").selectAll("*").remove();
-          draw_interactions_in_circles('visualization', interactions_strict, inner_data_strict, outer_data_strict, conversion_dict_strict);
+          draw_interactions_in_circles('visualization', interactions_strict, inner_data_strict, outer_data_strict, conversion_dict_strict, signalling_protein);
           d3.selectAll(`.van-der-waals`).attr("stroke-opacity", 0);
         });
 
@@ -410,7 +460,7 @@
           $("#strict").removeClass("active");
           $("#loose").addClass("active");
           d3.select("#visualization").selectAll("*").remove();
-          draw_interactions_in_circles('visualization', interactions, inner_data, outer_data, conversion_dict);
+          draw_interactions_in_circles('visualization', interactions, inner_data, outer_data, conversion_dict, signalling_protein);
           d3.selectAll(`.van-der-waals`).attr("stroke-opacity", 0);
         });
 
@@ -492,7 +542,7 @@
         // Section for the Matrix
         $.ajax({
           type: "POST",
-          url: "/signprot/matrix/AJAX_Interactions/",
+          url: "/signprot/matrix/AJAX_Interactions/False",
           async: false,
           data: {
             selected_pdbs: pdb_sel,
@@ -778,7 +828,7 @@
 {% endif %}
 <!-- NGL -->
 <!-- <script type="text/javascript" src="https://cdn.rawgit.com/arose/ngl/v2.0.0-dev.39/dist/ngl.js"> </script> -->
-{% if signaling_complex %}
+{% if has_interface_interactions %}
 <script src="{% static 'home/js/ngl.js' %}"> </script>
 <script>
     //stage.loadFile( "rcsb://1crn.mmtf", { defaultRepresentation: true } );

@@ -1,0 +1,227 @@
+/* GPCR superfamily class-cluster scatter (Plotly) + similarity side panel.
+   Only the superfamily 3-column layout is implemented — see cluster.js for why. */
+
+.ncct-page {
+  padding: 8px 12px 18px;
+}
+.ncct-status {
+  text-align: center;
+  font-size: 12px;
+  color: #666;
+  margin: 6px 0 0;
+}
+.ncct-plot-card {
+  border: 1px solid #d9d9d9;
+  border-radius: 8px;
+  background: #fff;
+  padding: 14px 16px 10px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+.ncct-plot {
+  min-height: 520px;
+}
+.ncct-meta {
+  text-align: center;
+  font-size: 12px;
+  color: #666;
+  margin-top: 6px;
+  padding: 0 8px;
+}
+.ncct-superfamily-shell {
+  display: grid;
+  grid-template-columns: 245px minmax(0, 1fr) 300px;
+  gap: 12px;
+  align-items: stretch;
+}
+.ncct-superfamily-side {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border: 1px solid #e3ebf5;
+  border-radius: 10px;
+  background: #fbfdff;
+  padding: 12px 14px;
+}
+.ncct-superfamily-side-title {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #516577;
+  text-align: center;
+}
+.ncct-superfamily-labels {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 8px;
+}
+.ncct-superfamily-label {
+  flex: 1 1 0;
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 7fr);
+  align-items: center;
+  column-gap: 10px;
+  border: 1px solid #d9e2ef;
+  border-radius: 10px;
+  background: #fff;
+  padding: 9px 12px;
+  min-height: 62px;
+  color: #33475b;
+}
+.ncct-superfamily-label:hover,
+.ncct-superfamily-label:focus {
+  border-color: #89abd3;
+  outline: 0;
+  box-shadow: 0 0 0 2px rgba(31, 120, 180, 0.12);
+}
+.ncct-superfamily-label.is-active {
+  border-color: #4f86c6;
+  background: #f3f8fe;
+  box-shadow: 0 0 0 2px rgba(31, 120, 180, 0.14);
+}
+.ncct-superfamily-label-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-width: 0;
+  width: 100%;
+  height: 100%;
+  text-align: center;
+}
+.ncct-superfamily-label-swatch {
+  width: 13px;
+  height: 13px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  flex: 0 0 auto;
+}
+.ncct-superfamily-label-symbol {
+  font-size: 13px;
+  font-weight: 700;
+  color: #213547;
+  line-height: 1;
+}
+.ncct-superfamily-label-text {
+  font-size: 13px;
+  line-height: 1.35;
+  text-align: center;
+}
+.ncct-superfamily-plot-card {
+  padding: 8px 0 6px;
+}
+.ncct-superfamily-plot-wrap {
+  min-height: 520px;
+  width: 100%;
+}
+.ncct-superfamily-plot-wrap .js-plotly-plot,
+.ncct-superfamily-plot-wrap .plot-container,
+.ncct-superfamily-plot-wrap .svg-container {
+  width: 100% !important;
+}
+#ncct-cluster-plot {
+  width: 100%;
+}
+#ncct-superfamily-hover {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+}
+.ncct-superfamily-hover-empty {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  color: #607385;
+  line-height: 1.6;
+  text-align: center;
+}
+.ncct-superfamily-hover-list {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 8px;
+}
+.ncct-superfamily-hover-row {
+  flex: 1 1 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(96px, 0.8fr);
+  gap: 10px;
+  border: 1px solid #dfe7f1;
+  border-radius: 10px;
+  background: #fff;
+  padding: 9px 11px;
+  min-height: 62px;
+  align-items: stretch;
+}
+.ncct-superfamily-hover-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-width: 0;
+  height: 100%;
+  text-align: center;
+}
+.ncct-superfamily-hover-metric {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  text-align: center;
+  padding: 6px 8px;
+}
+.ncct-superfamily-hover-metric-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #6d8194;
+  margin-bottom: 2px;
+}
+.ncct-superfamily-hover-metric-value {
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+  color: #1f3347;
+}
+.ncct-superfamily-hover-value {
+  color: #1f5b96;
+}
+.ncct-superfamily-hover-value-box .ncct-superfamily-hover-metric-value {
+  color: #1f5b96;
+}
+.ncct-superfamily-hover-text {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  font-size: 13px;
+  line-height: 1.35;
+  color: #2d4257;
+  text-align: center;
+  position: relative;
+  top: 1px;
+}
+.ncct-superfamily-hover-text strong {
+  color: #1f3347;
+}
+.ncct-superfamily-secondary {
+  display: block;
+  color: #607385;
+  font-size: 12px;
+  line-height: 1.25;
+}
+@media (max-width: 1199px) {
+  .ncct-superfamily-shell {
+    grid-template-columns: 1fr;
+  }
+  .ncct-superfamily-side,
+  .ncct-superfamily-plot-wrap {
+    min-height: 0;
+  }
+}

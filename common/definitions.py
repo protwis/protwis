@@ -2272,18 +2272,85 @@ G_PROTEIN_DISPLAY_NAME = { # Alpha
                            'F6VL43':'Gi3',
                            # Beta
                            'G(I)/G(S)/G(T) subunit beta-1':'G&beta;1',
-                           'BJ4_G0051350.mRNA.1.CDS.1':'STE4 isoform 1',
+                           'G(I)/G(S)/G(T) subunit beta-2':'G&beta;2',
+                           'G(I)/G(S)/G(T) subunit beta-3':'G&beta;3',
+                           'subunit beta':'STE4 isoform 1',
                            # Gamma
-                           'G(T) subunit gamma-T1':'G&gamma;T1', 'G(I)/G(S)/G(O) subunit gamma-2':'G&gamma;2',
+                           'G(T) subunit gamma-T1':'G&gamma;T1', 
+                           'G(I)/G(S)/G(O) subunit gamma-2':'G&gamma;2',
+                           'G(I)/G(S)/G(O) subunit gamma-13':'G&gamma;13',
                            'subunit gamma':'G&gamma;'}
 
-ARRESTIN_DISPLAY_NAME = {'arrs':'S-arrestin', 'arrb1':'Beta-arrestin-1'}
+ARRESTIN_DISPLAY_NAME = {'arrc_human': 'Arrestin-C',
+                         'arrs_human': 'S-arrestin',
+                         'arrs_mouse':'S-arrestin',
+                         'arrs_bovin':'S-arrestin',
+                         'arrb1_human':'Beta-arrestin-1',
+                         'arrb1_rat':'Beta-arrestin-1',
+                         'arrb2_human':'Beta-arrestin-2',
+                         'arrs':'S-arrestin',
+                         'arrb1':'Beta-arrestin-1',
+                         'arrb2':'Beta-arrestin-2',
+                         'arrc':'Arrestin-C'}
 
-# Remove this constants in the future
-_BEFORE_NAR2025_CLASSLESS_PARENT_GPCR_SLUGS_DICT = {'008':'Other GPCRs'} # {slug:name}
-_AFTER_NAR2025_CLASSLESS_PARENT_GPCR_SLUGS = {'010'}
 
-# DO NOT IMPORT 'CLASSLESS_PARENT_GPCR_SLUGS' DIRECTLY FROM HERE. Do it from protein.models instead.
-# protein.models fixes 'CLASSLESS_PARENT_GPCR_SLUGS' in case of changes in its definition
-# Uncomment next line in the future
-# CLASSLESS_PARENT_GPCR_SLUGS = {'010'}
+GPCR_CLASS_SLUG_PREFIX = '0'
+
+UNCLASSIFIED_PARENT_GPCR_SLUGS = {'011'}
+
+ROLE_DICTIONARY = {'Agonist':{
+                                'Agonist': [
+                                            'Agonist',
+                                            'agonist peptide',
+                                            'Full agonist',
+                                            'Synthetic full agonist',
+                                            'G protein-biased selective agonist'],
+                                 'Agonist (partial)': [
+                                                        'Partial agonist', 'Agonist (partial)'],
+                                 'Inverse agonist': [
+                                                        'Inverse agonist', 'Inverse agonist (partial)']
+                              },
+                   'Antagonist':{
+                                 'Antagonist': [
+                                                'Antagonist',
+                                                'Antagonist (neutral/silent)',
+                                                'inhibitor/antagonist',
+                                                'Antagonist (selective)',
+                                                'Antagonist dual',
+                                                'dual Antagonist',
+                                                'Antagonist antibody',
+                                                'orthosteric antagonist',
+                                                'AZ7188 is a weak PAR2 antagonist',
+                                                'AT2R-selective ligand',
+                                                'AT1R/AT2R dual ligand']
+                                },
+                    'Allosteric modulator':{
+                                             'Allosteric agonist': [
+                                                                    'Allosteric agonist'],
+                                             'Allosteric inverse agonist': [
+                                                                    'Allosteric inverse agonist'],
+                                             'Allosteric antagonist': [
+                                                                    'Allosteric antagonist'],
+                                             'NAM': [
+                                                     'NAM',
+                                                     'NAM (Negative allosteric modulator)',
+                                                     'Negative allosteric modulator - noncompetitive antagonist'],
+                                             'PAM': [
+                                                     'PAM',
+                                                     'Positive allosteric modulator',
+                                                     'Positive ago-allosteric modulator'],
+                                             'Ago-PAM': [
+                                                         'Ago-PAM']
+                                            },
+                    'Other':{
+                             'Unknown': [
+                                            'Binding - unknown pharmacological activity',
+                                            '',
+                                            'unknown',
+                                            'NA'],
+                             'Cofactor': [
+                                            'Cofactor'],
+                             'Stabilizing ligand': [
+                                            'Stabilizing ligand', 'covalent bound nanobody']
+                            }
+                    }

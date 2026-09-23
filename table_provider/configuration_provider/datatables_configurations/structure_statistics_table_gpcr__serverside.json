@@ -1,0 +1,18 @@
+{
+  "serverSide": true,
+  "processing": true,
+  "deferRender": true,
+  "scrollX": true,
+  "layout": {
+    "topEnd": null
+  },
+  "fixedColumns": { "left": 1 },
+  "ajax": {
+    "url": "/table_provider/structure_statistics_table/gpcr",
+    "type": "GET",
+    "cache": false,
+    "dataSrc":  "data"           
+    
+  },
+  "lengthMenu": [ [10, 25, 50], [10, 25, 50] ]
+}

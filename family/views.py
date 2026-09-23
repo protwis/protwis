@@ -6,6 +6,8 @@ from django.core.cache import cache
 from django.views.decorators.cache import cache_page
 
 from common.diagrams_gpcr import DrawHelixBox, DrawSnakePlot
+from common.diagrams_gprotein import DrawGproteinPlot
+from common.diagrams_arrestin import DrawArrestinPlot
 
 from protein.models import Protein, ProteinFamily, ProteinSegment, ProteinConformation
 from residue.models import Residue,ResidueGenericNumber
@@ -87,8 +89,10 @@ def detail(request, slug):
 
 
     # get structures of this family
-    structures = Structure.objects.filter(protein_conformation__protein__parent__family__slug__startswith=slug
-        ).exclude(structure_type__slug__startswith='af-').order_by('-representative', 'resolution').prefetch_related('pdb_code__web_resource')
+    structures = Structure.objects.filter(protein_conformation__protein__parent__family__slug__startswith=slug,
+                                          structure_type__origin='experiment') \
+                                  .order_by('-representative', 'resolution') \
+                                  .prefetch_related('pdb_code__web_resource')
 
     mutations = MutationExperiment.objects.filter(protein__in=proteins).prefetch_related('residue__generic_number',
                                 'exp_qual', 'ligand')
@@ -232,8 +236,19 @@ def detail(request, slug):
     # jsondata_cancer_mutations['color'] = linear_gradient(start_hex="#d8baff", finish_hex="#422d65", n=max_cancer_pos)
     # jsondata_disease_mutations['color'] = linear_gradient(start_hex="#ffa1b1", finish_hex="#6e000b", n=max_disease_pos)
 
-    HelixBox = DrawHelixBox(residues, 'Class A', 'family_diagram_preloaded_data')
-    SnakePlot = DrawSnakePlot(residues, 'Class A', 'family_diagram_preloaded_data')
+    # root family determines which diagram engine applies - the GPCR 7TM snake/helix-box
+    # layout doesn't apply to G-protein (root '100') or Arrestin (root '200') trees, which
+    # use their own segment naming and have their own dedicated Draw*Plot classes
+    family_root_slug = pf.slug.split('_')[0]
+    if family_root_slug == '100':
+        HelixBox = None
+        SnakePlot = DrawGproteinPlot(residues, families[0], 'family_diagram_preloaded_data')
+    elif family_root_slug == '200':
+        HelixBox = None
+        SnakePlot = DrawArrestinPlot(residues, families[0], 'family_diagram_preloaded_data')
+    else:
+        HelixBox = DrawHelixBox(residues, families[0], 'family_diagram_preloaded_data')
+        SnakePlot = DrawSnakePlot(residues, families[0], 'family_diagram_preloaded_data')
 
     # process residues and return them in chunks of 10
     # this is done for easier scaling on smaller screens

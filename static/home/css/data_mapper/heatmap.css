@@ -1,0 +1,96 @@
+/**
+ * Data Mapper -- Heatmap page-specific styles.
+ * Shared styling lives in core.css.
+ */
+
+.mapper-heatmap-toolbar-grid  { display: flex; flex-direction: column; row-gap: 6px; width: 510px; max-width: 100%; }
+.mapper-core-wheel-toolbar #mapper-heatmap-howto-btn {
+  color: #fff; background-color: #f0ad4e; border-color: #eea236; font-weight: 700; padding-left: 7px; padding-right: 7px;
+}
+.mapper-core-wheel-toolbar #mapper-heatmap-howto-btn:hover { color: #fff; background-color: #ec971f; border-color: #d58512; }
+.mapper-core-wheel-toolbar #mapper-heatmap-clear-rows:not(.mapper-core-clear-clean):hover { color: #fff; background-color: #a94442; border-color: #843534; }
+.mapper-core-wheel-toolbar #mapper-heatmap-clear-rows.mapper-core-clear-clean, .mapper-core-wheel-toolbar #mapper-heatmap-clear-rows:focus {
+  color: #fff; background-color: #337ab7; border-color: #2e6da4; outline: none;
+}
+.mapper-core-wheel-wrap.mapper-heatmap-page .mapper-core-wheel-primary-col { flex: 0 0 auto; min-width: 0; }
+.mapper-core-wheel-wrap.mapper-heatmap-page .mapper-core-wheel-plot-col { flex: 1 1 0; min-width: 0; }
+.mapper-core-wheel-wrap.mapper-heatmap-page .mapper-core-wheel-left {
+  display: block; width: 100%; max-width: min(550px, calc(100vw - 48px)); box-sizing: border-box;
+}
+.mapper-core-wheel-wrap.mapper-heatmap-page .mapper-core-wheel-left .table-responsive {
+  width: max-content; max-width: 100%; padding-left: 14px; overflow: visible;
+}
+.mapper-core-wheel-wrap.mapper-heatmap-page .mapper-core-wheel-left #mapper-heatmap-input-table {
+  table-layout: fixed; width: 510px; max-width: 100%; border-collapse: collapse;
+}
+.mapper-core-wheel-wrap.mapper-heatmap-page .mapper-core-wheel-left #mapper-heatmap-input-table thead th,
+.mapper-core-wheel-wrap.mapper-heatmap-page .mapper-core-wheel-left #mapper-heatmap-input-table tbody td {
+  box-sizing: border-box; overflow: hidden; word-wrap: break-word; word-break: break-word;
+}
+.mapper-core-wheel-wrap.mapper-heatmap-page .mapper-core-wheel-left #mapper-heatmap-input-table th.mapper-core-th-remove,
+.mapper-core-wheel-wrap.mapper-heatmap-page .mapper-core-wheel-left #mapper-heatmap-input-table td.mapper-core-remove-cell {
+  position: relative; width: 0; max-width: 0; padding: 0 !important; border: 0 !important;
+  background: transparent !important; overflow: visible; text-align: center; vertical-align: middle !important;
+}
+.mapper-core-wheel-wrap.mapper-heatmap-page .mapper-core-wheel-left #mapper-heatmap-input-table th.mapper-core-th-receptor,
+.mapper-core-wheel-wrap.mapper-heatmap-page .mapper-core-wheel-left #mapper-heatmap-input-table td.mapper-core-receptor-cell {
+  min-width: 165px;
+}
+.mapper-core-wheel-wrap.mapper-heatmap-page .mapper-core-wheel-left #mapper-heatmap-input-table th.mapper-heatmap-val-h,
+.mapper-core-wheel-wrap.mapper-heatmap-page .mapper-core-wheel-left #mapper-heatmap-input-table td.mapper-heatmap-val-cell {
+  width: 65px;
+}
+.mapper-core-wheel-wrap.mapper-heatmap-page #mapper-heatmap-input-table .mapper-heatmap-species-h,
+.mapper-core-wheel-wrap.mapper-heatmap-page #mapper-heatmap-input-table .mapper-heatmap-species-cell {
+  width: 88px; min-width: 88px; max-width: 88px;
+}
+.mapper-core-wheel-wrap.mapper-heatmap-page.mapper-heatmap-species-active .mapper-core-wheel-left {
+  max-width: min(660px, calc(100vw - 48px));
+}
+.mapper-core-wheel-wrap.mapper-heatmap-page.mapper-heatmap-species-active #mapper-heatmap-input-table {
+  width: 598px; /* 510 + 88 */
+}
+.mapper-core-wheel-wrap.mapper-heatmap-page .mapper-core-wheel-left #mapper-heatmap-input-table tbody td.mapper-core-receptor-cell,
+.mapper-core-wheel-wrap.mapper-heatmap-page .mapper-core-wheel-left #mapper-heatmap-input-table tbody td.mapper-core-value-cell {
+  max-width: 0;
+}
+.mapper-core-wheel-wrap.mapper-heatmap-page .mapper-core-wheel-left #mapper-heatmap-input-table tbody td.mapper-core-receptor-cell { vertical-align: top; }
+.mapper-core-wheel-wrap.mapper-heatmap-page .mapper-core-wheel-left #mapper-heatmap-input-table tbody td.mapper-core-value-cell  { vertical-align: middle; }
+.mapper-core-wheel-wrap.mapper-heatmap-page .mapper-core-wheel-left #mapper-heatmap-input-table .form-control.input-sm {
+  display: block; width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box;
+}
+.mapper-core-wheel-wrap.mapper-heatmap-page .mapper-core-wheel-left #mapper-heatmap-input-table .mapper-heatmap-val.form-control.input-sm {
+  height: 26px; padding: 2px 6px; font-size: 11px; line-height: 1.3; text-align: center;
+}
+.mapper-core-wheel-wrap.mapper-heatmap-page .mapper-core-wheel-left #mapper-heatmap-input-table textarea.mapper-core-in-receptor.form-control.input-sm {
+  height: auto; min-height: 44px; max-height: 200px; padding: 4px 6px; font-size: 11px; line-height: 1.38;
+  resize: vertical; overflow-x: hidden; overflow-y: hidden; white-space: pre-wrap; word-wrap: break-word; overflow-wrap: break-word;
+}
+.mapper-core-wheel-wrap.mapper-heatmap-page .mapper-core-wheel-left #mapper-heatmap-input-table.mapper-core-receptors-compact textarea.mapper-core-in-receptor.form-control.input-sm {
+  min-height: 26px; max-height: 26px; height: 26px; padding-top: 2px; padding-bottom: 2px; line-height: 1.3;
+  resize: none; overflow-x: auto; overflow-y: hidden; white-space: nowrap;
+}
+.mapper-core-wheel-wrap.mapper-heatmap-page .mapper-core-wheel-left #mapper-heatmap-input-table.mapper-core-receptors-compact .mapper-core-receptor-html-view {
+  min-height: 26px; max-height: 26px; height: 26px; overflow: hidden;
+}
+#mapper-heatmap-input-table thead th.mapper-heatmap-val-h { text-align: center !important; }
+#mapper-heatmap-input-tbody tr:first-child .mapper-core-receptor-input-wrap.is-empty .mapper-core-in-receptor { border-color: #e0892e !important; }
+#mapper-heatmap-messages { margin-top: 8px; font-size: 10px; max-height: 160px; overflow: auto; color: #a94442; }
+#mapper-heatmap-messages:empty { display: none; }
+.mapper-heatmap-plot-toolbar {
+  display: flex; justify-content: center; align-items: center; gap: 12px;
+  flex-wrap: wrap; font-size: 11px; margin-bottom: 8px; padding-top: 8px;
+}
+.mapper-heatmap-plot-toolbar .dropdown-toggle { font-size: 13px; line-height: 1.35; }
+.mapper-heatmap-plot-wrap { margin-top: 8px; width: 100%; max-width: 100%; overflow-x: auto; text-align: center; }
+.mapper-heatmap-plot-placeholder {
+  box-sizing: border-box; margin: 0 auto; max-width: 560px; min-height: clamp(240px, 40vh, 480px);
+  padding: 28px 20px; border: 1px dashed rgba(26,43,60,0.18); border-radius: 12px;
+  background: linear-gradient(180deg, #fafcfd 0%, #f5f8fb 100%); color: #4a5f73;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 10px;
+}
+.mapper-heatmap-plot-placeholder-title { margin: 0; font-size: 14px; font-weight: 600; color: #1a2b3c; }
+.mapper-heatmap-plot-placeholder-hint  { margin: 0; font-size: 12px; line-height: 1.45; max-width: 420px; }
+.mapper-heatmap-color-picker-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.mapper-heatmap-color-label-row  { display: flex; gap: 8px; justify-content: flex-end; font-size: 11px; margin-bottom: 3px; }
+.mapper-heatmap-color-label-row div, .mapper-heatmap-color-picker-row > div { width: 72px; text-align: center; }

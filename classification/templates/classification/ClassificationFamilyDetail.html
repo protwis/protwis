@@ -1,0 +1,336 @@
+{% extends "home/base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="cv-family-detail">
+  <div class="cv-family-tabs-bar">
+    <ul class="nav nav-tabs cv-family-tabs" role="tablist">
+      <li role="presentation" class="active">
+        <a href="#cv-family-tree-tab" aria-controls="cv-family-tree-tab" role="tab" data-toggle="tab">Tree (phylogenetic)</a>
+      </li>
+      <li role="presentation">
+        <a href="#cv-family-cluster-tab" aria-controls="cv-family-cluster-tab" role="tab" data-toggle="tab">Cluster</a>
+      </li>
+      <li role="presentation">
+        <a href="#cv-family-matrix-tab" aria-controls="cv-family-matrix-tab" role="tab" data-toggle="tab">Matrix</a>
+      </li>
+    </ul>
+    <div class="cv-family-title-inline">{{ page_title }}</div>
+  </div>
+
+  <div class="tab-content clearfix">
+    <div role="tabpanel" class="tab-pane active" id="cv-family-tree-tab">
+      <div class="cv-family-card sftree-page{% if family_tree_has_payload %} sftree-pending{% endif %}" id="sftree-page">
+        <div class="cv-family-toolbar">
+          {% if family_tree_has_payload %}
+          <div class="cv-family-tree-actions">
+            <button id="cvFamilyOuterLabelsToggle" type="button" class="btn btn-primary btn-sm">
+              Layout: Default
+            </button>
+            <div id="cvFamilyTreeLeafLabelGroup" class="dropdown">
+              <button id="cvFamilyTreeLeafLabelBtn" type="button" class="btn btn-primary btn-sm dropdown-toggle" data-toggle="dropdown">
+                Receptor names: Protein <span class="caret"></span>
+              </button>
+              <div class="dropdown-menu">
+                <button type="button" class="btn btn-primary btn-block active" data-label-type="Protein">Protein</button>
+                <button type="button" class="btn btn-outline-primary btn-block" data-label-type="Gene">Gene</button>
+                <button type="button" class="btn btn-outline-primary btn-block" data-label-type="UniProt">UniProt</button>
+              </div>
+            </div>
+            <div class="dropdown">
+              <button type="button" class="btn btn-primary btn-sm dropdown-toggle" data-toggle="dropdown">
+                Download <span class="caret"></span>
+              </button>
+              <ul class="dropdown-menu">
+                <li><a href="#" onclick="downloadPDFWait('clustering-tree', 'family_tree.pdf'); return false;">Tree as PDF</a></li>
+                <li><a href="#" onclick="downloadSVGWait('clustering-tree', 'family_tree.svg'); return false;">Tree as SVG</a></li>
+                <li><a href="#" onclick="downloadPNGWait('clustering-tree', 'family_tree.png'); return false;">Tree as PNG</a></li>
+                <li><a href="#" onclick="downloadNewick('family_tree.tree'); return false;">Tree in Newick format</a></li>
+              </ul>
+            </div>
+          </div>
+          <span class="zoombutton-container hidden">
+            <span class="pull-right glyphicon glyphicon-resize-full btn-zoomsize" data-toggle="tooltip" data-placement="bottom" title="Fit" onclick="resizeTree()"></span>
+            <span class="pull-right glyphicon glyphicon-plus btn-zoomin" data-toggle="tooltip" data-placement="bottom" title="Zoom-in" onclick="zoomInTree()"></span>
+            <span class="pull-right glyphicon glyphicon-minus btn-zoomout" data-toggle="tooltip" data-placement="bottom" title="Zoom-out" onclick="zoomOutTree()"></span>
+          </span>
+          {% else %}
+          <span class="text-muted">Tree payload unavailable</span>
+          {% endif %}
+        </div>
+
+        <div class="tree-shell cv-family-tree-shell">
+          <div class="sftree-plot-wrap cv-family-tree-wrap">
+            <div class="tree-container" id="tree-container">
+              <svg id="clustering-tree"></svg>
+            </div>
+          </div>
+          <div class="sftree-side">
+            <div class="sftree-side-title"></div>
+            <div id="sftree-hover" class="sftree-hover">
+              <p class="sftree-hover-empty">Hover a receptor pill to inspect its distances and similarities to the other receptors in this family.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Not user-facing UI (no toggle ever opens these) but required: phylotree.js's
+             renderTree() reads .datainner/.dataouter's <li> text directly at render time to
+             pick the default annotation grouping, and its document-ready handler un-hides/binds
+             click delegation on the rest of this block. Do not delete. -->
+        <div class="hidden">
+          <div id="submit-group" class="hidden"></div>
+          <div id="output-group0" class="hidden">
+            <textarea name="input-targets-0" id="input-targets-0" readonly></textarea>
+          </div>
+          <div id="output-group1" class="hidden">
+            <textarea name="input-targets-1" id="input-targets-1" readonly></textarea>
+          </div>
+          <div class="btn-group tree-toggles hidden">
+            <ul class="dropdown-menu names" role="menu">
+              <li class="active"><a href="#">UniProt</a></li>
+              <li><a href="#">UniProt_species</a></li>
+              <li><a href="#">IUPHAR</a></li>
+            </ul>
+          </div>
+          <div class="btn-group tree-toggles hidden">
+            <ul class="dropdown-menu treetypes" role="menu">
+              <li class="active"><a href="#">Circular dendrogram</a></li>
+              <li><a href="#">Horizontal dendrogram</a></li>
+            </ul>
+          </div>
+          <div class="btn-group tree-toggles hidden">
+            <ul class="dropdown-menu dataouter" role="menu">
+              <li><a href="#">No data</a></li>
+              <h6 class="dropdown-header">Classification</h6>
+              <li><a href="#">GPCR class</a></li>
+              <li><a href="#">Ligand type</a></li>
+              <li><a href="#">Receptor family</a></li>
+              <h6 class="dropdown-header">G protein Coupling</h6>
+              <li class="active"><a href="#">All G proteins</a></li>
+              <li><a href="#">Primary G proteins</a></li>
+              <li><a href="#">Secondary G proteins</a></li>
+            </ul>
+          </div>
+          <div class="btn-group tree-toggles hidden">
+            <ul class="dropdown-menu datainner" role="menu">
+              <li><a href="#">No data</a></li>
+              <h6 class="dropdown-header">Classification</h6>
+              <li><a href="#">GPCR class</a></li>
+              <li><a href="#">Ligand type</a></li>
+              <li class="active"><a href="#">Receptor family</a></li>
+              <h6 class="dropdown-header">G protein Coupling</h6>
+              <li><a href="#">All G proteins</a></li>
+              <li><a href="#">Primary G proteins</a></li>
+              <li><a href="#">Secondary G proteins</a></li>
+            </ul>
+          </div>
+          <div class="legend_box hidden">
+            <div class="outer_legend"></div>
+            <div class="inner_legend"></div>
+          </div>
+          <div id="single-crystal-group-pdbs-modal-table"></div>
+        </div>
+      </div>
+    </div>
+
+    <div role="tabpanel" class="tab-pane" id="cv-family-cluster-tab">
+      <div class="cv-family-card">
+        <div class="cv-family-toolbar">
+          <div class="btn-group">
+            <button id="cvFamilyDownloadSvgBtn" type="button" class="btn btn-primary btn-sm">Download SVG</button>
+            <button id="cvFamilyDownloadPngBtn" type="button" class="btn btn-primary btn-sm">Download PNG</button>
+          </div>
+        </div>
+        <div class="cv-family-cluster-shell">
+          <div class="cv-family-cluster-side">
+            <div class="cv-family-cluster-side-title">Receptors</div>
+            <div id="cvFamilyClusterLabels" class="cv-family-cluster-labels"></div>
+          </div>
+          <div class="cv-family-cluster-plot-card">
+            <div class="cv-family-cluster-plot-wrap">
+              <div id="cvFamilyPlot" class="cv-family-plot"></div>
+            </div>
+            <div id="cvFamilyClusterMeta" class="cv-family-cluster-meta"></div>
+          </div>
+          <div class="cv-family-cluster-side">
+            <div id="cvFamilyClusterSimilarityTitle" class="cv-family-cluster-side-title">Similarity ranking</div>
+            <div id="cvFamilyClusterHover" class="cv-family-cluster-hover"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div role="tabpanel" class="tab-pane" id="cv-family-matrix-tab">
+      <div class="cv-family-card">
+        <div class="cv-family-toolbar">
+          <div class="cv-family-matrix-note">
+            <div id="cvFamilyMatrixLeafLabelGroup" class="dropdown">
+              <button id="cvFamilyMatrixLeafLabelBtn" type="button" class="btn btn-primary btn-sm dropdown-toggle" data-toggle="dropdown">
+                Receptor names: Protein <span class="caret"></span>
+              </button>
+              <div class="dropdown-menu">
+                <button type="button" class="btn btn-primary btn-block active" data-label-type="Protein">Protein</button>
+                <button type="button" class="btn btn-outline-primary btn-block" data-label-type="Gene">Gene</button>
+                <button type="button" class="btn btn-outline-primary btn-block" data-label-type="UniProt">UniProt</button>
+              </div>
+            </div>
+            <span class="cv-family-matrix-badge cv-family-matrix-badge-id">Identity (%)</span>
+            <span class="cv-family-matrix-badge cv-family-matrix-badge-sim">Similarity (%)</span>
+            <span class="text-muted">Upper triangle shows identity; lower triangle shows similarity.</span>
+          </div>
+        </div>
+        <div class="cv-family-matrix-shell">
+          <div id="cvFamilyMatrixEmpty" class="cv-family-empty" style="display:none;">No receptor matrix data is available for this family.</div>
+          <div id="cvFamilyMatrixScroll" class="cv-family-matrix-scroll">
+            <table id="cvFamilyMatrixTable" class="cv-family-matrix-table">
+              <thead></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <div id="cvFamilyMatrixHover" class="cv-family-matrix-hover" aria-hidden="true"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block addon_js %}
+<script type="text/javascript" src="{% static 'home/js/snap.svg-min.js' %}"></script>
+<script type="text/javascript" src="{% static 'home/js/typeahead.bundle.min.js' %}"></script>
+<script type="text/javascript" src="{% static 'home/js/d3.v3.min.js' %}"></script>
+<script src="{% static 'home/js/d3-color.v1.min.js' %}"></script>
+<script src="{% static 'home/js/d3-interpolate.v1.min.js' %}"></script>
+<script src="{% static 'home/js/d3-scale-chromatic.v1.min.js' %}"></script>
+<script src="{% static 'home/js/d3-selection-multi.v1.min.js' %}"></script>
+<script src="{% static 'home/js/phylo_library.js' %}"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js" charset="utf-8"></script>
+<script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
+<script src="{% static 'home/js/plotly_v1_58_5.js' %}"></script>
+
+<script type="text/javascript">
+  var familyTreeData = JSON.parse('{{ family_tree_payload_json|escapejs }}');
+  var familyClusterPayload = JSON.parse('{{ family_cluster_payload_json|escapejs }}');
+
+  // Vendor tree engine (phylotree.js / classification_phylotree.js) expects this global.
+  window.data = familyTreeData;
+
+  // Bootstrap data for the three per-tab files loaded further down. The Matrix and Cluster
+  // tabs reuse the entities/matrix arrays already embedded in familyTreeData rather than
+  // having the server serialize the same data twice.
+  window.CLASSIFICATION_FAMILY_TREE_DATA = familyTreeData;
+  window.CLASSIFICATION_FAMILY_MATRIX_DATA = familyTreeData;
+  window.CLASSIFICATION_FAMILY_CLUSTER_DATA = familyClusterPayload;
+  window.CLASSIFICATION_FAMILY_CLUSTER_DATA.entities = familyTreeData.entities;
+  window.CLASSIFICATION_FAMILY_CLUSTER_DATA.matrix = familyTreeData.matrix;
+  window.CLASSIFICATION_FAMILY_CLUSTER_DATA.pageTitle = "{{ page_title|escapejs }}";
+
+  // These config flags are read synchronously by classification_phylotree.js the moment its
+  // <script> tag below executes, so they must stay inline here rather than move into
+  // family_tree.js (which loads after it).
+  window.classificationPhyloTreeBaseSrc = "{% static 'home/js/phylotree.js' %}";
+  window.classificationPhyloTreeShowInternalNodes = false;
+  window.classificationPhyloTreeShowDistanceRings = false;
+  window.classificationPhyloTreeShowRootCap = false;
+  window.classificationPhyloTreeRadialFitScale = 0.9;
+  window.classificationPhyloTreeEntityKind = "receptor";
+  window.classificationPhyloTreePanelTitle = "";
+  window.classificationPhyloTreeEmptyMessage = "Hover a receptor pill to inspect its distances and similarities to the other receptors in this family.";
+  window.classificationPhyloTreeStatusText = "Rendered with the phylogenetic tree renderer using receptor-family distances.";
+  window.classificationPhyloTreeEnableOuterLabelToggle = true;
+  window.classificationPhyloTreeOuterToggleId = "cvFamilyOuterLabelsToggle";
+  window.classificationPhyloTreeOuterLabelsDefault = true;
+  window.classificationPhyloTreeOuterToggleLabel = "Layout: Default";
+  window.classificationPhyloTreeInnerToggleLabel = "Layout: Edge";
+  window.classificationPhyloTreeOuterViewportPadding = 24;
+  window.classificationPhyloTreeAutoSelectLayout = true;
+  window.classificationPhyloTreeLeafLabelType = "Protein";
+</script>
+{% if family_tree_has_payload %}
+<script src="{% static 'home/js/classification_phylotree.js' %}"></script>
+{% endif %}
+
+<script src="{% static 'home/js/classification/core.js' %}"></script>
+<script src="{% static 'home/js/classification/family_tree.js' %}"></script>
+<script src="{% static 'home/js/classification/family_cluster.js' %}"></script>
+<script src="{% static 'home/js/classification/family_matrix.js' %}"></script>
+{% endblock %}
+
+{% block addon_css %}
+<link rel="stylesheet" href="{% static 'home/css/classification/family_tree.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/classification/family_cluster.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/classification/family_matrix.css' %}" type="text/css" />
+<meta name="csrf-token" content="{{ csrf_token }}">
+<style>
+.cv-family-detail {
+  padding: 10px 12px 32px;
+}
+
+.cv-family-tabs-bar {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  padding: 0 8px;
+  background: #f8fbfe;
+  border: 1px solid #d9e2ef;
+  border-bottom: 0;
+  border-radius: 12px 12px 0 0;
+}
+
+.cv-family-tabs {
+  border-bottom: 0;
+  padding: 0;
+  background: transparent;
+  flex: 1 1 auto;
+  position: relative;
+  z-index: 1;
+}
+
+.cv-family-tabs > li > a {
+  font-weight: 600;
+  margin-top: 10px;
+}
+
+.cv-family-title-inline {
+  position: absolute;
+  left: 50%;
+  bottom: 10px;
+  transform: translateX(-50%);
+  padding: 0 4px;
+  font-size: 20px;
+  line-height: 1.2;
+  font-weight: 600;
+  color: #3f5368;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.cv-family-card {
+  border: 1px solid #d9e2ef;
+  border-radius: 0 0 12px 12px;
+  background: #fff;
+  box-shadow: 0 10px 24px rgba(31, 120, 180, 0.08);
+  overflow: hidden;
+  padding: 14px;
+}
+
+.cv-family-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.cv-family-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 480px;
+  color: #6f7f90;
+  text-align: center;
+}
+</style>
+{% endblock %}

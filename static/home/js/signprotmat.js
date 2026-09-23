@@ -175,7 +175,6 @@ var signprotmat = {
       data_gap.push(...data_non, ...data_receptor);
       // data_non.push(...data_receptor)
       // data_gap = data_non
-      // console.log(data_gap)
 
       return data_gap;
     },
@@ -199,7 +198,7 @@ var signprotmat = {
       data = _.orderBy(data, ["rec_tm", "rec_gn"]);
       var seq = data.map((x) => x.rec_aa).join("");
 
-      return entry_name.concat(">\n", seq);
+      return ">".concat(entry_name, "\n", seq);
     },
 
     combine_fasta(array_of_fasta) {
@@ -270,33 +269,62 @@ var signprotmat = {
 
     // * SETTING THE X/Y SCALE
     xScale(data, receptor) {
-      var domain = d3
-        .map(data, function (d) {
-          return d.rec_gn;
-        })
-        .keys()
-        .sort(function (a, b) {
-          var a_patt = /(\d*)x/g;
-          var b_patt = /(\d*)x/g;
-          var a_match = a_patt.exec(a);
-          var b_match = b_patt.exec(b);
-          var a_obj = _.findIndex(receptor, function (d) {
-            if (a_match){
-              return d === a_match[1];
-            } else if (a === '-'){
-              return d === a;
-            }
-          });
-          var b_obj = _.findIndex(receptor, function (d) {
-            if (b_match){
-              return d === b_match[1];
-            } else if (b === '-'){
-              return d === b;
-            }
-          });
-          // console.log(a_obj);
-          return d3.ascending(a_obj, b_obj);
+      var pdb_ids = [];
+      data.forEach(function(d) {
+        if (!pdb_ids.includes(d.pdb_id)) {
+          pdb_ids.push(d.pdb_id);
+        }
+      })
+      var domain = [];
+      if (pdb_ids.length === 1) {
+        // Sorting based on res_pos for single entry
+        var rec_posis = [];
+        data.forEach(function(d) {
+          if (!rec_posis.includes(d.rec_pos)) {
+            rec_posis.push(parseInt(d.rec_pos))
+          }
         });
+        // Actual sorting
+        rec_posis.sort(function(a, b) {
+          return a - b;
+        });
+        // Number lookup
+        const recPosByGn = new Map(
+          data.map(d => [d.rec_pos, d.rec_gn])
+        );
+        rec_posis.forEach(function(o) {
+          domain.push(recPosByGn.get(o))
+        })
+      } else {
+        // Sorting based on gns for multiple entries
+        domain = d3
+          .map(data, function (d) {
+            return d.rec_gn;
+          })
+          .keys()
+          .sort(function (a, b) {
+            var a_patt = /(\d*)x/g;
+            var b_patt = /(\d*)x/g;
+            var a_match = a_patt.exec(a);
+            var b_match = b_patt.exec(b);
+            var a_obj = _.findIndex(receptor, function (d) {
+              if (a_match){
+                return d === a_match[1];
+              } else if (a === '-'){
+                return d === a;
+              }
+            });
+            var b_obj = _.findIndex(receptor, function (d) {
+              if (b_match){
+                return d === b_match[1];
+              } else if (b === '-'){
+                return d === b;
+              }
+            });
+            // console.log(a_obj);
+            return d3.ascending(a_obj, b_obj);
+          });
+      }
       var xScale = d3
         .scaleBand()
         .domain(domain)
@@ -565,53 +593,6 @@ var signprotmat = {
         .attr("rx", 3)
         .attr("ry", 3);
       svg.select(".legendOrdinal").selectAll("text").attr("class", "legend");
-
-      // * ADDING Interaction Type LEGEND
-      let size = 2;
-      let window_starts = _.range(0, colScale.domain().length + 1, size);
-
-      let i = 0;
-      for (let windo of window_starts) {
-        let start = windo;
-        let stop = windo + size;
-        let element_ids = _.range(start, stop);
-        let filter_elements = _.pullAt(colScale.domain(), element_ids);
-
-        svg
-          .append("g")
-          .attr("class", "legendOrdinal" + i)
-          .attr(
-            "transform",
-            "translate(" +
-              // (xScale.step() / 2 + i * 10 * xScale.step()) + ","
-              (10 + i * 160) +
-              "," +
-              65 +
-              ")"
-          );
-
-        let legendOrdinal = d3
-          .legendColor()
-          .cellFilter(function (d) {
-            return filter_elements.includes(d.label);
-          })
-          .orient("vertical")
-          .labelAlign("start")
-          .shapePadding(2)
-          .scale(colScale);
-        svg
-          .select(".legendOrdinal" + i)
-          .call(legendOrdinal)
-          .selectAll("rect")
-          .attr("rx", 3)
-          .attr("ry", 3);
-        svg
-          .select(".legendOrdinal" + i)
-          .selectAll("text")
-          .attr("class", "legend");
-
-        i += 1;
-      }
     },
 
     fScaleColor(f) {
@@ -1179,9 +1160,12 @@ var signprotmat = {
         .append("rect")
         .attr("class", "res_rect")
         .style("fill", function (d) {
-          return typeof d.int_ty !== "undefined"
-            ? colScale(d.int_ty[0])
-            : non_int_col;
+          var col = signprotmat.d3.resScaleColor(d.rec_aa); // Assuming d.rec_aa is the residue data for receptor
+          if (typeof col !== "undefined") {
+            return col.bg_color;
+          } else {
+            return null; // Or a default color if undefined
+          }
         })
         .attr("x", function (d) {
           return xScale(d.rec_gn) - xScale.step() / 2;
@@ -1273,7 +1257,12 @@ var signprotmat = {
         .append("rect")
         .attr("class", "res_rect_vertical")
         .style("fill", function (d) {
-          return colScale(d.int_ty[0]);
+          var col = signprotmat.d3.resScaleColor(d.sig_aa); // Assuming d.rec_aa is the residue data for receptor
+          if (typeof col !== "undefined") {
+            return col.bg_color;
+          } else {
+            return null; // Or a default color if undefined
+          }
         })
         .attr("x", function (d) {
           return sigScale(d.pdb_id) - sigScale.step() / 2;

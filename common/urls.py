@@ -29,6 +29,7 @@ urlpatterns = [
     url(r'setgroupminmatch', views.SetGroupMinMatch, name='setgroupminmatch'),
     url(r'verifyminimumselection', views.VerifyMinimumSelection, name='verifyminimumselection'),
     url(r'residuesdownload', views.ResiduesDownload, name='residuesupload'),
+    url(r'residuestemplate', views.ResiduesTemplateDownload, name='residuestemplate'),
     url(r'residuesupload', views.ResiduesUpload, name='residuesupload'),
     url(r'^selectiongproteinpredefined', views.SelectionGproteinPredefined, name='selectiongproteinpredefined'),
     url(r'^selectiongproteintoggle', views.SelectionGproteinToggle, name='selectiongproteintoggle'),

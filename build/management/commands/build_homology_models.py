@@ -150,7 +150,7 @@ class Command(BaseBuild):
                 if self.debug:
                     print('Introducing mutations at: {}'.format(self.added_mutations))
 
-        GPCR_class_codes = {'A':'001', 'B1':'002', 'B2':'003', 'C':'004', 'D1':'005', 'F':'006', 'T':'007'}
+        GPCR_class_codes = {'A':'001', 'B1':'002', 'B2':'003', 'C':'004', 'D1':'005', 'F':'006', 'O1':'007', 'O2':'008', 'T2':'009', 'V':'010'}
         self.modeller_iterations = options['i']
         self.build_all = False
 
@@ -176,7 +176,7 @@ class Command(BaseBuild):
             self.custom_selection = True
         # Only refined structures
         elif options['x']:
-            structs = Structure.objects.filter(annotated=True).exclude(structure_type__slug__startswith='af-').order_by('pdb_code__index')
+            structs = Structure.objects.filter(annotated=True, structure_type__origin='experiment').order_by('pdb_code__index')
             all_receptors = [i.protein_conformation.protein for i in structs]
         # Build all
         elif options['c']==False:
@@ -191,10 +191,10 @@ class Command(BaseBuild):
                                                                                                                                       Q(family__slug__istartswith='008') |
                                                                                                                                       Q(family__slug__istartswith='009') |
                                                                                                                                       Q(family__slug__istartswith='010')).order_by('entry_name')
-            structs = Structure.objects.filter(annotated=True).exclude(structure_type__slug__startswith='af-').order_by('pdb_code__index')
+            structs = Structure.objects.filter(annotated=True, structure_type__origin='experiment').order_by('pdb_code__index')
             all_receptors = list(all_receptors)+[i.protein_conformation.protein for i in structs]
         elif options['c'].upper() not in GPCR_class_codes:
-            raise AssertionError('Error: Incorrect class name given. Use argument -c with class name A, B1, B2, D1, C, F or T')
+            raise AssertionError('Error: Incorrect class name given. Use argument -c with class name A, B1, B2, D1, C, F, O1, O2, T2 or V')
         # Build one class
         else:
             all_receptors = Protein.objects.filter(parent__isnull=True, accession__isnull=False, species__common_name='Human',
@@ -315,15 +315,15 @@ class Command(BaseBuild):
         rec_class = ProteinFamily.objects.get(name=receptor.get_protein_class())
         if rec_class.name=='Class B2 (Adhesion)':
             rec_class = ProteinFamily.objects.filter(name__in=['Class B1 (Secretin)', 'Class B2 (Adhesion)'])
-            structs_in_class = Structure.objects.filter(annotated=True).exclude(structure_type__slug__startswith='af-').filter(Q(protein_conformation__protein__parent__family__slug__startswith=rec_class[0].slug) |
+            structs_in_class = Structure.objects.filter(annotated=True, structure_type__origin='experiment').filter(Q(protein_conformation__protein__parent__family__slug__startswith=rec_class[0].slug) |
                                                                                Q(protein_conformation__protein__parent__family__slug__startswith=rec_class[1].slug))
         else:
-            structs_in_class = Structure.objects.filter(protein_conformation__protein__parent__family__slug__startswith=rec_class.slug, annotated=True).exclude(structure_type__slug__startswith='af-')
+            structs_in_class = Structure.objects.filter(protein_conformation__protein__parent__family__slug__startswith=rec_class.slug, annotated=True, structure_type__origin='experiment')
         possible_states = structs_in_class.exclude(protein_conformation__protein__parent=receptor).exclude(state__name='Other').values_list('state__name', flat=True).distinct()
         if len(possible_states)==0:
             if rec_class.name=='Class T2 (Taste 2)':
                 rec_class = ProteinFamily.objects.get(name='Class A (Rhodopsin)')
-                structs_in_class = Structure.objects.filter(protein_conformation__protein__parent__family__slug__startswith=rec_class.slug, annotated=True).exclude(structure_type__slug__startswith='af-')
+                structs_in_class = Structure.objects.filter(protein_conformation__protein__parent__family__slug__startswith=rec_class.slug, annotated=True, structure_type__origin='experiment')
             possible_states = structs_in_class.exclude(protein_conformation__protein__parent=receptor).exclude(state__name='Other').values_list('state__name', flat=True).distinct()
         structs = structs_in_class.filter(protein_conformation__protein__parent=receptor)
         li1 = list(possible_states)
@@ -933,6 +933,8 @@ class CallHomologyModeling():
                 ### Custom fixes
                 if Homology_model.main_structure.pdb_code.index in ['2YCW','2YCZ']:
                     distorted_residues['TM6']+=['6x22','6x23']
+                elif Homology_model.main_structure.pdb_code.index in ['9LL7','9LL8']:
+                    distorted_residues['G.H1']+=['G.H1.10','G.H1.11','G.H1.12']
 
                 ### build alignment_dict
                 alignment_dict = OrderedDict()

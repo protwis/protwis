@@ -2,20 +2,22 @@
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.core.cache import cache
 from django.db.models import F, Q, Count, Prefetch
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.shortcuts import render, redirect
 from django.utils.decorators import method_decorator
+from django.utils.html import format_html
 from django.utils.text import slugify
 from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView
 
+from protwis.context_processors import current_site
 from common import definitions
 from common.diagrams_gpcr import DrawSnakePlot
 from common.diagrams_gprotein import DrawGproteinPlot
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from common.views import AbsTargetSelection
-from common.models import Publication
+from common.models import Publication, WebLink
 from contactnetwork.models import InteractingResiduePair
 from mutation.models import MutationExperiment
 from protein.models import (Gene, Protein, ProteinAlias, ProteinConformation, ProteinFamily,
@@ -30,11 +32,11 @@ from structure.models import Structure
 
 import json
 import time
+import re
 
 from collections import Counter, OrderedDict
 from copy import deepcopy
 from statistics import mean
-
 
 class BrowseSelection(AbsTargetSelection):
     step = 1
@@ -129,6 +131,369 @@ class TargetSelection(AbsTargetSelection):
             'color': 'success',
         },
     }
+
+class PhosphorylationBrowser(TemplateView):
+    template_name = 'signprot/phosphorylation_sites.html'
+    signprot = 'Arrestin'
+
+    # Define regex patterns used in analysis
+    patterns = {
+        'PxPP': r'([ST][A-Za-z][ST][ST])',
+        'PxPxxO': r'([ST][A-Za-z][ST][A-Za-z]{2}[STDE])',
+        'PxxPxxO': r'([ST][A-Za-z]{2}[ST][A-Za-z]{2}[STDE])',
+    }
+
+    # Define patterns for SitesOn and SitesP
+    SitesOn_L = r'[DE][^ST]{0,2}[ST]{1,}'
+    SitesOn_R = r'[ST]{1,}[^ST]{0,2}[DE]'
+    SitesOn_LR = r'[ST]{1,}[^ST]{0,2}[DE][^ST]{0,2}[ST]{1,}'
+    SitesP_L = r'[ST][^ST]{0,2}[ST]{1,}'
+    SitesP_R = r'[ST]{1,}[^ST]{0,2}[ST]'
+    SitesP_LR = r'[ST]{1,}[^ST]{0,2}[ST][^ST]{0,2}[ST]{1,}'
+
+    patterns2 = {
+        'SitesOn': f'{SitesOn_LR}|{SitesOn_L}|{SitesOn_R}',
+        'SitesP': f'{SitesP_LR}|{SitesP_L}|{SitesP_R}',
+    }
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        sites = self.calculating()
+        context['fixed_headers'] = ['uniprot', 'gene', 'gtodb', 'family', 'class']
+        context['segment_headers'] = self._headers()['headers']
+        context['extra_headers'] = ['log(Emax/EC50)', 'emax', 'pEC50']
+
+        # Collect all unique labels from 'emax', 'pec50', 'logemaxec50'
+        labels_set = set()
+        for site in sites:
+            for header in context['extra_headers']:
+                data_dict = site.get(header, {})
+                labels_set.update(data_dict.keys())
+        context['coupling_labels'] = sorted(labels_set)
+
+        context['sites'] = sites
+
+        return context
+
+    def _headers(self):
+        segment_headers = [
+            "Seq", 
+            "AA",
+            "PxPP", 
+            "PxPxxO", 
+            "PxxPxxO", 
+            "Sum",
+            "Psites_Seq",
+            "Psites_Sites",
+            "Psites_AA",
+            "Psites_O",
+            "Psites_P",
+            "Plong_Seq",
+            "Plong_AA",
+            "Plong_O",
+            "Plong_P",
+            "Osites_Seq",
+            "Osites_Sites",
+            "Osites_AA",
+            "Osites_O",
+            "Osites_P",
+            "Olong_Seq",
+            "Olong_AA",
+            "Olong_O",
+            "Olong_P",
+        ]
+        return {'headers': segment_headers}
+
+    def segments(self):
+        protein_data = []
+
+        # Prefetch related objects to optimize database queries
+        protein_couplings_queryset = ProteinCouplings.objects.filter(
+            g_protein__parent__name=self.signprot,
+            other_protein__isnull=True
+        ).exclude(
+            variant__startswith='iso'
+        ).select_related('g_protein_subunit'
+        ).order_by('g_protein_subunit__entry_name', 'variant')
+
+        # Prefetch the protein couplings
+        protein_couplings_prefetch = Prefetch(
+            'proteincouplings_set',
+            queryset=protein_couplings_queryset,
+            to_attr='filtered_couplings')
+
+        # Prefetch web links for UniProt and Guide to Pharmacology
+        web_links_prefetch = Prefetch(
+            'web_links',
+            queryset=WebLink.objects.filter(web_resource__id__in=[8, 5]).select_related('web_resource'),
+            to_attr='links')
+
+        # All top-level classes (001-011: A/B1/B2/C/D1/F/O1/O2/T2/V/Unclassified) -- slug-based so
+        # this doesn't silently drop classes again the next time a class display name is renamed.
+        class_slugs = ['001', '002', '003', '004', '005', '006', '007', '008', '009', '010', '011']
+
+        prots = (
+            Protein.objects
+            .filter(
+                family__parent__parent__parent__slug__in=class_slugs,
+                entry_name__endswith="_human",
+            )
+            .distinct()
+            .select_related(
+                "family",
+                "family__parent",
+                "family__parent__parent",
+                "family__parent__parent__parent",
+            )
+            .prefetch_related(
+                "proteinconformation_set__residue_set__protein_segment",
+                protein_couplings_prefetch,
+                web_links_prefetch,
+            )
+            .only("entry_name", "name", "family")
+        )
+
+        i = 0
+        for protein in prots:
+            i += 1
+            print(f'PROTEINS {i}')
+            print(protein.entry_name)
+            # Define family hierarchy
+            # family_name = protein.family.name if protein.family else ''
+            parent1 = protein.family.parent if protein.family else None
+            parent2 = parent1.parent if parent1 else None
+            parent3 = parent2.parent if parent2 else None
+
+            # Construct base data
+            base_data = {
+                'uniprot': self.get_uniprot_link(protein),  # GPCR
+                'gene': self.get_gene_link(protein),
+                'gtodb': self.get_gtodb_link(protein),
+                'family': parent1.name.replace('receptors', '').replace('Class', '') if parent1 else '',
+                'class': (parent3.name.split(' ')[1] if ' ' in parent3.name else parent3.name) if parent3 else '',
+            }
+
+            coupling_data = {
+                'emax': {},
+                'pEC50': {},
+                'log(Emax/EC50)': {}
+            }
+
+            for coupling in getattr(protein, 'filtered_couplings', []):
+                # Use the g_protein_subunit_entry_name directly
+                label = (coupling.g_protein_subunit.entry_name, coupling.variant)
+
+                if coupling.emax is not None:
+                    coupling_data['emax'][label] = coupling.emax
+                if coupling.pec50 is not None:
+                    coupling_data['pEC50'][label] = coupling.pec50
+                if coupling.logemaxec50 is not None:
+                    coupling_data['log(Emax/EC50)'][label] = coupling.logemaxec50
+
+            base_data.update(coupling_data)
+
+            # Initialize sequences for segments of interest
+            segment_sequences = {'icl3': '', 'c-term': ''}
+
+            # Build sequences for each segment
+            for conf in protein.proteinconformation_set.all():
+                for residue in conf.residue_set.all():
+                    segment = residue.protein_segment
+                    if segment:
+                        segment_name = segment.slug.lower()
+                        if segment_name in segment_sequences:
+                            segment_sequences[segment_name] += residue.amino_acid
+
+            # Initialize segment data
+            segment_data = base_data.copy()
+
+            # Analyze sequences for each segment and store in segment_data
+            for segment, seq in segment_sequences.items():
+                segment_specific_data = {}
+                self.sequence_analyzer(segment_specific_data, segment, seq)
+                for key, value in segment_specific_data.items():
+                    # Prefix keys with segment name to avoid collisions
+                    segment_data[f'{segment}_{key}'] = value
+
+            # Append the complete data for this protein to protein_data
+            protein_data.append(segment_data)
+
+        return protein_data
+
+    def get_uniprot_link(self, protein):
+        """Retrieve the UniProt link for the protein."""
+        uniprot_links = [link for link in getattr(protein, 'links', []) if 'uniprot' in link.web_resource.url]
+        if uniprot_links:
+            try:
+                uniprot_link = uniprot_links[1]
+            except IndexError:
+                uniprot_link = uniprot_links[0]
+
+            # Grab the base URL (which should contain `$index`)
+            uniprot_url = uniprot_link.web_resource.url
+            # Replace `$index` with the actual uniprot index
+            uniprot_url = uniprot_url.replace('$index', uniprot_link.index)
+            uniprot_display_name = protein.entry_name.split("_")[0].upper()
+            uniprot_display_name_safe = format_html(uniprot_display_name)
+
+            return format_html(
+                '<a href="{}" target="_blank">{}</a>',
+                uniprot_url,
+                uniprot_display_name_safe
+            )
+        else:
+            return protein.entry_name.split("_")[0].upper()
+
+    def get_gene_link(self, protein):
+        """Retrieve the gene link for the protein."""
+        gene_display = None
+
+        if protein.genes.count() > 0:
+            if protein.genes.first().entrez_id:
+                gene_display = format_html(
+                '<a href="{}" target="_blank">{}</a>',
+                protein.genes.first().entrez_weblink,
+                protein.genes.first().name
+            )
+            else:
+                gene_display = protein.genes.first().name
+
+        return gene_display
+
+    def get_gtodb_link(self, protein):
+        """Retrieve the Guide to Pharmacology link for the protein."""
+        gtodb_links = [link for link in getattr(protein, 'links', []) if 'guide' in link.web_resource.url]
+        if gtodb_links:
+            gtodb_link = gtodb_links[0]
+            display_name = protein.name.split("_")[0].replace(" receptor", "").replace("-adrenoceptor", "")
+            display_name_safe = format_html(display_name)
+
+            gtodb_url = gtodb_link.web_resource.url
+            gtodb_url = gtodb_url.replace('$index', gtodb_link.index)
+            return format_html(
+                '<a href="{}" target="_blank">{}</a>',
+                gtodb_url,
+                display_name_safe
+            )
+        else:
+            return protein.name.replace(" receptor", "").replace("-adrenoceptor", "")
+
+    def lower_upper_non(self, seq):
+        """Convert 'S', 'T', 'D', 'E' to uppercase, others to lowercase."""
+        return ''.join([res.upper() if res in "STDE" else res.lower() for res in seq])
+
+    def lower_upper_Ct(self, seq):
+        """Ensure the last character is uppercase, and process the rest of the sequence."""
+        if not seq:
+            return ''
+        processed_seq = ''.join([res.upper() if res in "STDE" or res.islower() else res.lower() for res in seq[:-1]])
+        last_char = seq[-1].upper()
+        return processed_seq + last_char
+
+    def longest_site(self, seqs):
+        """Find the longest sequence with the highest count of uppercase residues."""
+        if not seqs:
+            return ''
+        max_len = max(len(seq) for seq in seqs)
+        max_seqs = [seq for seq in seqs if len(seq) == max_len]
+        max_seq = max(max_seqs, key=lambda s: sum(1 for res in s if res.isupper()))
+        return max_seq
+
+    def SitesP_seq(self, seq):
+        """Extract sequences with at least 3 'S' or 'T' residues."""
+        pattern = r'[DEa-z]{3,}'
+        matches = re.split(pattern, seq)
+        return [match for match in matches if match and sum(1 for res in match if res in ['S', 'T']) >= 3]
+
+    def SitesOn_seq(self, seq):
+        """Extract SitesOn sequences based on defined patterns."""
+        matches = re.finditer(self.patterns2['SitesOn'], seq)
+        return [match.group() for match in matches if sum(1 for res in match.group() if res in 'STDE') >= 3]
+
+    def sequence_analyzer(self, data, segment, sequence):
+        """Analyze sequences and update data dictionary."""
+        # Process sequences, handling 'C-term' differently
+        if segment == 'c-term':
+            processed_seq = self.lower_upper_Ct(sequence)
+        else:
+            processed_seq = self.lower_upper_non(sequence)
+        data['Seq'] = processed_seq
+        data['AA'] = len(processed_seq)
+
+        # Count patterns in sequences
+        for key, val in self.patterns.items():
+            data[key] = len(re.findall(val, processed_seq))
+        data['Sum'] = sum(data[col] for col in self.patterns.keys())
+
+        # Process SitesP: sequences with at least 3 'S' or 'T' residues
+        data['Psites_Seq'] = self.SitesP_seq(processed_seq)
+        data['Psites_Sites'] = len(data['Psites_Seq'])
+        data['Psites_AA'] = sum(len(s) for s in data['Psites_Seq'])
+        data['Psites_O'] = sum(res in ['S', 'T', 'D', 'E'] for s in data['Psites_Seq'] for res in s)
+        data['Psites_P'] = sum(res in ['S', 'T'] for s in data['Psites_Seq'] for res in s)
+
+        # Find the longest SitesP sequence
+        data['Plong_Seq'] = self.longest_site(data['Psites_Seq'])
+        data['Plong_AA'] = len(data['Plong_Seq'])
+        data['Plong_O'] = sum(res in ['S', 'T', 'D', 'E'] for res in data['Plong_Seq'])
+        data['Plong_P'] = sum(res in ['S', 'T'] for res in data['Plong_Seq'])
+
+        # Process SitesOn sequences
+        data['Osites_Seq'] = self.SitesOn_seq(processed_seq)
+        data['Osites_Sites'] = len(data['Osites_Seq'])
+        data['Osites_AA'] = sum(len(s) for s in data['Osites_Seq'])
+        data['Osites_O'] = sum(res in ['S', 'T', 'D', 'E'] for s in data['Osites_Seq'] for res in s)
+        data['Osites_P'] = sum(res in ['S', 'T'] for s in data['Osites_Seq'] for res in s)
+
+        # Find the longest SitesOn sequence
+        data['Olong_Seq'] = self.longest_site(data['Osites_Seq'])
+        data['Olong_AA'] = len(data['Olong_Seq'])
+        data['Olong_O'] = sum(res in ['S', 'T', 'D', 'E'] for res in data['Olong_Seq'])
+        data['Olong_P'] = sum(res in ['S', 'T'] for res in data['Olong_Seq'])
+
+
+    def calculating(self):
+        sites_dict = self.segments()
+        return sites_dict
+
+####### lazy loader
+
+class LazyDataLoader:
+
+    def __init__(self, load_function,index=None, *args, **kwargs):
+        self._loaded_data = None
+        self._load_function = load_function
+        self._args = args
+        self._kwargs = kwargs
+        self.index = index
+
+    def _load_data(self):
+        if self._loaded_data is None:
+            if self.index == None:
+                self._loaded_data = self._load_function(*self._args, **self._kwargs)
+            else:
+                self._loaded_data = self._load_function(*self._args, **self._kwargs)[self.index]
+        return self._loaded_data
+
+    def __getattr__(self, name):
+        return getattr(self._load_data(), name)
+
+    def __getitem__(self, key):
+        return self._load_data()[key]
+
+    def __iter__(self):
+        return iter(self._load_data())
+
+    def __len__(self):
+        return len(self._load_data())
+
+def CouplingHandler(request):
+    domain = current_site(request)
+    origin = domain['current_site']
+    if origin == 'gprotein':
+        return CouplingBrowser.as_view()(request).render()
+    elif origin == 'arrestin':
+        return CouplingBrowser_deprecated.as_view(subunit_filter = "200_000_001", families = ["Beta"], page='arrestin')(request).render()
 
 
 class CouplingBrowser(TemplateView):
@@ -388,6 +753,8 @@ class CouplingBrowser(TemplateView):
             protein_data[prot.id]['family'] = prot.family.parent.short()
             protein_data[prot.id]['uniprot'] = prot.entry_short()
             protein_data[prot.id]['iuphar'] = prot.family.name.replace('receptor', '').strip()
+            protein_data[prot.id]['genename'] = prot.genes.first().name if prot.genes.count() else ''
+            protein_data[prot.id]['entrezweblink'] = prot.genes.first().entrez_weblink if prot.genes.count() else ''
             protein_data[prot.id]['accession'] = prot.accession
             protein_data[prot.id]['entryname'] = prot.entry_name
             protein_data[prot.id]['gtp_fam_supp'] = []
@@ -492,8 +859,8 @@ class CouplingBrowser_deprecated(TemplateView):
 
     @method_decorator(csrf_exempt)
     def get_context_data(self, **kwargs):
+        print('CouplingBrowser_deprecated get_context_data called')
         context = super().get_context_data(**kwargs)
-
         tab_fields, header = self.tab_fields(self.subunit_filter, self.families)
 
         context['tabfields'] = tab_fields
@@ -501,7 +868,6 @@ class CouplingBrowser_deprecated(TemplateView):
         flat_list = [item for sublist in header.values() for item in sublist]
         context['subunitheader'] = flat_list
         context['page'] = self.page
-
         return context
 
     @staticmethod
@@ -548,6 +914,8 @@ class CouplingBrowser_deprecated(TemplateView):
             protein_data[prot.id]['family'] = prot.family.parent.short()
             protein_data[prot.id]['uniprot'] = prot.entry_short()
             protein_data[prot.id]['iuphar'] = prot.family.name.replace('receptor', '').strip()
+            protein_data[prot.id]['genename'] = prot.genes.first().name if prot.genes.count() else ''
+            protein_data[prot.id]['entrezweblink'] = prot.genes.first().entrez_weblink if prot.genes.count() else ''
             protein_data[prot.id]['accession'] = prot.accession
             protein_data[prot.id]['entryname'] = prot.entry_name
 
@@ -603,7 +971,7 @@ class CouplingBrowser_deprecated(TemplateView):
         # First create and populate the dictionary for all receptors
         dictotemplate = {}
         sourcenames = set()
-        readouts = ["logemaxec50"]#, "pec50", "emax"]
+        readouts = ["logemaxec50", 'pec50', 'emax']#, "pec50", "emax"]
         for protein in proteins:
             dictotemplate[protein.pk] = {}
             dictotemplate[protein.pk]['protein'] = protein_data[protein.pk]
@@ -644,11 +1012,18 @@ class CouplingBrowser_deprecated(TemplateView):
             family = coupling_reverse_header_names[subunit]
 
             # Combine values
-            exp_values = {
-                "logemaxec50": round(pair.logemaxec50, 1)
-                # "pec50": round(pair.pec50, 1),
-                # "emax": round(pair.emax)
-                }
+            try:
+                exp_values = {
+                    "logemaxec50": round(pair.logemaxec50, 1),
+                    "pec50": round(pair.pec50, 1),
+                    "emax": round(pair.emax)
+                    }
+            except:
+                exp_values = {
+                    "logemaxec50": 0,
+                    "pec50": 0,
+                    "emax": 0
+                    }
 
             for readout in readouts:
                 dictotemplate[pair.protein_id]['coupling'][pair.source][readout][subunit] = exp_values[readout]
@@ -864,9 +1239,9 @@ Inoue,O,TGF-α,log(Emax/EC50),5,G protein dissociation| PKC activation| ADAM17 (
 def CouplingProfiles(request, render_part="both", signalling_data="empty"):
     name_of_cache = 'coupling_profiles_' + signalling_data
 
-    context = cache.get(name_of_cache)
+    # context = cache.get(name_of_cache)
     # NOTE cache disabled for development only!
-    # context = None
+    context = None
     if context == None:
 
         context = OrderedDict()
@@ -930,7 +1305,7 @@ def CouplingProfiles(request, render_part="both", signalling_data="empty"):
         slug_translate = {'001': "ClassA", '002': "ClassB1", '003': "ClassB2", '004': "ClassC", '006': "ClassF", '009': "ClassT2"}
         key_translate ={'Gs':"G<sub>s</sub>", 'Gi/o':"G<sub>i/o</sub>",
                         'Gq/11':"G<sub>q/11</sub>", 'G12/13':"G<sub>12/13</sub>",
-                        'Beta-arrestin-1':"&beta;-Arrestin<sub>1</sub>", 'Beta-arrestin-2':"&beta;-Arrestin<sub>2</sub>"}
+                        'Beta-arrestin-1':"&beta;-Arrestin 1", 'Beta-arrestin-2':"&beta;-Arrestin 2"}
         selectivitydata_gtp_plus = {}
         receptor_dictionary = []
         if signalling_data == "gprot":
@@ -1058,7 +1433,7 @@ def CouplingProfiles(request, render_part="both", signalling_data="empty"):
 
         # Collect receptor information
         receptor_panel = Protein.objects.filter(entry_name__in=receptor_dictionary)\
-                                .prefetch_related("family", "family__parent__parent__parent")
+                                .prefetch_related("family", "family__parent__parent__parent", "genes")
 
         receptor_dictionary = {}
         for p in receptor_panel:
@@ -1067,8 +1442,12 @@ def CouplingProfiles(request, render_part="both", signalling_data="empty"):
             rec_ligandtype = p.family.parent.parent.short()
             rec_family = p.family.parent.short()
             rec_uniprot = p.entry_short()
+            gene = p.genes.first()
+            rec_genename = gene.name if gene else "-"
+            rec_entrezweblink = gene.entrez_weblink if gene else None
+            rec_gene_as_anchor = f'<a href="{rec_entrezweblink}" target="_blank">{rec_genename}</a>' if rec_entrezweblink else rec_genename
             rec_iuphar = p.family.name.replace("receptor", '').replace("<i>","").replace("</i>","").strip()
-            receptor_dictionary[rec_uniprot] = [rec_class, rec_ligandtype, rec_family, rec_uniprot, rec_iuphar]
+            receptor_dictionary[rec_uniprot] = [rec_class, rec_ligandtype, rec_family, rec_uniprot, rec_gene_as_anchor, rec_iuphar]
 
         whole_receptors = Protein.objects.prefetch_related("family", "family__parent__parent__parent").filter(sequence_type__slug="wt", family__slug__startswith="0")
         whole_rec_dict = {}
@@ -1089,17 +1468,29 @@ def CouplingProfiles(request, render_part="both", signalling_data="empty"):
                   context
     )
 
-def GProteinTree(request):
-    return CouplingProfiles(request, "tree", "gprot")
+def TreeHandler(request):
+    domain = current_site(request)
+    print(domain)
+    origin = domain['current_site']
+    print(origin)
+    if origin == 'gprotein':
+        return CouplingProfiles(request, "tree", "gprot")
+    elif origin == 'arrestin':
+        return CouplingProfiles(request, "tree", "arrestin")
+    else:
+        ### Development mode DEFAULT_SITE set to gpcr
+        return HttpResponseRedirect('/')
 
-def GProteinVenn(request):
-    return CouplingProfiles(request, "venn", "gprot")
-
-def ArrestinTree(request):
-    return CouplingProfiles(request, "tree", "arrestin")
-
-def ArrestinVenn(request):
-    return CouplingProfiles(request, "venn", "arrestin")
+def VennHandler(request):
+    domain = current_site(request)
+    origin = domain['current_site']
+    if origin == 'gprotein':
+        return CouplingProfiles(request, "venn", "gprot")
+    elif origin == 'arrestin':
+        return CouplingProfiles(request, "venn", "arrestin")
+    else:
+        ### Development mode DEFAULT_SITE set to gpcr
+        return HttpResponseRedirect('/')
 
 #@cache_page(60*60*24*7)
 def familyDetail(request, slug):
@@ -1219,10 +1610,12 @@ def familyDetail(request, slug):
 
 @cache_page(60 * 60 * 24 * 7)
 def Ginterface(request, protein=None):
+    from angles.models import get_snake_plot_distance_lookup
     residuelist = Residue.objects.filter(protein_conformation__protein__entry_name=protein).prefetch_related(
         'protein_segment', 'display_generic_number', 'generic_number')
+    distance_lookup = get_snake_plot_distance_lookup(Protein.objects.get(entry_name=protein))
     SnakePlot = DrawSnakePlot(
-        residuelist, "Class A (Rhodopsin)", protein, nobuttons=1)
+        residuelist, "Class A (Rhodopsin)", protein, nobuttons=1, residue_distance_lookup=distance_lookup)
 
     # TEST
     gprotein_residues = Residue.objects.filter(protein_conformation__protein__entry_name='gnaz_human').prefetch_related(
@@ -1442,7 +1835,6 @@ def StructureInfo(request, pdbname):
 # @cache_page(60*60*24*2)
 def signprotdetail(request, slug):
     # get protein
-
     slug = slug.lower()
     p = Protein.objects.prefetch_related('web_links__web_resource').get(entry_name=slug, sequence_type__slug='wt')
 
@@ -1610,7 +2002,7 @@ def interface_dataset():
     return list(conf_ids), list(interactions)
 
 @method_decorator(csrf_exempt)
-def AJAX_Interactions(request):
+def AJAX_Interactions(request, include_non_gns):
     t1 = time.time()
     selected_pdbs = request.POST.getlist("selected_pdbs[]")
     effector = request.POST.get('effector')
@@ -1624,11 +2016,17 @@ def AJAX_Interactions(request):
     # # pdbs_names = [pdb.lower() for pdb in selected_pdbs]
     # pdbs_names = ['_'.join(pdb.split('_')[1:3]).lower() if pdb.startswith('AFM') else pdb.lower() for pdb in selected_pdbs]
 
-    complex_objs = SignprotComplex.objects.filter(structure__pdb_code__index__in=selected_pdbs).prefetch_related('structure__protein_conformation__protein')
+    fam_slug = '100' if effector == 'G alpha' else '200' if effector == 'A' else None
+
+    complex_objs = SignprotComplex.objects.filter(structure__pdb_code__index__in=selected_pdbs)
+    if fam_slug:
+        complex_objs = complex_objs.filter(protein__family__slug__startswith=fam_slug)
+    complex_objs = complex_objs.prefetch_related('structure__protein_conformation__protein')
 
     # complex_objs = SignprotComplex.objects.filter(structure__protein_conformation__protein__entry_name__in=pdbs_names).prefetch_related('structure__protein_conformation__protein')
     # fetching the id of the selected structures
     complex_struc_ids = [co.structure_id for co in complex_objs]
+    struc_id_to_gprot = {co.structure_id: co.protein.entry_name for co in complex_objs}
     # protein conformations for those
     # prot_conf = ProteinConformation.objects.filter(protein__entry_name__in=complex_names).values_list('id', flat=True)
     prot_conf = complex_objs.values_list('structure__protein_conformation__id', flat=True)
@@ -1650,14 +2048,14 @@ def AJAX_Interactions(request):
 
     interactions = InteractingResiduePair.objects.filter(
         Q(res1__in=prot_residues) | Q(res2__in=prot_residues),
-        referenced_structure__in=complex_struc_ids
-    # ).exclude(res1__generic_number__isnull=True
-    ).exclude(
+        referenced_structure__in=complex_struc_ids)
+    if include_non_gns=='True':
+        interactions = interactions.exclude(res1__generic_number__isnull=True)
+    interactions = interactions.exclude(
         Q(res1__in=prot_residues) & Q(res2__in=prot_residues)
     ).prefetch_related(
         'interaction__interaction_type',
         'referenced_structure__pdb_code__index',
-        'referenced_structure__signprot_complex__protein__entry_name',
         'referenced_structure__protein_conformation__protein__parent__entry_name',
         'res1__amino_acid',
         'res1__sequence_number',
@@ -1677,8 +2075,9 @@ def AJAX_Interactions(request):
         ),
         pdb_id=F('referenced_structure__pdb_code__index'),
         conf_id=F('referenced_structure__protein_conformation_id'),
-        gprot=F('referenced_structure__signprot_complex__protein__entry_name'),
+        struc_id=F('referenced_structure_id'),
         entry_name=F('referenced_structure__protein_conformation__protein__parent__entry_name'),
+        model_entry_name=F('referenced_structure__protein_conformation__protein__entry_name'),
 
         rec_aa=F('res1__amino_acid'),
         rec_pos=F('res1__sequence_number'),
@@ -1691,8 +2090,14 @@ def AJAX_Interactions(request):
 
     conf_ids = set()
     for i in interactions:
+        ### Using res pos instead of GN for residues with no GN
+        if not i['rec_gn']:
+            i['rec_gn'] = i['rec_pos']
         i['int_ty'] = sort_a_by_b(i['int_ty'], interaction_sort_order)
+        i['gprot'] = struc_id_to_gprot.get(i.pop('struc_id'))
         conf_ids.update([i['conf_id']])
+        if not i['entry_name']:
+            i['entry_name'] = i['model_entry_name']
 
     prot_conf_ids = list(conf_ids)
     remaining_residues = Residue.objects.filter(
@@ -1732,31 +2137,48 @@ def InteractionMatrix(request, database='gprotein'):
     if database == 'gprotein':
         gprotein_order = ProteinSegment.objects.filter(proteinfamily='Alpha').values('id', 'slug')
         fam_slug = '100'
+        struc = SignprotComplex.objects.filter(protein__family__slug__startswith=fam_slug).filter(
+            Q(structure__structure_type__origin='experiment') | Q(structure__structure_type__slug='af-signprot')
+        ).prefetch_related(
+            'structure',
+            'structure__pdb_code',
+            'structure__stabilizing_agents',
+            'structure__protein_conformation',
+            'structure__protein_conformation__protein',
+            'structure__protein_conformation__protein__species',
+            'structure__protein_conformation__protein__parent',
+            'structure__protein_conformation__protein__parent__parent__parent',
+            'structure__protein_conformation__protein__family__parent__parent__parent__parent',
+            'structure__stabilizing_agents',
+            'protein__family__parent',
+            'protein__family__parent__parent__parent__parent',
+        )
     elif database == 'arrestin':
         arrestin_order = ProteinSegment.objects.filter(proteinfamily='Arrestin').values('id', 'slug')
         fam_slug = '200'
+        struc = SignprotComplex.objects.filter(protein__family__slug__startswith=fam_slug).filter(
+            Q(structure__structure_type__origin='experiment') | Q(structure__structure_type__slug='af-arrestin')
+        ).prefetch_related(
+            'structure',
+            'structure__pdb_code',
+            'structure__stabilizing_agents',
+            'structure__protein_conformation',
+            'structure__protein_conformation__protein',
+            'structure__protein_conformation__protein__species',
+            'structure__protein_conformation__protein__parent',
+            'structure__protein_conformation__protein__parent__parent__parent',
+            'structure__protein_conformation__protein__family__parent__parent__parent__parent',
+            'structure__stabilizing_agents',
+            'protein__family__parent',
+            'protein__family__parent__parent__parent__parent',
+        )
 
     receptor_order = ['N', '1', '12', '2', '23', '3', '34', '4', '45', '5', '56', '6', '67', '7', '78', '8', 'C']
 
-    struc = SignprotComplex.objects.filter(protein__family__slug__startswith=fam_slug).prefetch_related(
-        'structure',
-        'structure__pdb_code',
-        'structure__stabilizing_agents',
-        'structure__protein_conformation',
-        'structure__protein_conformation__protein',
-        'structure__protein_conformation__protein__species',
-        'structure__protein_conformation__protein__parent',
-        'structure__protein_conformation__protein__parent__parent__parent',
-        'structure__protein_conformation__protein__family__parent__parent__parent__parent',
-        'structure__stabilizing_agents',
-        'structure__signprot_complex__protein__family__parent',
-        'structure__signprot_complex__protein__family__parent__parent__parent__parent',
-    )
-
     complex_info = []
-    for s in struc:
+    for complex_obj in struc:
         r = {}
-        s = s.structure
+        s = complex_obj.structure
         r['pdb_id'] = s.pdb_code.index
         try:
             r['name'] = s.protein_conformation.protein.parent.short()
@@ -1771,11 +2193,11 @@ def InteractionMatrix(request, database='gprotein'):
         r['conf_id'] = s.protein_conformation.id
         r['organism'] = s.protein_conformation.protein.species.common_name
         if database=='gprotein':
-            r['gprot'] = definitions.G_PROTEIN_DISPLAY_NAME[s.signprot_complex.protein.entry_name.split('_')[0].upper()]#s.get_stab_agents_gproteins()
+            r['gprot'] = definitions.G_PROTEIN_DISPLAY_NAME[complex_obj.protein.entry_name.split('_')[0].upper()]
         elif database=='arrestin':
-            r['gprot'] = definitions.ARRESTIN_DISPLAY_NAME[s.signprot_complex.protein.entry_name.split('_')[0]]
+            r['gprot'] = definitions.ARRESTIN_DISPLAY_NAME[complex_obj.protein.entry_name.split('_')[0]]
         try:
-            r['gprot_class'] = s.signprot_complex.protein.family.parent.name#s.get_signprot_gprot_family()
+            r['gprot_class'] = complex_obj.protein.family.parent.name
         except Exception:
             r['gprot_class'] = ''
         complex_info.append(r)

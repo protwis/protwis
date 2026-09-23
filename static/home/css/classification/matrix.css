@@ -1,0 +1,333 @@
+/* Cross-class similarity (heatmap) styles. Vendor stylesheet it also needs
+   (DataTables) is loaded directly by the Detail page template, not bundled here. */
+
+/* ===========================================================
+   Cross-class similarity — Styles
+   =========================================================== */
+
+/* --- Page layout / headings --- */
+.page-wrap { padding: 8px 0 16px; margin-top: 20px; }
+.title-center { text-align: center; margin-bottom: 8px; }
+
+/* New centering rail — matches .ccs-scroller’s centering */
+.ccs-toolbar-rail{
+  width: fit-content;
+  max-width: var(--ccs-maxw);
+  margin: 14px auto 50px;     /* same “center me” behavior as the table */
+}
+
+/* Keep the inline layout, but remove the old margin hack */
+.ccs-toolbar-inline{
+  display:flex; align-items:center; gap:10px;
+  margin: 0;                   /* was: 10px 10px 50px 5% */
+}
+
+/* Fixed width for the data scope toggle button */
+#ccsScopeToggle{
+  min-width: 230px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* Axis wrapper (scope width clamp) */
+.ccs-axis-wrap{ position: relative; width: 100%; margin: 0 auto; --ccs-maxw: 100%; display: grid; row-gap: 12px;}
+.ccs-axis-wrap.scope-human{ --ccs-maxw: 60%; }
+.ccs-axis-wrap.scope-human-unclassified{ --ccs-maxw: 100%; }
+
+/* Badges look */
+.ccs-axis-badge{ display:inline-block; padding:6px 10px; font-size:18px; line-height:1.1; border-radius:12px; border:1px solid #bbb; color:#000; }
+.ccs-badge-id{ background:#baeec2; }   /* Identity mid green */
+.ccs-badge-sim{ background:#bad4ee; }  /* Similarity mid blue */
+
+/* ====== Capture area (for export) ====== */
+.ccs-capture{ display:flex; justify-content:center; }
+.ccs-capture-inner{
+  position:relative;
+  display:inline-block;   /* shrink-wrap to contents */
+  background:#fff;
+  padding-left: 44px;     /* room for the rotated Y badge */
+}
+
+/* Badges are positioned *inside* the inner wrapper */
+.axis-label-x,
+.axis-label-y { position: absolute; z-index: 2; }
+
+/* vertical Y badge styling stays the same */
+.axis-label-y .ccs-axis-badge{
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  display:inline-block;
+}
+
+/* Heatmap container */
+.ccs-scroller{
+  position:relative;
+  width: fit-content;
+  max-width: var(--ccs-maxw);
+  margin: 0 auto;
+  overflow-x: auto;
+  overflow-y: auto;
+  border:0; border-radius:0; background:#fff; max-width:100%;
+}
+
+/* ====== Fixed-size squares + table base ====== */
+:root{
+  /* preset these however you like */
+  --ccs-cell: 50px;            /* width & height of data cells and header cells */
+  --ccs-row-header-w: 50px;    /* width of the left label column */
+  --ccs-empty-bg: #fff;        /* fixed blank background (white) */
+  --ccs-diagonal-bg: #eeeeee;  /* neutral diagonal background */
+
+  /* heatmap text presets (main table only) */
+  --ccs-num-fs: 20px;          /* numbers in data cells */
+  --ccs-num-fw: 550;           /* 400 normal, 700 bold */
+
+  /* header typography (two lines) */
+  --ccs-head1-fs: 20px;        /* main header line */
+  --ccs-head2-fs: 20px;        /* kept for any residual subtext usage */
+}
+
+/* HUMAN WITHOUT UNCLASSIFIED — larger layout */
+.ccs-axis-wrap.scope-human {
+  --ccs-cell: 50px;
+  --ccs-row-header-w: 50px;
+  --ccs-num-fs: 20px;
+  --ccs-head1-fs: 20px;
+  --ccs-head2-fs: 20px;
+}
+
+/* HUMAN WITH UNCLASSIFIED — compact layout */
+.ccs-axis-wrap.scope-human-unclassified {
+  --ccs-cell: 50px;
+  --ccs-row-header-w: 50px;
+  --ccs-num-fs: 20px;
+  --ccs-head1-fs: 20px;
+  --ccs-head2-fs: 20px;
+}
+
+#ccsTable{
+  width: auto;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+/* Fixed squares for all table cells */
+#ccsTable th, #ccsTable td{
+  width: var(--ccs-cell);
+  height: var(--ccs-cell);
+  box-sizing: border-box;
+  padding: 0;
+  text-align:center; vertical-align:middle;
+  border:1px solid #ddd;
+  line-height:1.2;
+}
+
+#ccsTable td{
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: normal;
+  overflow-wrap:anywhere; hyphens:auto; word-break:break-word;
+}
+
+/* Numbers styling (data cells only) */
+#ccsTable td{
+  font-size: var(--ccs-num-fs);
+  font-weight: var(--ccs-num-fw);
+}
+
+/* Header font sizes (corner + row/col headers) */
+#ccsTable th{
+  font-size: var(--ccs-head1-fs);
+  border: 0 !important;
+  background: transparent;
+  overflow: visible;
+  text-overflow: clip;
+  white-space: nowrap;
+  overflow-wrap: normal;
+  hyphens: none;
+  word-break: normal;
+}
+
+/* Left label column width override */
+#ccsTable th:first-child{ width: var(--ccs-row-header-w); }
+#ccsTable tbody th{
+  padding-right: 4px;
+  text-align: right;
+}
+#ccsTable thead th{
+  vertical-align: bottom;
+}
+#ccsTable thead th:not(:first-child) .ccs-col-label{
+  display: inline-block;
+}
+.ccs-axis-wrap.scope-human-unclassified #ccsTable thead th{
+  height: 100px;
+  vertical-align: bottom;
+  position: relative;
+}
+.ccs-axis-wrap.scope-human-unclassified #ccsTable thead th:not(:first-child) .ccs-col-label{
+  position: absolute;
+  left: calc(50% + 8px);
+  bottom: 8px;
+  width: 110px;
+  line-height: 1;
+  transform: rotate(-90deg);
+  transform-origin: left bottom;
+  text-align: left;
+}
+
+/* Two-line label subtext */
+#ccsTable th small.ccs-sub{
+  font-size: var(--ccs-head2-fs);
+  color:#6c757d;
+  font-weight:500;
+}
+
+/* Heatmap cell backgrounds (set via JS) */
+td.cell-sim{ background:var(--ccs-bg, #f4f9ff); } /* lower = similarity */
+td.cell-id { background:var(--ccs-bg, #f4fff4); } /* upper = identity */
+td.cell-empty{ background: var(--ccs-empty-bg); color:#888; }
+td.cell-diagonal{ background: var(--ccs-diagonal-bg); color: transparent; }
+
+/* Subtle hover outline */
+#ccsTable td.cell-id:hover, #ccsTable td.cell-sim:hover{
+  box-shadow: inset 0 0 0 2px rgba(0,0,0,.55);
+}
+
+/* Clickable heat cells (for stasis lock) */
+#ccsTable td.cell-id, #ccsTable td.cell-sim{ cursor: pointer; }
+
+/* Responsive tweaks */
+@media (max-width:640px){
+  .ccs-capture-inner{ padding-left: 0; }
+  #ccsTable{ font-size:.9rem; }
+}
+
+/* --- Flyout (DataTables skin, no inner scroll) --- */
+.ccs-fly{
+  position:absolute; z-index:2000; background:#fff; color:#111;
+  border:1px solid #cfcfcf; border-radius:10px; box-shadow:0 10px 24px rgba(0,0,0,.18);
+  width:780px; max-width:calc(100vw - 48px);
+  display:none; overflow:hidden;
+  pointer-events:none;
+  user-select:none;
+}
+.ccs-fly.locked{ pointer-events:auto; }
+
+/* Flyout table base */
+#ccsFlyTable{ width:100%; border-collapse:separate; border-spacing:0; }
+#ccsFlyTable thead th, #ccsFlyTable tbody td{ text-align:center; white-space:nowrap; }
+
+/* Header: DataTables-like (base) */
+#ccsFlyTable thead th{
+  background:#f6f6f6; font-weight:600; color:#222;
+  border:0; border-bottom:1px solid #000; padding:.5rem .6rem;
+}
+
+/* Body: compact grid */
+#ccsFlyTable tbody td{
+  border:1px solid #e6e6e6; border-left:0; border-top:0;
+  padding:.45rem .55rem; vertical-align:middle;
+}
+#ccsFlyTable tbody tr td:first-child{ border-left:1px solid #e6e6e6; }
+
+/* Zebra rows */
+#ccsFlyTable tbody tr:nth-child(odd) td{ background:#fafafa; }
+
+/* ---------- Flyout header layout (metrics split over two rows) ---------- */
+#ccsFlyTable thead tr.ccs-super th.metric-cap{
+  border-bottom: none !important;
+  vertical-align: bottom;
+  padding-bottom: .2rem;
+  font-weight: 600;
+  text-align: center;
+  width: 56px;
+  min-width: 48px;
+}
+#ccsFlyTable thead tr.ccs-super th.group-cap{
+  border-bottom: 1px solid #000 !important;
+  text-align: center;
+}
+#ccsFlyTable thead tr.metric-row th.metric-unit{
+  vertical-align: top;
+  padding-top: .15rem;
+  font-size: 11px;
+  line-height: 1;
+  text-align: center;
+  width: 56px;
+  min-width: 48px;
+}
+
+/* Vertical dividers */
+#ccsFlyTable thead tr.ccs-super th:nth-child(2),
+#ccsFlyTable thead tr.metric-row th:nth-child(2),
+#ccsFlyTable tbody td:nth-child(2),
+#ccsFlyTable thead tr.ccs-super th:nth-child(3),
+#ccsFlyTable thead tr.metric-row th:nth-child(6),
+#ccsFlyTable tbody td:nth-child(6){
+  border-right: 1px solid #000 !important;
+}
+
+/* Compact icons inside flyout cells */
+#ccsFlyTable .ccs-ico img{ width:12px; height:12px; opacity:.95; vertical-align:middle; }
+
+/* Links & muted text */
+#ccsFlyTable a{ color:#0b63c0; text-decoration:none; }
+#ccsFlyTable a:hover{ text-decoration:underline; }
+#ccsFlyTable .muted{ color:#8a8f96; }
+
+/* --- Overlay (only over the scroller) --- */
+.ccs-overlay{ position:absolute; inset:0; background:rgba(0,0,0,.35); z-index:1995; display:none; }
+.ccs-overlay.active{ display:block; }
+
+/* Flyout download button: absolute, above the scroller */
+.ccs-fly-dl{
+  position: absolute;
+  z-index: 2100;           /* above the flyout (2000) and overlay (1995) */
+  font-size: 13px;
+  white-space: nowrap;
+  box-shadow: 0 6px 18px rgba(0,0,0,.15);
+}
+
+/* Flyout download dropdown */
+#ccsFlyDownloadMenu {
+  position: absolute;
+  z-index: 2101;
+  min-width: 160px;
+  padding: 10px 12px;
+  display: none;
+  box-shadow: 0 6px 18px rgba(0,0,0,.15);
+}
+#ccsFlyDownloadMenu .btn { margin-bottom: 6px; }
+#ccsFlyDownloadMenu .btn:last-child { margin-bottom: 0; }
+
+/* --- How-to modal --- */
+.ccs-modal-backdrop{
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.45);
+  z-index: 3000; display:none;
+}
+.ccs-modal{
+  position: fixed; left: 50%; top: 12%;
+  transform: translateX(-50%);
+  width: min(780px, calc(100% - 40px));
+  background: #fff; color:#111;
+  border:1px solid #cfcfcf; border-radius:10px;
+  box-shadow:0 16px 36px rgba(0,0,0,.25);
+  z-index: 3001; display:none;
+}
+.ccs-modal header{
+  padding: 14px 16px; border-bottom:1px solid #e6e6e6;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.ccs-modal header h3{ margin:0; font-size:18px; font-weight:600; }
+.ccs-modal .ccs-modal-close{
+  border:0; background:transparent; font-size:22px; line-height:1;
+  opacity:.65; cursor:pointer;
+}
+.ccs-modal .ccs-modal-close:hover{ opacity:1; }
+.ccs-modal .ccs-modal-body{ padding: 14px 16px 18px; max-height: 70vh; overflow:auto; }
+.ccs-modal footer{ padding: 10px 16px; border-top:1px solid #e6e6e6; text-align:right; }
+
+</style>

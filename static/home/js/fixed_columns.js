@@ -14,7 +14,7 @@ function update_text_in_modal() {
     var group;
     group = $(".tableview:visible").attr("group-number");
     if (group) mode = mode + group;
-    
+
     $(".pdb_selected", oTable[mode].cells().nodes()).each(function() {
         if ($(this).prop("checked")) {
             $(this).closest("tr").addClass("selected");
@@ -326,8 +326,7 @@ function exportPDBs() {
 }
 
 function toggle_best(mode, index, value) {
-    var filter_value;
-    filter_value = value === "On" ? "Best" : "";
+    let filter_value = value === "On" ? "Best" : "";
     yadcf.exFilterColumn(oTable[mode], [[index, filter_value]]);
 }
 
@@ -385,7 +384,7 @@ function showPDBtable(element) {
 
     if (!$.fn.DataTable.isDataTable(element + " .tableview table")) {
         $(element + " #best_species").html('<div class2="pull-right">\
-                                            <div class="btn-group btn-toggle" column="7" mode="'+ mode +'"> \
+                                            <div class="btn-group btn-toggle" column="8" mode="'+ mode +'"> \
                                             <button class="btn btn-xs btn-default" value="On">&nbsp;</button> \
                                             <button class="btn btn-xs btn-primary active" value="Off">Off</button> \
                                             </div> \
@@ -393,7 +392,7 @@ function showPDBtable(element) {
                                             </div>');
 
         $(element + " #best_res").html('<div class2="pull-right"> \
-        <div class="btn-group btn-toggle" column="12" mode="'+ mode +'"> \
+        <div class="btn-group btn-toggle" column="13" mode="'+ mode +'"> \
                                             <button class="btn btn-xs btn-default" value="On">&nbsp;</button> \
                                             <button class="btn btn-xs btn-primary active" value="Off">Off</button> \
                                             </div> \
@@ -445,6 +444,81 @@ function showPDBtable(element) {
         // $(element + ' .modal-header').append(' | <div class="externalfilters" style="display: inline-block;"><span id="'+mode_without_space+'_external_filter_container_0"></span></div>');
         // $(element + ' .tableview').before('<div class="externalfilters" style="display: inline-block;"><span id="'+mode_without_space+'_external_filter_container_1"></span></div>');
 
+
+    ////////////////////////////
+    //// Column definitions ////
+    ////////////////////////////
+
+    ///// Filter Types /////
+
+    //Initialisation of basic defaults for a null filter column
+    const base_defaults = {
+        filter_type: 'none',
+        select_type: null,
+        filter_default_label: "",
+        filter_reset_button_text: null,
+        filter_match_mode: null,
+        column_data_type: null,
+        width: null,
+    }
+
+    //defaults for a multiselect text based filter
+    const multiselect_defaults = {
+        filter_type: "multi_select",
+        select_type: 'select2',
+        filter_default_label: 'Select',
+        column_data_type: 'text',
+        filter_match_mode: "exact",
+        filter_reset_button_text: false,
+    }
+
+    //defaults for a number range type filter
+    const range_number_defaults = {
+        ...base_defaults,
+        filter_type: "range_number",
+        filter_default_label: ['Min', 'Max'],
+        filter_reset_button_text: false,
+        style_class: "range_number_filter_slim",
+    }
+
+    const hiddenfilter_defaults = {
+        ...base_defaults,
+        filter_type: 'select',
+        select_type: 'select2',
+        filter_match_mode: 'exact',
+        column_data_type: 'text',
+        select_type_options: {width: "90px",  minimumResultsForSearch: -1}
+    }
+
+    /// Table Column Definitions ///
+
+    const structure_colDefs = {
+        selector                 : { column_number: 0, ...base_defaults},
+        receptor_uniprot         : { column_number: 1, ...multiselect_defaults, filter_default_label: "UniProt", },
+        receptor_gene            : { column_number: 2, ...multiselect_defaults, filter_default_label: "Gene", },
+        receptor_gtopdb          : { column_number: 3, ...multiselect_defaults, column_data_type: "html", filter_default_label: "GtoPdb", },
+        receptor_family          : { column_number: 4, ...multiselect_defaults, html_data_type: "text", select_type_options: {width: "150px"}, filter_default_label: "Rec Family", },
+        receptor_class           : { column_number: 5, ...multiselect_defaults, filter_default_label: "Cl", select_type_options: {width: "30px"}, },
+        receptor_pcnt_seq        : { column_number: 6, ...range_number_defaults, select_type_options: {width: "70px"}, },
+        species_species          : { column_number: 7, ...multiselect_defaults, filter_container_id: mode_without_space + "_species", column_data_type: "html", filter_default_label: "Species", },
+        best_species_hiddenfilter: { column_number: 8, ...hiddenfilter_defaults, filter_default_label: "All", },
+        species_ident_human      : { column_number: 9, ...range_number_defaults, select_type_options: {width: "70px"}, },
+        structure_type           : { column_number: 10, ...multiselect_defaults, filter_default_label: "Type", select_type_options: {width: "70px"}, },
+        structure_pdb            : { column_number: 11, ...multiselect_defaults, select_type_options: {width: "70px"}, filter_default_label: "PDB", },
+        structure_res            : { column_number: 12, ...range_number_defaults, select_type_options: {width: "70px"}, },
+        best_res_hiddenfilter    : { column_number: 13, ...hiddenfilter_defaults, filter_default_label: "All", },
+        receptor_state           : { column_number: 14, ...multiselect_defaults, filter_default_label: "State", select_type_options: {width: "70px"}, },
+        receptor_degreeact       : { column_number: 15, ...range_number_defaults, select_type_options: {width: "70px"}, },
+        receptor_tm6tilt         : { column_number: 16, ...range_number_defaults, select_type_options: {width: "70px"}, },
+        gprotein_family          : { column_number: 17, ...multiselect_defaults, filter_default_label: "Family", select_type_options: {width: "70px"}, },
+        gprotein_subtype         : { column_number: 18, ...multiselect_defaults, filter_default_label: "Subtype", select_type_options: {width: "70px"}, },
+        gprotein_pcntseq         : { column_number: 20, ...range_number_defaults, select_type_options: {width: "50px"}, column_data_type: "html", },
+        aux_fusion               : { column_number: 21, ...multiselect_defaults, filter_default_label: "Fusion", },
+        aux_antibody             : { column_number: 22, ...multiselect_defaults, filter_default_label: "Antibody", },
+        ligand_ligand            : { column_number: 23, ...multiselect_defaults, filter_default_label: "Ligand", },
+        ligand_modality          : { column_number: 24, ...multiselect_defaults, filter_default_label: "Modality", },
+        }
+
         console.time('DataTable');
         oTable[mode] = $(element + " .tableview table").DataTable({
             "fnInfoCallback": function (oSettings, iStart, iEnd, iMax, iTotal, sPre) {
@@ -452,18 +526,44 @@ function showPDBtable(element) {
                 filtered_text = filtered ? " (" + filtered + " structures filtered out)" : "";
                 var cols = []
                 var table = $(element + " .dataTables_scrollBody .structure_selection");
-                cols_of_interest = [1, 11];
+
+                // Hidden columns create a mismatch between column indexes in DataTable config and final HTML
+                // Here we compute new column indexes with an offset accounting for hidden columns,
+                // to be able to get the correct data for uniprot and receptor state
+                required_col_idxs = { uniprot : structure_colDefs.receptor_uniprot.column_number, receptor_state : structure_colDefs.receptor_state.column_number }
+                hidden_col_idxs = [structure_colDefs.best_species_hiddenfilter.column_number, structure_colDefs.best_res_hiddenfilter.column_number]
+                function apply_hidden_column_offset(col_idxs, hidden_col_idxs){
+                    //Checks if hidden columns are before the required columns, and subtracts offset accordingly
+                    let offset_return = {...col_idxs}
+                    for (const [key, current_idx] of Object.entries(col_idxs)){
+                        for (let h_idx of hidden_col_idxs){
+                            if (h_idx <= current_idx){
+                                offset_return[key] = offset_return[key] - 1
+                            }
+                        }
+                    }
+                    return offset_return
+                }
+                offset_col_idxs = apply_hidden_column_offset(required_col_idxs, hidden_col_idxs)
+
                 for (let [i, row] of [...table.find("tbody")[0].rows].entries()) {
                     for (let [j, cell] of [...row.cells].entries()) {
-                        if (cols_of_interest.includes(j)) {
+                        if (Object.values(offset_col_idxs).includes(j)) {
                             cols[j] = cols[j] || [];
                             cols[j].push(cell.innerText)
                         }
                     }
                 }
-                distinctReceptors = [...new Set(cols[1])];
-                distinctReceptorState = [...new Set(cols[1].map((val, i) => [cols[11]].reduce((a, arr) => [...a, arr[i]], [val])))];
-                distinctReceptorState = [...new Set(distinctReceptorState.map(x => x[0] + "_" + x[1]))]
+                if(cols[1]) //precaution to avoid error if all structures are filtered out and thus cols[1] is undefined
+                {
+                    distinctReceptors = [...new Set(cols[1])];
+                    distinctReceptorState = [...new Set(cols[1].map((val, i) => [cols[offset_col_idxs.receptor_state]].reduce((a, arr) => [...a, arr[i]], [val])))];
+                    distinctReceptorState = [...new Set(distinctReceptorState.map(x => x[0] + "_" + x[1]))]
+                }
+                else {
+                    distinctReceptors = []
+                    distinctReceptorState = []
+                }
 
                 return "Showing " + iEnd + " structures for "+distinctReceptors.length+" receptors and "+distinctReceptorState.length+" distinct receptor-state pairs"+filtered_text;
               },
@@ -479,320 +579,67 @@ function showPDBtable(element) {
                 targets: "no-sort",
                 orderable: false
             },
-                {"targets": [ 7, 12 ],
+                {"targets": [ structure_colDefs.best_species_hiddenfilter.column_number, structure_colDefs.best_res_hiddenfilter.column_number ],
                 "visible": false}],
             "aaSorting": [],
             "columns": [
                 {
                   "orderDataType": "dom-checkbox"
                 },
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
+                null, //uniprot
+                null, //gene
+                null, //GtoPdb
+                null, //Family
+                null, //Class
+                null, //Frac WT seq
+                null, //Species
+                null, //Species best !
+                null, //identity_to_human
+                null, //method
+                null, //pdb_id
+                null, //resolution
+                null, //resolution_best !
+                null, //state
+                null, //gprot_bound_likeness
+                null, //tm6_angle
+                null, //signal_protein
+                null, //signal_protein_subtype
+                null, //signal_protein_note
+                null, //signal_protein_seq_cons
+                null, //fusion
+                null, //antibody
+                null, //ligand
+                null, //ligand_function
             ],
         });
         console.timeEnd("DataTable");
         console.time("yadcf");
+
         yadcf.init(oTable[mode],
-            [{
-                    column_number: 1,
-                    filter_type: "multi_select",
-                    select_type: "select2",
-                    filter_default_label: "UniProt",
-                    filter_reset_button_text: false,
-                },
-                {
-                    column_number: 2,
-                    filter_type: "multi_select",
-                    select_type: "select2",
-                    column_data_type: "html",
-                    html_data_type: "text",
-                    filter_default_label: "GtoPdb",
-                    filter_match_mode: "exact",
-                    filter_reset_button_text: false,
-                },
-                {
-                    column_number: 3,
-                    filter_type: "multi_select",
-                    select_type: "select2",
-                    html_data_type: "text",
-                    select_type_options: {
-                        width: "150px"
-                    },
-                    filter_default_label: "Rec Family",
-                    filter_match_mode: "exact",
-                    filter_reset_button_text: false,
-                },
-                {
-                    column_number: 4,
-                    filter_type: "multi_select",
-                    select_type: "select2",
-                    filter_default_label: "Cl",
-                    select_type_options: {
-                        width: "30px"
-                    },
-                    filter_reset_button_text: false,
-                },
-                {
-                    column_number: 5,
-                    filter_type: "range_number",
-                    select_type_options: {
-                        width: "70px"
-                    },
-                    filter_default_label: ["From","to"],
-                    filter_reset_button_text: false,
-                },
-                {
-                    column_number: 6,
-                    filter_type: "multi_select",
-                    filter_container_id: mode_without_space + "_species",
-                    select_type: "select2",
-                    column_data_type: "html",
-                    filter_default_label: "Species",
-                    filter_reset_button_text: false,
-                },
-                {
-                    column_number: 7,
-                    filter_type: "select",
-                    select_type: "select2",
-                    select_type_options: {
-                        width: "90px",
-                        minimumResultsForSearch: -1 // remove search box
-                    },
-                    filter_default_label: "All",
-                    filter_reset_button_text: false,
-                },
-                {
-                    column_number: 8,
-                    filter_type: "range_number",
-                    select_type_options: {
-                        width: "70px"
-                    },
-                    filter_default_label: ["From","to"],
-                    filter_reset_button_text: false,
-                },
-                {
-                    column_number: 9,
-                    filter_type: "multi_select",
-                    select_type: "select2",
-                    filter_default_label: "Type",
-                    select_type_options: {
-                        width: "70px"
-                    },
-                    filter_reset_button_text: false,
-                },
-                {
-                    column_number: 10,
-                    filter_type: "multi_select",
-                    select_type: "select2",
-                    select_type_options: {
-                        width: "70px"
-                    },
-                    filter_default_label: "PDB",
-                    filter_reset_button_text: false,
-                },
-                {
-                    column_number: 11,
-                    filter_type: "range_number",
-                    select_type_options: {
-                        width: "70px"
-                    },
-                    filter_default_label: ["Res (Å)",""],
-                    filter_reset_button_text: false,
-                },
-                // {
-                //     column_number: 12,
-                //     filter_type: "multi_select",
-                //     select_type: "select2",
-                //     filter_default_label: "Best res.",
-                //     select_type_options: {
-                //         width: "70px"
-                //     },
-                //     filter_reset_button_text: false,
-                // },
-                {
-                    column_number: 12,
-                    // filter_container_id: mode_without_space + "_best_res",
-                    filter_type: "select",
-                    select_type: "select2",
-                    select_type_options: {
-                        width: "90px",
-                        minimumResultsForSearch: -1 // remove search box
-                    },
-                    filter_default_label: "All",
-                    filter_reset_button_text: false,
-                },
-                {
-                    column_number: 13,
-                    filter_type: "multi_select",
-                    select_type: "select2",
-                    filter_default_label: "State",
-                    select_type_options: {
-                        width: "70px"
-                    },
-                    filter_match_mode: "exact",
-                    filter_reset_button_text: false,
-
-                },
-                // {
-                //     column_number : 10,
-                //     filter_type: "multi_select",
-                //     select_type: "select2",
-                //     filter_default_label: "",
-                //     filter_match_mode : "exact",
-                //     filter_reset_button_text: false,
-
-                // },
-                // {
-                //     column_number : 11,
-                //     filter_type: "multi_select",
-                //     select_type: "select2",
-                //     filter_default_label: "",
-                //     filter_match_mode : "exact",
-                //     filter_reset_button_text: false,
-
-                // },
-                {
-                    column_number: 14,
-                    filter_type: "range_number",
-                    select_type_options: {
-                        width: "70px"
-                    },
-                    filter_default_label: ["From","to"],
-                    // filter_default_label: "Gprot-bound likeness",
-                    filter_reset_button_text: false,
-                },
-                {
-                    column_number: 15,
-                    filter_type: "range_number",
-                    select_type_options: {
-                        width: "70px"
-                    },
-                    filter_default_label: ["From","to"],
-                    filter_reset_button_text: false,
-
-                },
-                /*{
-                    column_number: 13,
-                    filter_type: "multi_select",
-                    select_type: "select2",
-                    filter_default_label: "7TM Open IC (Å)",
-                    filter_reset_button_text: false,
-                },*/
-                {
-                    column_number: 16,
-                    filter_type: "multi_select",
-                    select_type: "select2",
-                    filter_default_label: "Family",
-                    select_type_options: {
-                        width: "70px"
-                    },
-                    filter_reset_button_text: false,
-                },
-                {
-                    column_number: 17,
-                    filter_type: "multi_select",
-                    select_type: "select2",
-                    filter_default_label: "Subtype",
-                    select_type_options: {
-                        width: "70px"
-                    },
-                    filter_reset_button_text: false,
-                },
-                {
-                    column_number: 19,
-                    filter_type: "range_number",
-                    select_type_options: {
-                        width: "50px"
-                    },
-                    column_data_type: "html",
-                    filter_default_label: ["From","to"],
-                    filter_reset_button_text: false,
-                },
-                {
-                    column_number: 20,
-                    filter_type: "multi_select",
-                    select_type: "select2",
-                    filter_default_label: "Fusion",
-                    filter_reset_button_text: false,
-                },
-                {
-                    column_number: 21,
-                    filter_type: "multi_select",
-                    select_type: "select2",
-                    filter_default_label: "Antibody",
-                    column_data_type: "html",
-                    filter_reset_button_text: false,
-                },
-                {
-                    column_number: 22,
-                    filter_type: "multi_select",
-                    select_type: "select2",
-                    filter_default_label: "Ligand",
-                    filter_reset_button_text: false,
-                },
-                {
-                    column_number: 23,
-                    filter_type: "multi_select",
-                    select_type: "select2",
-                    filter_default_label: "Modality",
-                    filter_match_mode: "exact",
-                    filter_reset_button_text: false,
-                },
-                // {
-                //     column_number: 24,
-                //     filter_type: "multi_select",
-                //     select_type: "select2",
-                //     filter_default_label: "Modality",
-                //     filter_reset_button_text: false,
-                // },
-                // {
-                //     column_number: 25,
-                //     filter_container_id: mode_without_space+"_external_filter_container_0",
-                //     html_data_type: "text",
-                //     select_type: "select2",
-                //     // filter_type: "multi_select",
-                //     filter_default_label: "All species and structures",
-                //     filter_reset_button_text: false,
-                //     text_data_delimiter: ",",
-                //     select_type_options: {
-                //         width: "300px",
-                //         minimumResultsForSearch: -1 // remove search box
-                //     },
-                // },
-                // {
-                //     column_number: 23,
-                //     filter_container_id: mode_without_space+"_external_filter_container_1",
-                //     html_data_type: "text",
-                //     select_type: "select2",
-                //     // filter_type: "multi_select",
-                //     filter_default_label: "All Structures",
-                //     filter_reset_button_text: false,
-                //     select_type_options: {
-                //         width: "250px",
-                //         minimumResultsForSearch: -1 // remove search box
-                //     },
-                // },
+            [
+                structure_colDefs.receptor_uniprot,
+                structure_colDefs.receptor_gene,
+                structure_colDefs.receptor_gtopdb,
+                structure_colDefs.receptor_family,
+                structure_colDefs.receptor_class,
+                structure_colDefs.receptor_pcnt_seq,
+                structure_colDefs.species_species,
+                structure_colDefs.best_species_hiddenfilter,
+                structure_colDefs.species_ident_human,
+                structure_colDefs.structure_type,
+                structure_colDefs.structure_pdb,
+                structure_colDefs.structure_res,
+                structure_colDefs.best_res_hiddenfilter,
+                structure_colDefs.receptor_state,
+                structure_colDefs.receptor_degreeact,
+                structure_colDefs.receptor_tm6tilt,
+                structure_colDefs.gprotein_family,
+                structure_colDefs.gprotein_subtype,
+                structure_colDefs.gprotein_pcntseq,
+                structure_colDefs.aux_fusion,
+                structure_colDefs.aux_antibody,
+                structure_colDefs.ligand_ligand,
+                structure_colDefs.ligand_modality,
             ], {
                 cumulative_filtering: false,
                 // filters_tr_index: 1
@@ -810,7 +657,7 @@ function showPDBtable(element) {
         //   ]);
 
         var loading_anim = $(element + " .loading_overlay");
-        var delayDraw = true; 
+        var delayDraw = true;
 
         oTable[mode].on('preDraw.dt', function() {
             console.time('preDrawing');
@@ -823,12 +670,12 @@ function showPDBtable(element) {
                 console.log(loading_anim.css('display'));
 
                 setTimeout(function() {
-                delayDraw = false; 
-                oTable[mode].draw(); 
+                delayDraw = false;
+                oTable[mode].draw();
                 }, 100);
 
                 return false;
-            } 
+            }
         });
 
         oTable[mode].on("draw.dt", function(e, oSettings) {

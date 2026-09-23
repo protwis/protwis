@@ -398,8 +398,8 @@
                     {% for p in proteins %}
                     <tr>
                         <td><input class="alt" type="checkbox"></td>
-                        <td><a class="struct" rel="http://www.ebi.ac.uk/chembl/api/data/image/{{p.ligand__ids__index}}" href="/ligand/{{p.ligand_id}}/info">{{p.ligand__ids__index}}</a></td>
-                        <td><a href="/ligand/{{p.ligand_id}}/info">{{p.ligand_id}}</a></td>
+                        <td><a class="struct" rel="http://www.ebi.ac.uk/chembl/api/data/image/{{p.ligand__ids__index}}" href="/ligand/{{p.ligand_id}}/group">{{p.ligand__ids__index}}</a></td>
+                        <td><a href="/ligand/{{p.ligand_id}}/group">{{p.ligand_id}}</a></td>
                         <td>{{p.protein__entry_name}}</td>
                         <td>{{p.protein__name|safe}}</td>
                         <td>{{p.protein__species__common_name}}</td>

@@ -49,10 +49,13 @@
         <h4>DIAGRAMS</h4>
     </div>
     <div class="col-md-10">
+    {% if HelixBox %}
     {{ HelixBox }}
     <br>
     <a href="javascript:saveSvgAsPng(document.getElementById('helixbox'), 'helixbox_{{ p.entry_name }}.png', {scale: 3});"> Download as PNG</a>
     <a id=helix_svg_link href-lang="image/svg+xml" href="" download="helixbox_{{ p.entry_name }}"> Download as SVG</a>
+    <br>
+    {% endif %}
     {{ SnakePlot }}
     <br>
     <a href="javascript:saveSvgAsPng(document.getElementById('snakeplot'), 'snake_{{ p.entry_name }}.png', {scale: 3});"> Download as PNG</a>

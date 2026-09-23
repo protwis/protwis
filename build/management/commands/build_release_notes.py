@@ -77,7 +77,7 @@ class Command(BaseCommand):
         )
         signcomp_arrestin = SignprotComplex.objects.filter(protein__family__slug__startswith="200")
         interface_interactions_arrestin_count = (
-            InteractingResiduePair.objects.filter(referenced_structure__in=signcomp.values_list("structure", flat=True))
+            InteractingResiduePair.objects.filter(referenced_structure__in=signcomp_arrestin.values_list("structure", flat=True))
             .exclude(res1__protein_conformation_id=F("res2__protein_conformation_id"))
             .count()
         )
@@ -91,38 +91,40 @@ class Command(BaseCommand):
             #GPCRdb Block
             ['Human proteins GPCRdb', Protein.objects.filter(sequence_type__slug='wt', family__slug__startswith='0', species__common_name="Human").count(), 'GPCRdb'],
             ['Species orthologs GPCRdb', Protein.objects.filter(sequence_type__slug='wt', family__slug__startswith='0').exclude(species__common_name="Human").count(), 'GPCRdb'],
-            ['Generic residues GPCRdb', ResidueGenericNumber.objects.filter(scheme_id__in=[7,8,9,10,11]).values('label').count(), 'GPCRdb'],
-            ['GPCR structures GPCRdb', Structure.objects.filter(protein_conformation__protein__family__slug__startswith="0").exclude(structure_type__slug__startswith='af-').count(), 'GPCRdb'],
+            ['GPCR structures GPCRdb', Structure.objects.filter(protein_conformation__protein__family__slug__startswith="0", structure_type__origin='experiment').count(), 'GPCRdb'],
             ['Refined structures GPCRdb', StructureModel.objects.filter(protein__accession__isnull=True, protein__family__slug__startswith="0").count() + Structure.objects.filter(structure_type__slug__startswith="af-signprot-refined").count(), 'GPCRdb'],
             ['GPCR structure models GPCRdb', StructureModel.objects.filter(protein__accession__isnull=False).count(), 'GPCRdb'],
-            ['Physiological ligand-GPCR structure models GPCRdb', Structure.objects.filter(structure_type__slug__in=['af-rfaa-sm','af-signprot-peptide']).count(), 'GPCRdb'],
-            ['Drugs GPCRdb', Drugs.objects.filter(drug_status='Approved').values("ligand_id").distinct().count(), 'GPCRdb'],
-            ['Compounds in trial GPCRdb', Drugs.objects.exclude(drug_status='Approved').values("ligand_id").distinct().count(), 'GPCRdb'],
-            ['Drug targets GPCRdb', Drugs.objects.filter(drug_status='Approved').values('target_id').distinct().count(), 'GPCRdb'],
+            ['Ligand-GPCR structure models GPCRdb', Structure.objects.filter(structure_type__slug__in=['af-rfaa-sm','af-signprot-peptide','b2-smallmolecule','b2-signprot-smallmolecule','b2-peptide','b2-signprot-peptide']).count(), 'GPCRdb'],
+            ['Drugs GPCRdb', Drugs.objects.filter(drug_status__iexact='approved').values("ligand_id").distinct().count(), 'GPCRdb'],
+            ['Compounds in trial GPCRdb', Drugs.objects.exclude(drug_status__iexact='approved').exclude(drug_status__isnull=True).exclude(drug_status='').values("ligand_id").distinct().count(), 'GPCRdb'],
+            ['Drug targets GPCRdb', Drugs.objects.filter(drug_status__iexact='approved').values('target_id').distinct().count(), 'GPCRdb'],
             ['Disease indications GPCRdb', Drugs.objects.values('indication_id').distinct().count(), 'GPCRdb'],
-            ['Ligands GPCRdb', Ligand.objects.all().count(), 'GPCRdb'],
+            ['Ligands GPCRdb', Ligand.objects.filter(parent__isnull=True).count(), 'GPCRdb'],
             ['Physiological ligands GPCRdb', Endogenous_GTP.objects.values('ligand_id').distinct().count(), 'GPCRdb'],
             ['Ligand bioactivities GPCRdb', AssayExperiment.objects.all().count(), 'GPCRdb'],
             ['Ligand site mutations GPCRdb', MutationExperiment.objects.all().count(), 'GPCRdb'],
-            ['Ligand interactions GPCRdb', ResidueFragmentInteraction.objects.all().exclude(structure_ligand_pair__structure__structure_type__slug__startswith='af-').count(), 'GPCRdb'],
+            ['Ligand interactions GPCRdb', ResidueFragmentInteraction.objects.filter(structure_ligand_pair__structure__structure_type__origin='experiment').count(), 'GPCRdb'],
+            ['Generic residues GPCRdb', ResidueGenericNumber.objects.filter(scheme_id__in=[7,8,9,10,11]).values('label').count(), 'GPCRdb'],
             #GproteinDb block
             ['Human G proteins GproteinDb', Protein.objects.filter(family__parent__parent__name="Alpha", species__common_name="Human", accession__isnull=False).count(), 'GproteinDb'],
             ['Species orthologs GproteinDb', Protein.objects.filter(family__parent__parent__name="Alpha", accession__isnull=False).count(), 'GproteinDb'],
-            ['G protein couplings GproteinDb', ProteinCouplings.objects.all().exclude(g_protein__slug__startswith="200").count(), 'GproteinDb'],
-            ['G proteins GproteinDb', signcomp.exclude(structure__structure_type__slug__startswith='af-').count() + SignprotStructure.objects.all().exclude(protein__family__slug__startswith="200").count(), 'GproteinDb'],
-            ['G protein complexes GproteinDb', SignprotComplex.objects.all().exclude(structure__structure_type__slug__startswith='af-').count(), 'GproteinDb'],
             ['Generic residues GproteinDb', ResidueGenericNumber.objects.filter(scheme_id__in=[15]).values('label').count(), 'GproteinDb'],
-            ['G protein complexes', Structure.objects.filter(structure_type__slug='af-signprot').count(), 'GproteinDb'],
+            ['G protein couplings GproteinDb', ProteinCouplings.objects.all().exclude(g_protein__slug__startswith="200").count(), 'GproteinDb'],
+            ['G proteins GproteinDb', signcomp.filter(structure__structure_type__origin='experiment').count() + SignprotStructure.objects.all().exclude(protein__family__slug__startswith="200").count(), 'GproteinDb'],
+            ['G protein complexes GproteinDb', SignprotComplex.objects.filter(structure__structure_type__origin='experiment').count(), 'GproteinDb'],
+            ['GPCR complexes', Structure.objects.filter(structure_type__slug='af-signprot').count(), 'GproteinDb'],
             ['Refined complexes GproteinDb', Structure.objects.filter(structure_type__slug__startswith='af-signprot-refined').count(), 'GproteinDb'],
             ['G protein interface GproteinDb', interface_interactions_count, 'GproteinDb'],
             ['Interface mutations GproteinDb', 54, 'GproteinDb'],
             #ArrestinDb block
             ['Human arrestins ArrestinDb', Protein.objects.filter(family__slug__startswith="200", species__common_name="Human", accession__isnull=False).count(), 'ArrestinDb'],
             ['Species orthologs ArrestinDb', Protein.objects.filter(family__slug__startswith="200", accession__isnull=False).count(), 'ArrestinDb'],
+            ['Generic residues ArrestinDb', ResidueGenericNumber.objects.filter(scheme_id__in=[16]).values('label').count(), 'ArrestinDb'],
             ['Arrestin couplings ArrestinDb', ProteinCouplings.objects.filter(g_protein__slug__startswith="200").count(), 'ArrestinDb'],
             ['Arrestins ArrestinDb', signcomp_arrestin.count() + SignprotStructure.objects.filter(protein__family__slug__startswith="200").count(), 'ArrestinDb'],
-            ['Generic residues ArrestinDb', ResidueGenericNumber.objects.filter(scheme_id__in=[16]).values('label').count(), 'ArrestinDb'],
-            ['Arrestin complexes ArrestinDb', signcomp_arrestin.count(), 'ArrestinDb'],
+            ['Arrestin complexes', signcomp_arrestin.filter(structure__structure_type__origin='experiment').count(), 'ArrestinDb'],
+            ['Arrestin structure models ArrestinDb', signcomp_arrestin.filter(structure__structure_type__origin__in=['model', 'experiment_model_refined']).count(), 'ArrestinDb'],
+            ['GPCR complexes ArrestinDb', signcomp_arrestin.count(), 'ArrestinDb'],
             ['Interface interactions ArrestinDb', interface_interactions_arrestin_count, 'ArrestinDb'],
             ['Interface mutations ArrestinDb', 409, 'ArrestinDb'],
             #BiasedSignalingAtlas block

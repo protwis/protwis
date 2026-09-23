@@ -17,7 +17,7 @@
     <div class="row">
 
         <!-- description column -->
-        <div class="col-md-4">
+        <div class="{% block left_column_class %}col-md-4{% endblock %}">
 
             <!-- main description -->
             <div class="col-md-12 panel panel-primary">
@@ -43,13 +43,13 @@
         </div>
 
         <!-- middle column -->
-        <div class="col-md-4">
+        <div class="{% block middle_column_class %}col-md-4{% endblock %}">
         {% block middle_column %}
         {% endblock %}
         </div>
 
         <!-- selection column -->
-        <div class="col-md-4">
+        <div class="{% block right_column_class %}col-md-4{% endblock %}">
 
             <!-- button(s) -->
             {% if buttons.continue.label %}

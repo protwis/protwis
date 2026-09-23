@@ -16,7 +16,6 @@ urlpatterns = [
     path('target_detail', views.CachedTargetDetailsExtended, name='ligand_target_detail'),
     path('targets_compact', views.CachedTargetDetailsCompact, name='ligand_target_detail_compact'),
     url(r'^targets_purchasable', views.TargetPurchasabilityDetails, name='ligand_target_detail_purchasable'),
-    url(r'^(?P<ligand_id>[-\w]+)/details$', views.LigandDetails, name='ligand_detail'),
     url(r'^coverage', views.LigandStatistics.as_view(), name='ligand_statistics'),
 
     # BIASED LIGANDS
@@ -49,8 +48,8 @@ urlpatterns = [
     url(r'^subtype_coverage', cache_page(3600*24*7)(views.LigandStatistics.as_view(page='subtype')), name='ligand_statistics'),
     # url(r'^subtype_coverage', views.LigandStatistics.as_view(page='subtype'), name='ligand_statistics'),
     path('subtype_bias_rankorder_selection', views.BiasedSignallingSelection.as_view(subtype=True, way='BiasRankOrderSubtype'), name='bias_subtype_ro_selection'),
-    path('subtype_emax_rankorder', views.BiasedSignallingOnTheFlyCalculation.as_view(subtype=True), name='biased_rank_order'),
-    path('subtype_emax_rankorder_path_bias', views.BiasedSignallingOnTheFlyCalculation.as_view(subtype=True, balanced=True), name='biased_rank_order'),
+    path('subtype_bias_rankorder', views.BiasedSignallingOnTheFlyCalculation.as_view(subtype=True), name='biased_rank_order'),
+    path('subtype_bias_rankorder_path_bias', views.BiasedSignallingOnTheFlyCalculation.as_view(subtype=True, balanced=True), name='biased_rank_order'),
     path('userbiasedsubtypes_bias_rank_order', views.BiasedSignallingOnTheFlyCalculation.as_view(subtype=True, user=True), name='biased_rank_order'),
 
     path('subtype_emax_rankorder_selection', views.BiasedSignallingSelection.as_view(subtype=True, way='EmaxRankOrderSubtype'), name='ema_subtype_ro_selection'),
@@ -80,8 +79,10 @@ urlpatterns = [
     path('path_preference_emax_path_profiles_selection', views.BiasedSignallingSelection.as_view(pathway=True, way='EmaxPathProfilePathway'), name='ema_pathpref_pathprof_selection'),
     path('path_preference_emax_path_profiles', views.BiasedSignallingOnTheFlyCalculation.as_view(page='pathwayprofiles', pathway=True), name='biased_rank_order'),
 
-    url(r'^(?P<pk>[-\w]+)/info$', views.LigandInformationView.as_view()),
-    url(r'^(?P<pk>[-\w]+)/gtp_info$', views.LigandGtoPInfoView.as_view()),
+    path("<slug:gpcrdb_id>/group/", views.LigandGroup.as_view(), name="ligand-group"),
+    path("<slug:gpcrdb_id>/details/", views.LigandDetails, name="ligand_detail"),
+    path("<slug:gpcrdb_id>/<str:info_type>/", views.LigandInformationView.as_view(), name="ligand-info"),
+
     #Browsers Cached
     path('userbiased/', views.CachedOTFBiasBrowserUser, name='bias_browser-list'),
     path('userbiasedsubtypes/',views.CachedOTFBiasSubtypeBrowserUser, name='bias_browser-list'),
@@ -108,7 +109,7 @@ urlpatterns = [
     path('userselectionbiasedsubtype_emax_rank_order', views.UserBiased.as_view(subtype=True, way='EmaxRankOrderSubtype'), name='userbiasedsubtype_emax_rank_order'),
     path('userselectionbiasedsubtype_tau_rank_order', views.UserBiased.as_view(subtype=True, way='TauRankOrderSubtype'), name='userbiasedsubtype_tau_rank_order'),
     path('userselectionbiasedsubtype_emax_path_profile', views.UserBiased.as_view(subtype=True, way='EmaxPathProfileSubtype'), name='userbiasedsubtype_emax_path_profile'),
-    path('userselectionbiasedsubtype_tau_path_profile', views.UserBiased.as_view(subtype=True, way='TauPathProfilesubtype'), name='userbiasedsubtype_tau_path_profile'),
+    path('userselectionbiasedsubtype_tau_path_profile', views.UserBiased.as_view(subtype=True, way='TauPathProfileSubtype'), name='userbiasedsubtype_tau_path_profile'),
 
     #Balanced reference calculations
     path('pathwaybiased', views.CachedOTFBalancedBrowser, name='bias_browser-list'),
@@ -127,4 +128,9 @@ urlpatterns = [
     path('bias_guidelines', views.BiasGuidelines.as_view(), name='bias_guidelines'),
     path('reference_selection', views.ReferenceSelection.as_view(), name='reference_selection'),
 
+    ### DEPRECATED
+
+    # url(r'^(?P<pk>[-\w]+)/info$', views.LigandInfoLegacyRedirect.as_view(), name='ligand-info-legacy'),
+    # url(r'^(?P<pk>[-\w]+)/gtp_info$', views.LigandGtoPLegacyRedirect.as_view(), name='ligand-gtp-info-legacy'),
+    # url(r'^(?P<pk>[-\w]+)/details$', views.LigandDetailsLegacyRedirect.as_view(), name='ligand-detail-legacy'),
 ]

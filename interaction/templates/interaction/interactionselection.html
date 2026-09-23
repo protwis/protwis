@@ -1,108 +1,107 @@
-{% extends "common/selection.html" %}
+{% extends "home/base.html" %}
 {% load static %}
 
 {% block addon_css %}
-    <style type="text/css">
-      ul.structure_select {
-        max-height: 50vh;
-        overflow: scroll;
-      }
-    </style>
+  <link rel="stylesheet" href="{% static 'home/css/NewDrugsBrowser_datatables.min.css' %}" type="text/css"/>
+  <link rel="stylesheet" href="{% static 'home/css/structure/structure_browser_modern.css' %}" type="text/css">
+  <link rel="stylesheet" href="{% static 'home/css/select2_4.1.0-rc.0._full.css' %}" type="text/css">
+  <link rel="stylesheet" href="{% static 'home/css/BusyLoad.css' %}" type="text/css">
+  <link rel="stylesheet" href="{% static 'home/css/interaction/interaction_selection.css' %}" type="text/css">
 {% endblock %}
+
+{% block content %}
+<div id="browser">
+  <div class="container" id="InteractionSelectionContainer" style="margin-top: 15px; position: absolute; left: 0px; width: 100%;">
+
+    <div class="interaction-header">
+      <h2>Select a structure-ligand interaction</h2>
+      <div class="interaction-header-buttons">
+        <button type="button" class="btn btn-primary btn-inactive" id="btn-go-interaction" data-inactive-tooltip="Please select a structure-ligand interaction from the table to proceed.">Show interaction</button>
+        <button type="button" class="btn btn-success btn-inactive" id="btn-open-interaction" data-inactive-tooltip="Please select a structure-ligand interaction from the table to proceed.">Show interaction in new tab</button>
+      </div>
+    </div>
+
+    <div id="Init_loader"></div>
+
+    <div class="col-md-12" id="InteractionPickerTableContainer" style="display: none">
+      <div>
+        <table width="100%" class="display compact" id="InteractionPickerTable">
+          <thead>
+            <!-- Dummy Header Row for Complex Header Fix -->
+            <tr>
+              <th colspan="20" style="text-align: center" data-dt-order="disable"></th>
+            </tr>
+
+            <!-- Super Header Row -->
+            <tr style="padding-top: 10px; font-size: 14px; white-space: nowrap;">
+              <th colspan="6" style="text-align:center;" data-dt-order="disable">RECEPTORS</th>
+              <th colspan="3" style="text-align:center;border-left: 1px solid #cccccc;" data-dt-order="disable">CLASSIFICATIONS</th>
+              <th colspan="3" style="text-align:center;border-left: 1px solid #cccccc;" data-dt-order="disable">STRUCTURE LIGANDS</th>
+              <th colspan="5" style="text-align:center;border-left: 1px solid #cccccc;" data-dt-order="disable">STRUCTURES</th>
+              <th colspan="2" style="text-align:center;border-left: 1px solid #cccccc;" data-dt-order="disable">SIGNAL PROTEINS</th>
+              <th style="text-align:center;border-left: 1px solid #cccccc;" data-dt-order="disable">REFERENCES</th>
+            </tr>
+
+            <!-- Titles Row -->
+            <tr>
+              <th style="text-align: center;" data-dt-order="disable"></th>
+
+              <th class="gpcrdb-col text-center" data-dt-order="disable">GPCRdb</th>
+              <th style="text-align: center;">UniProt</th>
+              <th style="text-align: center;">Gene</th>
+              <th style="text-align: center;">IUPHAR</th>
+              <th style="text-align: center;">ID</th>
+
+              <th style="text-align: center;">Receptor family</th>
+              <th style="text-align: center;">Class</th>
+              <th style="text-align: center;">Species</th>
+
+              <th style="text-align: center;">Name</th>
+              <th style="text-align: center;">Type</th>
+              <th style="text-align: center;">Modality</th>
+
+              <th style="text-align: center;">Method</th>
+              <th style="text-align: center;">PDB</th>
+              <th style="text-align: center;">Res <br>(Å)</th>
+              <th style="text-align: center;">State<br>
+                <span class="glyphicon glyphicon-info-sign"
+                      data-html="true" data-toggle="popover" data-trigger="hover" data-placement="bottom"
+                      data-content="<b>GPCR structure state classification</b><br>GPCRdb calculates a ‘degree active’ percent value for each structure. Fully inactive state structures (0% active) are defined based on a maximum Cα atom distance between class-specific residue pairs A: 11.9Å between 2x46 and 6x37, B1: 13.0Å between 2x53 and 6x42, C: 14.5Å between 2x43 and 6x39, and F: 13.0Å between 2x43 and 6x30. These distance cut-offs were defined based on the best correlation with structures reported as inactive in their publications. Fully active state structures (100% active) are defined as G protein or arrestin bound. These fully inactive and active state reference structures are used to measure the conformational similarity of and to classify all other structures into the same categories or to an intermediate state category for classes A and B1 (classes C and F have no intermediate state structures). The conformational similarity measure is based on all-to-all Cα atom distances between class-specific generic residue pairs. A few outlier structures that have a very low similarity to both inactive and active state reference structures are classified as 'Other' e.g., the structure of the platelet-activating receptor binding the antagonist foropafant."></span>
+                <a href="https://docs.gpcrdb.org/structures.html#structure-descriptors" target="_blank"><span class="glyphicon glyphicon-book icon-button"></span></a>
+              </th>
+              <th style="text-align: center;">Degree<br>active (%) <a href="https://docs.gpcrdb.org/structures.html#structure-descriptors" target="_blank" class="icon-button" title="Read more"><i class="glyphicon glyphicon-book"></i></a></th>
+
+              <th style="text-align: center;">Family</th>
+              <th style="text-align: center;">Subtype</th>
+
+              <th style="text-align: center;">Reference</th>
+            </tr>
+
+            <!-- Filter Row (empty; filled by filter builder) -->
+            <tr>
+              <!-- 20 empty <th> cells -->
+              <th data-dt-order="disable"></th><th data-dt-order="disable"></th><th data-dt-order="disable"></th>
+              <th data-dt-order="disable"></th><th data-dt-order="disable"></th><th data-dt-order="disable"></th>
+              <th data-dt-order="disable"></th><th data-dt-order="disable"></th><th data-dt-order="disable"></th>
+              <th data-dt-order="disable"></th><th data-dt-order="disable"></th><th data-dt-order="disable"></th>
+              <th data-dt-order="disable"></th><th data-dt-order="disable"></th><th data-dt-order="disable"></th>
+              <th data-dt-order="disable"></th><th data-dt-order="disable"></th><th data-dt-order="disable"></th>
+              <th data-dt-order="disable"></th><th data-dt-order="disable"></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
 {% block addon_js %}
-    <script>
-        $(document).ready(function() {
-            $(function(){
-              // bind change event to select
-              $('#preloaded_xtals').on('change', function(){
-                selectedPDBAction($(this).val());
-              });
-            });
-        });
-
-        function selectedPDBAction(pdb) {
-          var url = window.location.href;
-
-          if (url.substr(-1) == '#') url = url.substr(0, url.length - 2);
-          if (url.substr(-1) == '/') url = url.substr(0, url.length - 2);
-
-          url = url.split('/');
-          url.pop();
-          url = url.join('/') + "/interaction/" + pdb; // set selected PDB
-          window.location = url; // redirect
-
-          toggleButtonClass('selection-button');
-          $("#selection-targets").html("<p><span class='selection-heading-text'>Selected targets</span></p>" + pdb);
-        }
-
-        function submitupload() {
-            $("#errormsg").remove();
-            var pdbid = $('#form').find('input#id_pdbname').val() ;
-            var filename = $('input[type=file]').val().split('\\').pop();
-              if (pdbid) {
-                $("#selection-targets").html("<p><span class='selection-heading-text'>Selected targets</span></p>PDB code: "+pdbid);
-                document.getElementById("form").submit();
-              } else if (filename) {
-                $("#selection-targets").html("<p><span class='selection-heading-text'>Selected targets</span></p>File: "+filename);
-                document.getElementById("form").submit();
-              } else {
-                $("#form").parent('div').parent('div').parent('div').after('<div id="errormsg" class="col-md-12 panel panel-primary">' +
-                    '<div class="panel-body">' +
-                    'Please make a selection' +
-                    '</div>' +
-                    '</div>');
-                toggleButtonClass('selection-button');
-              }
-        };
-    </script>
-    <script src="{% static 'home/js/selection.js' %}"></script>
-
-{% endblock %}
-
-{% block middle_column %}
-
-
-            <div class="col-md-12 panel panel-primary">
-                <div class="panel-body">
-                    <h4>Structure select</h4>
-                    <div>
-                      <div class="dropdown" id='preloaded_xtals'>
-                        <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown">Select from list<span class="caret"></span></button>
-                        <ul class="dropdown-menu" role="menu">
-                          {% for group in structure_groups %}
-                            <li class="dropdown-submenu">
-                              <a tabindex="-1" href="#">PDB-code: {{ group }}xxx</a>
-                              <ul class="dropdown-menu structure_select">
-                                {% for structure in structures %}
-                                  {%  if structure.structure_ligand_pair__structure__pdb_code__index|first == group %}
-                                    <li><a href="#" onClick="selectedPDBAction('{{structure.structure_ligand_pair__structure__pdb_code__index}}');">{{structure.structure_ligand_pair__structure__pdb_code__index}} ({{structure.structure_ligand_pair__structure__protein_conformation__protein__parent__entry_name}})</a></li>
-                                  {% endif %}
-                                {% endfor %}
-                              </ul>
-                            </li>
-                          {% endfor %}
-                        </ul>
-                      </div>
-                    </div>
-                </div>
-            </div>
-
-{% comment %}
-            {# DEPRECATED - see multi-level dropdown above #}
-            <div class="col-md-12 panel panel-primary">
-                <div class="panel-body">
-                    <h4>Run a new calculation</h4>
-                    <div>
-                        Enter a PDB code to analyse:
-                            <form action="calculate" id="form" method="post" enctype="multipart/form-data">
-                        {% csrf_token %}
-                            <label for="pdbname">PDB code</label>
-                            {{ form.pdbname }} <br> or
-                            <p>{{ form.file.label_tag }}  </p> {{ form.file }}
-                        </form>
-                    </div>
-                </div>
-            </div>
-{% endcomment %}
-
+  <script src="{% static 'home/js/gpcrdb.js' %}"></script>
+  <script src="{% static 'home/js/select2_4.1.0-rc.0_full.js' %}"></script>
+  <script src="{% static 'home/js/NewDrugsBrowser_datatables.min.js' %}"></script>
+  <script src="{% static 'home/js/NorgesDTFilterBuilder.js' %}"></script>
+  <script src="{% static 'home/js/BusyLoad.js' %}"></script>
+  <script src="{% static 'home/js/interaction/interaction_selection.js' %}"></script>
 {% endblock %}

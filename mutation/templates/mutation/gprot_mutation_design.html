@@ -50,7 +50,6 @@
       background-color: #eee;
     }
 
-
     #suglist1 td.expand {
       display: inline-block;
       overflow: hidden;
@@ -208,12 +207,95 @@
 <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
 <script src="{% static 'home/js/select2.js' %}"> </script>
 
-
 <script type="text/javascript" charset="utf-8">
+  ////////////////////////////
+  //// Column definitions ////
+  ////////////////////////////
+
+  ///// Filter Types /////
+
+  //Initialisation of basic defaults for a null filter column
+  const base_defaults = {
+      filter_type: 'none',
+      select_type: null,
+      filter_default_label: "",
+      filter_reset_button_text: false,
+      filter_match_mode: null,
+      column_data_type: null,
+      width: null,
+  }
+
+  //Columns definitions for a multiselect text based filter
+  const multiselect_defaults = {
+      ...base_defaults,
+      filter_type: "multi_select",
+      select_type: 'select2',
+      filter_default_label: '',
+      filter_match_mode : "exact",
+      column_data_type: "text"
+  }
+
+  //Columns definitions for a numeric range filter
+  const range_number_defaults = {
+      ...base_defaults,
+      filter_type: "range_number",
+      filter_default_label: ['Min', 'Max'],
+  }
+
+  //defaults for a free text type filter
+  const text_defaults = {
+      ...base_defaults,
+      filter_type: "text",
+      column_data_type: "text",
+      filter_match_mode : "contains",
+      select_type:"select2",
+  }
+
+  //defaults for a hidden filter column
+  const hidden_defaults = {
+      ...base_defaults,
+      filter_container_id: "hiddenblock",
+      filter_type: "select",
+      visible: "false"
+  }
+
+  /// Table Column Definitions ///
+  const mutation_coldefs = {
+    residue__segment                    :  { column_number: 0, ...multiselect_defaults },
+    residue__target_residue_number      :  { column_number: 1, ...text_defaults, column_data_type: "html" },
+    residue__generic_residue_number     :  { column_number: 2, ...text_defaults, column_data_type: "html" },
+    residue__target_wt_aa	              :  { column_number: 3, ...multiselect_defaults, column_data_type: "html" },
+    mutant_aa__increase_coupling        :  { column_number: 4, ...multiselect_defaults, column_data_type: "html" },
+    mutant_aa__decrease_coupling        :  { column_number: 5, ...multiselect_defaults, column_data_type: "html" },
+    struct_interact__gprotein           :  { column_number: 6, ...range_number_defaults },
+    struct_interact__ligand	            :  { column_number: 7, ...range_number_defaults },
+    mut_fivefold__num_mut               :  { column_number: 8, ...range_number_defaults },
+    mut_fivefold__num_rec               :  { column_number: 9, ...range_number_defaults },
+    gbind_sig__score                    :  { column_number: 10, ...range_number_defaults },
+    gbind_sig__property                 :  { column_number: 11, ...multiselect_defaults },
+    gbind_sig__length                   :  { column_number: 12, ...multiselect_defaults, select_type_options: {width: '80px',} },
+    gbind_sig__matching_aa	            :  { column_number: 13, ...base_defaults },
+    prop_conserv_gbind__pcntcons        :  { column_number: 14, ...range_number_defaults },
+    prop_conserv_gbind__property        :  { column_number: 15, ...multiselect_defaults },
+    prop_conserv_gbind__length	        :  { column_number: 16, ...multiselect_defaults, select_type_options: {width: '80px',} },
+    prop_conservnonbind__pcntcons       :  { column_number: 17, ...range_number_defaults },
+    prop_conservnonbind__property       :  { column_number: 18, ...multiselect_defaults },
+    prop_conservnonbind__length         :  { column_number: 19, ...multiselect_defaults, select_type_options: {width: '80px',} },
+    aa_conserv_gbind__pcnt_cons         :  { column_number: 20, ...range_number_defaults },
+    aa_conserv_gbind__aa                :  { column_number: 21, ...multiselect_defaults, select_type_options: {width: '60px',} },
+    aa_conserv_nonbind__pcnt_cons       :  { column_number: 22, ...range_number_defaults },
+    aa_conserv_nonbind__aa              :  { column_number: 23, ...multiselect_defaults, select_type_options: {width: '60px',} },
+    aa_conserv_gpcr__pcnt_cons          :  { column_number: 24, ...range_number_defaults },
+    aa_conserv_gpcr__aa                 :  { column_number: 25, ...multiselect_defaults, select_type_options: {width: '60px',} },
+    hidden__row_type                    :  { column_number: 26, ...hidden_defaults },
+    hidden__feature_freq_diff           :  { column_number: 27, ...hidden_defaults}  //see https://github.com/protwis/protwis/blob/8f870884c165d17dc9d9cb6fc28e4ff8ef603e62/seqsign/sequence_signature.py#L402 for source of this column
+  }
+  n_col = Object.keys(mutation_coldefs).length;
+
   var table_options = { "paging":       true,
                         "pageLength":   20,
                         "lengthChange": false,
-                        "order":        [[ 27, "desc" ]],
+                        "order":        [[ mutation_coldefs.hidden__feature_freq_diff.column_number, "desc" ]],
                         "buttons":      ["csv", "excel"],
                         "scrollX":      true,
                         "dom":          "lfrtipB",
@@ -223,6 +305,7 @@
   var table1, table2 = null;
 
   function initTable1() {
+
     // Init mutations table 1
     if ($("#suglist1").length > 0 && table1 == null){
       // Assign coloring class to each cell in freq. diff table
@@ -245,77 +328,20 @@
 
       gray_scale_table($("#suglist1"));
 
-      var table_options1 = Object.assign({}, table_options);
+      var table_options1 = Object.assign({ }, table_options);
       table_options1["columnDefs"] = [
-          { className: "text-center", "targets": [...Array(26).keys()] },
-          { "visible": false, "targets": [ 5, 26, 27 ] },
+          { className: "text-center", "targets": [...Array(n_col).keys()]  },
+          { "visible": false,
+            "targets": [ mutation_coldefs.mutant_aa__decrease_coupling.column_number,
+                         mutation_coldefs.hidden__row_type.column_number,
+                         mutation_coldefs.hidden__feature_freq_diff.column_number ]
+           },
         ]
 
       table1 = $("#suglist1").DataTable(table_options1);
 
-      // Multi select
-      var yadcf_options = [];
-      var list = [0, 3, 4, 5, 11, 12, 15, 16, 18, 19, 21, 23, 25];
-      var html_list = [3, 4, 5, 11, 12, 15, 18];
-      for (i in list){
-        yadcf_options.push({
-              column_number : list[i],
-              filter_type: "multi_select",
-              select_type: "select2",
-              filter_default_label: "",
-              filter_reset_button_text: false,
-          });
-
-          if (html_list.includes(list[i])){
-            yadcf_options[yadcf_options.length-1]["column_data_type"] = "html";
-          }
-      }
-
-      var list = [1, 2, 11];
-      for (i in list){
-        yadcf_options.push({
-                       column_number: list[i],
-                       filter_type: "text",
-                       select_type: "select2",
-                       filter_default_label: "",
-                       filter_reset_button_text: false,
-                       filter_match_mode : "contains",
-                   });
-      }
-
-      // Range filters
-      list = [6, 7, 8, 9, 10, 14, 17, 20, 22, 24];
-      for (i in list){
-        yadcf_options.push({
-            column_number : list[i],
-            filter_type: "range_number",
-            filter_reset_button_text: false,
-            column_data_type: "html",
-            html_data_type: "value",
-            filter_default_label: ["Min", "Max"],
-        });
-      }
-
-      list = [26,27];
-      for (i in list){
-        yadcf_options.push({
-          column_number: list[i],
-          filter_container_id: "hiddenblock",
-          filter_type: "select",
-          visible: "false"
-        });
-      }
-
-      // list = [10,11];
-      // for (i in list){
-      //   yadcf_options.push({
-      //     column_number: list[i],
-      //     filter_type: "range_number",
-      //     filter_default_label: ["Min", "Max"],
-      //     filter_reset_button_text: false,
-      //     html5_data: "data-search",
-      //   });
-      // }
+      //ensure column definitions sorted by column number
+      yadcf_options = Object.values(mutation_coldefs).sort( (a, b) => a.column_number - b.column_number );
 
       yadcf.init(table1, yadcf_options);
 
@@ -335,8 +361,8 @@
       });
 
       // By default: filter on type "good", hide the decrease column + draw
-      table1.columns(5).visible( false );
-      table1.columns(26).search("good").draw();
+      table1.columns(mutation_coldefs.mutant_aa__decrease_coupling.column_number).visible( false );
+      table1.columns(mutation_coldefs.hidden__row_type.column_number).search("good").draw();
     }
   }
 
@@ -348,27 +374,27 @@
     $(tab).addClass("active");
 
     // refresh sort order
-    table1.order([27, "desc"]);
+    table1.order([mutation_coldefs.hidden__feature_freq_diff.column_number, "desc"]);
 
     if (type === "all"){
         // simply reset all filters
         $("#pos_design_text").show();
         $("#neg_design_text").show();
-        table1.columns(4).visible( true );
-        table1.columns(5).visible( true );
+        table1.columns(mutation_coldefs.mutant_aa__increase_coupling.column_number).visible( true );
+        table1.columns(mutation_coldefs.mutant_aa__decrease_coupling.column_number).visible( true );
         yadcf.exResetAllFilters(table1);
     } else if (type === "good"){
         $("#pos_design_text").show();
         $("#neg_design_text").hide();
-        table1.columns(4).visible( true );
-        table1.columns(5).visible( false );
-        table1.columns(26).search(type).draw();
+        table1.columns(mutation_coldefs.mutant_aa__increase_coupling.column_number).visible( true );
+        table1.columns(mutation_coldefs.mutant_aa__decrease_coupling.column_number).visible( false );
+        table1.columns(mutation_coldefs.hidden__row_type.column_number).search(type).draw();
     } else if (type === "bad"){
         $("#pos_design_text").hide();
         $("#neg_design_text").show();
-        table1.columns(4).visible( false );
-        table1.columns(5).visible( true );
-        table1.columns(26).search(type).draw();
+        table1.columns(mutation_coldefs.mutant_aa__increase_coupling.column_number).visible( false );
+        table1.columns(mutation_coldefs.mutant_aa__decrease_coupling.column_number).visible( true );
+        table1.columns(mutation_coldefs.hidden__row_type.column_number).search(type).draw();
     }
   }
 

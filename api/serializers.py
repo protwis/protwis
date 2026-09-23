@@ -3,7 +3,7 @@ from rest_framework import serializers
 from interaction.models import ResidueFragmentInteraction
 from ligand.models import Endogenous_GTP, LigandID
 from mutation.models import MutationRaw
-from protein.models import Protein, ProteinConformation, ProteinFamily, Species, ProteinSource, ProteinSegment
+from protein.models import Protein, ProteinConformation, ProteinFamily, Species, ProteinSource, ProteinSegment, Gene
 from residue.models import Residue, ResidueNumberingScheme, ResidueGenericNumber
 from structure.models import Structure, StructureComplexModel
 from contactnetwork.models import InteractionPeptide, Interaction
@@ -11,7 +11,7 @@ from contactnetwork.models import InteractionPeptide, Interaction
 
 class ProteinSerializer(serializers.ModelSerializer):
     receptor_class = receptor_class = serializers.ReadOnlyField(source='family.parent.parent.parent.name')
-    family = serializers.SlugRelatedField(read_only=True, slug_field='slug')
+    family = serializers.ReadOnlyField(source='family.parent.name')
     species = serializers.StringRelatedField(read_only=True)
     source = serializers.StringRelatedField(read_only=True)
     residue_numbering_scheme = serializers.SlugRelatedField(read_only=True, slug_field='short_name')
@@ -48,6 +48,30 @@ class EndogenousGTPSerializer(serializers.ModelSerializer):
         model = Endogenous_GTP
         fields = ('name', )
 
+class SpeciesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Species
+        fields = ('latin_name', 'common_name')
+
+class GeneSerializerWithProtein(serializers.ModelSerializer):
+    name = serializers.CharField()
+    entrez_id = serializers.IntegerField()
+    species = SpeciesSerializer(read_only=True)
+    proteins = ProteinSerializer(read_only=True, many=True)
+    
+    class Meta:
+        model = Gene
+        fields = ('name', 'entrez_id', 'species', 'proteins')
+
+class GeneSerializerWithoutProtein(serializers.ModelSerializer):
+    name = serializers.CharField()
+    entrez_id = serializers.IntegerField()
+    species = SpeciesSerializer(read_only=True)
+    
+    class Meta:
+        model = Gene
+        fields = ('name', 'entrez_id', 'species')
+
 class ReceptorListSerializer(serializers.ModelSerializer):
     subfamily = serializers.ReadOnlyField(source='family.name')
     ligand_type = serializers.ReadOnlyField(source='family.parent.parent.name')
@@ -55,16 +79,12 @@ class ReceptorListSerializer(serializers.ModelSerializer):
     receptor_class = serializers.ReadOnlyField(source='family.parent.parent.parent.name')
     endogenous_ligands = EndogenousGTPSerializer(source='endogenous_gtp_set', read_only=True, many=True)
     species = serializers.StringRelatedField(read_only=True)
+    genes=serializers.StringRelatedField(read_only=True, many=True)
 
     class Meta:
         model = Protein
-        fields = ('entry_name', 'name', 'accession', 'receptor_class', 'receptor_family', 'ligand_type', 'subfamily', 'receptor_class', 'endogenous_ligands', 'species', 'sequence')
+        fields = ('entry_name', 'name', 'accession', 'receptor_class', 'receptor_family', 'ligand_type', 'subfamily', 'receptor_class', 'endogenous_ligands', 'species', 'sequence', 'genes')
 
-
-class SpeciesSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Species
-        fields = ('latin_name', 'common_name')
 
 class GuidetoPharmacologySerializer(serializers.ModelSerializer):
     gtp_ligand_id = serializers.ReadOnlyField(source='index')

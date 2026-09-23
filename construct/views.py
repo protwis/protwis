@@ -97,6 +97,8 @@ class ConstructStatistics(TemplateView):
                 track_anamalities[entry_name] = {}
             if helix not in track_anamalities[entry_name]:
                 track_anamalities[entry_name][helix] = [0,0]
+            if entry_name not in x50s or helix+"x50" not in x50s[entry_name]:
+                continue
             x50 = x50s[entry_name][helix+"x50"]
             gn_start = int(pc['GN2'][-2:])
             gn_end  = int(pc['GN'][-2:])
@@ -241,7 +243,7 @@ class ConstructStatistics(TemplateView):
                 pdb_code = c.crystal.pdb_code
                 entry_name_pdb = entry_name+ "_"+ pdb_code
                 state = c.structure.state.slug
-                if state=='other':
+                if state=='other' or state=='unknown':
                     continue
                 entry_name_pdb_state = entry_name+ "_"+ pdb_code + "_" +state
                 crystal_p = c.structure.protein_conformation.protein.parent.entry_name
@@ -336,12 +338,12 @@ class ConstructStatistics(TemplateView):
                             truncations_new[position][p_class_name] = {'receptors':OrderedDict(),'no_cut':[], 'possiblities':[]}
                         if entry_name_pdb_state not in truncations_new[position][p_class_name]['receptors']:
                             truncations_new[position][p_class_name]['receptors'][entry_name_pdb_state] = [[],[],[tm1_start[entry_name]-1]]
-                        if fusion_position!='nterm' or 1==1:
-                            if from_tm1 not in truncations_new[position][p_class_name]['receptors'][entry_name_pdb_state][0]:
-                                truncations_new[position][p_class_name]['receptors'][entry_name_pdb_state][0].append(from_tm1)
-                                if from_tm1 not in truncations_new_sum[position][p_class_name]:
-                                    truncations_new_sum[position][p_class_name][from_tm1] = 0
-                                truncations_new_sum[position][p_class_name][from_tm1] += 1
+
+                        if from_tm1 not in truncations_new[position][p_class_name]['receptors'][entry_name_pdb_state][0]:
+                            truncations_new[position][p_class_name]['receptors'][entry_name_pdb_state][0].append(from_tm1)
+                            if from_tm1 not in truncations_new_sum[position][p_class_name]:
+                                truncations_new_sum[position][p_class_name][from_tm1] = 0
+                            truncations_new_sum[position][p_class_name][from_tm1] += 1
                         # if from_tm1 not in truncations_new[position][p_class_name]['possiblities']:
                         #     truncations_new[position][p_class_name]['possiblities'].append(from_tm1)
                         #     truncations_new[position][p_class_name]['possiblities'] = sorted(truncations_new[position][p_class_name]['possiblities'])
@@ -1467,6 +1469,16 @@ class ConstructMutations(TemplateView):
             p_class = class_names[p_class]
             entry_short = p.entry_short
             receptor_short = p.short
+            if p.genes.count() > 0:
+                if p.genes.first().entrez_weblink:
+                    gene_as_anchor = f'<a href="{p.genes.first().entrez_weblink}" target="_blank">{p.genes.first()}</a>'
+                else:
+                    gene_as_anchor = p.genes.first()
+            else:
+                gene_as_anchor = "-"
+
+            species = p.species.common_name if p.species else "-"
+
 
 
             if entry_name not in rs_lookup:
@@ -1481,7 +1493,7 @@ class ConstructMutations(TemplateView):
 
             key = mutation[1]+"_"+str(mutation[0].sequence_number)+"_"+mutation[0].mutated_amino_acid
             if key not in new_mutations:
-                new_mutations[key] = {'entry_name':entry_short,'receptor_short':receptor_short,'cname':cname, 'segment':segment,'pos': pos, 'gn': gn, 'wt': wt, 'mut': mut,'p_class': p_class, 'type': set(), 'pdbs': set()}
+                new_mutations[key] = {'entry_name':entry_short,'receptor_short':receptor_short,'gene_as_anchor':gene_as_anchor,'species':species, 'cname':cname, 'segment':segment,'pos': pos, 'gn': gn, 'wt': wt, 'mut': mut,'p_class': p_class, 'type': set(), 'pdbs': set()}
             new_mutations[key]['type'].update(mut_types)
             new_mutations[key]['pdbs'].add(pdb)
 
@@ -1504,10 +1516,12 @@ def stabilisation_browser(request):
     class_interactions_list = {}
     for c in gpcr_class:
         class_interactions = ResidueFragmentInteraction.objects.filter(
-            structure_ligand_pair__structure__protein_conformation__protein__family__slug__startswith=c, structure_ligand_pair__annotated=True).exclude(
-            structure_ligand_pair__structure__structure_type__slug__startswith='af-').exclude(interaction_type__slug='acc').prefetch_related(
-            'rotamer__residue__generic_number','interaction_type',
-            'rotamer__residue__protein_conformation__protein__parent__family')
+                                                                        structure_ligand_pair__structure__protein_conformation__protein__family__slug__startswith=c, 
+                                                                        structure_ligand_pair__annotated=True, 
+                                                                        structure_ligand_pair__structure__structure_type__origin='experiment') \
+                                                               .exclude(interaction_type__slug='acc') \
+                                                               .prefetch_related('rotamer__residue__generic_number','interaction_type',
+                                                                                 'rotamer__residue__protein_conformation__protein__parent__family')
 
         generic = {}
         for i in class_interactions:
@@ -1723,6 +1737,9 @@ def stabilisation_browser(request):
         p_class_slug = prot.family.parent.parent.parent.slug
         p_ligand = prot.family.parent.parent.short()
         p_receptor = prot.family.parent.short()
+        p_gene_name =  str(prot.genes.first()) if prot.genes.count() > 0 else "-"
+        p_gene_weblink =  str(prot.genes.first().entrez_weblink ) if prot.genes.count() > 0 else "-"
+        p_gene_anchor = f'<a href="{p_gene_weblink}" target="_blank">{p_gene_name}</a>' if p_gene_weblink != 'None' else p_gene_name
         # print(p_receptor,'p_receptor')
         real_receptor = prot.entry_short
         real_receptor_iuphar = prot.short()
@@ -1749,6 +1766,7 @@ def stabilisation_browser(request):
                        'receptor': p_receptor,
                        'real_receptor': real_receptor,
                        'real_receptor_iuphar': real_receptor_iuphar,
+                       'gene_as_anchor': p_gene_anchor,
                        'wild_type':mutant_id["wild_type"],
                        'mutant':mutant_id['mutant'],
                        'state':state,
@@ -1828,15 +1846,16 @@ def stabilisation_browser(request):
             # Count the number of construct mutations recorded in the row.
             group[0]['GPCR_count'] += 1
             # Remove unnecessary items from the mutant info
-            info = {key:set((item,)) for key, item in mutant_info.items() if key not in attr['include_in_id']}
+            info = {key:item for key, item in mutant_info.items() if key not in attr['include_in_id']}
 
             if group[1] == {}:
                 # Initialise the dict with the first mutant.
-                group[1].update(info)
+                group[1] = {key:[item] for key, item in info.items()}
             else:
                  # Add the specific mutant info.
                 for key, item in info.items():
-                    group[1][key].update(item)
+                    if item not in group[1][key]:
+                        group[1][key].append(item)
                 # Remove receptor family conservation info if row refers to >1 receptor family
                 if len(group[1]['receptor']) != 1:
                     group[0]["receptor_fam_cons"] = u'\u2014'
@@ -2248,8 +2267,9 @@ class ExperimentBrowser(TemplateView):
                 "crystallization__crystal_method", "crystallization__crystal_type",
                 "crystallization__chemical_lists", "crystallization__chemical_lists__chemicals__chemical__chemical_type",
                 "protein__species","structure__pdb_code","structure__publication__web_link", "contributor",
-                Prefetch("structure__ligands", queryset=StructureLigandInteraction.objects.filter(
-                annotated=True).exclude(structure__structure_type__slug__startswith='af-').prefetch_related('ligand__ligand_type', 'ligand_role','ligand__ids__web_resource'))
+                Prefetch("structure__ligands", 
+                         queryset=StructureLigandInteraction.objects.filter(annotated=True, structure__structure_type__origin='experiment') \
+                                                                    .prefetch_related('ligand__ligand_type', 'ligand_role','ligand__ids__web_resource'))
                 ).annotate(pur_count = Count('purification__steps')).annotate(sub_count = Count('solubilization__chemical_list__chemicals'))
             #context['constructs'] = cache.get('construct_browser')
             #if context['constructs']==None:

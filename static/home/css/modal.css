@@ -68,3 +68,14 @@
   background-color: #b8d1f3;
   cursor: pointer;
 }
+
+/* Reduce width of numeric filter boxes in PDB selection modals */
+div[id*="-crystal-group-pdbs-modal"] .yadcf-filter-range-number {
+    width: 30px;
+    display: block;
+}
+
+/* Hide separator span that inserts unwanted vertical space when input boxes are in 'display:block' mode */
+div[id*="-crystal-group-pdbs-modal"] .yadcf-filter-range-number-seperator {
+    display: none
+}

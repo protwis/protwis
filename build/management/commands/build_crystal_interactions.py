@@ -29,7 +29,7 @@ class Command(BaseBuild):
 
     def handle(self, *args, **options):
         self.delete_all()
-        self.structures = Structure.objects.all().exclude(structure_type__slug__startswith='af-')
+        self.structures = Structure.objects.filter(structure_type__origin='experiment')
         self.prepare_input(options['proc'], self.structures)
         self.logger.info('Finished building crystal interaction data for all PDBs!')
 

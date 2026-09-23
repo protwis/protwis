@@ -4456,7 +4456,7 @@
             "ENST00000549716"
         ]
     },
-    "crfr1_human_1": {
+    "crhr1_human_1": {
         "deleted_ref": [],
         "inserts": [
             {
@@ -4474,7 +4474,7 @@
             "ENST00000398285"
         ]
     },
-    "crfr1_human_2": {
+    "crhr1_human_2": {
         "deleted_ref": [
             {
                 "from": [
@@ -10501,7 +10501,7 @@
             "ENST00000515701"
         ]
     },
-    "ogr1_human_1": {
+    "gpr68_human_1": {
         "deleted_ref": [],
         "inserts": [
             {
@@ -10516,7 +10516,7 @@
             "ENST00000238699"
         ]
     },
-    "ogr1_human_2": {
+    "gpr68_human_2": {
         "deleted_ref": [
             {
                 "from": [

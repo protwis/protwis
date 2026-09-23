@@ -1,0 +1,231 @@
+[
+  {
+    "column_group": "Classification",
+    "json_id": "protein_name",
+    "title": "Protein",
+    "data_type": "text",
+    "allow_filter": true,
+    "show_symbol_popup": true    
+  },
+  {
+    "column_group": "Classification",
+    "json_id": "uniprot",
+    "title": "UniProt",
+    "data_type": "weblinktext",
+    "allow_filter": true
+  },
+  {
+    "column_group": "Classification",
+    "json_id": "gene",
+    "title": "Gene",
+    "data_type": "weblinktext",
+    "allow_filter": true,    
+    "cssClassFilterInput": "gene_filter_input"
+  },
+  {
+    "column_group": "Classification",
+    "json_id": "receptor_family",
+    "title": "Receptor Family",
+    "data_type": "textselect",
+    "allow_filter": true
+  },
+  {
+    "column_group": "Classification",
+    "json_id": "receptor_class",
+    "title": "Receptor Class",
+    "data_type": "textselect",
+    "allow_filter": true
+  },
+  {
+    "column_group": "Species",
+    "json_id": "species_common_name",
+    "title": "Species",
+    "data_type": "textselect",
+    "allow_filter": true,
+    "cssClassFilterInput": "species_filter_input"
+  },
+  {
+    "column_group": "State",
+    "json_id": "st_inact_c",
+    "title": "Inactive",
+    "data_type": "numeric",
+    "allow_filter": true
+  },
+  {
+    "column_group": "State",
+    "json_id": "st_interm_c",
+    "title": "Intermediate",
+    "data_type": "numeric",
+    "allow_filter": true
+  },
+  {
+    "column_group": "State",
+    "json_id": "st_act_c",
+    "title": "Active",
+    "data_type": "numeric",
+    "allow_filter": true
+  },
+  {
+    "column_group": "Max Resolution",
+    "json_id": "best_res_inact",
+    "title": "Inactive",
+    "data_type": "numeric",
+    "allow_filter": true,
+    "exportHeaderOverride": "Max Resolution Inactive"
+  },
+  {
+    "column_group": "Max Resolution",
+    "json_id": "best_res_interm",
+    "title": "Intermediate",
+    "data_type": "numeric",
+    "allow_filter": true,
+    "exportHeaderOverride": "Max Resolution Intermediate"
+  },
+  {
+    "column_group": "Max Resolution",
+    "json_id": "best_res_act",
+    "title": "Active",
+    "data_type": "numeric",
+    "allow_filter": true,
+    "exportHeaderOverride": "Max Resolution Active"
+  },
+  {
+    "column_group": "Transducer family complexes",
+    "json_id": "transd_gio_c",
+    "title": "Gi/o",
+    "data_type": "numeric",
+    "allow_filter": true
+  },
+  {
+    "column_group": "Transducer family complexes",
+    "json_id": "transd_gq11_c",
+    "title": "Gq/11",
+    "data_type": "numeric",
+    "allow_filter": true
+  },
+  {
+    "column_group": "Transducer family complexes",
+    "json_id": "transd_g1213_c",
+    "title": "G12/13",
+    "data_type": "numeric",
+    "allow_filter": true
+  },
+  {
+    "column_group": "Transducer family complexes",
+    "json_id": "transd_arrest_c",
+    "title": "Arrestins",
+    "data_type": "numeric",
+    "allow_filter": true
+  },
+  {
+    "column_group": "Transducer family complexes",
+    "json_id": "transd_grks_c",
+    "title": "GRKs",
+    "data_type": "numeric",
+    "allow_filter": true
+  },
+  {
+    "column_group": "Ligand types",
+    "json_id": "ligand_types_smmol_c",
+    "title": "Small mol.",
+    "data_type": "numeric",
+    "allow_filter": true,
+    "exportHeaderOverride": "Small mol. ligand"
+  },
+  {
+    "column_group": "Ligand types",
+    "json_id": "ligand_types_pep_c",
+    "title": "Peptide/protein",
+    "data_type": "numeric",
+    "allow_filter": true,
+    "exportHeaderOverride": "Peptide/protein ligand"
+  },
+  {
+    "column_group": "Ligand modality groups",
+    "json_id": "limodgrp_stim_c",
+    "title": "Stimulatory",
+    "data_type": "numeric",
+    "allow_filter": true,
+    "exportHeaderOverride": "Stimulatory ligand"
+  },
+  {
+    "column_group": "Ligand modality groups",
+    "json_id": "limodgrp_inhib_c",
+    "title": "Inhibitory",
+    "data_type": "numeric",
+    "allow_filter": true,
+    "exportHeaderOverride": "Inhibitory ligand"
+  },
+  {
+    "column_group": "Ligand modality groups",
+    "json_id": "limodgrp_unk_c",
+    "title": "Unknown",
+    "data_type": "numeric",
+    "allow_filter": true,
+    "exportHeaderOverride": "Unknown ligand"
+  },
+  {
+    "column_group": "Ligand modalities",
+    "json_id": "limod_apo_c",
+    "title": "Apo",
+    "data_type": "numeric",
+    "allow_filter": true
+  },
+  {
+    "column_group": "Ligand modalities",
+    "json_id": "limod_ag_c",
+    "title": "Agonist",
+    "data_type": "numeric",
+    "allow_filter": true
+  },
+  {
+    "column_group": "Ligand modalities",
+    "json_id": "limod_ag_partial_c",
+    "title": "Agonist partial",
+    "data_type": "numeric",
+    "allow_filter": true
+  },
+  {
+    "column_group": "Ligand modalities",
+    "json_id": "limod_allo_antag_c",
+    "title": "Allosteric antagonist",
+    "data_type": "numeric",
+    "allow_filter": true
+  },
+  {
+"column_group": "Ligand modalities",
+    "json_id": "limod_antag_c",
+    "title": "Antagonist",
+    "data_type": "numeric",
+    "allow_filter": true
+  },
+  {
+    "column_group": "Ligand modalities",
+    "json_id": "limod_inv_ag_c",
+    "title": "Inverse agonist",
+    "data_type": "numeric",
+    "allow_filter": true
+  },
+  {
+"column_group": "Ligand modalities",
+    "json_id": "limod_nam_c",
+    "title": "NAM",
+    "data_type": "numeric",
+    "allow_filter": true
+  },
+  {
+"column_group": "Ligand modalities",
+    "json_id": "limod_pam_c",
+    "title": "PAM",
+    "data_type": "numeric",
+    "allow_filter": true
+  },
+  {
+"column_group": "Ligand modalities",
+    "json_id": "limod_unk_c",
+    "title": "Unknown",
+    "data_type": "numeric",
+    "allow_filter": true,
+    "exportHeaderOverride": "Unknown modality"
+  }
+]

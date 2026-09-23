@@ -173,7 +173,10 @@ class Command(BuildHumanProteins):
                 self.logger.info('Created protein sequence type {}'.format(sequence_type.name))
 
             # create a protein record
-            consensus_name = family.name + " consensus"
+            if family.name=="Orphan receptors":
+                consensus_name = family.name + " " + family.slug + " consensus"
+            else:
+                consensus_name = family.name + " consensus"
             residue_numbering_scheme = proteins[0].residue_numbering_scheme
             up = dict()
             up['entry_name'] = slugify(consensus_name)

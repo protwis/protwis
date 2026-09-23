@@ -122,20 +122,15 @@
     {% endif %}
 <div class="row">
     <div class="col-md-2 text-right text-info">
-        <h4>MUTATIONS</h4>
-    </div>
-    <div class="col-md-10">
-    <p>{{ mutations|length }} mutation data points available.</p>
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-md-2 text-right text-info">
         <h4>STRUCTURES</h4>
     </div>
     {% if structures|length > 0 %}
     <div class="col-md-10">
-        <p>View in <a href="/structure/g_protein_structure_browser" target='_blank'>Structures</a></p>
+        {% if "arr" in p.entry_name|stringformat:"s" and not arr_found %}
+            <p>Found {{ structures|length }} structure(s) - view in <a href="/structure/arrestin_structure_browser" target='_blank'>Structures</a></p>
+        {% elif "gna" in p.entry_name|stringformat:"s" and not gna_found %}
+            <p>Found {{ structures|length }} structure(s) - view in <a href="/structure/g_protein_structure_browser" target='_blank'>Structures</a></p>
+        {% endif %}
     </div>
     
     {% else %}
@@ -151,9 +146,12 @@
     </div>
     {% if complex_structures|length > 0 %}
     <div class="col-md-10">
-        <p>View in <a href="/structure/g_protein_structure_browser" target='_blank'>Structures</a></p>
+        {% if "arr" in p.entry_name|stringformat:"s" and not arr_found %}
+            <p>Found {{ complex_structures|length }} complex model(s) - view in <a href="/structure/arrestin_structure_browser" target='_blank'>Structures</a></p>
+        {% elif "gna" in p.entry_name|stringformat:"s" and not gna_found %}
+            <p>Found {{ complex_structures|length }} complex model(s) - view in <a href="/structure/g_protein_structure_browser" target='_blank'>Structures</a></p>
+        {% endif %}
     </div>
-    
     {% else %}
     <div class="col-md-10">
         No receptor complex structures available

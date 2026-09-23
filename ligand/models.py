@@ -6,15 +6,14 @@ from django.db import connection
 from django_rdkit import models as rdkit_models
 from django.contrib.postgres.indexes import GistIndex
 
-from common.models import WebResource
-from common.models import WebLink, Publication
+from common.models import Publication, WebResource
 from common.tools import fetch_from_web_api
 from string import Template
 from structure.models import Structure
+from protein.models import Protein
 from urllib.request import urlopen, quote
 
 import json
-import yaml
 import logging
 
 
@@ -27,9 +26,10 @@ class Ligand(models.Model):
 
     # structure definition
     smiles = models.TextField(null=True)
-    inchikey = models.CharField(max_length=27, null=True, unique=True)
-    clean_inchikey = models.CharField(max_length=27, null=True)
+    inchikey = models.CharField(max_length=27, null=True)
+    clean_inchikey = models.CharField(max_length=27, null=True, unique=True)
     sequence = models.CharField(max_length=1000, null=True)
+    helm = models.TextField(max_length=4000, null=True)
 
     # Ligand properties
     mw = models.DecimalField(max_digits=15, decimal_places=3, null=True)
@@ -37,12 +37,19 @@ class Ligand(models.Model):
     hacc = models.SmallIntegerField(null=True)
     hdon = models.SmallIntegerField(null=True)
     logp = models.DecimalField(max_digits=10, decimal_places=3, null=True)
+    radioactive = models.CharField(max_length=20, null=True)
+    stereo_status = models.CharField(max_length=20, null=True)
+    source = models.TextField(max_length=20, null=True)
+    # Parent structure addition with a unique related_name
+    parent = models.ForeignKey('self', null=True, on_delete=models.CASCADE, related_name='children')
+    gpcrdb_id = models.BigIntegerField(unique=True, editable=False, null=True)
 
     def __str__(self):
         return self.name
 
     class Meta():
         db_table = 'ligand'
+
 
 class CustomLigandMolManager(models.Manager):
     def truncate_table(self):
@@ -63,12 +70,14 @@ class LigandMol(models.Model):
             GistIndex(fields=['molecule']),
         ]
 
+
 class CustomLigandFingerprintManager(models.Manager):
     def truncate_table(self):
         cursor = connection.cursor()
         table_name = self.model._meta.db_table
         sql = 'TRUNCATE TABLE "{0}" CASCADE'.format(table_name)
         cursor.execute(sql)
+
 
 class LigandFingerprint(models.Model):
     ligand = models.OneToOneField('Ligand', null=False, on_delete=models.CASCADE)
@@ -82,7 +91,16 @@ class LigandFingerprint(models.Model):
         ]
 
 
+class LigandEffect(models.Model):
+    slug = models.CharField(max_length=100, null=True)
+    name = models.CharField(max_length=100, null=True)
 
+
+class LigandTargetPairing(models.Model):
+    ligand = models.ForeignKey('Ligand', null=True, on_delete=models.CASCADE)
+    target = models.ForeignKey(Protein, null=True, on_delete=models.CASCADE)
+    effect = models.ForeignKey('LigandEffect', null=True, on_delete=models.CASCADE)
+    role = models.ForeignKey('LigandType', null=True, on_delete=models.CASCADE)
 
     # def load_by_gtop_id(self, ligand_name, gtop_id, ligand_type):
     #     logger = logging.getLogger('build')
@@ -335,14 +353,19 @@ class LigandFingerprint(models.Model):
     #                 print("FAILED SAVING CANONICAL LIGAND, duplicate? " +
     #                       pubchem_name + " " + name)
 
+
 # Dedicated WebLink-like model to relieve pressure of the WL model and be more creative
 class LigandID(models.Model):
-    ligand = models.ForeignKey(Ligand, related_name='ids', on_delete = models.CASCADE)
-    index = models.TextField(null = False)
-    web_resource = models.ForeignKey(WebResource, on_delete = models.CASCADE, blank=True, null=True)
+    ligand = models.ForeignKey(Ligand, related_name='ids', on_delete=models.CASCADE)
+    index = models.TextField(null=False)
+    web_resource = models.ForeignKey(WebResource, on_delete=models.CASCADE, blank=True, null=True)
 
     def __str__(self):
         return Template(str(self.web_resource)).substitute(index=self.index)
+
+    class Meta:
+        unique_together = ('ligand', 'index', 'web_resource')
+
 
 class LigandImage(models.Model):
     ligand = models.ForeignKey(Ligand, related_name='image', on_delete = models.CASCADE)
@@ -351,6 +374,7 @@ class LigandImage(models.Model):
     def __str__(self):
         # TODO convert into base64 encoding by default for in-line integration
         return self.image
+
 
 class LigandType(models.Model):
     slug = models.SlugField(max_length=20, unique=True)
@@ -361,6 +385,7 @@ class LigandType(models.Model):
 
     class Meta():
         db_table = 'ligand_type'
+
 
 class LigandPeptideStructure(models.Model):
     structure = models.ForeignKey(
@@ -376,15 +401,19 @@ class LigandPeptideStructure(models.Model):
     class Meta():
         db_table = "ligand_peptide_structure"
 
+
 class LigandRole(models.Model):
     slug = models.SlugField(max_length=50, unique=True)
     name = models.CharField(max_length=100)
+    type = models.CharField(max_length=100, null=True)
+    effect = models.ForeignKey('LigandEffect', null=True, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.name
 
     class Meta():
         db_table = 'ligand_role'
+
 
 class AssayExperiment(models.Model):
     ligand = models.ForeignKey('Ligand', on_delete=models.CASCADE)
@@ -394,7 +423,7 @@ class AssayExperiment(models.Model):
     standard_activity_value = models.CharField(max_length=20, null=True)
     p_activity_value = models.CharField(max_length=100, null=True) #Only 1 value, median/max fot GTP (p activity)
     p_activity_ranges = models.CharField(max_length=40, null=True) #If we have ranges (GtP)
-    standard_relation = models.CharField(max_length=10)
+    standard_relation = models.CharField(max_length=10, null=True)
     value_type = models.CharField(max_length=50, null=True)
     source = models.CharField(max_length=50, null=True)
     publication = models.ManyToManyField(Publication)
@@ -404,6 +433,21 @@ class AssayExperiment(models.Model):
     count_affinity_test = models.CharField(max_length=10, null=True)
     count_potency_test = models.CharField(max_length=10, null=True)
     reference_ligand = models.CharField(max_length=300, null=True)
+    qualitative_activity = models.CharField(max_length=300, null=True)
+    assay_classification = models.ForeignKey('AssayClassification', on_delete=models.CASCADE, null=True)
+
+
+class AssayClassification(models.Model):
+    unit = models.CharField(max_length=30)
+    assay_type = models.CharField(max_length=20)
+    parameter_class = models.CharField(max_length=40)
+    modality = models.CharField(max_length=20)
+
+    def __str__(self):
+        return f"<AssayClassification: {self.unit}>"
+
+    class Meta():
+        db_table = 'ligand_assay_classification'
 
 
 class LigandVendors(models.Model):
@@ -431,6 +475,7 @@ class Endogenous_GTP(models.Model):
     pic50 = models.CharField(max_length=200, null=True)
     pKd = models.CharField(max_length=200, null=True)
     publication = models.ManyToManyField(Publication)
+
 
 # Biased Signalling Data
 class BiasedData(models.Model):
@@ -464,6 +509,7 @@ class BiasedData(models.Model):
     physiology_biased = models.CharField(max_length=60, null=True)  #biased ligands
     pathway_biased = models.CharField(max_length=60, null=True)     #balanced ligands
     pathway_subtype_biased = models.CharField(max_length=60, null=True)     #balanced subtype ligands
+
 
 class BalancedLigands(models.Model):
     ligand = models.ForeignKey(Ligand, on_delete=models.CASCADE) #LINK

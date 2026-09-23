@@ -8,7 +8,7 @@ from django.conf import settings
 from interaction.models import ResidueFragmentInteraction, StructureLigandInteraction, ResidueFragmentInteractionType
 from interaction.forms import PDBform
 from ligand.models import Ligand, LigandType, LigandRole
-from structure.models import Structure, PdbData, Rotamer, Fragment, StructureModel, StructureComplexModel, StructureExtraProteins, StructureVectors, StructureModelRMSD, StructureModelpLDDT, StructureAFScores
+from structure.models import Structure, PdbData, Rotamer, Fragment, StructureModel, StructureComplexModel, StructureExtraProteins, StructureVectors, StructureModelRMSD, StructureModelpLDDT, StructureModelScores
 from structure.assign_generic_numbers_gpcr import GenericNumbering
 from protein.models import Protein, ProteinSegment
 from residue.models import Residue, ResidueGenericNumberEquivalent, ResidueNumberingScheme
@@ -17,7 +17,6 @@ from common.tools import fetch_from_web_api
 from common.diagrams_gpcr import DrawHelixBox, DrawSnakePlot
 from common.selection import Selection, SelectionItem
 from common import definitions
-from common.views import AbsTargetSelection
 from contactnetwork.models import Interaction
 
 import os
@@ -69,15 +68,24 @@ POSITIVE = {'H', 'K', 'R'}
 cation_atoms =  ['NZ', 'CZ', 'NE', 'NH1', 'NH2']
 AROMATIC = {'TYR', 'TRP', 'PHE', 'HIS'}
 CHARGEDAA = {'ARG', 'LYS', 'ASP', 'GLU'}
+# PDB chemical-component ids for monoatomic ions whose single atom is named
+# after their element and happens to start with 'C' — the entry[0][0]=='C'
+# check in analyze_interactions() assumes any ligand atom name starting with
+# 'C' is carbon, which is wrong for these ions.
+NON_CARBON_C_IONS = {'CA', 'CD', 'CO', 'CU', 'CS'}
 HYDROPHOBIC_AA = {'A', 'C', 'F', 'I', 'L', 'M', 'P', 'V', 'W', 'Y'}
 ignore_het = ['NA', 'W']  # ignore sodium and water
 radius = 5
 hydrophob_radius = 4.5
+# Safety margin for the coarse CA-to-ligand-center pre-filter in find_interactions():
+# covers the largest residue CA-to-sidechain-tip distance (~8A for Arg/Lys/Trp)
+# plus the interaction radius above, with headroom.
+PRE_FILTER_MARGIN = 15
 pdb_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'pdbs'])
 
 #RETURN THE DICTIONARY RESULTS
-def runcalculation_2022(pdbname, peptide="", file_input=False):
-    output = calculate_interactions(pdbname, None, peptide, file_input)
+def runcalculation_2022(pdbname, peptide="", file_input=False, target_ligand=None, target_chain=None, target_resnum=None):
+    output = calculate_interactions(pdbname, None, peptide, file_input, target_ligand, target_chain, target_resnum)
     return output
 
 #RETURN THE DICTIONARY RESULTS
@@ -85,7 +93,7 @@ def runusercalculation_2022(filename, session):
     output = calculate_interactions(filename, session, None)
     return output
 
-def calculate_interactions(pdb, session=None, peptide=None, file_input=False):
+def calculate_interactions(pdb, session=None, peptide=None, file_input=False, target_ligand=None, target_chain=None, target_resnum=None):
     # REMEMBER TO GET THE RETURNS FROM ALL THE BELOW FUNCTIONS
     hetlist = {}
     ligand_atoms = {}
@@ -98,7 +106,10 @@ def calculate_interactions(pdb, session=None, peptide=None, file_input=False):
     sortedresults = []
     summary_results = {}
     new_results = {}
-    projectdir = '/tmp/interactions/'
+    if not session:
+        projectdir = '/tmp/interactions/'
+    else:
+        projectdir = os.sep.join(['/tmp', 'interactions', session,])+'/'
     tempdir = projectdir + 'temp/'
     if not os.path.exists(tempdir):
         os.makedirs(tempdir)
@@ -123,13 +134,14 @@ def calculate_interactions(pdb, session=None, peptide=None, file_input=False):
             pdb = complex_name
         scroller = parser.get_structure(pdb, pdb_location)
         # print('Creating ligand and poseview')
-        create_ligands_and_poseview(hetlist_display, scroller, projectdir, pdb, peptide) #ignore_het (should be global), inchikeys, smiles (should not be used)
+        create_ligands_and_poseview(hetlist_display, scroller, projectdir, pdb, peptide, target_ligand, target_chain, target_resnum) #ignore_het (should be global), inchikeys, smiles (should not be used)
         # print('Building ligand info')
         hetlist, ligand_charged, ligand_donors, ligand_atoms, ligand_acceptors, ligandcenter, ligand_rings = build_ligand_info(
                                                                                                                 scroller, hetlist_display,
                                                                                                                 projectdir, pdb, peptide, hetlist,
                                                                                                                 ligand_atoms, ligand_charged, ligand_donors,
-                                                                                                                ligand_acceptors, ligandcenter, ligand_rings)
+                                                                                                                ligand_acceptors, ligandcenter, ligand_rings,
+                                                                                                                target_ligand, target_chain, target_resnum)
         # print('Finding interactions')
         summary_results, new_results, results = find_interactions(
                                                     scroller, projectdir, pdb, peptide,
@@ -189,7 +201,7 @@ def check_pdb(projectdir, pdb, file_input):  #CAN WE HAVE THE PDB AS A VAR AND N
             else:
                 url = 'https://www.rcsb.org/pdb/files/%s.pdb' % pdb
                 # pdbfile = urllib.request.urlopen(url).read()
-                pdbfile = requests.get(url)
+                pdbfile = requests.get(url, timeout=30)
                 if ("404 Not Found" in pdbfile.text or pdb in ['7F1T', '7XBX']) and pdb+'.pdb' in os.listdir(pdb_dir):
                     with open(os.sep.join([pdb_dir, pdb+'.pdb']), 'r') as f:
                         pdbfile = f.read()
@@ -310,15 +322,18 @@ def accept_residue(residue, hetflag, peptide=None):
     else:
         return 0
 
-def create_ligands_and_poseview(ligand_het, scroller, projectdir, pdb, peptide=None):
+def create_ligands_and_poseview(ligand_het, scroller, projectdir, pdb, peptide=None, target_ligand=None, target_chain=None, target_resnum=None):
+    target_hetflag = target_ligand[:3] if target_ligand and len(target_ligand) > 3 else target_ligand
 
     class HetSelect(Select):
         @staticmethod
         def accept_residue(residue):
-            if residue.get_resname().strip() == hetflag:
-                return 1
-            else:
+            if residue.get_resname().strip() != hetflag:
                 return 0
+            if target_chain is not None and hetflag == target_hetflag and (
+                    residue.get_parent().id != target_chain or residue.id[1] != target_resnum):
+                return 0
+            return 1
 
     class ClassSelect(Select):
         @staticmethod
@@ -386,6 +401,8 @@ def get_sdf_ligand_from_cache(comp_id):
     cache_dir = ["pdbe", 'sdf_models']
     comp_id += '_ideal.sdf'
     data = fetch_from_web_api(url, comp_id, cache_dir, raw=True)
+    if not data:
+        return None
     mol = AllChem.MolFromMolBlock(data)
     # AllChem.AssignStereochemistryFrom3D(mol) #FOR PYTHON 3
     return mol
@@ -396,8 +413,9 @@ def isRingAromatic(mol, bondRing):
             return False
     return True
 
-def build_ligand_info(scroller, lig_het, projectdir, pdb, peptide, hetlist, ligand_atoms, ligand_charged, ligand_donors, ligand_acceptors, ligandcenter, ligand_rings):
+def build_ligand_info(scroller, lig_het, projectdir, pdb, peptide, hetlist, ligand_atoms, ligand_charged, ligand_donors, ligand_acceptors, ligandcenter, ligand_rings, target_ligand=None, target_chain=None, target_resnum=None):
     count_atom_ligand = {}
+    target_hetflag = target_ligand[:3] if target_ligand and len(target_ligand) > 3 else target_ligand
 
     for model in scroller:
         for chain in model:
@@ -414,6 +432,9 @@ def build_ligand_info(scroller, lig_het, projectdir, pdb, peptide, hetlist, liga
 
                 # REMEMBER TO PARSE ONLY THE ACTUAL LIGAND
                 if hetflag in lig_het.keys():
+                    if target_chain is not None and hetflag == target_hetflag and (
+                            chain.id != target_chain or residue.id[1] != target_resnum):
+                        continue
                     if (hetflag not in hetlist) or (chain.id==peptide):
                         if MolFromPDBFile(projectdir + 'results/' + pdb + '/ligand/' + hetflag + '_' + pdb + '.pdb') == 0:
                             # This ligand has no molecules
@@ -429,16 +450,18 @@ def build_ligand_info(scroller, lig_het, projectdir, pdb, peptide, hetlist, liga
                             mol2 = MolFromPDBFile(projectdir + 'results/' + pdb + '/ligand/' + hetflag + '_' + pdb + ".pdb")
                             if not mol2:
                                 mol2 = MolFromPDBFile(projectdir + 'results/' + pdb + '/ligand/' + hetflag + '_' + pdb + ".pdb", sanitize=False)
-                            hetflag_sdf = get_sdf_ligand_from_cache(hetflag)
-                            try:
-                                mol2 = AllChem.AssignBondOrdersFromTemplate(refmol=hetflag_sdf, mol=mol2)
-                            except ValueError:
+                            sdf_comp_id = target_ligand if target_ligand and hetflag == target_hetflag else hetflag
+                            if hetflag != 'pep':
+                                hetflag_sdf = get_sdf_ligand_from_cache(sdf_comp_id)
                                 try:
-                                    smiles = list(Ligand.objects.filter(pdbe=hetflag).values_list('smiles', flat=True))[0]
-                                    refmol = AllChem.MolFromSmiles(smiles)
-                                    mol2 = AllChem.AssignBondOrdersFromTemplate(refmol=refmol, mol=mol2)
-                                except:
-                                    pass
+                                    mol2 = AllChem.AssignBondOrdersFromTemplate(refmol=hetflag_sdf, mol=mol2)
+                                except (TypeError, ValueError):
+                                    try:
+                                        smiles = list(Ligand.objects.filter(pdbe=hetflag).values_list('smiles', flat=True))[0]
+                                        refmol = AllChem.MolFromSmiles(smiles)
+                                        mol2 = AllChem.AssignBondOrdersFromTemplate(refmol=refmol, mol=mol2)
+                                    except (TypeError, ValueError, IndexError):
+                                        pass
                             mol2 = Chem.AddHs(mol2)
                             rings = Chem.rdmolops.GetSSSR(mol2)
                             ringlist = []
@@ -524,7 +547,12 @@ def build_ligand_info(scroller, lig_het, projectdir, pdb, peptide, hetlist, liga
                                 ligand_atoms[hetflag].append([count_atom_ligand[hetflag], atom_vector, het_atom])
                                 count_atom_ligand[hetflag] += 1
                         center2 = center / count_atom_ligand[hetflag]
-                        ligandcenter[hetflag] = [center2, count_atom_ligand[hetflag],center]
+                        # Pre-filter radius must reflect the ligand's actual spatial extent, not
+                        # its atom count (a single-atom ligand like a metal ion otherwise gets a
+                        # ~1A cutoff here and every candidate residue is skipped before the real
+                        # radius/hydrophob_radius check ever runs).
+                        ligand_extent = max((av[1] - center2).norm() for av in ligand_atoms[hetflag])
+                        ligandcenter[hetflag] = [center2, ligand_extent + PRE_FILTER_MARGIN, center]
 
     return hetlist, ligand_charged, ligand_donors, ligand_atoms, ligand_acceptors, ligandcenter, ligand_rings
 
@@ -675,6 +703,13 @@ def find_interactions(scroller, projectdir, pdb, peptide, hetlist, ligandcenter,
                                         remove_hyd(aaname, hetflag, new_results)
                         #Calculate PiStack interactions
                         if (aa_resname in ['ARG', 'LYS']) and ligand_rings[hetflag]:
+                            if hetflag not in results:
+                                results[hetflag] = {}
+                                summary_results[hetflag] = {'score': [], 'hbond': [], 'hbondplus': [], 'pistack': [],
+                                                            'hbond_confirmed': [], 'aromatic': [],'aromaticff': [],
+                                                            'ionaromatic': [], 'aromaticion': [], 'aromaticef': [],
+                                                            'aromaticfe': [], 'hydrophobic': [], 'waals': [], 'accessible':[]}
+                                new_results[hetflag] = {'interactions':[]}
                             for atom in residue:
                                 aa_vector = atom.get_vector()
                                 aa_atom = atom.name
@@ -917,7 +952,7 @@ def analyze_interactions(projectdir, pdb, results, ligand_donors, ligand_accepto
             for entry in interaction:
                 hbondconfirmed = []
                 if (entry[2] <= 3.5):
-                    if entry[0][0] == 'C' or entry[1][0] == 'C':
+                    if (entry[0][0] == 'C' and ligand not in NON_CARBON_C_IONS) or entry[1][0] == 'C':
                         continue  # If either atom is C then no hydrogen bonding
                     aa_donors = get_hydrogen_from_aa(projectdir, pdb, entry[5], pdb_location)
                     hydrogenmatch = False
@@ -1194,51 +1229,8 @@ def regexaa(aa):
             return None, None, None
 
 
-class InteractionSelection(AbsTargetSelection):
-
-    # Left panel
-    step = 1
-    number_of_steps = 1
-    docs = 'generic_numbering.html'  # FIXME
-
-    # description = 'Select receptors to index by searching or browsing in the middle column. You can select entire' \
-    #     + ' receptor families and/or individual receptors.\n\nSelected receptors will appear in the right column,' \
-    #     + ' where you can edit the list.\n\nSelect which numbering schemes to use in the middle column.\n\nOnce you' \
-    #     + ' have selected all your receptors, click the green button.'
-
-    description = 'Select the structure of interest by using the dropdown in the middle. The selection if viewed to the right and the interactions will be loaded immediately.'
-
-    # Middle section
-    numbering_schemes = False
-    filters = False
-    search = False
-    title = "Select a structure based on PDB-code"
-
-    template_name = 'interaction/interactionselection.html'
-
-    selection_boxes = OrderedDict([
-        ('reference', False),
-        ('targets', True),
-        ('segments', False),
-    ])
-
-    # Buttons
-    buttons = {
-        'continue': {
-            'label': 'Show interactions',
-            'onclick': 'submitupload()',
-            'color': 'success',
-        }
-    }
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-
-        context['structures'] = ResidueFragmentInteraction.objects.values('structure_ligand_pair__structure__pdb_code__index', 'structure_ligand_pair__structure__protein_conformation__protein__parent__entry_name').annotate(
-            num_ligands=Count('structure_ligand_pair', distinct=True), num_interactions=Count('pk', distinct=True)).order_by('structure_ligand_pair__structure__pdb_code__index')
-        context['structure_groups'] = sorted(set([ structure['structure_ligand_pair__structure__pdb_code__index'][0] for structure in context['structures'] ]))
-        context['form'] = PDBform()
-        return context
+def InteractionSelection(request):
+    return render(request, 'interaction/interactionselection.html')
 
 
 def StructureDetails(request, pdbname):
@@ -1250,12 +1242,12 @@ def StructureDetails(request, pdbname):
         structure_ligand_pair__structure__pdb_code__index=pdbname).annotate(numRes=Count('pk', distinct=True)).order_by('-numRes')
     resn_list = ''
 
-
-    main_ligand = []
+    # Maps ligand name -> PDB chemical-component code, used below to build main_ligand/
+    # resn_list in the same order as `ligands` (see note near the bottom of this function).
+    pdb_reference_by_name = {}
     for structure in structures:
         if structure['structure_ligand_pair__annotated']:
-            resn_list += ",\"" + structure['structure_ligand_pair__pdb_reference'] + "\""
-            main_ligand.append(structure['structure_ligand_pair__pdb_reference'])
+            pdb_reference_by_name[structure['structure_ligand_pair__ligand__name']] = structure['structure_ligand_pair__pdb_reference']
 
     crystal = Structure.objects.get(pdb_code__index=pdbname)
     if pdbname.startswith('AFM'):
@@ -1276,8 +1268,8 @@ def StructureDetails(request, pdbname):
         structure_ligand_pair__structure__pdb_code__index=pdbname, structure_ligand_pair__annotated=True).exclude(interaction_type__type ='hidden').order_by('rotamer__residue__sequence_number')
     residues_browser = []
     ligands = []
+    seen_ligand_names = set()
     display_res = []
-    main_ligand_full = []
     residue_table_list = []
     for residue in residues:
         key = residue.interaction_type.name
@@ -1297,9 +1289,14 @@ def StructureDetails(request, pdbname):
             display = residue.rotamer.residue.display_generic_number.label
         else:
             display = ''
-        ligand = residue.structure_ligand_pair.ligand.name
+        ligand_obj = residue.structure_ligand_pair.ligand
+        ligand = ligand_obj.name
+        ligand_smiles = ligand_obj.smiles or ''
+        ligand_sequence = ligand_obj.sequence or ''
+        ligand_type = ligand_obj.ligand_type.name if ligand_obj.ligand_type_id else ''
         display_res.append(str(pos))
-        residues_browser.append({'type': key, 'aa': aa, 'ligand': ligand,
+        residues_browser.append({'type': key, 'aa': aa, 'ligand': ligand, 'ligand_id': ligand_obj.id,
+                                 'ligand_smiles': ligand_smiles, 'ligand_sequence': ligand_sequence, 'ligand_type': ligand_type,
                                  'pos': pos, 'wt_pos': wt_pos, 'gpcrdb': display, 'segment': segment})
 
         if pos not in residues_lookup:
@@ -1307,9 +1304,11 @@ def StructureDetails(request, pdbname):
         else:
             residues_lookup[pos] += " interaction " + key
 
-        if ligand not in ligands:
-            ligands.append(ligand)
-            main_ligand_full.append(ligand)
+        if ligand not in seen_ligand_names:
+            seen_ligand_names.add(ligand)
+            ligand_role = residue.structure_ligand_pair.ligand_role.name if residue.structure_ligand_pair.ligand_role_id else ''
+            ligands.append({'name': ligand, 'id': ligand_obj.id, 'smiles': ligand_smiles, 'sequence': ligand_sequence,
+                            'ligand_type': ligand_type, 'role': ligand_role})
     display_res = ' or '.join(display_res)
     # RESIDUE TABLE
     segments = ProteinSegment.objects.all().filter().prefetch_related()
@@ -1391,27 +1390,48 @@ def StructureDetails(request, pdbname):
     HelixBox = DrawHelixBox(
                 residuelist, p.get_protein_class(), str(p), nobuttons=1)
     if not pdbname.startswith('AFM'):
+        from angles.models import get_snake_plot_distance_lookup
         SnakePlot = DrawSnakePlot(
-                    residuelist, p.get_protein_class(), str(p), nobuttons=1)
+                    residuelist, p.get_protein_class(), str(p), nobuttons=1,
+                    residue_distance_lookup=get_snake_plot_distance_lookup(p))
     else:
         SnakePlot = []
-    #adjusting main_ligand and main_ligand_full
-    if len(main_ligand) == 0:
-        multiple_ligands = False
-        main_ligand = "None"
-        main_ligand_full = "None"
-    elif len(main_ligand) == 1:
-        multiple_ligands = False
-        main_ligand = main_ligand[0]
-        main_ligand_full = main_ligand_full[0]
-    else:
-        multiple_ligands = True
+    # resn_list built from `ligands` (rather than the separately-ordered `structures`
+    # query above) so it stays in the same order as `ligands` - previously main_ligand/
+    # main_ligand_full were built from two differently-ordered queries and could silently
+    # mismatch on some structures.
+    resn_list = ''.join(',"{}"'.format(pdb_reference_by_name[l['name']])
+                        for l in ligands if l['name'] in pdb_reference_by_name)
+
+    protein_class_short = p.get_protein_class_from_slug(short=True).split(' ')[0]
+
+    # Single JSON payload for the template's <script> blocks (via the json_script filter),
+    # instead of one `{{ x|safe }}` dump per variable - keeps Django template syntax out of
+    # the JavaScript entirely, and produces real JSON rather than a Python-repr-as-JS hack.
+    page_data = {
+        'pdbname': pdbname,
+        'ligands': [
+            {
+                'id': l['id'], 'name': l['name'],
+                'pdb_reference': pdb_reference_by_name.get(l['name'], ''),
+                'smiles': l['smiles'], 'sequence': l['sequence'],
+                'ligand_type': l['ligand_type'], 'role': l['role'],
+            }
+            for l in ligands
+        ],
+        'residues': residues_browser,
+        'residues_lookup': residues_lookup,
+        'display_res': display_res,
+        'number_of_schemes': len(numbering_schemes),
+    }
 
     return render(request, 'interaction/structure.html', {'pdbname': pdbname, 'structures': structures,
                                                           'crystal': crystal, 'protein': p, 'helixbox' : HelixBox, 'snakeplot': SnakePlot, 'residues': residues_browser, 'residues_lookup': residues_lookup, 'display_res': display_res, 'annotated_resn':
-                                                          resn_list, 'ligands': ligands,'main_ligand' : main_ligand,'main_ligand_full' : main_ligand_full, 'data': context['data'],
+                                                          resn_list, 'ligands': ligands, 'page_data': page_data,
+                                                          'protein_class_short': protein_class_short,
+                                                          'data': context['data'],
                                                           'header': context['header'], 'segments': context['segments'],
-                                                          'number_of_schemes': len(numbering_schemes), "multiple_ligands": multiple_ligands})
+                                                          'number_of_schemes': len(numbering_schemes)})
 
 
 def remove_duplicate_dicts(dict_list):
@@ -1470,7 +1490,7 @@ def ComplexDetails(request, pdbname):
     resn_list = ''
 
     crystal = Structure.objects.get(pdb_code__index=pdbname)
-    if crystal.structure_type.slug.startswith('af-'):
+    if crystal.structure_type.origin in ['model', 'experiment_model_refined']:
         p = Protein.objects.get(id=crystal.protein_conformation.protein.id)
     else:
         p = Protein.objects.get(protein=crystal.protein_conformation.protein)
@@ -1600,9 +1620,9 @@ def ComplexDetails(request, pdbname):
     ### Implementing same code for calculating the interactions plot
     model = Structure.objects.get(pdb_code__index=pdbname)
     if model.structure_type.slug == 'af-signprot':
-        scores = StructureAFScores.objects.get(structure=model)
+        scores = StructureModelScores.objects.get(structure=model)
     else:
-        scores = StructureAFScores()
+        scores = StructureModelScores()
     #Need to build the plDDT colors
     model_plddt = StructureModelpLDDT.objects.filter(structure=model)
     residues_plddt = {}
@@ -1873,13 +1893,17 @@ def extract_fragment_rotamer(f, residue, structure, ligand):
                 rotamer_pdb += line
         f_in.close()
 
-        rotamer_data, created = PdbData.objects.get_or_create(pdb=rotamer_pdb)
+        rotamer_data = PdbData.objects.filter(pdb=rotamer_pdb).first()
+        if rotamer_data is None:
+            rotamer_data = PdbData.objects.create(pdb=rotamer_pdb)
         try:
             rotamer = Rotamer.objects.get(residue=residue, structure=structure)
         except Rotamer.DoesNotExist:
             rotamer, _ = Rotamer.objects.get_or_create(residue=residue, structure=structure, pdbdata=rotamer_data)
 
-        fragment_data, _ = PdbData.objects.get_or_create(pdb=fragment_pdb)
+        fragment_data = PdbData.objects.filter(pdb=fragment_pdb).first()
+        if fragment_data is None:
+            fragment_data = PdbData.objects.create(pdb=fragment_pdb)
         fragment, created = Fragment.objects.get_or_create(ligand=ligand, structure=structure, pdbdata=fragment_data, residue=residue)
     else:
         #quit("Could not find " + residue)

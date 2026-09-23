@@ -1,10 +1,11 @@
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
+from django.template.loader import render_to_string
 from django.views.generic import TemplateView
 from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
-from django.db.models import Count, Case, When, Min, Q
+from django.db.models import Count, Case, When, Min
 from django.core.cache import cache
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.views.decorators.http import require_GET
@@ -34,8 +35,103 @@ import xlsxwriter, xlrd
 import time
 import json
 import urllib
+import copy
 
 default_schemes_excluded = ["cgn", "ecd", "can"]
+
+
+# ---------------------------------------------------------------------------
+# Alignment-flow domain filtering. GPCR / G-protein / Arrestin alignment are
+# three independent flows that all share this one session's Selection object
+# (there's no per-flow session namespace). This keeps a target/segment
+# selected in one flow from leaking into another's "Selected targets/segments"
+# list - it never deletes anything from the session, only filters what a
+# given request renders, since AddToSelection/RemoveFromSelection are shared
+# AJAX endpoints that don't know which page called them. Scoped to the
+# alignment app only: every other page's calls have no matching Referer
+# below, so _current_alignment_domain returns None and nothing changes.
+# ---------------------------------------------------------------------------
+
+def _alignment_protein_family_domain(family):
+    """
+    Classifies a ProteinFamily as 'gpcr', 'gprotein', 'arrestin', or None.
+    Arrestin's root ('200') has no parent; G-protein ('100') and every GPCR
+    class ('001' Class A, '002' Class B1, '003' Class B2, ...) are direct
+    children of the same abstract root ('000') - so G-protein has to be told
+    apart from GPCR by which direct child of '000' it descends from.
+    """
+    node = family
+    while node.parent is not None:
+        node = node.parent
+    absolute_root_slug = node.slug
+
+    if absolute_root_slug == '200':
+        return 'arrestin'
+    if absolute_root_slug == '000':
+        node = family
+        while node.parent is not None and node.parent.slug != '000':
+            node = node.parent
+        return 'gprotein' if node.slug == '100' else 'gpcr'
+    return None
+
+
+_ALIGNMENT_SEGMENT_PROTEINFAMILY_TO_DOMAIN = {'GPCR': 'gpcr', 'Alpha': 'gprotein', 'Arrestin': 'arrestin'}
+
+
+def _alignment_selection_item_domain(sel_item):
+    """Resolves a SelectionItem - a target/reference protein, or a segment/
+    residue selection - to its alignment domain, or None if unclassifiable
+    (left alone rather than guessed wrong)."""
+    try:
+        if sel_item.type == 'protein':
+            return _alignment_protein_family_domain(sel_item.item.family)
+        if sel_item.type == 'family':
+            return _alignment_protein_family_domain(sel_item.item)
+        if sel_item.type == 'structure':
+            return _alignment_protein_family_domain(sel_item.item.protein_conformation.protein.family)
+        if isinstance(sel_item.item, ProteinSegment):
+            return _ALIGNMENT_SEGMENT_PROTEINFAMILY_TO_DOMAIN.get(sel_item.item.proteinfamily)
+        if isinstance(sel_item.item, ResidueGenericNumberEquivalent):
+            segment = sel_item.item.default_generic_number.protein_segment
+            return _ALIGNMENT_SEGMENT_PROTEINFAMILY_TO_DOMAIN.get(segment.proteinfamily) if segment else None
+    except AttributeError:
+        return None
+    return None
+
+
+# Longer/more specific paths first - 'targetselection' is a literal substring
+# of 'targetselectiongprot', so order matters for correct matching.
+_ALIGNMENT_REFERER_DOMAINS = [
+    ('/alignment/targetselectiongprot', 'gprotein'),
+    ('/alignment/segmentselectiongprot', 'gprotein'),
+    ('/alignment/targetselectionarrestin', 'arrestin'),
+    ('/alignment/segmentselectionarrestin', 'arrestin'),
+    ('/alignment/targetselection', 'gpcr'),
+    ('/alignment/segmentselection', 'gpcr'),
+]
+
+
+def _current_alignment_domain(request):
+    """Identifies which alignment flow issued this AJAX call from the Referer
+    header - stateless, per-request, nothing stored in the session. Returns
+    None (no filtering applied) for every other app/page's calls."""
+    referer = request.META.get('HTTP_REFERER') or ''
+    for path, domain in _ALIGNMENT_REFERER_DOMAINS:
+        if path in referer:
+            return domain
+    return None
+
+
+def _filter_selection_for_alignment_domain(selection, domain):
+    """Shallow copy of `selection` (a Selection or SimpleSelection) with
+    reference/targets/segments filtered to `domain`. Never mutates the
+    original or touches the session - purely a display/build-time view, so
+    nothing is ever lost when switching between alignment flows."""
+    filtered = copy.copy(selection)
+    for selection_type in ('reference', 'targets', 'segments'):
+        items = getattr(selection, selection_type)
+        setattr(filtered, selection_type, [i for i in items if _alignment_selection_item_domain(i) in (domain, None)])
+    return filtered
 
 def getLigandTable(receptor_id, browser_type):
     cache_key = "reference_table_" + str(receptor_id) + browser_type
@@ -91,29 +187,21 @@ def getLigandTable(receptor_id, browser_type):
             t = {}
             t['ligandname'] = link_setup.format(str(p[3])+"/info", p[0])
             t['ligandtype'] = p[2]
-            t['endogenous'] = p[1]
+            t['endogenous'] = ("No" if p[1] == None else p[1])
             t['publications'] = len(pubs)
             t['compared'] = len(compared) - 1
             t['2d_structure'] = img_setup_smiles.format(urllib.parse.quote(p[5])) if p[5] != None else "Image not available"
-            data_table += "<tr> \
-            <td data-sort=\"0\"><input autocomplete='off' class=\"form-check-input\" type=\"checkbox\" name=\"reference\" id=\"{}\" data-entry=\"{}\" entry-value=\"{}\"></td> \
-            <td data-html=\"true\">{}</td> \
-            <td>{}</td> \
-            <td>{}</td> \
-            <td>{}</td> \
-            <td>{}</td> \
-            <td>{}</td> \
-            </tr> \n".format(
-                p[0],
-                p[3],
-                p[3],
-                t['ligandname'],
-                t['2d_structure'],
-                t['ligandtype'],
-                ("No" if t['endogenous'] == None else t['endogenous']),
-                t['publications'],
-                t['compared'],
-            )
+          
+            data_table += f'''<tr> 
+            <td data-sort="0"><input autocomplete='off' class="form-check-input" type="checkbox" 
+            name="reference" id="{p[0]}" data-entry="{p[3]}" entry-value="{p[3]}"></td>
+            <td data-html="true">{t['ligandname']}</td>
+            <td>{t['2d_structure']}</td>
+            <td>{t['ligandtype']}</td>
+            <td>{t['endogenous']}</td>
+            <td>{t['publications']}</td>
+            <td>{t['compared']}</td>
+            </tr> \n'''
 
         data_table += "</tbody></table>"
         cache.set(cache_key, data_table, 60*60*24*7)
@@ -157,7 +245,7 @@ def getLigandCountTable():
             <thead>\
               <tr> \
                 <th colspan=1>&nbsp;</th> \
-                <th colspan=6>Receptor classification</th> \
+                <th colspan=7>Receptor classification</th> \
                 <th colspan=1>Ligands</th> \
                 <th colspan=2>Drugs</th> \
               </tr> \
@@ -168,6 +256,7 @@ def getLigandCountTable():
                 <th style=\"width; 100px;\">Family<br>&nbsp;</th> \
                 <th>Species<br>&nbsp;</th> \
                 <th style=\"color:red\">Receptor<br>(UniProt)</th> \
+                <th>Gene<br>&nbsp;</th> \
                 <th style=\"color:red\">Receptor<br>(GtP)</th> \
                 <th>Count</th> \
                 <th>Approved</th> \
@@ -202,6 +291,14 @@ def getLigandCountTable():
                 t['family'] = p.family.parent.short()
                 t['uniprot'] = p.entry_short()
                 t['iuphar'] = p.family.name.replace("receptor", '').strip()
+                if(p.genes.first()):
+                    t['gene_name'] = p.genes.first().name
+                    t['gene_entrez'] = p.genes.first().entrez_id
+                    t['gene_weblink'] = p.genes.first().entrez_weblink if p.genes.first().entrez_id else None
+                else:
+                    t['gene_name'] = "-"
+                    t['gene_entrez'] = None
+                    t['gene_weblink'] = None
 
                 # Web resource links
                 #t['uniprot_link'] = ""
@@ -216,33 +313,28 @@ def getLigandCountTable():
                     #t['gtp_link'] = link_setup.format(p.web_links.filter(web_resource__slug='gtop')[0])
                     t['iuphar'] = link_setup.format(gtop_links[0], t['iuphar'])
 
+                if t['gene_weblink']:
+                    t['gene_display'] = link_setup.format(t['gene_weblink'], t['gene_name'])
+                else:
+                    t['gene_display'] = t['gene_name']
+
                 t['approved_target'] = approved[t['entry_name']] if t['entry_name'] in approved.keys() else 0
                 t['clinical_target'] = trials[t['entry_name']] if t['entry_name'] in trials.keys() else 0
 
-                data_table += "<tr> \
-                <td data-sort=\"0\"><input autocomplete='off' class=\"form-check-input\" type=\"checkbox\" name=\"reference\" data-entry=\"{}\" entry-value=\"{}\"></td> \
-                <td>{}</td> \
-                <td>{}</td> \
-                <td>{}</td> \
-                <td>{}</td> \
-                <td><span class=\"expand\">{}</span></td> \
-                <td><span class=\"expand\">{}</span></td> \
-                <td>{}</td> \
-                <td>{}</td> \
-                <td>{}</td> \
-                </tr> \n".format(
-                    t['slug'],
-                    t['id'],
-                    t['class'],
-                    t['ligandtype'],
-                    t['family'],
-                    t['species'],
-                    t['uniprot'],
-                    t['iuphar'],
-                    t['ligand_count'],
-                    t['approved_target'],
-                    t['clinical_target'],
-                )
+                data_table += f'''<tr>
+                <td data-sort="0"><input autocomplete='off' class="form-check-input" type="checkbox" name="reference" 
+                data-entry="{t['slug']}" entry-value="{t['id']}"></td>
+                <td>{t['class']}</td>
+                <td>{t['ligandtype']}</td>
+                <td>{t['family']}</td>
+                <td>{t['species']}</td>
+                <td><span class="expand">{t['uniprot']}</span></td>
+                <td><span>{t['gene_display']}</span></td> 
+                <td><span class="expand">{t['iuphar']}</span></td>
+                <td>{t['ligand_count']}</td>
+                <td>{t['approved_target']}</td>
+                <td>{t['clinical_target']}</td>
+                </tr> \n'''
 
         data_table += "</tbody></table>"
         cache.set("ligand_count_table", data_table, 60*60*24*7)
@@ -256,7 +348,8 @@ def getTargetTable():
                                           family__slug__startswith="0",
                                           species__common_name="Human").prefetch_related(
             "family",
-            "family__parent__parent__parent"
+            "family__parent__parent__parent",
+            "genes"
         )
         # Acquired slugs
         slug_list = [ p.family.slug for p in proteins ]
@@ -272,11 +365,12 @@ def getTargetTable():
                                         .order_by("id")\
                                         .prefetch_related(
                 "family",
-                "family__parent__parent__parent"
+                "family__parent__parent__parent",
+                "genes"
             )
             proteins = proteins | missing[:1]
 
-        pdbids = list(Structure.objects.all().exclude(structure_type__slug__startswith='af-').values_list("pdb_code__index", "protein_conformation__protein__family_id"))
+        pdbids = list(Structure.objects.filter(structure_type__origin='experiment').values_list("pdb_code__index", "protein_conformation__protein__family_id"))
 
         allpdbs = {}
         for pdb in pdbids:
@@ -310,7 +404,7 @@ def getTargetTable():
             <thead>\
               <tr> \
                 <th colspan=1>&nbsp;</th> \
-                <th colspan=5>Receptor classification</th> \
+                <th colspan=6>Receptor classification</th> \
                 <th colspan=1>Ligands</th> \
                 <th colspan=2>Structures</th> \
 <!--                <th colspan=2>Drugs</th> -->\
@@ -322,6 +416,7 @@ def getTargetTable():
                 <th>Ligand type<br>&nbsp;</th> \
                 <th style=\"width; 100px;\">Family<br>&nbsp;</th> \
                 <th style=\"color:red\">Receptor<br>(UniProt)</th> \
+                <th>Gene<br>&nbsp;</th> \
                 <th style=\"color:red\">Receptor<br>(GtP)</th> \
                 <th>Count</th> \
                 <th>Count</th> \
@@ -354,6 +449,14 @@ def getTargetTable():
             t['family'] = p.family.parent.short()
             t['uniprot'] = p.entry_short()
             t['iuphar'] = p.family.name.replace("receptor", '').strip()
+            if(p.genes.first()):
+                t['gene_name'] = p.genes.first().name
+                t['gene_entrez'] = p.genes.first().entrez_id
+                t['gene_weblink'] = p.genes.first().entrez_weblink if p.genes.first().entrez_id else None
+            else:
+                t['gene_name'] = "-"
+                t['gene_entrez'] = None
+                t['gene_weblink'] = None
 
             # Web resource links
             #t['uniprot_link'] = ""
@@ -365,6 +468,11 @@ def getTargetTable():
             gtop_links = p.web_links.filter(web_resource__slug='gtop')
             if gtop_links.count() > 0:
                 t['iuphar'] = link_setup.format(gtop_links[0], t['iuphar'])
+                
+            if t['gene_weblink']:
+                t['gene_display'] = link_setup.format(t['gene_weblink'], t['gene_name'])
+            else:
+                t['gene_display'] = t['gene_name']
 
             # Ligand count
             t['ligand_count'] = 0
@@ -396,44 +504,32 @@ def getTargetTable():
                 else:
                     t[gprotein] = "-"
 
-            data_table += "<tr> \
-            <td data-sort=\"0\"><input autocomplete='off' class=\"form-check-input\" type=\"checkbox\" name=\"targets\" id=\"{}\" data-entry=\"{}\" data-human=\"{}\"></td> \
-            <td>{}</td> \
-            <td>{}</td> \
-            <td>{}</td> \
-            <td><span class=\"expand\">{}</span></td> \
-            <td><span class=\"expand\">{}</span></td> \
-            <td>{}</td> \
-            <td>{}</td> \
-            <td><span {} data-html=\"true\" data-placement=\"bottom\" title=\"{}\" data-search=\"{}\" >{}</span></td> \
-            <!--<td>{}</td> \
-            <td>{}</td>--> \
-            <td>{}</td> \
-            <td>{}</td> \
-            <td>{}</td> \
-            <td>{}</td> \
-            </tr> \n".format(
-                t['slug'],
-                t['name'],
-                ("No" if t['slug'] in missing_slugs else "Yes"),
-                t['class'],
-                t['ligandtype'],
-                t['family'],
-                t['uniprot'],
-                t['iuphar'],
-                t['ligand_count'],
-                t['pdb_count'],
-                ("data-toggle=\"tooltip\"" if t['pdbid_tooltip']!="-" else ""),
-                t['pdbid_tooltip'],
-                t['pdbid'],      # This one hidden used for search box.
-                t['pdbid_two'],  # This one shown. Show only first two pdb's.
-                t['approved_target'],
-                t['clinical_target'],
-                t[gprotein_families[0]].capitalize(),
-                t[gprotein_families[1]].capitalize(),
-                t[gprotein_families[2]].capitalize(),
-                t[gprotein_families[3]].capitalize(),
-            )
+            # data-search="{t["pdbid"]}" is hidden and used for search box. 
+            # t["pdbid_two"] is one shown. Show only first two pdb's.
+            is_human = ("No" if t['slug'] in missing_slugs else "Yes")
+            data_toggle = 'data-toggle="tooltip"' if t["pdbid_tooltip"]!="-" else ""
+            data_table += f'''<tr> 
+            <td data-sort="0"><input autocomplete="off" class="form-check-input" type="checkbox" 
+                name="targets" id="{t["slug"]}" data-entry="{t["name"]}" 
+                    data-human="{is_human}"></td> 
+            <td>{t["class"]}</td> 
+            <td>{t["ligandtype"]}</td> 
+            <td>{t["family"]}</td> 
+            <td><span>{t["uniprot"]}</span></td>
+            <td><span>{t['gene_display']}</span></td> 
+            <td><span class="expand">{t["iuphar"]}</span></td> 
+            <td>{t["ligand_count"]}</td> 
+            <td>{t["pdb_count"]}</td> 
+            <td><span {data_toggle} data-html="true" 
+                data-placement="bottom" title="{t["pdbid_tooltip"]}" 
+                data-search="{t["pdbid"]}" >{ t["pdbid_two"]}</span></td> 
+            <!--<td>{t["approved_target"]}</td> 
+            <td>{t["clinical_target"]}</td>--> 
+            <td>{ t[gprotein_families[0]].capitalize()}</td> 
+            <td>{t[gprotein_families[1]].capitalize()}</td> 
+            <td>{t[gprotein_families[2]].capitalize()}</td> 
+            <td>{t[gprotein_families[3]].capitalize()}</td> 
+            </tr>\n''' 
 
         data_table += "</tbody></table>"
         cache.set("target_table", data_table, 60*60*24*7)
@@ -490,7 +586,7 @@ def getReferenceTable(pathway, subtype):
                 <thead>\
                   <tr> \
                     <th colspan=1>&nbsp;</th> \
-                    <th colspan=6>Receptor classification</th> \
+                    <th colspan=7>Receptor classification</th> \
                     <th colspan=1 style=\"border-left: 1px solid black; text-align:left\">Number of ligands</th> \
                   </tr> \
                   <tr> \
@@ -500,6 +596,7 @@ def getReferenceTable(pathway, subtype):
                     <th style=\"width; 100px;\">Family<br>&nbsp;</th> \
                     <th>Species<br>&nbsp;</th> \
                     <th style=\"color:red\">Receptor<br>(UniProt)</th> \
+                    <th>Gene<br>&nbsp;</th> \
                     <th style=\"color:red\">Receptor<br>(GtP)</th> \
                     <th>Tested<br>(total)</th> \
                   </tr> \
@@ -511,7 +608,7 @@ def getReferenceTable(pathway, subtype):
                 <thead>\
                   <tr> \
                     <th colspan=1>&nbsp;</th> \
-                    <th colspan=6>Receptor classification</th> \
+                    <th colspan=7>Receptor classification</th> \
                     <th colspan=4 style=\"border-left: 1px solid black; text-align:left\">Number of ligands</th> \
                   </tr> \
                   <tr> \
@@ -521,6 +618,7 @@ def getReferenceTable(pathway, subtype):
                     <th style=\"width; 100px;\">Family<br>&nbsp;</th> \
                     <th>Species<br>&nbsp;</th> \
                     <th style=\"color:red\">Receptor<br>(UniProt)</th> \
+                    <th>Gene<br>&nbsp;</th> \
                     <th style=\"color:red\">Receptor<br>(GtP)</th> \
                     <th>Tested<br>(total)</th> \
                     <th>Balanced<br>references</th> \
@@ -551,6 +649,15 @@ def getReferenceTable(pathway, subtype):
             t['family'] = p.family.parent.short()
             t['uniprot'] = p.entry_short()
             t['iuphar'] = p.family.name.replace("receptor", '').strip()
+            if(p.genes.first()):
+                t['gene_name'] = p.genes.first().name
+                t['gene_entrez'] = p.genes.first().entrez_id
+                t['gene_weblink'] = p.genes.first().entrez_weblink if p.genes.first().entrez_id else None
+            else:
+                t['gene_name'] = "-"
+                t['gene_entrez'] = None
+                t['gene_weblink'] = None
+
 
             uniprot_links = p.web_links.filter(web_resource__slug='uniprot')
             if uniprot_links.count() > 0:
@@ -559,6 +666,11 @@ def getReferenceTable(pathway, subtype):
             gtop_links = p.web_links.filter(web_resource__slug='gtop')
             if gtop_links.count() > 0:
                 t['iuphar'] = link_setup.format(gtop_links[0], t['iuphar'])
+
+            if t['gene_weblink']:
+                t['gene_display'] = link_setup.format(t['gene_weblink'], t['gene_name'])
+            else:
+                t['gene_display'] = t['gene_name']
 
             # Ligand count
             t['ligand_count'] = 0
@@ -585,58 +697,34 @@ def getReferenceTable(pathway, subtype):
                     t['pathway_span'] = ligand_tot[t['id']][3]
 
             if pathway == "yes":
-                data_table += "<tr> \
-                <td data-sort=\"0\"><input autocomplete='off' class=\"form-check-input\" type=\"checkbox\" name=\"reference\" id=\"{}\" data-entry=\"{}\" entry-value=\"{}\"></td> \
-                <td>{}</td> \
-                <td>{}</td> \
-                <td>{}</td> \
-                <td>{}</td> \
-                <td><span class=\"expand\">{}</span></td> \
-                <td><span class=\"expand\">{}</span></td> \
-                <td style=\"border-left: 1px solid black; text-align:left\">{}</td> \
-                </tr> \n".format(
-                    t['slug'],
-                    t['name'],
-                    t['id'],
-                    t['class'],
-                    t['ligandtype'],
-                    t['family'],
-                    t['species'],
-                    t['uniprot'],
-                    t['iuphar'],
-                    t['ligand_count'],
-                )
+                data_table += f'''<tr>
+                <td data-sort="0"><input autocomplete='off' class="form-check-input" 
+                type="checkbox" name="reference" id="{t['slug']}" data-entry="{t['name']}" entry-value="{t['id']}"></td>
+                <td>{t['class']}</td>
+                <td>{ t['ligandtype']}</td>
+                <td>{t['family']}</td>
+                <td>{t['species']}</td>
+                <td><span class="expand">{t['uniprot']}</span></td>
+                <td><span class="expand">{t['gene_display']}</span></td> 
+                <td><span class="expand">{t['iuphar']}</span></td>
+                <td style="border-left: 1px solid black; text-align:left">{t['ligand_count']}</td>
+                </tr> \n'''
             else:
-                data_table += "<tr> \
-                <td data-sort=\"0\"><input autocomplete='off' class=\"form-check-input\" type=\"checkbox\" name=\"reference\" id=\"{}\" data-entry=\"{}\" entry-value=\"{}\"></td> \
-                <td>{}</td> \
-                <td>{}</td> \
-                <td>{}</td> \
-                <td>{}</td> \
-                <td><span class=\"expand\">{}</span></td> \
-                <td><span class=\"expand\">{}</span></td> \
-                <td style=\"border-left: 1px solid black; text-align:left\">{}</td> \
-                <td data-search=\"{}\">{}</td> \
-                <td data-search=\"{}\">{}</td> \
-                <td data-search=\"{}\">{}</td> \
-                </tr> \n".format(
-                    t['slug'],
-                    t['name'],
-                    t['id'],
-                    t['class'],
-                    t['ligandtype'],
-                    t['family'],
-                    t['species'],
-                    t['uniprot'],
-                    t['iuphar'],
-                    t['ligand_count'],
-                    t['balanced_span'],
-                    t['balanced_refs'],
-                    t['pathway_span'],
-                    t['pathway_count'],
-                    t['biased_span'],
-                    t['biased_count'],
-                )
+                data_table += f'''<tr>
+                <td data-sort="0"><input autocomplete='off' class="form-check-input" 
+                type="checkbox" name="reference" id="{t['slug']}" data-entry="{t['name']}" entry-value="{t['id']}"></td> 
+                <td>{t['class']}</td> 
+                <td>{t['ligandtype']}</td> 
+                <td>{ t['family']}</td> 
+                <td>{t['species']}</td> 
+                <td><span class="expand">{t['uniprot']}</span></td>
+                <td><span class="expand">{t['gene_display']}</span></td>  
+                <td><span class="expand">{t['iuphar']}</span></td> 
+                <td style="border-left: 1px solid black; text-align:left">{t['ligand_count']}</td> 
+                <td data-search="{t['balanced_span']}">{t['balanced_refs']}</td> 
+                <td data-search="{t['pathway_span']}">{t['pathway_count']}</td> 
+                <td data-search="{t['biased_span']}">{t['biased_count']}</td> 
+                </tr> \n'''
 
         data_table += "</tbody></table>"
         cache.set(cache_key, data_table, 60*60*24*7)
@@ -1077,13 +1165,15 @@ class AbsSegmentSelection(TemplateView):
     amino_acid_group_names_old = definitions.AMINO_ACID_GROUP_NAMES_OLD
 
     # --- helper: decide color class for one segment ---
-    def _get_segment_color_class(self, seg):
+    @staticmethod
+    def _get_segment_color_class(seg):
         """
         Decide which UI color class to use based on category/slug/name.
         """
         slug = (seg.slug or '').upper()
         name = (seg.name or '')
         category = (seg.category or '').lower()
+        domain = (seg.domain or '').upper()
 
         # Terminus: split into N-term / C-term
         if category == 'terminus':
@@ -1094,6 +1184,16 @@ class AbsSegmentSelection(TemplateView):
         # Helix 8 explicitly
         if slug == 'H8' or name.startswith('Helix 8'):
             return 'seg-h8'
+
+        # GAIN domain and Class D1 sub-segments: color by structural category
+        if domain == 'GAIN' or slug.startswith('D1'):
+            if category == 'sheet':
+                return 'seg-sheet'
+            if category in ('loop', 'turn'):
+                return 'seg-ecl'
+            if category == 'helix':
+                return 'seg-tm'
+            return 'seg-default'
 
         # Transmembrane helices (TM1–TM7 etc.)
         if slug.startswith('TM'):
@@ -1110,12 +1210,29 @@ class AbsSegmentSelection(TemplateView):
         # Fallback
         return 'seg-default'
 
+    # --- helper: decide which of the 3 schematic rows a segment belongs on ---
+    def _get_segment_row_class(self, seg):
+        """
+        All-GPCR snake-plot rows: extracellular/N-term on top, TMs in the
+        middle, intracellular/H8/C-term on the bottom.
+        """
+        slug = (seg.slug or '').upper()
+
+        if slug.startswith('N-TERM') or slug.startswith('ECL'):
+            return 'seg-row-1'
+        if slug.startswith('TM'):
+            return 'seg-row-2'
+        # ICL*, H8, C-term
+        return 'seg-row-3'
+
     def _assign_segment_colors(self, segments):
         """
-        Attach ui_color_class attribute to each segment.
+        Attach ui_color_class, ui_row_class and display_slug attributes to each segment.
         """
         for seg in segments:
             seg.ui_color_class = self._get_segment_color_class(seg)
+            seg.ui_row_class = self._get_segment_row_class(seg)
+            seg.display_slug = (seg.slug or '').replace('ECL', 'EL').replace('ICL', 'IL')
         return segments
 
     def get_context_data(self, **kwargs):
@@ -1165,6 +1282,7 @@ class AbsSegmentSelection(TemplateView):
             .exclude(name__startswith='ECD')
             .exclude(domain='GAIN')          # keep GAIN separate
             .exclude(slug__startswith='D1')  # keep D1 sheets/turns separate
+            .exclude(slug='ICL4')            # not shown in the schematic segment layout
             .order_by('id')
             .prefetch_related('generic_numbers')
         )
@@ -1385,8 +1503,11 @@ def AddToSelection(request):
     # add simple selection to session
     request.session['selection'] = simple_selection
 
-    # context
-    context = selection.dict(selection_type)
+    # context - filtered to the calling alignment flow's domain if applicable
+    # (never affects what was just saved to session above, only what renders)
+    domain = _current_alignment_domain(request)
+    display_selection = _filter_selection_for_alignment_domain(selection, domain) if domain else selection
+    context = display_selection.dict(selection_type)
 
     # template to load
     if selection_subtype == 'site_residue':
@@ -1428,8 +1549,10 @@ def RemoveFromSelection(request):
     # add simple selection to session
     request.session['selection'] = simple_selection
 
-    # context
-    context = selection.dict(selection_type)
+    # context - filtered to the calling alignment flow's domain if applicable
+    domain = _current_alignment_domain(request)
+    display_selection = _filter_selection_for_alignment_domain(selection, domain) if domain else selection
+    context = display_selection.dict(selection_type)
 
     # template to load
     if selection_subtype == 'site_residue':
@@ -1799,6 +1922,26 @@ def SelectAlignableResidues(request):
                 has_b2 = True
             if cname.startswith('Class D1'):
                 has_d1 = True
+
+        # ------------------------------------------------------------------
+        # 3b) Strip any already-selected GAIN/D1 segments that are no longer
+        #     valid (e.g. their Class B2/D1 target was removed since they
+        #     were added). The add loop further down only ever ADDS segments
+        #     - without this, a stale GAIN/D1 segment from an earlier click
+        #     would survive here indefinitely and get re-added every time
+        #     this button is pressed, even with no matching target present.
+        # ------------------------------------------------------------------
+        def _is_still_valid_class_specific(sel_item):
+            seg = sel_item.item
+            if not isinstance(seg, ProteinSegment):
+                return True
+            if seg.domain == 'GAIN' and not has_b2:
+                return False
+            if seg.slug.startswith('D1') and not has_d1:
+                return False
+            return True
+
+        selection.segments = [s for s in selection.segments if _is_still_valid_class_specific(s)]
 
         # ------------------------------------------------------------------
         # 4) Drop segments that are not relevant:
@@ -2229,10 +2372,28 @@ def ExpandSegment(request):
     # get simple selection from session
     simple_selection = request.session.get('selection', False)
 
+    # fetch the segment once - reused below for scheme defaulting, the
+    # wide-grid check and the residue button color coding
+    segment = ProteinSegment.objects.get(id=segment_id)
+    is_gain = segment.domain == 'GAIN'
+    is_d1 = (segment.slug or '').startswith('D1')
+
     # find the relevant numbering scheme (based on target selection)
     cgn = False
     if numbering_scheme_slug == 'cgn':
         cgn = True
+    elif numbering_scheme_slug == 'false' and is_gain:
+        # GAIN domain segments only exist on Class B2 receptors - always
+        # default to the GAIN scheme, rather than whichever selected protein
+        # happens to be first (which could be any class, e.g. Class A, if it
+        # isn't the B2 target itself).
+        numbering_scheme = ResidueNumberingScheme.objects.get(slug='gpcrdbgain')
+    elif numbering_scheme_slug == 'false' and is_d1:
+        # Class D1's fungal-pheromone segments only exist on Class D1
+        # receptors - always default to the Class D scheme, rather than
+        # whichever selected protein happens to be first (which could be
+        # any class, e.g. Class A, if it isn't the D1 target itself).
+        numbering_scheme = ResidueNumberingScheme.objects.get(slug='gpcrdbd')
     elif numbering_scheme_slug == 'false' and simple_selection:
         first_item = False
         if simple_selection.reference:
@@ -2255,6 +2416,14 @@ def ExpandSegment(request):
     else:
         numbering_scheme = ResidueNumberingScheme.objects.get(slug="gpcrdba")
 
+    # GAIN/D1 labels (e.g. "B.S13.50", "D1S1.49") are noticeably longer than
+    # normal generic-number labels (e.g. "3x39") - the residue grid needs
+    # wider columns (fewer per row) for these or the text gets cramped.
+    residue_grid_wide = is_gain or is_d1
+
+    # color residue buttons the same as this segment's arrow on the schematic
+    ui_color_class = AbsSegmentSelection._get_segment_color_class(segment)
+
     if cgn ==True:
         # fetch the generic numbers for CGN differently
         context = {}
@@ -2265,6 +2434,8 @@ def ExpandSegment(request):
         context['scheme'] = ResidueNumberingScheme.objects.filter(slug='cgn')
         context['schemes'] = ResidueNumberingScheme.objects.filter(slug='cgn')
         context['segment_id'] = segment_id
+        context['residue_grid_wide'] = residue_grid_wide
+        context['ui_color_class'] = ui_color_class
     else:
         # fetch the generic numbers
         context = {}
@@ -2275,6 +2446,8 @@ def ExpandSegment(request):
         context['scheme'] = numbering_scheme
         context['schemes'] = ResidueNumberingScheme.objects.filter(parent__isnull=False)
         context['segment_id'] = segment_id
+        context['residue_grid_wide'] = residue_grid_wide
+        context['ui_color_class'] = ui_color_class
 
     return render(request, 'common/segment_generic_numbers.html', context)
 
@@ -2645,6 +2818,32 @@ def ResiduesDownload(request):
     outstream.seek(0)
     response = HttpResponse(outstream.read(), content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
     response['Content-Disposition'] = "attachment; filename=segment_selection.xlsx"
+
+    return response
+
+def ResiduesTemplateDownload(request):
+    """
+    Generates a small example .xlsx on the fly, illustrating the column
+    layout expected by ResiduesUpload (col A: 'helix'/'residue', col B:
+    numbering scheme slug for 'residue' rows only, col C: segment slug or
+    residue label) - not tied to any actual selection, just a reference.
+    """
+    example_rows = [
+        ['helix', '', 'TM1'],
+        ['helix', '', 'TM2'],
+        ['residue', 'gpcrdba', '1x50'],
+        ['residue', 'gpcrdbb', '2x50'],
+    ]
+
+    outstream = BytesIO()
+    wb = xlsxwriter.Workbook(outstream, {'in_memory': True})
+    worksheet = wb.add_worksheet()
+    for row_count, row in enumerate(example_rows):
+        worksheet.write_row(row_count, 0, row)
+    wb.close()
+    outstream.seek(0)
+    response = HttpResponse(outstream.read(), content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    response['Content-Disposition'] = "attachment; filename=residue_positions_template.xlsx"
 
     return response
 
@@ -3161,10 +3360,55 @@ def check_selection_status(request):
         if fname.startswith("Class D1"):
             has_class_d1 = True
 
-    return JsonResponse({
+    # ------------------------------------------------------------------
+    # Bulk-remove any GAIN/D1 segment or residue selection that's no longer
+    # valid (its Class B2/D1 target was removed) - whole segments and
+    # individual residues both, in one pass, not one RemoveFromSelection
+    # AJAX call per stale item. Residue items resolve their segment via
+    # default_generic_number - batched into a single query rather than one
+    # per residue.
+    # ------------------------------------------------------------------
+    segments = getattr(selection, 'segments', [])
+    residue_items = [s for s in segments if isinstance(s.item, ResidueGenericNumberEquivalent)]
+
+    residue_segment_info = {}
+    if residue_items:
+        default_gn_ids = [s.item.default_generic_number_id for s in residue_items]
+        residue_segment_info = {
+            row['id']: (row['protein_segment__domain'], row['protein_segment__slug'] or '')
+            for row in ResidueGenericNumber.objects.filter(id__in=default_gn_ids)
+                .values('id', 'protein_segment__domain', 'protein_segment__slug')
+        }
+
+    def _is_still_valid(sel_item):
+        if isinstance(sel_item.item, ProteinSegment):
+            domain, slug = sel_item.item.domain, sel_item.item.slug
+        elif isinstance(sel_item.item, ResidueGenericNumberEquivalent):
+            domain, slug = residue_segment_info.get(sel_item.item.default_generic_number_id, (None, ''))
+        else:
+            return True
+
+        if domain == 'GAIN' and not has_class_b2:
+            return False
+        if slug.startswith('D1') and not has_class_d1:
+            return False
+        return True
+
+    filtered_segments = [s for s in segments if _is_still_valid(s)]
+
+    response = {
         'has_class_b2': has_class_b2,
         'has_class_d1': has_class_d1,
-    })
+    }
+
+    if len(filtered_segments) != len(segments):
+        selection.segments = filtered_segments
+        request.session['selection'] = selection.exporter()
+        response['segments_html'] = render_to_string(
+            'common/selection_lists.html', selection.dict('segments'), request=request
+        )
+
+    return JsonResponse(response)
 
 def get_gpcr_class_name_for_item(sel_item):
     """

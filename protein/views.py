@@ -83,7 +83,7 @@ def detail(request, slug):
         alt_genes = genes[1:]
 
     # get structures of this protein
-    structures = Structure.objects.filter(protein_conformation__protein__parent=p).exclude(structure_type__slug__startswith='af-')
+    structures = Structure.objects.filter(protein_conformation__protein__parent=p, structure_type__origin='experiment')
 
     # get residues
     residues = Residue.objects.filter(protein_conformation=pc).order_by('sequence_number').prefetch_related(
@@ -190,7 +190,7 @@ def get_sankey_data(entry_name):
         level_0_node = next((item['node'] for item in sankey['nodes'] if item['name'] == indication_0), None)
 
         if [ligand_name, ligand_id] not in caches['ligands']:
-            sankey['nodes'].append({"node": node_counter, "name": ligand_name, "url": '/ligand/'+str(ligand_id)+'/info',"column":"x2"})
+            sankey['nodes'].append({"node": node_counter, "name": ligand_name, "url": '/ligand/'+str(ligand_id)+'/group',"column":"x2"})
             node_counter += 1
             caches['ligands'].append([ligand_name, ligand_id])
         lig_node = next((item['node'] for item in sankey['nodes'] if item['name'] == ligand_name), None)
@@ -656,7 +656,7 @@ def isoforms(request):
     n = 0
     for c,c_v in coverage.items():
         c_v['name'] = c_v['name'].split("(")[0]
-        if c_v['name'].strip() in ['Other GPCRs']:
+        if c_v['name'].strip() in ['Unclassified']:
             continue
         children = []
         for lt,lt_v in c_v['children'].items():
@@ -729,7 +729,7 @@ def AlignIsoformWildtype(request):
     from common.tools import fetch_from_web_api
     from Bio import pairwise2
     from Bio.pairwise2 import format_alignment
-    from Bio.SubsMat import MatrixInfo as matlist
+    from Bio.Align import substitution_matrices as matlist
     from Bio.Align.Applications import ClustalOmegaCommandline
     from Bio import AlignIO
     cache_dir = ['ensembl', 'isoform']

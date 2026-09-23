@@ -7,9 +7,13 @@ onchange="ExpandSegment('{{ segment_id }}', '{{ position_type }}', this.value)">
     </option>
 {% endfor %}
 </select></p>
+<div class="residue-grid{% if residue_grid_wide %} residue-grid-wide{% endif %}">
 {% for gn in generic_numbers %}
-    <a href="javascript:void(0)" onclick="AddToSelection('segments', '{{ position_type }}', '{{ gn.id }}')"
-    class="btn btn-success btn-sm">
+    <a href="javascript:void(0)" onclick="ToggleResidueSelection(this, '{{ position_type }}')"
+    class="btn btn-sm {{ ui_color_class }}"
+    data-gn-id="{{ gn.id }}"
+    data-default-gn-id="{{ gn.default_generic_number_id }}">
         {{ gn.label }}
     </a>
 {% endfor %}
+</div>

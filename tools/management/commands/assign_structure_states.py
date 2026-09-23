@@ -33,18 +33,33 @@ class Command(BaseCommand):
             class_slugs = list(ProteinFamily.objects.filter(parent__slug="000") \
                                 .filter(slug__startswith="00").values_list("slug"))
 
+####
+        from structure.functions import ParseStructureCSV
+        self.parsed_structures = ParseStructureCSV()
+####
+
         for slug in class_slugs:
             print("Processing class {}".format(slug[0]))
 
             # grab all PDB-codes for this class
-            structure_ids = list(Structure.objects.filter(protein_conformation__protein__family__slug__startswith=slug[0]) \
-                                .exclude(structure_type__slug__startswith='af-').values_list("pdb_code__index"))
+            structure_ids = list(Structure.objects.filter(protein_conformation__protein__family__slug__startswith=slug[0],
+                                                          structure_type__origin='experiment') \
+                                                  .values_list("pdb_code__index"))
 
             structure_ids = [x[0] for x in structure_ids]
 
             ### Skipping class C as author based state annotation is used here instead
             if slug[0].startswith('004'):
+#####
+                structs = Structure.objects.filter(protein_conformation__protein__family__slug__startswith='004')
+                for s in structs:
+                    if s.pdb_code.index in self.parsed_structures.structures:
+                        s.state = ProteinState.objects.get(name=self.parsed_structures.structures[s.pdb_code.index]['state'])
+                        s.gprot_bound_likeness = None
+                        s.save()
+#####
                 continue
+
 
             if len(structure_ids) > 0:
 
@@ -74,6 +89,7 @@ class Command(BaseCommand):
                 class_pair_inactives['007'] = ["2x46_6x37", 11.9] #O1
                 class_pair_inactives['008'] = ["2x46_6x37", 11.9] #O2
                 class_pair_inactives['009'] = ["2x46_6x37", 1000] #T2 PLACEHOLDER
+                class_pair_inactives['010'] = ["2x46_6x37", 11.9]
 
                 inactive_ids = list(Distance.objects.filter(distance__lt=class_pair_inactives[slug[0]][1]*distance_scaling_factor) \
                                     .filter(gns_pair=class_pair_inactives[slug[0]][0]) \
@@ -91,6 +107,14 @@ class Command(BaseCommand):
 
                 if "6FJ3" in inactive_ids:
                     inactive_ids.remove("6FJ3")
+                if "9IJA" in inactive_ids:
+                    inactive_ids.remove("9IJA")
+                if "9IIW" in inactive_ids:
+                    inactive_ids.remove("9IIW")
+                if "8JRV" in active_ids:
+                    active_ids.remove("8JRV")
+                if "8JRU" in active_ids:
+                    active_ids.remove("8JRU")
                 if "7XBX" in active_ids:
                     active_ids.remove("7XBX")
                 if "7XBW" in active_ids:
@@ -159,7 +183,9 @@ class Command(BaseCommand):
                         "6Z66" : "intermediate",
                         "6Z4V" : "intermediate",
                         "6Z8N" : "intermediate",
-                        "6ZA8" : "intermediate"
+                        "6ZA8" : "intermediate",
+                        "8JRV" : "active",
+                        "8JRU" : "active"
                     }
 
                     # Percentage score for TM2-TM6 opening
@@ -200,6 +226,8 @@ class Command(BaseCommand):
                             structure_state = "active"
                         elif score < 0 and slug[0] == "006": # above this score always inactive structure
                             structure_state = "active"
+                        elif score <  15 and slug[0] == "009": # above this score always inactive structure
+                            structure_state = "active"
                         elif score < 0 and slug[0] not in ["001", "004", "006"]: # above this score always inactive structure
                             structure_state = "active"
 
@@ -229,7 +257,7 @@ class Command(BaseCommand):
                             gprot_likeness = None
                             percentage = None
 
-                        #print(slug[0], pdb, score, min_score, max_score, gprot_likeness, structure_state)
+                        print(slug[0], pdb, score, min_score, max_score, gprot_likeness, structure_state)
 
                         # Store for structure
                         struct = Structure.objects.get(pdb_code__index=pdb)
@@ -279,12 +307,14 @@ class Command(BaseCommand):
             self.logger.info("ASSIGNING the \"representative\" tag for unique structure-state complexes")
 
             # Set the representative state of all GPCR structure to False
-            Structure.objects.filter(protein_conformation__protein__family__slug__startswith="00").exclude(structure_type__slug__startswith='af-').update(representative=False)
+            Structure.objects.filter(protein_conformation__protein__family__slug__startswith="00", structure_type__origin='experiment').update(representative=False)
 
 
             # Select all GPCR structures and get unique slug-state combinations
-            struct_combs = list(Structure.objects.filter(protein_conformation__protein__family__slug__startswith="00") \
-                                .exclude(structure_type__slug__startswith='af-').values_list("protein_conformation__protein__family__slug", "state", "pk", "resolution", "protein_conformation__pk", "protein_conformation__protein__parent__pk"))
+            struct_combs = list(Structure.objects.filter(protein_conformation__protein__family__slug__startswith="00", 
+                                                         structure_type__origin='experiment') \
+                                                 .values_list("protein_conformation__protein__family__slug", "state", "pk", "resolution", 
+                                                              "protein_conformation__pk", "protein_conformation__protein__parent__pk"))
 
             # Grab protein conformations IDs and receptor slugs
             struct_conf_pks = [struct[4] for struct in struct_combs]

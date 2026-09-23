@@ -1,1714 +1,1879 @@
 ﻿{% extends "home/base.html" %}
 {% load static %}
+{% load structure_extras %}
+{% load humanize %}
 {% block addon_css %}
-<link rel="stylesheet" href="{% static 'home/css/nv.d3.min.css' %}" type="text/css" />
-<link rel="stylesheet" href="{% static 'home/css/nvd3-update.css' %}" type="text/css" />
+<!-- <link rel="stylesheet" href="{% static 'home/css/nv.d3.min.css' %}" type="text/css" /> -->
+<!-- <link rel="stylesheet" href="{% static 'home/css/nvd3-update.css' %}" type="text/css" /> -->
 <link href="{% static 'home/css/bootstrap-responsive.css' %}" rel="stylesheet" media="screen">
 <link href="https://gitcdn.github.io/bootstrap-toggle/2.2.2/css/bootstrap-toggle.min.css" rel="stylesheet">
+
+<!-- DataTables CSS -->
+<link rel="stylesheet" href="{% static '/home/css/frameworks/datatables/datatables_bundle.min-2.3.8.css' %}">
+<!-- Select2 CSS -->
+<link rel="stylesheet" href="{% static '/home/css/frameworks/select2/4.1.0/select2.min.css' %}">
+<!-- Spectrum color picker CSS -- loaded without this before, so the picker popup never worked -->
+<link rel="stylesheet" href="{% static 'home/css/Spectrum_1_8_1.css' %}" type="text/css" />
+<!-- Dropdown-positioning + customize-colors picker layout, shared with the classification wheel -->
+<link rel="stylesheet" href="{% static 'home/css/classification/wheel.css' %}">
+
 <style>
-  .node circle {
+    .node circle {
     /*fill: #fff;*/
     /*stroke: DarkGreen;*/
     /*fill: DarkGreen;*/
     stroke: #000000 ;
     stroke-width: .3px;
-  }
+    }
 
-  .node {
+    .node {
     font: 8px sans-serif;
-  }
+    }
 
-  .link {
+    .link {
     fill: none;
     stroke: #eee;
     stroke-width: 1px;
-  }
+    }
 
-  .node text {
+    .node text {
     font: 8px sans-serif;
-  }
+    }
 
-  .links {
+    .links {
     fill: none;
     stroke: #000;
-  }
+    }
 
-  .link-extensions {
+    .link-extensions {
     fill: none;
     stroke: #000;
     stroke-opacity: .25;
-  }
+    }
 
-  .labels {
+    .labels {
     font: 14px Palatino;
     font-weight: bold;
-  }
+    }
 
-  .link--active {
+    .link--active {
     stroke: #000 !important;
     stroke-width: 3.5px;
-  }
+    }
 
-  .link-extension--active {
+    .link-extension--active {
     stroke-opacity: .6;
-  }
+    }
 
-  .label--active {
+    .label--active {
     font-weight: bold;
-  }
-</style>
-{% endblock %}
+    }
 
+    h3.subHeader {
+        font-size: 200%;
+        font-weight: bold;
+        margin-top: 30px;
+        margin-bottom: 10px;
+        padding: 5px;
+        text-align: center;
+        border-bottom: 2px solid #7b7b7b;
+    }
+
+    h4.subHeader {
+        font-size: 150%;
+        font-weight: bold;
+        margin-top: 30px;
+        margin-bottom: 20px;
+        padding:3px;
+        border-bottom: 1px solid black;
+    }
+    span.footer {
+        font-style: italic;
+        display: block;
+        margin: 20px auto 10px auto;        
+    }
+
+    .table_head_emphasis td {
+        background-color: #f2f2f2;
+        font-weight: bold;
+    }
+    
+    .table_head_emphasis td {
+        vertical-align: bottom;
+    }
+
+    .row_title {
+        font-weight: bold;
+    }
+
+    .col-filter.numericrange-filter {
+        width: 60px;
+    }
+
+    .col-filter.text-filter {
+        width: 140px;
+    }
+
+    .col-filter.text-filter.uniprot_filter_input {
+        width: 100px;
+    }
+
+    .col-filter.text-filter.gene_filter_input {
+        width: 85px;
+    }
+
+    .col-filter.text-filter.species_filter_input {
+        width: 85px;
+    }
+
+    .chart_controls {
+        width: 100%;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 6px;
+        justify-content: center;
+        margin: 30px;
+    }
+
+    .plot-container.plotly {
+        width: 100%;
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+    }
+
+    @media (min-width: 1600px) {
+    
+    .container,
+    .navbar-static-top .container,
+    .navbar-fixed-top .container,
+    .navbar-fixed-bottom .container {
+        width: 1570px;
+    }
+    }
+
+    @media (min-width: 2100px) {  
+    .container,
+    .navbar-static-top .container,
+    .navbar-fixed-top .container,
+    .navbar-fixed-bottom .container {
+        width: 2070px;
+    }
+    }
+
+    /*  Override Bootstrap's default behavior to hide non-active tab panes, 
+        ensuring that content from inactive tabs is not allocated space on the page */
+    .tab-pane.fade:not(.active) {
+        display: none;
+    }
+
+    .sectionHeader {
+    font-size: 180%;
+    font-weight: bold;
+    margin-top: 20px;
+    margin-bottom: 10px;
+    padding:3px;
+    width: 100%;
+    text-align: center;            
+    border-bottom: 1px solid black;
+    }
+
+    .chartHeader {
+        font-size: 120%;
+        font-weight: bold;
+        margin-top: 20px;
+        margin-bottom: 10px;
+        padding:3px;
+    }
+
+    .downloadButtonContainer {
+        margin: 10px auto
+    }
+
+    .col-filter-clear {
+        font-weight: bold;
+        color: #ab2020;
+        cursor: pointer;
+        height: 28px;
+        width: 28px;
+    }
+    
+    .col-filter-wrapper {
+        display: flex;
+        flex-wrap: nowrap;
+        flex-direction: row;
+        align-items: flex-start;
+        gap: 2px;
+    }
+
+    .select-filter {
+        min-width: 75%;
+    }
+
+    .nav-tabs .dropdown-menu {
+        margin-top: 0;
+        border-top-left-radius: 0;
+        border-top-right-radius: 0;
+    }
+
+    .nav-tabs .dropdown-menu > li > a {
+        padding: 10px 20px;
+        display: block;
+    }
+
+    .nav-tabs .dropdown-menu > li > a:hover {
+        background-color: #f5f5f5;
+    }
+
+    .nav-tabs > li.dropdown.active > a:hover,
+    .nav-tabs > li.dropdown > a:hover {
+        border-color: #ddd #ddd #fff;
+    }
+
+    .nav-tabs.main {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        border-bottom: 1px solid #ddd;
+    }
+
+    .nav-tabs.sub {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        border-bottom: 1px solid #ddd;
+    }
+
+    .spacer_cell {
+        background-color: #f2f2f2;
+        height: 30px;
+    }    
+
+    /*Table Manager CSS */
+    .super_header_cell {
+        text-align: center !important;
+        border: 1px solid #000000;
+    }
+
+    .primary_header_cell {
+        border: 1px solid #000000;        
+    }
+
+    .filter_header_cell {
+        font-weight: bold;
+        border: 1px solid #000000;
+    }
+
+</style>
+
+{% if page == 'gpcr' %}
+    <style type="text/css">
+        .gprot_blue {
+            color: blue;
+        }
+
+        .gprot_red {
+            color: red;
+        }
+
+        .gprot_green {
+            color: forestgreen;
+        }
+
+        .graydiv {
+            height: 20px;
+            width: 275px;
+            background: linear-gradient(to right, white 0%, black 100%)
+        }
+    
+        #classSelectionModal .modal-dialog,
+        #chemotypeSelectionModal .modal-dialog,
+        #familySelectionModal .modal-dialog {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            margin: 0;
+            width: 400px;
+            max-width: 90%;
+            max-height: 90%;
+        }
+
+        /* Family selection modal: hierarchical tree (gpcr_class > chemotype > family) */
+        #familyCheckboxList .family-tree-node > .checkbox {
+            margin-top: 2px;
+            margin-bottom: 2px;
+        }
+        /* Top-level (gpcr_class) and second-level (chemotype) parent rows are emphasised. */
+        #familyCheckboxList > .family-tree-node > .checkbox label {
+            font-weight: bold;
+        }
+        #familyCheckboxList > .family-tree-node > div > .family-tree-node > .checkbox label {
+            font-weight: 600;
+        }
+    </style>
+{% elif page == 'gprotein' %}
+    <style type="text/css">
+        .gprot_blue {
+            color: blue;
+        }
+
+        .gprot_red {
+            color: red;
+        }
+
+        .gprot_black {
+            color: black;
+        }
+
+        .gprot_green {
+            color: forestgreen;
+        }
+
+        .gprot_pink {
+            color: pink;
+        }
+
+        .graydiv {
+            height: 20px;
+            width: 350px;
+            background: linear-gradient(to right, white 0%, black 100%)
+        }
+
+        .wheel_or_tree_chart_legend
+        {
+            position: fixed; 
+            z-index: 10
+        }
+
+        .bottom_left
+        { 
+            bottom: 20px; 
+            left: 20px;            
+        }
+
+        .bottom_right
+        { 
+            bottom: 20px; 
+            right: 20px;
+        }
+
+        .visible
+        {
+            display: block;
+        }
+
+        .hidden
+        {
+            display: none;
+        }
+
+    </style>
+{% elif page == 'arrestin' %}
+    <style type="text/css">
+        .gprot_blue {
+            color: blue;
+        }
+
+        .gprot_red {
+            color: red;
+        }
+
+        .gprot_black {
+            color: black;
+        }
+
+        .gprot_green {
+            color: forestgreen;
+        }
+
+        .gprot_pink {
+            color: pink;
+        }
+
+        .gprot_orange {
+            color: orange;
+        }
+
+        .gprot_purple {
+            color: purple;
+        }
+
+        .gprot_aquamarine {
+            color: mediumturquoise;
+        }
+
+        .gprot_cornflower {
+            color: cornflowerblue;
+        }
+
+        .graydiv {
+            height: 20px;
+            width: 350px;
+            background: linear-gradient(to right, white 0%, black 100%)
+        }
+    </style>
+{% endif %}
+{% endblock %}
 
 {% block content %}
-{% if page == 'structure' %}
 
-<!-- GPCRDB GPCROME SECTION -->
+<!---------------->
+<!---------------->
+<!----- HTML ----->
+<!---------------->
+<!---------------->
 
-<!-- ### Create the panel tabs ### -->
-<ul class="nav nav-tabs">
-    <li class="active">
-      <a href="#coverage" data-toggle="tab">Structure coverage</a>
-    </li>
-    <li>
-      <a href="#complexes" data-toggle="tab">Receptor-ligand complexes</a>
-    </li>
-    <li>
-      <a href="#odorant" data-toggle="tab">Odorant receptors</a>
-    </li>
-</ul>
+{% if page == 'gpcr' %}
 
-<!-- ## Tab content ## -->
-<div class="tab-content">
-  <div id="coverage" class="tab-pane fade in active">
-    <div style="padding-top: 10px; font-size: 11px; white-space: nowrap;">
-      <div class="col-md-12">
-        <br>
-        <div class="col-md-3">
-          Receptor names:
-            <div class="btn-group" role="group" id="gtp_plus">
-              <button id="GPCRome_Protein" class="btn btn-info active">Protein</button>
-                <button id="GPCRome_Entrez" class="btn btn-info">Gene</button>
-                <button id="GPCRome_Uniprot" class="btn btn-info ">UniProt</button>
-            </div>
-        </div>
-        <div class="col-md-1"></div>
-        <div class="col-md-2" style="padding-top: 5px;">
-          Icon toggle:
-          <button id="ToggleIcon" class="btn btn-info active">On</button>
-        </div>
+    <!-------------------------------->
+    <!----- GPCR PAGE PROCESSING ----->
+    <!-------------------------------->
 
-      <div class="col-md-3">
-        <div class="text-center">
-          <div class="dropdown">
-            <button type="button" class="btn btn-primary dropdown-toggle" style="font-size: 14px;" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-              <span class="glyphicon glyphicon-download" style="vertical-align: top;line-height: 1.3"></span> Download <span class="caret"></span>
-            </button>
-            <div class="dropdown-menu dropdown-menu-right-middle">
-              <li><a class="dropdown-item" href="javascript:saveSvg(document.getElementById('GPCRome_plot_svg'), 'GPCRome_plot.svg');">SVG</a></li>
-              <li><a class="dropdown-item" href="javascript:saveSvgAsPng(document.getElementById('GPCRome_plot_svg'), 'GPCRome_plot.png');">PNG</a></li>
-              <li><a class="dropdown-item" href="javascript:saveSvgAsJpg(document.getElementById('GPCRome_plot_svg'), 'GPCRome_plot.jpg');">JPG</a></li>
-              <li><a class="dropdown-item" href="javascript:saveSvgAsTiff(document.getElementById('GPCRome_plot_svg'), 'GPCRome_plot.tiff');">TIFF</a></li>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      <div class="col-md-3">
-        <div style="float: left; position: relative" class="text-center">
-          <b>Structure coverage</b> <br/>
-              <span class="gprot_green">&#9644; <b>Active</b></span>
-              <span class="gprot_red">&#9644; <b>Inactive</b></span>
-              <span class="gprot_blue">&#9644; <b>Both</b></span>
-        </div>
-      </div>
-
-      <br />
-      <br />
-      <br />
-
-      <div id="image-container" data-image-url="{% static 'home/images/DataMapper/DataMapper_GPCRome_icon_legend.png' %}"></div>
-        <!-- GPCRome -->
-        <div class="col-md-12" style="margin-top: 0px;margin-bottom: 30px;">
-            <div id="GPCRome_plot" class="text-center"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-  <div id="complexes" class="tab-pane fade">
-    <div style="padding-top: 10px; font-size: 11px; white-space: nowrap;">
-      <div class="col-md-12">
-        <br>
-        <div class="col-md-3">
-          Receptor names:
-          <div class="btn-group" role="group" id="gtp_plus">
-            <button id="GPCRome_Complexes_Protein" class="btn btn-info active">Protein</button>
-              <button id="GPCRome_Complexes_Entrez" class="btn btn-info">Gene</button>
-              <button id="GPCRome_Complexes_Uniprot" class="btn btn-info ">UniProt</button>
-          </div>
-        </div>
-        <div class="col-md-1"></div>
-        <div class="col-md-3" style="padding-top: 5px;">
-          Icon toggle:
-          <button id="ToggleIconComplexes" class="btn btn-info active">On</button>
-        </div>
-
-      <div class="col-md-3">
-        <div class="text-center">
-          <div class="dropdown">
-            <button type="button" class="btn btn-primary dropdown-toggle" style="font-size: 14px;" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-              <span class="glyphicon glyphicon-download" style="vertical-align: top;line-height: 1.3"></span> Download <span class="caret"></span>
-            </button>
-            <div class="dropdown-menu dropdown-menu-right-middle">
-              <li><a class="dropdown-item" href="javascript:saveSvg(document.getElementById('GPCRome_complexes_plot_svg'), 'GPCRome_complexes_plot.svg');">SVG</a></li>
-              <li><a class="dropdown-item" href="javascript:saveSvgAsPng(document.getElementById('GPCRome_complexes_plot_svg'), 'GPCRome_complexes_plot.png');">PNG</a></li>
-              <li><a class="dropdown-item" href="javascript:saveSvgAsJpg(document.getElementById('GPCRome_complexes_plot_svg'), 'GPCRome_complexes_plot.jpg');">JPG</a></li>
-              <li><a class="dropdown-item" href="javascript:saveSvgAsTiff(document.getElementById('GPCRome_complexes_plot_svg'), 'GPCRome_complexes_plot.tiff');">TIFF</a></li>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <br />
-      <br />
-      <br />
-
-      <div id="image-container" data-image-url="{% static 'home/images/DataMapper/DataMapper_GPCRome_icon_legend.png' %}"></div>
-      <!-- GPCRome -->
-      <div class="col-md-12" style="margin-top: 0px;margin-bottom: 30px;">
-          <div id="GPCRome_complexes_plot" class="text-center"></div>
-      </div>
-
-      </div>
-    </div>
-  </div>
-  <div id="odorant" class="tab-pane fade">
-    <div style="padding-top: 10px; font-size: 11px; white-space: nowrap;">
-      <div class="col-md-12">
-        <br>
-        <div class="col-md-3">
-          Receptor names:
-          <div class="btn-group" role="group" id="gtp_plus">
-            <button id="GPCRome_Odorant_Protein" class="btn btn-info active">Protein</button>
-              <button id="GPCRome_Odorant_Entrez" class="btn btn-info">Gene</button>
-              <button id="GPCRome_Odorant_Uniprot" class="btn btn-info ">UniProt</button>
-          </div>
-        </div>
-        <div class="col-md-1"></div>
-        <div class="col-md-3" style="padding-top: 5px;">
-          Icon toggle:
-          <button id="ToggleIconOdorant" class="btn btn-info active">On</button>
-        </div>
-
-      <div class="col-md-3">
-        <div class="text-center">
-          <div class="dropdown">
-            <button type="button" class="btn btn-primary dropdown-toggle" style="font-size: 14px;" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-              <span class="glyphicon glyphicon-download" style="vertical-align: top;line-height: 1.3"></span> Download <span class="caret"></span>
-            </button>
-            <div class="dropdown-menu dropdown-menu-right-middle">
-              <li><a class="dropdown-item" href="javascript:saveSvg(document.getElementById('GPCRome_odorant_plot_svg'), 'GPCRome_odorant_plot.svg');">SVG</a></li>
-              <li><a class="dropdown-item" href="javascript:saveSvgAsPng(document.getElementById('GPCRome_odorant_plot_svg'), 'GPCRome_odorant_plot.png');">PNG</a></li>
-              <li><a class="dropdown-item" href="javascript:saveSvgAsJpg(document.getElementById('GPCRome_odorant_plot_svg'), 'GPCRome_odorant_plot.jpg');">JPG</a></li>
-              <li><a class="dropdown-item" href="javascript:saveSvgAsTiff(document.getElementById('GPCRome_odorant_plot_svg'), 'GPCRome_odorant_plot.tiff');">TIFF</a></li>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <br />
-      <br />
-      <br />
-
-        <div id="image-container" data-image-url="{% static 'home/images/DataMapper/DataMapper_GPCRome_icon_legend.png' %}"></div>
-        <!-- GPCRome -->
-        <div class="col-md-12" style="margin-top: 0px;margin-bottom: 30px;">
-            <div id="GPCRome_odorant_plot" class="text-center"></div>
-        </div>
-
-      </div>
-    </div>
-  </div>
-  </div>
-
-{% elif page == 'gprot' %}
-
-<!-- GPROTEIN TABLES SECTION -->
-<h4>Number of G protein structures</h4>
-<table style="width:75% !important" class="table table-stripped">
-    <thead>
-        <tr>
-            <td><b>Structures</td>
-            {% for class in all_gprots_by_gclass.items %}
-            <td align="center"><b>{{ class.0|safe}}</b></td>
-            {% endfor %}
-            <td align="center"><b>Total</b></td>
-        </tr>
-    </thead>
-    <tbody>
-      <tr>
-          <td>Non complexed G protein</td>
-          {% for class in noncomplex_gprots_by_gclass.items %}
-          <td align="center" style="vertical-align:middle !important">{% if class.1 == 0 %}-{% else %}{{ class.1 }}{% endif %}</td>
-          {% endfor %}
-          <td align="center" style="vertical-align:middle !important">{{ noncomplex_gprots }}</td>
-      </tr>
-      <tr>
-          <td>Receptor - G protein complexes</td>
-          {% for class in all_gprots_by_gclass.items %}
-          <td align="center" style="vertical-align:middle !important">{% if class.1 == 0 %}-{% else %}{{ class.1 }}{% endif %}</td>
-          {% endfor %}
-          <td align="center" style="vertical-align:middle !important">{{ all_gprots }}</td>
-      </tr>
-      <tr>
-          <td>Total structures</td>
-          {% for item in total_gprots_by_gclass %}
-          <td align="center" style="vertical-align:middle !important">{{ item }}</td>
-          {% endfor %}
-          <td align="center" style="vertical-align:middle !important">{{ total_gprots }}</td>
-      </tr>
-    </tbody>
-    <tr> </tr>
-</table>
-<br />
-<br />
-<h4>Number of GPCR-G protein structures (distinct complexes)</h4>
-<table style="width:75% !important" class="table table-stripped">
-    <thead>
-        <tr>
-            <td><b>Receptor Class</td>
-            {% for class in all_gprots_by_gclass.items %}
-            <td align="center"><b>{{ class.0|safe }}</b></td>
-            {% endfor %}
-            <td align="center"><b>Total</b></td>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td>Class A</td>
-            {% for total, unique in gA_complexes %}
-            <td align="center" style="vertical-align:middle !important">{% if total.1 == 0 %}-{% else %}{{ total.1 }} ({{ unique.1 }}){% endif %}</td>
-            {% endfor %}
-            <td align="center" style="vertical-align:middle !important">{{ all_g_A_complexes }} ({{ unique_g_A_complexes }})</td>
-        </tr>
-        <tr>
-            <td>Class B1</td>
-            {% for total, unique in gB1_complexes %}
-            <td align="center" style="vertical-align:middle !important">{% if total.1 == 0 %}-{% else %}{{ total.1 }} ({{ unique.1 }}){% endif %}</td>
-            {% endfor %}
-            <td align="center" style="vertical-align:middle !important">{{ all_g_B1_complexes }} ({{ unique_g_B1_complexes }})</td>
-        </tr>
-        <tr>
-            <td>Class B2</td>
-            {% for total, unique in gB2_complexes %}
-            <td align="center" style="vertical-align:middle !important">{% if total.1 == 0 %}-{% else %}{{ total.1 }} ({{ unique.1 }}){% endif %}</td>
-            {% endfor %}
-            <td align="center" style="vertical-align:middle !important">{{ all_g_B2_complexes }} ({{ unique_g_B2_complexes }})</td>
-        </tr>
-        <tr>
-            <td>Class C</td>
-            {% for total, unique in gC_complexes %}
-            <td align="center" style="vertical-align:middle !important">{% if total.1 == 0 %}-{% else %}{{ total.1 }} ({{ unique.1 }}){% endif %}</td>
-            {% endfor %}
-            <td align="center" style="vertical-align:middle !important">{{ all_g_C_complexes }} ({{ unique_g_C_complexes }})</td>
-        </tr>
-        <tr>
-            <td>Class D1</td>
-            {% for total, unique in gD1_complexes %}
-            <td align="center" style="vertical-align:middle !important">{% if total.1 == 0 %}-{% else %}{{ total.1 }} ({{ unique.1 }}){% endif %}</td>
-            {% endfor %}
-            <td align="center" style="vertical-align:middle !important">{{ all_g_D1_complexes }} ({{ unique_g_D1_complexes }})</td>
-        </tr>
-        <tr>
-            <td>Class F</td>
-            {% for total, unique in gF_complexes %}
-            <td align="center" style="vertical-align:middle !important">{% if total.1 == 0 %}-{% else %}{{ total.1 }} ({{ unique.1 }}){% endif %}</td>
-            {% endfor %}
-            <td align="center" style="vertical-align:middle !important">{{ all_g_F_complexes }} ({{ unique_g_F_complexes }})</td>
-        </tr>
-        <tr>
-            <td>Class T2</td>
-            {% for total, unique in gT2_complexes %}
-            <td align="center" style="vertical-align:middle !important">{% if total.1 == 0 %}-{% else %}{{ total.1 }} ({{ unique.1 }}){% endif %}</td>
-            {% endfor %}
-            <td align="center" style="vertical-align:middle !important">{{ all_g_T2_complexes }} ({{ unique_g_T2_complexes }})</td>
-        </tr>
-    </tbody>
-    <tr> </tr>
-</table>
-<br />
-<br />
-Specific sets of structures can be downloaded from the <a href="/structure">Structures</a> page.<br />
-The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }}</strong>.<br />
-
-{% elif page == 'arrestin' %}
-
-    <!-- ARRESTINDB GPCROME SECTION -->
-    <br />
-    <p><h4><strong>Structural coverage of GPCR-Arrestin complexes.</strong></h4></p>
-    <br />
-    <div style="padding-top: 10px; font-size: 11px; white-space: nowrap;">
-      <div class="col-md-12">
-        <br>
-        <div class="col-md-4">
-          Receptor names:
-            <div class="btn-group" role="group" id="gtp_plus">
-              <button id="GPCRome_Arrestin_Protein" class="btn btn-info active">Protein</button>
-                <button id="GPCRome_Arrestin_Entrez" class="btn btn-info">Gene</button>
-                <button id="GPCRome_Arrestin_Uniprot" class="btn btn-info ">UniProt</button>
-            </div>
-        </div>
-
-        <div class="col-md-2" style="padding-top: 5px;">
-          Icon toggle:
-          <button id="ToggleIconArrestin" class="btn btn-info active">On</button>
-        </div>
-
-      <div class="col-md-3">
-        <div class="text-center">
-          <div class="dropdown">
-            <button type="button" class="btn btn-primary dropdown-toggle" style="font-size: 14px;" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-              <span class="glyphicon glyphicon-download" style="vertical-align: top;line-height: 1.3"></span> Download <span class="caret"></span>
-            </button>
-            <div class="dropdown-menu dropdown-menu-right-middle">
-              <li><a class="dropdown-item" href="javascript:saveSvg(document.getElementById('GPCRome_Arrestin_plot_svg'), 'GPCRome_Arrestin_plot.svg');">SVG</a></li>
-              <li><a class="dropdown-item" href="javascript:saveSvgAsPng(document.getElementById('GPCRome_Arrestin_plot_svg'), 'GPCRome_Arrestin_plot.png');">PNG</a></li>
-              <li><a class="dropdown-item" href="javascript:saveSvgAsJpg(document.getElementById('GPCRome_Arrestin_plot_svg'), 'GPCRome_Arrestin_plot.jpg');">JPG</a></li>
-              <li><a class="dropdown-item" href="javascript:saveSvgAsTiff(document.getElementById('GPCRome_Arrestin_plot_svg'), 'GPCRome_Arrestin_plot.tiff');">TIFF</a></li>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-md-3">
-        <div style="float: left; position: relative" class="text-center">
-          <b>GPCR-Arrestin complexes coverage</b> <br/>
-              <span class="gprot_orange">&#9644; <b>&beta;-Arrestin<sub>1</sub></b></span>
-              <span class="gprot_purple">&#9644; <b>&beta;-Arrestin<sub>2</sub></b></span>
-              <span class="gprot_aquamarine">&#9644; <b>Arrestin-C</b></span>
-              <span class="gprot_cornflower">&#9644; <b>S-Arrestin</b></span>
-        </div>
-      </div>
-
-      <br />
-      <br />
-      <br />
-
-        <div id="image-container" data-image-url="{% static 'home/images/DataMapper/DataMapper_GPCRome_icon_legend.png' %}"></div>
-        <!-- GPCRome -->
-        <div class="col-md-12" style="margin-top: 0px;margin-bottom: 30px;">
-            <div id="GPCRome_Arrestin_plot" class="text-center"></div>
-        </div>
-
-      </div>
-    </div>
-
-{% endif %}
-
-{% if page == 'structure' %}
-
-<!-- GPCRDB HISTOGRAMS SECTION -->
-
-<style type="text/css">
-  .gprot_blue {
-    color: blue;
-  }
-  .gprot_red {
-    color: red;
-  }
-  .gprot_green {
-    color: forestgreen;
-  }
-  .graydiv {
-      height: 20px;
-      width: 275px;
-      background: linear-gradient(to right, white 0%, black 100%)
-  }
-</style>
-<br />
-<br />
-<br />
-<div id="charts" visibility="hidden">
-    <?xml version="1.0" standalone="no" ?>
-    <svg id="chart_legend" width="950px" height="100px" version="1.1" xmlns="http://www.w3.org/2000/svg">
-        <text x="100" y="18" font-family="Verdana" font-size="14">By class</text>
-        <text x="550" y="18" font-family="Verdana" font-size="14">By ligand type</text>
-
-        <circle class="chart_type" id="unique" cx="450" cy="30" r="5" stroke="black" fill="white" stroke-width="2" />
-        <text x="470" y="33" font-family="Verdana" font-size="10">The number of unique receptors with structures available.</text>
-
-        <circle class="chart_type" id="unique_y" cx="450" cy="50" r="5" stroke="black" fill="white" stroke-width="2" />
-        <text x="470" y="53" font-family="Verdana" font-size="10">The number of unique receptors GPCR-ligand complexes.</text>
-
-        <circle class="chart_type" id="all" cx="450" cy="70" r="5" stroke="black" fill="white" stroke-width="2" />
-        <text x="470" y="73" font-family="Verdana" font-size="10">The number of structures available.</text>
-
-        <circle class="chart_type" id="unique_class" cx="10" cy="30" r="5" stroke="black" fill="white" stroke-width="2" />
-        <text x="20" y="33" font-family="Verdana" font-size="10">The number of unique receptors with structures.</text>
-
-        <circle class="chart_type" id="unique_class_y" cx="10" cy="50" r="5" stroke="black" fill="white" stroke-width="2" />
-        <text x="20" y="53" font-family="Verdana" font-size="10">The number of unique GPCR-ligand complexes.</text>
-
-        <circle class="chart_type" id="all_class" cx="10" cy="70" r="5" stroke="black" fill="white" stroke-width="2" />
-        <text x="20" y="73" font-family="Verdana" font-size="10">The number of structures available.</text>
-    </svg>
-    <div id="unique" class="chart_container" style="display: none;">
-        <div id="unique_cryst_container"><svg id="unique_cryst" style="width:900px;height:600px;"></svg></div>
-        <script>
-        data_unique_cryst_container = {{ chartdata|safe }};
-        </script>
-        <div class="btn-group">
-            <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
-                    aria-haspopup="true" aria-expanded="false">
-                <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
-            </button>
+    <!-- NAVIGATION TABS -->
+    <ul class="nav nav-tabs main">
+        <li class="dropdown">
+            <a class="dropdown-toggle" data-toggle="dropdown" href="#">GPCRome Wheels <span class="caret"></span></a>
             <ul class="dropdown-menu">
-                <li>
-                    <a href="javascript:saveSvgAsPng(document.getElementById('unique_cryst'), 'unique_crystalized_receptors.png',
-            {scale: 3});">PNG</a>
-                </li>
-                <li>
-                    <a href="javascript:saveSvgAsJpg(document.getElementById('unique_cryst'), 'unique_crystalized_receptors.jpg',
-            {scale: 3});">JPG</a>
-                </li>
-                <li>
-                    <a href="javascript:saveSvgAsTiff(document.getElementById('unique_cryst'), 'unique_crystalized_receptors.tiff',
-            {scale: 3});">TIFF</a>
-                    </a>
-                </li>
-                <li>
-                    <a href="javascript:saveSvg(document.getElementById('unique_cryst'), 'unique_crystalized_receptors.svg');">SVG</a>
-                </li>
+                <li><a href="#structure_coverage_wheel_pane" data-toggle="tab">All Structures</a></li>
+                <li><a href="#receptor_ligand_wheel_pane" data-toggle="tab">Receptor-Ligand Complexes</a></li>
+                <li><a href="#olfactory_wheel_pane" data-toggle="tab">Olfactory Receptor-Ligand Complexes</a></li>                
             </ul>
-        </div>
-    </div>
-    <div id="unique_y" class="chart_container" style="display: none;">
-        <div id="unique_cryst_year_container"><svg id="unique_cryst_year" style="width:900px;height:600px;"></svg></div>
-        <script>
-            data_unique_cryst_year_container={{ chartdata_y|safe }};
-        </script>
-        <div class="btn-group">
-            <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
-                    aria-haspopup="true" aria-expanded="false">
-                <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
-            </button>
-            <ul class="dropdown-menu">
-                <li>
-                    <a href="javascript:saveSvgAsPng(document.getElementById('unique_cryst_year'), 'unique_crystalized_receptors_by_year.png',
-            {scale: 3});">PNG</a>
-                </li>
-                <li>
-                    <a href="javascript:saveSvgAsJpg(document.getElementById('unique_cryst_year'), 'unique_crystalized_receptors_by_year.jpg',
-            {scale: 3});">JPG</a>
-                </li>
-                <li>
-                    <a href="javascript:saveSvgAsTiff(document.getElementById('unique_cryst_year'), 'unique_crystalized_receptors_by_year.tiff',
-            {scale: 3});">TIFF</a>
-                    </a>
-                </li>
-                <li>
-                    <a href="javascript:saveSvg(document.getElementById('unique_cryst_year'), 'unique_crystalized_receptors_by_year.svg');">SVG</a>
-                </li>
-            </ul>
-        </div>
-    </div>
-    <div id="all" class="chart_container" style="display: none;">
-        <div id="cryst_year_container"><svg id="data_cryst_year" style="width:900px;height:600px;"></svg></div>
-        <script>
-            data_cryst_year_container={{ chartdata_all|safe }};
-        </script>
-        <div class="btn-group">
-            <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
-                    aria-haspopup="true" aria-expanded="false">
-                <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
-            </button>
-            <ul class="dropdown-menu">
-                <li>
-                    <a href="javascript:saveSvgAsPng(document.getElementById('data_cryst_year'), 'crystalized_receptors_by_year.png',
-            {scale: 3});">PNG</a>
-                </li>
-                <li>
-                    <a href="javascript:saveSvgAsJpg(document.getElementById('data_cryst_year'), 'crystalized_receptors_by_year.jpg',
-            {scale: 3});">JPG</a>
-                </li>
-                <li>
-                    <a href="javascript:saveSvgAsTiff(document.getElementById('data_cryst_year'), 'crystalized_receptors_by_year.tiff',
-            {scale: 3});">TIFF</a>
-                    </a>
-                </li>
-                <li>
-                    <a href="javascript:saveSvg(document.getElementById('data_cryst_year'), 'crystalized_receptors_by_year.svg');">SVG</a>
-                </li>
-            </ul>
-        </div>
-    </div>
-<!-- </div>
-<br />
-<br />
-
-<div id="charts_classes" visibility="hidden"> -->
-    <!-- <?xml version="1.0" standalone="no" ?>
-    <svg id="chart_class_legend" width="450px" height="70px" version="1.1" xmlns="http://www.w3.org/2000/svg">
-        <circle class="chart_type" id="unique_class" cx="10" cy="10" r="5" stroke="black" fill="white" stroke-width="2" />
-        <text x="20" y="13" font-family="Verdana" font-size="10">The number of unique crystallized receptors available.</text>
-        <circle class="chart_type" id="unique_class_y" cx="10" cy="30" r="5" stroke="black" fill="white" stroke-width="2" />
-        <text x="20" y="33" font-family="Verdana" font-size="10">The number of unique receptors CRYSTAL STRUCTURES PUBLISHED each year.</text>
-        <circle class="chart_type" id="all_class" cx="10" cy="50" r="5" stroke="black" fill="white" stroke-width="2" />
-        <text x="20" y="53" font-family="Verdana" font-size="10">The number of crystal structures available each year.</text>
-    </svg> -->
-    <div id="unique_class" class="chart_container" style="display: none;">
-        <div id="unique_cryst_class_container"><svg id="unique_class_cryst" style="width:900px;height:600px;"></svg></div>
-        <script>
-        data_unique_class_cryst_container={{ chartdata_class|safe }};
-        </script>
-        <div class="btn-group">
-            <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
-                    aria-haspopup="true" aria-expanded="false">
-                <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
-            </button>
-            <ul class="dropdown-menu">
-                <li>
-                    <a href="javascript:saveSvgAsPng(document.getElementById('unique_class_cryst'), 'unique_crystalized_receptors.png',
-            {scale: 3});">PNG</a>
-                </li>
-                <li>
-                    <a href="javascript:saveSvgAsJpg(document.getElementById('unique_class_cryst'), 'unique_crystalized_receptors.jpg',
-            {scale: 3});">JPG</a>
-                </li>
-                <li>
-                    <a href="javascript:saveSvgAsTiff(document.getElementById('unique_class_cryst'), 'unique_crystalized_receptors.tiff',
-            {scale: 3});">TIFF</a>
-                    </a>
-                </li>
-                <li>
-                    <a href="javascript:saveSvg(document.getElementById('unique_class_cryst'), 'unique_crystalized_receptors.svg');">SVG</a>
-                </li>
-            </ul>
-        </div>
-    </div>
-    <div id="unique_class_y" class="chart_container" style="display: none;">
-        <div id="unique_class_cryst_year_container"><svg id="unique_class_cryst_year" style="width:900px;height:600px;"></svg></div>
-        <script>
-            data_unique_class_cryst_year_container={{ chartdata_class_y|safe }};
-        </script>
-        <div class="btn-group">
-            <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
-                    aria-haspopup="true" aria-expanded="false">
-                <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
-            </button>
-            <ul class="dropdown-menu">
-                <li>
-                    <a href="javascript:saveSvgAsPng(document.getElementById('unique_class_cryst_year'), 'unique_crystalized_receptors_by_year.png',
-            {scale: 3});">PNG</a>
-                </li>
-                <li>
-                    <a href="javascript:saveSvgAsJpg(document.getElementById('unique_class_cryst_year'), 'unique_crystalized_receptors_by_year.jpg',
-            {scale: 3});">JPG</a>
-                </li>
-                <li>
-                    <a href="javascript:saveSvgAsTiff(document.getElementById('unique_class_cryst_year'), 'unique_crystalized_receptors_by_year.tiff',
-            {scale: 3});">TIFF</a>
-                    </a>
-                </li>
-                <li>
-                    <a href="javascript:saveSvg(document.getElementById('unique_class_cryst_year'), 'unique_crystalized_receptors_by_year.svg');">SVG</a>
-                </li>
-            </ul>
-        </div>
-    </div>
-    <div id="all_class" class="chart_container" style="display: none;">
-        <div id="cryst_class_year_container"><svg id="data_class_cryst_year" style="width:900px;height:600px;"></svg></div>
-        <script>
-            data_cryst_class_year_container={{ chartdata_class_all|safe }};
-        </script>
-        <div class="btn-group">
-            <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
-                    aria-haspopup="true" aria-expanded="false">
-                <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
-            </button>
-            <ul class="dropdown-menu">
-                <li>
-                    <a href="javascript:saveSvgAsPng(document.getElementById('data_class_cryst_year'), 'crystalized_receptors_by_year.png',
-            {scale: 3});">PNG</a>
-                </li>
-                <li>
-                    <a href="javascript:saveSvgAsJpg(document.getElementById('data_class_cryst_year'), 'crystalized_receptors_by_year.jpg',
-            {scale: 3});">JPG</a>
-                </li>
-                <li>
-                    <a href="javascript:saveSvgAsTiff(document.getElementById('data_class_cryst_year'), 'crystalized_receptors_by_year.tiff',
-            {scale: 3});">TIFF</a>
-                    </a>
-                </li>
-                <li>
-                    <a href="javascript:saveSvg(document.getElementById('data_class_cryst_year'), 'crystalized_receptors_by_year.svg');">SVG</a>
-                </li>
-            </ul>
-        </div>
-    </div>
-</div>
-<br />
-<br />
-<!--<h4>Resolution distribution of the available crystal structures</h4>
-<script>
-    data_reso_container={{ chartdata_reso|safe }};
-</script>
-<div id="reso_container"><svg id="data_reso" style="width:800px;height:600px;"></svg></div>
-<p><div class="btn-group">
-    <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
-            aria-haspopup="true" aria-expanded="false">
-        <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
-    </button>
-    <ul class="dropdown-menu">
-        <li>
-            <a href="javascript:saveSvgAsPng(document.getElementById('data_reso'), 'resolution_coverage.png',
-            {scale: 3});">PNG</a>
         </li>
         <li>
-            <a href="javascript:saveSvgAsJpg(document.getElementById('data_reso'), 'resolution_coverage.jpg',
-            {scale: 3});">JPG</a>
+            <a href="#barchart" data-toggle="tab">Bar chart</a>
         </li>
         <li>
-            <a href="javascript:saveSvgAsTiff(document.getElementById('data_reso'), 'resolution_coverage.tiff',
-            {scale: 3});">TIFF</a>
-            </a>
+            <a href="#table_counts" data-toggle="tab">Table (Summary)</a>
+        </li>
+        <li>
+            <a href="#table_perreceptorstats" data-toggle="tab">Table (Per Receptor Statistics)</a>
         </li>
     </ul>
-</div></p>
-<br />-->
 
-{% elif page == 'gprot' %}
-<style type="text/css">
-  .gprot_blue {
-    color: blue;
-  }
-  .gprot_red {
-    color: red;
-  }
-  .gprot_black {
-    color: black;
-  }
-  .gprot_green {
-    color: forestgreen;
-  }
-  .gprot_pink {
-    color: pink;
-  }
-  .graydiv {
-      height: 20px;
-      width: 350px;
-      background: linear-gradient(to right, white 0%, black 100%)
-  }
-</style>
-<br />
-<br />
-<p><h4><strong>Structural coverage of GPCR-G protein complexes.</strong></h4></p>
-<br />
-<div>
-  Receptor names:
-    <div class="btn-group" role="group" id="gtp_plus">
-        <button id="UniProtNames" class="btn btn-info active">UniProt</button>
-        <button id="IUPHARNames" class="btn btn-info">IUPHAR</button>
+    <div id="image-container"
+                        data-image-url="{% static 'home/images/DataMapper/DataMapper_GPCRome_icon_legend.png' %}"></div>
+    <!-- TAB CONTENT -->
+    <div class="tab-content">
+        
+        <!------------------------------->
+        <!-- WHEELS : RECEPTORS STATES -->
+        <!------------------------------->
+
+        <div id="structure_coverage_wheel_pane" class="tab-pane fade in active">
+            <div class="col-md-12" style="margin-bottom:20px; margin-top:20px;">
+              <div style="display:flex; justify-content:center; align-items:center; gap:15px; flex-wrap:wrap;">
+
+                <!-- Receptor names -->
+                <div class="dropdown">
+                  <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">Receptor names</button>
+                  <div class="dropdown-menu dropdown-menu-side dropdown-menu-align-names">
+                    <button type="button" class="btn btn-outline-primary btn-block mb-1 GPCRomeStats-label-btn" data-wheel="coverage" data-value="Protein">Protein</button>
+                    <button type="button" class="btn btn-outline-primary btn-block GPCRomeStats-label-btn" data-wheel="coverage" data-value="Entrez">Gene</button>
+                  </div>
+                </div>
+
+                <!-- Graphical legend -->
+                <button id="coverage-toggleIcon" class="btn btn-primary" type="button">Graphical legend</button>
+
+                <!-- Colors -->
+                <div class="dropdown">
+                  <button class="btn btn-primary btn-block" type="button" data-toggle="dropdown">Colors</button>
+                  <div class="dropdown-menu dropdown-menu-side p-3 customize-menu dropdown-menu-align-customize">
+                    <div id="coverage-color-pickers"></div>
+                  </div>
+                </div>
+
+                <!-- Download -->
+                <div class="dropdown">
+                  <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">
+                    <span class="glyphicon glyphicon-download"></span> Download
+                  </button>
+                  <div class="dropdown-menu dropdown-menu-side dropdown-menu-align-download">
+                    <button type="button" class="btn btn-primary btn-block" id="coverage-download-svg">SVG</button>
+                    <button type="button" class="btn btn-primary btn-block" id="coverage-download-png">PNG</button>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+            <div id="GPCRome_plot" class="text-center" style="padding-top:10px; margin-bottom:30px;"></div>
+        </div>
+
+        <!------------------------------->
+        <!-- WHEELS : LIGAND COMPLEXES -->
+        <!------------------------------->
+
+        <div id="receptor_ligand_wheel_pane" class="tab-pane fade">
+            <div class="col-md-12" style="margin-bottom:20px; margin-top:20px;">
+              <div style="display:flex; justify-content:center; align-items:center; gap:15px; flex-wrap:wrap;">
+
+                <!-- Receptor names -->
+                <div class="dropdown">
+                  <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">Receptor names</button>
+                  <div class="dropdown-menu dropdown-menu-side dropdown-menu-align-names">
+                    <button type="button" class="btn btn-outline-primary btn-block mb-1 GPCRomeStats-label-btn" data-wheel="complexes" data-value="Protein">Protein</button>
+                    <button type="button" class="btn btn-outline-primary btn-block GPCRomeStats-label-btn" data-wheel="complexes" data-value="Entrez">Gene</button>
+                  </div>
+                </div>
+
+                <!-- Graphical legend -->
+                <button id="complexes-toggleIcon" class="btn btn-primary" type="button">Graphical legend</button>
+
+                <!-- Colors -->
+                <div class="dropdown">
+                  <button class="btn btn-primary btn-block" type="button" data-toggle="dropdown">Colors</button>
+                  <div class="dropdown-menu dropdown-menu-side p-3 customize-menu dropdown-menu-align-customize">
+                    <div id="complexes-color-pickers"></div>
+                  </div>
+                </div>
+
+                <!-- Download -->
+                <div class="dropdown">
+                  <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">
+                    <span class="glyphicon glyphicon-download"></span> Download
+                  </button>
+                  <div class="dropdown-menu dropdown-menu-side dropdown-menu-align-download">
+                    <button type="button" class="btn btn-primary btn-block" id="complexes-download-svg">SVG</button>
+                    <button type="button" class="btn btn-primary btn-block" id="complexes-download-png">PNG</button>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+            <div id="GPCRome_complexes_plot" class="text-center" style="padding-top:10px; margin-bottom:30px;"></div>
+        </div>
+
+        <!---------------------------------->
+        <!-- WHEELS : OLFACTORY RECEPTORS -->
+        <!---------------------------------->
+
+        <div id="olfactory_wheel_pane" class="tab-pane fade">
+            <div class="col-md-12" style="margin-bottom:20px; margin-top:20px;">
+              <div style="display:flex; justify-content:center; align-items:center; gap:15px; flex-wrap:wrap;">
+
+                <!-- Receptor names -->
+                <div class="dropdown">
+                  <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">Receptor names</button>
+                  <div class="dropdown-menu dropdown-menu-side dropdown-menu-align-names">
+                    <button type="button" class="btn btn-outline-primary btn-block mb-1 GPCRomeStats-label-btn" data-wheel="olfactory" data-value="Protein">Protein</button>
+                    <button type="button" class="btn btn-outline-primary btn-block GPCRomeStats-label-btn" data-wheel="olfactory" data-value="Entrez">Gene</button>
+                  </div>
+                </div>
+
+                <!-- Graphical legend -->
+                <button id="olfactory-toggleIcon" class="btn btn-primary" type="button">Graphical legend</button>
+
+                <!-- Colors -->
+                <div class="dropdown">
+                  <button class="btn btn-primary btn-block" type="button" data-toggle="dropdown">Colors</button>
+                  <div class="dropdown-menu dropdown-menu-side p-3 customize-menu dropdown-menu-align-customize">
+                    <div id="olfactory-color-pickers"></div>
+                  </div>
+                </div>
+
+                <!-- Download -->
+                <div class="dropdown">
+                  <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">
+                    <span class="glyphicon glyphicon-download"></span> Download
+                  </button>
+                  <div class="dropdown-menu dropdown-menu-side dropdown-menu-align-download">
+                    <button type="button" class="btn btn-primary btn-block" id="olfactory-download-svg">SVG</button>
+                    <button type="button" class="btn btn-primary btn-block" id="olfactory-download-png">PNG</button>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+            <div id="GPCRome_olfactory_plot" class="text-center" style="padding-top:10px; margin-bottom:30px;"></div>
+        </div>
+
+        <!----------------------------------------->
+        <!-- STRUCTURE COUNTS BY YEAR BAR CHARTS -->
+        <!----------------------------------------->
+
+        <div id="barchart" class="tab-pane fade">
+            <script>
+                family__distinct_structure__data = {{ chart_data.distinct.complexed_or_not.family | safe }};
+                family__distinct_gpcrligand__data = {{ chart_data.distinct.complexed_ligand.family | safe }};
+                family__all_structures__data = {{ chart_data.redundant.complexed_or_not.family | safe }};
+                chemotype__distinct_structure__data = {{ chart_data.distinct.complexed_or_not.chemotype | safe }};
+                chemotype__distinct_gpcrligand__data = {{ chart_data.distinct.complexed_ligand.chemotype | safe }};
+                chemotype__all_structures__data = {{ chart_data.redundant.complexed_or_not.chemotype | safe }};
+                class__distinct_structure__data = {{ chart_data.distinct.complexed_or_not.class | safe }};
+                class__distinct_gpcrligand__data = {{ chart_data.distinct.complexed_ligand.class | safe }};
+                class__all_structures__data = {{ chart_data.redundant.complexed_or_not.class | safe }};
+                family_hierarchy = {{ family_hierarchy | safe }};
+
+                //create a global variable to store the current chart configuration, which can be updated by the dropdowns and used to determine which data to display in the charts.
+                chart_configuration = { 
+                    category: "class", 
+                    selection_list: [], 
+                    count_type: "distinct_receptors", 
+                    chart_data: class__distinct_structure__data, 
+                    chart_container_id: "chart_container_plotly",
+                    show_x_gridlines: false,
+                    show_y_gridlines: false,
+                    stack: true,
+                    x_label_angle: 45,
+                    color_palette: ["#cadae8", "#8aa9d6", "#7884ba", "#4c5a88", "#765b92", "#cc85b1", "#ee7474", "#de5353", 
+                                    "#c25858", "#c65a44", "#eb7b54", "#f5a697", "#f5b9b0", "#96665a", "#637b62", "#e2eab5", 
+                                    "#fbf2ad", "#f2dec4", "#f7f0e2", "#efecdc", "#e2e0d9", "#9a9999", "#b9cf84", "#265582", 
+                                    "#34f50e", "#b029bf", "#3f862d", "#e89ff0", "#4220f0", "#d3cb04", "#6865f0", "#2c97e0", 
+                                    "#cb1775", "#fe74fe", "#9a537c", "#e9ad6f", "#eb1138", "#737b55", "#ff8889", "#9a5c0d", 
+                                    "#3e2d1b", "#399283", "#f4327e", "#1ed46b", "#ca2dc5", "#c4f269", "#3f1ba1", "#88fe0e", 
+                                    "#730f44", "#60e9dc", "#3a2006", "#87cefe", "#252049", "#fcd107", "#7363e7", "#83aa3e", 
+                                    "#7212ff", "#dbe7c5", "#0a2c0f", "#f7b5be", "#900e08", "#3d84e3", "#dd750e", "#0e6e00", 
+                                    "#b35691", "#775a18", "#8d7f95", "#f9380a", "#41bbc5", "#2d747a", "#24ffcd", "#043919", 
+                                    "#cef06a", "#21247b", "#9e7ee9", "#3f08b1", "#96adcf", "#4f2038", "#fd47a5", "#965774"]
+
+                                 
+                }
+            </script>
+            <div id="charts" visibility="hidden">
+                <div class="chart_controls">
+                    <span style="font-size: 120%; font-weight: bold;">Select data to display</span>
+                        <!-- Category drop down menu -->
+                        <div class="dropdown">
+                            <button class="btn btn-default dropdown-toggle" type="button" id="CategoryDropdown"
+                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="true"
+                                style="height: 33px; width: 115px;">
+                                Receptors
+                                <span class="caret"></span>
+                            </button>
+                            <ul id="categoryDropdownButtonList" class="dropdown-menu" aria-labelledby="CategoryDropdown">
+                                <li><a href="#" onclick="setDisplayCategory(this)" data-category="class">All GPCR classes</a></li>
+                                <li><a href="#" onclick="setDisplayCategory(this)" data-category="chemotype">All receptor chemotypes </a></li>
+                                <li><a href="#" onclick="setDisplayCategory(this)" data-category="family">All receptor families</a></li>
+                                <li role="separator" class="divider"></li>
+                                <li><a href="#" onclick="displayClassSelection()">Select GPCR classes</a></li>
+                                <li><a href="#" onclick="displayChemotypeSelection()">Select receptor chemotypes</a></li>
+                                <li><a href="#" onclick="displayFamilySelection()">Select receptor families</a></li>
+                            </ul>
+                        </div>
+                        <!-- Count-type drop down menu -->
+                        <div class="dropdown">
+                            <button class="btn btn-default dropdown-toggle" type="button" id="CountTypeDropdown"
+                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="true"
+                                style="height: 33px; width: 115px;">
+                                Structure type
+                                <span class="caret"></span>
+                            </button>
+                            <ul class="dropdown-menu" aria-labelledby="CountTypeDropdown">
+                                <li><a href="#" onclick="setDisplayDataType(this)" data-counttype="distinct_receptors">
+                                        Distinct receptor structures</a>
+                                </li>
+                                <li><a href="#" onclick="setDisplayDataType(this)" data-counttype="distinct_gpcrligandcomplexes">
+                                        Distinct GPCR-ligand complexes</a>
+                                </li>
+                                <li><a href="#" onclick="setDisplayDataType(this)" data-counttype="all_structures">
+                                        All structures (redundant receptors)</a>
+                                </li>
+                            </ul>
+                        </div>
+                        <!--- Download Button-->
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                                aria-haspopup="true" aria-expanded="false" style="height: 33px; width: 115px;">
+                                <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <a data-format="png" href="#" onclick="downloadPlotlyChart(this)">PNG</a>
+                                </li>
+                                <li>
+                                    <a data-format="jpg" href="#" onclick="downloadPlotlyChart(this)">JPG</a>
+                                </li>
+                                <li>
+                                    <a data-format="svg" href="#" onclick="downloadPlotlyChart(this)">SVG</a>
+                                </li>
+                            </ul>
+                        </div>              
+                    </div>
+                <!-- Chart -->
+                <div>
+                     <div id="chart_container_plotly"></div>                
+                </div>                    
+            </div>
+        </div>
+
+        <!-------------------------------------->
+        <!-- GPCRDB SUMMARY STATISTICS TABLES -->
+        <!-------------------------------------->
+        
+        <div id="table_counts" class="tab-pane fade">
+            <ul class="nav nav-tabs sub">
+                <li class="active">
+                    <a href="#gpcr_table_counts_distinct" data-toggle="tab">Non-redundant receptor counts</a>
+                </li>
+                <li>
+                    <a href="#gpcr_table_counts_redundant" data-toggle="tab">All structures (redundant receptors)</a>
+                </li>              
+            </ul>
+
+            <!-- Loop creates two tabs/tables = distinct and redundant counts -->
+
+            {% for data_source, source_data in gpcr_table_data.items %}                
+                <div id="gpcr_table_counts_{{ data_source }}" class="tab-pane fade in {% if forloop.first %}active{% endif %}">
+                    <table class="table table-stripped">
+                        <colgroup>
+                            <col style="width: 20%;"/>
+                            <col span="10" style="width: 7%;" />
+                            <col style="width: 10%;"  />
+                        </colgroup>
+                        <thead class="table_head_emphasis">
+                            <tr>
+                                <td class="row_title"><b></b></td>
+                                {% for class_name, class_data in source_data.complexed_or_not.all_states.by_class.items %}
+                                <td align="center"><b>{{ class_name | format_class_header |safe }}</b></td>
+                                {% endfor %}
+                                <td align="center"><b>Total</b></td>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="row_title">Receptors</td>
+                                {% for class_name, structure_count in source_data.complexed_or_not.all_states.by_class.items %}
+                                <td align="center" style="vertical-align:middle !important">{{ structure_count }}</td>
+                                {% endfor %}
+                                <td align="center" style="vertical-align:middle !important;font-weight: bold;">{{ source_data.complexed_or_not.all_states.total }}</td>
+                            </tr>                            
+                            <tr>
+                                <td class="row_title"><b>Receptor - ligand complexes</b></td>
+                                {% for class_name, structure_count in source_data.complexed_ligand.all_states.by_class.items %}
+                                <td align="center">{{ structure_count }}</td>
+                                {% endfor %}
+                                <td align="center" style="font-weight: bold;">{{ source_data.complexed_ligand.all_states.total }}</td>
+                            </tr>
+                            <tr>
+                                <td class="row_title">Receptor &ndash; G protein complexes</td>
+                                {% for class_name, structure_count in source_data.complexed_gprotein.by_class.items %}
+                                <td align="center" style="vertical-align:middle !important">{{ structure_count }}</td>
+                                {% endfor %}
+                                <td align="center" style="vertical-align:middle !important;font-weight: bold;">{{ source_data.complexed_gprotein.total }}</td>
+                            </tr>
+                            {% for state, state_data in source_data.complexed_or_not.by_state.items %}
+                                <tr>
+                                    <td class="row_title">{{state | capfirst }}-state receptors</td>
+                                    {% for class_name, structure_count in state_data.by_class.items %}
+                                    <td align="center" style="vertical-align:middle !important">{{ structure_count }}</td>
+                                    {% endfor %}
+                                    <td align="center" style="vertical-align:middle !important;font-weight: bold;">{{ state_data.total }}</td>
+                                </tr>
+                            {% endfor %}                            
+                    </table>
+                </div>
+            {% endfor %}
+                <span class="footer"><b style="font-size: 130%;">*</b>Active state is defined as agonist-bound and opened intracellular TM bundle. 
+                <span class="footer"> Specific sets of structures can be downloaded from the <a href="/structure">Structures</a> page. The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }}</strong>.</span>
+        </div>
+        
+        <!----------------------------------->
+        <!-- PER-RECEPTOR STATISTICS TABLE -->
+        <!----------------------------------->
+
+        <div id="table_perreceptorstats" class="tab-pane fade">
+            <table id="structureStatisticsTable" class="display" style="width:100%">
+                <!-- This table is populated by the TableManager via AJAX -->  
+            </table>
+            <div style="margin-top: 10px;text-align: right;">
+                <div class="btn-group">
+                    <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a href="#" onclick="exportStructureStatistics('csv'); return false;">CSV (UTF-8)</a></li>
+                        <li><a href="#" onclick="exportStructureStatistics('excel'); return false;">Excel</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<!--------------------------->
+<!-- Class Selection Modal -->
+<!--------------------------->
+
+<div class="modal fade" id="classSelectionModal" tabindex="-1" role="dialog" aria-labelledby="classSelectionModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title" id="classSelectionModalLabel">Select Classes</h4>
+            </div>
+            <div class="modal-body">
+                <div id="classCheckboxList"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmClassSelection">Confirm</button>
+            </div>
+        </div>
     </div>
 </div>
-<br />
-<br />
-<script type="text/javascript" charset="utf-8">
-    class_a = {{ class_a|safe }};
-    class_a_options = {{ class_a_options|safe }};
-    class_b1 = {{ class_b1|safe }};
-    class_b1_options = {{ class_b1_options|safe }};
-    class_b2 = {{ class_b2|safe }};
-    class_b2_options = {{ class_b2_options|safe }};
-    class_c = {{ class_c|safe }};
-    class_c_options = {{ class_c_options|safe }};
-    class_f = {{ class_f|safe }};
-    class_f_options = {{ class_f_options|safe }};
-    class_t2 = {{ class_t2|safe }};
-    class_t2_options = {{ class_t2_options|safe }};
-    orphan = {{ orphan|safe }};
-    orphan_options = {{ orphan_options|safe }};
-    whole_dict = {{ whole_receptors|safe }};
-    matching = {{ circles_data|safe }}
-</script>
-<script language='javascript'>
-  maxLeafNodeLenght = 46;
-  conversion = {"Gs":"#0000FF", "Gi/o":"#FF0000", "Gq/11":"#000000", "G12/13":"#008000", "GPa1 family":"#FFC0CB"};
-  $("#UniProtNames").click(function() {
-      $("#UniProtNames").addClass("active");
-      $("#IUPHARNames").removeClass("active");
-      changeLeavesLabels("class_a","UniProt", whole_dict);
-      DrawCircles('class_a', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-      changeLeavesLabels("class_b1","UniProt", whole_dict);
-      DrawCircles('class_b1', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-      changeLeavesLabels("class_b2","UniProt", whole_dict);
-      DrawCircles('class_b2', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-      changeLeavesLabels("class_c","UniProt", whole_dict);
-      DrawCircles('class_c', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-      changeLeavesLabels("class_f","UniProt", whole_dict);
-      DrawCircles('class_f', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-      changeLeavesLabels("class_t2","UniProt", whole_dict);
-      DrawCircles('class_t2', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-      changeLeavesLabels("orphan","UniProt", whole_dict);
-      DrawCircles('orphan', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-  });
-  $("#IUPHARNames").click(function() {
-      $("#UniProtNames").removeClass("active");
-      $("#IUPHARNames").addClass("active");
-      changeLeavesLabels("class_a","IUPHAR", whole_dict);
-      DrawCircles('class_a', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-      changeLeavesLabels("class_b1","IUPHAR", whole_dict);
-      DrawCircles('class_b1', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-      changeLeavesLabels("class_b2","IUPHAR", whole_dict);
-      DrawCircles('class_b2', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-      changeLeavesLabels("class_c","IUPHAR", whole_dict);
-      DrawCircles('class_c', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-      changeLeavesLabels("class_f","IUPHAR", whole_dict);
-      DrawCircles('class_f', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-      changeLeavesLabels("class_t2","IUPHAR", whole_dict);
-      DrawCircles('class_t2', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-      changeLeavesLabels("orphan","IUPHAR", whole_dict);
-      DrawCircles('orphan', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-  });
-</script>
+
+<!------------------------------->
+<!-- Chemotype Selection Modal -->
+<!------------------------------->
+
+<div class="modal fade" id="chemotypeSelectionModal" tabindex="-1" role="dialog" aria-labelledby="chemotypeSelectionModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title" id="chemotypeSelectionModalLabel">Select Chemotypes</h4>
+            </div>
+            <div class="modal-body">
+                <div id="chemotypeCheckboxList"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmChemotypeSelection">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!---------------------------->
+<!-- Family Selection Modal -->
+<!---------------------------->
+
+<div class="modal fade" id="familySelectionModal" tabindex="-1" role="dialog" aria-labelledby="familySelectionModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title" id="familySelectionModalLabel">Select Families</h4>
+            </div>
+            <div class="modal-body">
+                <div id="familyCheckboxList"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmFamilySelection">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{% elif page == 'gprotein' %}
+    
+    <!------------------------------------>
+    <!----- GPROTEIN PAGE PROCESSING ----->
+    <!------------------------------------>
+
+    <!----- WHEEL/TABLE SELECTOR NAV TAB DEFINITION -->
+    <ul class="nav nav-tabs main">
+        <li class="dropdown active">
+            <a class="dropdown-toggle" data-toggle="dropdown" href="#">Trees <span class="caret"></span></a>
+            <ul class="dropdown-menu">
+                <li><a id='tree_class_a_rhodopsin_tablink' href="#tree_class_a_rhodopsin" data-toggle="tab">Class A (Rhodopsin)</a></li>
+                <li><a id='tree_class_a_orphan_tablink' href="#tree_class_a_orphan" data-toggle="tab">Class A (Orphan)</a></li>
+                <li><a id='tree_class_b1_tablink' href="#tree_class_b1_secretin" data-toggle="tab">Class B1 (Secretin)</a></li>
+                <li><a id='tree_class_b2_tablink' href="#tree_class_b2_adhesion" data-toggle="tab">Class B2 (Adhesion)</a></li>
+                <li><a id='tree_class_c_tablink' href="#tree_class_c_glutamate" data-toggle="tab">Class C (Glutamate)</a></li>
+                <li><a id='tree_class_f_tablink' href="#tree_class_f_frizzled" data-toggle="tab">Class F (Frizzled)</a></li>
+                <li><a id='tree_class_t2_tablink' href="#tree_class_t2_taste2" data-toggle="tab">Class T2 (Taste2)</a></li>
+            </ul>
+        </li>
+        <li>
+            <a href="#gprotein_tables" data-toggle="tab">Tables</a>
+        </li>
+    </ul>
+    
+    <!----- CHART CONTROLS: Fixed bottom left -->
+    <div class="wheel_or_tree_chart_legend bottom_left visible">
+        Receptor names:
+        <div class="btn-group" role="group" id="gtp_plus">
+            <button id="UniProtNames" class="btn btn-info active">UniProt</button>
+            <button id="IUPHARNames" class="btn btn-info">IUPHAR</button>
+        </div>
+    </div>
+
+    <!----- CHART LEGEND: Fixed to bottom right -->
+    <div class="wheel_or_tree_chart_legend bottom_right visible">
+        <div class="text-center">
+            <b>G Protein complexes</b> <br />
+            <span class="gprot_blue">&#11044; <b>G&alpha;<sub>s</sub></b></span>
+            <span class="gprot_red">&#11044; <b>G&alpha;<sub>i/o</sub></b></span>
+            <span class="gprot_black">&#11044; <b>G&alpha;<sub>q/11</sub></b></span>
+            <span class="gprot_green">&#11044; <b>G&alpha;<sub>12/13</sub></b></span>
+            <span class="gprot_pink">&#11044; <b>GPa1</b></span>
+        </div>
+    </div>
+
+    <div class="tab-content">
+            <!----- CLASS A TREE PANEL  -->
+            <div id="tree_class_a_rhodopsin" class="tab-pane fade in active">
+                <div id="class_a" class="text-center">
+                    <h4 class="chartHeader">Class A<br />(Rhodopsin)</h4>
+                    <div class="downloadButtonContainer">
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                                aria-haspopup="true" aria-expanded="false">
+                                <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <a
+                                        href="javascript:saveSvgAsPng(document.getElementById('class_a_svg'), 'xtals_tree_class_a.png');">PNG</a>
+                                </li>
+                                <li>
+                                    <a
+                                        href="javascript:saveSvgAsJpg(document.getElementById('class_a_svg'), 'xtals_tree_class_a.jpg');">JPG</a>
+                                </li>
+                                <li>
+                                    <a
+                                        href="javascript:saveSvgAsTiff(document.getElementById('class_a_svg'), 'xtals_tree_class_a.tiff');">TIFF</a>
+                                </li>
+                                <li>
+                                    <a
+                                        href="javascript:saveSvg(document.getElementById('class_a_svg'), 'xtals_tree_class_a.svg');">SVG</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+    
+            <!----- CLASS A ORPHAN WHEEL PANEL  -->
+            <div id="tree_class_a_orphan" class="tab-pane fade">
+                <div id="orphan" class="text-center">
+                    <h4 class="chartHeader">Class A <br /> (Orphans)</h4>
+                    <div class="downloadButtonContainer">
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                                aria-haspopup="true" aria-expanded="false">
+                                <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <a
+                                        href="javascript:saveSvgAsPng(document.getElementById('orphan_svg'), 'xtal_coverage_tree_class_a_orphan.png');">PNG</a>
+                                </li>
+                                <li>
+                                    <a
+                                        href="javascript:saveSvgAsJpg(document.getElementById('orphan_svg'), 'xtal_coverage_tree_class_a_orphan.jpg');">JPG</a>
+                                </li>
+                                <li>
+                                    <a
+                                        href="javascript:saveSvgAsTiff(document.getElementById('orphan_svg'), 'xtal_coverage_tree_class_a_orphan.tiff');">TIFF</a>
+                                </li>
+                                <li>
+                                    <a
+                                        href="javascript:saveSvg(document.getElementById('orphan_svg'), 'xtal_coverage_tree_class_a_orphan.svg');">SVG</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+    
+            <!----- CLASS B1 WHEEL PANEL  -->
+            <div id="tree_class_b1_secretin" class="tab-pane fade">
+                <div id="class_b1" class="text-center">
+                    <h4 class="chartHeader">Class B1<br />(Secretin)</h4>
+                    <div class="downloadButtonContainer">
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                                aria-haspopup="true" aria-expanded="false">
+                                <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <a
+                                        href="javascript:saveSvgAsPng(document.getElementById('class_b1_svg'), 'xtal_coverage_tree_class_b1.png');">PNG</a>
+                                </li>
+                                <li>
+                                    <a
+                                        href="javascript:saveSvgAsJpg(document.getElementById('class_b1_svg'), 'xtal_coverage_tree_class_b1.jpg');">JPG</a>
+                                </li>
+                                <li>
+                                    <a
+                                        href="javascript:saveSvgAsTiff(document.getElementById('class_b1_svg'), 'xtal_coverage_tree_class_b1.tiff');">TIFF</a>
+                                </li>
+                                <li>
+                                    <a
+                                        href="javascript:saveSvg(document.getElementById('class_b1_svg'), 'xtal_coverage_tree_class_b1.svg');">SVG</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+    
+            <!----- CLASS B2 TREE PANEL  -->
+            <div id="tree_class_b2_adhesion" class="tab-pane fade">
+                <div id="class_b2" class="text-center">
+                    <h4 class="chartHeader">Class B2<br />(Adhesion)</h4>
+                    <div class="downloadButtonContainer">
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                                aria-haspopup="true" aria-expanded="false">
+                                <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <a
+                                        href="javascript:saveSvgAsPng(document.getElementById('class_b2_svg'), 'xtal_coverage_tree_class_b2.png');">PNG</a>
+                                </li>
+                                <li>
+                                    <a
+                                        href="javascript:saveSvgAsJpg(document.getElementById('class_b2_svg'), 'xtal_coverage_tree_class_b2.jpg');">JPG</a>
+                                </li>
+                                <li>
+                                    <a
+                                        href="javascript:saveSvgAsTiff(document.getElementById('class_b2_svg'), 'xtal_coverage_tree_class_b2.tiff');">TIFF</a>
+                                </li>
+                                <li>
+                                    <a
+                                        href="javascript:saveSvg(document.getElementById('class_b2_svg'), 'xtal_coverage_tree_class_b2.svg');">SVG</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+    
+            <!----- CLASS C WHEEL PANEL  -->
+            <div id="tree_class_c_glutamate" class="tab-pane fade">
+                <div id="class_c" class="text-center">
+                    <h4 class="chartHeader">Class C<br />(Glutamate)</h4>
+                    <div class="downloadButtonContainer">
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                                aria-haspopup="true" aria-expanded="false">
+                                <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <a
+                                        href="javascript:saveSvgAsPng(document.getElementById('class_c_svg'), 'xtal_coverage_tree_class_c.png');">PNG</a>
+                                </li>
+                                <li>
+                                    <a
+                                        href="javascript:saveSvgAsJpg(document.getElementById('class_c_svg'), 'xtal_coverage_tree_class_c.jpg');">JPG</a>
+                                </li>
+                                <li>
+                                    <a
+                                        href="javascript:saveSvgAsTiff(document.getElementById('class_c_svg'), 'xtal_coverage_tree_class_c.tiff');">TIFF</a>
+                                </li>
+                                <li>
+                                    <a
+                                        href="javascript:saveSvg(document.getElementById('class_c_svg'), 'xtal_coverage_tree_class_c.svg');">SVG</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+    
+            <!----- CLASS F WHEEL PANEL  -->
+            <div id="tree_class_f_frizzled" class="tab-pane fade">
+                <div id="class_f" class="text-center">
+                    <h4 class="chartHeader">Class F<br />(Frizzled)</h4>
+                    <div class="downloadButtonContainer">
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                                aria-haspopup="true" aria-expanded="false">
+                                <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <a
+                                        href="javascript:saveSvgAsPng(document.getElementById('class_f_svg'), 'xtal_coverage_tree_class_f.png');">PNG</a>
+                                </li>
+                                <li>
+                                    <a
+                                        href="javascript:saveSvgAsJpg(document.getElementById('class_f_svg'), 'xtal_coverage_tree_class_f.jpg');">JPG</a>
+                                </li>
+                                <li>
+                                    <a
+                                        href="javascript:saveSvgAsTiff(document.getElementById('class_f_svg'), 'xtal_coverage_tree_class_f.tiff');">TIFF</a>
+                                </li>
+                                <li>
+                                    <a
+                                        href="javascript:saveSvg(document.getElementById('class_f_svg'), 'xtal_coverage_tree_class_f.svg');">SVG</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+    
+            <!----- CLASS T2 WHEEL PANEL  -->
+            <div id="tree_class_t2_taste2" class="tab-pane fade">
+                <div id="class_t2" class="text-center">
+                    <h4 class="chartHeader">Class T <br /> (Taste 2)</h4>
+                    <div class="downloadButtonContainer">
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                                aria-haspopup="true" aria-expanded="false">
+                                <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <a
+                                        href="javascript:saveSvgAsPng(document.getElementById('class_t2_svg'), 'xtal_coverage_tree_class_t2.png');">PNG</a>
+                                </li>
+                                <li>
+                                    <a
+                                        href="javascript:saveSvgAsJpg(document.getElementById('class_t2_svg'), 'xtal_coverage_tree_class_t2.jpg');">JPG</a>
+                                </li>
+                                <li>
+                                    <a
+                                        href="javascript:saveSvgAsTiff(document.getElementById('class_t2_svg'), 'xtal_coverage_tree_class_t2.tiff');">TIFF</a>
+                                </li>
+                                <li>
+                                    <a
+                                        href="javascript:saveSvg(document.getElementById('class_t2_svg'), 'xtal_coverage_tree_class_t2.svg');">SVG</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+        <!----- TABLE NAV PANEL  -->
+        <div id="gprotein_tables" class="tab-pane fade">
+            <ul class="nav nav-tabs sub">
+                <li class="active">
+                    <a href="#sigprot_tables_distinct" data-toggle="tab">Non-redundant receptor counts</a>
+                </li>
+                <li>
+                    <a href="#sigprot_tables_redundant" data-toggle="tab">All structures (redundant receptors)</a>
+                </li>
+            </ul>
+            <!-- G protein statistics table from template -->
+            {% include "sigprot_structure_stats_table.html" %}
+        </div>
+    </div>
+        
 
 {% elif page == 'arrestin' %}
-<style type="text/css">
-  .gprot_blue {
-    color: blue;
-  }
-  .gprot_red {
-    color: red;
-  }
-  .gprot_black {
-    color: black;
-  }
-  .gprot_green {
-    color: forestgreen;
-  }
-  .gprot_pink {
-    color: pink;
-  }
-  .gprot_orange{
-    color: orange;
-  }
-  .gprot_purple{
-    color: purple;
-  }
-  .gprot_aquamarine{
-    color: mediumturquoise;
-  }
-  .gprot_cornflower{
-    color: cornflowerblue;
-  }
-  .graydiv {
-      height: 20px;
-      width: 350px;
-      background: linear-gradient(to right, white 0%, black 100%)
-  }
-</style>
+
+    <!------------------------------------>
+    <!----- ARRESTIN PAGE PROCESSING ----->
+    <!------------------------------------>
+
+    <!----- WHEEL/TABLE SELECTOR NAV TAB DEFINITION -->
+    <ul class="nav nav-tabs main">
+        <li class="active">
+            <a href="#arrestin_wheels" data-toggle="tab">GPCRome Wheel</a>
+        </li>
+        <li>
+            <a href="#arrestin_tables" data-toggle="tab">Tables</a>
+        </li>
+    </ul>
+
+        <!----- WHEEL/TABLE SELECTOR NAV TAB CONTENT -->
+    <div class="tab-content">
+        <!----- WHEEL NAV PANEL  -->
+        <div id="arrestin_wheels" class="tab-pane fade in active">
+
+            <!----- CHART CONTROLS: Fixed bottom left -->
+            <div style="position: fixed; bottom: 20px; left: 20px;z-index: 1000">
+                Receptor names:
+                <div class="btn-group" role="group" id="gtp_plus">
+                    <button id="GPCRome_Arrestin_Protein" class="btn btn-info active">Protein</button>
+                    <button id="GPCRome_Arrestin_Entrez" class="btn btn-info">Gene</button>
+                    <!--<button id="GPCRome_Arrestin_Uniprot" class="btn btn-info ">UniProt</button>-->
+                </div>
+            </div>
+
+            <div style="position: fixed; bottom: 60px; left: 55px;z-index: 1001">
+                Icon toggle:
+                <button id="ToggleIconArrestin" class="btn btn-info active">On</button>
+            </div>    
+
+            <div class="downloadButtonContainer text-center">                
+                <div class="btn-group">
+                    <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                        aria-haspopup="true" aria-expanded="false">
+                        <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li>
+                            <a
+                                href="javascript:saveSvgAsPng(document.getElementById('GPCRome_Arrestin_plot_svg'), 'GPCRome_Arrestin_plot.png');">PNG</a>
+                        </li>
+                        <li>
+                            <a
+                                href="javascript:saveSvgAsJpg(document.getElementById('GPCRome_Arrestin_plot_svg'), 'GPCRome_Arrestin_plot.jpg');">JPG</a>
+                        </li>
+                        <li>
+                            <a
+                                href="javascript:saveSvgAsTiff(document.getElementById('GPCRome_Arrestin_plot_svg'), 'GPCRome_Arrestin_plot.tiff');">TIFF</a>
+                        </li>
+                        <li>
+                            <a
+                                href="javascript:saveSvg(document.getElementById('GPCRome_Arrestin_plot_svg'), 'GPCRome_Arrestin_plot.svg');">SVG</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div style="position: fixed; bottom: 20px; right: 20px;z-index: 1000">
+                <div class="text-center">
+                    <b>GPCR-Arrestin complexes coverage</b> <br />
+                    <span class="gprot_orange">&#9644; <b>&beta;-Arrestin<sub>1</sub></b></span>
+                    <span class="gprot_purple">&#9644; <b>&beta;-Arrestin<sub>2</sub></b></span>
+                    <span class="gprot_aquamarine">&#9644; <b>Arrestin-C</b></span>
+                    <span class="gprot_cornflower">&#9644; <b>S-Arrestin</b></span>
+                </div>
+            </div>
+
+            <div id="image-container"
+                data-image-url="{% static 'home/images/DataMapper/DataMapper_GPCRome_icon_legend.png' %}">
+            </div>
+            <!-- GPCRome -->
+            <div class="col-md-12" style="margin-top: 0px;margin-bottom: 30px;">
+                <div id="GPCRome_Arrestin_plot" class="text-center"></div>
+            </div>
+        </div>
+
+        <!----- TABLE NAV PANEL  -->
+        <div id="arrestin_tables" class="tab-pane fade">
+            <ul class="nav nav-tabs sub">
+                <li class="active">
+                    <a href="#sigprot_tables_distinct" data-toggle="tab">Non-redundant receptor counts</a>
+                </li>
+                <li>
+                    <a href="#sigprot_tables_redundant" data-toggle="tab">All structures (redundant receptors)</a>
+                </li>
+            </ul>
+            <!-- Arrestin statistics table from template -->
+            {% include "sigprot_structure_stats_table.html" %}
+        </div>
+    </div>
 {% endif %}
-
-  {% if page != 'structure' %}
-    {% if page == 'gprot' %}
-    <div id="class_a" class="text-center">
-    <h4>Class A<br />(Rhodopsin)</h4>
-    <br />
-    <div>
-      <!-- <div style="float: right; position: relative" class="text-center">
-        <b>G Protein complexes structures frequency (from low to high)</b>
-        <div class="graydiv"></div>
-      </div> -->
-      <div style="float: left; position: relative" class="text-center">
-        <b>G Protein complexes</b> <br />
-                <span class="gprot_blue">&#11044; <b>G&alpha;<sub>s</sub></b></span>
-                <span class="gprot_red">&#11044; <b>G&alpha;<sub>i/o</sub></b></span>
-                <span class="gprot_black">&#11044; <b>G&alpha;<sub>q/11</sub></b></span>
-                <span class="gprot_green">&#11044; <b>G&alpha;<sub>12/13</sub></b></span>
-                <span class="gprot_pink">&#11044; <b>GPa1</b></span>
-      </div>
-    </div>
-  </div>
-  <p>
-    <div class="text-center">
-      <div class="btn-group">
-          <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
-                  aria-haspopup="true" aria-expanded="false">
-              <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
-          </button>
-          <ul class="dropdown-menu">
-              <li>
-                  <a href="javascript:saveSvgAsPng(document.getElementById('class_a_svg'), 'xtals_tree_class_a.png');">PNG</a>
-              </li>
-              <li>
-                  <a href="javascript:saveSvgAsJpg(document.getElementById('class_a_svg'), 'xtals_tree_class_a.jpg');">JPG</a>
-              </li>
-              <li>
-                  <a href="javascript:saveSvgAsTiff(document.getElementById('class_a_svg'), 'xtals_tree_class_a.tiff');">TIFF</a>
-              </li>
-              <li>
-                  <a href="javascript:saveSvg(document.getElementById('class_a_svg'), 'xtals_tree_class_a.svg');">SVG</a>
-              </li>
-          </ul>
-      </div>
-    </div>
-  <br />
-  <br />
-  <br />
-
-  <div class="row-fluid">
-    <div class="span12">
-      <div class="row-fluid">
-
-        <div class="span4">
-          <div id="orphan" class="text-center">
-            <h4>Class A <br /> Orphans</h4>
-          </div>
-        </div>
-
-        <div class="span4">
-          <div id="class_b1" class="text-center">
-            <h4>Class B1<br />(Secretin)</h4>
-          </div>
-        </div>
-
-        <div class="span4">
-          <div id="class_b2" class="text-center">
-            <h4>Class B2<br />(Adhesion)</h4>
-          </div>
-        </div>
-
-      </div>
-    </div>
-  </div>
-
-  <div class="row-fluid">
-    <div class="span12">
-      <div class="row-fluid">
-
-        <div class="span4">
-          <div class="text-center">
-            <div class="btn-group">
-                <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
-                        aria-haspopup="true" aria-expanded="false">
-                    <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
-                </button>
-                <ul class="dropdown-menu">
-                    <li>
-                        <a href="javascript:saveSvgAsPng(document.getElementById('orphan_svg'), 'xtal_coverage_tree_class_a_orphan.png');">PNG</a>
-                    </li>
-                    <li>
-                        <a href="javascript:saveSvgAsJpg(document.getElementById('orphan_svg'), 'xtal_coverage_tree_class_a_orphan.jpg');">JPG</a>
-                    </li>
-                    <li>
-                        <a href="javascript:saveSvgAsTiff(document.getElementById('orphan_svg'), 'xtal_coverage_tree_class_a_orphan.tiff');">TIFF</a>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="javascript:saveSvg(document.getElementById('orphan_svg'), 'xtal_coverage_tree_class_a_orphan.svg');">SVG</a>
-                    </li>
-                </ul>
-            </div>
-          </div>
-        </div>
-
-        <div class="span4">
-          <div class="text-center">
-            <div class="btn-group">
-                <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
-                        aria-haspopup="true" aria-expanded="false">
-                    <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
-                </button>
-                <ul class="dropdown-menu">
-                    <li>
-                        <a href="javascript:saveSvgAsPng(document.getElementById('class_b1_svg'), 'xtal_coverage_tree_class_b1.png');">PNG</a>
-                    </li>
-                    <li>
-                        <a href="javascript:saveSvgAsJpg(document.getElementById('class_b1_svg'), 'xtal_coverage_tree_class_b1.jpg');">JPG</a>
-                    </li>
-                    <li>
-                        <a href="javascript:saveSvgAsTiff(document.getElementById('class_b1_svg'), 'xtal_coverage_tree_class_b1.tiff');">TIFF</a>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="javascript:saveSvg(document.getElementById('class_b1_svg'), 'xtal_coverage_tree_class_b1.svg');">SVG</a>
-                    </li>
-                </ul>
-            </div>
-          </div>
-        </div>
-        <div class="span4">
-          <div class="text-center">
-            <div class="btn-group">
-                <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
-                        aria-haspopup="true" aria-expanded="false">
-                    <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
-                </button>
-                <ul class="dropdown-menu">
-                    <li>
-                        <a href="javascript:saveSvgAsPng(document.getElementById('class_b2_svg'), 'xtal_coverage_tree_class_b2.png');">PNG</a>
-                    </li>
-                    <li>
-                        <a href="javascript:saveSvgAsJpg(document.getElementById('class_b2_svg'), 'xtal_coverage_tree_class_b2.jpg');">JPG</a>
-                    </li>
-                    <li>
-                        <a href="javascript:saveSvgAsTiff(document.getElementById('class_b2_svg'), 'xtal_coverage_tree_class_b2.tiff');">TIFF</a>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="javascript:saveSvg(document.getElementById('class_b2_svg'), 'xtal_coverage_tree_class_b2.svg');">SVG</a>
-                    </li>
-                </ul>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <br />
-  <br />
-  <br />
-
-  <div class="row-fluid">
-    <div class="span12">
-      <div class="row-fluid">
-        <div class="span4">
-          <div id="class_c" class="text-center">
-            <h4>Class C<br />(Glutamate)</h4>
-          </div>
-        </div>
-
-        <div class="span4">
-          <div id="class_f" class="text-center">
-            <h4>Class F<br />(Frizzled)</h4>
-          </div>
-        </div>
-
-        <div class="span4">
-          <div id="class_t2" class="text-center">
-            <h4>Class T <br /> (Taste 2)</h4>
-          </div>
-        </div>
-
-      </div>
-    </div>
-  </div>
-
-  <div class="row-fluid">
-    <div class="span12">
-      <div class="row-fluid">
-        <div class="span4">
-          <div class="text-center">
-            <div class="btn-group">
-                <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
-                        aria-haspopup="true" aria-expanded="false">
-                    <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
-                </button>
-                <ul class="dropdown-menu">
-                    <li>
-                        <a href="javascript:saveSvgAsPng(document.getElementById('class_c_svg'), 'xtal_coverage_tree_class_c.png');">PNG</a>
-                    </li>
-                    <li>
-                        <a href="javascript:saveSvgAsJpg(document.getElementById('class_c_svg'), 'xtal_coverage_tree_class_c.jpg');">JPG</a>
-                    </li>
-                    <li>
-                        <a href="javascript:saveSvgAsTiff(document.getElementById('class_c_svg'), 'xtal_coverage_tree_class_c.tiff');">TIFF</a>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="javascript:saveSvg(document.getElementById('class_c_svg'), 'xtal_coverage_tree_class_c.svg');">SVG</a>
-                    </li>
-                </ul>
-            </div>
-          </div>
-        </div>
-        <div class="span4">
-          <div class="text-center">
-            <div class="btn-group">
-                <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
-                        aria-haspopup="true" aria-expanded="false">
-                    <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
-                </button>
-                <ul class="dropdown-menu">
-                    <li>
-                        <a href="javascript:saveSvgAsPng(document.getElementById('class_f_svg'), 'xtal_coverage_tree_class_f.png');">PNG</a>
-                    </li>
-                    <li>
-                        <a href="javascript:saveSvgAsJpg(document.getElementById('class_f_svg'), 'xtal_coverage_tree_class_f.jpg');">JPG</a>
-                    </li>
-                    <li>
-                        <a href="javascript:saveSvgAsTiff(document.getElementById('class_f_svg'), 'xtal_coverage_tree_class_f.tiff');">TIFF</a>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="javascript:saveSvg(document.getElementById('class_f_svg'), 'xtal_coverage_tree_class_f.svg');">SVG</a>
-                    </li>
-                </ul>
-            </div>
-          </div>
-        </div>
-        <div class="span4">
-          <div class="text-center">
-            <div class="btn-group">
-                <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
-                        aria-haspopup="true" aria-expanded="false">
-                    <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
-                </button>
-                <ul class="dropdown-menu">
-                    <li>
-                        <a href="javascript:saveSvgAsPng(document.getElementById('class_t2_svg'), 'xtal_coverage_tree_class_t2.png');">PNG</a>
-                    </li>
-                    <li>
-                        <a href="javascript:saveSvgAsJpg(document.getElementById('class_t2_svg'), 'xtal_coverage_tree_class_t2.jpg');">JPG</a>
-                    </li>
-                    <li>
-                        <a href="javascript:saveSvgAsTiff(document.getElementById('class_t2_svg'), 'xtal_coverage_tree_class_t2.tiff');">TIFF</a>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="javascript:saveSvg(document.getElementById('class_t2_svg'), 'xtal_coverage_tree_class_t2.svg');">SVG</a>
-                    </li>
-                </ul>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-    {% elif page == 'arrestin' %}
-    <!-- ARRESTINDB TABLES SECTION -->
-
-    <h4>Number of arrestin structures</h4>
-    <table style="width:75% !important" class="table table-stripped">
-        <thead>
-            <tr>
-                <td><b>Structures</td>
-                {% for class in all_arrestins_by_gclass.items %}
-                <td align="center"><b>{{ class.0|safe}}</b></td>
-                {% endfor %}
-                <td align="center"><b>Total</b></td>
-            </tr>
-        </thead>
-        <tbody>
-          <tr>
-              <td>Non complexed arrestin</td>
-              {% for class in noncomplex_arrestins_by_gclass.items %}
-              <td align="center" style="vertical-align:middle !important">{% if class.1 == 0 %}-{% else %}{{ class.1 }}{% endif %}</td>
-              {% endfor %}
-              <td align="center" style="vertical-align:middle !important">{{ noncomplex_arrestins }}</td>
-          </tr>
-          <tr>
-              <td>Receptor - arrestin complexes</td>
-              {% for class in all_arrestins_by_gclass.items %}
-              <td align="center" style="vertical-align:middle !important">{% if class.1 == 0 %}-{% else %}{{ class.1 }}{% endif %}</td>
-              {% endfor %}
-              <td align="center" style="vertical-align:middle !important">{{ all_arrestins }}</td>
-          </tr>
-          <tr>
-              <td>Total structures</td>
-              {% for item in total_arrestins_by_gclass %}
-              <td align="center" style="vertical-align:middle !important">{{ item }}</td>
-              {% endfor %}
-              <td align="center" style="vertical-align:middle !important">{{ total_arrestins }}</td>
-          </tr>
-        </tbody>
-        <tr> </tr>
-    </table>
-    <br />
-    <br />
-    <h4>Number of GPCR-Arrestin structures (distinct complexes)</h4>
-    <table style="width:75% !important" class="table table-stripped">
-        <thead>
-            <tr>
-                <td><b>Receptor Class</td>
-                {% for class in all_arrestins_by_gclass.items %}
-                <td align="center"><b>{{ class.0|safe }}</b></td>
-                {% endfor %}
-                <td align="center"><b>Total</b></td>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>Class A</td>
-                {% for total, unique in arrA_complexes %}
-                <td align="center" style="vertical-align:middle !important">{% if total.1 == 0 %}-{% else %}{{ total.1 }} ({{ unique.1 }}){% endif %}</td>
-                {% endfor %}
-                <td align="center" style="vertical-align:middle !important">{{ all_arr_A_complexes }} ({{ unique_arr_A_complexes }})</td>
-            </tr>
-            <tr>
-                <td>Class B1</td>
-                {% for total, unique in arrB1_complexes %}
-                <td align="center" style="vertical-align:middle !important">{% if total.1 == 0 %}-{% else %}{{ total.1 }} ({{ unique.1 }}){% endif %}</td>
-                {% endfor %}
-                <td align="center" style="vertical-align:middle !important">{{ all_arr_B1_complexes }} ({{ unique_arr_B1_complexes }})</td>
-            </tr>
-            <tr>
-                <td>Class B2</td>
-                {% for total, unique in arrB2_complexes %}
-                <td align="center" style="vertical-align:middle !important">{% if total.1 == 0 %}-{% else %}{{ total.1 }} ({{ unique.1 }}){% endif %}</td>
-                {% endfor %}
-                <td align="center" style="vertical-align:middle !important">{{ all_arr_B2_complexes }} ({{ unique_arr_B2_complexes }})</td>
-            </tr>
-            <tr>
-                <td>Class C</td>
-                {% for total, unique in arrC_complexes %}
-                <td align="center" style="vertical-align:middle !important">{% if total.1 == 0 %}-{% else %}{{ total.1 }} ({{ unique.1 }}){% endif %}</td>
-                {% endfor %}
-                <td align="center" style="vertical-align:middle !important">{{ all_arr_C_complexes }} ({{ unique_arr_C_complexes }})</td>
-            </tr>
-            <tr>
-                <td>Class D1</td>
-                {% for total, unique in arrD1_complexes %}
-                <td align="center" style="vertical-align:middle !important">{% if total.1 == 0 %}-{% else %}{{ total.1 }} ({{ unique.1 }}){% endif %}</td>
-                {% endfor %}
-                <td align="center" style="vertical-align:middle !important">{{ all_arr_D1_complexes }} ({{ unique_arr_D1_complexes }})</td>
-            </tr>
-            <tr>
-                <td>Class F</td>
-                {% for total, unique in arrF_complexes %}
-                <td align="center" style="vertical-align:middle !important">{% if total.1 == 0 %}-{% else %}{{ total.1 }} ({{ unique.1 }}){% endif %}</td>
-                {% endfor %}
-                <td align="center" style="vertical-align:middle !important">{{ all_arr_F_complexes }} ({{ unique_arr_F_complexes }})</td>
-            </tr>
-            <tr>
-                <td>Class T2</td>
-                {% for total, unique in arrT2_complexes %}
-                <td align="center" style="vertical-align:middle !important">{% if total.1 == 0 %}-{% else %}{{ total.1 }} ({{ unique.1 }}){% endif %}</td>
-                {% endfor %}
-                <td align="center" style="vertical-align:middle !important">{{ all_arr_T2_complexes }} ({{ unique_arr_T2_complexes }})</td>
-            </tr>
-        </tbody>
-        <tr> </tr>
-    </table>
-    <br />
-    <br />
-    Specific sets of structures can be downloaded from the <a href="/structure">Structures</a> page.<br />
-    The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }}</strong>.<br />
-
-    {% endif %}
-
-{% else %}
-
-<!-- GPCRDB TABLES SECTION -->
-
-<h4>Number of structures, including multiple of same receptor (complex)</h4>
-<table style="width:75% !important" class="table table-stripped">
-    <thead>
-        <tr>
-            <td><b>Class<br />(Family)</b></td>
-            {% for class in all_structures_by_class.items %}
-            <td align="center"><b>
-              {% if class.0 == " T2 (Taste 2)" %}T2 (Taste&nbsp;2)
-              {% elif class.0 == " D1 (Ste2-like fungal pheromone)" %}D1<br \>(Ste2-like fungal pheromone)
-              {% else %}{{ class.0 }}
-              {% endif %}
-            </b></td>
-            {% endfor %}
-            <td align="center"><b>Total</b></td>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td>Receptors</td>
-            {% for class in all_structures_by_class.items %}
-            <td align="center" style="vertical-align:middle !important">{{ class.1 }}</td>
-            {% endfor %}
-            <td align="center" style="vertical-align:middle !important">{{ all_structures }}</td>
-        </tr>
-        <tr>
-            <td>Receptor - ligand complexes</td>
-            {% for class in all_complexes_by_class.items %}
-            <td align="center"  style="vertical-align:middle !important">{{ class.1 }}</td>
-            {% endfor %}
-            <td align="center" style="vertical-align:middle !important">{{ all_complexes }}</td>
-        </tr>
-        <tr>
-            <td>Receptor - G protein complexes</td>
-            {% for class in all_gprots_by_class.items %}
-            <td align="center"  style="vertical-align:middle !important">{{ class.1 }}</td>
-            {% endfor %}
-            <td align="center" style="vertical-align:middle !important">{{ all_gprots }}</td>
-        </tr>
-        <tr>
-            <td>Active-state receptors*</td>
-            {% for class in all_active_by_class.items %}
-            <td align="center"  style="vertical-align:middle !important">{{ class.1 }}</td>
-            {% endfor %}
-            <td align="center" style="vertical-align:middle !important">{{ all_active }}</td>
-        </tr>
-    </tbody>
-    <tr> </tr>
-
-</table>
-<br />
-<br />
-<h4>Number of unique receptor complexes</h4>
-<table style="width:75% !important" class="table table-stripped">
-    <thead>
-        <tr>
-            <td><b>Class<br />(Family)</b></td>
-            {% for class in unique_structures_by_class.items %}
-            <td align="center"><b>
-              {% if class.0 == " T2 (Taste 2)" %}T2 (Taste&nbsp;2)
-              {% elif class.0 == " D1 (Ste2-like fungal pheromone)" %}D1<br \>(Ste2-like fungal pheromone)
-              {% else %}{{ class.0 }}
-              {% endif %}
-            </b></td>
-            {% endfor %}
-            <td align="center"><b>Total</b></td>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td>Receptors**</td>
-            {% for class in unique_structures_by_class.items %}
-            <td align="center" style="vertical-align:middle !important">{{ class.1 }}</td>
-            {% endfor %}
-            <td align="center" style="vertical-align:middle !important">{{ unique_structures }}</td>
-        </tr>
-        <tr>
-            <td>Receptor - ligand complexes</td>
-            {% for class in unique_complexes_by_class.items %}
-            <td align="center" style="vertical-align:middle !important">{{ class.1 }}</td>
-            {% endfor %}
-            <td align="center" style="vertical-align:middle !important">{{ unique_complexes }}</td>
-        </tr>
-        <tr>
-            <td>Receptor - G protein complexes</td>
-            {% for class in unique_gprots_by_class.items %}
-            <td align="center" style="vertical-align:middle !important">{{ class.1 }}</td>
-            {% endfor %}
-            <td align="center" style="vertical-align:middle !important">{{ unique_gprots }}</td>
-        </tr>
-        <tr>
-            <td>Active-state receptors*</td>
-            {% for class in unique_active_by_class.items %}
-            <td align="center" style="vertical-align:middle !important">{{ class.1 }}</td>
-            {% endfor %}
-            <td align="center" style="vertical-align:middle !important">{{ unique_active }}</td>
-        </tr>
-    </tbody>
-    <tr> </tr>
-</table>
-*Active state is defined as agonist-bound and opened intracellular TM bundle.
-**Receptor-orthologues are only counted once.
-<br />
-<br />
-Specific sets of structures can be downloaded from the <a href="/structure">Structures</a> page.<br />
-The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }}</strong>.<br />
-
-{% endif %}
-
-
 {% endblock %}
 
+
 {% block addon_js %}
+
+<!----------------------->
+<!----------------------->
+<!----- JAVA SCRIPT ----->
+<!----------------------->
+<!----------------------->
+
 <script src="{% static 'home/js/bootstrap-toggle.min.js' %}"></script>
 <script src="{% static 'home/js/d3.min.js' %}"></script>
 <script src="{% static 'home/js/nv.d3.min.js' %}"></script>
+<script src="{% static 'home/js/frameworks/plotly/plotly-3.5.1.min.js' %}"></script>
 <script src="{% static 'home/js/d3.v4.min.js' %}"></script>
 <script src="{% static 'home/js/statistics.js' %}"></script>
 <script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
 <script src="{% static 'home/js/saveSvg.js' %}"></script>
 <script src="{% static 'home/js/phylo_tree.js' %}"></script>
-{% if page == 'structure' %}
+<script src="{% static 'home/js/xlsx.full.min.js' %}"></script>
+
+{% if page == 'gpcr' %}
+
+    <!-------------------------------->
+    <!----- GPCR PAGE JAVASCRIPT ----->
+    <!-------------------------------->
+
 <script src="{% static 'home/js/datamapper.js' %}"></script>
-<script src="{% static 'home/js/popper.min.js' %}"></script>
-<script src="{% static 'home/js/spectrum_v1_8_1.js' %}"></script>
-<script src="{% static 'home/js/ml.js' %}"></script>
-<script src="{% static 'home/js/d3.tip.js' %}"></script>
-<script>
+    <script src="{% static 'home/js/popper.min.js' %}"></script>
+    <script src="{% static 'home/js/spectrum_v1_8_1.js' %}"></script>
+    <script src="{% static 'home/js/ml.js' %}"></script>
+    <script src="{% static 'home/js/d3.tip.js' %}"></script>
 
-// Import GPCRome data 
-var GPCRome_stucture_data = {{ GPCRome_data|safe }};
-var GPCRome_complexes_data = {{ GPCRome_data_complexes|safe }};
-
-// == Structure GPCRome ==
-
-// Set styling
-var GPCRomes_styling = {
-    DataType: "Text",
-    FontStyle: "Arial",
-    FontsizeGlobal: "11px",
-    FontsizeClass: "20px",
-    Datatype: "Text",
-    showIcon: true,
-    LabelType: "Protein",
-    ShowLegend: false,
-    LegendLayout: { "mode": "row", "columns": "1", "sorted": "Vertically" }
-};
-
-// Add location and draw the GPCRome plot
-let GPCRome_location = "GPCRome_plot";
-DrawGPCRomeWheel(GPCRome_stucture_data, GPCRome_location, GPCRomes_styling);
-
-
-// == Complexes GPCRome ===
-
-// Recursively extract all "Data" values from a nested object
-function extractDataValues(obj) {
-    let values = [];
-
-    function findData(node) {
-        if (typeof node === "object" && node !== null) {
-            for (const key in node) {
-                const value = node[key];
-
-                if (value && typeof value === "object" && "Data" in value) {
-                    const dataValue = Number(value.Data);
-                    if (!isNaN(dataValue)) {
-                        values.push(dataValue);
-                    }
-                } else {
-                    findData(value); // keep digging
-                }
-            }
-        }
-    }
-
-    findData(obj);
-    return values;
-}
-
-// Extract min and max data (for numeric version)
-const GPCRomeWheelValues = extractDataValues(GPCRome_complexes_data)
-      .filter(value => value !== null && value !== '');
-
-  const GPCRomeMin = GPCRomeWheelValues.length > 0 ? Math.min(...GPCRomeWheelValues) : null;
-  const GPCRomeMax = GPCRomeWheelValues.length > 0 ? Math.max(...GPCRomeWheelValues) : null;
-  const GPCRomeAvg = GPCRomeWheelValues.length > 0 ? (GPCRomeMin + GPCRomeMax) / 2 : null;
-
-  function determineDecimalPlaces(minValue, maxValue) {
-    const allValues = [minValue, maxValue];
-    let maxDecimals = 0;
-
-    allValues.forEach(value => {
-        if (value == null) return; // Ignore nulls
-
-        const valueStr = Math.abs(value).toString();
-
-        if (valueStr.includes('e')) {
-            // Handle scientific notation separately
-            const parts = valueStr.split('e-');
-            if (parts.length === 2) {
-                const exp = parseInt(parts[1], 10);
-                maxDecimals = Math.max(maxDecimals, exp);
-            }
-        } else if (valueStr.includes('.')) {
-            const decimals = valueStr.split('.')[1].length;
-            maxDecimals = Math.max(maxDecimals, decimals);
-        }
-    });
-
-    // Cap at maximum 6 digits
-    return Math.min(maxDecimals, 6);
-  }
-
-  var GPCRomes_styling_complexes = {
-      GPCRomeMin: GPCRomeMin,
-      GPCRomeMax: GPCRomeMax,
-      GPCRomeAvg: GPCRomeAvg,
-      LegendbarDigit: determineDecimalPlaces(GPCRomeMin,GPCRomeMax),
-      LegendbarLength: 200,
-      LegendbarFontsize: "11px",
-      FontStyle: "Arial",
-      FontsizeGlobal: "11px",
-      FontsizeClass: "20px",
-      DataType: "Numeric",
-      colorStart: "#FFFFFF",
-      colorAvg: "#FFFFFF",
-      colorEnd: "#000000",
-      ColorSetup: 'One',
-      showIcon: true,
-      LabelType: "Protein",
-      ShowLegend: true,
-      LegendLabel: "Receptor-ligand complexes count (from low to high)"
-  };
-
-let GPCRome_complexes_location = "GPCRome_complexes_plot";
-DrawGPCRomeWheel(GPCRome_complexes_data, GPCRome_complexes_location, GPCRomes_styling_complexes);
-
-var Odorant_data = {{GPCRome_data_odorant|safe}};
-
-// Extract min and max data (for numeric version)
-const GPCRomeWheelValues_odorant = extractDataValues(Odorant_data)
-      .filter(value => value !== null && value !== '');
-
-  const GPCRomeMin_Odo = GPCRomeWheelValues_odorant.length > 0 ? Math.min(...GPCRomeWheelValues_odorant) : null;
-  const GPCRomeMax_Odo = GPCRomeWheelValues_odorant.length > 0 ? Math.max(...GPCRomeWheelValues_odorant) : null;
-  const GPCRomeAvg_Odo = GPCRomeWheelValues_odorant.length > 0 ? (GPCRomeMin_Odo + GPCRomeMax_Odo) / 2 : null;
+    <!-- jQuery + DataTables -->
   
-  function determineDecimalPlaces(minValue, maxValue) {
-    const allValues = [minValue, maxValue];
-    let maxDecimals = 0;
+  <script src="{% static '/home/js/frameworks/datatables/datatables-2.3.8.js' %}"></script> 
+  <script src="{% static '/home/js/frameworks/datatables/buttons-3.2.6.js' %}"></script> 
+  <script src="{% static '/home/js/frameworks/datatables/fixed_columns-5.0.5.js' %}"></script> 
+  <script src="{% static '/home/js/frameworks/datatables/html5_export-3.2.6.js' %}"></script> 
+  
+  <script src="{% static '/home/js/select2/4.1.0/select2.min.js' %}"></script> 
 
-    allValues.forEach(value => {
-        if (value == null) return; // Ignore nulls
+    <script>
+      window.STRUCTURE_GPCROME_WHEEL_DATA = {
+        coverageData: JSON.parse('{{ GPCRome_data|escapejs }}'),
+        complexesData: JSON.parse('{{ GPCRome_data_complexes|escapejs }}'),
+        complexesStats: JSON.parse('{{ GPCRome_complexes_stats|escapejs }}'),
+        olfactoryData: JSON.parse('{{ GPCRome_data_olfactory|escapejs }}'),
+        olfactoryStats: JSON.parse('{{ GPCRome_olfactory_stats|escapejs }}')
+      };
+    </script>
+    <script src="{% static 'home/js/gpcrome_svg_export.js' %}"></script>
+    <script src="{% static 'home/js/gpcrome_wheel_controls.js' %}"></script>
+    <script src="{% static 'home/js/structure/statistics_gpcrome_wheels.js' %}"></script>
+    <script type="module">
+        // Populate structure model statistics table using TableManager
+        import { TableManager } from "{% static 'home/js/tablemanager/tablemanager.js' %}";
+        let stattable = null;
+        TableManager.fetchConfiguration(
+          'structure_statistics_table_gpcr', //dataTableConfigName
+          'clientside', //dataTableConfigVariant
+          'structure_statistics_table_gpcr', //columnConfigName
+          'basic' //columnConfigVariant
+        )
+        .then(config => {
+          stattable = new TableManager(config.columnsSpecifications, 'structureStatisticsTable');
+          stattable.initialiseDataTable(config.datatableConfiguration);
+        }).catch(error => {
+          console.error('Error fetching configuration:', error);
+        });
+    </script>
+    <script>
+        function exportStructureStatistics(format) {
+          try {
+            const table = stattable.dataTableReference;
+            const ajsonData = table.ajax.json();
+            const columnSpecs = stattable.columnsSpecifications;
 
-        const valueStr = Math.abs(value).toString();
-
-        if (valueStr.includes('e')) {
-            // Handle scientific notation separately
-            const parts = valueStr.split('e-');
-            if (parts.length === 2) {
-                const exp = parseInt(parts[1], 10);
-                maxDecimals = Math.max(maxDecimals, exp);
+            if (!ajsonData || !ajsonData.data || ajsonData.data.length === 0) {
+              alert('No data available to export');
+              return;
             }
-        } else if (valueStr.includes('.')) {
-            const decimals = valueStr.split('.')[1].length;
-            maxDecimals = Math.max(maxDecimals, decimals);
+
+            const allRows = ajsonData.data;
+            const headers = columnSpecs.map(col => col.exportHeaderOverride || col.title);
+            const jsonIds = columnSpecs.map(col => col.json_id);
+
+            const exportData = allRows.map(row => {
+              return jsonIds.map(jsonId => {
+                const value = row[jsonId];
+                if (value && typeof value === 'object' && value.anchor_content !== undefined) {
+                  return value.anchor_content;
+                }
+                return (value === null || value === undefined) ? '' : value;
+              });
+            });
+
+            if (format === 'csv') {
+              exportToCSV(headers, exportData, 'gpcr_structure_statistics.csv');
+            } else if (format === 'excel') {
+              exportToExcel(headers, exportData, columnSpecs, 'gpcr_structure_statistics.xlsx');
+            }
+          } catch (error) {
+            console.error('Export error:', error);
+            alert('Error exporting data: ' + error.message);
+          }
         }
-    });
 
-    // Cap at maximum 6 digits
-    return Math.min(maxDecimals, 6);
-  }
+        function exportToCSV(headers, data, filename) {
+          const csvContent = [];
+          csvContent.push(headers.map(h => escapeCSV(processHTMLForCSV(h))).join(','));
 
-  var GPCRomes_styling_Odorant = {
-      GPCRomeMin: GPCRomeMin_Odo,
-      GPCRomeMax: GPCRomeMax_Odo,
-      GPCRomeAvg: GPCRomeAvg_Odo,
-      LegendbarDigit: determineDecimalPlaces(GPCRomeMin_Odo,GPCRomeMax_Odo),
-      LegendbarLength: 200,
-      LegendbarFontsize: "11px",
-      FontStyle: "Arial",
-      FontsizeGlobal: "11px",
-      FontsizeClass: "20px",
-      DataType: "Numeric",
-      colorStart: "FFFFFF",
-      colorAvg: "#FFFFFF",
-      colorEnd: "#000000",
-      ColorSetup: 'One',
-      showIcon: true,
-      LabelType: "Protein",
-      ShowLegend: true,
-      LegendLabel: "Structures count (from low to high)"
-  };
+          data.forEach(row => {
+            csvContent.push(row.map(cell => escapeCSV(processHTMLForCSV(cell))).join(','));
+          });
 
-  let GPCRome_odorant_location = "GPCRome_odorant_plot";
+          const blob = new Blob([csvContent.join('\n')], { type: 'text/csv;charset=utf-8;' });
+          downloadFile(blob, filename);
+        }
 
-  DrawGPCRomeWheel(Odorant_data, GPCRome_odorant_location, GPCRomes_styling_Odorant);
+        function exportToExcel(headers, data, columnSpecs, filename) {
+          const workbook = XLSX.utils.book_new();
+          const worksheetData = [headers, ...data];
+          const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
 
-function setupLabelButtons(groupIdPrefix, structureData, location, styling) {
-  const labelTypes = ["Protein", "Uniprot", "Entrez"];
+          const headerRange = XLSX.utils.decode_range(worksheet['!ref']);
+          for (let C = headerRange.s.c; C <= headerRange.e.c; ++C) {
+            const address = XLSX.utils.encode_col(C) + '1';
+            if (!worksheet[address]) continue;
+            worksheet[address].s = {
+              font: { bold: true },
+              fill: { fgColor: { rgb: 'FFD9D9D9' } },
+              alignment: { horizontal: 'center', vertical: 'center' }
+            };
+          }
 
-  labelTypes.forEach(label => {
-      const buttonId = `${groupIdPrefix}_${label}`;
-      document.getElementById(buttonId).addEventListener("click", () => {
-          styling.LabelType = label;
-          updateGPCRome(structureData, location, styling);
-          setActiveButton(groupIdPrefix, labelTypes, buttonId);
-      });
-  });
-}
+          for (let R = 1; R < worksheetData.length; R++) {
+            for (let C = 0; C < worksheetData[R].length; C++) {
+              const address = XLSX.utils.encode_col(C) + (R + 1);
+              const cell = worksheet[address];
+              if (!cell) continue;
 
-function setActiveButton(groupIdPrefix, labelTypes, activeId) {
-    labelTypes.forEach(label => {
-        const btnId = `${groupIdPrefix}_${label}`;
-        document.getElementById(btnId).classList.remove("active");
-    });
-    document.getElementById(activeId).classList.add("active");
-}
+              const rawValue = worksheetData[R][C];
+              if (typeof rawValue !== 'string' || (!rawValue.includes('<') && !rawValue.includes('&'))) continue;
 
-setupLabelButtons("GPCRome", GPCRome_stucture_data, GPCRome_location, GPCRomes_styling);
-setupLabelButtons("GPCRome_Complexes", GPCRome_complexes_data, GPCRome_complexes_location, GPCRomes_styling_complexes);
-setupLabelButtons("GPCRome_Odorant", Odorant_data, GPCRome_odorant_location, GPCRomes_styling_Odorant);
+              const richText = parseHTMLForExcel(rawValue);
 
-// Function to toggle the icon visibility and redraw the GPCRomes
-function toggleIcon() {
-    const button = d3.select("#ToggleIcon");
+              if (richText && richText.length > 1) {
+                cell.t = 's';
+                cell.v = richText.map(r => r.t).join('');
+                cell.r = richText;
+              } else if (richText && richText.length === 1) {
+                cell.t = 's';
+                cell.v = richText[0].t;
+              }
+            }
+          }
 
-    // Toggle the showIcon property in GPCRomes_styling
-    GPCRomes_styling.showIcon = !GPCRomes_styling.showIcon;
+          XLSX.utils.book_append_sheet(workbook, worksheet, 'structure_statistics');
+          XLSX.writeFile(workbook, filename);
+        }
 
-    // Update button text and state
-    if (GPCRomes_styling.showIcon) {
-        button.text("On");
-        button.classed("active", true);
-    } else {
-        button.text("Off");
-        button.classed("active", false);
-    }
+        function downloadFile(blob, filename) {
+          const link = document.createElement('a');
+          const url = URL.createObjectURL(blob);
 
-    // Redraw the GPCRomes with the updated icon state
-    updateGPCRome(GPCRome_stucture_data, GPCRome_location, GPCRomes_styling);
-}
+          link.setAttribute('href', url);
+          link.setAttribute('download', filename);
+          link.style.visibility = 'hidden';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+        }
 
-// Function to toggle the icon visibility and redraw the GPCRomes
-function toggleIconComplexes() {
-    const button = d3.select("#ToggleIconComplexes");
+        function escapeCSV(value) {
+          if (value === null || value === undefined) return '';
+          const stringValue = String(value);
+          if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
+            return '"' + stringValue.replace(/"/g, '""') + '"';
+          }
+          return stringValue;
+        }
 
-    // Toggle the showIcon property in GPCRomes_styling
-    GPCRomes_styling_complexes.showIcon = !GPCRomes_styling_complexes.showIcon;
+        function processHTMLForCSV(value) {
+          if (value === null || value === undefined) return '';
+          let text = String(value);
+          text = text.replace(/<sub>.*?<\/sub>/g, (match) => {
+            return match.replace(/<\/?sub>/g, '');
+          });
+          text = decodeHTMLEntities(text);
+          return text;
+        }
 
-    // Update button text and state
-    if (GPCRomes_styling_complexes.showIcon) {
-        button.text("On");
-        button.classed("active", true);
-    } else {
-        button.text("Off");
-        button.classed("active", false);
-    }
+        function parseHTMLForExcel(value) {
+          if (value === null || value === undefined) return [{ t: '' }];
 
-    // Redraw the GPCRomes with the updated icon state
-    updateGPCRome(GPCRome_complexes_data, GPCRome_complexes_location, GPCRomes_styling_complexes);
-}
+          let text = String(value);
+          const richText = [];
+          let currentPos = 0;
 
-// Function to toggle the icon visibility and redraw the GPCRomes
-function toggleIconOdorant() {
-    const button = d3.select("#ToggleIconOdorant");
+          const subRegex = /<sub>(.*?)<\/sub>/g;
+          let match;
+          const matches = [];
 
-    // Toggle the showIcon property in GPCRomes_styling
-    GPCRomes_styling_Odorant.showIcon = !GPCRomes_styling_Odorant.showIcon;
+          while ((match = subRegex.exec(text)) !== null) {
+            matches.push({
+              start: match.index,
+              end: match.index + match[0].length,
+              content: match[1]
+            });
+          }
 
-    // Update button text and state
-    if (GPCRomes_styling_Odorant.showIcon) {
-        button.text("On");
-        button.classed("active", true);
-    } else {
-        button.text("Off");
-        button.classed("active", false);
-    }
+          if (matches.length === 0) {
+            return [{ t: decodeHTMLEntities(text) }];
+          }
 
-    // Redraw the GPCRomes with the updated icon state
-    updateGPCRome(Odorant_data, GPCRome_odorant_location, GPCRomes_styling_Odorant);
-}
+          for (const m of matches) {
+            if (currentPos < m.start) {
+              richText.push({
+                t: decodeHTMLEntities(text.substring(currentPos, m.start))
+              });
+            }
 
-// Attach event listener to the button
-d3.select("#ToggleIcon").on("click", toggleIcon);
-d3.select("#ToggleIconComplexes").on("click", toggleIconComplexes);
-d3.select("#ToggleIconOdorant").on("click", toggleIconOdorant);
+            richText.push({
+              t: decodeHTMLEntities(m.content),
+              s: { vertAlign: 'subscript' }
+            });
 
-// Function to update and redraw GPCRomes
-function updateGPCRome(Data, location, styling) {
+            currentPos = m.end;
+          }
 
-    // Clear the existing SVG content
-    d3.select("#" + location).select("svg").remove();
+          if (currentPos < text.length) {
+            richText.push({
+              t: decodeHTMLEntities(text.substring(currentPos))
+            });
+          }
 
-    // Redraw the GPCRomes with the updated data
-    DrawGPCRomeWheel(Data, location, styling);
-}
+          return richText.length > 0 ? richText : [{ t: '' }];
+        }
 
-</script>
-{% elif page == 'gprot' %}
-<script type="text/javascript" charset="utf-8">
-    maxLeafNodeLenght = 46;
-    conversion = {"Gs":"#0000FF", "Gi/o":"#FF0000", "Gq/11":"#000000", "G12/13":"#008000", "GPa1 family":"#FFC0CB"};
-    $(window).on("load", function() {
-        draw_tree(class_a, class_a_options);
-        draw_tree(class_b1, class_b1_options);
-        draw_tree(class_b2, class_b2_options);
-        draw_tree(class_c, class_c_options);
-        draw_tree(class_f, class_f_options);
-        draw_tree(class_t2, class_t2_options);
-        draw_tree(orphan, orphan_options);
-        DrawCircles('class_a', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-        DrawCircles('class_b1', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-        DrawCircles('class_b2', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-        DrawCircles('class_c', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-        DrawCircles('class_f', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-        DrawCircles('class_t2', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-        DrawCircles('orphan', matching, maxLeafNodeLenght, conversion, true, true, false, false);
-        $("#class_a svg g").first().attr('transform', 'translate(555,555) scale(0.9,0.9) ');
-        $("#class_a_svg").attr('height', 1210);
-        $("#class_a_svg").attr('width', 1110);
-        $("#class_b1 svg g").first().attr('transform', 'translate(190,220) scale(0.80,0.80) ');
-        $("#class_b2 svg g").first().attr('transform', 'translate(195,182) scale(0.85,0.85) ');
-        $("#class_b2_svg").attr('height', 390);
-        $("#class_c svg g").first().attr('transform', 'translate(200,200) scale(0.85,0.85) ');
-        $("#class_f svg g").first().attr('transform', 'translate(180,180) scale(0.85,0.85) ');
-        $("#class_t2 svg g").first().attr('transform', 'translate(172,172) scale(0.85,0.85) ');
-        $("#orphan svg g").first().attr('transform', 'translate(175,180) scale(0.85,0.85)');
-        $("#orphan_svg").attr('height', 360).attr('width', 360);
-    });
-</script>
+        function decodeHTMLEntities(text) {
+          if (text === null || text === undefined) return '';
+
+          const greekLetters = {
+            '&Alpha;': 'Α', '&alpha;': 'α',
+            '&Beta;': 'Β', '&beta;': 'β',
+            '&Gamma;': 'Γ', '&gamma;': 'γ',
+            '&Delta;': 'Δ', '&delta;': 'δ',
+            '&Epsilon;': 'Ε', '&epsilon;': 'ε',
+            '&Zeta;': 'Ζ', '&zeta;': 'ζ',
+            '&Eta;': 'Η', '&eta;': 'η',
+            '&Theta;': 'Θ', '&theta;': 'θ',
+            '&Iota;': 'Ι', '&iota;': 'ι',
+            '&Kappa;': 'Κ', '&kappa;': 'κ',
+            '&Lambda;': 'Λ', '&lambda;': 'λ',
+            '&Mu;': 'Μ', '&mu;': 'μ',
+            '&Nu;': 'Ν', '&nu;': 'ν',
+            '&Xi;': 'Ξ', '&xi;': 'ξ',
+            '&Omicron;': 'Ο', '&omicron;': 'ο',
+            '&Pi;': 'Π', '&pi;': 'π',
+            '&Rho;': 'Ρ', '&rho;': 'ρ',
+            '&Sigma;': 'Σ', '&sigma;': 'σ',
+            '&Tau;': 'Τ', '&tau;': 'τ',
+            '&Upsilon;': 'Υ', '&upsilon;': 'υ',
+            '&Phi;': 'Φ', '&phi;': 'φ',
+            '&Chi;': 'Χ', '&chi;': 'χ',
+            '&Psi;': 'Ψ', '&psi;': 'ψ',
+            '&Omega;': 'Ω', '&omega;': 'ω'
+          };
+
+          let decoded = String(text);
+          for (const [entity, unicode] of Object.entries(greekLetters)) {
+            decoded = decoded.replace(new RegExp(entity.replace(/&/, '\\&'), 'g'), unicode);
+          }
+
+          return decoded;
+        }
+    </script>
+
+{% elif page == 'gprotein' %}
+    
+    <!------------------------------------>
+    <!----- GPROTEIN PAGE PROCESSING ----->
+    <!------------------------------------>
+
+    <script type="text/javascript" charset="utf-8">
+            class_a = {{ class_a | safe }};
+            class_a_options = {{ class_a_options | safe }};
+            class_b1 = {{ class_b1 | safe }};
+            class_b1_options = {{ class_b1_options | safe }};
+            class_b2 = {{ class_b2 | safe }};
+            class_b2_options = {{ class_b2_options | safe }};
+            class_c = {{ class_c | safe }};
+            class_c_options = {{ class_c_options | safe }};
+            class_f = {{ class_f | safe }};
+            class_f_options = {{ class_f_options | safe }};
+            class_t2 = {{ class_t2 | safe }};
+            class_t2_options = {{ class_t2_options | safe }};
+            orphan = {{ orphan | safe }};
+            orphan_options = {{ orphan_options | safe }};
+            whole_dict = {{ whole_receptors | safe }};
+            matching = {{ circles_data | safe }}
+        </script>
+    
+    <script type="text/javascript" charset="utf-8">
+        maxLeafNodeLength = 46;
+        conversion = {"Gs":"#0000FF", "Gi/o":"#FF0000", "Gq/11":"#000000", "G12/13":"#008000", "GPa1 family":"#FFC0CB"};
+
+        // Event handlers for tab clicks - they destroy the existing SVG and draw a new one with the corresponding data.
+        // Scaling and positioning of the SVG is handled in the tab change event handler ("shown.bs.tab")
+        // Find all anchor tags with ids matching pattern "tree_class_{class_code}_{class_name}_tablink" and attach click event handler to them
+        $('a[id^="tree_class"][id$="tablink"]').on('click', function(e) { 
+            switch (e.target.id){
+                case "tree_class_a_rhodopsin_tablink":
+                    classObject = class_a
+                    classOptions = class_a_options
+                    classStr = 'class_a'
+                    tabid = 'tree_class_a_rhodopsin'
+                break;
+                case "tree_class_a_orphan_tablink":
+                    classObject = orphan
+                    classOptions = orphan_options
+                    classStr = 'orphan'
+                    tabid = 'tree_class_a_orphan'
+                break;
+                case "tree_class_b1_tablink":
+                    classObject = class_b1
+                    classOptions = class_b1_options
+                    classStr = 'class_b1'
+                    tabid = 'tree_class_b1_secretin'
+                break;
+                case "tree_class_b2_tablink":
+                    classObject = class_b2
+                    classOptions = class_b2_options
+                    classStr = 'class_b2'
+                    tabid = 'tree_class_b2_adhesion'
+                break;
+                case "tree_class_c_tablink":
+                    classObject = class_c
+                    classOptions = class_c_options
+                    classStr = 'class_c'
+                    tabid = 'tree_class_c_glutamate'
+                break;
+                case "tree_class_f_tablink":
+                    classObject = class_f
+                    classOptions = class_f_options
+                    classStr = 'class_f'
+                    tabid = 'tree_class_f_frizzled'
+                break;
+                case "tree_class_t2_tablink":
+                    classObject = class_t2
+                    classOptions = class_t2_options
+                    classStr = 'class_t2'
+                    tabid = 'tree_class_t2_taste2'
+                break;
+            }
+
+            if($('#' + tabid).hasClass('active'))
+            {
+                return; //ignore second click on the same tab
+            }
+            else {
+                destroySVGs()
+                drawTree (classStr, classObject, classOptions)
+            }
+         });
+      
+        // Event Handler for tab change
+        // This event fires after tab click event and resulting draw calls so it has 
+        // access to SVG element dimensions and can resize it to fit the container
+        $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+            // Only rescale when a wheel tab was shown (its tablink id matches "wheel_class_..._tablink")
+            if(/^tree_class_.*tablink$/.test(e.target.id)) //On a Wheels Tab
+            {
+                setScaleAndTranslate(e.target.id);
+                $('.wheel_or_tree_chart_legend').show()
+            } else {
+                $('.wheel_or_tree_chart_legend').hide()
+            }
+         });
+
+        // On page load, trigger click on the first tab to display the first wheel and set the correct scaling and translation for the SVG
+        $(window).on("load", function() {
+            drawTree ('class_a', class_a, class_a_options)
+            setScaleAndTranslate("tree_class_a_rhodopsin_tablink");
+        });
+
+        function drawTree (classStr, classObject, classOptions){
+            draw_tree(classObject, classOptions);
+            updateLeafLabels(getActiveLabelType(), classStr);
+            DrawCircles(classStr, matching, maxLeafNodeLength, conversion, true, true, false, false);
+        }
+
+        // Function to compute the scaling factor and translation values for the SVG element to fit it to the container and apply the transformation
+        function setScaleAndTranslate(tabLinkId) {
+            
+            const maxWidth = 1400; // Max width to prevent excessive scaling on very wide screens
+            const availableWidth = Math.min($("#content").width(), maxWidth);            
+
+            let svg_element;
+            let scalingFactorAdjustment = 0.8;
+            let aspectRatio = 0.7
+            switch (tabLinkId){
+                case "tree_class_a_rhodopsin_tablink":                    
+                    svg_element = document.getElementById("class_a_svg")
+                    scalingFactorAdjustment = 1
+                break;
+                case "tree_class_a_orphan_tablink":
+                    svg_element = document.getElementById("orphan_svg")
+                    aspectRatio = 0.6
+                break;
+                case "tree_class_b1_tablink":
+                    svg_element = document.getElementById("class_b1_svg")          
+                    scalingFactorAdjustment = 0.9
+                    aspectRatio = 0.6
+                break;
+                case "tree_class_b2_tablink":
+                    svg_element = document.getElementById("class_b2_svg")                    
+                break;
+                case "tree_class_c_tablink":
+                    svg_element = document.getElementById("class_c_svg")                    
+                break;
+                case "tree_class_f_tablink":
+                    svg_element = document.getElementById("class_f_svg")
+                break;
+                case "tree_class_t2_tablink":
+                    svg_element = document.getElementById("class_t2_svg")                    
+                break;
+                    
+            }
+
+            if(svg_element){                
+                const marginFactor = 0.7
+
+                const svgWidth = availableWidth
+                const svgHeight = availableWidth * aspectRatio;
+                svg_element.setAttribute('height', svgHeight);
+                svg_element.setAttribute('width', svgWidth);
+
+                const main_g = svg_element.querySelector('g')
+
+                const currentContentWidth  = main_g.getBoundingClientRect().width
+                const currentContentHeight  = main_g.getBoundingClientRect().height
+                const scaleFactor = ((availableWidth * marginFactor) / currentContentWidth) * scalingFactorAdjustment
+                const newContentWidth = currentContentWidth * scaleFactor
+                const newContentHeight = currentContentHeight * scaleFactor
+                const x_trans = (newContentWidth)/2 + (availableWidth - newContentWidth)/2 
+                const y_trans = (newContentHeight)/2 + (svgHeight - newContentHeight)/2 
+
+                main_g.setAttribute('transform', 'translate(' + x_trans + ',' + y_trans + ') scale(' + scaleFactor + ',' + scaleFactor + ') ');
+            } else {
+                console.log("SVG element not found for tab");
+            }
+        }
+
+        // Clean up any existing SVGs before drawing a new one
+        function destroySVGs() {
+            d3.selectAll("#class_a svg").remove();
+            d3.selectAll("#class_b1 svg").remove();
+            d3.selectAll("#class_b2 svg").remove();
+            d3.selectAll("#class_c svg").remove();
+            d3.selectAll("#class_f svg").remove();
+            d3.selectAll("#class_t2 svg").remove();
+            d3.selectAll("#orphan svg").remove();
+        }
+    
+        $("#UniProtNames").click(function () {
+            $("#UniProtNames").addClass("active");
+            $("#IUPHARNames").removeClass("active");
+            updateLeafLabels("UniProt", getActiveClass());
+        });
+        $("#IUPHARNames").click(function () {
+            $("#UniProtNames").removeClass("active");
+            $("#IUPHARNames").addClass("active");  
+            updateLeafLabels("IUPHAR", getActiveClass());
+        });
+
+        function getActiveLabelType() {
+            if ($("#UniProtNames").hasClass("active")) {
+                return "UniProt";
+            } else if ($("#IUPHARNames").hasClass("active")) {
+                return "IUPHAR";
+            } else {
+                console.error("Errant code path in getActiveLabelType - no active label type found");
+                return null;
+            }
+        }
+
+        function getActiveClass (){
+            let activeTab = $('div[id*="tree_class"].active').attr('id')
+            let activeTabSplit = activeTab.split("_")
+            
+            if(activeTabSplit[3] == "orphan"){
+                activeClass = activeTabSplit[3]
+            } else {
+                activeClass = activeTab.split("_")[1] + "_" + activeTab.split("_")[2]
+            }
+
+            return activeClass
+        }
+        
+        function updateLeafLabels(labelType, activeClass) {
+            changeLeavesLabels(activeClass, labelType, whole_dict);
+            DrawCircles(activeClass, matching, maxLeafNodeLength, conversion, true, true, false, false);            
+        }
+    </script>
+
 {% elif page == 'arrestin' %}
-<script src="{% static 'home/js/datamapper.js' %}"></script>
-<script src="{% static 'home/js/popper.min.js' %}"></script>
-<script src="{% static 'home/js/spectrum_v1_8_1.js' %}"></script>
-<script src="{% static 'home/js/ml.js' %}"></script>
-<script src="{% static 'home/js/d3.tip.js' %}"></script>
-<script>
+
+    <!------------------------------------>
+    <!----- ARRESTIN PAGE PROCESSING ----->
+    <!------------------------------------>
+
+    <script src="{% static 'home/js/datamapper.js' %}"></script>
+    <script src="{% static 'home/js/popper.min.js' %}"></script>
+    <script src="{% static 'home/js/spectrum_v1_8_1.js' %}"></script>
+    <script src="{% static 'home/js/ml.js' %}"></script>
+    <script src="{% static 'home/js/d3.tip.js' %}"></script>
+    <script>
 
 
-// // Import GPCRome data 
-var GPCRome_stucture_data = {{ GPCRome_data|safe }};
+    // // Import GPCRome data 
+    var GPCRome_stucture_data = {{ GPCRome_data|safe }};
 
-// // == Structure GPCRome ==
+    // // == Structure GPCRome ==
 
-// Set styling
-var GPCRomes_styling = {
-    DataType: "Text",
-    FontStyle: "Arial",
-    FontsizeGlobal: "11px",
-    FontsizeClass: "20px",
-    Datatype: "Text",
-    showIcon: true,
-    LabelType: "Protein",
-    ShowLegend: false
-};
+    // Set styling
+    var GPCRomes_styling = {
+        DataType: "Text",
+        FontStyle: "Arial",
+        FontsizeGlobal: "11px",
+        FontsizeClass: "20px",
+        Datatype: "Text",
+        showIcon: true,
+        LabelType: "Protein",
+        ShowLegend: false
+    };
 
-// // Add location and draw the GPCRome plot
-let GPCRome_Arresting_location = "GPCRome_Arrestin_plot";
-DrawGPCRomeWheel(GPCRome_stucture_data, GPCRome_Arresting_location, GPCRomes_styling);
+    // // Add location and draw the GPCRome plot
+    let GPCRome_Arrestin_location = "GPCRome_Arrestin_plot";
+    DrawGPCRomeWheel(GPCRome_stucture_data, GPCRome_Arrestin_location, GPCRomes_styling);
 
 
-function setupLabelButtons(groupIdPrefix, structureData, location, styling) {
-  const labelTypes = ["Protein", "Uniprot", "Entrez"];
+    function setupLabelButtons(groupIdPrefix, structureData, location, styling) {
+    const labelTypes = ["Protein", "Entrez"]; //"Uniprot"
 
-  labelTypes.forEach(label => {
-      const buttonId = `${groupIdPrefix}_${label}`;
-      document.getElementById(buttonId).addEventListener("click", () => {
-          styling.LabelType = label;
-          updateGPCRome(structureData, location, styling);
-          setActiveButton(groupIdPrefix, labelTypes, buttonId);
-      });
-  });
-}
-
-function setActiveButton(groupIdPrefix, labelTypes, activeId) {
     labelTypes.forEach(label => {
-        const btnId = `${groupIdPrefix}_${label}`;
-        document.getElementById(btnId).classList.remove("active");
+        const buttonId = `${groupIdPrefix}_${label}`;
+        document.getElementById(buttonId).addEventListener("click", () => {
+            styling.LabelType = label;
+            updateGPCRome(structureData, location, styling);
+            setActiveButton(groupIdPrefix, labelTypes, buttonId);
+        });
     });
-    document.getElementById(activeId).classList.add("active");
-}
-
-setupLabelButtons("GPCRome_Arrestin", GPCRome_stucture_data, GPCRome_Arresting_location, GPCRomes_styling);
-
-// Function to toggle the icon visibility and redraw the GPCRomes
-function toggleIcon() {
-    const button = d3.select("#ToggleIconArrestin");
-
-    // Toggle the showIcon property in GPCRomes_styling
-    GPCRomes_styling.showIcon = !GPCRomes_styling.showIcon;
-
-    // Update button text and state
-    if (GPCRomes_styling.showIcon) {
-        button.text("On");
-        button.classed("active", true);
-    } else {
-        button.text("Off");
-        button.classed("active", false);
     }
 
-    // Redraw the GPCRomes with the updated icon state
-    updateGPCRome(GPCRome_stucture_data, GPCRome_Arresting_location, GPCRomes_styling);
-}
+    function setActiveButton(groupIdPrefix, labelTypes, activeId) {
+        labelTypes.forEach(label => {
+            const btnId = `${groupIdPrefix}_${label}`;
+            document.getElementById(btnId).classList.remove("active");
+        });
+        document.getElementById(activeId).classList.add("active");
+    }
 
-// Attach event listener to the button
-d3.select("#ToggleIconArrestin").on("click", toggleIcon);
+    setupLabelButtons("GPCRome_Arrestin", GPCRome_stucture_data, GPCRome_Arrestin_location, GPCRomes_styling);
 
-// Function to update and redraw GPCRomes
-function updateGPCRome(Data, location, styling) {
+    // Function to toggle the icon visibility and redraw the GPCRomes
+    function toggleIcon() {
+        const button = d3.select("#ToggleIconArrestin");
 
-    // Clear the existing SVG content
-    d3.select("#" + location).select("svg").remove();
+        // Toggle the showIcon property in GPCRomes_styling
+        GPCRomes_styling.showIcon = !GPCRomes_styling.showIcon;
 
-    // Redraw the GPCRomes with the updated data
-    DrawGPCRomeWheel(Data, location, styling);
-}
-</script>
+        // Update button text and state
+        if (GPCRomes_styling.showIcon) {
+            button.text("On");
+            button.classed("active", true);
+        } else {
+            button.text("Off");
+            button.classed("active", false);
+        }
+
+        // Redraw the GPCRomes with the updated icon state
+        updateGPCRome(GPCRome_stucture_data, GPCRome_Arrestin_location, GPCRomes_styling);
+    }
+
+    // Attach event listener to the button
+    d3.select("#ToggleIconArrestin").on("click", toggleIcon);
+
+    // Function to update and redraw GPCRomes
+    function updateGPCRome(Data, location, styling) {
+
+        // Clear the existing SVG content
+        d3.select("#" + location).select("svg").remove();
+
+        // Redraw the GPCRomes with the updated data
+        DrawGPCRomeWheel(Data, location, styling);
+    }
+
+    // Handle dropdown tab switching
+    $(function() {
+        $('.nav-tabs .dropdown-menu > li > a').on('click', function(e) {
+            e.preventDefault();
+
+            // Get the target tab pane
+            var href = $(this).attr('href');
+
+            // Activate the tab
+            $(href).tab('show');
+
+            // Close the dropdown
+            $(this).closest('.dropdown').find('.dropdown-toggle').dropdown('toggle');
+        });
+    });
+    </script>
 {% endif %}
+
 {% endblock %}

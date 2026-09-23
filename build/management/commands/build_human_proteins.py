@@ -8,7 +8,7 @@ from protein.models import (Protein, ProteinConformation, ProteinState, ProteinF
         ProteinSequenceType, Species, Gene, ProteinSource, ProteinSegment)
 from common.models import WebResource, WebLink
 from residue.models import ResidueNumberingScheme
-from common.tools import test_model_updates
+from common.tools import test_model_updates, parse_uniprot_file, build_entrezgeneid_lookup_dict, select_entrez_id
 
 import django.apps
 import shlex
@@ -25,6 +25,7 @@ class Command(BaseBuild):
     help = 'Reads source data and creates protein families, proteins, and associated tables'
 
     protein_source_file = os.sep.join([settings.DATA_DIR, 'protein_data', 'proteins_and_families.txt'])
+    entrezid_source_file = os.sep.join([settings.DATA_DIR, 'gene_data', 'entrez_id_lookup.txt'])
     local_uniprot_dir = os.sep.join([settings.DATA_DIR, 'protein_data', 'uniprot'])
     with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'sequences.yaml']), 'r') as f:
         excel_sequences = yaml.load(f, Loader=yaml.FullLoader)
@@ -35,6 +36,8 @@ class Command(BaseBuild):
     test_model_updates(all_models, tracker, initialize=True)
 
     def handle(self, *args, **options):
+        self.entrez_lookup = build_entrezgeneid_lookup_dict(self.entrezid_source_file, self.logger)
+
         # use a smaller protein file if in test mode
         if options['test']:
             self.protein_source_file = os.sep.join([settings.DATA_DIR, 'protein_data',
@@ -174,7 +177,8 @@ class Command(BaseBuild):
 
                         # parse uniprot file for this protein
                         self.logger.info('Parsing uniprot file for protein ' + protein_name)
-                        up = self.parse_uniprot_file(protein_accession)
+                        up = parse_uniprot_file(accession= protein_accession, logger=self.logger,
+                                                local_uniprot_dir=self.local_uniprot_dir, excel_sequences=self.excel_sequences, entrez_lookup=self.entrez_lookup)
                         if not up:
                             self.logger.error('Failed parsing uniprot file for protein ' + protein_name + ', skipping')
                             continue
@@ -259,10 +263,23 @@ class Command(BaseBuild):
                 self.logger.error('Failed creating protein alias ' + a.name + ' for protein ' + p.name)
 
         # genes
+        #There should generally be one gene name and one entrez gene id per protein,
+        #but edge cases exist where there are multiple gene names and/or entrez ids.
         for i, gene in enumerate(uniprot['genes']):
             g = False
+
             try:
-                g, created = Gene.objects.get_or_create(name=gene, species=species, position=i)
+                entrez_geneid = select_entrez_id(i, uniprot, self.entrez_lookup)
+
+                if entrez_geneid is not None:
+                    resource = WebResource.objects.get(slug='entrez_gene')
+                    entrez_link, created = WebLink.objects.get_or_create(web_resource=resource, index=entrez_geneid)
+                else:
+                    entrez_link = None
+
+                g, created = Gene.objects.get_or_create(name=gene, species=species, position=i,
+                                                        entrez_id=entrez_geneid, entrez_weblink=entrez_link)
+
                 if created:
                     self.logger.info('Created gene ' + g.name + ' for protein ' + p.name)
             except IntegrityError:
@@ -318,119 +335,3 @@ class Command(BaseBuild):
             'level_family_counter': level_family_counter,
         }
 
-    def parse_uniprot_file(self, accession, path_to_file=False):
-        filename = accession + '.txt'
-        if not path_to_file:
-            local_file_path = os.sep.join([self.local_uniprot_dir, filename])
-        else:
-            local_file_path = path_to_file
-        remote_file_path = self.remote_uniprot_dir + filename
-
-        up = {}
-        up['genes'] = []
-        up['names'] = []
-        up['accessions'] = []
-
-
-        read_sequence = False
-        remote = False
-
-        # record whether organism has been read
-        os_read = False
-
-        # should local file be written?
-        local_file = False
-
-        try:
-            if os.path.isfile(local_file_path):
-                uf = open(local_file_path, 'r')
-                self.logger.info('Reading local file ' + local_file_path)
-            else:
-                uf = urlopen(remote_file_path)
-                remote = True
-                self.logger.info('Reading remote file ' + remote_file_path)
-                local_file = open(local_file_path, 'w')
-
-            for raw_line in uf:
-                # line format
-                if remote:
-                    line = raw_line.decode('UTF-8')
-                else:
-                    line = raw_line
-
-                # write to local file if appropriate
-                if local_file:
-                    local_file.write(line)
-
-                # end of file
-                if line.startswith('//'):
-                    break
-
-                # entry name and review status
-                if line.startswith('ID'):
-                    split_id_line = line.split()
-                    up['entry_name'] = split_id_line[1].lower()
-                    review_status = split_id_line[2].strip(';')
-                    if review_status == 'Unreviewed':
-                        up['source'] = 'TREMBL'
-                    elif review_status == 'Reviewed':
-                        up['source'] = 'SWISSPROT'
-
-                # species
-                elif line.startswith('OS') and not os_read:
-                    species_full = line[2:].strip().strip('.')
-                    species_split = species_full.split('(')
-                    up['species_latin_name'] = species_split[0].strip()
-                    if len(species_split) > 1:
-                        up['species_common_name'] = species_split[1].strip().strip(')')
-                    else:
-                        up['species_common_name'] = up['species_latin_name']
-                    os_read = True
-
-                # accessions
-                elif line.startswith('AC'):
-                    sline = line.split()
-                    for ac in sline:
-                        up['accessions'].append(ac.strip(';'))
-
-                # names
-                elif line.startswith('DE'):
-                    split_de_line = line.split('=')
-                    if len(split_de_line) > 1:
-                        split_segment = split_de_line[1].split('{')
-                        up['names'].append(split_segment[0].strip().strip(';'))
-
-                # genes
-                elif line.startswith('GN'):
-                    split_gn_line = line.split(';')
-                    for segment in split_gn_line:
-                        if '=' in segment:
-                            split_segment = segment.split('=')
-                            split_segment = split_segment[1].split(',')
-                            for gene_name in split_segment:
-                                split_gene_name = gene_name.split('{')
-                                up['genes'].append(split_gene_name[0].strip())
-
-                # sequence
-                elif line.startswith('SQ'):
-                    split_sq_line = line.split()
-                    seq_len = int(split_sq_line[2])
-                    read_sequence = True
-                    up['sequence'] = ''
-                elif read_sequence == True:
-                    up['sequence'] += line.strip().replace(' ', '')
-
-            # close the Uniprot file
-            uf.close()
-            try:
-                up['sequence'] = self.excel_sequences[up['entry_name']]['Sequence']
-            except:
-                pass
-        except:
-            return False
-
-        # close the local file if appropriate
-        if local_file:
-            local_file.close()
-
-        return up

@@ -3,7 +3,9 @@ from django.conf import settings
 from django.views.decorators.cache import cache_page
 from django.http import JsonResponse
 from django.db.models import F, Q
+from django.db.utils import ProgrammingError, OperationalError
 from django.views.generic import TemplateView
+import logging
 
 from protwis.context_processors import site_title
 from news.models import News
@@ -16,6 +18,7 @@ from signprot.models import SignprotComplex, SignprotStructure
 from googleapiclient.discovery import build
 from oauth2client.service_account import ServiceAccountCredentials
 
+logger = logging.getLogger(__name__)
 
 # @cache_page(60 * 60 * 24)
 def index(request):
@@ -59,16 +62,17 @@ def index(request):
     context["news"] = News.objects.order_by("-date").all()[:3]
     # Setting the headers for data boxes
     headers={'GproteinDb' : {0: {"statistics_type": '<span class="stats_title"><b>Sequences</b></span>', "value": ''},
-                             2: {"statistics_type": '<span class="stats_title"><b>Couplings</b></span>', "value": ''},
-                             3: {"statistics_type": '<span class="stats_title"><b>Structures</b></span>', "value": ''},
+                             3: {"statistics_type": '<span class="stats_title"><b>Couplings</b></span>', "value": ''},
+                             4: {"statistics_type": '<span class="stats_title"><b>Structures</b></span>', "value": ''},
                              6: {"statistics_type": '<span class="stats_title"><b>Structure models</b></span>', "value": ''},
                              8: {"statistics_type": '<span class="stats_title"><b>Structure interactions</b></span>', "value": '',},
                              9: {"statistics_type": '<span class="stats_title"><b>Mutations</b></span>', "value": ''}},
              'ArrestinDb': {0: {"statistics_type": '<span class="stats_title"><b>Sequences</b></span>', "value": ''},
-                            2: {"statistics_type": '<span class="stats_title"><b>Couplings</b></span>', "value": ''},
-                            3: {"statistics_type": '<span class="stats_title"><b>Structures</b></span>', "value": ''},
-                            6: {"statistics_type": '<span class="stats_title"><b>Structure interactions</b></span>', "value": '',},
-                            7: {"statistics_type": '<span class="stats_title"><b>Mutations</b></span>', "value": ''}},
+                            3: {"statistics_type": '<span class="stats_title"><b>Couplings</b></span>', "value": ''},
+                            4: {"statistics_type": '<span class="stats_title"><b>Structures</b></span>', "value": ''},
+                            6: {"statistics_type": '<span class="stats_title"><b>Structure models</b></span>', "value": ''},
+                            8: {"statistics_type": '<span class="stats_title"><b>Structure interactions</b></span>', "value": '',},
+                            9: {"statistics_type": '<span class="stats_title"><b>Mutations</b></span>', "value": ''}},
              'Biased Signaling Atlas': {0: {"statistics_type": '<span class="stats_title"><b>Biased ligands</b></span>', "value": ''},
                                       3: {"statistics_type": '<span class="stats_title"><b>Pathways</b></span>', "value": ''},
                                       4: {"statistics_type": '<span class="stats_title"><b>Pathway-preferring ligands</b></span>', "value": '',},
@@ -102,25 +106,36 @@ def index(request):
 
 @cache_page(60 * 60 * 24 * 7)
 def citations_json(request):
-    citations_q = (
-        Citation.objects.all()
-        .values_list(
-            "url",
-            "video",
-            "docs",
-            "main",
-            "page_name",
-            "publication__title",
-            "publication__authors",
-            "publication__year",
-            "publication__reference",
-            "publication__journal__name",
-            "publication__web_link__index",
+    """
+    Returns a flat list of citation tuples consumed by `static/home/js/citation_tool.js`.
+
+    In dev setups where the `common` app migrations haven't been applied yet, the
+    underlying tables (notably the Citation<->Publication M2M table) may be missing.
+    In that case, degrade gracefully to an empty list to avoid a noisy 500 + JSON
+    parse error in the browser console.
+    """
+    try:
+        citations_q = (
+            Citation.objects.all()
+            .values_list(
+                "url",
+                "video",
+                "docs",
+                "main",
+                "page_name",
+                "publication__title",
+                "publication__authors",
+                "publication__year",
+                "publication__reference",
+                "publication__journal__name",
+                "publication__web_link__index",
+            )
+            .order_by("-publication__year", "page_name")
         )
-        .order_by("-publication__year", "page_name")
-    )
-    response = JsonResponse(list(citations_q), safe=False)
-    return response
+        return JsonResponse(list(citations_q), safe=False)
+    except (ProgrammingError, OperationalError) as e:
+        logger.warning("Citations endpoint unavailable (missing DB tables/migrations?): %s", e)
+        return JsonResponse([], safe=False)
 
 def cite_us(request, site):
     context = {'site': site}

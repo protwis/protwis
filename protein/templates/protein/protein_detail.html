@@ -151,12 +151,12 @@
 
     <div class="col-md-10">
         {% for hommod in homology_models %}
-            <p style="display: inline;"><a href="/structure/homology_models/{{ hommod.protein.entry_name }}_{{ hommod.state.slug }}">{{ hommod.protein.entry_name }} {{ hommod.state.slug }}</a>{% if forloop.last %} {% else %}, {% endif %}</p>
+            <p style="display: inline;"><a href="/structure/structure_models/receptor/{{ hommod.protein.entry_name }}_{{ hommod.state.slug }}">{{ hommod.protein.entry_name }} {{ hommod.state.slug }}</a>{% if forloop.last %} {% else %}, {% endif %}</p>
         {% empty %}
           {% if structures|length > 0 %}
             No structure models have been generated as experimental structures are available (see below).
           {% else %}
-            No structure models available. Check the Archive on <a href="/structure/homology_models">Structure models</a> for earlier releases.
+            No structure models available. Check the Archive on <a href="/structure/structure_models/receptor">Structure models</a> for earlier releases.
           {% endif %}
         {% endfor %}
     </div>

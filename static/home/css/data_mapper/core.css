@@ -1,0 +1,718 @@
+/**
+ * Data Mapper -- shared core styles used by all 5 plot pages
+ * (GPCRome wheel, Tree, List, Cluster, Heatmap).
+ * Page-specific styling lives in wheel.css / tree.css / list.css / cluster.css / heatmap.css.
+ */
+
+/* Clear table dropdown */
+.mapper-core-clear-menu { min-width: 180px; }
+.mapper-core-clear-menu > li > a { padding: 4px 16px; }
+.mapper-core-clear-menu > li > a:hover { background-color: #fdecea; color: #a94442; }
+.mapper-core-clear-menu > li:first-child > a:hover { background-color: #a94442 !important; color: #fff !important; }
+.mapper-core-wheel-wrap {
+  margin-bottom: 24px;
+}
+.mapper-core-wheel-wrap.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+@media (min-width: 992px) {
+  .mapper-core-wheel-primary-col.col-xs-12 {
+    width: auto;
+    float: none;
+    flex: 0 1 auto;
+    max-width: 100%;
+  }
+  .mapper-core-wheel-plot-col.col-xs-12 {
+    width: auto;
+    float: none;
+    flex: 1 1 0;
+    min-width: 0;
+  }
+}
+@media (max-width: 991px) {
+  .mapper-core-wheel-wrap.row {
+    display: block;
+  }
+  .mapper-core-wheel-primary-col,
+  .mapper-core-wheel-plot-col {
+    width: 100%;
+    float: none;
+  }
+  .mapper-core-wheel-plot-col {
+    margin-top: 20px;
+  }
+}
+.mapper-core-wheel-left {
+  display: inline-block;
+  width: max-content;
+  max-width: 100%;
+  box-sizing: border-box;
+  vertical-align: top;
+  background: #fff;
+  border: 1px solid rgba(26, 43, 60, 0.08);
+  border-radius: 10px;
+  padding: 10px 10px 12px;
+  box-shadow: 0 4px 14px rgba(26, 43, 60, 0.05);
+  font-size: 11px;
+  line-height: 1.35;
+  color: #333;
+}
+.mapper-core-wheel-left .table-responsive {
+  width: max-content;
+  max-width: 100%;
+}
+/* Header: intrinsic width — back btn + tight title side-by-side (no wide empty “title column”) */
+.mapper-core-wheel-top-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 10px;
+  row-gap: 4px;
+  position: relative;
+  width: auto;
+  max-width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 8px;
+  min-height: 28px;
+}
+.mapper-core-wheel-top-left {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  flex: 0 1 auto;
+  min-width: 0;
+  text-align: left;
+}
+.mapper-core-wheel-page-title {
+  flex: 1 1 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  align-self: center;
+  text-align: center;
+  white-space: nowrap;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: #1a2b3c;
+}
+.mapper-core-wheel-top-left a.btn.mapper-core-wheel-back-btn {
+  color: #fff;
+  background-color: #337ab7;
+  border-color: #2e6da4;
+  font-size: 11px;
+  padding: 2px 8px;
+  line-height: 1.35;
+  max-width: 100%;
+  box-sizing: border-box;
+  white-space: nowrap;
+  text-align: left;
+}
+.mapper-core-wheel-top-left a.btn.mapper-core-wheel-back-btn:hover,
+.mapper-core-wheel-top-left a.btn.mapper-core-wheel-back-btn:focus {
+  color: #fff;
+  background-color: #286090;
+  border-color: #204d74;
+}
+.mapper-core-wheel-back-btn .glyphicon-new-window {
+  transform: scaleX(-1);
+}
+.mapper-core-wheel-toolbar-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 8px;
+  width: max-content;
+  max-width: 100%;
+}
+.mapper-core-wheel-toolbar-stack .mapper-core-wheel-toolbar {
+  margin-bottom: 0;
+}
+.mapper-core-wheel-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+.mapper-core-wheel-toolbar .btn {
+  font-size: 12px;
+  padding: 4px 10px;
+  line-height: 1.35;
+}
+.mapper-core-wheel-toolbar .btn-primary,
+.mapper-core-wheel-toolbar .btn-default {
+  color: #fff;
+  background-color: #337ab7;
+  border-color: #2e6da4;
+}
+.mapper-core-wheel-toolbar .btn-primary:hover,
+.mapper-core-wheel-toolbar .btn-primary:focus,
+.mapper-core-wheel-toolbar .btn-default:hover,
+.mapper-core-wheel-toolbar .btn-default:focus {
+  color: #fff;
+  background-color: #286090;
+  border-color: #204d74;
+}
+.mapper-core-wheel-toolbar .btn-group[aria-label="Input mode"] .btn {
+  min-width: 58px;
+  background-color: #c8c8c8; background-image: none;
+  border-color: #aaa; color: #555;
+}
+.mapper-core-wheel-toolbar .btn-group[aria-label="Input mode"] .btn:hover,
+.mapper-core-wheel-toolbar .btn-group[aria-label="Input mode"] .btn:focus {
+  background-color: #b8b8b8; border-color: #999; color: #333;
+}
+.mapper-core-wheel-toolbar .btn-group[aria-label="Input mode"] .btn.active {
+  background-color: #337ab7; background-image: none;
+  border-color: #2e6da4; color: #fff;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,.12);
+}
+.mapper-core-wheel-toolbar .btn-group[aria-label="Input mode"] .btn.active:hover,
+.mapper-core-wheel-toolbar .btn-group[aria-label="Input mode"] .btn.active:focus {
+  background-color: #286090; border-color: #204d74; color: #fff;
+}
+.mapper-core-howto-mark {
+  display: inline-flex;
+  position: relative;
+  top: -1px;
+  align-items: center;
+  justify-content: center;
+  width: 11px;
+  height: 11px;
+  margin-left: 3px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  font-size: 8px;
+  line-height: 1;
+  font-weight: 700;
+}
+.mapper-core-howto-modal .modal-body { font-size: 13px; color: #333; line-height: 1.5; }
+.mapper-core-howto-modal .modal-body p:last-child { margin-bottom: 0; }
+.mapper-core-wheel-left .table { margin-bottom: 8px; font-size: 11px; }
+.mapper-core-wheel-left .table thead th { border-bottom-width: 1px; padding: 4px 5px; }
+.mapper-core-wheel-left .table tbody td { padding: 3px 4px; vertical-align: middle; }
+/* Narrow fixed grid: lock table width; receptor gets remaining space after value column */
+.mapper-core-wheel-left .mapper-core-input-table {
+  table-layout: fixed;
+  width: 360px;
+  max-width: 100%;
+  border-collapse: collapse;
+}
+.mapper-core-wheel-left .mapper-core-input-table thead th,
+.mapper-core-wheel-left .mapper-core-input-table tbody td {
+  box-sizing: border-box;
+  overflow: hidden;
+  word-wrap: break-word;
+  word-break: break-word;
+}
+.mapper-core-wheel-left .mapper-core-input-table th.mapper-core-th-remove,
+.mapper-core-wheel-left .mapper-core-input-table td.mapper-core-remove-cell {
+  position: relative;
+  width: 0;
+  max-width: 0;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  overflow: visible;
+  text-align: center;
+  vertical-align: middle !important;
+}
+.mapper-core-wheel-left .mapper-core-input-table th.mapper-core-th-receptor,
+.mapper-core-wheel-left .mapper-core-input-table td.mapper-core-receptor-cell {
+  min-width: 165px;
+}
+.mapper-core-wheel-left .mapper-core-input-table td.mapper-core-receptor-cell,
+.mapper-core-wheel-left .mapper-core-input-table td.mapper-core-value-cell {
+  max-width: 0;
+}
+.mapper-core-wheel-left .mapper-core-input-table .form-control.input-sm {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+.mapper-core-wheel-left .mapper-core-input-table .mapper-core-in-receptor::placeholder,
+.mapper-core-wheel-left .mapper-core-input-table .mapper-core-in-receptor::-webkit-input-placeholder,
+.mapper-core-wheel-left .mapper-core-input-table .mapper-core-in-receptor::-moz-placeholder,
+.mapper-core-wheel-left .mapper-core-input-table .mapper-core-in-receptor:-ms-input-placeholder {
+  color: #8a9399;
+  opacity: 1;
+  white-space: pre-line;
+}
+/* Orange border on empty receptor cells; clears when filled (compact mode = data present, no orange) */
+#mapper-core-input-table:not(.mapper-core-receptors-compact) .mapper-core-receptor-input-wrap.is-empty .mapper-core-in-receptor {
+  border-color: #e0892e !important;
+}
+/* "Input data" label beside the mode toggle */
+.mapper-core-input-mode-wrap {
+  display: inline-flex; flex-direction: row; align-items: center; gap: 5px;
+}
+.mapper-core-input-mode-label {
+  font-size: 13px; font-weight: 600; color: #555;
+  line-height: 1; user-select: none; white-space: nowrap;
+}
+/* Value column stays single-line; receptor is a textarea that grows with placeholder / text */
+.mapper-core-wheel-left .mapper-core-input-table textarea.mapper-core-in-receptor.form-control.input-sm {
+  height: auto;
+  min-height: 44px;
+  max-height: 200px;
+  padding: 4px 6px;
+  font-size: 11px;
+  line-height: 1.38;
+  resize: vertical;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+.mapper-core-wheel-left .mapper-core-input-table.mapper-core-receptors-compact textarea.mapper-core-in-receptor.form-control.input-sm {
+  min-height: 26px;
+  max-height: 26px;
+  height: 26px;
+  padding-top: 2px;
+  padding-bottom: 2px;
+  line-height: 1.3;
+  resize: none;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+}
+.mapper-core-wheel-left .mapper-core-input-table.mapper-core-receptors-compact .mapper-core-receptor-html-view {
+  min-height: 26px;
+}
+.mapper-core-wheel-left .mapper-core-input-table tbody td.mapper-core-receptor-cell {
+  vertical-align: top;
+}
+.mapper-core-wheel-left .mapper-core-input-table tbody td.mapper-core-value-cell {
+  vertical-align: middle;
+}
+.mapper-core-remove-row {
+  width: 17px;
+  height: 17px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid rgba(169, 68, 66, 0.35);
+  border-radius: 50%;
+  background: #fff;
+  color: #a94442;
+  font-size: 14px;
+  line-height: 14px;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(26, 43, 60, 0.12);
+  position: absolute;
+  top: 50%;
+  right: 3px;
+  transform: translateY(-50%);
+}
+.mapper-core-remove-row:hover,
+.mapper-core-remove-row:focus {
+  color: #fff;
+  border-color: #a94442;
+  background: #a94442;
+  outline: none;
+}
+.mapper-core-remove-cell.is-remove-hidden .mapper-core-remove-row {
+  visibility: hidden;
+  pointer-events: none;
+}
+.mapper-core-wheel-left .mapper-core-input-table th.mapper-core-sortable-head {
+  cursor: pointer;
+  position: relative;
+  padding-right: 18px;
+  user-select: none;
+}
+.mapper-core-wheel-left .mapper-core-input-table th.mapper-core-sortable-head:focus {
+  outline: thin dotted #333;
+  outline-offset: -2px;
+}
+.mapper-core-sort-indicator {
+  position: absolute;
+  right: 5px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #666;
+  font-size: 10px;
+  line-height: 1;
+}
+.mapper-core-wheel-errors { margin-top: 8px; font-size: 10px; max-height: 160px; overflow: auto; color: #a94442; }
+.mapper-core-wheel-errors:empty { display: none; }
+.mapper-core-plot-panel {
+  background: transparent;
+  border-radius: 12px;
+  padding: 8px 8px 16px;
+  border: none;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.mapper-core-wheel-wrap .mapper-core-wheel-plot-col {
+  min-width: 0;
+}
+.mapper-core-plot-toolbar { display: flex; justify-content: center; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 11px; margin-bottom: 8px; padding-top: 8px; }
+/* Invalid / unknown receptor (live validation). Detailed errors only use cell hint classes below. */
+.mapper-core-input-table tbody tr.mapper-core-row-invalid td.mapper-core-receptor-cell {
+  border: 2px solid #a94442 !important;
+  background-color: rgba(169, 68, 66, 0.06);
+}
+.mapper-core-wheel-left .mapper-core-receptor-ac-menu.ui-autocomplete {
+  z-index: 4000;
+  max-height: 224px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.mapper-core-wheel-left .mapper-core-receptor-ac-menu .ui-menu-item {
+  padding: 0;
+  margin: 0;
+}
+.mapper-core-wheel-left .mapper-core-receptor-ac-menu .mapper-core-ac-item-label {
+  padding: 4px 8px;
+  font-size: 11px;
+  line-height: 1.35;
+}
+.mapper-core-receptor-html-view {
+  display: none;
+  cursor: text;
+  min-height: 44px;
+  height: auto;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: normal;
+  word-break: break-word;
+}
+.mapper-core-receptor-html-view:not(:empty) {
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+.mapper-core-receptor-html-view:focus {
+  outline: thin dotted #333;
+  outline-offset: 1px;
+}
+.mapper-core-receptor-input-wrap {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.mapper-core-receptor-input-wrap .mapper-core-in-receptor,
+.mapper-core-receptor-input-wrap .mapper-core-receptor-html-view {
+  padding-right: 26px;
+}
+.mapper-core-receptor-clear {
+  display: block;
+  position: absolute;
+  top: 4px;
+  right: 3px;
+  z-index: 2;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  line-height: 16px;
+  font-size: 16px;
+  font-weight: 400;
+  color: #8a9399;
+  cursor: pointer;
+  border-radius: 2px;
+}
+.mapper-core-receptor-clear:hover,
+.mapper-core-receptor-clear:focus {
+  color: #333;
+  background: rgba(0, 0, 0, 0.05);
+  outline: none;
+}
+.mapper-core-receptor-input-wrap.is-empty .mapper-core-receptor-clear {
+  display: none;
+}
+#mapper-core-gpcrome-picker-modal { padding-top: 30px !important; }
+#mapper-core-gpcrome-picker-modal .modal-dialog {
+  width: 95%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+#mapper-core-gpcrome-picker-modal table.dataTable {
+  font-size: 12px;
+}
+#mapper-core-gpcrome-picker-modal img.gpcrdb-link {
+  vertical-align: middle;
+}
+#mapper-core-gpcrome-picker-modal th.mapper-core-picker-gpcrdb-label {
+  white-space: nowrap;
+}
+#mapper-core-gpcrome-picker-modal .select2-container--open .select2-dropdown {
+  z-index: 2060 !important;
+}
+#mapper-core-gpcrome-picker-modal #mapper-core-picker-filter-row th { padding: 3px 2px; }
+#mapper-core-gpcrome-picker-modal .modal-content { display: flex; flex-direction: column; max-height: calc(100vh - 20px); }
+#mapper-core-gpcrome-picker-modal .modal-body { overflow-y: auto; flex: 1 1 auto; min-height: 0; }
+/* ------- Text mode: swatch column + widen grid ------- */
+.mapper-core-wheel-left .mapper-core-input-table.mapper-core-text-mode {
+  width: 320px;
+}
+/* Receptor fills remaining space in text mode too */
+/* Sidebar dropdown beside toolbar buttons: align top of panel with top of toggle */
+.mapper-core-plot-toolbar .dropdown.mapper-core-dropdown-anchor-topleft > .dropdown-menu.mapper-core-dropdown-menu-topleft {
+  top: 0 !important;
+  bottom: auto !important;
+  margin-top: 0 !important;
+  transform: none !important;
+}
+/* ------- Label colour customise (Spectrum in Colors dropdown) ------- */
+.mapper-core-colors-text-wrap .customize-menu {
+  --check-col: 20px;
+  --picker-col: 32px;
+  --gap: 4px;
+  width: 100%;
+  max-width: none;
+  max-height: 58vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 6px 4px 6px 6px;
+  box-sizing: border-box;
+  scrollbar-width: thin;
+}
+.mapper-core-colors-text-wrap .customize-menu.dropdown-menu {
+  min-width: 0 !important;
+}
+.mapper-core-colors-text-wrap .customize-menu::-webkit-scrollbar {
+  width: 6px;
+}
+.mapper-core-colors-text-wrap .customize-menu::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+.mapper-core-colors-text-wrap .mapper-core-label-cat-head {
+  display: grid;
+  grid-template-columns: var(--check-col) minmax(0, 1fr);
+  align-items: center;
+  column-gap: var(--gap);
+  padding: 0 0 6px;
+  margin: 0 0 6px;
+  border-bottom: 1px solid #eaeaea;
+}
+.mapper-core-colors-text-wrap .mapper-core-label-cat-head-title {
+  font-weight: 600;
+  font-size: 12px;
+  text-align: center;
+  letter-spacing: 0.02em;
+}
+.mapper-core-colors-text-wrap .color-item {
+  display: grid;
+  grid-template-columns: var(--check-col) minmax(0, 1fr) var(--picker-col);
+  align-items: center;
+  column-gap: var(--gap);
+  padding: 2px 0;
+  border-bottom: 1px solid #ebebeb;
+}
+.mapper-core-colors-text-wrap .color-item:last-child {
+  border-bottom: none;
+}
+.mapper-core-colors-text-wrap .color-item .color-label {
+  margin: 0;
+  min-width: 0;
+  align-self: center;
+  line-height: 1.3;
+  font-weight: normal;
+  font-size: 11px;
+  /* Prefer whole words / natural breaks; split long tokens only when they would overflow */
+  word-break: normal;
+  overflow-wrap: break-word;
+  hyphens: none;
+}
+.mapper-core-colors-text-wrap .mapper-core-lcat-replacer.sp-replacer {
+  height: 22px !important;
+  padding: 2px !important;
+  vertical-align: middle;
+}
+.mapper-core-colors-text-wrap .mapper-core-lcat-replacer .sp-preview {
+  width: 20px !important;
+  height: 16px !important;
+}
+.mapper-core-colors-text-wrap .mapper-core-lcat-replacer .sp-dd {
+  height: auto !important;
+  line-height: 16px !important;
+  padding: 0 1px !important;
+  font-size: 9px;
+}
+/* Label Spectra: sit under the Colors menu DOM + constrain width vs viewport edge */
+.mapper-core-colors-dropdown-anchor .mapper-core-lcat-sp-container.sp-container {
+  box-sizing: border-box !important;
+  z-index: 10055 !important;
+  max-width: min(316px, calc(100vw - 20px)) !important;
+}
+.mapper-core-colors-dropdown-anchor .mapper-core-lcat-sp-container .sp-input-container.sp-cf input {
+  max-width: 100%;
+}
+/* Loading overlay */
+.mapper-core-wheel-wrap .mapper-core-wheel-left { position: relative; }
+.mapper-core-boot-overlay {
+  display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 10; background: rgba(255,255,255,0.80); border-radius: 10px;
+  align-items: center; justify-content: center; font-size: 13px; color: #666;
+  pointer-events: all;
+}
+.mapper-core-booting .mapper-core-boot-overlay { display: flex; }
+/* ----- Layout: mirror GPCRome wheel flex so plot column keeps space ----- */
+/* Narrow fixed grid (extended from wheel): receptor wide, values tight columns */
+/* Text mode: receptor fills remaining space; table expands to wrapper width in catmode */
+/* Orange hint on empty Category cell in Categorical mode */
+/* Center column headers (all except receptor and remove) */
+/* Center value inputs (inner + outer rings) */
+/* Colors dropdown — flex-centered rows matching wheel style */
+/* Categorical colour panel in Colors dropdown — mirrors wheel */
+.mapper-core-colors-text-wrap .customize-menu::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 3px; }
+.mapper-core-colors-text-wrap .color-item .color-label {
+  margin: 0; min-width: 0; align-self: center;
+  line-height: 1.3; font-weight: normal; font-size: 11px;
+  word-break: normal; overflow-wrap: break-word; hyphens: none;
+}
+/* Placeholder styling for receptor cells */
+.mapper-core-in-receptor::placeholder,
+.mapper-core-in-receptor::-webkit-input-placeholder,
+.mapper-core-in-receptor::-moz-placeholder,
+.mapper-core-in-receptor:-ms-input-placeholder {
+  color: #8a9399; opacity: 1; white-space: pre-line;
+}
+/* Orange border on empty receptor cells — only when table has no data yet */
+/* Categorical mode: JS sets .mapper-core-wheel-left to 400px inline; CSS constrains toolbar + table */
+/* Species column: widen panel and tables when active (+88px for species column) */
+/* Species column */
+/* ── Layout ───────────────────────────────────────────────── */
+/* ── Left panel ───────────────────────────────────────────── */
+.mapper-core-wheel-left {
+  display: inline-block; width: max-content; max-width: 100%;
+  box-sizing: border-box; vertical-align: top; background: #fff;
+  border: 1px solid rgba(26,43,60,0.08); border-radius: 10px;
+  padding: 10px 10px 12px; box-shadow: 0 4px 14px rgba(26,43,60,0.05);
+  font-size: 11px; line-height: 1.35; color: #333;
+}
+/* ── Toolbar ──────────────────────────────────────────────── */
+/* ── Input data label + mode toggle ──────────────────────── */
+/* ── Left panel tree-page overrides ──────────────────────── */
+/* ── Input table ──────────────────────────────────────────── */
+/* Remove button column */
+/* Receptor column — auto-fill */
+/* Value columns — fixed */
+/* Receptor column min-width */
+/* Text-mode: hide value columns, show swatch */
+/* Swatch hidden in numeric mode */
+/* Cat-mode header */
+/* Center value column headers + inputs */
+/* Receptor textarea */
+/* Critical: counteract max-width:0 on <td> so inputs render at column width, not 0px */
+/* Placeholder */
+/* Orange border only on the first (placeholder) row — trailing blank rows stay neutral */
+/* Catmode hint on empty category cell */
+/* Remove button */
+.mapper-core-remove-row {
+  width: 17px; height: 17px; margin: 0; padding: 0;
+  border: 1px solid rgba(169,68,66,0.35); border-radius: 50%; background: #fff;
+  color: #a94442; font-size: 14px; line-height: 14px; cursor: pointer;
+  box-shadow: 0 1px 3px rgba(26,43,60,0.12);
+  position: absolute; top: 50%; right: 3px; transform: translateY(-50%);
+}
+/* Sortable headers */
+/* Receptor input wrap */
+.mapper-core-receptor-clear:hover, .mapper-core-receptor-clear:focus { color: #333; background: rgba(0,0,0,0.05); outline: none; }
+/* Autocomplete */
+/* Row invalid */
+.mapper-core-input-table tbody tr.mapper-core-row-invalid td.mapper-core-receptor-cell {
+  border: 2px solid #a94442 !important; background-color: rgba(169,68,66,0.06);
+}
+/* Messages */
+/* Swatch */
+/* Catmode: left panel shrinks to 400px so primary toolbar wraps to two rows */
+/* Species-active: wider panel + tables */
+/* Categorical colours panel in Colors dropdown */
+/* Numeric colours panel (ring-style) */
+/* Plot panel */
+/* Picker modal */
+.mapper-core-picker-gpcrdb-label { white-space: nowrap; }
+.mapper-core-clear-menu .btn { font-size: 12px; }
+.mapper-core-clear-menu .btn:hover { background-color: #a94442 !important; border-color: #843534 !important; color: #fff !important; }
+/* Position info box */
+.cluster-pos-info-box {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 10px; margin: 4px 0 6px;
+  background: #eef2ff; border: 1px solid #c5d0e6; border-radius: 4px;
+  font-size: 12px; color: #444;
+}
+.cluster-pos-spinner {
+  display: inline-block; width: 13px; height: 13px;
+  border: 2px solid #ddd; border-top-color: #337ab7;
+  border-radius: 50%; animation: cluster-spin 0.7s linear infinite;
+}
+@keyframes cluster-spin { to { transform: rotate(360deg); } }
+/* ── Layout ────────────────────────────────────────────────────────────── */
+/* ── Left panel ──────────────────────────────────────────────────────── */
+/* ── Toolbar ──────────────────────────────────────────────────────────── */
+.mapper-core-wheel-toolbar .btn-primary:hover, .mapper-core-wheel-toolbar .btn-default:hover {
+  color: #fff; background-color: #286090; border-color: #204d74;
+}
+/* ── Input data toggle ───────────────────────────────────────────────── */
+/* ── Left panel width overrides ─────────────────────────────────────── */
+/* ── Input table ─────────────────────────────────────────────────────── */
+/* Compact receptor textarea */
+/* Receptor textarea placeholder and first row orange border */
+/* Receptor controls */
+/* Orange outline on empty gradient/category cells when the row already has a receptor */
+/* Orange outline on empty position cells when at least one position is already filled */
+/* Red outline + glow on invalid gradient values (non-numeric content) */
+/* Red outline on receptor inputs that contain unresolved text */
+/* Loading overlay — shown until mapperClusterBoot() fires */
+/* ── Right panel ─────────────────────────────────────────────────────── */
+/* Multi-class warning badge */
+.cluster-multiclass-badge {
+  display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px;
+  background: #fff3cd; border: 1px solid #ffc107; border-radius: 4px;
+  font-size: 12px; color: #856404; font-weight: 600; cursor: default;
+  user-select: none; white-space: nowrap; line-height: 1.35; vertical-align: middle;
+}
+.cluster-multiclass-badge .cluster-warn-icon { font-size: 13px; }
+.tooltip.cluster-warning-tooltip .tooltip-inner { max-width: 360px; text-align: left; font-size: 12px; line-height: 1.5; }
+/* Align top-left dropdown panels with the toggle button top edge */
+/* ── Colors panel (Wheel-matching) ──────────────────────────────────── */
+/* Gradient sub-panel sizing — wide enough for select + 3 pickers */
+#cluster-colors-panel.mapper-core-colors-show-numeric { min-width: 390px; padding: 10px 15px !important; box-sizing: border-box; }
+/* Categorical sub-panel sizing */
+#cluster-colors-panel.mapper-core-colors-show-text { width: max-content; min-width: 120px; max-width: min(280px, 92vw); padding: 8px 8px !important; }
+/* Sub-panel visibility — controlled by class on the panel wrapper */
+.mapper-core-colors-panel-wrap #cluster-cp-gradient,
+.mapper-core-colors-panel-wrap #cluster-cp-labels { display: none; }
+.mapper-core-colors-panel-wrap.mapper-core-colors-show-numeric #cluster-cp-gradient { display: block; }
+.mapper-core-colors-panel-wrap.mapper-core-colors-show-text #cluster-cp-labels { display: block; }
+/* Categorical label list container */
+/* Scheme title header inside the categorical panel */
+/* 2-column grid: label | picker (no checkbox column for cluster) */
+.mapper-core-colors-text-wrap .color-item .color-label {
+  margin: 0; min-width: 0; align-self: center; line-height: 1.3;
+  font-weight: normal; font-size: 11px; word-break: normal; overflow-wrap: break-word;
+}
+/* Spectrum containers for label/gradient pickers — anchored under the Colors dropdown */
+/* Gradient picker replacer */
+.cluster-grad-replacer.sp-replacer { display: inline-flex; align-items: center; padding: 2px 3px; border-radius: 3px; cursor: pointer; }
+.cluster-grad-replacer.sp-replacer .sp-preview { width: 22px; height: 18px; border-radius: 2px; }
+.cluster-grad-replacer.sp-replacer .sp-dd { display: none; }
+/* Color swatch column — visible only when table has mapper-core-text-mode */
+/* Row swatch — exact Wheel CSS */
+/* ── Layout ─────────────────────────────────────────────────────────── */
+/* ── Left panel ─────────────────────────────────────────────────────── */
+/* ── Toolbar ─────────────────────────────────────────────────────────── */
+/* ── Input data label + static Numerical badge ─────────────────────── */
+/* ── Left panel overrides ───────────────────────────────────────────── */
+/* Species-active: wider panel + table */
+/* Critical: counteract max-width:0 on <td> */
+/* Compact receptor */
+/* Center val column headers */
+/* Placeholder + orange border on first row */
+.mapper-core-sortable-head { cursor: pointer; position: relative; padding-right: 18px; user-select: none; }
+/* Right panel */
+/* Colors dropdown */

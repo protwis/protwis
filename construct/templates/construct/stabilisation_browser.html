@@ -244,7 +244,7 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
     <thead>
         <tr>
             <th class="seq-th over_header" colspan="1">STATE</th>
-            <th class="protein-th over_header" colspan="5">TARGETS</th>
+            <th class="protein-th over_header" colspan="6">TARGETS</th>
             <th class="seq-th over_header" colspan="4">MUTATIONS</th>
             <th class="protein-th over_header" colspan="4">FREQUENCY</th>
             <th class="seq-th over_header" colspan="3">SITES</th>
@@ -257,6 +257,7 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
             <th class="protein-th">Receptor Family</th>
             <th class="protein-th">UniProt</th>
             <th class="protein-th">Receptor</th>
+            <th class="protein-th">Gene</th>
             <th class="seq-th">Segment</th>
             <th class="seq-th">Position (GN)</th>
             <th class="seq-th">WT</th>
@@ -324,6 +325,15 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
                     {% endfor %}
                 </table>
             </td>
+            <td>
+                <table class="internal-table">
+                    {% for mutant in group.1.gene_as_anchor %}
+                    <tr style='background-color: transparent;'>
+                        <td class='inner'> {{ mutant | safe }} </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </td>
             <td>{{group.0.segment}}</td>
             <td> {{group.0.gen_num}} </td>
             <td>
@@ -373,7 +383,7 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
     <thead>
         <tr>
             <th class="seq-th over_header" colspan="1">STATE</th>
-            <th class="protein-th over_header" colspan="5">TARGETS</th>
+            <th class="protein-th over_header" colspan="6">TARGETS</th>
             <th class="seq-th over_header" colspan="4">MUTATIONS</th>
             <th class="protein-th over_header" colspan="4">FREQUENCY</th>
             <th class="seq-th over_header" colspan="4">DATA (MUTANT)</th>
@@ -387,6 +397,7 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
             <th class="protein-th">Receptor Family</th>
             <th class="protein-th">UniProt</th>
             <th class="protein-th">Receptor</th>
+            <th class="protein-th">Gene</th>
             <th class="seq-th">Segment</th>
             <th class="seq-th">Position (GN)</th>
             <th class="seq-th">WT</th>
@@ -458,6 +469,15 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
                     {% endfor %}
                 </table>
             </td>
+            <td>
+                <table class="internal-table">
+                    {% for mutant in group.1.gene_as_anchor %}
+                    <tr style='background-color: transparent;'>
+                        <td class='inner'> {{ mutant | safe }} </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </td>
             <td>{{group.0.segment}}</td>
             <td> {{group.0.gen_num}} </td>
             <td>
@@ -505,7 +525,7 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
     <thead>
         <tr >
             <th class="seq-th over_header" colspan="1">STATE</th>
-            <th class="protein-th over_header" colspan="5">TARGETS</th>
+            <th class="protein-th over_header" colspan="6">TARGETS</th>
             <th class="seq-th over_header" colspan="4">MUTATIONS</th>
             <th class="protein-th over_header" colspan="4">FREQUENCY</th>
             <th class="seq-th over_header" colspan="4">DATA (WILD TYPE)</th>
@@ -519,6 +539,7 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
             <th class="protein-th">Receptor Family</th>
             <th class="protein-th">UniProt</th>
             <th class="protein-th">Receptor</th>
+            <th class="protein-th">Gene</th>
             <th class="seq-th">Segment</th>
             <th class="seq-th">Position (GN)</th>
             <th class="seq-th">WT</th>
@@ -589,6 +610,15 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
                     {% endfor %}
                 </table>
             </td>
+            <td>
+                <table class="internal-table">
+                    {% for mutant in group.1.gene_as_anchor %}
+                    <tr style='background-color: transparent;'>
+                        <td class='inner'> {{ mutant | safe }} </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </td>
             <td>{{group.0.segment}}</td>
             <td> {{group.0.gen_num}} </td>
             <td>{{group.0.wild_type}}</td>
@@ -636,7 +666,7 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
     <thead>
         <tr>
             <th class="seq-th over_header" colspan="1">STATE</th>
-            <th class="protein-th over_header" colspan="5">TARGETS</th>
+            <th class="protein-th over_header" colspan="6">TARGETS</th>
             <th class="seq-th over_header" colspan="4">MUTATIONS</th>
             <th class="protein-th over_header" colspan="4">FREQUENCY</th>
             <th class="seq-th over_header" colspan="4">DATA (FOLD CHANGE (MUTANT/WILD TYPE))</th>
@@ -650,6 +680,7 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
             <th class="protein-th">Receptor Family</th>
             <th class="protein-th">UniProt</th>
             <th class="protein-th">Receptor</th>
+            <th class="protein-th">Gene</th>
             <th class="seq-th">Segment</th>
             <th class="seq-th">Position (GN)</th>
             <th class="seq-th">WT</th>
@@ -703,6 +734,11 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
             <td>
                 {% for mutant in group.1.real_receptor_iuphar %}
                     {{ mutant|safe }}
+                {% endfor %}
+            </td>
+            <td>
+                {% for mutant in group.1.gene_as_anchor %}
+                    {{ mutant | safe }}
                 {% endfor %}
             </td>
             <td>{{group.0.segment}}</td>

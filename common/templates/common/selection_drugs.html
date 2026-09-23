@@ -564,11 +564,11 @@
                       <thead>
                           <!-- Dummy Header Row for Complex Header Fix -->
                           <tr>
-                              <td colspan="37" style="text-align: center" data-dt-order="disable"></td>
+                              <td colspan="38" style="text-align: center" data-dt-order="disable"></td>
                           </tr>
                           <!-- Super Header Row -->
                           <tr style="padding-top: 10px; font-size: 14px; white-space: nowrap;">
-                              <th colspan="5" style="text-align:center;">Classification</th>
+                              <th colspan="6" style="text-align:center;">Classification</th>
                               <th colspan="1" style="text-align:center;border-left: 1px solid #cccccc;">Disease</th>
                               <th colspan="9" style="text-align:center;border-left: 1px solid #cccccc;">Genetic<br>association</th>
                               <th colspan="4" style="text-align:center;border-left: 1px solid #cccccc;">Somatic<br>mutations</th>
@@ -584,6 +584,7 @@
                           <!-- Header Row -->
                           <tr>
                               <!-- Classification -->
+                              <th style="text-align: center;">Uniprot</th>
                               <th style="text-align: center;">Gene</th>
                               <th style="text-align: center">Protein</th>
                               <th style="text-align: center">Receptor family</th>
@@ -636,7 +637,8 @@
                           </tr>
                           <!-- Filter Row for header -->
                           <tr>
-                              <td style="text-align: center;border-left: 1px solid #cccccc;" data-dt-order="disable"></td>
+                              <td style="text-align: center;" data-dt-order="disable"></td>
+                              <td style="text-align: center" data-dt-order="disable"></td>
                               <td style="text-align: center" data-dt-order="disable"></td>
                               <td style="text-align: center" data-dt-order="disable"></td>
                               <td style="text-align: center" data-dt-order="disable"></td>
@@ -689,7 +691,7 @@
                         <tr style="padding-top: 10px; font-size: 14px; white-space: nowrap;">
                             <th colspan="5" style="text-align:center">Agent/drug</th>
                             <th colspan="1" style="text-align:center;border-left: 1px solid #cccccc;">Disease</th>
-                            <th colspan="5" style="text-align:center;border-left: 1px solid #cccccc;">Target</th>
+                            <th colspan="6" style="text-align:center;border-left: 1px solid #cccccc;">Target</th>
                         </tr>
                         <tr>
                             <!-- Drug -->
@@ -725,7 +727,8 @@
                             <!-- Phase -->
                             <th style="text-align: center;border-left: 1px solid #cccccc;">Phase</th>
                             <!-- Target -->
-                            <th style="text-align: center;border-left: 1px solid #cccccc;">Gene</th>
+                            <th style="text-align: center;border-left: 1px solid #cccccc;">Uniprot</th>
+                            <th style="text-align: center;">Gene</th>
                             <th style="text-align: center">Protein</th>
                             <th style="text-align: center">Receptor family</th>
                             <th style="text-align: center">Ligand type</th>
@@ -740,6 +743,7 @@
                             <td style="text-align: center" data-dt-order="disable"></td>
                             <td style="text-align: center;border-left: 1px solid #cccccc;" data-dt-order="disable"></td>
                             <td style="text-align: center;border-left: 1px solid #cccccc;" data-dt-order="disable"></td>
+                            <td style="text-align: center" data-dt-order="disable"></td>
                             <td style="text-align: center" data-dt-order="disable"></td>
                             <td style="text-align: center" data-dt-order="disable"></td>
                             <td style="text-align: center" data-dt-order="disable"></td>
@@ -991,7 +995,7 @@
 
 
                 if (Selected_table_data.length > 0) {
-                    var Linkdata = Selected_table_data[0]['Gene name']; // Assuming one match
+                    var Linkdata = Selected_table_data[0]['Uniprot entry']; // Assuming one match
                     var displayData = Selected_table_data[0]['Target name']; // Assuming one match
                     searchedText = 'Target: <a href="/protein/' + Linkdata + '/" target="_blank">' + displayData + '</a>';
                 }
@@ -1107,7 +1111,7 @@
 
             if (type === 'Drugs') {
                 pageSpecificDefs = [
-                    { targets: [5, 9], className: 'border-left' }
+                    { targets: [6, 10], className: 'border-left' }
                 ];
             } else if (type === 'Targets') {
                 pageSpecificDefs = [
@@ -1119,7 +1123,7 @@
                 ];
             } else if (type === 'Targets for Indications') {
                 pageSpecificDefs = [
-                { targets: [5, 6, 15,19,20,,25,26,27,28,31,34], className: 'border-left' }
+                { targets: [6, 7, 16,20,21,,26,27,28,29,32,35], className: 'border-left' }
                 ];
             }
 
@@ -1138,7 +1142,7 @@
             var columns = [];
             if (type === 'Drugs') {
                 columns = [
-                    {data: "Gene name", name: "Gene name",width: "5%", render: function (data, type, row, meta) {
+                    {data: "Uniprot entry", name: "Uniprot",width: "5%", render: function (data, type, row, meta) {
                     if (type === 'display') {
                         const originalData = data; // Raw data
                         const transformedData = data.replace('_human', '').toUpperCase(); // Transformed display value
@@ -1149,6 +1153,20 @@
                         return data.replace('_human', '').toUpperCase();
                     }
                     return data; // Raw data for sorting
+                    }},
+                    {data: "Gene name", name: "Gene", render: function (data, type, row, meta) {
+                        if (type === 'display') {
+                        if (row && row['Gene name']) {
+                            if (row['Gene_entrez_weblink'] != ""){
+                            return '<a href="' + row['Gene_entrez_weblink'] + '" target="_blank">' + row['Gene name'] + '</a>';
+                            } else {
+                            return row['Gene name'];
+                            }
+                        }
+                        } else if (type === 'filter') {
+                            return row['Gene name'];
+                        }          
+                        return data;
                     }},
                     {data: "Protein name", name: "Protein name",width: "7%"},
                     {data: "Receptor family", name: "Receptor family",width: "9%"},
@@ -1241,7 +1259,7 @@
 
             } else if (type === 'Targets for Indications') {
                 columns = [
-                    {data: "Gene name", name: "Gene name", render: function (data, type, row, meta) {
+                    {data: "Uniprot entry", name: "Uniprot", render: function (data, type, row, meta) {
                     if (type === 'display') {
                         const originalData = data; // Raw data
                         const transformedData = data.replace('_human', '').toUpperCase(); // Transformed display value
@@ -1252,6 +1270,20 @@
                         return data.replace('_human', '').toUpperCase();
                     }
                     return data; // Raw data for sorting
+                    }},
+                    {data: "Gene name", name: "Gene", render: function (data, type, row, meta) {
+                        if (type === 'display') {
+                        if (row && row['Gene name']) {
+                            if (row['Gene_entrez_weblink'] != ""){
+                            return '<a href="' + row['Gene_entrez_weblink'] + '" target="_blank">' + row['Gene name'] + '</a>';
+                            } else {
+                            return row['Gene name'];
+                            }
+                        }
+                        } else if (type === 'filter') {
+                            return row['Gene name'];
+                        }          
+                        return data;
                     }},
                     {data: "Protein name", name: "Protein name"},
                     {data: "Receptor family", name: "Receptor family"},
@@ -1313,7 +1345,7 @@
                     {data: "In trial", name: "In trial",width: "9%"},
                     {data: "Approved", name: "Approved",width: "9%"},
                     {data: "Highest_phase", name: "Max",width: "6%"},
-                    {data: "Gene name", name: "Gene name",width: "5%", render: function (data, type, row, meta) {
+                    {data: "Uniprot entry", name: "Uniprot",width: "5%", render: function (data, type, row, meta) {
                     if (type === 'display') {
                         const originalData = data; // Raw data
                         const transformedData = data.replace('_human', '').toUpperCase(); // Transformed display value
@@ -1324,6 +1356,20 @@
                         return data.replace('_human', '').toUpperCase();
                     }
                     return data; // Raw data for sorting
+                    }},
+                    {data: "Gene name", name: "Gene", render: function (data, type, row, meta) {
+                        if (type === 'display') {
+                        if (row && row['Gene name']) {
+                            if (row['Gene_entrez_weblink'] != ""){
+                            return '<a href="' + row['Gene_entrez_weblink'] + '" target="_blank">' + row['Gene name'] + '</a>';
+                            } else {
+                            return row['Gene name'];
+                            }
+                        }
+                        } else if (type === 'filter') {
+                            return row['Gene name'];
+                        }          
+                        return data;
                     }},
                     {data: "Protein name", name: "Protein name",width: "10%"},
                     {data: "Receptor family", name: "Receptor family",width: "10%"},
@@ -1384,23 +1430,23 @@
             const Table_selector = $(tableId).DataTable();
             // CreateColumnFilters --> CreateColumnFilters(datatable_selector,column_number, column_range, filter_type)
             if (type === 'Drugs') {
-                column_filters = column_filters.concat(CreateColumnFilters(Table_selector,0,8,"Multi-select-exact"));
-                column_filters = column_filters.concat(CreateColumnFilters(Table_selector,8,2,"Range-float-vertical"));
-                column_filters = column_filters.concat(CreateColumnFilters(Table_selector,10,1,"Multi-select-exact"));
+                column_filters = column_filters.concat(CreateColumnFilters(Table_selector,0,9,"Multi-select-exact"));
+                column_filters = column_filters.concat(CreateColumnFilters(Table_selector,9,2,"Range-float-vertical"));
+                column_filters = column_filters.concat(CreateColumnFilters(Table_selector,11,1,"Multi-select-exact"));
 
             } else if (type === 'Targets') {
-                column_filters = column_filters.concat(CreateColumnFilters(Table_selector,0,6,"Multi-select-exact"));
-                column_filters = column_filters.concat(CreateColumnFilters(Table_selector,6,1,"Range-float-vertical"));
-                column_filters = column_filters.concat(CreateColumnFilters(Table_selector,7,2,"Multi-select-exact"));
-                column_filters = column_filters.concat(CreateColumnFilters(Table_selector,9,1,"Range-float-vertical"));
+                column_filters = column_filters.concat(CreateColumnFilters(Table_selector,0,7,"Multi-select-exact"));
+                column_filters = column_filters.concat(CreateColumnFilters(Table_selector,7,1,"Range-float-vertical"));
+                column_filters = column_filters.concat(CreateColumnFilters(Table_selector,8,2,"Multi-select-exact"));
+                column_filters = column_filters.concat(CreateColumnFilters(Table_selector,10,1,"Range-float-vertical"));
             } else if (type === 'Targets for Indications') {
-                column_filters = column_filters.concat(CreateColumnFilters(Table_selector,0,5,"Multi-select-exact"));
-                column_filters = column_filters.concat(CreateColumnFilters(Table_selector,5,32,"Range-float-vertical"));
+                column_filters = column_filters.concat(CreateColumnFilters(Table_selector,0,6,"Multi-select-exact"));
+                column_filters = column_filters.concat(CreateColumnFilters(Table_selector,6,32,"Range-float-vertical"));
                 // column_filters = column_filters.concat(CreateColumnFilters(Table_selector,11,1,"Multi-select-exact"));
             } else if (type === 'Agents/Drugs') {
                 column_filters = column_filters.concat(CreateColumnFilters(Table_selector,0,5,"Multi-select-exact"));
                 column_filters = column_filters.concat(CreateColumnFilters(Table_selector,5,1,"Range-float-vertical"));
-                column_filters = column_filters.concat(CreateColumnFilters(Table_selector,6,5,"Multi-select-exact"));
+                column_filters = column_filters.concat(CreateColumnFilters(Table_selector,6,6,"Multi-select-exact"));
             }
             // Create the filteres
             createDropdownFilters(Table_selector,column_filters);
@@ -1416,15 +1462,16 @@
             if (columnType == 0) {
                 // Show only classification columns
                 table.columns().visible(false);
-                table.column(0).visible(true); // Gene name
-                table.column(1).visible(true); // Protein name
-                table.column(2).visible(true); // Receptor family
-                table.column(3).visible(true); // Ligand type
-                table.column(4).visible(true); // Class
-                table.column(5).visible(true); // Association score
+                table.column(0).visible(true); // Uniprot
+                table.column(1).visible(true); // Gene name
+                table.column(2).visible(true); // Protein name
+                table.column(3).visible(true); // Receptor family
+                table.column(4).visible(true); // Ligand type
+                table.column(5).visible(true); // Class
+                table.column(6).visible(true); // Association score
 
                 // Loop through columns 6 to 27 and hide if empty
-                for (let i = 6; i <= 27; i++) {
+                for (let i = 7; i <= 28; i++) {
                     var column = table.column(i);
                     var columnData = column.data().toArray();
 
@@ -1435,14 +1482,15 @@
             } else if (columnType == 1) {
                 // Show only agents/drugs columns
                 table.columns().visible(false);
-                table.column(0).visible(true); // Gene name
-                table.column(1).visible(true); // Protein name
-                table.column(2).visible(true); // Receptor family
-                table.column(3).visible(true); // Ligand type
-                table.column(4).visible(true); // Class
+                table.column(0).visible(true); // Uniprot
+                table.column(1).visible(true); // Gene name
+                table.column(2).visible(true); // Protein name
+                table.column(3).visible(true); // Receptor family
+                table.column(4).visible(true); // Ligand type
+                table.column(5).visible(true); // Class
 
                 // Show only agents/drugs specific columns 28 to 36
-                for (let i = 28; i <= 36; i++) {
+                for (let i = 29; i <= 37; i++) {
                     table.column(i).visible(true);
                 }
             }

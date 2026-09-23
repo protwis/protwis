@@ -302,10 +302,14 @@ const run_seq_sig = function(interface_data) {
       );
       var startTime = performance.now();
       // Once done run the signature match
-      run_sig_match();
+      // FIXME if wanting to add sequence signature
+      // The signature match in its current form doesn't work due to the new type of coupling data and added AF models
+      // - fails on prepare_coupling_data_container in interaction.py - logemaxec50 can be null now
+      // - the signprot exclusion in score_protein_class in sequence_signature.py excludes all receptors from selection
+      // run_sig_match();
       var endTime = performance.now();
       var elapsed = endTime - startTime;
-      console.log("run_sig_match execution Time: " + elapsed);
+      // console.log("run_sig_match execution Time: " + elapsed);
 
       startTime = performance.now();
       initialize_consensus(data.feat);
@@ -732,10 +736,17 @@ $(document).ready(function() {
       pdb_sel.push(($(this).attr("id")));
     });
 
+    var ajax_url = "";
+    if (selection.length>1) {
+      ajax_url = "/signprot/matrix/AJAX_Interactions/True";
+    } else {
+      ajax_url = "/signprot/matrix/AJAX_Interactions/False"
+    }
+
     // api request
     $.ajax({
       type: "POST",
-      url: "/signprot/matrix/AJAX_Interactions/",
+      url: ajax_url,
       async: false,
       data: {
         selected_pdbs: pdb_sel,
@@ -789,8 +800,9 @@ $(document).ready(function() {
         sigScale,
         tooltip
       );
-      document.querySelector("#intbut").classList.add("active");
-      document.querySelector("#resbut").classList.remove("active");
+      // Gives an error, commented out for now
+      // document.querySelector("#intbut").classList.add("active");
+      // document.querySelector("#resbut").classList.remove("active");
 
       reset_slider();
 

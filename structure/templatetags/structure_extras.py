@@ -1,5 +1,6 @@
 from django import template
 from common.definitions import G_PROTEIN_DISPLAY_NAME as g_prot_dict
+from common.definitions import ARRESTIN_DISPLAY_NAME as arr_dict
 
 import re
 
@@ -113,6 +114,8 @@ def only_one_subunit ( objs, arg ):
             return elements[0].wt_protein.family.parent.name
         elif value=='coverage':
             return elements[0].wt_coverage
+        elif value=='chain':
+            return elements[0].chain
         else:
             return '-'
     else:
@@ -171,10 +174,11 @@ def cut_refined ( objs ):
 
 @register.filter
 def cut_classname ( objs ):
-    if objs == "Other GPCRs":
-        return "Other"
-    else:
-        return objs[5:]
+    # Names that don't follow the "Class X (...)" pattern (e.g. "Unclassified") have no prefix
+    # to cut -- return them as-is instead of mangling the first 5 characters off.
+    if not objs.startswith("Class "):
+        return objs
+    return objs[5:]
 
 @register.filter
 def entry_short ( objs ):
@@ -185,7 +189,62 @@ def gprot_short ( objs ):
     return g_prot_dict[objs]
 
 @register.filter
+def arr_short ( objs ):
+    return arr_dict[objs]
+
+@register.filter
 def receptor_short ( objs ):
     if not objs.startswith('mGlu'):
         objs = objs[0].upper()+objs[1:]
     return objs.replace(" receptor","").replace("-adrenoceptor","")
+
+@register.filter
+def br_after_class_code ( objs ):
+    objs = objs.strip()
+    m = re.match("^([A-Z][0-9]?)\s(\(.+\))", objs)
+    if m:
+        return m.group(1) + "<br/>" + m.group(2)
+    else:
+        return objs
+
+@register.filter(name='times')
+def times(number):
+    return range(number)
+
+@register.filter(name='class_code_to_name')
+def class_code_to_name(class_code):
+    class_names = {
+        "A": "Class A (Rhodopsin)",
+        "B1": "Class B1 (Secretin)",
+        "B2": "Class B2 (Adhesion)",
+        "C": "Class C (Glutamate)",
+        "D1": "Class D1 (Ste2-like fungal pheromone)",
+        "F": "Class F (Frizzled)",
+        "O1": "Class O1 (Olfactory/extra-nasal 1)",
+        "O2": "Class O2 (Olfactory/extra-nasal 2)",
+        "T2": "Class T2 (Taste 2)",
+        "V": "Class V (Vomeronasal)",
+        "U": "Class U (Unclassified)"
+    }
+    return class_names.get(class_code, "Invalid class code")
+
+@register.filter(name='format_class_header')
+def format_class_header(class_code):
+    class_names = {
+        "Class A (Rhodopsin)": "Class A<br>(Rhodopsin)",
+        "Class B1 (Secretin)": "Class B1<br>(Secretin)",
+        "Class B2 (Adhesion)": "Class B2<br>(Adhesion)",
+        "Class C (Glutamate)": "Class C<br>(Glutamate)",
+        "Class D1 (Ste2-like fungal pheromone)": "Class D1<br>(Ste2-like fungal pheromone)",
+        "Class F (Frizzled)": "Class F<br>(Frizzled)",
+        "Class O1 (Olfactory/extra-nasal 1)": "Class O1<br>(Olfactory/extra-nasal 1)",
+        "Class O2 (Olfactory/extra-nasal 2)": "Class O2<br>(Olfactory/extra-nasal 2)",
+        "Class T2 (Taste 2)": "Class T2<br>(Taste&nbsp;2)",
+        "Class V (Vomeronasal)": "Class V<br>(Vomeronasal)",
+        "Unclassified": "Class U<br>(Unclassified)"
+    }
+    return class_names.get(class_code, class_code)
+
+@register.filter
+def keyvalue(input_dict, dict_key):    
+    return input_dict.get(dict_key, None)

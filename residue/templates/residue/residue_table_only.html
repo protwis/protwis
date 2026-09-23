@@ -60,7 +60,7 @@
         </th>
       {% else %}
         <th class="sticky">
-        <div><span id='{{protein}}'>{{ elem|safe }}</span></div>
+        <div class='protein' index="{{ forloop.counter }}"><span id='{{protein}}'>{{ elem|safe }}</span></div>
         </th>
       {% endif %}
     {% endfor %}

@@ -477,7 +477,12 @@ class Distances():
         # store distance map
         if normalize:
             for pdb in self.pdbs:
-                pdb_distance_maps[pdb] = np.nan_to_num(pdb_distance_maps[pdb]/pdb_distance_maps["average"])
+                # Avoid RuntimeWarning from invalid divisions (0/0, x/0).
+                # Keep behavior: invalid results become 0 via nan_to_num.
+                with np.errstate(divide='ignore', invalid='ignore'):
+                    pdb_distance_maps[pdb] = np.nan_to_num(
+                        pdb_distance_maps[pdb] / pdb_distance_maps["average"]
+                    )
 
         # calculate distance matrix
         distance_matrix = np.full((len(self.pdbs), len(self.pdbs)), 0.0)

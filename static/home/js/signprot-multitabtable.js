@@ -160,7 +160,7 @@ function make_rank_col_filters(start_column, repeat_number, cont_prefix, default
 let isScrolling;
 let leftOverlayOffset = [];
 
-function createFixedColumnsOverlay(table_id, clone_cols = 6) {
+function createFixedColumnsOverlay(table_id, clone_cols = 7) {
   // When called after filtering: remove current overlay rows
   $("#overlay_" + table_id + " table tbody tr").remove();
 

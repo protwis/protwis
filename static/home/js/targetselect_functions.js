@@ -252,7 +252,7 @@ function importTargets(){
     $("#AnnotationSP").removeClass('active');
     $("#AnnotationAll").addClass('active');
   }
-  
+
   // Update not_found list
   var remove_indeces = [];
   for (i=0;i<slugs.length;i++) {
@@ -454,143 +454,85 @@ function initTargetTable(elementID) {
                 targets: 1,
                 className: "text-center"
             },{
-                targets: [6,7,9,10,11,12],
+                targets: [7,8,10,11,12,13],
                 className: "text-center"
             },],
         });
 
-        yadcf.init(targetTable,
-            [
-                {
-                  column_number: 0,
-                  filter_type: "custom_func",
-                  custom_func: selectedTargetFilter,
-                  filter_container_id: "hidden_filter_container",
-                  html5_data: "data-search", // which does not exist - prevent warning logs
-                },
-                {
-                    column_number: 1,
-                    filter_type: "multi_select",
-                    select_type: "select2",
-                    filter_default_label: "Class",
-                    filter_reset_button_text: false,
-                    select_type_options: {
-                        "width": "70px",
-                    },
-                },
-                {
-                    column_number: 2,
-                    filter_type: "multi_select",
-                    select_type: "select2",
-                    filter_default_label: "Ligand",
-                    filter_reset_button_text: false,
-                    filter_match_mode : "exact",
-                },
-                {
-                    column_number: 3,
-                    filter_type: "multi_select",
-                    select_type: "select2",
-                    filter_default_label: "Family",
-                    filter_reset_button_text: false,
-                    filter_match_mode : "exact",
-                },
-                {
-                    column_number: 4,
-                    filter_type: "multi_select",
-                    select_type: "select2",
-                    column_data_type: "html",
-                    filter_default_label: "Uniprot",
-                    filter_reset_button_text: false,
-                    select_type_options: {
-                        "width": "110px",
-                    }
-                },
-                {
-                    column_number: 5,
-                    filter_type: "multi_select",
-                    select_type: "select2",
-                    column_data_type: "html",
-                    html_data_type: "text",
-                    filter_default_label: "GtP",
-                    filter_match_mode : "exact",
-                    filter_reset_button_text: false,
-                    select_type_options: {
-                        "width": "110px",
-                    }
-                },
-                {
-                    column_number: 6,
-                    filter_type: "range_number",
-                    filter_default_label: ["From", "To"],
-                    filter_reset_button_text: false,
-                    //style_class: "center"
-                    //html5_data: "data-search",
-                    column_data_type: "html",
-                },
-                {
-                    column_number: 7,
-                    filter_type: "range_number",
-                    filter_default_label: ["From", "To"],
-                    filter_reset_button_text: false,
-                    style_class: "center",
-                },
-                {
-                    column_number: 8,
-                    filter_type: "text",
-                    select_type: "select2",
-                    html5_data: "data-search",
-                    filter_default_label: "PDB",
-                    filter_reset_button_text: false,
-                    select_type_options: {
-                        "width": "110px",
-                    }
-                },
-                /*{
-                    column_number: 7,
-                    filter_type: "multi_select",
-                    select_type: "select2",
-                    filter_default_label: "Approved",
-                },
-                {
-                    column_number: 8,
-                    filter_type: "multi_select",
-                    select_type: "select2",
-                    filter_default_label: "Clinical trial",
-                },*/
-                {
-                    column_number: 9,
-                    filter_type: "multi_select",
-                    select_type: "select2",
-                    filter_default_label: "Gs",
-                    filter_reset_button_text: false,
-                },
-                {
-                    column_number: 10,
-                    filter_type: "multi_select",
-                    select_type: "select2",
-                    filter_default_label: "Gi/o",
-                    filter_reset_button_text: false,
-                },
-                {
-                    column_number: 11,
-                    filter_type: "multi_select",
-                    select_type: "select2",
-                    filter_default_label: "Gq/11",
-                    filter_reset_button_text: false,
-                },
-                {
-                    column_number: 12,
-                    filter_type: "multi_select",
-                    select_type: "select2",
-                    filter_default_label: "G12/13",
-                    filter_reset_button_text: false,
-                },
+        ////////////////////////////
+        //// Column definitions ////
+        ////////////////////////////
 
-            ], {
-//                cumulative_filtering: true,
-                filters_tr_index: 1
-            }
-        );
+        ///// Filter Types /////
+
+        //Initialisation of basic defaults for a null filter column
+        const base_defaults = {
+            filter_type: 'none',
+            select_type: null,
+            filter_default_label: "",
+            filter_reset_button_text: null,
+            filter_match_mode: null,
+            column_data_type: null,
+            width: null,
+        }
+
+        //defaults for a multiselect text based filter
+        const multiselect_defaults = {
+            filter_type: "multi_select",
+            select_type: 'select2',
+            filter_default_label: 'Select',
+            column_data_type: 'text',
+            filter_match_mode: "exact",
+            filter_reset_button_text: false,
+        }
+
+        const multiselect_html_defaults = {
+            filter_type: "multi_select",
+            select_type: 'select2',
+            filter_default_label: 'Select',
+            column_data_type: 'html',
+            html_data_type: "text",
+            filter_match_mode: "exact",
+            filter_reset_button_text: false,
+        }
+
+        //defaults for a multiselect text based filter
+        const text_search_defaults = {
+            filter_type: "text",
+            filter_default_label: 'Search',
+            column_data_type: 'text',
+            filter_match_mode: "contains",
+            filter_reset_button_text: false,
+        }
+
+        //defaults for a number range type filter
+        const range_number_defaults = {
+            ...base_defaults,
+            filter_type: "range_number",
+            filter_default_label: ['Min', 'Max'],
+            filter_reset_button_text: false,
+            style_class: "range_number_filter_slim",
+        }
+
+        //Target select column definitions
+        const target_colDefs = {
+            selector        : { column_number: 0, ...base_defaults, filter_type: "custom_func", custom_func: selectedTargetFilter, filter_container_id: "hidden_filter_container", html5_data: "data-search", },
+            receptor_class  : { column_number: 1, ...multiselect_defaults, filter_default_label: "Class", select_type_options: { "width": "70px",}, },
+            receptor_ligand : { column_number: 2, ...multiselect_defaults, filter_default_label: "Ligand", },
+            receptor_family : { column_number: 3, ...multiselect_defaults, filter_default_label: "Family", },
+            receptor_uniprot: { column_number: 4, ...multiselect_html_defaults, filter_default_label: "Uniprot", select_type_options: { "width": "110px", } },
+            receptor_gene   : { column_number: 5, ...multiselect_html_defaults, filter_default_label: "Gene", select_type_options: { "width": "110px", } },
+            receptor_gtp    : { column_number: 6, ...multiselect_html_defaults, filter_default_label: "GtP", select_type_options: { "width": "110px",} },
+            ligand_count    : { column_number: 7, ...range_number_defaults, column_data_type: "html", },
+            structure_count : { column_number: 8, ...range_number_defaults, column_data_type: "html", },
+            pdb_list        : { column_number: 9, ...text_search_defaults, html5_data: "data-search", select_type_options: {"width": "110px",} },
+            gprotein_gs     : { column_number: 10, ...multiselect_defaults, filter_default_label: "Gs", },
+            gprotein_gio    : { column_number: 11, ...multiselect_defaults, filter_default_label: "Gi/o", },
+            gprotein_gq11   : { column_number: 12, ...multiselect_defaults, filter_default_label: "Gq/11", },
+            gprotein_g1213  : { column_number: 13, ...multiselect_defaults, filter_default_label: "G12/13", }
+        }
+
+        yadcf.init(targetTable, Object.values(target_colDefs), { filters_tr_index: 1 });
     }
 
     // When redrawing update the information selection message

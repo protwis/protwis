@@ -102,7 +102,7 @@
         <table width="100%" class="display compact" id="receptor_table">
           <thead>
             <tr>
-              <td colspan="18" style="text-align: center" data-dt-order="disable"></td>
+              <td colspan="19" style="text-align: center" data-dt-order="disable"></td>
             </tr>
             <tr>
               {% if layout == "drugs" %}
@@ -117,10 +117,10 @@
                       style="font-size: 14px; margin-left: 8px;">
                 </span>
               </th>
-              <th colspan="5" style="text-align:center;border-left: 1px solid #cccccc;">Targets</th>
+              <th colspan="6" style="text-align:center;border-left: 1px solid #cccccc;">Targets</th>
               <th colspan="5" style="text-align:center;border-left: 1px solid #cccccc;">Diseases</th>
               {% else %}
-              <th colspan="5" style="text-align:center;">Targets</th>
+              <th colspan="6" style="text-align:center;">Targets</th>
               <th colspan="8" style="text-align:center">
                 Agents/drugs
                 <span class="glyphicon glyphicon-info-sign"
@@ -169,7 +169,8 @@
                   </span>
                 </div>
               </th>
-              <th style="text-align: center;border-left: 1px solid #cccccc;">Gene</th>
+              <th style="text-align: center;border-left: 1px solid #cccccc;">Uniprot</th>
+              <th style="text-align: center;">Gene</th>
               <th style="text-align: center; min-width: 90px;width: 90px;max-width: 90px;">Protein</th>
               <th style="text-align: center;">Receptor<br>family</th>
               <th style="text-align: center;">Ligand<br>type</th>
@@ -180,6 +181,7 @@
               <th style="text-align: center;">Max<br>phase</th>
               <th style="text-align: center;">Assoc.<br>score</th>
               {% else %}
+              <th style="text-align: center;">Uniprot</th>
               <th style="text-align: center;">Gene</th>
               <th style="text-align: center;">Protein</th>
               <th style="text-align: center;">Receptor<br>family</th>
@@ -226,43 +228,45 @@
             </tr>
             <tr class="filter-row">
               {% if layout == "drugs" %}
-              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
-              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
-              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
-              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
-              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
-              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
-              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
-              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
-              <th class="expand" style="text-align: center;border-left: 1px solid #cccccc;" data-dt-order="disable"></th>
-              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
-              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
-              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
-              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
-              <th class="expand" style="text-align: center;border-left: 1px solid #cccccc;" data-dt-order="disable"></th>
-              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
-              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
-              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
-              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <!-- Name --> <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <!-- Type --> <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <!-- Modality --> <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <!-- Indication area (ATC) --> <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <!-- Indication (ATC) --><th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <!-- Indication code (ATC) --><th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <!-- trial --><th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <!-- Approved --><th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <!-- Uniprot --><th class="expand" style="text-align: center;border-left: 1px solid #cccccc;" data-dt-order="disable"></th>
+              <!-- Gene --><th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <!-- Protein --><th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <!-- Receptor family --><th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <!-- Ligand type --><th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <!-- Class --><th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <!-- Disease area (ICD11) --><th class="expand" style="text-align: center;border-left: 1px solid #cccccc;" data-dt-order="disable"></th>
+              <!-- Disease (ICD11) --><th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <!-- Disease code (ICD11) --><th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <!-- Max phase --><th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <!-- Assoc. score --><th class="expand" style="text-align: center;" data-dt-order="disable"></th>
               {% else %}
-              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
-              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
-              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
-              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
-              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
-              <th class="expand" style="text-align: center;border-left: 1px solid #cccccc;" data-dt-order="disable"></th>
-              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
-              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
-              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
-              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
-              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
-              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
-              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
-              <th class="expand" style="text-align: center;border-left: 1px solid #cccccc;" data-dt-order="disable"></th>
-              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
-              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
-              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
-              <th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <!-- Uniprot --><th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <!-- Gene --><th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <!-- Protein --><th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <!-- Receptor family --><th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <!-- Ligand type --><th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <!-- Class --><th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <!-- Name --><th class="expand" style="text-align: center;border-left: 1px solid #cccccc;" data-dt-order="disable"></th>
+              <!-- Type --><th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <!-- Modality --><th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <!-- Indication area (ATC) --><th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <!-- Indication (ATC) --><th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <!-- Indication code (ATC) --><th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <!-- In trial --><th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <!-- Approved --><th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <!-- Disease area (ICD11) --><th class="expand" style="text-align: center;border-left: 1px solid #cccccc;" data-dt-order="disable"></th>
+              <!-- Disease (ICD11) --><th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <!-- Disease code (ICD11) --><th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <!-- Max phase --><th class="expand" style="text-align: center;" data-dt-order="disable"></th>
+              <!-- Assoc. score --><th class="expand" style="text-align: center;" data-dt-order="disable"></th>
               {% endif %}
             </tr>
           </thead>
@@ -364,7 +368,7 @@ $(document).ready(function () {
               $(cell).addClass('expand');
           }
       },
-      { className: 'border-left', targets: [8, 13] }
+      { className: 'border-left', targets: [8, 14] }
     ];
 
     var targetsColumnDefs = [
@@ -376,7 +380,7 @@ $(document).ready(function () {
               $(cell).addClass('expand');
           }
       },
-      { className: 'border-left', targets: [5, 13] }
+      { className: 'border-left', targets: [6, 14] }
     ];
 
     // Select columns based on layout
@@ -427,7 +431,7 @@ $(document).ready(function () {
         { data: 'ATC Code', name: 'Indication code (ATC)', visible: !hideColumns },
         { data: "In trial", name: "In trial" },
         { data: "Approved", name: "Approved" },
-        { data: "Gene name", name: "Gene", render: function (data, type, row, meta) {
+        { data: "Uniprot entry", name: "Uniprot", render: function (data, type, row, meta) {
             if (type === 'display') {
                 const originalData = data; 
                 const transformedData = data.replace('_human', '').toUpperCase(); 
@@ -435,6 +439,20 @@ $(document).ready(function () {
             } else if (type === 'filter') {
                 return data.replace('_human', '').toUpperCase();
             }
+            return data;
+        }},
+        { data: "Gene name", name: "Gene", render: function (data, type, row, meta) {
+            if (type === 'display') {
+              if (row && row['Gene name']) {
+                if (row['Gene_entrez_weblink'] != ""){
+                  return '<a href="' + row['Gene_entrez_weblink'] + '" target="_blank">' + row['Gene name'] + '</a>';
+                } else {
+                  return row['Gene name'];
+                }
+              }
+            } else if (type === 'filter') {
+                return row['Gene name'];
+            }          
             return data;
         }},
         { data: "Protein name", name: "Protein", width: "125px", render: function (data) { return data.replace(' receptor', ''); }},
@@ -462,7 +480,7 @@ $(document).ready(function () {
     ];
 
     const targetsColumns = [
-        { data: "Gene name", name: "Gene", render: function (data, type, row, meta) {
+       { data: "Uniprot entry", name: "Uniprot", render: function (data, type, row, meta) {
             if (type === 'display') {
                 const originalData = data; 
                 const transformedData = data.replace('_human', '').toUpperCase(); 
@@ -470,6 +488,20 @@ $(document).ready(function () {
             } else if (type === 'filter') {
                 return data.replace('_human', '').toUpperCase();
             }
+            return data;
+        }},
+        { data: "Gene name", name: "Gene", render: function (data, type, row, meta) {
+            if (type === 'display') {
+              if (row && row['Gene name']) {
+                if (row['Gene_entrez_weblink'] != ""){
+                  return '<a href="' + row['Gene_entrez_weblink'] + '" target="_blank">' + row['Gene name'] + '</a>';
+                } else {
+                  return row['Gene name'];
+                }
+              }
+            } else if (type === 'filter') {
+                return row['Gene name'];
+            }          
             return data;
         }},
         { data: "Protein name", name: "Protein" },
@@ -535,7 +567,7 @@ $(document).ready(function () {
             return data;
         }},
         { data: 'ICD11', name: 'Disease code (ICD11)' },
-        { data: "Phase", name: "Max pahse" },
+        { data: "Phase", name: "Max phase" },
         { data: 'Association score', name: "Association score", render: function (data) { return data === "" || data === null ? data : parseFloat(data).toFixed(4); }}
     ];
 
@@ -720,7 +752,7 @@ $(document).ready(function () {
                     action: function () {
                         const excludeIndices = layout === "drugs"
                             ? (hideColumns ? [3, 4, 5] : []) // Exclude ATC columns for drugs layout if hideColumns is true
-                            : (hideColumns ? [8, 9, 10] : []); // Exclude ATC columns for targets layout if hideColumns is true
+                            : (hideColumns ? [9, 10, 11] : []); // Exclude ATC columns for targets layout if hideColumns is true
                         
                         // Make all columns visible except excluded ones
                         table.columns().every(function (index) {
@@ -764,7 +796,7 @@ $(document).ready(function () {
       const table = $(tableId).DataTable();
 
       // Update visibility of columns if necessary
-      const atcColumnIndexes = layout === "drugs" ? [3, 4, 5] : [8, 9, 10];
+      const atcColumnIndexes = layout === "drugs" ? [3, 4, 5] : [9, 10, 11];
       atcColumnIndexes.forEach((index) => table.column(index).visible(!hideColumns));
 
       // Clear existing data and add new data
@@ -825,8 +857,8 @@ $(document).ready(function () {
     var column_filters = [];
     const Table_selector = $(tableId).DataTable();
     // CreateColumnFilters --> CreateColumnFilters(datatable_selector,column_number, column_range, filter_type)
-        column_filters = column_filters.concat(CreateColumnFilters(Table_selector,0,16,"Multi-select-exact"));
-        column_filters = column_filters.concat(CreateColumnFilters(Table_selector,16,2,"Range-float-vertical"));
+        column_filters = column_filters.concat(CreateColumnFilters(Table_selector,0,17,"Multi-select-exact"));
+        column_filters = column_filters.concat(CreateColumnFilters(Table_selector,17,2,"Range-float-vertical"));
     // Create the filteres
     createDropdownFilters(Table_selector,column_filters);
   }
@@ -894,7 +926,7 @@ $(document).ready(function () {
         const shouldHideATCColumns = !filter_id_list.includes(clickedId); // If not in the list, hide the columns
         // Define the column to filter by and the values to match in that column
         // Set filterColumn based on the layout value
-        const filterColumn = layout === "targets" ? "Gene name" : "Ligand name";
+        const filterColumn = layout === "targets" ? "Uniprot entry" : "Ligand name";
         // set filter values
         const filterValues = this.list;
         // Filter the data based on the specified column and values
@@ -1094,7 +1126,7 @@ $(document).ready(function () {
       // Use gdata to get the newline-separated list for the phase
       const filterValues = gdata[phaseLabel].split("\n").map((item) => item.trim());
       // Define the column to filter by based on layout
-      const filterColumn = layout === "targets" ? "Gene name" : "Ligand name";
+      const filterColumn = layout === "targets" ? "Uniprot entry" : "Ligand name";
       // Filter the fullData based on the selected phase's filter values
       const selectedData = fullData.filter((row) =>
         filterValues.includes(row[filterColumn])

@@ -17,28 +17,28 @@ from copy import deepcopy
 from collections import defaultdict, OrderedDict
 
 from django.middleware.csrf import get_token
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse, HttpResponseServerError, JsonResponse
-from django.views.generic import TemplateView, DetailView, View
+from django.views.generic import TemplateView, DetailView, View, RedirectView
 from django.db import connection
 from django.http import HttpResponseRedirect
-
-from django.db.models import Q, Count, Subquery, OuterRef
-from django.db.models.functions import Coalesce
+from django.urls import reverse
+from django.db.models import Q, Count, Subquery, OuterRef, Value, CharField
+from django.db.models.functions import Coalesce, Concat
 from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import ValidationError
+from django.utils.html import escape
 from django_rdkit.models import *
-
 from django.core.cache import cache
 
 from common.views import AbsReferenceSelectionTable, getReferenceTable, getLigandTable, getLigandCountTable, AbsTargetSelection
-from common.models import ReleaseNotes, WebResource, Publication
+from common.models import ReleaseNotes, WebResource, Publication, WebLink
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from common.selection import Selection, SelectionItem
 from mapper.views import DataMapperHome
 from ligand.models import Ligand, LigandVendorLink, BiasedPathways, AssayExperiment, BiasedData, Endogenous_GTP, LigandID, LigandPeptideStructure, LigandMol, LigandFingerprint
 from ligand.functions import OnTheFly, AddPathwayData, standardize_smiles
-from protein.models import Protein, ProteinFamily, Tissues, TissueExpression
+from protein.models import Protein, ProteinFamily, Tissues, TissueExpression, Gene
 from interaction.models import StructureLigandInteraction
 from mutation.models import MutationExperiment
 from drugs.models import Drugs, Indication, ATCCodes
@@ -617,7 +617,7 @@ class LigandBulkSearch(TemplateView):
                     return result
                 return result
             else:
-                ligand_data_affinity, ligand_data_potency = get_ligand_details(
+                ligand_data_affinity, ligand_data_potency, ligand_data_qualitative = get_ligand_details(
                     mode, ps, ligand_search=True
                 )
             context = {}
@@ -631,6 +631,11 @@ class LigandBulkSearch(TemplateView):
             context["potency_data_json"] = (
                 json.dumps(ligand_data_potency, default=str)
                 if ligand_data_potency
+                else "[]"
+            )
+            context["qualitative_data_json"] = (
+                json.dumps(ligand_data_qualitative, default=str)
+                if ligand_data_qualitative
                 else "[]"
             )
             if len(ligand_data_potency) + len(ligand_data_affinity) > MAX_RECORDS:
@@ -934,7 +939,7 @@ class LigandStructuralSearch(TemplateView):
                 cache.touch(cache_key, 60 * 60 * 24 * 7)
                 return context
             else:
-                ligand_data_affinity, ligand_data_potency = get_ligand_details(
+                ligand_data_affinity, ligand_data_potency, ligand_data_qualitative = get_ligand_details(
                     mode, ps, ligand_search=True, ligand_similarities=similarities
                 )
             context = {}
@@ -949,6 +954,11 @@ class LigandStructuralSearch(TemplateView):
             context["potency_data_json"] = (
                 json.dumps(ligand_data_potency, default=str)
                 if ligand_data_potency
+                else "[]"
+            )
+            context["qualitative_data_json"] = (
+                json.dumps(ligand_data_qualitative, default=str)
+                if ligand_data_qualitative
                 else "[]"
             )
             if len(ligand_data_potency) + len(ligand_data_affinity) > MAX_RECORDS:
@@ -1040,12 +1050,12 @@ class LigandTargetSelection(AbsReferenceSelectionTable):
         return context
 
 
-def LigandDetails(request, ligand_id):
+def LigandDetails(request, gpcrdb_id):
     """
     The details of a ligand record. Lists all the assay experiments for a given ligand.
     """
     ligand_records = AssayExperiment.objects.filter(
-        ligand__ids__index=ligand_id
+        ligand__gpcrdb_id=gpcrdb_id
     ).order_by("protein__entry_name")
 
     record_count = (
@@ -1098,7 +1108,7 @@ def LigandDetails(request, ligand_id):
                 }
             )
 
-    context = {"ligand_data": ligand_data, "ligand": ligand_id}
+    context = {"ligand_data": ligand_data, "ligand": gpcrdb_id}
 
     return render(request, "ligand_details.html", context)
 
@@ -1130,6 +1140,7 @@ def build_ligand_record(
     ligand_search,
     ligand_similarities,
     record_count,
+    qualitative_activity=None,
 ):
 
     record_dict = {
@@ -1158,6 +1169,7 @@ def build_ligand_record(
         "reference": experiment_obj.reference_ligand if experiment_obj else None,
         "smiles_for_image": smiles_for_image,
         "record_count": record_count,
+        "qualitative_activity": qualitative_activity,
     }
 
     # Safely add species ...
@@ -1251,6 +1263,7 @@ def get_extended_ligand_details(
     """
     ligand_data_affinity = []
     ligand_data_potency = []
+    ligand_data_qualitative = []
 
     total_tested_subquery = (
         AssayExperiment.objects.filter(ligand_id=OuterRef("ligand__id"))
@@ -1287,7 +1300,7 @@ def get_extended_ligand_details(
         "ligand__id",
         "ligand__name",
         "ligand__ligand_type__name",
-        "ligand__sequence", 
+        "ligand__sequence",
         "ligand__mw",
         "ligand__logp",
         "ligand__rotatable_bonds",
@@ -1307,6 +1320,7 @@ def get_extended_ligand_details(
         "reference_ligand",
         "total_tested_gpcrs_annotated",
         "purchasability_annotated",
+        "qualitative_activity",
     ]
 
     for exp_data in annotated_experiments_qs.values(*fields_to_select).iterator(
@@ -1367,17 +1381,22 @@ def get_extended_ligand_details(
 
         # Process assay_type 'U'
         assay_type = processed_exp_data["assay_type"]
+        qualitative_data = processed_exp_data["qualitative_activity"]
         if assay_type == "U":
             processed_exp_data["assay_type"] = "N/A"
 
         # Distribute to affinity/potency lists
-        if assay_type == "B":  # Binding
-            ligand_data_affinity.append(processed_exp_data)
-        elif assay_type == "F":  # Functional
-            ligand_data_potency.append(processed_exp_data)
-        # Other assay types are ignored for these lists, as per original logic implied
+        if not qualitative_data:
+            if assay_type == "B":  # Binding
+                ligand_data_affinity.append(processed_exp_data)
+            elif assay_type == "F":  # Functional
+                ligand_data_potency.append(processed_exp_data)
+            # Other assay types are ignored for these lists, as per original logic implied
+        else:
+            ligand_data_qualitative.append(processed_exp_data)
 
-    return ligand_data_affinity, ligand_data_potency
+    # ligand_data_qualitative = ligand_data_affinity
+    return ligand_data_affinity, ligand_data_potency, ligand_data_qualitative
 
 
 # ===================================================
@@ -1389,6 +1408,7 @@ def get_compact_ligand_details(
 
     ligand_data_affinity = []
     ligand_data_potency = []
+    ligand_data_qualitative = []
 
     # assay_conversion
     assay_conversion = {
@@ -1543,14 +1563,19 @@ def get_compact_ligand_details(
                             ligand_search=ligand_search,
                             ligand_similarities=ligand_similarities,
                             record_count=record_count,
+                            qualitative_activity=representative_exp.qualitative_activity if representative_exp else None,
                         )
 
-                        if assay_label == "Binding":
-                            ligand_data_affinity.append(ligand_record)
-                        elif assay_label == "Functional":
-                            ligand_data_potency.append(ligand_record)
+                        if representative_exp and representative_exp.qualitative_activity:
+                            ligand_data_qualitative.append(ligand_record)
+                        else:
+                            if assay_label == "Binding":
+                                ligand_data_affinity.append(ligand_record)
+                            elif assay_label == "Functional":
+                                ligand_data_potency.append(ligand_record)
 
-    return ligand_data_affinity, ligand_data_potency
+    # ligand_data_qualitative = ligand_data_affinity
+    return ligand_data_affinity, ligand_data_potency, ligand_data_qualitative
 
 
 # =====================================================
@@ -1618,7 +1643,7 @@ def TargetDetails(mode, request, **kwargs):
         if not assay_experiments and "slug" not in kwargs:
             return redirect("ligand_selection")
 
-        ligand_data_affinity, ligand_data_potency = get_ligand_details(
+        ligand_data_affinity, ligand_data_potency, ligand_data_qualitative = get_ligand_details(
             "extended", assay_experiments
         )
         context = {}
@@ -1630,6 +1655,11 @@ def TargetDetails(mode, request, **kwargs):
         context["potency_data_json"] = (
             json.dumps(ligand_data_potency, default=str)
             if ligand_data_potency
+            else "[]"
+        )
+        context["qualitative_data_json"] = (
+            json.dumps(ligand_data_qualitative, default=str)
+            if ligand_data_qualitative
             else "[]"
         )
         context["mode"] = mode
@@ -1649,7 +1679,7 @@ def TargetDetails(mode, request, **kwargs):
         if not assay_experiments:
             return redirect("ligand_selection")
 
-        ligand_data_affinity, ligand_data_potency = get_ligand_details(
+        ligand_data_affinity, ligand_data_potency, ligand_data_qualitative = get_ligand_details(
             "compact", assay_experiments
         )
         context = {}
@@ -1661,6 +1691,11 @@ def TargetDetails(mode, request, **kwargs):
         context["potency_data_json"] = (
             json.dumps(ligand_data_potency, default=str)
             if ligand_data_potency
+            else "[]"
+        )
+        context["qualitative_data_json"] = (
+            json.dumps(ligand_data_qualitative, default=str)
+            if ligand_data_qualitative
             else "[]"
         )
         context["mode"] = mode
@@ -1933,9 +1968,9 @@ class UserBiased(AbsReferenceSelectionTable):
     #Biased Effector Subtype Tau/KA Rank Order (Ligand Selection)
     'TauRankOrderSubtype': "submitSelection('/biased_signalling/userbiasedsubtypes_tau_rank_order');",
     #Biased Effector Subtype Emax/EC50 Pathway Profiles (Ligand Selection)
-    'EmaxPathProfilesSubtype': "submitSelection('/biased_signalling/userbiasedsubtypes_emax_path_profile');",
+    'EmaxPathProfileSubtype': "submitSelection('/biased_signalling/userbiasedsubtypes_emax_path_profile');",
     #Biased Effector Subtype Tau/KA Pathway Profiles (Ligand Selection)
-    'TauPathProfilesSubtype': "submitSelection('/biased_signalling/userbiasedsubtypes_tau_path_profile');"}
+    'TauPathProfileSubtype': "submitSelection('/biased_signalling/userbiasedsubtypes_tau_path_profile');"}
 
     selection_boxes = OrderedDict([
         ('reference', True),
@@ -2696,7 +2731,7 @@ class LigandStatistics(TemplateView):
         context['release_notes'] = ReleaseNotes.objects.all()[0]
 
         tree = PhylogeneticTreeGenerator()
-        class_a_data = tree.get_tree_data(ProteinFamily.objects.get(name='Class A (Rhodopsin)'))
+        class_a_data = tree.get_tree_data(ProteinFamily.objects.get(slug='001'))
         context['class_a_options'] = deepcopy(tree.d3_options)
         context['class_a_options']['anchor'] = 'class_a'
         context['class_a_options']['leaf_offset'] = 50
@@ -2711,7 +2746,7 @@ class LigandStatistics(TemplateView):
                 break
         context['class_a'] = json.dumps(whole_class_a)
         class_b1_data = tree.get_tree_data(
-            ProteinFamily.objects.get(name__startswith='Class B1 (Secretin)'))
+            ProteinFamily.objects.get(slug='002'))
         context['class_b1_options'] = deepcopy(tree.d3_options)
         context['class_b1_options']['anchor'] = 'class_b1'
         context['class_b1_options']['branch_trunc'] = 60
@@ -2719,27 +2754,27 @@ class LigandStatistics(TemplateView):
         context['class_b1'] = json.dumps(
             class_b1_data.get_nodes_dict(self.page))
         class_b2_data = tree.get_tree_data(
-            ProteinFamily.objects.get(name__startswith='Class B2 (Adhesion)'))
+            ProteinFamily.objects.get(slug='003'))
         context['class_b2_options'] = deepcopy(tree.d3_options)
         context['class_b2_options']['anchor'] = 'class_b2'
         context['class_b2_options']['label_free'] = [1, ]
         context['class_b2'] = json.dumps(
             class_b2_data.get_nodes_dict(self.page))
         class_c_data = tree.get_tree_data(
-            ProteinFamily.objects.get(name__startswith='Class C (Glutamate)'))
+            ProteinFamily.objects.get(slug='004'))
         context['class_c_options'] = deepcopy(tree.d3_options)
         context['class_c_options']['anchor'] = 'class_c'
         context['class_c_options']['branch_trunc'] = 50
         context['class_c_options']['label_free'] = [1, ]
         context['class_c'] = json.dumps(class_c_data.get_nodes_dict(self.page))
         class_f_data = tree.get_tree_data(
-            ProteinFamily.objects.get(name__startswith='Class F (Frizzled)'))
+            ProteinFamily.objects.get(slug='006'))
         context['class_f_options'] = deepcopy(tree.d3_options)
         context['class_f_options']['anchor'] = 'class_f'
         context['class_f_options']['label_free'] = [1, ]
         context['class_f'] = json.dumps(class_f_data.get_nodes_dict(self.page))
         class_t2_data = tree.get_tree_data(
-            ProteinFamily.objects.get(name__startswith='Class T2 (Taste 2)'))
+            ProteinFamily.objects.get(slug='009'))
         context['class_t2_options'] = deepcopy(tree.d3_options)
         context['class_t2_options']['anchor'] = 'class_t2'
         context['class_t2_options']['label_free'] = [1, ]
@@ -2768,7 +2803,7 @@ class LigandStatistics(TemplateView):
         #Adding section for addressing the data for tree against balanced reference ONLY for ligand_bias page
         if self.page == 'ligand_bias':
             tree = PhylogeneticTreeGenerator()
-            class_a_data_bal = tree.get_tree_data(ProteinFamily.objects.get(name='Class A (Rhodopsin)'))
+            class_a_data_bal = tree.get_tree_data(ProteinFamily.objects.get(slug='001'))
             context['class_a_options_bal'] = deepcopy(tree.d3_options)
             context['class_a_options_bal']['anchor'] = 'class_a_bal'
             context['class_a_options_bal']['leaf_offset'] = 50
@@ -2783,7 +2818,7 @@ class LigandStatistics(TemplateView):
                     break
             context['class_a_bal'] = json.dumps(whole_class_a_bal)
             class_b1_data_bal = tree.get_tree_data(
-                ProteinFamily.objects.get(name__startswith='Class B1 (Secretin)'))
+                ProteinFamily.objects.get(slug='002'))
             context['class_b1_options_bal'] = deepcopy(tree.d3_options)
             context['class_b1_options_bal']['anchor'] = 'class_b1_bal'
             context['class_b1_options_bal']['branch_trunc'] = 60
@@ -2791,27 +2826,27 @@ class LigandStatistics(TemplateView):
             context['class_b1_bal'] = json.dumps(
                 class_b1_data_bal.get_nodes_dict(self.page+'_bal'))
             class_b2_data_bal = tree.get_tree_data(
-                ProteinFamily.objects.get(name__startswith='Class B2 (Adhesion)'))
+                ProteinFamily.objects.get(slug='003'))
             context['class_b2_options_bal'] = deepcopy(tree.d3_options)
             context['class_b2_options_bal']['anchor'] = 'class_b2_bal'
             context['class_b2_options_bal']['label_free'] = [1, ]
             context['class_b2_bal'] = json.dumps(
                 class_b2_data_bal.get_nodes_dict(self.page+"_bal"))
             class_c_data_bal = tree.get_tree_data(
-                ProteinFamily.objects.get(name__startswith='Class C (Glutamate)'))
+                ProteinFamily.objects.get(slug='004'))
             context['class_c_options_bal'] = deepcopy(tree.d3_options)
             context['class_c_options_bal']['anchor'] = 'class_c_bal'
             context['class_c_options_bal']['branch_trunc'] = 50
             context['class_c_options_bal']['label_free'] = [1, ]
             context['class_c_bal'] = json.dumps(class_c_data_bal.get_nodes_dict(self.page+"_bal"))
             class_f_data_bal = tree.get_tree_data(
-                ProteinFamily.objects.get(name__startswith='Class F (Frizzled)'))
+                ProteinFamily.objects.get(slug='006'))
             context['class_f_options_bal'] = deepcopy(tree.d3_options)
             context['class_f_options_bal']['anchor'] = 'class_f_bal'
             context['class_f_options_bal']['label_free'] = [1, ]
             context['class_f_bal'] = json.dumps(class_f_data_bal.get_nodes_dict(self.page+"_bal"))
             class_t2_data_bal = tree.get_tree_data(
-                ProteinFamily.objects.get(name__startswith='Class T2 (Taste 2)'))
+                ProteinFamily.objects.get(slug='009'))
             context['class_t2_options_bal'] = deepcopy(tree.d3_options)
             context['class_t2_options_bal']['anchor'] = 'class_t2_bal'
             context['class_t2_options_bal']['label_free'] = [1, ]
@@ -3018,8 +3053,8 @@ class LigandStatistics(TemplateView):
                 "Class F (Frizzled)": 'Teal',
                 "Other GPCR orphans": "Grey",
                 "Class T2 (Taste 2)": 'MediumPurple',
-                "Class O1 (fish-like odorant)": "Tomato",
-                "Class O2 (tetrapod specific odorant)": "Peru",
+                "Class O1 (Olfactory/extra-nasal 1)": "Tomato",
+                "Class O2 (Olfactory/extra-nasal 2)": "Peru",
                 "Odorant receptors": "DarkOliveGreen",
                 }
             heatmap_receptors = Protein.objects.filter(family__slug__startswith='0', species_id=1).exclude(
@@ -3028,7 +3063,10 @@ class LigandStatistics(TemplateView):
             MasterDict = {}
             color_cache = {}
             for rec in heatmap_receptors:
-                if 'CONSENSUS' in rec.entry_short():
+                # entry_short() only keeps the part of entry_name before the first "_", so a
+                # "..._NNN-consensus" placeholder's "-consensus" suffix never actually reaches it --
+                # check entry_name directly instead of the always-false 'CONSENSUS' in entry_short().
+                if 'consensus' in rec.entry_name.lower():
                     continue
                 if (rec.entry_short()[0].isdigit()) and (rec.entry_short()[0] != '5'):
                     continue
@@ -3036,15 +3074,15 @@ class LigandStatistics(TemplateView):
                     continue
                 if rec.family.parent.name.startswith('Class'):
                     class_name = rec.family.parent.name.split(' (')[0]
-                    class_color = CSS_COLORS[rec.family.parent.name]
+                    class_color = CSS_COLORS.get(rec.family.parent.name, 'Black')
                     lig_type_color = "NA"
                     lig_type_name = "NA"
                     rec_family_color = "NA"
                     rec_family_name = "NA"
                 if rec.family.parent.parent.name.startswith('Class') or rec.family.parent.parent.name.startswith('Orphan'):
                     class_name = rec.family.parent.parent.name.split(' (')[0]
-                    class_color = CSS_COLORS[rec.family.parent.parent.name]
-                    lig_type_color = CSS_COLORS[rec.family.parent.name]
+                    class_color = CSS_COLORS.get(rec.family.parent.parent.name, 'Black')
+                    lig_type_color = CSS_COLORS.get(rec.family.parent.name, 'Black')
                     lig_type_name = rec.family.parent.name
                     if rec.family.name not in color_cache:
                         color_cache[rec.family.name] = '#%02x%02x%02x' % (BiasedSignallingOnTheFlyCalculation.create_rgb_color(), BiasedSignallingOnTheFlyCalculation.create_rgb_color(), BiasedSignallingOnTheFlyCalculation.create_rgb_color())
@@ -3052,8 +3090,8 @@ class LigandStatistics(TemplateView):
                     rec_family_name = rec.family.name
                 if rec.family.parent.parent.parent.name.startswith('Class'):
                     class_name = rec.family.parent.parent.parent.name.split(' (')[0]
-                    class_color = CSS_COLORS[rec.family.parent.parent.parent.name]
-                    lig_type_color = CSS_COLORS[rec.family.parent.parent.name]
+                    class_color = CSS_COLORS.get(rec.family.parent.parent.parent.name, 'Black')
+                    lig_type_color = CSS_COLORS.get(rec.family.parent.parent.name, 'Black')
                     lig_type_name = rec.family.parent.parent.name
                     if rec.family.parent.name not in color_cache:
                         color_cache[rec.family.parent.name] = '#%02x%02x%02x' % (BiasedSignallingOnTheFlyCalculation.create_rgb_color(), BiasedSignallingOnTheFlyCalculation.create_rgb_color(), BiasedSignallingOnTheFlyCalculation.create_rgb_color())
@@ -3123,61 +3161,214 @@ class BiasVendorBrowser(TemplateView):
 
         return context
 
-class LigandGtoPInfoView(TemplateView):
-    # Tunnel view from Guide to Pharmacology, gets their GtoP ID and
-    # return the associated GPCRdb ligand info page
-    # calls function from LigandInformationView because this is simply a head copy
-    template_name = 'ligand_info.html'
+# class LigandGtoPInfoView(TemplateView):
+#     # Tunnel view from Guide to Pharmacology, gets their GtoP ID and
+#     # return the associated GPCRdb ligand info page
+#     # calls function from LigandInformationView because this is simply a head copy
+#     template_name = 'ligand_info.html'
+#
+#     def get_context_data(self, *args, **kwargs):
+#         context = super(LigandGtoPInfoView, self).get_context_data(**kwargs)
+#         ligand_id = self.kwargs['gpcrdb_id']
+#         ligand_conversion = LigandID.objects.filter(index=ligand_id, web_resource_id__slug="gtoplig").values_list('ligand_id')[0][0]
+#         ligand_data = Ligand.objects.get(gpcrdb_id=ligand_conversion)
+#         endogenous_ligands =  Endogenous_GTP.objects.all().values_list("ligand_id", flat=True)
+#         assay_data = list(AssayExperiment.objects.filter(ligand=ligand_conversion).prefetch_related(
+#             'ligand', 'protein', 'protein__family',
+#             'protein__family__parent', 'protein__family__parent__parent__parent',
+#             'protein__family__parent__parent', 'protein__family', 'protein__species'))
+#         context = dict()
+#         structures = LigandInformationView.get_structure(ligand_data)
+#         ligand_data = LigandInformationView.process_ligand(ligand_data, endogenous_ligands)
+#         assay_data_affinity, assay_data_potency = LigandInformationView.process_assay(assay_data)
+#         mutations = LigandInformationView.get_mutations(ligand_data)
+#
+#         context.update({'structure': structures})
+#         context.update({'ligand': ligand_data})
+#         context.update({'assay_affinity': assay_data_affinity})
+#         context.update({'assay_potency': assay_data_potency})
+#         context.update({'mutations': mutations})
+#         return context
 
-    def get_context_data(self, *args, **kwargs):
-        context = super(LigandGtoPInfoView, self).get_context_data(**kwargs)
-        ligand_id = self.kwargs['pk']
-        ligand_conversion = LigandID.objects.filter(index=ligand_id, web_resource_id__slug="gtoplig").values_list('ligand_id')[0][0]
-        ligand_data = Ligand.objects.get(id=ligand_conversion)
-        endogenous_ligands =  Endogenous_GTP.objects.all().values_list("ligand_id", flat=True)
-        assay_data = list(AssayExperiment.objects.filter(ligand=ligand_conversion).prefetch_related(
-            'ligand', 'protein', 'protein__family',
-            'protein__family__parent', 'protein__family__parent__parent__parent',
-            'protein__family__parent__parent', 'protein__family', 'protein__species'))
-        context = dict()
-        structures = LigandInformationView.get_structure(ligand_data)
-        ligand_data = LigandInformationView.process_ligand(ligand_data, endogenous_ligands)
-        assay_data_affinity, assay_data_potency = LigandInformationView.process_assay(assay_data)
-        mutations = LigandInformationView.get_mutations(ligand_data)
+class _GpcrdbRedirectGTOP(RedirectView):
+    permanent = False
+    query_string = True
+    legacy_kwarg = 'pk'          # override per-URL if needed
+    target_pattern_name = None   # e.g. 'ligand:ligand-info'
 
-        context.update({'structure': structures})
-        context.update({'ligand': ligand_data})
-        context.update({'assay_affinity': assay_data_affinity})
-        context.update({'assay_potency': assay_data_potency})
-        context.update({'mutations': mutations})
+    def _resolve_gpcrdb(self, raw):
+        # Try legacy PK first; if not found, treat the raw id as gpcrdb_id
+        try:
+            return LigandID.objects.filter(index=raw).values_list('ligand__gpcrdb_id', flat=True).get()
+        except LigandID.DoesNotExist:
+            return get_object_or_404(LigandID.objects.filter(index=raw).values_list('ligand__gpcrdb_id', flat=True).get())
+
+    def get_redirect_url(self, *args, **kwargs):
+        raw = kwargs[self.legacy_kwarg]
+        gpcrdb = self._resolve_gpcrdb(raw)
+        return reverse(self.target_pattern_name, kwargs={'gpcrdb_id': gpcrdb})
+
+
+class _GpcrdbRedirectBase(RedirectView):
+    permanent = False
+    query_string = True
+    legacy_kwarg = 'pk'          # override per-URL if needed
+    target_pattern_name = None   # e.g. 'ligand:ligand-info'
+
+    def _resolve_gpcrdb(self, raw):
+        # Try legacy PK first; if not found, treat the raw id as gpcrdb_id
+        try:
+            return Ligand.objects.only('gpcrdb_id').get(pk=raw).gpcrdb_id
+        except Ligand.DoesNotExist:
+            return get_object_or_404(Ligand.objects.only('gpcrdb_id'), gpcrdb_id=raw).gpcrdb_id
+
+    def get_redirect_url(self, *args, **kwargs):
+        raw = kwargs[self.legacy_kwarg]
+        gpcrdb = self._resolve_gpcrdb(raw)
+        return reverse(self.target_pattern_name, kwargs={'gpcrdb_id': gpcrdb})
+
+class LigandInfoLegacyRedirect(_GpcrdbRedirectBase):
+    target_pattern_name = 'ligand-info'
+    legacy_kwarg = 'pk'
+
+class LigandGtoPLegacyRedirect(_GpcrdbRedirectGTOP):
+    target_pattern_name = 'ligand-gtp-info'
+    legacy_kwarg = 'pk'
+
+class LigandDetailsLegacyRedirect(_GpcrdbRedirectBase):
+    target_pattern_name = 'ligand_detail'
+    legacy_kwarg = 'pk'
+
+class AbsLigand(TemplateView):
+
+    @staticmethod
+    def get_related_ligands(ligand_id):
+        _assay_count = Count(Concat('assayexperiment__protein_id', Value('|'), 'assayexperiment__source', Value('|'), 'assayexperiment__value_type', output_field=CharField()), distinct=True, filter=Q(assayexperiment__isnull=False) & ~Q(assayexperiment__value_type='-'))
+        _model_structure_count = Count('ligandpeptidestructure', filter=Q(ligandpeptidestructure__structure__structure_type__origin='model'), distinct=True)
+        this_ligand = Ligand.objects.filter(gpcrdb_id=ligand_id).prefetch_related('ligand_type').annotate(assay_count=_assay_count, structure_count=Count('structureligandinteraction'), model_structure_count=_model_structure_count)
+        if this_ligand[0].parent:
+            parent_ligand = Ligand.objects.filter(id=this_ligand[0].parent.id).prefetch_related('ligand_type').annotate(assay_count=_assay_count, structure_count=Count('structureligandinteraction'), model_structure_count=_model_structure_count)[0]
+        else:
+            parent_ligand = this_ligand[0]
+        children = Ligand.objects.filter(parent=parent_ligand).prefetch_related('ligand_type').annotate(assay_count=_assay_count, structure_count=Count('structureligandinteraction'), model_structure_count=_model_structure_count)
+
+        ### Keeping this line for debugging - shows also parent object on group page
+        # ligands = [parent_ligand]+list(children)
+        ligands = list(children)
+
+        return this_ligand, ligands
+
+class LigandGroup(AbsLigand):
+    template_name = 'ligand_group.html'
+
+    def get(self, request, *args, **kwargs):
+        ligand_id = self.kwargs['gpcrdb_id']
+        self.this_ligand, self.ligands = AbsLigand.get_related_ligands(ligand_id)
+
+        if len(self.ligands) < 2:
+            return redirect(f"/ligand/{ligand_id}/info")
+
+        return super().get(request, *args, **kwargs)
+
+    @staticmethod
+    def _attr_line(value, label, max_len=None):
+        if value in (None, '', '-'):
+            return None
+        text = str(value)
+        display = text if not max_len or len(text) <= max_len else text[:max_len] + '…'
+        return f'<div class="lig-attr" title="{escape(text)}"><span class="lig-attr-label">{label}:</span> {escape(display)}</div>'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        ligands_parsed = []
+        for l in self.ligands:
+            ids = LigandID.objects.filter(ligand=l).count()
+            mutations = MutationExperiment.objects.filter(ligand=l).count()
+            assay_count = l.assay_count
+            structure_count = l.structure_count
+            structure_model_count = l.model_structure_count
+            drug_indications = l.drugs_set.all().count()
+            is_peptide_like = l.ligand_type.slug in ['peptide', 'protein'] and bool(l.sequence)
+            lig_dict = {'ligand_object':None, 'chemical_properties':None, 'chemical_identifiers':None, 'bioactivities':assay_count,
+                        'structures':structure_count, 'structure_models':structure_model_count, 'sequence':None, 'gpcrdb_id':l.gpcrdb_id, 'db_ids':ids, 'drug_indications':drug_indications, 'mutations':mutations,
+                        'ligand_type': 'peptide' if is_peptide_like else 'small_molecule'}
+
+            identifier_lines = [self._attr_line(l.inchikey, "InChIKey", max_len=27)]
+            if is_peptide_like:
+                identifier_lines.append(self._attr_line(l.helm, "HELM", max_len=30))
+            else:
+                identifier_lines.append(self._attr_line(l.smiles, "SMILES", max_len=30))
+            identifier_lines = [line for line in identifier_lines if line]
+            lig_dict['chemical_identifiers'] = ''.join(identifier_lines) if identifier_lines else None
+
+            if not is_peptide_like:
+                property_lines = [
+                    self._attr_line(l.logp, "Log P"),
+                    self._attr_line(l.mw, "MW"),
+                    self._attr_line(l.stereo_status, "Stereo"),
+                ]
+                property_lines = [line for line in property_lines if line]
+                lig_dict['chemical_properties'] = ''.join(property_lines) if property_lines else None
+
+            if l.sequence:
+                lig_dict['sequence'] = l.sequence
+
+            ligands_parsed.append(lig_dict)
+
+            if l.smiles and l.smiles != "-":
+                _, smiles_for_image, picture_flag = standardize_smiles(l.smiles, None)
+            else:
+                smiles_for_image = ""
+                picture_flag = "Not_available"
+            lig_dict['smiles_for_image'] = smiles_for_image
+            lig_dict['picture'] = picture_flag
+
+            if not l.parent:
+                icon = '<i class="bi bi-star-fill" style="color: gold;-webkit-text-stroke: 1px black;paint-order: stroke fill;font-size: 12px;"data-html="true" data-toggle="popover" data-trigger="hover" data-placement="right" data-content="Parent entry of ligand group"></i>'
+            elif l.radioactive:
+                icon = '<i class="bi bi-radioactive" style="display: inline-block; width: 1em; height: 1em; line-height: 1; background-color: yellow; border-radius: 50%; font-size: 14px; margin-right: 4px;"data-html="true" data-toggle="popover" data-trigger="hover" data-placement="right" data-content="Radioactive ligand"></i>'
+            else:
+                icon = ''
+            lig_dict['ligand_object'] = f"""{icon}{l.name}"""
+
+        context.update({'ligands': json.dumps(ligands_parsed)})
+        context.update({'this_ligand': self.this_ligand[0]})
+
         return context
 
 
-class LigandInformationView(TemplateView):
+class LigandInformationView(AbsLigand):
     template_name = 'ligand_info.html'
-
+    
     def get_context_data(self, *args, **kwargs):
         context = super(LigandInformationView, self).get_context_data(**kwargs)
-        ligand_id = self.kwargs['pk']
-        ligand_data = Ligand.objects.get(id=ligand_id)
+        ligand_id = self.kwargs['gpcrdb_id']
+        info_type = self.kwargs['info_type']
+        if info_type=='info':
+            ligand_data = Ligand.objects.get(gpcrdb_id=ligand_id)
+        elif info_type=='gtp_info':
+            ligand_data = LigandID.objects.get(web_resource__slug='gtoplig', index=ligand_id).ligand
         endogenous_ligands =  Endogenous_GTP.objects.all().values_list("ligand_id", flat=True)
-        assay_data = list(AssayExperiment.objects.filter(ligand=ligand_id).prefetch_related(
+        assay_data = list(AssayExperiment.objects.filter(ligand__gpcrdb_id=ligand_id).prefetch_related(
             'ligand', 'protein', 'protein__family',
             'protein__family__parent', 'protein__family__parent__parent__parent',
             'protein__family__parent__parent', 'protein__family', 'protein__species'))
         context = dict()
         structures = LigandInformationView.get_structure(ligand_data)
+        model_structures = LigandInformationView.get_model_structures(ligand_data)
         ligand_data = LigandInformationView.process_ligand(ligand_data, endogenous_ligands)
         assay_data_affinity, assay_data_potency = LigandInformationView.process_assay(assay_data)
         mutations = LigandInformationView.get_mutations(ligand_data)
         # if int(ligand_id) in endogenous_ligands:
-        #     endo_data = list(Endogenous_GTP.objects.filter(ligand=ligand_id).prefetch_related(
+        #     endo_data = list(Endogenous_GTP.objects.filter(ligand__gpcrdb_id=ligand_id).prefetch_related(
         #     'ligand', 'receptor', 'receptor__family',
         #     'receptor__family__parent', 'receptor__family__parent__parent__parent',
         #     'receptor__family__parent__parent', 'receptor__species'))
         #     endo_values = LigandInformationView.process_endo(endo_data)
         #     assay_data = assay_data + endo_values
         context.update({'structure': structures})
+        context.update({'model_structures': model_structures})
         context.update({'ligand': ligand_data})
         # Convert assay data to JSON
         if len(assay_data_affinity) > 0:
@@ -3195,7 +3386,7 @@ class LigandInformationView(TemplateView):
         else:
             context['assay_potency_json'] = "[]"
 
-        if context['assay_affinity_json'] == "[]" or context['assay_potency_json'] == "[]":
+        if context['assay_affinity_json'] == "[]" and context['assay_potency_json'] == "[]":
             context['assay_existence'] = 'no'
         else:
             context['assay_existence'] = 'yes'
@@ -3204,7 +3395,7 @@ class LigandInformationView(TemplateView):
 
         ##### ADDING SECTION FOR SANKEY #####
 
-        indication_data = Drugs.objects.filter(ligand=ligand_id).prefetch_related('ligand',
+        indication_data = Drugs.objects.filter(ligand__gpcrdb_id=ligand_id).prefetch_related('ligand',
                                                                                       'target',
                                                                                       'indication')
         context.update({'plot_existence': 'no'})
@@ -3231,7 +3422,7 @@ class LigandInformationView(TemplateView):
                 indication_0 = record.indication.get_level_0().title
                 uri = record.indication.uri.index if record.indication.uri else ''
                 ligand_name = record.ligand.name.capitalize()
-                ligand_id = record.ligand.id
+                ligand_id = record.ligand.gpcrdb_id
                 protein_name = record.target.name
                 target_name = record.target.entry_name
                 #check for each value if it exists and retrieve the source node value
@@ -3272,7 +3463,7 @@ class LigandInformationView(TemplateView):
                     'x3_name': indication_0,
                     'x4_name': indication_name
                 }
-                
+
                 sankey['links'].append({"source": prot_node, "target": lig_node, "value": 1, "ligtrace": protein_name, "prottrace": indication_name, "linkage_key": "primary","link_identifier": link_id})  # x1 -> x2 (Protein → Ligand)
                 link_id += 1
                 sankey['links'].append({"source": lig_node, "target": level_0_node, "value": 1, "ligtrace": protein_name, "prottrace": indication_0, "linkage_key": "primary","link_identifier": link_id})  # x2 -> x3 (Ligand → Level 0)
@@ -3282,7 +3473,7 @@ class LigandInformationView(TemplateView):
 
                 path_matrix.append(row)
                 row_id += 1
-                
+
             #Fixing redundancy in sankey['links']
             unique_combinations = {}
 
@@ -3410,7 +3601,7 @@ class LigandInformationView(TemplateView):
                 'Is_Phase_IV': 'sum',
                 'Is_Approved': 'max'
                 }).to_dict()
-            
+
             phase_counts['Is_Approved'] = 'Yes' if phase_counts['Is_Approved'] == 1 else 'No'
 
             context.update({
@@ -3456,7 +3647,7 @@ class LigandInformationView(TemplateView):
                 'target__family__parent__parent__parent',
                 'indication',
                 'disease_association'
-            ).filter(ligand=ligand_id).values(
+            ).filter(ligand__gpcrdb_id=ligand_id).values(
                 'ligand',
                 'ligand__name',
                 'target__entry_name',
@@ -3543,7 +3734,7 @@ class LigandInformationView(TemplateView):
     def get_structure(ligand):
         return_list = list()
         structures = list(
-            StructureLigandInteraction.objects.filter(ligand=ligand).exclude(structure__structure_type__slug__startswith='af-'))
+            StructureLigandInteraction.objects.filter(ligand=ligand, structure__structure_type__origin='experiment'))
         for i in structures:
             structure_dict = dict()
             structure_dict['structure_pdb'] = i.structure.pdb_code.index
@@ -3551,11 +3742,26 @@ class LigandInformationView(TemplateView):
         return return_list
 
     @staticmethod
+    def get_model_structures(ligand):
+        interactions = LigandPeptideStructure.objects.filter(
+            ligand=ligand, structure__structure_type__origin='model'
+        ).select_related('structure__structure_type', 'structure__pdb_code',
+                          'structure__protein_conformation__protein')
+        grouped = dict()
+        for i in interactions:
+            type_name = i.structure.structure_type.name
+            grouped.setdefault(type_name, []).append({
+                'structure_pdb': i.structure.pdb_code.index,
+                'receptor_name': i.structure.protein_conformation.protein.short(),
+            })
+        return grouped
+
+    @staticmethod
     def get_mutations(ligand):
         return_set = set()
         return_list = list()
         mutations = list(
-            MutationExperiment.objects.filter(ligand_id=ligand['ligand_id']).only('protein').order_by("protein__name"))
+            MutationExperiment.objects.filter(ligand__gpcrdb_id=ligand['ligand_id']).only('protein').order_by("protein__name"))
         for i in mutations:
             if i.protein.family_id in return_set:
                 pass
@@ -3568,7 +3774,7 @@ class LigandInformationView(TemplateView):
     @staticmethod
     def process_assay(assays):
         return_dict = dict()
-        for i in assays:
+        for c, i in enumerate(assays):
             name = str(i.protein) + '_' + str(i.source)
             assay_type = i.value_type
             if i.source == 'PDSP KiDatabase':
@@ -3576,7 +3782,14 @@ class LigandInformationView(TemplateView):
             if i.source == 'Guide to Pharmacology':
                 data_value = i.p_activity_ranges
             else:
-                data_value = float(i.p_activity_value)
+                if i.p_activity_value is not None:
+                    try:
+                        data_value = float(i.p_activity_value)
+                    except (ValueError, TypeError):
+                        # Handle cases where the value might be an empty string or non-numeric
+                        data_value = None
+                else:
+                    data_value = None
 
             if name in return_dict:
                 if assay_type in return_dict[name]['data_type'].keys():
@@ -3603,10 +3816,13 @@ class LigandInformationView(TemplateView):
     	#Unpacking
         unpacked_affinity = dict()
         unpacked_potency = dict()
-        potency_values = ['pKB', 'pKb', 'pEC50', 'pA2', 'A2', 'Kb', 'KB', 'EC50', 'Potency', 'IC50', 'pIC50']
+        potency_values = ['pKB', 'pKb', 'pEC50', 'pA2', 'A2', 'Kb', 'KB', 'EC50', 'Potency', 'IC50', 'pIC50', 'AC50']
         affinity_values = ['pKi', 'pKd', 'Ki', 'Kd']
         for key in return_dict.keys():
             for data_type in return_dict[key]['data_type'].keys():
+                ### Temp FIX to ignore assay data with value_type set to None
+                if not data_type:
+                    continue
                 label = '_'.join([key,data_type])
                 if data_type in potency_values:
                     unpacked_potency[label] = deepcopy(return_dict[key])
@@ -3690,6 +3906,16 @@ class LigandInformationView(TemplateView):
 
     @staticmethod
     def get_min_max_values(value):
+
+        # Filter out None values from the list to avoid TypeErrors.
+        numeric_values = [v for v in value if v is not None]
+
+        # Check if there are any valid numeric values left to process.
+        if not numeric_values:
+            # If the list is empty after filtering, return default placeholders.
+            return ['-', '-', '-']
+
+        # If there are valid numbers, proceed with calculations.
         maximum = max(value)
         minimum = min(value)
         avg = sum(value) / len(value)
@@ -3699,7 +3925,7 @@ class LigandInformationView(TemplateView):
     @staticmethod
     def process_ligand(ligand_data, endogenous_ligands):
         ld = dict()
-        ld['ligand_id'] = ligand_data.id
+        ld['ligand_id'] = ligand_data.gpcrdb_id
         ld['ligand_name'] = ligand_data.name
         ld['ligand_inchikey'] = ligand_data.inchikey
         try:
@@ -3711,10 +3937,14 @@ class LigandInformationView(TemplateView):
         ld['hacc'] = ligand_data.hacc
         ld['hdon'] = ligand_data.hdon
         ld['logp'] = ligand_data.logp
-        ld['mw'] = ligand_data.mw
+        ld['mw'] = round(ligand_data.mw,1) if ligand_data.mw else None
         ld['labels'] = LigandInformationView.get_labels(ligand_data, endogenous_ligands, ld['type'])
         ld['wl'] = list()
         ld['ligand_smiles'], ld['ligand_smiles_for_image'], ld['picture'] = standardize_smiles(ligand_data.smiles, ld['mw'])
+        ld['helm'] = ligand_data.helm
+        ld['radioactive'] = ligand_data.radioactive
+        ld['stereo_status'] = ligand_data.stereo_status
+        ld['related_ids'] = list()
 
         #Sorting links if ligand is endogenous
         if ligand_data.id in endogenous_ligands:
@@ -3722,12 +3952,16 @@ class LigandInformationView(TemplateView):
             to_be_sorted = {}
             for i in ligand_data.ids.all():
                 to_be_sorted[i.web_resource.name] = {'name': i.web_resource.name, "link": str(i)}
-            tmp = sorted(to_be_sorted.items(), key=lambda pair: sorted_list.index(pair[0]))
+            tmp = sorted(to_be_sorted.items(), key=lambda pair: sorted_list.index(pair[0]) if pair[0] in sorted_list else len(sorted_list))
             for i in tmp:
                 ld['wl'].append(i[1])
         else:
             for i in ligand_data.ids.all():
                 ld['wl'].append({'name': i.web_resource.name, "link": str(i)})
+        #Adding related ligand object links
+        _, related_ligand_objects = AbsLigand.get_related_ligands(ligand_data.gpcrdb_id)
+        for r in related_ligand_objects:
+            ld['related_ids'].append(r.gpcrdb_id)
         return ld
 
     # @staticmethod
@@ -4086,7 +4320,7 @@ class PhysiologicalLigands(TemplateView):
 
         context = super().get_context_data(**kwargs)
 
-        browser_columns = ['Class', 'Receptor family', 'UniProt', 'IUPHAR', 'Species',
+        browser_columns = ['Class', 'Receptor family', 'UniProt', 'IUPHAR', 'Gene', 'Gene_weblink', 'Species',
                         'Ligand name', 'GtP link', 'GtP Classification', 'Potency Ranking', 'Type','smiles','inchikey',
                         'pEC50 - min', 'pEC50 - mid', 'pEC50 - max',
                         'pKi - min', 'pKi - mid', 'pKi - max', 'Reference', 'ID',
@@ -4117,6 +4351,35 @@ class PhysiologicalLigands(TemplateView):
             structure__protein_conformation__protein__parent__pk=OuterRef('receptor')
         ).values('structure__structure_type__slug')[:1]
 
+        required_fields = [ "receptor__family__parent__parent__parent__name", #0 Class
+                            "receptor__family__parent__name",                 #1 Receptor Family
+                            "receptor__entry_name",                           #2 UniProt
+                            "receptor__name",                                 #3 IUPHAR
+                            "receptor__genes__name",                          #4 Gene name
+                            "receptor__genes__entrez_id",                     #5 Gene entrez id
+                            "receptor__species__common_name",                 #6 Species
+                            "ligand__name",                                   #7 Ligand
+                            "ligand",                                         #8 Ligand ID
+                            "endogenous_status",                              #9 Principal/Secondary
+                            "potency_ranking",                                #10 Potency Ranking
+                            "ligand__ligand_type__name",                      #11 Type
+                            "ligand__smiles",                                 #12 Smiles
+                            "ligand__inchikey",                               #13 inchikey
+                            "pec50",                                          #14 pEC50 - min - med - max
+                            "pKi",                                            #15 pKi - min - med - max
+                            "publication__authors",                           #16 Pub Authors
+                            "publication__year",                              #17 Pub Year
+                            "publication__title",                             #18 Pub Title
+                            "publication__journal__name",                     #19 Pub Journal
+                            "publication__reference",                         #20 Pub Reference
+                            "publication__web_link__index",                   #21 DOI/PMID
+                            "receptor",                                       #22 Receptor ID
+                            "receptor__accession",                            #23 Accession (UniProt link)
+                            'pdb_code',                                       #24 pdb_code (UniProt link)
+                            'structure_type',                                 #25
+                            'ligand__sequence'                                #26 Sequence
+                            ]
+
         # Annotate the queryset
         endogenous_data = Endogenous_GTP.objects.annotate(
             experimental_pdb_code=Subquery(experimental_pdb_subquery),
@@ -4126,58 +4389,53 @@ class PhysiologicalLigands(TemplateView):
         ).annotate(
             pdb_code=Coalesce('experimental_pdb_code', 'model_pdb_code'),
             structure_type=Coalesce('experimental_structure_type', 'model_structure_type'),
-        ).values_list(
-                            "receptor__family__parent__parent__parent__name", #0 Class
-                            "receptor__family__parent__name",                 #1 Receptor Family
-                            "receptor__entry_name",                           #2 UniProt
-                            "receptor__name",                                 #3 IUPHAR
-                            "receptor__species__common_name",                 #4 Species
-                            "ligand__name",                                   #5 Ligand
-                            "ligand",                                         #6 Ligand ID
-                            "endogenous_status",                              #7 Principal/Secondary
-                            "potency_ranking",                                #8 Potency Ranking
-                            "ligand__ligand_type__name",                      #9 Type
-                            "ligand__smiles",                                 #10 Smiles
-                            "ligand__inchikey",                               #11 inchikey
-                            "pec50",                                          #12 pEC50 - min - med - max
-                            "pKi",                                            #13 pKi - min - med - max
-                            "publication__authors",                           #14 Pub Authors
-                            "publication__year",                              #15 Pub Year
-                            "publication__title",                             #16 Pub Title
-                            "publication__journal__name",                     #17 Pub Journal
-                            "publication__reference",                         #18 Pub Reference
-                            "publication__web_link__index",                   #19 DOI/PMID
-                            "receptor",                                       #20 Receptor ID
-                            "receptor__accession",                            #21 Accession (UniProt link)
-                            'pdb_code',                                       #22 pdb_code (UniProt link)
-                            'structure_type',                                 #23
-                            'ligand__sequence'                                #24 Sequence
-                            ).distinct()  
+        ).values_list(*required_fields).distinct()  
+
+        #Remap as dictionary to avoid accessing by index
+        endogenous_data_dict = list(map(lambda entry: dict(zip(required_fields,entry)), endogenous_data))
 
         gtpidlinks = dict(list(LigandID.objects.filter(web_resource__slug='gtoplig').values_list(
                             "ligand",
                             "index").distinct()))
 
+        entrez_websource = WebResource.objects.get(slug="entrez_gene")
+        pubmed_websource = WebResource.objects.get(slug="pubmed")
+        doi_websource = WebResource.objects.get(slug="doi")
+        gtplig_websource = WebResource.objects.get(slug="gtoplig")
+
         matches = []
         publications = {}
-        gtplink = 'https://www.guidetopharmacology.org/GRAC/LigandDisplayForward?ligandId={}'
         pub_ref = "<b>{0}. ({1})</b><br />{2}.<br /><i>{3}</i>, <b>{4}</b> [PMID: <a target='_blank' href='{5}'>{6}</a>]<br /><br />"
-        for data in endogenous_data:
+        for data in endogenous_data_dict:
             pub_link = ''
-            ligand_receptor = str(data[6]) + '_' + str(data[20])
-            if data[6] not in gtpidlinks.keys():
+            ligand_receptor = str(data['ligand']) + '_' + str(data['receptor'])
+            if data['ligand'] not in gtpidlinks.keys():
                 continue
             if ligand_receptor not in publications.keys():
                 publications[ligand_receptor] = {}
-            if data[19]:
-                pub_link = "https://pubmed.ncbi.nlm.nih.gov/" + data[19] if data[19].isdigit() else "https://dx.doi.org/" + data[17]
+            if data['publication__web_link__index']:
+                if data['publication__web_link__index'].isdigit():
+                    pub_link = str(WebLink(index=data['publication__web_link__index'], web_resource=pubmed_websource))
+                elif data['publication__web_link__index'].startswith('10.'):
+                    pub_link = str(WebLink(index=data['publication__web_link__index'], web_resource=doi_websource))
+                else:
+                    pub_link = ""
+
                 #skipping publications without info (probably bug in the database)
-                if data[15] == None:
+                if data['publication__year'] == None:
                     continue
                 #splicing for years so we can then merge later
-                if data[15] not in publications[ligand_receptor].keys():
-                    publications[ligand_receptor][data[15]] = ''
-                publications[ligand_receptor][data[15]] = publications[ligand_receptor][data[15]] + pub_ref.format(data[14],data[15],data[16],data[17],data[18], pub_link, data[19])
+                if data['publication__year'] not in publications[ligand_receptor].keys():
+                    publications[ligand_receptor][data['publication__year']] = ''
+                publications[ligand_receptor][data['publication__year']] = \
+                publications[ligand_receptor][data['publication__year']] + \
+                pub_ref.format(data['publication__authors'],
+                               data['publication__year'],
+                               data['publication__title'],
+                               data['publication__journal__name'],
+                               data['publication__reference'], 
+                               pub_link, 
+                               data['publication__web_link__index'])
         #Cycling through the years to make a single reference string
         for key in publications:
             years = sorted(publications[key].keys())
@@ -4187,49 +4445,51 @@ class PhysiologicalLigands(TemplateView):
             publications[key] = refs
 
 
-        for data in endogenous_data:
-            if data[6] not in gtpidlinks.keys():
+        for data in endogenous_data_dict:
+            if data['ligand'] not in gtpidlinks.keys():
                 continue
-            pair = str(data[6]) + '_' + str(data[20])
+            pair = str(data['ligand']) + '_' + str(data['receptor'])
             if pair not in matches:
                 matches.append(pair)
                 data_subset = {}
-                data_subset['Class'] = data[0].replace('Class ', '')                        #0
-                data_subset['Receptor family'] = data[1].strip('receptors')                 #1
-                data_subset['UniProt'] = data[2].split('_')[0].upper()                      #2
-                data_subset['IUPHAR'] = data[3].replace(" receptor","").replace("-adrenoceptor","")                          #3
-                data_subset['Species'] = data[4]                                            #4
-                data_subset['Ligand name'] = data[5]                                        #5
-                data_subset['GtP link'] =  gtplink.format(gtpidlinks[data[6]])              #6
-                data_subset['GtP Classification'] = data[7] if data[7] else ""              #7
-                data_subset['Potency Ranking'] = str(data[8]) if data[8] else ""            #8
-                data_subset['Type'] = data[9].replace('-',' ').capitalize()                 #9
-                data_subset['smiles'] = str(data[10]) if data[10] else "-"                  #10
-                data_subset['inchikey'] = str(data[11]) if data[11] else "-"                #11
-                data_subset['pEC50 - min'] = data[12].split(' | ')[0]                       #12
-                data_subset['pEC50 - mid'] = data[12].split(' | ')[1]                       #13
-                data_subset['pEC50 - max'] = data[12].split(' | ')[2]                       #14
-                data_subset['pKi - min'] = data[13].split(' | ')[0]                         #15
-                data_subset['pKi - mid'] = data[13].split(' | ')[1]                         #16
-                data_subset['pKi - max'] = data[13].split(' | ')[2]                         #17
+                data_subset['Class'] = data['receptor__family__parent__parent__parent__name'].replace('Class ', '')
+                data_subset['Receptor family'] = data['receptor__family__parent__name'].strip('receptors')
+                data_subset['UniProt'] = data['receptor__entry_name'].split('_')[0].upper()
+                data_subset['IUPHAR'] = data['receptor__name'].replace(" receptor","").replace("-adrenoceptor","")
+                data_subset['Gene'] = data['receptor__genes__name']
+                data_subset['Gene_weblink'] = str(WebLink(index=data['receptor__genes__entrez_id'], web_resource=entrez_websource)) if data['receptor__genes__entrez_id'] else ""
+                data_subset['Species'] = data['receptor__species__common_name']
+                data_subset['Ligand name'] = data['ligand__name']
+                data_subset['GtP link'] =  str(WebLink(index=gtpidlinks[data['ligand']], web_resource=gtplig_websource))
+                data_subset['GtP Classification'] = data['endogenous_status'] if data['endogenous_status'] else ""
+                data_subset['Potency Ranking'] = str(data['potency_ranking']) if data['potency_ranking'] else ""
+                data_subset['Type'] = data['ligand__ligand_type__name'].replace('-',' ').capitalize()
+                data_subset['smiles'] = str(data['ligand__smiles']) if data['ligand__smiles'] else "-"
+                data_subset['inchikey'] = str(data['ligand__inchikey']) if data['ligand__inchikey'] else "-"
+                data_subset['pEC50 - min'] = data['pec50'].split(' | ')[0]
+                data_subset['pEC50 - mid'] = data['pec50'].split(' | ')[1]
+                data_subset['pEC50 - max'] = data['pec50'].split(' | ')[2]
+                data_subset['pKi - min'] = data['pKi'].split(' | ')[0]
+                data_subset['pKi - mid'] = data['pKi'].split(' | ')[1]
+                data_subset['pKi - max'] = data['pKi'].split(' | ')[2]
                 if len(publications[pair]) != 0:
-                    data_subset['Reference'] = publications[pair]                           #18
+                    data_subset['Reference'] = publications[pair]
                 else:
                     data_subset['Reference'] = 'empty'
-                data_subset['ID'] = data[6]                                                 #19
-                data_subset['Entry Name'] = data[2]                                         #20
-                data_subset['Accession'] = data[21]                                         #21
-                data_subset["pdb_code"] = data[22]                                          #22
-                data_subset['structure_type'] = data[23]
-                data_subset['sequence'] = data[24] if data[24] else ""
+                data_subset['ID'] = data['ligand']
+                data_subset['Entry Name'] = data['receptor__entry_name']
+                data_subset['Accession'] = data['receptor__accession']
+                data_subset["pdb_code"] = data['pdb_code']
+                data_subset['structure_type'] = data['structure_type']
+                data_subset['sequence'] = data['ligand__sequence'] if data['ligand__sequence'] else ""
 
-                if data[10] and data[10] != "-":
-                    canonical_smiles, smiles_for_image, picture_flag = standardize_smiles(data[10], None)
+                if data['ligand__smiles'] and data['ligand__smiles'] != "-":
+                    canonical_smiles, smiles_for_image, picture_flag = standardize_smiles(data['ligand__smiles'], None)
                 else:
                     smiles_for_image = ""
                     picture_flag = "Not_available"
-                data_subset['smiles_for_image'] = smiles_for_image                          #23
-                data_subset['picture'] = picture_flag                                       #24
+                data_subset['smiles_for_image'] = smiles_for_image 
+                data_subset['picture'] = picture_flag
 
                 data_subsets.append(data_subset)
 

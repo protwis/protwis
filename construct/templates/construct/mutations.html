@@ -100,8 +100,7 @@
                         column_number : 0,
                         filter_type: "multi_select",
                         select_type: 'select2',
-                        column_data_type: "html",
-                        html_data_type: "text",
+                        column_data_type: "text",
                         filter_default_label: "UniProt",
                         filter_reset_button_text: false,
                     }, 
@@ -119,32 +118,48 @@
                         column_number: 2,
                         filter_type: "multi_select",
                         select_type: 'select2',
-                        filter_default_label: "GNs",
+                        column_data_type: "html",
+                        html_data_type: "text",
+                        filter_default_label: "Gene",
+                        filter_reset_button_text: false,
+                    },
+                    {
+                        column_number: 3,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "Species",
                         filter_reset_button_text: false,
                     },
                     {
                         column_number: 4,
                         filter_type: "multi_select",
                         select_type: 'select2',
+                        filter_default_label: "GNs",
+                        filter_reset_button_text: false,
+                    },
+                    {
+                        column_number: 6,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
                         filter_default_label: "Segment",
                         filter_reset_button_text: false,
                     }, 
                     {
-                        column_number : 5,
+                        column_number : 7,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         filter_default_label: "WT",
                         filter_reset_button_text: false,
                     }, 
                     {
-                        column_number : 6,
+                        column_number : 8,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         filter_default_label: "MUT",
                         filter_reset_button_text: false,
                     },
                     {
-                        column_number : 7,
+                        column_number : 9,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         filter_default_label: "Effect",
@@ -152,7 +167,7 @@
                         filter_reset_button_text: false,
                     },  
                     {
-                        column_number : 8,
+                        column_number : 10,
                         filter_type: "text",
                         // filter_type: "multi_select",
                         // select_type: 'select2',
@@ -224,6 +239,8 @@
             <th class="protein-th" width="100px"></th>
             <th class="protein-th"></th>
             <th class="protein-th"></th>
+            <th class="protein-th"></th>
+            <th class="protein-th"></th>
             <th class="protein-th">Position</th>
             <th class="protein-th" width="100px"></th>
             <th class="protein-th" width="60px"></th>
@@ -238,6 +255,8 @@
         <tr class="{{ mutation.pk }} mutationrow {{ mutation.type|join:" "}}">
             <td>{{ mutation.entry_name|safe }}</td>
             <td><span>{{ mutation.receptor_short|safe }}</span></td>
+            <td><span>{{ mutation.gene_as_anchor | safe }}</span></td>
+            <td>{{ mutation.species }}</td>
             <td>{{ mutation.gn}}</td>
             <td>{{ mutation.pos}}</td>
             <td>{{ mutation.segment}}</td>

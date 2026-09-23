@@ -1,0 +1,149 @@
+/**
+ * Data Mapper -- Cluster page-specific styles.
+ * Shared styling lives in core.css.
+ */
+
+.mapper-cluster-pos.pos-invalid {
+  border-color: #a94442;
+  box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 4px rgba(169,68,66,.5);
+}
+.mapper-core-wheel-toolbar #mapper-cluster-howto-btn {
+  color: #fff; background-color: #f0ad4e; border-color: #eea236; font-weight: 700; padding-left: 7px; padding-right: 7px;
+}
+.mapper-core-wheel-toolbar #mapper-cluster-howto-btn:hover { color: #fff; background-color: #ec971f; border-color: #d58512; }
+.mapper-core-wheel-toolbar #mapper-cluster-clear-rows:focus { outline: none; }
+.mapper-core-wheel-wrap.mapper-cluster-page .mapper-core-wheel-primary-col { flex: 0 0 auto; min-width: 0; }
+.mapper-core-wheel-wrap.mapper-cluster-page .mapper-core-wheel-plot-col { flex: 1 1 0; min-width: 0; }
+.mapper-core-wheel-wrap.mapper-cluster-page .mapper-core-wheel-left {
+  display: block; width: 100%; max-width: min(420px, calc(100vw - 48px)); box-sizing: border-box;
+}
+.mapper-core-wheel-wrap.mapper-cluster-page .mapper-core-wheel-left .table-responsive {
+  width: max-content; max-width: 100%; padding-left: 14px; overflow: visible;
+}
+.mapper-core-wheel-wrap.mapper-cluster-page .mapper-core-wheel-left #mapper-cluster-input-table {
+  table-layout: fixed; width: 390px; max-width: 100%; border-collapse: collapse;
+}
+.mapper-core-wheel-wrap.mapper-cluster-page .mapper-core-wheel-left #mapper-cluster-input-table thead th,
+.mapper-core-wheel-wrap.mapper-cluster-page .mapper-core-wheel-left #mapper-cluster-input-table tbody td {
+  box-sizing: border-box; overflow: hidden; word-wrap: break-word; word-break: break-word;
+}
+.mapper-core-wheel-wrap.mapper-cluster-page .mapper-core-wheel-left #mapper-cluster-input-table th.mapper-core-th-remove,
+.mapper-core-wheel-wrap.mapper-cluster-page .mapper-core-wheel-left #mapper-cluster-input-table td.mapper-core-remove-cell {
+  position: relative; width: 0; max-width: 0; padding: 0 !important; border: 0 !important;
+  background: transparent !important; overflow: visible; text-align: center; vertical-align: middle !important;
+}
+.mapper-core-wheel-wrap.mapper-cluster-page .mapper-core-wheel-left #mapper-cluster-input-table th.mapper-core-th-receptor,
+.mapper-core-wheel-wrap.mapper-cluster-page .mapper-core-wheel-left #mapper-cluster-input-table td.mapper-core-receptor-cell {
+  min-width: 165px;
+}
+.mapper-core-wheel-wrap.mapper-cluster-page .mapper-core-wheel-left #mapper-cluster-input-table th.mapper-cluster-val-h,
+.mapper-core-wheel-wrap.mapper-cluster-page .mapper-core-wheel-left #mapper-cluster-input-table td.mapper-cluster-val-cell,
+.mapper-core-wheel-wrap.mapper-cluster-page .mapper-core-wheel-left #mapper-cluster-input-table td.mapper-cluster-pos-cell {
+  width: 75px;
+}
+.mapper-core-wheel-wrap.mapper-cluster-page .mapper-core-wheel-left #mapper-cluster-input-table tbody td.mapper-core-receptor-cell,
+.mapper-core-wheel-wrap.mapper-cluster-page .mapper-core-wheel-left #mapper-cluster-input-table tbody td.mapper-cluster-val-cell,
+.mapper-core-wheel-wrap.mapper-cluster-page .mapper-core-wheel-left #mapper-cluster-input-table tbody td.mapper-cluster-pos-cell {
+  max-width: 0;
+}
+.mapper-core-wheel-wrap.mapper-cluster-page .mapper-core-wheel-left #mapper-cluster-input-table tbody td.mapper-core-receptor-cell { vertical-align: top; }
+.mapper-core-wheel-wrap.mapper-cluster-page .mapper-core-wheel-left #mapper-cluster-input-table .form-control.input-sm {
+  display: block; width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box;
+}
+.mapper-core-wheel-wrap.mapper-cluster-page .mapper-core-wheel-left #mapper-cluster-input-table .mapper-cluster-val.form-control.input-sm,
+.mapper-core-wheel-wrap.mapper-cluster-page .mapper-core-wheel-left #mapper-cluster-input-table .mapper-cluster-gradient.form-control.input-sm,
+.mapper-core-wheel-wrap.mapper-cluster-page .mapper-core-wheel-left #mapper-cluster-input-table .mapper-cluster-cat.form-control.input-sm,
+.mapper-core-wheel-wrap.mapper-cluster-page .mapper-core-wheel-left #mapper-cluster-input-table .mapper-cluster-pos.form-control.input-sm {
+  height: 26px; padding: 2px 6px; font-size: 11px; line-height: 1.3; text-align: center;
+}
+.mapper-core-wheel-wrap.mapper-cluster-page .mapper-core-wheel-left #mapper-cluster-input-table textarea.mapper-core-in-receptor.form-control.input-sm {
+  height: auto; min-height: 44px; max-height: 200px; padding: 4px 6px; font-size: 11px; line-height: 1.38;
+  resize: vertical; overflow-x: hidden; overflow-y: hidden; white-space: pre-wrap; word-wrap: break-word; overflow-wrap: break-word;
+}
+.mapper-core-wheel-wrap.mapper-cluster-page .mapper-core-wheel-left #mapper-cluster-input-table.mapper-core-receptors-compact textarea.mapper-core-in-receptor.form-control.input-sm {
+  min-height: 26px; max-height: 26px; height: 26px; padding-top: 2px; padding-bottom: 2px; line-height: 1.3;
+  resize: none; overflow-x: auto; overflow-y: hidden; white-space: nowrap;
+}
+.mapper-core-wheel-wrap.mapper-cluster-page .mapper-core-wheel-left #mapper-cluster-input-table.mapper-core-receptors-compact .mapper-core-receptor-html-view {
+  min-height: 26px; max-height: 26px; height: 26px; overflow: hidden;
+}
+#mapper-cluster-input-tbody tr:first-child .mapper-core-receptor-input-wrap.is-empty .mapper-core-in-receptor { border-color: #e0892e !important; }
+#mapper-cluster-input-tbody tr.has-receptor .mapper-cluster-gradient.val-empty,
+#mapper-cluster-input-tbody tr.has-receptor .mapper-cluster-cat.val-empty {
+  border-color: #e0892e !important;
+}
+#mapper-cluster-input-tbody.pos-partially-filled tr.has-receptor .mapper-cluster-pos.pos-empty {
+  border-color: #e0892e !important;
+}
+#mapper-cluster-input-tbody tr.has-receptor .mapper-cluster-gradient.val-invalid {
+  border-color: #a94442 !important;
+  box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 4px rgba(169,68,66,.5);
+}
+#mapper-cluster-input-tbody tr.receptor-unknown .mapper-core-in-receptor,
+#mapper-cluster-input-tbody tr:first-child.receptor-unknown .mapper-core-receptor-input-wrap.is-empty .mapper-core-in-receptor {
+  border-color: #a94442 !important;
+  box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 4px rgba(169,68,66,.5);
+}
+.mapper-cluster-page .mapper-core-wheel-left { position: relative; }
+.mapper-cluster-boot-overlay {
+  display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 10; background: rgba(255,255,255,0.80); border-radius: 10px;
+  align-items: center; justify-content: center; font-size: 13px; color: #666;
+  pointer-events: all; transition: opacity 0.15s;
+}
+.mapper-cluster-booting .mapper-cluster-boot-overlay { display: flex; }
+#mapper-cluster-messages { margin-top: 8px; font-size: 10px; max-height: 160px; overflow: auto; color: #a94442; }
+#mapper-cluster-messages:empty { display: none; }
+.mapper-cluster-plot-toolbar {
+  display: flex; justify-content: center; align-items: center; gap: 8px;
+  flex-wrap: wrap; font-size: 11px; margin-bottom: 8px; padding-top: 8px;
+}
+.mapper-cluster-plot-toolbar .dropdown-toggle { font-size: 13px; line-height: 1.35; }
+.mapper-cluster-plot-wrap { margin-top: 8px; width: 100%; max-width: 100%; overflow-x: auto; display: flex; flex-direction: column; align-items: center; }
+.mapper-cluster-plot-wrap #plotContainer_cluster { width: 100%; align-self: stretch; will-change: transform; }
+.mapper-cluster-plot-placeholder {
+  box-sizing: border-box; margin: 0 auto; max-width: 560px; min-height: clamp(240px, 40vh, 480px);
+  padding: 28px 20px; border: 1px dashed rgba(26,43,60,0.18); border-radius: 12px;
+  background: linear-gradient(180deg, #fafcfd 0%, #f5f8fb 100%); color: #4a5f73;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 10px;
+}
+.mapper-cluster-plot-placeholder-title { margin: 0; font-size: 14px; font-weight: 600; color: #1a2b3c; }
+.mapper-cluster-plot-placeholder-hint  { margin: 0; font-size: 12px; line-height: 1.45; max-width: 420px; }
+.mapper-cluster-plot-toolbar .dropdown.mapper-core-dropdown-anchor-topleft > .dropdown-menu.mapper-core-dropdown-menu-topleft {
+  top: 0 !important; bottom: auto !important; margin-top: 0 !important;
+}
+.mapper-core-colors-text-wrap .mapper-cluster-lcat-scheme-head {
+  font-weight: 600; font-size: 12px; text-align: center;
+  padding: 0 0 5px; margin: 0 0 5px; border-bottom: 1px solid #eaeaea;
+  letter-spacing: 0.02em;
+}
+.mapper-cluster-page .mapper-core-colors-text-wrap .color-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--picker-col);
+  align-items: center; column-gap: var(--gap); padding: 2px 0;
+  border-bottom: 1px solid #ebebeb;
+}
+#mapper-cluster-input-table:not(.mapper-core-text-mode) .mapper-core-th-swatch,
+#mapper-cluster-input-table:not(.mapper-core-text-mode) .mapper-cluster-swatch-cell { display: none; }
+#mapper-cluster-input-table.mapper-core-text-mode .mapper-core-th-swatch,
+#mapper-cluster-input-table.mapper-core-text-mode .mapper-cluster-swatch-cell { width: 44px; max-width: 44px; text-align: center; vertical-align: middle !important; padding: 2px !important; }
+.mapper-cluster-label-swatch,
+.mapper-cluster-swatch-cell .mapper-cluster-row-swatch-replacer.sp-replacer {
+  display: inline-block;
+  width: 18px; height: 18px;
+  border: 1px solid #aaa; border-radius: 3px;
+  box-sizing: border-box; vertical-align: middle;
+  background-color: transparent;
+}
+.mapper-cluster-label-swatch.mapper-core-row-color-picker {
+  padding: 0; color: transparent; font-size: 0; cursor: pointer;
+}
+.mapper-cluster-swatch-cell .mapper-cluster-row-swatch-replacer.sp-replacer {
+  margin: 0; padding: 0 !important; overflow: hidden;
+}
+.mapper-cluster-swatch-cell .mapper-cluster-row-swatch-replacer .sp-preview {
+  width: 100% !important; height: 100% !important; margin: 0; border: 0;
+}
+.mapper-cluster-swatch-cell .mapper-cluster-row-swatch-replacer .sp-preview-inner { border-radius: 2px; }
+.mapper-cluster-swatch-cell .mapper-cluster-row-swatch-replacer .sp-dd { display: none; }
+.mapper-cluster-row-swatch-sp-container.sp-container { z-index: 10060 !important; }

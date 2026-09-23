@@ -1,0 +1,325 @@
+{% extends "home/base.html" %}
+{% load static %}
+
+{% block addon_css %}
+<link rel="stylesheet" href="{% static 'home/css/nv.d3.min.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/nvd3-update.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/classification/tree.css' %}" type="text/css" />
+<style>
+.cv-detail {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 10px 8px 32px;
+}
+
+.cv-detail-card {
+  border: 1px solid #d9e2ef;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 10px 24px rgba(31, 120, 180, 0.08);
+  overflow: hidden;
+}
+
+.cv-detail-tabs-bar {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  padding: 0 8px;
+  background: #f8fbfe;
+  border-bottom: 1px solid #d9e2ef;
+}
+
+.cv-detail-tabs {
+  border-bottom: 0;
+  padding: 0;
+  background: transparent;
+  flex: 1 1 auto;
+  position: relative;
+  z-index: 1;
+}
+
+.cv-detail-title-inline {
+  position: absolute;
+  left: 50%;
+  bottom: 10px;
+  transform: translateX(-50%);
+  padding: 0 4px;
+  font-size: 20px;
+  line-height: 1.2;
+  font-weight: 600;
+  color: #3f5368;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.cv-detail-tabs > li > a {
+  margin-top: 10px;
+}
+
+.cv-detail-tabs > li.disabled > span {
+  position: relative;
+  display: block;
+  margin-top: 10px;
+  margin-right: 2px;
+  padding: 10px 15px;
+  border: 1px solid transparent;
+  border-radius: 4px 4px 0 0;
+  color: #8a9bad;
+  cursor: not-allowed;
+  background: transparent;
+}
+
+.cv-detail-tabs > li.disabled > span::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 6px);
+  z-index: 20;
+  width: max-content;
+  max-width: 320px;
+  transform: translateX(-50%);
+  padding: 7px 10px;
+  border: 1px solid #cbd8e6;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 8px 18px rgba(31, 60, 90, 0.16);
+  color: #3f5368;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.25;
+  text-align: center;
+  white-space: normal;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 60ms ease;
+}
+
+.cv-detail-tabs > li.disabled > span:hover::after {
+  opacity: 1;
+}
+
+.cv-detail-body {
+  padding: 12px 8px;
+  overflow: hidden;
+}
+
+.cv-detail-body .tab-pane {
+  overflow: hidden;
+}
+
+.cv-detail-frame {
+  width: 100%;
+  border: 0;
+  background: #fff;
+  display: block;
+  overflow: hidden;
+}
+
+.cv-detail-frame--cluster {
+  height: 640px;
+}
+
+.cv-detail-note {
+  margin-bottom: 14px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid cv-detail">
+  <div class="cv-detail-card">
+    <div class="cv-detail-tabs-bar">
+      <ul class="nav nav-tabs cv-detail-tabs" role="tablist">
+        {% if has_tree %}
+          <li role="presentation" class="active">
+            <a href="#cv-tree-tab" aria-controls="cv-tree-tab" role="tab" data-toggle="tab">Tree (classification)</a>
+          </li>
+        {% endif %}
+        <li role="presentation"{% if not has_tree %} class="active"{% endif %}>
+          <a href="#cv-cluster-tab" aria-controls="cv-cluster-tab" role="tab" data-toggle="tab">Cluster</a>
+        </li>
+        {% if not has_tree %}
+          <li role="presentation" class="disabled">
+            <span role="tab" aria-disabled="true" aria-label="{{ tree_note }}" data-tooltip="{{ tree_note }}">Tree (classification)</span>
+          </li>
+        {% endif %}
+      </ul>
+      <div class="cv-detail-title-inline">{{ class_title }}</div>
+    </div>
+
+    <div class="tab-content cv-detail-body">
+      {% if has_tree %}
+        <div role="tabpanel" class="tab-pane active" id="cv-tree-tab">
+          <div class="col-md-12">
+            {% if error %}
+              <div class="alert alert-danger">
+                <strong>Error:</strong> {{ error }}
+              </div>
+            {% else %}
+              <!-- Controls -->
+              <div class="row" style="margin-top: 20px; margin-bottom: 16px;">
+                <div class="col-md-12">
+                  <div class="tree-toolbar">
+                    <div>
+                      <div class="tree-controls-label">&nbsp;</div>
+                      <div id="tree_layout_group" class="dropdown">
+                        <button id="treeLayoutDropdownBtn" class="btn btn-primary btn-sm dropdown-toggle" type="button" data-toggle="dropdown">
+                          Layout: Circular <span class="caret"></span>
+                        </button>
+                        <div class="dropdown-menu">
+                          <button type="button" class="btn btn-primary btn-block active" data-layout="Tree - Circular" data-layout-label="Circular">Circular</button>
+                          <button type="button" class="btn btn-outline-primary btn-block" data-layout="Tree - Organic" data-layout-label="Curved ladder">Curved ladder</button>
+                          <button type="button" class="btn btn-outline-primary btn-block" data-layout="Tree - Straight" data-layout-label="Ladder">Ladder</button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div class="tree-controls-label">&nbsp;</div>
+                      <button id="treeLeafColorToggle" type="button" class="btn btn-danger btn-sm" aria-pressed="false">
+                        Leaf color
+                      </button>
+                    </div>
+
+                    <div>
+                      <div class="tree-controls-label">&nbsp;</div>
+                      <div id="tree_leaf_label_group" class="dropdown">
+                        <button id="treeLeafLabelDropdownBtn" class="btn btn-primary btn-sm dropdown-toggle" type="button" data-toggle="dropdown">
+                          Receptor names: Protein <span class="caret"></span>
+                        </button>
+                        <div class="dropdown-menu">
+                          <button type="button" class="btn btn-primary btn-block active" data-label-type="Protein">Protein</button>
+                          <button type="button" class="btn btn-outline-primary btn-block" data-label-type="Gene">Gene</button>
+                          <button type="button" class="btn btn-outline-primary btn-block" data-label-type="UniProt">UniProt</button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {% if tree_locked %}
+                      <select id="tree_selection" class="form-control input-sm" style="display:none;"></select>
+                    {% else %}
+                      <div>
+                        <div class="tree-controls-label">Type</div>
+                        <div id="tree_type_group" class="btn-group" role="group" aria-label="Type">
+                          <button type="button" class="btn btn-primary btn-sm active" data-type="Class">Class</button>
+                          <button type="button" class="btn btn-default btn-sm" data-type="Modality">Modality</button>
+                          <button type="button" class="btn btn-default btn-sm" data-type="Chemotype">Chemotype</button>
+                        </div>
+                      </div>
+
+                      <div style="min-width: 260px; flex: 1;">
+                        <div class="tree-controls-label">Selection</div>
+                        <select id="tree_selection" class="form-control input-sm"></select>
+                      </div>
+                    {% endif %}
+
+                    <div>
+                      <div class="tree-controls-label">&nbsp;</div>
+                      <div class="dropdown">
+                        <button id="treeDownloadDropdownBtn" class="btn btn-primary btn-sm dropdown-toggle" type="button" data-toggle="dropdown">
+                          <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+                        </button>
+                        <div class="dropdown-menu">
+                          <button id="download_svg_main" type="button" class="btn btn-primary btn-block">SVG</button>
+                          <button id="download_png_main" type="button" class="btn btn-primary btn-block">PNG</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Single plot (dual-plot class, e.g. Class O2, adds a second half here via JS) -->
+              <div class="plot-container">
+                <div id="tree_plot_title" class="plot-title"></div>
+                <div id="tree_plot_scroll_wrap" class="col-md-12 tree-plot-scroll">
+                  <div id="tree_plot_main" class="tree_plot text-center"></div>
+                  <div id="tree_plot_secondary" class="tree_plot text-center" style="display:none;"></div>
+                </div>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      {% endif %}
+
+      <div role="tabpanel" class="tab-pane{% if not has_tree %} active{% endif %}" id="cv-cluster-tab">
+        <iframe
+          id="cvClusterFrame"
+          class="cv-detail-frame cv-detail-frame--cluster"
+          src="{{ cluster_url }}"
+          title="{{ class_title }} cluster"
+          data-initial-height="640"
+          scrolling="no"
+          loading="lazy"
+        ></iframe>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block addon_js %}
+<script src="{% static 'home/js/d3.min.js' %}"></script>
+<script src="{% static 'home/js/nv.d3.min.js' %}"></script>
+<script src="{% static 'home/js/d3.v4.min.js' %}"></script>
+
+<script>
+  window.CLASSIFICATION_TREE_DATA = {
+    treeSets: JSON.parse('{{ tree_sets|default:"{}"|escapejs }}'),
+    leafLabelLookup: JSON.parse('{{ tree_leaf_label_lookup|default:"{}"|escapejs }}'),
+    initialType: "{{ tree_initial_type|default:'Class'|escapejs }}",
+    initialSelection: "{{ tree_initial_selection|default:''|escapejs }}",
+    lockedType: "{{ tree_locked_type|default:''|escapejs }}",
+    lockedSelection: "{{ tree_locked_selection|default:''|escapejs }}"
+  };
+</script>
+
+<script src="{% static 'home/js/classification/core.js' %}"></script>
+<script src="{% static 'home/js/gpcrome_svg_export.js' %}"></script>
+<script src="{% static 'home/js/classification/tree.js' %}"></script>
+
+<script>
+(function() {
+  function resizeFrame(frame) {
+    if (!frame || !frame.contentWindow || !frame.contentWindow.document) return;
+    const initialHeight = Number(frame.getAttribute("data-initial-height") || 720) || 720;
+    try {
+      const doc = frame.contentWindow.document;
+      const body = doc.body;
+      const html = doc.documentElement;
+      const nextHeight = Math.max(
+        body ? body.scrollHeight : 0,
+        html ? html.scrollHeight : 0,
+        initialHeight
+      );
+      frame.style.height = (nextHeight + 24) + "px";
+    } catch (err) {
+      frame.style.height = initialHeight + "px";
+    }
+  }
+
+  function wireFrame(frameId) {
+    const frame = document.getElementById(frameId);
+    if (!frame) return;
+    frame.addEventListener("load", function() {
+      resizeFrame(frame);
+      window.setTimeout(function() { resizeFrame(frame); }, 300);
+      window.setTimeout(function() { resizeFrame(frame); }, 1000);
+    });
+    frame.addEventListener("cv:content-resize", function() {
+      resizeFrame(frame);
+      window.setTimeout(function() { resizeFrame(frame); }, 60);
+      window.setTimeout(function() { resizeFrame(frame); }, 180);
+    });
+  }
+
+  wireFrame("cvClusterFrame");
+
+  $('a[data-toggle="tab"]').on('shown.bs.tab', function () {
+    resizeFrame(document.getElementById("cvClusterFrame"));
+  });
+})();
+</script>
+{% endblock %}

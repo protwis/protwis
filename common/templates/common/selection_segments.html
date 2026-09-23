@@ -23,6 +23,21 @@
       font-size: 90%;
   }
 
+  /* The middle column got wider for the All-GPCR/GAIN/D1 grids, which made
+     every full-width (.btn-block) action/toggle button in this panel far
+     too wide - shrink and center them instead of letting them stretch. */
+  #segment-selection-panel .btn-block {
+      width: 70%;
+      margin-left: auto;
+      margin-right: auto;
+  }
+
+  /* Vertically center the up/down arrow glyph in the toggle buttons instead
+     of leaving it sat on the text baseline */
+  #segment-selection-panel .pull-right.glyphicon {
+      vertical-align: middle;
+  }
+
   /* Panel under each sub dropdown (GAIN / TM / Terminus) */
   .sub-dropdown-panel {
       border: 1px solid #d9edf7;
@@ -58,10 +73,33 @@
   }
 
   /* Base for all segment buttons */
-  
+
+  /* Stack label + arrow vertically ("vertical split") instead of side by side,
+     so each segment unit is only as wide as its label. */
+  #sequence_segments .btn-group {
+      display: flex;
+      flex-direction: column;
+      position: relative;
+  }
+  #sequence_segments .btn-group > .segment-btn {
+      width: 100%;
+      border-radius: 4px 4px 0 0;
+  }
+  #sequence_segments .btn-group > .segment-btn.arrow-btn {
+      border-radius: 0 0 4px 4px;
+      margin-left: 0 !important;
+      margin-top: 0;
+  }
+  #sequence_segments .btn-group > .segment-btn:only-child {
+      border-radius: 4px;
+  }
+
     .segment-btn.arrow-btn {
         padding-left: 4px;
         padding-right: 4px;
+        padding-top: 3px;
+        padding-bottom: 1px;
+        line-height: 1;
     }
 
   /* N-term & C-term: dark blue */
@@ -100,6 +138,13 @@
       color: #ffffff;
   }
 
+  /* GAIN / D1 sheets: purple */
+  .btn.seg-sheet {
+      background-color: #6a3d9a;
+      border-color: #6a3d9a;
+      color: #ffffff;
+  }
+
   /* Default fallback */
   .btn.seg-default {
       /* falls back roughly to Bootstrap primary */
@@ -119,18 +164,185 @@
   
   /* Highlight selected segment buttons (only the label buttons, not arrows) */
     .segment-group-selected {
-        box-shadow: 0 0 0 3px #000000;
-        border-radius: 6px;       /* smooth outline corners */
-        padding: 2px;             /* creates spacing between buttons and outline */
+        box-shadow: 0 0 0 2px #000000;
+        border-radius: 5px;       /* smooth outline corners */
+        padding: 0;               /* hug the button tightly instead of floating around it */
         background-color: transparent;
     }
 
+  /* Highlight a selected residue button directly (not a wrapping .btn-group,
+     unlike segment-group-selected above) - must NOT reset padding/background,
+     or it strips the button's own Bootstrap styling (shrinks it and turns
+     its fill transparent/white). */
+    .residue-selected {
+        /* !important so this survives Bootstrap's .btn:active inset shadow
+           (higher specificity: class + pseudo-class) during the brief
+           mousedown-to-mouseup window on a deselect click - otherwise the
+           ring gets replaced by the inset shadow, then reappears once
+           :active clears (item is still selected pre-AJAX), then finally
+           disappears once the removal completes: a visible 3-state flash. */
+        box-shadow: 0 0 0 2px #000000 !important;
+        border-radius: 5px;
+    }
+
+  /* Grid of residue-position buttons in the expand panel, for predictable
+     alignment instead of default inline-block wrapping */
+    #segment-generic-numbers .residue-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));
+        gap: 6px;
+    }
+    /* GAIN/D1 labels (e.g. "B.S13.50", "D1S1.49") are longer than normal
+       generic-number labels (e.g. "3x39") - wider columns, so ~7-8 fit per
+       row instead of ~9 cramped ones */
+    #segment-generic-numbers .residue-grid.residue-grid-wide {
+        grid-template-columns: repeat(auto-fill, minmax(68px, 1fr));
+    }
+    #segment-generic-numbers .residue-grid .btn {
+        margin: 0;
+        width: 100%;
+    }
+
+  /* ================================ */
+  /*   ALL-GPCR 3-ROW SCHEMATIC ROW   */
+  /* ================================ */
+  #all-gpcr {
+      /* Fluid layout: 16 buttons share the row's width equally (flex:1 each)
+         instead of a fixed pixel width, so the row always exactly fills
+         whatever space it's given - it can never need to scroll or overflow
+         into a neighbouring column, and looks like a normal panel just like
+         the Class-specific section below it (which is also just 95% wide,
+         no separate scrollable inner box). */
+      position: relative; /* anchors the connector-line SVG overlay */
+      display: flex;
+      flex-wrap: nowrap;
+      align-items: flex-start;
+      /* symmetric top/bottom padding - the old lopsided 24px bottom padding
+         was left over from the scrollbar this row no longer needs, which is
+         what made the schematic look pushed up towards the top */
+      padding: 10px 4px 10px;
+  }
+  #all-gpcr .btn-group {
+      flex: 1 1 0%;
+      min-width: 0;
+      min-height: 44px;
+  }
+  /* Percentages on a flex item's margin resolve against the row's own width,
+     not the button's - so this overlap scales proportionally at any width.
+     :first-of-type/:last-of-type (not :first-child/:last-child) because the
+     connector-line <svg> is also a child of #all-gpcr, ahead of the buttons -
+     :first-child would otherwise count the svg and wrongly overlap N-term. */
+  #all-gpcr .btn-group:not(:first-of-type) {
+      margin-left: -3.6%; /* ~40% overlap of a single button's share */
+  }
+  /* Last item (C-term) shares its row with the previous item (H8) - give it
+     a small gap instead of overlapping a button sitting on the same row */
+  #all-gpcr .btn-group:last-of-type {
+      margin-left: 1.2%;
+  }
+  /* Row spacing = button height (44px) + both selection outlines (2px each)
+     + a 1px gap, so two selected buttons on adjacent rows never touch. */
+  #all-gpcr .seg-row-1 { margin-top: 6px; }
+  #all-gpcr .seg-row-2 { margin-top: 55px; }
+  #all-gpcr .seg-row-3 { margin-top: 104px; }
+
+  /* Segment label text: centered, wraps long labels (N-term/C-term) */
+  #all-gpcr .segment-btn {
+      padding-left: 2px;
+      padding-right: 2px;
+      white-space: normal;
+      word-break: break-word;
+      text-align: center;
+  }
+
+  /* Label part fills any remaining height in the unit and vertically centers
+     its text - whether it's alone (N-term/C-term) or paired with an arrow
+     strip below it. Without this, the label+arrow only take their natural
+     content height, leaving a blank gap below the arrow that the selection
+     outline (drawn around the full unit) would otherwise wrap around too. */
+  #all-gpcr .btn-group > .segment-btn:not(.arrow-btn) {
+      flex: 1 1 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+  }
+  #all-gpcr .btn-group > .segment-btn:only-child {
+      border-radius: 4px;
+  }
+
+  /* Divider line between the label and arrow parts of a two-part unit -
+     white to match the white label text, black on light backgrounds with dark text (IL) */
+  #all-gpcr .btn-group > .segment-btn:not(.arrow-btn):not(:only-child) {
+      border-bottom: 1px solid #ffffff;
+  }
+  #all-gpcr .btn-group > .segment-btn.seg-icl:not(.arrow-btn):not(:only-child) {
+      border-bottom-color: #000000;
+  }
+
+  /* Hover: highlight only the part under the cursor */
+  #all-gpcr .segment-btn:hover {
+      filter: brightness(0.92);
+  }
+  /* Drop the browser's default focus ring on every link/button in this panel.
+     Selection is shown by .segment-group-selected (driven by JS off the
+     actual selection state), never by :focus - so a lingering focus ring
+     after a click just reads as a second, unrelated "selected" outline. */
+  #segment-selection-panel a:focus,
+  #segment-selection-panel button:focus {
+      outline: none;
+      box-shadow: none;
+  }
+
+  /* ============================================= */
+  /*   GAIN / D1 CLASS-SPECIFIC SEGMENTS: 4 COLS   */
+  /* ============================================= */
+  #gain-container,
+  #d1-container {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px 8px;
+      align-items: start;
+  }
+  #gain-container .btn-group,
+  #d1-container .btn-group {
+      min-width: 0;
+      width: 100%;
+  }
+
+  /* GAIN and D1 both have room to spare in their 4-column grids - put the
+     arrow back beside the label (not stacked below it) so each row is shorter */
+  #gain-container .btn-group,
+  #d1-container .btn-group {
+      flex-direction: row;
+  }
+  #gain-container .btn-group > .segment-btn,
+  #d1-container .btn-group > .segment-btn {
+      width: auto;
+      flex: 1 1 auto;
+      border-radius: 4px 0 0 4px;
+  }
+  #gain-container .btn-group > .segment-btn.arrow-btn,
+  #d1-container .btn-group > .segment-btn.arrow-btn {
+      flex: 0 0 auto;
+      border-radius: 0 4px 4px 0;
+      margin-left: -1px !important;
+      margin-top: 0;
+      padding: 1px 5px;
+      line-height: 1.5;
+  }
+  #gain-container .btn-group > .segment-btn:only-child,
+  #d1-container .btn-group > .segment-btn:only-child {
+      border-radius: 4px;
+  }
+
 </style>
 
-<h4>Sequence segment selection</h4> <hr>
+<div id="segment-selection-panel">
+
+<h4 style="text-align:center;">Sequence segment selection</h4> <hr>
         <a href="javascript:void(0)" onclick="SelectAlignableResidues('segments')"
         class="btn btn-primary btn-md  btn-block selection_buttons">
-            Structurally conserved (generic) positions
+            Structurally conserved residue positions<br>(have generic residue numbers)
         </a>
         <a href="javascript:void(0)" onclick="SelectFullSequence('segments')"
         class="btn btn-primary btn-md  btn-block selection_buttons">
@@ -152,8 +364,10 @@
 
     <div id="all-gpcr" class="sub-dropdown-panel">
 
+        <svg id="all-gpcr-connectors" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none;"></svg>
+
         {% for s in all_gpcr_segments %}
-        <div class="btn-group" role="group">
+        <div class="btn-group {{ s.ui_row_class }}" role="group">
 
             <!-- main button: TOGGLE -->
             <a href="javascript:void(0)"
@@ -162,7 +376,7 @@
                data-segment-id="{{ s.id }}"
                data-segment-domain="{{ s.domain }}"
                data-selection-subtype="{{ s.category }}">
-                {{ s.slug }}
+                {{ s.display_slug }}
             </a>
 
             <!-- expand arrow -->
@@ -211,7 +425,7 @@
                    data-segment-id="{{ s.id }}"
                    data-segment-domain="GAIN"
                    data-selection-subtype="{{ s.category }}">
-                    {{ s.slug }}
+                    {{ s.display_slug }}
                 </a>
 
                 {% if not ignore_residue_selection and s.generic_numbers.all %}
@@ -245,7 +459,7 @@
                    data-segment-id="{{ s.id }}"
                    data-segment-domain="D1"
                    data-selection-subtype="{{ s.category }}">
-                    {{ s.slug }}
+                    {{ s.display_slug }}
                 </a>
 
                 {% if not ignore_residue_selection and s.generic_numbers.all %}
@@ -285,7 +499,7 @@
 {% if not ignore_residue_selection %}
     <a href="javascript:void(0)" onclick="ToggleResidueSets()" class="btn btn-info btn-md btn-block selection_buttons"> Residue sets<span class="glyphicon glyphicon-arrow-down pull-right"></span></a>
     {% if rsets %}
-                <div id="residue_sets"  style="display: none">
+                <div id="residue_sets" class="sub-dropdown-panel" style="display: none; text-align: center;">
                     {% include 'common/segmentselection_predefined.html' %}
                 </div>
     {% endif %}
@@ -298,6 +512,16 @@
                 Select a file to upload.
             </div>
             <div class="modal-body">
+                <p>
+                    To restore a saved setup, use the file downloaded from the 
+                    <strong>Save residue positions</strong> link in the 
+                    "Selected segments" box (right). That file is already in 
+                    the required format and can be re-uploaded later to restore 
+                    the same selection.
+                </p>
+                <p>
+                    To create a new setup manually, <a href="/common/residuestemplate">download an example template</a> to see the expected layout.
+                </p>
                 <form id="xls-form" enctype="multipart/form-data" method="post" onsubmit="return ReadDefinitionFromFile(document.getElementById('xls-file').files[0], '/common/residuesupload')">
                     <input id="xls-file" type="file" /> {% csrf_token %}
                 </form>
@@ -309,3 +533,121 @@
         </div>
     </div>
 </div>
+
+</div><!-- #segment-selection-panel -->
+
+<script>
+(function () {
+    // Draws thin backbone lines connecting consecutive All-GPCR segment
+    // buttons, e.g. bottom-of-N-term -> left-of-TM1 -> bottom-of-TM1 ->
+    // left-of-IL1 -> right-of-IL1 -> bottom-of-TM2 -> top-of-TM2 -> ...
+    // The layout is fluid (percentage widths), so exact pixel positions are
+    // read from the live DOM rather than hardcoded.
+    var ROW_TRANSITION_ANCHORS = {
+        '1-2': ['bottom', 'left'],
+        '2-3': ['bottom', 'left'],
+        '3-2': ['right', 'bottom'],
+        '2-1': ['top', 'left'],
+        '1-1': ['right', 'left'],
+        '3-3': ['right', 'left']
+    };
+
+    function rowOf(el) {
+        if (el.classList.contains('seg-row-1')) return 1;
+        if (el.classList.contains('seg-row-2')) return 2;
+        if (el.classList.contains('seg-row-3')) return 3;
+        return null;
+    }
+
+    function isEcl(el) {
+        var label = el.children[0];
+        return !!label && label.classList.contains('seg-ecl');
+    }
+
+    function anchorsFor(fromEl, toEl, fromRow, toRow) {
+        // EL1->TM3, EL2->TM5, EL3->TM7 connect right-of-EL to top-of-TM
+        // instead of the usual bottom-of-row1 -> left-of-row2 (which is
+        // still used for N-term -> TM1).
+        if (fromRow === 1 && toRow === 2 && isEcl(fromEl)) {
+            return ['right', 'top'];
+        }
+        return ROW_TRANSITION_ANCHORS[fromRow + '-' + toRow] || null;
+    }
+
+    function anchorPoint(rect, side, containerRect, role) {
+        // On a top/bottom edge, offset the x position off-centre (30%/70%)
+        // instead of dead-centre - every connection always heads to the
+        // right, so the "from" end leans left (towards where it came from)
+        // and the "to" end leans right (towards where it's going).
+        var frac = role === 'from' ? 0.3 : 0.7;
+        // Pull bottom/right anchors 1px inward - "left"/"top" (rect.left/rect.top)
+        // sit exactly on the visible edge already, but "right"/"bottom" are
+        // computed as left+width/top+height, which on fractional (fluid-width)
+        // boxes lands 1px past where the border actually renders.
+        var x, y;
+        if (side === 'top') { x = rect.left + rect.width * frac; y = rect.top; }
+        else if (side === 'bottom') { x = rect.left + rect.width * frac; y = rect.bottom - 1; }
+        else if (side === 'left') { x = rect.left; y = rect.top + rect.height / 2; }
+        else { x = rect.right - 1; y = rect.top + rect.height / 2; }
+        return { x: x - containerRect.left, y: y - containerRect.top };
+    }
+
+    function drawAllGpcrConnectors() {
+        var container = document.getElementById('all-gpcr');
+        var svg = document.getElementById('all-gpcr-connectors');
+        if (!container || !svg) return;
+
+        var groups = container.querySelectorAll('.btn-group');
+        if (groups.length < 2) return;
+
+        var containerRect = container.getBoundingClientRect();
+        if (containerRect.width === 0) return; // panel is still collapsed/hidden
+
+        svg.setAttribute('width', containerRect.width);
+        svg.setAttribute('height', containerRect.height);
+        while (svg.firstChild) svg.removeChild(svg.firstChild);
+
+        for (var i = 0; i < groups.length - 1; i++) {
+            var fromRow = rowOf(groups[i]);
+            var toRow = rowOf(groups[i + 1]);
+            var anchors = anchorsFor(groups[i], groups[i + 1], fromRow, toRow);
+            if (!anchors) continue;
+
+            var p1 = anchorPoint(groups[i].getBoundingClientRect(), anchors[0], containerRect, 'from');
+            var p2 = anchorPoint(groups[i + 1].getBoundingClientRect(), anchors[1], containerRect, 'to');
+
+            // Smooth S-curve between the two anchors instead of a straight line.
+            var midY = (p1.y + p2.y) / 2;
+            var d = 'M ' + p1.x + ' ' + p1.y +
+                ' C ' + p1.x + ' ' + midY + ', ' + p2.x + ' ' + midY + ', ' + p2.x + ' ' + p2.y;
+
+            var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', d);
+            path.setAttribute('fill', 'none');
+            path.setAttribute('stroke', '#5c6b7a');
+            path.setAttribute('stroke-width', '1.5');
+            svg.appendChild(path);
+        }
+    }
+
+    var redrawTimer = null;
+    function scheduleRedraw() {
+        clearTimeout(redrawTimer);
+        redrawTimer = setTimeout(drawAllGpcrConnectors, 50);
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        var container = document.getElementById('all-gpcr');
+        if (!container) return;
+
+        drawAllGpcrConnectors();
+        window.addEventListener('resize', scheduleRedraw);
+
+        // Panel starts as display:none, so sizes are 0 at DOMContentLoaded -
+        // a ResizeObserver catches the moment it's toggled open (or resized).
+        if (window.ResizeObserver) {
+            new ResizeObserver(scheduleRedraw).observe(container);
+        }
+    });
+})();
+</script>

@@ -10,6 +10,32 @@ function rankedRangeFiltert1(filterVal, columnVal, rowValues, stateVal) {
 }
 
 $(document).ready(function() {
+  function enableTopScroller(table_id) {
+    // Put top scroller
+    // https://stackoverflow.com/questions/35147038/how-to-place-the-datatables-horizontal-scrollbar-on-top-of-the-table
+    let $table = $(table_id);
+    if ($table.length === 0) {
+      return;
+    }
+
+    let $wrapper = $table.closest(".dataTables_wrapper");
+    let $scrollHead = $wrapper.find(".dataTables_scrollHead");
+    if ($scrollHead.length === 0) {
+      return;
+    }
+
+    $scrollHead.css({
+      "overflow-x": "scroll"
+    }).off("scroll.topscroller").on("scroll.topscroller", function() {
+      let scrollBody = $(this).parent().find(".dataTables_scrollBody").get(0);
+      if (!scrollBody) {
+        return;
+      }
+      scrollBody.scrollLeft = this.scrollLeft;
+      $(scrollBody).trigger("scroll");
+    });
+  }
+
   // Activate tooltips and popovers from Bootstrap
   $("[data-toggle='tooltip']").tooltip();
   $("[data-toggle='popover']").popover();
@@ -30,11 +56,14 @@ $(document).ready(function() {
     aaSorting: [],
     order: [
       [2, "asc"],
-      [4, "asc"]
+      [5, "asc"]
     ],
     autoWidth: true,
     bInfo: true,
   });
+
+  // Enable top horizontal scrollbar (in the header section)
+  enableTopScroller("#arrestintable");
 
   let column_filters = [];
   // Selector column
@@ -45,11 +74,12 @@ $(document).ready(function() {
   column_filters = column_filters.concat(createYADCFfilters(3, 1, "multi_select", "select2", "", false, null, null, "200px"));
   column_filters = column_filters.concat(createYADCFfilters(4, 1, "multi_select", "select2", "", false, "exact", "html", "80px"));
   column_filters = column_filters.concat(createYADCFfilters(5, 1, "multi_select", "select2", "", false, "exact", "html", "80px"));
+  column_filters = column_filters.concat(createYADCFfilters(6, 1, "multi_select", "select2", "", false, "exact", "html", "80px"));
   // Ligands section
-  column_filters = column_filters.concat(createYADCFfilters(6, 1, "multi_select", "select2", "", false, "exact", "html", "200px"));
-  column_filters = column_filters.concat(createYADCFfilters(7, 1, "multi_select", "select2", "", false, null, null, "50px"));
+  column_filters = column_filters.concat(createYADCFfilters(7, 1, "multi_select", "select2", "", false, "exact", "html", "200px"));
+  column_filters = column_filters.concat(createYADCFfilters(8, 1, "multi_select", "select2", "", false, null, null, "50px"));
   // Coupling data filters
-  column_filters = column_filters.concat(createYADCFfilters(8, 3, "range_number", null, ["Min", "Max"], false, null, null, "40px", null, "-"));
+  column_filters = column_filters.concat(createYADCFfilters(9, 9, "range_number", null, ["Min", "Max"], false, null, null, "40px", null, "-"));
   // column_filters = column_filters.concat(make_rank_col_filters(8, 19, "hide_ranksub", rankedRangeFiltert1));
   // Hidden GPCRdb support type column calls customized function
   // column_filters = column_filters.concat([
@@ -114,17 +144,6 @@ $(document).ready(function() {
       $(".alt").parent().parent().find("td").removeClass("highlight");
     }
   });
-
-  // Put top scroller
-  // https://stackoverflow.com/questions/35147038/how-to-place-the-datatables-horizontal-scrollbar-on-top-of-the-table
-  //    console.time("scroll to top");
-  // $(".dataTables_scrollHead").css({
-  //   "overflow-x": "scroll"
-  // }).on("scroll", function(e) {
-  //   var scrollBody = $(this).parent().find(".dataTables_scrollBody").get(0);
-  //   scrollBody.scrollLeft = this.scrollLeft;
-  //   $(scrollBody).trigger("scroll");
-  // });
 
   // Enable columns overlay
   initFixedColumnsOverlay("arrestintable");

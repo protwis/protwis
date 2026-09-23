@@ -40,6 +40,34 @@ class ResidueAngle(models.Model):
         db_table = 'residue_angles'
         unique_together = ("residue", "structure")
 
+def get_snake_plot_distance_lookup(protein):
+    """Look up per-residue midplane_distance for a protein's snake plot TM alignment.
+
+    Returns {sequence_number: {'best_midplane':, 'avg_midplane':}}, joined across the
+    protein's experimental structures by sequence_number (ResidueAngle.residue is FK'd to
+    each structure's own protein_conformation, not the snake plot's reference conformation).
+    """
+    structures = list(Structure.objects.filter(protein_conformation__protein__parent=protein,
+                                               structure_type__origin='experiment').order_by('resolution'))
+    if not structures:
+        return {}
+
+    best_structure_id = structures[0].pk
+    by_sequence_number = {}
+    for structure_id, sequence_number, midplane_distance in ResidueAngle.objects.filter(
+                structure__in=structures
+            ).values_list('structure_id', 'residue__sequence_number', 'midplane_distance'):
+        by_sequence_number.setdefault(sequence_number, {})[structure_id] = midplane_distance
+
+    lookup = {}
+    for sequence_number, by_structure in by_sequence_number.items():
+        midplane_values = [v for v in by_structure.values() if v is not None]
+        lookup[sequence_number] = {
+            'best_midplane': by_structure.get(best_structure_id),
+            'avg_midplane': sum(midplane_values) / len(midplane_values) if midplane_values else None,
+        }
+    return lookup
+
 def get_angle_averages(pdbs,s_lookup,normalized = False, standard_deviation = False, split_by_amino_acid = False, forced_class_a = False):
     start_time = time.time()
     pdbs_upper = [pdb.upper() for pdb in pdbs]

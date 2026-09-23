@@ -17,6 +17,7 @@ from common.selection import Selection, SelectionItem
 from common.views import AbsTargetSelection, AbsTargetSelectionTable
 from common.views import AbsSegmentSelection
 from common.views import AbsMiscSelection
+from common.views import _alignment_selection_item_domain, _filter_selection_for_alignment_domain
 from structure.functions import BlastSearch
 from protwis.context_processors import site_title
 
@@ -37,6 +38,21 @@ import numpy as np
 import os
 import xlsxwriter
 import xlrd
+
+
+def _filter_context_selection_domain(context, domain):
+    # Non-destructively filter context['selection'][...] lists.
+    # Built by the parent get_context_data, so cross-flow items never render
+    # even on a fresh page load - nothing touches the session here, matching
+    # the non-destructive filtering _current_alignment_domain does for the
+    # AddToSelection/RemoveFromSelection AJAX responses in common/views.py.
+    selection_ctx = context.get('selection') or {}
+    for selection_type in ('reference', 'targets', 'segments'):
+        if selection_type in selection_ctx:
+            selection_ctx[selection_type] = [
+                i for i in selection_ctx[selection_type]
+                if _alignment_selection_item_domain(i) in (domain, None)
+            ]
 
 
 # class TargetSelection(AbsTargetSelection):
@@ -78,6 +94,11 @@ class TargetSelection(AbsTargetSelectionTable):
         },
     }
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        _filter_context_selection_domain(context, 'gpcr')
+        return context
+
 class TargetSelectionGprotein(AbsTargetSelection):
     step = 1
     number_of_steps = 2
@@ -111,6 +132,11 @@ class TargetSelectionGprotein(AbsTargetSelection):
             del ppf
     except Exception as e:
         pass
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        _filter_context_selection_domain(context, 'gprotein')
+        return context
 
 class TargetSelectionArrestin(AbsTargetSelection):
     step = 1
@@ -146,10 +172,26 @@ class TargetSelectionArrestin(AbsTargetSelection):
     except Exception as e:
         pass
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        _filter_context_selection_domain(context, 'arrestin')
+        return context
+
 class SegmentSelection(AbsSegmentSelection):
     step = 2
     number_of_steps = 2
     docs = 'sequences.html#structure-based-alignments'
+    description = 'Select sequence segments in the middle column. You can expand helices and select individual' \
+        + ' residues by clicking on the down arrows inside the segment buttons.\n\n' \
+        + 'Segments are colour-coded: ' \
+        + '<span class="btn btn-xs seg-nterm" style="cursor:default; margin:2px 4px 2px 0;">Terminus</span>' \
+        + '<span class="btn btn-xs seg-tm" style="cursor:default; margin:2px 4px 2px 0;">Helix</span>' \
+        + '<span class="btn btn-xs seg-sheet" style="cursor:default; margin:2px 4px 2px 0;">Sheet</span>' \
+        + '<span class="btn btn-xs seg-icl" style="cursor:default; margin:2px 4px 2px 0;">Intracellular loop</span>' \
+        + '<span class="btn btn-xs seg-ecl" style="cursor:default; margin:2px 4px 2px 0;">Extracellular loop</span>' \
+        + '\n\nSelected segments will appear in the' \
+        + ' right column, where you can edit the list.\n\nOnce you have selected all your segments, click the' \
+        + ' "Show alignment" button (top right).\n\n'
     selection_boxes = OrderedDict([
         ('reference', False),
         ('targets', True),
@@ -162,6 +204,11 @@ class SegmentSelection(AbsSegmentSelection):
             'color': 'success',
         },
     }
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        _filter_context_selection_domain(context, 'gpcr')
+        return context
 
 class SegmentSelectionGprotein(AbsSegmentSelection):
     step = 2
@@ -192,6 +239,11 @@ class SegmentSelectionGprotein(AbsSegmentSelection):
 
     ss = ProteinSegment.objects.filter(partial=False, proteinfamily='Alpha').prefetch_related('generic_numbers')
     ss_cats = ss.values_list('category').order_by('category').distinct('category')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        _filter_context_selection_domain(context, 'gprotein')
+        return context
 
 
 class SegmentSelectionArrestin(AbsSegmentSelection):
@@ -226,6 +278,11 @@ class SegmentSelectionArrestin(AbsSegmentSelection):
     ## ProteinSegment for different proteins
     ss = ProteinSegment.objects.filter(partial=False, proteinfamily='Arrestin').prefetch_related('generic_numbers')
     ss_cats = ss.values_list('category').order_by('category').distinct('category')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        _filter_context_selection_domain(context, 'arrestin')
+        return context
 
 
 class BlastSearchInput(AbsMiscSelection):
@@ -272,6 +329,20 @@ def render_alignment(request):
     simple_selection = request.session.get('selection', False)
     if simple_selection == False or not simple_selection.targets:
         return redirect("/alignment/targetselection")
+
+    # Defensive backstop: all three alignment flows (GPCR/G-protein/Arrestin)
+    # funnel into this one shared render view, which has no way to know which
+    # flow the request came from. Infer the intended domain from the first
+    # reference/target item and build a filtered LOCAL view for the alignment
+    # to consume - this never touches the session, so nothing is lost if a
+    # mixed selection somehow reaches here (e.g. a browser back-button replay).
+    domain = None
+    for sel_item in list(simple_selection.reference) + list(simple_selection.targets):
+        domain = _alignment_selection_item_domain(sel_item)
+        if domain:
+            break
+    if domain:
+        simple_selection = _filter_selection_for_alignment_domain(simple_selection, domain)
 
     # create an alignment object
     a = Alignment()

@@ -54,7 +54,7 @@ class Command(BaseBuild):
     def handle(self, *args, **options):
         self.parse_csv()
         gn_scheme_parent = ResidueNumberingScheme.objects.get(slug='gpcrdbb')
-        gn_scheme, _ = ResidueNumberingScheme.objects.get_or_create(slug='gpcrdbgain', short_name='GPCRdb(GAIN)', name='GPCRdb (GAIN)', parent=gn_scheme_parent)
+        gn_scheme, _ = ResidueNumberingScheme.objects.get_or_create(slug='gpcrdbgain', short_name='GPCRdb (GAIN)', name='GPCRdb (GAIN)', parent=gn_scheme_parent)
         gn_scheme_eq = ResidueNumberingScheme.objects.get(slug='gpcrdb')
 
         for protein, ends in self.annotation_dict.items():

@@ -36,8 +36,8 @@ from residue.models import (Residue, ResidueGenericNumber,
                             ResidueNumberingScheme)
 from signprot.models import SignprotBarcode, SignprotComplex, SignprotStructure, SignprotStructureExtraProteins
 from structure.models import Structure, StructureStabilizingAgent, StructureType, StructureExtraProteins
-from common.tools import test_model_updates
-
+from common.tools import test_model_updates, parse_uniprot_file, build_entrezgeneid_lookup_dict, select_entrez_id
+from build.management.commands.build_human_proteins import Command as BuildHumanProteinsCommand
 
 class Command(BaseCommand):
     help = 'Build G proteins'
@@ -49,6 +49,7 @@ class Command(BaseCommand):
             f.write(
                 'PDB_ID\tPDB_Chain\tPosition\tResidue\tCGN\tEnsembl_Protein_ID\tUniprot_ACC\tUniprot_ID\tsortColumn\n')
     gprotein_data_file = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'PDB_UNIPROT_ENSEMBLE_ALL.txt'])
+    entrezid_source_file = os.sep.join([settings.DATA_DIR, 'gene_data', 'entrez_id_lookup.txt'])
     barcode_data_file = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'barcode_data.csv'])
     pdbs_path = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'pdbs'])
     lookup = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'CGN_lookup.csv'])
@@ -57,7 +58,7 @@ class Command(BaseCommand):
     local_uniprot_dir = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'uniprot'])
     local_uniprot_beta_dir = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'uniprot_beta'])
     local_uniprot_gamma_dir = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'uniprot_gamma'])
-    remote_uniprot_dir = 'https://www.uniprot.org/uniprot/'
+
     #Setting the variables for the test tracking of the model upadates
     tracker = {}
     all_models = django.apps.apps.get_models()[6:]
@@ -84,6 +85,7 @@ class Command(BaseCommand):
                             help='Build PDB_UNIPROT_ENSEMBLE_ALL file')
 
     def handle(self, *args, **options):
+        self.entrez_lookup = build_entrezgeneid_lookup_dict(self.entrezid_source_file, self.logger)
         self.options = options
         if options['filename']:
             filenames = options['filename']
@@ -179,7 +181,7 @@ class Command(BaseCommand):
         files = os.listdir(uniprot_dir)
         for f in files:
             acc = f.split('.')[0]
-            up = self.parse_uniprot_file(acc)
+            up = parse_uniprot_file(accession=acc, logger=self.logger, local_uniprot_dir=self.local_uniprot_dir, entrez_lookup=self.entrez_lookup)
             pst = ProteinSequenceType.objects.get(slug='wt')
             try:
                 species, created = Species.objects.get_or_create(latin_name=up['species_latin_name'],
@@ -659,7 +661,7 @@ class Command(BaseCommand):
         rns = ResidueNumberingScheme.objects.get(slug='cgn')
 
         for a in accessions:
-            up = self.parse_uniprot_file(a)
+            up = parse_uniprot_file(accession=a, logger=self.logger, local_uniprot_dir=self.local_uniprot_dir, entrez_lookup=self.entrez_lookup)
 
             # Fetch Protein Family for gproteins
             for k in cgn_dict.keys():
@@ -689,7 +691,7 @@ class Command(BaseCommand):
         accessions_orth = df.loc[df['Uniprot_ID'].isin(orthologs)]
         accessions_orth = accessions_orth['Uniprot_ACC'].unique()
         for a in accessions_orth:
-            up = self.parse_uniprot_file(a)
+            up = parse_uniprot_file(accession=a, logger=self.logger, local_uniprot_dir=self.local_uniprot_dir, entrez_lookup=self.entrez_lookup)
             # Fetch Protein Family for gproteins
             for k in cgn_dict.keys():
                 name = str(up['entry_name']).upper()
@@ -795,7 +797,17 @@ class Command(BaseCommand):
         for i, gene in enumerate(uniprot['genes']):
             g = False
             try:
-                g, created = Gene.objects.get_or_create(name=gene, species=species, position=i)
+                entrez_geneid = select_entrez_id(i, uniprot, self.entrez_lookup)
+
+                if entrez_geneid is not None:
+                    resource = WebResource.objects.get(slug='entrez_gene')
+                    entrez_link, created = WebLink.objects.get_or_create(web_resource=resource, index=entrez_geneid)
+                else:
+                    entrez_link = None
+
+                g, created = Gene.objects.get_or_create(name=gene, species=species, position=i,
+                                                        entrez_id=entrez_geneid, entrez_weblink=entrez_link)
+
                 if created:
                     self.logger.info('Created gene ' + g.name + ' for protein ' + p.name)
             except IntegrityError:
@@ -828,7 +840,7 @@ class Command(BaseCommand):
         #             structure.save()
 
     def signprot_struct_ids(self):
-        structs = Structure.objects.exclude(structure_type__slug__startswith='af-').count()
+        structs = Structure.objects.filter(structure_type__origin='experiment').count()
         s_structs = SignprotStructure.objects.count()
         offset = 1000
         if s_structs == None:
@@ -916,115 +928,6 @@ class Command(BaseCommand):
 
         # function to create necessary arguments to add protein entry
         self.cgn_add_proteins()
-
-    def parse_uniprot_file(self, accession):
-        filename = accession + '.txt'
-        local_file_path = os.sep.join([self.local_uniprot_dir, filename])
-        remote_file_path = self.remote_uniprot_dir + filename
-
-        up = {}
-        up['genes'] = []
-        up['names'] = []
-        up['structures'] = []
-
-        read_sequence = False
-        remote = False
-
-        # record whether organism has been read
-        os_read = False
-
-        # should local file be written?
-        local_file = False
-
-        try:
-            if os.path.isfile(local_file_path):
-                uf = open(local_file_path, 'r')
-                self.logger.info('Reading local file ' + local_file_path)
-            else:
-                uf = urlopen(remote_file_path)
-                remote = True
-                self.logger.info('Reading remote file ' + remote_file_path)
-                local_file = open(local_file_path, 'w')
-
-            for raw_line in uf:
-                # line format
-                if remote:
-                    line = raw_line.decode('UTF-8')
-                else:
-                    line = raw_line
-
-                # write to local file if appropriate
-                if local_file:
-                    local_file.write(line)
-
-                # end of file
-                if line.startswith('//'):
-                    break
-
-                # entry name and review status
-                if line.startswith('ID'):
-                    split_id_line = line.split()
-                    up['entry_name'] = split_id_line[1].lower()
-                    review_status = split_id_line[2].strip(';')
-                    if review_status == 'Unreviewed':
-                        up['source'] = 'TREMBL'
-                    elif review_status == 'Reviewed':
-                        up['source'] = 'SWISSPROT'
-
-                # species
-                elif line.startswith('OS') and not os_read:
-                    species_full = line[2:].strip().strip('.')
-                    species_split = species_full.split('(')
-                    up['species_latin_name'] = species_split[0].strip()
-                    if len(species_split) > 1:
-                        up['species_common_name'] = species_split[1].strip().strip(')')
-                    else:
-                        up['species_common_name'] = up['species_latin_name']
-                    os_read = True
-
-                # names
-                elif line.startswith('DE'):
-                    split_de_line = line.split('=')
-                    if len(split_de_line) > 1:
-                        split_segment = split_de_line[1].split('{')
-                        up['names'].append(split_segment[0].strip().strip(';'))
-
-                # genes
-                elif line.startswith('GN'):
-                    split_gn_line = line.split(';')
-                    for segment in split_gn_line:
-                        if '=' in segment:
-                            split_segment = segment.split('=')
-                            split_segment = split_segment[1].split(',')
-                            for gene_name in split_segment:
-                                split_gene_name = gene_name.split('{')
-                                up['genes'].append(split_gene_name[0].strip())
-
-                # structures
-                elif line.startswith('DR') and 'PDB' in line and not 'sum' in line:
-                    split_gn_line = line.split(';')
-                    up['structures'].append([split_gn_line[1].lstrip(), split_gn_line[3].lstrip().split(" A")[0]])
-
-                # sequence
-                elif line.startswith('SQ'):
-                    split_sq_line = line.split()
-                    seq_len = int(split_sq_line[2])
-                    read_sequence = True
-                    up['sequence'] = ''
-                elif read_sequence == True:
-                    up['sequence'] += line.strip().replace(' ', '')
-
-            # close the Uniprot file
-            uf.close()
-        except:
-            return False
-
-        # close the local file if appropriate
-        if local_file:
-            local_file.close()
-
-        return up
-
 
 class SeqCompare(object):
     def __init__(self):

@@ -1,0 +1,72 @@
+{% extends "home/base.html" %}
+{% load static %}
+{% block addon_css %}
+<link rel="stylesheet" href="{% static 'home/css/data_mapper/landing.css' %}" type="text/css" />
+{% endblock %}
+
+{% block content %}
+<div class="mapper-landing-wrap">
+  <div class="mapper-landing-hero">
+    <h1>Data mapper</h1>
+    <p>Choose a visualization to map your receptor data onto.</p>
+  </div>
+  <div class="mapper-landing-cards">
+    <div class="mapper-landing-card">
+<h2>GPCRome wheel</h2>
+      <img src="{% static 'home/images/DataMapper/GPCRome_icon.png' %}" alt="" width="120" height="120">
+      <p>A circular layout arranging class, family and receptor in one view — built to spot patterns across the whole GPCRome at a glance.</p>
+      <ul class="mapper-landing-stats">
+        <li>Max receptors: {{ wheel_max_receptors }}</li>
+        <li>Datasets: 1</li>
+        <li>Human only</li>
+      </ul>
+      <a href="{% url 'MapperGPCRomeWheel' %}" class="btn btn-primary">Open</a>
+    </div>
+    <div class="mapper-landing-card">
+<h2>Tree</h2>
+      <img src="{% static 'home/images/DataMapper/Tree_icon.png' %}" alt="" width="120" height="120">
+      <p>A classification tree grouping receptors from class down to individual receptor.</p>
+      <ul class="mapper-landing-stats">
+        <li>Max receptors: 150</li>
+        <li>Datasets: 5</li>
+        <li>Ortholog support</li>
+      </ul>
+      <a href="{% url 'MapperTree' %}" class="btn btn-primary">Open</a>
+    </div>
+    <div class="mapper-landing-card">
+<h2>Cluster</h2>
+      <img src="{% static 'home/images/DataMapper/Cluster_icon.png' %}" alt="" width="120" height="120">
+      <p>Group receptors by sequence similarity or by the spatial layout of your own input to surface natural groupings.</p>
+      <ul class="mapper-landing-stats">
+        <li>Max receptors: {{ full_max_receptors }}</li>
+        <li>Datasets: 1</li>
+        <li>Human only</li>
+      </ul>
+      <a href="{% url 'MapperCluster' %}" class="btn btn-primary">Open</a>
+    </div>
+    <div class="mapper-landing-card">
+<h2>List</h2>
+      <img src="{% static 'home/images/DataMapper/List_icon.png' %}" alt="" width="120" height="120">
+      <p>A sortable list of receptors organised under headings you define, for quick side-by-side comparison.</p>
+      <ul class="mapper-landing-stats">
+        <li>Max receptors: {{ full_max_receptors }}</li>
+        <li>Datasets: 4</li>
+        <li>Ortholog support</li>
+      </ul>
+      <a href="{% url 'MapperList' %}" class="btn btn-primary">Open</a>
+    </div>
+    <div class="mapper-landing-card">
+<h2>Heatmap</h2>
+      <img src="{% static 'home/images/DataMapper/Heatmap_icon.png' %}" alt="" width="120" height="120">
+      <p>A colour-coded grid for comparing numeric values across receptors and data columns side by side.</p>
+      <ul class="mapper-landing-stats">
+        <li>Max receptors: {{ full_max_receptors }}</li>
+        <li>Datasets: 5</li>
+        <li>Ortholog support</li>
+      </ul>
+      <a href="{% url 'MapperHeatmap' %}" class="btn btn-primary">Open</a>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

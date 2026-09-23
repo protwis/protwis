@@ -1,0 +1,493 @@
+{% extends "home/base.html" %}
+{% load static %}
+{% load humanize %}
+{% block addon_css %}
+<link rel="stylesheet" href="{% static 'home/css/nv.d3.min.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/nvd3-update.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/Spectrum_1_8_1.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/select2_4.1.0-rc.0._full.css' %}" type="text/css">
+<link rel="stylesheet" href="{% static 'home/css/NewDrugsBrowser_datatables.min.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/data_mapper/core.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/data_mapper/tree.css' %}" type="text/css" />
+{% endblock %}
+
+{% block content %}
+<div class="mapper-core-wheel-wrap row mapper-tree-page mapper-core-booting">
+  <div class="col-xs-12 mapper-core-wheel-primary-col">
+    <div class="mapper-core-wheel-left">
+      <div class="mapper-core-boot-overlay">Loading…</div>
+      <div class="mapper-core-wheel-top-row">
+        <h2 class="mapper-core-wheel-page-title">Classification tree</h2>
+      </div>
+      <div class="mapper-core-wheel-toolbar-stack">
+        <div class="mapper-tree-toolbar-grid">
+          <div class="mapper-core-wheel-toolbar" aria-label="Mapper tree tools primary" style="align-items:flex-end;">
+            <div class="mapper-core-input-mode-wrap">
+              <span class="mapper-core-input-mode-label">Input data:</span>
+              <div class="btn-group btn-group-xs" role="group" aria-label="Input mode">
+                <button type="button" class="btn btn-default btn-xs active" id="mapper-tree-mode-numeric-btn" aria-pressed="true">Numbers</button>
+                <button type="button" class="btn btn-default btn-xs" id="mapper-tree-mode-labels-btn" aria-pressed="false">Categories</button>
+              </div>
+            </div>
+            <button type="button" class="btn btn-default btn-xs" id="mapper-tree-demo-rows">Demo</button>
+            <button type="button" class="btn btn-default btn-xs" id="mapper-tree-species-toggle">Species</button>
+          </div>
+          <div class="mapper-core-wheel-toolbar" aria-label="Table actions">
+            <button type="button" class="btn btn-default btn-xs" id="mapper-tree-howto-btn" data-toggle="modal" data-target="#mapper-tree-howto-modal" title="How to use the tree mapper">
+              How to<span class="mapper-core-howto-mark" aria-hidden="true">?</span>
+            </button>
+            <button type="button" class="btn btn-primary btn-xs" id="mapper-tree-open-picker" data-toggle="modal" data-target="#mapper-core-gpcrome-picker-modal">Receptor lookup</button>
+            <div class="dropdown" style="position:relative;">
+              <button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown" id="mapper-tree-clear-rows">
+                Clear <span class="caret"></span>
+              </button>
+              <ul class="dropdown-menu mapper-core-clear-menu">
+                <li><a href="#" id="mapper-tree-clear-whole">Whole table</a></li>
+                <li class="divider"></li>
+                <li><a href="#" id="mapper-tree-clear-mode">Current mode (<span id="mapper-tree-clear-mode-label">Numbers</span>)</a></li>
+                <li class="divider"></li>
+                <li class="mapper-tree-clear-col-num"><a href="#" data-tree-col="inner">Dot 1</a></li>
+                <li class="mapper-tree-clear-col-num"><a href="#" data-tree-col="o1">Dot 2</a></li>
+                <li class="mapper-tree-clear-col-num"><a href="#" data-tree-col="o2">Dot 3</a></li>
+                <li class="mapper-tree-clear-col-num"><a href="#" data-tree-col="o3">Dot 4</a></li>
+                <li class="mapper-tree-clear-col-num"><a href="#" data-tree-col="o4">Dot 5</a></li>
+                <li class="mapper-tree-clear-col-text" style="display:none;"><a href="#" data-tree-col="inner">Category</a></li>
+              </ul>
+            </div>
+            <button type="button" class="btn btn-default btn-xs" onclick="mapperTreeDownloadTable()" title="Download input table as Excel (.xlsx)"><span class="glyphicon glyphicon-save" aria-hidden="true"></span> Download</button>
+          </div>
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-bordered table-condensed mapper-core-input-table" id="mapper-tree-input-table">
+          <thead>
+            <tr>
+              <th class="mapper-core-th-remove" aria-label="Remove row"></th>
+              <th class="mapper-core-th-receptor mapper-core-sortable-head" data-mapper-tree-sort-col="receptor" tabindex="0" role="button" aria-sort="none">Receptor <span class="mapper-core-sort-indicator" aria-hidden="true"></span></th>
+              <th class="mapper-tree-species-th" title="Species / ortholog">Species</th>
+              <th class="mapper-tree-inner-h mapper-core-sortable-head" data-mapper-tree-sort-col="inner" tabindex="0" role="button" aria-sort="none"><span class="mapper-tree-inner-header-label">Dot 1</span> <span class="mapper-core-sort-indicator" aria-hidden="true"></span></th>
+              <th class="mapper-tree-o-head mapper-tree-outer-col" title="Dot 2">Dot 2</th>
+              <th class="mapper-tree-o-head mapper-tree-outer-col" title="Dot 3">Dot 3</th>
+              <th class="mapper-tree-o-head mapper-tree-outer-col" title="Dot 4">Dot 4</th>
+              <th class="mapper-tree-o-head mapper-tree-outer-col" title="Dot 5">Dot 5</th>
+              <th class="mapper-core-th-swatch" title="Text mode colour">Color</th>
+            </tr>
+          </thead>
+          <tbody id="mapper-tree-input-tbody"></tbody>
+        </table>
+      </div>
+      <p id="mapper-tree-messages" class="mapper-tree-soft-warn" role="status" aria-live="polite"></p>
+    </div>
+  </div>
+
+  <div class="col-xs-12 mapper-core-wheel-plot-col">
+    <div class="mapper-core-plot-panel">
+      <div class="mapper-core-plot-toolbar" aria-label="Tree plot toolbar">
+        <div class="dropdown" style="position: relative;">
+          <button type="button" class="btn btn-primary dropdown-toggle btn-sm" id="mapper-tree-leaf-dropdown"
+                  data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            Receptor names
+          </button>
+          <div class="dropdown-menu p-2"
+               style="min-width: 160px; padding: 10px 15px; left: 100%; top: 50%; margin-left: 5px; position: absolute; transform: translateY(-30%);">
+            <button type="button" class="btn btn-outline-primary btn-block mb-1 mapper-tree-leaf-btn btn-primary active" data-value="IUPHAR">Protein</button>
+            <button type="button" class="btn btn-outline-primary btn-block mb-1 mapper-tree-leaf-btn" data-value="Gene">Gene</button>
+            <button type="button" class="btn btn-outline-primary btn-block mapper-tree-leaf-btn" data-value="UniProt">UniProt</button>
+          </div>
+        </div>
+
+        <div class="dropdown mapper-core-dropdown-anchor-topleft" id="mapper-tree-species-names-wrap" style="display:none; position:relative;">
+          <button type="button" class="btn btn-primary dropdown-toggle btn-sm" id="mapper-tree-species-names-btn"
+                  data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Species names</button>
+          <div class="dropdown-menu dropdown-menu-listplot mapper-core-dropdown-menu-topleft"
+               style="min-width:160px; padding:10px 14px; left:100%; margin-left:5px; position:absolute; font-size:11px;">
+            <button type="button" class="btn btn-primary btn-block mb-1 mapper-tree-species-name-btn active" data-value="common">Common name</button>
+            <button type="button" class="btn btn-outline-primary btn-block mb-1 mapper-tree-species-name-btn" data-value="latin">Latin name</button>
+            <button type="button" class="btn btn-outline-primary btn-block mapper-tree-species-name-btn" data-value="both">Both</button>
+          </div>
+        </div>
+
+        <div class="dropdown mapper-core-dropdown-anchor-topleft mapper-core-colors-dropdown-anchor" style="position: relative;">
+          <button type="button" class="btn btn-primary dropdown-toggle btn-sm" id="mapper-tree-colors-btn" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Colors</button>
+          <div class="dropdown-menu dropdown-menu-listplot mapper-core-dropdown-menu-topleft" id="mapper-tree-colors-menu"
+               style="min-width:510px; padding:10px 14px; left:100%; margin-left:5px; position:absolute; font-size:11px; box-sizing:border-box; overflow:visible;">
+
+            <!-- Numeric mode panel -->
+            <div id="mapper-tree-colors-numeric">
+              <!-- header -->
+              <div class="mapper-tree-color-ring-grid" style="font-weight:600; border-bottom:1px solid #ddd; padding-bottom:6px; margin-bottom:8px;">
+                <div class="mapper-tree-color-ring-label">Dots</div>
+                <div class="mapper-tree-color-style-wrap" style="text-align:center;">Style</div>
+                <div class="mapper-tree-color-picker-wrap">Min</div>
+                <div class="mapper-tree-color-picker-wrap">Mid</div>
+                <div class="mapper-tree-color-picker-wrap">Max</div>
+              </div>
+
+              <!-- Inner -->
+              <div class="mapper-tree-color-ring-row" id="mapper-tree-color-row-Inner" style="display:none; margin-bottom:6px;">
+                <div class="mapper-tree-color-ring-grid">
+                  <div class="mapper-tree-color-ring-label">Dot 1</div>
+                  <div class="mapper-tree-color-style-wrap"><select id="mapper-tree-cstyle-Inner" class="form-control input-sm" style="width:100%;"><option value="One">One</option><option value="Two">Two</option><option value="Three_RWB">Three</option><option value="Three_TWM">Three</option></select></div>
+                  <div class="mapper-tree-cpicker-min-wrap mapper-tree-color-picker-wrap"><input type="text" id="mapper-tree-cpicker-min-Inner"></div>
+                  <div class="mapper-tree-cpicker-mid-wrap mapper-tree-color-picker-wrap" style="visibility:hidden;"><input type="text" id="mapper-tree-cpicker-mid-Inner"></div>
+                  <div class="mapper-tree-color-picker-wrap"><input type="text" id="mapper-tree-cpicker-max-Inner"></div>
+                </div>
+              </div>
+
+              <!-- O1 -->
+              <div class="mapper-tree-color-ring-row" id="mapper-tree-color-row-O1" style="display:none; margin-bottom:6px;">
+                <div class="mapper-tree-color-ring-grid">
+                  <div class="mapper-tree-color-ring-label">Dot 2</div>
+                  <div class="mapper-tree-color-style-wrap"><select id="mapper-tree-cstyle-O1" class="form-control input-sm" style="width:100%;"><option value="One">One</option><option value="Two">Two</option><option value="Three_RWB">Three</option><option value="Three_TWM">Three</option></select></div>
+                  <div class="mapper-tree-cpicker-min-wrap mapper-tree-color-picker-wrap"><input type="text" id="mapper-tree-cpicker-min-O1"></div>
+                  <div class="mapper-tree-cpicker-mid-wrap mapper-tree-color-picker-wrap" style="visibility:hidden;"><input type="text" id="mapper-tree-cpicker-mid-O1"></div>
+                  <div class="mapper-tree-color-picker-wrap"><input type="text" id="mapper-tree-cpicker-max-O1"></div>
+                </div>
+              </div>
+
+              <!-- O2 -->
+              <div class="mapper-tree-color-ring-row" id="mapper-tree-color-row-O2" style="display:none; margin-bottom:6px;">
+                <div class="mapper-tree-color-ring-grid">
+                  <div class="mapper-tree-color-ring-label">Dot 3</div>
+                  <div class="mapper-tree-color-style-wrap"><select id="mapper-tree-cstyle-O2" class="form-control input-sm" style="width:100%;"><option value="One">One</option><option value="Two">Two</option><option value="Three_RWB">Three</option><option value="Three_TWM">Three</option></select></div>
+                  <div class="mapper-tree-cpicker-min-wrap mapper-tree-color-picker-wrap"><input type="text" id="mapper-tree-cpicker-min-O2"></div>
+                  <div class="mapper-tree-cpicker-mid-wrap mapper-tree-color-picker-wrap" style="visibility:hidden;"><input type="text" id="mapper-tree-cpicker-mid-O2"></div>
+                  <div class="mapper-tree-color-picker-wrap"><input type="text" id="mapper-tree-cpicker-max-O2"></div>
+                </div>
+              </div>
+
+              <!-- O3 -->
+              <div class="mapper-tree-color-ring-row" id="mapper-tree-color-row-O3" style="display:none; margin-bottom:6px;">
+                <div class="mapper-tree-color-ring-grid">
+                  <div class="mapper-tree-color-ring-label">Dot 4</div>
+                  <div class="mapper-tree-color-style-wrap"><select id="mapper-tree-cstyle-O3" class="form-control input-sm" style="width:100%;"><option value="One">One</option><option value="Two">Two</option><option value="Three_RWB">Three</option><option value="Three_TWM">Three</option></select></div>
+                  <div class="mapper-tree-cpicker-min-wrap mapper-tree-color-picker-wrap"><input type="text" id="mapper-tree-cpicker-min-O3"></div>
+                  <div class="mapper-tree-cpicker-mid-wrap mapper-tree-color-picker-wrap" style="visibility:hidden;"><input type="text" id="mapper-tree-cpicker-mid-O3"></div>
+                  <div class="mapper-tree-color-picker-wrap"><input type="text" id="mapper-tree-cpicker-max-O3"></div>
+                </div>
+              </div>
+
+              <!-- O4 -->
+              <div class="mapper-tree-color-ring-row" id="mapper-tree-color-row-O4" style="display:none; margin-bottom:6px;">
+                <div class="mapper-tree-color-ring-grid">
+                  <div class="mapper-tree-color-ring-label">Dot 5</div>
+                  <div class="mapper-tree-color-style-wrap"><select id="mapper-tree-cstyle-O4" class="form-control input-sm" style="width:100%;"><option value="One">One</option><option value="Two">Two</option><option value="Three_RWB">Three</option><option value="Three_TWM">Three</option></select></div>
+                  <div class="mapper-tree-cpicker-min-wrap mapper-tree-color-picker-wrap"><input type="text" id="mapper-tree-cpicker-min-O4"></div>
+                  <div class="mapper-tree-cpicker-mid-wrap mapper-tree-color-picker-wrap" style="visibility:hidden;"><input type="text" id="mapper-tree-cpicker-mid-O4"></div>
+                  <div class="mapper-tree-color-picker-wrap"><input type="text" id="mapper-tree-cpicker-max-O4"></div>
+                </div>
+              </div>
+
+              <p id="mapper-tree-colors-no-data" style="margin:6px 0 0; color:#888; font-size:11px; text-align:center;">Enter numbers data to configure dot colours.</p>
+            </div>
+
+            <!-- Categorical mode colour pickers panel (matches wheel) -->
+            <div id="mapper-tree-colors-text" style="display:none;" class="mapper-core-colors-text-wrap">
+              <div class="customize-menu mapper-core-colors-text-menu" onclick="event.stopPropagation();">
+                <div id="mapper-tree-label-color-pickers"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dropdown mapper-core-dropdown-anchor-topleft" id="mapper-tree-labels-dropdown" style="position: relative;">
+          <button type="button" class="btn btn-primary dropdown-toggle btn-sm" id="mapper-tree-labels-btn" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Legend labels</button>
+          <div class="dropdown-menu dropdown-menu-listplot mapper-core-dropdown-menu-topleft"
+               style="min-width:220px; padding:10px 14px; left:100%; margin-left:5px; position:absolute; font-size:11px;">
+
+            <!-- Numeric mode panel -->
+            <div id="mapper-tree-labels-numeric">
+              <div style="font-weight:600; margin-bottom:8px; border-bottom:1px solid #ddd; padding-bottom:5px;">Gradient bar labels</div>
+              <div style="display:flex; flex-direction:column; gap:5px;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <label style="width:54px; margin:0; font-weight:normal; flex-shrink:0;">Dot 1</label>
+                  <input type="text" id="mapper-tree-lbl-Inner" class="form-control input-sm" maxlength="22" value="Dot 1">
+                </div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <label style="width:54px; margin:0; font-weight:normal; flex-shrink:0;">Dot 2</label>
+                  <input type="text" id="mapper-tree-lbl-O1" class="form-control input-sm" maxlength="22" value="Dot 2">
+                </div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <label style="width:54px; margin:0; font-weight:normal; flex-shrink:0;">Dot 3</label>
+                  <input type="text" id="mapper-tree-lbl-O2" class="form-control input-sm" maxlength="22" value="Dot 3">
+                </div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <label style="width:54px; margin:0; font-weight:normal; flex-shrink:0;">Dot 4</label>
+                  <input type="text" id="mapper-tree-lbl-O3" class="form-control input-sm" maxlength="22" value="Dot 4">
+                </div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <label style="width:54px; margin:0; font-weight:normal; flex-shrink:0;">Dot 5</label>
+                  <input type="text" id="mapper-tree-lbl-O4" class="form-control input-sm" maxlength="22" value="Dot 5">
+                </div>
+              </div>
+            </div>
+
+            <!-- Text mode notice -->
+            <div id="mapper-tree-labels-text" style="display:none; color:#666; font-size:11px; padding:4px 0;">
+              Labels apply to numbers mode only.
+            </div>
+          </div>
+        </div>
+
+        <div class="dropdown mapper-core-dropdown-anchor-topleft" style="position: relative;">
+          <button type="button" class="btn btn-primary dropdown-toggle btn-sm" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Fonts</button>
+          <div class="dropdown-menu p-3 mapper-core-dropdown-menu-topleft"
+               style="min-width: 248px; padding: 12px 14px; left: 100%; margin-left: 5px; position: absolute;">
+            <div class="form-group text-center" style="margin-bottom:10px;">
+              <label class="small" for="classFontSizeSlider">Class</label>
+              <input type="range" class="form-control" style="width:90%" min="11" max="28" value="16" id="classFontSizeSlider">
+              <div class="small"><span id="classFontSizeValue">16</span> px</div>
+            </div>
+            <div class="form-group text-center" style="margin-bottom:10px;">
+              <label class="small" for="ligandTypeFontSizeSlider">Chemotype</label>
+              <input type="range" class="form-control" style="width:90%" min="11" max="24" value="14" id="ligandTypeFontSizeSlider">
+              <div class="small"><span id="ligandTypeFontSizeValue">14</span> px</div>
+            </div>
+            <div class="form-group text-center" style="margin-bottom:10px;">
+              <label class="small" for="receptorFamilyFontSizeSlider">Receptor family</label>
+              <input type="range" class="form-control" style="width:90%" min="11" max="22" value="13" id="receptorFamilyFontSizeSlider">
+              <div class="small"><span id="receptorFamilyFontSizeValue">13</span> px</div>
+            </div>
+            <div class="form-group text-center" style="margin-bottom:4px;">
+              <label class="small" for="receptorFontSizeSlider">Receptor leaves</label>
+              <input type="range" class="form-control" style="width:90%" min="11" max="22" value="12" id="receptorFontSizeSlider">
+              <div class="small"><span id="receptorFontSizeValue">12</span> px</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dropdown mapper-core-dropdown-anchor-topleft" style="position: relative;">
+          <button type="button" class="btn btn-primary dropdown-toggle btn-sm" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Dots</button>
+          <div class="dropdown-menu dropdown-menu-listplot mapper-core-dropdown-menu-topleft p-2 text-center"
+               style="min-width:200px; padding: 10px 15px; font-size:11px; left: 100%; margin-left: 5px; position: absolute;">
+            <label for="mapper-tree-circle-size-slider" id="mapper-tree-circle-size-label">Size</label>
+            <input type="range" min="1" max="6" value="3" id="mapper-tree-circle-size-slider" class="form-control">
+            <div class="text-center"><span id="mapper-tree-circle-size-val">3</span></div>
+            <div id="mapper-tree-spacer-section">
+              <hr style="margin:6px 0;">
+              <label for="mapper-tree-circle-spacer-slider">Spacing</label>
+              <input type="range" min="0" max="2" value="1" id="mapper-tree-circle-spacer-slider" class="form-control">
+              <div class="text-center"><span id="mapper-tree-circle-spacer-val">1</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dropdown mapper-core-dropdown-anchor-topleft" style="position: relative;">
+          <button type="button" class="btn btn-primary dropdown-toggle btn-sm" id="Legend_Menu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Legend position</button>
+          <div class="dropdown-menu dropdown-menu-listplot mapper-core-dropdown-menu-topleft p-3 text-center"
+               style="min-width: 250px; padding: 12px 14px; font-size: 12px; left: 100%; margin-left: 5px; position: absolute;">
+            <div style="display:flex;justify-content:center;align-items:center;gap:10px;padding:12px 0;">
+              <label for="legendToggleBtn" style="margin:0;">Legend:</label>
+              <button type="button" id="legendToggleBtn" class="btn btn-xs btn-success" style="min-width:54px;">Shown</button>
+            </div>
+            <hr style="margin: 0 auto 12px;width:82%;border-top:1px solid #ddd;">
+            <div style="display:flex;justify-content:center;align-items:center;gap:10px;padding-bottom:6px;">
+              <label for="toggleLegendPosition" style="margin:0;">Position:</label>
+              <button type="button" id="toggleLegendPosition" class="btn btn-xs btn-primary" style="min-width:72px;">Top</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="dropdown" style="position: relative;">
+          <button type="button" class="btn btn-primary dropdown-toggle btn-sm" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <span class="glyphicon glyphicon-download" style="vertical-align: top; line-height: 1.3;"></span>
+            Download <span class="caret"></span>
+          </button>
+          <div class="dropdown-menu p-2"
+               style="min-width: 160px; padding: 10px 15px; left: 100%; top: 50%; margin-left: 5px; position: absolute; transform: translateY(-25%);">
+            <button type="button" class="btn btn-primary btn-block mb-1" onclick="saveSvgAsPngTree(document.getElementById('tree_plot_svg'), 'Tree.jpg');">JPG</button>
+            <button type="button" class="btn btn-primary btn-block mb-1" onclick="saveSvgAsPngTree(document.getElementById('tree_plot_svg'), 'Tree.png');">PNG</button>
+            <button type="button" class="btn btn-primary btn-block mb-1" onclick="saveSvg(document.getElementById('tree_plot_svg'), 'Tree.svg');">SVG</button>
+            <button type="button" class="btn btn-primary btn-block" onclick="saveSvgAsPngTree(document.getElementById('tree_plot_svg'), 'Tree.tiff');">TIFF</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="mapper-tree-plot-wrap">
+        <div id="tree_plot" class="text-center mapper-tree-host"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade mapper-core-howto-modal" id="mapper-tree-howto-modal" tabindex="-1" role="dialog" aria-labelledby="mapper-tree-howto-label">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="mapper-tree-howto-label">Classification tree mapper</h4>
+      </div>
+      <div class="modal-body">
+        <p>Enter one receptor per row (search, paste UniProt/accession synonyms, or <strong>Select from table</strong>). The tree is filtered to those receptors the same way as classic Data Mapper, using phylogenetic leaf names from GPCRdb.</p>
+        <p><strong>Numbers</strong> mode fills <strong>Dot 1</strong> and up to four <strong>Dot 2–Dot 5</strong> dots (spreadsheet paste: receptor TAB dot1 TAB dot2 TAB …).</p>
+        <p><strong>Categories</strong> colours the <strong>Dot 1</strong> ring only from categorical labels; outer dot inputs stay disabled.</p>
+        <p>Use the right toolbar for leaf label type (Protein / Gene / UniProt), circle sizing, and exports.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="mapper-core-gpcrome-picker-modal" tabindex="-1" role="dialog" aria-labelledby="mapper-core-gpcrome-picker-modal-label">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" id="mapper-core-gpcrome-picker-dismiss-x" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="mapper-core-gpcrome-picker-modal-label">Select receptors</h4>
+      </div>
+      <div class="modal-body">
+        <div style="overflow-x:auto;">
+          <table width="100%" class="display compact" id="mapper-core-gpcrome-picker-table">
+            <thead>
+              <tr>
+                <th data-dt-order="disable"><input type="checkbox" id="mapper-core-gpcrome-picker-select-all" title="Select all filtered rows"></th>
+                <th class="mapper-core-picker-gpcrdb-label">GPCRdb</th>
+                <th>GtoPdb</th>
+                <th>Gene</th>
+                <th>UniProt</th>
+                <th>family</th>
+                <th>class</th>
+              </tr>
+              <tr id="mapper-core-picker-filter-row">
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+              </tr>
+            </thead>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer" style="display:flex; align-items:center; justify-content:space-between;">
+        <div class="dropdown" style="position:relative;">
+          <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><span class="mapper-core-picker-assign-toggle-label">Assign value: None</span> <span class="caret"></span></button>
+          <div class="dropdown-menu p-2" id="mapper-core-gpcrome-picker-assign-menu" style="min-width:220px; padding:10px 15px; bottom:100%; top:auto;">
+            <div style="font-weight:bold; margin-bottom:4px;">Value</div>
+            <button type="button" class="btn btn-primary btn-block btn-sm mb-1 mapper-core-picker-assign-src" data-src="none">None</button>
+            <button type="button" class="btn btn-outline-primary btn-block btn-sm mb-1 mapper-core-picker-assign-src" data-src="class">Class</button>
+            <button type="button" class="btn btn-outline-primary btn-block btn-sm mb-1 mapper-core-picker-assign-src" data-src="ligandtype">Chemotype</button>
+            <button type="button" class="btn btn-outline-primary btn-block btn-sm mapper-core-picker-assign-src" data-src="family">Receptor family</button>
+          </div>
+        </div>
+        <div>
+          <button type="button" class="btn btn-default" data-dismiss="modal" id="mapper-core-gpcrome-picker-cancel">Cancel</button>
+          <button type="button" class="btn btn-primary" id="mapper-core-gpcrome-picker-add">Add to table</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block addon_js %}
+<script src="{% static 'home/js/d3.min.js' %}"></script>
+<script src="{% static 'home/js/nv.d3.min.js' %}"></script>
+<script src="{% static 'home/js/d3.v4.min.js' %}"></script>
+<script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
+<script src="{% static 'home/js/saveSvgAsPngTree.js' %}"></script>
+<script src="{% static 'home/js/saveSvg.js' %}"></script>
+<script src="{% static 'home/js/datamapper.js' %}"></script>
+<script src="{% static 'home/js/spectrum_v1_8_1.js' %}"></script>
+<script src="{% static 'home/js/select2_4.1.0-rc.0_full.js' %}"></script>
+<script src="{% static 'home/js/NewDrugsBrowser_datatables.min.js' %}"></script>
+<script src="{% static 'home/js/NorgesDTFilterBuilder.js' %}"></script>
+<script src="{% static 'home/js/data_mapper/data_mapper_modal_table.js' %}"></script>
+<script src="{% static 'home/js/data_mapper/mapper_classification_tree.js' %}"></script>
+<script src="{% static 'home/js/xlsx.full.min.js' %}"></script>
+
+<script>
+$('.dropdown-menu:not(.mapper-core-clear-menu)').on('click', function(event){
+  event.stopPropagation();
+});
+$('.dropdown-menu input[type="range"]').on('mouseenter pointerdown', function() { this.focus(); });
+
+var receptorSelect2Data = {{ receptor_select2_json|safe }};
+var MAPPER_CORE_RESOLVE = {{ gpcrome_resolve_json|safe }};
+var MAPPER_CORE_GPCROME_PICKER_ROWS = {{ gpcrome_picker_rows_json|safe }};
+var MAPPER_TREE_SPECIES_DATA = {{ ortholog_species_json|safe }};
+
+window.MAPPER_CORE_ENTRY_META = {};
+(function () {
+  if (receptorSelect2Data && receptorSelect2Data.length) {
+    receptorSelect2Data.forEach(function(item) {
+      var uni = item.uniprot != null ? String(item.uniprot).trim().toUpperCase() : '';
+      if (!uni && item.id && String(item.id).indexOf('_') !== -1) {
+        uni = String(item.id).split('_')[0].trim().toUpperCase();
+      } else if (!uni && item.id) {
+        uni = String(item.id).trim().toUpperCase();
+      }
+      window.MAPPER_CORE_ENTRY_META[item.id] = {
+        name_html: item.name_html || '',
+        name_plain: item.name_plain || '',
+        text: item.text || '',
+        gene: item.gene != null ? String(item.gene).trim() : '',
+        uniprot: uni
+      };
+    });
+  }
+})();
+
+window.MAPPER_TREE_BOOT = {
+  tree_skeleton: {{ tree|safe }},
+  tree_options: {{ tree_options|safe }},
+  receptor_dict: {{ Receptor_dict|safe }},
+  gene_dict: {{ Entrez_dict|safe }}
+};
+</script>
+
+<script src="{% static 'home/js/data_mapper/mapper_page_core.js' %}"></script>
+<script src="{% static 'home/js/data_mapper/mapper_tree_page.js' %}"></script>
+<script>
+function mapperTreeDownloadTable() {
+  var isText = $('#mapper-tree-input-table').hasClass('mapper-core-text-mode');
+  var dot1Label = ($('#mapper-tree-lbl-Inner').val() || 'Dot 1').trim();
+  var dot2Label = ($('#mapper-tree-lbl-O1').val() || 'Dot 2').trim();
+  var dot3Label = ($('#mapper-tree-lbl-O2').val() || 'Dot 3').trim();
+  var dot4Label = ($('#mapper-tree-lbl-O3').val() || 'Dot 4').trim();
+  var dot5Label = ($('#mapper-tree-lbl-O4').val() || 'Dot 5').trim();
+  var headers = isText
+    ? ['Receptor', dot1Label + ' (Category)']
+    : ['Receptor', dot1Label, dot2Label, dot3Label, dot4Label, dot5Label];
+  var rows = [headers];
+  $('#mapper-tree-input-tbody tr').each(function() {
+    var $tr = $(this);
+    var entryId = ($tr.find('.mapper-core-receptor-entry').val() || '').trim();
+    var unmatched = $tr.data('mapperCoreUnmatchedRaw');
+    var ta = ($tr.find('.mapper-core-in-receptor').val() || '').trim();
+    var receptor = '';
+    if (entryId && window.MAPPER_CORE_ENTRY_META && window.MAPPER_CORE_ENTRY_META[entryId]) {
+      receptor = window.MAPPER_CORE_ENTRY_META[entryId].name_plain || window.MAPPER_CORE_ENTRY_META[entryId].text || entryId;
+    } else if (unmatched != null && String(unmatched).trim()) {
+      receptor = String(unmatched).trim();
+    } else {
+      receptor = ta;
+    }
+    if (!receptor) return;
+    var row;
+    if (isText) {
+      row = [receptor, ($tr.find('.mapper-tree-inner').val() || '').trim()];
+    } else {
+      row = [
+        receptor,
+        ($tr.find('.mapper-tree-inner').val() || '').trim(),
+        ($tr.find('.mapper-tree-o1').val() || '').trim(),
+        ($tr.find('.mapper-tree-o2').val() || '').trim(),
+        ($tr.find('.mapper-tree-o3').val() || '').trim(),
+        ($tr.find('.mapper-tree-o4').val() || '').trim()
+      ];
+    }
+    rows.push(row);
+  });
+  var wb = XLSX.utils.book_new();
+  var ws = XLSX.utils.aoa_to_sheet(rows);
+  XLSX.utils.book_append_sheet(wb, ws, 'Classification Tree');
+  XLSX.writeFile(wb, 'Classification_Tree_data.xlsx');
+}
+</script>
+
+{% endblock %}

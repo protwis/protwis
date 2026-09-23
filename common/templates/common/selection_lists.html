@@ -14,6 +14,9 @@
                  data-segment-id="{{ selected_item.item.id }}"
                  data-segment-domain="{% if selected_item.item.slug|slice:':2' == 'D1' %}D1{% else %}{{ selected_item.item.domain }}{% endif %}"
                  data-selection-subtype="{{ selected_item.type }}"
+             {% elif selection_type == 'segments' and selected_item.type == 'residue' %}
+                 data-gn-id="{{ selected_item.item.id }}"
+                 data-default-gn-id="{{ selected_item.item.default_generic_number_id }}"
              {% endif %}>
             {% if selection_type == 'segments' %}
                 {% if selected_item.type == 'residue' %}

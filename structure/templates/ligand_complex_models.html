@@ -1,35 +1,20 @@
 {% extends "home/base.html" %}
 {% load static %}
-{% load structure_extras %}
 
 {% block addon_css %}
-    <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
     <link rel="stylesheet" href="{% static 'home/css/construct_browser.css' %}" type="text/css" />
-    <link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css" />
-    <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
-    <!-- <link rel="stylesheet" href="{% static 'home/structure_browser.css' %}"> -->
     <link href="{% static 'home/css/construct_alignment.css' %}" rel="stylesheet">
     <link href="{% static 'home/css/sequenceviewer.css' %}" rel="stylesheet">
     <link href="{% static 'home/css/modal.css' %}" rel="stylesheet">
-
-    <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
-    <link rel="stylesheet" href="{% static 'home/css/construct_browser.css' %}" type="text/css" />
-    <link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css" />
-    <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
-    <link href="{% static 'home/css/construct_alignment.css' %}" rel="stylesheet">
-    <link href="{% static 'home/css/sequenceviewer.css' %}" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'home/css/struct_tooltip.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/select2_4.1.0-rc.0._full.css' %}" type="text/css">
+    <link rel="stylesheet" href="{% static 'home/css/BusyLoad.css' %}" type="text/css">
+    <link rel="stylesheet" href="{% static 'home/css/NewDrugsBrowser_datatables.min.css' %}" type="text/css"/>
     <style type="text/css">
 
         .select2-result-label{
             font-size:x-small;
             font-size: 10px;
-        }
-
-        #filters{
-
-            font-size: 10px;
-            padding:  7px 15px;
         }
 
         @media (min-width: 1600px){
@@ -43,46 +28,6 @@
             }
         }
 
-        table.dataTable.compact thead th.over_header {
-            text-align: center;
-            padding: 4px 4px 4px 4px;
-        }
-
-        table.dataTable.compact thead tr.over_header th {
-            border-bottom: 1px solid #ccc;
-        }
-
-        table.dataTable.compact thead th.leftborder {
-            border-left: 1px solid;
-        }
-
-        table.dataTable.compact thead th.rightborder {
-            border-right: 1px solid;
-        }
-
-        table.dataTable.compact thead th.checkbox_tr {
-            text-align: left;
-            padding: 4px 4px 4px 4px;
-        }
-
-        table.dataTable.compact thead th {
-            padding: 4px 16px 4px 2px;
-        }
-        .yadcf-filter-wrapper {
-            margin-top: 0px;
-        }
-        input.yadcf-filter  {
-            width: 100px;
-            font-family: sans-serif;
-            font-size: 100%;
-            font-weight: bold;
-        }
-        .yadcf-filter-range-date, .yadcf-filter-range-number {
-            width: 30px;
-            font-family: sans-serif;
-            font-size: 100%;
-            font-weight: bold;
-        }
         .modal {
             display: none; /* Hidden by default */
             position: fixed; /* Stay in place */
@@ -97,294 +42,149 @@
             background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
         }
 
+        /* --- Init loader --- */
+        #Init_loader {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 40vh;
+        }
+
+        /* --- checkbox in header --- */
+        #select-all {
+            transform: scale(1.2);
+            display: inline-block;
+            margin: 0 auto;
+            vertical-align: middle;
+            overflow: visible;
+        }
+
+        /* --- DataTables 2.x auto-wraps header text in .dt-column-title -- let it wrap ---
+           Scoped to #homology_models_wrapper (not the #homology_models table itself): with
+           scrollX/scrollY on, DataTables splits the header into a separate cloned <thead>
+           (for horizontal-scroll sync) that does NOT carry the table's id, so a selector
+           scoped to #homology_models alone misses the header that's actually on screen. */
+        #homology_models_wrapper thead th:not([data-dt-order="disable"]) .dt-column-title {
+            display: inline-block;
+            text-align: center;
+            padding-left: 20px;
+            margin: 0;
+            line-height: 1.2em;
+            white-space: normal;
+        }
+
+        /* --- Section dividers, static (no ColVis -> columns never move/hide) ---
+           Applied to both header rows (via the wrapper, see note above) and body cells so the
+           divider runs continuously from the super-header down through the filter row and body. */
+        #homology_models_wrapper thead th:nth-child(3),
+        #homology_models_wrapper thead th:nth-child(8),
+        #homology_models_wrapper thead th:nth-child(14),
+        #homology_models_wrapper thead th:nth-child(17),
+        #homology_models_wrapper thead th:nth-child(20),
+        #homology_models tbody td:nth-child(3),
+        #homology_models tbody td:nth-child(8),
+        #homology_models tbody td:nth-child(14),
+        #homology_models tbody td:nth-child(17),
+        #homology_models tbody td:nth-child(20) {
+            border-left: 1px solid #ccc;
+        }
+
+        /* --- Filter row: center the dropdowns and the range min/max inputs ---
+           The filter row's <th> cells (data-dt-order="disable", populated by
+           NorgesDTFilterBuilder) don't get a text-align from the library, and its
+           "max" range input is missing the inline text-align:center its "min"
+           sibling has -- center everything explicitly instead. */
+        #homology_models_wrapper thead th[data-dt-order="disable"] {
+            text-align: center;
+        }
+        #homology_models_wrapper thead th[data-dt-order="disable"] .select2-container {
+            margin: 0 auto;
+        }
+        #homology_models_wrapper thead th[data-dt-order="disable"] input.select2 {
+            text-align: center !important;
+        }
+
+        /* --- Center-align body cells --- */
+        #homology_models tbody td {
+            text-align: center;
+        }
+
+        /* --- Compact cell: collapse to one line, expand on hover --- */
+        td.expand_1line {
+            max-width: 170px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            position: relative;
+        }
+        td.expand_1line .expanded {
+            display: none;
+            white-space: normal;
+        }
+        td.expand_1line:hover {
+            overflow: visible;
+            white-space: normal;
+        }
+        td.expand_1line:hover .collapsed {
+            display: none;
+        }
+        td.expand_1line:hover .expanded {
+            display: inline;
+        }
+
+        /* --- Selection styling --- */
+        #homology_models tbody tr {
+            cursor: pointer;
+        }
+        #homology_models tbody tr.row-selected td {
+            background-color: #e7f1ff !important;
+        }
+
+        /* --- Buttons, spread out like the structure browser --- */
+        .dt-btn { padding-left: 10%; box-sizing: border-box; }
+        .dt-buttons .dt-button { margin-right: 5px !important; font-size: 13px !important; }
+        .dt-buttons .dt-button.cluster-sep { margin-left: 35px !important; }
+        .dt-buttons .dt-button > span { padding: 5px 5px !important; }
+
+        .dt-button { position: relative; }
+        .dt-button > .btn-spinner {
+            display: none;
+            position: absolute; left: 50%; top: 50%;
+            transform: translate(-50%, -50%) rotate(0deg);
+            width: 16px; height: 16px;
+            border: 2px solid rgba(0,0,0,.25);
+            border-top-color: rgba(0,0,0,.7);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 1;
+            animation: btnSpin .8s linear infinite;
+        }
+        @keyframes btnSpin { to { transform: translate(-50%, -50%) rotate(360deg); } }
+        .dt-button.is-busy > .btn-spinner { display: inline-block; }
+        .dt-button.is-busy > span { opacity: .45; }
+
     </style>
 {% endblock %}
 
 {% block addon_js %}
-    <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
-    <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
-    <script src="{% static 'home/js/select2.js' %}"> </script>
-    <script src="{% static 'home/js/alignment.js' %}"> </script>
-    <!-- <script src="{% static 'home/js/browser_functions.js' %}"> </script> -->
-    <script src="{% static 'home/js/structure_browser.js' %}"></script>
+    <script src="{% static 'home/js/gpcrdb.js' %}"></script>
+    <script src="{% static 'home/js/browser_functions.js' %}"></script>
+    <script src="{% static 'home/js/select2_4.1.0-rc.0_full.js' %}"></script>
+    <script src="{% static 'home/js/NewDrugsBrowser_datatables.min.js' %}"></script>
+    <script src="{% static 'home/js/NorgesDTFilterBuilder.js' %}"></script>
+    <script src="{% static 'home/js/BusyLoad.js' %}"></script>
+    <script src="{% static 'home/js/alignment.js' %}"></script>
     <script src="{% static 'home/js/openchemlib-full.js' %}"></script> <!-- for rendering ligand images -->
     <script src="{% static 'home/js/PeptideLayoutEngine.js' %}"></script>
     <script src="{% static 'home/js/compoundPreviewTooltip.js' %}"></script>
 
     <script type="text/javascript">
         window.NO_IMAGE_URL = "{% static 'home/images/No_image_available.svg' %}";
+        window.GPCR_STRUCTURE_LOGO_URL = "{% static 'home/images/gpcr_structure_logo.png' %}";
+        window.MODEL_SURFACE_URL = "{% static 'home/images/model-surface.png' %}";
     </script>
 
-<system.webServer>
-   <httpErrors errorMode="Detailed" />
-   <asp scriptErrorSentToBrowser="true"/>
-</system.webServer>
-
-<script>
-//   window.addEventListener("hashchange", updateSuperpositionButtonConfiguration, false);
-
-  // Call this function on page load to set the initial configuration
-//   document.addEventListener("DOMContentLoaded", updateSuperpositionButtonConfiguration);
-
-</script>
-    <script type="text/javascript" charset="utf-8">
-        $(document).ready(function () {
-
-            var oTable = $('#homology_models').DataTable({
-                scrollY:        "65vh",
-                scrollX:        true,
-                scrollCollapse: true,
-                paging:         false,
-                "order": [[2,'asc'],[5,'asc']],
-                  columnDefs: [
-                    { targets: 'no-sort', orderable: false }
-
-                  ]
-            });
-
-            $("#homology_models_div").show();
-            assign_to_row();
-            $("#loading_div").hide();
-
-            //Uncheck every row when using back button on browser
-            $('.alt-selected').prop('checked',false)
-            $('.alt').prop('checked',false)
-            $('.select-all').prop('checked',false)
-            //
-
-            yadcf.init(oTable,
-                [
-                    {
-                        column_number : 2,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        column_data_type: "html",
-                        filter_default_label: "Name",
-                        filter_reset_button_text: false,
-                        select_type_options: {
-                            width: '80px',
-                        }
-                    },
-                    {
-                        column_number : 3,
-                        filter_type: "multi_select",
-                        select_type: "select2",
-                        filter_default_label: "Type",
-                        filter_match_mode : "exact",
-                        filter_reset_button_text: false,
-                        select_type_options: {
-                            width: "60px",
-                        }
-                    },
-
-                    // Receptor
-
-                    {
-                        column_number: 4,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        filter_default_label: "Gene name",
-                        filter_reset_button_text: false,
-                        select_type_options: {
-                            width: '60px',
-                        }
-                    },
-                    {
-                        column_number : 5,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        filter_default_label: "Protein name",
-                        filter_reset_button_text: false,
-                        column_data_type:'html',
-                        select_type_options: {
-                            width: '60px',
-                        }
-                    },
-                    {
-                        column_number : 6,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        filter_default_label: "Family",
-                        filter_reset_button_text: false,
-                        select_type_options: {
-                            width: '60px',
-                        }
-                    },
-                    {
-                        column_number : 7,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        filter_default_label: "Class",
-                        filter_reset_button_text: false,
-                        select_type_options: {
-                            width: '80px',
-                        }
-                    },
-                    {
-                        column_number : 8,
-                        filter_type: "range_number",
-                        select_type: 'select2',
-                        filter_default_label: ["From", "To"],
-                        filter_reset_button_text: false,
-                        select_type_options: {
-                            width: '50px',
-                        }
-                    },
-                    {
-                        column_number : 9,
-                        filter_type: "range_number",
-                        select_type: 'select2',
-                        filter_default_label: ["From", "To"],
-                        filter_reset_button_text: false,
-                        select_type_options: {
-                            width: '50',
-                        }
-                    },
-                    {
-                        column_number : 10,
-                        filter_type: "range_date",
-                        date_format: "yyyy-mm-dd",
-                        select_type: 'select2',
-                        filter_default_label: ["From", "To"],
-                        filter_reset_button_text: false,
-                        select_type_options: {
-                            width: '100px',
-                        }
-                    },
-                ],
-
-                {
-                    cumulative_filtering: false
-                }
-            );
-
-
-
-            // Make range number on top of each other
-            $("[id^='yadcf-filter--homology_models-from']").after("<br>");
-            // $("#yadcf-filter--homology_models-from-9").after("<br>");
-            // $("#yadcf-filter--homology_models-from-date-10").after("<br>");
-
-
-
-            //yadcf.exResetAllFilters(oTable);
-            oTable.columns.adjust()
-
-
-            $('.alt').change(function () {
-                $(this).parent().parent().toggleClass('alt_selected');
-            });
-
-            $('.select-all').change(function () {
-                $('.alt').prop('checked', $(this).prop("checked"));
-                $('.alt').parent().parent().toggleClass('alt_selected');
-            });
-
-
-            $('[data-toggle="tooltip"]').tooltip({ container: 'body' })
-            $('.table_tooltip').tooltip({ container: 'body', html: true, placement: "top"})
-
-            $('#download_btn').click(function () {
-                var selected_ids = [];
-                 $.each($(".alt_selected"), function(){
-                    hom_id = $(this).closest('tr').attr('model_id');
-                    selected_ids.push(hom_id);
-                });
-                window.location.href = '/structure/lig_complexmod_download?ids='+selected_ids.join(",");
-            });
-            $('#align_btn').click(function () {
-                var checked_data = oTable.rows('.alt_selected').data();
-                ClearSelection('targets');
-                for (i = 0; i < checked_data.length; i++) {
-                    console.log(checked_data[i][11])
-                    AddToSelection('targets', 'structure',  checked_data[i][11]);
-
-                }
-                window.location.href = '/structure/selection_convert';
-            });
-
-            $('#superpose_template_btn').click(function () {
-                direct_superposition(oTable, "gpcr", [9,3], "structure_model");
-            });
-
-            $("#superpose_btn").click(function() {
-                superposition(oTable, [4,5,6,7,8,2,3,9], "homology_model_browser", 'gpcr', 9, [9]);
-            });
-        });
-
-        function ClearSelection(selection_type) {
-            $.ajax({
-                'url': '/common/clearselection',
-                'data': {
-                    selection_type: selection_type
-                },
-                'type': 'GET',
-                'async': false,
-                'success': function (data) {
-                    $("#selection-" + selection_type).html(data);
-                }
-            });
-        }
-
-        function CheckSelection(selection_type) {
-            var result = null;
-
-            $.ajax({
-                'url': '/common/checkselection',
-                'data': {
-                    selection_type: selection_type
-                },
-                'type': 'GET',
-                'dataType': 'json',  // Expecting JSON response from the server
-                'async': false,
-                'success': function(response) {
-                    result = response.total;
-                },
-                'error': function(error) {
-                    console.error("An error occurred:", error);
-                }
-            });
-
-            return result;
-        }
-
-        function AddToSelection(selection_type, selection_subtype, selection_id) {
-            $.ajax({
-                'url': '/common/addtoselection',
-                'data': {
-                    selection_type: selection_type,
-                    selection_subtype: selection_subtype,
-                    selection_id: selection_id
-                },
-                'type': 'GET',
-                'async': false,
-                'success': function(data) {
-                    $("#selection-" + selection_type).html(data);
-                },
-            });
-        }
-
-        function select_all(e) {
-            var checkedStatus = $(e).prop("checked");
-
-            $('.select-all  ').each(function () {
-                    $(this).prop('checked', checkedStatus);
-            });
-
-            $('.alt').each(function () {
-                    $(this).prop('checked', checkedStatus);
-            });
-        };
-
-        function assign_to_row(){
-          $('tbody tr').click(function(event) {
-            if (event.target.type !== 'checkbox') {
-              $(':checkbox', this).trigger('click');
-            }
-          });
-        }
-
-    </script>
+    <script src="{% static 'home/js/structure/ligand_complex_models.js' %}"></script>
 
     <script type="text/javascript">
         $(document).ready(function() {
@@ -394,187 +194,67 @@
 {% endblock %}
 
 {% block content %}
-<div class="btn-group">
-    <label class="btn btn-default btn-s" id="align_btn" href="javascript:void(0)">Align</label>
-    <label class="btn btn-default btn-s" id="download_btn" href="javascript:void(0)">Download</label>
-    <!-- <label class="btn btn-default btn-s" id="superpose_template_btn" href="javascript:void(0)">Superposition</label> -->
-</div>
-
-<br><br>
-
-    <!-- <div style="padding-top: 0px; font-size: 15px; white-space: nowrap;" id="loading_div">
-    <br>Loading...
-    </div> -->
-</div>
 <div id="browser">
-    <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;" id="homology_models_div">
+    <div id="Init_loader"></div>
+    <div style="padding-top: 0px; font-size: 10px; display: none;" id="homology_models_div">
         <table width="100%" class="display compact" id="homology_models">
             <thead>
-                <tr class='over_header' style='max-height: 20px'>
-                    <th colspan=1 class="over_header rightborder"></th> 
-                    <th colspan=1 class="over_header rightborder">   MODEL   </th>
-                    <th colspan=2 class="over_header rightborder" style="text-align: left;">LIGAND</th>
-                    <th colspan=4 class="over_header rightborder" style="text-align: left;">RECEPTOR</th>
-                    <th colspan=2 class="over_header rightborder" style="text-align: left;">LIGAND MODEL SCORE</th>
-                    <th colspan=1 class="over_header">Date</th>
-                    <th style='display:none;'></th>
-                </tr>
+                <!-- Dummy header row for complex header fix -->
                 <tr>
-                    <!-- checkbox  1 -->
-                    <th class='no-sort checkbox_tr text-center' style="text-align: center !important;"><input class="select-all" type="checkbox" onclick="select_all(this)"></th>
-                   <!-- model icon -->
-                    <th></th>
-
-                    <!--               LIGAND            -->
-
-                    <!-- ligand name 7 -->
-                    <th>Name</th>
-                    <!-- ligand type 8-->
-                    <th>Type</th>
-
-                   
-                   <!--                     Receptor                -->
-
-                    <!-- uniprot 3 -->
-                    <th>Gene <br>name</th>
-                    <!-- guitoph 4 -->
-                    <th>Protein <br>name</th>
-                    <!-- family 5 -->
-                    <th>Family</th>
-                    <!-- class 6-->
-                    <th>Class</th>
-                    <!-- SIGNPROT presence -->
-
-                
-                    <!--                    SCORES                  -->
-                    <th>AF2 <br>(PAE mean)</th>
-                    <th>RFAA <br>(pLDDT mean)</th>
-
-
-                    <!--                date                 -->
-                    <th></th>
-
-                    <!-- Hidden -->
-                    <th style='display:none;'></th>
-
+                    <th colspan="20" style="text-align: center" data-dt-order="disable"></th>
                 </tr>
 
+                <!-- Super header row -->
+                <tr style="padding-top: 10px; font-size: 14px; white-space: nowrap;">
+                    <th colspan="2" style="text-align: center;" data-dt-order="disable">MODEL</th>
+                    <th colspan="5" style="text-align: center; border-left: 1px solid #ccc;" data-dt-order="disable">LIGAND</th>
+                    <th colspan="6" style="text-align: center; border-left: 1px solid #ccc;" data-dt-order="disable">RECEPTOR</th>
+                    <th colspan="3" style="text-align: center; border-left: 1px solid #ccc;" data-dt-order="disable">STRUCTURE</th>
+                    <th colspan="3" style="text-align: center; border-left: 1px solid #ccc;" data-dt-order="disable">LIGAND MODEL SCORE</th>
+                    <th colspan="1" style="text-align: center; border-left: 1px solid #ccc;" data-dt-order="disable">DATE</th>
+                </tr>
+
+                <!-- Titles row -->
+                <tr>
+                    <th data-dt-order="disable"><input type="checkbox" id="select-all"></th>
+                    <th data-dt-order="disable"></th>
+                    <th>Name</th>
+                    <th>Mol. modality</th>
+                    <th>Pharm. modality</th>
+                    <th>Physiological</th>
+                    <th>Clinical</th>
+                    <th>Gene name</th>
+                    <th>Protein name</th>
+                    <th>Family</th>
+                    <th>Class</th>
+                    <th>Modality</th>
+                    <th>Chemotype</th>
+                    <th>State</th>
+                    <th>Signal protein family</th>
+                    <th>Signal protein subtype</th>
+                    <th>AF2 (PAE mean)</th>
+                    <th>Boltz2 (Ligand pLDDT)</th>
+                    <th>RFAA (pLDDT mean)</th>
+                    <th>Date</th>
+                </tr>
+
+                <!-- Filter row (empty; filled by NorgesDTFilterBuilder) -->
+                <tr>
+                    <th data-dt-order="disable"></th><th data-dt-order="disable"></th>
+                    <th data-dt-order="disable"></th><th data-dt-order="disable"></th>
+                    <th data-dt-order="disable"></th><th data-dt-order="disable"></th>
+                    <th data-dt-order="disable"></th><th data-dt-order="disable"></th>
+                    <th data-dt-order="disable"></th><th data-dt-order="disable"></th>
+                    <th data-dt-order="disable"></th><th data-dt-order="disable"></th>
+                    <th data-dt-order="disable"></th><th data-dt-order="disable"></th>
+                    <th data-dt-order="disable"></th><th data-dt-order="disable"></th>
+                    <th data-dt-order="disable"></th><th data-dt-order="disable"></th>
+                    <th data-dt-order="disable"></th><th data-dt-order="disable"></th>
+                </tr>
             </thead>
             <tbody>
-            {% for model in structure_model %}
-                {% if model.prefetch_ligands %} {# Safety check #}
-                {% with ligand_obj=model.prefetch_ligands.0.ligand %}
-                <tr model_id='{{model.pk}}'>
-                    <!-- CHECKBOX   1 -->
-                    <td class="text-center" data='{{ model }}'><input class="alt" type="checkbox" id="{{ model.pk }}"></td>
-                                        <!-- model icon 2 -->
-                    {% if ligand_obj.ligand_type.slug == "small-molecule" %}
-                        <td style="text-align:center;"><a target="_blank" href="ligand_complex_models/{{ model.pdb_code.index }}"><img width="14px" height="20px" class="model-link" src="{% static 'home/images/gpcr_structure_logo.png' %}"></a></td>
-                    {% else %}
-                        <td style="text-align:center;"><a target="_blank" href="ligand_complex_models/{{ model.pdb_code.index }}"><img width="14px" height="20px" class="model-link" src="{% static 'home/images/model-surface.png' %}"></a></td>
-                    {% endif %}
-
-                                        <!--               LIGAND            -->
-                    <td>
-                        {% if ligand_obj.ligand_type.slug == "peptide" %}
-                        <a class="struct"
-                           href="/ligand/{{ ligand_obj.id }}/info"
-                           data-ligand-type="peptide"
-                           data-sequence="{{ ligand_obj.sequence|default_if_none:''|escapejs }}">
-                            {% if ligand_obj.name|length >= 6 %}
-                                {{ ligand_obj.name | capfirst | safe }}
-                            {% else %}
-                                {{ ligand_obj.name | upper | safe }}
-                            {% endif %}
-                        </a>
-                        {% else %} {# Assume small molecule or other, use SMILES/picture #}
-                        <a class="struct"
-                           href="/ligand/{{ ligand_obj.id }}/info"
-                           data-ligand-type="{{ ligand_obj.ligand_type.slug|default_if_none:'other'|slugify }}"
-                           data-smiles="{{ ligand_obj.smiles_for_image|default_if_none:''|escapejs }}"
-                           rel="{{ ligand_obj.picture|default_if_none:'Not_available' }}">
-                            {% if ligand_obj.name|length >= 6 %}
-                                {{ ligand_obj.name | capfirst | safe }}
-                            {% else %}
-                                {{ ligand_obj.name | upper | safe }}
-                            {% endif %}
-                        </a>
-                        {% endif %}
-                    </td>
-
-                                        <!-- ligand type 8 -->
-                    {% if ligand_obj.ligand_type.slug == "small-molecule" %}
-                        <td>Small mol</td>
-                    {% elif ligand_obj.ligand_type.slug == "peptide" %}
-                        <td>Peptide</td>
-                    {% else %}
-                        <td> {{ ligand_obj.ligand_type.name|default:ligand_obj.ligand_type.slug|title|default:"N/A" }} </td>
-                    {% endif %}
-                    
-                                        <!--               RECEPTOR            -->
-                    <!-- Gene name 3 -->
-                    <td>{{ model.gene_name }}</td>
-
-                    <!-- Protein name 4 -->
-                    <td> <a href=" /protein/{{model.protein_conformation.protein.entry_name}} ">{{ model.protein_conformation.protein.name|receptor_short|safe }}</a></td>
-
-                    <!-- Fam 5 -->
-                    <td>{{ model.protein_conformation.protein.family.parent.name }}</td>
-
-                    <!-- Class 6-->
-                    <td>{{ model.protein_conformation.protein.family.parent.parent.parent.name|cut_classname }}</td>
-
-                    <!--                         Scores                           -->
-
-                    {% if model.prefetch_af_scores %}
-                        <td>{{ model.prefetch_af_scores.0.pae_mean }} </td>
-                    {% else %}
-                        <td> - </td>
-                    {% endif %}
-                    {% if model.prefetch_rfaa_scores %}
-                        <td>{{ model.prefetch_rfaa_scores.0.plddt_mean }} </td>
-                    {% else %}
-                        <td> - </td>
-                    {% endif %}
-
-                    <!--                         DATE                           -->
-                     <td> {{ model.publication_date }} </td>
-
-                     <!-- Hidden -->
-                     <td style='display:none;'>{{ model }}</td>
-
-                </tr>
-                {% endwith %}
-                {% endif %}
-            {% endfor %}
             </tbody>
         </table>
     </div>
 </div>
-<!-- <div id="superposition-modal" class="modal"> -->
-  <!-- Modal content -->
-    <!-- <div class="modal-content">
-        <button id="close_superposition_modal" style="float:right;display:inline;" aria-hidden="true" aria-label="Close" class="close" data-dismiss="superposition-modal">&times;</button>
-        <h3>Pick template from selection</h3>
-        <p>Superpositions structures selected in the browser to the template checked in this table</p>
-        <br>
-        <table id="superposition_modal_table" class="display compact" width="100%">
-            <thead>
-                <tr>
-                    <th></th>
-                    <th>Gene <br>name</th>
-                    <th>Protein <br>name</th>
-                    <th>Rec. family</th>
-                    <th>Class</th>
-                    <th>Species</th>
-                    <th>Date</th>
-                    <th>State</th>
-                  </tr>
-              </thead>
-              <tbody> -->
-                  <!-- Javascript populates the table from selected rows -->
-              <!-- </tbody>
-          </table>
-      </div>
-  </div> -->
 {% endblock %}

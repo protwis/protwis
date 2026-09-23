@@ -41,7 +41,7 @@
 
             <tr>
                 <th colspan=1></th>
-                <th colspan=6 style='height:35px; text-align:center;' class="rightborder">
+                <th colspan=7 style='height:35px; text-align:center;' class="rightborder">
                     Receptor
                 </th>
                 <th colspan=5 style='height:35px; text-align:center;' class="rightborder">
@@ -117,7 +117,8 @@
                         <div><button class='icon-button' type='button' data-toggle="tooltip" data-placement="top" title="Export UniProt IDs"><i id='uniprot_copy1' class="glyphicon glyphicon-export"></i></button></div>
                     </div>
                 </th>
-                <th>GtoPdb<br>(IUPHAR)</th>
+                <th>Gene</th>
+                <th>GtoPdb<br>(IUPHAR)</th>                
                 <th>GPCRdb</th>
                 <th>Rec. family</th>
                 <th>Cl</th>
@@ -163,7 +164,7 @@
 
             <tr>
                 <th class='no-sort checkbox_tr'><input class="select-all" type="checkbox" onclick="select_all(this)"></th>
-                {% for n in "x"|rjust:"2" %}
+                {% for n in "x"|rjust:"3" %}
                     <th></th>
                 {% endfor %}
                 <th class='no-sort'></th>
@@ -221,6 +222,9 @@
                         <td class="uniprot1 text-left">
                             <a href="https://www.uniprot.org/uniprot/{{ pvals.protein.accession }}" target="_blank">{{ pvals.protein.uniprot|safe }}</a>
                         </td>
+                        <td class="uniprot1 text-left">
+                            <a href="{{ pvals.protein.entrezweblink }}" target="_blank">{{ pvals.protein.genename | safe }}</a>
+                        </td>
                         <td class="text-left">
                             <a href="{{ pvals.protein.gtp_link }}" target="_blank">{{ pvals.protein.iuphar|receptor_short|safe }}</a>
                         </td>
@@ -263,7 +267,7 @@
                         {% endif %}
                         <td class="text-left expand">
                             {% if cvals.ligand_name != None and cvals.lab != "GtoPdb" %}
-                            <a href="/ligand/{{ cvals.ligand_id }}/info" target="_blank"><span>{{ cvals.ligand_name|safe }}</span></a>
+                            <a href="/ligand/{{ cvals.ligand_id }}/group" target="_blank"><span>{{ cvals.ligand_name|safe }}</span></a>
                             {% elif cvals.lab == "GtoPdb" or cvals.lab == "GproteinDb" %}
                             <span>-</span>
                             {% else %}

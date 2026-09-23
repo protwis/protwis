@@ -8,13 +8,10 @@ from residue.models import (Residue, ResidueDataPoint, ResidueDataType,
                             ResidueGenericNumberEquivalent,
                             ResidueNumberingScheme)
 
-# Uncomment in the future
-# from common.definitions import CLASSLESS_PARENT_GPCR_SLUGS
-
-# Remove in the future
-from common.definitions import _BEFORE_NAR2025_CLASSLESS_PARENT_GPCR_SLUGS_DICT, _AFTER_NAR2025_CLASSLESS_PARENT_GPCR_SLUGS
+from common.definitions import UNCLASSIFIED_PARENT_GPCR_SLUGS
 
 class_prefix_re = re.compile(r'^(Class)\s+', flags=re.I)
+class_very_short_re = re.compile(r'^Class\s+(.*?)\s+', flags=re.I)
 
 class Protein(models.Model):
     parent = models.ForeignKey('self', null=True, on_delete=models.CASCADE)
@@ -56,16 +53,20 @@ class Protein(models.Model):
             tmp = tmp.parent
         return tmp.name
 
-    def get_protein_class_from_slug(self,slug=None,short=False):
+    def get_protein_class_from_slug(self,slug=None,short=False,very_short=False):
         if slug is None:
             slug = self.family.slug
         class_slug = slug.split('_')[0]
-        if class_slug in CLASSLESS_PARENT_GPCR_SLUGS:
+        if class_slug in UNCLASSIFIED_PARENT_GPCR_SLUGS:
             f = self.family
         else:
             f = ProteinFamily.objects.get(slug=class_slug)
         if short:
             return class_prefix_re.sub(r'',f.name.replace('<i>','').replace('</i>',''))
+        if very_short:
+            m = class_very_short_re.match(f.name)
+            if m:
+                return m.group(1).replace('<i>','').replace('</i>','')
         return f.name
 
     def get_helical_box(self):
@@ -73,20 +74,26 @@ class Protein(models.Model):
         return DrawHelixBox(residuelist,self.get_protein_class(),str(self))
 
     def get_snake_plot(self, domain=None):
+        from angles.models import get_snake_plot_distance_lookup
         residuelist = Residue.objects.filter(protein_conformation__protein__entry_name=str(self)).prefetch_related('protein_segment','display_generic_number','generic_number')
-        return DrawSnakePlot(residuelist,self.get_protein_class(),str(self), domain=domain)
+        distance_lookup = get_snake_plot_distance_lookup(self)
+        return DrawSnakePlot(residuelist,self.get_protein_class(),str(self), domain=domain, residue_distance_lookup=distance_lookup)
 
     def get_snake_plot_GAIN(self):
+        from angles.models import get_snake_plot_distance_lookup
         residuelist = Residue.objects.filter(protein_conformation__protein__entry_name=str(self)).prefetch_related('protein_segment','display_generic_number','generic_number')
-        return DrawSnakePlot(residuelist,self.get_protein_class(),str(self), domain='GAIN')
+        distance_lookup = get_snake_plot_distance_lookup(self)
+        return DrawSnakePlot(residuelist,self.get_protein_class(),str(self), domain='GAIN', residue_distance_lookup=distance_lookup)
 
     def get_helical_box_no_buttons(self):
         residuelist = Residue.objects.filter(protein_conformation__protein__entry_name=str(self)).prefetch_related('protein_segment','display_generic_number','generic_number')
         return DrawHelixBox(residuelist,self.get_protein_class(),str(self), nobuttons=1)
 
     def get_snake_plot_no_buttons(self):
+        from angles.models import get_snake_plot_distance_lookup
         residuelist = Residue.objects.filter(protein_conformation__protein__entry_name=str(self)).prefetch_related('protein_segment','display_generic_number','generic_number')
-        return DrawSnakePlot(residuelist,self.get_protein_class(),str(self), nobuttons=1)
+        distance_lookup = get_snake_plot_distance_lookup(self)
+        return DrawSnakePlot(residuelist,self.get_protein_class(),str(self), nobuttons=1, residue_distance_lookup=distance_lookup)
 
     def get_gprotein_plot(self):
         residuelist = Residue.objects.filter(protein_conformation__protein__entry_name=str(self)).prefetch_related('protein_segment','display_generic_number','generic_number')
@@ -109,7 +116,7 @@ class Protein(models.Model):
         if len(splited_slug) < 2:
             return None
         class_slug = '_'.join(splited_slug[:2])
-        if class_slug in CLASSLESS_PARENT_GPCR_SLUGS:
+        if class_slug in UNCLASSIFIED_PARENT_GPCR_SLUGS:
             f = self.family
         else:
             f = ProteinFamily.objects.get(slug=class_slug)
@@ -229,7 +236,7 @@ class IdentifiedSites(models.Model):
     residues = models.ManyToManyField('residue.Residue', related_name='site_residue')
 
 class Site(models.Model):
-    slug = models.CharField(max_length=20)
+    slug = models.CharField(max_length=30)
     name = models.CharField(max_length=30)
 
 
@@ -248,6 +255,8 @@ class Gene(models.Model):
     species = models.ForeignKey('Species', on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
     position = models.SmallIntegerField()
+    entrez_id = models.IntegerField(null=True)
+    entrez_weblink = models.ForeignKey('common.WebLink', null=True, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.name
@@ -334,15 +343,85 @@ class ProteinFamily(models.Model):
         db_table = 'protein_family'
         ordering = ('id', )
 
-# Remove in the future
-# The next two lines must be after class ProteinFamily
-try:
-  # This usually fails if ProteinFamily table does not exist in DB or "from protein.models import ProteinFamily" fails
-  from protein.model_func import get_current_classless_parent_gpcr_slugs
-  CLASSLESS_PARENT_GPCR_SLUGS = get_current_classless_parent_gpcr_slugs(_BEFORE_NAR2025_CLASSLESS_PARENT_GPCR_SLUGS_DICT,
-                                                                        _AFTER_NAR2025_CLASSLESS_PARENT_GPCR_SLUGS)
-except:
-  CLASSLESS_PARENT_GPCR_SLUGS = _AFTER_NAR2025_CLASSLESS_PARENT_GPCR_SLUGS
+class ProteinFamilyClassificationSense(models.Model):
+    slug = models.SlugField(max_length=100, unique=True)
+    name = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        db_table = "protein_family_classification_sense"
+
+
+class ProteinFamilyClassificationChemotype(models.Model):
+    slug = models.SlugField(max_length=100, unique=True)
+    name = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        db_table = "protein_family_classification_chemotype"
+
+
+class ProteinFamilyClassificationModality(models.Model):
+    slug = models.SlugField(max_length=100, unique=True)
+    name = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        db_table = "protein_family_classification_modality"
+
+
+class ProteinFamilyClassification(models.Model):
+    protein_family = models.ForeignKey("ProteinFamily", on_delete=models.CASCADE)
+    sense = models.ForeignKey(
+        "ProteinFamilyClassificationSense",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+    )
+    chemotype = models.ForeignKey(
+        "ProteinFamilyClassificationChemotype",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+    )
+    chemotype_order = models.SmallIntegerField(null=True, blank=True)
+    modality = models.ForeignKey(
+        "ProteinFamilyClassificationModality",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+    )
+    modality_order = models.SmallIntegerField(null=True, blank=True)
+
+    def __str__(self):
+        parts = [self.protein_family.slug]
+        if self.sense:
+            parts.append("sense={}".format(self.sense.name))
+        if self.chemotype:
+            parts.append("chemotype={} ({})".format(self.chemotype.name, self.chemotype_order))
+        if self.modality:
+            parts.append("modality={} ({})".format(self.modality.name, self.modality_order))
+        return ", ".join(parts)
+
+    class Meta:
+        db_table = "protein_family_classification"
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(chemotype_order__isnull=True) | models.Q(chemotype_order__in=[1, 2]),
+                name="pfc_chemotype_order_valid",
+            ),
+            models.CheckConstraint(
+                check=models.Q(modality_order__isnull=True) | models.Q(modality_order__in=[1, 2]),
+                name="pfc_modality_order_valid",
+            ),
+        ]
+
 
 class ProteinSequenceType(models.Model):
     slug = models.SlugField(max_length=20, unique=True)
@@ -431,6 +510,8 @@ class ProteinCouplings(models.Model):
     deltaGDP_conc_family = models.DecimalField(max_digits=4, decimal_places=2, null=True)
     ### Subtype based values
     logemaxec50 = models.FloatField(null=True, blank=True)
+    emax = models.FloatField(null=True, blank=True)  # Value from David Gloriam # ERASE
+    pec50 = models.FloatField(null=True, blank=True)  # Value from David Gloriam # ERASE
     percent_of_primary_subtype = models.IntegerField(null=True)
     kon_mean = models.DecimalField(max_digits=4, decimal_places=1, null=True)
     deltaGDP_conc = models.DecimalField(max_digits=4, decimal_places=2, null=True)

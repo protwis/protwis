@@ -9,6 +9,12 @@
       background: linear-gradient(to right, white 0%, black 100%)
   }
 </style>
+<!-- Select2 CSS -->
+<link rel="stylesheet" href="{% static '/home/css/frameworks/select2/4.1.0/select2.min.css' %}">
+<!-- Spectrum color picker CSS -->
+<link rel="stylesheet" href="{% static 'home/css/Spectrum_1_8_1.css' %}" type="text/css" />
+<!-- Dropdown-positioning + customize-colors picker layout, shared with the classification wheel -->
+<link rel="stylesheet" href="{% static 'home/css/classification/wheel.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -17,39 +23,48 @@
     <div class="col-md-12" style="margin-bottom: 40px;">
       <br>
       The GPCRome wheel plot shows receptors for which mutation data has been annotated.<br>
-      Data is shown in a grayscale gradient, where light gray denotes a small amount of mutations annotated in thata receptor,
-      and darker grey/black implies high number of annotated mutations.<br>
+      Data is shown in a color gradient, where blue denotes a small amount of mutations annotated in that receptor,
+      and red implies a high number of annotated mutations.<br>
+      Counts include mutation data annotated against non-human orthologs (e.g. rat, mouse, bovine), which are folded into their corresponding human receptor's total.<br>
       The labs of <i>David Gloriam</i>, <i>Anke Schiedel</i>, <i>Chris de Graaf</i> and <i>Hugo Gutiérrez-de-Terán</i> are acknowledged for the annotation of mutation data.
       <br>
     </div>
     <br>
-    <div class="col-md-3">
-      Receptor names:
-      <div class="btn-group" role="group" id="gtp_plus">
-        <button id="GPCRome_Protein" class="btn btn-info active">Protein</button>
-          <button id="GPCRome_Entrez" class="btn btn-info">Gene</button>
-          <button id="GPCRome_Uniprot" class="btn btn-info ">UniProt</button>
-      </div>
-    </div>
+    <div class="text-center" style="white-space: normal;">
+      <div style="display:inline-flex; justify-content:center; align-items:center; gap:15px; flex-wrap:wrap;">
 
-    <div class="col-md-2" style="padding-top: 5px;margin-left: 75px;">
-      Icon toggle:
-      <button id="ToggleIcon" class="btn btn-info active">On</button>
-    </div>
-
-    <div class="col-md-4">
-      <div class="text-center">
+        <!-- Receptor names -->
         <div class="dropdown">
-          <button type="button" class="btn btn-primary dropdown-toggle" style="font-size: 14px;" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            <span class="glyphicon glyphicon-download" style="vertical-align: top;line-height: 1.3"></span> Download <span class="caret"></span>
-          </button>
-          <div class="dropdown-menu dropdown-menu-right-middle">
-            <li><a class="dropdown-item" href="javascript:saveSvg(document.getElementById('GPCRome_plot_svg'), 'GPCRome_plot.svg');">SVG</a></li>
-            <li><a class="dropdown-item" href="javascript:saveSvgAsPng(document.getElementById('GPCRome_plot_svg'), 'GPCRome_plot.png');">PNG</a></li>
-            <li><a class="dropdown-item" href="javascript:saveSvgAsJpg(document.getElementById('GPCRome_plot_svg'), 'GPCRome_plot.jpg');">JPG</a></li>
-            <li><a class="dropdown-item" href="javascript:saveSvgAsTiff(document.getElementById('GPCRome_plot_svg'), 'GPCRome_plot.tiff');">TIFF</a></li>
+          <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">Receptor names</button>
+          <div class="dropdown-menu dropdown-menu-side dropdown-menu-align-names">
+            <button type="button" class="btn btn-outline-primary btn-block mb-1 GPCRomeStats-label-btn" data-wheel="mutations" data-value="Protein">Protein</button>
+            <button type="button" class="btn btn-outline-primary btn-block mb-1 GPCRomeStats-label-btn" data-wheel="mutations" data-value="Entrez">Gene</button>
+            <button type="button" class="btn btn-outline-primary btn-block GPCRomeStats-label-btn" data-wheel="mutations" data-value="Uniprot">UniProt</button>
           </div>
         </div>
+
+        <!-- Graphical legend -->
+        <button id="mutations-toggleIcon" class="btn btn-primary" type="button">Graphical legend</button>
+
+        <!-- Colors -->
+        <div class="dropdown">
+          <button class="btn btn-primary btn-block" type="button" data-toggle="dropdown">Colors</button>
+          <div class="dropdown-menu dropdown-menu-side p-3 customize-menu dropdown-menu-align-customize">
+            <div id="mutations-color-pickers"></div>
+          </div>
+        </div>
+
+        <!-- Download -->
+        <div class="dropdown">
+          <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">
+            <span class="glyphicon glyphicon-download"></span> Download
+          </button>
+          <div class="dropdown-menu dropdown-menu-side dropdown-menu-align-download">
+            <button type="button" class="btn btn-primary btn-block" id="mutations-download-svg">SVG</button>
+            <button type="button" class="btn btn-primary btn-block" id="mutations-download-png">PNG</button>
+          </div>
+        </div>
+
       </div>
     </div>
   <br />
@@ -78,154 +93,14 @@
 <script src="{% static 'home/js/spectrum_v1_8_1.js' %}"></script>
 <script src="{% static 'home/js/ml.js' %}"></script>
 <script src="{% static 'home/js/d3.tip.js' %}"></script>
+<script src="{% static '/home/js/select2/4.1.0/select2.min.js' %}"></script>
+<script src="{% static 'home/js/gpcrome_svg_export.js' %}"></script>
+<script src="{% static 'home/js/gpcrome_wheel_controls.js' %}"></script>
 <script>
-
-var GPCRomeData = {{ GPCRome_data|safe }};
-// var fill_data = {{ GPCRome_data_variables|safe }};
-// var GPCRome_Label_conversion_dict = {{GPCRome_Label_Conversion|safe}};
-
-console.log(GPCRomeData)
-
-
-// Recursively extract all "Data" values from a nested object
-function extractDataValues(obj) {
-    let values = [];
-
-    function findData(node) {
-        if (typeof node === "object" && node !== null) {
-            for (const key in node) {
-                const value = node[key];
-
-                if (value && typeof value === "object" && "Data" in value) {
-                    const dataValue = Number(value.Data);
-                    if (!isNaN(dataValue)) {
-                        values.push(dataValue);
-                    }
-                } else {
-                    findData(value); // keep digging
-                }
-            }
-        }
-    }
-
-    findData(obj);
-    return values;
-}
-
-// Extract min and max data (for numeric version)
-const GPCRomeWheelValues = extractDataValues(GPCRomeData)
-      .filter(value => value !== null && value !== '');
-
-  const GPCRomeMin = GPCRomeWheelValues.length > 0 ? Math.min(...GPCRomeWheelValues) : null;
-  const GPCRomeMax = GPCRomeWheelValues.length > 0 ? Math.max(...GPCRomeWheelValues) : null;
-  const GPCRomeAvg = GPCRomeWheelValues.length > 0 ? (GPCRomeMin + GPCRomeMax) / 2 : null;
-
-  function determineDecimalPlaces(minValue, maxValue) {
-    const allValues = [minValue, maxValue];
-    let maxDecimals = 0;
-
-    allValues.forEach(value => {
-        if (value == null) return; // Ignore nulls
-
-        const valueStr = Math.abs(value).toString();
-
-        if (valueStr.includes('e')) {
-            // Handle scientific notation separately
-            const parts = valueStr.split('e-');
-            if (parts.length === 2) {
-                const exp = parseInt(parts[1], 10);
-                maxDecimals = Math.max(maxDecimals, exp);
-            }
-        } else if (valueStr.includes('.')) {
-            const decimals = valueStr.split('.')[1].length;
-            maxDecimals = Math.max(maxDecimals, decimals);
-        }
-    });
-
-    // Cap at maximum 6 digits
-    return Math.min(maxDecimals, 6);
-  }
-
-  var GPCRomes_styling = {
-      GPCRomeMin: GPCRomeMin,
-      GPCRomeMax: GPCRomeMax,
-      GPCRomeAvg: GPCRomeAvg,
-      LegendbarDigit: determineDecimalPlaces(GPCRomeMin,GPCRomeMax),
-      LegendbarLength: 200,
-      LegendbarFontsize: "11px",
-      FontStyle: "Arial",
-      FontsizeGlobal: "11px",
-      FontsizeClass: "20px",
-      DataType: "Numeric",
-      colorStart: "#FFFFFF",
-      colorAvg: "#FFFFFF",
-      colorEnd: "#000000",
-      ColorSetup: 'One',
-      showIcon: true,
-      LabelType: "Protein",
-      ShowLegend: true,
-      LegendLabel: "Mutations count"
-  };
-
-let GPCRome_location = "GPCRome_plot";
-DrawGPCRomeWheel(GPCRomeData, GPCRome_location, GPCRomes_styling);
-
-
-function setupLabelButtons(groupIdPrefix, structureData, location, styling) {
-  const labelTypes = ["Protein", "Uniprot", "Entrez"];
-
-  labelTypes.forEach(label => {
-      const buttonId = `${groupIdPrefix}_${label}`;
-      document.getElementById(buttonId).addEventListener("click", () => {
-          styling.LabelType = label;
-          updateGPCRome(structureData, location, styling);
-          setActiveButton(groupIdPrefix, labelTypes, buttonId);
-      });
-  });
-}
-
-function setActiveButton(groupIdPrefix, labelTypes, activeId) {
-    labelTypes.forEach(label => {
-        const btnId = `${groupIdPrefix}_${label}`;
-        document.getElementById(btnId).classList.remove("active");
-    });
-    document.getElementById(activeId).classList.add("active");
-}
-
-setupLabelButtons("GPCRome", GPCRomeData, GPCRome_location, GPCRomes_styling);
-
-// Function to toggle the icon visibility and redraw the GPCRomes
-function toggleIcon() {
-    const button = d3.select("#ToggleIcon");
-
-    // Toggle the showIcon property in GPCRomes_styling
-    GPCRomes_styling.showIcon = !GPCRomes_styling.showIcon;
-
-    // Update button text and state
-    if (GPCRomes_styling.showIcon) {
-        button.text("On");
-        button.classed("active", true);
-    } else {
-        button.text("Off");
-        button.classed("active", false);
-    }
-
-    // Redraw the GPCRomes with the updated icon state
-    updateGPCRome(GPCRomeData, GPCRome_location, GPCRomes_styling);
-}
-
-// Function to update and redraw GPCRomes
-function updateGPCRome(Data, location, styling) {
-
-// Clear the existing SVG content
-d3.select("#" + location).select("svg").remove();
-
-// Redraw the GPCRomes with the updated data
-DrawGPCRomeWheel(Data, location, styling);
-}
-
-// Attach event listener to the button
-d3.select("#ToggleIcon").on("click", toggleIcon);
-
+    window.MUTATION_GPCROME_WHEEL_DATA = {
+        data: JSON.parse('{{ GPCRome_data|escapejs }}'),
+        stats: JSON.parse('{{ GPCRome_mutation_stats|escapejs }}')
+    };
 </script>
+<script src="{% static 'home/js/mutation/statistics_gpcrome_wheel.js' %}"></script>
 {% endblock %}

@@ -5,6 +5,32 @@
 let oTable1 = [];
 
 $(document).ready(function() {
+  function enableTopScroller(table_id) {
+    // Put top scroller
+    // https://stackoverflow.com/questions/35147038/how-to-place-the-datatables-horizontal-scrollbar-on-top-of-the-table
+    let $table = $(table_id);
+    if ($table.length === 0) {
+      return;
+    }
+
+    let $wrapper = $table.closest(".dataTables_wrapper");
+    let $scrollHead = $wrapper.find(".dataTables_scrollHead");
+    if ($scrollHead.length === 0) {
+      return;
+    }
+
+    $scrollHead.css({
+      "overflow-x": "scroll"
+    }).off("scroll.topscroller").on("scroll.topscroller", function() {
+      let scrollBody = $(this).parent().find(".dataTables_scrollBody").get(0);
+      if (!scrollBody) {
+        return;
+      }
+      scrollBody.scrollLeft = this.scrollLeft;
+      $(scrollBody).trigger("scroll");
+    });
+  }
+
   // Activate tooltips and popovers from Bootstrap
   $("[data-toggle='tooltip']").tooltip();
   $("[data-toggle='popover']").popover();
@@ -31,6 +57,9 @@ $(document).ready(function() {
     bInfo: true,
   });
 
+  // Enable top horizontal scrollbar (in the header section)
+  enableTopScroller("#familiestabletab");
+
   let column_filters = [];
   // Selector column
   column_filters = column_filters.concat(createYADCFfilters(0, 1, "none"));
@@ -38,29 +67,30 @@ $(document).ready(function() {
   
   column_filters = column_filters.concat(createYADCFfilters(1, 1, "multi_select", "select2", "", false, "exact", "html", "80px"));
   column_filters = column_filters.concat(createYADCFfilters(2, 1, "multi_select", "select2", "", false, "exact", "html", "80px"));
-  column_filters = column_filters.concat(createYADCFfilters(3, 1, "none"));
-  column_filters = column_filters.concat(createYADCFfilters(4, 1, "multi_select", "select2", "", false, "exact", null, "80px"));
-  column_filters = column_filters.concat(createYADCFfilters(5, 1, "multi_select", "select2", "", false, null, "html", "45px"));
-  column_filters = column_filters.concat(createYADCFfilters(6, 1, "multi_select", "select2", "", false, null, null, "100px"));
+  column_filters = column_filters.concat(createYADCFfilters(3, 1, "multi_select", "select2", "", false, "exact", "html", "80px"));
+  column_filters = column_filters.concat(createYADCFfilters(4, 1, "none"));
+  column_filters = column_filters.concat(createYADCFfilters(5, 1, "multi_select", "select2", "", false, "exact", null, "80px"));
+  column_filters = column_filters.concat(createYADCFfilters(6, 1, "multi_select", "select2", "", false, null, "html", "45px"));
+  column_filters = column_filters.concat(createYADCFfilters(7, 1, "multi_select", "select2", "", false, null, null, "100px"));
   //Source section
-  column_filters = column_filters.concat(createYADCFfilters(7, 2, "multi_select", "select2", "", false, null, null, "90px"));
-  column_filters = column_filters.concat(createYADCFfilters(9, 1, "multi_select", "select2", "", false, null, null, "35px"));
-  column_filters = column_filters.concat(createYADCFfilters(10, 1, "multi_select", "select2", "", false, null, null, "40px"));
-  column_filters = column_filters.concat(createYADCFfilters(11, 1, "none"));
+  column_filters = column_filters.concat(createYADCFfilters(8, 2, "multi_select", "select2", "", false, null, null, "90px"));
+  column_filters = column_filters.concat(createYADCFfilters(10, 1, "multi_select", "select2", "", false, null, null, "35px"));
+  column_filters = column_filters.concat(createYADCFfilters(11, 1, "multi_select", "select2", "", false, null, null, "40px"));
+  column_filters = column_filters.concat(createYADCFfilters(12, 1, "none"));
   // Ligands section
-  column_filters = column_filters.concat(createYADCFfilters(12, 1, "multi_select", "select2", "", false, "exact", "html", "100px"));
-  column_filters = column_filters.concat(createYADCFfilters(13, 1, "multi_select", "select2", "", false, null, null, "50px"));
+  column_filters = column_filters.concat(createYADCFfilters(13, 1, "multi_select", "select2", "", false, "exact", "html", "100px"));
+  column_filters = column_filters.concat(createYADCFfilters(14, 1, "multi_select", "select2", "", false, null, null, "50px"));
   // Supporting datasets, Guide to Pharmacology and family rank orders section
-  column_filters = column_filters.concat(createYADCFfilters(14, 4, "multi_select", "select2", "", false, null, "html", "40px"));
-  column_filters = column_filters.concat(createYADCFfilters(18, 6, "multi_select", "select2", "", false, null, null, "40px"));
-  column_filters = column_filters.concat(createYADCFfilters(24, 4, "range_number", null, ["Min", "Max"], false, null, null, "40px", null, "-"));
-  column_filters = column_filters.concat(createYADCFfilters(28, 1, "multi_select", "select2", "", false, null, "html", "90px"));
-  column_filters = column_filters.concat(createYADCFfilters(29, 4, "range_number", null, ["Min", "Max"], false, null, null, "40px", null, "-"));
+  column_filters = column_filters.concat(createYADCFfilters(15, 4, "multi_select", "select2", "", false, null, "html", "40px"));
+  column_filters = column_filters.concat(createYADCFfilters(19, 6, "multi_select", "select2", "", false, null, null, "40px"));
+  column_filters = column_filters.concat(createYADCFfilters(25, 4, "range_number", null, ["Min", "Max"], false, null, null, "40px", null, "-"));
+  column_filters = column_filters.concat(createYADCFfilters(29, 1, "multi_select", "select2", "", false, null, "html", "90px"));
+  column_filters = column_filters.concat(createYADCFfilters(30, 4, "range_number", null, ["Min", "Max"], false, null, null, "40px", null, "-"));
 
-  column_filters = column_filters.concat(createYADCFfilters(33, 1, "multi_select", "select2", "", false, null, null, "60px"));
-  column_filters = column_filters.concat(createYADCFfilters(34, 16, "range_number", null, ["Min", "Max"], false, null, null, "40px", null, "-"));
-  column_filters = column_filters.concat(createYADCFfilters(50, 1, "multi_select", "select2", "", false, null, "html", "90px"));
-  column_filters = column_filters.concat(createYADCFfilters(51, 16, "range_number", null, ["Min", "Max"], false, null, null, "40px", null, "-"));
+  column_filters = column_filters.concat(createYADCFfilters(34, 1, "multi_select", "select2", "", false, null, null, "60px"));
+  column_filters = column_filters.concat(createYADCFfilters(35, 16, "range_number", null, ["Min", "Max"], false, null, null, "40px", null, "-"));
+  column_filters = column_filters.concat(createYADCFfilters(51, 1, "multi_select", "select2", "", false, null, "html", "90px"));
+  column_filters = column_filters.concat(createYADCFfilters(52, 16, "range_number", null, ["Min", "Max"], false, null, null, "40px", null, "-"));
   // Coupling data filters
 
   yadcf.init(oTable1, column_filters, {

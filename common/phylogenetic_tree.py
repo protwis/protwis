@@ -251,7 +251,7 @@ class PhylogeneticTreeGenerator(object):
     def get_aux_data(self):
 
         self.aux_data['crystals'] = [x.protein_conformation.protein.parent.id for x in
-                                                 Structure.objects.all().exclude(structure_type__slug__startswith='af-')
+                                                 Structure.objects.filter(structure_type__origin='experiment')
                                                  .distinct
                                                  ('protein_conformation__protein__parent').prefetch_related('protein_conformation__protein__parent')
                                                  ]
@@ -362,7 +362,10 @@ class PhylogeneticTreeGenerator(object):
 
             if lvl == self.tree_depth:
                 for path, branch in coverage.get_nodes(lvl-2).items():
-                    tmp_prots = self.proteins_index[path]
+                    # A family can exist in the tree with zero SWISSPROT proteins attached
+                    # (e.g. a branch whose only member is TREMBL-sourced) -- that's an empty
+                    # branch, not an error.
+                    tmp_prots = self.proteins_index.get(path, [])
                     for protein in tmp_prots:
                         tmp_node = PhylogeneticTreeNode(
                             protein.entry_name.split("_")[0],

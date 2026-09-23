@@ -135,7 +135,20 @@
                         }
                     },
                     {
-                        column_number: 4,
+                        column_number : 4,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        column_data_type: "html",
+                        html_data_type: "text",
+                        filter_default_label: "Gene",
+                        filter_match_mode : "exact",
+                        filter_reset_button_text: false,
+                        select_type_options: {
+                            width: '80px',
+                        }
+                    },
+                    {
+                        column_number: 5,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         column_data_type: "html",
@@ -147,7 +160,7 @@
                         }
                     },
                     {
-                        column_number: 5,
+                        column_number: 6,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         filter_default_label: "Class",
@@ -157,7 +170,7 @@
                         }
                     },
                     {
-                        column_number : 6,
+                        column_number : 7,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         filter_default_label: "Species",
@@ -167,20 +180,10 @@
                         }
                     },
                     {
-                        column_number : 7,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        filter_default_label: "Method",
-                        filter_reset_button_text: false,
-                        select_type_options: {
-                            width: '100px',
-                        }
-                    },
-                    {
                         column_number : 8,
                         filter_type: "multi_select",
                         select_type: 'select2',
-                        filter_default_label: "Host cell",
+                        filter_default_label: "Method",
                         filter_reset_button_text: false,
                         select_type_options: {
                             width: '100px',
@@ -190,7 +193,7 @@
                         column_number : 9,
                         filter_type: "multi_select",
                         select_type: 'select2',
-                        filter_default_label: "Host cell type",
+                        filter_default_label: "Host cell",
                         filter_reset_button_text: false,
                         select_type_options: {
                             width: '100px',
@@ -198,6 +201,16 @@
                     },
                     {
                         column_number : 10,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "Host cell type",
+                        filter_reset_button_text: false,
+                        select_type_options: {
+                            width: '100px',
+                        }
+                    },
+                    {
+                        column_number : 11,
                         filter_type: "text",
                         select_type: 'select2',
                         filter_default_label: "Solubilization",
@@ -207,7 +220,7 @@
                         }
                     },
                     {
-                        column_number : 11,
+                        column_number : 12,
                         filter_type: "text",
                         select_type: 'select2',
                         filter_default_label: "Purification",
@@ -217,7 +230,7 @@
                         }
                     },
                     {
-                        column_number : 12,
+                        column_number : 13,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         filter_default_label: "Method",
@@ -227,7 +240,7 @@
                         }
                     },
                     {
-                        column_number : 13,
+                        column_number : 14,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         filter_default_label: "Type",
@@ -237,7 +250,7 @@
                         }
                     },
                     {
-                        column_number : 14,
+                        column_number : 15,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         filter_default_label: "Additional",
@@ -247,7 +260,7 @@
                         }
                     },
                     {
-                        column_number : 15,
+                        column_number : 16,
                         filter_type: "text",
                         select_type: 'select2',
                         filter_default_label: "Components",
@@ -269,7 +282,7 @@
                     //     filter_reset_button_text: false,
                     // },
                     {
-                        column_number : 18,
+                        column_number : 19,
                         filter_type: "text",
                         select_type: 'select2',
                         filter_default_label: "Ligand",
@@ -279,18 +292,21 @@
                         }
                     },
                     {
-                        column_number : 19,
+                        column_number : 20,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         filter_default_label: "Ligand Function",
                         filter_reset_button_text: false,
                     },
                     {
-                        column_number : 21,
+                        column_number : 22,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         filter_default_label: "State",
                         filter_reset_button_text: false,
+                        select_type_options: {
+                            width: '50px',
+                        }
                     },
                 ],
                 {
@@ -465,19 +481,19 @@
     Show/hide columns:
 <div class="btn-group" data-toggle="buttons">
   <label class="btn btn-default btn-xs active">
-    <input class="column_toggle" type="checkbox" value="Expression" data-column="7,8,9" checked="checked"> Expression
+    <input class="column_toggle" type="checkbox" value="Expression" data-column="8,9,10" checked="checked"> Expression
   </label>
 
   <label class="btn btn-default btn-xs active">
-    <input class="column_toggle" type="checkbox" value="Solubilization" data-column="10" checked="checked"> Solubilization
+    <input class="column_toggle" type="checkbox" value="Solubilization" data-column="11" checked="checked"> Solubilization
   </label>
 
   <label class="btn btn-default btn-xs active">
-    <input class="column_toggle" type="checkbox" value="Purification" data-column="11" checked="checked"> Purification
+    <input class="column_toggle" type="checkbox" value="Purification" data-column="12" checked="checked"> Purification
   </label>
 
   <label class="btn btn-default btn-xs active">
-    <input class="column_toggle" type="checkbox" value="Crystallization" data-column="12,13,14,15,16,17,18" checked="checked"> Structure determination
+    <input class="column_toggle" type="checkbox" value="Crystallization" data-column="13,14,15,16,17,18,19,20" checked="checked"> Structure determination
   </label>
 </div>
 <br><br>
@@ -492,7 +508,7 @@
             <thead>
                     <tr class='over_header' style='max-height: 20px'>
                     <th colspan=1 class='no-sort'></th>
-                    <th colspan=6 class="over_header">RECEPTOR</th>
+                    <th colspan=7 class="over_header">RECEPTOR</th>
                     <th colspan=3 class="over_header">EXPRESSION </th>
                     <th colspan=1 class="over_header">SOLUBILIZATION</th>
                     <th colspan=1 class="over_header">PURIFICATION</th>
@@ -503,6 +519,7 @@
                 <tr>
                     <th  class='no-sort checkbox_tr'><input class="select-all" type="checkbox" onclick="select_all(this)"></th>
                     <th >PDB</th>
+                    <th ></th>
                     <th ></th>
                     <th ></th>
                     <th ></th>
@@ -535,6 +552,18 @@
                     <td><a href="{{ construct.name|safe}}">{{ construct.name|safe }}</a></td>
                     <td><span>{{ construct.protein.entry_short|safe }}</span></td>
                     <td><span>{{ construct.protein.short|safe }}</span></td>
+                    <td><span>
+                        {% if construct.protein.genes.first %}
+                            {% if construct.protein.genes.first.entrez_weblink %}
+                                <a href="{{ construct.protein.genes.first.entrez_weblink }}" target="_blank">{{construct.protein.genes.first |safe }}</a>
+                            {% else %}
+                                {{construct.protein.genes.first |safe }}
+                            {% endif %}
+                        {% else %}
+                         "-"
+                        {% endif %}
+                        </span>
+                    </td>
                     <td><span>{{ construct.protein.family.parent.short|safe }}</span></td>
                     <td>{{ construct.protein.family.parent.parent.parent.short }}</td>
                     <td>{{ construct.protein.species.common_name }}</td>

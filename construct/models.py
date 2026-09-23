@@ -167,9 +167,11 @@ class Construct(models.Model):
         temp = self.snakecache
         if temp==None:
             print(self.name+'_snake no cache')
+            from angles.models import get_snake_plot_distance_lookup
             residues = Residue.objects.filter(protein_conformation__protein=self.protein).order_by('sequence_number').prefetch_related(
                 'protein_segment', 'generic_number', 'display_generic_number')
-            temp = DrawSnakePlot(residues,self.protein.get_protein_class(),str(self.protein),nobuttons = True)
+            distance_lookup = get_snake_plot_distance_lookup(self.protein)
+            temp = DrawSnakePlot(residues,self.protein.get_protein_class(),str(self.protein),nobuttons = True, residue_distance_lookup=distance_lookup)
             self.snakecache = pickle.dumps(temp)
             self.save()
         else:

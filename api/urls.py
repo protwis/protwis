@@ -10,7 +10,8 @@ excluded_apis = [
 urlpatterns = excluded_apis + [
     url(r'^protein/accession/(?P<accession>[^/].+)/$', views.ProteinByAccessionDetail.as_view(),
         name='proteinbyaccession'),
-    url(r'^protein/(?P<entry_name>[^/].+)/$', views.ProteinDetail.as_view(), name='protein-detail'),
+    url(r'^protein/(?P<entry_name>[^/]+)/$', views.ProteinDetail.as_view(), name='protein-detail'),
+    url(r'^protein/(?P<entry_name>[^/]+)/gene/?$', views.ProteinGeneList.as_view(), name='protein-genes'),
     url(r'^proteinfamily/$', cache_page(3600*24*7)(views.ProteinFamilyList.as_view()), name='proteinfamily-list'),
     url(r'^proteinfamily/(?P<slug>[^/]+)/$', views.ProteinFamilyDetail.as_view(), name='proteinfamily-detail'),
     url(r'^proteinfamily/children/(?P<slug>[^/]+)/$', views.ProteinFamilyChildrenList.as_view(),
@@ -22,7 +23,14 @@ urlpatterns = excluded_apis + [
     url(r'^proteinfamily/proteins/(?P<slug>[^/]+)/(?P<latin_name>[^/]+)/$', views.ProteinsInFamilySpeciesList.as_view(),
         name='proteinfamily-proteins'),
 
-    url(r'^receptorlist/$', cache_page(3600*24*7)(views.ReceptorList.as_view()), name='receptor-list'),
+    url(r'^gene/symbol/(?P<hgnc_symbol>[^/]+)/?$', views.GeneInfoBySymbol.as_view(),
+        name='geneinfo-bysymbol'),
+    url(r'^gene/entrez/(?P<entrez_id>[^/]+)/?$', views.GeneInfoByEntrezId.as_view(),
+        name='geneinfo-byentrez'),
+    url(r'^gene/?$', views.GeneInfo.as_view(),
+        name='geneinfo-all'),
+
+    url(r'^receptorlist/?$', cache_page(3600*24*7)(views.ReceptorList.as_view()), name='receptor-list'),
 
     url(r'^residues/(?P<entry_name>[^/]+)/$', views.ResiduesList.as_view(), name='residues'),
     url(r'^residues/extended/(?P<entry_name>[^/]+)/$', views.ResiduesExtendedList.as_view(), name='residues-extended'),
@@ -80,6 +88,7 @@ urlpatterns = excluded_apis + [
     url(r'^ligands/endogenousligands/$', views.EndogenousLigands.as_view(), name='gtp-ids'),
     url(r'^ligands/peptides/$', views.PeptideList.as_view(), name='peptide-list'),
     url(r'^species/(?P<latin_name>[^/]+)/$', views.SpeciesDetail.as_view(), name='species-detail'),
+    url(r'^species/(?P<latin_name>[^/]+)/genes/?$', views.SpeciesGeneList.as_view(), name='species-detail'),
     url(r'^mutants/(?P<entry_name>[^/].+)/$', views.MutantList.as_view(), name='mutants'),
     url(r'^drugs/(?P<entry_name>[^/].+)/$', views.DrugList.as_view(), name='drugs'),
     url(r'^ligands/(?P<prot_name>[^/].+)/$', views.LigandList.as_view(), name='drugs'),

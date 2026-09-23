@@ -1,13 +1,14 @@
 from django.shortcuts import render
 from django.http import JsonResponse
-from django.db.models import Count, Max, Case, When, IntegerField
+from django.db.models import Count, Max, Case, When, IntegerField, Subquery, OuterRef
 from django.core.cache import cache
 from django.views.decorators.cache import cache_page
 from django.views.generic import TemplateView
 from structure.models import Structure
+from common.models import WebResource, WebLink
 from drugs.models import Drugs, Indication, ATCCodes, IndicationAssociation
 from protein.views import get_sankey_data
-from protein.models import Protein, ProteinFamily, TissueExpression
+from protein.models import Protein, ProteinFamily, TissueExpression, Gene
 from mapper.views import DataMapperHome
 from ligand.models import AssayExperiment, LigandID
 from ligand.functions import standardize_smiles
@@ -70,9 +71,19 @@ def Venn(request, origin="both"):
             'indication',
             'moa',
             'disease_association'
+        ).annotate(
+            #Fetch single gene name and entrez_id for each target using subqueries, prioritizing lowest entrez_id
+            gene_name=Subquery(
+                Gene.objects.filter(proteins=OuterRef('target__pk')).order_by('entrez_id').values('name')[:1]
+            ),
+            gene_entrez_id=Subquery(
+                Gene.objects.filter(proteins=OuterRef('target__pk')).order_by('entrez_id').values('entrez_id')[:1]
+            )
         ).values(
             'target',
             'target__entry_name',
+            'gene_name',
+            'gene_entrez_id',
             'target__name',
             'target__family__parent__name',
             'target__family__parent__parent__name',
@@ -101,7 +112,9 @@ def Venn(request, origin="both"):
         # Rename the columns to your desired format
         df.rename(columns={
             'target': 'TargetID',
-            'target__entry_name': "Gene name",
+            'target__entry_name': "Uniprot entry",
+            'gene_name': "Gene name",
+            'gene_entrez_id': "Gene_entrez_id",
             'target__name': "Protein name",
             'target__family__parent__name': 'Receptor family',
             'target__family__parent__parent__name': 'Ligand type',
@@ -120,6 +133,11 @@ def Venn(request, origin="both"):
             'disease_association__association_score': 'Association score',
             'drug_status': 'Approved'
         }, inplace=True)
+
+        #Convert Gene_entrez_ids to web links
+        entrez_websource = WebResource.objects.get(slug="entrez_gene")
+        df['Gene_entrez_weblink'] = df['Gene_entrez_id'].apply(lambda id: str(WebLink(index=id, web_resource=entrez_websource)) if pd.notna(id) and str(id) != "" else "")
+        df.drop(columns=['Gene_entrez_id'], inplace=True)
 
         # Preprocess SMILES data
         extra_df = df.apply(DrugSectionSelection.process_smiles, axis=1)
@@ -317,7 +335,7 @@ class DrugSectionSelection(TemplateView):
                 'ligand__name',  # Agent/Drug
                 'ligand__ligand_type__name',  # "type'
                 'ligand__smiles', # SMILES
-                'ligand__mw', 
+                'ligand__mw',
                 'ligand__sequence',
                 'moa__name',  # Modality
                 'indication__title',  # Disease name
@@ -419,6 +437,14 @@ class DrugSectionSelection(TemplateView):
                 'target__family__parent__parent__parent',  # All target info
                 'moa',
                 'disease_association'
+            ).annotate(
+            #Fetch single gene name and entrez_id for each target using subqueries, prioritizing lowest entrez_id
+            gene_name=Subquery(
+                Gene.objects.filter(proteins=OuterRef('target_id')).order_by('entrez_id').values('name')[:1]
+                ),
+            gene_entrez_id=Subquery(
+                Gene.objects.filter(proteins=OuterRef('target_id')).order_by('entrez_id').values('entrez_id')[:1]
+                )
             ).values(
                 'indication',  # Indication ID
                 'indication__title',  # Indication name
@@ -432,7 +458,9 @@ class DrugSectionSelection(TemplateView):
                 'drug_status',  # Approval
                 'ligand__ligand_type__name',  # Molecule type
                 'moa__name',  # Mode of action
-                'target__entry_name',  # Gene name
+                'target__entry_name',  # Uniprot name
+                'gene_name', # Gene name
+                'gene_entrez_id', # Gene id
                 'target__name',  # Protein name
                 'target__family__parent__name',  # Receptor family
                 'target__family__parent__parent__name',  # Ligand type
@@ -482,7 +510,9 @@ class DrugSectionSelection(TemplateView):
                 'drug_status': 'Status',
                 'ligand__ligand_type__name': 'Molecule_type',
                 'moa__name': 'Mode of action',
-                'target__entry_name': 'Gene name',
+                'target__entry_name': 'Uniprot entry',
+                'gene_name' : 'Gene name',
+                'gene_entrez_id' : 'Gene_entrez_id',
                 'target__name': 'Protein name',
                 'target__family__parent__name': 'Receptor family',
                 'target__family__parent__parent__name': 'Ligand type',
@@ -522,6 +552,11 @@ class DrugSectionSelection(TemplateView):
             stim_moa = ['Partial agonist', 'Agonist', 'PAM']
             inhib_moa = ['Antagonist', 'Inverse agonist', 'NAM']
 
+            #Convert Gene_entrez_ids to web links
+            entrez_websource = WebResource.objects.get(slug="entrez_gene")
+            df['Gene_entrez_weblink'] = df['Gene_entrez_id'].apply(lambda id: str(WebLink(index=id, web_resource=entrez_websource)) if pd.notna(id) and str(id) != "" else "")
+            df.drop(columns=['Gene_entrez_id'], inplace=True)
+
             # Split the DataFrame into two: one for targets and one for drugs
             df_targets = df.copy()
             df_drugs = df.copy()
@@ -530,7 +565,7 @@ class DrugSectionSelection(TemplateView):
             # Data Aggregation for Targets
             # ###########################
             # Update group_cols to include 'Indication name'
-            group_cols = ['Indication ID', 'ICD11', 'Gene name', 'Indication name', 'Protein name', 'Receptor family', 'Ligand type', 'Class']
+            group_cols = ['Indication ID', 'ICD11', 'Uniprot entry', 'Gene name', 'Gene_entrez_weblink', 'Indication name', 'Protein name', 'Receptor family', 'Ligand type', 'Class']
 
             # Define disease association columns to be added to the grouping
             disease_cols = [
@@ -605,7 +640,8 @@ class DrugSectionSelection(TemplateView):
             # ###########################
             # Data Aggregation for Drugs
             # ###########################
-            group_cols_drugs = ['Indication ID', 'ICD11', 'Gene name', 'Drug name', 'LigandID', 'Indication name', 'Protein name', 'Receptor family', 'Ligand type', 'Class', 'Molecule_type','Mode of action','Phase']
+            group_cols_drugs = ['Indication ID', 'ICD11', 'Uniprot entry', 'Gene name', 'Gene_entrez_weblink', 'Drug name', 'LigandID', 'Indication name',
+                                'Protein name', 'Receptor family', 'Ligand type', 'Class', 'Molecule_type','Mode of action','Phase']
 
             # Precompute relevant columns
             df_drugs['Is_Approved'] = df_drugs['Status'].apply(lambda x: 1 if x == 'Approved' else 0)
@@ -768,7 +804,7 @@ class DruggedGPCRome(TemplateView):
                 #     print(len(unique_entries),sorted(unique_entries))
                 drug_dict[target][key] = len(unique_entries)  # Replace the list with the count
 
-        tree, tree_options, circles, receptors, genes = DataMapperHome.generate_tree_plot(drug_dict)
+        tree, tree_options, circles, receptors, genes = DataMapperHome.GenerateClassificationTreeData(drug_dict)
         #Remove 0 circles
         for key, outer_dict in circles.items():
             circles[key] = {k: v for k, v in outer_dict.items() if v != 0}
@@ -810,7 +846,7 @@ class DruggedGPCRome(TemplateView):
                 else:
                     drug_dict[drug[1]]['Outer1'] += 1
 
-        repurposed_tree, repurposed_tree_options, repurposed_circles, repurposed_receptors, repurposed_genes = DataMapperHome.generate_tree_plot(drug_dict)
+        repurposed_tree, repurposed_tree_options, repurposed_circles, repurposed_receptors, repurposed_genes = DataMapperHome.GenerateClassificationTreeData(drug_dict)
         #Remove 0 circles
         for key, outer_dict in repurposed_circles.items():
             repurposed_circles[key] = {k: v for k, v in outer_dict.items() if v != 0}
@@ -1297,8 +1333,16 @@ class TargetSelectionTool(TemplateView):
             family_id__slug__startswith='007'
         ).exclude(
             family_id__slug__startswith='008'
+        ).annotate(
+            #Fetch single gene name and entrez_id for each target using subqueries, prioritizing lowest entrez_id
+            gene_name=Subquery(
+                Gene.objects.filter(proteins=OuterRef('pk')).order_by('entrez_id').values('name')[:1]
+            ),
+            gene_entrez_id=Subquery(
+                Gene.objects.filter(proteins=OuterRef('pk')).order_by('entrez_id').values('entrez_id')[:1]
+            )
         ).values(
-            'id', 'entry_name', 'name', 'family__parent__name', 
+            'id', 'entry_name', 'gene_name', 'gene_entrez_id', 'name', 'family__parent__name',
             'family__parent__parent__name', 'family__parent__parent__parent__name'
         )
 
@@ -1306,12 +1350,22 @@ class TargetSelectionTool(TemplateView):
         proteins_df = pd.DataFrame(list(all_proteins))
         proteins_df.rename(columns={
             'id': 'Target ID',
-            'entry_name': 'Gene name',
+            'entry_name': 'Uniprot entry',
+            'gene_name': 'Gene name',
+            'gene_entrez_id': 'Gene_entrez_id',
             'name': 'Protein name',
             'family__parent__name': 'Receptor family',
             'family__parent__parent__name': 'Ligand type',
             'family__parent__parent__parent__name': 'Class'
         }, inplace=True)
+
+        #Remove duplicates due to multiple gene synonyms on some target entries
+        proteins_df = proteins_df.groupby(by=['Target ID'], as_index = False).first()
+
+        #Convert Gene_entrez_ids to web links
+        entrez_websource = WebResource.objects.get(slug="entrez_gene")
+        proteins_df['Gene_entrez_weblink'] = proteins_df['Gene_entrez_id'].apply(lambda id: str(WebLink(index=id, web_resource=entrez_websource)) if id != "" else "")
+        proteins_df.drop(columns=['Gene_entrez_id'], inplace=True)
 
         # Fetch all data in a single query
         table_data = Drugs.objects.select_related(
@@ -1347,7 +1401,7 @@ class TargetSelectionTool(TemplateView):
         # Rename the columns to your desired format
         df.rename(columns={
             'target': 'Target ID', # Target ID
-            'target__entry_name': 'Gene name', # Gene name
+            'target__entry_name': "Uniprot entry", # Uniprot entry name
             'target__name': 'Protein name', # Protein name
             'target__family__parent__name': 'Receptor family', # Receptor family
             'target__family__parent__parent__name': 'Ligand type', # Ligand type
@@ -1375,16 +1429,15 @@ class TargetSelectionTool(TemplateView):
         target_ids = df['Target ID'].unique()
 
         # Fetch only relevant `Structure` data for matching `target_ids`
-        structure_data = Structure.objects.filter(
-            protein_conformation__protein__parent__id__in=target_ids
-        ).exclude(structure_type__slug__startswith='af-').values(
-            'protein_conformation__protein__parent__id'
-        ).annotate(
-            Inactive=Count(Case(When(state_id=1, then=1), output_field=IntegerField())),
-            Active=Count(Case(When(state_id=2, then=1), output_field=IntegerField())),
-            Intermediate=Count(Case(When(state_id=3, then=1), output_field=IntegerField())),
-            Total=Count('id')
-        ).order_by('protein_conformation__protein__parent__id')
+        structure_data = Structure.objects \
+            .filter(protein_conformation__protein__parent__id__in=target_ids,
+                    structure_type__origin='experiment') \
+            .values('protein_conformation__protein__parent__id') \
+            .annotate(Inactive=Count(Case(When(state_id=1, then=1), output_field=IntegerField())),
+                      Active=Count(Case(When(state_id=2, then=1), output_field=IntegerField())),
+                      Intermediate=Count(Case(When(state_id=3, then=1), output_field=IntegerField())),
+                      Total=Count('id')) \
+            .order_by('protein_conformation__protein__parent__id')
 
         # Convert structure data to a DataFrame
         structure_df = pd.DataFrame(list(structure_data))
@@ -1422,7 +1475,7 @@ class TargetSelectionTool(TemplateView):
         # Define a helper function to compute unique counts for drugs/agents
         def compute_unique_counts(df, group_cols, value_col, classification_col):
             """
-            Aggregates the unique count of `value_col` grouped by `group_cols` 
+            Aggregates the unique count of `value_col` grouped by `group_cols`
             and splits them by their classification.
             """
             grouped = df.groupby(group_cols)[[value_col, classification_col]].apply(
@@ -1505,7 +1558,8 @@ class TargetSelectionTool(TemplateView):
 
         # Keep only the specified columns in df_first
         keep_col_names = [
-            'Target ID', 'Gene name', 'Protein name', 'Receptor family', 'Ligand type',
+            'Target ID', 'Uniprot entry', 'Gene name', 'Gene_entrez_weblink',
+            'Protein name', 'Receptor family', 'Ligand type',
             'Class', 'Literature', 'Novelty (Pharos)', 'IDG',
             'Total', 'Active', 'Inactive', 'All_Max_Phase', 'All_Drugs', 'All_Agents',
             'Stimulatory_max_phase', 'Stimulatory_Drugs', 'Stimulatory_Agents',
@@ -1688,9 +1742,19 @@ class TargetSelectionTool(TemplateView):
             'target__family__parent__parent__parent',
             'moa',
             'indication'
+        ).annotate(
+            #Fetch single gene name and entrez_id for each target using subqueries, prioritizing lowest entrez_id
+            gene_name=Subquery(
+                Gene.objects.filter(proteins=OuterRef('target__pk')).order_by('entrez_id').values('name')[:1]
+            ),
+            gene_entrez_id=Subquery(
+                Gene.objects.filter(proteins=OuterRef('target__pk')).order_by('entrez_id').values('entrez_id')[:1]
+            )
         ).values(
             'target',  # Target ID
-            'target__entry_name',  # Gene name
+            'target__entry_name', # Uniprot entry name
+            'target__genes__name', # Gene name/symbol
+            'target__genes__entrez_id', # Gene NCBI/Entrez ID
             'target__name',  # Protein name
             'target__family__parent__name',  # Receptor family
             'target__family__parent__parent__name',  # Ligand type
@@ -1707,7 +1771,9 @@ class TargetSelectionTool(TemplateView):
         df_table_2 = pd.DataFrame(list(table_data_2))
         df_table_2.rename(columns={
             'target': 'Target ID',
-            'target__entry_name': 'Gene name',
+            'target__entry_name': "Uniprot entry",
+            'target__genes__name': "Gene name",
+            'target__genes__entrez_id': "Gene_entrez_id",
             'target__name': 'Protein name',
             'target__family__parent__name': 'Receptor family',
             'target__family__parent__parent__name': 'Ligand type',
@@ -1719,6 +1785,10 @@ class TargetSelectionTool(TemplateView):
             'disease_association__association_score': 'Association Score',
             'drug_status': 'Status'
         }, inplace=True)
+
+        #Convert Gene_entrez_ids to web links
+        df_table_2['Gene_entrez_weblink'] = df_table_2['Gene_entrez_id'].apply(lambda id: str(WebLink(index=id, web_resource=entrez_websource)) if id != "" else "")
+        df_table_2.drop(columns=['Gene_entrez_id'], inplace=True)
 
         # Classify based on status
         df_table_2['Classification'] = df_table_2['Status'].apply(
@@ -1760,7 +1830,7 @@ class TargetSelectionTool(TemplateView):
         def aggregate_table_fast(df):
             # Select unique rows for non-aggregated columns
             unique_df = df.drop_duplicates(subset=[
-                'Target ID', 'Gene name', 'Protein name', 'Receptor family',
+                'Target ID', 'Uniprot entry', 'Gene name', 'Protein name', 'Receptor family',
                 'Ligand type', 'Class', 'Master Indication', 'Indication',
                 'ATC Code', 'ATC Parent Name', 'ATC Name', 'Association Score','ICD11'
             ])
@@ -1810,7 +1880,7 @@ class TargetSelectionTool(TemplateView):
 
         # Retain only the specified columns
         keep_cols = [
-            'Target ID', 'Gene name', 'Protein name', 'Receptor family', 'Ligand type',
+            'Target ID', 'Uniprot entry', 'Gene name', 'Gene_entrez_weblink', 'Protein name', 'Receptor family', 'Ligand type',
             'Class', 'Master Indication', 'Indication', 'ATC Code',
             'ATC Parent Name', 'ATC Name', 'Association Score', 'Drug Count', 'Agent Count','ICD11'
         ]
@@ -1832,9 +1902,19 @@ class TargetSelectionTool(TemplateView):
             'indication'
         ).exclude(
             target__in=existing_target_ids  # Exclude targets that already exist in df_table_2
+        ).annotate(
+            #Fetch single gene name and entrez_id for each target using subqueries, prioritizing lowest entrez_id
+            gene_name=Subquery(
+                Gene.objects.filter(proteins=OuterRef('target__pk')).order_by('entrez_id').values('name')[:1]
+            ),
+            gene_entrez_id=Subquery(
+                Gene.objects.filter(proteins=OuterRef('target__pk')).order_by('entrez_id').values('entrez_id')[:1]
+            )
         ).values(
             'target',  # Target ID
-            'target__entry_name',  # Gene name
+            'target__entry_name',  # Uniprot entry
+            'gene_name', # Gene symbol/name
+            'gene_entrez_id', # Gene NCBI/entrez ID
             'target__name',  # Protein name
             'target__family__parent__name',  # Receptor family
             'target__family__parent__parent__name',  # Ligand type
@@ -1850,7 +1930,9 @@ class TargetSelectionTool(TemplateView):
 
         df_table_3.rename(columns={
             'target': 'Target ID',
-            'target__entry_name': 'Gene name',
+            'target__entry_name': 'Uniprot entry',
+            'gene_name' : "Gene name",
+            'gene_entrez_id' : "Gene_entrez_id", # Gene NCBI/entrez ID
             'target__name': 'Protein name',
             'target__family__parent__name': 'Receptor family',
             'target__family__parent__parent__name': 'Ligand type',
@@ -1982,7 +2064,7 @@ def drugmapping(request):
     n = 0
     for c,c_v in coverage.items():
         c_v['name'] = c_v['name'].split("(")[0]
-        if c_v['name'].strip() == 'Other GPCRs':
+        if c_v['name'].strip() == 'Unclassified':
             # i += 1
             continue
             # pass
@@ -2065,7 +2147,7 @@ def indication_detail(request, code):
         level_0_node = next((item['node'] for item in sankey['nodes'] if item['name'] == indication_0), None)
 
         if [ligand_name, ligand_id] not in caches['ligands']:
-            sankey['nodes'].append({"node": node_counter, "name": ligand_name, "url":'/ligand/'+str(ligand_id)+'/info',"column":"x2"})
+            sankey['nodes'].append({"node": node_counter, "name": ligand_name, "url":'/ligand/'+str(ligand_id)+'/group',"column":"x2"})
             node_counter += 1
             caches['ligands'].append([ligand_name, ligand_id])
         lig_node = next((item['node'] for item in sankey['nodes'] if item['name'] == ligand_name), None)
@@ -2286,7 +2368,7 @@ def get_sankey_indi_data(code):
         level_0_node = next((item['node'] for item in sankey['nodes'] if item['name'] == indication_0), None)
 
         if [ligand_name, ligand_id] not in caches['ligands']:
-            sankey['nodes'].append({"node": node_counter, "name": ligand_name, "url":'/ligand/'+str(ligand_id)+'/info',"column":"x2"})
+            sankey['nodes'].append({"node": node_counter, "name": ligand_name, "url":'/ligand/'+str(ligand_id)+'/group',"column":"x2"})
             node_counter += 1
             caches['ligands'].append([ligand_name, ligand_id])
         lig_node = next((item['node'] for item in sankey['nodes'] if item['name'] == ligand_name), None)

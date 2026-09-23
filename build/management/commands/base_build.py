@@ -5,7 +5,7 @@ from django.db import connection
 
 import datetime
 import logging
-from multiprocessing import Queue, Process, Value, Lock
+from multiprocessing import get_context
 
 
 class Command(BaseCommand):
@@ -27,14 +27,20 @@ class Command(BaseCommand):
             help='Include only a subset of data for testing')
 
     def prepare_input(self, proc, items, iteration=1):
-        q = Queue()
+        # Explicit fork context: macOS defaults to 'spawn' since Python 3.8, which
+        # re-imports this command module in each worker before django.setup() has
+        # run there (AppRegistryNotReady) and loses the copy-on-write inheritance
+        # of the class-level caches built at import time. Forcing 'fork' makes
+        # worker startup behave the same (and be cheap) on macOS as it already is
+        # on Linux, where 'fork' is the default.
+        ctx = get_context('fork')
         procs = list()
         num_items = len(items)
-        num = Value('i', 0)
-        lock = Lock()
+        num = ctx.Value('i', 0)
+        lock = ctx.Lock()
 
         if not num_items:
-            return False
+            return True
 
         # make sure not to use more jobs than proteins (chunk size will be 0, which is not good)
         if proc > num_items:
@@ -48,10 +54,17 @@ class Command(BaseCommand):
                 last = False
             else:
                 last = chunk_size * (i + 1)
-    
-            p = Process(target=self.main_func, args=([(first, last), iteration,num,lock]))
+
+            p = ctx.Process(target=self.main_func, args=([(first, last), iteration,num,lock]))
             procs.append(p)
             p.start()
 
         for p in procs:
             p.join()
+
+        failed_procs = [p for p in procs if p.exitcode]
+        if failed_procs:
+            self.logger.error(f"{len(failed_procs)}/{len(procs)} worker process(es) exited with an error (exit code(s): {[p.exitcode for p in failed_procs]}). See the log above for details.")
+            return False
+
+        return True

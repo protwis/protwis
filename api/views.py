@@ -12,13 +12,14 @@ from django.db.models import Prefetch, Q, Min, Count
 
 from interaction.models import ResidueFragmentInteraction
 from mutation.models import MutationRaw
-from protein.models import Protein, ProteinFamily, Species, ProteinSegment
+from protein.models import Protein, ProteinFamily, Species, ProteinSegment, Gene
 from ligand.models import LigandID, AssayExperiment, Ligand, LigandPeptideStructure, Endogenous_GTP
 from residue.models import Residue, ResidueGenericNumberEquivalent
 from structure.models import Structure, StructureExtraProteins
 from structure.assign_generic_numbers_gpcr import GenericNumbering
 from structure.sequence_parser import SequenceParser
-from api.serializers import (ProteinSerializer, ProteinFamilySerializer, SpeciesSerializer, ResidueSerializer,
+from api.serializers import (ProteinSerializer, ProteinFamilySerializer, SpeciesSerializer, ResidueSerializer, 
+                             GeneSerializerWithProtein, GeneSerializerWithoutProtein,
                              ResidueExtendedSerializer, StructureLigandInteractionSerializer,
                              ComplexInteractionSerializer,
                              StructurePeptideLigandInteractionSerializer,
@@ -59,7 +60,28 @@ class ProteinDetail(generics.RetrieveAPIView):
     serializer_class = ProteinSerializer
     lookup_field = 'entry_name'
 
+class ProteinGeneList(generics.ListAPIView):
 
+    """
+    Get a gene list for a protein instance 
+    \n/protein/{entry_name}/gene/
+    \n{entry_name} is a protein identifier from Uniprot, e.g. adrb2_human
+    """
+    
+    serializer_class = GeneSerializerWithoutProtein
+        
+    def get_queryset(self):
+        up_name=self.kwargs.get('entry_name')
+        queryset = Protein.objects.filter(entry_name__exact=up_name).prefetch_related('genes')
+        
+        p = queryset.first()
+
+        if p:
+            return p.genes.all()
+        else:
+            return None
+        
+        
 class ProteinByAccessionDetail(ProteinDetail):
 
     """
@@ -77,9 +99,14 @@ class ReceptorList(generics.ListAPIView):
     Get a list of all receptor proteins in GPCRdb (source: SWISSPROT)
     \n/receptorlist/
     """
-
-    queryset = Protein.objects.filter(accession__isnull=False, parent__isnull=True, family__slug__startswith="0", source__name="SWISSPROT").prefetch_related('family','endogenous_gtp_set')
+    
     serializer_class = ReceptorListSerializer
+    
+    def get_queryset(self):
+        
+        queryset = Protein.objects.filter(accession__isnull=False, parent__isnull=True, family__slug__startswith="0", source__name="SWISSPROT").prefetch_related('family','endogenous_gtp_set', 'genes')
+        return queryset
+        
 
 class ProteinFamilyList(generics.ListAPIView):
 
@@ -173,7 +200,59 @@ class ProteinsInFamilySpeciesList(generics.ListAPIView):
         return queryset.filter(sequence_type__slug='wt', family__slug__startswith=family,
                                species__latin_name__iexact=species).prefetch_related('family',
                                'species', 'source', 'residue_numbering_scheme', 'genes')
+    
+class GeneInfo(generics.ListAPIView):
 
+    """
+    Get information about all genes
+    \n/gene/
+    """
+
+    serializer_class = GeneSerializerWithoutProtein
+    queryset = Gene.objects.all().select_related('species')
+
+
+class GeneInfoBySymbol(generics.ListAPIView):
+
+    """
+    Get information about a gene by its symbol, can be filtered by species using "?common_name=xxx" or "?latin_name=xxx"
+    \n/gene/{hgnc_symbol}/
+    \n{hgnc_symbol} is a gene symbol, e.g. ADRB2
+    """
+
+    serializer_class = GeneSerializerWithProtein
+    
+    def get_queryset(self):
+        latin_name = self.request.query_params.get('latin_name')
+        common_name = self.request.query_params.get('common_name')
+        name = self.kwargs.get('hgnc_symbol')
+        queryset = Gene.objects.filter(name__iexact=name).select_related('species').prefetch_related('proteins')
+        
+        
+        if latin_name:
+            queryset = queryset.filter(species__latin_name__iexact=latin_name)
+
+        if common_name:
+            queryset = queryset.filter(species__common_name__iexact=common_name)
+
+        return queryset
+
+class GeneInfoByEntrezId(generics.ListAPIView):
+
+    """
+    Get information about a gene by its entrez identifier
+    \n/gene/{entrez_id}/
+    \n{entrez_id} is a gene entrez identifier, e.g. 3350
+    """
+    
+    serializer_class = GeneSerializerWithProtein
+    
+    def get_queryset(self):
+        entrez_id = self.kwargs.get('entrez_id')
+        self.schema
+        queryset = Gene.objects.filter(entrez_id=entrez_id)
+        return queryset
+        
 
 class ResiduesList(generics.ListAPIView):
 
@@ -295,6 +374,25 @@ class SpeciesDetail(generics.RetrieveAPIView):
     serializer_class = SpeciesSerializer
     lookup_field = 'latin_name'
 
+class SpeciesGeneList(generics.ListAPIView):
+
+    """
+    Get a list of genes for a single species instance
+    \n/species/{latin_name}/genes/
+    \n{latin_name} is a species identifier from Uniprot, e.g. Homo sapiens
+    """
+    serializer_class = GeneSerializerWithoutProtein
+    
+    def get_queryset(self):
+        species_latin = self.kwargs.get('latin_name')
+        speciesquery = Species.objects.filter(latin_name__iexact=species_latin)
+        species=speciesquery.first()
+        
+        if species:
+            genequery = Gene.objects.filter(species_id=species.id)
+        else:
+            return None
+        return genequery
 
 class NumberPDBStructureView(views.APIView):
 
@@ -389,13 +487,13 @@ class StructureList(views.APIView):
             structures = Structure.objects.filter(pdb_code__index=pdb_code)
         elif entry_name and representative:
             structures = Structure.objects.filter(protein_conformation__protein__parent__entry_name=entry_name,
-                representative=True).exclude(structure_type__slug__startswith='af-')
+                representative=True, structure_type__origin='experiment')
         elif entry_name:
-            structures = Structure.objects.filter(protein_conformation__protein__parent__entry_name=entry_name).exclude(structure_type__slug__startswith='af-')
+            structures = Structure.objects.filter(protein_conformation__protein__parent__entry_name=entry_name, structure_type__origin='experiment')
         elif representative:
-            structures = Structure.objects.filter(representative=True).exclude(structure_type__slug__startswith='af-')
+            structures = Structure.objects.filter(representative=True, structure_type__origin='experiment')
         else:
-            structures = Structure.objects.all().exclude(structure_type__slug__startswith='af-')
+            structures = Structure.objects.all().filter(structure_type__origin='experiment')
 
         structures = structures.prefetch_related('protein_conformation__protein__parent__species', 'pdb_code',
             'protein_conformation__protein__parent__family', 'protein_conformation__protein__parent__species',
@@ -480,7 +578,7 @@ class StructureList(views.APIView):
         return Response(s)
 
     def get_structures(self, pdb_code=None, representative=None):
-        return Structure.objects.all().exclude(structure_type__slug__startswith='af-')
+        return Structure.objects.filter(structure_type__origin='experiment')
 
 class RepresentativeStructureList(StructureList):
 
@@ -524,8 +622,11 @@ class StructureAccessionHuman(views.APIView):
     """
 
     def get(self, request):
-        unique_slugs = list(Structure.objects.filter(protein_conformation__protein__family__slug__startswith="0").exclude(structure_type__slug__startswith='af-')\
-            .order_by('protein_conformation__protein__family__slug').values_list('protein_conformation__protein__family__slug', flat=True).distinct())
+        unique_slugs = list(Structure.objects.filter(protein_conformation__protein__family__slug__startswith="0", 
+                                                     structure_type__origin='experiment') \
+                                             .order_by('protein_conformation__protein__family__slug') \
+                                             .values_list('protein_conformation__protein__family__slug', flat=True) \
+                                             .distinct())
         accession_codes = list(Protein.objects.filter(family__slug__in=unique_slugs, sequence_type__slug='wt', species__latin_name='Homo sapiens')\
                             .values_list('entry_name', flat=True))
         accessions = [x.split("_")[0].upper() for x in accession_codes]
@@ -1292,10 +1393,10 @@ class PeptideInteractionCADistances(views.APIView):
             "V": "VAL",
         }
         if interaction_id is not None:
-            interaction_record = InteractingPeptideResiduePair.objects.filter(id=test_id)[0]
+            interaction_record = InteractingPeptideResiduePair.objects.filter(id=interaction_id).first()
             conformation_id = interaction_record.receptor_residue.protein_conformation.id
             peptide_amino, peptide_pos, receptor_residue = interaction_record.peptide_amino_acid_three_letter, interaction_record.peptide_sequence_number, interaction_record.receptor_residue
-            struct = Structure.objects.filter(protein_conformation=conformation_id)[0]
+            struct = Structure.objects.filter(protein_conformation=conformation_id).first()
 
             # Create a StringIO object to simulate reading from a file-like object
             pdb_io = StringIO(struct.pdb_data.pdb)
@@ -1320,10 +1421,12 @@ class PeptideInteractionCADistances(views.APIView):
                 for chain in model:
                     for res in chain:
                         if res.get_resname() == residue1_name and res.get_id()[1] == residue1_number:
-                            ca1 = res["CA"].get_coord()
-                            cb = res["CB"].get_coord()
+                            if "CA" in res and "CB" in res:
+                                ca1 = res["CA"].get_coord()
+                                cb = res["CB"].get_coord()
                         elif res.get_resname() == residue2_name and res.get_id()[1] == residue2_number:
-                            ca2 = res["CA"].get_coord()
+                            if "CA" in res:
+                                ca2 = res["CA"].get_coord()
 
 
             # Check if both Cα atoms were found
@@ -1348,3 +1451,5 @@ class PeptideInteractionCADistances(views.APIView):
                           'Ca-Ca-CB angle (degrees)': angle_degrees,
                           'Ca-Ca-CB angle (radians)': angle_radians}]
                 return Response(result)
+            else:
+                return Response({'error': 'Cα atom not found for one or both residues.'})

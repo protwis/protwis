@@ -146,7 +146,7 @@ def ShowDistances(request):
     return render(request, 'contactnetwork/distances.html', template_data)
 
 def PdbTreeData(request):
-    data = Structure.objects.exclude(structure_type__slug__startswith='af-').values(
+    data = Structure.objects.filter(structure_type__origin='experiment').values(
         'representative',
         'pdb_code__index',
         'protein_conformation__protein__parent__family__parent__parent__parent__name',
@@ -226,7 +226,12 @@ def PdbTableData(request):
     # 'G alpha' = G proteins (all G protein classes starts with G)
     # 'A' = Arrestin
     if effector:
-        data = Structure.objects.all().prefetch_related(
+        af_model_slugs = {'G alpha': 'af-signprot', 'A': 'af-arrestin'}
+        structure_filter = Q(structure_type__origin='experiment')
+        if effector in af_model_slugs:
+            structure_filter |= Q(structure_type__slug=af_model_slugs[effector])
+
+        data = Structure.objects.filter(structure_filter).prefetch_related(
                 "pdb_code",
                 "state",
                 "stabilizing_agents",
@@ -252,22 +257,29 @@ def PdbTableData(request):
                             ).order_by().annotate(coverage = Max('wt_coverage'))
         ep = {s['structure__pdb_code__index']:s for s in signal_ps}
     else:
-        data = Structure.objects.all().exclude(structure_type__slug__startswith='af-').prefetch_related(
-                "pdb_code",
-                "state",
-                "stabilizing_agents",
-                "structureligandinteraction_set__ligand__ligand_type",
-                "structureligandinteraction_set__ligand_role",
-                "structure_type",
-                "protein_conformation__protein__parent__parent__parent",
-                "protein_conformation__protein__parent__family__parent",
-                "protein_conformation__protein__parent__family__parent__parent__parent",
-                "protein_conformation__protein__parent",
-                "protein_conformation__protein__parent__parent",
-                "protein_conformation__protein__family__parent",
-                "protein_conformation__protein__family__parent__parent__parent",
-                "protein_conformation__protein__species",Prefetch("ligands", queryset=StructureLigandInteraction.objects.filter(
-                annotated=True).exclude(structure__structure_type__slug__startswith='af-').prefetch_related('ligand', 'ligand__ligand_type', 'ligand_role')))
+        data = Structure.objects.filter(structure_type__origin='experiment') \
+                                .prefetch_related(
+                                    "pdb_code",
+                                    "state",
+                                    "stabilizing_agents",
+                                    "structureligandinteraction_set__ligand__ligand_type",
+                                    "structureligandinteraction_set__ligand_role",
+                                    "structure_type",
+                                    "protein_conformation__protein__parent__parent__parent",
+                                    "protein_conformation__protein__parent__family__parent",
+                                    "protein_conformation__protein__parent__family__parent__parent__parent",
+                                    "protein_conformation__protein__parent",
+                                    "protein_conformation__protein__parent__parent",
+                                    "protein_conformation__protein__family__parent",
+                                    "protein_conformation__protein__family__parent__parent__parent",
+                                    "protein_conformation__protein__species",
+                                    Prefetch("ligands", 
+                                             queryset=StructureLigandInteraction.objects.filter(annotated=True, 
+                                                                                                structure__structure_type__origin='experiment') \
+                                                                                        .prefetch_related('ligand', 'ligand__ligand_type', 'ligand_role')
+                                    )
+                                )
+        
         data = data.prefetch_related('extra_proteins__protein_conformation','extra_proteins__wt_protein').order_by(
         'extra_proteins__protein_conformation__protein__parent','state').annotate(
         res_count = Sum(Case(When(extra_proteins__protein_conformation__residue__generic_number=None, then=0), default=1, output_field=IntegerField())))
@@ -282,8 +294,8 @@ def PdbTableData(request):
         data = data.filter(id__in=complex_structure_ids)
 
     # get a gn residue count for all WT proteins
-    proteins_pks = Structure.objects.all().exclude(structure_type__slug__startswith='af-').values_list("protein_conformation__protein__parent__pk", flat=True).distinct()
-    proteins_af_pks = Structure.objects.all().filter(structure_type__slug__startswith='af-').values_list("protein_conformation__protein__pk", flat=True).distinct()
+    proteins_pks = Structure.objects.filter(structure_type__origin='experiment').values_list("protein_conformation__protein__parent__pk", flat=True).distinct()
+    proteins_af_pks = Structure.objects.all().filter(structure_type__origin__in=['model','experiment_model_refined']).values_list("protein_conformation__protein__pk", flat=True).distinct()
     if effector:
         proteins_pks = list(proteins_pks) + list(proteins_af_pks)
     residue_counts = ProteinConformation.objects.filter(protein__pk__in=proteins_pks).values('protein__pk').annotate(res_count = Sum(Case(When(residue__generic_number=None, then=0), default=1, output_field=IntegerField())))
@@ -296,7 +308,7 @@ def PdbTableData(request):
     if effector:
         resolutions = Structure.objects.all().values('protein_conformation__protein__parent','state__name').order_by().annotate(res = Min('resolution'))
     else:
-        resolutions = Structure.objects.all().exclude(structure_type__slug__startswith='af-').values('protein_conformation__protein__parent','state__name').order_by().annotate(res = Min('resolution'))
+        resolutions = Structure.objects.filter(structure_type__origin='experiment').values('protein_conformation__protein__parent','state__name').order_by().annotate(res = Min('resolution'))
     best_resolutions = {}
     for r in resolutions:
         key = '{}_{}'.format(r['protein_conformation__protein__parent'], r['state__name'])
@@ -318,51 +330,55 @@ def PdbTableData(request):
         signalling_header = 'Arrestin'
     else:
         signalling_header = 'Signalling protein'
-    data_table = "<table id2='structure_selection' border=0 class='structure_selection row-border text-center compact text-nowrap' width='100%'> \
-        <thead><tr> \
-            <th rowspan=2> <input class ='form-check-input check_all' type='checkbox' value='' onclick='check_all(this);'> </th> \
-            <th colspan=5>Receptor</th> \
-            <th colspan=3>Species</th> \
-            <th colspan=4>Structure</th> \
-            <th colspan=3>Receptor state <a href=\"https://docs.gpcrdb.org/structures.html#structure-descriptors\" target=\"_blank\"><span class=\"glyphicon glyphicon-info-sign\"></span></a></th> \
-            <th colspan=4>{}</th> \
-            <th colspan=2>Auxiliary protein</th> \
-            <th colspan=2>Ligand</th> \
-        </tr> \
-        <tr><th></th> \
-            <th></th> \
-            <th></th> \
-            <th></th> \
-            <th>% of Seq</th> \
-            <th id=species></th> \
-            <th></th> \
-            <th>Identity %<br>to Human</th> \
-            <th></th> \
-            <th></th> \
-            <th></th> \
-            <th></th> \
-            <th></th> \
-            <th>Degree active (%)</th> \
-            <th>TM6 tilt</th>".format(signalling_header)
+    data_table = f'''
+    <table id2='structure_selection' border=0 class='structure_selection row-border text-center compact text-nowrap' width='100%'> 
+        <thead><tr> 
+            <th rowspan=2> <input class ='form-check-input check_all' type='checkbox' value='' onclick='check_all(this);'> </th> 
+            <th colspan=6>Receptor</th> 
+            <th colspan=3>Species</th> 
+            <th colspan=4>Structure</th> 
+            <th colspan=3>Receptor state <a href=\"https://docs.gpcrdb.org/structures.html#structure-descriptors\" target=\"_blank\"><span class=\"glyphicon glyphicon-info-sign\"></span></a></th> 
+            <th colspan=4>{signalling_header}</th> 
+            <th colspan=2>Auxiliary protein</th> 
+            <th colspan=2>Ligand</th> 
+        </tr> 
+        <tr>
+            <!-- Protein Name --> <th></th>
+            <!-- Gene Name --> <th></th>
+            <!-- Protein Long --> <th></th> 
+            <!-- Protein Family --> <th></th> 
+            <!-- Class --> <th></th> 
+            <!-- Fraction_of_wt_seq --> <th>% of Seq</th> 
+            <!-- Species --> <th id=species></th> 
+            <!-- species best --> <th></th> 
+            <!-- identity to human --> <th>Identity %<br>to Human</th> 
+            <!-- Method --> <th></th>
+            <!-- pdb_id --> <th></th> 
+            <!-- resolution --> <th>Res (Å)</th>
+            <!-- resolution_best --> <th></th> 
+            <!-- state --> <th></th> 
+            <!-- gprot_bound_likeness --> <th>Degree active (%)</th> 
+            <!-- tm6_angle --> <th>TM6 tilt</th>'''
 #            <th><a href=\"http://docs.gpcrdb.org/structures.html\" target=\"_blank\">Cytosolic</br> opening</a></th>"
 #            <th><a href=\"http://docs.gpcrdb.org/structures.html\" target=\"_blank\">7TM Open IC (Å)</a></th> \
 #            <th>TM6 tilt (%, inactive: 0-X, intermed: X-Y, active Y-Z)</th> \
-    data_table += "<th></th> \
-            <th></th> \
-            <th>Note</th> \
-            <th>% of Seq</th> \
-            <th></th> \
-            <th></th> \
-            <th></th> \
-            <th></th> \
-        </tr> \
-        <tr> \
-            <th colspan=6></th> \
-            <th colspan=1 id=best_species class='text-center'></th> \
-            <th colspan=4></th> \
-            <th colspan=1 id=best_res class='text-center'></th> \
-            <th colspan=12></th> \
-        </tr></thead><tbody>\n"
+    data_table += ''' 
+            <!-- signal_protein --> <th></th>
+            <!-- signal_protein_subtype --> <th></th>
+            <!-- signal_protein_note --> <th>Note</th> 
+            <!-- signal_protein_seq_cons --> <th>% of Seq</th>
+            <!-- fusion --> <th></th> 
+            <!-- antibody --> <th></th> 
+            <!-- ligand --> <th></th> 
+            <!-- ligand_function --> <th></th> 
+        </tr> 
+        <tr> 
+            <th colspan=7></th> 
+            <th colspan=1 id=best_species class='text-center'></th> 
+            <th colspan=4></th> 
+            <th colspan=1 id=best_res class='text-center'></th> 
+            <th colspan=12></th> 
+        </tr></thead><tbody>\n'''
 
     identity_lookup = {}
     for s in data:
@@ -383,6 +399,8 @@ def PdbTableData(request):
         r['protein_family'] = shorted.family.parent.short()
         r['class'] = shorted.family.parent.parent.parent.shorter()
         r['species'] = s.protein_conformation.protein.species.common_name
+        gene_obj = shorted.genes.first()
+        r['gene'] = gene_obj.name if gene_obj else "-"
         # # r['date'] = s.publication_date
         r['state'] = s.state.name
         r['distance_representative'] = 'Yes' if s.distance_representative else 'No'
@@ -536,8 +554,9 @@ def PdbTableData(request):
         r['g_protein'] = g_protein
         r['arrestin']  = arrestin
         r['fusion'] = fusion
+        r['antibody_full'] = antibody
         if len(antibody) > 20:
-            antibody = "<span title='{}'>{}</span>".format(antibody, antibody[:20] + "..")
+            antibody = antibody[:20] + ".."
         r['antibody'] = antibody
 
         r['ligand'] = "-"
@@ -548,7 +567,8 @@ def PdbTableData(request):
             r['ligand'] = l.ligand.name
             if len(r['ligand'])>20:
                 r['ligand'] = r['ligand'][:20] + ".."
-            r['ligand_function'] = l.ligand_role.name
+            if l.ligand_role != None:
+                r['ligand_function'] = l.ligand_role.name
             if l.ligand.ligand_type != None:
                 r['ligand_type'] = l.ligand.ligand_type.name
 
@@ -559,64 +579,39 @@ def PdbTableData(request):
         #         pdb_id = pdb_id.replace('_HUMAN', '')
 
         data_dict[pdb_id] = r
-        data_table += "<tr> \
-                        <td data-sort='0'><input class='form-check-input pdb_selected' type='checkbox' value='' onclick='thisPDB(this);' representative='{}' distance_representative='{}' class_consensus_based_representative='{}' long='{}'  id='{}'></td> \
-                        <td>{}</td> \
-                        <td><span>{}</span></td> \
-                        <td>{}</td> \
-                        <td>{}</td> \
-                        <td>{}</td> \
-                        <td><p class='no_margins' style='color:{}'>{}</td> \
-                        <td>{}</td> \
-                        <td>{}</td> \
-                        <td>{}</td> \
-                        <td class='shorten'>{}</td> \
-                        <td><p class='no_margins' style='color:{}'>{}</p></td> \
-                        <td>{}</td> \
-                        <td>{}</td> \
-                        <td>{}</td> \
-                        <td>{}</td> \
-                        <td>{}</td> \
-                        <td>{}</td> \
-                        <td>{}</td> \
-                        <td><p class='no_margins' style='color:{}'>{}</p></td> \
-                        <td>{}</td> \
-                        <td>{}</td> \
-                        <td>{}</td> \
-                        <td>{}</td> \
-                        </tr> \n".format(
-                                        r['contact_representative'],
-                                        r['distance_representative'],
-                                        r['class_consensus_based_representative'],
-                                        r['protein_long'],
-                                        pdb_id,
-                                        r['protein'],
-                                        r['protein_long'],
-                                        r['protein_family'],
-                                        r['class'],
-                                        r['fraction_of_wt_seq'],
-                                        'green' if r['closest_to_human_raw'] else 'red',
-                                        r['species'],
-                                        'Best' if r['closest_to_human_raw'] else '',
-                                        r['identity_to_human'],
-                                        r['method'],
-                                        pdb_id,
-                                        'green' if r['resolution_best'] else 'red',
-                                        r['resolution'],
-                                        'Best' if r['resolution_best'] else '',
-                                        r['state'],
-                                        r['gprot_bound_likeness'],
-                                        r['tm6_angle'],
-                                        r['signal_protein'],
-                                        r['signal_protein_subtype'],
-                                        r['signal_protein_note'],
-                                        r['signal_protein_seq_cons_color'],
-                                        r['signal_protein_seq_cons'],
-                                        r['fusion'],
-                                        r['antibody'],
-                                        r['ligand'],
-                                        r['ligand_function'],
-                                        )
+        resolution_colour = 'green' if r['resolution_best'] else 'red'
+        resolution_best = 'Best' if r['resolution_best'] else ''
+        species_colour = 'green' if r['closest_to_human_raw'] else 'red'
+        species_best = 'Best' if r['closest_to_human_raw'] else ''
+        data_table += f'''<tr> \
+                        <td data-sort='0'><input class='form-check-input pdb_selected' type='checkbox' value='' 
+                                onclick='thisPDB(this);' representative='{r['contact_representative']}' distance_representative='{ r['distance_representative']}' 
+                                class_consensus_based_representative='{r['class_consensus_based_representative']}' long='{r['protein_long']}'  id='{pdb_id}'></td> \
+                        <td>{r['protein']}</td> 
+                        <td>{r['gene']}</td> 
+                        <td><span>{r['protein_long']}</span></td> 
+                        <td>{r['protein_family']}</td> 
+                        <td>{r['class']}</td> 
+                        <td>{r['fraction_of_wt_seq']}</td> 
+                        <td><p class='no_margins' style='color:{species_colour}'>{r['species']}</p></td> 
+                        <td>{species_best}</td> 
+                        <td>{r['identity_to_human']}</td> 
+                        <td>{r['method']}</td> 
+                        <td class='shorten'>{pdb_id}</td> 
+                        <td style='color:{resolution_colour}'>{r['resolution']}</td> 
+                        <td>{resolution_best}</td> 
+                        <td>{r['state']}</td> 
+                        <td>{r['gprot_bound_likeness']}</td>
+                        <td>{r['tm6_angle']}</td>
+                        <td>{r['signal_protein']}</td>
+                        <td>{r['signal_protein_subtype']}</td>
+                        <td>{r['signal_protein_note']}</td>
+                        <td><p class='no_margins' style='color:{r['signal_protein_seq_cons_color']}'>{r['signal_protein_seq_cons']}</p></td>
+                        <td>{r['fusion']}</td>
+                        <td title='{r['antibody_full']}'>{r['antibody']}</td>
+                        <td>{r['ligand']}</td>
+                        <td>{r['ligand_function']}</td>
+                        </tr> \n'''
     data_table += "</tbody></table>"
     return HttpResponse(data_table)
 
@@ -1096,7 +1091,7 @@ def InteractionBrowserData(request):
                 all_interaction_residues.add(i[1])
             all_interaction_residues = sorted(list(all_interaction_residues), key=functools.cmp_to_key(gpcrdb_number_comparator))
 
-            all_pdbs = list(Structure.objects.all().exclude(structure_type__slug__startswith='af-').values_list('pdb_code__index', flat=True))
+            all_pdbs = list(Structure.objects.filter(structure_type__origin='experiment').values_list('pdb_code__index', flat=True))
             all_pdbs = [x.lower() for x in all_pdbs]
             #generic_number__label__in=all_interaction_residues)
             residues = Residue.objects.filter(protein_conformation__protein__entry_name__in=all_pdbs).exclude(generic_number=None).values(
@@ -2954,7 +2949,7 @@ def ClusteringData(request):
                     signaling_proteins[ps["structure__pdb_code__index"]] = ps['display_name']
 
         # Check for GRK complexes
-        grk_complexes = list(Structure.objects.filter(stabilizing_agents__name__contains="GRK").exclude(structure_type__slug__startswith='af-').values_list("pdb_code__index", flat = True))
+        grk_complexes = list(Structure.objects.filter(stabilizing_agents__name__contains="GRK", structure_type__origin='experiment').values_list("pdb_code__index", flat = True))
         for pdb in grk_complexes:
             if not pdb in signaling_proteins:
                 signaling_proteins[pdb] = "GRK"

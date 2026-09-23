@@ -396,10 +396,14 @@ function maxmin() {
     counter = 0;
     if (!$('#snake').length) return
     // console.log("temp",y_max,y_min);
-    $('#snake').children('.rtext').each(function () {
+    $('#snake').find('text').each(function () {
         counter += 1;
         y = parseInt($(this).attr( "y" ));
         x = parseInt($(this).attr( "x" ));
+        $(this).parentsUntil('#snake', 'g[transform]').each(function () {
+            var m = /translate\(\s*[\d.\-]+\s*,\s*([\d.\-]+)\s*\)/.exec($(this).attr('transform'));
+            if (m) y += parseFloat(m[1]);
+        });
         classtext = $(this).attr( "class" );
         // test = $(this).attr("original_title");
         // test2 = $(this).css("display");
@@ -450,8 +454,16 @@ function maxmin() {
         document.getElementById("snakeplot").setAttribute("viewBox", "0 0 " + width + " " + newheight);
 
 
-        svg.setAttribute('height', "100%");
-        svg.setAttribute('width', "100%");
+        // Scale down on narrow viewports without ever stretching past the diagram's own
+        // computed size - the container (a plain Bootstrap column) has no defined height,
+        // so setting the width/height *attributes* to "100%" (as this used to do) resolves
+        // against that undefined height unpredictably and can blow the diagram up far past
+        // its intended size. max-width/height:auto (CSS, not SVG presentation attributes)
+        // scales the SVG down to fit a narrow container while leaving it at its natural
+        // pixel size otherwise.
+        svg.style.maxWidth = "100%";
+        svg.style.width = "";
+        svg.style.height = "auto";
     }
 
     // console.log("New attr"+$('#snake').attr("transform"));

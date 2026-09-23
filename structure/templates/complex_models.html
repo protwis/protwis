@@ -115,8 +115,13 @@
                 // }
             });
 
-            var prev_ids = Array()
-            var current_align_ids = Array()
+            var prev_ids = Array();
+            var current_align_ids = Array();
+
+            if ('{{signalling_protein}}'!='af-signprot'){
+                oTable.column(9).visible(false);
+                oTable.column(10).visible(false);
+            }
 
             $("#constructs_div").show();
             assign_to_row();
@@ -140,122 +145,58 @@
                     break;
             }
 
+            //Initialisation of basic defaults for a null filter column
+            const base_defaults = {
+                filter_type: 'none',
+                select_type: null,
+                filter_default_label: "",
+                filter_reset_button_text: null,
+                filter_match_mode: null,
+                column_data_type: null,
+                width: null,
+            }
+
+            //Columns definitions for a multiselect text based filter
+            const multiselect_defaults = {
+                ...base_defaults,
+                filter_type: "multi_select",
+                select_type: 'select2',
+                filter_default_label: 'Select',
+                filter_match_mode : "exact",
+                column_data_type: "text",
+                filter_reset_button_text: false
+            }
+
+            const construct_coldefs = {
+                selector                 : { column_number: 0, ...base_defaults},
+                model_link               : { column_number: 1, ...base_defaults},
+                receptor_gpcr_link       : { column_number: 2, ...base_defaults},
+                receptor_uniprot         : { column_number: 3, ...multiselect_defaults, column_data_type: "html", filter_default_label: "UniProt", select_type_options: {width: '80px',} },
+                receptor_gene            : { column_number: 4, ...multiselect_defaults, filter_default_label: "Gene", column_data_type: "html", select_type_options: {width: "60px",} },
+                receptor_gtopdb          : { column_number: 5, ...multiselect_defaults, filter_default_label: "GtoPdb", column_data_type: "html", select_type_options: {width: "60px",} },
+                receptor_receptor_family : { column_number: 6, ...multiselect_defaults, filter_default_label: "Family", select_type_options: {width: '100px',} },
+                receptor_class           : { column_number: 7, ...multiselect_defaults, filter_default_label: "Class", select_type_options:  {width: '100px',} },
+                gprotein_subtype         : { column_number: 8, ...multiselect_defaults, filter_default_label: "Subtype", column_data_type: "html", select_type_options: {width: '70px',} },
+                gprotein_family          : { column_number: 9, ...multiselect_defaults, filter_default_label: "Family", select_type_options:  {width: "60px",} },
+                gprotein_heterotrimer    : { column_number: 10, ...multiselect_defaults, filter_default_label: "Heterotrimer", select_type_options:  {width: "80px",} },
+                coupling                 : { column_number: 11, ...multiselect_defaults, select_type_options:  {width: "30px",} },
+                date                     : { column_number: 12, ...base_defaults, filter_type: "range_date", date_format: "yyyy-mm-dd", select_type: 'select2', filter_default_label: ["From", "To"], select_type_options:  {width: "100px",} },
+                protein_id               : { column_number: 13, ...base_defaults },
+                pdb_weblink_index        : { column_number: 14, ...base_defaults }
+            }
+
             yadcf.init(oTable,
                 [
-                    {
-                        column_number : 3,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        column_data_type: "html",
-                        filter_default_label: "UniProt",
-                        filter_reset_button_text: false,
-                        select_type_options: {
-                            width: '80px',
-                        }
-                    },
-                    {
-                        column_number : 4,
-                        filter_type: "multi_select",
-                        select_type: "select2",
-                        column_data_type: "html",
-                        html_data_type: "text",
-                        filter_default_label: "GtoPdb",
-                        filter_match_mode : "exact",
-                        filter_reset_button_text: false,
-                        select_type_options: {
-                            width: "60px",
-                        }
-                    },
-                    {
-                        column_number: 5,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        filter_default_label: "Family",
-                        filter_reset_button_text: false,
-                        select_type_options: {
-                            width: '100px',
-                        }
-                    },
-                    {
-                        column_number : 6,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        filter_default_label: "Class",
-                        filter_reset_button_text: false,
-                        select_type_options: {
-                            width: '100px',
-                        }
-                    },
-                    {
-                        column_number : 7,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        filter_default_label: "Subtype",
-                        column_data_type: "html",
-                        filter_reset_button_text: false,
-                        select_type_options: {
-                            width: '70px',
-                        }
-                    },
-                    {
-                        column_number : 8,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        filter_default_label: "Family",
-                        filter_reset_button_text: false,
-                        select_type_options: {
-                            width: '60px',
-                        }
-                    },
-                    {
-                        column_number : 9,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        filter_default_label: "Heterotrimer",
-                        filter_reset_button_text: false,
-                        select_type_options: {
-                            width: '80px',
-                        }
-                    },
-                    // {
-                    //     column_number : 10,
-                    //     filter_type: "range_number",
-                    //     filter_default_label: ["Min", "Max"],
-                    //     filter_reset_button_text: false,
-                    //     select_type_options: {
-                    //         width: '30px',
-                    //     }
-                    // },
-                    // {
-                    //     column_number : 11,
-                    //     filter_type: "range_number",
-                    //     filter_default_label: ["Min", "Max"],
-                    //     filter_reset_button_text: false,
-                    //     select_type_options: {
-                    //         width: '30px',
-                    //     }
-                    // },
-                    {
-                        column_number : 10,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        filter_default_label: "",
-                        filter_reset_button_text: false,
-                        select_type_options: {
-                            width: '30px',
-                        }
-                    },
-                    {
-                        column_number : 11,
-                        filter_type: "range_date",
-                        date_format: "yyyy-mm-dd",
-                        select_type: 'select2',
-                        filter_default_label: ["From", "To"],
-                        filter_reset_button_text: false,
-                        select_type_options: {
-                            width: '100px',
-                        }
-                    },
+                    construct_coldefs.receptor_uniprot,
+                    construct_coldefs.receptor_gene,
+                    construct_coldefs.receptor_gtopdb,
+                    construct_coldefs.receptor_receptor_family,
+                    construct_coldefs.receptor_class,
+                    construct_coldefs.gprotein_subtype,
+                    construct_coldefs.gprotein_family,
+                    construct_coldefs.gprotein_heterotrimer,
+                    construct_coldefs.coupling,
+                    construct_coldefs.date,
                 ],
                 {
                     cumulative_filtering: false
@@ -325,7 +266,6 @@
             $('[data-toggle="tooltip"]').tooltip({ container: 'body' })
             $('.table_tooltip').tooltip({ container: 'body', html: true, placement: "top"})
 
-
             $('.column_toggle').change(function(evt) {
                 console.log('start toggle');
                 // evt.stopPropagation();
@@ -352,11 +292,13 @@
             } );
 
             $("#superpose_btn").click(function() {
-                superposition(oTable, [3,4,5,6,7,8,9,11,13], "complex_models", "gprot", 13, [13]);
+                required_cols = ["receptor_uniprot","receptor_gene","receptor_gtopdb","receptor_receptor_family","receptor_class","gprotein_subtype",
+                                    "gprotein_family","gprotein_heterotrimer", "date","pdb_weblink_index"].map( (col) => { return construct_coldefs[col].column_number; });
+                superposition(oTable, required_cols, "complex_models", "gprot", construct_coldefs.pdb_weblink_index.column_number, [construct_coldefs.pdb_weblink_index.column_number]);
             });
 
             $('#superpose_template_btn').click(function () {
-                direct_superposition(oTable, "gprot", 13, "signprot");
+                direct_superposition(oTable, "gprot", construct_coldefs.pdb_weblink_index.column_number, "signprot");
             });
 
             $('#download_btn').click(function () {
@@ -387,10 +329,11 @@
 
                 ClearSelection('targets');
                 for (i = 0; i < checked_data.length; i++) {
-                    AddToSelection('targets', 'protein_entry',  checked_data[i][12] );
+                    console.log(checked_data[i][construct_coldefs.protein_id.column_number])
+                    AddToSelection('targets', 'protein',  checked_data[i][construct_coldefs.protein_id.column_number] );
 
                 }
-                window.location.href = '/structure/selection_convert_model';
+                window.location.href = '/alignment/segmentselection';
             });
 
             $('#align_btn2').click(function () {
@@ -401,8 +344,7 @@
                 }
                 ClearSelection('targets');
                 for (i = 0; i < checked_data.length; i++) {
-                    AddToSelection('targets', 'structure',  checked_data[i][13] );
-
+                    AddToSelection('targets', 'structure',  checked_data[i][construct_coldefs.pdb_weblink_index.column_number] );
                 }
                 window.location.href = '/structure/selection_convert_signprot_model';
             });
@@ -496,7 +438,6 @@
               });
         };
 
-
     </script>
     <script>
       window.addEventListener("hashchange", updateSuperpositionButtonConfiguration, false);
@@ -510,8 +451,12 @@
 {% block content %}
 <div class="btn-group">
     <label class="btn btn-default btn-s" id="align_btn1" href="javascript:void(0)">Align Receptors</label>
+    {% if signalling_protein == 'af-signprot' %}
     <label class="btn btn-default btn-s" id="align_btn2" href="javascript:void(0)">Align G proteins</label>
     <label class="btn btn-default btn-s" id="superpose_template_btn" href="javascript:void(0)">Superposition</label>
+    {% else %}
+    <label class="btn btn-default btn-s" id="align_btn2" href="javascript:void(0)">Align Arrestins</label>
+    {% endif %}
     <label class="btn btn-default btn-s" id="download_btn" href="javascript:void(0)">Download</label>
     <!-- <label class="btn btn-default btn-s" id="superpose_btn" href="javascript:void(0)">Superposition</label> -->
 </div>
@@ -543,14 +488,21 @@
                 <tr class='over_header' style='max-height: 20px'>
                     <th colspan=1 class="over_header"></th>
                     <th colspan=1 class="over_header">   MODEL   </th>
-                    <th colspan=5 class="over_header">RECEPTOR</th>
+                    <th colspan=6 class="over_header">RECEPTOR</th>
+                    {% if signalling_protein == 'af-signprot' %}
                     <th colspan=3 class="over_header">G PROTEIN</th>
+                    {% else %}
+                    <th colspan=3 class="over_header">ARRESTIN</th>
+                    {% endif %}
                     <th colspan=1 class="over_header" style="max-width:50px;">COUPLING DATA</th>
                     <th colspan=1 class="over_header">DATE</th>
                 </tr>
+
+                {% if signalling_protein == 'af-signprot' %}
                 <tr class='over_header cenetered-header'>
                     <th class='rightborder'></th>
                     <th class='rightborder'></th>
+                    <th></th>
                     <th></th>
                     <th></th>
                     <th></th>
@@ -566,6 +518,7 @@
                     <th class='hidden'></th>
                     <th class='hidden'></th>
                 </tr>
+                {% endif %}
                 <tr>
                     <th class='no-sort checkbox_tr rightborder'><input class="select-all" type="checkbox" onclick="select_all(this)"></th>
                     <th class='rightborder'></th>
@@ -573,9 +526,14 @@
                     <th></th>
                     <th></th>
                     <th></th>
+                    <th></th>
                     <th class='rightborder'></th>
                     <th></th>
+                    {% if signalling_protein == 'af-signprot' %}
                     <th></th>
+                    {% else %}
+                    <th class='rightborder'></th>
+                    {% endif %}
                     <th class='rightborder'></th>
                   <!--   <th></th>
                     <th></th> -->
@@ -590,13 +548,32 @@
             {% for model in structure_complex_model %}
                 <tr model_id='{{model.pk}}'>
                     <td class="text-center"><input class="alt" type="checkbox" id="{{ model.pk }}"></td>
+                    {% if signalling_protein == 'af-signprot' %}
                     <td style="text-align:center;"><a target="_blank" href="complex_models/{{ model.pdb_code__index }}"><img width="14px" height="20px" class="model-link" src="{% static 'home/images/model-surface.png' %}"></a></div></td>
+                    {% else %}
+                    <td style="text-align:center;"><a target="_blank" href="complex_models/{{ model.pdb_code__index }}"><img width="14px" height="20px" class="model-link" src="{% static 'home/images/arrestin-surface.png' %}"></a></div></td>
+                    {% endif %}
                     <td class="text-center"><a target="_blank" href="/protein/{{ model.protein_conformation__protein__entry_name }}"><img width="12px" height="12px" class="gpcrdb-link" src="{% static 'home/logo/gpcr/main.png' %}"></a></td>
                     <td><a target="_blank" href="http://www.uniprot.org/uniprot/{{ model.protein_conformation__protein__accession }}">{{ model.protein_conformation__protein__entry_name|entry_short }}</a></td>
+                    <td>
+                        {% if model.gene_name %}
+                            {% if model.gene_entrez_weblink %}
+                                <a href="{{ model.gene_entrez_weblink }}" target="_blank">{{ model.gene_name | safe }}</a>
+                            {% else %}
+                                <span>{{ model.gene_name | safe }}</span>
+                            {% endif %}
+                        {% else %}
+                            <span>-</span>
+                        {% endif %}
+                    </td>
                     <td><span>{{ model.protein_conformation__protein__name|receptor_short|safe }}</span></td>
                     <td>{{ model.protein_conformation__protein__family__parent__name }}</td>
                     <td>{{ model.protein_conformation__protein__family__parent__parent__parent__name|cut_classname }}</td>
-                    <td><a href="/signprot/{{ model.signprot_complex_protein__entry_name }}">{{ model.signprot_complex__protein__family__name|gprot_short }}</a></td>
+                    {% if signalling_protein == 'af-signprot' %}
+                    <td><a href="/signprot/{{ model.signprot__complex_protein__entry_name }}">{{ model.signprot_complex__protein__family__name|gprot_short }}</a></td>
+                    {% else %}
+                    <td><a href="/signprot/{{ model.signprot_complex__protein__entry_name }}">{{ model.signprot_complex__protein__entry_name|arr_short }}</a></td>
+                    {% endif %}
                     <td>{{ model.signprot_complex__protein__family__parent__name }}</td>
                     <td>{{ model.heterotrimer }}</td>
             <!--         {% if model.Bouvier == "-" %}
@@ -617,7 +594,7 @@
                         <td>-</td>
                     {% endif %}
                     <td>{{ model.publication_date|date:"Y-m-d" }}</td>
-                    <td style="display:none;">{{ model.protein_conformation__protein__entry_name }}</td>
+                    <td style="display:none;">{{ model.protein_conformation__protein }}</td>
                     <td style="display:none;">{{ model.pdb_code__index }}</td>
                 </tr>
                 {% endfor %}
@@ -637,6 +614,7 @@
                 <tr>
                     <th></th>
                     <th>UniProt</th>
+                    <th>Gene</th>
                     <th>IUPHAR</th>
                     <th>Rec. family</th>
                     <th>Class</th>

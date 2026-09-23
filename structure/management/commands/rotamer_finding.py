@@ -41,7 +41,7 @@ class Command(BaseCommand):
 
             AA = polypeptide.three_to_one(af_atoms[0].get_parent().get_resname())
             this_temp = ['AF', round(rmsd,3)]
-            for pdb in Structure.objects.all().exclude(structure_type__slug__startswith='af-'):#gn_dict[g]:
+            for pdb in Structure.objects.filter(structure_type__origin='experiment'):#gn_dict[g]:
                 struct = pdb#Structure.objects.get(pdb_code__index=pdb)
                 try:
                     dgn_lab = dgn(g, struct.protein_conformation)

@@ -88,7 +88,6 @@
             background-color: rgb(0,0,0); /* Fallback color */
             background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
         }
-    }
     </style>
 {% endblock %}
 
@@ -136,94 +135,74 @@
             $('.select-all').prop('checked',false)
             //
 
+            ////////////////////////////
+            //// Column definitions ////
+            ////////////////////////////
+
+            ///// Filter Types /////
+
+            //Initialisation of basic defaults for a null filter column
+            const base_defaults = {
+                filter_type: "none",
+                select_type: null,
+                filter_default_label: "",
+                filter_reset_button_text: false,
+                filter_match_mode: null,
+                column_data_type: null,
+                width: null
+            }
+
+            //defaults for a free text type filter
+            const text_defaults = {
+                ...base_defaults,
+                filter_type: "text",
+                select_type:"select2",
+                column_data_type: "text",
+            }
+
+            //defaults for a multi-select select type filter
+            const multiselect_defaults = {
+                ...base_defaults,
+                filter_type: "multi_select",
+                select_type:"select2",
+                filter_match_mode: "exact",
+                column_data_type: "text",
+            }
+
+            //defaults for a number range type filter
+            const range_number_defaults = {
+                ...base_defaults,
+                filter_type: "range_number",
+                filter_default_label: ['Min', 'Max'],
+            }
+
+            /// Table Column Definitions ///
+            const homology_cols = {
+                select_checkbox    : { column_number: 0, ...base_defaults, },
+                model_link         : { column_number: 1, ...base_defaults, },
+                date               : { column_number: 2, ...base_defaults, filter_type: "range_date", date_format: "yyyy-mm-dd", select_type: 'select2', filter_default_label: ["From", "To"], select_type_options: { width: '100px', } },
+                state              : { column_number: 3, ...multiselect_defaults, filter_default_label: "State", select_type_options: { width: '100px', } },
+                method             : { column_number: 4, ...multiselect_defaults, filter_default_label: "Method", column_data_type: "html", select_type_options: { width: '100px', } },
+                uniprot            : { column_number: 5, ...multiselect_defaults, column_data_type: "html", filter_default_label: "UniProt", select_type_options: { width: '80px', } },
+                gene               : { column_number: 6, ...multiselect_defaults, column_data_type: "html", filter_default_label: "Gene", select_type_options: { width: '80px', } },
+                iuphar             : { column_number: 7, ...multiselect_defaults, column_data_type: "html", filter_default_label: "IUPHAR", select_type_options: { width: '100px', } },
+                rec_family         : { column_number: 8, ...multiselect_defaults, filter_default_label: "Rec. family", select_type_options: { width: '100px', } },
+                class              : { column_number: 9, ...multiselect_defaults, filter_default_label: "Class", select_type_options: { width: '100px', } },
+                species            : { column_number: 10, ...multiselect_defaults, filter_default_label: "Species", select_type_options: { width: '100px', } },
+                protein_entry_name : { column_number: 11, ...base_defaults,
+                }}
+
             yadcf.init(oTable,
                 [
-                    {
-                        column_number : 2,
-                        filter_type: "range_date",
-                        date_format: "yyyy-mm-dd",
-                        select_type: 'select2',
-                        filter_default_label: ["From", "To"],
-                        filter_reset_button_text: false,
-                        select_type_options: {
-                            width: '100px',
-                        }
-                    },
-                    {
-                        column_number : 3,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        filter_default_label: "State",
-                        filter_reset_button_text: false,
-                        filter_match_mode : "exact",
-                        select_type_options: {
-                            width: '100px',
-                        }
-                    },
-                    {
-                        column_number : 4,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        filter_default_label: "Method",
-                        filter_reset_button_text: false,
-                        column_data_type: "html",
-                        filter_match_mode : "exact",
-                        select_type_options: {
-                            width: '100px',
-                        }
-                    },
-                    {
-                        column_number : 5,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        column_data_type: "html",
-                        filter_default_label: "UniProt",
-                        filter_reset_button_text: false,
-                        select_type_options: {
-                            width: '80px',
-                        }
-                    },
-                    {
-                        column_number: 6,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        column_data_type: "html",
-                        filter_default_label: "IUPHAR",
-                        filter_reset_button_text: false,
-                        select_type_options: {
-                            width: '100px',
-                        }
-                    },
-                    {
-                        column_number: 7,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        filter_default_label: "Rec. family",
-                        filter_reset_button_text: false,
-                        select_type_options: {
-                            width: '100px',
-                        }
-                    },
-                    {
-                        column_number : 8,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        filter_default_label: "Class",
-                        filter_reset_button_text: false,
-                        select_type_options: {
-                            width: '100px',
-                        }
-                    },
-                    {
-                        column_number : 9,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        filter_default_label: "Species",
-                        filter_reset_button_text: false,
-                        select_type_options: {
-                            width: '100px',
-                        }
-                    },
+                    homology_cols.date,
+                    homology_cols.state,
+                    homology_cols.method,
+                    homology_cols.uniprot,
+                    homology_cols.gene,
+                    homology_cols.iuphar,
+                    homology_cols.rec_family,
+                    homology_cols.class,
+                    homology_cols.species,
                 ],
                 {
                     cumulative_filtering: false
@@ -258,18 +237,20 @@
                 ClearSelection('targets');
                 for (i = 0; i < checked_data.length; i++) {
 
-                    AddToSelection('targets', 'structure_model',  checked_data[i][10]+"_"+checked_data[i][3]);
+                    AddToSelection('targets', 'structure_model',  checked_data[i][homology_cols.protein_entry_name.column_number]+"_"+checked_data[i][homology_cols.state.column_number]);
 
                 }
                 window.location.href = '/structure/selection_convert_model';
             });
 
             $('#superpose_template_btn').click(function () {
-                direct_superposition(oTable, "gpcr", [10,3], "structure_model");
+                direct_superposition(oTable, "gpcr", [homology_cols.protein_entry_name.column_number, homology_cols.state.column_number], "structure_model");
             });
 
             $("#superpose_btn").click(function() {
-                superposition(oTable, [5,6,7,8,9,2,3,4,10], "homology_model_browser", 'gpcr', 10, [10]);
+                const required_col_idx = ["uniprot", "gene", "iuphar", "rec_family", "class", "species", "date", "state", "method", "protein_entry_name"].map(col => homology_cols[col].column_number)
+                const pe_idx = homology_cols.protein_entry_name.column_number
+                superposition(oTable, required_col_idx, "homology_model_browser", 'gpcr', pe_idx, [pe_idx]);
             });
         });
 
@@ -403,7 +384,7 @@
             <thead>
                 <tr class='over_header' style='max-height: 20px'>
                     <th colspan=5 class="over_header">MODEL</th>
-                    <th colspan=5 class="over_header">RECEPTOR</th>
+                    <th colspan=6 class="over_header">RECEPTOR</th>
                 </tr>
                 <tr>
                     <th class='no-sort checkbox_tr'><input class="select-all" type="checkbox" onclick="select_all(this)"></th>
@@ -411,6 +392,7 @@
                     <th>Date</th>
                     <th></th>
                     <th class='rightborder'></th>
+                    <th></th>
                     <th></th>
                     <th></th>
                     <th ></th>
@@ -425,11 +407,11 @@
                 <tr model_id='{{model.pk}}'>
                     <td class="text-center"><input class="alt" type="checkbox" id="{{ model.pk }}"></td>
                     {% if model.protein.accession %}
-                        <td><a target="_blank" href="homology_models/{{ model.protein.entry_name }}_{{ model.state.slug }}">
+                        <td><a target="_blank" href="/structure/structure_models/receptor/{{ model.protein.entry_name }}_{{ model.state.slug }}">
                             <img width="14px" height="20px" class="model-link" src="{% static 'home/images/gpcr_structure_logo.png' %}">
                         </a></td>
                     {% else %}
-                        <td><a target="_blank" href="refined/{{ model.protein.entry_name|upper }}">
+                        <td><a target="_blank" href="/structure/refined/{{ model.protein.entry_name|upper }}">
                             <img width="14px" height="20px" class="model-link" src="{% static 'home/images/gpcr_structure_logo.png' %}">
                         </a></td>
                     {% endif %}
@@ -445,6 +427,17 @@
                             <a href="http://www.uniprot.org/uniprot/{{ model.protein.parent.accession }}">{{ model.protein.parent.entry_short|safe }}</a>
                         {% else %}
                             <a href="http://www.uniprot.org/uniprot/{{ model.protein.accession }}">{{ model.protein.entry_short|safe }}</a>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if model.protein.genes.first %}
+                            {% if model.protein.genes.first.entrez_weblink %}
+                            <a href="{{ model.protein.genes.first.entrez_weblink }}" target="_blank" rel="noopener">{{ model.protein.genes.first.name | safe }}</a>
+                            {% else %}
+                                {{ model.protein.genes.first.name |safe }}
+                            {% endif %}
+                        {% else %}
+                            Unavailable
                         {% endif %}
                     </td>
                     <td>
@@ -476,6 +469,7 @@
                 <tr>
                     <th></th>
                     <th>UniProt</th>
+                    <th>Gene</th>
                     <th>IUPHAR</th>
                     <th>Rec. family</th>
                     <th>Class</th>
