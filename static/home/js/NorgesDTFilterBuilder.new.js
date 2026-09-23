@@ -241,9 +241,9 @@ function createDropdownFilters(api,column_filters) {
                         return function() {
                             var data = $.map($(this).select2('data'), function(value, key) {
                                 if (capturedFilterType === 'Multi-select-exact') {
-                                    return value.text ? '^' + $.fn.dataTable.util.escapeRegex(value.text) + '$' : null;
+                                    return value.id ? '^' + $.fn.dataTable.util.escapeRegex(value.id) + '$' : null;
                                 } else if (capturedFilterType === 'Multi-select-unspecific') {
-                                    return value.text ? $.fn.dataTable.util.escapeRegex(value.text) : null;
+                                    return value.id ? $.fn.dataTable.util.escapeRegex(value.id) : null;
                                 }
                             });
 
@@ -260,13 +260,30 @@ function createDropdownFilters(api,column_filters) {
                     var renderFunction_multi = currentColumnAPI_for_multi.settings()[0].aoColumns[currentColIndex_for_multi].mRender;
 
                     currentColumnAPI_for_multi.data().unique().sort().each(function(d_multi) {
-                         var renderedValue_multi = renderFunction_multi ? renderFunction_multi(d_multi, 'display', undefined, {col: currentColIndex_for_multi, row: -1, settings: currentColumnAPI_for_multi.settings()[0]}) : d_multi;
+                         var renderContext_multi = {col: currentColIndex_for_multi, row: -1, settings: currentColumnAPI_for_multi.settings()[0]};
+                         var renderedValue_multi = renderFunction_multi ? renderFunction_multi(d_multi, 'display', undefined, renderContext_multi) : d_multi;
                          renderedValue_multi = (typeof renderedValue_multi === 'string') ? renderedValue_multi : String(renderedValue_multi);
                         var tempDiv_multi = document.createElement("div");
                         tempDiv_multi.innerHTML = renderedValue_multi;
                         var textContent_multi = tempDiv_multi.textContent || tempDiv_multi.innerText || "";
-                        // console.log(`Col ${currentColIndex_for_multi} - Original Data (d):`, d_multi, `Rendered for Display:`, renderedValue_multi, `Text Content for Option:`, textContent_multi);
-                        $('#' + Table_id + '_Filter' + currentColIndex_for_multi).append($('<option>' + textContent_multi + '</option>'));
+
+                        // Search on the 'filter'-typed render, not the 'display' one used for
+                        // the human-readable label above -- a column can transform characters
+                        // only in display mode (e.g. GPCRList's family column swaps a literal
+                        // "-" for a non-breaking-hyphen entity purely for cosmetic wrapping),
+                        // which used to break exact-match filtering for any such value: the
+                        // option's search text decoded to a different character (U+2011) than
+                        // what DataTables actually compares rows against (raw U+002D "-"),
+                        // so the regex could never match and selecting it silently returned
+                        // zero rows. Store the two separately: option *value* = filter-typed
+                        // (what we search on), option *text* = display-typed (what's shown).
+                        var filterValue_multi = renderFunction_multi ? renderFunction_multi(d_multi, 'filter', undefined, renderContext_multi) : d_multi;
+                        filterValue_multi = (typeof filterValue_multi === 'string') ? filterValue_multi : String(filterValue_multi);
+
+                        $('<option></option>')
+                            .attr('value', filterValue_multi)
+                            .text(textContent_multi)
+                            .appendTo('#' + Table_id + '_Filter' + currentColIndex_for_multi);
                     });
 
                     $('#' + Table_id + '_Filter' + currentColIndex_for_multi).attr('multiple', 'multiple');
