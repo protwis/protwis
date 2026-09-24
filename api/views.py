@@ -559,7 +559,8 @@ class StructureList(views.APIView):
             # signalling protein
             if structure.signprot_complex:
                 sign_prot = {'type': 'G protein', 'data': {}}
-                sign_prot['data']['entity1'] = {'entry_name':structure.signprot_complex.protein.entry_name, 'chain':structure.signprot_complex.alpha}
+                if structure.signprot_complex.protein:
+                    sign_prot['data']['entity1'] = {'entry_name':structure.signprot_complex.protein.entry_name, 'chain':structure.signprot_complex.alpha}
                 if structure.signprot_complex.beta_protein:
                     sign_prot['data']['entity2'] = {'entry_name':structure.signprot_complex.beta_protein.entry_name, 'chain':structure.signprot_complex.beta_chain}
                 if structure.signprot_complex.gamma_protein:
@@ -884,8 +885,11 @@ class ProteinSimilaritySearchAlignment(views.APIView):
                         a.proteins[num].similarity = 100
                     # order dict after custom list
                     keyorder = ["similarity","identity","AA"]
-                    ali_dict[k] = {"AA": row, "identity": int(str(a.proteins[num].identity).replace(" ","")),
-                    "similarity": int(str(a.proteins[num].similarity).replace(" ",""))}
+                    identity = float(str(a.proteins[num].identity).replace(" ",""))
+                    similarity = float(str(a.proteins[num].similarity).replace(" ",""))
+                    identity = int(identity) if identity.is_integer() else round(identity, 1)
+                    similarity = int(similarity) if similarity.is_integer() else round(similarity, 1)
+                    ali_dict[k] = {"AA": row, "identity": identity, "similarity": similarity}
                     ali_dict[k] = OrderedDict(sorted(ali_dict[k].items(), key=lambda t: keyorder.index(t[0])))
                     num+=1
                     k = False
