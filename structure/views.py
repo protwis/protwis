@@ -3789,14 +3789,26 @@ def ConvertStructuresToProteins(request):
     if simple_selection:
         selection.importer(simple_selection)
     if selection.targets != []:
+        # Only convert 'structure'-typed targets -- anything else (e.g. a 'structure_model'
+        # left behind by an abandoned homology-model-browser visit) is a leftover from an
+        # unrelated flow and is dropped rather than blindly processed, since selection.targets
+        # is one session-wide bucket shared by every browsing page.
+        new_targets = []
         for struct in selection.targets:
+            if struct.type != 'structure':
+                continue
             prot = struct.item.protein_conformation.protein.parent
             if not prot:
                 prot = struct.item.protein_conformation.protein
-            selection.remove('targets', 'structure', struct.item.id)
-            selection.add('targets', 'protein', SelectionItem('protein', prot))
+            new_targets.append(SelectionItem('protein', prot))
         if selection.reference != []:
-            selection.add('targets', 'protein', selection.reference[0])
+            new_targets.append(selection.reference[0])
+            selection.clear('reference')
+        # Replace (not mutate) targets, so anything not explicitly converted above -- for
+        # whatever reason it was sitting there -- can't survive into the alignment selection.
+        selection.clear('targets')
+        for item in new_targets:
+            selection.add('targets', 'protein', item)
     # export simple selection that can be serialized
     simple_selection = selection.exporter()
 
@@ -3813,28 +3825,36 @@ def ConvertStructureModelsToProteins(request):
     if simple_selection:
         selection.importer(simple_selection)
     if selection.targets != []:
+        # Only convert the target types this view actually understands -- anything else
+        # (e.g. a leftover 'structure' from an unrelated superposition/browser visit) is
+        # dropped rather than blindly processed, since selection.targets is one session-wide
+        # bucket shared by every browsing page.
+        new_targets = []
         for struct_mod in selection.targets:
-            if hasattr(struct_mod.item, 'protein'):
+            if struct_mod.type == 'structure_model':
                 if not struct_mod.item.protein.accession:
                     prot = struct_mod.item.protein.parent
                 else:
                     prot = struct_mod.item.protein
-                selection.remove('targets', 'structure_model', struct_mod.item.id)
-                selection.add('targets', 'protein', SelectionItem('protein', prot))
-            elif hasattr(struct_mod.item, 'receptor_protein'):
+                new_targets.append(SelectionItem('protein', prot))
+            elif struct_mod.type == 'structure_complex_receptor':
                 if not struct_mod.item.receptor_protein.accession:
                     prot = struct_mod.item.receptor_protein.parent
                 else:
                     prot = struct_mod.item.receptor_protein
-                selection.remove('targets', 'structure_complex_receptor', struct_mod.item.id)
-                selection.add('targets', 'protein', SelectionItem('protein', prot))
-            elif hasattr(struct_mod.item, 'pdb_code'):
+                new_targets.append(SelectionItem('protein', prot))
+            elif struct_mod.type == 'structure':
                 prot = struct_mod.item.protein_conformation.protein.parent
-                selection.remove('targets', 'structure', struct_mod.item.id)
-                selection.add('targets', 'protein', SelectionItem('protein', prot))
+                new_targets.append(SelectionItem('protein', prot))
 
         if selection.reference != []:
-            selection.add('targets', 'protein', selection.reference[0])
+            new_targets.append(selection.reference[0])
+            selection.clear('reference')
+        # Replace (not mutate) targets, so anything not explicitly converted above -- for
+        # whatever reason it was sitting there -- can't survive into the alignment selection.
+        selection.clear('targets')
+        for item in new_targets:
+            selection.add('targets', 'protein', item)
     # export simple selection that can be serialized
     simple_selection = selection.exporter()
 
@@ -3849,25 +3869,37 @@ def ConvertStructureComplexSignprotToProteins(request):
     selection = Selection()
     if simple_selection:
         selection.importer(simple_selection)
+    prot = None
     if selection.targets != []:
+        # Only convert the target types this view actually understands -- anything else
+        # (e.g. a leftover 'structure_model' from an unrelated browser visit) is dropped
+        # rather than blindly assumed to be a signprot-complex Structure (which previously
+        # crashed with SignprotComplex.DoesNotExist for anything that wasn't), since
+        # selection.targets is one session-wide bucket shared by every browsing page.
+        new_targets = []
         for struct_mod in selection.targets:
-            if hasattr(struct_mod.item, 'sign_protein'):
+            if struct_mod.type == 'structure_complex_signprot':
                 prot = struct_mod.item.sign_protein
-                selection.remove('targets', 'structure_complex_signprot', struct_mod.item.id)
-                selection.add('targets', 'protein', SelectionItem('protein', prot))
-            else:
+                new_targets.append(SelectionItem('protein', prot))
+            elif struct_mod.type == 'structure':
                 prot = SignprotComplex.objects.get(structure=struct_mod.item).protein
-                selection.remove('targets', 'structure', struct_mod.item.id)
-                selection.add('targets', 'protein', SelectionItem('protein', prot))
+                new_targets.append(SelectionItem('protein', prot))
+
         if selection.reference != []:
-            selection.add('targets', 'protein', selection.reference[0])
+            new_targets.append(selection.reference[0])
+            selection.clear('reference')
+        # Replace (not mutate) targets, so anything not explicitly converted above -- for
+        # whatever reason it was sitting there -- can't survive into the alignment selection.
+        selection.clear('targets')
+        for item in new_targets:
+            selection.add('targets', 'protein', item)
     # export simple selection that can be serialized
     simple_selection = selection.exporter()
 
     # add simple selection to session
     request.session['selection'] = simple_selection
 
-    if prot.family.parent.parent.name=='Arrestin':
+    if prot and prot.family.parent.parent.name=='Arrestin':
         return HttpResponseRedirect('/alignment/segmentselectionarrestin')
     else:
         return HttpResponseRedirect('/alignment/segmentselectiongprot')
@@ -5100,28 +5132,54 @@ class LigandComplexModelsDataJsonView(View):
 
             receptor_ids = [s.protein_conformation.protein_id for s in structures]
             ligand_ids = [s.prefetch_ligands[0].ligand_id for s in structures]
+            # Canonical receptor identity: model structures always sit directly on the reference
+            # protein (parent is None), while annotated experimental structures are a mix of the
+            # reference protein and PDB-specific construct variants (parent set to the reference).
+            # Normalize both sides to the reference protein's entry_name so the two line up.
+            receptor_canonical_entry_names = {
+                s.protein_conformation.protein.parent.entry_name if s.protein_conformation.protein.parent
+                else s.protein_conformation.protein.entry_name
+                for s in structures
+            }
 
             physiological_pairs = set(
                 Endogenous_GTP.objects.filter(ligand_id__in=ligand_ids, receptor_id__in=receptor_ids)
                 .values_list('ligand_id', 'receptor_id')
             )
 
-            # Drugs, matched by (ligand, receptor target) -- see plan's Clinical/Pharm. modality rules
+            # Drugs, matched by (ligand, receptor target) -- Clinical status only, never Pharm. modality
             drugs_by_pair = defaultdict(list)
             for d in Drugs.objects.filter(
                 ligand_id__in=ligand_ids, target_id__in=receptor_ids
-            ).select_related('moa').values('ligand_id', 'target_id', 'drug_status', 'indication_max_phase', 'moa__name'):
+            ).values('ligand_id', 'target_id', 'drug_status', 'indication_max_phase'):
                 drugs_by_pair[(d['ligand_id'], d['target_id'])].append(d)
 
-            def clinical_and_pharm_modality(ligand_id, receptor_id):
+            def clinical_status(ligand_id, receptor_id):
                 rows = drugs_by_pair.get((ligand_id, receptor_id), [])
                 if not rows:
-                    return "No", "-"
-                approved = [r for r in rows if r['drug_status'] == 'Approved']
-                highest_order_rows = approved if approved else rows
-                moas = sorted({r['moa__name'] for r in highest_order_rows if r['moa__name']})
-                clinical = "Approved drug" if approved else "Agent in trial"
-                return clinical, (" / ".join(moas) if moas else "-")
+                    return "No"
+                approved = any(r['drug_status'] == 'Approved' for r in rows)
+                return "Approved drug" if approved else "Agent in trial"
+
+            # Ligand roles, matched by (ligand, receptor's canonical entry_name) -- independent of
+            # Drugs; StructureLigandInteraction.ligand_role is the actual "pharm. modality" source
+            roles_by_pair = defaultdict(set)
+            for r in StructureLigandInteraction.objects.filter(
+                ligand_id__in=ligand_ids,
+                ligand_role__isnull=False,
+            ).annotate(
+                canonical_entry_name=Coalesce(
+                    'structure__protein_conformation__protein__parent__entry_name',
+                    'structure__protein_conformation__protein__entry_name',
+                )
+            ).filter(
+                canonical_entry_name__in=receptor_canonical_entry_names
+            ).values('ligand_id', 'canonical_entry_name', 'ligand_role__name'):
+                roles_by_pair[(r['ligand_id'], r['canonical_entry_name'])].add(r['ligand_role__name'])
+
+            def pharm_modality(ligand_id, canonical_entry_name):
+                roles = roles_by_pair.get((ligand_id, canonical_entry_name), set())
+                return " / ".join(sorted(roles)) if roles else "-"
 
             # ProteinFamilyClassification -- primary (order=1) annotation only
             family_ids = {s.protein_conformation.protein.family_id for s in structures}
@@ -5144,7 +5202,9 @@ class LigandComplexModelsDataJsonView(View):
                 ligand = structure.prefetch_ligands[0].ligand
 
                 is_physiological = (ligand.id, p.id) in physiological_pairs
-                clinical, pharm_modality = clinical_and_pharm_modality(ligand.id, p.id)
+                canonical_entry_name = p.parent.entry_name if p.parent else p.entry_name
+                clinical = clinical_status(ligand.id, p.id)
+                pharm_modality_value = pharm_modality(ligand.id, canonical_entry_name)
 
                 if ligand.ligand_type and ligand.ligand_type.slug == "small-molecule":
                     mol_modality = "Small mol"
@@ -5189,7 +5249,7 @@ class LigandComplexModelsDataJsonView(View):
                         "sequence": ligand.sequence or "",
                     },
                     "mol_modality": mol_modality,
-                    "pharm_modality": pharm_modality,
+                    "pharm_modality": pharm_modality_value,
                     "physiological": "Yes" if is_physiological else "No",
                     "clinical": clinical,
                     # Nested (rather than flat gene_name/protein_name + sibling fields) so that

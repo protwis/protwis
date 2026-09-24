@@ -369,22 +369,30 @@ function createDropdownFilters(api,column_filters) {
 
                     // helpers
                     //
-                    // decodeHTML/normalizeText used to create a real <div> and set its
-                    // innerHTML per cell to strip tags/decode entities via the browser's
-                    // HTML parser — correct, but up to ~1716 rows x 7 columns of real DOM
-                    // parsing on every page load (measured ~0.9-1.3s of the total load
-                    // time). The only markup this filter type's columns ever contain
-                    // (fusions/antibodies/ligand_type/ligand_role/endo_type/ligand names,
-                    // built server-side in structure_browser_table_query.py) is a literal
-                    // "<br>" separator — no HTML entities are ever emitted into these
-                    // fields — so a plain string replace is behaviorally identical here
-                    // without touching the DOM.
+                    // decodeHTML/normalizeText strip tags AND decode entities (ligand/protein
+                    // names routinely carry both, e.g. "CXCL12&phi;" or "PGF<sub>2</sub>") via
+                    // the browser's own HTML parser, which is the only correct way to do this
+                    // (a tag-stripping regex alone leaves "&phi;"/"&alpha;" etc. as literal,
+                    // useless filter option text). A naive per-cell `new Element + innerHTML`
+                    // was previously measured at ~0.9-1.3s across ~1716 rows x 7 columns, so
+                    // this reuses a single detached element and memoizes by raw string --
+                    // there are only ever as many distinct raw strings as distinct cell values,
+                    // not one DOM parse per cell.
                     function escapeRegex(s){ return String(s||'').replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+                    var _decodeEl = null;
+                    var _decodeCache = new Map();
                     function decodeHTML(s){
-                    return String(s || '').replace(/<[^>]*>/g, '');
+                    s = String(s || '');
+                    var cached = _decodeCache.get(s);
+                    if (cached !== undefined) return cached;
+                    if (!_decodeEl) _decodeEl = document.createElement('div');
+                    _decodeEl.innerHTML = s;
+                    var out = _decodeEl.textContent || _decodeEl.innerText || '';
+                    _decodeCache.set(s, out);
+                    return out;
                     }
                     function normalizeText(s){
-                    return String(s || '').replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]*>/g, '');
+                    return decodeHTML(String(s || '').replace(/<br\s*\/?>/gi, '\n'));
                     }
 
                     // ✅ collect tokens from the raw data when it's an array of names (best),
