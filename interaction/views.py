@@ -4,6 +4,7 @@ from django.conf import settings
 from django.db.models import Count, Sum, Avg, Q
 from django.utils.text import slugify
 from django.conf import settings
+from django.http import HttpResponseNotFound
 
 from interaction.models import ResidueFragmentInteraction, StructureLigandInteraction, ResidueFragmentInteractionType
 from interaction.forms import PDBform
@@ -1968,7 +1969,12 @@ def calculate(request, redirect=None):
 
                 temp_path = module_dir + '/pdbs/' + str(pdbdata).replace("_","")
                 pdbdata = open(temp_path, 'r').read()
-                results = runusercalculation_2022(pdbname, session_key)
+
+                pdb_wr = WebResource.objects.get(slug='pdb')
+                if (WebLink.objects.filter(web_resource=pdb_wr, index__iexact=pdbname).exists()):
+                    results = runusercalculation_2022(pdbname, session_key)
+                else:
+                    return HttpResponseNotFound("It looks like the name of the PDB file you uploaded does not match any PDB code in GPCRdb. Please check the name of the file and try again. If you are using a custom PDB file, please make sure to use a valid PDB code matching the receptor sequence as the name of the file (e.g. 2RH1.pdb).")
 
             else:
                 pdbname = form.cleaned_data['pdbname'].strip()
