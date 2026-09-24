@@ -41,8 +41,8 @@ def dashwhenempty (obj):
 
 @register.filter
 def ligandrole ( objs ):
-    objs = sorted(objs, key=lambda obj: obj.ligand_role.name)
-    elements = [obj.ligand_role.name for obj in objs]
+    objs = sorted(objs, key=lambda obj: obj.ligand_role.name if obj.ligand_role else '')
+    elements = [obj.ligand_role.name if obj.ligand_role else '-' for obj in objs]
     if len(elements) > 0:
         if len(elements) > 1:
             if elements[0]==elements[1]:
@@ -56,7 +56,7 @@ def ligandrole ( objs ):
 
 @register.filter
 def ligandtype ( objs ):
-    objs = sorted(objs, key=lambda obj: obj.ligand_role.name)
+    objs = sorted(objs, key=lambda obj: obj.ligand_role.name if obj.ligand_role else '')
     elements = [obj.ligand.ligand_type.name for obj in objs]
     if len(elements) > 0:
         return "\n".join(elements)

@@ -14,7 +14,7 @@ if settings.PYTHON_SMILES_VALIDATION:
 
 from random import SystemRandom
 from copy import deepcopy
-from collections import defaultdict, OrderedDict
+from collections import defaultdict, OrderedDict, Counter
 
 from django.middleware.csrf import get_token
 from django.shortcuts import render, redirect, get_object_or_404
@@ -3939,25 +3939,28 @@ class LigandInformationView(AbsLigand):
         ld['logp'] = ligand_data.logp
         ld['mw'] = round(ligand_data.mw,1) if ligand_data.mw else None
         ld['labels'] = LigandInformationView.get_labels(ligand_data, endogenous_ligands, ld['type'])
-        ld['wl'] = list()
         ld['ligand_smiles'], ld['ligand_smiles_for_image'], ld['picture'] = standardize_smiles(ligand_data.smiles, ld['mw'])
         ld['helm'] = ligand_data.helm
         ld['radioactive'] = ligand_data.radioactive
         ld['stereo_status'] = ligand_data.stereo_status
         ld['related_ids'] = list()
 
+        #Building database connection links, disambiguating duplicate resource names (e.g. multiple UniProt entries)
+        id_rows = list(ligand_data.ids.all())
+        name_counts = Counter(i.web_resource.name for i in id_rows)
+        entries = [
+            {
+                'raw_name': i.web_resource.name,
+                'name': i.web_resource.name if name_counts[i.web_resource.name] == 1 else f"{i.web_resource.name} ({i.index})",
+                'link': str(i),
+            }
+            for i in id_rows
+        ]
         #Sorting links if ligand is endogenous
         if ligand_data.id in endogenous_ligands:
             sorted_list = ['Guide To Pharmacology', 'DrugBank', 'Drug Central', 'ChEMBL_compound_ids', 'PubChem']
-            to_be_sorted = {}
-            for i in ligand_data.ids.all():
-                to_be_sorted[i.web_resource.name] = {'name': i.web_resource.name, "link": str(i)}
-            tmp = sorted(to_be_sorted.items(), key=lambda pair: sorted_list.index(pair[0]) if pair[0] in sorted_list else len(sorted_list))
-            for i in tmp:
-                ld['wl'].append(i[1])
-        else:
-            for i in ligand_data.ids.all():
-                ld['wl'].append({'name': i.web_resource.name, "link": str(i)})
+            entries.sort(key=lambda e: sorted_list.index(e['raw_name']) if e['raw_name'] in sorted_list else len(sorted_list))
+        ld['wl'] = [{'name': e['name'], 'link': e['link']} for e in entries]
         #Adding related ligand object links
         _, related_ligand_objects = AbsLigand.get_related_ligands(ligand_data.gpcrdb_id)
         for r in related_ligand_objects:
