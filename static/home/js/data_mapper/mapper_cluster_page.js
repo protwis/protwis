@@ -180,18 +180,28 @@ function mapperClusterGetLabelColor(lbl) {
     });
   }
 
-  // Demo data (subset from heatmap demo, gradient only)
+  // Demo data: two receptor groups (serotonin vs. opsins) so fellow receptors share a color
   var MAPPER_CLUSTER_DEMO_ROWS = [
-    { receptor: '5HT1A', gradient: '1',  category: 'Group A' },
-    { receptor: '5HT1B', gradient: '2',  category: 'Group B' },
-    { receptor: '5HT2A', gradient: '6',  category: 'Group C' },
-    { receptor: 'ACKR1', gradient: '13', category: 'Group A' },
-    { receptor: 'ACKR2', gradient: '14', category: 'Group B' },
-    { receptor: 'ACM1',  gradient: '17', category: 'Group C' },
-    { receptor: 'ACM2',  gradient: '18', category: 'Group A' },
-    { receptor: 'ADA1A', gradient: '23', category: 'Group B' },
-    { receptor: 'ADRB1', gradient: '29', category: 'Group C' },
-    { receptor: 'ADRB2', gradient: '30', category: 'Group A' }
+    { receptor: '5-HT1A receptor', gradient: '1', category: 'Aminergic receptors' },
+    { receptor: '5-HT1B receptor', gradient: '1', category: 'Aminergic receptors' },
+    { receptor: '5-HT1D receptor', gradient: '1', category: 'Aminergic receptors' },
+    { receptor: '5-HT1E receptor', gradient: '1', category: 'Aminergic receptors' },
+    { receptor: '5-HT1F receptor', gradient: '1', category: 'Aminergic receptors' },
+    { receptor: '5-HT2A receptor', gradient: '1', category: 'Aminergic receptors' },
+    { receptor: '5-HT2B receptor', gradient: '1', category: 'Aminergic receptors' },
+    { receptor: '5-HT2C receptor', gradient: '1', category: 'Aminergic receptors' },
+    { receptor: '5-HT4 receptor',  gradient: '1', category: 'Aminergic receptors' },
+    { receptor: '5-HT5A receptor', gradient: '1', category: 'Aminergic receptors' },
+    { receptor: '5-HT6 receptor',  gradient: '1', category: 'Aminergic receptors' },
+    { receptor: '5-HT7 receptor',  gradient: '1', category: 'Aminergic receptors' },
+    { receptor: 'OPN3',            gradient: '2', category: 'Retinal receptors' },
+    { receptor: 'OPN4',            gradient: '2', category: 'Retinal receptors' },
+    { receptor: 'OPN5',            gradient: '2', category: 'Retinal receptors' },
+    { receptor: 'OPN1SW',          gradient: '2', category: 'Retinal receptors' },
+    { receptor: 'Rhodopsin',       gradient: '2', category: 'Retinal receptors' },
+    { receptor: 'OPN1MW',          gradient: '2', category: 'Retinal receptors' },
+    { receptor: 'OPN1LW',          gradient: '2', category: 'Retinal receptors' },
+    { receptor: 'RRH',             gradient: '2', category: 'Retinal receptors' }
   ];
 
   // ── Helpers ────────────────────────────────────────────────────────────────
@@ -1125,9 +1135,8 @@ function mapperClusterGetLabelColor(lbl) {
     suppressRedraw = true;
 
     // Set default palette colors for the demo categories
-    CLUSTER_LABEL_COLORS['Group A'] = '#3c5488';
-    CLUSTER_LABEL_COLORS['Group B'] = '#e64b35';
-    CLUSTER_LABEL_COLORS['Group C'] = '#00a087';
+    CLUSTER_LABEL_COLORS['Aminergic receptors'] = '#3c5488';
+    CLUSTER_LABEL_COLORS['Retinal receptors']   = '#e64b35';
 
     // Resolve all demo entries first
     var demoResolved = MAPPER_CLUSTER_DEMO_ROWS.map(function (row) {
