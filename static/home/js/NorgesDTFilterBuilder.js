@@ -56,7 +56,7 @@ function CreateColumnFilters(datatable_selector,column_number, column_range, fil
         // ## Filter type list of valid inputs ##
         // ######################################
 
-        const Filter_type_list = ['Multi-select-exact','Multi-select-unspecific','Range-float-vertical','Range-float-horizontal','Range-select-vertical','Range-select-horizontal','Multi-select-exact-filter']
+        const Filter_type_list = ['Multi-select-exact','Multi-select-unspecific','Range-float-vertical','Range-float-horizontal','Range-select-vertical','Range-select-horizontal','Multi-select-exact-filter','Multi-select-exact-filter-lines']
         
         // ######################################################################
         // # Check if column_number is an integer in the range of the DataTable #
@@ -355,7 +355,7 @@ function createDropdownFilters(api,column_filters) {
                 } // End of is searchable
             }); // End of multi-selct filter
 
-            } else if (filter_type === 'Multi-select-exact-filter') {
+            } else if (filter_type === 'Multi-select-exact-filter' || filter_type === 'Multi-select-exact-filter-lines') {
                 api.columns([column_number]).every(function () {
                     if (!this.searchable()) return;
 
@@ -415,7 +415,12 @@ function createDropdownFilters(api,column_filters) {
                         // fallback: use rendered "filter" text, then split
                         var v = this.render('filter');
                         v = normalizeText(v);
-                        v.split(/\s*(?:\n|,|\|)\s*/g).forEach(function(tok){
+                        // '-lines' variant: items are newline/pipe delimited only; commas belong to the
+                        // name (IUPAC names like "3,3',3''-phosphanetriyltripropanoic acid" stay whole)
+                        var splitRx = (filter_type === 'Multi-select-exact-filter-lines')
+                            ? /\s*(?:\n|\|)\s*/g
+                            : /\s*(?:\n|,|\|)\s*/g;
+                        v.split(splitRx).forEach(function(tok){
                         tok = tok && tok.trim();
                         if (tok) tokenSet.add(tok);
                         });
