@@ -30,6 +30,8 @@ $(function() {
         create: function(event, ui) { this.focus();return false; },
         focus: function(event, ui) { return false; },
         select: function(event, ui) {
+            // Why is this here? Should not be $( '#nav-selection-autocomplete' ).val('');?
+            // It might interfere with other selection-autocomplete.
             $( '#selection-autocomplete' ).val('');
             console.log(ui.item['id'],ui.item['type'],ui.item['label']);
             redirect_url = '/protein/'+ui.item['slug'];
