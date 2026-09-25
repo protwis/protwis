@@ -242,16 +242,6 @@ var Styling_Option_dict = {
 // ## Initialization of global data for list ##
 function fixedStyling(list_data_wow, data_types_list) {
 
-    // Function to check if any of the specified keys are present in a given object
-    function checkKeysPresent(obj, keys) {
-        return keys.some(k => k in obj);
-    }
-
-    // Define the keys to check for each column
-    var col1Keys = ["Value1", "Value2"];
-    var col2Keys = ["Value3", "Value4"];
-    var col3Keys = ["Value5", "Value6"];
-
     var Data_styling = {
         Col1: {Data: "Yes", Datatype: 'Continuous', Data_min: Infinity,Data_max: -Infinity, Data_coloring: 'All', Data_color1: '#FFFFFF', Data_color2: '#FF0000', data_color_complexity: 'One'},
         Col2: {Data: "Yes", Datatype: 'Continuous', Data_min: Infinity,Data_max: -Infinity, Data_coloring: 'All', Data_color1: '#FFFFFF', Data_color2: '#A020F0', data_color_complexity: 'One'},
@@ -274,9 +264,9 @@ function fixedStyling(list_data_wow, data_types_list) {
     Object.keys(list_data_wow).forEach(function(key) {
         var currentObj = list_data_wow[key];
 
-        updateDataMinMax('Col1', 'Value2', currentObj);
-        updateDataMinMax('Col2', 'Value4', currentObj);
-        updateDataMinMax('Col3', 'Value6', currentObj);
+        updateDataMinMax('Col1', 'Value1', currentObj);
+        updateDataMinMax('Col2', 'Value2', currentObj);
+        updateDataMinMax('Col3', 'Value3', currentObj);
     });
 
     return Data_styling;
