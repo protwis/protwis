@@ -77,12 +77,12 @@ class Structure(models.Model):
                 save_line = False
             if ligands_to_keep and line.startswith('HET'):
                 if pref_chain:
-                    if line[17:20] != 'HOH' and line[17:20] in ligands_to_keep and line[21] == self.preferred_chain[0]:
+                    if line[17:20] != 'HOH' and line[17:20].strip() in ligands_to_keep and line[21] == self.preferred_chain[0]:
                         save_line = True
                     elif line[17:20] != 'HOH':
                         save_line=False
                 else:
-                    if line[17:20] != 'HOH' and line[17:20] in ligands_to_keep:
+                    if line[17:20] != 'HOH' and line[17:20].strip() in ligands_to_keep:
                         save_line = True
                     elif line[17:20] != 'HOH':
                         save_line=False

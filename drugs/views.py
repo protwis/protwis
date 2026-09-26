@@ -1155,7 +1155,7 @@ class DiseaseOverview(TemplateView):
                if indi.title not in indication_data[lvl0].keys():
                    indication_data[lvl0][indi.title] = {'red': 0, 'purple': 0, 'blue': 0}
                    listdata[lvl0].append(indi.title)
-                   listplot_data_variables[indi.title] = {'Value1': 'Circle', 'Value2': 0, 'Value3': 'Circle', 'Value4': 0, 'Value5': 'Circle','Value6': 0}
+                   listplot_data_variables[indi.title] = {'Value1': 0, 'Value2': 0, 'Value3': 0}
                    Label_Conversion[indi.title] = indi.title
         #with master dict set, now we add data from drugs
         drug_data = Drugs.objects.all().prefetch_related('ligand', 'indication', 'indication__parent',
@@ -1181,11 +1181,11 @@ class DiseaseOverview(TemplateView):
             indications = list(drug_dict[drug].keys())[1:]
             for ind in indications:
                 if max_phase < 4 and drug_dict[drug][ind][0] < 4:
-                    listplot_data_variables[ind]['Value2'] += 1
+                    listplot_data_variables[ind]['Value1'] += 1
                 elif max_phase == 4 and drug_dict[drug][ind][0] < 4:
-                    listplot_data_variables[ind]['Value4'] += 1
+                    listplot_data_variables[ind]['Value2'] += 1
                 elif max_phase == 4 and drug_dict[drug][ind][0] == 4:
-                    listplot_data_variables[ind]['Value6'] += 1
+                    listplot_data_variables[ind]['Value3'] += 1
 
         counter = 1
         labeled_listdata = {}
