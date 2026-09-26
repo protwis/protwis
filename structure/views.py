@@ -1629,7 +1629,7 @@ def ServeCleanPdbDiagram(request, pdbname, ligname):
 
     # Obtain and save cleaned PDB
     parser = PDBParser(QUIET = True)
-    filtered_pdb = StringIO(structure.get_cleaned_pdb(ligands_to_keep=ligname.upper()))
+    filtered_pdb = StringIO(structure.get_cleaned_pdb(ligands_to_keep=[ligname.upper()]))
     pdb_out = PDBIO()
     pdb_out.set_structure(parser.get_structure(structure.pdb_code.index, filtered_pdb))
 
