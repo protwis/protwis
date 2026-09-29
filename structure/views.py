@@ -1123,10 +1123,10 @@ def ServeComplexModDiagram(request, modelname):
     if model.exists():
         model=model.get()
     else:
-         quit() #quit!
+        return HttpResponseNotFound("Structure not found")
 
     if model.pdb_data is None:
-        quit()
+        return HttpResponseNotFound("No PDB data for this structure")
 
     response = HttpResponse(model.pdb_data.pdb, content_type='text/plain')
     return response
@@ -1541,10 +1541,10 @@ def ServePdbDiagram(request, pdbname):
     if structure.exists():
         structure=structure.get()
     else:
-         quit() #quit!
+        return HttpResponseNotFound("Structure not found")
 
     if structure.pdb_data is None:
-        quit()
+        return HttpResponseNotFound("No PDB data for this structure")
 
     response = HttpResponse(structure.pdb_data.pdb, content_type='text/plain')
     return response
@@ -1555,10 +1555,10 @@ def ServeUprightPdbDiagram(request, pdbname):
     if structure.exists():
         structure = structure.get()
     else:
-         quit() #quit!
+        return HttpResponseNotFound("Structure not found")
 
     if structure.pdb_data is None:
-        quit()
+        return HttpResponseNotFound("No PDB data for this structure")
 
     sv = StructureVectors.objects.filter(structure=structure)
     struct = translation = center_axis = ""
@@ -1623,13 +1623,67 @@ def ServeCleanPdbDiagram(request, pdbname, ligname):
     if structure.exists():
         structure = structure.get()
         if structure.pdb_data is None:
-            quit()
+            return HttpResponseNotFound("No PDB data for this structure")
     else:
-        quit()
+        return HttpResponseNotFound("Structure not found")
+
+    # Resolve the requested ligand either by its 2-3 letter PDB chemical-component
+    # code, or by its GPCRdb ligand id (needed for peptide/protein ligands, whose
+    # pdb_reference is just the literal 'pep' and can be ambiguous per structure -
+    # but any ligand can be looked up this way).
+    interactions = list(StructureLigandInteraction.objects.filter(structure=structure, pdb_reference=ligname.upper()))
+    if not interactions and ligname.isdigit():
+        interactions = list(StructureLigandInteraction.objects.filter(structure=structure, ligand__gpcrdb_id=int(ligname)))
+    if not interactions:
+        return HttpResponseNotFound("Ligand not found in this structure")
+
+    lig_code = interactions[0].pdb_reference.upper()
+    no_coordinates_anywhere = all(not i.chain_res for i in interactions)
+
+    if interactions[0].ligand.ligand_type.slug in ('peptide', 'protein'):
+        # Peptide/protein ligands are whole polymer chains (plain ATOM records,
+        # no HETATM), so they're extracted by chain rather than by residue name.
+        # Always fetched live from the structure - StructureLigandInteraction.pdb_file
+        # only contains the residues that interact with the ligand, not the full
+        # receptor chain or the full peptide, so it can't be used here.
+        chains_to_keep = []
+        for interaction in interactions:
+            if interaction.chain_res:
+                chains_to_keep += [c.strip() for c in interaction.chain_res.split(',') if c.strip()]
+        cleaned = structure.get_cleaned_pdb(chains_to_keep=chains_to_keep) if chains_to_keep else ''
+        found = any(
+            (l.startswith('ATOM') or l.startswith('HET')) and len(l) > 21 and l[21] in chains_to_keep
+            for l in cleaned.split('\n')
+        )
+    else:
+        residues_to_keep = []
+        for interaction in interactions:
+            if interaction.chain_res:
+                for part in interaction.chain_res.split(','):
+                    part = part.strip()
+                    if ':' in part:
+                        chain, resnum = part.split(':', 1)
+                        try:
+                            residues_to_keep.append((chain.strip(), int(resnum.strip())))
+                        except ValueError:
+                            pass
+
+        if residues_to_keep:
+            cleaned = structure.get_cleaned_pdb(residues_to_keep=residues_to_keep)
+        else:
+            # No usable chain_res - fall back to matching by ligand code on the
+            # preferred chain, same as before this session.
+            cleaned = structure.get_cleaned_pdb(ligands_to_keep=[lig_code])
+        found = any(l.startswith('HET') and l[17:20].strip() == lig_code for l in cleaned.split('\n'))
+
+    if not found:
+        if no_coordinates_anywhere:
+            return HttpResponseNotFound("Ligand is annotated for this structure but has no resolved atomic coordinates")
+        return HttpResponseNotFound("Ligand not found in this structure")
 
     # Obtain and save cleaned PDB
     parser = PDBParser(QUIET = True)
-    filtered_pdb = StringIO(structure.get_cleaned_pdb(ligands_to_keep=[ligname.upper()]))
+    filtered_pdb = StringIO(cleaned)
     pdb_out = PDBIO()
     pdb_out.set_structure(parser.get_structure(structure.pdb_code.index, filtered_pdb))
 
@@ -1640,11 +1694,15 @@ def ServeCleanPdbDiagram(request, pdbname, ligname):
 
 class NotDisordered(Select):
     def accept_atom(self, atom):
-        if not atom.is_disordered() or atom.get_altloc() == 'A':
+        if not atom.is_disordered():
             atom.set_altloc(' ')
             return True
-        else:
-            return False
+        disordered_atom = atom.get_parent()[atom.get_name()]
+        first_altloc = disordered_atom.disordered_get_id_list()[0]  # already sorted alphabetically
+        if atom.get_altloc() == first_altloc:
+            atom.set_altloc(' ')
+            return True
+        return False
 
     def accept_residue(self, residue):
         if residue.is_disordered():
