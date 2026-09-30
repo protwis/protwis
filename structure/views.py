@@ -1632,12 +1632,22 @@ def ServeCleanPdbDiagram(request, pdbname, ligname):
     # pdb_reference is just the literal 'pep' and can be ambiguous per structure -
     # but any ligand can be looked up this way).
     interactions = list(StructureLigandInteraction.objects.filter(structure=structure, pdb_reference=ligname.upper()))
+    if not interactions and len(ligname) == 3:
+        # Extended (4-5 char) chemical component codes get truncated to 3 chars
+        # when a .cif gets converted to the legacy fixed-width .pdb format, so the
+        # residue name actually present in pdb_data.pdb no longer matches the full
+        # pdb_reference recorded in the annotation.
+        candidates = StructureLigandInteraction.objects.filter(structure=structure, pdb_reference__istartswith=ligname)
+        interactions = [i for i in candidates if i.pdb_reference and len(i.pdb_reference) > 3]
     if not interactions and ligname.isdigit():
         interactions = list(StructureLigandInteraction.objects.filter(structure=structure, ligand__gpcrdb_id=int(ligname)))
     if not interactions:
         return HttpResponseNotFound("Ligand not found in this structure")
 
     lig_code = interactions[0].pdb_reference.upper()
+    lig_code_variants = {lig_code}
+    if len(lig_code) > 3:
+        lig_code_variants.add(lig_code[:3])
     no_coordinates_anywhere = all(not i.chain_res for i in interactions)
 
     if interactions[0].ligand.ligand_type.slug in ('peptide', 'protein'):
@@ -1673,8 +1683,8 @@ def ServeCleanPdbDiagram(request, pdbname, ligname):
         else:
             # No usable chain_res - fall back to matching by ligand code on the
             # preferred chain, same as before this session.
-            cleaned = structure.get_cleaned_pdb(ligands_to_keep=[lig_code])
-        found = any(l.startswith('HET') and l[17:20].strip() == lig_code for l in cleaned.split('\n'))
+            cleaned = structure.get_cleaned_pdb(ligands_to_keep=list(lig_code_variants))
+        found = any(l.startswith('HET') and l[17:20].strip() in lig_code_variants for l in cleaned.split('\n'))
 
     if not found:
         if no_coordinates_anywhere:
