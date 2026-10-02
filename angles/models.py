@@ -43,20 +43,31 @@ class ResidueAngle(models.Model):
 def get_snake_plot_distance_lookup(protein):
     """Look up per-residue midplane_distance for a protein's snake plot TM alignment.
 
-    Returns {sequence_number: {'best_midplane':, 'avg_midplane':}}, joined across the
-    protein's experimental structures by sequence_number (ResidueAngle.residue is FK'd to
-    each structure's own protein_conformation, not the snake plot's reference conformation).
+    Returns {sequence_number: {'best_midplane':, 'avg_midplane':}}, keyed by the protein's own
+    (wild-type) sequence_number. Values are joined across the protein's experimental structures
+    by generic number rather than sequence_number: ResidueAngle.residue is FK'd to each
+    structure's own protein_conformation, whose sequence_numbers can be offset from wild type
+    (e.g. 6KUX/6KUY for ada2a_human are off by 15), while generic numbers stay correct.
     """
+    from residue.models import Residue
+
     structures = list(Structure.objects.filter(protein_conformation__protein__parent=protein,
                                                structure_type__origin='experiment').order_by('resolution'))
     if not structures:
         return {}
 
+    gn_to_sequence_number = dict(Residue.objects.filter(
+            protein_conformation__protein=protein, generic_number__isnull=False
+        ).values_list('generic_number_id', 'sequence_number'))
+
     best_structure_id = structures[0].pk
     by_sequence_number = {}
-    for structure_id, sequence_number, midplane_distance in ResidueAngle.objects.filter(
-                structure__in=structures
-            ).values_list('structure_id', 'residue__sequence_number', 'midplane_distance'):
+    for structure_id, generic_number_id, midplane_distance in ResidueAngle.objects.filter(
+                structure__in=structures, residue__generic_number__isnull=False
+            ).values_list('structure_id', 'residue__generic_number_id', 'midplane_distance'):
+        sequence_number = gn_to_sequence_number.get(generic_number_id)
+        if sequence_number is None:
+            continue
         by_sequence_number.setdefault(sequence_number, {})[structure_id] = midplane_distance
 
     lookup = {}
