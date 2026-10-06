@@ -1,6 +1,6 @@
 from django.shortcuts import render
-from django.db.models import Q, F, Prefetch, Avg, StdDev, IntegerField, Sum, Case, When, Min, Max
-from django.db.models.functions import Concat
+from django.db.models import Q, F, ExpressionWrapper, FloatField, Prefetch, Avg, StdDev, IntegerField, Sum, Case, When, Min, Max
+from django.db.models.functions import Cast, Coalesce, Concat, Length
 from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import csrf_exempt
 from django.core.cache import cache
@@ -250,7 +250,16 @@ def PdbTableData(request):
         data = data.filter(extra_proteins__category__startswith=effector).prefetch_related(
         'extra_proteins__protein_conformation','extra_proteins__wt_protein').order_by(
         'extra_proteins__protein_conformation__protein__parent','state').annotate(
-        res_count = Sum(Case(When(extra_proteins__structure__protein_conformation__residue__generic_number=None, then=0), default=1, output_field=IntegerField())))
+        coverage_pct=ExpressionWrapper(
+                        Cast(Count("protein_conformation__residue", distinct=True),
+                                FloatField()) * 100.0 /
+                        Coalesce(
+                            Length("protein_conformation__protein__parent__sequence"),
+                            Value(1.0)
+                        ),
+                        output_field=IntegerField(),
+                    )
+        )
         signal_ps = StructureExtraProteins.objects.filter(category__startswith=effector).values(
                             'structure__pdb_code__index','structure__protein_conformation__protein','structure__protein_conformation__protein__parent','display_name',
                             'wt_coverage','wt_protein__family__parent__parent__name','wt_protein__family__parent__name','category','note'
@@ -282,7 +291,16 @@ def PdbTableData(request):
         
         data = data.prefetch_related('extra_proteins__protein_conformation','extra_proteins__wt_protein').order_by(
         'extra_proteins__protein_conformation__protein__parent','state').annotate(
-        res_count = Sum(Case(When(extra_proteins__protein_conformation__residue__generic_number=None, then=0), default=1, output_field=IntegerField())))
+        coverage_pct=ExpressionWrapper(
+                        Cast(Count("protein_conformation__residue", distinct=True),
+                                FloatField()) * 100.0 /
+                        Coalesce(
+                            Length("protein_conformation__protein__parent__sequence"),
+                            Value(1.0)
+                        ),
+                        output_field=IntegerField(),
+                    )
+        )
         signal_ps = StructureExtraProteins.objects.all().exclude(category__in=['G beta','G gamma']).values(
                             'structure__pdb_code__index','structure__protein_conformation__protein__parent','display_name',
                             'wt_coverage','wt_protein__family__parent__parent__name','wt_protein__family__parent__name','category','note'
@@ -449,11 +467,7 @@ def PdbTableData(request):
                     cache.set(key,r['identity_to_human'], 24*7*3600)
                 identity_lookup[key] = r['identity_to_human']
 
-        residues_wt = rcs[shorted.pk]
-        residues_s = s.res_count
-        # residues_s = residues_wt
-        #print(pdb,"residues",protein,residues_wt,residues_s,residues_s/residues_wt)
-        r['fraction_of_wt_seq'] = int(100*residues_s/residues_wt)
+        r['fraction_of_wt_seq'] = s.coverage_pct if s.coverage_pct != None else "N/A"
 
         a_list = []
         for a in s.stabilizing_agents.all():
