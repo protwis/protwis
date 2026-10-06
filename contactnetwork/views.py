@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from django.db.models import Q, F, ExpressionWrapper, FloatField, Prefetch, Avg, StdDev, IntegerField, Sum, Case, When, Min, Max
+from django.db.models import Q, F, Count, Value, ExpressionWrapper, FloatField, Prefetch, Avg, StdDev, IntegerField, Sum, Case, When, Min, Max
 from django.db.models.functions import Cast, Coalesce, Concat, Length
 from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import csrf_exempt
@@ -255,6 +255,7 @@ def PdbTableData(request):
                                 FloatField()) * 100.0 /
                         Coalesce(
                             Length("protein_conformation__protein__parent__sequence"),
+                            Length("protein_conformation__protein__sequence"),
                             Value(1.0)
                         ),
                         output_field=IntegerField(),
@@ -296,6 +297,7 @@ def PdbTableData(request):
                                 FloatField()) * 100.0 /
                         Coalesce(
                             Length("protein_conformation__protein__parent__sequence"),
+                            Length("protein_conformation__protein__sequence"),
                             Value(1.0)
                         ),
                         output_field=IntegerField(),
@@ -316,10 +318,6 @@ def PdbTableData(request):
     proteins_af_pks = Structure.objects.all().filter(structure_type__origin__in=['model','experiment_model_refined']).values_list("protein_conformation__protein__pk", flat=True).distinct()
     if effector:
         proteins_pks = list(proteins_pks) + list(proteins_af_pks)
-    residue_counts = ProteinConformation.objects.filter(protein__pk__in=proteins_pks).values('protein__pk').annotate(res_count = Sum(Case(When(residue__generic_number=None, then=0), default=1, output_field=IntegerField())))
-    rcs = {}
-    for rc in residue_counts:
-        rcs[rc['protein__pk']] = rc['res_count']
 
     # get minimum resolution for every receptor/state pair
     # resolutions = Structure.objects.all().exclude(structure_type__slug__startswith='af-').values('protein_conformation__protein__parent','state__name').order_by().annotate(res = Min('resolution'))
