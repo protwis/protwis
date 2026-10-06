@@ -1679,7 +1679,7 @@ class StructureBuildCheck():
         else:
             logger.warning('Warning: {} not annotated'.format(key))
 
-    def check_residue_mismatches(self, structure, min_consecutive_mismatches=10):
+    def check_residue_mismatches(self, structure, min_consecutive_mismatches=10, max_match_tolerance=1):
         parent = structure.protein_conformation.protein.parent
         parent_residues = Residue.objects.filter(protein_conformation__protein=parent) \
             .exclude(generic_number=None).select_related('generic_number')
@@ -1690,15 +1690,19 @@ class StructureBuildCheck():
 
         max_streak = 0
         current_streak = 0
+        match_run = 0
         for r in structure_residues:
             wt_r = parent_by_gn.get(r.generic_number.label)
             if wt_r is None:
                 continue
             if r.amino_acid != wt_r.amino_acid:
                 current_streak += 1
+                match_run = 0
                 max_streak = max(max_streak, current_streak)
             else:
-                current_streak = 0
+                match_run += 1
+                if match_run > max_match_tolerance:
+                    current_streak = 0
 
         if max_streak > min_consecutive_mismatches:
             self.residue_mismatch_structures.append(structure)

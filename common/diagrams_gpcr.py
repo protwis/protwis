@@ -1157,7 +1157,8 @@ class DrawSnakePlot(Diagram):
 
                 self.output += "<path id='path_"+name+"' class='"+name+" long' d='" + points2 + "' stroke='black' fill='none' stroke-width='2' />"
 
-                max_y = y1
+                max_y = None
+                x_at_max_y = (x1+x2)/2
                 for i in range(0,len(rs)):
                     r = rs[i]
                     if len(rs)>=loop_long_length:
@@ -1178,15 +1179,14 @@ class DrawSnakePlot(Diagram):
                     else:
                         if where[1][1]>self.maxY[position]: self.maxY[position] = where[1][1]
 
-                    if orientation==-1:
-                        if where[1][1]<max_y:
-                            max_y = where[1][1]
-                            x_at_max_y = where[1][0]
-                    else:
-                        if where[1][1]>max_y:
-                            max_y = where[1][1]
-                            x_at_max_y = where[1][0]
+                    # label goes at the outermost residue - not required to pass y1, as structure-based
+                    # TM alignment can leave the two helix ends far apart vertically
+                    if max_y is None or (orientation==-1 and where[1][1]<max_y) or (orientation==1 and where[1][1]>max_y):
+                        max_y = where[1][1]
+                        x_at_max_y = where[1][0]
 
+                if max_y is None: # empty loop
+                    max_y = boxY
                 if orientation==1:
                     max_y = max_y+25
                 else:

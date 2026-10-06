@@ -434,7 +434,8 @@ def decide_penalty(pdb_code):
         "9UAZ"
     ]:
         return 3, -4, -3, -1
-    elif pdb_code in ["5VEW","5VEX","6LN2","6KJV","6KK7","6KK1","8HN8","8HOC"]:
+    elif pdb_code in ["5VEW","5VEX","6LN2","6KJV","6KK7","6KK1","8HN8","8HOC",
+                       "8J22","8J23","8J24"]:
         # 5VEW's engineered disulfide (I317C/G361C, see structures.tsv) puts two
         # point mutations one residue apart. With cheap gaps (open<=-5), the
         # aligner "wobbles" -- opens a 1-residue gap on each side right next to
@@ -445,11 +446,26 @@ def decide_penalty(pdb_code):
         # chain. A steeper gap-open cost makes the straight, no-gap alignment
         # win instead. 5VEW previously shared the cheap-gap group above, which
         # was the actual cause here, not a fix for it.
+        #
+        # 8J22/8J23/8J24 hit the same wobble around WT position ~246 (a locally
+        # repetitive/conserved stretch). The legacy pairwise2-based pipeline
+        # had a manual per-code patch for exactly this (see the commented-out
+        # 'elif structure.pdb_code.index in [...]' blocks in build_structures.py
+        # for these three codes, all slicing out a spurious gap pair at the
+        # same alignment indices) that was dropped when the pipeline switched
+        # to PairwiseAligner; the steeper gap-open cost here fixes it the same
+        # way as for the 5VEW family instead of reinstating that hardcoded fix.
         return 3, -4, -8, -2
     elif pdb_code in ["6KUX", "6KUY", "6KUW"]:
         return 3, -4, -4, -1.5
     elif pdb_code in ["7YMJ"]:
         return 3, -5, -4, -4
+    elif pdb_code in ["6ZFZ", "6ZG4", "6ZG9"]:
+        # M1 StaR + T4L-in-ICL3: ~28 point mutations (dense in TM1) and a
+        # 134-residue ICL3 gap (220-353). Default extend (-2) makes that gap too
+        # expensive, so TM6/7 got placed straight after TM5; steep open/cheap
+        # extend opens the one long gap and suppresses the TM1 gap wobble.
+        return 3, -4, -10, -0.5
     else:
         return 3, -4, -5, -2
 
