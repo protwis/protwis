@@ -57,8 +57,11 @@ import zipfile
 import json
 import statistics
 import re
+import html
 from math import atan2, cos, sin, pi
 import traceback
+from urllib.parse import quote
+from django.utils.html import strip_tags
 
 from copy import deepcopy
 from io import StringIO, BytesIO
@@ -4131,7 +4134,9 @@ def prepare_lig_complex_download(mod, scores_obj=None, refined=False):
     # Get ligand name(s)
     ligand_names = [lps.ligand.name for lps in getattr(mod, 'ligandpeptide_structures', [])]
     if ligand_names:
-        ligand_name_str = '_'.join(ligand_names).replace('<sup>','').replace('</sup>','').replace('<sub>','').replace('</sub>','').replace('<i>','').replace('</i>','').replace('<b>','').replace('</b>','')
+        # Strip HTML markup/entities (e.g. &beta;) and anything unsafe in a filename
+        ligand_name_str = html.unescape(strip_tags('_'.join(ligand_names)))
+        ligand_name_str = re.sub(r'[^\w\-]+', '_', ligand_name_str).strip('_')
     else:
         ligand_name_str = 'unknown_ligand'
 
@@ -4199,7 +4204,10 @@ def SingleLigComplexModelDownload(request, modelname, csv=False):
         backup_zip.writestr(mod_name, pdb_io.getvalue())
         backup_zip.writestr(scores_name, scores_io.getvalue())
     response = HttpResponse(zip_io.getvalue(), content_type='application/x-zip-compressed')
-    response['Content-Disposition'] = 'attachment; filename=%s' % mod_name.split('.')[0] + ".zip"
+    # Quoted ASCII fallback plus RFC 6266 UTF-8 filename for non-ASCII ligand names
+    zip_name = os.path.splitext(mod_name)[0] + '.zip'
+    ascii_name = zip_name.encode('ascii', 'ignore').decode()
+    response['Content-Disposition'] = "attachment; filename=\"{}\"; filename*=UTF-8''{}".format(ascii_name, quote(zip_name))
     response['Content-Length'] = zip_io.tell()
 
     return response
