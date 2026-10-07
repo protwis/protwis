@@ -211,7 +211,6 @@ input.form-control {
 .dropdown-submenu > a::after {
   display: block;
   content: " ";
-  float: right;
   width: 0;
   height: 0;
   border-color: transparent;
@@ -219,10 +218,6 @@ input.form-control {
   border-width: 5px 0 5px 5px;
   border-left-color: #000;
   margin-top: 5px;
-  margin-right: -10px;
-}
-
-.dropdown-submenu > a::after {
   position: absolute;
   right: 5%;    /* stick to the far right */
   top: 20%;
