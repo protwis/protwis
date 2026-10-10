@@ -8,6 +8,7 @@ from django.http import HttpResponseNotFound
 
 from interaction.models import ResidueFragmentInteraction, StructureLigandInteraction, ResidueFragmentInteractionType
 from interaction.forms import PDBform
+from interaction.stored_interactions import stored_results
 from ligand.models import Ligand, LigandType, LigandRole
 from structure.models import Structure, PdbData, Rotamer, Fragment, StructureModel, StructureComplexModel, StructureExtraProteins, StructureVectors, StructureModelRMSD, StructureModelpLDDT, StructureModelScores
 from structure.assign_generic_numbers_gpcr import GenericNumbering
@@ -1980,15 +1981,25 @@ def calculate(request, redirect=None):
                 pdbname = form.cleaned_data['pdbname'].strip()
                 temp_path = module_dir + '/pdbs/' + pdbname + '.pdb'
 
-                if not os.path.isfile(temp_path):
-                    url = 'http://www.rcsb.org/pdb/files/%s.pdb' % pdbname
-                    pdbdata = urllib.request.urlopen(url).read().decode('utf-8')
-                    f = open(temp_path, 'w')
-                    f.write(pdbdata)
-                    f.close()
+                # A structure GPCRdb has: its stored interactions, not a new
+                # legacy calculation (interaction.stored_interactions).
+                stored = stored_results(pdbname)
+                if stored is not None:
+                    results, pdbdata = stored
+                    if not results and redirect:
+                        return HttpResponseNotFound("GPCRdb has no ligand interactions stored for %s, so no binding site can be selected from it." % pdbname)
+                    with open(temp_path, 'w') as f:
+                        f.write(pdbdata)
                 else:
-                    pdbdata = open(temp_path, 'r').read()
-                results = runusercalculation_2022(pdbname, session_key)
+                    if not os.path.isfile(temp_path):
+                        url = 'http://www.rcsb.org/pdb/files/%s.pdb' % pdbname
+                        pdbdata = urllib.request.urlopen(url).read().decode('utf-8')
+                        f = open(temp_path, 'w')
+                        f.write(pdbdata)
+                        f.close()
+                    else:
+                        pdbdata = open(temp_path, 'r').read()
+                    results = runusercalculation_2022(pdbname, session_key)
 
             # MAPPING GPCRdb numbering onto pdb.
             generic_numbering = GenericNumbering(temp_path,top_results=1, blastdb=os.sep.join([settings.STATICFILES_DIRS[0], 'blast', 'protwis_gpcr_blastdb']))
