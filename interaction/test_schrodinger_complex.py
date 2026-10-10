@@ -1,9 +1,4 @@
-r"""
-Unit tests for interaction.schrodinger_complex (no database).
-
-    python -c "import django; django.setup(); import unittest; \
-        unittest.main(module='interaction.test_schrodinger_complex', argv=['x'])"
-"""
+"""Unit tests for interaction.schrodinger_complex (no database)."""
 
 import unittest
 

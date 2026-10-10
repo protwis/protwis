@@ -1,8 +1,4 @@
-"""
-Unit tests for interaction.schrodinger_chain_map (no database).
-
-Run with plain unittest after django.setup(), like test_schrodinger_import.
-"""
+"""Unit tests for interaction.schrodinger_chain_map (no database)."""
 
 import unittest
 

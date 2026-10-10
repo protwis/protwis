@@ -1,12 +1,4 @@
-"""
-Unit tests for the database-free layer of interaction.schrodinger_peptide.
-
-They need Django configured (the module imports models) but never touch the
-database, so they run with plain unittest:
-
-    python -c "import django; django.setup(); import unittest; \
-        unittest.main(module='interaction.test_schrodinger_peptide', argv=['x'])"
-"""
+"""Unit tests for the database-free layer of interaction.schrodinger_peptide."""
 
 import json
 import os

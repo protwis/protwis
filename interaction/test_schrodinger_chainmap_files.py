@@ -1,13 +1,4 @@
-"""
-Unit tests for the database-free layer of build_schrodinger_chainmap_files.
-
-They need Django configured (the command imports models through
-interaction.schrodinger_import) but never touch the database, so they run with
-plain unittest:
-
-    python -c "import django; django.setup(); import unittest; \
-        unittest.main(module='interaction.test_schrodinger_chainmap_files', argv=['x'])"
-"""
+"""Unit tests for the database-free layer of build_schrodinger_chainmap_files."""
 
 import os
 import shutil
@@ -46,12 +37,7 @@ class ReadTsvTests(unittest.TestCase):
             b.read_tsv(path)
 
     def test_a_short_row_is_padded_and_loses_its_token(self):
-        """
-        The safe direction: the anchor keeps its component but no residue.
-
-        The map cannot cover the database's token, so the importer refuses the
-        structure.
-        """
+        """A short row is padded; the anchor keeps its component but no residue."""
         path = self.write(tsv([["PDB", "Name", "Type"], ["2RH1", "CAU"]]))
         self.assertEqual(b.read_tsv(path), [{"PDB": "2RH1", "Name": "CAU", "Type": ""}])
         self.assertEqual(
@@ -110,11 +96,7 @@ class AnnotationAnchorTests(unittest.TestCase):
         )
 
     def test_the_map_selects_what_the_importer_serves(self):
-        """
-        annotation_anchors and schrodinger_import.is_in_scope agree.
-
-        Checked on every combination of reference and type.
-        """
+        """annotation_anchors and is_in_scope agree on every reference and type."""
         import types as pytypes
 
         references = ["CAU", "D2U", "PEP", "pep", "APO", " apo ", "", None]

@@ -187,10 +187,9 @@ def receptor_segment(segments, auth_chain, ca_numbers):
     """
     (segment name, residues covered, note) of the receptor's main segment.
 
-    The main segment is the one on the receptor's author chain that covers most
-    of GPCRdb's receptor residues.
-
-    None when no segment covers any; a tie is refused rather than broken.
+    The main segment is the one on the receptor's author chain that covers the
+    most of GPCRdb's receptor residues. The name is None when no segment covers
+    any, and on a tie, which is refused rather than broken; the note says why.
     """
     scored = sorted(
         (
@@ -603,7 +602,7 @@ class UnroutableRow(si.UnroutableRow):
 
 def peptide_type(row):
     """
-    (interaction_type, specific_type, receptor_is_ring, peptide_is_ring).
+    (interaction_type, specific_type, receptor_is_ring, peptide_is_ring), or None.
 
     None for a family the peptide tables do not hold.
     """

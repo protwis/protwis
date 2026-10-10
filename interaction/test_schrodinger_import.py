@@ -1,12 +1,4 @@
-"""
-Unit tests for the database-free layer of interaction.schrodinger_import.
-
-They need Django configured (the module imports models) but never touch the
-database, so they run with plain unittest:
-
-    python -c "import django; django.setup(); import unittest; \
-        unittest.main(module='interaction.test_schrodinger_import', argv=['x'])"
-"""
+"""Unit tests for the database-free layer of interaction.schrodinger_import."""
 
 import os
 import shutil
@@ -1034,11 +1026,7 @@ class ProductContractTests(unittest.TestCase):
 
 
 class SeedTests(unittest.TestCase):
-    """
-    The seed migration creates every slug the imports can write.
-
-    build_structures creates no interaction type, so the migration must.
-    """
+    """The seed migration creates every slug the imports can write."""
 
     @staticmethod
     def _migration():

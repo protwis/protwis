@@ -1,11 +1,4 @@
-r"""
-End-to-end tests of the map builders and the clean-up on a small synthetic delivery.
-
-No database: each command is called with the options build/ligand_imports plans.
-
-    python -c "import django; django.setup(); import unittest; \
-        unittest.main(module='interaction.test_schrodinger_map_builders', argv=['x'])"
-"""
+"""End-to-end tests of the two map builders and the clean-up (no database)."""
 
 import hashlib
 import io

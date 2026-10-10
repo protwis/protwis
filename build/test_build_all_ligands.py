@@ -1,11 +1,4 @@
-r"""
-Unit tests for the ligand import steps of build_all and build_all_interactions.
-
-No database: every import command is replaced by a stub.
-
-    python -c "import django; django.setup(); import unittest; \
-        unittest.main(module='build.test_build_all_ligands', argv=['x'])"
-"""
+"""Unit tests for the ligand import steps of build_all and build_all_interactions."""
 
 import io
 import os

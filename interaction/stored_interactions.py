@@ -74,7 +74,7 @@ def anchor_keys(anchors):
 
 def build_results(rows, chain):
     """
-    Results from database rows, in the shape calculate_interactions returns.
+    Results from stored interaction rows, in the shape calculate_interactions returns.
 
     The rows are ((ligand key, is pep), one-letter amino acid, residue number,
     slug, name, type, direction).
