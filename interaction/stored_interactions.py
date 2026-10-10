@@ -1,15 +1,12 @@
-"""
-Stored interactions of a structure GPCRdb has, for the online calculation page.
-
-interaction.views.calculate computes interactions for a PDB file a user
-uploads or a PDB code a user types. For a typed code that GPCRdb already has,
-the answer is the interactions stored in the database, so the page agrees with
-the structure page. An uploaded file is still calculated: it may not be the
-deposited structure.
-
-The results come in the shape interaction.views.calculate_interactions returns,
-so the page needs no other change.
-"""
+"""Stored interactions of a structure GPCRdb has, for the online calculation page."""
+# interaction.views.calculate computes interactions for a PDB file a user
+# uploads or a PDB code a user types. For a typed code that GPCRdb already has,
+# the answer is the interactions stored in the database, so the page agrees with
+# the structure page. An uploaded file is still calculated: it may not be the
+# deposited structure.
+#
+# The results come in the shape interaction.views.calculate_interactions returns,
+# so the page needs no other change.
 
 import collections
 
@@ -54,13 +51,12 @@ def ligand_key(pdb_reference, ligand_name):
 
 
 def anchor_keys(anchors):
-    """
-    {anchor id: (results key, is pep)} for (id, pdb_reference, ligand name, chain_res).
-
-    Anchors that would share a key (two copies of one HET code at different
-    sites) each get their chain_res appended, so one site is never built from
-    two pockets.
-    """
+    """{anchor id: (results key, is pep)} for the given anchors."""
+    # Each anchor is (id, pdb_reference, ligand name, chain_res).
+    #
+    # Anchors that would share a key (two copies of one HET code at different
+    # sites) each get their chain_res appended, so one site is never built from
+    # two pockets.
     base = {sid: ligand_key(ref, name) for sid, ref, name, _chain in anchors}
     count = collections.Counter(base.values())
     out = {}
@@ -73,21 +69,18 @@ def anchor_keys(anchors):
 
 
 def build_results(rows, chain):
-    """
-    Results from stored interaction rows, in the shape calculate_interactions returns.
-
-    The rows are ((ligand key, is pep), one-letter amino acid, residue number,
-    slug, name, type, direction).
-
-    Each interaction is [residue, fragment file, slug, name, type, direction]
-    with residue as three-letter name, number and chain (ASP113A, what
-    interaction.views.regexaa reads); the fragment file is left empty, the page
-    does not read it. A residue that is not a standard amino acid is left out.
-    calculate takes the first ligand as the main one, and the page opens on a
-    HET ligand when there is one, so HET ligands come first, then "pep"
-    chains, each by the number of visible rows, then by key. The score is that
-    number.
-    """
+    """Results in the shape calculate_interactions returns, from stored rows."""
+    # The rows are ((ligand key, is pep), one-letter amino acid, residue number,
+    # slug, name, type, direction).
+    #
+    # Each interaction is [residue, fragment file, slug, name, type, direction]
+    # with residue as three-letter name, number and chain (ASP113A, what
+    # interaction.views.regexaa reads); the fragment file is left empty, the page
+    # does not read it. A residue that is not a standard amino acid is left out.
+    # calculate takes the first ligand as the main one, and the page opens on a
+    # HET ligand when there is one, so HET ligands come first, then "pep"
+    # chains, each by the number of visible rows, then by key. The score is that
+    # number.
     per = collections.OrderedDict()
     for (key, is_pep), amino_acid, number, slug, name, type_, direction in rows:
         three = THREE_LETTER.get((amino_acid or "").upper())

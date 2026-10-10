@@ -1,36 +1,33 @@
-"""
-Import Schrodinger Engine 1 (small-molecule) interactions into GPCRdb.
-
-The schrodinger_interaction pipeline writes one YAML per ligand instance:
-
-    {data_dir}/{PDB}/{HET}_{chain}_{resnum}{icode}/{HET}_{chain}_{resnum}{icode}.yaml
-
-with the rows under ``doc["result"]["interactions"]``. This module turns those
-rows into ResidueFragmentInteraction (RFI) rows hung on the curated
-StructureLigandInteraction (SLI) anchors.
-
-Two layers:
-
-* a pure layer (no database access) that selects the instance(s) for an
-  anchor and plans the rows to write, with an exact account of every row
-  that is not written and why;
-* a database layer that replaces the RFI rows of one structure inside one
-  transaction.
-
-Instance selection and the receptor chain come from a per-structure chain
-map, {data_dir}/{PDB}/chainmap.tsv, written by build_schrodinger_chainmap_files
-with interaction/schrodinger_chain_map.py. Product chain names are mmCIF author
-names, which can differ from the chain names in GPCRdb's stored text.
-
-Replacement semantics: every in-scope anchor loses all its existing rows, so
-an anchor never shows rows of another calculation next to, or instead of,
-Schrodinger rows. Anchors with a product instance get the Schrodinger
-rows; anchors without one (the map says no_product) are left empty and
-reported with the map's reason. Anchors outside Engine 1 scope ("pep" chains
-and placeholder references, see is_in_scope) are never touched. Fragments left
-unreferenced are deleted, and so is their PdbData text when nothing else
-references it.
-"""
+"""Import Schrodinger Engine 1 (small-molecule) interactions into GPCRdb."""
+# The schrodinger_interaction pipeline writes one YAML per ligand instance:
+#
+#     {data_dir}/{PDB}/{HET}_{chain}_{resnum}{icode}/{HET}_{chain}_{resnum}{icode}.yaml
+#
+# with the rows under ``doc["result"]["interactions"]``. This module turns those
+# rows into ResidueFragmentInteraction (RFI) rows hung on the curated
+# StructureLigandInteraction (SLI) anchors.
+#
+# Two layers:
+#
+# * a pure layer (no database access) that selects the instance(s) for an
+#   anchor and plans the rows to write, with an exact account of every row
+#   that is not written and why;
+# * a database layer that replaces the RFI rows of one structure inside one
+#   transaction.
+#
+# Instance selection and the receptor chain come from a per-structure chain
+# map, {data_dir}/{PDB}/chainmap.tsv, written by build_schrodinger_chainmap_files
+# with interaction/schrodinger_chain_map.py. Product chain names are mmCIF author
+# names, which can differ from the chain names in GPCRdb's stored text.
+#
+# Replacement semantics: every in-scope anchor loses all its existing rows, so
+# an anchor never shows rows of another calculation next to, or instead of,
+# Schrodinger rows. Anchors with a product instance get the Schrodinger
+# rows; anchors without one (the map says no_product) are left empty and
+# reported with the map's reason. Anchors outside Engine 1 scope ("pep" chains
+# and placeholder references, see is_in_scope) are never touched. Fragments left
+# unreferenced are deleted, and so is their PdbData text when nothing else
+# references it.
 
 import collections
 import glob
@@ -83,12 +80,9 @@ INSTANCE_DIR_RE = re.compile(
 
 
 def instance_yaml_paths(data_dir, pdb_code):
-    """
-    Map instance name -> YAML path for one PDB (flat product layout).
-
-    Only directories whose name parses as an instance and that hold a YAML of
-    the same name are returned. A missing PDB directory returns {}.
-    """
+    """Map instance name -> YAML path for one PDB (flat product layout)."""
+    # Only directories whose name parses as an instance and that hold a YAML of
+    # the same name are returned. A missing PDB directory returns {}.
     top = os.path.join(data_dir, pdb_code.upper())
     found = {}
     for inst_dir in sorted(glob.glob(os.path.join(top, "*"))):
@@ -155,12 +149,9 @@ PROVENANCE_KEYS = (
 
 
 def load_chainmap(path):
-    """
-    (pdb, anchors, receptor_row, provenance, ran) from one chainmap.tsv.
-
-    `ran` says whether the structure's directory held the producer's summary
-    when the map was built.
-    """
+    """(pdb, anchors, receptor_row, provenance, ran) from one chainmap.tsv."""
+    # `ran` says whether the structure's directory held the producer's summary
+    # when the map was built.
     header, fieldnames, rows = _read_map(path)
     if not header:
         raise MapMismatch(
@@ -212,27 +203,24 @@ def load_chainmap(path):
 
 
 def load_chainmap_dir(data_dir, pdb_codes):
-    """
-    Per-PDB chain maps from {data_dir}/{PDB}/chainmap.tsv.
-
-    Returns (anchor_table, receptor_table, missing, provenance, not_run):
-    anchor_table maps (PDB, HET, token) to its row, receptor_table maps PDB to
-    its receptor row.
-
-    `missing` lists the PDB codes with no chainmap.tsv; the caller fails them
-    one at a time.
-
-    `not_run` lists the PDB codes whose directory holds neither a product
-    instance nor the producer's summary. Nobody ran them, which is not the
-    same as "ran and found no ligand", so the caller leaves their anchors
-    alone. The header's claim is checked against the tree: a header saying
-    "no products" beside a directory that holds some is not treated as not run.
-
-    `provenance` counts the distinct values of each PROVENANCE_KEY.
-
-    A chainmap that is present but malformed raises and ends the run, before
-    the caller has opened its anomaly CSV.
-    """
+    """Per-PDB chain maps from {data_dir}/{PDB}/chainmap.tsv."""
+    # Returns (anchor_table, receptor_table, missing, provenance, not_run):
+    # anchor_table maps (PDB, HET, token) to its row, receptor_table maps PDB to
+    # its receptor row.
+    #
+    # `missing` lists the PDB codes with no chainmap.tsv; the caller fails them
+    # one at a time.
+    #
+    # `not_run` lists the PDB codes whose directory holds neither a product
+    # instance nor the producer's summary. Nobody ran them, which is not the
+    # same as "ran and found no ligand", so the caller leaves their anchors
+    # alone. The header's claim is checked against the tree: a header saying
+    # "no products" beside a directory that holds some is not treated as not run.
+    #
+    # `provenance` counts the distinct values of each PROVENANCE_KEY.
+    #
+    # A chainmap that is present but malformed raises and ends the run, before
+    # the caller has opened its anomaly CSV.
     anchors, receptors, missing, not_run = {}, {}, [], []
     provenance = dict((k, {}) for k in PROVENANCE_KEYS)
     empty_tree = chain_map.instances_sha256([])
@@ -269,21 +257,18 @@ def load_chainmap_dir(data_dir, pdb_codes):
 def structure_verdict(
     in_db, experimental, was_run, has_chainmap, anchors_at_risk=0, allow_not_run=False
 ):
-    """
-    What to do with one delivered structure, before the database is touched.
-
-    Returns (status, level, category), or None when the structure is imported.
-
-    The order is the policy:
-
-    * a structure this import does not serve needs no chain map, so the two
-      "not ours" answers come first;
-    * a structure nobody ran is left as it is: clearing its anchors would claim
-      that Engine 1 found nothing. Without anchors that is a note; with anchors
-      it is a failure unless ``allow_not_run``, because they would keep rows
-      this import did not write;
-    * a delivered directory with no chain map is a failure, never a skip.
-    """
+    """What to do with one delivered structure, before the database is touched."""
+    # Returns (status, level, category), or None when the structure is imported.
+    #
+    # The order is the policy:
+    #
+    # * a structure this import does not serve needs no chain map, so the two
+    #   "not ours" answers come first;
+    # * a structure nobody ran is left as it is: clearing its anchors would claim
+    #   that Engine 1 found nothing. Without anchors that is a note; with anchors
+    #   it is a failure unless ``allow_not_run``, because they would keep rows
+    #   this import did not write;
+    # * a delivered directory with no chain map is a failure, never a skip.
     if not in_db:
         return "structure_not_in_db", "WARNING", "structure_not_in_db"
     if not experimental:
@@ -300,14 +285,11 @@ def structure_verdict(
 
 
 def product_pdb_codes(data_dir):
-    """
-    Every structure directory of a delivered tree, sorted.
-
-    This is what the tree offers, not what the producer ran (see
-    load_chainmap_dir's `not_run`). Names are returned as they are on disk, so a
-    lower-case directory is found and two differing only in case stay two.
-    Names beginning with a dot are skipped.
-    """
+    """Every structure directory of a delivered tree, sorted."""
+    # This is what the tree offers, not what the producer ran (see
+    # load_chainmap_dir's `not_run`). Names are returned as they are on disk, so a
+    # lower-case directory is found and two differing only in case stay two.
+    # Names beginning with a dot are skipped.
     return sorted(
         name
         for name in os.listdir(data_dir)
@@ -320,18 +302,15 @@ IMPORT_STATUSES = frozenset({"ok", "errata"})
 
 
 def anchor_instances(pdb, het, chain_res, anchor_map, instance_names):
-    """
-    Product instances for one anchor, from the anchor map.
-
-    Returns (names, mode, notes). mode is ``mapped`` (every named copy has an
-    instance), ``mapped_partial`` (some copies have none), ``all_copies``
-    (chain_res names no residue; every copy of the HET) or ``no_product``.
-    Raises MapMismatch when a copy is missing from the map, or when the map
-    says no_product although ``instance_names`` (the product tree being
-    imported) holds a copy of the HET -- a map built against another tree
-    would otherwise clear anchors that do have a product. Raises
-    UnresolvedAnchor when the map could not decide.
-    """
+    """Product instances for one anchor, from the anchor map."""
+    # Returns (names, mode, notes). mode is ``mapped`` (every named copy has an
+    # instance), ``mapped_partial`` (some copies have none), ``all_copies``
+    # (chain_res names no residue; every copy of the HET) or ``no_product``.
+    # Raises MapMismatch when a copy is missing from the map, or when the map
+    # says no_product although ``instance_names`` (the product tree being
+    # imported) holds a copy of the HET -- a map built against another tree
+    # would otherwise clear anchors that do have a product. Raises
+    # UnresolvedAnchor when the map could not decide.
     pdb, het = pdb.upper(), het.upper()
     has_copy = any(n.split("_", 1)[0].upper() == het for n in instance_names)
     tokens = chain_map.split_tokens(chain_res) or [""]
@@ -372,14 +351,11 @@ def anchor_instances(pdb, het, chain_res, anchor_map, instance_names):
 
 
 def instance_chains(pdb, het, chain_res, anchor_map, names):
-    """
-    The GPCRdb chain for each selected instance of one anchor.
-
-    Named copies take the chain of their chain_res token (GPCRdb naming; the
-    token pattern allows one character only). Copies selected as all_copies
-    keep their product chain, which must then be a single character; otherwise
-    MapMismatch.
-    """
+    """The GPCRdb chain for each selected instance of one anchor."""
+    # Named copies take the chain of their chain_res token (GPCRdb naming; the
+    # token pattern allows one character only). Copies selected as all_copies
+    # keep their product chain, which must then be a single character; otherwise
+    # MapMismatch.
     pdb, het = pdb.upper(), het.upper()
     out = {}
     for tok in chain_map.split_tokens(chain_res) or [""]:
@@ -399,12 +375,9 @@ def instance_chains(pdb, het, chain_res, anchor_map, names):
 
 
 def standard_ligand_block(block, instance, gpcrdb_chain):
-    """
-    Rewrite every atom line of a producer ligand block.
-
-    Returns (text, capped_lines): the rewritten block and the output lines
-    whose B-factor was capped.
-    """
+    """Rewrite every atom line of a producer ligand block."""
+    # Returns (text, capped_lines): the rewritten block and the output lines
+    # whose B-factor was capped.
     m = INSTANCE_DIR_RE.match(instance)
     if not m:
         raise MalformedProduct("not an instance name: {!r}".format(instance))
@@ -427,16 +400,13 @@ def standard_ligand_block(block, instance, gpcrdb_chain):
 
 
 def checked_receptor_chain(pdb, receptor_map, gpcrdb_text, instance_names):
-    """
-    receptor_chain, once the map is known to fit the structure.
-
-    A map built from another stored text or product tree is reported as stale
-    first, whatever its receptor row says: only a rebuild can tell more. A row
-    whose build failed before the stored text was read has an empty text
-    fingerprint; the text cannot show it stale, so its note is the reason and
-    is reported first. An ok row always has one, and without it is refused as
-    stale.
-    """
+    """receptor_chain, once the map is known to fit the structure."""
+    # A map built from another stored text or product tree is reported as stale
+    # first, whatever its receptor row says: only a rebuild can tell more. A row
+    # whose build failed before the stored text was read has an empty text
+    # fingerprint; the text cannot show it stale, so its note is the reason and
+    # is reported first. An ok row always has one, and without it is refused as
+    # stale.
     row = receptor_map.get(pdb.upper())
     if row is not None and not row.get("gpcrdb_text_sha256"):
         receptor_chain(pdb, receptor_map)
@@ -537,25 +507,22 @@ def apply_backbone_override(slug, receptor_atom_name):
 
 
 def plan_rows(interactions, receptor_chain_name):
-    """
-    Plan the RFI rows for the product rows of one anchor.
-
-    ``receptor_chain_name`` is the product (mmCIF author) chain that GPCRdb
-    stores as the receptor; '' keeps every chain.
-
-    Returns (records, counts, other_chain_by_chain). ``records`` are dicts
-    with ``sequence_number``, ``amino_acid``, ``slug`` and ``ligand_lines``
-    (the ligand atom lines of every product row collapsed into the record, in
-    first-seen order), one per distinct (sequence_number, slug).
-    ``counts`` accounts for every input row:
-
-        rows_in == excluded_family + nonstandard_residue + other_chain
-                   + duplicate + len(records)
-
-    ``other_chain`` rows are those on a chain other than the receptor chain:
-    GPCRdb residues carry no chain, so they cannot be stored.
-    Raises UnroutableRow for a (family, direction) the map does not know.
-    """
+    """Plan the RFI rows for the product rows of one anchor."""
+    # ``receptor_chain_name`` is the product (mmCIF author) chain that GPCRdb
+    # stores as the receptor; '' keeps every chain.
+    #
+    # Returns (records, counts, other_chain_by_chain). ``records`` are dicts
+    # with ``sequence_number``, ``amino_acid``, ``slug`` and ``ligand_lines``
+    # (the ligand atom lines of every product row collapsed into the record, in
+    # first-seen order), one per distinct (sequence_number, slug).
+    # ``counts`` accounts for every input row:
+    #
+    #     rows_in == excluded_family + nonstandard_residue + other_chain
+    #                + duplicate + len(records)
+    #
+    # ``other_chain`` rows are those on a chain other than the receptor chain:
+    # GPCRdb residues carry no chain, so they cannot be stored.
+    # Raises UnroutableRow for a (family, direction) the map does not know.
     counts = collections.Counter()
     counts["rows_in"] = len(interactions)
     other_chain_by_chain = collections.Counter()
@@ -618,12 +585,9 @@ PRODUCT_CONTRACT = "engine1/1.0"
 
 
 def check_product_contract(data_dir, pdb_code):
-    """
-    Raise MalformedProduct unless the structure's summary.yaml carries PRODUCT_CONTRACT.
-
-    A structure whose products are imported was run to the end, and the
-    producer then always writes summary.yaml; one without it is refused too.
-    """
+    """Raise MalformedProduct unless summary.yaml carries PRODUCT_CONTRACT."""
+    # A structure whose products are imported was run to the end, and the
+    # producer then always writes summary.yaml; one without it is refused too.
     path = os.path.join(data_dir, pdb_code, PRODUCT_SUMMARY_NAME)
     try:
         with open(path, encoding="utf-8") as fh:
@@ -662,17 +626,14 @@ def read_instance_rows(path):
 
 
 def is_in_scope(sli):
-    """
-    True iff this SLI anchor is served by Engine 1.
-
-    Served means the anchor names a chemical component (a HET code), whatever
-    type the database gives the ligand.
-
-    The reference says what the anchor is in the structure; the database's
-    ligand type can disagree (a peptide drug referenced by one chemical
-    component), and a type test here would leave such an anchor out of both
-    imports.
-    """
+    """True iff this SLI anchor names a chemical component (Engine 1 scope)."""
+    # Served means the anchor names a chemical component (a HET code), whatever
+    # type the database gives the ligand.
+    #
+    # The reference says what the anchor is in the structure; the database's
+    # ligand type can disagree (a peptide drug referenced by one chemical
+    # component), and a type test here would leave such an anchor out of both
+    # imports.
     reference = (sli.pdb_reference or "").strip().upper()
     return bool(reference) and reference not in PLACEHOLDER_REFERENCES
 
@@ -757,15 +718,12 @@ def _pdb_atom_name(name, element):
 
 
 def standard_ligand_line(line, het, product_chain, resnum, icode, gpcrdb_chain):
-    """
-    Rewrite one producer ligand atom line in standard PDB v3.3 columns.
-
-    The producer's residue name, chain and residue number are checked against
-    the instance the line came from; any disagreement raises
-    MalformedLigandLine instead of guessing. In the output the residue name is
-    cut to three characters and the chain is GPCRdb's, as in GPCRdb's own
-    stored structure text. Returns (standard_line, b_factor_was_capped).
-    """
+    """Rewrite one producer ligand atom line in standard PDB v3.3 columns."""
+    # The producer's residue name, chain and residue number are checked against
+    # the instance the line came from; any disagreement raises
+    # MalformedLigandLine instead of guessing. In the output the residue name is
+    # cut to three characters and the chain is GPCRdb's, as in GPCRdb's own
+    # stored structure text. Returns (standard_line, b_factor_was_capped).
     record = line[:6].strip()
     if record not in ("ATOM", "HETATM"):
         raise MalformedLigandLine("not an atom record: {!r}".format(line[:30]))
@@ -832,16 +790,13 @@ def fragment_text(ligand_lines):
 
 
 def delete_orphan_fragments(structure):
-    """
-    Delete this structure's fragments that no interaction row references.
-
-    A fragment's PdbData text is deleted too, but only when no other row of
-    any model references it: PdbData is shared by rotamers, structures,
-    anchors and others, all with on_delete=CASCADE. The referencing models
-    are read from Django's model metadata, not from a hand-written list.
-    Returns a Counter with fragments_deleted, pdbdata_deleted and
-    pdbdata_kept_referenced.
-    """
+    """Delete this structure's fragments that no interaction row references."""
+    # A fragment's PdbData text is deleted too, but only when no other row of
+    # any model references it: PdbData is shared by rotamers, structures,
+    # anchors and others, all with on_delete=CASCADE. The referencing models
+    # are read from Django's model metadata, not from a hand-written list.
+    # Returns a Counter with fragments_deleted, pdbdata_deleted and
+    # pdbdata_kept_referenced.
     out = collections.Counter()
     referenced = set(
         ResidueFragmentInteraction.objects.filter(
@@ -866,14 +821,11 @@ def delete_orphan_fragments(structure):
 
 
 def delete_unreferenced_pdbdata(candidates):
-    """
-    Delete the PdbData rows of ``candidates`` that no row of any model references.
-
-    Every reference to PdbData cascades (a StructureLigandInteraction whose
-    pdb_file is deleted goes with it), so a row still referenced is kept. The
-    referencing models are read from Django's model metadata. Returns a Counter
-    with pdbdata_deleted and pdbdata_kept_referenced.
-    """
+    """Delete the PdbData rows of ``candidates`` that no row of any model references."""
+    # Every reference to PdbData cascades (a StructureLigandInteraction whose
+    # pdb_file is deleted goes with it), so a row still referenced is kept. The
+    # referencing models are read from Django's model metadata. Returns a Counter
+    # with pdbdata_deleted and pdbdata_kept_referenced.
     out = collections.Counter()
     candidates = {pd for pd in candidates if pd is not None}
     if not candidates:
@@ -895,20 +847,18 @@ def delete_unreferenced_pdbdata(candidates):
 
 
 def check_map_covers(pdb, slis, anchor_map):
-    """
-    Every copy the database has must be listed; extra copies are allowed.
-
-    Returns the copies the map lists that this database cannot use, sorted, so
-    the caller can report them: a ligand copy computed but not imported should
-    not pass in silence.
-
-    The map is built from the annotation (ligands.tsv), which lists every
-    physical copy of a ligand, while StructureLigandInteraction keeps one row
-    per (structure, ligand, role); extra copies on the map side are normal.
-    The cost: a change that moves a database copy onto a pair the map already
-    lists (a renamed chain, two HETs merged into one ligand) is not refused,
-    only reported among the unused copies.
-    """
+    """Check every database copy is mapped; return the map copies left unused."""
+    # Every copy the database has must be listed; extra copies are allowed.
+    # Returns the copies the map lists that this database cannot use, sorted, so
+    # the caller can report them: a ligand copy computed but not imported should
+    # not pass in silence.
+    #
+    # The map is built from the annotation (ligands.tsv), which lists every
+    # physical copy of a ligand, while StructureLigandInteraction keeps one row
+    # per (structure, ligand, role); extra copies on the map side are normal.
+    # The cost: a change that moves a database copy onto a pair the map already
+    # lists (a renamed chain, two HETs merged into one ligand) is not refused,
+    # only reported among the unused copies.
     pdb = pdb.upper()
     wanted = set()
     for sli in slis:
@@ -932,18 +882,15 @@ def check_map_covers(pdb, slis, anchor_map):
 
 
 def import_structure(structure, data_dir, anchor_map, receptor_map):
-    """
-    Replace the Engine 1 RFI rows of one structure.
-
-    Runs in one transaction: any exception leaves the structure exactly as it
-    was. Returns (outcomes, out_of_scope_count, cleanup_counter, unused_copies),
-    where unused_copies are the map's (HET, token) pairs this database has no
-    anchor for. Rows planned but not written because the database has no
-    matching residue or rotamer are counted in ``outcome.dropped``; for every
-    anchor
-
-        counts["planned"] == written + sum(dropped.values())
-    """
+    """Replace the Engine 1 RFI rows of one structure."""
+    # Runs in one transaction: any exception leaves the structure exactly as it
+    # was. Returns (outcomes, out_of_scope_count, cleanup_counter, unused_copies),
+    # where unused_copies are the map's (HET, token) pairs this database has no
+    # anchor for. Rows planned but not written because the database has no
+    # matching residue or rotamer are counted in ``outcome.dropped``; for every
+    # anchor
+    #
+    #     counts["planned"] == written + sum(dropped.values())
     pdb_code = structure.pdb_code.index.upper()
     instances = instance_yaml_paths(data_dir, pdb_code)
     types = {t.slug: t for t in ResidueFragmentInteractionType.objects.all()}

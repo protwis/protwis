@@ -1,28 +1,25 @@
-"""
-Reconcile chain names between Schrodinger products and GPCRdb.
-
-The products name chains as the RCSB mmCIF does (author chain, up to four
-characters). GPCRdb names them as its stored PDB-format structure text does
-(one character, sometimes renamed, split or hand-edited by curators). This
-module decides two kinds of rows, both written into one chainmap.tsv per
-structure, from GPCRdb's text on one side and, on the other, the coordinate
-index the producer delivers with the products (the atoms of the mmCIF they
-were computed from, see below):
-
-* anchor map: one row per GPCRdb ligand-anchor copy (pdb, HET, chain_res
-  token) naming the product instance that is the same ligand copy;
-* receptor map: one row per structure naming the product (author) chain whose
-  atoms are GPCRdb's preferred chain.
-
-Exact coordinate identity decides. The annotation's label_asym_id is a second,
-independent witness: it confirms coordinate answers, flags annotation errors
-when it disagrees, and is the only thing that can confirm a name-based
-fallback where GPCRdb stores an older model whose coordinates no longer match.
-
-No database access and no Django imports: the commands that build the maps
-(build_schrodinger_chainmap_files and build_schrodinger_peptide_maps) feed this
-module with text.
-"""
+"""Reconcile chain names between Schrodinger products and GPCRdb."""
+# The products name chains as the RCSB mmCIF does (author chain, up to four
+# characters). GPCRdb names them as its stored PDB-format structure text does
+# (one character, sometimes renamed, split or hand-edited by curators). This
+# module decides two kinds of rows, both written into one chainmap.tsv per
+# structure, from GPCRdb's text on one side and, on the other, the coordinate
+# index the producer delivers with the products (the atoms of the mmCIF they
+# were computed from, see below):
+#
+# * anchor map: one row per GPCRdb ligand-anchor copy (pdb, HET, chain_res
+#   token) naming the product instance that is the same ligand copy;
+# * receptor map: one row per structure naming the product (author) chain whose
+#   atoms are GPCRdb's preferred chain.
+#
+# Exact coordinate identity decides. The annotation's label_asym_id is a second,
+# independent witness: it confirms coordinate answers, flags annotation errors
+# when it disagrees, and is the only thing that can confirm a name-based
+# fallback where GPCRdb stores an older model whose coordinates no longer match.
+#
+# No database access and no Django imports: the commands that build the maps
+# (build_schrodinger_chainmap_files and build_schrodinger_peptide_maps) feed this
+# module with text.
 
 import collections
 import hashlib
@@ -79,17 +76,14 @@ def index_path(index_dir, pdb):
 
 
 def parse_structure_index(text):
-    """
-    (cif_sha256, atoms) of a coordinate index.
-
-    Each atom is a dict with label_asym, auth_asym, comp, auth_seq, icode, atom,
-    group, key -- the shape the resolvers below take. The header must name this
-    schema, a sha256 and the number of atoms that follow; the column line must be
-    INDEX_COLUMNS; every row must have one value per column, a record type of
-    ATOM or HETATM and coordinates with three decimals. Anything else is a
-    ParseError, because a half-read or reformatted index would resolve to the
-    wrong chain, or through a fallback, without a sound.
-    """
+    """(cif_sha256, atoms) of a coordinate index."""
+    # Each atom is a dict with label_asym, auth_asym, comp, auth_seq, icode, atom,
+    # group, key -- the shape the resolvers below take. The header must name this
+    # schema, a sha256 and the number of atoms that follow; the column line must be
+    # INDEX_COLUMNS; every row must have one value per column, a record type of
+    # ATOM or HETATM and coordinates with three decimals. Anything else is a
+    # ParseError, because a half-read or reformatted index would resolve to the
+    # wrong chain, or through a fallback, without a sound.
     header = {}
     lines = text.splitlines()
     i = 0
@@ -156,13 +150,10 @@ def parse_structure_index(text):
 
 
 def parse_gpcrdb_pdb(text):
-    """
-    Return first-model, non-hydrogen, non-water atoms of GPCRdb's stored text.
-
-    Fields are read exactly as build_structures reads them: chain = column 22
-    (line[21]), residue number = columns 23-26, residue name = columns 18-20
-    (so five-character CCD codes appear truncated to three characters).
-    """
+    """Return first-model, non-hydrogen, non-water atoms of GPCRdb's stored text."""
+    # Fields are read exactly as build_structures reads them: chain = column 22
+    # (line[21]), residue number = columns 23-26, residue name = columns 18-20
+    # (so five-character CCD codes appear truncated to three characters).
     atoms = []
     for line in text.splitlines():
         if line.startswith("ENDMDL"):
@@ -198,12 +189,9 @@ def parse_gpcrdb_pdb(text):
 
 
 def annotation_labels(rows):
-    """
-    Map (PDB, HET, token) -> label_asym_id from ligands.tsv rows.
-
-    Residue_seq_id and label_asym_id are comma lists aligned copy for copy.
-    Rows whose two lists differ in length contribute nothing.
-    """
+    """Map (PDB, HET, token) -> label_asym_id from ligands.tsv rows."""
+    # Residue_seq_id and label_asym_id are comma lists aligned copy for copy.
+    # Rows whose two lists differ in length contribute nothing.
     out = {}
     for r in rows:
         tokens = [
@@ -257,22 +245,19 @@ def split_tokens(chain_res):
 
 
 def resolve_anchor(pdb, het, token, cif_atoms, gpcrdb_atoms, product_instances, label):
-    """
-    Decide which product instance is the ligand copy GPCRdb calls `token`.
-
-    Returns a dict with the ANCHOR_COLUMNS fields. Rules:
-
-    1. exact coordinates: the GPCRdb residue (chain, number, name[:3]) is
-       compared atom by atom with every product instance of the HET; exactly
-       one instance with the most shared atoms decides (source coord_exact).
-    2. the label route names an instance via label_asym_id; it confirms rule 1
-       (source coord+label), or disagrees (status errata, rule 1 still wins),
-       or is absent (source coord_only).
-    3. no shared atoms at all (GPCRdb stores an older model): the name-based
-       candidate HET_<chain>_<number> is accepted only when the label route
-       names the same instance (source fallback+label); otherwise unresolved.
-    4. the product has no instance of this HET: no_product.
-    """
+    """Decide which product instance is the ligand copy GPCRdb calls `token`."""
+    # Returns a dict with the ANCHOR_COLUMNS fields. Rules:
+    #
+    # 1. exact coordinates: the GPCRdb residue (chain, number, name[:3]) is
+    #    compared atom by atom with every product instance of the HET; exactly
+    #    one instance with the most shared atoms decides (source coord_exact).
+    # 2. the label route names an instance via label_asym_id; it confirms rule 1
+    #    (source coord+label), or disagrees (status errata, rule 1 still wins),
+    #    or is absent (source coord_only).
+    # 3. no shared atoms at all (GPCRdb stores an older model): the name-based
+    #    candidate HET_<chain>_<number> is accepted only when the label route
+    #    names the same instance (source fallback+label); otherwise unresolved.
+    # 4. the product has no instance of this HET: no_product.
     het = het.upper()
     copies = sorted(i for i in product_instances if i.split("_", 1)[0].upper() == het)
     row = {
@@ -391,16 +376,13 @@ def instances_sha256(names):
 
 
 def resolve_receptor(pdb, preferred_chain, cif_atoms, gpcrdb_atoms):
-    """
-    Name the product (author) chain whose CA atoms are GPCRdb's preferred chain.
-
-    exact: the author chain sharing the most CA coordinates with the GPCRdb
-    preferred chain; every matched CA must keep its residue number, otherwise
-    status renumbered (the importer must refuse the structure).
-    identity_drift: no CA matches at all (older model in GPCRdb); accepted only
-    if an author chain of the same name carries every GPCRdb (number, name)
-    pair of the preferred chain.
-    """
+    """Name the product (author) chain whose CA atoms are GPCRdb's preferred chain."""
+    # exact: the author chain sharing the most CA coordinates with the GPCRdb
+    # preferred chain; every matched CA must keep its residue number, otherwise
+    # status renumbered (the importer must refuse the structure).
+    # identity_drift: no CA matches at all (older model in GPCRdb); accepted only
+    # if an author chain of the same name carries every GPCRdb (number, name)
+    # pair of the preferred chain.
     pref = (preferred_chain or "").split(",")[0].strip()
     row = {
         "pdb": pdb,

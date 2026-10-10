@@ -1,23 +1,20 @@
-"""
-The ligand 3D file of an anchor (StructureLigandInteraction.pdb_file).
-
-The interaction page loads it into each ligand's viewer (through
-interaction.views.download) and structure/pdb/<pdb>/ligand/<lig> serves it.
-The imports write it: the ligand and the receptor residues the import wrote
-interaction rows for, as lines of GPCRdb's own stored structure text, so the
-viewer shows the residues the table lists, with the names and coordinates the
-rest of the site uses.
-
-A HET ligand is found in that text by residue name and position: a HETATM
-residue named like the ligand (a five-character code is cut to three in the
-stored text) with an atom within LIGAND_NEAR of a product ligand atom. HETATM
-only, because some ligands carry an amino acid's name and the receptor residue
-of that name next to them is ATOM. Not an exact match, because structure
-preparation can move product coordinates by up to about 2 A, which LIGAND_NEAR
-allows for; atoms of two different molecules are not that close, and the name
-keeps a neighbouring molecule of another kind out. An alternate conformer
-stored as its own residue is taken too.
-"""
+"""The ligand 3D file of an anchor (StructureLigandInteraction.pdb_file)."""
+# The interaction page loads it into each ligand's viewer (through
+# interaction.views.download) and structure/pdb/<pdb>/ligand/<lig> serves it.
+# The imports write it: the ligand and the receptor residues the import wrote
+# interaction rows for, as lines of GPCRdb's own stored structure text, so the
+# viewer shows the residues the table lists, with the names and coordinates the
+# rest of the site uses.
+#
+# A HET ligand is found in that text by residue name and position: a HETATM
+# residue named like the ligand (a five-character code is cut to three in the
+# stored text) with an atom within LIGAND_NEAR of a product ligand atom. HETATM
+# only, because some ligands carry an amino acid's name and the receptor residue
+# of that name next to them is ATOM. Not an exact match, because structure
+# preparation can move product coordinates by up to about 2 A, which LIGAND_NEAR
+# allows for; atoms of two different molecules are not that close, and the name
+# keeps a neighbouring molecule of another kind out. An alternate conformer
+# stored as its own residue is taken too.
 
 from interaction import schrodinger_chain_map as cm
 from structure.models import PdbData
@@ -35,13 +32,10 @@ def _is_hydrogen(line):
 
 
 def text_residues(gpcrdb_text):
-    """
-    [(residue id, lines, heavy atom xyz)] of the stored text, in text order.
-
-    First model only, waters left out; a residue id is
-    (chain, residue number, insertion code, residue name), read from the
-    columns parse_gpcrdb_pdb reads.
-    """
+    """[(residue id, lines, heavy atom xyz)] of the stored text, in text order."""
+    # First model only, waters left out; a residue id is
+    # (chain, residue number, insertion code, residue name), read from the
+    # columns parse_gpcrdb_pdb reads.
     order, lines, atoms = [], {}, {}
     for line in (gpcrdb_text or "").splitlines():
         if line.startswith("ENDMDL"):
@@ -93,16 +87,13 @@ def complex_text(
     ligand_resname="",
     ligand_chain="",
 ):
-    """
-    The anchor's 3D file, or "" when no residue of the text is the ligand.
-
-    The ligand is, for an anchor that is a chain, every residue on
-    ``ligand_chain``; otherwise every HETATM residue named ``ligand_resname``
-    (cut to three characters, as the stored text has it) with a heavy atom
-    within LIGAND_NEAR of a ``ligand_xyz`` atom. The receptor part is every residue
-    on ``receptor_chain`` whose number is in ``receptor_seqs`` (no insertion
-    code). Lines keep the text's order and columns.
-    """
+    """The anchor's 3D file, or "" when no residue of the text is the ligand."""
+    # The ligand is, for an anchor that is a chain, every residue on
+    # ``ligand_chain``; otherwise every HETATM residue named ``ligand_resname``
+    # (cut to three characters, as the stored text has it) with a heavy atom
+    # within LIGAND_NEAR of a ``ligand_xyz`` atom. The receptor part is every residue
+    # on ``receptor_chain`` whose number is in ``receptor_seqs`` (no insertion
+    # code). Lines keep the text's order and columns.
     resname = (ligand_resname or "").strip().upper()[:3]
     grid = {}
     for xyz in ligand_xyz:
@@ -147,15 +138,12 @@ def complex_text(
 
 
 def write_complex_file(sli, text):
-    """
-    Point the anchor at ``text`` as its 3D file; "" leaves it with none.
-
-    Returns (status, replaced PdbData id or None). status is "unchanged"
-    (the anchor's file already holds exactly this text, as on a second run),
-    "written", "cleared" or "none". The replaced PdbData is not deleted here:
-    StructureLigandInteraction.pdb_file cascades, so the caller deletes it only
-    once nothing references it (schrodinger_import.delete_unreferenced_pdbdata).
-    """
+    """Point the anchor at ``text`` as its 3D file; "" leaves it with none."""
+    # Returns (status, replaced PdbData id or None). status is "unchanged"
+    # (the anchor's file already holds exactly this text, as on a second run),
+    # "written", "cleared" or "none". The replaced PdbData is not deleted here:
+    # StructureLigandInteraction.pdb_file cascades, so the caller deletes it only
+    # once nothing references it (schrodinger_import.delete_unreferenced_pdbdata).
     old = sli.pdb_file_id
     if not text:
         if old is None:

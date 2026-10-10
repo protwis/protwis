@@ -1,27 +1,24 @@
-"""
-Seed every interaction type the Schrodinger imports write.
-
-build_structures does not compute ligand interactions, so nothing else in a
-build creates these types. These rows are exactly
-schrodinger_import.required_slugs(): the targets of interaction_type_map.yaml
-outside the excluded families, plus polar_backbone, the backbone override.
-
-Eleven of them are types the legacy calculation also computes, and keep the
-slug, name, type and direction it gives them, so a database built either way
-names them alike. Three are new:
-
-* halogen_protein and metal_coordination_protein. halogen_protein is named
-  "halogen contact", not "halogen bond": the producer's criterion has loose
-  angle limits, so the rows are contacts rather than proven halogen bonds.
-* covalent, one row per ligand-receptor bond; a row says a bond exists, not
-  its order. Its type is ``covalent`` and not ``hidden``: pages leave out
-  hidden types, and the rows are imported so that the pages show them.
-
-Existing rows are never modified, except that an existing halogen_protein row
-is renamed to "halogen contact". The reverse operation is a deliberate no-op:
-deleting interaction types would cascade to every ResidueFragmentInteraction
-that uses them.
-"""
+"""Seed every interaction type the Schrodinger imports write."""
+# build_structures does not compute ligand interactions, so nothing else in a
+# build creates these types. These rows are exactly
+# schrodinger_import.required_slugs(): the targets of interaction_type_map.yaml
+# outside the excluded families, plus polar_backbone, the backbone override.
+#
+# Eleven of them are types the legacy calculation also computes, and keep the
+# slug, name, type and direction it gives them, so a database built either way
+# names them alike. Three are new:
+#
+# * halogen_protein and metal_coordination_protein. halogen_protein is named
+#   "halogen contact", not "halogen bond": the producer's criterion has loose
+#   angle limits, so the rows are contacts rather than proven halogen bonds.
+# * covalent, one row per ligand-receptor bond; a row says a bond exists, not
+#   its order. Its type is ``covalent`` and not ``hidden``: pages leave out
+#   hidden types, and the rows are imported so that the pages show them.
+#
+# Existing rows are never modified, except that an existing halogen_protein row
+# is renamed to "halogen contact". The reverse operation is a deliberate no-op:
+# deleting interaction types would cascade to every ResidueFragmentInteraction
+# that uses them.
 
 from django.db import migrations
 
