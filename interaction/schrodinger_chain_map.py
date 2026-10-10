@@ -1,4 +1,5 @@
-"""Reconcile chain names between Schrodinger products and GPCRdb.
+"""
+Reconcile chain names between Schrodinger products and GPCRdb.
 
 The products name chains as the RCSB mmCIF does (author chain, up to four
 characters). GPCRdb names them as its stored PDB-format structure text does
@@ -78,7 +79,8 @@ def index_path(index_dir, pdb):
 
 
 def parse_structure_index(text):
-    """(cif_sha256, atoms) of a coordinate index.
+    """
+    (cif_sha256, atoms) of a coordinate index.
 
     Each atom is a dict with label_asym, auth_asym, comp, auth_seq, icode, atom,
     group, key -- the shape the resolvers below take. The header must name this
@@ -154,7 +156,8 @@ def parse_structure_index(text):
 
 
 def parse_gpcrdb_pdb(text):
-    """Return first-model, non-hydrogen, non-water atoms of GPCRdb's stored text.
+    """
+    Return first-model, non-hydrogen, non-water atoms of GPCRdb's stored text.
 
     Fields are read exactly as build_structures reads them: chain = column 22
     (line[21]), residue number = columns 23-26, residue name = columns 18-20
@@ -195,7 +198,8 @@ def parse_gpcrdb_pdb(text):
 
 
 def annotation_labels(rows):
-    """Map (PDB, HET, token) -> label_asym_id from ligands.tsv rows.
+    """
+    Map (PDB, HET, token) -> label_asym_id from ligands.tsv rows.
 
     Residue_seq_id and label_asym_id are comma lists aligned copy for copy.
     Rows whose two lists differ in length contribute nothing.
@@ -253,7 +257,8 @@ def split_tokens(chain_res):
 
 
 def resolve_anchor(pdb, het, token, cif_atoms, gpcrdb_atoms, product_instances, label):
-    """Decide which product instance is the ligand copy GPCRdb calls `token`.
+    """
+    Decide which product instance is the ligand copy GPCRdb calls `token`.
 
     Returns a dict with the ANCHOR_COLUMNS fields. Rules:
 
@@ -386,7 +391,8 @@ def instances_sha256(names):
 
 
 def resolve_receptor(pdb, preferred_chain, cif_atoms, gpcrdb_atoms):
-    """Name the product (author) chain whose CA atoms are GPCRdb's preferred chain.
+    """
+    Name the product (author) chain whose CA atoms are GPCRdb's preferred chain.
 
     exact: the author chain sharing the most CA coordinates with the GPCRdb
     preferred chain; every matched CA must keep its residue number, otherwise

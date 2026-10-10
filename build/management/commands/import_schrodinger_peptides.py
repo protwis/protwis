@@ -1,7 +1,8 @@
-"""Import Schrodinger Engine 2 receptor x peptide interactions, one transaction per structure.
+r"""
+Import Schrodinger Engine 2 receptor x peptide interactions, one transaction per structure.
 
-    python manage.py import_schrodinger_peptides \\
-        --data-dir DATA_DIR/structure_data/schrodinger/engine2 \\
+    python manage.py import_schrodinger_peptides \
+        --data-dir DATA_DIR/structure_data/schrodinger/engine2 \
         --anomaly-csv /runs/peptides/anomalies.csv --report-json /runs/peptides/report.json
 
 The corpus is the database: every experimental structure with an anchor this

@@ -1,4 +1,5 @@
-"""Remove the maps a build made for the Schrodinger imports, once both imports are done.
+"""
+Remove the maps a build made for the Schrodinger imports, once both imports are done.
 
 build_all builds chainmap.tsv (Engine 1 tree) and peptide_map.tsv (Engine 2
 tree), imports with them, and then runs this, so the deliveries (a gpcrdb_data

@@ -1,4 +1,5 @@
-"""The ligand 3D file of an anchor (StructureLigandInteraction.pdb_file).
+"""
+The ligand 3D file of an anchor (StructureLigandInteraction.pdb_file).
 
 The interaction page loads it into each ligand's viewer (through
 interaction.views.download) and structure/pdb/<pdb>/ligand/<lig> serves it.
@@ -34,7 +35,8 @@ def _is_hydrogen(line):
 
 
 def text_residues(gpcrdb_text):
-    """[(residue id, lines, heavy atom xyz)] of the stored text, in text order.
+    """
+    [(residue id, lines, heavy atom xyz)] of the stored text, in text order.
 
     First model only, waters left out; a residue id is
     (chain, residue number, insertion code, residue name), read from the
@@ -91,7 +93,8 @@ def complex_text(
     ligand_resname="",
     ligand_chain="",
 ):
-    """The anchor's 3D file, or "" when no residue of the text is the ligand.
+    """
+    The anchor's 3D file, or "" when no residue of the text is the ligand.
 
     The ligand is, for an anchor that is a chain, every residue on
     ``ligand_chain``; otherwise every HETATM residue named ``ligand_resname``
@@ -144,7 +147,8 @@ def complex_text(
 
 
 def write_complex_file(sli, text):
-    """Point the anchor at ``text`` as its 3D file; "" leaves it with none.
+    """
+    Point the anchor at ``text`` as its 3D file; "" leaves it with none.
 
     Returns (status, replaced PdbData id or None). status is "unchanged"
     (the anchor's file already holds exactly this text, as on a second run),

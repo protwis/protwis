@@ -1,6 +1,7 @@
-"""Unit tests for interaction.stored_interactions (no database).
+r"""
+Unit tests for interaction.stored_interactions (no database).
 
-    python -c "import django; django.setup(); import unittest; \\
+    python -c "import django; django.setup(); import unittest; \
         unittest.main(module='interaction.test_stored_interactions', argv=['x'])"
 """
 

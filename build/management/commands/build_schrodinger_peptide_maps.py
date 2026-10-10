@@ -1,7 +1,8 @@
-"""Build one peptide_map.tsv per structure of an Engine 2 tree, from files only.
+r"""
+Build one peptide_map.tsv per structure of an Engine 2 tree, from files only.
 
-    python manage.py build_schrodinger_peptide_maps \\
-        --data-dir <DATA_DIR>/structure_data/schrodinger/engine2 \\
+    python manage.py build_schrodinger_peptide_maps \
+        --data-dir <DATA_DIR>/structure_data/schrodinger/engine2 \
         --index-dir <DATA_DIR>/structure_data/schrodinger/engine1
 
 build_all runs it before the imports, so the maps always match the annotation
@@ -45,7 +46,8 @@ from interaction import schrodinger_peptide as sp
 
 
 def peptide_chains(rows):
-    """PDB -> {gpcrdb chain: (titles, types)} for every "pep" ligand of the annotation.
+    """
+    PDB -> {gpcrdb chain: (titles, types)} for every "pep" ligand of the annotation.
 
     No type filter: the importer serves every "pep" anchor whatever its type,
     and a map that left a chain out would make the importer refuse the
@@ -240,7 +242,8 @@ class Command(BaseCommand):
         gpcrdb_pdb_path,
         summary_sha=None,
     ):
-        """(receptor, rows, header values) for one structure.
+        """
+        (receptor, rows, header values) for one structure.
 
         An unreadable input is not a reason to skip: the receptor is written
         unresolved with the reason, and the importer refuses the structure.

@@ -1,4 +1,5 @@
-"""Run the unit tests of the Schrodinger ligand imports; fail if any test fails.
+"""
+Run the unit tests of the Schrodinger ligand imports; fail if any test fails.
 
 build_all and build_all_interactions run this before anything else
 (build.ligand_imports.with_tests), so a build whose import code fails its own

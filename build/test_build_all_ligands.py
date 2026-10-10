@@ -1,7 +1,9 @@
-"""Unit tests for the ligand import steps of build_all and build_all_interactions
-(no database: every import command is replaced by a stub).
+r"""
+Unit tests for the ligand import steps of build_all and build_all_interactions.
 
-    python -c "import django; django.setup(); import unittest; \\
+No database: every import command is replaced by a stub.
+
+    python -c "import django; django.setup(); import unittest; \
         unittest.main(module='build.test_build_all_ligands', argv=['x'])"
 """
 
@@ -187,8 +189,11 @@ class LigandImportStepsTests(unittest.TestCase):
 
 
 class BuildAllInteractionsTests(unittest.TestCase):
-    """build_all_interactions runs the contact network and the same imports,
-    dry-run before the contacts and imported after them."""
+    """
+    build_all_interactions runs the contact network and the same imports.
+
+    The imports run dry before the contacts and for real after them.
+    """
 
     def test_it_takes_the_import_options_and_dry_runs_before_the_contacts(self):
         from tools.management.commands import build_all_interactions as bai

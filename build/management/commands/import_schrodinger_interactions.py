@@ -1,11 +1,12 @@
-"""Import Schrodinger Engine 1 interaction YAMLs, one transaction per structure.
+r"""
+Import Schrodinger Engine 1 interaction YAMLs, one transaction per structure.
 
 Usage, the way a build calls it -- the tree under --data-dir says what to
 import, and build_schrodinger_chainmap_files has written a chainmap.tsv into
 each structure directory, so nothing else has to be passed::
 
-    python manage.py import_schrodinger_interactions \\
-        --data-dir DATA_DIR/structure_data/schrodinger/engine1 \\
+    python manage.py import_schrodinger_interactions \
+        --data-dir DATA_DIR/structure_data/schrodinger/engine1 \
         --anomaly-csv /runs/anomalies.csv
 
 Every directory under --data-dir is one structure; whether Engine 1 ran it is
@@ -63,7 +64,8 @@ class _Rollback(Exception):
 
 
 def _make_room_for(path):
-    """Create the directory an output file is about to be written into.
+    """
+    Create the directory an output file is about to be written into.
 
     Each run is given its own directory, so the caller should not have to make
     it first.
@@ -88,6 +90,7 @@ class AnomalyLog(object):
     ]
 
     def __init__(self, path):
+        """Open the CSV at path, creating its directory, and write the header."""
         _make_room_for(path)
         self._fh = open(path, "w", newline="")
         self._writer = csv.writer(self._fh)
@@ -158,10 +161,14 @@ class Command(BaseCommand):
         )
 
     def _pdb_codes(self, options):
-        """(codes, came_from_the_tree). The second value decides whether the
-        database's in-scope structures have to be covered: a list file that
-        turns out to hold no code leaves the tree as the corpus, and the check
-        has to follow the corpus, not the flag."""
+        """
+        (codes, came_from_the_tree).
+
+        The second value decides whether the database's in-scope structures
+        have to be covered: a list file that turns out to hold no code leaves
+        the tree as the corpus, and the check has to follow the corpus, not
+        the flag.
+        """
         codes = [c.strip().upper() for c in options["pdb"] if c.strip()]
         if options["pdb_list"]:
             with open(options["pdb_list"]) as fh:
@@ -184,7 +191,8 @@ class Command(BaseCommand):
 
     @staticmethod
     def _uncovered(codes):
-        """In-scope structures the database has and the delivered tree does not.
+        """
+        In-scope structures the database has and the delivered tree does not.
 
         Only meaningful when the corpus came from the tree: such a structure is
         never visited, so its anchors would keep rows this import did not

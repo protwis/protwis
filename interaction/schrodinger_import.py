@@ -1,4 +1,5 @@
-"""Import Schrodinger Engine 1 (small-molecule) interactions into GPCRdb.
+"""
+Import Schrodinger Engine 1 (small-molecule) interactions into GPCRdb.
 
 The schrodinger_interaction pipeline writes one YAML per ligand instance:
 
@@ -82,7 +83,8 @@ INSTANCE_DIR_RE = re.compile(
 
 
 def instance_yaml_paths(data_dir, pdb_code):
-    """Map instance name -> YAML path for one PDB (flat product layout).
+    """
+    Map instance name -> YAML path for one PDB (flat product layout).
 
     Only directories whose name parses as an instance and that hold a YAML of
     the same name are returned. A missing PDB directory returns {}.
@@ -153,7 +155,8 @@ PROVENANCE_KEYS = (
 
 
 def load_chainmap(path):
-    """(pdb, anchors, receptor_row, provenance, ran) from one chainmap.tsv.
+    """
+    (pdb, anchors, receptor_row, provenance, ran) from one chainmap.tsv.
 
     `ran` says whether the structure's directory held the producer's summary
     when the map was built.
@@ -209,7 +212,8 @@ def load_chainmap(path):
 
 
 def load_chainmap_dir(data_dir, pdb_codes):
-    """Per-PDB chain maps from {data_dir}/{PDB}/chainmap.tsv.
+    """
+    Per-PDB chain maps from {data_dir}/{PDB}/chainmap.tsv.
 
     Returns (anchor_table, receptor_table, missing, provenance, not_run):
     anchor_table maps (PDB, HET, token) to its row, receptor_table maps PDB to
@@ -265,7 +269,8 @@ def load_chainmap_dir(data_dir, pdb_codes):
 def structure_verdict(
     in_db, experimental, was_run, has_chainmap, anchors_at_risk=0, allow_not_run=False
 ):
-    """What to do with one delivered structure, before the database is touched.
+    """
+    What to do with one delivered structure, before the database is touched.
 
     Returns (status, level, category), or None when the structure is imported.
 
@@ -295,7 +300,8 @@ def structure_verdict(
 
 
 def product_pdb_codes(data_dir):
-    """Every structure directory of a delivered tree, sorted.
+    """
+    Every structure directory of a delivered tree, sorted.
 
     This is what the tree offers, not what the producer ran (see
     load_chainmap_dir's `not_run`). Names are returned as they are on disk, so a
@@ -314,7 +320,8 @@ IMPORT_STATUSES = frozenset({"ok", "errata"})
 
 
 def anchor_instances(pdb, het, chain_res, anchor_map, instance_names):
-    """Product instances for one anchor, from the anchor map.
+    """
+    Product instances for one anchor, from the anchor map.
 
     Returns (names, mode, notes). mode is ``mapped`` (every named copy has an
     instance), ``mapped_partial`` (some copies have none), ``all_copies``
@@ -365,7 +372,8 @@ def anchor_instances(pdb, het, chain_res, anchor_map, instance_names):
 
 
 def instance_chains(pdb, het, chain_res, anchor_map, names):
-    """GPCRdb chain for each selected instance of one anchor.
+    """
+    The GPCRdb chain for each selected instance of one anchor.
 
     Named copies take the chain of their chain_res token (GPCRdb naming; the
     token pattern allows one character only). Copies selected as all_copies
@@ -391,7 +399,8 @@ def instance_chains(pdb, het, chain_res, anchor_map, names):
 
 
 def standard_ligand_block(block, instance, gpcrdb_chain):
-    """Rewrite every atom line of a producer ligand block.
+    """
+    Rewrite every atom line of a producer ligand block.
 
     Returns (text, capped_lines): the rewritten block and the output lines
     whose B-factor was capped.
@@ -418,7 +427,8 @@ def standard_ligand_block(block, instance, gpcrdb_chain):
 
 
 def checked_receptor_chain(pdb, receptor_map, gpcrdb_text, instance_names):
-    """receptor_chain, once the map is known to fit the structure.
+    """
+    receptor_chain, once the map is known to fit the structure.
 
     A map built from another stored text or product tree is reported as stale
     first, whatever its receptor row says: only a rebuild can tell more. A row
@@ -527,7 +537,8 @@ def apply_backbone_override(slug, receptor_atom_name):
 
 
 def plan_rows(interactions, receptor_chain_name):
-    """Plan the RFI rows for the product rows of one anchor.
+    """
+    Plan the RFI rows for the product rows of one anchor.
 
     ``receptor_chain_name`` is the product (mmCIF author) chain that GPCRdb
     stores as the receptor; '' keeps every chain.
@@ -607,7 +618,8 @@ PRODUCT_CONTRACT = "engine1/1.0"
 
 
 def check_product_contract(data_dir, pdb_code):
-    """Raise MalformedProduct unless the structure's summary.yaml carries PRODUCT_CONTRACT.
+    """
+    Raise MalformedProduct unless the structure's summary.yaml carries PRODUCT_CONTRACT.
 
     A structure whose products are imported was run to the end, and the
     producer then always writes summary.yaml; one without it is refused too.
@@ -650,8 +662,11 @@ def read_instance_rows(path):
 
 
 def is_in_scope(sli):
-    """True iff this SLI anchor is served by Engine 1: it names a chemical
-    component (a HET code), whatever type the database gives the ligand.
+    """
+    True iff this SLI anchor is served by Engine 1.
+
+    Served means the anchor names a chemical component (a HET code), whatever
+    type the database gives the ligand.
 
     The reference says what the anchor is in the structure; the database's
     ligand type can disagree (a peptide drug referenced by one chemical
@@ -686,6 +701,7 @@ class AnchorOutcome(object):
     )
 
     def __init__(self, sli_id, het):
+        """Start with nothing done for this anchor."""
         self.sli_id = sli_id
         self.het = het
         self.mode = ""
@@ -741,7 +757,8 @@ def _pdb_atom_name(name, element):
 
 
 def standard_ligand_line(line, het, product_chain, resnum, icode, gpcrdb_chain):
-    """Rewrite one producer ligand atom line in standard PDB v3.3 columns.
+    """
+    Rewrite one producer ligand atom line in standard PDB v3.3 columns.
 
     The producer's residue name, chain and residue number are checked against
     the instance the line came from; any disagreement raises
@@ -815,7 +832,8 @@ def fragment_text(ligand_lines):
 
 
 def delete_orphan_fragments(structure):
-    """Delete this structure's fragments that no interaction row references.
+    """
+    Delete this structure's fragments that no interaction row references.
 
     A fragment's PdbData text is deleted too, but only when no other row of
     any model references it: PdbData is shared by rotamers, structures,
@@ -848,7 +866,8 @@ def delete_orphan_fragments(structure):
 
 
 def delete_unreferenced_pdbdata(candidates):
-    """Delete the PdbData rows of ``candidates`` that no row of any model references.
+    """
+    Delete the PdbData rows of ``candidates`` that no row of any model references.
 
     Every reference to PdbData cascades (a StructureLigandInteraction whose
     pdb_file is deleted goes with it), so a row still referenced is kept. The
@@ -876,7 +895,8 @@ def delete_unreferenced_pdbdata(candidates):
 
 
 def check_map_covers(pdb, slis, anchor_map):
-    """Every copy the database has must be listed; extra copies are allowed.
+    """
+    Every copy the database has must be listed; extra copies are allowed.
 
     Returns the copies the map lists that this database cannot use, sorted, so
     the caller can report them: a ligand copy computed but not imported should
@@ -912,7 +932,8 @@ def check_map_covers(pdb, slis, anchor_map):
 
 
 def import_structure(structure, data_dir, anchor_map, receptor_map):
-    """Replace the Engine 1 RFI rows of one structure.
+    """
+    Replace the Engine 1 RFI rows of one structure.
 
     Runs in one transaction: any exception leaves the structure exactly as it
     was. Returns (outcomes, out_of_scope_count, cleanup_counter, unused_copies),

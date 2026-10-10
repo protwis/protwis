@@ -1,4 +1,5 @@
-"""The Schrodinger ligand imports, as build_all and build_all_interactions run them.
+"""
+The Schrodinger ligand imports, as build_all and build_all_interactions run them.
 
 Ligand interactions come from two imports of the Schrodinger deliveries:
 Engine 1 serves the anchors named by a HET code (import_schrodinger_interactions),
@@ -111,8 +112,12 @@ def engine2_dir(options):
 
 
 def steps(options):
-    """[[command, options]]: the two maps, both imports as dry runs, both for real,
-    the clean-up. with_tests() puts the tests in front."""
+    """
+    [[command, options]] for the maps, the dry runs, the imports and the clean-up.
+
+    In order: the two maps, both imports as dry runs, both for real, the clean-up.
+    with_tests() puts the tests in front.
+    """
     if options["skip_ligand_import"]:
         print(
             "{} SKIPPING the ligand imports: no ligand interactions are written".format(
@@ -204,7 +209,8 @@ def check_deliveries(options, command_names):
 
 
 def split(planned):
-    """(tests, maps and dry runs; real imports and the clean-up) of a planned list.
+    """
+    (tests, maps and dry runs; real imports and the clean-up) of a planned list.
 
     Each part keeps its order. Plan once and split, so the dry runs and the
     imports they vouch for share one accounting directory per import, and read the

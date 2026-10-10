@@ -1,4 +1,5 @@
-"""Import Schrodinger Engine 2 receptor x peptide interactions into GPCRdb.
+"""
+Import Schrodinger Engine 2 receptor x peptide interactions into GPCRdb.
 
 Engine 2 computes every pair of polymer segments a structure declares, each
 pair both ways round, and its delivered tree holds one directory per structure:
@@ -183,8 +184,11 @@ def receptor_ca_numbers(auth_chain, preferred_chain, cif_atoms, gpcrdb_atoms):
 
 
 def receptor_segment(segments, auth_chain, ca_numbers):
-    """(segment name, residues covered, note): the segment on the receptor's
-    author chain that covers most of GPCRdb's receptor residues.
+    """
+    (segment name, residues covered, note) of the receptor's main segment.
+
+    The main segment is the one on the receptor's author chain that covers most
+    of GPCRdb's receptor residues.
 
     None when no segment covers any; a tie is refused rather than broken.
     """
@@ -218,7 +222,8 @@ ANY_ATOM_MIN_SHARE = 0.9
 
 
 def peptide_author_chain(pdb, gpcrdb_chain, cif_atoms, gpcrdb_atoms):
-    """(author chain, method, note) for one GPCRdb peptide chain.
+    """
+    (author chain, method, note) for one GPCRdb peptide chain.
 
     method "ca": the receptor rule of the Engine 1 chain map, applied to the
     peptide chain; a renumbered match is still a match (the peptide numbers
@@ -270,8 +275,11 @@ def receptor_chain_segments(segments, auth_chain):
 
 
 def peptide_items(segments, items, author_chain, receptor_segs):
-    """[(peptide segment, item key)] with the peptide as the ligand side and a
-    receptor segment as the receptor side. A segment is never both."""
+    """
+    [(peptide segment, item key)] with the peptide as the ligand side.
+
+    The receptor side is a receptor segment; a segment is never both.
+    """
     receptor_segs = set(receptor_segs)
     peptide_segs = {
         name
@@ -452,7 +460,8 @@ PREPARED_NAMES = {
 
 
 def parse_peptide_line(line, product_chain):
-    """One producer atom line of a peptide (or any multi-residue ligand side).
+    """
+    One producer atom line of a peptide (or any multi-residue ligand side).
 
     The producer's layout is one column short of standard PDB (no altloc) and
     widens the residue name for five-character codes; the chain it writes is
@@ -494,7 +503,8 @@ def parse_peptide_line(line, product_chain):
 
 
 def standard_peptide_line(atom, gpcrdb_chain):
-    """(standard PDB v3.3 line, b_factor_was_capped) for one parsed atom.
+    """
+    (standard PDB v3.3 line, b_factor_was_capped) for one parsed atom.
 
     The residue name is cut to three characters and the chain is GPCRdb's, as
     in GPCRdb's own stored structure text.
@@ -592,8 +602,11 @@ class UnroutableRow(si.UnroutableRow):
 
 
 def peptide_type(row):
-    """(interaction_type, specific_type, receptor_is_ring, peptide_is_ring), or None
-    for a family the peptide tables do not hold."""
+    """
+    (interaction_type, specific_type, receptor_is_ring, peptide_is_ring).
+
+    None for a family the peptide tables do not hold.
+    """
     family = row["feature_family"]
     if family in NOT_IN_PEPTIDE_TABLES:
         return None
@@ -610,7 +623,8 @@ def peptide_type(row):
 
 
 def plan_peptide_pairs(rows, receptor_chain_name, product_chain):
-    """Plan the peptide-table rows for the product rows of one anchor.
+    """
+    Plan the peptide-table rows for the product rows of one anchor.
 
     Returns (pairs, counts). ``pairs`` maps
     (peptide resnum, icode, resname, receptor seq, receptor one-letter) to a
@@ -666,7 +680,8 @@ def plan_peptide_pairs(rows, receptor_chain_name, product_chain):
 
 
 def standardise_blocks(rows, product_chain, gpcrdb_chain):
-    """Rewrite every row's ligand_pdb_block in standard PDB columns, in place.
+    """
+    Rewrite every row's ligand_pdb_block in standard PDB columns, in place.
 
     Returns the set of output lines whose B-factor was capped.
     """
@@ -683,7 +698,8 @@ def standardise_blocks(rows, product_chain, gpcrdb_chain):
 
 
 def anchor_rows(data_dir, pdb, map_row):
-    """(rows, failed) of one anchor, from the items its map row names.
+    """
+    (rows, failed) of one anchor, from the items its map row names.
 
     Each item's record is read again and must still say what the map says.
     ``failed`` lists "key:outcome" for the items the run could not answer
@@ -756,6 +772,7 @@ class AnchorOutcome(object):
     )
 
     def __init__(self, sli_id, chain):
+        """Start with nothing done for this anchor."""
         self.sli_id = sli_id
         self.chain = chain
         self.mode = ""
@@ -846,7 +863,7 @@ def _write_rfi(structure, sli, records, types, outcome):
 
 def _write_pairs(structure, peptide, pairs, outcome):
     bulk = []
-    for (resnum, icode, resname, seq, amino_acid), interactions in sorted(
+    for (resnum, _icode, resname, seq, amino_acid), interactions in sorted(
         pairs.items()
     ):
         residue = _receptor_residue(structure, seq, amino_acid, outcome.pair_dropped)
@@ -896,8 +913,11 @@ def _clear_anchor(sli, peptide, outcome):
 
 
 def choose_peptide_structure(candidates, chain, label):
-    """The anchor's LigandPeptideStructure among those of its ligand: the only
-    one, or the one on the anchor's chain when the ligand has several."""
+    """
+    The anchor's LigandPeptideStructure among those of its ligand.
+
+    The only one, or the one on the anchor's chain when the ligand has several.
+    """
     found = list(candidates)
     if len(found) > 1:
         found = [p for p in found if p.chain == chain]
@@ -931,7 +951,8 @@ def check_receptor(pdb, receptor):
 
 
 def anchor_action(pdb, sli_id, chain, chain_rows):
-    """(action, map row) for one anchor, before anything is written.
+    """
+    (action, map row) for one anchor, before anything is written.
 
     "clear" for an anchor with no chain_res (it keeps no rows);
     "import" for an anchor whose chain has an ok row. A chain the map does
@@ -954,8 +975,11 @@ def anchor_action(pdb, sli_id, chain, chain_rows):
 
 
 def claim_peptide_structure(used, peptide_id, sli_id, pdb):
-    """Record that an anchor owns a LigandPeptideStructure; refuse a second owner,
-    whose clear would wipe the first anchor's pairs."""
+    """
+    Record that an anchor owns a LigandPeptideStructure.
+
+    A second owner is refused: its clear would wipe the first anchor's pairs.
+    """
     if peptide_id in used:
         raise MissingPeptideStructure(
             "{}: anchors {} and {} share LigandPeptideStructure {}".format(
@@ -966,7 +990,8 @@ def claim_peptide_structure(used, peptide_id, sli_id, pdb):
 
 
 def check_receptor_and_fingerprints(pdb, data_dir, receptor, header, gpcrdb_text):
-    """check_receptor and check_fingerprints, a stale map reported first.
+    """
+    check_receptor and check_fingerprints, a stale map reported first.
 
     The rule of schrodinger_import.checked_receptor_chain: a map built from
     another stored text or plan is reported as stale whatever its receptor row
@@ -996,7 +1021,8 @@ def check_fingerprints(pdb, data_dir, receptor, header, gpcrdb_text):
 
 
 def import_structure(structure, data_dir, receptor, chain_rows, header):
-    """Replace the peptide-import rows of one structure, in one transaction.
+    """
+    Replace the peptide-import rows of one structure, in one transaction.
 
     ``receptor``, ``chain_rows`` and ``header`` are this structure's
     peptide_map.tsv as load_peptide_map returns them. Returns

@@ -6,6 +6,7 @@ from django.db import connection
 from structure.models import Structure
 
 from contactnetwork.cube import *
+from contactnetwork.cube import compute_interactions
 from build import ligand_imports
 
 import logging, json, os

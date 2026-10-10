@@ -1,11 +1,12 @@
-"""Build one chainmap.tsv per PDB, from files only.
+r"""
+Build one chainmap.tsv per PDB, from files only.
 
 The per-anchor and per-receptor resolution is interaction.schrodinger_chain_map.
 Every input comes from files, not the database, and the output is one file per
 structure, written into that structure's product directory, where the importer
 looks for it::
 
-    python manage.py build_schrodinger_chainmap_files \\
+    python manage.py build_schrodinger_chainmap_files \
         --data-dir <DATA_DIR>/structure_data/schrodinger/engine1
 
 build_all runs it before the imports, so the maps always match the annotation
@@ -66,7 +67,8 @@ def _sha256_file(path):
 
 
 def annotation_commit(given, gdata):
-    """The gpcrdb_data commit to record: the one given, else the HEAD of ``gdata``.
+    """
+    The gpcrdb_data commit to record: the one given, else the HEAD of ``gdata``.
 
     Only recorded in the map headers, never compared, so when git cannot answer
     for that very directory (not an enclosing repository) the value is
@@ -96,7 +98,8 @@ def annotation_commit(given, gdata):
 
 
 def product_input_sha256(tree, pdb):
-    """The input sha256 Engine 1 recorded in <tree>/<PDB>/summary.yaml.
+    """
+    The input sha256 Engine 1 recorded in <tree>/<PDB>/summary.yaml.
 
     None when there is no summary (no recorded input sha256 to compare
     against); "" when a summary is there but unreadable or without the field,
@@ -115,7 +118,8 @@ def product_input_sha256(tree, pdb):
 
 
 def index_mismatch(summary_sha, index_sha):
-    """The reason to refuse the coordinate index, or None.
+    """
+    The reason to refuse the coordinate index, or None.
 
     Refused: a summary without input_sha256, and an index read from another
     mmCIF than the products.
@@ -134,7 +138,8 @@ def index_mismatch(summary_sha, index_sha):
 
 
 def _sha256_parts(parts):
-    """sha256 over a list, length-prefixed so the parts cannot be re-cut.
+    """
+    sha256 over a list, length-prefixed so the parts cannot be re-cut.
 
     One of the parts is a function body and carries newlines, so joining on a
     separator would not be injective.
@@ -159,7 +164,8 @@ HEADER_KEYS = (
 
 
 def has_product_summary(data_dir, pdb):
-    """Did the producer leave its per-structure summary in this directory?
+    """
+    Did the producer leave its per-structure summary in this directory?
 
     Read from the product tree, never from the out dir, which may be elsewhere.
     """
@@ -172,7 +178,8 @@ def has_product_summary(data_dir, pdb):
 
 
 def chainmap_header(pdb, values, receptor, has_summary):
-    """The '# key<TAB>value' lines of one chainmap, in order.
+    """
+    The '# key<TAB>value' lines of one chainmap, in order.
 
     Every field is about this structure or about an input common to all of
     them, so each file stays true when trees are merged.
@@ -199,7 +206,8 @@ def _some(names, limit=20):
 
 
 def _flat(value):
-    """A header value may hold free text (note); keep it on one line, one field.
+    """
+    A header value may hold free text (note); keep it on one line, one field.
 
     Only the characters that would break the format are replaced, so the value
     still reads as what it was.
@@ -211,7 +219,8 @@ def _flat(value):
 
 
 def read_tsv(path):
-    """Rows of a gpcrdb_data annotation TSV, keys and values stripped.
+    """
+    Rows of a gpcrdb_data annotation TSV, keys and values stripped.
 
     A row wider than the header arrives under the key None as a list: refuse
     the file rather than guess which field went where. A row that is too short
@@ -232,7 +241,8 @@ def read_tsv(path):
 
 
 def preferred_chains(rows):
-    """PDB -> preferred chain, as structure.functions.ParseStructureCSV stores it.
+    """
+    PDB -> preferred chain, as structure.functions.ParseStructureCSV stores it.
 
     That parser keeps only the first character of a chain id containing a dot.
     The dot rule is applied here and the comma rule by resolve_receptor, as on
@@ -250,7 +260,8 @@ def preferred_chains(rows):
 
 
 def annotation_anchors(rows):
-    """PDB -> [(HET, token, chain_res)] in file order, for the anchors Engine 1 serves.
+    """
+    PDB -> [(HET, token, chain_res)] in file order, for the anchors Engine 1 serves.
 
     Mirrors schrodinger_import.is_in_scope: every row whose Name is a real
     chemical component, whatever its Type (the type can disagree between the
@@ -532,7 +543,8 @@ class Command(BaseCommand):
         has_summary,
         summary_sha=None,
     ):
-        """(anchor_rows, receptor_row, provenance) for one structure.
+        """
+        (anchor_rows, receptor_row, provenance) for one structure.
 
         An unreadable input is not a reason to skip: every anchor is written as
         unresolved with the reason, and the importer refuses the structure. A

@@ -1,4 +1,5 @@
-"""Unit tests for the database-free layer of interaction.schrodinger_import.
+"""
+Unit tests for the database-free layer of interaction.schrodinger_import.
 
 They need Django configured (the module imports models) but never touch the
 database, so they run with plain unittest:
@@ -199,8 +200,6 @@ class MapGuardTests(unittest.TestCase):
         self.assertEqual(table[0]["note"], note)
 
     def test_fingerprints(self):
-        from interaction import schrodinger_chain_map as cm
-
         rmap = {
             "6ZIN": {
                 "gpcrdb_text_sha256": cm.text_sha256("ATOM 1\n"),
@@ -279,7 +278,7 @@ CHAINMAP_HEADER = "".join(
 CHAINMAP_COLUMNS = "\t".join(cm.ANCHOR_COLUMNS) + "\n"
 
 
-def chainmap_row(
+def chainmap_row(  # nosec B107
     pdb="6ZIN", het="q6q", token="A:1000", instance="Q6Q_A_1000", status="ok"
 ):
     row = dict.fromkeys(cm.ANCHOR_COLUMNS, "")
@@ -353,7 +352,7 @@ class ChainmapDirTests(unittest.TestCase):
     def test_a_directory_without_a_map_is_named_not_skipped(self):
         self.write("6ZIN", CHAINMAP_HEADER + CHAINMAP_BODY)
         os.makedirs(os.path.join(self.root, "2RH1"))
-        anchors, receptors, missing, prov, not_run = si.load_chainmap_dir(
+        anchors, receptors, missing, _, not_run = si.load_chainmap_dir(
             self.root, ["6ZIN", "2RH1"]
         )
         self.assertEqual(missing, ["2RH1"])
@@ -373,7 +372,7 @@ class ChainmapDirTests(unittest.TestCase):
         inst = os.path.join(self.root, "6ZIN", "Q6Q_A_1000")
         os.makedirs(inst)
         open(os.path.join(inst, "Q6Q_A_1000.yaml"), "w").close()
-        anchors, receptors, _, _, not_run = si.load_chainmap_dir(self.root, ["6ZIN"])
+        _, receptors, _, _, not_run = si.load_chainmap_dir(self.root, ["6ZIN"])
         self.assertEqual(not_run, [])
         self.assertEqual(sorted(receptors), ["6ZIN"])
 
@@ -392,9 +391,7 @@ class ChainmapDirTests(unittest.TestCase):
             "# receptor.product_instances_sha256\t" + cm.instances_sha256([]),
         )
         self.write("6ZIN", empty + CHAINMAP_BODY)
-        anchors, receptors, missing, prov, not_run = si.load_chainmap_dir(
-            self.root, ["6ZIN"]
-        )
+        anchors, receptors, _, _, not_run = si.load_chainmap_dir(self.root, ["6ZIN"])
         self.assertEqual(not_run, ["6ZIN"])
         self.assertEqual(anchors, {})
         self.assertEqual(receptors, {})
@@ -586,7 +583,7 @@ class StandardLigandLineTests(unittest.TestCase):
             si.standard_ligand_line(self.CAU[:60], "CAU", "A", "408", "", "A")
 
     def test_block_and_instance_chains(self):
-        text, capped = si.standard_ligand_block(
+        text, _ = si.standard_ligand_block(
             self.CAU + "\n\n" + self.HNAME + "\n", "CAU_A_408", "A"
         )
         self.assertEqual(len(text.splitlines()), 2)
@@ -1037,8 +1034,11 @@ class ProductContractTests(unittest.TestCase):
 
 
 class SeedTests(unittest.TestCase):
-    """build_structures creates no interaction type, so the seed migration
-    must create every slug the imports can write."""
+    """
+    The seed migration creates every slug the imports can write.
+
+    build_structures creates no interaction type, so the migration must.
+    """
 
     @staticmethod
     def _migration():

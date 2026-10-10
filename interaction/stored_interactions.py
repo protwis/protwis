@@ -1,4 +1,5 @@
-"""Stored interactions of a structure GPCRdb has, for the online calculation page.
+"""
+Stored interactions of a structure GPCRdb has, for the online calculation page.
 
 interaction.views.calculate computes interactions for a PDB file a user
 uploads or a PDB code a user types. For a typed code that GPCRdb already has,
@@ -53,7 +54,8 @@ def ligand_key(pdb_reference, ligand_name):
 
 
 def anchor_keys(anchors):
-    """{anchor id: (results key, is pep)} for (id, pdb_reference, ligand name, chain_res).
+    """
+    {anchor id: (results key, is pep)} for (id, pdb_reference, ligand name, chain_res).
 
     Anchors that would share a key (two copies of one HET code at different
     sites) each get their chain_res appended, so one site is never built from
@@ -71,8 +73,11 @@ def anchor_keys(anchors):
 
 
 def build_results(rows, chain):
-    """Results from ((ligand key, is pep), one-letter amino acid, residue number, slug,
-    name, type, direction) rows, in the shape calculate_interactions returns.
+    """
+    Results from database rows, in the shape calculate_interactions returns.
+
+    The rows are ((ligand key, is pep), one-letter amino acid, residue number,
+    slug, name, type, direction).
 
     Each interaction is [residue, fragment file, slug, name, type, direction]
     with residue as three-letter name, number and chain (ASP113A, what

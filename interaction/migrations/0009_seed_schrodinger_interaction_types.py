@@ -1,4 +1,5 @@
-"""Seed every interaction type the Schrodinger imports write.
+"""
+Seed every interaction type the Schrodinger imports write.
 
 build_structures does not compute ligand interactions, so nothing else in a
 build creates these types. These rows are exactly

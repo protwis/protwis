@@ -1,7 +1,9 @@
-"""End-to-end tests of the two map builders and the clean-up on a small synthetic delivery
-(no database): each command is called with the options build/ligand_imports plans.
+r"""
+End-to-end tests of the map builders and the clean-up on a small synthetic delivery.
 
-    python -c "import django; django.setup(); import unittest; \\
+No database: each command is called with the options build/ligand_imports plans.
+
+    python -c "import django; django.setup(); import unittest; \
         unittest.main(module='interaction.test_schrodinger_map_builders', argv=['x'])"
 """
 
@@ -10,7 +12,6 @@ import io
 import json
 import os
 import shutil
-import subprocess
 import tempfile
 import unittest
 from unittest import mock
@@ -93,6 +94,7 @@ class Delivery(object):
     """A gpcrdb_data checkout with one structure delivered by both engines."""
 
     def __init__(self, root, summary_sha=SHA, index=True, coord="%.3f"):
+        """Write the annotation, the structure texts and both deliveries under root."""
         self.gdata = os.path.join(root, "gpcrdb_data")
         self.engine1 = os.path.join(
             self.gdata, "structure_data", "schrodinger", "engine1"
@@ -345,18 +347,18 @@ class AnnotationCommitTests(unittest.TestCase):
         with mock.patch.object(
             e1.subprocess, "run", side_effect=FileNotFoundError("git")
         ):
-            self.assertEqual(e1.annotation_commit(None, "/tmp"), "unknown")
+            self.assertEqual(e1.annotation_commit(None, "/nowhere"), "unknown")
 
     def test_a_hanging_git_is_unknown(self):
         with mock.patch.object(
-            e1.subprocess, "run", side_effect=subprocess.TimeoutExpired("git", 30)
+            e1.subprocess, "run", side_effect=e1.subprocess.TimeoutExpired("git", 30)
         ):
-            self.assertEqual(e1.annotation_commit(None, "/tmp"), "unknown")
+            self.assertEqual(e1.annotation_commit(None, "/nowhere"), "unknown")
 
     def test_only_the_top_level_of_a_repository_answers(self):
         def fake(cmd, **kw):
             out = {"--show-toplevel": "/repo", "--short=7": "1234567"}[cmd[4]]
-            return subprocess.CompletedProcess(cmd, 0, stdout=out + "\n")
+            return e1.subprocess.CompletedProcess(cmd, 0, stdout=out + "\n")
 
         with mock.patch.object(e1.subprocess, "run", side_effect=fake):
             self.assertEqual(e1.annotation_commit(None, "/repo/inside"), "unknown")
