@@ -5,6 +5,8 @@ from django.conf import settings
 
 import datetime
 
+from build import ligand_imports
+
 
 class Command(BaseCommand):
     help = 'Runs all build functions'
@@ -37,6 +39,11 @@ class Command(BaseCommand):
                             dest='phase',
                             default=None,
                             help='Specify build phase to run (1 or 2, default: None)')
+        ligand_imports.add_arguments(parser)
+
+    def ligand_import_steps(self, options):
+        """The ligand interactions, right after build_structures (build.ligand_imports)."""
+        return ligand_imports.steps(options)
 
     def handle(self, *args, **options):
         if options['test']:
@@ -62,6 +69,9 @@ class Command(BaseCommand):
             # ['build_chembl_data', {'test_run': options['test']}],
             ['build_mutant_data', {'test_run': options['test']}],
             ['build_structures', {'proc': options['proc'], 'skip_cn': options['test']}],
+            # The ligand interactions come from the Schrodinger deliveries,
+            # imported before anything reads them.
+            *(self.ligand_import_steps(options) if options['phase'] in (None, 1) else []),
             ['build_consensus_sequences', {'proc': options['proc']}],
             ['build_g_proteins'],
             ['build_consensus_sequences', {'proc': options['proc'], 'signprot': 'Alpha'}],
@@ -121,6 +131,10 @@ class Command(BaseCommand):
                 commands = phase3
         else:
             commands = phase1+phase2+phase3
+
+        # The tests of the ligand import code run first, before anything is written.
+        commands = ligand_imports.with_tests(commands)
+        ligand_imports.check_deliveries(options, [c[0] for c in commands])
 
         for c in commands:
             print('{} Running {}'.format(
