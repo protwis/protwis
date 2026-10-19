@@ -78,6 +78,9 @@ class DrawSnakePlot(Diagram):
         # per-residue midplane_distance, keyed by sequence_number; feeds the per-TM alignment
         # calculation in drawSnakePlotHelix (measured vs. TM_ANCHOR_CANDIDATES approximation)
         self.residue_distance_lookup = residue_distance_lookup or {}
+        # set by get_snake_plot_distance_lookup: True if the receptor has experimental structures,
+        # even when none of them have midplane data yet (picks the warning text below)
+        self.has_structures = getattr(residue_distance_lookup, 'has_structures', False)
 
         i = 0
         for r in self.sequence:
@@ -231,7 +234,12 @@ class DrawSnakePlot(Diagram):
 
             missing_tms = [i for i in range(1,8) if self.tm_alignment_status.get(i) == 'missing']
             messages = []
-            if not self.residue_distance_lookup:
+            if not self.residue_distance_lookup and self.has_structures:
+                messages.append("Experimental structures are available for this receptor, but their "
+                    "membrane alignment data is still being processed and will be included in the next "
+                    "GPCRdb release.<br>Until then, the transmembrane helix alignment shown here is an "
+                    "approximation based on generic conserved positions observed across GPCRs.")
+            elif not self.residue_distance_lookup:
                 messages.append("Transmembrane helix alignment shown here is an approximation based on "
                     "generic conserved positions observed across GPCRs - it was not calculated from "
                     "experimental structure data for this diagram.")
