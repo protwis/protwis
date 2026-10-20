@@ -2179,161 +2179,126 @@ class StructureStatistics(TemplateView):
                 context['GPCRome_data'] = json.dumps(updated_data)
 
             else:
+                # Each wheel is built twice -- all species (the page default) and human only -- and
+                # the page's species toggle just swaps between them client-side.
+                ortholog_lookup = self.get_human_ortholog_lookup()
+
                 #Adjust call to exclude olfactory
                 all_proteins = Protein.objects.filter(species_id=1, parent_id__isnull=True, accession__isnull=False, family_id__slug__startswith='0').exclude(
                                                     family_id__slug__startswith='007'
                                                 ).exclude(
                                                     family_id__slug__startswith='008'
-                                                )
-                all_structs = Structure.objects.filter(structure_type__origin='experiment').prefetch_related('protein_conformation__protein__family')
-                circle_data = all_structs.values_list(
-                              "state_id__slug", "protein_conformation__protein__parent__entry_name").order_by(
-                              "state_id__slug", "protein_conformation__protein__parent__entry_name").distinct(
-                              "state_id__slug", "protein_conformation__protein__parent__entry_name")
+                                                ).values_list('entry_name', flat=True)
+                coverage_rows = Structure.objects.filter(structure_type__origin='experiment').values_list(
+                                    'state__slug',
+                                    'protein_conformation__protein__parent__entry_name',
+                                    'protein_conformation__protein__parent__species_id').distinct()
+                for suffix, all_species in (('_all', True), ('', False)):
+                    wheel = self.build_coverage_wheel(coverage_rows, all_proteins, all_species, ortholog_lookup)
+                    context['GPCRome_data' + suffix] = json.dumps(wheel)
 
-                result_dict = {}
-                for prot in all_proteins:
-                    key = prot.entry_name
-                    # Initialize the key in result_dict if not already present
-                    if key not in result_dict:
-                        result_dict[key] = {'states': set(), 'status': 'empty'}
-
-                for item in circle_data:
-                    key = item[1]
-                    value = item[0]
-
-                    # Initialize the key in result_dict if not already present
-                    if key in result_dict:
-                        # Add the value to the states set to avoid duplicates
-                        result_dict[key]['states'].add(value)
-
-                        # Determine the status based on the current set of states
-                        if len(result_dict[key]['states']) == 1:
-                            if 'active' in result_dict[key]['states']:
-                                result_dict[key]['status'] = 'Active'
-                            elif 'inactive' in result_dict[key]['states']:
-                                result_dict[key]['status'] = 'Inactive'
-                        elif 'active' in result_dict[key]['states'] and 'inactive' in result_dict[key]['states']:
-                            result_dict[key]['status'] = 'Both'
-                        elif 'active' in result_dict[key]['states']:
-                            result_dict[key]['status'] = 'Active'
-                        elif 'inactive' in result_dict[key]['states']:
-                            result_dict[key]['status'] = 'Inactive'
-
-                # Optionally, reduce to key-status dictionary
-                result_dict = {k: v['status'] for k, v in result_dict.items()}
-
-                # Mapping for Value2
-                status_color_map = {
-                    'Both': 'blue',
-                    'Inactive': 'red',
-                    'Active': 'forestgreen'
-                }
-
-                # Creating the new dictionary
-                results_updated_dict = {
-                    key: {
-                        'Value1': value,
-                        'Value2': status_color_map.get(value, '#FFFFFF')  # Default to black if key not found
-                    }
-                    for key, value in result_dict.items()
-                }
-
-                gpcr_data = DataMapperHome.GenerateGPCRomeDataStructure(data_type="Classic")
-                updated_data = DataMapperHome.update_nested_GPCRome_data(gpcr_data["Data"], results_updated_dict)
-
-                context['GPCRome_data'] = json.dumps(updated_data)
-
-                # fetech the Complexes data
-                complexes_count = StructureLigandInteraction.objects \
-                    .filter(annotated=True, 
+                # fetch the Complexes data
+                complexes_rows = StructureLigandInteraction.objects \
+                    .filter(annotated=True,
                             structure__structure_type__origin='experiment') \
-                    .values('structure_id__protein_conformation_id__protein__parent__entry_name') \
+                    .values_list('structure__protein_conformation__protein__parent__entry_name',
+                                 'structure__protein_conformation__protein__parent__species_id') \
                     .annotate(c=Count('id', distinct=True))
-                complexes_dict = {}
-
-                complexes_list = list(complexes_count)
-
-                complexes_dict = {}
-                for prot in all_proteins:
-                    key = prot.entry_name
-                    # Initialize the key in result_dict if not already present
-                    if key not in complexes_dict:
-                        complexes_dict[key] = 0
-
-                for a in complexes_list:
-                    complexes_dict[a['structure_id__protein_conformation_id__protein__parent__entry_name']] = a['c']
-
-                # Creating the new dictionary -- receptors with 0 complexes are left out entirely
-                # (rather than sent as Value1: 0) so they render as blank/uncolored wedges instead
-                # of being pulled into the numeric color scale, and so they don't skew its min/max.
-                complexes_updated_dict = {
-                    key: {
-                        'Value1': value,
-                    }
-                    for key, value in complexes_dict.items()
-                    if value > 0
-                }
-
-                gpcr_data_complexes = DataMapperHome.GenerateGPCRomeDataStructure(data_type="Classic")
-                complexes_updated_data = DataMapperHome.update_nested_GPCRome_data(gpcr_data_complexes["Data"], complexes_updated_dict)
-
-                context['GPCRome_data_complexes'] = json.dumps(complexes_updated_data)
-
-                complexes_nonzero_values = [v for v in complexes_dict.values() if v > 0]
-                complexes_min = min(complexes_nonzero_values) if complexes_nonzero_values else 0
-                complexes_max = max(complexes_nonzero_values) if complexes_nonzero_values else 0
-                context['GPCRome_complexes_stats'] = json.dumps({
-                    'min': complexes_min,
-                    'max': complexes_max,
-                    'avg': (complexes_min + complexes_max) / 2,
-                })
+                for suffix, all_species in (('_all', True), ('', False)):
+                    wheel, stats = self.build_count_wheel(complexes_rows, all_proteins, all_species, ortholog_lookup, "Classic")
+                    context['GPCRome_data_complexes' + suffix] = json.dumps(wheel)
+                    context['GPCRome_complexes_stats' + suffix] = json.dumps(stats)
 
                 ### TESTING GPCROME FOR ODORANTS
                 all_olfactory = Protein.objects.filter(species_id=1, parent_id__isnull=True, accession__isnull=False
-                                                    ).filter(Q(family_id__slug__startswith='007') | Q(family_id__slug__startswith='008'))
-                olfactory_struct = Structure.objects.filter(Q(protein_conformation__protein__family_id__slug__startswith='007') | Q(protein_conformation__protein__family_id__slug__startswith='008')).values(
-                                                        'protein_conformation__protein__parent__entry_name'
-                                                    ).annotate(
-                                                        c=Count('id', distinct=True)
-                                                    )
-
-                olfactory_struct_dict = {}
-                for prot in all_olfactory:
-                    olfactory_struct_dict[prot.entry_name] = 0
-
-                for a in olfactory_struct:
-                    olfactory_struct_dict[a['protein_conformation__protein__parent__entry_name']] = a['c']
-
-
-                if None in olfactory_struct_dict:
-                    olfactory_struct_dict.pop(None)
-
-                # As above: receptors with 0 structures are left out entirely, not sent as
-                # Value1: 0, so they render blank rather than being folded into the color scale.
-                updated_olfactory_struct_dict = {
-                    key: {
-                        'Value1': value,
-                    }
-                    for key, value in olfactory_struct_dict.items()
-                    if value > 0
-                }
-
-                gpcr_data_olfactory = DataMapperHome.GenerateGPCRomeDataStructure(data_type="Odorant")
-                Olfactory_updated_data = DataMapperHome.update_nested_GPCRome_data(gpcr_data_olfactory["Data"], updated_olfactory_struct_dict)
-                context['GPCRome_data_olfactory'] = json.dumps(Olfactory_updated_data)
-
-                olfactory_nonzero_values = [v for v in olfactory_struct_dict.values() if v > 0]
-                olfactory_min = min(olfactory_nonzero_values) if olfactory_nonzero_values else 0
-                olfactory_max = max(olfactory_nonzero_values) if olfactory_nonzero_values else 0
-                context['GPCRome_olfactory_stats'] = json.dumps({
-                    'min': olfactory_min,
-                    'max': olfactory_max,
-                    'avg': (olfactory_min + olfactory_max) / 2,
-                })
-
+                                                    ).filter(Q(family_id__slug__startswith='007') | Q(family_id__slug__startswith='008')
+                                                    ).values_list('entry_name', flat=True)
+                olfactory_rows = Structure.objects.filter(structure_type__origin='experiment'
+                                                    ).filter(Q(protein_conformation__protein__family_id__slug__startswith='007') | Q(protein_conformation__protein__family_id__slug__startswith='008')
+                                                    ).values_list('protein_conformation__protein__parent__entry_name',
+                                                                  'protein_conformation__protein__parent__species_id'
+                                                    ).annotate(c=Count('id', distinct=True))
+                for suffix, all_species in (('_all', True), ('', False)):
+                    wheel, stats = self.build_count_wheel(olfactory_rows, all_olfactory, all_species, ortholog_lookup, "Odorant")
+                    context['GPCRome_data_olfactory' + suffix] = json.dumps(wheel)
+                    context['GPCRome_olfactory_stats' + suffix] = json.dumps(stats)
 
         return context
+
+    @staticmethod
+    def get_human_ortholog_lookup():
+        """Map every wild-type receptor entry_name (any species) to the entry_name of its human
+        ortholog, i.e. the human receptor in the same receptor-level ProteinFamily. Human receptors
+        map to themselves; receptors without a human ortholog (viral, yeast, ...) are left out."""
+        human_by_family = dict(Protein.objects.filter(species_id=1, sequence_type__slug='wt', family__slug__startswith='0')
+                               .values_list('family_id', 'entry_name'))
+        return {entry_name: human_by_family[family_id]
+                for entry_name, family_id in Protein.objects.filter(sequence_type__slug='wt', family_id__in=human_by_family.keys())
+                                                            .values_list('entry_name', 'family_id')}
+
+    @staticmethod
+    def place_on_human_wheel(entry_name, species_id, all_species, ortholog_lookup):
+        """The GPCRome wheel only has human receptor slots. Human only: keep human receptors as-is.
+        All species: move every receptor onto its human ortholog. None means "not placeable"."""
+        if all_species:
+            return ortholog_lookup.get(entry_name)
+        return entry_name if species_id == 1 else None
+
+    @staticmethod
+    def numeric_wheel_stats(values):
+        nonzero = [v for v in values if v > 0]
+        low = min(nonzero) if nonzero else 0
+        high = max(nonzero) if nonzero else 0
+        return {'min': low, 'max': high, 'avg': (low + high) / 2}
+
+    def build_coverage_wheel(self, rows, wheel_receptors, all_species, ortholog_lookup):
+        """rows: (state slug, receptor entry_name, species_id). Returns the wheel data."""
+        states = {entry_name: set() for entry_name in wheel_receptors}
+        for state, entry_name, species_id in rows:
+            key = self.place_on_human_wheel(entry_name, species_id, all_species, ortholog_lookup)
+            if key in states:
+                states[key].add(state)
+
+        def status(receptor_states):
+            if 'active' in receptor_states and 'inactive' in receptor_states:
+                return 'Both'
+            if 'active' in receptor_states:
+                return 'Active'
+            if 'inactive' in receptor_states:
+                return 'Inactive'
+            return 'empty'
+
+        # Mapping for Value2
+        status_color_map = {
+            'Both': 'blue',
+            'Inactive': 'red',
+            'Active': 'forestgreen'
+        }
+        results = {}
+        for entry_name, receptor_states in states.items():
+            value = status(receptor_states)
+            results[entry_name] = {'Value1': value, 'Value2': status_color_map.get(value, '#FFFFFF')}
+
+        gpcr_data = DataMapperHome.GenerateGPCRomeDataStructure(data_type="Classic")
+        return DataMapperHome.update_nested_GPCRome_data(gpcr_data["Data"], results)
+
+    def build_count_wheel(self, rows, wheel_receptors, all_species, ortholog_lookup, data_type):
+        """rows: (receptor entry_name, species_id, count). Counts from several species landing on
+        the same human receptor are summed. Returns (wheel data, min/max/avg stats)."""
+        counts = {entry_name: 0 for entry_name in wheel_receptors}
+        for entry_name, species_id, count in rows:
+            key = self.place_on_human_wheel(entry_name, species_id, all_species, ortholog_lookup)
+            if key in counts:
+                counts[key] += count
+
+        # Receptors with 0 are left out entirely (rather than sent as Value1: 0) so they render as
+        # blank/uncolored wedges instead of being pulled into the numeric color scale, and so they
+        # don't skew its min/max.
+        results = {entry_name: {'Value1': value} for entry_name, value in counts.items() if value > 0}
+
+        gpcr_data = DataMapperHome.GenerateGPCRomeDataStructure(data_type=data_type)
+        wheel = DataMapperHome.update_nested_GPCRome_data(gpcr_data["Data"], results)
+        return wheel, self.numeric_wheel_stats(counts.values())
 
     def get_families_dict(self, queryset, lookup, level="family"):
 
