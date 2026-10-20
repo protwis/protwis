@@ -72,12 +72,58 @@
       onDone(new Error("html2canvas is not loaded"));
       return;
     }
-    window.html2canvas(targetEl, { scale: 3, backgroundColor: "#ffffff", useCORS: true })
+
+    // html2canvas rasterizes each inline <svg> by serializing it on its own, so CSS-*class*-based
+    // svg styling (D3 charts) would be lost in the PNG. Tag the originals, then in the cloned
+    // document inject the same collected CSS the vector export uses into each matching clone.
+    var svgs = Array.prototype.slice.call(targetEl.querySelectorAll("svg"));
+    if (isSvg(targetEl)) svgs.unshift(targetEl);
+    svgs.forEach(function (svg, i) { svg.setAttribute("data-snap-svg-idx", i); });
+    targetEl.setAttribute("data-snap-target", "1");
+    function untag() {
+      svgs.forEach(function (svg) { svg.removeAttribute("data-snap-svg-idx"); });
+      targetEl.removeAttribute("data-snap-target");
+    }
+
+    // html2canvas doesn't paint the live page -- it re-lays-out a clone in its own iframe, which
+    // has no scrollbar and so is a little wider. Anything sized in % / flex then lands somewhere
+    // else than on screen, while JS-drawn svg overlays keep the pixel coordinates measured on the
+    // live page (e.g. #all-gpcr's connector curves vs. its flex buttons) -- they drift apart, worst
+    // when zoomed out, since the scrollbar is then more CSS px. Pinning the target and its svgs to
+    // their live pixel size in the clone makes it lay out exactly as on screen.
+    var frozen = [targetEl].concat(svgs).map(function (node) {
+      var cs = window.getComputedStyle(node);
+      return { node: node, width: cs.width, height: cs.height };
+    });
+
+    window.html2canvas(targetEl, {
+      scale: 3, backgroundColor: "#ffffff", useCORS: true,
+      onclone: function (clonedDoc) {
+        frozen.forEach(function (f) {
+          var clone = (f.node === targetEl)
+            ? clonedDoc.querySelector('[data-snap-target="1"]')
+            : clonedDoc.querySelector('[data-snap-svg-idx="' + f.node.getAttribute("data-snap-svg-idx") + '"]');
+          if (!clone || f.width === "auto" || f.height === "auto") return;
+          clone.style.width = clone.style.minWidth = clone.style.maxWidth = f.width;
+          clone.style.height = clone.style.minHeight = clone.style.maxHeight = f.height;
+          clone.style.flex = "none";
+        });
+        svgs.forEach(function (svg, i) {
+          var clone = clonedDoc.querySelector('[data-snap-svg-idx="' + i + '"]');
+          var css = snapCollectSvgCss(svg);
+          if (!clone || !css) return;
+          var styleEl = clonedDoc.createElementNS("http://www.w3.org/2000/svg", "style");
+          styleEl.textContent = css;
+          clone.insertBefore(styleEl, clone.firstChild);
+        });
+      },
+    })
       .then(function (canvas) {
+        untag();
         triggerDownload(canvas.toDataURL("image/png"), filename, false);
         onDone(null);
       })
-      .catch(function (err) { onDone(err); });
+      .catch(function (err) { untag(); onDone(err); });
   }
 
   function triggerDownload(url, filename, revoke) {
@@ -106,8 +152,54 @@
     }, FLASH_MS);
   }
 
+  // ---------------------------------------------------------------------
+  // Vector vs. raster: the snap should look like what's on screen. Only export
+  // a real .svg when that one <svg> *is* everything visible in the element --
+  // an element that merely contains an svg next to other HTML (e.g. the
+  // segment-selection panel's connector-line overlay behind its buttons)
+  // would otherwise lose all of that HTML, so it gets a PNG of the whole thing.
+  // ---------------------------------------------------------------------
+  var CONTENT_TAGS = { img: 1, canvas: 1, video: 1, iframe: 1, input: 1, select: 1, textarea: 1, button: 1 };
+
+  function isRendered(el) {
+    return !!el && el.getClientRects().length > 0 && window.getComputedStyle(el).visibility !== "hidden";
+  }
+
+  function isSvg(el) {
+    return !!el && !!el.tagName && el.tagName.toLowerCase() === "svg";
+  }
+
+  // Returns the <svg> to export as vector, or null if the element should be rasterized.
+  function svgOnlyContent(el) {
+    if (isSvg(el)) return el;
+
+    // Visible, top-level svgs only (an svg nested inside another svg is part of its parent).
+    var svgs = Array.prototype.filter.call(el.querySelectorAll("svg"), function (svg) {
+      return isRendered(svg) && !(svg.parentElement && svg.parentElement.closest("svg"));
+    });
+    if (svgs.length !== 1) return null;
+    var svg = svgs[0];
+
+    // Any visible text or content element outside that svg means it isn't the whole picture.
+    var walker = document.createTreeWalker(el, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, {
+      acceptNode: function (node) {
+        return isSvg(node) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT;
+      },
+    });
+    var node;
+    while ((node = walker.nextNode())) {
+      if (node.nodeType === Node.TEXT_NODE) {
+        if (node.nodeValue.trim() && isRendered(node.parentElement)) return null;
+      } else if (CONTENT_TAGS[node.tagName.toLowerCase()] && isRendered(node)) {
+        return null;
+      }
+    }
+    return svg;
+  }
+
   function snapElement(el, baseName, statusEl) {
-    var svg = (el.tagName && el.tagName.toLowerCase() === "svg") ? el : el.querySelector("svg");
+    var svg = svgOnlyContent(el);
+    var hasSvg = !svg && !!el.querySelector("svg");
     if (svg) {
       try {
         snapSaveSvg(svg, baseName + ".svg");
@@ -121,7 +213,7 @@
       return;
     }
 
-    setStatus(statusEl, "No <svg> found — rendering PNG…", false);
+    setStatus(statusEl, hasSvg ? "Mixed HTML + SVG — rendering PNG of everything…" : "No <svg> found — rendering PNG…", false);
     snapSavePng(el, baseName + ".png", function (err) {
       if (err) {
         flashOutline(el, false);
@@ -129,7 +221,8 @@
         window.console && console.error("[screen-snaps]", err);
       } else {
         flashOutline(el, true);
-        setStatus(statusEl, "Downloaded " + baseName + ".png", false);
+        setStatus(statusEl, "Downloaded " + baseName + ".png" +
+          (hasSvg ? " (enter the SVG's own id for a vector-only .svg)" : ""), false);
       }
     });
   }
