@@ -4306,6 +4306,10 @@ class BiasGuidelines(TemplateView):
         context = super().get_context_data(**kwargs)
         return context
 
+class PeptideAnalogBioactivities(TemplateView):
+
+    template_name = 'peptide_analog_bioactivities.html'
+
 class ReferenceSelection(TemplateView):
 
     template_name = 'reference_ligand_selection.html'
