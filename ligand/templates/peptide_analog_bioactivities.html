@@ -1,0 +1,52 @@
+{% extends "home/base.html" %}
+
+{% block content %}
+
+<h3>Peptide hormone analog bioactivities</h3>
+
+<div class="row">
+    <div class="col-md-8">
+        <p>
+            A literature-annotated dataset of bioactivities, mostly potency and E<sub>max</sub> values, for
+            physiological peptide hormones and their analogs. Each entry was annotated with a standardized
+            spreadsheet and imported into GPCRdb.
+        </p>
+
+        <h4>Contents</h4>
+        <ul>
+            <li>
+                <strong>Class A</strong> (6,626 rows): neurokinin, vasopressin, orexin-A, substance P, MSH, GnRH,
+                OT, ACTH, angiotensin II, Ccl1-28, Cx3Cl1, Cxcl1-17 and Xcl1.
+            </li>
+            <li>
+                <strong>Class B1</strong> (3,012 rows): &alpha;/&beta;-CGRP, adrenomedullin (ADM), amylin,
+                calcitonin (CT), gastric inhibitory peptide (GIP), GNRH, glucagon, PACAP, PTH, PTHRP, secretin,
+                TIP39, urocortin-1 and VIP.
+            </li>
+        </ul>
+
+        <h4>Use it to</h4>
+        <ul>
+            <li>See which analogs have already been tested, and which have not.</li>
+            <li>Analyse structure-activity relationships across published studies.</li>
+        </ul>
+
+        <p>The standardized annotation spreadsheet is available upon request.</p>
+
+        {# TODO: add the publication DOI link once published #}
+        <p><a href="#" target="_blank">Read more in the publication</a></p>
+    </div>
+
+    <div class="col-md-4">
+        <div class="panel panel-default">
+            <div class="panel-body text-center">
+                <a href="https://files.gpcrdb.org/Annotation_AB1.xlsx" class="btn btn-primary btn-lg btn-block">
+                    <span class="glyphicon glyphicon-download-alt"></span> Download (Excel)
+                </a>
+                <p class="text-muted" style="margin-top: 10px; margin-bottom: 0;">MS Excel &middot; Class A + B1 &middot; 9,638 rows</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
