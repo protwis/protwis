@@ -50,6 +50,141 @@ h4 {
   margin-right: auto;
 }
 
+.carousel {
+  border: 2px solid #c2c2c2;
+  border-radius: 3px;
+}
+
+/* Inactive indicators */
+.carousel-indicators {
+  position: absolute;
+  bottom: 0px;
+  left: 0;
+  right: 0;
+  width: auto;
+  margin: 0 auto;
+  background-color: rgb(120,120,120,0.5);
+  padding: 5px 5px;
+  border-radius: 4px;
+  display: table;
+}
+
+/* Inactive indicators */
+.carousel-indicators li {
+  background-color: #999;
+  border: 2px solid #666;
+}
+
+/* Active indicator */
+.carousel-indicators li.active {
+  background-color: #ffffff;
+  border: 2px solid #ffffff;
+}
+
+/* Carousel control arrows */
+.carousel-control {
+  background-image: none !important;
+  background-color: transparent !important;
+  filter: none;
+}
+
+.carousel-control:hover {
+  background-image: none !important;
+  background-color: transparent !important;
+}
+
+.carousel-control.left {
+  left: 0;
+  width: 5%;
+}
+
+.carousel-control.right {
+  right: 0;
+  left: auto;
+  width: 5%;
+}
+
+.carousel-control .glyphicon {
+  font-size: 48px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  margin-top: -24px;  /* Half of font-size */
+  margin-left: -24px; /* Half of font-size */
+}
+
+/* Carousel overlay text positioning */
+.carousel-inner {
+  position: relative;
+}
+
+.carousel-overlay-text {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 33%;
+  z-index: 10;
+  color:black;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.carousel-overlay-text-links {
+  text-align: center;
+}
+
+
+@media (min-width: 300px) {
+  .carousel-overlay-text-heading {
+    font-size: 1em;
+    font-weight: bold;
+    margin-bottom: 10px;
+  }
+
+  .carousel-overlay-text-subheading {
+    font-size: 1em;
+    font-weight: normal;
+    margin-bottom: 10px;
+    max-width: 100px;
+  }
+}
+
+@media (min-width: 1000px) {
+.carousel-overlay-text-heading {
+  font-size: 1.5em;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.carousel-overlay-text-subheading {
+  font-size: 1em;
+  font-weight: normal;
+  margin-bottom: 10px;
+  max-width: 300px;
+}
+}
+.carousel-overlay-text-links {
+  margin-top: 10px;
+}
+
+@media (min-width: 1500px) {
+.carousel-overlay-text-heading {
+  font-size: 2em;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.carousel-overlay-text-subheading {
+  font-size: 1.2em;
+  font-weight: normal;
+  margin-bottom: 10px;
+  max-width: 500px;
+}
+}
+
 .main-logo {
   height: 20px;
   width: 20px;
