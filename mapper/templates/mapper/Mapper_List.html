@@ -480,49 +480,4 @@ window.MAPPER_CORE_ENTRY_META = {};
 </script>
 <script src="{% static 'home/js/data_mapper/mapper_page_core.js' %}"></script>
 <script src="{% static 'home/js/data_mapper/mapper_list_page.js' %}"></script>
-<script>
-function mapperListDownloadTable() {
-  var isText = $('#mapper-list-input-table').hasClass('mapper-core-text-mode');
-  var v1Label = ($('#mapper-list-lbl-Val1').val() || 'Dot 1').trim();
-  var v2Label = ($('#mapper-list-lbl-Val2').val() || 'Dot 2').trim();
-  var v3Label = ($('#mapper-list-lbl-Val3').val() || 'Dot 3').trim();
-  var v4Label = ($('#mapper-list-lbl-Val4').val() || 'Dot 4').trim();
-  var headers = isText
-    ? ['Receptor', 'Category']
-    : ['Receptor', v1Label, v2Label, v3Label, v4Label];
-  var rows = [headers];
-  $('#mapper-list-input-tbody tr').each(function() {
-    var $tr = $(this);
-    var entryId = ($tr.find('.mapper-core-receptor-entry').val() || '').trim();
-    var unmatched = $tr.data('mapperCoreUnmatchedRaw');
-    var ta = ($tr.find('.mapper-core-in-receptor').val() || '').trim();
-    var receptor = '';
-    if (entryId && window.MAPPER_CORE_ENTRY_META && window.MAPPER_CORE_ENTRY_META[entryId]) {
-      receptor = window.MAPPER_CORE_ENTRY_META[entryId].name_plain || window.MAPPER_CORE_ENTRY_META[entryId].text || entryId;
-    } else if (unmatched != null && String(unmatched).trim()) {
-      receptor = String(unmatched).trim();
-    } else {
-      receptor = ta;
-    }
-    if (!receptor) return;
-    var row;
-    if (isText) {
-      row = [receptor, ($tr.find('.mapper-list-cat').val() || '').trim()];
-    } else {
-      row = [
-        receptor,
-        ($tr.find('.mapper-list-val1').val() || '').trim(),
-        ($tr.find('.mapper-list-val2').val() || '').trim(),
-        ($tr.find('.mapper-list-val3').val() || '').trim(),
-        ($tr.find('.mapper-list-val4').val() || '').trim()
-      ];
-    }
-    rows.push(row);
-  });
-  var wb = XLSX.utils.book_new();
-  var ws = XLSX.utils.aoa_to_sheet(rows);
-  XLSX.utils.book_append_sheet(wb, ws, 'List');
-  XLSX.writeFile(wb, 'List_data.xlsx');
-}
-</script>
 {% endblock %}

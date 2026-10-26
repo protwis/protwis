@@ -57,9 +57,120 @@
     };
   }
 
+  /**
+   * Classifies clipboard text pasted into an input table, using the GPCRome
+   * Wheel's rules (mapper_gpcrome_page.js paste handler):
+   *   'grid'   – a TAB anywhere, or every non-empty line contains ';'
+   *   'column' – no column delimiter but a line break: one value per line
+   *   null     – a plain single-line value; leave it to the browser
+   * `lines` holds the non-empty lines.
+   */
+  function classifyPaste(text) {
+    var s = String(text || '');
+    var lines = s.split(/\r?\n/).filter(function (ln) { return ln.trim() !== ''; });
+    if (!lines.length) return { kind: null, lines: lines };
+    var semiGrid = lines.every(function (ln) { return ln.indexOf(';') !== -1; });
+    if (s.indexOf('\t') !== -1 || semiGrid) return { kind: 'grid', lines: lines };
+    if (/[\r\n]/.test(s)) return { kind: 'column', lines: lines };
+    return { kind: null, lines: lines };
+  }
+
+  /** Splits one pasted grid line into trimmed cells: TAB columns, else ';' columns. */
+  function splitPasteLine(line) {
+    var s = String(line || '');
+    var parts = s.indexOf('\t') !== -1 ? s.split('\t') : s.indexOf(';') !== -1 ? s.split(';') : [s];
+    return parts.map(function (p) { return p.trim(); });
+  }
+
+  /**
+   * Writes one pasted line per row down the column of the cell that received
+   * the paste, starting at that row (or at findBlankRow() in the receptor
+   * column when the paste didn't come from a row). Receptor cells go through
+   * setReceptor($tr, raw); other cells through their first visible, enabled
+   * text input, then the optional onValue($input) hook. appendRow() must return
+   * the new row, or an empty jQuery object once the page's row cap is reached
+   * (remaining lines are dropped).
+   * Returns false, touching nothing, when the target cell has nothing writable.
+   */
+  function pasteColumnDown(opts) {
+    var $ = window.jQuery;
+    var $tbody = opts.$tbody;
+    var $target = $(opts.target);
+    var $tr0 = $target.closest('tr');
+    var inBody = $tr0.length && $.contains($tbody[0], $tr0[0]);
+    var $td = inBody ? $target.closest('td') : $();
+    var isReceptor = !inBody || $td.hasClass('mapper-core-receptor-cell');
+    var colIdx = $td.length ? $td.index() : -1;
+    var writableSel = 'input[type="text"]:visible:not(:disabled):not([readonly])';
+    if (!isReceptor && !$td.find(writableSel).length) return false;
+
+    var $start = inBody ? $tr0 : opts.findBlankRow();
+    var $tr = $start && $start.length ? $start : opts.appendRow();
+    for (var i = 0; i < opts.lines.length && $tr && $tr.length; i++) {
+      var val = String(opts.lines[i]).trim();
+      if (isReceptor) {
+        opts.setReceptor($tr, val);
+      } else {
+        var $inp = $tr.children().eq(colIdx).find(writableSel).first().val(val);
+        if (opts.onValue) opts.onValue($inp);
+      }
+      if (i + 1 < opts.lines.length) {
+        var $next = $tr.next('tr');
+        $tr = $next.length ? $next : opts.appendRow();
+      }
+    }
+    return true;
+  }
+
+  /**
+   * Receptor text for a download. UniProt mode writes the UniProt entry name, which pastes
+   * straight back: 5HT1A_HUMAN, or for a no-human-ortholog row its species entry (5HT5B_MOUSE),
+   * or the ortholog picked in the row's Species dropdown. Other modes write opts.label(entryId),
+   * the page's cell text for the active Receptor Names mode.
+   */
+  function downloadReceptorLabel(entryId, $tr, opts) {
+    if (!opts.uniprotMode) return opts.label(entryId);
+    if (/_human$/i.test(entryId)) return entryId.toUpperCase();
+    var spec = opts.speciesSelect ? ($tr.find(opts.speciesSelect).val() || '').trim() : '';
+    return (spec || entryId).toUpperCase();
+  }
+
+  /**
+   * Saves a page's input table as .xlsx: one row per receptor row, unmatched receptors as typed.
+   * opts: tbody (selector), headers, sheetName, fileName, values($tr) → the row's value cells,
+   *       label(entryId) and uniprotMode / speciesSelect (see downloadReceptorLabel).
+   */
+  function downloadInputTable(opts) {
+    var $ = window.jQuery;
+    var meta = window.MAPPER_CORE_ENTRY_META || {};
+    var rows = [opts.headers];
+    $(opts.tbody + ' tr').each(function () {
+      var $tr = $(this);
+      var entryId = ($tr.find('.mapper-core-receptor-entry').val() || '').trim();
+      var unmatched = $tr.data('mapperCoreUnmatchedRaw');
+      var receptor;
+      if (entryId && meta[entryId]) {
+        receptor = downloadReceptorLabel(entryId, $tr, opts) || meta[entryId].name_plain || meta[entryId].text || entryId;
+      } else if (unmatched != null && String(unmatched).trim()) {
+        receptor = String(unmatched).trim();
+      } else {
+        receptor = ($tr.find('.mapper-core-in-receptor').val() || '').trim();
+      }
+      if (!receptor) return;
+      rows.push([receptor].concat(opts.values($tr)));
+    });
+    var wb = window.XLSX.utils.book_new();
+    window.XLSX.utils.book_append_sheet(wb, window.XLSX.utils.aoa_to_sheet(rows), opts.sheetName);
+    window.XLSX.writeFile(wb, opts.fileName);
+  }
+
   window.MapperPageCore = {
     fnv1a32: fnv1a32,
     defaultColorForLabel: defaultColorForLabel,
-    debounce: debounce
+    debounce: debounce,
+    classifyPaste: classifyPaste,
+    splitPasteLine: splitPasteLine,
+    pasteColumnDown: pasteColumnDown,
+    downloadInputTable: downloadInputTable
   };
 })(window);

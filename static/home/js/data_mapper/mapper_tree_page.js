@@ -404,8 +404,12 @@
       $('<option>').val(o.entry).text(mapperTreeSpeciesLabel(o)).appendTo($sel);
     });
     var validPrev = prevVal && orthologs.some(function (o) { return o.entry === prevVal; });
+    // A no-human-ortholog row resolved from a species entry (e.g. pasted 5HT5B_RAT) keeps that species.
+    var ownEntry = orthologs.some(function (o) { return o.entry === entryId; });
     if (validPrev) {
       $sel.val(prevVal);
+    } else if (ownEntry) {
+      $sel.val(entryId);
     } else {
       var humanOpt = null;
       orthologs.forEach(function (o) { if (o.is_human) humanOpt = o; });
@@ -1557,6 +1561,26 @@
     if (ltype === 'UniProt' && meta.uniprot) { return meta.uniprot; }
     return meta.name_plain || '';
   }
+  /** Download button (Mapper_Tree.html): the input table as .xlsx, receptors named per the Receptor Names mode. */
+  window.mapperTreeDownloadTable = function () {
+    var isText = $('#mapper-tree-input-table').hasClass('mapper-core-text-mode');
+    var dotLabels = ['Inner', 'O1', 'O2', 'O3', 'O4'].map(function (k, i) {
+      return ($('#mapper-tree-lbl-' + k).val() || 'Dot ' + (i + 1)).trim();
+    });
+    var cols = isText ? ['inner'] : ['inner', 'o1', 'o2', 'o3', 'o4'];
+    MapperPageCore.downloadInputTable({
+      tbody: '#mapper-tree-input-tbody',
+      headers: isText ? ['Receptor', dotLabels[0] + ' (Category)'] : ['Receptor'].concat(dotLabels),
+      values: function ($tr) {
+        return cols.map(function (c) { return ($tr.find('.mapper-tree-' + c).val() || '').trim(); });
+      },
+      label: mapperTreeEditSeed,
+      uniprotMode: mapperTreeActiveLeafDropdownVal() === 'UniProt',
+      speciesSelect: mapperTreeSpeciesActive ? '.mapper-tree-species-select' : null,
+      sheetName: 'Classification Tree',
+      fileName: 'Classification_Tree_data.xlsx'
+    });
+  };
 
   function mapperTreeFilterLocal(term, limit) {
     var t = (term || '').trim().toUpperCase();
@@ -1785,6 +1809,46 @@
     return { r: (parts[0] || '').trim(), rest: [] };
   }
 
+  /** Fills the next blank row from one grid paste line; returns false once the row cap is hit. */
+  function mapperTreePasteGridLine(ln) {
+    var $trPZ = mapperTreeFindBlankRow();
+    if (!$trPZ.length) {
+      $trPZ = mapperTreeAppendRowForPaste();
+    }
+    if (!$trPZ.length) {
+      return false;
+    }
+    var ps = mapperTreePasteSplit(ln);
+    mapperTreeSetReceptorFromPaste($trPZ, ps.r);
+
+    var restPZ = [];
+    if (Array.isArray(ps.rest)) {
+      restPZ = ps.rest;
+    } else if (ps.rest != null && String(ps.rest).trim()) {
+      restPZ = String(ps.rest)
+        .split(';')
+        .map(function (s) {
+          return s.trim();
+        });
+    }
+    if (restPZ[0]) {
+      $trPZ.find('.mapper-tree-inner').val(restPZ[0]);
+    }
+    if (restPZ[1]) {
+      $trPZ.find('.mapper-tree-o1').val(restPZ[1]);
+    }
+    if (restPZ[2]) {
+      $trPZ.find('.mapper-tree-o2').val(restPZ[2]);
+    }
+    if (restPZ[3]) {
+      $trPZ.find('.mapper-tree-o3').val(restPZ[3]);
+    }
+    if (restPZ[4]) {
+      $trPZ.find('.mapper-tree-o4').val(restPZ[4]);
+    }
+    return true;
+  }
+
   function mapperTreeNormalizeSortText(value) {
     var text = $('<div/>').html(String(value || '')).text();
     return text
@@ -1985,6 +2049,42 @@
       }
     });
     return $hit;
+  }
+
+  /** Appends a row for a paste, or returns an empty set once the table holds MAPPER_TREE_MAX_ROWS. */
+  function mapperTreeAppendRowForPaste() {
+    if ($('#mapper-tree-input-tbody tr').length >= MAPPER_TREE_MAX_ROWS) {
+      return $();
+    }
+    mapperTreeAppendRow(true);
+    return $('#mapper-tree-input-tbody tr').last();
+  }
+
+  /** Puts pasted receptor text on a row, replacing whatever the row held; unresolved text is marked invalid. */
+  function mapperTreeSetReceptorFromPaste($tr, raw) {
+    var r = raw != null ? String(raw).trim() : '';
+    var id = r && window.MAPPER_CORE_RESOLVE ? window.MAPPER_CORE_RESOLVE[r.toUpperCase()] : '';
+    if (id) {
+      mapperTreeSetResolved($tr, id);
+      return;
+    }
+    if (($tr.find('.mapper-core-receptor-entry').val() || '').trim()) {
+      mapperTreeSetResolved($tr, '');
+    }
+    mapperTreeDestroyAc($tr.find('.mapper-core-in-receptor'));
+    $tr.find('.mapper-core-receptor-input-wrap .mapper-core-in-receptor').remove();
+    var $tx = $(
+      '<textarea class="form-control input-sm mapper-core-in-receptor" rows="1" autocomplete="off" spellcheck="false"></textarea>'
+    ).val(r);
+    $tr.find('.mapper-core-receptor-input-wrap').prepend($tx);
+    mapperTreeBindAc($tx);
+    $tr.toggleClass('mapper-core-row-invalid', !!r);
+    if (r) {
+      $tr.data('mapperCoreUnmatchedRaw', r);
+    } else {
+      $tr.removeData('mapperCoreUnmatchedRaw');
+    }
+    mapperTreeSyncClearBtn($tr);
   }
 
   function mapperTreeSetDemoReceptor($tr, receptor) {
@@ -2263,6 +2363,8 @@
           });
           if (window.MAPPER_CORE_RESOLVE) {
             window.MAPPER_CORE_RESOLVE[stemU] = nho.entry;
+            // The cell/download label itself, so "5HT5B (no human ortholog)" resolves when pasted or typed.
+            window.MAPPER_CORE_RESOLVE[dispText.toUpperCase()] = nho.entry;
           }
         }
       });
@@ -2583,64 +2685,30 @@
       function (ePz) {
         var evPz = ePz.originalEvent || ePz;
         var textPz = evPz.clipboardData ? evPz.clipboardData.getData('text/plain') : '';
-        if (!textPz || textPz.indexOf('\t') === -1) {
+        var pz = MapperPageCore.classifyPaste(textPz);
+        if (!pz.kind) {
           return;
         }
-        if (typeof textPz === 'undefined') {
-          return;
+        suppressRedraw = true;
+        if (pz.kind === 'column') {
+          // One value per line, written down the pasted-into column from that row.
+          var handled = MapperPageCore.pasteColumnDown({
+            $tbody: $('#mapper-tree-input-tbody'),
+            target: ePz.target,
+            lines: pz.lines,
+            findBlankRow: mapperTreeFindBlankRow,
+            appendRow: mapperTreeAppendRowForPaste,
+            setReceptor: mapperTreeSetReceptorFromPaste
+          });
+          if (!handled) {
+            suppressRedraw = false;
+            return;
+          }
+        } else {
+          pz.lines.every(mapperTreePasteGridLine);
         }
         ePz.preventDefault();
         $('#mapper-tree-clear-rows').removeClass('mapper-core-clear-clean');
-        suppressRedraw = true;
-        textPz.split(/\r?\n/).forEach(function (ln) {
-          if (!ln.trim()) {
-            return;
-          }
-          var $trPZ = mapperTreeFindBlankRow();
-          if (!$trPZ.length) {
-            mapperTreeAppendRow(true);
-            $trPZ = $('#mapper-tree-input-tbody tr').last();
-          }
-          var ps = mapperTreePasteSplit(ln);
-          mapperTreeDestroyAc($trPZ.find('.mapper-core-in-receptor'));
-          $trPZ.find('.mapper-core-receptor-input-wrap .mapper-core-in-receptor').remove();
-          var $tx = $(
-            '<textarea class="form-control input-sm mapper-core-in-receptor" rows="1" autocomplete="off" spellcheck="false"></textarea>'
-          ).val(ps.r || '');
-          $trPZ.find('.mapper-core-receptor-input-wrap').prepend($tx);
-          mapperTreeBindAc($tx);
-
-          var restPZ = [];
-          if (Array.isArray(ps.rest)) {
-            restPZ = ps.rest;
-          } else if (ps.rest != null && String(ps.rest).trim()) {
-            restPZ = String(ps.rest)
-              .split(';')
-              .map(function (s) {
-                return s.trim();
-              });
-          }
-          if (restPZ[0]) {
-            $trPZ.find('.mapper-tree-inner').val(restPZ[0]);
-          }
-          if (restPZ[1]) {
-            $trPZ.find('.mapper-tree-o1').val(restPZ[1]);
-          }
-          if (restPZ[2]) {
-            $trPZ.find('.mapper-tree-o2').val(restPZ[2]);
-          }
-          if (restPZ[3]) {
-            $trPZ.find('.mapper-tree-o3').val(restPZ[3]);
-          }
-          if (restPZ[4]) {
-            $trPZ.find('.mapper-tree-o4').val(restPZ[4]);
-          }
-
-          var upU = ps.r ? ps.r.trim().toUpperCase() : '';
-          if (upU && window.MAPPER_CORE_RESOLVE && window.MAPPER_CORE_RESOLVE[upU]) {
-            mapperTreeSetResolved($trPZ, window.MAPPER_CORE_RESOLVE[upU]);
-          }
-        });
         suppressRedraw = false;
         mapperTreeEnsureTrailingBlankRow();
         mapperTreeSyncRemoveButtons();

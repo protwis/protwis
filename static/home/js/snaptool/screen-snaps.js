@@ -67,7 +67,49 @@
     triggerDownload(URL.createObjectURL(blob), filename, true);
   }
 
-  function snapSavePng(targetEl, filename, onDone) {
+  // ---------------------------------------------------------------------
+  // PNG resolution metadata. Canvas-encoded PNGs carry no pHYs chunk, so
+  // Illustrator/Word/journal checks read them as 72 ppi. Insert one right
+  // after IHDR (8-byte signature + 25-byte IHDR = offset 33).
+  // ---------------------------------------------------------------------
+  var CRC_TABLE = null;
+
+  function crc32(bytes) {
+    if (!CRC_TABLE) {
+      CRC_TABLE = [];
+      for (var n = 0; n < 256; n++) {
+        var c = n;
+        for (var k = 0; k < 8; k++) { c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1); }
+        CRC_TABLE[n] = c >>> 0;
+      }
+    }
+    var crc = 0xFFFFFFFF;
+    for (var i = 0; i < bytes.length; i++) { crc = CRC_TABLE[(crc ^ bytes[i]) & 0xFF] ^ (crc >>> 8); }
+    return (crc ^ 0xFFFFFFFF) >>> 0;
+  }
+
+  function snapPngWithPpi(blob, ppi, cb) {
+    var reader = new FileReader();
+    reader.onerror = function () { cb(reader.error || new Error("could not read PNG blob")); };
+    reader.onload = function () {
+      var png = new Uint8Array(reader.result);
+      var ppm = Math.round(ppi / 0.0254);  // pixels per metre
+
+      var chunk = new Uint8Array(21);
+      var view = new DataView(chunk.buffer);
+      view.setUint32(0, 9);                                 // data length
+      chunk.set([0x70, 0x48, 0x59, 0x73], 4);               // "pHYs"
+      view.setUint32(8, ppm);                               // X pixels per unit
+      view.setUint32(12, ppm);                              // Y pixels per unit
+      chunk[16] = 1;                                        // unit: metre
+      view.setUint32(17, crc32(chunk.subarray(4, 17)));     // CRC over type + data
+
+      cb(null, new Blob([png.subarray(0, 33), chunk, png.subarray(33)], { type: "image/png" }));
+    };
+    reader.readAsArrayBuffer(blob);
+  }
+
+  function snapSavePng(targetEl, filename, ppi, onDone) {
     if (typeof window.html2canvas !== "function") {
       onDone(new Error("html2canvas is not loaded"));
       return;
@@ -97,7 +139,8 @@
     });
 
     window.html2canvas(targetEl, {
-      scale: 3, backgroundColor: "#ffffff", useCORS: true,
+      // One CSS px = 1/96 in, so this scale makes the file print at its on-screen size.
+      scale: ppi / 96, backgroundColor: "#ffffff", useCORS: true,
       onclone: function (clonedDoc) {
         frozen.forEach(function (f) {
           var clone = (f.node === targetEl)
@@ -120,8 +163,14 @@
     })
       .then(function (canvas) {
         untag();
-        triggerDownload(canvas.toDataURL("image/png"), filename, false);
-        onDone(null);
+        canvas.toBlob(function (blob) {
+          if (!blob) { onDone(new Error("canvas.toBlob returned nothing (image too large?)")); return; }
+          snapPngWithPpi(blob, ppi, function (err, pngBlob) {
+            if (err) { onDone(err); return; }
+            triggerDownload(URL.createObjectURL(pngBlob), filename, true);
+            onDone(null);
+          });
+        }, "image/png");
       })
       .catch(function (err) { untag(); onDone(err); });
   }
@@ -213,15 +262,18 @@
       return;
     }
 
+    var ppiSelect = document.getElementById("snaptool-ppi");
+    var ppi = (ppiSelect && parseInt(ppiSelect.value, 10)) || 300;
+
     setStatus(statusEl, hasSvg ? "Mixed HTML + SVG — rendering PNG of everything…" : "No <svg> found — rendering PNG…", false);
-    snapSavePng(el, baseName + ".png", function (err) {
+    snapSavePng(el, baseName + ".png", ppi, function (err) {
       if (err) {
         flashOutline(el, false);
         setStatus(statusEl, "PNG export failed (see console)", true);
         window.console && console.error("[screen-snaps]", err);
       } else {
         flashOutline(el, true);
-        setStatus(statusEl, "Downloaded " + baseName + ".png" +
+        setStatus(statusEl, "Downloaded " + baseName + ".png (" + ppi + " ppi)" +
           (hasSvg ? " (enter the SVG's own id for a vector-only .svg)" : ""), false);
       }
     });
@@ -256,6 +308,8 @@
       "#snaptool-hint{font-size:11px;color:#6d8194;margin-bottom:8px;line-height:1.4;}" +
       "#snaptool-input{width:100%;box-sizing:border-box;padding:6px 8px;margin-bottom:8px;" +
       "border:1px solid #d9e2ef;border-radius:6px;font-size:13px;}" +
+      "#snaptool-ppi-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:12px;}" +
+      "#snaptool-ppi{flex:1;padding:4px 6px;border:1px solid #d9e2ef;border-radius:6px;font-size:13px;}" +
       "#snaptool-go{width:100%;padding:6px 8px;background:#1f78b4;color:#fff;border:none;" +
       "border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;}" +
       "#snaptool-go:hover{background:#1a659e;}" +
@@ -294,8 +348,11 @@
       '<h4>Screen snaps</h4>' +
       '<div id="snaptool-quickpicks"></div>' +
       '<div id="snaptool-hint">Real .svg if the element contains a chart, otherwise a ' +
-      'high-res .png (tables/UI can\'t become real vector SVG).</div>' +
+      'high-res .png at the chosen ppi (tables/UI can\'t become real vector SVG).</div>' +
       '<input type="text" id="snaptool-input" placeholder="Element id, e.g. gpcrListTable_wrapper">' +
+      '<div id="snaptool-ppi-row"><label for="snaptool-ppi">PNG resolution</label>' +
+      '<select id="snaptool-ppi"><option value="300" selected>300 ppi</option>' +
+      '<option value="600">600 ppi</option></select></div>' +
       '<button type="button" id="snaptool-go">Snap</button>' +
       '<div id="snaptool-status"></div>';
     document.body.appendChild(panel);

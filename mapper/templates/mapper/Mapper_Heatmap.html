@@ -334,42 +334,4 @@ window.MAPPER_CORE_ENTRY_META = {};
 </script>
 <script src="{% static 'home/js/data_mapper/mapper_page_core.js' %}"></script>
 <script src="{% static 'home/js/data_mapper/mapper_heatmap_page.js' %}"></script>
-<script>
-function mapperHeatmapDownloadTable() {
-  var c1Label = ($('#mapper-heatmap-lbl-V1').val() || 'Dataset 1').trim();
-  var c2Label = ($('#mapper-heatmap-lbl-V2').val() || 'Dataset 2').trim();
-  var c3Label = ($('#mapper-heatmap-lbl-V3').val() || 'Dataset 3').trim();
-  var c4Label = ($('#mapper-heatmap-lbl-V4').val() || 'Dataset 4').trim();
-  var c5Label = ($('#mapper-heatmap-lbl-V5').val() || 'Dataset 5').trim();
-  var headers = ['Receptor', c1Label, c2Label, c3Label, c4Label, c5Label];
-  var rows = [headers];
-  $('#mapper-heatmap-input-tbody tr').each(function() {
-    var $tr = $(this);
-    var entryId = ($tr.find('.mapper-core-receptor-entry').val() || '').trim();
-    var unmatched = $tr.data('mapperCoreUnmatchedRaw');
-    var ta = ($tr.find('.mapper-core-in-receptor').val() || '').trim();
-    var receptor = '';
-    if (entryId && window.MAPPER_CORE_ENTRY_META && window.MAPPER_CORE_ENTRY_META[entryId]) {
-      receptor = window.MAPPER_CORE_ENTRY_META[entryId].name_plain || window.MAPPER_CORE_ENTRY_META[entryId].text || entryId;
-    } else if (unmatched != null && String(unmatched).trim()) {
-      receptor = String(unmatched).trim();
-    } else {
-      receptor = ta;
-    }
-    if (!receptor) return;
-    rows.push([
-      receptor,
-      ($tr.find('.mapper-heatmap-val1').val() || '').trim(),
-      ($tr.find('.mapper-heatmap-val2').val() || '').trim(),
-      ($tr.find('.mapper-heatmap-val3').val() || '').trim(),
-      ($tr.find('.mapper-heatmap-val4').val() || '').trim(),
-      ($tr.find('.mapper-heatmap-val5').val() || '').trim()
-    ]);
-  });
-  var wb = XLSX.utils.book_new();
-  var ws = XLSX.utils.aoa_to_sheet(rows);
-  XLSX.utils.book_append_sheet(wb, ws, 'Heatmap');
-  XLSX.writeFile(wb, 'Heatmap_data.xlsx');
-}
-</script>
 {% endblock %}

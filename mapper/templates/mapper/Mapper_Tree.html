@@ -442,52 +442,5 @@ window.MAPPER_TREE_BOOT = {
 
 <script src="{% static 'home/js/data_mapper/mapper_page_core.js' %}"></script>
 <script src="{% static 'home/js/data_mapper/mapper_tree_page.js' %}"></script>
-<script>
-function mapperTreeDownloadTable() {
-  var isText = $('#mapper-tree-input-table').hasClass('mapper-core-text-mode');
-  var dot1Label = ($('#mapper-tree-lbl-Inner').val() || 'Dot 1').trim();
-  var dot2Label = ($('#mapper-tree-lbl-O1').val() || 'Dot 2').trim();
-  var dot3Label = ($('#mapper-tree-lbl-O2').val() || 'Dot 3').trim();
-  var dot4Label = ($('#mapper-tree-lbl-O3').val() || 'Dot 4').trim();
-  var dot5Label = ($('#mapper-tree-lbl-O4').val() || 'Dot 5').trim();
-  var headers = isText
-    ? ['Receptor', dot1Label + ' (Category)']
-    : ['Receptor', dot1Label, dot2Label, dot3Label, dot4Label, dot5Label];
-  var rows = [headers];
-  $('#mapper-tree-input-tbody tr').each(function() {
-    var $tr = $(this);
-    var entryId = ($tr.find('.mapper-core-receptor-entry').val() || '').trim();
-    var unmatched = $tr.data('mapperCoreUnmatchedRaw');
-    var ta = ($tr.find('.mapper-core-in-receptor').val() || '').trim();
-    var receptor = '';
-    if (entryId && window.MAPPER_CORE_ENTRY_META && window.MAPPER_CORE_ENTRY_META[entryId]) {
-      receptor = window.MAPPER_CORE_ENTRY_META[entryId].name_plain || window.MAPPER_CORE_ENTRY_META[entryId].text || entryId;
-    } else if (unmatched != null && String(unmatched).trim()) {
-      receptor = String(unmatched).trim();
-    } else {
-      receptor = ta;
-    }
-    if (!receptor) return;
-    var row;
-    if (isText) {
-      row = [receptor, ($tr.find('.mapper-tree-inner').val() || '').trim()];
-    } else {
-      row = [
-        receptor,
-        ($tr.find('.mapper-tree-inner').val() || '').trim(),
-        ($tr.find('.mapper-tree-o1').val() || '').trim(),
-        ($tr.find('.mapper-tree-o2').val() || '').trim(),
-        ($tr.find('.mapper-tree-o3').val() || '').trim(),
-        ($tr.find('.mapper-tree-o4').val() || '').trim()
-      ];
-    }
-    rows.push(row);
-  });
-  var wb = XLSX.utils.book_new();
-  var ws = XLSX.utils.aoa_to_sheet(rows);
-  XLSX.utils.book_append_sheet(wb, ws, 'Classification Tree');
-  XLSX.writeFile(wb, 'Classification_Tree_data.xlsx');
-}
-</script>
 
 {% endblock %}
