@@ -51,6 +51,7 @@ Typical Workflow
 """
 
 import json
+from collections import OrderedDict
 import os
 from io import StringIO
 from django.conf import settings
@@ -60,6 +61,19 @@ from Bio.SeqUtils import seq1
 # from Bio.PDB.Polypeptide import PPBuilder
 from Bio.Align import PairwiseAligner
 import numpy as np
+
+from construct.functions import construct_structure_annotation_override
+
+# Three-letter -> one-letter map deciding which residues count as "receptor
+# residues" when building a structure's sequence (includes modified residues
+# like YCM/CSD/TYS/SEP/TPO). Shared by build_structures.py and add_annotation.py
+# so both select -- and therefore align -- exactly the same residues.
+AA_MAP = {'ALA':'A', 'ARG':'R', 'ASN':'N', 'ASP':'D',
+          'CYS':'C', 'GLN':'Q', 'GLU':'E', 'GLY':'G',
+          'HIS':'H', 'ILE':'I', 'LEU':'L', 'LYS':'K',
+          'MET':'M', 'PHE':'F', 'PRO':'P', 'SER':'S',
+          'THR':'T', 'TRP':'W', 'TYR':'Y', 'VAL':'V',
+          'YCM':'C', 'CSD':'C', 'TYS':'Y', 'SEP':'S', 'TPO':'T', 'U8S':'U'} #non-standard AAs
 
 # Pre-computed alignments (pdb_code -> [ref_seq, temp_seq]) for structures where
 # the automatic PairwiseAligner can't be trusted to reproduce the correct result.
@@ -1043,3 +1057,157 @@ def consolidate_structural_islands(pdb_seq, temp_seq, break_indexes):
             i = j
 
     return "".join(temp_list)
+
+
+def count_chain_residues(chain, aa_map=AA_MAP):
+    """
+    Number of residues in a Bio.PDB chain that `generate_seq_and_distances_from_pdb_text`
+    would select with the same `aa_map` (NH2 amidation caps excluded).
+    """
+    return sum(1 for res in chain if res.resname != "NH2" and aa_map.get(res.resname) is not None)
+
+
+def get_removed_and_deletions(pdb_code, d, chain_residue_count=None):
+    """
+    Collects the residues to leave out of the structure <-> WT alignment from
+    `fetch_pdb_info` output.
+
+    Parameters
+    ----------
+    pdb_code : str
+        The PDB code, used for manual overrides.
+    d : dict
+        Output of `construct.functions.fetch_pdb_info`.
+    chain_residue_count : int, optional
+        Number of receptor residues in the preferred chain (see
+        `count_chain_residues`). When given, a `removed` list that covers
+        (almost) the whole chain is treated as a parsing failure and cleared.
+
+    Returns
+    -------
+    tuple
+        (removed, deletions) where:
+          - removed (list of int): author/PDB residue numbers of non-receptor
+            residues in the receptor chain (fusion proteins, tags) - to be
+            removed from the structure sequence.
+          - deletions (list of int): WT sequence numbers absent from the
+            construct - to be removed from the WT sequence.
+    """
+    deletions = []
+    ## Remove WT ranges that arent in xtal (no need to try to map them)
+    if 'deletions' in d:
+        for del_range in d['deletions']:
+            if del_range['start']==146 and pdb_code=='4K5Y':
+                #Manual fix for faulty 4K5Y annotation
+                continue
+            for i in range(del_range['start'],del_range['end']+1):
+                deletions.append(i)
+    removed = list(d.get('removed', []))
+
+    removed, deletions = construct_structure_annotation_override(pdb_code, removed, deletions)
+
+    if chain_residue_count is not None and len(removed)+100>chain_residue_count:
+        print(pdb_code,'More (or almost) sequence set to be removed from sequence',len(removed),' than exists',chain_residue_count,' removing removed[]')
+        removed = []
+
+    return removed, deletions
+
+
+def align_structure_to_wt(pdb_code, pdb_text, preferred_chain, wt_seq, removed, debug=False):
+    """
+    Aligns the receptor chain of a structure to its WT sequence.
+
+    `removed` residues (PDB numbering) are taken out of the structure sequence
+    before aligning, and `wt_seq` is expected to already exclude the construct's
+    deletions (WT numbering), so the aligner never has to bridge a fusion protein.
+    The initial PairwiseAligner alignment is then corrected using CA-CA distances
+    and chain breaks.
+
+    Returns
+    -------
+    tuple
+        (ref_seq, temp_seq, pdb_seq, resnums) where ref_seq/temp_seq are the
+        gapped WT/structure alignment strings, pdb_seq the ungapped structure
+        sequence and resnums its author residue numbers (parallel to pdb_seq).
+    """
+    # aa_map=AA_MAP keeps this selection in lockstep with any other residue
+    # index built by the caller with the same map (e.g. build_structures'
+    # pdbseq) -- both must include/exclude the exact same residues, in the
+    # same order, for their indices to stay aligned.
+    pdb_seq, distances, resnums = generate_seq_and_distances_from_pdb_text(
+        pdb_text, preferred_chain, residues_to_remove=removed, aa_map=AA_MAP
+    )
+
+    # Get initial alignment and residue mapping
+    initial_ref_seq, initial_temp_seq, pdb_map, custom_mapping = run_pairwisealigner(
+        pdb_code, wt_seq, pdb_seq
+    )
+
+    if not custom_mapping:
+        # Find outliers which might indicate misalignments
+        outlier_indexes = distances_stats(distances, debug=debug)
+
+        # Attempt to automatically fix misalignments based on outliers and gaps
+        # The function returns the final, corrected alignment string for the PDB sequence.
+        fixed_temp_seq = detect_alignment_mistakes_and_reposition(
+            pdb_code,
+            wt_seq,
+            pdb_seq,
+            initial_ref_seq,
+            initial_temp_seq,
+            pdb_map,
+            distances,
+            outlier_indexes,
+            aanumber=3,
+            debug=debug,
+        )
+
+        # Collapse any physically-bonded PDB residues (no real chain break between
+        # them) that ended up scattered across a gap by coincidental letter matches.
+        # Uses an absolute CA-CA distance threshold rather than distances_stats'
+        # whole-structure relative outlier test, which can miss a real break if the
+        # rest of the structure's distances already have enough natural spread.
+        chain_breaks = sorted(set(find_chain_breaks(distances, resnums=resnums))
+                            | set(manual_chain_break_indexes(resnums, pdb_code)))
+        fixed_temp_seq = consolidate_structural_islands(
+            pdb_seq, fixed_temp_seq, chain_breaks
+        )
+
+        ref_seq = initial_ref_seq
+        temp_seq = fixed_temp_seq
+    else:
+        ref_seq = initial_ref_seq
+        temp_seq = initial_temp_seq
+
+    return ref_seq, temp_seq, pdb_seq, resnums
+
+
+def wt_to_pdb_map(ref_seq, temp_seq, wt_seqnums, resnums):
+    """
+    Converts an alignment from `align_structure_to_wt` into a lookup.
+
+    Parameters
+    ----------
+    ref_seq, temp_seq : str
+        Gapped WT and structure alignment strings.
+    wt_seqnums : list of int
+        WT sequence numbers, parallel to the ungapped `ref_seq`.
+    resnums : list of int
+        Author (PDB) residue numbers, parallel to the ungapped `temp_seq`.
+
+    Returns
+    -------
+    OrderedDict
+        WT sequence number -> author (PDB) residue number, for every aligned
+        (non-gap on both sides) position, in alignment order.
+    """
+    mapping = OrderedDict()
+    wt_i, pdb_i = 0, 0
+    for r, t in zip(ref_seq, temp_seq):
+        if r != "-" and t != "-":
+            mapping[wt_seqnums[wt_i]] = resnums[pdb_i]
+        if r != "-":
+            wt_i += 1
+        if t != "-":
+            pdb_i += 1
+    return mapping
