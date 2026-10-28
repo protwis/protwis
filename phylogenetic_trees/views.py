@@ -127,6 +127,7 @@ class Treeclass:
         self.phylip = None
         self.outtree = None
         self.dir = ''
+        self.too_large = None
 
     def Prepare_file(self, request,build=False):
         self.Tree = PrepareTree(build)
@@ -173,7 +174,9 @@ class Treeclass:
         if self.bootstrap!=0:
             self.bootstrap=pow(10,self.bootstrap)
         #### Create an alignment object
-        a.build_alignment()
+        if a.build_alignment() == 'Too large':
+            self.too_large = {'proteins': len(a.proteins), 'residues': a.number_of_residues_total}
+            return "too big","too big","too big","too big","too big","too big","too big","too big","too big"
         a.calculate_statistics()
         a.calculate_similarity()
         self.total = len(a.proteins)
@@ -436,6 +439,9 @@ def render_tree_v3(request):
 
     Tree_class=Treeclass()
     phylogeny_input, branches, ttype, total, legend, box, Additional_info, buttons, proteins=Tree_class.Prepare_file(request)
+    if Tree_class.too_large:
+        return render(request, 'alignment/error.html', Tree_class.too_large)
+
     if phylogeny_input == 'too big':
         return render(request, 'phylogenetic_trees/too_big.html')
 

@@ -34,12 +34,34 @@
     };
     var DEFAULT_NUMERIC_PRESET_KEY = "Two";
 
-    var complexesStats = DATA.complexesStats || { min: 0, max: 0, avg: 0 };
-    var olfactoryStats = DATA.olfactoryStats || { min: 0, max: 0, avg: 0 };
+    var EMPTY_STATS = { min: 0, max: 0, avg: 0 };
+
+    // Every wheel ships in two variants: all species (default -- non-human structures are placed on
+    // their human ortholog server-side, structure/views.py) and human only. The per-wheel species
+    // button swaps between them.
+    var DEFAULT_SPECIES = "all";
+    var VARIANTS = {
+        coverage: {
+            all: { data: DATA.coverageDataAll },
+            human: { data: DATA.coverageData },
+        },
+        complexes: {
+            all: { data: DATA.complexesDataAll, stats: DATA.complexesStatsAll || EMPTY_STATS },
+            human: { data: DATA.complexesData, stats: DATA.complexesStats || EMPTY_STATS },
+        },
+        olfactory: {
+            all: { data: DATA.olfactoryDataAll, stats: DATA.olfactoryStatsAll || EMPTY_STATS },
+            human: { data: DATA.olfactoryData, stats: DATA.olfactoryStats || EMPTY_STATS },
+        },
+    };
+    var SPECIES_LABELS = { all: "All species", human: "Human only" };
+
+    var complexesStats = VARIANTS.complexes[DEFAULT_SPECIES].stats;
+    var olfactoryStats = VARIANTS.olfactory[DEFAULT_SPECIES].stats;
 
     var WHEELS = {
         coverage: {
-            data: DATA.coverageData,
+            data: VARIANTS.coverage[DEFAULT_SPECIES].data,
             locationId: "GPCRome_plot",
             filenameBase: "GPCRome_plot",
             categorical: true,
@@ -53,7 +75,7 @@
             drawn: false,
         },
         complexes: {
-            data: DATA.complexesData,
+            data: VARIANTS.complexes[DEFAULT_SPECIES].data,
             locationId: "GPCRome_complexes_plot",
             filenameBase: "GPCRome_complexes_plot",
             categorical: false,
@@ -67,7 +89,7 @@
             drawn: false,
         },
         olfactory: {
-            data: DATA.olfactoryData,
+            data: VARIANTS.olfactory[DEFAULT_SPECIES].data,
             locationId: "GPCRome_olfactory_plot",
             filenameBase: "GPCRome_olfactory_plot",
             categorical: false,
@@ -82,20 +104,53 @@
         },
     };
 
+    Object.keys(WHEELS).forEach(function (key) {
+        WHEELS[key].species = DEFAULT_SPECIES;
+        WHEELS[key].baseFilename = WHEELS[key].filenameBase;
+    });
+
     COVERAGE_CATEGORIES.forEach(function (cat) {
         WHEELS.coverage.categoryColors[cat.key] = cat.color;
     });
 
-    // Seed the actual wheel data with these colors up front -- the server bakes in its own
-    // status_color_map colors (structure/views.py), so without this the first render (and
+    // Paint a coverage dataset with the wheel's current category colors -- the server bakes in its
+    // own status_color_map colors (structure/views.py), so without this the first render (and
     // anything before a user touches a picker) would still show the server's colors, not ours.
-    function seedCoverageColors() {
-        var categoryColorByKey = {};
-        COVERAGE_CATEGORIES.forEach(function (cat) { categoryColorByKey[cat.key] = cat.color; });
-        walkLeaves(WHEELS.coverage.data, function (leaf) {
+    // Also re-run on a species switch, so colors customized on one variant carry over.
+    function applyCoverageColors(data) {
+        var categoryColorByKey = WHEELS.coverage.categoryColors;
+        walkLeaves(data, function (leaf) {
             if (Object.prototype.hasOwnProperty.call(categoryColorByKey, leaf.Data)) {
                 leaf.Color = categoryColorByKey[leaf.Data];
             }
+        });
+    }
+
+    function setSpecies(controls, key, species) {
+        var wheel = WHEELS[key];
+        var variant = VARIANTS[key][species];
+        if (!variant || !variant.data) return;
+        wheel.species = species;
+        wheel.data = variant.data;
+        if (key === "coverage") {
+            applyCoverageColors(wheel.data);
+        } else {
+            wheel.styling.GPCRomeMin = variant.stats.min;
+            wheel.styling.GPCRomeMax = variant.stats.max;
+            wheel.styling.GPCRomeAvg = variant.stats.avg;
+        }
+        wheel.filenameBase = wheel.baseFilename + (species === "human" ? "_human" : "");
+        var btn = document.getElementById(key + "-speciesToggle");
+        if (btn) btn.textContent = SPECIES_LABELS[species];
+        if (wheel.drawn) controls.redraw(key);
+    }
+
+    // Label-only toggle (stays btn-primary in both states, unlike "Graphical legend").
+    function wireSpeciesToggle(controls, key) {
+        var btn = document.getElementById(key + "-speciesToggle");
+        if (!btn) return;
+        btn.addEventListener("click", function () {
+            setSpecies(controls, key, WHEELS[key].species === "all" ? "human" : "all");
         });
     }
 
@@ -170,7 +225,8 @@
     }
 
     $(function () {
-        seedCoverageColors();
+        applyCoverageColors(VARIANTS.coverage.all.data);
+        applyCoverageColors(VARIANTS.coverage.human.data);
 
         var controls = GPCRomeWheelControls.init({
             wheels: WHEELS,
@@ -185,6 +241,10 @@
                     drawCoverageLegend(wheel.locationId, "Structure coverage", legendCategories, wheel.styling);
                 }
             },
+        });
+
+        Object.keys(WHEELS).forEach(function (key) {
+            wireSpeciesToggle(controls, key);
         });
 
         controls.redraw("coverage"); // active tab on load; the other two draw lazily below

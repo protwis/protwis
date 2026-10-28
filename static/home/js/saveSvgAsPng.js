@@ -80,6 +80,71 @@
     return css;
   }
 
+  // Illustrator, Inkscape, PowerPoint etc. ignore dominant-/alignment-baseline and often the
+  // embedded CSS too, so bake what the browser actually renders into the clone: elements hidden
+  // on screen (e.g. the snake plot's ".long" loops) are dropped, and baseline offsets become
+  // plain translates. The PNG/JPG/TIFF exports render this same clone, so they stay identical.
+  var BASELINE_PROPS = ['dominant-baseline', 'alignment-baseline'];
+  var GRAPHIC_TAG = /^(g|text|circle|rect|path|line|polyline|polygon|ellipse|image|use)$/i;
+  var NON_RENDERED_ANCESTOR = 'defs, clipPath, mask, marker, pattern, symbol';
+
+  function bboxY(node) {
+    try { return node.getBBox().y; } catch (err) { return NaN; }  // Firefox throws if not rendered
+  }
+
+  function bakeForExport(el, clone) {
+    var liveTexts = el.querySelectorAll('text');
+    var cloneTexts = clone.querySelectorAll('text');
+    var shifted = [];
+    for (var i = 0; i < liveTexts.length; i++) {
+      var cs = out$.getComputedStyle(liveTexts[i]);
+      if (cs.display == 'none') continue;
+      var custom = BASELINE_PROPS.some(function(p) {
+        var v = cs.getPropertyValue(p);
+        return v && v != 'auto' && v != 'baseline';
+      });
+      if (custom) shifted.push({live: liveTexts[i], copy: cloneTexts[i], y: bboxY(liveTexts[i])});
+    }
+
+    // Measure everything with the baseline reset in one pass (a single relayout), then restore.
+    shifted.forEach(function(s) {
+      s.saved = BASELINE_PROPS.map(function(p) {
+        return [p, s.live.style.getPropertyValue(p), s.live.style.getPropertyPriority(p)];
+      });
+      BASELINE_PROPS.forEach(function(p) { s.live.style.setProperty(p, 'auto', 'important'); });
+    });
+    shifted.forEach(function(s) { s.shift = s.y - bboxY(s.live); });
+    shifted.forEach(function(s) {
+      s.saved.forEach(function(v) {
+        if (v[1]) s.live.style.setProperty(v[0], v[1], v[2]);
+        else s.live.style.removeProperty(v[0]);
+      });
+    });
+
+    // No measurable shift (e.g. the svg isn't on screen) -- leave that text untouched.
+    shifted.forEach(function(s) {
+      if (!s.copy || !(Math.abs(s.shift) > 0.01)) return;
+      BASELINE_PROPS.forEach(function(p) {
+        s.copy.removeAttribute(p);
+        s.copy.style.setProperty(p, 'auto');  // beats any exported CSS rule in browsers
+      });
+      var t = s.copy.getAttribute('transform');
+      s.copy.setAttribute('transform', (t ? t + ' ' : '') + 'translate(0,' + Math.round(s.shift * 100) / 100 + ')');
+    });
+
+    var liveAll = el.querySelectorAll('*');
+    var cloneAll = clone.querySelectorAll('*');
+    var hidden = [];
+    for (var j = 0; j < liveAll.length; j++) {
+      var node = liveAll[j];
+      if (GRAPHIC_TAG.test(node.tagName) && !node.closest(NON_RENDERED_ANCESTOR) &&
+          out$.getComputedStyle(node).display == 'none') {
+        hidden.push(cloneAll[j]);
+      }
+    }
+    hidden.forEach(function(n) { if (n.parentNode) n.parentNode.removeChild(n); });
+  }
+
   out$.svgAsDataUri = function(el, options, cb) {
     options = options || {};
     options.scale = options.scale || 1.6;
@@ -88,6 +153,7 @@
     inlineImages(el, function() {
       var outer = document.createElement("div");
       var clone = el.cloneNode(true);
+      bakeForExport(el, clone);
       var width, height;
       if(el.tagName == 'svg') {
         var box = el.getBoundingClientRect();

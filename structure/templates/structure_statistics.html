@@ -478,6 +478,9 @@
                 <!-- Graphical legend -->
                 <button id="coverage-toggleIcon" class="btn btn-primary" type="button">Graphical legend</button>
 
+                <!-- Species -->
+                <button id="coverage-speciesToggle" class="btn btn-primary" type="button">All species</button>
+
                 <!-- Colors -->
                 <div class="dropdown">
                   <button class="btn btn-primary btn-block" type="button" data-toggle="dropdown">Colors</button>
@@ -522,6 +525,9 @@
                 <!-- Graphical legend -->
                 <button id="complexes-toggleIcon" class="btn btn-primary" type="button">Graphical legend</button>
 
+                <!-- Species -->
+                <button id="complexes-speciesToggle" class="btn btn-primary" type="button">All species</button>
+
                 <!-- Colors -->
                 <div class="dropdown">
                   <button class="btn btn-primary btn-block" type="button" data-toggle="dropdown">Colors</button>
@@ -565,6 +571,9 @@
 
                 <!-- Graphical legend -->
                 <button id="olfactory-toggleIcon" class="btn btn-primary" type="button">Graphical legend</button>
+
+                <!-- Species -->
+                <button id="olfactory-speciesToggle" class="btn btn-primary" type="button">All species</button>
 
                 <!-- Colors -->
                 <div class="dropdown">
@@ -1306,7 +1315,12 @@
         complexesData: JSON.parse('{{ GPCRome_data_complexes|escapejs }}'),
         complexesStats: JSON.parse('{{ GPCRome_complexes_stats|escapejs }}'),
         olfactoryData: JSON.parse('{{ GPCRome_data_olfactory|escapejs }}'),
-        olfactoryStats: JSON.parse('{{ GPCRome_olfactory_stats|escapejs }}')
+        olfactoryStats: JSON.parse('{{ GPCRome_olfactory_stats|escapejs }}'),
+        coverageDataAll: JSON.parse('{{ GPCRome_data_all|escapejs }}'),
+        complexesDataAll: JSON.parse('{{ GPCRome_data_complexes_all|escapejs }}'),
+        complexesStatsAll: JSON.parse('{{ GPCRome_complexes_stats_all|escapejs }}'),
+        olfactoryDataAll: JSON.parse('{{ GPCRome_data_olfactory_all|escapejs }}'),
+        olfactoryStatsAll: JSON.parse('{{ GPCRome_olfactory_stats_all|escapejs }}')
       };
     </script>
     <script src="{% static 'home/js/gpcrome_svg_export.js' %}"></script>

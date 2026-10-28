@@ -91,6 +91,7 @@ urlpatterns = [
     path('pathwaypreference/',views.CachedOTFPathwayPrefBrowser, name='bias_browser-list'),
     path('endogenousbrowser/', cache_page(3600*24*7)(views.endogenous_redirect), name='endogenous_browser'),
     path('physiological_ligands/', cache_page(3600*24*7)(views.PhysiologicalLigands.as_view()), name='physiological_ligands'),
+    path('peptide_analog_bioactivities/', views.PeptideAnalogBioactivities.as_view(), name='peptide_analog_bioactivities'),
     #User selected calculations
     #Biased Family
     path('userselectionbiased', views.UserBiased.as_view(way='Browser'), name='bias_browser-list'),

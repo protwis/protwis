@@ -1056,6 +1056,25 @@ function mapperClusterGetLabelColor(lbl) {
     if (ltype === 'UniProt' && meta.uniprot) return meta.uniprot;
     return meta.name_plain || '';
   }
+  // Download button (Mapper_Cluster.html): the input table as .xlsx, receptors named per the Receptor Names mode.
+  window.mapperClusterDownloadTable = function () {
+    var isText = $('#mapper-cluster-input-table').hasClass('mapper-core-text-mode');
+    MapperPageCore.downloadInputTable({
+      tbody: '#mapper-cluster-input-tbody',
+      headers: ['Receptor', isText ? 'Category' : 'Gradient', 'Position'],
+      values: function ($tr) {
+        return [
+          ($tr.find(isText ? '.mapper-cluster-cat' : '.mapper-cluster-gradient').val() || '').trim(),
+          ($tr.find('.mapper-cluster-pos').val() || '').trim()
+        ];
+      },
+      label: mapperClusterEditSeed,
+      uniprotMode: getActiveLabelType() === 'UniProt',
+      speciesSelect: null,
+      sheetName: 'Cluster',
+      fileName: 'Cluster_data.xlsx'
+    });
+  };
 
   function mapperClusterFilterLocal(term) {
     var t     = term.trim().toUpperCase();
@@ -1393,18 +1412,21 @@ function mapperClusterGetLabelColor(lbl) {
     });
 
     // Value input → redraw + track empty/invalid state for orange/red border
-    $('#mapper-cluster-input-tbody').on('input change', '.mapper-cluster-gradient, .mapper-cluster-cat', function () {
-      var val = $(this).val().trim();
-      $(this).toggleClass('val-empty', val === '');
-      if ($(this).hasClass('mapper-cluster-gradient')) {
-        $(this).toggleClass('val-invalid', val !== '' && !_isValidPos(val));
+    function mapperClusterSyncValueInput($inp) {
+      var val = $inp.val().trim();
+      $inp.toggleClass('val-empty', val === '');
+      if ($inp.hasClass('mapper-cluster-gradient')) {
+        $inp.toggleClass('val-invalid', val !== '' && !_isValidPos(val));
         setActiveColorButton('cluster-colorByGradient');
       } else {
         // Category changed — update this row's swatch to the color for the new label
-        var $tr = $(this).closest('tr');
+        var $tr = $inp.closest('tr');
         try { $tr.find('.mapper-cluster-label-swatch').spectrum('set', mapperClusterGetLabelColor(val)); } catch(e) {}
         setActiveColorButton('cluster-colorByUserCategory');
       }
+    }
+    $('#mapper-cluster-input-tbody').on('input change', '.mapper-cluster-gradient, .mapper-cluster-cat', function () {
+      mapperClusterSyncValueInput($(this));
       mapperClusterScheduleRedraw();
     });
 
@@ -1555,29 +1577,60 @@ function mapperClusterGetLabelColor(lbl) {
         if (!inPositionMode) mapperClusterScheduleRedraw();
       });
 
-    // Paste handler (tab-separated receptor + value)
-    $('#mapper-cluster-input-tbody').on('paste', '.mapper-core-in-receptor', function (e) {
-      var pastedData = (e.originalEvent || e).clipboardData.getData('text');
-      if (!pastedData || pastedData.indexOf('\n') === -1) return;
-      e.preventDefault();
+    // Paste handler. Grid pastes (TAB / ';' columns: receptor, value, position) and a single
+    // column pasted into the receptor cell append one row per line; a single column pasted into
+    // a value or position cell fills down the existing rows from that row.
+    $('#mapper-cluster-input-tbody').on('paste', function (e) {
+      var pz = MapperPageCore.classifyPaste((e.originalEvent || e).clipboardData.getData('text'));
+      if (!pz.kind) return;
+      var inReceptor = $(e.target).closest('td.mapper-core-receptor-cell').length > 0;
       suppressRedraw = true;
-      var lines = pastedData.replace(/\r\n/g, '\n').split('\n');
-      lines.forEach(function (line) {
-        if (!line.trim()) return;
-        var parts    = line.split('\t');
-        var receptor = parts[0].trim();
-        var gradient = parts[1] ? parts[1].trim() : '';
-        if (!receptor) return;
-        var resolved = window.MAPPER_CORE_RESOLVE && window.MAPPER_CORE_RESOLVE[receptor.toUpperCase()];
-        if (resolved) {
-          mapperClusterAppendRow({ entry: resolved, gradient: gradient });
-        } else {
-          var $row = mapperClusterFindBlankRow();
-          if (!$row.length) { mapperClusterAppendRow(); $row = $('#mapper-cluster-input-tbody tr').last(); }
-          $row.find('.mapper-core-in-receptor').val(receptor);
-          $row.find('.mapper-cluster-gradient').val(gradient);
-        }
-      });
+      if (pz.kind === 'column' && !inReceptor) {
+        var handled = MapperPageCore.pasteColumnDown({
+          $tbody: $('#mapper-cluster-input-tbody'), target: e.target, lines: pz.lines,
+          findBlankRow: mapperClusterFindBlankRow,
+          // Rows without a receptor aren't kept on this page, so values past the last row are dropped.
+          appendRow: function () { return $(); },
+          setReceptor: function () {},
+          onValue: function ($inp) {
+            if ($inp.hasClass('mapper-cluster-pos')) {
+              // Position classes and counters are recomputed by _posCountersReset() below.
+              positionResultCache[plotMode] = null;
+              positionProcessed = false;
+            } else {
+              mapperClusterSyncValueInput($inp);
+            }
+          }
+        });
+        if (!handled) { suppressRedraw = false; return; }
+      } else {
+        var valSel = plotMode === 'categories' ? '.mapper-cluster-cat' : '.mapper-cluster-gradient';
+        pz.lines.every(function (line) {
+          var parts    = pz.kind === 'grid' ? MapperPageCore.splitPasteLine(line) : [line.trim()];
+          var receptor = parts[0];
+          var val      = parts[1] || '';
+          var pos      = parts[2] || '';
+          if (!receptor) return true;
+          var resolved = window.MAPPER_CORE_RESOLVE && window.MAPPER_CORE_RESOLVE[receptor.toUpperCase()];
+          var $row;
+          if (resolved) {
+            var rowOpts = { entry: resolved, pos: pos };
+            rowOpts[plotMode === 'categories' ? 'category' : 'gradient'] = val;
+            $row = mapperClusterAppendRow(rowOpts);
+          } else {
+            $row = mapperClusterFindBlankRow();
+            if (!$row.length) $row = mapperClusterAppendRow();
+            if ($row && $row.length) {
+              $row.find('.mapper-core-in-receptor').val(receptor);
+              $row.find(valSel).val(val).toggleClass('val-empty', val === '');
+              if (pos) $row.find('.mapper-cluster-pos').val(pos);
+            }
+          }
+          // mapperClusterAppendRow returns null at MAPPER_CLUSTER_MAX_ROWS: drop the remaining lines.
+          return !!($row && $row.length);
+        });
+      }
+      e.preventDefault();
       suppressRedraw = false;
       mapperClusterEnsureTrailingBlankRow();
       _posCountersReset();
