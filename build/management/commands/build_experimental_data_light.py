@@ -1,6 +1,6 @@
 from django.core.management.base import CommandError
 from build.management.commands.base_build import Command as BaseBuild
-from build.management.commands.build_ligand_functions import get_ligand_by_id, match_id_via_unichem, get_or_create_ligand, get_or_create_ligands_batch, is_float, standardize_smiles, generate_parent, apply_canonical_ligand_types, classify_lipids, allocate_next_gpcrdb_id, load_gtp_source_data
+from build.management.commands.build_ligand_functions import get_ligand_by_id, match_id_via_unichem, get_or_create_ligand, get_or_create_ligands_batch, is_float, standardize_smiles, generate_parent, apply_canonical_ligand_types, consolidate_structureless_parents, classify_lipids, rename_radiolabel_parents, allocate_next_gpcrdb_id, load_gtp_source_data
 from django.conf import settings
 from django.utils.text import slugify
 from django.db import IntegrityError, transaction, connection
@@ -314,6 +314,10 @@ class Command(BaseBuild):
         self.calculate_potency_and_affinity()
         print("Potency and affinity indexes have been added to the model")
 
+        print("\n\nMerging structure-less parents into same-name structured families")
+        n = consolidate_structureless_parents()
+        print("\n\nMerged {} structure-less parents".format(n))
+
         print("\n\nFixing mismatched LigandType definition")
         n  = apply_canonical_ligand_types()
         print("\n\nUpdated LigandType on {} records to their canonical type".format(n))
@@ -321,6 +325,10 @@ class Command(BaseBuild):
         print("\n\nClassifying lipid ligands")
         n = classify_lipids()
         print("\n\nReclassified {} records as lipid".format(n))
+
+        print("\n\nRenaming radiolabel-named parents after an unlabelled child")
+        n = rename_radiolabel_parents()
+        print("\n\nRenamed {} parents".format(n))
 
         if options["make_dump"]:
             print("\n\nRunning the Dump Checker and saving new csvs")
@@ -1486,7 +1494,9 @@ class Command(BaseBuild):
                 try:
                     _pubchem_cid = str(int(float(str(row['pubchem_cid']))))
                 except (ValueError, TypeError):
-                    _pubchem_cid = str(row['pubchem_cid']).strip() or None
+                    # several CIDs in one field (newline/";" separated) -> one LigandID each
+                    _cids = re.findall(r"\d+", str(row['pubchem_cid']))
+                    _pubchem_cid = (_cids[0] if len(_cids) == 1 else _cids) or None
 
             source_ids = {}
             if _chembl_id:
@@ -1504,6 +1514,7 @@ class Command(BaseBuild):
                 "source_ids": source_ids,
                 "radioactive": False,
                 "synonyms": False,
+                "chirality": row.get('chirality') if pd.notna(row.get('chirality')) else None,
             })
 
             if len(entries_batch) >= Command.bulk_size:
@@ -1526,15 +1537,12 @@ class Command(BaseBuild):
                      ].reset_index()
         print("Found", len(nonsm_data), "new non-small-molecules")
 
-        ligand_types = {"Unknown": "na", "Protein": "protein"}
+        # ChEMBL molecule_type is not used for typing: ChEMBL labels peptides "Protein"
+        # (and many "Unknown"), so ligand types are predicted from sequence/SMILES ("auto").
+        alias_rows = []  # (row, _smiles, _ik, _sequence, _helm) for Phase 2
 
-        alias_rows = []  # (_lig_type, row, _smiles, _ik, _sequence, _helm) for Phase 2
-
-        for _lig_type in ("na", "protein"):
-            typed_rows = [row for _, row in nonsm_data.iterrows()
-                          if ligand_types.get(row.get('molecule_type'), 'na') == _lig_type]
-            if not typed_rows:
-                continue
+        typed_rows = [row for _, row in nonsm_data.iterrows()]
+        if typed_rows:
             batch = []
             for row in typed_rows:
                 _name = str(row.get('pref_name') or row.get('molecule_chembl_id') or "")
@@ -1553,16 +1561,15 @@ class Command(BaseBuild):
                     "source_ids": {"chembl_ligand": str(_chembl_id)} if _chembl_id else {},
                     "radioactive": False,
                     "synonyms": False,
-                    "skip_normalization": True,
                 })
                 if pd.notna(row.get("other_ids")) and row.get("other_ids"):
-                    alias_rows.append((_lig_type, row, _smiles, _ik, _sequence, _helm))
-            get_or_create_ligands_batch(batch, source="ChEMBL_peptide", lig_type=_lig_type)
+                    alias_rows.append((row, _smiles, _ik, _sequence, _helm))
+            get_or_create_ligands_batch(batch, source="ChEMBL_peptide", lig_type="auto")
 
         # Phase 2: alias IDs — children already in DB after Phase 1, Step E finds by
         # InChIKey and queues a new LigandID without creating a duplicate child
         alias_batch = []
-        for _lig_type, row, _smiles, _ik, _sequence, _helm in alias_rows:
+        for row, _smiles, _ik, _sequence, _helm in alias_rows:
             for alias_id in str(row["other_ids"]).split(";"):
                 alias_id = alias_id.strip()
                 if not alias_id:
@@ -1577,10 +1584,9 @@ class Command(BaseBuild):
                     "source_ids": {"chembl_ligand": alias_id},
                     "radioactive": False,
                     "synonyms": False,
-                    "skip_normalization": True,
                 })
         if alias_batch:
-            get_or_create_ligands_batch(alias_batch, source="ChEMBL_peptide", lig_type="na")
+            get_or_create_ligands_batch(alias_batch, source="ChEMBL_peptide", lig_type="auto")
 
     @staticmethod
     def build_chembl_bioactivities():
@@ -2307,7 +2313,7 @@ class Command(BaseBuild):
             # compounds that happen to share a display name aren't merged into one ligand.
             cache_key = (ligand_name, row['SMILES'], row['CAS'])
             if cache_key not in ligand_cache.keys():
-                ligand = get_or_create_ligand(ligand_name, ids, source='PDSP KiDatabase')
+                ligand = get_or_create_ligand(ligand_name, ids, lig_type='auto', source='PDSP KiDatabase')
                 ligand_cache[cache_key] = ligand
             if label in protein_names.keys():
                 receptor = protein_names[label]
@@ -2391,7 +2397,7 @@ class Command(BaseBuild):
             # ligand and each structure's own drug_central id reaches get_or_create_ligand.
             cache_key = row['ID']
             if cache_key not in ligand_cache.keys():
-                ligand = get_or_create_ligand(row['DRUG_NAME'], ids, source='Drug Central')
+                ligand = get_or_create_ligand(row['DRUG_NAME'], ids, lig_type='auto', source='Drug Central')
                 ligand_cache[cache_key] = ligand
             if code in accession_numbers.keys():
                 receptor = accession_numbers[code]
@@ -2476,7 +2482,7 @@ class Command(BaseBuild):
 
             name = row.Name
             if name not in ligand_cache:
-                ligand = get_or_create_ligand(name, ids, source='DrugBank')
+                ligand = get_or_create_ligand(name, ids, lig_type='auto', source='DrugBank')
                 ligand_cache[name] = ligand
 
     # @staticmethod

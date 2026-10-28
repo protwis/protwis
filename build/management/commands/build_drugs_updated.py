@@ -2,7 +2,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 from django.db import IntegrityError
 from django.utils.text import slugify
-from build.management.commands.build_ligand_functions import get_ligand_by_id, match_id_via_unichem, get_or_create_ligand, is_float, resolve_ligand_ambiguity
+from build.management.commands.build_ligand_functions import get_ligand_by_id, match_id_via_unichem, get_or_create_ligand, is_float, resolve_ligand_ambiguity, _inchikeys_compatible, _raw_stereo_conflict, _child_key
 
 from common.models import WebResource, WebLink, Publication
 from protein.models import Protein, TissueExpression, CancerType, CancerExpression, Tissues, ExpressionValue
@@ -388,6 +388,23 @@ class Command(BaseCommand):
             return str(value)
 
     @staticmethod
+    def _match_by_ids(mapper, inchikey):
+        """Return the single ligand carrying one of the row's IDs, but only if it is
+        stereo-compatible with the row's InChIKey; otherwise None (→ get_or_create_ligand)."""
+        for key, values in mapper.items():
+            for code in values:
+                if code == 'nan':
+                    continue
+                hits = LigandID.objects.filter(index=code, web_resource__slug=key)
+                if len(hits) == 1:
+                    lig = hits[0].ligand
+                    if inchikey == 'NOT AVAILABLE' or (
+                            _inchikeys_compatible(inchikey, _child_key(lig))
+                            and not _raw_stereo_conflict(inchikey, lig.inchikey)):
+                        return lig
+        return None
+
+    @staticmethod
     def fetch_ligand(row):
         """
         fetch ligands with Ligand model
@@ -417,17 +434,9 @@ class Command(BaseCommand):
                     return resolve_ligand_ambiguity(
                         Ligand.objects.filter(inchikey=inchi, parent__isnull=False), row['Name'], inchi)
                 except Ligand.DoesNotExist:
-                    for key, values in mapper.items():
-                        for code in values:
-                            if code != 'nan':
-                                try:
-                                    check = LigandID.objects.filter(index=code, web_resource__slug=key)
-                                    if len(check) == 1:
-                                        return check[0].ligand
-                                    else:
-                                        check = None
-                                except LigandID.DoesNotExist:
-                                    continue
+                    check = Command._match_by_ids(mapper, inchi)
+                    if check is not None:
+                        return check
         else:
             try:
                 check = Ligand.objects.get(inchikey=inchi_list[0], parent__isnull=False)
@@ -436,17 +445,9 @@ class Command(BaseCommand):
                 return resolve_ligand_ambiguity(
                     Ligand.objects.filter(inchikey=inchi_list[0], parent__isnull=False), row['Name'], inchi_list[0])
             except Ligand.DoesNotExist:
-                for key, values in mapper.items():
-                    for code in values:
-                        if code != 'nan':
-                            try:
-                                check = LigandID.objects.filter(index=code, web_resource__slug=key)
-                                if len(check) == 1:
-                                    return check[0].ligand
-                                else:
-                                    check = None
-                            except LigandID.DoesNotExist:
-                                continue
+                check = Command._match_by_ids(mapper, inchi_list[0])
+                if check is not None:
+                    return check
 
         if check == None:
             # perform a check: if all the mapper items are NaN
