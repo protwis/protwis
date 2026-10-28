@@ -114,8 +114,12 @@
       $('<option>').val(o.entry).text(mapperHeatmapSpeciesLabel(o)).appendTo($sel);
     });
     var validPrev = prevVal && orthologs.some(function (o) { return o.entry === prevVal; });
+    // A no-human-ortholog row resolved from a species entry (e.g. pasted 5HT5B_RAT) keeps that species.
+    var ownEntry = orthologs.some(function (o) { return o.entry === entryId; });
     if (validPrev) {
       $sel.val(prevVal);
+    } else if (ownEntry) {
+      $sel.val(entryId);
     } else {
       var humanOpt = null;
       orthologs.forEach(function (o) { if (o.is_human) humanOpt = o; });
@@ -415,6 +419,24 @@
     if (lt === 'UniProt' && meta.uniprot) { return meta.uniprot; }
     return meta.name_plain || '';
   }
+  /** Download button (Mapper_Heatmap.html): the input table as .xlsx, receptors named per the Receptor Names mode. */
+  window.mapperHeatmapDownloadTable = function () {
+    var cols = [1, 2, 3, 4, 5];
+    MapperPageCore.downloadInputTable({
+      tbody: '#mapper-heatmap-input-tbody',
+      headers: ['Receptor'].concat(cols.map(function (i) {
+        return ($('#mapper-heatmap-lbl-V' + i).val() || 'Dataset ' + i).trim();
+      })),
+      values: function ($tr) {
+        return cols.map(function (i) { return ($tr.find('.mapper-heatmap-val' + i).val() || '').trim(); });
+      },
+      label: mapperHeatmapEditSeed,
+      uniprotMode: !!HeatmapDataStyling && HeatmapDataStyling.LabelType === 'UniProt',
+      speciesSelect: mapperHeatmapSpeciesActive ? '.mapper-heatmap-species-select' : null,
+      sheetName: 'Heatmap',
+      fileName: 'Heatmap_data.xlsx'
+    });
+  };
 
   function mapperHeatmapSetResolved($tr, id) {
     var sid  = id != null ? String(id).trim() : '';
@@ -606,6 +628,23 @@
     return $found;
   }
 
+  function mapperHeatmapAppendRowForPaste() {
+    mapperHeatmapAppendRow(true);
+    return $('#mapper-heatmap-input-tbody tr').last();
+  }
+
+  /** Puts pasted receptor text on a row, replacing whatever the row held; unresolved text is marked invalid. */
+  function mapperHeatmapSetReceptorFromPaste($tr, raw) {
+    var r   = raw != null ? String(raw).trim() : '';
+    var rid = r && window.MAPPER_CORE_RESOLVE ? window.MAPPER_CORE_RESOLVE[r.toUpperCase()] : '';
+    if (rid) { mapperHeatmapSetResolved($tr, rid); return; }
+    if (($tr.find('.mapper-core-receptor-entry').val() || '').trim()) mapperHeatmapSetResolved($tr, '');
+    $tr.find('.mapper-core-in-receptor').val(r);
+    $tr.toggleClass('mapper-core-row-invalid', !!r);
+    if (r) $tr.data('mapperCoreUnmatchedRaw', r); else $tr.removeData('mapperCoreUnmatchedRaw');
+    mapperHeatmapSyncClearBtn($tr);
+  }
+
   // ── Boot ──────────────────────────────────────────────────────────────────
   function mapperHeatmapBoot() {
     $('.mapper-core-booting').removeClass('mapper-core-booting');
@@ -634,6 +673,10 @@
               uniprot:    dispText
             };
           }
+          // Every species entry resolves (e.g. a downloaded 5HT5B_RAT), not just the stem's first one.
+          if (window.MAPPER_CORE_RESOLVE && !window.MAPPER_CORE_RESOLVE[nho.entry.toUpperCase()]) {
+            window.MAPPER_CORE_RESOLVE[nho.entry.toUpperCase()] = nho.entry;
+          }
 
           if (_seenNhoStems[stem]) return;
           _seenNhoStems[stem] = true;
@@ -650,6 +693,8 @@
           if (window.MAPPER_CORE_RESOLVE) {
             window.MAPPER_CORE_RESOLVE[stem.toUpperCase()] = nho.entry;
             window.MAPPER_CORE_RESOLVE[nho.entry.toUpperCase()] = nho.entry;
+            // The cell/download label itself, so "5HT5B (no human ortholog)" resolves when pasted or typed.
+            window.MAPPER_CORE_RESOLVE[dispText.toUpperCase()] = nho.entry;
           }
         });
       }
@@ -826,21 +871,28 @@
     $('#mapper-heatmap-input-table').on('paste.mapperHeatmapPaste', function (ePz) {
       var ev   = ePz.originalEvent || ePz;
       var text = ev.clipboardData ? ev.clipboardData.getData('text/plain') : '';
-      if (!text || text.indexOf('\t') === -1) return;
+      var pz   = MapperPageCore.classifyPaste(text);
+      if (!pz.kind) return;
+      suppressRedraw = true;
+      if (pz.kind === 'column') {
+        // One value per line, written down the pasted-into column from that row.
+        var handled = MapperPageCore.pasteColumnDown({
+          $tbody: $('#mapper-heatmap-input-tbody'), target: ePz.target, lines: pz.lines,
+          findBlankRow: mapperHeatmapFindBlankRow, appendRow: mapperHeatmapAppendRowForPaste,
+          setReceptor: mapperHeatmapSetReceptorFromPaste
+        });
+        if (!handled) { suppressRedraw = false; return; }
+      } else {
+        pz.lines.forEach(function (ln) {
+          var parts = MapperPageCore.splitPasteLine(ln);
+          var $tr   = mapperHeatmapFindBlankRow();
+          if (!$tr.length) $tr = mapperHeatmapAppendRowForPaste();
+          mapperHeatmapSetReceptorFromPaste($tr, parts[0]);
+          [1,2,3,4,5].forEach(function (i) { if (parts[i]) $tr.find('.mapper-heatmap-val' + i).val(parts[i]); });
+        });
+      }
       ePz.preventDefault();
       $('#mapper-heatmap-clear-rows').removeClass('mapper-core-clear-clean');
-      suppressRedraw = true;
-      text.split(/\r?\n/).forEach(function (ln) {
-        if (!ln.trim()) return;
-        var parts = ln.split('\t');
-        var rawR  = (parts[0] || '').trim();
-        var $tr   = mapperHeatmapFindBlankRow();
-        if (!$tr.length) { mapperHeatmapAppendRow(true); $tr = $('#mapper-heatmap-input-tbody tr').last(); }
-        $tr.find('.mapper-core-in-receptor').val(rawR);
-        var rid = window.MAPPER_CORE_RESOLVE && window.MAPPER_CORE_RESOLVE[rawR.toUpperCase()];
-        if (rid) mapperHeatmapSetResolved($tr, rid);
-        [1,2,3,4,5].forEach(function (i) { if (parts[i]) $tr.find('.mapper-heatmap-val' + i).val((parts[i]||'').trim()); });
-      });
       suppressRedraw = false;
       mapperHeatmapEnsureTrailingBlankRow();
       mapperHeatmapSyncRemoveButtons(); mapperHeatmapCompactReceptors();
