@@ -253,37 +253,11 @@ class Command(BaseBuild):
             preferred_chain = preferred_chain.split(',')[0]
 
 
-        AA = {'ALA':'A', 'ARG':'R', 'ASN':'N', 'ASP':'D',
-             'CYS':'C', 'GLN':'Q', 'GLU':'E', 'GLY':'G',
-             'HIS':'H', 'ILE':'I', 'LEU':'L', 'LYS':'K',
-             'MET':'M', 'PHE':'F', 'PRO':'P', 'SER':'S',
-             'THR':'T', 'TRP':'W', 'TYR':'Y', 'VAL':'V',
-             'YCM':'C', 'CSD':'C', 'TYS':'Y', 'SEP':'S', 'TPO':'T', 'U8S':'U'} #non-standard AAs
+        AA = AA_MAP
 
         atom_num_dict = {'E':9, 'S':6, 'Y':12, 'G':4, 'A':5, 'V':7, 'M':8, 'L':8, 'I':8, 'T':7, 'F':11, 'H':10, 'K':9,
                          'D':8, 'C':6, 'R':11, 'P':7, 'Q':9, 'N':8, 'W':14}
 
-
-        # print(d['xml_segments'])
-        # print(d['deletions'])
-        deletions = []
-        ## Remove WT ranges that arent in xtal (no need to try to map them)
-        # print(d)
-        if 'deletions' in d:
-            for del_range in d['deletions']:
-                if del_range['start']==146 and structure.pdb_code.index=='4K5Y':
-                    #Manual fix for faulty 4K5Y annotation
-                    continue
-                for i in range(del_range['start'],del_range['end']+1):
-                    deletions.append(i)
-            #print("Annotation missing WT residues",d['deletions'])
-        removed = d.get('removed', [])
-
-        removed, deletions = construct_structure_annotation_override(structure.pdb_code.index, removed, deletions)
-
-        if self.debug:
-            print('Deletions: ', deletions)
-            print('Removed: ', removed)
 
         s = self.parsed_pdb
         chain = s[preferred_chain] #select only one chain (avoid n-mer receptors)
@@ -330,15 +304,13 @@ class Command(BaseBuild):
         # modified residues like YCM/CSD/TYS/SEP (kept here, dropped there),
         # each causing a permanent one-residue generic-number drift for every
         # residue after the divergence point.
-        all_pdb_residues_in_chain = sum(
-            1 for res in chain
-            if res.resname != "NH2" and AA.get(res.resname) is not None
-        )
+        all_pdb_residues_in_chain = count_chain_residues(chain, AA)
 
-        if len(removed)+100>all_pdb_residues_in_chain:
-            print(structure,'More (or almost) sequence set to be removed from sequence',len(removed),' than exists',all_pdb_residues_in_chain,' removing removed[]')
-            #print(removed)
-            removed = []
+        removed, deletions = get_removed_and_deletions(structure.pdb_code.index, d, all_pdb_residues_in_chain)
+
+        if self.debug:
+            print('Deletions: ', deletions)
+            print('Removed: ', removed)
 
         for res in list(chain): #snapshot first -- detach_child mutates chain during iteration
             id = res.id
@@ -771,55 +743,10 @@ class Command(BaseBuild):
         pdb_text = structure.pdb_data.pdb
 
         # 'removed' list (for fusion proteins) is already calculated above.
-        # We pass it to our helper to get a clean PDB sequence. aa_map=AA
-        # keeps this selection in lockstep with pdbseq's (see build above) --
-        # both must include/exclude the exact same residues, in the same
-        # order, for their indices to stay aligned.
-        pdb_seq, distances, resnums = generate_seq_and_distances_from_pdb_text(
-            pdb_text, preferred_chain, residues_to_remove=removed, aa_map=AA
+        # Shared with add_annotation.py so annotation and build use the same mapping.
+        ref_seq, temp_seq, pdb_seq, resnums = align_structure_to_wt(
+            pdb_code, pdb_text, preferred_chain, wt_seq, removed, debug=self.debug
         )
-
-        # Get initial alignment and residue mapping
-        initial_ref_seq, initial_temp_seq, pdb_map, custom_mapping = run_pairwisealigner(
-            pdb_code, wt_seq, pdb_seq
-        )
-
-        if not custom_mapping:
-            # Find outliers which might indicate misalignments
-            outlier_indexes = distances_stats(distances, debug=self.debug)
-
-            # Attempt to automatically fix misalignments based on outliers and gaps
-            # The function returns the final, corrected alignment string for the PDB sequence.
-            fixed_temp_seq = detect_alignment_mistakes_and_reposition(
-                pdb_code,
-                wt_seq,
-                pdb_seq,
-                initial_ref_seq,
-                initial_temp_seq,
-                pdb_map,
-                distances,
-                outlier_indexes,
-                aanumber=3,
-                debug=self.debug,
-            )
-
-            # Collapse any physically-bonded PDB residues (no real chain break between
-            # them) that ended up scattered across a gap by coincidental letter matches.
-            # Uses an absolute CA-CA distance threshold rather than distances_stats'
-            # whole-structure relative outlier test, which can miss a real break if the
-            # rest of the structure's distances already have enough natural spread.
-            chain_breaks = sorted(set(find_chain_breaks(distances, resnums=resnums))
-                                | set(manual_chain_break_indexes(resnums, pdb_code)))
-            fixed_temp_seq = consolidate_structural_islands(
-                pdb_seq, fixed_temp_seq, chain_breaks
-            )
-
-            # Assign the final, corrected alignment strings to be used by the rest of the function.
-            ref_seq = initial_ref_seq
-            temp_seq = fixed_temp_seq
-        else:
-            ref_seq = initial_ref_seq
-            temp_seq = initial_temp_seq
 
         # # ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
         # # New code block for automatic alignment fixes using space information from the pdb, ends here

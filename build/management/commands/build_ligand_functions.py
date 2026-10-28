@@ -4,6 +4,7 @@ from django.db.models import Q, Count, Max
 from django.utils.text import slugify
 from django.utils.functional import SimpleLazyObject
 from django.db import transaction, IntegrityError
+from django.conf import settings
 
 from ligand.models import Ligand, LigandID, LigandType, LigandRole
 from common.models import WebResource
@@ -167,14 +168,48 @@ def load_gtp_source_data():
     }
 
 
+_INVALID_SID_VALUES = {"", "0", "nan", "none", "null"}
+
+
 def _iter_sids(source_ids):
-    """Yield (slug, str_value) pairs, expanding list values accumulated during dedup."""
+    """Yield (slug, str_value) pairs, expanding list values accumulated during dedup.
+    Placeholder values (e.g. PubChem CID "0" in GtP data) are skipped: they would
+    link unrelated ligands through a shared LigandID and false source-ID matches."""
     for slug, val in source_ids.items():
-        if isinstance(val, list):
-            for v in val:
-                yield slug, str(v)
-        else:
-            yield slug, str(val)
+        for v in (val if isinstance(val, list) else [val]):
+            if v is None or str(v).strip().lower() in _INVALID_SID_VALUES:
+                continue
+            yield slug, str(v)
+
+
+def _element_counts(smiles):
+    """Element counts incl. implicit hydrogens, or None if the SMILES can't be parsed."""
+    mol = Chem.MolFromSmiles(smiles) if smiles else None
+    if mol is None:
+        return None
+    counts = Counter()
+    for atom in mol.GetAtoms():
+        counts[atom.GetSymbol()] += 1
+        counts["H"] += atom.GetTotalNumHs()
+    return counts
+
+
+def _is_label_variant(entry, parent) -> bool:
+    """True when the entry's (isotope-stripped) structure differs from the parent's only
+    by radio-iodination (I replacing H or another halogen) and/or open disulfide bridges
+    (+2H each) - i.e. a labelled form of the same ligand as drawn by the source."""
+    ef = _element_counts((entry.get("_parent_norm") or {}).get("smiles"))
+    pf = _element_counts(parent.smiles)
+    if not ef or not pf:
+        return False
+    diff = {k: ef[k] - pf[k] for k in set(ef) | set(pf) if ef[k] != pf[k]}
+    if not diff:
+        return True
+    if not set(diff) <= {"H", "I", "F", "Cl", "Br"}:
+        return False
+    if diff.get("I", 0) < 0 or any(diff.get(x, 0) > 0 for x in ("F", "Cl", "Br")):
+        return False
+    return sum(diff.values()) % 2 == 0 and sum(diff.values()) >= 0
 
 
 def _inchikeys_compatible(entry_ck: Optional[str], child_inchikey: Optional[str]) -> bool:
@@ -182,7 +217,8 @@ def _inchikeys_compatible(entry_ck: Optional[str], child_inchikey: Optional[str]
 
     Rules (both sides must be non-empty for rejection to fire):
     - Connectivity block (first dash-segment) must match.
-    - If both sides have a stereo block (second segment), they must also match.
+    - If both sides have a stereo block (second segment), they must also match. UHFFFAOYSA
+      (racemic/undefined) is a distinct child from any defined stereoisomer.
     A None on either side means no structural evidence to compare — allow by default.
     """
     if not entry_ck or not child_inchikey:
@@ -192,13 +228,35 @@ def _inchikeys_compatible(entry_ck: Optional[str], child_inchikey: Optional[str]
     if e_parts[0] != c_parts[0]:
         return False
     if len(e_parts) >= 2 and len(c_parts) >= 2 and e_parts[1] != c_parts[1]:
-        # Allow when either side is truly achiral (UHFFFAOYSA = no stereo specified).
-        # This preserves the achiral-short-circuit design where a racemic entry can
-        # reuse any existing child with the same connectivity.
-        # Only reject when BOTH sides carry specific stereo information that differs.
-        if e_parts[1] != "UHFFFAOYSA" and c_parts[1] != "UHFFFAOYSA":
-            return False
+        return False
     return True
+
+
+def _raw_stereo_conflict(a: Optional[str], b: Optional[str]) -> bool:
+    """Raw (unnormalized) InChIKeys with the same connectivity but different stereo blocks.
+    Differing first blocks (tautomers drawn differently) are not a conflict — the
+    normalized-key check decides those."""
+    if not a or not b:
+        return False
+    ap, bp = a.split("-"), b.split("-")
+    return len(ap) >= 2 and len(bp) >= 2 and ap[0] == bp[0] and ap[1] != bp[1]
+
+
+def _child_key(lig) -> Optional[str]:
+    """Stereo-preserving normalized key of an existing child, recomputed from its SMILES.
+    Stored clean_inchikey may predate stereo-preserving normalization (flattened stereo)."""
+    if lig.smiles:
+        cnorm = normalize_for_child(lig.smiles)
+        if cnorm and cnorm.get("inchikey"):
+            return cnorm["inchikey"]
+    return lig.clean_inchikey or lig.inchikey
+
+
+def _stereo_match_ok(entry, lig) -> bool:
+    """Both evidence types must agree: normalized keys compatible AND no raw-key stereo conflict."""
+    if not _inchikeys_compatible(entry.get("_ck") or entry.get("raw_inchikey"), _child_key(lig)):
+        return False
+    return not _raw_stereo_conflict(entry.get("raw_inchikey"), lig.inchikey)
 
 
 _MW_TOL_FRAC = 0.05   # 5 % relative tolerance on molecular weight
@@ -227,6 +285,47 @@ def _props_compatible(entry_props: dict, candidate: "Ligand") -> bool:
             if round(ev) != round(cv):
                 return False
     return True
+
+
+_RACEMIC_NAME_RE = re.compile(
+    r"^\s*(\(\s*(±|\+/-|\+-|RS|R,S)\s*\)\s*-?|rac[-\s]|DL-)|\bracem(ic|ate)\b", re.I)
+_chembl_chirality_map = None
+
+
+def _chembl_chirality(chembl_id: str) -> Optional[int]:
+    """ChEMBL molecule_dictionary.chirality (0 racemic, 1 single stereoisomer, 2 achiral,
+    -1 unknown) from the local chembl_cpds file; loaded once, no web calls."""
+    global _chembl_chirality_map
+    if _chembl_chirality_map is None:
+        _chembl_chirality_map = {}
+        path = os.path.join(settings.DATA_DIR, "ligand_data", "assay_data", "chembl_cpds.csv.gz")
+        try:
+            df = pd.read_csv(path, usecols=["molecule_chembl_id", "chirality"], dtype=str)
+            _chembl_chirality_map = {
+                k: int(v) for k, v in zip(df.molecule_chembl_id, df.chirality)
+                if isinstance(v, str) and v.lstrip("-").isdigit()
+            }
+        except (OSError, ValueError) as e:
+            log.warning(f"ChEMBL chirality unavailable ({e}); racemate labelling falls back to names")
+    return _chembl_chirality_map.get(str(chembl_id).upper())
+
+
+def _is_racemic_entry(entry) -> bool:
+    """True when the structure is chiral with no stereo defined AND a source says racemic.
+    Structure alone cannot distinguish racemic from undefined stereo."""
+    mol = entry.get("_child_mol")
+    if mol is None:
+        return False
+    Chem.AssignStereochemistry(mol, cleanIt=True, force=True)
+    centers = Chem.FindMolChiralCenters(mol, includeUnassigned=True)
+    if not centers or any(label in ("R", "S") for _, label in centers):
+        return False
+    if str(entry.get("chirality")) == "0":
+        return True
+    for slug, val in _iter_sids(entry.get("source_ids", {})):
+        if slug == "chembl_ligand" and _chembl_chirality(val) == 0:
+            return True
+    return bool(_RACEMIC_NAME_RE.search(str(entry.get("name") or "")))
 
 
 def _prepare_ligand_entries(entries):
@@ -279,10 +378,22 @@ def _prepare_ligand_entries(entries):
 
         # Pre-compute isotope label so Steps C/D/E/G can distinguish different
         # radioactive variants of the same compound (e.g. [³H] vs [¹²⁵I]).
+        # Only GtP flags radioactivity, so for every source also detect it from the name
+        # and SMILES isotopes (synonyms only when flagged: they can list labelled forms).
         entry["_radioactive_label"] = None
-        if entry.get("radioactive"):
-            _rl = get_radioactive_info(entry.get("name", ""), entry.get("synonyms", "") or "")
+        _rl = get_radioactive_info(
+            str(entry.get("name") or ""),
+            (entry.get("synonyms", "") or "") if entry.get("radioactive") else "",
+            entry.get("raw_smiles"),
+        )
+        # Names like "Radiolabeled octreotide derivative" are radioactive without a
+        # known isotope -> label "Yes"
+        _radiolabel_name = bool(re.search(r"radiolabel", str(entry.get("name") or ""), re.I))
+        if entry.get("radioactive") or _rl or _radiolabel_name:
+            entry["radioactive"] = True
             entry["_radioactive_label"] = _rl[0] if _rl else "Yes"
+
+        entry["_racemic"] = _is_racemic_entry(entry)
 
     # ── Step A.5: UniChem source-ID enrichment for structure-less entries ─────
     # Entries with no InChIKey, SMILES, or HELM cannot be matched structurally.
@@ -325,11 +436,17 @@ def _resolve_ligand_entries(entries, source=None, lig_type="small-molecule", ext
     since the check-then-insert logic below relies on that lock, not a DB
     constraint, to avoid two workers creating duplicate Ligand rows.
     """
-    if lig_type not in _LIGAND_TYPE_CACHE:
-        _LIGAND_TYPE_CACHE[lig_type] = LigandType.objects.get_or_create(
-            slug=slugify(lig_type), defaults={"name": lig_type}
-        )[0]
-    lig_type_obj = _LIGAND_TYPE_CACHE[lig_type]
+    # lig_type="auto": the source gives no (reliable) type, so a new parent is typed from
+    # its structure (predict_entry_type) and a new child inherits its parent's type.
+    auto_type = lig_type == "auto"
+    if auto_type:
+        lig_type_obj = None
+    else:
+        if lig_type not in _LIGAND_TYPE_CACHE:
+            _LIGAND_TYPE_CACHE[lig_type] = LigandType.objects.get_or_create(
+                slug=slugify(lig_type), defaults={"name": lig_type}
+            )[0]
+        lig_type_obj = _LIGAND_TYPE_CACHE[lig_type]
 
     # ── Step B: batch parent lookup ───────────────────────────────────────────
     all_clean_keys = {e["_pk"] for e in entries if e["_pk"]}
@@ -430,9 +547,10 @@ def _resolve_ligand_entries(entries, source=None, lig_type="small-molecule", ext
     existing_by_source_id = {}  # (slug, index, is_radioactive) → child Ligand
     for src_slug in external_sources:
         ids_for_src = {
-            str(e["source_ids"][src_slug])
+            val
             for e in entries
-            if src_slug in e.get("source_ids", {})
+            for slug, val in _iter_sids(e.get("source_ids", {}))
+            if slug == src_slug
         }
         if ids_for_src:
             for lid in (LigandID.objects
@@ -489,11 +607,25 @@ def _resolve_ligand_entries(entries, source=None, lig_type="small-molecule", ext
             return existing_parents[pk]
         if pnorm and pnorm.get("smiles") and pnorm["smiles"] in existing_parents:
             return existing_parents[pnorm["smiles"]]
+        # HELM / sequence / UniProt fallbacks only for entries without a structure key:
+        # an entry with a _pk that matched no parent is a new structure, and sequences
+        # do not encode modifications (GtP uses "X", drops terminal groups), so a
+        # sequence match would merge different analogues (e.g. fertirelin/alarelin).
+        if pk:
+            # Exception: a radiolabelled variant (e.g. [125I]ET-1) whose SMILES differs from
+            # the unlabelled peptide only by the label or by open disulfides belongs to the
+            # unlabelled family; the formula check keeps true analogues out.
+            if entry.get("_radioactive_label"):
+                for key in (entry.get("raw_helm"), entry.get("raw_sequence")):
+                    candidate = existing_parents.get(key) if key else None
+                    if candidate is not None and _is_label_variant(entry, candidate):
+                        return candidate
+            return None
         raw_helm = entry.get("raw_helm")
         if raw_helm and raw_helm in existing_parents:
             return existing_parents[raw_helm]
         raw_seq = entry.get("raw_sequence")
-        if raw_seq and raw_seq in existing_parents:
+        if raw_seq and "X" not in raw_seq and raw_seq in existing_parents:
             return existing_parents[raw_seq]
         raw_uniprot = entry.get("raw_uniprot")
         if (raw_uniprot and not entry.get("raw_sequence") and not entry.get("raw_helm")
@@ -544,9 +676,7 @@ def _resolve_ligand_entries(entries, source=None, lig_type="small-molecule", ext
         if (found_child is not None
                 and _source_id_that_found is not None
                 and (found_child.clean_inchikey or found_child.inchikey)
-                and not _inchikeys_compatible(
-                    entry.get("_ck") or entry.get("raw_inchikey"),
-                    found_child.clean_inchikey or found_child.inchikey)):
+                and not _stereo_match_ok(entry, found_child)):
             log.info(
                 f"Source-ID {_source_id_that_found} found incompatible child "
                 f"(entry {entry.get('_ck')!r} vs child {found_child.clean_inchikey or found_child.inchikey!r}); falling through"
@@ -559,17 +689,12 @@ def _resolve_ligand_entries(entries, source=None, lig_type="small-molecule", ext
         if not _skip_structural and found_child is None and entry.get("_ck"):
             candidate = existing_by_norm_ik.get((entry["_ck"], entry_radioactive_label))
             if candidate is not None and _props_compatible(entry_props, candidate):
-                # Guard: if entry has a specific raw_inchikey (e.g. an E/Z stereo block that
-                # tautomer canonicalization stripped from _ck), verify it is compatible with
-                # the candidate's inchikey before accepting the match.
-                _entry_raw_ik = entry.get("raw_inchikey") or ""
-                _erp = _entry_raw_ik.split("-")
-                if (len(_erp) >= 2
-                        and _erp[1] not in ("", "UHFFFAOYSA")
-                        and not _inchikeys_compatible(_entry_raw_ik, candidate.inchikey or "")):
+                # Guard: legacy children may carry a stereo-flattened clean_inchikey, so check
+                # the recomputed child key and the raw keys before accepting.
+                if not _stereo_match_ok(entry, candidate):
                     log.info(
-                        f"norm-ik match rejected: entry raw_inchikey {_entry_raw_ik!r} "
-                        f"incompatible with candidate inchikey {candidate.inchikey!r}"
+                        f"norm-ik match rejected: entry {entry['_ck']!r}/{entry.get('raw_inchikey')!r} "
+                        f"vs candidate gpcrdb_id={candidate.gpcrdb_id} {candidate.inchikey!r}"
                     )
                 else:
                     found_child = candidate
@@ -679,12 +804,18 @@ def _resolve_ligand_entries(entries, source=None, lig_type="small-molecule", ext
                     found_child.parent.clean_inchikey != correct_pk):
                 correct_parent = existing_parents.get(correct_pk)
                 if correct_parent:
+                    old_parent = found_child.parent
                     found_child.parent = correct_parent
                     found_child.save(update_fields=["parent"])
                     log.warning(
                         f"Reassigned child {found_child.name!r} (gpcrdb_id={found_child.gpcrdb_id}) "
                         f"to parent {correct_pk!r}"
                     )
+                    # Don't leave the previous parent behind as an empty root
+                    old_parent_pk = old_parent.pk if old_parent else None
+                    if delete_parent_if_orphan(old_parent):
+                        for key in [k for k, v in existing_parents.items() if v.pk == old_parent_pk]:
+                            del existing_parents[key]
                 else:
                     log.error(
                         f"Child {found_child.name!r} expected parent {correct_pk!r} but not found"
@@ -708,6 +839,11 @@ def _resolve_ligand_entries(entries, source=None, lig_type="small-molecule", ext
             if not found_child.pdbe and entry.get("raw_pdbe") and len(entry["raw_pdbe"]) <= _PDBE_MAX_LEN:
                 found_child.pdbe = entry["raw_pdbe"]
                 found_child.save(update_fields=["pdbe"])
+
+            # Back-fill racemic label; never overwrite a defined (full/partial) status
+            if entry.get("_racemic") and found_child.stereo_status in (None, "unspecified"):
+                found_child.stereo_status = "racemic"
+                found_child.save(update_fields=["stereo_status"])
 
             # Queue new LigandIDs — skip the DB fetch entirely when the entry has no source IDs
             entry_source_ids = entry.get("source_ids", {})
@@ -744,7 +880,7 @@ def _resolve_ligand_entries(entries, source=None, lig_type="small-molecule", ext
         p = Ligand()
         p.name = entry["name"]
         p.ambiguous_alias = False
-        p.ligand_type = lig_type_obj
+        p.ligand_type = predict_entry_type(entry) if auto_type else lig_type_obj
         p.smiles = pnorm.get("smiles")
         p.inchikey = pnorm.get("inchikey")
         p.clean_inchikey = pnorm.get("clean_inchikey")
@@ -841,11 +977,11 @@ def _resolve_ligand_entries(entries, source=None, lig_type="small-molecule", ext
                     _sids[slug] = val
                 elif _sids[slug] != val:
                     existing = _sids[slug]
-                    if isinstance(existing, list):
-                        if val not in existing:
-                            existing.append(val)
-                    else:
-                        _sids[slug] = [existing, val]
+                    if not isinstance(existing, list):
+                        existing = _sids[slug] = [existing]
+                    for v in (val if isinstance(val, list) else [val]):
+                        if v not in existing:
+                            existing.append(v)
     entries_needing_new_child = unique_entries_needing_new_child
 
     # Pre-flight: catch any _ck that already exists in the DB regardless of
@@ -931,7 +1067,12 @@ def _resolve_ligand_entries(entries, source=None, lig_type="small-molecule", ext
             _entry_name = resolved_parent.name or ""
         c.name = _entry_name
         c.ambiguous_alias = False
-        c.ligand_type = lig_type_obj
+        if auto_type:
+            c.ligand_type = (resolved_parent.ligand_type
+                             if resolved_parent is not None and resolved_parent.ligand_type_id
+                             else predict_entry_type(entry))
+        else:
+            c.ligand_type = lig_type_obj
         c.smiles = entry.get("raw_smiles")
         c.inchikey = entry.get("raw_inchikey") or entry.get("_ck")
         c.clean_inchikey = entry.get("_ck")
@@ -946,7 +1087,7 @@ def _resolve_ligand_entries(entries, source=None, lig_type="small-molecule", ext
         )
         c.parent = resolved_parent
         c.source = source
-        c.stereo_status = infer_stereo_status(mol)
+        c.stereo_status = "racemic" if entry.get("_racemic") else infer_stereo_status(mol)
         c.radioactive = entry.get("_radioactive_label")
         for field, val in rdkit_props.items():
             setattr(c, field, val)
@@ -1073,7 +1214,31 @@ def get_or_create_ligand(name, ids={}, lig_type="small-molecule", unichem=False,
 unichem_src_types = {"1": "chembl_ligand", "2": "drugbank", "3": "pdb", "4": "gtoplig", "22": "pubchem", "34": "drug_central"}
 unichem_src_types_inv = {v: k for k, v in unichem_src_types.items()}
 
-def get_radioactive_info(name, synonyms):
+# Radionuclides recognised in names/SMILES (stable labels such as 2H, 13C, 15N are excluded)
+_RADIONUCLIDES = {
+    "3H", "11C", "14C", "13N", "15O", "18F", "32P", "33P", "35S", "45Ca", "51Cr", "57Co", "58Co",
+    "64Cu", "67Ga", "68Ga", "75Se", "81mKr", "82Rb", "89Sr", "90Y", "99mTc", "111In", "123I",
+    "124I", "125I", "131I", "133Xe", "153Sm", "177Lu", "186Re", "188Re", "197Hg", "203Hg",
+    "201Tl", "223Ra",
+}
+_RADIO_NAME_PATTERNS = [
+    re.compile(r"\[(\d{1,3}m?)([A-Z][a-z]?)\]"),          # [3H]X, [125I]X, [99mTc]X
+    re.compile(r"\b([A-Z][a-z]?)[- ](\d{1,3}m?)\b"),       # DrugBank "Liothyronine I-131", "Choline C 11"
+    re.compile(r"\((\d{1,3}m?)([A-Z][a-z]?)\)"),          # "Samarium (153Sm) lexidronam"
+]
+_RADIO_SMILES_PATTERN = re.compile(r"\[(\d{1,3})([A-Z][a-z]?)")
+
+
+def _radio_label(mass, element):
+    """GtP-style label (<sup>131</sup>I) for a whitelisted radionuclide, else None.
+    "(3H)" in names is an IUPAC indicated-hydrogen locant (e.g. quinazolin-4(3H)-one),
+    so tritium is only accepted from bracket names and SMILES (handled by callers)."""
+    if mass + element in _RADIONUCLIDES:
+        return f"<sup>{mass}</sup>{element}"
+    return None
+
+
+def get_radioactive_info(name, synonyms, smiles=None):
     # Regex for radioactive isotopes
     regexes = {"isotope":"\[(<sup>\d+</sup>[A-Za-z]{1,2})\]"}#, "other":"\[(?=[^\]]*<sup>)([^\]]+)\]"}
     for _, regex in regexes.items():
@@ -1084,6 +1249,29 @@ def get_radioactive_info(name, synonyms):
     isotopes = []
     for i in isotope_search:
         isotopes.append(i)
+
+    # Non-GtP naming conventions and isotope atoms in SMILES
+    if len(isotopes)==0:
+        bracket, suffix, paren = _RADIO_NAME_PATTERNS
+        for m in bracket.finditer(name):
+            label = _radio_label(m.group(1), m.group(2))
+            if label and label not in isotopes:
+                isotopes.append(label)
+        for m in suffix.finditer(name):
+            label = _radio_label(m.group(2), m.group(1))
+            if label and label not in isotopes:
+                isotopes.append(label)
+        for m in paren.finditer(name):
+            if m.group(2) == "H":
+                continue
+            label = _radio_label(m.group(1), m.group(2))
+            if label and label not in isotopes:
+                isotopes.append(label)
+    if len(isotopes)==0 and smiles:
+        for m in _RADIO_SMILES_PATTERN.finditer(smiles):
+            label = _radio_label(m.group(1), m.group(2))
+            if label and label not in isotopes:
+                isotopes.append(label)
     # Check ligand name synonyms
     found = False
     if len(isotopes)==0 and synonyms:
@@ -1584,19 +1772,22 @@ def update_parent(parent, child):
     """
     updated = False
 
-    # Derive correct parent clean_inchikey from child-normalized InChIKey
-    correct_clean_key = child.clean_inchikey.split("-")[0] if child.clean_inchikey else None
+    # Parent keys must come from the parent normalization: the child clean_inchikey is
+    # the stereo-preserving child key, whose first block can differ (tautomers), which
+    # would key the parent so later entries can't find it. Child key only as fallback.
+    norm = normalize_for_parent(child.smiles) if child.smiles else None
+    correct_clean_key = (norm or {}).get("clean_inchikey")
+    if not correct_clean_key and child.clean_inchikey:
+        correct_clean_key = child.clean_inchikey.split("-")[0]
 
     if correct_clean_key and not parent.clean_inchikey:
         parent.clean_inchikey = correct_clean_key
         updated = True
 
-    if not parent.smiles and child.smiles:
-        norm = normalize_for_parent(child.smiles)
-        if norm:
-            parent.smiles = norm["smiles"]
-            parent.inchikey = norm["inchikey"]
-            updated = True
+    if not parent.smiles and norm:
+        parent.smiles = norm["smiles"]
+        parent.inchikey = norm["inchikey"]
+        updated = True
 
     for field in ["sequence", "logp", "mw", "helm", "uniprot", "pdbe"]:
         if not getattr(parent, field) and getattr(child, field):
@@ -1610,6 +1801,79 @@ def update_parent(parent, child):
             log.error(f"update_parent failed for {parent.name!r}: {e!r}")
 
     return parent
+
+
+def consolidate_structureless_parents():
+    """Post-build pass: merge structure-less parents into the structured family of the
+    same name.
+
+    A source record without any structure (no SMILES/sequence/HELM/UniProt) gets its own
+    ambiguous_alias=True parent, even when a structured family with that name exists or is
+    created later (order-dependent, so it can't be resolved at insert time). Once all
+    sources are loaded, a structure-less parent whose case-insensitive name (its own or
+    its children's) points to exactly one structured root family is merged into it.
+    Names pointing to zero or several structured families are left alone.
+    Returns the number of merged parents.
+    """
+    from django.db.models.functions import Lower
+
+    candidates = {p.pk: p for p in Ligand.objects.filter(parent__isnull=True, ambiguous_alias=True)}
+    if not candidates:
+        return 0
+
+    cand_names = defaultdict(set)  # candidate pk -> lower-cased names (own + children)
+    for pk, p in candidates.items():
+        if p.name and p.name.strip():
+            cand_names[pk].add(p.name.strip().lower())
+    for parent_id, name in (Ligand.objects.filter(parent_id__in=list(candidates))
+                            .values_list("parent_id", "name")):
+        if name and name.strip():
+            cand_names[parent_id].add(name.strip().lower())
+
+    all_names = set().union(*cand_names.values()) if cand_names else set()
+    structured_roots_by_name = defaultdict(set)  # lower name -> structured root pks
+    rows = (Ligand.objects.annotate(lname=Lower("name"))
+            .filter(lname__in=all_names)
+            .values_list("lname", "id", "parent_id", "ambiguous_alias", "parent__ambiguous_alias"))
+    for lname, lid, parent_id, amb, parent_amb in rows:
+        root_id, root_amb = (parent_id, parent_amb) if parent_id else (lid, amb)
+        if not root_amb:
+            structured_roots_by_name[lname.strip()].add(root_id)
+
+    merged = 0
+    for pk, names in cand_names.items():
+        targets = set().union(*(structured_roots_by_name.get(n, set()) for n in names)) - {pk}
+        cand = candidates[pk]
+        if len(targets) != 1:
+            if len(targets) > 1:
+                log.info(f"Structure-less parent {cand.name!r} (gpcrdb_id={cand.gpcrdb_id}) not merged: "
+                         f"name matches {len(targets)} structured families")
+            continue
+        target_id = targets.pop()
+        moved = Ligand.objects.filter(parent_id=pk).update(parent_id=target_id)
+        log.warning(f"Merged structure-less parent {cand.name!r} (gpcrdb_id={cand.gpcrdb_id}, "
+                    f"{moved} children) into structured parent id={target_id}")
+        delete_parent_if_orphan(cand)
+        merged += 1
+    return merged
+
+
+def delete_parent_if_orphan(parent):
+    """Delete a parent ligand left without children, but only when nothing else
+    references it (bioactivities, LigandIDs, interactions, ... all cascade on delete).
+    Returns True when deleted."""
+    if parent is None or parent.parent_id is not None or parent.children.exists():
+        return False
+    for rel in parent._meta.related_objects:
+        if rel.related_model is Ligand and rel.field.name == "parent":
+            continue
+        if rel.related_model.objects.filter(**{rel.field.name: parent}).exists():
+            log.info(f"Orphan parent {parent.name!r} (gpcrdb_id={parent.gpcrdb_id}) kept: "
+                     f"referenced by {rel.related_model.__name__}")
+            return False
+    log.warning(f"Deleting orphan parent {parent.name!r} (gpcrdb_id={parent.gpcrdb_id})")
+    parent.delete()
+    return True
 
 
 #### Block for fixing mismatched LigandType assignment in Ligand model
@@ -1626,51 +1890,70 @@ from rdkit.Chem import Descriptors as _RDDesc
 
 # 8+ consecutive non-ring sp3 CH2 — characteristic of fatty acid / acylglycerol / sphingolipid chains
 _LIPID_CHAIN_SMARTS = _RDChem.MolFromSmarts('[CH2;!R][CH2;!R][CH2;!R][CH2;!R][CH2;!R][CH2;!R][CH2;!R][CH2;!R]')
-# Steroid tetracyclic nucleus (cholesterol, bile acids, steroid hormones)
-_STEROID_SMARTS = _RDChem.MolFromSmarts('[#6]1~[#6]~[#6]~[#6]2~[#6]~[#6]~[#6]3~[#6]~[#6]~[#6]~[#6]~[#6]3~[#6]~[#6]2~[#6]~1')
+# Sterols (cholesterol, oxysterols, phytosterols, sterol esters): steroid nucleus with an
+# O at C3 and an acyclic C17 side chain of >=4 carbons. Steroid hormones/drugs (short or
+# no C17 chain) and bile acids (C24 acid/ester/amide) don't match and stay small molecules.
+# C(=[O,N])[O,N] also covers bile-acid amides drawn as imidates (C([O-])=N, e.g. in metal complexes)
+_STEROL_SIDE_CHAIN = ('$([#6]-[C;!R]~[C;!R]~[C;!R]~[C;!R;!$(C=[O,N])])'
+                      ';!$([#6]-[C;!R]~[C;!R]~[C;!R]~[CX3](=[O,N])[O,N])'
+                      ';!$([#6]-[C;!R]~[C;!R]~[CX3](=[O,N])[O,N])')
+_STEROL_SMARTS = _RDChem.MolFromSmarts(
+    '[#6]1~[#6]~[#6;$([#6]-[OX2])]~[#6]~[#6]2~[#6]~[#6]~[#6]3~[#6]4~[#6]~[#6]~[#6;'
+    + _STEROL_SIDE_CHAIN + ']~[#6]~4~[#6]~[#6]~[#6]~3~[#6]~1~2')
 
-def predict_type(ligand):
-    """
-    Predict small-molecule vs peptide vs protein vs lipid from
-    the presence/length of sequence *or* the pattern of amide
-    bonds and lipid structural features in SMILES if sequence is missing.
-    """
-    seq = (ligand.sequence or '').strip()
-    smiles = (ligand.smiles or '').strip()
+# Peptide backbone unit N-Calpha-C(=O)-N (roughly one per residue). Counting these instead
+# of any amide keeps amide-containing drugs (one or two amides) typed as small molecules.
+_PEPTIDE_BACKBONE_SMARTS = _RDChem.MolFromSmarts('[NX3][CX4][CX3](=O)[NX3]')
+_PEPTIDE_MIN_BACKBONE_UNITS = 3   # TRH (pGlu-His-Pro-NH2) has 3
+_PEPTIDE_MAX_RESIDUES = 50        # above this a ligand is typed protein
+
+
+def _predict_type_from(sequence, smiles):
+    seq = (sequence or '').strip()
+    smiles = (smiles or '').strip()
 
     # 1) If we actually have a sequence, use length
     if seq:
-        return PEPTIDE if len(seq) <= 15 else PROTEIN
+        return PEPTIDE if len(seq) <= _PEPTIDE_MAX_RESIDUES else PROTEIN
 
     # 2) No sequence: look at SMILES
     if smiles:
         mol = _RDChem.MolFromSmiles(smiles)
-        if mol is not None:
-            frac_sp3 = _RDDesc.FractionCSP3(mol)
-            n_aromatic_rings = sum(
-                1 for r in mol.GetRingInfo().AtomRings()
-                if all(mol.GetAtomWithIdx(i).GetIsAromatic() for i in r)
-            )
-            has_long_chain = mol.HasSubstructMatch(_LIPID_CHAIN_SMARTS)
-            has_steroid = mol.HasSubstructMatch(_STEROID_SMARTS)
-            if (has_long_chain and frac_sp3 >= 0.65 and n_aromatic_rings <= 1) or has_steroid:
-                return LIPID
+        if mol is None:
+            return UNKNOWN
+        # peptide check first, so lipidated peptides (semaglutide, liraglutide) stay peptides
+        n_backbone = len(mol.GetSubstructMatches(_PEPTIDE_BACKBONE_SMARTS))
+        if n_backbone >= _PEPTIDE_MIN_BACKBONE_UNITS:
+            return PEPTIDE if n_backbone + 1 <= _PEPTIDE_MAX_RESIDUES else PROTEIN
 
-        # count amide bonds (one per residue) in either orientation
-        smiles_up = smiles.upper()
-        count = (
-            smiles_up.count('NC(=O)')
-          + smiles_up.count('C(=O)N')
+        frac_sp3 = _RDDesc.FractionCSP3(mol)
+        n_aromatic_rings = sum(
+            1 for r in mol.GetRingInfo().AtomRings()
+            if all(mol.GetAtomWithIdx(i).GetIsAromatic() for i in r)
         )
-
-        if count == 0:
-            return SMALL_MOLECULE
-        if count <= 15:
-            return PEPTIDE
-        return PROTEIN
+        has_long_chain = mol.HasSubstructMatch(_LIPID_CHAIN_SMARTS)
+        has_steroid = mol.HasSubstructMatch(_STEROL_SMARTS)
+        if (has_long_chain and frac_sp3 >= 0.65 and n_aromatic_rings <= 1) or has_steroid:
+            return LIPID
+        return SMALL_MOLECULE
 
     # 3) nothing to go on
     return UNKNOWN
+
+
+def predict_type(ligand):
+    """
+    Predict small-molecule vs peptide vs protein vs lipid from
+    the presence/length of sequence *or* the number of peptide backbone
+    units and lipid structural features in SMILES if sequence is missing.
+    """
+    return _predict_type_from(ligand.sequence, ligand.smiles)
+
+
+def predict_entry_type(entry):
+    """predict_type for a batch entry dict (raw sequence / SMILES)."""
+    smiles = entry.get("raw_smiles") or (entry.get("_parent_norm") or {}).get("smiles")
+    return _predict_type_from(entry.get("raw_sequence"), smiles)
 
 def score(item):
     """
@@ -1697,8 +1980,8 @@ def pick_canonical_type(children):
     # 2) split into "matched" vs "unmatched" against actual
     matched = []
     for lig, pred in pairs:
-        actual = (lig.ligand_type.name.lower() if lig.ligand_type else UNKNOWN)
-        if pred == actual:
+        actual_slug = lig.ligand_type.slug if lig.ligand_type else UNKNOWN.slug
+        if pred.slug == actual_slug:
             matched.append((lig, pred))
 
     if matched:
@@ -1791,7 +2074,7 @@ def classify_lipids():
             if all(mol.GetAtomWithIdx(i).GetIsAromatic() for i in r)
         )
         has_chain = mol.HasSubstructMatch(_LIPID_CHAIN_SMARTS)
-        has_steroid = mol.HasSubstructMatch(_STEROID_SMARTS)
+        has_steroid = mol.HasSubstructMatch(_STEROL_SMARTS)
         if (has_chain and frac_sp3 >= 0.65 and n_ar <= 1) or has_steroid:
             lipid_ids.append(lig.pk)
             parent_ids.add(lig.parent_id)
@@ -1799,9 +2082,31 @@ def classify_lipids():
     if not lipid_ids:
         return 0
 
+    # Type the whole family (parent and all its children), not only the matching
+    # children, so siblings (e.g. other stereo forms) don't stay small-molecule.
     with transaction.atomic():
         updated = Ligand.objects.filter(
-            pk__in=lipid_ids + list(parent_ids)
+            Q(pk__in=lipid_ids) | Q(pk__in=list(parent_ids)) | Q(parent_id__in=list(parent_ids))
         ).update(ligand_type=LIPID)
 
     return updated
+
+
+def rename_radiolabel_parents():
+    """Post-build pass: a parent created by a radioligand carries its label in the name
+    (e.g. "[<sup>125</sup>I]urocortin 1 (mouse, rat)"). When the family also has an
+    unlabelled child, name the parent after it (lowest gpcrdb_id).
+    Returns the number of renamed parents."""
+    renamed = 0
+    for parent in Ligand.objects.filter(parent__isnull=True, name__regex=r'\[<sup>\d+m?</sup>[A-Z][a-z]?[],]'):
+        unlabelled = (Ligand.objects.filter(parent=parent, radioactive__isnull=True)
+                      .exclude(name__regex=r'\[<sup>\d+m?</sup>[A-Z][a-z]?[],]')
+                      .exclude(name="")
+                      .order_by("gpcrdb_id").first())
+        if unlabelled is None:
+            continue
+        log.info(f"Renaming parent {parent.name!r} (gpcrdb_id={parent.gpcrdb_id}) to {unlabelled.name!r}")
+        parent.name = unlabelled.name
+        parent.save(update_fields=["name"])
+        renamed += 1
+    return renamed

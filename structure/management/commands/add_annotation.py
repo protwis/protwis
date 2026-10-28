@@ -6,12 +6,13 @@ from residue.models import Residue
 from structure.functions import ParseStructureCSV, X50Finder
 from tools.management.commands.build_structure_angles import NonHetSelect
 from contactnetwork.interaction import InteractingPair
-from construct.functions import fetch_pdb_info, construct_structure_annotation_override
+from construct.functions import fetch_pdb_info
+from build.management.commands.PDB_sequence_helper import AA_MAP, get_removed_and_deletions, count_chain_residues, align_structure_to_wt, wt_to_pdb_map
 #from build.management.commands.build_human_proteins import Command as Parse
 from common.tools import parse_uniprot_file
 
 
-from Bio.PDB import PDBParser, Polypeptide
+from Bio.PDB import PDBParser
 import logging
 import os
 import yaml
@@ -23,7 +24,6 @@ from urllib.request import urlopen
 from urllib.error import HTTPError
 from copy import deepcopy
 import shutil
-import json
 import gemmi
 
 
@@ -43,8 +43,6 @@ class Command(BaseCommand):
     anomalies_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'all_anomalies.yaml'])
     with open(anomalies_file, 'r') as f2:
         anomalies = yaml.load(f2, Loader=yaml.FullLoader)
-    with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'custom_mappings.json'])) as cm:
-        custom_mappings = json.load(cm)
     pdb_data_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'pdbs'])
 
     sequence_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'sequences.yaml'])
@@ -378,114 +376,58 @@ class Command(BaseCommand):
                         structure = PDBParser(QUIET=True).get_structure(s, self.pdb_path)
                         parent_protein = Protein.objects.get(entry_name=data['protein'])
                         parent_residues = Residue.objects.filter(protein_conformation__protein=parent_protein)
-                        parent_seq = parent_protein.sequence
 
-                        # Check for fusion protein
-                        fusion_present = False
-                        deletions, removed = [], []
-                        if 'auxiliary_protein' in data:
-                            if len([a for a in data['auxiliary_protein'] if a in self.parsed_structures.fusion_proteins])>0:
-                                fusion_present = True
-                                try:
-                                    d = fetch_pdb_info(s, parent_protein, True, preferred_chain=data['preferred_chain'])
-                                    if self.debug:
-                                        print('pdb info fetched', datetime.now()- starttime)
-                                    if 'deletions' in d:
-                                        for del_range in d['deletions']:
-                                            if del_range['start']==146 and s=='4K5Y':
-                                                #Manual fix for faulty 4K5Y annotation
-                                                continue
-                                            for i in range(del_range['start'],del_range['end']+1):
-                                                deletions.append(i)
-                                        #print("Annotation missing WT residues",d['deletions'])
-                                    removed = d.get('removed', [])
+                        # Construct info: 'removed' (non-receptor residues in the chain, e.g. fusion
+                        # proteins, PDB numbering) and 'deletions' (WT residues absent from the construct)
+                        chain = structure[0][data['preferred_chain']]
+                        d = {}
+                        try:
+                            d = fetch_pdb_info(s, parent_protein, True, preferred_chain=data['preferred_chain'])
+                            if self.debug:
+                                print('pdb info fetched', datetime.now()- starttime)
+                        except TypeError:
+                            print('ERROR: Fetch pdb data failed {} needs debug check'.format(s))
+                        removed, deletions = get_removed_and_deletions(s, d, count_chain_residues(chain))
 
-                                    removed, deletions = construct_structure_annotation_override(s, removed, deletions)
+                        if self.debug:
+                            print('Deletions:')
+                            print(deletions)
+                            print('Removed:')
+                            print(removed)
 
-                                    if self.debug:
-                                        print('Deletions:')
-                                        print(deletions)
-                                        print('Removed:')
-                                        print(removed)
-                                except TypeError:
-                                    print('ERROR: Fetch pdb data failed {} needs debug check'.format(s))
+                        dssp = self.dssp(s, chain, structure)
 
-                        seq = ''
-                        res_list = []
-                        for res in structure[0][data['preferred_chain']]:
+                        # Same structure <-> WT mapping as build_structures (see PDB_sequence_helper)
+                        wt_residues = parent_residues.exclude(sequence_number__in=deletions).order_by('sequence_number')
+                        wt_seq = ''.join(wt_residues.values_list('amino_acid', flat=True))
+                        wt_seqnums = list(wt_residues.values_list('sequence_number', flat=True))
+                        with open(self.pdb_path, 'r') as pdb_file:
+                            pdb_text = pdb_file.read()
+                        ref_seq, temp_seq, pdb_seq, resnums = align_structure_to_wt(s, pdb_text, data['preferred_chain'], wt_seq, removed, debug=self.debug)
+
+                        if self.debug:
+                            print(pdb_seq)
+                            for r, t in zip(ref_seq, temp_seq):
+                                print(r, t)
+
+                        # Residue lookup by number - includes modified residues (HETATM, e.g. CSD) selected by AA_MAP
+                        chain_residues = {}
+                        for res in chain:
+                            if AA_MAP.get(res.get_resname()) is not None:
+                                chain_residues.setdefault(res.get_id()[1], res)
+
+                        res_dict = OrderedDict()
+                        wt_pdb_lookup = {}
+                        for wt_num, pdb_num in wt_to_pdb_map(ref_seq, temp_seq, wt_seqnums, resnums).items():
+                            res = chain_residues[pdb_num]
                             ### Skip residues with missing backbone atoms
                             if not res.has_id('N') or not res.has_id('CA') or not res.has_id('C') or not res.has_id('O'):
                                 continue
-                            ### Skip heteroatom residues - non-receptor residues
-                            if res.get_id()[0].startswith('H'):
+                            dssp_key = (chain.id, res.get_id())
+                            if dssp_key not in dssp:
                                 continue
-                            try:
-                                seq+=Polypeptide.protein_letters_3to1.get(res.get_resname())
-                                res_list.append(res)
-                            except KeyError:
-                                pass
-
-                        # crh = ClosestReceptorHomolog(data['protein'], force=True)
-                        # crh.find_closest_receptor_homolog()
-                        # max5sim = heapq.nlargest(5, [p.similarity for p in crh.all_proteins[1:]])
-                        # max5prot = []
-                        # for p in crh.all_proteins:
-                        #     if p.protein not in max5prot and p.similarity in max5sim:
-                        #         max5prot.append(p.protein)
-                        # structures = Structure.objects.filter(protein_conformation__protein__parent__in=max5prot)
-
-                        # print(len(structures))
-                        # print(max5prot)
-
-                        # Custom fixes
-                        if s=='2I35':
-                            seq = seq[:-2]
-                        elif s=='3ZEV':
-                            seq = seq[:-5]
-                        elif s in ['8JD1','8JD2','8JD3','8JD4','8JD5','8IZB','8WPG','8WPU','8WRB']:
-                            seq = seq[:-1]
-                        elif s=='9IJR':
-                            seq = seq[:-7]
-
-                        if self.debug:
-                            print(seq)
-
-                        dssp = self.dssp(s, structure[0][data['preferred_chain']], structure)
-
-                        if s in self.custom_mappings:
-                            ref_seq, temp_seq = self.custom_mappings[s]
-                        else:
-                            if fusion_present or s in ['7V68','7V69','7V6A','7W6P','7W7E','8E9W','8E9X','8E9Y','8E9Z','8EA0','7T8X','7T90','7T94','7T96',
-                                                    '7TRK','7TRP','7TRQ','7TRS','8IRU','8FX5','8W8R','8W8S','7V9L','8TZQ','8U02','8YN2','9EK0','9N09','9N29',
-                                                    '9LRB','9LRD','9EJZ','9PLN','9PLO','9PQD']:
-                                pw2 = Bio.pairwise2.align.localms(parent_seq, seq, 3, -3, -3.5, -1)
-                            else:
-                                pw2 = Bio.pairwise2.align.localms(parent_seq, seq, 3, -4, -5, -2)
-
-                            ref_seq, temp_seq = str(pw2[0][0]), str(pw2[0][1])
-                        ref_i, temp_i = 0, 0
-                        res_dict = OrderedDict()
-                        wt_pdb_lookup = {}
-
-                        for i, r in enumerate(ref_seq, 1):
-                            fusion_res = False
-                            if self.debug:
-                                print(i,r,temp_seq[i-1])
-                            # if r=='-':
-                            #     temp_i+=1
-                            if temp_seq[i-1]!='-':
-                                if s=='7ZI0':
-                                    if fusion_present and res_list[temp_i].get_id()[1] in removed:
-                                        fusion_res = True
-                                else:
-                                    if fusion_present and (res_list[temp_i].get_id()[1] in deletions or res_list[temp_i].get_id()[1] in removed):
-                                        fusion_res = True
-                                if not fusion_res:
-                                    res_dict[parent_residues[ref_i].sequence_number] = [res_list[temp_i], dssp[temp_i]]
-                                    wt_pdb_lookup[parent_residues[ref_i].sequence_number] = res_list[temp_i].get_id()[1]
-                                temp_i+=1
-                            if r!='-':
-                                ref_i+=1
+                            res_dict[wt_num] = [res, dssp[dssp_key]]
+                            wt_pdb_lookup[wt_num] = pdb_num
 
                         needs_lookup = False
                         if len(wt_pdb_lookup)>0:
@@ -730,13 +672,6 @@ class Command(BaseCommand):
 
                         if self.debug:
                             pprint.pprint(segends[s])
-                        proteins_in_db = Structure.objects.filter(protein_conformation__protein__parent=parent_protein, structure_type__origin='experiment')
-                        if len(proteins_in_db)==0:
-                            if parent_protein not in new_unique_receptor_structures:
-                                new_unique_receptor_structures[parent_protein] = [s]
-                            else:
-                                new_unique_receptor_structures[parent_protein].append(s)
-                        # print(new_unique_receptor_structures)
 
                         ### Check with done structures
                         # for seg, val in segends[s].items():
@@ -770,6 +705,18 @@ class Command(BaseCommand):
 
             print('ERRORS:')
             pprint.pprint(errors)
+
+            ### Receptors only present in structures.tsv because of this batch
+            batch = set(structures_to_process)
+            existing_proteins = {d['protein'] for pdb, d in self.parsed_structures.structures.items() if pdb not in batch}
+            new_proteins = OrderedDict()
+            for pdb in structures_to_process:
+                if pdb in self.parsed_structures.structures:
+                    protein = self.parsed_structures.structures[pdb]['protein']
+                    if protein not in existing_proteins:
+                        new_proteins.setdefault(protein, []).append(pdb)
+            print('New UniProt entry names (only in this batch):')
+            pprint.pprint(dict(new_proteins))
 
 
 
@@ -877,4 +824,5 @@ class Command(BaseCommand):
         #     for d in dssp:
         #         print(d)
         os.remove(filename)
-        return [i for i in dssp]
+        # Keyed by (chain_id, residue id)
+        return dssp

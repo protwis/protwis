@@ -3245,12 +3245,13 @@ class AbsLigand(TemplateView):
     def get_related_ligands(ligand_id):
         _assay_count = Count(Concat('assayexperiment__protein_id', Value('|'), 'assayexperiment__source', Value('|'), 'assayexperiment__value_type', output_field=CharField()), distinct=True, filter=Q(assayexperiment__isnull=False) & ~Q(assayexperiment__value_type='-'))
         _model_structure_count = Count('ligandpeptidestructure', filter=Q(ligandpeptidestructure__structure__structure_type__origin='model'), distinct=True)
-        this_ligand = Ligand.objects.filter(gpcrdb_id=ligand_id).prefetch_related('ligand_type').annotate(assay_count=_assay_count, structure_count=Count('structureligandinteraction'), model_structure_count=_model_structure_count)
+        _structure_count = Count('structureligandinteraction__structure', filter=Q(structureligandinteraction__structure__structure_type__origin='experiment'), distinct=True)
+        this_ligand = Ligand.objects.filter(gpcrdb_id=ligand_id).prefetch_related('ligand_type').annotate(assay_count=_assay_count, structure_count=_structure_count, model_structure_count=_model_structure_count)
         if this_ligand[0].parent:
-            parent_ligand = Ligand.objects.filter(id=this_ligand[0].parent.id).prefetch_related('ligand_type').annotate(assay_count=_assay_count, structure_count=Count('structureligandinteraction'), model_structure_count=_model_structure_count)[0]
+            parent_ligand = Ligand.objects.filter(id=this_ligand[0].parent.id).prefetch_related('ligand_type').annotate(assay_count=_assay_count, structure_count=_structure_count, model_structure_count=_model_structure_count)[0]
         else:
             parent_ligand = this_ligand[0]
-        children = Ligand.objects.filter(parent=parent_ligand).prefetch_related('ligand_type').annotate(assay_count=_assay_count, structure_count=Count('structureligandinteraction'), model_structure_count=_model_structure_count)
+        children = Ligand.objects.filter(parent=parent_ligand).prefetch_related('ligand_type').annotate(assay_count=_assay_count, structure_count=_structure_count, model_structure_count=_model_structure_count)
 
         ### Keeping this line for debugging - shows also parent object on group page
         # ligands = [parent_ligand]+list(children)
