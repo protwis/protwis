@@ -2307,6 +2307,8 @@ ROLE_DICTIONARY = {'Agonist':{
                                             'G protein-biased selective agonist'],
                                  'Agonist (partial)': [
                                                         'Partial agonist', 'Agonist (partial)'],
+                                 'Co-agonist': [
+                                                        'Co-agonist', 'Coagonist'],
                                  'Inverse agonist': [
                                                         'Inverse agonist', 'Inverse agonist (partial)']
                               },

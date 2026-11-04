@@ -8,6 +8,7 @@ from django.http import HttpResponseNotFound
 
 from interaction.models import ResidueFragmentInteraction, StructureLigandInteraction, ResidueFragmentInteractionType
 from interaction.forms import PDBform
+from interaction.stored_interactions import stored_results
 from ligand.models import Ligand, LigandType, LigandRole
 from structure.models import Structure, PdbData, Rotamer, Fragment, StructureModel, StructureComplexModel, StructureExtraProteins, StructureVectors, StructureModelRMSD, StructureModelpLDDT, StructureModelScores
 from structure.assign_generic_numbers_gpcr import GenericNumbering
@@ -30,7 +31,7 @@ import logging
 from subprocess import call
 import urllib
 import collections
-from collections import OrderedDict, defaultdict
+from collections import Counter, OrderedDict, defaultdict
 from io import BytesIO
 from Bio.PDB import PDBIO, PDBParser, Select, Vector
 import xlsxwriter
@@ -1234,6 +1235,24 @@ def InteractionSelection(request):
     return render(request, 'interaction/interactionselection.html')
 
 
+def _ngl_selection(pdb_reference, chain_res):
+    """NGL selection for one ligand anchor from its chain_res ("R:404", "A:1205, B:1205" or a
+    bare chain "U"), so only that copy is shown rather than every copy of the component."""
+    # The stored PDB text keeps three resname characters, so a five-character CCD code
+    # (A1AEI) is A1A in the file.
+    pdb_reference = (pdb_reference or '')[:3]
+    copies = [part.strip().partition(':') for part in (chain_res or '').split(',') if part.strip()]
+    if not copies:
+        return '[{}]'.format(pdb_reference) if pdb_reference else ''
+    if not all(resnum for _, _, resnum in copies):
+        # A bare chain is a peptide/protein ligand - its own chain already selects it.
+        return ' or '.join(':' + chain for chain, _, _ in copies)
+    copy_sele = ' or '.join('{}:{}'.format(resnum, chain) for chain, _, resnum in copies)
+    if len(copies) > 1:
+        copy_sele = '(' + copy_sele + ')'
+    return '[{}] and {}'.format(pdb_reference, copy_sele) if pdb_reference else copy_sele
+
+
 def StructureDetails(request, pdbname):
     """
     Show structure details
@@ -1241,14 +1260,30 @@ def StructureDetails(request, pdbname):
     pdbname = pdbname
     structures = ResidueFragmentInteraction.objects.values('structure_ligand_pair__ligand__name', 'structure_ligand_pair__pdb_reference', 'structure_ligand_pair__annotated').filter(
         structure_ligand_pair__structure__pdb_code__index=pdbname).annotate(numRes=Count('pk', distinct=True)).order_by('-numRes')
-    resn_list = ''
 
-    # Maps ligand name -> PDB chemical-component code, used below to build main_ligand/
-    # resn_list in the same order as `ligands` (see note near the bottom of this function).
-    pdb_reference_by_name = {}
-    for structure in structures:
-        if structure['structure_ligand_pair__annotated']:
-            pdb_reference_by_name[structure['structure_ligand_pair__ligand__name']] = structure['structure_ligand_pair__pdb_reference']
+    # One entry per annotated anchor (StructureLigandInteraction), not per ligand: a ligand
+    # bound at two sites (e.g. two cholesterols) is two binding events with their own residues,
+    # role and PDB file. The anchor location is appended to the name only when it repeats.
+    anchors = StructureLigandInteraction.objects.filter(
+        structure__pdb_code__index=pdbname, annotated=True).select_related(
+        'ligand__ligand_type', 'ligand_role').annotate(
+        numRes=Count('residuefragmentinteraction', distinct=True,
+                     filter=~Q(residuefragmentinteraction__interaction_type__type='hidden'))).filter(
+        numRes__gt=0).order_by('-numRes', 'id')
+    name_counts = Counter(a.ligand.name for a in anchors)
+    anchor_labels = {}
+    ligands = []
+    for a in anchors:
+        label = a.ligand.name
+        if name_counts[a.ligand.name] > 1 and a.chain_res:
+            label = '{} ({})'.format(a.ligand.name, a.chain_res)
+        anchor_labels[a.id] = label
+        ligands.append({'name': a.ligand.name, 'label': label, 'id': a.ligand.id, 'anchor_id': a.id,
+                        'smiles': a.ligand.smiles or '', 'sequence': a.ligand.sequence or '',
+                        'ligand_type': a.ligand.ligand_type.name if a.ligand.ligand_type_id else '',
+                        'role': a.ligand_role.name if a.ligand_role_id else '',
+                        'pdb_reference': a.pdb_reference or '', 'chain_res': a.chain_res or '',
+                        'sele': _ngl_selection(a.pdb_reference, a.chain_res)})
 
     crystal = Structure.objects.get(pdb_code__index=pdbname)
     if pdbname.startswith('AFM'):
@@ -1268,8 +1303,6 @@ def StructureDetails(request, pdbname):
     residues = ResidueFragmentInteraction.objects.filter(
         structure_ligand_pair__structure__pdb_code__index=pdbname, structure_ligand_pair__annotated=True).exclude(interaction_type__type ='hidden').order_by('rotamer__residue__sequence_number')
     residues_browser = []
-    ligands = []
-    seen_ligand_names = set()
     display_res = []
     residue_table_list = []
     for residue in residues:
@@ -1296,7 +1329,9 @@ def StructureDetails(request, pdbname):
         ligand_sequence = ligand_obj.sequence or ''
         ligand_type = ligand_obj.ligand_type.name if ligand_obj.ligand_type_id else ''
         display_res.append(str(pos))
-        residues_browser.append({'type': key, 'aa': aa, 'ligand': ligand, 'ligand_id': ligand_obj.id,
+        anchor_id = residue.structure_ligand_pair_id
+        residues_browser.append({'type': key, 'aa': aa, 'ligand': anchor_labels.get(anchor_id, ligand), 'ligand_id': ligand_obj.id,
+                                 'anchor_id': anchor_id,
                                  'ligand_smiles': ligand_smiles, 'ligand_sequence': ligand_sequence, 'ligand_type': ligand_type,
                                  'pos': pos, 'wt_pos': wt_pos, 'gpcrdb': display, 'segment': segment})
 
@@ -1304,12 +1339,6 @@ def StructureDetails(request, pdbname):
             residues_lookup[pos] = aa + str(pos) + " " +display + " interaction " + key
         else:
             residues_lookup[pos] += " interaction " + key
-
-        if ligand not in seen_ligand_names:
-            seen_ligand_names.add(ligand)
-            ligand_role = residue.structure_ligand_pair.ligand_role.name if residue.structure_ligand_pair.ligand_role_id else ''
-            ligands.append({'name': ligand, 'id': ligand_obj.id, 'smiles': ligand_smiles, 'sequence': ligand_sequence,
-                            'ligand_type': ligand_type, 'role': ligand_role})
     display_res = ' or '.join(display_res)
     # RESIDUE TABLE
     segments = ProteinSegment.objects.all().filter().prefetch_related()
@@ -1397,12 +1426,16 @@ def StructureDetails(request, pdbname):
                     residue_distance_lookup=get_snake_plot_distance_lookup(p))
     else:
         SnakePlot = []
-    # resn_list built from `ligands` (rather than the separately-ordered `structures`
-    # query above) so it stays in the same order as `ligands` - previously main_ligand/
-    # main_ligand_full were built from two differently-ordered queries and could silently
-    # mismatch on some structures.
-    resn_list = ''.join(',"{}"'.format(pdb_reference_by_name[l['name']])
-                        for l in ligands if l['name'] in pdb_reference_by_name)
+    # resn_list built from `ligands` so it stays in the same order as `ligands`.
+    resn_list = ''.join(',"{}"'.format(l['pdb_reference']) for l in ligands if l['pdb_reference'])
+
+    # Interacting residues belong to the receptor chain; the 3D viewer restricts its side-chain
+    # highlight to it so same-numbered residues in G protein/Fab chains aren't lit. Left empty
+    # (unfiltered) when that chain isn't in the served PDB file, as in some refined models.
+    receptor_chain = (crystal.preferred_chain or '')[:1]
+    if receptor_chain and not (crystal.pdb_data and any(
+            line.startswith('ATOM') and line[21:22] == receptor_chain for line in crystal.pdb_data.pdb.splitlines())):
+        receptor_chain = ''
 
     protein_class_short = p.get_protein_class_from_slug(short=True).split(' ')[0]
 
@@ -1413,8 +1446,8 @@ def StructureDetails(request, pdbname):
         'pdbname': pdbname,
         'ligands': [
             {
-                'id': l['id'], 'name': l['name'],
-                'pdb_reference': pdb_reference_by_name.get(l['name'], ''),
+                'id': l['id'], 'anchor_id': l['anchor_id'], 'name': l['name'], 'label': l['label'],
+                'pdb_reference': l['pdb_reference'], 'sele': l['sele'],
                 'smiles': l['smiles'], 'sequence': l['sequence'],
                 'ligand_type': l['ligand_type'], 'role': l['role'],
             }
@@ -1424,6 +1457,7 @@ def StructureDetails(request, pdbname):
         'residues_lookup': residues_lookup,
         'display_res': display_res,
         'number_of_schemes': len(numbering_schemes),
+        'receptor_chain': receptor_chain,
     }
 
     return render(request, 'interaction/structure.html', {'pdbname': pdbname, 'structures': structures,
@@ -1980,15 +2014,25 @@ def calculate(request, redirect=None):
                 pdbname = form.cleaned_data['pdbname'].strip()
                 temp_path = module_dir + '/pdbs/' + pdbname + '.pdb'
 
-                if not os.path.isfile(temp_path):
-                    url = 'http://www.rcsb.org/pdb/files/%s.pdb' % pdbname
-                    pdbdata = urllib.request.urlopen(url).read().decode('utf-8')
-                    f = open(temp_path, 'w')
-                    f.write(pdbdata)
-                    f.close()
+                # A structure GPCRdb has: its stored interactions, not a new
+                # legacy calculation (interaction.stored_interactions).
+                stored = stored_results(pdbname)
+                if stored is not None:
+                    results, pdbdata = stored
+                    if not results and redirect:
+                        return HttpResponseNotFound("GPCRdb has no ligand interactions stored for %s, so no binding site can be selected from it." % pdbname)
+                    with open(temp_path, 'w') as f:
+                        f.write(pdbdata)
                 else:
-                    pdbdata = open(temp_path, 'r').read()
-                results = runusercalculation_2022(pdbname, session_key)
+                    if not os.path.isfile(temp_path):
+                        url = 'http://www.rcsb.org/pdb/files/%s.pdb' % pdbname
+                        pdbdata = urllib.request.urlopen(url).read().decode('utf-8')
+                        f = open(temp_path, 'w')
+                        f.write(pdbdata)
+                        f.close()
+                    else:
+                        pdbdata = open(temp_path, 'r').read()
+                    results = runusercalculation_2022(pdbname, session_key)
 
             # MAPPING GPCRdb numbering onto pdb.
             generic_numbering = GenericNumbering(temp_path,top_results=1, blastdb=os.sep.join([settings.STATICFILES_DIRS[0], 'blast', 'protwis_gpcr_blastdb']))
@@ -2274,13 +2318,19 @@ def download(request):
                        '/interaction/' + pdbname + '_' + ligand + '.pdb', 'r').read()
         response = HttpResponse(pdbdata, content_type='text/plain')
     else:
-        # here's the needed fix
-        try:
-            pair = StructureLigandInteraction.objects.filter(structure__pdb_code__index=pdbname).filter(
-                Q(ligand__inchikey=ligand) | Q(ligand__name=ligand)).exclude(pdb_file__isnull=True).get()
-            response = HttpResponse(pair.pdb_file.pdb, content_type='text/plain')
-        except:
+        # `sli` picks one anchor; `ligand` (name/InChIKey) is kept for old links and takes the
+        # first anchor when the ligand is bound at several sites.
+        pairs = StructureLigandInteraction.objects.filter(
+            structure__pdb_code__index=pdbname).exclude(pdb_file__isnull=True).select_related('pdb_file')
+        sli = request.GET.get('sli')
+        if sli and sli.isdigit():
+            pair = pairs.filter(id=int(sli)).first()
+        else:
+            pair = pairs.filter(Q(ligand__inchikey=ligand) | Q(ligand__name=ligand)).order_by(
+                '-annotated', 'id').first()
+        if pair is None:
             return redirect("/interaction/")
+        response = HttpResponse(pair.pdb_file.pdb, content_type='text/plain')
     return response
 
 def excel(request, slug, **response_kwargs):
@@ -2313,12 +2363,15 @@ def excel(request, slug, **response_kwargs):
             row['Interaction'] = interaction[3]
             row['Interaction Slug'] = interaction[2]
             row['Ligand'] = results[ligand]['prettyname']
+            row['Ligand Chain:Residue'] = ''
             data.append(row)
 
     else:
 
         interactions = ResidueFragmentInteraction.objects.filter(
-            structure_ligand_pair__structure__pdb_code__index=slug, structure_ligand_pair__annotated=True).order_by('rotamer__residue__sequence_number')
+            structure_ligand_pair__structure__pdb_code__index=slug, structure_ligand_pair__annotated=True).select_related(
+            'structure_ligand_pair__ligand', 'rotamer__residue__display_generic_number',
+            'rotamer__residue__protein_segment', 'interaction_type').order_by('rotamer__residue__sequence_number')
         data = []
         for interaction in interactions:
             row = {}
@@ -2334,11 +2387,13 @@ def excel(request, slug, **response_kwargs):
             row['Interaction'] = interaction.interaction_type.name
             row['Interaction Slug'] = interaction.interaction_type.slug
             row['Ligand'] = interaction.structure_ligand_pair.ligand.name
+            # Tells apart anchors of the same ligand (e.g. two cholesterols in 6PB0).
+            row['Ligand Chain:Residue'] = interaction.structure_ligand_pair.chain_res or ''
 
             data.append(row)
 
 
-    headers = ['Ligand','Amino Acid','Sequence Number','Generic Number','Segment','Interaction','Interaction Slug']
+    headers = ['Ligand','Ligand Chain:Residue','Amino Acid','Sequence Number','Generic Number','Segment','Interaction','Interaction Slug']
 
     #EXCEL SOLUTION
     output = BytesIO()
