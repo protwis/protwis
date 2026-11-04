@@ -9,7 +9,7 @@ from django.core.management import call_command
 from build.management.commands.PDB_sequence_helper import *
 
 from build.management.commands.base_build import Command as BaseBuild
-from build.management.commands.build_ligand_functions import get_or_create_ligand, match_id_via_unichem, set_ligand_lock
+from build.management.commands.build_ligand_functions import get_or_create_ligand, annotation_ligand_ids, set_ligand_lock
 from protein.models import (Protein, ProteinConformation, ProteinState, ProteinAnomaly, ProteinAnomalyType,
     ProteinSegment, Site)
 from residue.models import ResidueGenericNumber, ResidueNumberingScheme, Residue, ResidueGenericNumberEquivalent
@@ -26,7 +26,8 @@ from Bio.PDB import PDBParser, Polypeptide
 from Bio import pairwise2
 
 from structure.assign_generic_numbers_gpcr import GenericNumbering
-from structure.functions import StructureBuildCheck, AbsParseStructureCSV, ParseStructureCSV
+from structure.functions import (StructureBuildCheck, AbsParseStructureCSV, ParseStructureCSV,
+    resolve_small_molecule_chain, sync_auxiliary_small_molecules)
 from ligand.models import Ligand, LigandType, LigandRole, LigandPeptideStructure
 from interaction.models import *
 # Replaced by the Schrodinger ligand imports (build.ligand_imports):
@@ -69,6 +70,11 @@ def represent_ordereddict(dumper, data):
 
 yaml.add_representer(OrderedDict, represent_ordereddict)
 yaml.add_constructor(_mapping_tag, dict_constructor)
+
+# The JRNL DOI in these PDB files is wrong (8INR/8IOC/8IOD carry the MolProbity paper's DOI)
+DOI_OVERRIDES = {'8FEG': '10.1038/s41467-023-43718-w',
+                 '8INR': '10.1038/s41421-023-00586-4', '8IOC': '10.1038/s41421-023-00586-4',
+                 '8IOD': '10.1038/s41421-023-00586-4'}
 
 class Command(BaseBuild):
     help = 'Reads source data and creates pdb structure records'
@@ -1325,24 +1331,9 @@ class Command(BaseBuild):
         self.logger.warning(message)
 
     def _resolve_small_molecule_chain(self, ligand, chain_candidates, preferred_chain):
-        rsid_parts = [p.strip() for p in (ligand.get('residue_seq_id') or '').split(',') if p.strip()]
-        label_parts = [p.strip() for p in (ligand.get('label_asym_id') or '').split(',') if p.strip()]
-
-        match_index = next((i for i, rsid in enumerate(rsid_parts)
-                             if ':' in rsid and rsid.split(':', 1)[0].strip() == preferred_chain), None)
-        if match_index is not None:
-            ligand['chain'] = preferred_chain
-            ligand['residue_seq_id'] = rsid_parts[match_index]
-            if match_index < len(label_parts):
-                ligand['label_asym_id'] = label_parts[match_index]
-            return
-
-        if preferred_chain in chain_candidates:
-            ligand['chain'] = preferred_chain
-        else:
-            self._warn('Ligand {} chain candidates {} had no Residue_seq_id match for preferred chain {} - defaulting to first'.format(
-                ligand.get('name'), chain_candidates, preferred_chain))
-            ligand['chain'] = chain_candidates[0]
+        warning = resolve_small_molecule_chain(ligand, chain_candidates, preferred_chain)
+        if warning:
+            self._warn(warning)
 
     def _resolve_peptide_chain(self, ligand, chain_candidates, preferred_chain):
         best_chain, best_distance = None, None
@@ -1627,8 +1618,8 @@ class Command(BaseBuild):
                 if line.startswith('JRNL        DOI'):
                     sd['doi_id'] = line[19:].strip()
 
-            if pdb_id=='8FEG':
-                sd['doi_id'] = '10.1038/s41467-023-43718-w'
+            if pdb_id in DOI_OVERRIDES:
+                sd['doi_id'] = DOI_OVERRIDES[pdb_id]
 
             if len(hetsyn) == 0:
                 self.logger.info("PDB file contained NO hetsyn")
@@ -1798,7 +1789,6 @@ class Command(BaseBuild):
                             continue
 
                         # Adding the PDB three-letter code
-                        ids = {}
                         pdb_reference = ligand['name']
 
                         # reformat pdb_reference to string if the 3 letter code is a number and gets formatted as float
@@ -1813,31 +1803,7 @@ class Command(BaseBuild):
                                 pdb_reference, s, pdb_reference_max_len, sd.get('pdb', '?')))
                             pdb_reference = None
 
-                        if ligand['name'] != "pep" and ligand['name'] != "apo":
-                            ids["pdb"] = ligand['name']
-                            ids["pdbe"] = ligand['name']
-
-                        # use pubchem_id
-                        if 'pubchemId' in ligand and ligand['pubchemId'] and ligand['pubchemId'] != 'None':
-                            # TODO expand list and expand structure annotation
-                            if isinstance(ligand['pubchemId'], str) and ligand['pubchemId'].startswith("gtoplig:"):
-                                ids["gtoplig"] = ligand['pubchemId'][8:]
-                            else:
-                                ids["pubchem"] = ligand['pubchemId']
-                        elif "pdb" in ids:
-                            # match PDB via UniChem
-                            uc_entries = match_id_via_unichem("pdb", ids["pdb"])
-                            #print("UNICHEM matching", ids["pdb"])
-                            for entry in uc_entries:
-                                if entry["type"] not in ids:
-                                    ids[entry["type"]] = entry["id"]
-                        # use smiles, inchikey, sequence from annotation CSV
-                        if ligand.get('smiles'):
-                            ids['smiles'] = ligand['smiles']
-                        if ligand.get('inchikey'):
-                            ids['inchikey'] = ligand['inchikey']
-                        if ligand.get('sequence'):
-                            ids['sequence'] = ligand['sequence']
+                        ids = annotation_ligand_ids(ligand)
                         # sequence
                         if ligand['type'] in ['peptide', 'protein'] and peptide_chain in self.parsed_pdb:
                             seq = ''
@@ -1891,15 +1857,15 @@ class Command(BaseBuild):
                         else:
                             chain_res_val = ligand.get('residue_seq_id', '') or None
 
+                        # chain_res is part of the lookup: each ligands.tsv row is one binding
+                        # event, so copies of one ligand with the same role get their own anchor.
                         i, created = StructureLigandInteraction.objects.get_or_create(structure=s,
-                            ligand=l, ligand_role=lr, annotated=True,
-                            defaults={'pdb_reference': pdb_reference, 'site': site_obj, 'chain_res': chain_res_val})
+                            ligand=l, ligand_role=lr, annotated=True, chain_res=chain_res_val,
+                            defaults={'pdb_reference': pdb_reference, 'site': site_obj})
                         if i.pdb_reference != pdb_reference:
                             i.pdb_reference = pdb_reference
                         if i.site != site_obj:
                             i.site = site_obj
-                        if i.chain_res != chain_res_val:
-                            i.chain_res = chain_res_val
                         i.save()
 
             # protein anomalies
@@ -2007,27 +1973,7 @@ class Command(BaseBuild):
                     s.stabilizing_agents.add(sa)
 
             # auxiliary small molecules
-            if 'auxiliary_small_molecules' in sd:
-                preferred_chain = s.preferred_chain
-                for mol in sd['auxiliary_small_molecules']:
-                    for pair in mol['residue_seq_ids']:
-                        parts = pair.split(':')
-                        if len(parts) != 2:
-                            continue
-                        chain, resid = parts[0].strip(), parts[1].strip()
-                        if chain != preferred_chain:
-                            continue
-                        StructureAuxiliarySmallMolecule.objects.get_or_create(
-                            structure=s,
-                            name=mol['name'],
-                            chain=chain,
-                            residue_seq_id=int(resid),
-                            defaults={
-                                'title': mol['title'],
-                                'type': mol['type'],
-                                'function': mol['function'],
-                            },
-                        )
+            sync_auxiliary_small_molecules(s, sd.get('auxiliary_small_molecules', []))
 
             # save structure
             s.save()
