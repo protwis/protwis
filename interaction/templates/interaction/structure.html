@@ -837,7 +837,9 @@ canvas {
             stage.loadFile( "download?sli="+ligand.anchor_id+"&pdb="+PAGE_DATA.pdbname, { ext: "pdb", defaultRepresentation: false } ).then( function( o ){
 
                 o.addRepresentation( "ball+stick", { sele: sele, scale: 1, aspectRatio: 1 } );
-                o.addRepresentation( "licorice", { sele: "sidechainAttached and not "+sele , scale: 2, aspectRatio: 1});
+                o.addRepresentation( "surface", { sele: sele, opacity: 0.4, useWorker: false } );
+                // sele is "[CODE] and RES:CHAIN", so it needs brackets after "not"
+                o.addRepresentation( "licorice", { sele: "sidechainAttached and not (" + sele + ")", scale: 2, aspectRatio: 1});
                 o.addRepresentation( "label", { sele: ".CB", color: "#113", scale: 2.0} );
 
                 o.centerView();
